@@ -1,9 +1,56 @@
-# Anamnesis — weaknesses & limitations (hostile self-audit, 2026-06-17)
+# Anamnesis — weaknesses & limitations (hostile self-audit, 2026-06-17; launch update 2026-06-20)
 
 *Written in the role of a harsh critic: dogfooded on a real 328-note / 12-project vault,
 ran all 10 test suites, probed the new research features for dead code, token bloat, and
 clutter. Findings are graded **[FIXED]** (closed this pass), **[OPEN]** (real, unsolved),
 **[design]** (a trade-off worth naming), **[info]** (known/by-design). Fairness section first.*
+
+## Launch-state update (2026-06-20)
+
+This audit was written on 2026-06-17. Several items it lists as open were closed in the
+rounds that followed (calibrated fusion, the trained cross-encoder, the watch daemon, the
+head-to-head, binary quantization), shipped in **v1.0.0**. The corrections, so the body
+below is read in context:
+
+- **Default ranker is now calibrated score fusion, not RRF.** Mentions of "hybrid RRF" as
+  the default below are stale. Calibrated fusion lifted the default from R@1 0.42 / R@5 0.66
+  to **0.55 / 0.80** and now leads Mem0 / LangMem / A-MEM on a shared local stand. RRF is a
+  fallback (`ANAMNESIS_FUSION=rrf`). See `anamnesis/research/RETRIEVAL_FUSION.md`.
+- **W4 (no reranker) is addressed.** A purpose-trained cross-encoder (bge-reranker-v2-m3)
+  ships as an opt-in second stage: recall@1 0.55 to **0.61**, MRR +0.06 on LongMemEval. Off
+  by default to keep the stdlib core dependency-free; `backend_report()` now surfaces it when
+  torch is present, so it is discoverable rather than hidden.
+- **W2 (embedding-compression ceiling) is mitigated, not eliminated.** The lever that closes
+  most of it (the cross-encoder above) now exists, and calibrated fusion raised the default
+  floor. The pure-stdlib bi-encoder default still has the ceiling, which is a deliberate
+  no-dependency trade, not an unsolved bug. SPLADE learned-sparse was measured this round and
+  loses to BM25 (and needs torch), so it was not adopted.
+- **"Automatic capture is Claude-Code-only" is outdated.** `anamnesis watch` (a stdlib polling
+  daemon) plus `ingest` now give always-on auto-capture for Codex / Cline / Roo / Aider /
+  Gemini-CLI, and an MCP server covers any MCP client. Hooks remain the zero-latency path for
+  Claude Code.
+- **W13 (only one external benchmark) is updated.** There is now a full local head-to-head
+  against Mem0, LangMem, and A-MEM on one shared embedder (`research/head_to_head.py`).
+- **Scale:** opt-in 1-bit index quantization (`ANAMNESIS_EMBED_QUANT=binary`) plus a popcount
+  scan reach six figures of notes with no ANN dependency (`research/QUANTIZATION.md`).
+
+### The four genuinely-remaining items and their disposition
+
+1. **Default-path precision ceiling (W2/W4).** Closed as far as the design allows: the
+   cross-encoder lever is shipped and discoverable; the stdlib default sits at its measured
+   bi-encoder-fusion ceiling. No stdlib magic fix exists (PRF, structure-aware spreading,
+   LLM-rerank, agreement bonuses, robust normalization were all measured and rejected).
+2. **Plausible single-source false fact (W7).** Irreducible without external ground truth. A
+   non-issue under the single-user threat model (you own every session); the opt-in
+   corroboration quarantine covers the multi-tenant case; provenance (`sources`, `confidence`)
+   is stored so a note's support is auditable. Documented as an accepted boundary.
+3. **Entity-typed knowledge graph.** The one real feature gap (structural `[[links]]` today,
+   not entity/relation typed). Design-compatible path: the extraction LLM, which already runs,
+   emits optional typed edges stored as markdown, so retrieval gains relation-aware multi-hop
+   with no new dependency and no database. This is the active build.
+4. **No multi-tenant server / horizontal scale.** An explicit non-goal: local-first files are
+   the whole thesis. Multi-machine is already supported (the store is git; `sync.py` mirrors
+   it), but a hosted multi-tenant service is out of scope by design.
 
 ## What actually works (verified by dogfooding)
 
@@ -63,9 +110,11 @@ clutter. Findings are graded **[FIXED]** (closed this pass), **[OPEN]** (real, u
   recency fallback (`recency_fallback=False`) so an off-topic prompt stays silent rather than
   injecting recent-but-irrelevant notes. Dogfooded: off-topic prompt 5→0 injected hits, confident
   query unaffected. (`memory_search` now delegates to the core gate — one gate, both paths.)
-- **W4 [OPEN] No reranker on the default path.** Retrieval is bi-encoder cosine + lexical RRF;
-  the cloud rerank is opt-in and off the hot path. Zep/Cognee use cross-encoder rerankers for
-  precision. A small *local* reranker would close much of the W2 precision gap.
+- **W4 [ADDRESSED 2026-06-20 — see launch update] No reranker on the default path.** Retrieval
+  is bi-encoder cosine + lexical (now calibrated fusion). A purpose-trained cross-encoder
+  (bge-reranker-v2-m3) now ships as an opt-in second stage (recall@1 0.55 to 0.61), off by
+  default to keep the core dependency-free, and surfaced by `backend_report()` when torch is
+  present. The remaining "not on by default" is the deliberate stdlib trade, not an open bug.
 
 ### Scale & performance
 - **W5 [VERIFIED — not a bug] The scale-index builds correctly.** `.index.sqlite` was absent on
@@ -222,9 +271,13 @@ compression) or low-value-for-single-user (W7/W8 security) — not bugs.
   entity-typed — so multi-hop "which intervention affects which pathway" style queries are weaker.
 - **No production server / multi-tenant / horizontal scale.** Letta and Zep are services;
   Anamnesis is single-machine files (a deliberate local-first choice, but a real ceiling).
-- **Automatic capture is Claude-Code-only** (four hooks); every other agent needs an explicit
-  MCP/`ingest` call — honest, but a friction vs always-on systems.
-- **Recall confidence is weak** (W1/W2) relative to reranked graph systems.
+- **Automatic capture** [UPDATED 2026-06-20]: hooks are Claude-Code-only, but `anamnesis watch`
+  (a stdlib polling daemon) now gives always-on auto-capture for Codex / Cline / Roo / Aider /
+  Gemini-CLI, and an MCP server covers any MCP client. SQLite-only editors (Cursor / Windsurf)
+  still need an export-then-`--dir` step.
+- **Recall confidence** [UPDATED 2026-06-20]: materially stronger since this was written, via
+  calibrated fusion (default) and the opt-in trained cross-encoder; the bi-encoder ceiling (W2)
+  remains for the pure-stdlib default.
 
 ## Prioritized improvement list
 

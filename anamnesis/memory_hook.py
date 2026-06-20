@@ -1751,6 +1751,19 @@ def backend_report(timeout_s: float = 2.0) -> str:
         lines.append(f"  recall     : local Ollama {EMBED_MODEL}  (semantic + lexical, hybrid)")
     else:
         lines.append("  recall     : lexical only (FTS5) — start Ollama (bge-m3) for semantic recall")
+    # Surface the opt-in precision lever when its deps are already on the machine, so the
+    # cross-encoder that closes most of the W2/W4 embedding-compression gap is discoverable
+    # instead of hidden behind an env var nobody knows to set.
+    try:
+        try:
+            from . import reranker_ce as _rc
+        except ImportError:
+            import reranker_ce as _rc
+        if _rc.available() and not _rc.ENABLED:
+            lines.append("  precision  : trained cross-encoder available (torch detected); set "
+                         "ANAMNESIS_XRERANK=1 for a measured +0.06 recall@1")
+    except Exception:
+        pass
     return "\n".join(lines)
 
 
