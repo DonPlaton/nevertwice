@@ -230,9 +230,10 @@ def _tool_memory_entities(args: dict) -> tuple[str, bool]:
     entity = (args.get("entity") or "").strip()
     try:
         if entity:
-            notes = m.notes_for_entity(entity, project, k)
-            co = m.co_occurring(entity, project)
-            edges = m.related_by(entity, project=project)
+            idx = m.entity_index(project)     # one scan, shared across the three facets
+            notes = m.notes_for_entity(entity, project, k, idx=idx)
+            co = m.co_occurring(entity, project, idx=idx)
+            edges = m.related_by(entity, project=project, idx=idx)
             lines = [f"{len(notes)} note(s) tagged {entity!r}"
                      + (f" [{project}]" if project else "") + ":"]
             lines += [f"  [{n['ntype']}] {n['title']}  ({n['stem']})" for n in notes]

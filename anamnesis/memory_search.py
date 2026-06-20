@@ -230,9 +230,10 @@ def main():
             print(m.graph_export(proj, fmt=graph_fmt, cooccurrence="--cooccurrence" in flags))
             return
         if entity:
-            notes = m.notes_for_entity(entity, proj, k)
-            co = m.co_occurring(entity, proj)
-            edges = m.related_by(entity, project=proj)
+            idx = m.entity_index(proj)        # one scan, shared across the three facets
+            notes = m.notes_for_entity(entity, proj, k, idx=idx)
+            co = m.co_occurring(entity, proj, idx=idx)
+            edges = m.related_by(entity, project=proj, idx=idx)
             if "--json" in flags:
                 print(json.dumps({"entity": entity, "notes": [
                     {"ntype": n["ntype"], "title": n["title"], "stem": n["stem"],

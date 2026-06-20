@@ -75,6 +75,7 @@ starts with its memory already loaded. The five-minute walkthrough is in [QUICKS
 | **Dependencies** | **0** Python packages (stdlib core), local Ollama for embeddings (or an optional cloud embedder) | many, usually a server plus a DB |
 | **Your data leaves the machine?** | **never** by default (local embeddings; cloud embedder is opt-in) | usually, via cloud APIs |
 | **Auto-capture** | ✅ native for Claude Code, always-on daemon for the rest | manual API calls |
+| **Knowledge graph** | ✅ entity + typed-relation graph over the Markdown, traversable, no DB | a separate graph database (Neo4j / FalkorDB) |
 | **Open in Obsidian** | ✅ it is your vault | ✗ |
 | **Honest about what works** | ✅ we publish the negative results | rarely |
 

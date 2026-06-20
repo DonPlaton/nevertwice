@@ -498,17 +498,12 @@ EXTRACTION_PROMPT = """Проанализируй эту Claude Code сесси�
 ПОЛЕ confidence (0.0–1.0) — насколько это устойчивое знание, а не разовая деталь.
   Высокое (0.8–1.0) для проверенных фактов; низкое (<0.5) для догадок.
 
-ПОЛЕ entities (опционально) — ключевые СУЩНОСТИ урока для связывания заметок:
-  инструменты, технологии, концепты, файлы/модули (2-5 штук, lowercase, kebab-case,
-  БЕЗ версий/значений). Напр. для CUDA-OOM: ["cuda", "batch-size", "gradient-checkpointing"].
-  Так уроки про одну сущность находятся вместе и образуют граф. Неясно — [].
-
-ПОЛЕ relations (опционально) — ТИПИЗИРОВАННЫЕ рёбра между сущностями для графа:
-  список {{"rel": тип, "target": сущность}}. target — сущность (kebab-case, как в entities).
-  Тип rel из набора: causes, caused-by, fixes, fixed-by, depends-on, requires, part-of,
-  alternative-to, related-to. Напр. для CUDA-OOM mistake: [{{"rel":"caused-by","target":"batch-size"}},
-  {{"rel":"fixed-by","target":"gradient-checkpointing"}}]. Так появляется multi-hop «что вызывает/
-  чинит X». Неясно — []."""
+ПОЛЯ entities/relations (опционально) — граф знаний:
+  entities — 2-5 ключевых сущностей урока (инструменты/концепты/файлы), lowercase kebab-case,
+  без версий. relations — рёбра {{"rel": тип, "target": сущность}}, target в том же стиле; rel
+  из набора: causes, caused-by, fixes, fixed-by, depends-on, requires, part-of, alternative-to,
+  related-to. Напр. для CUDA-OOM: entities ["cuda","batch-size"], relations
+  [{{"rel":"fixed-by","target":"gradient-checkpointing"}}]. Неясно — []."""
 
 
 def log(msg):
@@ -2917,7 +2912,9 @@ def _iter_all_notes() -> list[dict]:
 # the per-prompt hot path: it is an explicit, on-demand facet over the store.
 
 def entity_index(project: str | None = None) -> dict:
-    """entity -> [note metas tagged with it]. The Phase-1 knowledge graph."""
+    """entity -> [note metas tagged with it]. The shared graph index, built in ONE note
+    scan. Pass it to the query helpers below (idx=) so a `--entity` / `--entities` command
+    scans the vault once, not once per entity (audit 2026-06-20)."""
     notes = _iter_project_notes(project) if project else _iter_all_notes()
     idx: dict[str, list] = {}
     for n in notes:
@@ -2926,24 +2923,47 @@ def entity_index(project: str | None = None) -> dict:
     return idx
 
 
-def notes_for_entity(entity: str, project: str | None = None, k: int = 20) -> list[dict]:
+def _edge_counts(notes, exclude=None, rel=None) -> dict:
+    """{(rel, target): count} over the notes' typed relations, skipping self-edges (target
+    == `exclude`) and, when `rel` is given, other relation types. One source for the edge
+    aggregation, shared by related_by and relation_graph so the two never drift."""
+    counts: dict = {}
+    for n in notes:
+        for edge in n.get("relations") or []:
+            r, t = edge.get("rel"), edge.get("target")
+            if r and t and t != exclude and not (rel and r != rel):
+                counts[(r, t)] = counts.get((r, t), 0) + 1
+    return counts
+
+
+def _edges_sorted(counts: dict, k: int | None = None) -> list:
+    """A {(rel,target): count} map → [{rel, target, notes}] strongest first."""
+    out = [{"rel": r, "target": t, "notes": c}
+           for (r, t), c in sorted(counts.items(), key=lambda kv: (-kv[1], kv[0]))]
+    return out[:k] if k else out
+
+
+def notes_for_entity(entity: str, project: str | None = None, k: int = 20,
+                     idx: dict | None = None) -> list[dict]:
     """Live notes tagged with `entity` (faceted recall), newest first. The entity is
-    normalised, so 'CUDA' and 'cuda' match the same bucket."""
+    normalised, so 'CUDA' and 'cuda' match. `idx` reuses a pre-built index (no rescan)."""
     norm = _norm_entities([entity])
     if not norm:
         return []
-    notes = entity_index(project).get(norm[0], [])
-    return sorted(notes, key=lambda n: n.get("date", ""), reverse=True)[:k]
+    idx = idx if idx is not None else entity_index(project)
+    return sorted(idx.get(norm[0], []), key=lambda n: n.get("date", ""), reverse=True)[:k]
 
 
-def co_occurring(entity: str, project: str | None = None, k: int = 10) -> list[tuple]:
+def co_occurring(entity: str, project: str | None = None, k: int = 10,
+                 idx: dict | None = None) -> list[tuple]:
     """Entities that share a note with `entity` (implicit relations), by shared-note count."""
     norm = _norm_entities([entity])
     if not norm:
         return []
     e = norm[0]
+    idx = idx if idx is not None else entity_index(project)
     counts: dict[str, int] = {}
-    for n in entity_index(project).get(e, []):
+    for n in idx.get(e, []):
         for other in n.get("entities") or []:
             if other != e:
                 counts[other] = counts.get(other, 0) + 1
@@ -2952,50 +2972,35 @@ def co_occurring(entity: str, project: str | None = None, k: int = 10) -> list[t
 
 def entity_graph(project: str | None = None, top: int = 30) -> dict:
     """Overview of the graph: the most-connected entities with their note count and top
-    co-occurring neighbours (for an `--entities` listing or a visual)."""
+    co-occurring neighbours. Builds the index ONCE and reuses it for every entity (was a
+    rescan per entity → 31 scans for one call; audit 2026-06-20)."""
     idx = entity_index(project)
     ranked = sorted(idx.items(), key=lambda kv: (-len(kv[1]), kv[0]))[:top]
-    return {e: {"notes": len(notes), "links": co_occurring(e, project, k=5)}
+    return {e: {"notes": len(notes), "links": co_occurring(e, project, k=5, idx=idx)}
             for e, notes in ranked}
 
 
 def related_by(entity: str, rel: str | None = None, project: str | None = None,
-               k: int = 20) -> list:
+               k: int = 20, idx: dict | None = None) -> list:
     """Typed edges declared by lessons tagged with `entity` (Phase 2, relation-aware
     multi-hop): [{rel, target, notes}] by how many of those lessons declare the edge,
-    optionally filtered to one `rel`. Targets are entities, so you can hop: a result's
-    `target` is itself a valid `entity` for the next related_by/notes_for_entity call."""
+    optionally filtered to one `rel`. Targets are entities, so a result's `target` is a
+    valid `entity` for the next related_by/notes_for_entity call."""
     norm = _norm_entities([entity])
     if not norm:
         return []
+    idx = idx if idx is not None else entity_index(project)
     rfilter = _norm_entities([rel])
-    rnorm = rfilter[0] if rfilter else None
-    counts: dict = {}
-    for n in entity_index(project).get(norm[0], []):
-        for edge in n.get("relations") or []:
-            r, t = edge.get("rel"), edge.get("target")
-            if not r or not t or t == norm[0] or (rnorm and r != rnorm):
-                continue            # skip self-edges (target == the queried entity)
-            counts[(r, t)] = counts.get((r, t), 0) + 1
-    return [{"rel": r, "target": t, "notes": c}
-            for (r, t), c in sorted(counts.items(), key=lambda kv: (-kv[1], kv[0]))][:k]
+    return _edges_sorted(_edge_counts(idx.get(norm[0], []), exclude=norm[0],
+                                      rel=rfilter[0] if rfilter else None), k)
 
 
 def relation_graph(project: str | None = None, top: int = 30) -> dict:
-    """Per-entity typed edges overview: {entity: [{rel, target, notes}]}, entities ranked
-    by total edge weight. Consistent with related_by (edges are what lessons about the
-    entity declare). Builds the index once."""
-    out = {}
-    for e, notes in entity_index(project).items():
-        counts: dict = {}
-        for n in notes:
-            for edge in n.get("relations") or []:
-                r, t = edge.get("rel"), edge.get("target")
-                if r and t and t != e:        # skip self-edges (target == source entity)
-                    counts[(r, t)] = counts.get((r, t), 0) + 1
-        if counts:
-            out[e] = [{"rel": r, "target": t, "notes": c}
-                      for (r, t), c in sorted(counts.items(), key=lambda kv: (-kv[1], kv[0]))][:8]
+    """Per-entity typed-edge overview: {entity: [{rel, target, notes}]}, entities ranked by
+    total edge weight. One index build; shares _edge_counts with related_by."""
+    idx = entity_index(project)
+    out = {e: _edges_sorted(_edge_counts(notes, exclude=e), 8) for e, notes in idx.items()}
+    out = {e: edges for e, edges in out.items() if edges}
     ranked = sorted(out.items(), key=lambda kv: -sum(x["notes"] for x in kv[1]))[:top]
     return dict(ranked)
 
@@ -4335,7 +4340,10 @@ def emit_session_start_context(cwd: str) -> None:
         for r in items:
             stale = STALE_CHECK and _note_stale(r.get("stem", ""), r.get("ntype", ""), proj_dir)
             line = _fact_line(r, stale=stale)
-            if added and used[0] + len(line) > INJECT_BUDGET_CHARS:
+            # A precise hit keeps the "show at least one" guarantee (the first item bypasses
+            # the cap). A graph-expanded note (carries `via`) is ALWAYS budget-gated, so the
+            # opt-in relation expansion can never overshoot the card (audit 2026-06-20).
+            if (added or r.get("via")) and used[0] + len(line) > INJECT_BUDGET_CHARS:
                 break
             section.append(line)
             used[0] += len(line) + 1

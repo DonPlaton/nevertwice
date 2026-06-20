@@ -17,12 +17,12 @@
   "recall@10": 0.846,
   "mrr": 0.6026,
   "n": 500,
-  "ingest_s": 342.7,
-  "query_s": 195.6,
+  "ingest_s": 190.9,
+  "query_s": 119.9,
   "mode": "infer=False (retrieval-only, 1 memory/session)",
   "embedder": "ollama bge-m3",
   "setup": "pip install mem0ai ollama fastembed; embedded qdrant (no server)",
-  "_wall_s": 540.7
+  "_wall_s": 314.1
  },
  "zep": {
   "blocked": "Graphiti/Zep needs Neo4j or FalkorDB (Docker) — set NEO4J_URI / FALKORDB_HOST",
