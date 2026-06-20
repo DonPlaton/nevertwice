@@ -218,9 +218,39 @@ def main():
                 pass
         elif a.startswith("--as-of="):
             as_of_date = a.split("=", 1)[1].strip()
+
+    # Entity knowledge graph (no query needed): facet by one entity or show the graph.
+    entity = next((a.split("=", 1)[1] for a in flags if a.startswith("--entity=")), None)
+    if entity or "--entities" in flags:
+        proj = rest[0] if rest else None     # the positional is the project in entity mode
+        if entity:
+            notes = m.notes_for_entity(entity, proj, k)
+            if "--json" in flags:
+                print(json.dumps([{"ntype": n["ntype"], "title": n["title"], "stem": n["stem"],
+                                   "project": n.get("project"), "entities": n.get("entities", [])}
+                                  for n in notes], ensure_ascii=False, indent=2))
+            else:
+                print(f"{len(notes)} note(s) tagged {entity!r}" + (f" [{proj}]" if proj else "") + ":")
+                for n in notes:
+                    print(f"  {ICON.get(n['ntype'], '·')} {n['title']}  ({n['stem']})")
+                co = m.co_occurring(entity, proj)
+                if co:
+                    print("  related: " + ", ".join(f"{e} x{c}" for e, c in co))
+        else:
+            g = m.entity_graph(proj)
+            if "--json" in flags:
+                print(json.dumps(g, ensure_ascii=False, indent=2))
+            else:
+                print(f"Entity graph{(' [' + proj + ']') if proj else ''} — {len(g)} entit(y/ies):")
+                for e, info in g.items():
+                    links = ", ".join(f"{le} x{lc}" for le, lc in info["links"])
+                    print(f"  {e}  ({info['notes']} notes)" + (f"  -> {links}" if links else ""))
+        return
+
     if not rest:
-        print("usage: memory_search.py <query> [project] [--k=N] [--expand] "
-              "[--json] [--brief] [--rerank] [--xrerank] [--as-of=YYYY-MM-DD]", file=sys.stderr)
+        print("usage: memory_search.py <query> [project] [--k=N] [--expand] [--json] [--brief] "
+              "[--rerank] [--xrerank] [--as-of=YYYY-MM-DD] | --entity=X [project] | --entities [project]",
+              file=sys.stderr)
         sys.exit(1)
     query = rest[0]
     project = rest[1] if len(rest) > 1 else None

@@ -37,3 +37,4 @@ jobs:
           python anamnesis/_test_ingest.py
           python anamnesis/_test_watch.py
           python anamnesis/_test_quant.py
+          python anamnesis/_test_entities.py

@@ -25,6 +25,32 @@ capture_session(transcript_text, project="myproj", agent="my-bot")
 and falls back to lexical search when the GPU/Ollama is busy. `remember` writes a typed note.
 `capture_session` runs the full extraction pipeline (Patterns / Mistakes / Decisions + Context).
 
+## Entity knowledge graph
+
+Every lesson is tagged with its key entities (tools, concepts, files) as it is captured, so
+memory is also a graph you can facet and traverse, with no database and no embedder. The tags
+are LLM-emitted during extraction, normalised to lowercase kebab tokens, and stored in the note
+frontmatter, so the graph reads straight from your files.
+
+```python
+from anamnesis.api import notes_for_entity, co_occurring, entity_graph
+
+notes_for_entity("cuda", project="myproj")     # every lesson tagged with this entity, newest first
+co_occurring("cuda", project="myproj")         # [{entity, shared}] entities that share a note with it
+entity_graph(project="myproj")                 # {entity: {notes, links}} overview, most-connected first
+```
+
+`remember(..., entities=["cuda", "batch-size"])` attaches entities yourself; `remember_lessons`
+takes an `entities` key per lesson. From the CLI and any MCP client:
+
+```bash
+python anamnesis/memory_search.py --entity=cuda myproj     # all lessons about an entity (+ related)
+python anamnesis/memory_search.py --entities myproj        # the project's entity graph
+```
+
+The MCP `memory_entities` tool exposes the same to any MCP client. This is the first half of the
+knowledge-graph roadmap (entities and co-occurrence today; typed relation edges next).
+
 ## Generic capture (any agent)
 
 `MemorySession` collects turns and extracts memory once on close. Give any agent a memory in

@@ -57,13 +57,43 @@ def format_note(result: dict) -> str:
     return "\n".join(ln for ln in lines if ln)
 
 
+def _entity_view(n: dict) -> dict:
+    """A note meta → the same shape recall() returns, plus `entities`/`date`."""
+    return {"ntype": n.get("ntype"), "project": n.get("project"),
+            "title": n.get("title"), "stem": n.get("stem"),
+            "description": n.get("desc", ""), "prevention": n.get("prevention", ""),
+            "entities": n.get("entities", []), "recurrence": n.get("recurrence", 1),
+            "date": n.get("date", "")}
+
+
+def notes_for_entity(entity: str, project: str | None = None, k: int = 20) -> list[dict]:
+    """Every live note tagged with `entity` (faceted recall, no query needed), newest
+    first. The entity knowledge graph (Phase 1): the LLM tags each lesson with its key
+    entities (tools, concepts, files), so 'show me everything about CUDA' is one call.
+    Reads note frontmatter, so it works with NO embedder. Returns recall-shaped dicts."""
+    return [_entity_view(n) for n in m.notes_for_entity(entity, project, k)]
+
+
+def co_occurring(entity: str, project: str | None = None, k: int = 10) -> list[dict]:
+    """Entities that share a note with `entity` (implicit relations), strongest first:
+    `[{entity, shared}]` where `shared` is the number of notes the two appear in together."""
+    return [{"entity": e, "shared": c} for e, c in m.co_occurring(entity, project, k)]
+
+
+def entity_graph(project: str | None = None, top: int = 30) -> dict:
+    """Overview of the entity knowledge graph: the most-connected entities, each with its
+    note count and top co-occurring neighbours. `{entity: {notes, links}}`."""
+    return m.entity_graph(project, top)
+
+
 def remember(title: str, *, project: str, type: str = "pattern",
              description: str = "", prevention: str = "", tags=(),
-             supersedes: str = "", embed: bool = True) -> str | None:
+             supersedes: str = "", entities=(), embed: bool = True) -> str | None:
     """Write one typed memory note and return its stem, or None if it was rejected
     as a prompt-injection payload. `type` ∈ {pattern, mistake, decision}. Embeds
     immediately when the embedder is free (so it is recallable at once); otherwise
     the note is written and folded into semantic recall on the next embed run.
+    `entities` (tools/concepts/files) feed the entity knowledge graph.
 
     Raises ValueError on bad arguments and RuntimeError if the vault lock is busy."""
     if type not in m.TYPED_TYPES:
@@ -72,8 +102,10 @@ def remember(title: str, *, project: str, type: str = "pattern",
         raise ValueError("project and title are required")
     proj = m.slug_project(project)
     tag_list = m._norm_tags(tags.split(",") if isinstance(tags, str) else list(tags))
+    ent = entities.split(",") if isinstance(entities, str) else list(entities)
     item = {"title": title, "description": description or "",
-            "prevention": prevention or "", "supersedes": supersedes or ""}
+            "prevention": prevention or "", "supersedes": supersedes or "",
+            "entities": ent}
     if not m.acquire_lock(timeout_s=60):
         raise RuntimeError("vault busy (lock held by another process) — try again")
     try:
@@ -128,7 +160,8 @@ def remember_lessons(lessons, *, project: str, embed: bool = True) -> list[str]:
                                     else list(raw_tags))
             item = {"title": title, "description": ln.get("description") or "",
                     "prevention": ln.get("prevention") or "",
-                    "supersedes": ln.get("supersedes") or ""}
+                    "supersedes": ln.get("supersedes") or "",
+                    "entities": ln.get("entities") or []}
             stem = m.write_typed_note(m.TYPE_FOLDER[typ], item, proj, date, tag_list, typ)
             if stem:                       # None == rejected (injection-shaped) — skip it
                 written.append(stem)

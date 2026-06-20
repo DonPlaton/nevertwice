@@ -646,12 +646,12 @@ check("initialize echoes protocolVersion",
 check("initialize advertises serverInfo",
       _sent[0]["result"]["serverInfo"]["name"] == mcp.SERVER_NAME)
 
-# tools/list exposes the three tools
+# tools/list exposes the tool set
 _sent.clear()
 mcp._handle({"jsonrpc": "2.0", "id": 2, "method": "tools/list"})
 names = {t["name"] for t in _sent[0]["result"]["tools"]}
-check("tools/list exposes search/remember/ingest",
-      names == {"memory_search", "memory_remember", "memory_ingest"})
+check("tools/list exposes search/remember/ingest/entities",
+      names == {"memory_search", "memory_remember", "memory_ingest", "memory_entities"})
 
 # a notification (no id) produces no response
 _sent.clear()

@@ -215,13 +215,13 @@ shows up.
 
 ## Tests
 
-Standard-library only and fully mocked, so no network and no GPU. Twelve core suites run in CI,
+Standard-library only and fully mocked, so no network and no GPU. Thirteen core suites run in CI,
 alongside the research suites under `anamnesis/research/`:
 
 ```bash
 for t in _test_memory_hook _test_memory_v2 _test_memory_v3 _test_audit_fixes \
          _test_failure_injection _test_api _test_capture _test_integrations \
-         _test_cloud_embed _test_ingest _test_watch _test_quant; do
+         _test_cloud_embed _test_ingest _test_watch _test_quant _test_entities; do
   python anamnesis/$t.py; done
 ```
 

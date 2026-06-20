@@ -44,10 +44,12 @@ below is read in context:
    non-issue under the single-user threat model (you own every session); the opt-in
    corroboration quarantine covers the multi-tenant case; provenance (`sources`, `confidence`)
    is stored so a note's support is auditable. Documented as an accepted boundary.
-3. **Entity-typed knowledge graph.** The one real feature gap (structural `[[links]]` today,
-   not entity/relation typed). Design-compatible path: the extraction LLM, which already runs,
-   emits optional typed edges stored as markdown, so retrieval gains relation-aware multi-hop
-   with no new dependency and no database. This is the active build.
+3. **Entity-typed knowledge graph.** The one real feature gap. **Phase 1 shipped (2026-06-20):**
+   the extraction LLM now tags each lesson with its key entities (tools/concepts/files), stored
+   normalised in frontmatter, so memory is a faceted graph with no database and no embedder.
+   `notes_for_entity`, `co_occurring`, `entity_graph` (Python API), `--entity` / `--entities`
+   (CLI), and the `memory_entities` MCP tool expose "show everything about X" and co-occurrence.
+   Phase 2 (next): typed relation edges (`X caused-by Y`) for relation-aware multi-hop.
 4. **No multi-tenant server / horizontal scale.** An explicit non-goal: local-first files are
    the whole thesis. Multi-machine is already supported (the store is git; `sync.py` mirrors
    it), but a hosted multi-tenant service is out of scope by design.

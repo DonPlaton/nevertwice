@@ -108,6 +108,22 @@ TOOLS = [
             "required": ["project", "text"],
         },
     },
+    {
+        "name": "memory_entities",
+        "description": ("Faceted view of memory by entity (tools, concepts, files). With "
+                        "`entity`: every lesson tagged with it, plus related entities. "
+                        "Without: the entity graph (most-connected entities and their "
+                        "co-occurring neighbours). Read-only."),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "entity": {"type": "string",
+                           "description": "One entity to facet by (optional)."},
+                "project": {"type": "string", "description": "Limit to one project (optional)."},
+                "k": {"type": "integer", "description": "Max results (default 12)."},
+            },
+        },
+    },
 ]
 
 
@@ -194,10 +210,40 @@ def _tool_memory_ingest(args: dict) -> tuple[str, bool]:
             else ("Nothing stored (no project-relevant knowledge found).", False))
 
 
+def _tool_memory_entities(args: dict) -> tuple[str, bool]:
+    project = (args.get("project") or "").strip() or None
+    try:
+        k = int(args.get("k") or 12)
+    except (TypeError, ValueError):
+        k = 12
+    entity = (args.get("entity") or "").strip()
+    try:
+        if entity:
+            notes = m.notes_for_entity(entity, project, k)
+            co = m.co_occurring(entity, project)
+            lines = [f"{len(notes)} note(s) tagged {entity!r}"
+                     + (f" [{project}]" if project else "") + ":"]
+            lines += [f"  [{n['ntype']}] {n['title']}  ({n['stem']})" for n in notes]
+            if co:
+                lines.append("related: " + ", ".join(f"{e} x{c}" for e, c in co))
+            return "\n".join(lines), False
+        g = m.entity_graph(project)
+        if not g:
+            return "no entities yet (lessons get entity-tagged as they are captured)", False
+        lines = [f"entity graph{(' [' + project + ']') if project else ''} ({len(g)} entities):"]
+        for e, info in g.items():
+            links = ", ".join(f"{le} x{lc}" for le, lc in info["links"])
+            lines.append(f"  {e} ({info['notes']} notes)" + (f" -> {links}" if links else ""))
+        return "\n".join(lines), False
+    except Exception as exc:
+        return f"error: {type(exc).__name__}", True
+
+
 _DISPATCH = {
     "memory_search": _tool_memory_search,
     "memory_remember": _tool_memory_remember,
     "memory_ingest": _tool_memory_ingest,
+    "memory_entities": _tool_memory_entities,
 }
 
 
