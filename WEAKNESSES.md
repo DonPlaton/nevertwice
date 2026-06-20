@@ -55,9 +55,14 @@ below is read in context:
    Python API, the CLI (`--entity` / `--entities` / `--relations`), and the `memory_entities` MCP
    tool. **Phase 2b:** the edges feed retrieval — `recall(expand_relations=True)` (CLI
    `--expand-relations`, MCP flag) appends the lessons the hits' edges reach, so a query about a bug
-   surfaces its fix even with no shared words; off by default, each addition tagged with `via`. 52
-   regression tests (`_test_entities.py`). This matches the entity/relation extraction the leaders
-   use, but over markdown with zero new dependency.
+   surfaces its fix even with no shared words; off by default, each addition tagged with `via`. The
+   graph also **exports** to Mermaid / DOT / JSON (`graph_export`, CLI `--graph`) for a visual that
+   renders straight in an Obsidian or GitHub markdown block, and can enrich the **SessionStart** card
+   itself via the opt-in `ANAMNESIS_RELATION_EXPAND` (SessionStart only, budget-gated, never the
+   per-prompt path). The whole feature lives in its own `anamnesis/graph.py`. 60 regression tests
+   (`_test_entities.py`); a hostile multi-pass audit fixed an O(E×N) rescan and confirmed the hot-path
+   discipline. This matches the entity/relation extraction the leaders use, but over markdown with zero
+   new dependency.
 4. **No multi-tenant server / horizontal scale.** An explicit non-goal: local-first files are
    the whole thesis. Multi-machine is already supported (the store is git; `sync.py` mirrors
    it), but a hosted multi-tenant service is out of scope by design.

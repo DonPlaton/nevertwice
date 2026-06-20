@@ -30,6 +30,7 @@ flowchart TD
 | `memory_hook.py` | The engine: event dispatch, extraction, note writing, supersession, retrieval, injection, scheduling-safe locking. |
 | `mcp_server.py` | Zero-dep MCP stdio server → any MCP client. |
 | `memory_search.py` | On-demand recall (shared `search_core`). |
+| `graph.py` | Entity + typed-relation knowledge graph over the notes (faceting, multi-hop, relation-aware recall, Mermaid/DOT/JSON export). |
 | `remember.py` / `ingest.py` | Agent self-write / generic transcript ingestion. |
 | `embed_index.py` | (Re)build the embedding cache. |
 | `consolidate_memory.py` | Sleep-time dedup + compaction + recurrence. |

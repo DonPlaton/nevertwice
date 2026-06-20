@@ -2906,209 +2906,25 @@ def _iter_all_notes() -> list[dict]:
     return out
 
 
-# ── Entity knowledge graph (Phase 1) ──────────────────────────────────
-# Lessons carry an optional `entities` list (LLM-emitted, normalised). These read it
-# straight from note frontmatter, so the graph works with NO embedder and never touches
-# the per-prompt hot path: it is an explicit, on-demand facet over the store.
-
-def entity_index(project: str | None = None) -> dict:
-    """entity -> [note metas tagged with it]. The shared graph index, built in ONE note
-    scan. Pass it to the query helpers below (idx=) so a `--entity` / `--entities` command
-    scans the vault once, not once per entity (audit 2026-06-20)."""
-    notes = _iter_project_notes(project) if project else _iter_all_notes()
-    idx: dict[str, list] = {}
-    for n in notes:
-        for e in n.get("entities") or []:
-            idx.setdefault(e, []).append(n)
-    return idx
-
-
-def _edge_counts(notes, exclude=None, rel=None) -> dict:
-    """{(rel, target): count} over the notes' typed relations, skipping self-edges (target
-    == `exclude`) and, when `rel` is given, other relation types. One source for the edge
-    aggregation, shared by related_by and relation_graph so the two never drift."""
-    counts: dict = {}
-    for n in notes:
-        for edge in n.get("relations") or []:
-            r, t = edge.get("rel"), edge.get("target")
-            if r and t and t != exclude and not (rel and r != rel):
-                counts[(r, t)] = counts.get((r, t), 0) + 1
-    return counts
-
-
-def _edges_sorted(counts: dict, k: int | None = None) -> list:
-    """A {(rel,target): count} map → [{rel, target, notes}] strongest first."""
-    out = [{"rel": r, "target": t, "notes": c}
-           for (r, t), c in sorted(counts.items(), key=lambda kv: (-kv[1], kv[0]))]
-    return out[:k] if k else out
-
-
-def notes_for_entity(entity: str, project: str | None = None, k: int = 20,
-                     idx: dict | None = None) -> list[dict]:
-    """Live notes tagged with `entity` (faceted recall), newest first. The entity is
-    normalised, so 'CUDA' and 'cuda' match. `idx` reuses a pre-built index (no rescan)."""
-    norm = _norm_entities([entity])
-    if not norm:
-        return []
-    idx = idx if idx is not None else entity_index(project)
-    return sorted(idx.get(norm[0], []), key=lambda n: n.get("date", ""), reverse=True)[:k]
-
-
-def co_occurring(entity: str, project: str | None = None, k: int = 10,
-                 idx: dict | None = None) -> list[tuple]:
-    """Entities that share a note with `entity` (implicit relations), by shared-note count."""
-    norm = _norm_entities([entity])
-    if not norm:
-        return []
-    e = norm[0]
-    idx = idx if idx is not None else entity_index(project)
-    counts: dict[str, int] = {}
-    for n in idx.get(e, []):
-        for other in n.get("entities") or []:
-            if other != e:
-                counts[other] = counts.get(other, 0) + 1
-    return sorted(counts.items(), key=lambda kv: (-kv[1], kv[0]))[:k]
-
-
-def entity_graph(project: str | None = None, top: int = 30) -> dict:
-    """Overview of the graph: the most-connected entities with their note count and top
-    co-occurring neighbours. Builds the index ONCE and reuses it for every entity (was a
-    rescan per entity → 31 scans for one call; audit 2026-06-20)."""
-    idx = entity_index(project)
-    ranked = sorted(idx.items(), key=lambda kv: (-len(kv[1]), kv[0]))[:top]
-    return {e: {"notes": len(notes), "links": co_occurring(e, project, k=5, idx=idx)}
-            for e, notes in ranked}
-
-
-def related_by(entity: str, rel: str | None = None, project: str | None = None,
-               k: int = 20, idx: dict | None = None) -> list:
-    """Typed edges declared by lessons tagged with `entity` (Phase 2, relation-aware
-    multi-hop): [{rel, target, notes}] by how many of those lessons declare the edge,
-    optionally filtered to one `rel`. Targets are entities, so a result's `target` is a
-    valid `entity` for the next related_by/notes_for_entity call."""
-    norm = _norm_entities([entity])
-    if not norm:
-        return []
-    idx = idx if idx is not None else entity_index(project)
-    rfilter = _norm_entities([rel])
-    return _edges_sorted(_edge_counts(idx.get(norm[0], []), exclude=norm[0],
-                                      rel=rfilter[0] if rfilter else None), k)
-
-
-def relation_graph(project: str | None = None, top: int = 30) -> dict:
-    """Per-entity typed-edge overview: {entity: [{rel, target, notes}]}, entities ranked by
-    total edge weight. One index build; shares _edge_counts with related_by."""
-    idx = entity_index(project)
-    out = {e: _edges_sorted(_edge_counts(notes, exclude=e), 8) for e, notes in idx.items()}
-    out = {e: edges for e, edges in out.items() if edges}
-    ranked = sorted(out.items(), key=lambda kv: -sum(x["notes"] for x in kv[1]))[:top]
-    return dict(ranked)
-
-
-def relation_expand(hits, project: str | None = None, max_add: int = 5, rels=None) -> list:
-    """Relation-aware retrieval (Phase 2b): given first-stage recall hits (dicts with a
-    `stem`), pull in lessons the query did NOT surface directly but that the graph connects
-    to them. Follows each hit's typed relation edges to their target entities and returns
-    notes about those targets, so a query that hits an OOM mistake also surfaces its
-    `fixed-by` fix. Reads note frontmatter (no embedder), bounded by `max_add`; `rels`
-    optionally limits which relation types expand (e.g. {'fixed-by','fixes'}). Returns
-    recall-shaped dicts tagged with `via` (the edge that pulled them in)."""
-    if not hits:
-        return []
-    rfilter = {x for r in (rels or ()) for x in _norm_entities([r])} or None
-    notes = _iter_project_notes(project) if project else _iter_all_notes()
-    by_stem = {n["stem"]: n for n in notes}
-    idx: dict = {}
-    for n in notes:
-        for e in n.get("entities") or []:
-            idx.setdefault(e, []).append(n)
-    present = {h.get("stem") for h in hits}
-    added, seen_targets = [], set()
-    for h in hits:
-        meta = by_stem.get(h.get("stem"))
-        if not meta:
-            continue
-        for edge in meta.get("relations") or []:
-            t, rel = edge.get("target"), edge.get("rel")
-            if not t or t in seen_targets or (rfilter and rel not in rfilter):
-                continue
-            seen_targets.add(t)
-            for n in idx.get(t, []):
-                if n["stem"] in present or len(added) >= max_add:
-                    continue
-                present.add(n["stem"])
-                added.append({"score": 0.0, "ntype": n["ntype"], "project": n.get("project"),
-                              "title": n["title"], "stem": n["stem"],
-                              "description": n.get("desc", ""),
-                              "prevention": n.get("prevention", ""),
-                              "recurrence": n.get("recurrence"),
-                              "via": f"{rel} -> {t}", "low_confidence": True})
-            if len(added) >= max_add:
-                return added
-    return added
-
-
-def graph_export(project: str | None = None, fmt: str = "mermaid", top: int = 40,
-                 cooccurrence: bool = False) -> str:
-    """Render the knowledge graph to a portable format: 'mermaid' (renders directly in
-    Obsidian / a GitHub markdown block, no tool to install), 'dot' (Graphviz), or 'json'
-    (nodes/edges for D3 or any custom view). Typed relation edges are directed and
-    labelled; with cooccurrence=True, entities sharing >=2 notes get a dashed undirected
-    edge too. Nodes are capped at `top` by note count, so a large vault stays legible."""
-    notes = _iter_project_notes(project) if project else _iter_all_notes()
-    node_notes: dict = {}                      # entity -> note count
-    rel_edges: dict = {}                       # (src, rel, tgt) -> count
-    cooc: dict = {}                            # (a, b) sorted -> shared-note count
-    for n in notes:
-        ents = n.get("entities") or []
-        for e in ents:
-            node_notes[e] = node_notes.get(e, 0) + 1
-        for edge in n.get("relations") or []:
-            r, t = edge.get("rel"), edge.get("target")
-            if not r or not t:
-                continue
-            node_notes.setdefault(t, 0)        # a target is a node even if untagged
-            for src in ents:
-                if src != t:
-                    rel_edges[(src, r, t)] = rel_edges.get((src, r, t), 0) + 1
-        if cooccurrence:
-            for i, a in enumerate(ents):
-                for b in ents[i + 1:]:
-                    if a != b:
-                        cooc[tuple(sorted((a, b)))] = cooc.get(tuple(sorted((a, b))), 0) + 1
-    keep = {e for e, _ in sorted(node_notes.items(), key=lambda kv: (-kv[1], kv[0]))[:top]}
-    redges = sorted(((s, r, t, c) for (s, r, t), c in rel_edges.items() if s in keep and t in keep),
-                    key=lambda x: (-x[3], x[0], x[2]))
-    cedges = sorted(((a, b, c) for (a, b), c in cooc.items() if c >= 2 and a in keep and b in keep),
-                    key=lambda x: -x[2])
-
-    if fmt == "json":
-        return json.dumps({"nodes": [{"id": e, "notes": node_notes[e]}
-                                     for e in sorted(keep, key=lambda e: (-node_notes[e], e))],
-                           "edges": [{"source": s, "rel": r, "target": t, "notes": c}
-                                     for s, r, t, c in redges],
-                           "cooccurrence": [{"a": a, "b": b, "notes": c} for a, b, c in cedges]},
-                          ensure_ascii=False, indent=1)
-    if fmt == "dot":
-        out = ["digraph anamnesis {", '  rankdir=LR; node [shape=box];']
-        for e in sorted(keep):
-            out.append(f'  "{e}" [label="{e}\\n({node_notes[e]})"];')
-        for s, r, t, c in redges:
-            out.append(f'  "{s}" -> "{t}" [label="{r}"];')
-        for a, b, c in cedges:
-            out.append(f'  "{a}" -> "{b}" [dir=none, style=dashed];')
-        out.append("}")
-        return "\n".join(out)
-    # mermaid (default)
-    ids = {e: f"n{i}" for i, e in enumerate(sorted(keep))}
-    out = ["graph LR"]
-    for e in sorted(keep):
-        out.append(f'  {ids[e]}["{e}"]')
-    for s, r, t, c in redges:
-        out.append(f'  {ids[s]} -->|{r}| {ids[t]}')
-    for a, b, c in cedges:
-        out.append(f'  {ids[a]} -.- {ids[b]}')
-    return "\n".join(out)
+# ── Entity + typed-relation knowledge graph ──────────────────────────
+# The graph lives in anamnesis/graph.py (kept out of this module to keep it lean). It is
+# re-exported here so `m.entity_index(...)` etc. keep working; graph.py imports memory_hook
+# lazily-safe (only inside function bodies, never at import time), so this re-export does
+# not deadlock the circular import.
+try:
+    from . import graph as _graph
+except ImportError:
+    import graph as _graph
+entity_index = _graph.entity_index
+_edge_counts = _graph._edge_counts
+_edges_sorted = _graph._edges_sorted
+notes_for_entity = _graph.notes_for_entity
+co_occurring = _graph.co_occurring
+entity_graph = _graph.entity_graph
+related_by = _graph.related_by
+relation_graph = _graph.relation_graph
+relation_expand = _graph.relation_expand
+graph_export = _graph.graph_export
 
 
 # tags that carry no topical signal in the "stack/themes" line
