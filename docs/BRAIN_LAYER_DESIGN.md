@@ -1,7 +1,10 @@
 # Brain Layer — Design
 
-Status: **approved, in implementation**. This doc is the contract the implementation
-follows. Anything not consistent with the **Invariants** section is a bug, not a feature.
+Status: **implemented** (F1 entity layer + profiles · F2 entity cards · F4 SQLite scale-tier ·
+F3 temporal/evolution · F5 salience · invariant tests — all green). This doc is the contract the
+implementation follows. Anything not consistent with the **Invariants** section is a bug, not a
+feature. Guards live in `anamnesis/_test_brain*.py` (102 checks); the invariants are enforced by
+`_test_brain_invariants.py` (separation · budget byte-parity on/off · privacy · opt-in).
 
 ## 1. Motivation
 
