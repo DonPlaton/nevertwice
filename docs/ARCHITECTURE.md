@@ -30,11 +30,11 @@ flowchart TD
 | `memory_hook.py` | The engine: event dispatch, extraction, note writing, supersession, retrieval, injection, scheduling-safe locking. |
 | `mcp_server.py` | Zero-dep MCP stdio server → any MCP client. |
 | `memory_search.py` | On-demand recall (shared `search_core`). |
-| `graph.py` | Entity + typed-relation knowledge graph over the notes (faceting, multi-hop, relation-aware recall, Mermaid/DOT/JSON export). |
+| `graph.py` | Entity + typed-relation knowledge graph over the notes (faceting, multi-hop, relation-aware recall, Mermaid/DOT/JSON export). Also the opt-in **Brain layer**: typed-entity index, per-entity timeline/evolution, and graph-centrality salience. |
 | `remember.py` / `ingest.py` | Agent self-write / generic transcript ingestion. |
 | `embed_index.py` | (Re)build the embedding cache. |
-| `consolidate_memory.py` | Sleep-time dedup + compaction + recurrence. |
-| `index_sqlite.py` | Optional SQLite scale-index (derived from markdown). |
+| `consolidate_memory.py` | Sleep-time dedup + compaction + recurrence; stamps Brain-layer salience. |
+| `index_sqlite.py` | Optional SQLite scale-index (derived from markdown): FTS5 + vectors, plus the entity/relation graph tables for fast Brain-layer queries at scale. |
 | `manage_tasks.py` / `install.py` | Scheduling (Windows tasks / POSIX cron) and setup. |
 | `research/` | Eval harness, temporal-graph prototype, contradiction scan. |
 
@@ -52,6 +52,11 @@ flowchart TD
   injection surface.
 - **Links:** notes cross-link with `[[wikilinks]]`; `graph.json` is the machine-readable
   graph. Obsidian can render both, but is not required.
+- **Brain layer (opt-in):** a research/general profile turns the captured sessions into a
+  self-wiring knowledge graph — typed entities, per-entity cards (a cross-project rollup),
+  an evolution timeline, and graph-centrality salience. It is **pull-only**: stored under
+  `Entities/` (never in the recall pool) and read on demand, so the token-bounded hot path
+  is byte-for-byte unchanged when off. See [BRAIN_LAYER_DESIGN.md](BRAIN_LAYER_DESIGN.md).
 
 ## Retrieval
 

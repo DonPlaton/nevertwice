@@ -62,7 +62,13 @@ below is read in context:
    per-prompt path). The whole feature lives in its own `anamnesis/graph.py`. 60 regression tests
    (`_test_entities.py`); a hostile multi-pass audit fixed an O(E×N) rescan and confirmed the hot-path
    discipline. This matches the entity/relation extraction the leaders use, but over markdown with zero
-   new dependency.
+   new dependency. **Brain layer (2026-06-22):** an opt-in `research`/`general` profile builds on this
+   graph — first-class typed entities over a wide research ontology (paper/method/architecture/dataset/
+   benchmark/metric/…), per-entity **cards** (a cross-project rollup stored under `Entities/`, pull-only,
+   never in the recall pool), an **evolution timeline** across live + superseded notes, and sleep-time
+   graph-**centrality salience**. A SQLite graph scale-tier keeps the entity queries single-digit-ms at
+   5k notes. Off by default — the hot path is byte-for-byte unchanged — and held by separation / budget /
+   privacy / opt-in invariant tests (+107 tests; `docs/BRAIN_LAYER_DESIGN.md`).
 4. **No multi-tenant server / horizontal scale.** An explicit non-goal: local-first files are
    the whole thesis. Multi-machine is already supported (the store is git; `sync.py` mirrors
    it), but a hosted multi-tenant service is out of scope by design.
