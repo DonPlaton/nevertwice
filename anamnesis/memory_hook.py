@@ -503,7 +503,7 @@ EXTRACTION_PROMPT = """Проанализируй эту Claude Code сесси�
   без версий. relations — рёбра {{"rel": тип, "target": сущность}}, target в том же стиле; rel
   из набора: causes, caused-by, fixes, fixed-by, depends-on, requires, part-of, alternative-to,
   related-to. Напр. для CUDA-OOM: entities ["cuda","batch-size"], relations
-  [{{"rel":"fixed-by","target":"gradient-checkpointing"}}]. Неясно — []."""
+  [{{"rel":"fixed-by","target":"gradient-checkpointing"}}]. Неясно — [].{brain_block}"""
 
 
 def log(msg):
@@ -766,6 +766,52 @@ def _norm_relations(raw, cap: int = 8) -> list:
     return out
 
 
+def _norm_entity_types(raw, cap: int = 8, gate: bool = True) -> dict:
+    """Canonical {entity: type} map for the Brain layer (F1). Keys normalised to the SAME
+    token space as `entities`, so a typed entity matches its graph node.
+
+    gate=True  (extraction / WRITE): values restricted to the ACTIVE profile's ontology
+               (config.entity_types()); a coding-only install therefore writes none, and
+               junk / an injection payload in the type slot is dropped.
+    gate=False (reading a note BACK): the stored type is kept as a clean token regardless of
+               which profile is active now — recall must not depend on the current profile,
+               since the type was already validated at write time."""
+    if not isinstance(raw, dict):
+        return {}
+    allowed = set(_cfg.entity_types())
+    if gate and not allowed:
+        return {}
+    out: dict = {}
+    for name, typ in raw.items():
+        if not isinstance(name, str) or not isinstance(typ, str):
+            continue
+        key = _norm_entities([name])
+        t = re.sub(r"[^a-z0-9-]", "", typ.strip().lower())
+        if not key or not (2 <= len(t) <= 24) or (gate and t not in allowed) or key[0] in out:
+            continue
+        out[key[0]] = t
+        if len(out) >= cap:
+            break
+    return out
+
+
+def _brain_prompt_block() -> str:
+    """The extra extraction instruction that asks the model to TYPE the entities it tags
+    (paper/method/dataset/...). Empty string for a coding-only install, so the prompt — and
+    the model's job — is byte-for-byte unchanged unless a brain profile is on."""
+    if not _cfg.brain_enabled():
+        return ""
+    types = ", ".join(_cfg.entity_types())
+    # Inserted as a .format() VALUE (not itself re-formatted), so braces are single here.
+    return (
+        "\n\nKNOWLEDGE-ГРАФ (профиль второго мозга включён): в каждой категории, для тех "
+        "entities, что являются реальными ОБЪЕКТАМИ ЗНАНИЯ (не файлы/переменные/код), добавь "
+        'поле "entity_types" — словарь {"сущность": "тип"}. Допустимые типы: ' + types + ". "
+        'Пример: "entity_types": {"gears": "method", "imagenet": "dataset"}. '
+        "Код-сущности НЕ типизируй — пропусти их."
+    )
+
+
 def _is_relevant(flag) -> bool:
     """Interpret the LLM's project_relevant flag; default True when absent so a
     backend that omits it never silently drops knowledge (audit C1)."""
@@ -908,8 +954,8 @@ _YAML_NEEDS_QUOTE = re.compile(r'[:#&*!|>\'"%@`{}\[\],]|^\s|\s$')
 
 
 def _yaml_scalar(v) -> str:
-    if isinstance(v, list):
-        return json.dumps(v, ensure_ascii=False)
+    if isinstance(v, (list, dict)):
+        return json.dumps(v, ensure_ascii=False)   # inline JSON is valid YAML (lists + maps, e.g. entity_types)
     s = str(v)
     if s == "" or _YAML_NEEDS_QUOTE.search(s):
         return '"' + s.replace('\\', '\\\\').replace('"', '\\"') + '"'
@@ -2426,12 +2472,14 @@ def write_typed_note(folder: str, item, project: str, date: str,
         confidence = item.get("confidence")                            # M-10
         entities = _norm_entities(item.get("entities"))                # entity graph (Phase 1)
         relations = _norm_relations(item.get("relations"))             # typed edges (Phase 2)
+        entity_types = _norm_entity_types(item.get("entity_types"))    # Brain layer (F1): {entity: type}
     else:
         title = _strip_lead_icon(str(item))
         desc = prevention = supersedes_title = contradicts_title = resolves_title = ""
         confidence = None
         entities = []
         relations = []
+        entity_types = {}
 
     # M-10/W8 memory-poisoning guard: refuse to persist extracted "knowledge" that looks like an
     # injection payload OR a bare dangerous imperative (exfiltration/destruction/security-bypass) —
@@ -2548,6 +2596,8 @@ def write_typed_note(folder: str, item, project: str, date: str,
         fm["entities"] = entities           # entity graph (Phase 1): faceted recall + co-occurrence
     if relations:
         fm["relations"] = relations         # typed edges (Phase 2): relation-aware multi-hop
+    if entity_types:
+        fm["entity_types"] = entity_types   # Brain layer (F1): {entity: paper|method|...} for entity cards
     if quarantine_reason:
         fm["quarantine_reason"] = quarantine_reason       # W7 provenance (kept out of recall)
     # Recurrence carry-forward, hardened against recurrence-GAMING (3B): the count is the
@@ -2783,9 +2833,10 @@ def _one_line(s: str, limit: int) -> str:
 
 
 def _read_frontmatter(text: str) -> tuple[dict, str]:
-    """(frontmatter dict, body). JSON-array values are parsed to lists and
-    double-quoted scalars unquoted; everything else stays a raw string. Tolerant
-    of a missing/short frontmatter — used by the project-card distillation."""
+    """(frontmatter dict, body). Inline-JSON values are parsed back to their type —
+    arrays to lists (entities/relations), maps to dicts (entity_types) — and double-quoted
+    scalars unquoted; everything else stays a raw string. Tolerant of a missing/short
+    frontmatter — used by the project-card distillation."""
     if text[:1] == "﻿":          # a BOM-writing editor must not blank the header (audit A7)
         text = text[1:]
     if not text.startswith("---"):
@@ -2801,9 +2852,9 @@ def _read_frontmatter(text: str) -> tuple[dict, str]:
         k, v = k.strip(), v.strip()
         if not k:
             continue
-        if v.startswith("[") and v.endswith("]"):
+        if (v.startswith("[") and v.endswith("]")) or (v.startswith("{") and v.endswith("}")):
             try:
-                v = json.loads(v)
+                v = json.loads(v)          # JSON array OR map (e.g. entity_types) → list/dict
             except ValueError:
                 pass
         elif len(v) >= 2 and v[0] == '"' and v[-1] == '"':
@@ -2865,7 +2916,8 @@ def _note_meta(p: Path, ntype: str, parsed: dict) -> dict | None:
             "title": title.strip(), "desc": desc, "prevention": prevention,
             "tags": _norm_tags(raw_tags), "resolved": resolved, "recurrence": rec,
             "entities": _norm_entities(fm.get("entities")),
-            "relations": _norm_relations(fm.get("relations"))}
+            "relations": _norm_relations(fm.get("relations")),
+            "entity_types": _norm_entity_types(fm.get("entity_types"), gate=False)}
 
 
 def _iter_project_notes(project: str) -> list[dict]:
@@ -2916,6 +2968,8 @@ try:
 except ImportError:
     import graph as _graph
 entity_index = _graph.entity_index
+entity_types_index = _graph.entity_types_index     # Brain layer (F1): entity -> type
+entities_by_type = _graph.entities_by_type
 _edge_counts = _graph._edge_counts
 _edges_sorted = _graph._edges_sorted
 notes_for_entity = _graph.notes_for_entity
@@ -3202,6 +3256,7 @@ def process_session(session_id: str, cwd: str, transcript_path: str,
         existing_patterns=", ".join(existing["pattern"]) or "(нет)",
         existing_mistakes=", ".join(existing["mistake"]) or "(нет)",
         existing_decisions=", ".join(existing["decision"]) or "(нет)",
+        brain_block=_brain_prompt_block(),     # F1: typed-entity ask, "" unless a brain profile is on
     )
     extraction = generate_json(prompt, project=project_hint)
     if not extraction:

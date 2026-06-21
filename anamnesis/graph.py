@@ -52,6 +52,27 @@ def entity_index(project: str | None = None) -> dict:
     return idx
 
 
+def entity_types_index(project: str | None = None, idx: dict | None = None) -> dict:
+    """entity -> type (paper/method/dataset/...), read from notes' `entity_types`
+    frontmatter (Brain layer, F1). Newest note wins when an entity is typed more than once,
+    so a re-classification supersedes the old label. Empty until a brain profile has tagged
+    anything — a coding-only store never writes entity_types. Drives the entity cards (F2)."""
+    mh = _m()
+    notes = mh._iter_project_notes(project) if project else mh._iter_all_notes()
+    typed: dict = {}
+    for n in sorted(notes, key=lambda n: n.get("date", "")):
+        for name, typ in (n.get("entity_types") or {}).items():
+            typed[name] = typ                  # last (newest) write wins
+    return typed
+
+
+def entities_by_type(etype: str, project: str | None = None) -> list:
+    """All known entities classified as `etype` (e.g. every 'method' or 'paper'), sorted.
+    The enumeration the entity-card generator walks to know what cards to (re)build."""
+    et = etype.strip().lower()
+    return sorted(e for e, t in entity_types_index(project).items() if t == et)
+
+
 def _edge_counts(notes, exclude=None, rel=None) -> dict:
     """{(rel, target): count} over the notes' typed relations, skipping self-edges (target
     == `exclude`) and, when `rel` is given, other relation types. One source for the edge
