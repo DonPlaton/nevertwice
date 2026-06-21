@@ -190,6 +190,14 @@ Underneath, a SQLite index keeps per-query cost bounded into the tens of thousan
 submodular forgetting cap stops unbounded growth, and git handles cross-machine sync. It also reads
 and writes AGENTS.md and the OKF format, so the project card travels to other tools.
 
+An opt-in **Brain layer** turns the same captured sessions into a self-wiring knowledge graph for
+research or personal knowledge: typed entities (paper, method, dataset, benchmark, …), per-entity
+cards that roll up everything known about each across projects, a timeline of how your take on it
+evolved, and a graph-centrality salience signal. It is **pull-only** — read on demand, never
+injected — so the lean, token-bounded hot path is byte-for-byte unchanged when it is off (the
+default). Turn it on with `ANAMNESIS_PROFILE=research` (or `general`); see
+[docs/BRAIN_LAYER_DESIGN.md](docs/BRAIN_LAYER_DESIGN.md).
+
 ## Privacy
 
 Embeddings run locally on Ollama by default, so nothing leaves the machine. If you would rather not
@@ -216,13 +224,14 @@ shows up.
 
 ## Tests
 
-Standard-library only and fully mocked, so no network and no GPU. Thirteen core suites run in CI,
+Standard-library only and fully mocked, so no network and no GPU. Sixteen core suites run in CI,
 alongside the research suites under `anamnesis/research/`:
 
 ```bash
 for t in _test_memory_hook _test_memory_v2 _test_memory_v3 _test_audit_fixes \
          _test_failure_injection _test_api _test_capture _test_integrations \
-         _test_cloud_embed _test_ingest _test_watch _test_quant _test_entities; do
+         _test_cloud_embed _test_ingest _test_watch _test_quant _test_entities \
+         _test_brain _test_brain_sqlite _test_brain_invariants; do
   python anamnesis/$t.py; done
 ```
 
@@ -231,6 +240,7 @@ CI runs the core suites on Linux, Windows, and macOS across Python 3.10, 3.12, a
 ## Docs
 
 [Quickstart](QUICKSTART.md) · [Architecture](docs/ARCHITECTURE.md) ·
+[Brain layer (opt-in)](docs/BRAIN_LAYER_DESIGN.md) ·
 [Integrations](docs/INTEGRATIONS.md) · [Configuration](docs/CONFIG.md) ·
 [Benchmarks](docs/BENCHMARKS.md) ·
 [Comparison vs Mem0/Zep/Letta/A-MEM](docs/COMPARISON.md) ·
