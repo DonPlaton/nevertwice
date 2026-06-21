@@ -333,11 +333,11 @@ def cap_project_notes(cache: dict, apply: bool) -> int:
         if isinstance(r, dict) and r.get("ntype") in m.TYPE_FOLDER:
             buckets.setdefault((r.get("project"), r.get("ntype")), []).append((stem, r))
     archived = 0
+    sal = m.salience_index()                         # F5: one corpus-wide scan, reused for every bucket
     for (proj, nt), items in buckets.items():
         if len(items) <= MAX_LIVE_PER_PROJECT:
             continue
         rec_of = dict(items)
-        sal = m.salience_index()                     # F5: graph centrality, generalises recurrence
         def _util(stem, _r=rec_of, _s=sal):          # query-independent value (1A frequency prior)
             r = _r[stem]
             n = int(r.get("recurrence", 1) or 1)

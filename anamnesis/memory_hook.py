@@ -2934,7 +2934,8 @@ def _note_meta(p: Path, ntype: str, parsed: dict) -> dict | None:
             "entities": _norm_entities(fm.get("entities")),
             "relations": _norm_relations(fm.get("relations")),
             "entity_types": _norm_entity_types(fm.get("entity_types"), gate=False),
-            "salience": _coerce_salience(fm.get("salience"))}
+            "salience": _coerce_salience(fm.get("salience")),
+            "superseded_by": str(fm.get("superseded_by") or "")}    # "" for live notes (F3 timeline)
 
 
 def _coerce_salience(v) -> float:
@@ -2979,12 +2980,10 @@ def _iter_superseded_notes(project: str | None = None) -> list[dict]:
             parsed = parse_typed_stem(p.stem)
             if not parsed or (project and parsed["project"] != project):
                 continue
-            meta = _note_meta(p, ntype, parsed)
+            meta = _note_meta(p, ntype, parsed)            # carries superseded_by (single read)
             if not meta:
                 continue
-            fm = _read_frontmatter_file(p)
             meta["status"] = "superseded"
-            meta["superseded_by"] = str(fm.get("superseded_by") or "")
             meta.setdefault("project", parsed["project"])
             out.append(meta)
     return out
@@ -3226,7 +3225,7 @@ def build_entity_card(entity: str, etype: str | None = None, idx: dict | None = 
         return ""
     etype = etype or entity_types_index().get(ent, "entity")
     projects = sorted({n.get("project") for n in notes if n.get("project")})
-    tl = entity_timeline(ent, None, sup=sup)              # F3: spans live + superseded history
+    tl = entity_timeline(ent, None, sup=sup, idx=idx)     # F3: spans live + superseded history
     first_seen, last_seen = tl.get("first_seen", ""), tl.get("last_seen", "")
     evo = tl.get("evolution", [])
     edges = related_by(ent, project=None, k=8, idx=idx)            # typed neighbours
@@ -3333,16 +3332,19 @@ def entity_card(entity: str) -> str:
     norm = _norm_entities([entity])
     if not norm:
         return ""
-    etype = entity_types_index().get(norm[0], "entity")
-    stem = _entity_card_stem(norm[0], etype)
-    if stem:
-        fp = VAULT / ENTITIES_FOLDER / f"{stem}.md"
-        try:
-            if fp.exists():
-                return fp.read_text(encoding="utf-8", errors="replace")
-        except OSError:
-            pass
-    return build_entity_card(norm[0], etype)
+    ent = norm[0]
+    # Cache hit: a card file is named "<type>-<entity>.md". Glob by the entity suffix and confirm
+    # via its `name` so we don't pay a corpus-wide entity_types_index() scan just to locate a file
+    # already on disk (the glob alone is ambiguous — "method-gears" vs an entity "some-gears").
+    d = VAULT / ENTITIES_FOLDER
+    try:
+        for fp in d.glob(f"*-{ent}.md"):
+            txt = fp.read_text(encoding="utf-8", errors="replace")
+            if _read_frontmatter(txt)[0].get("name") == ent:
+                return txt
+    except OSError:
+        pass
+    return build_entity_card(ent)    # miss: build_entity_card resolves the type itself
 
 
 def update_context(project: str, update: str, tags: list, date: str, time_str: str,
@@ -3549,6 +3551,8 @@ def process_session(session_id: str, cwd: str, transcript_path: str,
 
     links: dict[str, list[str]] = {nt: [] for nt in TYPED_TYPES}
     new_notes = []
+    touched_entities: set = set()       # F2: typed entities of notes ACTUALLY written (skips rejects)
+    brain = _cfg.brain_enabled()
     for nt in TYPED_TYPES:
         for item in items_of(nt):
             stem = write_typed_note(TYPE_FOLDER[nt], item, project, date, tags, nt,
@@ -3560,6 +3564,8 @@ def process_session(session_id: str, cwd: str, transcript_path: str,
             prevention = item.get("prevention", "") if isinstance(item, dict) else ""
             conf = item.get("confidence") if isinstance(item, dict) else None
             new_notes.append((stem, nt, project, title_of(item), desc, prevention, conf))
+            if brain and isinstance(item, dict):
+                touched_entities |= set(_norm_entity_types(item.get("entity_types")))
 
     sess_link = write_session_note(
         project, date, time_str, summary, cwd, session_id, tags, links, trigger,
@@ -3580,15 +3586,11 @@ def process_session(session_id: str, cwd: str, transcript_path: str,
     if relevant:
         refresh_project_card(project)
 
-    # F2 (Brain layer): refresh entity cards for the TYPED entities this session touched.
-    # Only when a brain profile is active (coding-only store stays byte-for-byte unchanged),
-    # off the hot path, deterministic, and bounded to this session's handful of entities.
-    if relevant and _cfg.brain_enabled():
-        touched = {e for nt in TYPED_TYPES for item in items_of(nt)
-                   if isinstance(item, dict)
-                   for e in _norm_entity_types(item.get("entity_types")).keys()}
-        if touched:
-            refresh_entity_cards(list(touched))
+    # F2 (Brain layer): refresh entity cards for the TYPED entities this session actually wrote
+    # (collected in the write loop above, so injection-rejected items are excluded). Only when a
+    # brain profile is active (coding-only store unchanged), off the hot path, deterministic.
+    if relevant and touched_entities:
+        refresh_entity_cards(list(touched_entities))
 
     # All of this session's notes/session-note/context are now durably written →
     # mark it processed LAST (audit C5). A crash before this point leaves the
@@ -3881,7 +3883,7 @@ def _salience_mult(stem: str, rec: dict) -> float:
             mult *= RETRIEVAL_CONF_FLOOR + (1.0 - RETRIEVAL_CONF_FLOOR) * c
         sal = rec.get("salience")        # Brain F5: gentle centrality boost, inert when unstamped (0)
         if sal and RETRIEVAL_SALIENCE_BOOST > 0:
-            mult *= 1.0 + RETRIEVAL_SALIENCE_BOOST * max(0.0, min(1.0, _coerce_salience(sal)))
+            mult *= 1.0 + RETRIEVAL_SALIENCE_BOOST * _coerce_salience(sal)   # already clamped to [0,1]
     return mult
 
 

@@ -96,19 +96,21 @@ def entities_by_type(etype: str, project: str | None = None) -> list:
     return sorted(e for e, t in entity_types_index(project).items() if t == et)
 
 
-def entity_timeline(entity: str, project: str | None = None, sup: dict | None = None) -> dict:
+def entity_timeline(entity: str, project: str | None = None, sup: dict | None = None,
+                    idx: dict | None = None) -> dict:
     """The chronological history of an entity across LIVE and SUPERSEDED notes (Brain layer, F3):
     first/last seen, the dated mentions, and the EVOLUTION events — where an earlier note about it
     was later superseded, i.e. the take changed. Reads the Superseded/ folders too, so it shows
-    history that live recall hides; `sup` reuses a pre-built superseded index across a card refresh.
-    Pull-only — surfaced in the entity card and via api.entity_timeline, never injected. Returns
+    history that live recall hides; `sup` reuses a pre-built superseded index and `idx` the live
+    entity index across a card refresh (so the card's own scan is not repeated). Pull-only —
+    surfaced in the entity card and via api.entity_timeline, never injected. Returns
     {entity, first_seen, last_seen, count, mentions:[...], evolution:[...]} or {} for an unknown one."""
     mh = _m()
     norm = mh._norm_entities([entity])
     if not norm:
         return {}
     ent = norm[0]
-    live = notes_for_entity(ent, project, k=1000)
+    live = notes_for_entity(ent, project, k=1000, idx=idx)
     dead = (sup if sup is not None else mh._superseded_index(project)).get(ent, [])
     notes = live + dead
     if not notes:
@@ -126,12 +128,13 @@ def entity_timeline(entity: str, project: str | None = None, sup: dict | None = 
 
 
 def salience_index(project: str | None = None) -> dict:
-    """stem -> salience in [0,1]: graph CENTRALITY blended with the recurrence prior (Brain F5).
-    A note is salient when its entities are referenced by the rest of the store (inbound relation
-    edges + co-occurrence degree) OR when it recurs across sessions — generalising recurrence
-    (seen often) to centrality (referenced often). Max-scaled across the corpus, so an entity-less
-    / flat store → all 0 (INERT, e.g. on a benchmark). Computed sleep-time, stamped by
-    consolidation, read as a gentle ranking nudge. No embedder, no LLM."""
+    """stem -> salience in [0,1]: pure graph CENTRALITY (Brain F5). A note is salient when its
+    entities are referenced by the rest of the store — inbound relation edges + co-occurrence
+    degree. This is the NEW signal orthogonal to recurrence (the ranker already applies recurrence
+    separately, so salience deliberately does NOT re-fold it — double-counting it once compounded
+    the keep/rank decision). Max-scaled across the corpus, so an entity-less / flat store → all 0
+    (INERT, e.g. on a benchmark). Computed sleep-time, stamped by consolidation, read as a gentle
+    ranking nudge. No embedder, no LLM."""
     mh = _m()
     notes = mh._iter_project_notes(project) if project else mh._iter_all_notes()
     if not notes:
@@ -150,10 +153,9 @@ def salience_index(project: str | None = None) -> dict:
         ents = n.get("entities") or []
         deg = sum(max(0, ent_notes.get(e, 1) - 1) for e in ents)   # co-occurrence centrality
         inb = sum(inbound.get(e, 0) for e in ents)                 # inbound reference count
-        rec = max(1, int(n.get("recurrence", 1) or 1))
-        raw[n["stem"]] = math.log1p(inb) + 0.5 * math.log1p(deg) + math.log1p(rec - 1)
+        raw[n["stem"]] = math.log1p(inb) + 0.5 * math.log1p(deg)
     hi = max(raw.values(), default=0.0)
-    if hi <= 0:                  # no centrality and no recurrence anywhere → inert
+    if hi <= 0:                  # no centrality anywhere → inert
         return {s: 0.0 for s in raw}
     return {s: round(v / hi, 4) for s, v in raw.items()}
 

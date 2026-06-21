@@ -122,12 +122,10 @@ def _conf(r: dict):
 
 def _row(stem: str, r: dict, salience: float = 0.0) -> tuple:
     """A note record → a `notes` table row (column order = the CREATE below). `salience`
-    (Brain F5) is sourced from frontmatter at build time, 0 for a fresh/unstamped note."""
+    (Brain F5) is sourced from frontmatter at build time, 0 for a fresh/unstamped note. Clamped
+    via m._coerce_salience (NaN-safe) exactly as _conf delegates confidence — one clamp rule."""
     vec = r.get("vec") or []
-    try:
-        sal = max(0.0, min(1.0, float(r.get("salience", salience) or salience)))
-    except (TypeError, ValueError):
-        sal = float(salience or 0.0)
+    sal = m._coerce_salience(r.get("salience") or salience)
     return (stem, r.get("project"), r.get("ntype"), r.get("title"),
             r.get("desc", ""), r.get("prevention", ""),
             int(r.get("recurrence", 1) or 1),
@@ -213,11 +211,13 @@ def build(verbose: bool = False) -> int:
             cur.execute("DELETE FROM notes_fts")
         cur.execute("DELETE FROM meta")
         # Brain F5: salience lives in note frontmatter (stamped sleep-time), not the embed cache,
-        # so source it from the markdown here. One scan; {} → every row salience 0 (inert).
+        # so source it from the markdown here. ONE scan, reused for the graph rebuild below;
+        # {} → every row salience 0 (inert).
         try:
-            sal_map = {nt["stem"]: nt.get("salience", 0.0) for nt in m._iter_all_notes()}
+            all_notes = m._iter_all_notes()
         except Exception:
-            sal_map = {}
+            all_notes = []
+        sal_map = {nt["stem"]: nt.get("salience", 0.0) for nt in all_notes}
         n = dim = 0
         for stem, r in cache.items():
             if not isinstance(r, dict):
@@ -242,7 +242,7 @@ def build(verbose: bool = False) -> int:
         cur.execute("INSERT OR REPLACE INTO meta VALUES ('dim', ?)", (str(dim),))
         cur.execute("INSERT OR REPLACE INTO meta VALUES ('vec_format', ?)", (VEC_FORMAT,))
         cur.execute("COMMIT")
-        g = reindex_graph()      # F4: (re)build the entity/relation graph tables from markdown truth
+        g = reindex_graph(all_notes, full=True)   # F4: graph tables from the SAME scan (no 2nd read)
         if verbose:
             print(f"[index] built {db_path().name}: {n} notes, {g} graph rows "
                   f"(fts={fts}, model={model})", file=sys.stderr)
@@ -350,23 +350,25 @@ def _graph_rows(meta: dict):
     return e_rows, r_rows, t_rows
 
 
-def reindex_graph(metas: list | None = None) -> int:
+def reindex_graph(metas: list | None = None, full: bool = False) -> int:
     """(Re)build the entity/relation graph tables from note frontmatter (the truth).
-    metas=None → FULL scan of every live note (clears + repopulates); else replace rows for
-    just the given metas' stems (incremental). Derived & rebuildable — any failure is logged
-    and swallowed, leaving the markdown scan as the correct fallback. Returns rows written."""
+    metas=None → FULL scan of every live note (clears + repopulates). metas given + full=True →
+    FULL rebuild from the GIVEN notes (lets build() reuse its single vault scan). metas given +
+    full=False → incremental (replace rows for just those stems). Derived & rebuildable — any
+    failure is logged and swallowed, leaving the markdown scan as the correct fallback. Returns
+    rows written."""
     con = _connect()
     try:
         _create_graph_schema(con)
         cur = con.cursor()
         if metas is None:
             metas = m._iter_all_notes()
+            full = True
+        if full:
             cur.execute("DELETE FROM note_entities")
             cur.execute("DELETE FROM note_relations")
             cur.execute("DELETE FROM note_etype")
-            full = True
         else:
-            full = False
             stems = [mt.get("stem") for mt in metas if mt.get("stem")]
             for i in range(0, len(stems), 400):          # chunked: stay under SQLite's host-param cap
                 chunk = stems[i:i + 400]
