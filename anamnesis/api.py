@@ -118,6 +118,21 @@ def graph_export(project: str | None = None, fmt: str = "mermaid", top: int = 40
     return m.graph_export(project, fmt, top, cooccurrence)
 
 
+def entity_card(entity: str) -> str:
+    """The Brain-layer card for a first-class entity (paper / method / dataset / ...): a
+    distilled, cross-project rollup of everything the memory knows about it — where it is used,
+    its typed neighbours, and the lessons grouped by kind. Built on the fly if not cached.
+    PULL-ONLY by design: this is how Brain knowledge reaches an agent — by explicit request,
+    never by injection. '' when the entity has no notes (or no brain profile is active)."""
+    return m.entity_card(entity)
+
+
+def entities_by_type(etype: str, project: str | None = None) -> list:
+    """Every entity classified as `etype` (e.g. all 'method' or 'paper' entities), sorted —
+    the enumeration behind the entity cards. Empty until a brain profile has typed something."""
+    return m.entities_by_type(etype, project)
+
+
 def remember(title: str, *, project: str, type: str = "pattern",
              description: str = "", prevention: str = "", tags=(),
              supersedes: str = "", entities=(), relations=None,

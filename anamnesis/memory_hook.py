@@ -3107,6 +3107,145 @@ def refresh_project_card(project: str, fp: Path | None = None) -> None:
             log(f"Project card write skipped for {project}: {exc}")
 
 
+# ── Entity cards (Brain layer, F2) ───────────────────────────────────────────────
+# A distilled, regenerated card per first-class (TYPED) entity: where it is used across ALL
+# projects, its typed neighbours, and the lessons grouped by kind. The SAME deterministic,
+# GPU-free rollup as the project card — but stored as a standalone file under Entities/, which
+# is NOT a TYPE_FOLDER, so a card NEVER enters the recall pool (separation invariant). Pull-only:
+# read via api.entity_card / the MCP surface / an explicit request, never auto-injected.
+ENTITIES_FOLDER = "Entities"
+
+
+def _entity_card_stem(entity: str, etype: str) -> str:
+    """Filename stem for an entity card: '<type>-<entity>' (both already kebab tokens), so a
+    regenerated card overwrites its predecessor instead of duplicating. '' for a junk entity."""
+    e = _norm_entities([entity])
+    t = re.sub(r"[^a-z0-9-]", "", (etype or "entity").lower()) or "entity"
+    return f"{t}-{e[0]}" if e else ""
+
+
+def build_entity_card(entity: str, etype: str | None = None, idx: dict | None = None) -> str:
+    """Distil every live note tagged with `entity` (across ALL projects) into a standalone
+    markdown card: type · where-used · typed neighbours · co-occurring entities · lessons
+    grouped by kind, with a first/last-seen line. Deterministic structural rollup — no LLM, no
+    embedder. Returns the full file text (frontmatter + body), or '' when nothing references it.
+    `idx` reuses a pre-built entity_index so a full refresh scans the vault once, not 3× a card."""
+    norm = _norm_entities([entity])
+    if not norm:
+        return ""
+    ent = norm[0]
+    idx = idx if idx is not None else entity_index(None)
+    notes = sorted(idx.get(ent, []), key=lambda n: n.get("date", ""), reverse=True)
+    if not notes:
+        return ""
+    etype = etype or entity_types_index().get(ent, "entity")
+    projects = sorted({n.get("project") for n in notes if n.get("project")})
+    dates = sorted(n["date"] for n in notes if n.get("date"))
+    first_seen, last_seen = (dates[0], dates[-1]) if dates else ("", "")
+    edges = related_by(ent, project=None, k=8, idx=idx)            # typed neighbours
+    cooc = [e for e, _ in co_occurring(ent, None, k=8, idx=idx) if e != ent]
+
+    fm = {"type": "entity", "entity_type": etype, "name": ent, "projects": projects,
+          "first_seen": first_seen, "last_seen": last_seen}
+    rel_bits = []
+    if edges:
+        rel_bits.append("  ·  ".join(f"{e['rel']} → {e['target']}" for e in edges[:5]))
+    if cooc:
+        rel_bits.append("рядом: " + ", ".join(cooc[:6]))
+
+    by_type = {"mistake": [], "pattern": [], "decision": []}
+    for n in notes:
+        if n["ntype"] in by_type:
+            by_type[n["ntype"]].append(n)
+    lines = [f"# 🧠 {ent} · {etype}", "",
+             f"**Где встречается:** {', '.join(projects)}  ({len(notes)} заметок)"
+             if projects else f"**Заметок:** {len(notes)}"]
+    if rel_bits:
+        lines.append("**Связано:** " + "  ·  ".join(rel_bits))
+    if first_seen:
+        lines.append(f"_Впервые: {first_seen} · последний раз: {last_seen}_")
+    for kind, label in (("mistake", "**⚠️ Грабли:**"), ("pattern", "**✅ Паттерны:**"),
+                        ("decision", "**🎯 Решения:**")):
+        if by_type[kind]:
+            lines += ["", label] + [_card_item(n) for n in by_type[kind][:CARD_MAX_ITEMS]]
+    return fm_block(fm) + "\n" + "\n".join(lines) + "\n"
+
+
+def write_entity_card(entity: str, etype: str | None = None, idx: dict | None = None) -> str:
+    """(Re)generate ONE entity card under Entities/ and write it atomically, only on change.
+    Returns the stem when a card was actually WRITTEN, or '' when there was nothing to write —
+    unchanged (idempotent no-op), no notes, junk entity, or no brain profile active. The 'only
+    on change' return is what keeps a full refresh from churning git on a no-op pass."""
+    if not _cfg.brain_enabled():
+        return ""
+    norm = _norm_entities([entity])
+    if not norm:
+        return ""
+    etype = etype or entity_types_index().get(norm[0], "entity")
+    stem = _entity_card_stem(norm[0], etype)
+    card = build_entity_card(norm[0], etype, idx=idx)
+    if not stem or not card:
+        return ""
+    d = VAULT / ENTITIES_FOLDER
+    try:
+        d.mkdir(exist_ok=True)
+        fp = d / f"{stem}.md"
+        if fp.exists() and fp.read_text(encoding="utf-8", errors="replace") == card:
+            return ""                                      # unchanged → not a write, don't count/churn
+        write_atomic(fp, card)
+    except OSError as exc:
+        log(f"Entity card write skipped for {stem}: {exc}")
+        return ""
+    return stem
+
+
+def refresh_entity_cards(entities: list | None = None) -> int:
+    """Regenerate entity cards (Brain layer, F2). With `entities` given, refresh just those
+    typed entities (the ones a session touched — the per-session path); otherwise refresh EVERY
+    typed entity in the store (the sleep-time pass). Off entirely unless a brain profile is
+    active. One vault scan shared across all cards. Returns the count written; never raises."""
+    if not _cfg.brain_enabled():
+        return 0
+    type_idx = entity_types_index()
+    if not type_idx:
+        return 0
+    idx = entity_index(None)
+    if entities is None:
+        targets = list(type_idx.items())
+    else:
+        wanted = set(_norm_entities(list(entities), cap=64))
+        targets = [(e, type_idx[e]) for e in wanted if e in type_idx]
+    n = 0
+    for ent, etype in targets:
+        try:
+            if write_entity_card(ent, etype, idx=idx):
+                n += 1
+        except Exception as exc:                           # one bad card must not abort the pass
+            log(f"Entity card error for {ent}: {exc}")
+    if n:
+        log(f"Entity cards refreshed: {n}")
+    return n
+
+
+def entity_card(entity: str) -> str:
+    """Read an entity's card text (Brain layer, F2), building it on the fly if no file exists
+    yet. '' when the entity has no notes. The pull-only read surface for api / MCP / search —
+    this is how Brain knowledge reaches an agent: by explicit request, never by injection."""
+    norm = _norm_entities([entity])
+    if not norm:
+        return ""
+    etype = entity_types_index().get(norm[0], "entity")
+    stem = _entity_card_stem(norm[0], etype)
+    if stem:
+        fp = VAULT / ENTITIES_FOLDER / f"{stem}.md"
+        try:
+            if fp.exists():
+                return fp.read_text(encoding="utf-8", errors="replace")
+        except OSError:
+            pass
+    return build_entity_card(norm[0], etype)
+
+
 def update_context(project: str, update: str, tags: list, date: str, time_str: str,
                    links: dict[str, list[str]], session_link: str):
     fp = VAULT / "Context" / f"{project}.md"
@@ -3341,6 +3480,16 @@ def process_session(session_id: str, cwd: str, transcript_path: str,
     # context_update fired — so a notes-only session still refreshes the card.
     if relevant:
         refresh_project_card(project)
+
+    # F2 (Brain layer): refresh entity cards for the TYPED entities this session touched.
+    # Only when a brain profile is active (coding-only store stays byte-for-byte unchanged),
+    # off the hot path, deterministic, and bounded to this session's handful of entities.
+    if relevant and _cfg.brain_enabled():
+        touched = {e for nt in TYPED_TYPES for item in items_of(nt)
+                   if isinstance(item, dict)
+                   for e in _norm_entity_types(item.get("entity_types")).keys()}
+        if touched:
+            refresh_entity_cards(list(touched))
 
     # All of this session's notes/session-note/context are now durably written →
     # mark it processed LAST (audit C5). A crash before this point leaves the

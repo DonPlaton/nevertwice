@@ -146,5 +146,66 @@ with tempfile.TemporaryDirectory() as td:
     check("_iter_project_notes also excludes Entities/",
           all(n["ntype"] in ("pattern", "mistake", "decision") for n in m._iter_project_notes("demo")))
 
+# ── F2: entity cards ────────────────────────────────────────────────────────────
+print("entity cards (F2)")
+import api                       # noqa: E402  (shares the same memory_hook module object as m)
+with tempfile.TemporaryDirectory() as td:
+    m.VAULT = Path(td)
+    set_profile("research")
+    m.write_typed_note("Mistakes",
+        {"title": "GEARS checkpoint drops morph flag", "description": "bool not a registered buffer",
+         "entities": ["gears", "checkpoint"], "entity_types": {"gears": "method"},
+         "relations": [{"rel": "fixed-by", "target": "buffer-registration"}]},
+        "gears_experiments", "2026-05-26", [], "mistake")
+    m.write_typed_note("Patterns",
+        {"title": "GEARS scales to 30M params", "description": "modular pillars work",
+         "entities": ["gears", "scaling"], "entity_types": {"gears": "method"}},
+        "nexus", "2026-06-12", [], "pattern")
+    m.write_typed_note("Decisions",
+        {"title": "ImageNet as the eval set", "description": "standard benchmark",
+         "entities": ["imagenet"], "entity_types": {"imagenet": "dataset"}},
+        "gears_experiments", "2026-06-01", [], "decision")
+
+    n = m.refresh_entity_cards()
+    check("refresh_entity_cards writes one card per typed entity (gears, imagenet)", n == 2)
+    cdir = m.VAULT / "Entities"
+    check("cards live under Entities/",
+          cdir.is_dir() and (cdir / "method-gears.md").exists() and (cdir / "dataset-imagenet.md").exists())
+
+    card = (cdir / "method-gears.md").read_text(encoding="utf-8")
+    cfm = m._read_frontmatter_file(cdir / "method-gears.md")
+    check("card frontmatter: type=entity, entity_type=method, name=gears",
+          cfm.get("type") == "entity" and cfm.get("entity_type") == "method" and cfm.get("name") == "gears")
+    check("card aggregates BOTH projects (cross-project rollup)",
+          set(cfm.get("projects") or []) == {"gears_experiments", "nexus"})
+    check("card spans first/last seen", cfm.get("first_seen") == "2026-05-26"
+          and cfm.get("last_seen") == "2026-06-12")
+    check("card body lists the lessons + the typed neighbour",
+          "GEARS checkpoint drops morph flag" in card and "fixed-by" in card)
+
+    pool = m._iter_all_notes()
+    check("entity card is NOT in the recall pool — only the 3 typed notes (separation)",
+          len(pool) == 3 and all(p["ntype"] in ("pattern", "mistake", "decision") for p in pool))
+
+    check("entity_card() reads the cached card", "🧠 gears · method" in m.entity_card("gears"))
+    check("api.entity_card surface works (case-normalised)", "method" in api.entity_card("GEARS"))
+    check("api.entities_by_type lists typed entities", api.entities_by_type("method") == ["gears"])
+
+    mtime = (cdir / "method-gears.md").stat().st_mtime
+    m.refresh_entity_cards()
+    check("re-refresh is idempotent (no rewrite when unchanged)",
+          (cdir / "method-gears.md").stat().st_mtime == mtime)
+    check("unknown entity → empty card", m.entity_card("nonexistent-xyz") == "")
+    check("untyped entity (checkpoint) gets no card file", not (cdir / "entity-checkpoint.md").exists())
+
+# ── F2: cards are OFF under a coding-only profile (opt-in) ───────────────────────
+print("entity cards opt-in (coding = none)")
+with tempfile.TemporaryDirectory() as td:
+    m.VAULT = Path(td)
+    set_profile("coding")
+    check("refresh_entity_cards is a no-op under coding", m.refresh_entity_cards(["gears"]) == 0)
+    check("write_entity_card is a no-op under coding", m.write_entity_card("gears", "method") == "")
+    check("no Entities/ folder created under coding", not (m.VAULT / "Entities").exists())
+
 print(f"\n{P} passed, {F} failed")
 sys.exit(1 if F else 0)
