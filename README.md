@@ -54,6 +54,10 @@ system, Anamnesis out-retrieves the funded hosted leaders (Mem0, LangMem, A-MEM)
 and you can reproduce that in one command. The numbers, and an honest account of what we tried and
 cut to get there, are [below](#benchmarks).
 
+Want more than coding memory? Flip on the opt-in **Brain layer** and the same captured sessions
+self-wire into a knowledge graph — papers, methods, datasets, and how your thinking on each one
+evolved. It is *pull-only*, read on demand, so your token budget never notices it is there.
+
 ```bash
 git clone https://github.com/DonPlaton/anamnesis && cd anamnesis
 python install.py
