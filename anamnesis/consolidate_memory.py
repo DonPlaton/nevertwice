@@ -519,6 +519,18 @@ def _run_consolidation(apply, mode, has_llm):
         print(f"[consolidate] salience: {salstamp} note(s) "
               f"{'stamped' if apply else 'would be stamped'} (graph centrality)")
 
+    # 4c) active memory (axis A): distil high-recurrence mistakes into executable guards so the
+    #     PreToolUse hot path has something to fire on. Sleep-time only (may use the LLM); the
+    #     hot path only ever READS the resulting ledger. Idempotent (dedup by born_from).
+    if apply:
+        try:
+            import guards as _guards
+            added = _guards.generate_from_vault(min_recurrence=2, use_llm=has_llm)
+            if added:
+                print(f"[consolidate] active memory: {added} new guard(s) distilled from mistakes")
+        except Exception as e:
+            print(f"[consolidate] guard generation skipped: {e}", file=sys.stderr)
+
     if apply:
         m.rebuild_index()    # Index.md is itself OKF-valid now (type: index — audit H1/M-14)
         # the merges/archival/distillation above changed the note set → rebuild the

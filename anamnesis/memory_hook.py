@@ -1196,10 +1196,25 @@ def register_written_notes(project: str, tags, links: dict) -> None:
 # ── Advisory lock (sentinel file, race-safe via O_EXCL) ───────────────
 
 def _pid_alive(pid: int) -> bool:
-    """Best-effort liveness check for a Windows PID. Returns True when
-    uncertain so we never steal a lock from a process that might be alive."""
+    """Best-effort liveness check for a lock-holder PID, cross-platform. Returns True when
+    uncertain so we never steal a lock from a process that might be alive.
+
+    POSIX (macOS/Linux): `os.kill(pid, 0)` — ESRCH means dead, EPERM means alive-but-not-ours
+    (still alive). Windows: OpenProcess. Without the POSIX branch a crashed holder's lock could
+    only be reclaimed by the age guard (up to LOCK_STALE_S), wedging every writer on Mac/Linux
+    for minutes after a crash."""
     if pid <= 0:
         return False
+    if os.name != "nt":
+        try:
+            os.kill(pid, 0)
+            return True                    # signal delivered → alive
+        except ProcessLookupError:
+            return False                   # ESRCH → no such process (safe to reclaim)
+        except PermissionError:
+            return True                    # EPERM → exists, owned by another user
+        except OSError:
+            return True                    # uncertain → don't steal
     try:
         import ctypes
         PROCESS_QUERY_LIMITED = 0x1000
@@ -4736,6 +4751,75 @@ def git_autocommit():
 
 # ── Entrypoint ────────────────────────────────────────────────────────
 
+# ── Active Memory on the hot path: axis-A guards on PreToolUse ─────────
+# The moat, made automatic. Before a code-writing tool runs, check what it is about to write
+# against the learned guards. The check is REGEX-ONLY (no LLM, no embedder, no network) and
+# SILENT when clear, so it adds 0 context tokens until a guard actually catches a repeat — the
+# token-economy invariant holds. Advisory by default (surfaces a warning, never blocks); set
+# ANAMNESIS_GUARD_ENFORCE=1 to let a 'blocking'-status guard deny the call. Popperian guards
+# self-retire on false positives, so this never boxes the agent in.
+GUARDS_HOTPATH = os.environ.get("ANAMNESIS_GUARDS_HOTPATH", "1") != "0"
+GUARD_ENFORCE = os.environ.get("ANAMNESIS_GUARD_ENFORCE", "0") != "0"
+_GUARDABLE_TOOLS = {"Edit", "Write", "MultiEdit", "NotebookEdit", "Bash"}
+
+
+def _action_text_from_tool(tool_name: str, tool_input: dict) -> tuple[str, str | None]:
+    """The code/command a tool is about to apply, plus the file path if any. Only the NEW
+    content is scanned (never the old), so a guard fires on what is being written."""
+    if not isinstance(tool_input, dict):
+        return "", None
+    path = tool_input.get("file_path") or tool_input.get("notebook_path")
+    if tool_name == "Bash":
+        return str(tool_input.get("command", "")), None
+    parts = []
+    for key in ("new_string", "content", "new_source"):
+        if tool_input.get(key):
+            parts.append(str(tool_input[key]))
+    for e in tool_input.get("edits", []) or []:            # MultiEdit
+        if isinstance(e, dict) and e.get("new_string"):
+            parts.append(str(e["new_string"]))
+    return "\n".join(parts), path
+
+
+def emit_pretooluse_guard(session: dict, cwd: str) -> None:
+    """PreToolUse (axis A). Silent (no stdout → 0 tokens) unless a guard fires; on a hit,
+    emit a one-line warning as additionalContext (advisory) — or, under ANAMNESIS_GUARD_ENFORCE,
+    deny a blocking-status guard. Read-only, no lock, regex-only: safe to run before every edit."""
+    if not GUARDS_HOTPATH or session.get("tool_name", "") not in _GUARDABLE_TOOLS:
+        return
+    action, path = _action_text_from_tool(session.get("tool_name", ""), session.get("tool_input") or {})
+    if not action.strip():
+        return
+    project = derive_project_from_cwd(cwd) if is_tracked_project(cwd) else None
+    try:
+        from . import guards as _g
+    except ImportError:
+        import guards as _g
+    try:
+        hits = _g.check(action, project=project, path=path, tool=session.get("tool_name"))
+    except Exception as e:
+        log(f"guard check failed: {e}")
+        return
+    if not hits:
+        return
+    for h in hits:
+        try:
+            _g.mark_fired(h["id"])                          # telemetry; never fatal on the hot path
+        except Exception:
+            pass
+    lines = [("⛔ " if h["status"] == "blocking" else "⚠ ") + h["message"] for h in hits]
+    payload = {"hookSpecificOutput": {
+        "hookEventName": "PreToolUse",
+        "additionalContext": "**Anamnesis guard — a past mistake may be repeating:**\n"
+                             + "\n".join(f"- {l}" for l in lines),
+    }}
+    blocking = [h for h in hits if h["status"] == "blocking"]
+    if GUARD_ENFORCE and blocking:
+        payload["hookSpecificOutput"]["permissionDecision"] = "deny"
+        payload["hookSpecificOutput"]["permissionDecisionReason"] = blocking[0]["message"]
+    print(json.dumps(payload))                              # ascii-safe: json.dumps escapes non-ASCII
+
+
 def main():
     try:
         raw = sys.stdin.read()
@@ -4778,6 +4862,15 @@ def main():
             emit_prompt_recall(cwd, prompt, session_id)
         except Exception as e:
             log(f"prompt recall failed: {e}")
+        return
+
+    # PreToolUse: active memory (axis A) — guard the action a code-writing tool is about to
+    # apply. Read-only, no lock, regex-only, silent unless a guard fires (0 tokens when clear).
+    if event == "PreToolUse":
+        try:
+            emit_pretooluse_guard(session, cwd)
+        except Exception as e:
+            log(f"pretooluse guard failed: {e}")
         return
 
     # The vault lock (single-writer) is held only across extraction + the fast

@@ -3,18 +3,23 @@
 
     python install.py                 # wire hooks + create the store (safe, idempotent)
     python install.py --ollama        # also pull the local models (bge-m3, qwen3)
-    python install.py --tasks         # also register the Windows safety-net tasks
+    python install.py --tasks         # also register the safety-net jobs (Task Scheduler on
+                                      #   Windows, crontab on macOS/Linux)
     python install.py --profile research   # turn on the Brain layer (research/general/coding)
     python install.py --print         # dry-run: show what would change, write nothing
 
 What it does (all idempotent, re-runnable):
   1. Create the memory store dir (default ~/.anamnesis; honours ANAMNESIS_HOME).
-  2. Merge the four Claude Code hooks into ~/.claude/settings.json — backing the
-     file up first — so SessionStart / UserPromptSubmit / SessionEnd / PreCompact
-     run the engine. Existing hooks from other tools are preserved.
+  2. Merge the Claude Code hooks into ~/.claude/settings.json — backing the file up
+     first — so SessionStart / UserPromptSubmit / SessionEnd / PreCompact run the
+     engine, and PreToolUse runs the active-memory guard before a code-writing tool
+     (Edit/Write/Bash) — silent unless a past mistake is about to repeat. Existing
+     hooks from other tools are preserved.
   3. Print the MCP-client snippet (Cursor / Claude Desktop / Cline / Zed).
   4. (--ollama) pull bge-m3 + qwen3.  (--tasks) register the scheduled tasks.
      (--profile) persist ANAMNESIS_PROFILE so the opt-in Brain layer turns on.
+     On macOS/Linux --tasks installs three `# anamnesis`-tagged crontab jobs; on
+     Windows it registers per-user scheduled tasks. Both are idempotent.
   5. Close with the options the user has: profiles, and how to bring in projects
      they already have — so a first-time install is self-explanatory.
 
@@ -38,7 +43,15 @@ HOOK = PKG / "memory_hook.py"
 MCP = PKG / "mcp_server.py"
 PYTHON = sys.executable.replace("\\", "/")
 SETTINGS = Path.home() / ".claude" / "settings.json"
-EVENTS = ["SessionStart", "UserPromptSubmit", "SessionEnd", "PreCompact"]
+# event -> matcher. "" matches all; PreToolUse is scoped to code-writing tools so the guard
+# hook (active memory, axis A) only spawns before an edit/command, never on a Read/Grep.
+EVENTS = {
+    "SessionStart": "",
+    "UserPromptSubmit": "",
+    "SessionEnd": "",
+    "PreCompact": "",
+    "PreToolUse": "Edit|Write|MultiEdit|NotebookEdit|Bash",
+}
 DRY = "--print" in sys.argv
 
 
@@ -126,11 +139,11 @@ def wire_hooks() -> None:
             return
     hooks = settings.setdefault("hooks", {})
     added = 0
-    for ev in EVENTS:
+    for ev, matcher in EVENTS.items():
         groups = hooks.setdefault(ev, [])
         if _has_our_hook(groups):
             continue
-        groups.append({"matcher": "",
+        groups.append({"matcher": matcher,
                        "hooks": [{"type": "command", "command": _cmd()}]})
         added += 1
     if added == 0:
