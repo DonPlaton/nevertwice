@@ -8,8 +8,9 @@ tagged with the agent's name. No Claude Code JSONL or ~/.claude layout required.
     # inline text
     python ingest.py --project project_delta --agent my-bot --text "...transcript..."
 
-    # from a file
+    # from a file — a transcript, OR a document (.pdf / .docx / .md / .html / .txt)
     python ingest.py --project project_delta --agent my-bot --file run.log
+    python ingest.py --project research --file paper.pdf      # mine a paper into memory
 
     # JSON on stdin (fields: project, agent, text/transcript_text, cwd, session_id)
     echo '{"project":"project_delta","agent":"my-bot","text":"..."}' | python ingest.py
@@ -19,6 +20,7 @@ tagged with the agent's name. No Claude Code JSONL or ~/.claude layout required.
     # skipped, a changed one re-ingested. Point it at the agent's log dir on a schedule:
     python ingest.py --dir ~/.codex/sessions --project myproj --agent codex
     python ingest.py --dir ./agent_logs --recursive --glob "*.jsonl,*.md"
+    python ingest.py --dir ~/research/papers --glob "*.pdf,*.docx,*.md" --project research
 
 `--project` is recommended; without it the project is derived from `--cwd` like
 the live hook. A stable `--session-id` makes re-ingestion idempotent; otherwise a
@@ -41,6 +43,7 @@ except Exception:
 
 sys.path.insert(0, str(Path(__file__).parent))
 import memory_hook as m
+import docparse                  # .pdf/.docx/.html/.md → text, so any document is ingestible
 
 # DoS guard for --dir sweeps: skip files larger than this (a swept dir could hold a
 # huge/sparse file that would block the vault lock for the whole read). audit 2026-06-18.
@@ -103,7 +106,11 @@ def ingest_files(files, project, agent, db, *, trigger="ingest-sweep",
             if f.stat().st_size > MAX_SWEEP_BYTES:        # DoS guard: skip a huge file
                 skipped += 1                              # rather than block the lock on it
                 continue
-            txt = f.read_text(encoding="utf-8", errors="replace")
+            txt = docparse.extract_text(f)                # .pdf/.docx/.html → text; else raw read
+        except docparse.DocError as e:                    # missing PDF dep / corrupt doc — skip, don't abort
+            print(f"[ingest] skip {f.name}: {e}", file=sys.stderr)
+            skipped += 1
+            continue
         except OSError:
             continue
         if len(txt) > MAX_SWEEP_BYTES:       # re-check after read: a file that grew past the cap
@@ -175,8 +182,9 @@ def main():
     ap.add_argument("--text", help="transcript text inline")
     ap.add_argument("--file", help="read transcript text from this file")
     ap.add_argument("--dir", help="SWEEP: ingest every transcript file in this dir (idempotent)")
-    ap.add_argument("--glob", default="*.md,*.txt,*.log,*.jsonl,*.json",
-                    help="--dir mode: comma-separated filename globs to ingest")
+    ap.add_argument("--glob", default="*.md,*.txt,*.log,*.jsonl,*.json,*.docx,*.html",
+                    help="--dir mode: comma-separated filename globs (add *.pdf for PDFs — "
+                         "needs `pip install pypdf`)")
     ap.add_argument("--recursive", action="store_true",
                     help="--dir mode: recurse into subdirectories")
     ap.add_argument("--cwd", help="working directory (for project derivation)")
@@ -190,8 +198,14 @@ def main():
         return
 
     j = _payload_from_stdin()
-    text = args.text or (Path(args.file).read_text(encoding="utf-8", errors="replace")
-                         if args.file else None) or j.get("text") or j.get("transcript_text")
+    file_text = None
+    if args.file:
+        try:
+            file_text = docparse.extract_text(args.file)   # transcript OR .pdf/.docx/.md/.html
+        except docparse.DocError as e:
+            print(f"[ingest] cannot read {args.file}: {e}", file=sys.stderr)
+            sys.exit(1)
+    text = args.text or file_text or j.get("text") or j.get("transcript_text")
     if not text or not text.strip():
         print("[ingest] no transcript text (use --text/--file or JSON stdin)",
               file=sys.stderr)
