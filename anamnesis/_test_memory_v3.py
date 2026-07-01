@@ -650,8 +650,10 @@ check("initialize advertises serverInfo",
 _sent.clear()
 mcp._handle({"jsonrpc": "2.0", "id": 2, "method": "tools/list"})
 names = {t["name"] for t in _sent[0]["result"]["tools"]}
-check("tools/list exposes search/remember/ingest/entities",
-      names == {"memory_search", "memory_remember", "memory_ingest", "memory_entities"})
+check("tools/list exposes all read/write + active-memory tools",
+      names == {"memory_search", "memory_remember", "memory_ingest", "memory_entities",
+                "memory_conflicts", "memory_digest",
+                "memory_guard_check", "memory_anticipate", "memory_what_breaks"})
 
 # a notification (no id) produces no response
 _sent.clear()

@@ -25,6 +25,36 @@ capture_session(transcript_text, project="myproj", agent="my-bot")
 and falls back to lexical search when the GPU/Ollama is busy. `remember` writes a typed note.
 `capture_session` runs the full extraction pipeline (Patterns / Mistakes / Decisions + Context).
 
+## Active Memory: memory that acts (the differentiator, on every agent)
+
+Most memory is something you *read* — it taxes every turn with injected text. Anamnesis also
+*acts*, and stays silent until it has something worth saying, so it costs **zero context tokens
+until an intervention earns its place**. All three axes are on the Python API **and** the MCP
+server, so Cursor / Cline / Codex / Zed / any MCP client get the moat, not just Claude Code. Full
+thesis + measurements: [`research/ACTIVE_MEMORY.md`](../anamnesis/research/ACTIVE_MEMORY.md).
+
+```python
+from anamnesis.api import guards_check, anticipate, what_breaks
+
+# A — guard a proposed action against learned mistakes (0 tokens unless it fires)
+for hit in guards_check("model = torch.device('cpu')", project="myproj"):
+    print(hit["status"], hit["message"])      # 'blocking' → stop and comply or override
+
+# B — predict the failure the current plan is heading toward (one warning, or silence)
+anticipate("refactoring the orchestrator, touching prism_orchestrator.py", project="myproj")
+
+# C — counterfactual: what breaks if I change this? (a synthesized answer, not an episode dump)
+print(what_breaks("prism-orchestrator", project="myproj"))     # downstream impacts + failure modes
+```
+
+From any MCP client the same three are `memory_guard_check`, `memory_anticipate`, and
+`memory_what_breaks`. Measured on real tasks (DeepSeek), a fired guard cuts the real error rate
+**0.36 → 0.05**; on a task series, active interventions match always-inject's error-prevention for
+**~31× fewer tokens** ([`research/LIVE_VALIDATION.md`](../anamnesis/research/LIVE_VALIDATION.md),
+[`research/ACTIVE_MEMORY.md`](../anamnesis/research/ACTIVE_MEMORY.md)). Guards are **Popperian** —
+advisory until corroborated, self-retiring on false positives, always overridable — so memory
+proposes and reality disposes; the agent is never boxed in.
+
 ## Entity knowledge graph
 
 Every lesson is tagged with its key entities (tools, concepts, files) as it is captured, so

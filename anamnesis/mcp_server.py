@@ -20,9 +20,15 @@ Register it with an MCP client, e.g. Claude Desktop / Cursor config:
     }
 
 Tools:
-  memory_search   (query, project?, k?)                      — recall, read-only
-  memory_remember (project, type, title, description?, …)    — write a lesson
-  memory_ingest   (project, text, agent?)                    — extract+store a chat
+  memory_search    (query, project?, k?)                     — recall, read-only
+  memory_remember  (project, type, title, description?, …)   — write a lesson
+  memory_ingest    (project, text, agent?)                   — extract+store a chat
+  memory_entities  (entity?, relations?, project?, k?)       — entity / relation graph, read-only
+  memory_conflicts (project?, limit?)                        — supersession ledger, read-only
+  memory_digest    (project?, days?)                         — what's new rollup, read-only
+  memory_guard_check   (action_text, project?, path?)        — active memory A: guard a proposed action
+  memory_anticipate    (trajectory, project?)                — active memory B: predict the failure ahead
+  memory_what_breaks   (entity, project?)                    — active memory C: counterfactual impact
 
 stdout carries ONLY JSON-RPC: every library print is redirected to stderr so it
 can never corrupt the protocol stream.
@@ -47,9 +53,13 @@ sys.path.insert(0, str(Path(__file__).parent))
 import memory_hook as m          # noqa: E402
 import memory_search             # noqa: E402  (search_core, shared ranker)
 import remember as _remember     # noqa: E402  (do_remember validation/lock path)
+import digest as _digest         # noqa: E402  (conflicts + digest review commands)
+import guards as _guards         # noqa: E402  (active memory A — executable guards)
+import anticipate as _anticipate # noqa: E402  (active memory B — anticipatory warning)
+import causal as _causal         # noqa: E402  (active memory C — counterfactual)
 
 SERVER_NAME = "anamnesis"
-SERVER_VERSION = "1.0.0"
+SERVER_VERSION = "1.1.0"
 DEFAULT_PROTOCOL = "2025-06-18"
 
 TOOLS = [
@@ -130,6 +140,84 @@ TOOLS = [
                 "project": {"type": "string", "description": "Limit to one project (optional)."},
                 "k": {"type": "integer", "description": "Max results (default 12)."},
             },
+        },
+    },
+    {
+        "name": "memory_conflicts",
+        "description": ("The contradiction / supersession ledger — facts the memory revised "
+                        "(an old note and the note that superseded it), newest first. Anamnesis "
+                        "resolves contradictions at write time, so this is the audit trail of "
+                        "what changed. Read-only."),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "project": {"type": "string", "description": "Limit to one project (optional)."},
+                "limit": {"type": "integer", "description": "Max rows (default 25)."},
+            },
+        },
+    },
+    {
+        "name": "memory_digest",
+        "description": ("A rollup of the memory store: what was added and revised in the last "
+                        "N days, per project and type, plus the most-connected entities. The "
+                        "daily/weekly 'what's new' view. Read-only."),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "project": {"type": "string", "description": "Limit to one project (optional)."},
+                "days": {"type": "integer", "description": "Window in days (default 7)."},
+            },
+        },
+    },
+    {
+        "name": "memory_guard_check",
+        "description": ("Active memory (A) — check a proposed action (a diff, command, or code "
+                        "you are about to write) against learned guards. Returns any that FIRE, "
+                        "each a one-line risk from a past mistake; a 'blocking' hit means stop and "
+                        "comply or override. Silent (nothing) when clear — costs no tokens unless "
+                        "it catches a real repeat. Run it BEFORE risky edits."),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "action_text": {"type": "string",
+                                "description": "The code/command/diff about to be applied."},
+                "project": {"type": "string", "description": "Limit to one project (optional)."},
+                "path": {"type": "string", "description": "File path being touched (optional)."},
+            },
+            "required": ["action_text"],
+        },
+    },
+    {
+        "name": "memory_anticipate",
+        "description": ("Active memory (B) — predict the failure the CURRENT plan is heading "
+                        "toward, by resemblance to past mistakes. Give it what you are about to do "
+                        "(the plan / files / recent steps); returns one precise warning if risk is "
+                        "high, or nothing. Catches novel forms a static guard would miss. Silent "
+                        "below threshold (no tokens)."),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "trajectory": {"type": "string",
+                               "description": "What the agent is about to do (plan/files/steps)."},
+                "project": {"type": "string", "description": "Limit to one project (optional)."},
+            },
+            "required": ["trajectory"],
+        },
+    },
+    {
+        "name": "memory_what_breaks",
+        "description": ("Active memory (C) — counterfactual: what may break if you change/touch "
+                        "an entity (a file, module, or concept). Returns downstream impacts (from "
+                        "the induced causal graph) plus known failure modes, synthesized in a few "
+                        "lines — not an episode dump. Ask before a risky refactor."),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "entity": {"type": "string",
+                           "description": "The thing you are about to change (file/module/concept)."},
+                "project": {"type": "string", "description": "Limit to one project (optional)."},
+            },
+            "required": ["entity"],
         },
     },
 ]
@@ -263,11 +351,105 @@ def _tool_memory_entities(args: dict) -> tuple[str, bool]:
         return f"error: {type(exc).__name__}", True
 
 
+def _tool_memory_conflicts(args: dict) -> tuple[str, bool]:
+    project = (args.get("project") or "").strip() or None
+    try:
+        limit = int(args.get("limit") or 25)
+    except (TypeError, ValueError):
+        limit = 25
+    try:
+        rows = _digest.compute_conflicts(m.slug_project(project) if project else None,
+                                         limit=max(1, min(limit, 200)))
+    except Exception as exc:
+        return f"error: {type(exc).__name__}", True
+    if not rows:
+        return "No revised facts on record — nothing has been superseded yet.", False
+    lines = [f"{len(rows)} revised fact(s), newest first:"]
+    for r in rows:
+        evo = "" if r["resolved"] else "  (still evolving)"
+        lines.append(f"- [{r['new_date'] or r['old_date']}] {r['project']}/{r['ntype']}{evo}: "
+                     f"{r['old_title']} → {r['new_title'] or '(archived)'}")
+    return "\n".join(lines), False
+
+
+def _tool_memory_digest(args: dict) -> tuple[str, bool]:
+    project = (args.get("project") or "").strip() or None
+    try:
+        days = int(args.get("days") or 7)
+    except (TypeError, ValueError):
+        days = 7
+    try:
+        d = _digest.compute_digest(project, days=max(1, days))
+    except Exception as exc:
+        return f"error: {type(exc).__name__}", True
+    t = d["totals"]
+    lines = [f"Digest [{d['project']}] last {d['window_days']}d — {t['live_notes']} live notes, "
+             f"{t['projects']} project(s), +{t['added_in_window']} added, "
+             f"{t['revised_in_window']} revised."]
+    for p, v in sorted(d["by_project"].items(), key=lambda kv: -kv[1]["total"])[:12]:
+        lines.append(f"  {p}: {v['total']} (+{v['added']}/~{v['superseded']} revised)")
+    if d["top_entities"]:
+        lines.append("entities: " + ", ".join(f"{e['entity']}({e['notes']})"
+                                               for e in d["top_entities"]))
+    return "\n".join(lines), False
+
+
+def _tool_memory_guard_check(args: dict) -> tuple[str, bool]:
+    text = (args.get("action_text") or "").strip()
+    if not text:
+        return "error: 'action_text' is required", True
+    project = (args.get("project") or "").strip() or None
+    path = (args.get("path") or "").strip() or None
+    try:
+        hits = _guards.check(text, project=project, path=path)
+    except Exception as exc:
+        return f"error: {type(exc).__name__}", True
+    if not hits:
+        return "clear — no guard fires for this action.", False
+    lines = []
+    for h in hits:
+        tag = "BLOCK" if h["status"] == "blocking" else "warn"
+        lines.append(f"[{tag}] {h['message']}  (id {h['id']})")
+    return "\n".join(lines), False
+
+
+def _tool_memory_anticipate(args: dict) -> tuple[str, bool]:
+    traj = (args.get("trajectory") or "").strip()
+    if not traj:
+        return "error: 'trajectory' is required", True
+    project = (args.get("project") or "").strip() or None
+    try:
+        hits = _anticipate.anticipate(traj, project=project, k=1)
+    except Exception as exc:
+        return f"error: {type(exc).__name__}", True
+    if not hits:
+        return "no anticipated failure above threshold.", False
+    h = hits[0]
+    return f"(risk {h['risk']}) {h['message']}", False
+
+
+def _tool_memory_what_breaks(args: dict) -> tuple[str, bool]:
+    entity = (args.get("entity") or "").strip()
+    if not entity:
+        return "error: 'entity' is required", True
+    project = (args.get("project") or "").strip() or None
+    try:
+        out = _causal.counterfactual(entity, project)
+    except Exception as exc:
+        return f"error: {type(exc).__name__}", True
+    return (out or f"no causal footprint recorded for `{entity}`."), False
+
+
 _DISPATCH = {
     "memory_search": _tool_memory_search,
     "memory_remember": _tool_memory_remember,
     "memory_ingest": _tool_memory_ingest,
     "memory_entities": _tool_memory_entities,
+    "memory_conflicts": _tool_memory_conflicts,
+    "memory_digest": _tool_memory_digest,
+    "memory_guard_check": _tool_memory_guard_check,
+    "memory_anticipate": _tool_memory_anticipate,
+    "memory_what_breaks": _tool_memory_what_breaks,
 }
 
 
