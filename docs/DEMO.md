@@ -43,13 +43,18 @@ mechanisms, one realistic project, visible advantages.
 
 ## Recording the README GIF
 
+The hero GIF is **`examples/guard_demo.py`** — the 15-second "memory that acts" beat: a mistake is
+recorded once, then days later the agent is about to repeat it and the guard fires *before* the
+edit lands. That is the moment that earns the star (more compelling than plain recall).
+
 ```bash
 # 1. record (https://github.com/asciinema/asciinema)
-asciinema rec -c "bash examples/demo.sh" demo.cast
+asciinema rec -c "python examples/guard_demo.py" guard.cast
 
 # 2. render to GIF (https://github.com/asciinema/agg)
-agg --theme monokai --speed 1.3 demo.cast docs/demo.gif
+agg --theme monokai --speed 1.2 guard.cast docs/guard.gif
 ```
 
-The README embeds `docs/demo.gif`. Keep it under ~3 MB so it loads inline on GitHub. Aim for the
-"it remembered" beat (step ②) to land in the first few seconds. That's the moment that earns the star.
+Embed `docs/guard.gif` at the top of the README. Keep it under ~3 MB so it loads inline on GitHub.
+The `⛔ guard fires` line should land in the first few seconds. (`examples/demo.sh` remains the
+gentler "it remembered" recall demo if you want a second GIF.)
