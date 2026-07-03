@@ -35,6 +35,13 @@ flowchart TD
 | `embed_index.py` | (Re)build the embedding cache. |
 | `consolidate_memory.py` | Sleep-time dedup + compaction + recurrence; stamps Brain-layer salience. |
 | `index_sqlite.py` | Optional SQLite scale-index (derived from markdown): FTS5 + vectors, plus the entity/relation graph tables for fast Brain-layer queries at scale. |
+| `api.py` | The one-import Python surface (`recall`, `remember`, `guards_check`, …). |
+| `capture.py` / `watch.py` | Wrap any LLM client in one line / polling daemon that mines other agents' session logs. |
+| `guards.py` · `anticipate.py` · `causal.py` | Active Memory: executable guards (PreToolUse hot path), trajectory-resemblance warnings, induced causal graph (`what_breaks` / `counterfactual`). |
+| `digest.py` / `dashboard.py` | Read-only rollups: what changed, the contradiction ledger; a self-contained HTML snapshot. |
+| `docparse.py` | .docx / HTML / text intake for `ingest` (stdlib, size-capped). |
+| `sync.py` + `merge.py` | Cross-machine git sync with a structured merge driver (concurrent edits to one note auto-resolve). |
+| `integrations/` | LangChain / LlamaIndex retriever + memory adapters. |
 | `manage_tasks.py` / `install.py` | Scheduling (Windows tasks / POSIX cron) and setup. |
 | `research/` | Eval harness, temporal-graph prototype, contradiction scan. |
 
@@ -60,11 +67,12 @@ flowchart TD
 
 ## Retrieval
 
-Hybrid **Reciprocal Rank Fusion** of a semantic ranking (bge-m3 cosine) and a lexical
-ranking (token overlap), recurrence-weighted. The semantic side runs only if the local
-embedder answers a fast ping, so a busy GPU degrades gracefully to lexical, then to
-recency; recall never blocks. An optional cloud-judge **rerank** can reorder the top
-candidates for deliberate on-demand search.
+**Calibrated score fusion** of the semantic signal (bge-m3 cosine) and the lexical signal
+(BM25), recurrence-weighted, behind an abstention gate (`ANAMNESIS_FUSION=rrf` restores the
+legacy rank fusion). The semantic side runs only if the local embedder answers a fast ping,
+so a busy GPU degrades gracefully to lexical, then to recency; recall never blocks. Two
+opt-in second stages exist for deliberate search: a trained cross-encoder
+(`ANAMNESIS_XRERANK=1`, the measured precision win) and a cloud-judge rerank.
 
 ## Privacy
 

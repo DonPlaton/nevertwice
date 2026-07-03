@@ -253,14 +253,19 @@ write-ups live in [the research directory](anamnesis/research/), heading to Zeno
 
 ## What is in the box
 
-Everything here ships today. Bi-temporal point-in-time queries answer "what did we believe on date
-X". Supersession with contradiction detection keeps conflicting notes from piling up. Recall walks
-`[[wikilinks]]` for multi-hop answers, abstains when nothing is a confident match, and transfers
-lessons across projects. Secrets are redacted on the way in, and a memory-poisoning guard caught
-injection, exfiltration, and destruction attempts with zero false positives on a 328-note vault.
-Underneath, a SQLite index keeps per-query cost bounded into the tens of thousands of notes, a
-submodular forgetting cap stops unbounded growth, and git handles cross-machine sync. It also reads
-and writes AGENTS.md and the OKF format, so the project card travels to other tools.
+Everything here ships today, not on a roadmap:
+
+- Ask *"what did we believe on March 3?"* and bi-temporal queries answer from that day's truth.
+- A new fact that contradicts an old one retires it at write time; recall never serves both.
+- Recall walks `[[wikilinks]]` for multi-hop answers, abstains instead of guessing, and carries
+  lessons across projects.
+- Secrets are redacted before anything is written. A poisoning guard caught every injection,
+  exfiltration, and destruction attempt we threw at a 328-note vault, with zero false positives.
+- A SQLite index keeps per-query cost flat into tens of thousands of notes; a submodular
+  forgetting cap stops unbounded growth.
+- Sync between machines is `git pull`. Concurrent edits to the same note auto-merge
+  field-by-field (recurrence takes the max, a retirement wins, tags union).
+- The project card travels: AGENTS.md and OKF in and out, so other tools can read what yours knows.
 
 An opt-in **Brain layer** turns the same captured sessions into a self-wiring knowledge graph for
 research or personal knowledge: typed entities (paper, method, dataset, benchmark, …), per-entity
@@ -306,18 +311,13 @@ point the bootstrapper at it: `python -m anamnesis.bootstrap_contexts /path/to/p
 
 ## Tests
 
-Standard-library only and fully mocked, so no network and no GPU. Sixteen core suites run in CI,
-alongside the research suites under `anamnesis/research/`:
+Thirty-seven suites, standard library only, LLM and embedder fully mocked. No network, no GPU:
 
 ```bash
-for t in _test_memory_hook _test_memory_v2 _test_memory_v3 _test_audit_fixes \
-         _test_failure_injection _test_api _test_capture _test_integrations \
-         _test_cloud_embed _test_ingest _test_watch _test_quant _test_entities \
-         _test_brain _test_brain_sqlite _test_brain_invariants; do
-  python anamnesis/$t.py; done
+for t in anamnesis/_test_*.py anamnesis/research/_test_*.py; do python "$t" || break; done
 ```
 
-CI runs the core suites on Linux, Windows, and macOS across Python 3.10, 3.12, and 3.13.
+CI runs them on Linux, Windows, and macOS across Python 3.10, 3.12, and 3.13.
 
 ## Docs
 
