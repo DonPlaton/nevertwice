@@ -120,12 +120,12 @@ def ensure_store() -> None:
     ensure_gitignore(d)
 
 
-def _has_our_hook(groups: list) -> bool:
+def _our_hook_entries(groups: list):
+    """Every hook dict in these groups that points at A memory_hook.py (ours or a stale copy)."""
     for g in groups or []:
         for h in g.get("hooks", []):
             if "memory_hook.py" in (h.get("command") or ""):
-                return True
-    return False
+                yield h
 
 
 def wire_hooks() -> None:
@@ -138,19 +138,28 @@ def wire_hooks() -> None:
             print(f"  ! could not parse settings.json ({exc}); aborting hook wiring")
             return
     hooks = settings.setdefault("hooks", {})
-    added = 0
+    added = updated = 0
     for ev, matcher in EVENTS.items():
         groups = hooks.setdefault(ev, [])
-        if _has_our_hook(groups):
+        ours = list(_our_hook_entries(groups))
+        if ours:
+            # a bare substring match used to report "already present" even when the hook
+            # pointed at a MOVED/stale copy, so a reinstall never repointed it (code-review
+            # 2026-07). Update the command in place — never append a second hook beside a
+            # stale one (that would double-fire every event).
+            for h in ours:
+                if h.get("command") != _cmd():
+                    h["command"] = _cmd()
+                    updated += 1
             continue
         groups.append({"matcher": matcher,
                        "hooks": [{"type": "command", "command": _cmd()}]})
         added += 1
-    if added == 0:
-        print("  = all four hooks already present")
+    if added == 0 and updated == 0:
+        print("  = all hooks already present and current")
         return
     if DRY:
-        print(f"  would add {added} hook(s); command: {_cmd()}")
+        print(f"  would add {added} / repoint {updated} hook(s); command: {_cmd()}")
         return
     SETTINGS.parent.mkdir(parents=True, exist_ok=True)
     if SETTINGS.exists():
@@ -158,9 +167,15 @@ def wire_hooks() -> None:
             f"settings.json.bak-anamnesis-{datetime.now().strftime('%Y%m%d%H%M%S')}")
         shutil.copy2(SETTINGS, bak)
         print(f"  backup → {bak.name}")
-    SETTINGS.write_text(json.dumps(settings, indent=2, ensure_ascii=False),
-                        encoding="utf-8")
-    print(f"  + added {added} hook(s)")
+    # atomic: a crash mid-write must not leave settings.json corrupt (the backup exists,
+    # but recovery shouldn't be needed for a routine install)
+    tmp = SETTINGS.with_name(SETTINGS.name + ".tmp-anamnesis")
+    tmp.write_text(json.dumps(settings, indent=2, ensure_ascii=False), encoding="utf-8")
+    os.replace(tmp, SETTINGS)
+    if added:
+        print(f"  + added {added} hook(s)")
+    if updated:
+        print(f"  ~ repointed {updated} stale hook command(s) → {_cmd()}")
 
 
 def mcp_snippet() -> None:

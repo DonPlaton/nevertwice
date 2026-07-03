@@ -157,7 +157,11 @@ def search_core(query: str, project: str | None = None, k: int = 10,
         if _low_confidence(raw):
             mode = mode + " (low-confidence)"
     else:
-        mode = "lexical (Ollama/GPU busy)"
+        # embedder pinged OK but the query embed failed → weak token-overlap ranking. Mark it
+        # low-confidence like every other lexical path — `low_conf` below is derived from this
+        # string, so omitting it silently bypassed the abstention gate for programmatic callers
+        # (code-review 2026-07, HIGH).
+        mode = "lexical (Ollama/GPU busy) (low-confidence)"
         qtok = m._tokens(query)
         for s, r in cands:
             sc = _lex_overlap(qtok, r, s)

@@ -278,9 +278,9 @@ def build_html(project=None, days=30, conflicts_limit=40) -> str:
 
 def main():
     argv = sys.argv[1:]
-    project = next((a.split("=", 1)[1] for a in argv if a.startswith("--project=")), None)
-    days = int(next((a.split("=", 1)[1] for a in argv if a.startswith("--days=")), "30"))
-    out = next((a.split("=", 1)[1] for a in argv if a.startswith("--out=")), "memory_dashboard.html")
+    project = m.argval(argv, "project")
+    days = int(m.argval(argv, "days", "30"))
+    out = m.argval(argv, "out", "memory_dashboard.html")
     no_open = "--no-open" in argv
     htmls = build_html(project, days=days)
     p = Path(out).expanduser().resolve()

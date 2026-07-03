@@ -653,7 +653,8 @@ names = {t["name"] for t in _sent[0]["result"]["tools"]}
 check("tools/list exposes all read/write + active-memory tools",
       names == {"memory_search", "memory_remember", "memory_ingest", "memory_entities",
                 "memory_conflicts", "memory_digest",
-                "memory_guard_check", "memory_anticipate", "memory_what_breaks"})
+                "memory_guard_check", "memory_anticipate", "memory_what_breaks",
+                "memory_why", "memory_guard_feedback", "memory_anticipate_feedback"})
 
 # a notification (no id) produces no response
 _sent.clear()

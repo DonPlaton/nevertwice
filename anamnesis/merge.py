@@ -32,7 +32,9 @@ _STATUS_RANK = {"": 0, "current": 0, "resolved": 1, "superseded": 2}
 def _split(text: str):
     """(frontmatter_dict, body) for a note. Frontmatter is the YAML block between the first two
     `---` fences; everything after is the body. Values are kept as raw strings; a `tags` line is
-    parsed into a list. Missing frontmatter → ({}, whole text)."""
+    parsed into a list. Missing frontmatter → ({}, whole text). Known limitation: this is a
+    line-splitter, not a YAML parser — a block-list value (a line without `:`) is not preserved;
+    Anamnesis notes only ever use inline scalars/lists, so that shape never occurs in practice."""
     if not text.startswith("---"):
         return {}, text
     end = text.find("\n---", 3)
@@ -64,6 +66,13 @@ def _merge_front(base: dict, ours: dict, theirs: dict):
             if o is not None:
                 merged[k] = o
             continue
+        if o is None or t is None:
+            # one side added / kept a field the other lacks → keep the present value. Doing
+            # this FIRST means every typed rule below sees two real values — it also stops a
+            # literal "status: None" from being emitted when only one side had a status
+            # (code-review 2026-07).
+            merged[k] = o if o is not None else t
+            continue
         if k == "recurrence":
             def _n(x):
                 try:
@@ -74,11 +83,13 @@ def _merge_front(base: dict, ours: dict, theirs: dict):
         elif k == "status":
             merged[k] = o if _STATUS_RANK.get(o, 0) >= _STATUS_RANK.get(t, 0) else t
         elif k in ("superseded_by", "resolved_by"):
-            merged[k] = (o or t) if not (o and t) else (o if o >= t else t)   # a retirement wins; tie→later stem
+            # both sides retired the same note via DIFFERENT replacements — silently keeping
+            # one would drop the other supersession link with no trace. That is a genuine
+            # disagreement; surface it as a conflict (code-review 2026-07).
+            ok = False
+            merged[k] = o
         elif k == "tags":
             merged[k] = '[' + ', '.join(f'"{x}"' for x in dict.fromkeys(_tags(o or "") + _tags(t or ""))) + ']'
-        elif o is None or t is None:
-            merged[k] = o if o is not None else t              # one side added a field → keep it
         else:
             ok = False                                         # a real scalar disagreement
             merged[k] = o
@@ -112,15 +123,23 @@ def merge_note(base: str, ours: str, theirs: str):
 
 
 def _driver(base_path, ours_path, theirs_path) -> int:
-    """git merge-driver entry: read the three files, write the merge to `ours_path` (%A). Exit 0
-    if resolved, 1 to signal an unresolved conflict (git then writes conflict markers)."""
+    """git merge-driver entry: read the three files, write the result to `ours_path` (%A). Exit 0
+    if resolved, non-zero for a conflict. CRITICAL: on conflict, a custom driver is itself
+    responsible for leaving conflict markers in %A — git does NOT add them for you, and returning
+    1 with a clean-looking file makes some flows (rebase --continue) treat "ours" as the
+    resolution and silently drop "theirs" (code-review 2026-07: verified data loss). So we write
+    the standard <<<<<<</=======/>>>>>>> block ourselves before signalling the conflict."""
     def _read(p):
         try:
             return Path(p).read_text(encoding="utf-8", errors="replace")
         except OSError:
             return ""
-    merged = merge_note(_read(base_path), _read(ours_path), _read(theirs_path))
+    base, ours, theirs = _read(base_path), _read(ours_path), _read(theirs_path)
+    merged = merge_note(base, ours, theirs)
     if merged is None:
+        Path(ours_path).write_text(
+            "<<<<<<< ours\n" + ours.rstrip("\n") + "\n=======\n"
+            + theirs.rstrip("\n") + "\n>>>>>>> theirs\n", encoding="utf-8")
         return 1
     Path(ours_path).write_text(merged, encoding="utf-8")
     return 0
@@ -133,7 +152,11 @@ def register(vault: Path) -> bool:
     if not (vault / ".git").exists():
         return False
     py = sys.executable.replace("\\", "/")
-    driver = f'"{py}" -m anamnesis.merge %O %A %B'
+    # invoke this FILE by absolute path, not `-m anamnesis.merge`: the package is usually not
+    # pip-installed (the whole point is a clone-and-run tool), so the -m form raised
+    # ModuleNotFoundError on every merge and the driver silently never fired (code-review 2026-07).
+    me = str(Path(__file__).resolve()).replace("\\", "/")
+    driver = f'"{py}" "{me}" %O %A %B'
     subprocess.run(["git", "-C", str(vault), "config", "merge.anamnesis.name",
                     "Anamnesis structured note merge"], capture_output=True)
     subprocess.run(["git", "-C", str(vault), "config", "merge.anamnesis.driver", driver],

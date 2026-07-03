@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """
-Graphify — генератор графа кода для Claude Code.
-Создаёт graph.json в корне проекта: лёгкий индекс файлов с импортами/экспортами.
-Claude читает его для навигации вместо сканирования всех файлов. Реальная
-экономия считается на лету (stats.savings_*) и зависит от проекта — на крупных
-проектах граф полезен только если держать его малым, отсюда жёсткие лимиты ниже
-(аудит F20/F21/F22: раздутый graph.json дороже прямого чтения нужных файлов).
-Запуск: python graphify.py [путь_к_проекту] [--incremental]
-  --incremental: пересобрать только если исходники новее graph.json
+Graphify — a code-graph generator for coding agents.
+Writes graph.json at the project root: a light index of files with their imports and
+exports, which an agent reads for navigation instead of scanning every file. The real
+token saving is computed on the fly (stats.savings_*) and depends on the project — on
+large codebases the graph only pays off if it stays small, hence the hard caps below
+(audit F20/F21/F22: a bloated graph.json costs more than reading the right files).
+Run: python graphify.py [project_path] [--incremental]
+  --incremental: rebuild only when sources are newer than graph.json
 """
 
 import os, sys, json, ast, re
@@ -172,10 +172,10 @@ def build(root: Path) -> dict:
         "structure": {d: len(ps) for d, ps in dirs.items()},
         "files":     files,
         "claude_instructions": (
-            "Используй этот граф для навигации по проекту. "
-            "files[] — путь, импорты и экспорты каждого файла. "
-            "structure{} — папки и число файлов в каждой. "
-            "Читай конкретный файл только если нужен полный код."
+            "Use this graph to navigate the project. "
+            "files[] lists each file's path, imports, and exports. "
+            "structure{} maps folders to their file counts. "
+            "Read a specific file only when you need its full code."
         )
     }
     # Honest savings ratio on the actual serialized graph (audit F21: the

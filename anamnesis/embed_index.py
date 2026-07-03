@@ -23,26 +23,14 @@ except Exception:
 
 
 def note_fields(p: Path) -> tuple[str, str, str]:
-    """Parse (title, description, prevention) from a typed note for embedding."""
-    title, desc, prevention = p.stem, "", ""
+    """Parse (title, description, prevention) from a typed note for embedding — the shared
+    body parser (m._parse_note_body), so this can't drift from _note_meta/_note_snippet."""
     try:
         lines = p.read_text(encoding="utf-8", errors="replace").split("\n")
     except OSError:
-        return title, desc, prevention
-    seen_title = False
-    for ln in lines:
-        s = ln.strip()
-        if s.startswith("# "):
-            title = m._strip_lead_icon(s.lstrip("# ")) or title
-            seen_title = True
-            continue
-        if not seen_title or not s:
-            continue
-        if s.startswith("**Как избежать:**"):
-            prevention = s.replace("**Как избежать:**", "").strip()
-        elif not desc and not s.startswith(("**", "#", "-", "_", "---", "[[", "|")):
-            desc = s
-    return title, desc, prevention
+        return p.stem, "", ""
+    title, desc, prevention = m._parse_note_body(lines)
+    return title or p.stem, desc, prevention
 
 
 def main():

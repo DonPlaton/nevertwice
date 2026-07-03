@@ -76,6 +76,21 @@ def test_flush_resets_turns_no_duplicate_extraction():
     cs.assert_called_once()
 
 
+def test_flush_keeps_turns_on_nonraising_failure():
+    # extraction that FAILS WITHOUT RAISING (malformed LLM JSON → stored=False) must keep
+    # the buffer so a retry can succeed — it used to wipe the conversation (code-review 2026-07)
+    with mock.patch.object(capture._api, "capture_session",
+                           side_effect=[{"stored": False, "reason": "llm"},
+                                        {"stored": True}]) as cs:
+        s = MemorySession(project="p")
+        s.log_user("x").log_assistant("y")
+        r1 = s.flush()
+        assert r1["stored"] is False and len(s.turns) == 2    # kept for retry
+        r2 = s.flush()                                        # retry re-extracts the SAME turns
+        assert r2["stored"] is True and s.turns == []
+    assert cs.call_count == 2
+
+
 def test_capture_chat_flush_delimits_conversations():
     with mock.patch.object(capture._api, "capture_session",
                            return_value={"stored": True}) as cs:

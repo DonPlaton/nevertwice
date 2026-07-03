@@ -3,10 +3,12 @@
 
 The CLIs (`memory_search`, `remember`, `ingest`) and the MCP server are the
 universal interface, but a Python caller — a framework adapter, a custom agent, a
-notebook — shouldn't have to shell out. This module is that library surface: three
-functions, stdlib-only, no argparse, no `sys.exit`. The CLIs and the LangChain /
-LlamaIndex integrations and the generic `capture` decorator are all thin shims over
-these, so there is exactly one write path and one read path.
+notebook — shouldn't have to shell out. This module is that library surface: one thin
+function per capability (recall/remember/capture, the entity graph, digest/conflicts/
+dashboard, guards/anticipation/causal, interop), stdlib-only, no argparse, no
+`sys.exit`. Every function delegates to the engine modules, so there is exactly one
+write path and one read path no matter which surface (CLI, MCP, LangChain/LlamaIndex,
+or this API) a call came from.
 
     from anamnesis.api import recall, remember, capture_session
 
@@ -16,14 +18,12 @@ these, so there is exactly one write path and one read path.
     capture_session(transcript_text, project="myproj", agent="my-bot")
 """
 import os
+import sys
 import uuid
 from datetime import datetime
 from pathlib import Path
 
-sys_path_root = str(Path(__file__).resolve().parent)
-import sys
-if sys_path_root not in sys.path:
-    sys.path.insert(0, sys_path_root)
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 import memory_hook as m
 import memory_search as _search
 import digest as _digest
@@ -202,7 +202,13 @@ def guards_check(action_text: str, *, project: str | None = None,
     NOTHING reaches context unless one matches. Each hit is `{id, status, message, scope}`;
     a `blocking` status means stop and comply or override-with-reason. Pure regex+scope
     match: no embedder, no LLM, no network. See `research/ACTIVE_MEMORY.md`."""
-    return _guards.check(action_text, project=project, path=path, tool=tool)
+    hits = _guards.check(action_text, project=project, path=path, tool=tool)
+    if hits:
+        try:
+            _guards.record_fired([h["id"] for h in hits])   # telemetry (guards list fired=)
+        except Exception:
+            pass
+    return hits
 
 
 def guard_feedback(guard_id: str, outcome: str, *, session_id: str | None = None,
@@ -374,3 +380,18 @@ def capture_session(text: str, *, project: str | None = None,
                 "session_id": sid}
     finally:
         m.release_lock()
+
+
+def write_agents_md(project: str, target_dir=None):
+    """Interop (M-13): write/refresh the `## Memory (Anamnesis)` block in a project's
+    AGENTS.md so any AGENTS.md-reading tool (Codex, Cursor, …) sees the project card.
+    Returns the path written."""
+    import interop as _interop
+    return _interop.write_agents_md(project, target_dir or os.getcwd())
+
+
+def okf_index():
+    """Interop (M-14): export the store's OKF index (the draft knowledge-interchange
+    format), so other tools can read what this memory knows. Returns the path written."""
+    import interop as _interop
+    return _interop.write_okf_index()

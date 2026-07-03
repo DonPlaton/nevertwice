@@ -32,7 +32,8 @@ except ImportError:
 
 def _git(*args, check=False):
     return subprocess.run(["git", "-C", str(m.VAULT), *args],
-                          capture_output=True, text=True, check=check)
+                          capture_output=True, text=True, check=check,
+                          encoding="utf-8", errors="replace")
 
 
 def main() -> int:
@@ -43,6 +44,13 @@ def main() -> int:
         print("[sync] no git remote configured (add one: git remote add origin <url>).",
               file=sys.stderr)
         return 0
+    # a previous sync may have stopped mid-rebase; committing on top would steamroll the
+    # conflict state, so stop loudly instead (code-review 2026-07)
+    gitdir = m.VAULT / ".git"
+    if (gitdir / "rebase-merge").exists() or (gitdir / "rebase-apply").exists():
+        print("[sync] a rebase is already in progress — resolve it first "
+              "(git -C <vault> rebase --continue / --abort).", file=sys.stderr)
+        return 1
 
     # 0) install the structured merge driver so a concurrent-write conflict on a note
     #    (recurrence bump / supersession) auto-resolves instead of stopping the sync (idempotent).
@@ -52,18 +60,33 @@ def main() -> int:
         import merge as _merge
     _merge.register(m.VAULT)
 
-    # 1) commit local changes (if any)
+    # 1) commit local changes (if any) — and only claim success when git agrees
     if (_git("status", "--porcelain").stdout or "").strip():
         _git("add", "-A")
         msg = f"sync: memory snapshot {datetime.now():%Y-%m-%d %H:%M}"
-        _git("commit", "-m", msg)
+        commit = _git("commit", "-m", msg)
+        if commit.returncode != 0:
+            print("[sync] commit failed:\n" + (commit.stderr or commit.stdout), file=sys.stderr)
+            return 1
         print(f"[sync] committed local changes: {msg}")
 
-    # 2) rebase on remote (autostash keeps any leftover state out of the way)
+    # 2) rebase on remote (autostash keeps any leftover state out of the way). A fresh vault
+    #    whose branch has no upstream yet is not a conflict — bootstrap it with push -u instead.
     pull = _git("pull", "--rebase", "--autostash")
     if pull.returncode != 0:
-        print("[sync] pull --rebase failed (conflict?). Resolve manually:\n"
-              + (pull.stderr or pull.stdout), file=sys.stderr)
+        err = (pull.stderr or "") + (pull.stdout or "")
+        if "no tracking information" in err or "There is no tracking information" in err:
+            branch = (_git("rev-parse", "--abbrev-ref", "HEAD").stdout or "").strip() or "master"
+            up = _git("push", "-u", "origin", branch)
+            if up.returncode != 0:
+                print("[sync] initial push -u failed:\n" + (up.stderr or up.stdout),
+                      file=sys.stderr)
+                return 1
+            print(f"[sync] bootstrapped upstream: origin/{branch}")
+            print("[sync] done")
+            return 0
+        print("[sync] pull --rebase failed (conflict?). Resolve manually:\n" + err,
+              file=sys.stderr)
         return 1
     print("[sync] rebased on origin")
 

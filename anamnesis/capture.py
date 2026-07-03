@@ -114,14 +114,18 @@ class MemorySession:
     def flush(self) -> dict:
         """Extract from the collected turns, then RESET — so a later flush() does not
         re-extract the same turns and duplicate notes in the vault (audit 2026-06-18 CRIT).
-        No-op (stored=False) when empty. If extraction raises (no LLM / lock busy) the turns
-        are KEPT so the caller can retry without losing the conversation."""
+        No-op (stored=False) when empty. If extraction fails — whether it raises (no LLM /
+        lock busy) or returns stored=False without raising (malformed LLM JSON, a transient
+        cloud error) — the turns are KEPT so the caller (or the atexit auto-flush) can retry
+        without losing the conversation (code-review 2026-07, HIGH: the non-raising failure
+        used to wipe the buffer with nothing left to retry)."""
         if not self.turns:
             self.result = {"stored": False, "reason": "no turns"}
             return self.result
         self.result = _api.capture_session(self.transcript, project=self.project,
                                            agent=self.agent, session_id=self.session_id)
-        self.turns = []          # consumed — a second flush must not re-mine the same turns
+        if self.result.get("stored"):
+            self.turns = []      # consumed — a second flush must not re-mine the same turns
         return self.result
 
     def __enter__(self) -> "MemorySession":

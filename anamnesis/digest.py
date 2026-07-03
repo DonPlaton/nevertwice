@@ -174,14 +174,15 @@ def _print_digest(d):
 
 def main():
     argv = sys.argv[1:]
-    project = next((a.split("=", 1)[1] for a in argv if a.startswith("--project=")), None)
-    days = int(next((a.split("=", 1)[1] for a in argv if a.startswith("--days=")), "7"))
-    limit = int(next((a.split("=", 1)[1] for a in argv if a.startswith("--limit=")), "50"))
+    project = m.argval(argv, "project")
+    days = int(m.argval(argv, "days", "7"))
+    limit = int(m.argval(argv, "limit", "50"))
     as_json = "--json" in argv
     if "--conflicts" in argv:
         rows = compute_conflicts(m.slug_project(project) if project else None, limit=limit)
-        print(json.dumps(rows, ensure_ascii=False, indent=1) if as_json else "", end="")
-        if not as_json:
+        if as_json:
+            print(json.dumps(rows, ensure_ascii=False, indent=1))
+        else:
             _print_conflicts(rows)
     else:
         d = compute_digest(project, days=days)

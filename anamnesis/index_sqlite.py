@@ -231,7 +231,13 @@ def build(verbose: bool = False) -> int:
                 row = _row(stem, r, sal_map.get(stem, 0.0))
             except (TypeError, ValueError, OverflowError, struct.error):
                 continue        # poisoned vector (bad type / out of range) — drop the row
-            cur.execute(f"INSERT OR REPLACE INTO notes VALUES ({','.join('?' * 12)})", row)
+            # explicit column list: on a pre-F5 index migrated via ALTER TABLE, `salience` sits
+            # LAST in physical order, so a bare positional VALUES would write salience into dim,
+            # dim into vec, and the vector blob into salience — corrupting every row and crashing
+            # the next read (code-review 2026-07, CRITICAL).
+            cur.execute("INSERT OR REPLACE INTO notes (stem, project, ntype, title, descr, "
+                        "prevention, recurrence, resolved, confidence, salience, dim, vec) "
+                        f"VALUES ({','.join('?' * 12)})", row)
             if fts:
                 cur.execute("INSERT INTO notes_fts (stem, text) VALUES (?, ?)",
                             (stem, _fts_text(r, stem)))
@@ -273,7 +279,13 @@ def upsert(records: dict) -> int:
                 continue        # poisoned/out-of-range vector — skip the row, not the
                                 # whole batch (mirror build()'s A10 guard; P3 struct.pack
                                 # raises OverflowError where the old array('f') never did)
-            cur.execute(f"INSERT OR REPLACE INTO notes VALUES ({','.join('?' * 12)})", row)
+            # explicit column list: on a pre-F5 index migrated via ALTER TABLE, `salience` sits
+            # LAST in physical order, so a bare positional VALUES would write salience into dim,
+            # dim into vec, and the vector blob into salience — corrupting every row and crashing
+            # the next read (code-review 2026-07, CRITICAL).
+            cur.execute("INSERT OR REPLACE INTO notes (stem, project, ntype, title, descr, "
+                        "prevention, recurrence, resolved, confidence, salience, dim, vec) "
+                        f"VALUES ({','.join('?' * 12)})", row)
             if fts:
                 cur.execute("DELETE FROM notes_fts WHERE stem = ?", (stem,))
                 cur.execute("INSERT INTO notes_fts (stem, text) VALUES (?, ?)",

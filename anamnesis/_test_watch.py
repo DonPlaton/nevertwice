@@ -14,6 +14,8 @@ import watch
 import capture
 import memory_hook as m
 
+watch.SETTLE_S = 0            # tests write transcripts "now"; the settle window is tested explicitly
+
 
 def _vault_mocks(db, fake_ps):
     """The standard set of patches that stub out the vault/LLM for a poll cycle."""
@@ -62,6 +64,42 @@ def test_watch_captures_new_transcript_exactly_once():
         assert n3 == 1, f"changed file should capture 1, got {n3}"
         assert len(seen) == 2, seen
         assert seen[0] != seen[1]                                # content change → new id
+
+
+def test_watch_waits_for_a_live_transcript_to_settle():
+    """A file whose mtime is fresher than SETTLE_S is a session still being written — it must
+    NOT be mined this cycle (each growth would mint a new session id → note spam), and must be
+    mined once its mtime is old enough."""
+    import os
+    import time
+    with tempfile.TemporaryDirectory() as d:
+        tmp = Path(d)
+        f = tmp / "live.jsonl"
+        f.write_text("user: hi\nassistant: still typing...", encoding="utf-8")
+        db, seen = {}, []
+
+        def fake_ps(sid, cwd, path, trig, dbarg, run_log=None, agent=None,
+                    transcript_text=None, project_override=None):
+            seen.append(sid)
+            dbarg[sid] = {"processed_at": "x"}
+            return True
+
+        targets = [watch.Target("mybot", tmp, ["*.jsonl"], False, "proj")]
+        patches = _vault_mocks(db, fake_ps)
+        for p in patches:
+            p.start()
+        old = watch.SETTLE_S
+        watch.SETTLE_S = 3600
+        try:
+            assert watch.poll_cycle(targets) == 0, "fresh file must be skipped (still settling)"
+            past = time.time() - 7200
+            os.utime(f, (past, past))                    # the session finished long ago
+            assert watch.poll_cycle(targets) == 1, "settled file must be mined"
+        finally:
+            watch.SETTLE_S = old
+            for p in patches:
+                p.stop()
+        assert len(seen) == 1
 
 
 def test_watch_yields_when_no_backend_or_lock_busy():

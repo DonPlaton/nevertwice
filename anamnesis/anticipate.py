@@ -227,12 +227,9 @@ def main():
         print(f"{stem}: helped={s['helped']} false_alarms={s['false_alarms']} "
               f"→ effective_tau={_effective_tau(load_state(), stem):.2f}")
         return
-    opt = lambda n, d=None: next((a.split("=", 1)[1] for a in argv if a.startswith(f"--{n}=")), d)
-    flag = lambda n: (argv[argv.index(f"--{n}") + 1]
-                      if f"--{n}" in argv and argv.index(f"--{n}") + 1 < len(argv) else None)
     traj = argv[0]
-    hits = anticipate(traj, project=opt("project") or flag("project"),
-                      k=int(opt("k") or flag("k") or "1"), use_embeddings="--embed" in argv)
+    hits = anticipate(traj, project=m.argval(argv, "project"),
+                      k=int(m.argval(argv, "k", "1")), use_embeddings="--embed" in argv)
     if not hits:
         print("ok — no anticipated failure above threshold (0 tokens spent).")
         return

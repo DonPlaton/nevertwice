@@ -47,6 +47,12 @@ Target = namedtuple("Target", "agent dir globs recursive project")
 # Cap new transcripts mined per cycle so the daemon never holds the vault lock for minutes
 # on a first run over a huge log dir — the remainder is caught on the next sweep.
 MAX_PER_CYCLE = int(os.environ.get("ANAMNESIS_WATCH_MAX_PER_CYCLE", "40"))
+# A transcript is only mined once its mtime has settled: a LIVE session file grows on every
+# poll, and since the content hash keys the processed-db, each growth would mint a fresh
+# session id → one new Session note + one LLM extraction per poll interval for an hours-long
+# session (code-review 2026-07, HIGH). Waiting until the file stops changing means one mine
+# per finished session. 0 disables (tests).
+SETTLE_S = int(os.environ.get("ANAMNESIS_WATCH_SETTLE_S", "120"))
 
 _STOP = False
 
@@ -119,6 +125,14 @@ def known_targets() -> list[Target]:
     return out
 
 
+def _mtime_ok(f: Path, now: float) -> bool:
+    """True when the file's mtime is at least SETTLE_S old (the session looks finished)."""
+    try:
+        return now - f.stat().st_mtime >= SETTLE_S
+    except OSError:
+        return False
+
+
 def poll_cycle(targets: list[Target]) -> int:
     """One sweep over every target, idempotent, in a single short-held vault lock.
     Returns the number of newly-mined transcripts. Yields (returns 0) immediately if no
@@ -137,6 +151,10 @@ def poll_cycle(targets: list[Target]) -> int:
             if not t.dir.is_dir():
                 continue
             files = ig.collect_transcripts(t.dir, t.globs, t.recursive)
+            if SETTLE_S:                       # skip files still being written (see SETTLE_S)
+                now = time.time()
+                files = [f for f in files
+                         if _mtime_ok(f, now)]
             if not files:
                 continue
             budget = max(1, MAX_PER_CYCLE - total_new)     # share the per-cycle cap across targets

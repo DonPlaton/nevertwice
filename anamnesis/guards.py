@@ -242,16 +242,30 @@ def _confidence(g: dict) -> float:
     return round((pos + 1) / (n + 2), 3)             # Laplace-smoothed
 
 
-def mark_fired(guard_id: str, session_id=None, guards=None, persist=True) -> None:
-    """Bump the fired counter (telemetry; distinct from the helped/false-positive verdict)."""
+def record_fired(guard_ids, guards=None, persist=True) -> None:
+    """Bump the fired counters for a set of hits in ONE pass and (at most) one atomic write —
+    the telemetry behind `guards list`'s fired= column, distinct from the helped/false-positive
+    verdict. Every check surface (the PreToolUse hot path, api.guards_check, the MCP tool)
+    funnels through this, so there is a single implementation and no per-hit write amplification."""
+    ids = set(guard_ids)
+    if not ids:
+        return
     owns = guards is None
     guards = load_guards() if owns else guards
-    g = _find(guards, guard_id)
-    if g:
-        g["fired"] += 1
-        g["last_fired"] = datetime.now().strftime("%Y-%m-%d %H:%M")
-        if persist and owns:
-            save_guards(guards)
+    stamp = datetime.now().strftime("%Y-%m-%d %H:%M")
+    hit = False
+    for g in guards:
+        if g.get("id") in ids:
+            g["fired"] = g.get("fired", 0) + 1
+            g["last_fired"] = stamp
+            hit = True
+    if hit and persist and owns:
+        save_guards(guards)
+
+
+def mark_fired(guard_id: str, session_id=None, guards=None, persist=True) -> None:
+    """Single-guard convenience wrapper over record_fired (kept for API stability)."""
+    record_fired([guard_id], guards=guards, persist=persist)
 
 
 # ── generation from mistakes (sleep-time, off the hot path) ───────────
@@ -397,14 +411,9 @@ def main():
               "[--reason ..] | generate [--project P] [--limit N]")
         return
     cmd = argv[0]
-    opt = lambda name: next((a.split("=", 1)[1] for a in argv if a.startswith(f"--{name}=")), None)
-    flagval = lambda name: (argv[argv.index(f"--{name}") + 1]
-                            if f"--{name}" in argv and argv.index(f"--{name}") + 1 < len(argv)
-                            else None)
     if cmd == "check":
         text = argv[1] if len(argv) > 1 and not argv[1].startswith("--") else ""
-        hits = check(text, project=opt("project") or flagval("project"),
-                     path=opt("path") or flagval("path"))
+        hits = check(text, project=m.argval(argv, "project"), path=m.argval(argv, "path"))
         _print_hits(hits)
     elif cmd == "list":
         guards = load_guards()
@@ -416,12 +425,12 @@ def main():
     elif cmd == "feedback":
         gid = argv[1] if len(argv) > 1 else ""
         outcome = argv[2] if len(argv) > 2 else ""
-        g = feedback(gid, outcome, reason=opt("reason") or flagval("reason"))
+        g = feedback(gid, outcome, reason=m.argval(argv, "reason"))
         print(f"updated {gid}: status={g['status']} corroborations={g['corroborations']} "
               f"fp={g['false_positives']}" if g else f"no such guard: {gid}")
     elif cmd == "generate":
-        lim = opt("limit") or flagval("limit")
-        n = generate_from_vault(opt("project") or flagval("project"),
+        lim = m.argval(argv, "limit")
+        n = generate_from_vault(m.argval(argv, "project"),
                                 limit=int(lim) if lim else None)
         print(f"added {n} new guard(s) → {_ledger_path()}")
     else:

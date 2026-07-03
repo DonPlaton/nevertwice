@@ -155,10 +155,7 @@ def main():
         return
     cmd = argv[0]
     ent = argv[1] if len(argv) > 1 and not argv[1].startswith("--") else ""
-    opt = lambda n: next((a.split("=", 1)[1] for a in argv if a.startswith(f"--{n}=")), None)
-    flag = lambda n: (argv[argv.index(f"--{n}") + 1]
-                      if f"--{n}" in argv and argv.index(f"--{n}") + 1 < len(argv) else None)
-    project = opt("project") or flag("project")
+    project = m.argval(argv, "project")
     if not ent:
         print("provide an entity")
         return

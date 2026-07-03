@@ -524,6 +524,20 @@ def log(msg):
         pass
 
 
+def argval(argv, name: str, default=None):
+    """One CLI flag reader for every satellite CLI (digest, dashboard, guards, …):
+    accepts both `--name=value` and `--name value`, returns `default` when absent.
+    Replaces six hand-rolled copies that each understood only one of the two forms."""
+    for a in argv:
+        if a.startswith(f"--{name}="):
+            return a.split("=", 1)[1]
+    if f"--{name}" in argv:
+        i = argv.index(f"--{name}") + 1
+        if i < len(argv) and not argv[i].startswith("--"):
+            return argv[i]
+    return default
+
+
 # ── Shared low-level helpers ──────────────────────────────────────────
 
 def write_atomic(path: Path, text: str, encoding: str = "utf-8") -> None:
@@ -1261,8 +1275,13 @@ def acquire_lock(timeout_s: float = 30) -> bool:
                 # Steal a lock whose holder is provably dead IMMEDIATELY — don't wait
                 # out LOCK_STALE_S, or a crashed holder with a fresh mtime wedges every
                 # writer for 10 min (audit A19). An unknown/empty pid (holder crashed
-                # between create and pid-write) still falls back to the age guard.
-                reclaim = (not _pid_alive(holder)) if holder > 0 else age > LOCK_STALE_S
+                # between create and pid-write) still falls back to the age guard. The
+                # outer age ceiling (10× stale) breaks the one remaining wedge: a crashed
+                # holder whose PID was RE-USED by an unrelated live process would otherwise
+                # hold the lock forever (code-review 2026-07) — no legitimate hook run
+                # lasts 100 minutes.
+                reclaim = ((not _pid_alive(holder)) if holder > 0 else age > LOCK_STALE_S) \
+                    or age > LOCK_STALE_S * 10
                 if reclaim:
                     LOCK_FILE.unlink(missing_ok=True)
                     continue
@@ -2402,9 +2421,21 @@ def supersede_note(p: Path, new_stem: str) -> bool:
     dest_dir.mkdir(exist_ok=True)
     try:
         write_atomic(dest_dir / p.name, text)
-        p.unlink(missing_ok=True)
     except OSError as e:
         log(f"Supersede failed for {p.name}: {e}")
+        return False
+    try:
+        p.unlink(missing_ok=True)
+    except OSError as e:
+        # the copy landed in Superseded/ but the original would not delete (Windows: Obsidian /
+        # AV / OneDrive holding it open). Roll the copy back — leaving BOTH would mean two
+        # contradictory "live" notes, exactly what this mechanism exists to prevent
+        # (code-review 2026-07).
+        try:
+            (dest_dir / p.name).unlink(missing_ok=True)
+        except OSError:
+            pass
+        log(f"Supersede failed for {p.name} (unlink: {e}); rolled back the Superseded/ copy")
         return False
     _unregister_slug(p.stem)              # keep the grounding cache honest (audit A16)
     cache = load_embed_cache()
@@ -2494,7 +2525,9 @@ def write_typed_note(folder: str, item, project: str, date: str,
                      session_stem_: str | None = None,
                      siblings: list[str] | None = None) -> str:
     if isinstance(item, dict):
-        title = _strip_lead_icon(item.get("title", "untitled"))
+        # title goes through the same scrub as desc/prevention: it lands in the heading AND
+        # the filename slug, so a secret-shaped string there would be baked in twice
+        title = redact_secrets(_strip_lead_icon(item.get("title", "untitled")))
         desc = redact_secrets(item.get("description", ""))        # audit B11
         prevention = redact_secrets(item.get("prevention", ""))
         supersedes_title = (item.get("supersedes") or "").strip()
@@ -2913,6 +2946,28 @@ def _read_frontmatter_file(p: Path) -> dict:
     return fm
 
 
+def _parse_note_body(lines) -> tuple[str, str, str]:
+    """The ONE body parser for a typed note → (title, desc, prevention). Title is the first
+    `# ` heading (icon-stripped, "" if none); desc is the first plain line after it; prevention
+    is the `**Как избежать:**` line. _note_meta, _note_snippet, and embed_index.note_fields all
+    ride this so the three copies can't drift again (code-review 2026-07: _note_snippet's
+    exclude-tuple had already lost "---" and could pick a horizontal rule as the description)."""
+    title, desc, prevention, seen = "", "", "", False
+    for ln in lines:
+        s = ln.strip()
+        if s.startswith("# "):
+            title = _strip_lead_icon(s.lstrip("# "))
+            seen = True
+            continue
+        if not seen or not s:
+            continue
+        if s.startswith("**Как избежать:**"):
+            prevention = s.replace("**Как избежать:**", "").strip()
+        elif not desc and not s.startswith(("**", "#", "-", "_", "---", "[[", "|")):
+            desc = s
+    return title, desc, prevention
+
+
 def _note_meta(p: Path, ntype: str, parsed: dict) -> dict | None:
     """Read one typed note in a single pass → the fields the project card needs:
     date (from stem), title/desc/prevention (body), tags/resolved/recurrence
@@ -2922,19 +2977,8 @@ def _note_meta(p: Path, ntype: str, parsed: dict) -> dict | None:
     except OSError:
         return None
     fm, body = _read_frontmatter(text)
-    title, desc, prevention, seen = p.stem, "", "", False
-    for ln in body.split("\n"):
-        s = ln.strip()
-        if s.startswith("# "):
-            title = _strip_lead_icon(s.lstrip("# ")) or title
-            seen = True
-            continue
-        if not seen or not s:
-            continue
-        if s.startswith("**Как избежать:**"):
-            prevention = s.replace("**Как избежать:**", "").strip()
-        elif not desc and not s.startswith(("**", "#", "-", "_", "---", "[[", "|")):
-            desc = s
+    title, desc, prevention = _parse_note_body(body.split("\n"))
+    title = title or p.stem
     raw_tags = fm.get("tags", [])
     if isinstance(raw_tags, str):
         raw_tags = [t for t in re.split(r"[,\s]+", raw_tags) if t]
@@ -3575,8 +3619,12 @@ def process_session(session_id: str, cwd: str, transcript_path: str,
             if not stem:                 # rejected (injection-shaped, M-10) — skip
                 continue
             links[nt].append(stem)
-            desc = item.get("description", "") if isinstance(item, dict) else ""
-            prevention = item.get("prevention", "") if isinstance(item, dict) else ""
+            # redact BEFORE the embed path too: write_typed_note redacts what lands in the .md,
+            # but these raw fields feed update_embeddings → the embeddings cache (plaintext on
+            # disk) and, with a cloud embedder, the provider — the same secret the note path
+            # just scrubbed would leak through the side channel (code-review 2026-07, HIGH).
+            desc = redact_secrets(item.get("description", "")) if isinstance(item, dict) else ""
+            prevention = redact_secrets(item.get("prevention", "")) if isinstance(item, dict) else ""
             conf = item.get("confidence") if isinstance(item, dict) else None
             new_notes.append((stem, nt, project, title_of(item), desc, prevention, conf))
             if brain and isinstance(item, dict):
@@ -4370,20 +4418,8 @@ def _note_snippet(stem: str, ntype: str, max_chars: int = 220) -> str:
         lines = fp.read_text(encoding="utf-8", errors="replace").split("\n")
     except OSError:
         return ""
-    desc, prevention, seen_title, resolved = "", "", False, False
-    for ln in lines:
-        s = ln.strip()
-        if not seen_title and s.startswith("resolved_by:"):
-            resolved = True          # mistake already fixed (audit I-18)
-        if s.startswith("# "):
-            seen_title = True
-            continue
-        if not seen_title or not s:
-            continue
-        if s.startswith("**Как избежать:**"):
-            prevention = s.replace("**Как избежать:**", "").strip()
-        elif not desc and not s.startswith(("**", "#", "-", "_", "[[", "|")):
-            desc = s
+    resolved = any(ln.strip().startswith("resolved_by:") for ln in lines[:20])   # audit I-18
+    _, desc, prevention = _parse_note_body(lines)
     out = desc
     if prevention:
         out = f"{out} → {prevention}" if out else prevention
@@ -4804,18 +4840,10 @@ def emit_pretooluse_guard(session: dict, cwd: str) -> None:
         return
     if not hits:
         return
-    # bump the fired counters in the loaded list and persist in a SINGLE atomic write, instead of
-    # one load+save per hit (avoids write amplification + lost increments under concurrent hooks).
     try:
-        fired_ids = {h["id"] for h in hits}
-        stamp = datetime.now().strftime("%Y-%m-%d %H:%M")
-        for g in ledger:
-            if g.get("id") in fired_ids:
-                g["fired"] = g.get("fired", 0) + 1
-                g["last_fired"] = stamp
-        _g.save_guards(ledger)
-    except Exception:
-        pass                                               # telemetry only; never fatal on the hot path
+        _g.record_fired([h["id"] for h in hits])           # one load, one atomic write — and only
+    except Exception:                                      # on the rare hit path; telemetry only,
+        pass                                               # never fatal on the hot path
     lines = [("⛔ " if h["status"] == "blocking" else "⚠ ") + h["message"] for h in hits]
     payload = {"hookSpecificOutput": {
         "hookEventName": "PreToolUse",

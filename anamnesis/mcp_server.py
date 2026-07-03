@@ -29,6 +29,9 @@ Tools:
   memory_guard_check   (action_text, project?, path?)        — active memory A: guard a proposed action
   memory_anticipate    (trajectory, project?)                — active memory B: predict the failure ahead
   memory_what_breaks   (entity, project?)                    — active memory C: counterfactual impact
+  memory_why           (entity, project?)                    — active memory C: upstream causes
+  memory_guard_feedback     (guard_id, outcome, reason?)     — Popperian loop: train the guard
+  memory_anticipate_feedback (stem, outcome)                 — cry-wolf damping for warnings
 
 stdout carries ONLY JSON-RPC: every library print is redirected to stderr so it
 can never corrupt the protocol stream.
@@ -220,6 +223,55 @@ TOOLS = [
             "required": ["entity"],
         },
     },
+    {
+        "name": "memory_why",
+        "description": ("Active memory (C) — the reverse causal question: what CAUSES or underpins "
+                        "an entity, from the induced causal graph. Use it to understand why "
+                        "something is the way it is before changing its upstream."),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "entity": {"type": "string", "description": "The entity to explain."},
+                "project": {"type": "string", "description": "Limit to one project (optional)."},
+            },
+            "required": ["entity"],
+        },
+    },
+    {
+        "name": "memory_guard_feedback",
+        "description": ("Close the Popperian loop on a guard that fired: report what actually "
+                        "happened. outcome='helped' (it caught a real repeat — corroborates; 3 "
+                        "distinct sessions promote advisory→blocking), 'false_positive' (it was "
+                        "wrong here — 3 demote/retire it), or 'corroborated'. ALWAYS send this "
+                        "after acting on a memory_guard_check hit; it is how guards learn."),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "guard_id": {"type": "string", "description": "The id from the guard hit."},
+                "outcome": {"type": "string",
+                            "enum": ["helped", "false_positive", "corroborated"]},
+                "reason": {"type": "string",
+                           "description": "Why (required in spirit for false_positive)."},
+                "session_id": {"type": "string",
+                               "description": "Distinct-session key for corroboration counting."},
+            },
+            "required": ["guard_id", "outcome"],
+        },
+    },
+    {
+        "name": "memory_anticipate_feedback",
+        "description": ("Close the loop on an anticipation warning: 'helped' if it flagged a real "
+                        "risk, 'false_alarm' if not. False alarms raise that mistake's firing "
+                        "threshold (cry-wolf damping), so the warnings stay precise."),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "stem": {"type": "string", "description": "The mistake stem from the warning."},
+                "outcome": {"type": "string", "enum": ["helped", "false_alarm"]},
+            },
+            "required": ["stem", "outcome"],
+        },
+    },
 ]
 
 
@@ -277,7 +329,10 @@ def _tool_memory_remember(args: dict) -> tuple[str, bool]:
     buf = io.StringIO()
     with contextlib.redirect_stdout(buf), contextlib.redirect_stderr(buf):
         rc = _remember.do_remember(ns)
-    out = buf.getvalue().strip()
+    # drop the engine's internal [memory_hook ...] log lines — the client should get the
+    # human message, not a 5-line log blob (code-review 2026-07)
+    out = "\n".join(l for l in buf.getvalue().splitlines()
+                    if l.strip() and not l.startswith("[memory_hook")).strip()
     if rc != 0:
         return f"remember failed: {out or 'invalid arguments'}", True
     return out or f"Saved {ns.type} '{ns.title}' to project {ns.project}.", False
@@ -406,10 +461,15 @@ def _tool_memory_guard_check(args: dict) -> tuple[str, bool]:
         return f"error: {type(exc).__name__}", True
     if not hits:
         return "clear — no guard fires for this action.", False
+    try:
+        _guards.record_fired([h["id"] for h in hits])       # telemetry (guards list fired=)
+    except Exception:
+        pass
     lines = []
     for h in hits:
         tag = "BLOCK" if h["status"] == "blocking" else "warn"
         lines.append(f"[{tag}] {h['message']}  (id {h['id']})")
+    lines.append("(after acting on this, call memory_guard_feedback with helped/false_positive)")
     return "\n".join(lines), False
 
 
@@ -438,6 +498,50 @@ def _tool_memory_what_breaks(args: dict) -> tuple[str, bool]:
     except Exception as exc:
         return f"error: {type(exc).__name__}", True
     return (out or f"no causal footprint recorded for `{entity}`."), False
+
+
+def _tool_memory_why(args: dict) -> tuple[str, bool]:
+    entity = (args.get("entity") or "").strip()
+    if not entity:
+        return "error: 'entity' is required", True
+    project = (args.get("project") or "").strip() or None
+    try:
+        r = _causal.why(entity, project)
+    except Exception as exc:
+        return f"error: {type(exc).__name__}", True
+    if not r.get("causes"):
+        return f"no upstream causes recorded for `{entity}`.", False
+    lines = [f"`{entity}` is caused / underpinned by:"]
+    lines += [f"  <- {c['effect']}  (via {c['via']})" for c in r["causes"]]
+    return "\n".join(lines), False
+
+
+def _tool_memory_guard_feedback(args: dict) -> tuple[str, bool]:
+    gid = (args.get("guard_id") or "").strip()
+    outcome = (args.get("outcome") or "").strip()
+    if not gid or outcome not in ("helped", "false_positive", "corroborated"):
+        return "error: 'guard_id' and outcome in {helped,false_positive,corroborated} required", True
+    try:
+        g = _guards.feedback(gid, outcome, session_id=(args.get("session_id") or None),
+                             reason=(args.get("reason") or None))
+    except Exception as exc:
+        return f"error: {type(exc).__name__}", True
+    if not g:
+        return f"no such guard: {gid}", True
+    return (f"updated {gid}: status={g['status']} corroborations={g['corroborations']} "
+            f"fp={g['false_positives']}"), False
+
+
+def _tool_memory_anticipate_feedback(args: dict) -> tuple[str, bool]:
+    stem = (args.get("stem") or "").strip()
+    outcome = (args.get("outcome") or "").strip()
+    if not stem or outcome not in ("helped", "false_alarm"):
+        return "error: 'stem' and outcome in {helped,false_alarm} required", True
+    try:
+        s = _anticipate.feedback(stem, outcome)
+    except Exception as exc:
+        return f"error: {type(exc).__name__}", True
+    return f"recorded {outcome} for {stem}: helped={s['helped']} false_alarms={s['false_alarms']}", False
 
 
 _DISPATCH = {
@@ -516,7 +620,14 @@ def main() -> None:
         try:
             msg = json.loads(line)
         except (json.JSONDecodeError, ValueError):
-            continue          # malformed line — skip, never crash the server
+            # JSON-RPC 2.0: a parse failure must be ANSWERED (-32700, id null), not silently
+            # dropped — a synchronous client awaiting its id would otherwise hang until its
+            # own timeout (code-review 2026-07). Never crash the server either way.
+            _error(None, -32700, "parse error")
+            continue
+        if not isinstance(msg, dict):
+            _error(None, -32600, "invalid request: expected a JSON object")
+            continue
         try:
             _handle(msg)
         except Exception as exc:
