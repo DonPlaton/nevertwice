@@ -125,7 +125,9 @@ You own every byte of your agent's memory, and you can read it.
 
 ## See it work
 
-<p align="center"><img src="docs/demo.gif" alt="Anamnesis demo: an agent learns three lessons; days later a fresh agent recalls the right one by meaning, finds it under different words, and abstains when nothing matches" width="820"></p>
+<p align="center"><img src="docs/tour.gif" alt="Anamnesis full tour: a guard fires before a recorded SQL-injection mistake repeats, then recall (5.9x fewer tokens than dumping the store), anticipation on a new endpoint, a counterfactual answered from the causal graph, and a contradiction resolved by supersession" width="740"></p>
+
+<p align="center"><sub>Recorded from the real system (<code>examples/guard_demo.py</code> + <code>examples/scenario_demo.py</code>, throwaway vault) — every number on screen is measured live, nothing is mocked.</sub></p>
 
 ```
 $ # session 1: you hit a CUDA OOM, Anamnesis quietly records the lesson

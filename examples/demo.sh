@@ -5,7 +5,7 @@
 #
 #   bash examples/demo.sh
 #   # to record a GIF:  asciinema rec -c "bash examples/demo.sh" demo.cast
-#   #                   agg demo.cast docs/demo.gif      (https://github.com/asciinema/agg)
+#   #                   agg demo.cast demo.gif      (https://github.com/asciinema/agg)
 set -e
 cd "$(dirname "$0")/.."
 export ANAMNESIS_VAULT="$(mktemp -d)/anamnesis-demo"

@@ -41,11 +41,16 @@ retrieval on 940 LongMemEval sessions, the 200-task improvement-per-token study,
 validation, and the eff-vs-capability curve. This demo is the qualitative counterpart — all
 mechanisms, one realistic project, visible advantages.
 
-## Recording the README GIF
+## The README GIF
 
-The hero GIF is **`examples/guard_demo.py`** — the 15-second "memory that acts" beat: a mistake is
-recorded once, then days later the agent is about to repeat it and the guard fires *before* the
-edit lands. That is the moment that earns the star (more compelling than plain recall).
+The README embeds **`docs/tour.gif`** — a ~45-second tour recorded from the real system on a
+throwaway vault. Act 1 is the "memory that acts" beat from `guard_demo.py` (a mistake recorded
+once; days later the guard fires *before* the agent repeats it). Act 2 walks the remaining
+mechanisms from `scenario_demo.py` with live numbers: recall + token economy, anticipation,
+counterfactual, supersession, scoreboard. Every figure on screen is measured during the recording;
+nothing is mocked.
+
+To re-record it (or a variant) on Linux/macOS:
 
 ```bash
 # 1. record (https://github.com/asciinema/asciinema)
@@ -55,6 +60,8 @@ asciinema rec -c "python examples/guard_demo.py" guard.cast
 agg --theme monokai --speed 1.2 guard.cast docs/guard.gif
 ```
 
-Embed `docs/guard.gif` at the top of the README. Keep it under ~3 MB so it loads inline on GitHub.
-The `⛔ guard fires` line should land in the first few seconds. (`examples/demo.sh` remains the
-gentler "it remembered" recall demo if you want a second GIF.)
+On Windows (no asciinema): generate the asciicast v2 file programmatically — run the demo
+functions in-process, capture writes with virtual timestamps into `[t, "o", data]` JSONL, then
+render with `agg`. That is how `docs/tour.gif` was produced. Keep it under ~3 MB so it loads
+inline on GitHub, and land the `⛔ guard fires` line in the first few seconds — that is the
+moment that earns the star.
