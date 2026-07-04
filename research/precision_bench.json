@@ -1,0 +1,25 @@
+{
+ "notes": 328,
+ "projects": 11,
+ "queries": 131,
+ "k": 3,
+ "cluster_thr": 0.55,
+ "baseline": {
+  "recall": 0.7099236641221374,
+  "mrr": 0.5469447939676949
+ },
+ "rerank": {
+  "backend": "local",
+  "model": "qwen3:30b-a3b",
+  "n": 12,
+  "pool_ceiling": 0.9847328244274809,
+  "reranked_recall": 0.5419847328244275,
+  "reranked_mrr": 0.4371261689963982,
+  "delta": -0.16793893129770987,
+  "calls": 131,
+  "errors": 0,
+  "est_prompt_tokens": 95371,
+  "wall_s": 93.8,
+  "beats_baseline": false
+ }
+}

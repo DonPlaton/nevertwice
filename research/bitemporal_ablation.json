@@ -1,0 +1,92 @@
+{
+ "config": {
+  "horizon_days": 365,
+  "revisions": [
+   1,
+   2,
+   3,
+   5,
+   8,
+   12
+  ],
+  "facts": 1500,
+  "queries_per_fact": 20,
+  "seeds": 6
+ },
+ "by_revision": [
+  {
+   "revisions": 1,
+   "bitemporal_acc": 1.0,
+   "newest_acc": 1.0,
+   "advantage": 0.0,
+   "useall_avg_versions": 1.0
+  },
+  {
+   "revisions": 2,
+   "bitemporal_acc": 1.0,
+   "newest_acc": 0.49773333333333336,
+   "advantage": 0.5022666666666666,
+   "useall_avg_versions": 2.0
+  },
+  {
+   "revisions": 3,
+   "bitemporal_acc": 1.0,
+   "newest_acc": 0.33393333333333336,
+   "advantage": 0.6660666666666666,
+   "useall_avg_versions": 3.0
+  },
+  {
+   "revisions": 5,
+   "bitemporal_acc": 1.0,
+   "newest_acc": 0.20106666666666667,
+   "advantage": 0.7989333333333333,
+   "useall_avg_versions": 5.0
+  },
+  {
+   "revisions": 8,
+   "bitemporal_acc": 1.0,
+   "newest_acc": 0.1265,
+   "advantage": 0.8734999999999999,
+   "useall_avg_versions": 8.0
+  },
+  {
+   "revisions": 12,
+   "bitemporal_acc": 1.0,
+   "newest_acc": 0.089,
+   "advantage": 0.911,
+   "useall_avg_versions": 12.0
+  }
+ ],
+ "by_query_age": [
+  {
+   "age_bucket": 0,
+   "bitemporal_acc": 1.0,
+   "newest_acc": 0.7549673312112581
+  },
+  {
+   "age_bucket": 1,
+   "bitemporal_acc": 1.0,
+   "newest_acc": 0.4734919537960312
+  },
+  {
+   "age_bucket": 2,
+   "bitemporal_acc": 1.0,
+   "newest_acc": 0.3473171055249718
+  },
+  {
+   "age_bucket": 3,
+   "bitemporal_acc": 1.0,
+   "newest_acc": 0.27285800280917666
+  },
+  {
+   "age_bucket": 4,
+   "bitemporal_acc": 1.0,
+   "newest_acc": 0.21823811426288453
+  },
+  {
+   "age_bucket": 5,
+   "bitemporal_acc": 1.0,
+   "newest_acc": 0.17994338859684594
+  }
+ ]
+}

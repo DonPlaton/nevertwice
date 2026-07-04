@@ -1,0 +1,46 @@
+{
+ "generated": "2026-06-30T18:09:28",
+ "dataset": "LongMemEval-oracle (global pool, 940 sessions / 500 questions)",
+ "embedder": "bge-m3",
+ "answer_model": "deepseek:deepseek-chat",
+ "judge_model": "deepseek:deepseek-chat",
+ "backend": "deepseek:deepseek-chat (primary) + ollama qwen3:30b-a3b (fallback)",
+ "k": 5,
+ "char_budget": 24000,
+ "cot": true,
+ "reader_model": "deepseek:deepseek-chat",
+ "reasoner": false,
+ "metric": "answer-accuracy (LLM-judge vs gold answer) — comparable to vendor 'X% on LongMemEval' headlines",
+ "settings": {
+  "retrieved": {
+   "accuracy": 0.468,
+   "n": 500,
+   "by_type": {
+    "single-session-user": {
+     "acc": 0.6142857142857143,
+     "n": 70
+    },
+    "single-session-assistant": {
+     "acc": 0.9107142857142857,
+     "n": 56
+    },
+    "single-session-preference": {
+     "acc": 0.2,
+     "n": 30
+    },
+    "multi-session": {
+     "acc": 0.3233082706766917,
+     "n": 133
+    },
+    "temporal-reasoning": {
+     "acc": 0.3308270676691729,
+     "n": 133
+    },
+    "knowledge-update": {
+     "acc": 0.6025641025641025,
+     "n": 78
+    }
+   }
+  }
+ }
+}

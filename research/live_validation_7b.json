@@ -1,0 +1,113 @@
+{
+ "model": "ollama:qwen2.5:7b",
+ "trials": 8,
+ "tasks": {
+  "api-empty-guard": {
+   "rate_without": 1.0,
+   "rate_with": 0.0,
+   "abs_reduction": 1.0,
+   "rel_reduction": 1.0,
+   "guard_detect_rate": null,
+   "trials": 8
+  },
+  "api-ms-units": {
+   "rate_without": 1.0,
+   "rate_with": 0.875,
+   "abs_reduction": 0.125,
+   "rel_reduction": 0.125,
+   "guard_detect_rate": null,
+   "trials": 8
+  },
+  "api-auth-order": {
+   "rate_without": 1.0,
+   "rate_with": 0.0,
+   "abs_reduction": 1.0,
+   "rel_reduction": 1.0,
+   "guard_detect_rate": null,
+   "trials": 8
+  },
+  "api-lock-finally": {
+   "rate_without": 0.25,
+   "rate_with": 0.0,
+   "abs_reduction": 0.25,
+   "rel_reduction": 1.0,
+   "guard_detect_rate": null,
+   "trials": 8
+  },
+  "mutable-default": {
+   "rate_without": 0.0,
+   "rate_with": 0.0,
+   "abs_reduction": 0.0,
+   "rel_reduction": null,
+   "guard_detect_rate": null,
+   "trials": 8
+  },
+  "bare-except": {
+   "rate_without": 0.0,
+   "rate_with": 0.0,
+   "abs_reduction": 0.0,
+   "rel_reduction": null,
+   "guard_detect_rate": null,
+   "trials": 8
+  },
+  "div-zero": {
+   "rate_without": 1.0,
+   "rate_with": 0.0,
+   "abs_reduction": 1.0,
+   "rel_reduction": 1.0,
+   "guard_detect_rate": null,
+   "trials": 8
+  },
+  "no-context-manager": {
+   "rate_without": 0.0,
+   "rate_with": 0.0,
+   "abs_reduction": 0.0,
+   "rel_reduction": null,
+   "guard_detect_rate": null,
+   "trials": 8
+  },
+  "sql-format": {
+   "rate_without": 0.5,
+   "rate_with": 0.0,
+   "abs_reduction": 0.5,
+   "rel_reduction": 1.0,
+   "guard_detect_rate": null,
+   "trials": 8
+  },
+  "float-eq": {
+   "rate_without": 0.0,
+   "rate_with": 0.0,
+   "abs_reduction": 0.0,
+   "rel_reduction": null,
+   "guard_detect_rate": null,
+   "trials": 8
+  },
+  "mutate-iter": {
+   "rate_without": 0.0,
+   "rate_with": 0.0,
+   "abs_reduction": 0.0,
+   "rel_reduction": null,
+   "guard_detect_rate": null,
+   "trials": 8
+  },
+  "eq-none": {
+   "rate_without": 0.0,
+   "rate_with": 0.0,
+   "abs_reduction": 0.0,
+   "rel_reduction": null,
+   "guard_detect_rate": null,
+   "trials": 8
+  }
+ },
+ "summary": {
+  "mean_rate_without": 0.396,
+  "mean_rate_with": 0.073,
+  "measured_eff": 0.854,
+  "tasks_with_pitfall": 6,
+  "eff_project": 0.781,
+  "n_project_with_pitfall": 4,
+  "eff_generic": 1.0,
+  "n_generic_with_pitfall": 2,
+  "guard_detect_rate": null
+ }
+}

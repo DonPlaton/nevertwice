@@ -1,0 +1,36 @@
+[qa] backend: deepseek:deepseek-chat (primary) + ollama qwen3.6:35b-a3b (fallback)
+[qa] settings=['oracle', 'retrieved'] k=5 budget=24000 questions=500 judge=deepseek:deepseek-chat
+  [retrieved] 20 new answers (26s, 1276 ms/q)
+  [retrieved] 40 new answers (35s, 879 ms/q)
+[memory_hook 2026-06-30 15:06:08] DeepSeek error: IncompleteRead: IncompleteRead(0 bytes read)
+[memory_hook 2026-06-30 15:06:29] DeepSeek error: RemoteDisconnected: Remote end closed connection without response
+  [retrieved] 60 new answers (81s, 1351 ms/q)
+[memory_hook 2026-06-30 15:07:26] DeepSeek error: RemoteDisconnected: Remote end closed connection without response
+  [retrieved] 80 new answers (139s, 1743 ms/q)
+  [retrieved] 100 new answers (237s, 2374 ms/q)
+==========================================================================
+  LongMemEval-oracle — END-TO-END QA ACCURACY (answer-correctness)
+  judge=deepseek:deepseek-chat   embedder=bge-m3   k=5   budget=24000 chars
+==========================================================================
+
+  [oracle]  perfect-retrieval CEILING
+    overall accuracy: 0.748   (n=500)
+      single-session-user            0.971  (n=70)
+      single-session-assistant       0.982  (n=56)
+      single-session-preference      0.533  (n=30)
+      multi-session                  0.744  (n=133)
+      temporal-reasoning             0.526  (n=133)
+      knowledge-update               0.846  (n=78)
+
+  [retrieved]  FULL pipeline (our hybrid top-5)
+    overall accuracy: 0.464   (n=500)
+      single-session-user            0.586  (n=70)
+      single-session-assistant       0.929  (n=56)
+      single-session-preference      0.267  (n=30)
+      multi-session                  0.308  (n=133)
+      temporal-reasoning             0.338  (n=133)
+      knowledge-update               0.577  (n=78)
+
+  → retrieval cost (oracle − retrieved): +0.284 (how much answer-accuracy our retrieval, not the LLM, leaves on the table)
+==========================================================================
+  saved → D:\Coding\anamnesis\anamnesis\research\qa_results_deepseek_cot.json

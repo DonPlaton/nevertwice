@@ -81,7 +81,7 @@ starts with its memory already loaded. The five-minute walkthrough is in [QUICKS
 
 Every other memory system is a better **library**. It retrieves text and injects it into the
 prompt, taxing every single turn. We measured that axis to its end and found it is
-[reader-bound and commoditizing](nevertwice/research/QA_ACCURACY.md): the LLM, not the memory, is
+[reader-bound and commoditizing](research/QA_ACCURACY.md): the LLM, not the memory, is
 the variable. So Nevertwice does something no other memory does. It treats memory as a set of
 **token-budgeted interventions** that stay silent until they have something worth saying.
 
@@ -99,9 +99,9 @@ These are **measured on real tasks**, with the harness to reproduce each one:
 
 | claim | result | evidence |
 |---|---|---|
-| a fired guard changes a real model's output | real error rate **0.36 → 0.05 (−86%)** on DeepSeek | [LIVE_VALIDATION.md](nevertwice/research/LIVE_VALIDATION.md) |
-| memory that acts vs always-inject | same error-prevention for **~31× fewer tokens**, a *net* token saving | [ACTIVE_MEMORY.md](nevertwice/research/ACTIVE_MEMORY.md) |
-| answer-accuracy on the standard benchmark | **0.788** LongMemEval-oracle (open reasoner) | [QA_ACCURACY.md](nevertwice/research/QA_ACCURACY.md) |
+| a fired guard changes a real model's output | real error rate **0.36 → 0.05 (−86%)** on DeepSeek | [LIVE_VALIDATION.md](research/LIVE_VALIDATION.md) |
+| memory that acts vs always-inject | same error-prevention for **~31× fewer tokens**, a *net* token saving | [ACTIVE_MEMORY.md](research/ACTIVE_MEMORY.md) |
+| answer-accuracy on the standard benchmark | **0.788** LongMemEval-oracle (open reasoner) | [QA_ACCURACY.md](research/QA_ACCURACY.md) |
 | retrieval vs the funded leaders | R@5 **0.80** › Mem0 0.76, one shared embedder | [COMPARISON.md](docs/COMPARISON.md) |
 
 All three axes are on the Python API **and** the MCP server, so this works on **every agent**:
@@ -227,7 +227,7 @@ human-annotated questions, local `bge-m3`):
 The shipped ranker fuses the semantic and lexical signals with calibrated score fusion, which lifts
 R@5 from 0.66 under the rank fusion most systems ship to 0.80. The optional cross-encoder
 (bge-reranker-v2-m3, `NEVERTWICE_XRERANK=1`, `[reranker]` extra) then takes top-1 to 0.61. Reproduce
-with `python nevertwice/research/longmem_eval.py [--xrerank]` (the dataset is fetched separately).
+with `python research/longmem_eval.py [--xrerank]` (the dataset is fetched separately).
 
 **The head-to-head, run locally and reported straight.** On the same stand with the same local
 embedder for everyone, we ran Mem0, LangMem, and A-MEM end to end on Ollama, no paid key. Nevertwice
@@ -236,7 +236,7 @@ with the reranker) against Mem0's 0.478. The win is the fusion, not the embedder
 for all four. We are careful about what is a moat: calibrated score fusion is classic retrieval, so
 the durable edge is the substrate (plain files, $0, local, no server), and we publish the full table
 plus what we tried and cut in [COMPARISON.md](docs/COMPARISON.md) and
-[research/RETRIEVAL_FUSION.md](nevertwice/research/RETRIEVAL_FUSION.md).
+[research/RETRIEVAL_FUSION.md](research/RETRIEVAL_FUSION.md).
 
 ### What we measured, and what we cut
 
@@ -251,7 +251,7 @@ dropped real recall@3 from 0.82 to 0.35, because a general principle embeds away
 question that needs it, so it never shipped. The recurrence prior is a sound mechanism that stays
 dormant on a young single-user store, so it sits off the hot path. The one idea that earned its
 place was the trained cross-encoder, and we only learned which was which by measuring. The
-write-ups live in [the research directory](nevertwice/research/), heading to Zenodo and arXiv.
+write-ups live in [the research directory](research/).
 
 ## What is in the box
 
@@ -316,7 +316,7 @@ point the bootstrapper at it: `python -m nevertwice.bootstrap_contexts /path/to/
 Thirty-seven suites, standard library only, LLM and embedder fully mocked. No network, no GPU:
 
 ```bash
-for t in nevertwice/_test_*.py nevertwice/research/_test_*.py; do python "$t" || break; done
+for t in tests/_test_*.py tests/research/_test_*.py; do python "$t" || break; done
 ```
 
 CI runs them on Linux, Windows, and macOS across Python 3.10, 3.12, and 3.13.
@@ -328,14 +328,13 @@ CI runs them on Linux, Windows, and macOS across Python 3.10, 3.12, and 3.13.
 [Integrations](docs/INTEGRATIONS.md) · [Configuration](docs/CONFIG.md) ·
 [Benchmarks](docs/BENCHMARKS.md) ·
 [Comparison vs Mem0/Zep/Letta/A-MEM](docs/COMPARISON.md) ·
-[Research, the honest eval lab](nevertwice/research/) ·
+[Research, the honest eval lab](research/) ·
 [Security policy](SECURITY.md)
 
 ## Author and citation
 
 Built by **Platon Chernov**. If Nevertwice helps your work or your research, a ⭐ is genuinely
-appreciated, and a citation is welcome. A `CITATION.cff` ships with the repo, and the method
-write-up is on its way to Zenodo.
+appreciated, and a citation is welcome; a `CITATION.cff` ships with the repo.
 
 ## License
 

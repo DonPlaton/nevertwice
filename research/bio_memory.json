@@ -1,0 +1,22 @@
+{
+ "claims": 25,
+ "best_accuracy": {
+  "flat-newest": 0.7,
+  "lexical-only": 0.8,
+  "bio-memory": 1.0
+ },
+ "served_contradicted": {
+  "flat-newest": 0.0,
+  "lexical-only": 0.1,
+  "bio-memory": 0.0
+ },
+ "asof": {
+  "flat-newest": 0.3,
+  "bio-memory": 1.0
+ },
+ "contradiction_f1": {
+  "structure-aware": 1.0,
+  "recency-baseline": 0.8750000000000001,
+  "n_contradicted": 7
+ }
+}

@@ -31,7 +31,7 @@ Most memory is something you *read* — it taxes every turn with injected text. 
 *acts*, and stays silent until it has something worth saying, so it costs **zero context tokens
 until an intervention earns its place**. All three axes are on the Python API **and** the MCP
 server, so Cursor / Cline / Codex / Zed / any MCP client get the moat, not just Claude Code. Full
-thesis + measurements: [`research/ACTIVE_MEMORY.md`](../nevertwice/research/ACTIVE_MEMORY.md).
+thesis + measurements: [`research/ACTIVE_MEMORY.md`](../research/ACTIVE_MEMORY.md).
 
 ```python
 from nevertwice.api import guards_check, anticipate, what_breaks
@@ -50,8 +50,8 @@ print(what_breaks("prism-orchestrator", project="myproj"))     # downstream impa
 From any MCP client the same three are `memory_guard_check`, `memory_anticipate`, and
 `memory_what_breaks`. Measured on real tasks (DeepSeek), a fired guard cuts the real error rate
 **0.36 → 0.05**; on a task series, active interventions match always-inject's error-prevention for
-**~31× fewer tokens** ([`research/LIVE_VALIDATION.md`](../nevertwice/research/LIVE_VALIDATION.md),
-[`research/ACTIVE_MEMORY.md`](../nevertwice/research/ACTIVE_MEMORY.md)). Guards are **Popperian** —
+**~31× fewer tokens** ([`research/LIVE_VALIDATION.md`](../research/LIVE_VALIDATION.md),
+[`research/ACTIVE_MEMORY.md`](../research/ACTIVE_MEMORY.md)). Guards are **Popperian** —
 advisory until corroborated, self-retiring on false positives, always overridable — so memory
 proposes and reality disposes; the agent is never boxed in.
 

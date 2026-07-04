@@ -24,27 +24,7 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - name: Run test suites
+        shell: bash
         run: |
-          python nevertwice/_test_memory_hook.py
-          python nevertwice/_test_memory_v2.py
-          python nevertwice/_test_memory_v3.py
-          python nevertwice/_test_audit_fixes.py
-          python nevertwice/_test_failure_injection.py
-          python nevertwice/_test_api.py
-          python nevertwice/_test_capture.py
-          python nevertwice/_test_integrations.py
-          python nevertwice/_test_cloud_embed.py
-          python nevertwice/_test_ingest.py
-          python nevertwice/_test_watch.py
-          python nevertwice/_test_quant.py
-          python nevertwice/_test_entities.py
-          python nevertwice/_test_digest.py
-          python nevertwice/_test_docparse.py
-          python nevertwice/_test_dashboard.py
-          python nevertwice/_test_guards.py
-          python nevertwice/_test_anticipate.py
-          python nevertwice/_test_causal.py
-          python nevertwice/_test_merge.py
-          python nevertwice/research/_test_qa_eval.py
-          python nevertwice/research/_test_longitudinal.py
-          python nevertwice/research/_test_live_validation.py
+          set -e
+          for t in tests/_test_*.py tests/research/_test_*.py; do python "$t"; done

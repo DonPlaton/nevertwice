@@ -55,7 +55,7 @@ key, no cloud).
   reciprocal rank fusion that most systems ship, and that Nevertwice used to ship, discards the
   score magnitudes and so scores *below plain BM25*. Nevertwice now uses **calibrated score fusion**:
   z-normalise each signal and combine the magnitudes. The full study, including the ideas we tested
-  and cut, is in [`research/RETRIEVAL_FUSION.md`](../nevertwice/research/RETRIEVAL_FUSION.md).
+  and cut, is in [`research/RETRIEVAL_FUSION.md`](../research/RETRIEVAL_FUSION.md).
 - **We are honest about what is and is not a moat.** Calibrated linear score fusion is classic
   information retrieval (CombSUM, 1994), not our invention; the contribution is measuring that it
   beats the rank fusion the field actually ships. The durable moat is the substrate: plain files,
@@ -101,7 +101,7 @@ honest scope notes; the production-facing ones are opt-in and off by default):
 - **Poisoning taxonomy + a shipped defense:** recurrence-gaming defeated by **distinct-session**
   counting; corroboration-gating for supersession-abuse/confidence-spoofing.
 
-**Honest counter-balance** (see [`WEAKNESSES.md`](../WEAKNESSES.md)): these are mechanism
+**Honest counter-balance** (see [`WEAKNESSES.md`](WEAKNESSES.md)): these are mechanism
 results on synthetic/curated data, not external SOTA; and Nevertwice is still **behind** on an
 LLM entity/relation **knowledge graph** (Zep/Cognee), a production **server/scale** story
 (Letta/Zep), default **rerankers**, and recall **confidence under embedding compression**.
@@ -175,6 +175,6 @@ Effort tags kept for reference. ✅ = shipped.
 > held fixed, localizing the ~0.11 gap to memanto's 0.898 as reader-model strength on hard
 > temporal/multi-session reasoning, not the memory — full decomposition (reader sweep, CoT
 > effect, a negative result on retrieving more) in
-> [`QA_ACCURACY.md`](../nevertwice/research/QA_ACCURACY.md). Mem0 (Apr-2026 rewrite)
+> [`QA_ACCURACY.md`](../research/QA_ACCURACY.md). Mem0 (Apr-2026 rewrite)
 > and Letta (Feb-2026 MemFS) changed architecture recently; classic papers no longer
 > describe shipping behavior. Windsurf is now "Devin Desktop"; Memary is unmaintained.

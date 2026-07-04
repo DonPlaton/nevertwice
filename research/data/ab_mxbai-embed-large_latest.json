@@ -1,0 +1,36 @@
+{
+ "sessions": 940,
+ "questions": 500,
+ "embedder": "mxbai-embed-large:latest",
+ "methods": {
+  "semantic": {
+   "recall@1": 0.364,
+   "recall@3": 0.54,
+   "recall@5": 0.628,
+   "recall@10": 0.736,
+   "mrr": 0.4839777979959389
+  },
+  "lexical": {
+   "recall@1": 0.274,
+   "recall@3": 0.458,
+   "recall@5": 0.528,
+   "recall@10": 0.63,
+   "mrr": 0.39090959404400577
+  },
+  "hybrid": {
+   "recall@1": 0.378,
+   "recall@3": 0.604,
+   "recall@5": 0.668,
+   "recall@10": 0.78,
+   "mrr": 0.5106633303379923
+  },
+  "semantic+recur": {
+   "recall@1": 0.364,
+   "recall@3": 0.54,
+   "recall@5": 0.628,
+   "recall@10": 0.736,
+   "mrr": 0.4839777979959389
+  }
+ },
+ "recur_inert": true
+}

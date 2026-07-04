@@ -1,0 +1,36 @@
+{
+ "sessions": 940,
+ "questions": 500,
+ "embedder": "dengcao/Qwen3-Embedding-0.6B:Q8_0",
+ "methods": {
+  "semantic": {
+   "recall@1": 0.374,
+   "recall@3": 0.486,
+   "recall@5": 0.558,
+   "recall@10": 0.624,
+   "mrr": 0.45742186965148385
+  },
+  "lexical": {
+   "recall@1": 0.274,
+   "recall@3": 0.458,
+   "recall@5": 0.528,
+   "recall@10": 0.63,
+   "mrr": 0.39090959404400577
+  },
+  "hybrid": {
+   "recall@1": 0.392,
+   "recall@3": 0.578,
+   "recall@5": 0.654,
+   "recall@10": 0.728,
+   "mrr": 0.5069709760407815
+  },
+  "semantic+recur": {
+   "recall@1": 0.374,
+   "recall@3": 0.486,
+   "recall@5": 0.558,
+   "recall@10": 0.624,
+   "mrr": 0.45742186965148385
+  }
+ },
+ "recur_inert": true
+}

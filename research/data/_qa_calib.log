@@ -1,0 +1,64 @@
+[qa] backend: ollama qwen3.6:35b-a3b
+[qa] settings=['oracle'] k=5 budget=8000 questions=30 judge=qwen3.6:35b-a3b
+  [oracle] 10 new answers (25s, 2451 ms/q)
+  [oracle] 20 new answers (35s, 1729 ms/q)
+  [oracle] 30 new answers (44s, 1480 ms/q)
+==========================================================================
+  LongMemEval-oracle — END-TO-END QA ACCURACY (answer-correctness)
+  judge=qwen3.6:35b-a3b   embedder=bge-m3   k=5   budget=8000 chars
+==========================================================================
+
+  [oracle]  perfect-retrieval CEILING
+    overall accuracy: 0.700   (n=30)
+      single-session-user            0.600  (n=5)
+      single-session-assistant       1.000  (n=5)
+      single-session-preference      0.200  (n=5)
+      multi-session                  0.600  (n=5)
+      temporal-reasoning             0.800  (n=5)
+      knowledge-update               1.000  (n=5)
+==========================================================================
+  saved → D:\Coding\anamnesis\anamnesis\research\qa_calib_local.json
+[qa] backend: cerebras:gpt-oss-120b (primary) + ollama qwen3.6:35b-a3b (fallback)
+[qa] settings=['oracle'] k=5 budget=8000 questions=30 judge=cerebras:gpt-oss-120b
+[memory_hook 2026-06-29 19:50:56] Cerebras HTTP 429: {"message":"Tokens per minute limit exceeded - too many tokens processed.","type":"too_many_tokens_error","param":"quota","code":"token_quota_exceeded
+[memory_hook 2026-06-29 19:52:14] Cerebras HTTP 429: {"message":"Requests per minute limit exceeded - too many requests sent.","type":"too_many_requests_error","param":"quota","code":"request_quota_excee
+[memory_hook 2026-06-29 19:52:29] Cerebras HTTP 429: {"message":"Requests per minute limit exceeded - too many requests sent.","type":"too_many_requests_error","param":"quota","code":"request_quota_excee
+[memory_hook 2026-06-29 19:52:43] Cerebras HTTP 429: {"message":"Requests per minute limit exceeded - too many requests sent.","type":"too_many_requests_error","param":"quota","code":"request_quota_excee
+[memory_hook 2026-06-29 19:53:11] Cerebras HTTP 429: {"message":"Requests per minute limit exceeded - too many requests sent.","type":"too_many_requests_error","param":"quota","code":"request_quota_excee
+[memory_hook 2026-06-29 19:53:25] Cerebras HTTP 429: {"message":"Requests per minute limit exceeded - too many requests sent.","type":"too_many_requests_error","param":"quota","code":"request_quota_excee
+[memory_hook 2026-06-29 19:53:39] Cerebras HTTP 429: {"message":"Requests per minute limit exceeded - too many requests sent.","type":"too_many_requests_error","param":"quota","code":"request_quota_excee
+[memory_hook 2026-06-29 19:53:53] Cerebras HTTP 429: {"message":"Requests per minute limit exceeded - too many requests sent.","type":"too_many_requests_error","param":"quota","code":"request_quota_excee
+[memory_hook 2026-06-29 19:54:08] Cerebras HTTP 429: {"message":"Requests per minute limit exceeded - too many requests sent.","type":"too_many_requests_error","param":"quota","code":"request_quota_excee
+  [oracle] 10 new answers (243s, 24334 ms/q)
+[memory_hook 2026-06-29 19:54:33] Cerebras HTTP 429: {"message":"Requests per minute limit exceeded - too many requests sent.","type":"too_many_requests_error","param":"quota","code":"request_quota_excee
+[memory_hook 2026-06-29 19:54:49] Cerebras HTTP 429: {"message":"Requests per minute limit exceeded - too many requests sent.","type":"too_many_requests_error","param":"quota","code":"request_quota_excee
+[memory_hook 2026-06-29 19:55:21] Cerebras HTTP 429: {"message":"Requests per minute limit exceeded - too many requests sent.","type":"too_many_requests_error","param":"quota","code":"request_quota_excee
+[memory_hook 2026-06-29 19:55:35] Cerebras HTTP 429: {"message":"Requests per minute limit exceeded - too many requests sent.","type":"too_many_requests_error","param":"quota","code":"request_quota_excee
+[memory_hook 2026-06-29 19:55:49] Cerebras HTTP 429: {"message":"Requests per minute limit exceeded - too many requests sent.","type":"too_many_requests_error","param":"quota","code":"request_quota_excee
+[memory_hook 2026-06-29 19:56:03] Cerebras HTTP 429: {"message":"Requests per minute limit exceeded - too many requests sent.","type":"too_many_requests_error","param":"quota","code":"request_quota_excee
+[memory_hook 2026-06-29 19:56:16] Cerebras HTTP 429: {"message":"Requests per minute limit exceeded - too many requests sent.","type":"too_many_requests_error","param":"quota","code":"request_quota_excee
+[memory_hook 2026-06-29 19:57:30] Cerebras unreachable: _ssl.c:1063: The handshake operation timed out
+[memory_hook 2026-06-29 19:58:17] Cerebras HTTP 429: {"message":"Requests per minute limit exceeded - too many requests sent.","type":"too_many_requests_error","param":"quota","code":"request_quota_excee
+[memory_hook 2026-06-29 19:58:32] Cerebras HTTP 429: {"message":"Requests per minute limit exceeded - too many requests sent.","type":"too_many_requests_error","param":"quota","code":"request_quota_excee
+[memory_hook 2026-06-29 19:59:00] Cerebras error: RemoteDisconnected: Remote end closed connection without response
+  [oracle] 20 new answers (545s, 27274 ms/q)
+[memory_hook 2026-06-29 19:59:45] Cerebras HTTP 429: {"message":"Requests per minute limit exceeded - too many requests sent.","type":"too_many_requests_error","param":"quota","code":"request_quota_excee
+[memory_hook 2026-06-29 19:59:59] Cerebras HTTP 429: {"message":"Requests per minute limit exceeded - too many requests sent.","type":"too_many_requests_error","param":"quota","code":"request_quota_excee
+[memory_hook 2026-06-29 20:01:44] Cerebras HTTP 429: {"message":"We're experiencing high traffic right now! Please try again soon.","type":"too_many_requests_error","param":"queue","code":"queue_exceeded
+[memory_hook 2026-06-29 20:03:23] Cerebras HTTP 429: {"message":"Requests per minute limit exceeded - too many requests sent.","type":"too_many_requests_error","param":"quota","code":"request_quota_excee
+  [oracle] 30 new answers (838s, 27938 ms/q)
+==========================================================================
+  LongMemEval-oracle — END-TO-END QA ACCURACY (answer-correctness)
+  judge=cerebras:gpt-oss-120b   embedder=bge-m3   k=5   budget=8000 chars
+==========================================================================
+
+  [oracle]  perfect-retrieval CEILING
+    overall accuracy: 0.767   (n=30)
+      single-session-user            0.600  (n=5)
+      single-session-assistant       1.000  (n=5)
+      single-session-preference      0.800  (n=5)
+      multi-session                  0.800  (n=5)
+      temporal-reasoning             0.800  (n=5)
+      knowledge-update               0.600  (n=5)
+==========================================================================
+  saved → D:\Coding\anamnesis\anamnesis\research\qa_calib_cloud.json

@@ -50,7 +50,7 @@ anamnesis-remember = "nevertwice.remember:main"
 anamnesis-mcp = "nevertwice.mcp_server:main"
 
 [tool.setuptools]
-packages = ["nevertwice", "nevertwice.research", "nevertwice.integrations"]
+packages = ["nevertwice", "nevertwice.integrations"]
 
 [tool.setuptools.package-data]
 nevertwice = ["*.md"]

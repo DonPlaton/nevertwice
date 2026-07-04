@@ -1,0 +1,36 @@
+{
+ "sessions": 940,
+ "questions": 500,
+ "embedder": "bge-m3",
+ "methods": {
+  "semantic": {
+   "recall@1": 0.422,
+   "recall@3": 0.58,
+   "recall@5": 0.652,
+   "recall@10": 0.728,
+   "mrr": 0.5281852224668283
+  },
+  "lexical": {
+   "recall@1": 0.274,
+   "recall@3": 0.458,
+   "recall@5": 0.528,
+   "recall@10": 0.63,
+   "mrr": 0.39090959404400577
+  },
+  "hybrid": {
+   "recall@1": 0.418,
+   "recall@3": 0.586,
+   "recall@5": 0.66,
+   "recall@10": 0.77,
+   "mrr": 0.5329377790247621
+  },
+  "semantic+recur": {
+   "recall@1": 0.422,
+   "recall@3": 0.58,
+   "recall@5": 0.652,
+   "recall@10": 0.728,
+   "mrr": 0.5281852224668283
+  }
+ },
+ "recur_inert": true
+}

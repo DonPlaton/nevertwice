@@ -1,0 +1,36 @@
+{
+ "sessions": 940,
+ "questions": 500,
+ "embedder": "snowflake-arctic-embed2:latest",
+ "methods": {
+  "semantic": {
+   "recall@1": 0.35,
+   "recall@3": 0.498,
+   "recall@5": 0.58,
+   "recall@10": 0.682,
+   "mrr": 0.4556720249992313
+  },
+  "lexical": {
+   "recall@1": 0.274,
+   "recall@3": 0.458,
+   "recall@5": 0.528,
+   "recall@10": 0.63,
+   "mrr": 0.39090959404400577
+  },
+  "hybrid": {
+   "recall@1": 0.384,
+   "recall@3": 0.566,
+   "recall@5": 0.646,
+   "recall@10": 0.742,
+   "mrr": 0.5024873382605108
+  },
+  "semantic+recur": {
+   "recall@1": 0.35,
+   "recall@3": 0.498,
+   "recall@5": 0.58,
+   "recall@10": 0.682,
+   "mrr": 0.4556720249992313
+  }
+ },
+ "recur_inert": true
+}

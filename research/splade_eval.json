@@ -1,0 +1,35 @@
+{
+ "model": "naver/splade-cocondenser-ensembledistil",
+ "maxlen": 512,
+ "rows": {
+  "calibrated(dense,BM25)": {
+   "recall@1": 0.55,
+   "recall@3": 0.722,
+   "recall@5": 0.802,
+   "recall@10": 0.858,
+   "mrr": 0.6565628988084086
+  },
+  "SPLADE alone": {
+   "recall@1": 0.474,
+   "recall@3": 0.64,
+   "recall@5": 0.708,
+   "recall@10": 0.794,
+   "mrr": 0.5782573713048467
+  },
+  "calibrated(dense,SPLADE)": {
+   "recall@1": 0.466,
+   "recall@3": 0.648,
+   "recall@5": 0.72,
+   "recall@10": 0.806,
+   "mrr": 0.5797127099060824
+  },
+  "calibrated(dense,BM25+SPLADE)": {
+   "recall@1": 0.518,
+   "recall@3": 0.698,
+   "recall@5": 0.768,
+   "recall@10": 0.834,
+   "mrr": 0.630801756027909
+  }
+ },
+ "verdict": "NO WIN \u2014 BM25 matches/beats SPLADE here; keep stdlib BM25 (honest negative)"
+}

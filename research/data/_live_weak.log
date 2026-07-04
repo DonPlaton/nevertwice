@@ -1,0 +1,26 @@
+[live] LOCAL weak agent ollama:qwen2.5:3b trials=8 tasks=12
+==========================================================================
+  LIVE VALIDATION — does a fired guard change a real model's output?  (ollama:qwen2.5:3b)
+==========================================================================
+  task                  without   with   abs↓   rel↓  A-detect
+  api-empty-guard          1.00   0.00   1.00   1.00         -
+  api-ms-units             1.00   1.00   0.00   0.00         -
+  api-auth-order           1.00   0.25   0.75   0.75         -
+  api-lock-finally         0.25   0.25   0.00   0.00         -
+  mutable-default          0.00   0.00   0.00      -         -
+  bare-except              0.00   0.00   0.00      -         -
+  div-zero                 0.25   0.00   0.25   1.00         -
+  no-context-manager       0.00   0.00   0.00      -         -
+  sql-format               1.00   0.00   1.00   1.00         -
+  float-eq                 0.00   0.00   0.00      -         -
+  mutate-iter              0.00   0.00   0.00      -         -
+  eq-none                  0.00   0.00   0.00      -         -
+
+  → mean pitfall rate: 0.38 → 0.12
+  → MEASURED eff overall: 0.62  (the D sim assumed 0.75)
+     · PROJECT-specific knowledge (memory's true value): eff=0.438  over 4 task(s) the model got wrong
+     · GENERIC pitfalls (the model was trained on): eff=1.0  over 2 task(s)
+  → axis-A guard detection rate on real buggy outputs: None
+  → pitfall actually occurred in 6/12 tasks
+  saved → D:\Coding\anamnesis\anamnesis\research\live_validation_weak.json
+==========================================================================

@@ -1,0 +1,73 @@
+{
+ "generated": "2026-06-29T19:37:40",
+ "dataset": "LongMemEval-oracle (global pool, 940 sessions / 500 questions)",
+ "embedder": "bge-m3",
+ "answer_model": "qwen3:30b-a3b",
+ "judge_model": "qwen3:30b-a3b",
+ "backend": "ollama qwen3:30b-a3b",
+ "k": 5,
+ "char_budget": 24000,
+ "metric": "answer-accuracy (LLM-judge vs gold answer) — comparable to vendor 'X% on LongMemEval' headlines",
+ "settings": {
+  "oracle": {
+   "accuracy": 0.614,
+   "n": 500,
+   "by_type": {
+    "single-session-user": {
+     "acc": 0.9714285714285714,
+     "n": 70
+    },
+    "single-session-assistant": {
+     "acc": 1.0,
+     "n": 56
+    },
+    "single-session-preference": {
+     "acc": 0.4,
+     "n": 30
+    },
+    "multi-session": {
+     "acc": 0.48872180451127817,
+     "n": 133
+    },
+    "temporal-reasoning": {
+     "acc": 0.3233082706766917,
+     "n": 133
+    },
+    "knowledge-update": {
+     "acc": 0.8076923076923077,
+     "n": 78
+    }
+   }
+  },
+  "retrieved": {
+   "accuracy": 0.398,
+   "n": 500,
+   "by_type": {
+    "single-session-user": {
+     "acc": 0.5857142857142857,
+     "n": 70
+    },
+    "single-session-assistant": {
+     "acc": 0.9285714285714286,
+     "n": 56
+    },
+    "single-session-preference": {
+     "acc": 0.13333333333333333,
+     "n": 30
+    },
+    "multi-session": {
+     "acc": 0.24812030075187969,
+     "n": 133
+    },
+    "temporal-reasoning": {
+     "acc": 0.19548872180451127,
+     "n": 133
+    },
+    "knowledge-update": {
+     "acc": 0.5512820512820513,
+     "n": 78
+    }
+   }
+  }
+ }
+}
