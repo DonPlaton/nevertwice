@@ -1,0 +1,9 @@
+# Derived artifacts — regenerate, never commit (embeddings, matrices, LLM caches, the dataset)
+longmem_embeds*.json
+longmemeval_oracle.json
+_rnd_*.npy
+_rnd_meta.json
+_splade_sparse.json
+*_cache*.json
+qa_cache*.json
+_*.log

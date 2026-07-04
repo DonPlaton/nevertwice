@@ -34,3 +34,10 @@ python research/embedder_ab.py              # A/B local embedders (each pulled i
 
 `--embed` writes per-embedder vector caches here (`longmem_embeds*.json`) so re-ranking is instant.
 Delete them to force a re-embed. None of these are committed.
+
+## Derived caches
+
+Everything else that used to sit here (embedding caches `longmem_embeds*.json`, the
+`_rnd_*.npy` matrices, SPLADE sparse vectors, LLM answer caches) is derived: the harnesses
+rebuild each artifact on first run (`rnd_launch.py --build`, the eval scripts' cache paths).
+They are gitignored so the repo stays a few megabytes instead of a hundred.
