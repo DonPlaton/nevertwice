@@ -9,7 +9,8 @@ from unittest import mock
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 import capture
-from capture import MemorySession, capture_chat, _last_user, _text_of
+MemorySession, capture_chat = capture.MemorySession, capture.capture_chat
+_last_user, _text_of = capture._last_user, capture._text_of
 
 
 # ── message parsing helpers ─────────────────────────────────────────────────────

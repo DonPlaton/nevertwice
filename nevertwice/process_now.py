@@ -26,11 +26,11 @@ except Exception:
     pass
 
 sys.path.insert(0, str(Path(__file__).parent))
+import memory_hook as _mh
 from memory_hook import (  # noqa: E402
     llm_backend_desc,
     PROJECT_ROOT_DISPLAY,
     PROJECTS_ROOT,
-    VAULT,
     acquire_lock,
     archive_old_sessions,
     archive_old_typed,
@@ -53,7 +53,7 @@ def main():
     print(BAR)
     print("  Claude Memory — Process NOW (полный скан, без ограничения по дате)")
     print(BAR)
-    print(f"  Vault          : {VAULT}")
+    print(f"  Vault          : {_mh.VAULT}")
     print(f"  Projects root  : {PROJECTS_ROOT}")
     print(f"  Extraction LLM : {llm_backend_desc()}")
     print(BAR)

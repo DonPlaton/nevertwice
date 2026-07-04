@@ -867,13 +867,16 @@ def _is_noise_update(text: str) -> bool:
 _INJECTION_RE = re.compile(
     # "ignore/disregard … (previous/all/your/the/above) instructions|prompts|rules|context"
     r"\b(?:ignore|disregard|forget|bypass|override)\s+"
-    r"(?:all\s+|the\s+|your\s+|any\s+|these\s+|previous\s+|prior\s+|earlier\s+|above\s+|"
-    r"the\s+above\s+)*"
+    # up to four single-word modifiers between verb and object. Bounded {0,4} of
+    # \w-word + single \s beats the old starred alternation of words each ending in
+    # \s+ (a py/redos backtracking shape on adversarial text) and also catches
+    # modifiers we never thought to list.
+    r"(?:[A-Za-z]{1,20}\s){0,4}"
     r"(?:instructions?|prompts?|rules?|directives?|guidelines?|guardrails?|context|"
     r"everything\s+(?:above|before)|all\s+of\s+the\s+above)\b|"
     # reveal/leak/print the system prompt / initial instructions
     r"\b(?:reveal|leak|expose|exfiltrate|print|show|repeat|reproduce|divulge)\s+"
-    r"(?:me\s+|us\s+|the\s+|your\s+|all\s+|its\s+)*"
+    r"(?:[A-Za-z]{1,20}\s){0,4}"
     r"(?:system\s+prompt|system\s+instructions?|initial\s+instructions?|"
     r"the\s+prompt\s+above|prompt\s+verbatim)\b|"
     # role-override / jailbreak personas
@@ -3004,7 +3007,7 @@ def _coerce_salience(v) -> float:
         f = float(v)
     except (TypeError, ValueError):
         return 0.0
-    return 0.0 if f != f else max(0.0, min(1.0, f))   # NaN-safe clamp
+    return 0.0 if math.isnan(f) else max(0.0, min(1.0, f))   # NaN-safe clamp
 
 
 def _note_meta_for_stem(stem: str) -> dict | None:
@@ -3110,8 +3113,6 @@ entity_types_index = _graph.entity_types_index     # Brain layer (F1): entity ->
 entities_by_type = _graph.entities_by_type
 entity_timeline = _graph.entity_timeline           # Brain layer (F3): live+superseded history
 salience_index = _graph.salience_index             # Brain layer (F5): graph-centrality salience
-_edge_counts = _graph._edge_counts
-_edges_sorted = _graph._edges_sorted
 notes_for_entity = _graph.notes_for_entity
 co_occurring = _graph.co_occurring
 entity_graph = _graph.entity_graph
@@ -3475,7 +3476,7 @@ def rebuild_index():
         "",
         "> Точка входа. Claude Code читает ТОЛЬКО этот файл при старте сессии.",
         "> Не сканируй все папки — переходи через wikilinks из этого индекса.",
-        "> Open Knowledge Format bundle: markdown + YAML frontmatter, каждая "
+        "> Open Knowledge Format bundle: markdown + YAML frontmatter, каждая " +
         "заметка несёт `type`; навигация через `[[wikilinks]]` и `graph.json`.",
         "",
         "## Структура",

@@ -66,7 +66,6 @@ def test_docx_zip_bomb_capped():
         big = ("<w:p><w:r><w:t>" + "A" * 100 + "</w:t></w:r></w:p>") * 5000
         _make_docx(p, [])
         # rewrite with an oversized body and a low cap via env
-        import zipfile
         with zipfile.ZipFile(p, "w") as z:
             z.writestr("word/document.xml",
                        f'<?xml version="1.0"?><w:document xmlns:w="{_W}"><w:body>{big}</w:body></w:document>')

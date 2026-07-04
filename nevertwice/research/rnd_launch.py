@@ -13,7 +13,6 @@ INSTANTLY (no GPU, no re-embed). Every method is scored exactly as longmem_eval.
 Faithfulness gate: the `baseline` row must equal longmem_results.json
 (hybrid R@1 0.550, R@5 0.802, R@10 0.858, MRR 0.657) or the harness is not trustworthy.
 """
-import collections
 import json
 import math
 import sys

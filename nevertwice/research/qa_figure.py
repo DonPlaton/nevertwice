@@ -15,7 +15,6 @@ Research dep: matplotlib (optional; the script no-ops with a message if it is ab
 numbers are read, never recomputed, so this never touches the network or a model.
 """
 import json
-import sys
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent

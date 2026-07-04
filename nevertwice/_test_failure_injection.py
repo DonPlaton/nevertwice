@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Failure-injection probes against memory_hook hardening. Read-only on the real
 vault: everything runs in a temp dir by repointing module globals."""
-import sys, os, json, tempfile, time, re
+import sys, json, tempfile, time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
@@ -145,7 +145,7 @@ check("bootstrap-only: head == whole file (nothing swallowed)",
 
 # ════════════════════════════════════════════════════════════════════
 print("\n# PROBE 5: retrieve_relevant / emit_session_start — cosine dim mismatch + empty")
-d = fresh_vault()
+fresh_vault()   # dead store removed (d unused here)
 # poison cache: one good vec, one wrong-dimension vec, one non-list
 cache = {
     "2026-05-01-project_epsilon-mistake-oom": {"vec":[0.1]*8,"ntype":"mistake","project":"project_epsilon","title":"oom crash"},

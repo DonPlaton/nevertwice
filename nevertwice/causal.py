@@ -38,7 +38,6 @@ except Exception:
 _FORWARD = {"causes", "enables", "prevents", "implements", "improves", "enforces",
             "standardizes", "exposes"}
 _REVERSE = {"caused-by", "depends-on", "requires", "uses", "part-of"}
-_IMPACT_RELS = _FORWARD | _REVERSE
 
 
 def build_impact_graph(project=None) -> dict:

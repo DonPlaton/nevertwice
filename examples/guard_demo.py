@@ -88,7 +88,8 @@ def main():
         beat()
         clean = api.guards_check("cursor.execute(\"SELECT * FROM users WHERE name = ?\", (name,))",
                                  project="app")
-        print(f"  {GREEN}✓ clean — the guard stays silent now{X}")
+        print(f"  {GREEN}✓ clean — the guard stays silent now{X}" if not clean
+              else f"  {RED}⚠ guard still firing — unexpected{X}")
     beat()
 
     print(f"\n{CYAN}That's memory that acts.{X} {DIM}Not a wall of recalled text every turn — a "

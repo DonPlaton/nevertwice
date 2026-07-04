@@ -215,7 +215,6 @@ def evaluate():
     svec = cache["sessions"]
     qvec = cache["questions"]
     pool_ids = [s for s in pool if s in svec]
-    toks = {s: m._tokens(pool[s]) for s in pool_ids}
     toks_lists = {s: m._token_list(pool[s]) for s in pool_ids}
     bm_tf, bm_dl, bm_df, bm_avgdl = build_bm25(pool_ids, toks_lists)
     methods = ("semantic", "lexical", "hybrid", "semantic+recur") + (

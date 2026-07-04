@@ -12,7 +12,6 @@ Memory removes the knowledge bottleneck, not the capability one.
 Reads numbers, never recomputes; matplotlib optional.
 """
 import json
-import sys
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent

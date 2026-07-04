@@ -43,7 +43,6 @@ except ImportError:
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parent))
-import memory_hook as m
 import research.longitudinal_bench as lb
 import research.posterior_model as pm
 

@@ -28,7 +28,7 @@ import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import api as _api
-from api import recall, remember          # re-export the read/write helpers (convenience)
+recall, remember = _api.recall, _api.remember   # re-export the read/write helpers
 
 __all__ = ["MemorySession", "capture_chat", "auto_capture", "recall", "remember"]
 

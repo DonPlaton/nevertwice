@@ -336,7 +336,7 @@ def main():
     if "--dry" in argv:
         print(f"{len(TASKS)} tasks; checks self-test on planted buggy/clean snippets:")
         _selfcheck_checks()
-        return
+        return None
 
     if "--replug-d" in argv:
         eff = float(next((a.split("=", 1)[1] for a in argv if a.startswith("--eff=")), "0"))
@@ -350,7 +350,7 @@ def main():
         v1, v2 = out["v1"], out["v2"]
         print(f"  → v2 improvement-per-1k-tok {v2['improvement_per_1k_tok']} vs v1 "
               f"{v1['improvement_per_1k_tok']}; v2 total tokens vs no-mem {v2['total_tokens_vs_nomem']:+.0f}")
-        return
+        return None
 
     ollama_model = next((a.split("=", 1)[1] for a in argv if a.startswith("--ollama=")), None)
     if ollama_model:

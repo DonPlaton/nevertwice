@@ -146,7 +146,7 @@ def main():
         m.fm_block({"type": "user_model", "date": datetime.now().strftime("%Y-%m-%d"),
                     "tags": ["user", "profile"]}),
         "", "# Learned User Model",
-        "", "_Выведено структурно из всего vault (теги, кросс-проектные темы). "
+        "", "_Выведено структурно из всего vault (теги, кросс-проектные темы). " +
         "Дополняет CLAUDE.md выученными паттернами. Обновить: `python build_user_model.py`._",
         "", "## Кратко (для инъекции)", "", brief,
         "", f"## Стек и темы (топ-{len(top_tags)} тегов)", "",

@@ -35,7 +35,7 @@ def _fake_urlopen(payload: dict):
 
 def test_unit_normalises():
     v = ce._unit([3.0, 4.0])
-    assert abs(math.sqrt(v[0] ** 2 + v[1] ** 2) - 1.0) < 1e-9
+    assert abs(math.hypot(v[0], v[1]) - 1.0) < 1e-9
 
 
 def test_mean_is_centroid():

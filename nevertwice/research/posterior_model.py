@@ -176,7 +176,6 @@ def evaluate(data, score_fn):
 def calibration(data, w, mean, std, bins=10):
     """Reliability diagram: bin candidates by the model's predicted P(target│pool)
     (per-query softmax), report empirical target-rate per bin."""
-    edges = np.linspace(0, 1, bins + 1)
     hit = np.zeros(bins)
     cnt = np.zeros(bins)
     conf_sum = np.zeros(bins)

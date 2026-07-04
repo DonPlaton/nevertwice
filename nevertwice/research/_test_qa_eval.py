@@ -3,7 +3,6 @@
 accuracy math, per-type aggregation, the oracle vs retrieved context selection,
 the resumable cache (no second LLM call), the down-backend guard, a distinct
 judge model, and the deepseek-reasoner response parsing (mocked urllib)."""
-import io
 import json
 import os
 import re

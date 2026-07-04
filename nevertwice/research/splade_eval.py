@@ -22,7 +22,6 @@ import numpy as np
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(HERE.parent))
-import memory_hook as m  # noqa: E402
 import rnd_launch as R  # noqa: E402
 
 DATA = HERE / "data"

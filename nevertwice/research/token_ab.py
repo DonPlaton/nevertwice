@@ -28,7 +28,6 @@ Data: data/longmemeval_oracle.json + data/longmem_embeds.json (see longmem_eval.
 import hashlib
 import json
 import sys
-import time
 import urllib.request
 from pathlib import Path
 

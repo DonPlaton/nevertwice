@@ -335,7 +335,7 @@ check("resolved mistake marked in recall snippet",
 
 # ── I-7: cross-project transfer (GPU-free lexical path) ───────────────
 print("# I-7 — cross-project transfer")
-d = sandbox()
+sandbox()   # dead store removed (d unused here)
 m.save_embed_cache({
     "2026-05-01-proja-mistake-cuda-oom-spawn": {
         "vec": [0.1], "ntype": "mistake", "project": "proja", "title": "cuda oom spawn",
@@ -668,7 +668,7 @@ mcp._handle({"jsonrpc": "2.0", "id": 3, "method": "tools/call",
 check("unknown tool errors", "error" in _sent[0] and _sent[0]["error"]["code"] == -32602)
 
 # memory_search tool over a sandbox cache (lexical path, GPU forced down)
-d = sandbox()
+sandbox()   # dead store removed (d unused here)
 m.save_embed_cache({
     "2026-05-01-proj-mistake-cuda-oom": {
         "vec": [0.1], "ntype": "mistake", "project": "proj", "title": "cuda oom",
@@ -709,7 +709,7 @@ finally:
     m.git_autocommit, m.rebuild_index = _gi, _ri
 
 # memory_ingest tool (extraction pipeline stubbed)
-d = sandbox()
+sandbox()   # dead store removed (d unused here)
 _ls = {n: getattr(m, n) for n in
        ("llm_available", "acquire_lock", "release_lock", "process_session",
         "rebuild_index", "git_autocommit", "load_processed")}
@@ -769,7 +769,7 @@ try:
           m.rerank_notes("q", [_res[0]], k=3) == [_res[0]])
 
     # search_core integration: rerank=True invokes the judge and reorders
-    d = sandbox()
+    sandbox()   # dead store removed (d unused here)
     m.save_embed_cache({
         "2026-05-01-proj-pattern-aaa": {"vec": [0.1], "ntype": "pattern", "project": "proj",
                                         "title": "aaa", "desc": "retry logic", "recurrence": 1},
@@ -794,7 +794,7 @@ finally:
 # ── P-7: SQLite scale index (derived accelerator) ────────────────────
 print("# P-7 — SQLite scale index")
 import index_sqlite as idx
-d = sandbox()
+sandbox()   # dead store removed (d unused here)
 m.save_embed_cache({
     "2026-05-01-proj-mistake-cuda-oom": {
         "vec": [1.0, 0.0, 0.0], "ntype": "mistake", "project": "proj", "title": "cuda oom",
@@ -830,7 +830,7 @@ finally:
 
 # ── M-3 / M-12 / M-15: decay+salience, age markers, budget injection ─
 print("# M-3/M-12/M-15 — ranking decay, age markers, injection budget")
-d = sandbox()
+sandbox()   # dead store removed (d unused here)
 m.save_embed_cache({
     "2025-01-01-proj-pattern-retry-old": {"vec": [0.1], "ntype": "pattern", "project": "proj",
         "title": "retry old", "desc": "retry logic with backoff", "recurrence": 1},
@@ -846,7 +846,7 @@ try:
 finally:
     m.ollama_alive = _al
 
-d = sandbox()
+sandbox()   # dead store removed (d unused here)
 m.save_embed_cache({
     "2026-06-01-proj-mistake-bug-open": {"vec": [0.1], "ntype": "mistake", "project": "proj",
         "title": "bug open", "desc": "cache invalidation race", "recurrence": 1, "resolved": False},
@@ -997,7 +997,7 @@ check("M-5 point-in-time (June) sees the new belief",
 check("M-5 valid_to stamped on superseded note",
       "valid_to:" in (d / "Decisions" / "Superseded").glob("*use-adam*.md").__next__().read_text(encoding="utf-8"))
 
-d = sandbox()
+sandbox()   # dead store removed (d unused here)
 bstem = m.write_typed_note("Patterns", {"title": "beta unrelated",
         "description": "completely different xyzzy"}, "proj", "2026-05-01", ["t"], "pattern")
 astem = m.write_typed_note("Patterns", {"title": "alpha thing",
@@ -1026,7 +1026,7 @@ print("# M-4/M-13/M-14/M-11/M-9 — staleness · AGENTS.md/OKF · sync · benchm
 import interop
 import sync as sync_mod
 
-d = sandbox()
+sandbox()   # dead store removed (d unused here)
 projdir = Path(tempfile.mkdtemp(prefix="proj_"))
 (projdir / "src").mkdir()
 (projdir / "src" / "live.py").write_text("x", encoding="utf-8")
@@ -1042,7 +1042,7 @@ check("M-4 no path refs → not stale", m._note_stale(s_none, "pattern", projdir
 check("M-4 fact line flags stale",
       "устарел" in m._fact_line({"stem": s_gone, "ntype": "pattern", "title": "T"}, stale=True))
 
-d = sandbox()
+sandbox()   # dead store removed (d unused here)
 m.write_typed_note("Decisions", {"title": "adopt cursor pagination", "description": "6x faster"},
                    "proj", "2026-05-01", ["api"], "decision")
 blk = interop.agents_md_block("proj")
@@ -1056,14 +1056,14 @@ txt = (tdir / "AGENTS.md").read_text(encoding="utf-8")
 check("M-13 merge preserves hand-written content", "hand-written" in txt)
 check("M-13 idempotent (single managed block)", txt.count(interop.AGENTS_START) == 1)
 
-d = sandbox()
+sandbox()   # dead store removed (d unused here)
 m.write_typed_note("Mistakes", {"title": "x", "description": "y"}, "proj", "2026-05-01", ["t"], "mistake")
 idx_path = interop.write_okf_index()
 check("M-14 OKF index written", idx_path.exists())
 check("M-14 OKF index is OKF-valid (type: index frontmatter)",
       "type: index" in idx_path.read_text(encoding="utf-8"))
 
-d = sandbox()
+sandbox()   # dead store removed (d unused here)
 check("M-11 sync no-ops on a non-git store (rc 0)", sync_mod.main() == 0)
 
 d = sandbox()

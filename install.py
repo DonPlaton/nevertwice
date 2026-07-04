@@ -216,8 +216,9 @@ _CRON_MARK = "# nevertwice"
 
 def register_tasks() -> None:
     if os.name == "nt":
-        return _register_tasks_windows()
-    return _register_tasks_cron()
+        _register_tasks_windows()
+    else:
+        _register_tasks_cron()
 
 
 def _register_tasks_windows() -> None:

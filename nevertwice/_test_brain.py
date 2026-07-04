@@ -71,7 +71,8 @@ check("wide ontology adds architecture/benchmark/metric/task/concept/tool",
       {"architecture", "benchmark", "metric", "task", "concept", "tool"} <= set(cfg.entity_types()))
 check("research relation hints exposed (cites / evaluated-on)",
       {"cites", "evaluated-on"} <= set(cfg.relation_hints()))
-check("coding-only has no relation hints", (set_profile("coding") or cfg.relation_hints()) == [])
+set_profile("coding")
+check("coding-only has no relation hints", cfg.relation_hints() == [])
 set_profile("research")
 check("brain_block surfaces a research relation hint", "cites" in m._brain_prompt_block())
 

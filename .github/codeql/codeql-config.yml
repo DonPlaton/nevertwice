@@ -1,0 +1,20 @@
+# CodeQL configuration for Nevertwice.
+#
+# Two queries are excluded deliberately; both flag patterns this codebase uses on purpose:
+#
+# py/empty-except — the hook philosophy is "never crash the host agent": every hook entry
+#   point degrades silently rather than breaking a user's coding session. The bare handlers
+#   sit on paths where the failure is non-actionable (best-effort telemetry, cosmetic
+#   output, cleanup); anything actionable is logged via log(). Flagging all ~90 of them
+#   buries real findings in noise.
+#
+# py/cyclic-import — modules use paired lazy imports (`from . import x` with a plain
+#   `import x` fallback) so every file runs both as a package member and as a standalone
+#   script (clone-and-run, no pip install). The cycles are import-time-safe by construction
+#   and exercised by the test suite on every push.
+name: nevertwice-codeql
+query-filters:
+  - exclude:
+      id: py/empty-except
+  - exclude:
+      id: py/cyclic-import

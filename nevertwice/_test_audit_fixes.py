@@ -78,7 +78,7 @@ for i, txt in enumerate(ATTACKS):
     check(f"real injection flagged [{i}]", m._looks_injected(txt))
 
 # end-to-end: legit note writes; injection note rejected
-d = sandbox()
+sandbox()   # dead store removed (d unused here)
 ok_stem = m.write_typed_note("Patterns", {"title": "thin wrapper",
             "description": "implement the parser to act as a thin wrapper around the API"},
             "proj", "2026-06-01", ["t"], "pattern")
@@ -189,7 +189,7 @@ ok = m.process_session("sidOK", os.path.join(_ROOT, "proj"), str(tp), "test", db
 check("processed session is marked AFTER writing notes",
       ok and "sidOK" in db and bool(list((d / "Patterns").glob("*.md"))))
 
-d = sandbox()
+sandbox()   # dead store removed (d unused here)
 m.update_embeddings = lambda notes: None
 m.generate_json = lambda *a, **k: {}        # extraction failure
 db2 = {}
@@ -210,7 +210,7 @@ check("plain prose yields nothing", m._referenced_paths("a general principle, no
 
 # ── H2: confidence is READ in ranking ──────────────────────────────────
 print("# H2 — confidence-aware ranking")
-d = sandbox()
+sandbox()   # dead store removed (d unused here)
 m.save_embed_cache({
     "2026-06-01-proj-pattern-low": {"vec": [0.1], "ntype": "pattern", "project": "proj",
         "title": "retry", "desc": "retry logic with backoff", "recurrence": 1, "confidence": 0.2},
@@ -230,7 +230,7 @@ finally:
 # ── C2/C3: SQLite scale index — build/upsert/delete/iter + hot path ────
 print("# C2/C3 — SQLite scale index on the retrieval path")
 import index_sqlite as idx
-d = sandbox()
+sandbox()   # dead store removed (d unused here)
 m.save_embed_cache({
     "2026-06-01-proj-mistake-oom": {"vec": [1.0, 0.0], "ntype": "mistake", "project": "proj",
         "title": "oom", "desc": "vram exhausted on subprocess spawn", "prevention": "reuse",
@@ -252,7 +252,7 @@ idx.delete(["2026-06-01-proj-mistake-oom"])
 check("delete removes from the index", len(idx.iter_candidates("proj")) == 1)
 
 # retrieve_relevant reads from the index (lexical path, embedder down)
-d = sandbox()
+sandbox()   # dead store removed (d unused here)
 m.save_embed_cache({"2026-06-01-proj-mistake-oom": {"vec": [0.1], "ntype": "mistake",
     "project": "proj", "title": "oom", "desc": "vram exhausted on subprocess spawn",
     "recurrence": 1}})
@@ -400,7 +400,7 @@ check("recurrence keeps growing across re-statements (2→3)", str(fm3.get("recu
 
 # ── A4/A5: index stamps model+dim and refuses a stale-model index ──────
 print("# A4/A5 — index model/dim stamp + stale self-invalidation")
-d = sandbox()
+sandbox()   # dead store removed (d unused here)
 m.save_embed_cache({"2026-06-01-proj-mistake-z": {"vec": [1.0, 0.0, 0.0], "ntype": "mistake",
     "project": "proj", "title": "z", "desc": "d", "recurrence": 1}})
 m.save_embed_meta({"model": m.EMBED_MODEL, "prefixed": False})
@@ -420,7 +420,7 @@ finally:
 
 # ── A10: one poisoned vector must not abort the whole build ────────────
 print("# A10 — build survives a garbage vector")
-d = sandbox()
+sandbox()   # dead store removed (d unused here)
 m.save_embed_cache({
     "2026-06-01-proj-mistake-good": {"vec": [1.0, 0.0], "ntype": "mistake", "project": "proj",
         "title": "good", "desc": "fine", "recurrence": 1},
@@ -487,7 +487,7 @@ check("merge floors recurrence at the cluster size (a 3-dup cluster → ≥3)",
 print("# A13/A14 — abstain + empty-project vs empty-index")
 import memory_search as ms
 check("abstention floor constant present", isinstance(ms.CONFIDENT_SIM, float))
-d = sandbox()
+sandbox()   # dead store removed (d unused here)
 m.save_embed_cache({})
 _, mode_empty = ms.search_core("anything", None)
 check("truly empty index → mode 'empty'", mode_empty == "empty")
@@ -535,7 +535,7 @@ else:
 
 # ── P1: large project → FTS-prefiltered candidate set (bounded cosine) ─
 print("# P1 — FTS-prefilter bounds candidates on a large project")
-d = sandbox()
+sandbox()   # dead store removed (d unused here)
 big = {f"2026-06-01-proj-mistake-n{i:03d}": {"vec": [1.0, 0.0], "ntype": "mistake",
        "project": "proj", "title": f"n{i}", "desc": "cuda memory leak in training",
        "recurrence": 1} for i in range(50)}
@@ -561,7 +561,7 @@ finally:
 
 # ── P3: float16 vectors + self-migrating pack format ───────────────────
 print("# P3 — float16 vectors + self-migrating format")
-d = sandbox()
+sandbox()   # dead store removed (d unused here)
 m.save_embed_cache({"2026-06-01-proj-mistake-v": {"vec": [0.5, -0.25, 0.125, 0.0625],
     "ntype": "mistake", "project": "proj", "title": "v", "desc": "d", "recurrence": 1}})
 m.save_embed_meta({"model": m.EMBED_MODEL, "prefixed": False})
@@ -581,7 +581,6 @@ check("ensure() rebuilds a stale-format index from the cache", m.scale_index_rea
 
 # ── P2: per-project cap archives lowest-salience, off by default ───────
 print("# P2 — per-project cap (opt-in, salience-aware)")
-import consolidate_memory as cons
 d = sandbox()
 (d / "Mistakes").mkdir()
 c2 = {}
@@ -614,7 +613,7 @@ finally:
 
 # ── B1: a stale-format index falls to the cache (never read as garbage) ─
 print("# B1 — stale-format index → cache fallback (critic round 2)")
-d = sandbox()
+sandbox()   # dead store removed (d unused here)
 m.save_embed_cache({"2026-06-01-proj-mistake-w": {"vec": [0.1, 0.2, 0.3], "ntype": "mistake",
     "project": "proj", "title": "w", "desc": "d", "recurrence": 1}})
 m.save_embed_meta({"model": m.EMBED_MODEL, "prefixed": False})
@@ -630,7 +629,7 @@ check("stale-format index → _scale_candidates returns None (cache fallback, no
 
 # ── B2: upsert poison guard — one bad vector must not drop the batch ────
 print("# B2 — upsert per-row poison guard (critic round 2)")
-d = sandbox()
+sandbox()   # dead store removed (d unused here)
 m.save_embed_cache({"2026-06-01-proj-mistake-ok": {"vec": [0.1, 0.2], "ntype": "mistake",
     "project": "proj", "title": "ok", "desc": "d", "recurrence": 1}})
 m.save_embed_meta({"model": m.EMBED_MODEL, "prefixed": False})
@@ -647,7 +646,7 @@ check("the good note actually landed in the index",
 
 # ── C1: atomic rebuild keeps the index populated (no DROP-window) ──────
 print("# C1 — transactional rebuild (critic round 3)")
-d = sandbox()
+sandbox()   # dead store removed (d unused here)
 m.save_embed_cache({f"2026-06-01-proj-mistake-r{i}": {"vec": [1.0, 0.0], "ntype": "mistake",
     "project": "proj", "title": f"r{i}", "desc": "d", "recurrence": 1} for i in range(5)})
 m.save_embed_meta({"model": m.EMBED_MODEL, "prefixed": False})

@@ -37,7 +37,6 @@ sys.path.insert(0, str(ROOT / "nevertwice"))
 
 import api            # noqa: E402
 import guards as G    # noqa: E402
-import anticipate     # noqa: E402
 import causal         # noqa: E402
 
 try:

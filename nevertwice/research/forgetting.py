@@ -41,7 +41,6 @@ except ImportError:
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parent))
-import memory_hook as m
 import consolidate_memory as cons
 import research.longitudinal_bench as lb
 
