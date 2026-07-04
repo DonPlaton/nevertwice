@@ -1,4 +1,4 @@
-# Anamnesis runs on the Python standard library alone — no required deps.
+# Nevertwice runs on the Python standard library alone — no required deps.
 # Extraction and embeddings talk to local Ollama or a cloud API over plain HTTP
 # (urllib), so there is nothing to pip-install for the core to work.
 #

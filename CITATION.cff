@@ -1,6 +1,6 @@
 cff-version: 1.2.0
-message: "If you use Anamnesis in your work or research, please cite it."
-title: "Anamnesis: Local-first long-term memory for AI coding agents"
+message: "If you use Nevertwice in your work or research, please cite it."
+title: "Nevertwice: Local-first long-term memory for AI coding agents"
 abstract: >-
   A local-first, zero-dependency agent-memory system that stores distilled lessons
   as plain Markdown under git, with hybrid local-embedding + lexical retrieval,
@@ -10,7 +10,7 @@ type: software
 authors:
   - family-names: Chernov
     given-names: Platon
-repository-code: "https://github.com/DonPlaton/anamnesis"
+repository-code: "https://github.com/DonPlaton/nevertwice"
 license: MIT
 keywords:
   - agent-memory

@@ -34,5 +34,5 @@ graph.json
 
 # LongMemEval dataset + cached embeddings (downloaded separately, large) — but keep the
 # fetch instructions tracked so a cloner knows where to get the data.
-anamnesis/research/data/*
-!anamnesis/research/data/README.md
+nevertwice/research/data/*
+!nevertwice/research/data/README.md

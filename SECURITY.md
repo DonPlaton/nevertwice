@@ -1,6 +1,6 @@
 # Security Policy
 
-Anamnesis is a local-first tool. Your memory store is plain Markdown and Git on your own
+Nevertwice is a local-first tool. Your memory store is plain Markdown and Git on your own
 machine, the core runs on the Python standard library with no third-party packages, and
 nothing leaves your computer unless you opt into a cloud backend with your own API key.
 That design removes most of the usual attack surface, but the project still takes security
@@ -8,14 +8,14 @@ seriously and welcomes reports.
 
 ## Supported versions
 
-The latest release on the default branch is supported. Anamnesis is pre-1.0 in spirit even
+The latest release on the default branch is supported. Nevertwice is pre-1.0 in spirit even
 at v1.0.0: fixes land on the default branch first.
 
 ## Reporting a vulnerability
 
 Please report suspected vulnerabilities privately, not in a public issue.
 
-- Preferred: open a [GitHub private security advisory](https://github.com/DonPlaton/anamnesis/security/advisories/new).
+- Preferred: open a [GitHub private security advisory](https://github.com/DonPlaton/nevertwice/security/advisories/new).
 - Alternative: open a regular issue that says only "security report, please open a private
   channel" with no details, and a maintainer will follow up.
 
@@ -54,4 +54,4 @@ specific surfaces:
 - No `pickle`, `eval`, `exec`, or YAML object construction is used anywhere in the core.
 
 See [docs/CONFIG.md](docs/CONFIG.md) for the privacy and data-routing controls
-(`ANAMNESIS_LOCAL_ONLY`, `ANAMNESIS_CLOUD_ONLY`) that keep chosen projects entirely offline.
+(`NEVERTWICE_LOCAL_ONLY`, `NEVERTWICE_CLOUD_ONLY`) that keep chosen projects entirely offline.

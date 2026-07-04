@@ -3,9 +3,9 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "anamnesis-memory"
-version = "1.1.0"
-description = "Local-first, agent-agnostic long-term memory for AI coding agents (markdown + git)."
+name = "nevertwice"
+version = "2.0.0"
+description = "Local-first memory for AI coding agents that catches a mistake before it repeats. Formerly Anamnesis."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
@@ -22,31 +22,35 @@ dependencies = []   # standard library only; Ollama/cloud are reached over HTTP
 
 # Everything below is OPTIONAL — the core stays stdlib-only. Install only what you use.
 [project.optional-dependencies]
-reranker = ["torch", "transformers"]   # trained cross-encoder precision boost (ANAMNESIS_XRERANK=1)
-langchain = ["langchain-core"]         # AnamnesisRetriever / AnamnesisMemory adapters
-llamaindex = ["llama-index-core"]      # AnamnesisRetriever for LlamaIndex
+reranker = ["torch", "transformers"]   # trained cross-encoder precision boost (NEVERTWICE_XRERANK=1)
+langchain = ["langchain-core"]         # NevertwiceRetriever / NevertwiceMemory adapters
+llamaindex = ["llama-index-core"]      # NevertwiceRetriever for LlamaIndex
 
 [project.urls]
-Homepage = "https://github.com/DonPlaton/anamnesis"
-Repository = "https://github.com/DonPlaton/anamnesis"
+Homepage = "https://github.com/DonPlaton/nevertwice"
+Repository = "https://github.com/DonPlaton/nevertwice"
 
 [project.scripts]
-anamnesis-search = "anamnesis.memory_search:main"
-anamnesis-remember = "anamnesis.remember:main"
-anamnesis-ingest = "anamnesis.ingest:main"
-anamnesis-watch = "anamnesis.watch:main"
-anamnesis-mcp = "anamnesis.mcp_server:main"
-anamnesis-tasks = "anamnesis.manage_tasks:main"
-anamnesis-sync = "anamnesis.sync:main"
-anamnesis-digest = "anamnesis.digest:main"
-anamnesis-conflicts = "anamnesis.digest:conflicts_main"
-anamnesis-dashboard = "anamnesis.dashboard:main"
-anamnesis-guards = "anamnesis.guards:main"
-anamnesis-anticipate = "anamnesis.anticipate:main"
-anamnesis-causal = "anamnesis.causal:main"
+nevertwice-search = "nevertwice.memory_search:main"
+nevertwice-remember = "nevertwice.remember:main"
+nevertwice-ingest = "nevertwice.ingest:main"
+nevertwice-watch = "nevertwice.watch:main"
+nevertwice-mcp = "nevertwice.mcp_server:main"
+nevertwice-tasks = "nevertwice.manage_tasks:main"
+nevertwice-sync = "nevertwice.sync:main"
+nevertwice-digest = "nevertwice.digest:main"
+nevertwice-conflicts = "nevertwice.digest:conflicts_main"
+nevertwice-dashboard = "nevertwice.dashboard:main"
+nevertwice-guards = "nevertwice.guards:main"
+nevertwice-anticipate = "nevertwice.anticipate:main"
+nevertwice-causal = "nevertwice.causal:main"
+# one release of rename back-compat: the old anamnesis-* commands keep working
+anamnesis-search = "nevertwice.memory_search:main"
+anamnesis-remember = "nevertwice.remember:main"
+anamnesis-mcp = "nevertwice.mcp_server:main"
 
 [tool.setuptools]
-packages = ["anamnesis", "anamnesis.research", "anamnesis.integrations"]
+packages = ["nevertwice", "nevertwice.research", "nevertwice.integrations"]
 
 [tool.setuptools.package-data]
-anamnesis = ["*.md"]
+nevertwice = ["*.md"]

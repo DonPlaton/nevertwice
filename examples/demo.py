@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Anamnesis 25-second demo — the "it remembered" moment, on any OS.
+"""Nevertwice 25-second demo — the "it remembered" moment, on any OS.
 
 Pure standard library, no bash. Seeds a throwaway temp store (your real vault is
 untouched), then recalls from it. Best with Ollama running for semantic recall; it
@@ -14,7 +14,7 @@ import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-PKG = ROOT / "anamnesis"
+PKG = ROOT / "nevertwice"
 PY = sys.executable
 
 
@@ -28,8 +28,8 @@ def run(args):
 
 
 # throwaway store so the real vault is never touched
-_tmp = tempfile.mkdtemp(prefix="anamnesis-demo-")
-ENV = {**os.environ, "ANAMNESIS_VAULT": str(Path(_tmp) / "store")}
+_tmp = tempfile.mkdtemp(prefix="nevertwice-demo-")
+ENV = {**os.environ, "NEVERTWICE_VAULT": str(Path(_tmp) / "store")}
 try:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 except Exception:
@@ -57,7 +57,7 @@ try:
     run(["memory_search.py", "xyzzy nonsense unrelated gibberish", "demo"])
 
     say("That is it. Plain Markdown + Git. No DB, no server, no cloud.")
-    print("    github.com/DonPlaton/anamnesis")
+    print("    github.com/DonPlaton/nevertwice")
 finally:
     import shutil
     shutil.rmtree(_tmp, ignore_errors=True)

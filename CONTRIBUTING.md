@@ -1,6 +1,6 @@
 # Contributing
 
-Thanks for your interest! Anamnesis aims to stay **local-first, dependency-light, and
+Thanks for your interest! Nevertwice aims to stay **local-first, dependency-light, and
 simple to deploy**. Please keep changes in that spirit.
 
 ## Principles
@@ -18,7 +18,7 @@ simple to deploy**. Please keep changes in that spirit.
 ## Dev setup
 
 ```bash
-git clone https://github.com/DonPlaton/anamnesis && cd anamnesis
+git clone https://github.com/DonPlaton/nevertwice && cd nevertwice
 python install.py --print     # see what install would do (writes nothing)
 ```
 
@@ -27,9 +27,9 @@ python install.py --print     # see what install would do (writes nothing)
 Standard-library only, fully mocked (no network, no GPU). Run all three:
 
 ```bash
-python anamnesis/_test_memory_hook.py
-python anamnesis/_test_memory_v2.py
-python anamnesis/_test_memory_v3.py
+python nevertwice/_test_memory_hook.py
+python nevertwice/_test_memory_v2.py
+python nevertwice/_test_memory_v3.py
 ```
 
 CI runs them on Linux, Windows and macOS across Python 3.10/3.12/3.13. Add a test for

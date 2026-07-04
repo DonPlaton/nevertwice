@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""One-command installer for Anamnesis.
+"""One-command installer for Nevertwice.
 
     python install.py                 # wire hooks + create the store (safe, idempotent)
     python install.py --ollama        # also pull the local models (bge-m3, qwen3)
@@ -9,7 +9,7 @@
     python install.py --print         # dry-run: show what would change, write nothing
 
 What it does (all idempotent, re-runnable):
-  1. Create the memory store dir (default ~/.anamnesis; honours ANAMNESIS_HOME).
+  1. Create the memory store dir (default ~/.nevertwice; honours NEVERTWICE_HOME).
   2. Merge the Claude Code hooks into ~/.claude/settings.json — backing the file up
      first — so SessionStart / UserPromptSubmit / SessionEnd / PreCompact run the
      engine, and PreToolUse runs the active-memory guard before a code-writing tool
@@ -17,8 +17,8 @@ What it does (all idempotent, re-runnable):
      hooks from other tools are preserved.
   3. Print the MCP-client snippet (Cursor / Claude Desktop / Cline / Zed).
   4. (--ollama) pull bge-m3 + qwen3.  (--tasks) register the scheduled tasks.
-     (--profile) persist ANAMNESIS_PROFILE so the opt-in Brain layer turns on.
-     On macOS/Linux --tasks installs three `# anamnesis`-tagged crontab jobs; on
+     (--profile) persist NEVERTWICE_PROFILE so the opt-in Brain layer turns on.
+     On macOS/Linux --tasks installs three `# nevertwice`-tagged crontab jobs; on
      Windows it registers per-user scheduled tasks. Both are idempotent.
   5. Close with the options the user has: profiles, and how to bring in projects
      they already have — so a first-time install is self-explanatory.
@@ -38,7 +38,7 @@ try:                                       # never crash printing on a non-UTF-8
 except Exception:
     pass
 
-PKG = Path(__file__).resolve().parent / "anamnesis"
+PKG = Path(__file__).resolve().parent / "nevertwice"
 HOOK = PKG / "memory_hook.py"
 MCP = PKG / "mcp_server.py"
 PYTHON = sys.executable.replace("\\", "/")
@@ -60,9 +60,13 @@ def _cmd() -> str:
 
 
 def store_dir() -> Path:
-    return Path(os.path.expanduser(
-        os.environ.get("ANAMNESIS_HOME") or os.environ.get("ANAMNESIS_VAULT")
-        or str(Path.home() / ".anamnesis")))
+    explicit = (os.environ.get("NEVERTWICE_HOME") or os.environ.get("NEVERTWICE_VAULT")
+                or os.environ.get("ANAMNESIS_HOME") or os.environ.get("ANAMNESIS_VAULT"))
+    if explicit:
+        return Path(os.path.expanduser(explicit))
+    new, old = Path.home() / ".nevertwice", Path.home() / ".anamnesis"
+    # v1 installs keep their existing store in place — we never relocate user data silently
+    return old if (old.exists() and not new.exists()) else new
 
 
 # Derived / machine-local files: regenerated every run, so they are gitignored —
@@ -99,7 +103,7 @@ def ensure_gitignore(d: Path) -> None:
     if DRY:
         print(f"  would add {len(missing)} line(s) to .gitignore")
         return
-    header = "" if existing else ("# Anamnesis store — derived/local files "
+    header = "" if existing else ("# Nevertwice store — derived/local files "
                                   "(regenerated; kept out of git for clean sync)\n")
     body = (existing.rstrip() + "\n" if existing.strip() else "") + header + \
         "\n".join(missing) + "\n"
@@ -164,12 +168,12 @@ def wire_hooks() -> None:
     SETTINGS.parent.mkdir(parents=True, exist_ok=True)
     if SETTINGS.exists():
         bak = SETTINGS.with_name(
-            f"settings.json.bak-anamnesis-{datetime.now().strftime('%Y%m%d%H%M%S')}")
+            f"settings.json.bak-nevertwice-{datetime.now().strftime('%Y%m%d%H%M%S')}")
         shutil.copy2(SETTINGS, bak)
         print(f"  backup → {bak.name}")
     # atomic: a crash mid-write must not leave settings.json corrupt (the backup exists,
     # but recovery shouldn't be needed for a routine install)
-    tmp = SETTINGS.with_name(SETTINGS.name + ".tmp-anamnesis")
+    tmp = SETTINGS.with_name(SETTINGS.name + ".tmp-nevertwice")
     tmp.write_text(json.dumps(settings, indent=2, ensure_ascii=False), encoding="utf-8")
     os.replace(tmp, SETTINGS)
     if added:
@@ -179,7 +183,7 @@ def wire_hooks() -> None:
 
 
 def mcp_snippet() -> None:
-    cfg = {"mcpServers": {"anamnesis": {
+    cfg = {"mcpServers": {"nevertwice": {
         "command": PYTHON, "args": [str(MCP).replace("\\", "/")]}}}
     print("[mcp] add to your MCP client (Cursor / Claude Desktop / Cline / Zed):")
     print("\n".join("    " + l for l in json.dumps(cfg, indent=2).splitlines()))
@@ -207,7 +211,7 @@ def pull_models() -> None:
 _JOBS = [("process_now.py", "", "0 */4 * * *"),
          ("health_check.py", "", "0 * * * *"),
          ("consolidate_memory.py", "--apply", "0 3 * * 0")]
-_CRON_MARK = "# anamnesis"
+_CRON_MARK = "# nevertwice"
 
 
 def register_tasks() -> None:
@@ -219,9 +223,9 @@ def register_tasks() -> None:
 def _register_tasks_windows() -> None:
     sys.path.insert(0, str(PKG))
     import manage_tasks
-    targets = {"Anamnesis_Catchup": "process_now.py",
-               "Anamnesis_Health": "health_check.py",
-               "Anamnesis_Consolidate": "consolidate_memory.py --apply"}
+    targets = {"Nevertwice_Catchup": "process_now.py",
+               "Nevertwice_Health": "health_check.py",
+               "Nevertwice_Consolidate": "consolidate_memory.py --apply"}
     for spec in manage_tasks.TASKS:
         script = targets.get(spec["name"], "process_now.py")
         if not DRY:
@@ -239,7 +243,7 @@ def _register_tasks_windows() -> None:
 
 def _register_tasks_cron() -> None:
     """Idempotently install the periodic jobs into the user's crontab (POSIX).
-    Each line is tagged `# anamnesis` so re-running replaces, never duplicates."""
+    Each line is tagged `# nevertwice` so re-running replaces, never duplicates."""
     if not shutil.which("crontab"):
         print("[cron] `crontab` not found — add these lines to your scheduler manually:")
         for script, args, sched in _JOBS:
@@ -251,7 +255,7 @@ def _register_tasks_cron() -> None:
     current = subprocess.run(["crontab", "-l"], capture_output=True, text=True)
     kept = [l for l in (current.stdout or "").splitlines() if _CRON_MARK not in l]
     merged = "\n".join(kept + new).strip() + "\n"
-    print("[cron] installing 3 jobs (tagged # anamnesis):")
+    print("[cron] installing 3 jobs (tagged # nevertwice):")
     for l in new:
         print("    " + l)
     if not DRY:
@@ -274,7 +278,7 @@ def detect_backends() -> None:
 
 
 def configure_profile() -> str | None:
-    """Honour `--profile <name[,name]>`: persist ANAMNESIS_PROFILE into the package
+    """Honour `--profile <name[,name]>`: persist NEVERTWICE_PROFILE into the package
     .env that the hook already loads, so the opt-in Brain layer turns on for this
     install. Validated against the known profiles; upserts (never clobbers other keys).
     Returns the active profile string, or None when the flag is absent/invalid."""
@@ -292,12 +296,12 @@ def configure_profile() -> str | None:
     kept = []
     if envf.exists():
         kept = [l for l in envf.read_text(encoding="utf-8").splitlines()
-                if not l.strip().startswith("ANAMNESIS_PROFILE=")]
+                if not l.strip().startswith("NEVERTWICE_PROFILE=")]
     if DRY:
-        print(f"[profile] would set ANAMNESIS_PROFILE={value} in {envf}")
+        print(f"[profile] would set NEVERTWICE_PROFILE={value} in {envf}")
         return value
-    envf.write_text("\n".join(kept + [f"ANAMNESIS_PROFILE={value}"]) + "\n", encoding="utf-8")
-    print(f"[profile] ANAMNESIS_PROFILE={value} → {envf.name}")
+    envf.write_text("\n".join(kept + [f"NEVERTWICE_PROFILE={value}"]) + "\n", encoding="utf-8")
+    print(f"[profile] NEVERTWICE_PROFILE={value} → {envf.name}")
     return value
 
 
@@ -308,25 +312,25 @@ def print_next_steps(profile: str | None) -> None:
     active = profile or "coding"
     brain_on = any(p in active for p in ("research", "general"))
     print("\n--- Your options " + "-" * 47)
-    print("Profiles -- how much Anamnesis remembers (active now: %s):" % active)
+    print("Profiles -- how much Nevertwice remembers (active now: %s):" % active)
     print("  coding (default)    lean operational memory: mistakes, patterns, decisions")
     print("  research / general  + an opt-in Brain layer: a self-wiring knowledge graph")
     print("                      (papers, methods, datasets, ...) with per-entity cards and")
     print("                      timelines. Pull-only -- never enlarges the token budget.")
     if not brain_on:
         print("  -> doing research? re-run:  python install.py --profile research")
-        print("     (or set ANAMNESIS_PROFILE=research in your .env) to switch the Brain layer on.")
+        print("     (or set NEVERTWICE_PROFILE=research in your .env) to switch the Brain layer on.")
     print("\nBring in projects you already have:")
     print("  * Every new session is captured automatically from now on.")
     print("  * Past Claude Code sessions backfill on the catch-up sweep (no action needed).")
     print("  * Seed a rich card for a big existing project right now:")
-    print("        python -m anamnesis.bootstrap_contexts /path/to/project")
+    print("        python -m nevertwice.bootstrap_contexts /path/to/project")
     print("\nLearn more:  docs/CONFIG.md (all tunables) and docs/BRAIN_LAYER_DESIGN.md (Brain layer)")
     print("-" * 64)
 
 
 def main() -> int:
-    print(f"Anamnesis installer ({'DRY-RUN' if DRY else 'apply'}) — python {PYTHON}\n")
+    print(f"Nevertwice installer ({'DRY-RUN' if DRY else 'apply'}) — python {PYTHON}\n")
     ensure_store()
     wire_hooks()
     profile = configure_profile()

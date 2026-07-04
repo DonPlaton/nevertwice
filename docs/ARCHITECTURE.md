@@ -1,6 +1,6 @@
 # Architecture
 
-Anamnesis turns finished agent sessions into durable, recallable knowledge, stored
+Nevertwice turns finished agent sessions into durable, recallable knowledge, stored
 as plain markdown under git. There is no server and no database in the core path:
 just files, embeddings, and a thin engine.
 
@@ -14,7 +14,7 @@ flowchart TD
     X -->|redact secrets| N[Typed notes\nMistakes / Patterns / Decisions]
     X --> C[Per-project card\nContext/&lt;project&gt;.md]
     N --> E[Embeddings\nbge-m3, local]
-    N & C & E --> S[(markdown + git store\n~/.anamnesis)]
+    N & C & E --> S[(markdown + git store\n~/.nevertwice)]
     S -->|SessionStart| I1[Inject project card + relevant facts]
     S -->|UserPromptSubmit| I2[Task-aware recall by prompt text]
     S -->|on demand| I3[memory_search / MCP memory_search]
@@ -26,7 +26,7 @@ flowchart TD
 
 | Module | Role |
 |---|---|
-| `config.py` | Cross-platform, env-driven paths & settings (`ANAMNESIS_*`). |
+| `config.py` | Cross-platform, env-driven paths & settings (`NEVERTWICE_*`). |
 | `memory_hook.py` | The engine: event dispatch, extraction, note writing, supersession, retrieval, injection, scheduling-safe locking. |
 | `mcp_server.py` | Zero-dep MCP stdio server → any MCP client. |
 | `memory_search.py` | On-demand recall (shared `search_core`). |
@@ -68,15 +68,15 @@ flowchart TD
 ## Retrieval
 
 **Calibrated score fusion** of the semantic signal (bge-m3 cosine) and the lexical signal
-(BM25), recurrence-weighted, behind an abstention gate (`ANAMNESIS_FUSION=rrf` restores the
+(BM25), recurrence-weighted, behind an abstention gate (`NEVERTWICE_FUSION=rrf` restores the
 legacy rank fusion). The semantic side runs only if the local embedder answers a fast ping,
 so a busy GPU degrades gracefully to lexical, then to recency; recall never blocks. Two
 opt-in second stages exist for deliberate search: a trained cross-encoder
-(`ANAMNESIS_XRERANK=1`, the measured precision win) and a cloud-judge rerank.
+(`NEVERTWICE_XRERANK=1`, the measured precision win) and a cloud-judge rerank.
 
 ## Privacy
 
 Embeddings are local (Ollama). Extraction is cloud-first (configurable, e.g. a
 zero-retention provider) or fully local. Secrets are regex-redacted before anything is
-written or sent. Per-project routing (`ANAMNESIS_LOCAL_ONLY` / `ANAMNESIS_CLOUD_ONLY`)
+written or sent. Per-project routing (`NEVERTWICE_LOCAL_ONLY` / `NEVERTWICE_CLOUD_ONLY`)
 keeps sensitive projects off the network entirely.

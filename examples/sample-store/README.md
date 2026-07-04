@@ -1,7 +1,7 @@
 # Sample memory store
 
-A tiny example of what Anamnesis writes to disk, so you can see the format before
-running it. A real store lives at `~/.anamnesis` (override with `ANAMNESIS_HOME`).
+A tiny example of what Nevertwice writes to disk, so you can see the format before
+running it. A real store lives at `~/.nevertwice` (override with `NEVERTWICE_HOME`).
 
 Layout:
 

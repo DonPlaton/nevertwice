@@ -36,7 +36,7 @@ grows to **44×** (the ratio scales with the store), and the offline guard gener
 of a battery of repeat-actions (the default LLM generator is far more precise — the live study
 measures a **−86%** real error rate, `research/LIVE_VALIDATION.md`).
 
-The large-scale *quantitative* benchmarks live in [`../anamnesis/research/`](../anamnesis/research/):
+The large-scale *quantitative* benchmarks live in [`../nevertwice/research/`](../nevertwice/research/):
 retrieval on 940 LongMemEval sessions, the 200-task improvement-per-token study, the live guard
 validation, and the eff-vs-capability curve. This demo is the qualitative counterpart — all
 mechanisms, one realistic project, visible advantages.

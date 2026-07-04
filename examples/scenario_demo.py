@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Anamnesis — the full-scenario demo: every mechanism, on a realistic project, with numbers.
+"""Nevertwice — the full-scenario demo: every mechanism, on a realistic project, with numbers.
 
 Where `demo.py` is the 25-second "it remembered" moment, this is the complete tour: it seeds a
 throwaway vault with a realistic multi-session history of one web-app project, then exercises
@@ -29,11 +29,11 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 # Point the store at a throwaway dir BEFORE importing the engine (VAULT is resolved at import),
 # and force the offline/deterministic path so the demo is reproducible and touches no network.
-_TMP = tempfile.mkdtemp(prefix="anamnesis-scenario-")
-os.environ["ANAMNESIS_HOME"] = _TMP
+_TMP = tempfile.mkdtemp(prefix="nevertwice-scenario-")
+os.environ["NEVERTWICE_HOME"] = _TMP
 os.environ["VAULT"] = _TMP
-os.environ["ANAMNESIS_CLOUD"] = "none"
-sys.path.insert(0, str(ROOT / "anamnesis"))
+os.environ["NEVERTWICE_CLOUD"] = "none"
+sys.path.insert(0, str(ROOT / "nevertwice"))
 
 import api            # noqa: E402
 import guards as G    # noqa: E402
@@ -155,7 +155,7 @@ def main():
     seed()
     metrics = {"project": PROJECT, "lessons_seeded": len(LESSONS) + 2}
 
-    line(f"{C['b']}Anamnesis — full-scenario demo{C['x']}  "
+    line(f"{C['b']}Nevertwice — full-scenario demo{C['x']}  "
          f"{C['d']}(throwaway vault, offline, deterministic){C['x']}")
     line(f"{C['d']}Seeded a realistic history of the '{PROJECT}' project: "
          f"{metrics['lessons_seeded']} lessons across {len(set(sum((l.get('entities', []) for l in LESSONS), [])))} entities.{C['x']}")

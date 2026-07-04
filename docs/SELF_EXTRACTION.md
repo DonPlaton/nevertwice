@@ -1,18 +1,18 @@
 # Self-extraction: let the agent be the extractor (no separate model)
 
-Anamnesis's default pipeline distils a finished session into memory with an
+Nevertwice's default pipeline distils a finished session into memory with an
 extraction LLM (a cloud key or local Ollama). But the agent in your loop is *already*
 an LLM. It can decide what it learned and write it directly. That turnkey path needs
 **no extraction model at all**, and it works for any agent, not just Claude Code.
 
-Two neural steps exist in Anamnesis; self-extraction removes one of them:
+Two neural steps exist in Nevertwice; self-extraction removes one of them:
 
 | step | default | self-extraction |
 |---|---|---|
 | **extract** session → lessons | cloud / Ollama | **the agent itself** (this doc) |
 | **embed** for semantic recall | Ollama / cloud embedder | still needed for *semantic* recall; lexical (FTS5) recall needs nothing |
 
-So with self-extraction + lexical recall you can run Anamnesis with **zero models**:
+So with self-extraction + lexical recall you can run Nevertwice with **zero models**:
 the agent writes its own lessons, and they're recalled by full-text search.
 
 ## The contract
@@ -37,13 +37,13 @@ one line that saves the next session.
 
 ### 1. Claude Code: drop in the skill
 
-Copy [`skills/anamnesis-remember/`](../skills/anamnesis-remember/SKILL.md) into your
+Copy [`skills/nevertwice-remember/`](../skills/nevertwice-remember/SKILL.md) into your
 `.claude/skills/` (or the repo's). Claude Code then records lessons at end-of-task or
 on "remember this", deduping against existing memory first. Zero glue code.
 
 ### 2. Any MCP client (Cursor / Cline / Zed / Claude Desktop)
 
-Run the MCP server (`python -m anamnesis.mcp_server`) and the agent gets a
+Run the MCP server (`python -m nevertwice.mcp_server`) and the agent gets a
 `memory_remember` tool: `project, type, title, description?, prevention?, tags?,
 supersedes?`. Add a line to your system prompt (template below) and the agent
 self-records through the tool.
@@ -54,7 +54,7 @@ Have the model emit a JSON list of lessons, then persist the batch in one call (
 vault lock, one git commit):
 
 ```python
-from anamnesis.api import remember_lessons
+from nevertwice.api import remember_lessons
 
 lessons = my_agent.extract_lessons(transcript)     # your model returns the JSON above
 stems = remember_lessons(lessons, project="myproj")
@@ -62,8 +62,8 @@ print(f"recorded {len(stems)} lessons")            # injection-shaped/empty ones
 ```
 
 `remember_lessons` runs no extraction model; it just writes what you give it. Single
-lessons can also use `anamnesis.api.remember(...)` or the CLI
-`python -m anamnesis.remember --project P --type T --title "..."`.
+lessons can also use `nevertwice.api.remember(...)` or the CLI
+`python -m nevertwice.remember --project P --type T --title "..."`.
 
 ## System-prompt template (provider-agnostic)
 

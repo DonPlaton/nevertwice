@@ -1,7 +1,7 @@
 # `paper/` — manuscript for Zenodo → arXiv
 
-[`anamnesis.md`](anamnesis.md) is the working manuscript (v0.2), assembled from the
-measured studies in [`../anamnesis/research/`](../anamnesis/research/). Every empirical
+[`nevertwice.md`](nevertwice.md) is the working manuscript (v0.2), assembled from the
+measured studies in [`../nevertwice/research/`](../nevertwice/research/). Every empirical
 claim in it regenerates from a script on a public dataset — see the *Reproducibility*
 section of the paper.
 
@@ -25,16 +25,16 @@ Markdown keeps the draft reviewable in-repo; convert when you want a PDF:
 
 ```bash
 # plain PDF
-pandoc paper/anamnesis.md -o anamnesis.pdf
+pandoc paper/nevertwice.md -o nevertwice.pdf
 
 # arXiv-style two-column LaTeX (then edit/submit the .tex)
-pandoc paper/anamnesis.md -o anamnesis.tex
+pandoc paper/nevertwice.md -o nevertwice.tex
 ```
 
 ## Submission checklist
 
 1. **Zenodo (do this first — no gatekeeper).** Zenodo issues a DOI immediately and has a
-   GitHub integration: create a Zenodo account, link the `DonPlaton/anamnesis` repo, and
+   GitHub integration: create a Zenodo account, link the `DonPlaton/nevertwice` repo, and
    cut a GitHub release — Zenodo archives the tagged source and mints a DOI. Update
    `CITATION.cff` with the DOI afterward. This gives a citable artifact regardless of arXiv.
 2. **arXiv (needs an endorsement).** Category `cs.IR` (primary) or `cs.AI`. arXiv requires

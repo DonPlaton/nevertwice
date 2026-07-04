@@ -3,12 +3,12 @@
 Status: **implemented** (F1 entity layer + profiles · F2 entity cards · F4 SQLite scale-tier ·
 F3 temporal/evolution · F5 salience · invariant tests — all green). This doc is the contract the
 implementation follows. Anything not consistent with the **Invariants** section is a bug, not a
-feature. Guards live in `anamnesis/_test_brain*.py` (102 checks); the invariants are enforced by
+feature. Guards live in `nevertwice/_test_brain*.py` (102 checks); the invariants are enforced by
 `_test_brain_invariants.py` (separation · budget byte-parity on/off · privacy · opt-in).
 
 ## 1. Motivation
 
-Anamnesis today is *operational* memory for a coding agent: one fact per file
+Nevertwice today is *operational* memory for a coding agent: one fact per file
 (mistake / pattern / decision), auto-captured from finished sessions, injected
 token-lean at SessionStart and per-prompt. It has no durable *world knowledge* — the
 cross-session entities a user actually thinks in (for a researcher: papers, methods,
@@ -19,7 +19,7 @@ but on a VC's ontology (people / companies / `invested_in`), backed by Postgres,
 fed by *manual* capture. We take the **idea**, not the implementation:
 
 - **Re-ontologised** to the user's real world (research / general), not a VC's.
-- **Auto-fed** from the sessions Anamnesis already mines — no manual capture.
+- **Auto-fed** from the sessions Nevertwice already mines — no manual capture.
 - **Zero-dep / local / markdown** — no Postgres, no external service; SQLite (stdlib)
   is the only scale tier.
 
@@ -49,7 +49,7 @@ A token-budget regression test and a privacy test (below) enforce 1, 2, and 4 in
 
 ## 3. Onboarding profiles
 
-First run asks once: **"What will you use Anamnesis for?"** (multi-select):
+First run asks once: **"What will you use Nevertwice for?"** (multi-select):
 
 | Profile     | Brain layer | Ontology enabled                                   |
 |-------------|-------------|----------------------------------------------------|
@@ -57,7 +57,7 @@ First run asks once: **"What will you use Anamnesis for?"** (multi-select):
 | `research`  | ON          | paper, method, architecture, model, dataset, benchmark, metric, task, concept, experiment, result, tool, venue, person |
 | `general`   | ON          | topic, person, place, work, idea                   |
 
-- Stored as `ANAMNESIS_PROFILE` (comma-separated) in config / vault config file; env
+- Stored as `NEVERTWICE_PROFILE` (comma-separated) in config / vault config file; env
   override wins (CI/tests).
 - `coding` and a Brain profile compose: you still get operational memory; the Brain
   layer is purely additive and pull-only.

@@ -6,7 +6,7 @@ need any of it yet.
 ## 1. Get it
 
 ```bash
-git clone https://github.com/DonPlaton/anamnesis && cd anamnesis
+git clone https://github.com/DonPlaton/nevertwice && cd nevertwice
 ```
 
 Nothing to `pip install`. The core is standard-library Python (3.10+).
@@ -17,7 +17,7 @@ Nothing to `pip install`. The core is standard-library Python (3.10+).
 python install.py
 ```
 
-This creates your memory store at `~/.anamnesis` (plain Markdown + Git), wires the four
+This creates your memory store at `~/.nevertwice` (plain Markdown + Git), wires the four
 Claude Code hooks, and **prints the backend it auto-detected**. For example:
 
 ```
@@ -35,13 +35,13 @@ then:
 python install.py --ollama     # pulls bge-m3 (embedder) + an extraction model
 ```
 
-**No Ollama and no cloud key?** Anamnesis still works: recall runs on lexical full-text
+**No Ollama and no cloud key?** Nevertwice still works: recall runs on lexical full-text
 search (FTS5), and extraction *pauses* (sessions are kept and retried, never dropped)
 until a backend appears. Nothing to configure either way.
 
 ## 3. Use it: there is nothing to do
 
-Open Claude Code and work as usual. Anamnesis captures each session automatically and, at
+Open Claude Code and work as usual. Nevertwice captures each session automatically and, at
 the start of the next one, injects the project card plus the lessons relevant to what
 you're doing. The agent just already knows.
 
@@ -59,7 +59,7 @@ graph, supersession, every number measured live — run `python examples/scenari
 Once you have captured real sessions, search the memory by hand any time:
 
 ```bash
-python anamnesis/memory_search.py "that bug with the database connection" myproject
+python nevertwice/memory_search.py "that bug with the database connection" myproject
 ```
 
 ```
@@ -76,6 +76,6 @@ answer.
 That's the happy path. When you want more:
 
 - **A different agent** (Cursor, Aider, Cline, Codex, Windsurf…)? → [docs/INTEGRATIONS.md](docs/INTEGRATIONS.md),
-  including `anamnesis watch`, which makes auto-capture always-on for any of them.
+  including `nevertwice watch`, which makes auto-capture always-on for any of them.
 - **Tune anything** (cloud backend, embedder, retrieval, retention)? → [docs/CONFIG.md](docs/CONFIG.md)
 - **How and why it works?** → [README.md](README.md) · [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)

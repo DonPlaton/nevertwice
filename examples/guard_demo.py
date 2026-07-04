@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Anamnesis — the 15-second "memory that acts" GIF: a guard fires before a real mistake repeats.
+"""Nevertwice — the 15-second "memory that acts" GIF: a guard fires before a real mistake repeats.
 
 The single beat that earns the star. A throwaway vault, a mistake recorded once, then the agent
 about to repeat it — and memory speaks up *before* the edit lands, at zero cost until this moment.
@@ -17,11 +17,11 @@ import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-_TMP = tempfile.mkdtemp(prefix="anamnesis-guard-")
-os.environ["ANAMNESIS_HOME"] = _TMP
+_TMP = tempfile.mkdtemp(prefix="nevertwice-guard-")
+os.environ["NEVERTWICE_HOME"] = _TMP
 os.environ["VAULT"] = _TMP
-os.environ["ANAMNESIS_CLOUD"] = "none"
-sys.path.insert(0, str(ROOT / "anamnesis"))
+os.environ["NEVERTWICE_CLOUD"] = "none"
+sys.path.insert(0, str(ROOT / "nevertwice"))
 
 import api      # noqa: E402
 import guards as G  # noqa: E402
@@ -36,7 +36,7 @@ BOLD, GREEN, YELLOW, RED, DIM, CYAN, X = (
 if not sys.stdout.isatty():
     BOLD = GREEN = YELLOW = RED = DIM = CYAN = X = ""
 
-PAUSE = float(os.environ.get("ANAMNESIS_DEMO_PAUSE", "1.3"))
+PAUSE = float(os.environ.get("NEVERTWICE_DEMO_PAUSE", "1.3"))
 
 
 def beat(t=None):
@@ -54,10 +54,10 @@ def type_out(prefix, text, color=""):
 
 
 def main():
-    print(f"\n{BOLD}Anamnesis — memory that acts{X}  {DIM}(a guard fires before the mistake repeats){X}\n")
+    print(f"\n{BOLD}Nevertwice — memory that acts{X}  {DIM}(a guard fires before the mistake repeats){X}\n")
     beat()
 
-    print(f"{DIM}Monday. Your agent hits a SQL-injection bug and Anamnesis records the lesson:{X}")
+    print(f"{DIM}Monday. Your agent hits a SQL-injection bug and Nevertwice records the lesson:{X}")
     beat(0.6)
     api.remember_lessons([{
         "type": "mistake", "title": "sql-built-by-fstring",
@@ -75,7 +75,7 @@ def main():
     type_out("  ", action, YELLOW)
     beat()
 
-    print(f"\n{DIM}Anamnesis checks the edit against what you've learned…{X}")
+    print(f"\n{DIM}Nevertwice checks the edit against what you've learned…{X}")
     beat()
     hits = api.guards_check(action, project="app")
     if hits:
@@ -94,7 +94,7 @@ def main():
     print(f"\n{CYAN}That's memory that acts.{X} {DIM}Not a wall of recalled text every turn — a "
           f"single warning,{X}")
     print(f"{DIM}exactly when it matters, at zero tokens until it does.{X}")
-    print(f"\n  {BOLD}github.com/DonPlaton/anamnesis{X}  {DIM}· local-first · MIT · works with your agent{X}\n")
+    print(f"\n  {BOLD}github.com/DonPlaton/nevertwice{X}  {DIM}· local-first · MIT · works with your agent{X}\n")
 
 
 if __name__ == "__main__":

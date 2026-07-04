@@ -11,8 +11,8 @@ Two kinds of number here, and the difference matters:
 940 real agent sessions in one shared store, 500 questions, each with **human-annotated**
 evidence sessions (`answer_session_ids`). Relevance is **independent of our embeddings**, so
 this is a real recall number, not a self-grade. Reproduce:
-`python anamnesis/research/longmem_eval.py [--xrerank]` (dataset fetched separately, see
-[`research/data/README.md`](../anamnesis/research/data/README.md)).
+`python nevertwice/research/longmem_eval.py [--xrerank]` (dataset fetched separately, see
+[`research/data/README.md`](../nevertwice/research/data/README.md)).
 
 | method | R@1 | R@5 | R@10 | MRR |
 |---|---|---|---|---|
@@ -26,13 +26,13 @@ the magnitudes), which lifts R@5 from 0.66 under the old rank fusion to **0.80**
 local competitor on the same stand (Mem0 0.758, LangMem and A-MEM 0.692; see
 [COMPARISON.md](COMPARISON.md)). The popular reciprocal rank fusion most systems ship discards the
 score magnitudes and scores below plain BM25; the full study is in
-[`research/RETRIEVAL_FUSION.md`](../anamnesis/research/RETRIEVAL_FUSION.md).
+[`research/RETRIEVAL_FUSION.md`](../nevertwice/research/RETRIEVAL_FUSION.md).
 
-The optional reranker (bge-reranker-v2-m3, `ANAMNESIS_XRERANK=1`, `[reranker]` extra) then stacks on
+The optional reranker (bge-reranker-v2-m3, `NEVERTWICE_XRERANK=1`, `[reranker]` extra) then stacks on
 top, taking **top-1 recall to 0.614** and MRR to 0.712. A *promptable* LLM reranker, by contrast,
 degraded top-1, so we ship the trained one and not the LLM one. The embedder A/B (no local embedder
 beat bge-m3 as a drop-in) and the consolidation negative are in
-[`research/W2_PRECISION.md`](../anamnesis/research/W2_PRECISION.md).
+[`research/W2_PRECISION.md`](../nevertwice/research/W2_PRECISION.md).
 
 ## Retrieval quality (Task A: leave-one-out, n=327, self-consistency only)
 
@@ -101,12 +101,12 @@ Read honestly, both directions:
   net-negative.** Retrieval is not magic; if the haystack is already small, just load it.
 - **Against the realistic alternative at scale (the *whole* accumulated history) retrieval is
   overwhelmingly cheaper.** It is what makes recall feasible when full-load is impossible.
-- This A/B models retrieval of **raw sessions**. Anamnesis's real mechanism adds a lever it omits:
+- This A/B models retrieval of **raw sessions**. Nevertwice's real mechanism adds a lever it omits:
   **distillation** (each session becomes a ~one-screen typed note). Measured next.
 
 ### Distillation A/B: the real mechanism, measured (the net flips positive)
 
-Anamnesis never stores raw sessions; it stores **distilled notes**. We measured that lever directly:
+Nevertwice never stores raw sessions; it stores **distilled notes**. We measured that lever directly:
 distil each retrieved session into a compact note via local Ollama, then recompute the net
 (`research/token_ab.py --distill`). On a 40-question sample the distiller compressed
 **968,715 → 31,517 tokens = 30.7× smaller**, and the per-hit cost collapsed:
@@ -143,7 +143,7 @@ dip rather than hide it.
 **distillation flips it positive** (30.7× compression, net +6.3-6.9k tok/query even vs the curated
 haystack), and a **live two-arm run measures a 93% input-token cut**, with an honest accuracy caveat
 on a small local-model sample. The defensible headline is *distillation makes memory token-positive*,
-not "saves X tokens unconditionally." Reproduce: `python anamnesis/research/token_ab.py --distill --live`.
+not "saves X tokens unconditionally." Reproduce: `python nevertwice/research/token_ab.py --distill --live`.
 
 ## Real-task battle-test: does it save tokens & help recall?
 

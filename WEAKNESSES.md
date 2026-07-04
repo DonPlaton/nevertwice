@@ -1,4 +1,4 @@
-# Anamnesis — weaknesses & limitations (hostile self-audit, 2026-06-17; launch update 2026-06-20)
+# Nevertwice — weaknesses & limitations (hostile self-audit, 2026-06-17; launch update 2026-06-20)
 
 *Written in the role of a harsh critic: dogfooded on a real 328-note / 12-project vault,
 ran all 10 test suites, probed the new research features for dead code, token bloat, and
@@ -15,7 +15,7 @@ below is read in context:
 - **Default ranker is now calibrated score fusion, not RRF.** Mentions of "hybrid RRF" as
   the default below are stale. Calibrated fusion lifted the default from R@1 0.42 / R@5 0.66
   to **0.55 / 0.80** and now leads Mem0 / LangMem / A-MEM on a shared local stand. RRF is a
-  fallback (`ANAMNESIS_FUSION=rrf`). See `anamnesis/research/RETRIEVAL_FUSION.md`.
+  fallback (`NEVERTWICE_FUSION=rrf`). See `nevertwice/research/RETRIEVAL_FUSION.md`.
 - **W4 (no reranker) is addressed.** A purpose-trained cross-encoder (bge-reranker-v2-m3)
   ships as an opt-in second stage: recall@1 0.55 to **0.61**, MRR +0.06 on LongMemEval. Off
   by default to keep the stdlib core dependency-free; `backend_report()` now surfaces it when
@@ -25,7 +25,7 @@ below is read in context:
   floor. The pure-stdlib bi-encoder default still has the ceiling, which is a deliberate
   no-dependency trade, not an unsolved bug. SPLADE learned-sparse was measured this round and
   loses to BM25 (and needs torch), so it was not adopted.
-- **"Automatic capture is Claude-Code-only" is outdated.** `anamnesis watch` (a stdlib polling
+- **"Automatic capture is Claude-Code-only" is outdated.** `nevertwice watch` (a stdlib polling
   daemon) plus `ingest` now give always-on auto-capture for Codex / Cline / Roo / Aider /
   Gemini-CLI, and an MCP server covers any MCP client. Hooks remain the zero-latency path for
   Claude Code.
@@ -34,7 +34,7 @@ below is read in context:
   second external axis: **end-to-end answer-accuracy** on standard LongMemEval-oracle
   (`research/qa_eval.py` → `QA_ACCURACY.md`) — 0.788 with an open reasoning reader, decomposed
   by a reader sweep that localizes the gap to vendor headlines as reader strength, not memory.
-- **Scale:** opt-in 1-bit index quantization (`ANAMNESIS_EMBED_QUANT=binary`) plus a popcount
+- **Scale:** opt-in 1-bit index quantization (`NEVERTWICE_EMBED_QUANT=binary`) plus a popcount
   scan reach six figures of notes with no ANN dependency (`research/QUANTIZATION.md`).
 
 ### The four genuinely-remaining items and their disposition
@@ -61,8 +61,8 @@ below is read in context:
    surfaces its fix even with no shared words; off by default, each addition tagged with `via`. The
    graph also **exports** to Mermaid / DOT / JSON (`graph_export`, CLI `--graph`) for a visual that
    renders straight in an Obsidian or GitHub markdown block, and can enrich the **SessionStart** card
-   itself via the opt-in `ANAMNESIS_RELATION_EXPAND` (SessionStart only, budget-gated, never the
-   per-prompt path). The whole feature lives in its own `anamnesis/graph.py`. 60 regression tests
+   itself via the opt-in `NEVERTWICE_RELATION_EXPAND` (SessionStart only, budget-gated, never the
+   per-prompt path). The whole feature lives in its own `nevertwice/graph.py`. 60 regression tests
    (`_test_entities.py`); a hostile multi-pass audit fixed an O(E×N) rescan and confirmed the hot-path
    discipline. This matches the entity/relation extraction the leaders use, but over markdown with zero
    new dependency. **Brain layer (2026-06-22):** an opt-in `research`/`general` profile builds on this
@@ -82,7 +82,7 @@ below is read in context:
   GPU-memory-leak mistake (0.48); a sharper "gpu vram leak subprocess windows" → 0.68. The
   hybrid RRF + lexical fallback + bi-temporal `--as-of` all run.
 - **All 10 suites pass** (5 core ~4 s + 5 research). The new production paths are off by
-  default (`ANAMNESIS_RANKER=hybrid`, `ANAMNESIS_DIVERGENCE=0`), so they add **zero cost to
+  default (`NEVERTWICE_RANKER=hybrid`, `NEVERTWICE_DIVERGENCE=0`), so they add **zero cost to
   the default hot path** — the "new features bloat everything" critique does **not** hold for
   the default ranker; the research lives in isolated `research/` modules.
 - **Token economy holds.** SessionStart injects a ~1100-char Context *brief* + a budgeted fact
@@ -158,7 +158,7 @@ below is read in context:
   open core. **Shipped two things that shrink it:** (a) the W8 `_looks_dangerous` guard now hard-
   rejects the *dangerous-advice* subset (disable TLS, chmod 777, exfiltration) → false-fact
   acceptance 1.00→0.50; (b) the **corroboration-gated quarantine** is now wired into
-  `write_typed_note`, **opt-in** (`ANAMNESIS_QUARANTINE=1`): a single-source suspicious note
+  `write_typed_note`, **opt-in** (`NEVERTWICE_QUARANTINE=1`): a single-source suspicious note
   (near-max confidence, or superseding a corroborated note) is diverted to `Quarantine/` retiring
   nothing — fully blocking supersession-abuse + confidence-spoof (→0.00) for multi-tenant/untrusted
   deployments. OFF by default (single-user owns every session; W9 reasoning). Residual: a *plausible,
@@ -184,7 +184,7 @@ below is read in context:
 ### Growth, code & honesty
 - **W10 [DESIGN — not a bug; now measured] The per-project cap is OFF by default.** A store grows
   unbounded, but this is a deliberate choice ("never silently shed memory") and **retrieval cost is
-  already bounded** regardless of size: past `ANAMNESIS_PREFILTER_LIMIT=600` the FTS-prefilter caps
+  already bounded** regardless of size: past `NEVERTWICE_PREFILTER_LIMIT=600` the FTS-prefilter caps
   the per-query cosine work, so growth is a *storage* concern, not a latency one. A default cap would
   silently drop the user's memory — against the design. The opt-in submodular cap (1C) is there for
   anyone who wants bounded storage. Left as-is. **`retention_bench.py` (3A.3) now quantifies the
@@ -204,9 +204,9 @@ below is read in context:
   deleted). Verdict: the cap policy is correct as designed — nothing to implement beyond the test
   hardening (honest "nothing to improve" rather than speculative recency/utility churn).
 - **W11 [FIXED 2026-06-17] Two opt-in research rankers moved to a plugin boundary.** `posterior` +
-  MMR `divergence` (~45 lines) left `memory_hook` for `anamnesis/rankers.py`, lazy-loaded by
-  `retrieve_relevant` (`_load_rankers()`) ONLY when `ANAMNESIS_RANKER=posterior` or
-  `ANAMNESIS_DIVERGENCE>0` — a one-way import mirroring `index_sqlite`, so the default hot path never
+  MMR `divergence` (~45 lines) left `memory_hook` for `nevertwice/rankers.py`, lazy-loaded by
+  `retrieve_relevant` (`_load_rankers()`) ONLY when `NEVERTWICE_RANKER=posterior` or
+  `NEVERTWICE_DIVERGENCE>0` — a one-way import mirroring `index_sqlite`, so the default hot path never
   imports the code and the core carries no maintenance surface for it. Behaviour bit-identical
   (E3/E5 tests + all 5 core suites green; the default ranker never touches the plugin).
 - **W12 [FIXED 2026-06-17] Shared `research/` helper extracted.** The mean±95%CI `_ci` duplicated
@@ -291,11 +291,11 @@ compression) or low-value-for-single-user (W7/W8 security) — not bugs.
 ## Competitive gaps vs the leaders
 
 - **No LLM entity/relation extraction into a typed knowledge graph** (Zep/Graphiti, Mem0-graph,
-  Cognee). Anamnesis has `[[wikilinks]]` + graph-hop, but links are structural, not
+  Cognee). Nevertwice has `[[wikilinks]]` + graph-hop, but links are structural, not
   entity-typed — so multi-hop "which intervention affects which pathway" style queries are weaker.
 - **No production server / multi-tenant / horizontal scale.** Letta and Zep are services;
-  Anamnesis is single-machine files (a deliberate local-first choice, but a real ceiling).
-- **Automatic capture** [UPDATED 2026-06-20]: hooks are Claude-Code-only, but `anamnesis watch`
+  Nevertwice is single-machine files (a deliberate local-first choice, but a real ceiling).
+- **Automatic capture** [UPDATED 2026-06-20]: hooks are Claude-Code-only, but `nevertwice watch`
   (a stdlib polling daemon) now gives always-on auto-capture for Codex / Cline / Roo / Aider /
   Gemini-CLI, and an MCP server covers any MCP client. SQLite-only editors (Cursor / Windsurf)
   still need an export-then-`--dir` step.
@@ -348,7 +348,7 @@ index_sqlite / ingest / select_coreset / mcp_server / `_looks_injected` / mmr ar
 the new modules (rankers, _rerank, _common — every function is reached). Token economy is real (~3.2×
 Context compression). Competitive review: the system has *already* measured-and-rejected the tempting
 additions (cross-encoder rerank, abstractive consolidation, recurrence boost); the only design-compatible
-open lever is a **stronger local embedder** via the existing `ANAMNESIS_EMBED_MODEL` knob (attacks the W2
+open lever is a **stronger local embedder** via the existing `NEVERTWICE_EMBED_MODEL` knob (attacks the W2
 ceiling with zero new dependency) plus optional minimal LLM-emitted **typed edges** (P2) — both documented,
 neither shipped speculatively.
 

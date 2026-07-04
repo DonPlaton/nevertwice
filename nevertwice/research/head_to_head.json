@@ -1,0 +1,61 @@
+{
+ "nevertwice": {
+  "recall@1": 0.55,
+  "recall@3": 0.722,
+  "recall@5": 0.802,
+  "recall@10": 0.858,
+  "mrr": 0.6511,
+  "n": 500,
+  "query_s": 53.1,
+  "setup": "local bge-m3 via Ollama (calibrated fusion; 0 deps, no server, no DB)",
+  "_wall_s": 53.8
+ },
+ "mem0": {
+  "recall@1": 0.478,
+  "recall@3": 0.684,
+  "recall@5": 0.758,
+  "recall@10": 0.846,
+  "mrr": 0.6026,
+  "n": 500,
+  "ingest_s": 190.9,
+  "query_s": 119.9,
+  "mode": "infer=False (retrieval-only, 1 memory/session)",
+  "embedder": "ollama bge-m3",
+  "setup": "pip install mem0ai ollama fastembed; embedded qdrant (no server)",
+  "_wall_s": 314.1
+ },
+ "zep": {
+  "blocked": "Graphiti/Zep needs Neo4j or FalkorDB (Docker) — set NEO4J_URI / FALKORDB_HOST",
+  "_wall_s": 0.0
+ },
+ "langmem": {
+  "recall@1": 0.426,
+  "recall@3": 0.624,
+  "recall@5": 0.692,
+  "recall@10": 0.782,
+  "mrr": 0.5427,
+  "n": 500,
+  "ingest_s": 229.1,
+  "query_s": 128.6,
+  "embedder": "ollama bge-m3",
+  "setup": "pip install langgraph langmem langchain-ollama (no server)",
+  "_wall_s": 359.8
+ },
+ "amem": {
+  "recall@1": 0.428,
+  "recall@3": 0.624,
+  "recall@5": 0.692,
+  "recall@10": 0.782,
+  "mrr": 0.5437,
+  "n": 500,
+  "ingest_s": 180.2,
+  "query_s": 82.5,
+  "embedder": "ollama bge-m3",
+  "setup": "pip install chromadb (A-MEM's vector store) + Ollama embeddings",
+  "_wall_s": 263.4
+ },
+ "cognee": {
+  "blocked": "cognee not installed — `pip install cognee`; configure LLM+embedder to local Ollama (LLM_PROVIDER=ollama, EMBEDDING_PROVIDER=ollama) and a local graph/vector store, then add an ingest+search adapter here",
+  "_wall_s": 0.0
+ }
+}

@@ -1,13 +1,13 @@
 # Integrations
 
-Anamnesis works with **any** agent, not just Claude Code. The stdlib-only core exposes one
-in-process Python API (`anamnesis.api`); the framework adapters and the generic capture helpers
+Nevertwice works with **any** agent, not just Claude Code. The stdlib-only core exposes one
+in-process Python API (`nevertwice.api`); the framework adapters and the generic capture helpers
 are thin shims over it. Nothing here is required by the core; install only what you use.
 
 ## The Python API
 
 ```python
-from anamnesis.api import recall, remember, capture_session
+from nevertwice.api import recall, remember, capture_session
 
 # write one lesson now (recallable immediately if the embedder is free)
 remember("Crash-safe writes", project="myproj", type="pattern",
@@ -27,14 +27,14 @@ and falls back to lexical search when the GPU/Ollama is busy. `remember` writes 
 
 ## Active Memory: memory that acts (the differentiator, on every agent)
 
-Most memory is something you *read* — it taxes every turn with injected text. Anamnesis also
+Most memory is something you *read* — it taxes every turn with injected text. Nevertwice also
 *acts*, and stays silent until it has something worth saying, so it costs **zero context tokens
 until an intervention earns its place**. All three axes are on the Python API **and** the MCP
 server, so Cursor / Cline / Codex / Zed / any MCP client get the moat, not just Claude Code. Full
-thesis + measurements: [`research/ACTIVE_MEMORY.md`](../anamnesis/research/ACTIVE_MEMORY.md).
+thesis + measurements: [`research/ACTIVE_MEMORY.md`](../nevertwice/research/ACTIVE_MEMORY.md).
 
 ```python
-from anamnesis.api import guards_check, anticipate, what_breaks
+from nevertwice.api import guards_check, anticipate, what_breaks
 
 # A — guard a proposed action against learned mistakes (0 tokens unless it fires)
 for hit in guards_check("model = torch.device('cpu')", project="myproj"):
@@ -50,8 +50,8 @@ print(what_breaks("prism-orchestrator", project="myproj"))     # downstream impa
 From any MCP client the same three are `memory_guard_check`, `memory_anticipate`, and
 `memory_what_breaks`. Measured on real tasks (DeepSeek), a fired guard cuts the real error rate
 **0.36 → 0.05**; on a task series, active interventions match always-inject's error-prevention for
-**~31× fewer tokens** ([`research/LIVE_VALIDATION.md`](../anamnesis/research/LIVE_VALIDATION.md),
-[`research/ACTIVE_MEMORY.md`](../anamnesis/research/ACTIVE_MEMORY.md)). Guards are **Popperian** —
+**~31× fewer tokens** ([`research/LIVE_VALIDATION.md`](../nevertwice/research/LIVE_VALIDATION.md),
+[`research/ACTIVE_MEMORY.md`](../nevertwice/research/ACTIVE_MEMORY.md)). Guards are **Popperian** —
 advisory until corroborated, self-retiring on false positives, always overridable — so memory
 proposes and reality disposes; the agent is never boxed in.
 
@@ -63,7 +63,7 @@ are LLM-emitted during extraction, normalised to lowercase kebab tokens, and sto
 frontmatter, so the graph reads straight from your files.
 
 ```python
-from anamnesis.api import notes_for_entity, co_occurring, entity_graph, related_by, relation_graph
+from nevertwice.api import notes_for_entity, co_occurring, entity_graph, related_by, relation_graph
 
 notes_for_entity("cuda", project="myproj")     # every lesson tagged with this entity, newest first
 co_occurring("cuda", project="myproj")         # [{entity, shared}] entities that share a note with it
@@ -85,10 +85,10 @@ yourself; `remember_lessons` takes `entities` / `relations` keys per lesson. Fro
 MCP client:
 
 ```bash
-python anamnesis/memory_search.py --entity=cuda myproj     # a lesson's notes, co-occurrence, and edges
-python anamnesis/memory_search.py --entities myproj        # the project's entity graph
-python anamnesis/memory_search.py --relations myproj       # the project's typed-relation graph
-python anamnesis/memory_search.py --graph=mermaid myproj   # export the graph (mermaid | dot | json)
+python nevertwice/memory_search.py --entity=cuda myproj     # a lesson's notes, co-occurrence, and edges
+python nevertwice/memory_search.py --entities myproj        # the project's entity graph
+python nevertwice/memory_search.py --relations myproj       # the project's typed-relation graph
+python nevertwice/memory_search.py --graph=mermaid myproj   # export the graph (mermaid | dot | json)
 ```
 
 `graph_export(fmt="mermaid"|"dot"|"json")` renders the whole graph for a visual: Mermaid drops
@@ -104,7 +104,7 @@ no words with the query. Off by default (plain recall is unchanged); each expans
 `via` field naming the edge that pulled it in. From the CLI it is `memory_search.py "query" myproj
 --expand-relations`, and the MCP `memory_search` tool takes an `expand_relations` flag. To make the
 **SessionStart** card relation-aware too (so a project's bug also carries its fix automatically), set
-`ANAMNESIS_RELATION_EXPAND=N`; it stays off the per-prompt path to keep that precise and token-lean.
+`NEVERTWICE_RELATION_EXPAND=N`; it stays off the per-prompt path to keep that precise and token-lean.
 
 ## Generic capture (any agent)
 
@@ -112,7 +112,7 @@ no words with the query. Off by default (plain recall is unchanged); each expans
 four lines:
 
 ```python
-from anamnesis.capture import MemorySession
+from nevertwice.capture import MemorySession
 
 with MemorySession(project="myproj", agent="my-bot") as mem:
     mem.log_user(prompt)
@@ -123,7 +123,7 @@ with MemorySession(project="myproj", agent="my-bot") as mem:
 Already have an OpenAI-style chat function? Decorate it:
 
 ```python
-from anamnesis.capture import capture_chat
+from nevertwice.capture import capture_chat
 
 @capture_chat(project="myproj", agent="my-bot")
 def chat(messages):
@@ -137,7 +137,7 @@ Or wrap the **client itself** (zero rewrite, every call captured transparently):
 
 ```python
 from openai import OpenAI
-from anamnesis.capture import auto_capture
+from nevertwice.capture import auto_capture
 
 client = auto_capture(OpenAI(), project="myproj", agent="my-bot")
 client.chat.completions.create(model="gpt-4o", messages=[...])   # captured automatically
@@ -156,7 +156,7 @@ it can decide what it learned and write it directly, with **no extraction model*
 emit a JSON list of lessons and persist the batch in one call (one lock, one commit):
 
 ```python
-from anamnesis.api import remember_lessons
+from nevertwice.api import remember_lessons
 
 lessons = [
     {"type": "mistake", "title": "CUDA OOM accumulates across epochs",
@@ -166,11 +166,11 @@ lessons = [
 remember_lessons(lessons, project="myproj")        # injection-shaped/empty lessons are skipped
 ```
 
-For Claude Code, drop in the [`anamnesis-remember` skill](../skills/anamnesis-remember/SKILL.md);
+For Claude Code, drop in the [`nevertwice-remember` skill](../skills/nevertwice-remember/SKILL.md);
 for any MCP client, the `memory_remember` tool does the same. Full guide, the JSON contract, and a
 provider-agnostic system-prompt template: [SELF_EXTRACTION.md](SELF_EXTRACTION.md).
 
-## Always-on auto-capture for ANY agent: `anamnesis watch`
+## Always-on auto-capture for ANY agent: `nevertwice watch`
 
 Claude Code captures automatically via hooks. Every *other* agent that writes its sessions to
 disk gets the same "magic" from the **watch daemon**: a tiny stdlib polling loop (no new deps)
@@ -178,9 +178,9 @@ that auto-detects the known agent log dirs on your machine and idempotently mine
 sessions:
 
 ```bash
-python -m anamnesis.watch            # auto-detect known agent logs, poll every 60s
-python -m anamnesis.watch --list     # show exactly what it would watch, then exit
-python -m anamnesis.watch --once     # one sweep then exit (good for cron / a smoke test)
+python -m nevertwice.watch            # auto-detect known agent logs, poll every 60s
+python -m nevertwice.watch --list     # show exactly what it would watch, then exit
+python -m nevertwice.watch --once     # one sweep then exit (good for cron / a smoke test)
 ```
 
 It takes one short-held vault lock per cycle and yields instantly if Claude Code is mid-write, so
@@ -203,7 +203,7 @@ login (Task Scheduler / a `launchd`/`systemd --user` unit / `nohup … &`) and f
 Point it at anything explicitly (covers SQLite-based editors after an export, or a custom agent):
 
 ```bash
-python -m anamnesis.watch --dir ~/exported_cursor_chats --agent cursor --project myproj
+python -m nevertwice.watch --dir ~/exported_cursor_chats --agent cursor --project myproj
 ```
 
 ### The one-shot sweep (cron alternative)
@@ -213,34 +213,34 @@ resident daemon. A file is keyed by path + content hash, so an unchanged transcr
 mined twice and a changed one is re-mined once:
 
 ```bash
-python -m anamnesis.ingest --dir ~/.codex/sessions --project myproj --agent codex
-python -m anamnesis.ingest --dir ./agent_logs --recursive --glob "*.jsonl,*.md"
+python -m nevertwice.ingest --dir ~/.codex/sessions --project myproj --agent codex
+python -m nevertwice.ingest --dir ./agent_logs --recursive --glob "*.jsonl,*.md"
 ```
 
 Both paths need an extraction backend (one cloud key or local Ollama), apply the same
-secret-redaction and danger guards, and skip files over `ANAMNESIS_MAX_SWEEP_BYTES` and any
+secret-redaction and danger guards, and skip files over `NEVERTWICE_MAX_SWEEP_BYTES` and any
 symlink that escapes the swept dir. Honest scope: polling, not native file events, but always-on
 for every agent that logs to disk, which is all of them except the SQLite-only editors.
 
-## LangChain  ·  `pip install anamnesis-memory[langchain]`
+## LangChain  ·  `pip install nevertwice-memory[langchain]`
 
 ```python
-from anamnesis.integrations.langchain_memory import AnamnesisRetriever, AnamnesisMemory
+from nevertwice.integrations.langchain_memory import NevertwiceRetriever, NevertwiceMemory
 
-retriever = AnamnesisRetriever(project="myproj", k=5)        # a LangChain Retriever
+retriever = NevertwiceRetriever(project="myproj", k=5)        # a LangChain Retriever
 docs = retriever.invoke("how did we fix the OOM crash")      # → list[Document]
 
-memory = AnamnesisMemory(project="myproj", memory_key="history")
+memory = NevertwiceMemory(project="myproj", memory_key="history")
 # load_memory_variables injects relevant past lessons into the prompt;
 # save_context collects the exchange — call memory.flush() to extract durable lessons.
 ```
 
-## LlamaIndex  ·  `pip install anamnesis-memory[llamaindex]`
+## LlamaIndex  ·  `pip install nevertwice-memory[llamaindex]`
 
 ```python
-from anamnesis.integrations.llamaindex_retriever import AnamnesisRetriever
+from nevertwice.integrations.llamaindex_retriever import NevertwiceRetriever
 
-retriever = AnamnesisRetriever(project="myproj", k=5)
+retriever = NevertwiceRetriever(project="myproj", k=5)
 nodes = retriever.retrieve("how did we fix the OOM crash")   # → list[NodeWithScore]
 
 # plug into a query engine:
@@ -248,20 +248,20 @@ from llama_index.core.query_engine import RetrieverQueryEngine
 engine = RetrieverQueryEngine.from_args(retriever)
 ```
 
-## Optional: the trained reranker  ·  `pip install anamnesis-memory[reranker]`
+## Optional: the trained reranker  ·  `pip install nevertwice-memory[reranker]`
 
 A purpose-trained cross-encoder (bge-reranker-v2-m3) reorders recall results for a precision
 gain on top of the calibrated fusion: **recall@1 0.55 → 0.61, MRR +0.06 on LongMemEval** (see
 [BENCHMARKS](BENCHMARKS.md) / `research/RETRIEVAL_FUSION.md`). Off by default; enable with
-`ANAMNESIS_XRERANK=1` (it imports torch+transformers lazily, runs best on a GPU, and degrades
+`NEVERTWICE_XRERANK=1` (it imports torch+transformers lazily, runs best on a GPU, and degrades
 safely to first-stage order if unavailable). It flows through everything above: `recall`, the
 CLI (`memory_search --xrerank`), and both framework retrievers.
 
 ## Optional: a cloud embedder (no local model for recall)
 
 Semantic recall defaults to local Ollama (bge-m3). To run it with **no local model**, set
-`ANAMNESIS_EMBED_PROVIDER=openai|voyage|cohere|gemini` (or point `ANAMNESIS_EMBED_BASE_URL` at any
+`NEVERTWICE_EMBED_PROVIDER=openai|voyage|cohere|gemini` (or point `NEVERTWICE_EMBED_BASE_URL` at any
 OpenAI-compatible `/v1/embeddings` host) and the matching key, then re-embed once:
-`python -m anamnesis.embed_index --rebuild`. The cache self-invalidates on a provider/model change
+`python -m nevertwice.embed_index --rebuild`. The cache self-invalidates on a provider/model change
 (stale vectors are demoted to text-only, never cross-cosined), and with **no** embedder at all
 recall still answers via lexical FTS5 instead of going dark. See `.env.example`.
