@@ -141,7 +141,7 @@ Updated verdict (Exp 5 reverses the earlier "ship nothing"):
 
 - **Default, unchanged:** bge-m3 hybrid, **stdlib-only, zero dependencies**. Exp 4 confirms no local
   embedder beats it on top-1 as a drop-in; Exp 1-3 confirm no free re-weighting or promptable reranker helps.
-- **Ships as opt-in (`nevertwice.reranker_ce`, `NEVERTWICE_XRERANK=1`, `pip install nevertwice-memory[reranker]`):**
+- **Ships as opt-in (`nevertwice.reranker_ce`, `NEVERTWICE_XRERANK=1`, `pip install nevertwice[reranker]`):**
   the bge-reranker-v2-m3 cross-encoder. Off by default; heavy deps (torch+transformers) imported lazily only
   when enabled; degrades safely to first-stage order if the model/GPU is absent. `memory_search --xrerank`
   and `search_core(xrerank=True)` expose it. This is the audit's P1 fix, now **measured and shipped** without

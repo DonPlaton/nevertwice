@@ -23,7 +23,7 @@ its tokens.*
 [![Core deps](https://img.shields.io/badge/core%20deps-0%20(stdlib)-orange)](#why-nevertwice)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![LongMemEval](https://img.shields.io/badge/LongMemEval%20R%405-0.80%20%E2%80%BA%20Mem0%200.76-blueviolet)](#benchmarks)
-[![Active Memory](https://img.shields.io/badge/active%20memory-31%C3%97%20fewer%20tokens%20%C2%B7%20%E2%88%9286%25%20errors-2ea043)](#memory-that-acts)
+[![Active Memory](https://img.shields.io/badge/active%20memory-%E2%88%9286%25%20errors%20%C2%B7%200--token%20guards-2ea043)](#memory-that-acts)
 
 ```text
 $ # days ago, a different session, your agent hit a CUDA OOM and Nevertwice recorded the lesson.
@@ -51,10 +51,12 @@ Nevertwice gives it a memory. It watches each session, distils the durable lesso
 Markdown notes, commits them to git, and feeds the relevant ones back at the start of the next
 session and again as you type each prompt. The agent stops re-learning and starts recollecting.
 
-The part most memory tools get wrong is the store itself. Here it is just files. You can open it
-in Obsidian, grep it, diff it, and copy the folder to move your agent's brain to another machine.
-There is no vector database to run and no service to trust. Embeddings run locally on Ollama by
-default, or on a single cloud key if you would rather not run a local model.
+The part most memory tools get wrong is the store itself. Here it is just files: your agent's
+memory is a folder of Markdown notes in a git repo (a *vault*), and you own every byte of it. You
+can open it in Obsidian, grep it, diff it, `git pull` it to another machine, or delete a note you
+disagree with. There is no vector database to run and no service to trust. That is the part no
+cloud competitor can copy without giving up their business model. Embeddings run locally on Ollama
+by default, or on a single cloud key if you would rather not run a local model.
 
 And it is not a toy. On the public LongMemEval benchmark, with the same local embedder for every
 system, Nevertwice out-retrieves the funded hosted leaders (Mem0, LangMem, A-MEM) on every metric,
@@ -70,7 +72,9 @@ git clone https://github.com/DonPlaton/nevertwice && cd nevertwice
 python install.py
 ```
 
-`install.py` detects your backend, prints what it chose, and wires Claude Code. Your next session
+`install.py` detects your backend, prints what it chose, and wires Claude Code (Anthropic's
+terminal coding agent). Using something else? Cursor, Cline, Codex, and Zed connect through the
+MCP server or the watch daemon instead ([INTEGRATIONS.md](docs/INTEGRATIONS.md)). Your next session
 starts with its memory already loaded. The five-minute walkthrough is in [QUICKSTART.md](QUICKSTART.md).
 
 > **Why not Mem0, Zep, or Letta?** Those are a hosted service plus a vector database you ship your
@@ -85,29 +89,42 @@ prompt, taxing every single turn. We measured that axis to its end and found it 
 the variable. So Nevertwice does something no other memory does. It treats memory as a set of
 **token-budgeted interventions** that stay silent until they have something worth saying.
 
-- **Guards (A).** A past mistake compiles into an executable check that fires *before* you repeat
-  it, at **zero context tokens until it fires**. The design is Popperian: a guard is advisory until
-  corroborated, retires itself on false positives, and is always overridable. Memory proposes,
-  reality disposes, and the agent is never boxed in.
+- **Guards (A).** A *guard* is a small executable check distilled from a past mistake. It fires
+  *before* you repeat that mistake, at **zero context tokens until it fires** (it lives in a file,
+  not your prompt). The design is Popperian: a guard is advisory until corroborated, retires itself
+  on false positives, and is always overridable. Memory proposes, reality disposes, and the agent
+  is never boxed in.
 - **Anticipation (B).** Predicts the failure your current plan is heading toward by resemblance
   to past ones, and surfaces *one* precise warning. Spend is proportional to risk, not paid per turn.
 - **Counterfactual (C).** *"What breaks if I change X?"* answered from an induced causal graph in
   a few lines rather than an episode dump, at about **7× fewer tokens** than recalling every
   related note.
 
-These are **measured on real tasks**, with the harness to reproduce each one:
+These are **measured on real tasks**, with the harness to reproduce each one. The samples are small
+and run by one person; the point is that the harness is in the repo and the numbers are checkable,
+not that they are the last word.
 
 | claim | result | evidence |
 |---|---|---|
-| a fired guard changes a real model's output | real error rate **0.36 → 0.05 (−86%)** on DeepSeek | [LIVE_VALIDATION.md](research/LIVE_VALIDATION.md) |
-| memory that acts vs always-inject | same error-prevention for **~31× fewer tokens**, a *net* token saving | [ACTIVE_MEMORY.md](research/ACTIVE_MEMORY.md) |
+| a fired guard changes a real model's output | real error rate **0.36 → 0.05 (−86%)** on DeepSeek (12 tasks × 8 trials) | [LIVE_VALIDATION.md](research/LIVE_VALIDATION.md) |
+| memory that acts vs *always-injecting* recalled text | same error-prevention for **~31× fewer tokens** | [ACTIVE_MEMORY.md](research/ACTIVE_MEMORY.md) |
 | answer-accuracy on the standard benchmark | **0.788** LongMemEval-oracle (open reasoner) | [QA_ACCURACY.md](research/QA_ACCURACY.md) |
 | retrieval vs the funded leaders | R@5 **0.80** › Mem0 0.76, one shared embedder | [COMPARISON.md](docs/COMPARISON.md) |
 
-All three axes are on the Python API **and** the MCP server, so this works on **every agent**:
-Claude Code, Cursor, Cline, Codex, Zed, and anything else that speaks MCP or writes logs to disk
-([INTEGRATIONS.md](docs/INTEGRATIONS.md)). The moat isn't a better database. It's a memory that
-*acts* and costs almost nothing until it does.
+One honest caveat we measured rather than hid: the payoff scales with the agent's own capability. A
+strong model applies a delivered lesson and captures most of the benefit; a small 3B model captures
+about half. Memory removes the *knowledge* bottleneck, not the reasoning one
+([LIVE_VALIDATION.md](research/LIVE_VALIDATION.md)).
+
+All three axes are on the Python API **and** the MCP server (Model Context Protocol, the open
+standard agents use to call tools), so this works on **every agent**: Claude Code, Cursor, Cline,
+Codex, Zed, and anything else that speaks MCP or writes session logs to disk
+([INTEGRATIONS.md](docs/INTEGRATIONS.md)).[^cursor] The moat isn't a better database. It's plain
+files you own, plus a memory that *acts* and costs almost nothing until it does.
+
+[^cursor]: Cursor and Windsurf keep their chat in a local SQLite blob rather than plain log files,
+so they need a one-time export step before the watch daemon can read them; the MCP path works
+for them with no export. Details in [INTEGRATIONS.md](docs/INTEGRATIONS.md).
 
 ## Why Nevertwice
 
@@ -191,8 +208,9 @@ in Obsidian as-is.)
 Retrieval is hybrid: semantic search over local embeddings, fused with lexical search, behind a
 calibrated abstention gate. A nonsense query gets back *"no confident match"* instead of a
 confident wrong answer, which matters more for a memory than chasing one extra point of recall.
-Newer lessons supersede older ones so contradictions do not pile up, and a fix links to the bug it
-resolved.
+When a newer lesson contradicts an older one, *supersession* retires the old note (it moves to a
+`Superseded/` folder, kept for history but out of the recall pool) so the agent only ever sees the
+current truth, and a fix links back to the bug it resolved.
 
 ## Memory for any agent
 
@@ -215,7 +233,10 @@ SQLite blob rather than plain files, so they need an export step before the watc
 ## Benchmarks
 
 External and reproducible, on **LongMemEval-oracle** (940 sessions in one shared store, 500
-human-annotated questions, local `bge-m3`):
+human-annotated questions, local `bge-m3`). Nevertwice's own numbers reproduce with the zero-dep
+core; the head-to-head against Mem0 / LangMem / A-MEM installs those competitors' own packages to
+run them on the same stand (their deps, not ours), and the dataset is fetched separately
+([research/data/README.md](research/data/README.md)):
 
 | method | R@1 | R@5 | R@10 | MRR |
 |---|---|---|---|---|

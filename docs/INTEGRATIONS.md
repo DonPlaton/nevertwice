@@ -222,7 +222,7 @@ secret-redaction and danger guards, and skip files over `NEVERTWICE_MAX_SWEEP_BY
 symlink that escapes the swept dir. Honest scope: polling, not native file events, but always-on
 for every agent that logs to disk, which is all of them except the SQLite-only editors.
 
-## LangChain  ·  `pip install nevertwice-memory[langchain]`
+## LangChain  ·  `pip install nevertwice[langchain]`
 
 ```python
 from nevertwice.integrations.langchain_memory import NevertwiceRetriever, NevertwiceMemory
@@ -235,7 +235,7 @@ memory = NevertwiceMemory(project="myproj", memory_key="history")
 # save_context collects the exchange - call memory.flush() to extract durable lessons.
 ```
 
-## LlamaIndex  ·  `pip install nevertwice-memory[llamaindex]`
+## LlamaIndex  ·  `pip install nevertwice[llamaindex]`
 
 ```python
 from nevertwice.integrations.llamaindex_retriever import NevertwiceRetriever
@@ -248,7 +248,7 @@ from llama_index.core.query_engine import RetrieverQueryEngine
 engine = RetrieverQueryEngine.from_args(retriever)
 ```
 
-## Optional: the trained reranker  ·  `pip install nevertwice-memory[reranker]`
+## Optional: the trained reranker  ·  `pip install nevertwice[reranker]`
 
 A purpose-trained cross-encoder (bge-reranker-v2-m3) reorders recall results for a precision
 gain on top of the calibrated fusion: **recall@1 0.55 → 0.61, MRR +0.06 on LongMemEval** (see

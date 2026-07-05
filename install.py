@@ -134,6 +134,13 @@ def _our_hook_entries(groups: list):
 
 def wire_hooks() -> None:
     print(f"[hooks] {SETTINGS}")
+    if not SETTINGS.parent.exists():
+        # ~/.claude is absent: this machine has no Claude Code. Wiring still creates it and
+        # is harmless, but say so plainly so a Cursor/Codex/other user isn't misled into
+        # thinking they are now set up for their editor (they wire via MCP / the watch daemon).
+        print("  note: ~/.claude not found - Claude Code doesn't look installed here.")
+        print("        For Cursor / Cline / Codex / Zed, wire the MCP server or run the watch")
+        print("        daemon instead - see docs/INTEGRATIONS.md. (Wiring the hooks anyway is safe.)")
     settings = {}
     if SETTINGS.exists():
         try:
@@ -268,12 +275,25 @@ def _register_tasks_cron() -> None:
 def detect_backends() -> None:
     """Show the zero-config backend auto-detection: what extraction + recall will
     use right now, with no env edits. Read straight from the runtime so install and
-    runtime can never disagree (audit L-b)."""
+    runtime can never disagree (audit L-b). If NOTHING is configured, say so loudly -
+    a silent success here is the top first-run surprise (make the degraded state obvious)."""
     sys.path.insert(0, str(PKG))
     try:
         import memory_hook as _m
         print("[backends] auto-detected (zero config - override in .env only if you want to):")
         print(_m.backend_report())
+        no_llm = not _m.llm_available()
+        no_embed = (_m.EMBED_PROVIDER == "ollama") and not _m.embedder_available()
+        if no_llm or no_embed:
+            print("\n  !! HEADS UP: running in DEGRADED mode.")
+            if no_llm:
+                print("     - No extractor. Sessions are SAVED and retried, but no new lessons are")
+                print("       distilled until a backend appears. Fix: `python install.py --ollama`")
+                print("       (installs Ollama models), or add one cloud key to .env (see .env.example).")
+            if no_embed:
+                print("     - No embedder. Recall falls back to lexical full-text search (still works,")
+                print("       just less semantic). Fix: start Ollama with bge-m3 pulled.")
+            print("     Nothing is broken - this is the honest fallback. Re-run this installer any time.")
     except Exception as exc:                       # detection is best-effort, never fatal
         print(f"[backends] detection skipped ({type(exc).__name__})")
 

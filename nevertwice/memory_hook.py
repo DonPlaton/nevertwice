@@ -670,8 +670,11 @@ def slug_project(name: str) -> str:
 def _strip_lead_icon(t: str) -> str:
     """Drop a leading type-icon the LLM sometimes echoes into a title, so the
     note heading doesn't render the icon twice (audit C5)."""
-    t = re.sub(r'^[\s✅⚠️\U0001f3af•·\---]+', '',
-               t or '')
+    # char class holds the icons the LLM tends to echo plus real dashes/bullets. Dashes are
+    # escaped individually (\-) NOT as a range: a bare '-' between two chars in a class is a
+    # set-difference/range and Python 3.14 warns on it (FutureWarning). Keep hyphen, en dash,
+    # em dash, bullets.
+    t = re.sub('^[\\s✅⚠️\U0001f3af•·\\-–—]+', '', t or '')
     return t.strip() or "untitled"
 
 

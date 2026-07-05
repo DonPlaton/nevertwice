@@ -61,8 +61,9 @@ import guards as _guards         # noqa: E402  (active memory A - executable gua
 import anticipate as _anticipate # noqa: E402  (active memory B - anticipatory warning)
 import causal as _causal         # noqa: E402  (active memory C - counterfactual)
 
+import config as _cfg            # noqa: E402
 SERVER_NAME = "nevertwice"
-SERVER_VERSION = "1.1.0"
+SERVER_VERSION = _cfg.VERSION    # single source: config.VERSION (never drift from pyproject)
 DEFAULT_PROTOCOL = "2025-06-18"
 
 TOOLS = [

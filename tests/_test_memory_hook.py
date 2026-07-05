@@ -201,12 +201,39 @@ def test_collect_existing_titles():
     check("excludes wrong ntype", "ccc" not in got["pattern"])
 
 
+def test_strip_lead_icon():
+    print("\n- strip_lead_icon drops icons/dashes/bullets, keeps text, no 3.14 warning -")
+    import warnings
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", FutureWarning)   # the char-class range trap fires here
+        cases = [("✅ Fixed the bug", "Fixed the bug"), ("— dash title", "dash title"),
+                 ("– en dash", "en dash"), ("•· bullet", "bullet"),
+                 ("⚠️ warn", "warn"), ("plain", "plain"), ("", "untitled"),
+                 ("\U0001f3af target", "target")]
+        for inp, want in cases:
+            check(f"strip {want!r}", mh._strip_lead_icon(inp) == want,
+                  repr(mh._strip_lead_icon(inp)))
+
+
+def test_version_is_single_sourced():
+    print("\n- version single-sourced: config.VERSION == pyproject == mcp -")
+    import re
+    import config as cfg
+    root = Path(__file__).resolve().parent.parent
+    pyproject = (root / "pyproject.toml").read_text(encoding="utf-8")
+    pv = re.search(r'^version = "([^"]+)"', pyproject, re.M).group(1)
+    check("pyproject matches config.VERSION", pv == cfg.VERSION, f"{pv} vs {cfg.VERSION}")
+    import mcp_server
+    check("mcp SERVER_VERSION matches", mcp_server.SERVER_VERSION == cfg.VERSION)
+
+
 if __name__ == "__main__":
     print("=== memory_hook unit tests (sandbox: %s) ===" % mh.VAULT)
     for fn in [test_slug_helpers, test_stem_parse, test_project_filter,
               test_yaml_quoting, test_truncate_smart, test_lock,
               test_archive_filename_date, test_unique_path_collision,
-              test_processed_db_guard, test_collect_existing_titles]:
+              test_processed_db_guard, test_collect_existing_titles,
+              test_strip_lead_icon, test_version_is_single_sourced]:
         try:
             fn()
         except Exception as e:
