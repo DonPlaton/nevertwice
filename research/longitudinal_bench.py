@@ -49,7 +49,7 @@ from pathlib import Path
 try:
     import numpy as np
 except ImportError:
-    print("longitudinal_bench needs numpy (research dep): pip install numpy", file=sys.stderr)
+    sys.stderr.write("longitudinal_bench needs numpy (research dep): pip install numpy\n")
     sys.exit(2)
 
 HERE = Path(__file__).resolve().parent

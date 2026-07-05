@@ -16,3 +16,4 @@ def ci(xs):
 
 
 _ci = ci          # the benches reference `_ci`; keep the private alias so call sites are untouched
+__all__ = ["ci", "_ci"]   # exported to the sibling harnesses (from _common import _ci)

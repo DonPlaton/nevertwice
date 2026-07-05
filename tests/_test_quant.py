@@ -104,7 +104,6 @@ with tempfile.TemporaryDirectory() as td:
     # candidates come back with ±1 vecs; the ranker cosines the float query
     cands = ix.iter_candidates("p")
     check("3 candidates unpacked", len(cands) == 3)
-    rec = dict(cands)
     # query near va → note-a must score highest under asymmetric cosine
     scored = sorted(((m.cosine(va, r["vec"]), s) for s, r in cands), reverse=True)
     check("query≈va ranks note-a first", scored[0][1] == "note-a")
