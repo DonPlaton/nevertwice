@@ -156,7 +156,8 @@ def _rocchio(beta, k0):
 
 def run_rocchio(queries, base_r, base_m):
     print(f"  Rocchio PRF sweep - recall@{K} (Δ vs baseline) / MRR:")
-    print(f"  {'beta\\K0':>8}" + "".join(f"{k0:>14}" for k0 in K0S))
+    _hdr = "beta\\K0"          # backslash lifted out of the f-string (PEP 701 is 3.12+ only)
+    print(f"  {_hdr:>8}" + "".join(f"{k0:>14}" for k0 in K0S))
     best = (base_r, base_m, 0.0, 0)
     grid = {}
     for beta in BETAS:
