@@ -12,6 +12,11 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parent.parent / "research"))
 sys.path.insert(0, str(HERE.parent.parent / "nevertwice"))
+
+try:
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+except Exception:
+    pass
 import precision_bench as pb
 import _rerank as rr
 

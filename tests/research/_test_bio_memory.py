@@ -8,6 +8,11 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parent.parent / "nevertwice"))
 sys.path.insert(0, str(HERE.parent.parent / "research"))
+
+try:
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+except Exception:
+    pass
 import bio_memory as b
 
 P = F = 0

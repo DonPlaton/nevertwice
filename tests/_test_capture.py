@@ -8,6 +8,11 @@ from unittest import mock
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parent / "nevertwice"))
+
+try:
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+except Exception:
+    pass
 import capture
 MemorySession, capture_chat = capture.MemorySession, capture.capture_chat
 _last_user, _text_of = capture._last_user, capture._text_of

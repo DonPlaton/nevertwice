@@ -16,6 +16,11 @@ _ROOT = r"D:\Projects" if os.name == "nt" else "/projects"   # OS-appropriate te
 os.environ["NEVERTWICE_PROJECT_ROOT"] = _ROOT
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "nevertwice"))   # import the package
+
+try:
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+except Exception:
+    pass
 import memory_hook as mh  # noqa: E402
 mh.VAULT = _sandbox
 mh.PROCESSED_DB = _sandbox / ".processed_sessions.json"

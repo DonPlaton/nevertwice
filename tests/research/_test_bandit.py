@@ -16,6 +16,11 @@ except ImportError:
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parent.parent / "nevertwice"))
 sys.path.insert(0, str(HERE.parent.parent / "research"))
+
+try:
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+except Exception:
+    pass
 import posterior_model as pm
 import bandit as bd
 

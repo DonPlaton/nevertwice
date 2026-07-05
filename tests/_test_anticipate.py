@@ -8,6 +8,11 @@ import tempfile
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "nevertwice"))
+
+try:
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+except Exception:
+    pass
 import memory_hook as m          # noqa: E402
 import anticipate as A           # noqa: E402
 

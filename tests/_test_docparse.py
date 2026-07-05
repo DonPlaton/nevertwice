@@ -7,6 +7,11 @@ import zipfile
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "nevertwice"))
+
+try:
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+except Exception:
+    pass
 import docparse as dp            # noqa: E402
 
 _W = "http://schemas.openxmlformats.org/wordprocessingml/2006/main"

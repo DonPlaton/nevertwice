@@ -12,6 +12,11 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parent.parent / "research"))
 sys.path.insert(0, str(HERE.parent.parent / "nevertwice"))
+
+try:
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+except Exception:
+    pass
 import memory_hook as m          # noqa: E402
 import longmem_eval as le        # noqa: E402
 import qa_eval as qa             # noqa: E402
