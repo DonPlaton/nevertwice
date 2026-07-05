@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""RESEARCH — real-trace recurrence validation (roadmap 3A.2; paper §8 decisive check).
+"""RESEARCH - real-trace recurrence validation (roadmap 3A.2; paper §8 decisive check).
 
 The synthetic 3A benchmark BUILT recurrence in; the honest question its limitations section
 raises is: does GENUINE recurrence exist in a *real* accumulated store, and does the production
-slug-based recurrence counter capture it? This tool answers both on a live vault — and finds
+slug-based recurrence counter capture it? This tool answers both on a live vault - and finds
 the gap the supersession/consolidation fixes target: recurrence is real but slug-invisible.
 
-METHOD. Read ONLY the local embedding cache (vectors + metadata — never raw note text). Within
+METHOD. Read ONLY the local embedding cache (vectors + metadata - never raw note text). Within
 each project, greedily cluster notes whose cosine ≥ a relative threshold (bge-m3 cosines bunch
 near a high background ~0.42, so the threshold is swept above it, not the near-exact 0.92 the
 dedup uses). A cluster spanning >1 DATE is GENUINE cross-session recurrence: the same lesson
@@ -68,11 +68,11 @@ def main():
              if isinstance(r, dict) and isinstance(r.get("vec"), list)]
     bar = "=" * 78
     print(bar)
-    print("  REAL-TRACE RECURRENCE VALIDATION (3A.2) — does genuine recurrence exist, and does")
+    print("  REAL-TRACE RECURRENCE VALIDATION (3A.2) - does genuine recurrence exist, and does")
     print("  the slug-based counter capture it? (aggregate-only; no note content read)")
     print(bar)
     if len(notes) < 20:
-        print(f"  only {len(notes)} embedded notes — set NEVERTWICE_VAULT to a real, populated store.")
+        print(f"  only {len(notes)} embedded notes - set NEVERTWICE_VAULT to a real, populated store.")
         return
     by_proj = defaultdict(list)
     for s, r in notes:
@@ -82,7 +82,7 @@ def main():
     print(f"  {len(notes)} embedded notes across {len(by_proj)} projects")
     print(f"  slug-based recurrence>1 (what production recorded): {slug_recurring} notes\n")
 
-    print(f"— genuine SEMANTIC recurrence (cosine clusters; >1 date = cross-session) —")
+    print(f"- genuine SEMANTIC recurrence (cosine clusters; >1 date = cross-session) -")
     print(f"  {'cosine≥':>8} {'clusters':>9} {'cross-session':>14} {'notes in clusters':>18}")
     sweep = {}
     for thr in THRESHOLDS:
@@ -98,7 +98,7 @@ def main():
 
     xs55 = sweep[RECALL_THR]["cross_session"]
     print(f"\n  → KEY: ~{xs55} genuine cross-session recurring topics exist at cosine≥{RECALL_THR}, "
-          f"but the slug counter\n    recorded {slug_recurring} — real recurrence is present yet "
+          f"but the slug counter\n    recorded {slug_recurring} - real recurrence is present yet "
           f"SLUG-INVISIBLE (the extractor rephrases each\n    occurrence). It needs semantic "
           f"aggregation (supersession/consolidation), not slug matching.")
 
@@ -136,7 +136,7 @@ def main():
     if q:
         base = recall[0.0]
         best_w = max(WEIGHTS, key=lambda w: recall[w])
-        print(f"\n— same-topic recall@{K} vs additive recurrence prior ({q} queries) —")
+        print(f"\n- same-topic recall@{K} vs additive recurrence prior ({q} queries) -")
         print(f"  {'prior w':>8} {'recall@'+str(K):>10}")
         for w in WEIGHTS:
             mark = "  <- relevance-only" if w == 0.0 else (
@@ -152,7 +152,7 @@ def main():
         out = {"notes": len(notes), "projects": len(by_proj), "slug_recurring": slug_recurring,
                "semantic_recurrence": sweep,
                "recall_at_k": K, "recall_queries": q, "recall_vs_prior_weight": recall}
-        p = HERE / "real_trace_bench.json"      # aggregate only — safe to keep
+        p = HERE / "real_trace_bench.json"      # aggregate only - safe to keep
         p.write_text(json.dumps(out, ensure_ascii=False, indent=1), encoding="utf-8")
         print(f"\n  saved aggregate metrics → {p}")
     print(bar)

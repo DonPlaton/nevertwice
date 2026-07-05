@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""RESEARCH — figure for the end-to-end QA-accuracy study (QA_ACCURACY.md / the paper).
+"""RESEARCH - figure for the end-to-end QA-accuracy study (QA_ACCURACY.md / the paper).
 
 Two panels, both built straight from the saved `qa_results*.json` so the figure can never
 drift from the numbers:
-  (left)  the reader sweep — oracle answer-accuracy climbs monotonically as the reader is
+  (left)  the reader sweep - oracle answer-accuracy climbs monotonically as the reader is
           upgraded while the memory is held fixed (qwen3:30b → deepseek-chat → +CoT →
           deepseek-reasoner), the visual proof that the memory is not the bottleneck.
   (right) per-question-type accuracy, oracle (reasoner) vs our harder global-pool retrieved,
@@ -37,7 +37,7 @@ def main():
         matplotlib.use("Agg")
         import matplotlib.pyplot as plt
     except Exception as e:
-        print(f"[qa_figure skipped: matplotlib unavailable — {e}]")
+        print(f"[qa_figure skipped: matplotlib unavailable - {e}]")
         return
 
     # ── the reader sweep (oracle overall) ──
@@ -59,7 +59,7 @@ def main():
     green, grey = "#2ea043", "#8b949e"
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 4.6))
 
-    # left — monotone climb, memanto headline as a reference line
+    # left - monotone climb, memanto headline as a reference line
     ax1.plot(range(len(vals)), vals, "-o", color=green, lw=2.4, ms=9, zorder=3)
     for i, v in enumerate(vals):
         ax1.annotate(f"{v:.3f}", (i, v), textcoords="offset points", xytext=(0, 10),
@@ -71,10 +71,10 @@ def main():
     ax1.set_xticklabels(labels, fontsize=9)
     ax1.set_ylim(0.55, 0.95)
     ax1.set_ylabel("LongMemEval-oracle answer-accuracy")
-    ax1.set_title("Reader sweep — memory held fixed, only the reader changes", fontsize=11)
+    ax1.set_title("Reader sweep - memory held fixed, only the reader changes", fontsize=11)
     ax1.grid(axis="y", alpha=0.25)
 
-    # right — per-type oracle vs retrieved
+    # right - per-type oracle vs retrieved
     x = range(len(QTYPES))
     w = 0.38
     ax2.bar([i - w / 2 for i in x], orc_v, w, label="oracle (reasoner)", color=green)
@@ -83,7 +83,7 @@ def main():
     ax2.set_xticklabels(SHORT, fontsize=9, rotation=20)
     ax2.set_ylim(0, 1.05)
     ax2.set_ylabel("answer-accuracy")
-    ax2.set_title("By question type — where the work remains", fontsize=11)
+    ax2.set_title("By question type - where the work remains", fontsize=11)
     ax2.legend(fontsize=9, loc="upper right")
     ax2.grid(axis="y", alpha=0.25)
 

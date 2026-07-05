@@ -2,7 +2,7 @@
 """Self-check for anticipate.py (active memory, axis B). Verifies the 0-token silence below
 threshold, firing on trajectory-similarity, top-1 discipline, recurrence weighting, and the
 Popperian adaptive threshold (false alarms raise the bar until a predictor goes quiet).
-Synthetic signatures + a temp state dir — no vault, no embedder, no network."""
+Synthetic signatures + a temp state dir - no vault, no embedder, no network."""
 import sys
 import tempfile
 from pathlib import Path

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Self-check for docparse.py — .docx (stdlib zip+xml), .html (stdlib parser), plain
+"""Self-check for docparse.py - .docx (stdlib zip+xml), .html (stdlib parser), plain
 text, raw fallback, and the .pdf error path. No network, no external deps required."""
 import sys
 import tempfile

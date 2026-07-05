@@ -1,4 +1,4 @@
-"""Central configuration for Nevertwice — de-personalized and cross-platform.
+"""Central configuration for Nevertwice - de-personalized and cross-platform.
 
 Every path and tunable resolves from an environment variable with a sensible
 default, so the same code runs unchanged on any machine. `NEVERTWICE_*` overrides
@@ -6,7 +6,7 @@ its default; the legacy `CLAUDE_MEMORY_*` names are still read for back-compat,
 so an existing install keeps working after the rename.
 
 The memory store is plain markdown + JSON under git. Obsidian can open it for a
-graph/backlinks GUI, but nothing here requires Obsidian — it is fully optional.
+graph/backlinks GUI, but nothing here requires Obsidian - it is fully optional.
 """
 import os
 from pathlib import Path
@@ -15,7 +15,7 @@ from pathlib import Path
 # Mirror every legacy-prefixed variable into its NEVERTWICE_* twin (never overriding an
 # explicitly-set new name). This module is imported before any config read, so EVERY
 # `os.environ.get("NEVERTWICE_X")` across the codebase transparently honours an existing
-# ANAMNESIS_X / CLAUDE_MEMORY_X — one release of painless back-compat, one block of code.
+# ANAMNESIS_X / CLAUDE_MEMORY_X - one release of painless back-compat, one block of code.
 for _k in list(os.environ):
     for _old in ("ANAMNESIS_", "CLAUDE_MEMORY_"):
         if _k.startswith(_old):
@@ -33,7 +33,7 @@ def _expand(p: str) -> Path:
 
 
 def _default_vault() -> str:
-    """~/.nevertwice — but if only the pre-rename ~/.anamnesis exists, keep using it, so a
+    """~/.nevertwice - but if only the pre-rename ~/.anamnesis exists, keep using it, so a
     v1 install upgrades in place without a data move (the store is the user's data; we never
     relocate it silently)."""
     new, old = Path.home() / ".nevertwice", Path.home() / ".anamnesis"
@@ -43,7 +43,7 @@ def _default_vault() -> str:
 
 
 # ── Core paths (cross-platform defaults under the user's home) ────────
-# The memory store. Default: ~/.nevertwice (an existing ~/.anamnesis is honoured — see
+# The memory store. Default: ~/.nevertwice (an existing ~/.anamnesis is honoured - see
 # _default_vault). Override with NEVERTWICE_HOME (or legacy ANAMNESIS_HOME / *_VAULT).
 VAULT = _expand(env("VAULT") or os.environ.get("NEVERTWICE_HOME")
                 or _default_vault())
@@ -58,7 +58,7 @@ PROJECTS_ROOT = _expand(os.environ.get("NEVERTWICE_PROJECTS_ROOT")
 
 # ── Knowledge profiles: the opt-in "Brain layer" ─────────────────────
 # What the user uses Nevertwice for. "coding" (default) = today's lean operational
-# memory only — sessions become mistakes/patterns/decisions, nothing else. A brain
+# memory only - sessions become mistakes/patterns/decisions, nothing else. A brain
 # profile ("research"/"general") additionally turns on the PULL-ONLY entity layer
 # with the matching ontology (see docs/BRAIN_LAYER_DESIGN.md). The layer is OFF unless
 # a brain profile is listed, so a default install is byte-for-byte the operational
@@ -75,7 +75,7 @@ ONTOLOGY = {
     "general":  ["topic", "person", "place", "work", "idea"],
 }
 
-# Suggested typed edges per profile — guides extraction toward a graph that actually connects the
+# Suggested typed edges per profile - guides extraction toward a graph that actually connects the
 # entities above (the model may still emit the generic rel set; nothing is allow-listed away). The
 # research edges are the scholarly relations a literature/experiment graph is built from.
 RELATION_HINTS = {
@@ -93,7 +93,7 @@ def profiles() -> set:
 
 
 def brain_enabled() -> bool:
-    """True iff any knowledge (brain) profile is active — the master gate for the
+    """True iff any knowledge (brain) profile is active - the master gate for the
     entity layer. False for a coding-only install (the default)."""
     return bool(profiles() & set(ONTOLOGY))
 
@@ -111,7 +111,7 @@ def entity_types() -> list:
 
 def relation_hints() -> list:
     """Suggested typed-edge names for the active brain profiles (e.g. cites / evaluated-on),
-    in declaration order. Empty for a coding-only install — the generic rel set is used then."""
+    in declaration order. Empty for a coding-only install - the generic rel set is used then."""
     out: list = []
     for p in profiles():
         for r in RELATION_HINTS.get(p, []):

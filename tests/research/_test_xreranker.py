@@ -2,7 +2,7 @@
 """Tests for the W2 trained-cross-encoder path: _xreranker.py + longmem_eval's
 per-embedder cache routing. The light tests are offline (no model, no network);
 the actual cross-encoder ranking is gated behind NEVERTWICE_TEST_XRERANK=1 because
-it downloads ~2 GB and needs a GPU — CI stays fast and hermetic without it."""
+it downloads ~2 GB and needs a GPU - CI stays fast and hermetic without it."""
 import os
 import sys
 from pathlib import Path
@@ -25,7 +25,7 @@ def test_available_is_bool():
 
 
 def test_empty_passages_no_model_load():
-    # must short-circuit before any import/model load — empty input → empty scores
+    # must short-circuit before any import/model load - empty input → empty scores
     assert xr.rerank_scores("q", []) == []
 
 

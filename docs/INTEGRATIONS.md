@@ -1,6 +1,6 @@
 # Integrations
 
-Nevertwice works with **any** agent, not just Claude Code. The stdlib-only core exposes one
+Nevertwice works with **any** agent; Claude Code is only the zero-config case. The stdlib-only core exposes one
 in-process Python API (`nevertwice.api`); the framework adapters and the generic capture helpers
 are thin shims over it. Nothing here is required by the core; install only what you use.
 
@@ -11,7 +11,7 @@ from nevertwice.api import recall, remember, capture_session
 
 # write one lesson now (recallable immediately if the embedder is free)
 remember("Crash-safe writes", project="myproj", type="pattern",
-         prevention="write to a tmp file then os.replace — never partial files")
+         prevention="write to a tmp file then os.replace - never partial files")
 
 # recall the most relevant lessons for a query
 for hit in recall("how do I persist files safely", project="myproj", k=5):
@@ -27,23 +27,23 @@ and falls back to lexical search when the GPU/Ollama is busy. `remember` writes 
 
 ## Active Memory: memory that acts (the differentiator, on every agent)
 
-Most memory is something you *read* — it taxes every turn with injected text. Nevertwice also
+Most memory is something you *read* - it taxes every turn with injected text. Nevertwice also
 *acts*, and stays silent until it has something worth saying, so it costs **zero context tokens
 until an intervention earns its place**. All three axes are on the Python API **and** the MCP
-server, so Cursor / Cline / Codex / Zed / any MCP client get the moat, not just Claude Code. Full
+server, so Cursor / Cline / Codex / Zed / any MCP client get the same active memory Claude Code gets. Full
 thesis + measurements: [`research/ACTIVE_MEMORY.md`](../research/ACTIVE_MEMORY.md).
 
 ```python
 from nevertwice.api import guards_check, anticipate, what_breaks
 
-# A — guard a proposed action against learned mistakes (0 tokens unless it fires)
+# A - guard a proposed action against learned mistakes (0 tokens unless it fires)
 for hit in guards_check("model = torch.device('cpu')", project="myproj"):
     print(hit["status"], hit["message"])      # 'blocking' → stop and comply or override
 
-# B — predict the failure the current plan is heading toward (one warning, or silence)
+# B - predict the failure the current plan is heading toward (one warning, or silence)
 anticipate("refactoring the orchestrator, touching prism_orchestrator.py", project="myproj")
 
-# C — counterfactual: what breaks if I change this? (a synthesized answer, not an episode dump)
+# C - counterfactual: what breaks if I change this? (a synthesized answer, not an episode dump)
 print(what_breaks("prism-orchestrator", project="myproj"))     # downstream impacts + failure modes
 ```
 
@@ -51,8 +51,8 @@ From any MCP client the same three are `memory_guard_check`, `memory_anticipate`
 `memory_what_breaks`. Measured on real tasks (DeepSeek), a fired guard cuts the real error rate
 **0.36 → 0.05**; on a task series, active interventions match always-inject's error-prevention for
 **~31× fewer tokens** ([`research/LIVE_VALIDATION.md`](../research/LIVE_VALIDATION.md),
-[`research/ACTIVE_MEMORY.md`](../research/ACTIVE_MEMORY.md)). Guards are **Popperian** —
-advisory until corroborated, self-retiring on false positives, always overridable — so memory
+[`research/ACTIVE_MEMORY.md`](../research/ACTIVE_MEMORY.md)). Guards are **Popperian** -
+advisory until corroborated, self-retiring on false positives, always overridable - so memory
 proposes and reality disposes; the agent is never boxed in.
 
 ## Entity knowledge graph
@@ -74,7 +74,7 @@ Lessons also carry **typed relation edges** (`caused-by`, `fixed-by`, `depends-o
 graph is traversable, not just faceted. Each edge `target` is itself an entity, so you can hop:
 
 ```python
-related_by("cuda", "fixed-by", project="myproj")   # [{rel, target, notes}] — what fixes CUDA issues
+related_by("cuda", "fixed-by", project="myproj")   # [{rel, target, notes}] - what fixes CUDA issues
 hop = related_by("cuda", "fixed-by", project="myproj")[0]["target"]
 related_by(hop, "requires", project="myproj")      # multi-hop: cuda -> grad-checkpointing -> pytorch
 relation_graph(project="myproj")                   # {entity: [{rel, target, notes}]} typed-edge overview
@@ -232,7 +232,7 @@ docs = retriever.invoke("how did we fix the OOM crash")      # → list[Document
 
 memory = NevertwiceMemory(project="myproj", memory_key="history")
 # load_memory_variables injects relevant past lessons into the prompt;
-# save_context collects the exchange — call memory.flush() to extract durable lessons.
+# save_context collects the exchange - call memory.flush() to extract durable lessons.
 ```
 
 ## LlamaIndex  ·  `pip install nevertwice-memory[llamaindex]`

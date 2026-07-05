@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Self-check for digest.py — conflicts pairing + digest windowing/aggregation.
+"""Self-check for digest.py - conflicts pairing + digest windowing/aggregation.
 Mocks the note iterators (no vault, no files, no network), the same way the research
 tests mock the LLM, so it asserts the pure logic deterministically."""
 import sys

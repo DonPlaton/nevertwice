@@ -2,8 +2,8 @@
 """Regression tests for opt-in 1-bit embedding quantization (launch round, A2).
 
 NEVERTWICE_EMBED_QUANT=binary packs sign-bit codes in the SQLite scale-index: 16x
-smaller than the float16 default, and — because the ranker cosines the float query
-against the unpacked {-1,+1} doc — scoring as asymmetric binary cosine (measured
+smaller than the float16 default, and - because the ranker cosines the float query
+against the unpacked {-1,+1} doc - scoring as asymmetric binary cosine (measured
 ~lossless on LongMemEval; research/QUANTIZATION.md). These guard the pack/unpack
 round-trip, the size win, the self-retrieval ranking property, and a full
 build+search end-to-end in binary mode.

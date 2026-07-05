@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Self-check for qa_eval.py — mocked LLM, no network, no GPU. Verifies the
+"""Self-check for qa_eval.py - mocked LLM, no network, no GPU. Verifies the
 accuracy math, per-type aggregation, the oracle vs retrieved context selection,
 the resumable cache (no second LLM call), the down-backend guard, a distinct
 judge model, and the deepseek-reasoner response parsing (mocked urllib)."""

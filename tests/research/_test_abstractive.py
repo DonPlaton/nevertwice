@@ -6,7 +6,7 @@ boundary so the headline ("memory's value is abstraction") cannot silently rot:
   • CORE: the principle aligns to the TRUE latent rule better than the mean episode (denoising);
   • variance reduction: the rule-recovery gain grows with cluster size K;
   • honesty boundary: when context overwhelms the rule (high beta) recall collapses toward chance
-    for BOTH stores — consolidation amplifies a present signal, it cannot manufacture one;
+    for BOTH stores - consolidation amplifies a present signal, it cannot manufacture one;
   • PRIVACY: the real-trace tie-in reads no note content and degrades gracefully without a vault.
 
 Needs numpy (research dep).
@@ -61,7 +61,7 @@ hi = ab.run(k=8, beta=1.5, seeds=6)
 chance = 1.0 / ab.R
 ok(hi["recall_epi"][0] < 4 * chance and hi["recall_con"][0] < 4 * chance,
    f"honesty: at high beta both collapse toward chance ({hi['recall_epi'][0]:.3f}, "
-   f"{hi['recall_con'][0]:.3f} vs 1/R={chance:.3f}) — no manufactured signal")
+   f"{hi['recall_con'][0]:.3f} vs 1/R={chance:.3f}) - no manufactured signal")
 
 # ── 5. PRIVACY: real-trace tie-in reads no content, degrades gracefully ──
 src = (HERE.parent.parent / "research" / "abstractive.py").read_text(encoding="utf-8")

@@ -8,11 +8,11 @@ vault is never touched.
 bash examples/demo.sh          # run it (best with Ollama running → semantic recall)
 ```
 
-## The full-scenario demo — every mechanism, with numbers
+## The full-scenario demo - every mechanism, with numbers
 
 `examples/scenario_demo.py` is the complete tour: it seeds a throwaway vault with a realistic
 multi-session history of one web-app project, then exercises **every** mechanism end to end on the
-real system and prints what each one buys — in tokens and errors prevented. Nothing is mocked,
+real system and prints what each one buys - in tokens and errors prevented. Nothing is mocked,
 nothing hits the network.
 
 ```bash
@@ -33,17 +33,17 @@ On the seeded project it shows, measured live:
 
 At `--scale=20` the same store holds ~220 notes across 20 projects: the recall-vs-dump economy
 grows to **44×** (the ratio scales with the store), and the offline guard generator catches **3/4**
-of a battery of repeat-actions (the default LLM generator is far more precise — the live study
+of a battery of repeat-actions (the default LLM generator is far more precise - the live study
 measures a **−86%** real error rate, `research/LIVE_VALIDATION.md`).
 
 The large-scale *quantitative* benchmarks live in [`../research/`](../research/):
 retrieval on 940 LongMemEval sessions, the 200-task improvement-per-token study, the live guard
-validation, and the eff-vs-capability curve. This demo is the qualitative counterpart — all
+validation, and the eff-vs-capability curve. This demo is the qualitative counterpart - all
 mechanisms, one realistic project, visible advantages.
 
 ## The README GIF
 
-The README embeds **`docs/tour.gif`** — a ~45-second tour recorded from the real system on a
+The README embeds **`docs/tour.gif`** - a ~45-second tour recorded from the real system on a
 throwaway vault. Act 1 is the "memory that acts" beat from `guard_demo.py` (a mistake recorded
 once; days later the guard fires *before* the agent repeats it). Act 2 walks the remaining
 mechanisms from `scenario_demo.py` with live numbers: recall + token economy, anticipation,
@@ -60,8 +60,8 @@ asciinema rec -c "python examples/guard_demo.py" guard.cast
 agg --theme monokai --speed 1.2 guard.cast docs/guard.gif
 ```
 
-On Windows (no asciinema): generate the asciicast v2 file programmatically — run the demo
+On Windows (no asciinema): generate the asciicast v2 file programmatically - run the demo
 functions in-process, capture writes with virtual timestamps into `[t, "o", data]` JSONL, then
 render with `agg`. That is how `docs/tour.gif` was produced. Keep it under ~3 MB so it loads
-inline on GitHub, and land the `⛔ guard fires` line in the first few seconds — that is the
+inline on GitHub, and land the `⛔ guard fires` line in the first few seconds - that is the
 moment that earns the star.

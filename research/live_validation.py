@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""RESEARCH — live validation of the Active Memory thesis on a real LLM.
+"""RESEARCH - live validation of the Active Memory thesis on a real LLM.
 
 Code can look right and still be a non-product. The whole Active Memory story rests on ONE
-empirical assumption: that a fired guard/warning actually changes a real model's output — that
+empirical assumption: that a fired guard/warning actually changes a real model's output - that
 seeing the lesson makes the agent avoid the pitfall. The D simulation *assumed* that effect
 (`eff = 0.75`). This harness MEASURES it, end to end, on a real model, and then feeds the
 measured number back into D to see whether the improvement-per-token conclusion survives on
@@ -11,11 +11,11 @@ measured ground instead of an assumption.
 ## The experiment (paired, objective, honest)
 
 A curated set of real coding micro-tasks, each with a **common pitfall** and an **objective
-static check** (regex/AST — we never execute model output, for safety). For each task we run a
+static check** (regex/AST - we never execute model output, for safety). For each task we run a
 real model (DeepSeek, the user's key) twice:
 
-  * **without memory** — just the task.
-  * **with active memory** — the task plus the ONE-LINE guard the system would fire.
+  * **without memory** - just the task.
+  * **with active memory** - the task plus the ONE-LINE guard the system would fire.
 
 We measure the pitfall rate in each condition; the drop is the real `eff`. We also run the
 actual `guards.check` on the *unguarded* outputs to confirm axis A genuinely detects the real
@@ -27,7 +27,7 @@ a rate, not an anecdote.
     python research/live_validation.py --dry                 # list tasks + self-check the checks
 
 Honest by construction: if the guard does NOT reduce the pitfall, this prints eff≈0 and the
-thesis is in trouble — which is exactly what we want to learn before shipping.
+thesis is in trouble - which is exactly what we want to learn before shipping.
 """
 import json
 import os
@@ -49,7 +49,7 @@ except Exception:
     pass
 
 
-# ── objective static checks (pitfall present?) — no execution of model output ──
+# ── objective static checks (pitfall present?) - no execution of model output ──
 
 def _strip_fences(code: str) -> str:
     """Pull the code out of a ```python ... ``` block if present; else return as-is."""
@@ -101,7 +101,7 @@ def chk_eq_none(c):
 
 
 # ── project-specific knowledge: constraints the model CANNOT know from training. This is
-# memory's true value — conveying a fact no LLM was trained on. `check` = did the code apply
+# memory's true value - conveying a fact no LLM was trained on. `check` = did the code apply
 # the constraint the guard states? base rate should be high (unknowable), eff high (guard tells).
 def chk_render_guard(c):     # constraint applied = empty-guard before render_chart
     return not bool(re.search(r"(if\s+(not\s+)?rows|if\s+len\(\s*rows|rows\s*and\b)", c))
@@ -126,11 +126,11 @@ PROJECT_TASKS = [
     {"id": "api-empty-guard", "check": chk_render_guard, "family": "project",
      "prompt": "Write a short Python snippet that calls render_chart(rows) to display a list of "
                "rows. Only the code.",
-     "guard": "guard: render_chart(rows) raises on an empty list — always check `if rows:` first."},
+     "guard": "guard: render_chart(rows) raises on an empty list - always check `if rows:` first."},
     {"id": "api-ms-units", "check": chk_ms_units, "family": "project",
      "prompt": "Write a short Python snippet that uses set_timeout(t) to set a 5 second timeout. "
                "Only the code.",
-     "guard": "guard: set_timeout takes MILLISECONDS, not seconds — pass seconds*1000."},
+     "guard": "guard: set_timeout takes MILLISECONDS, not seconds - pass seconds*1000."},
     {"id": "api-auth-order", "check": chk_auth_order, "family": "project",
      "prompt": "Write a short Python snippet that creates Client() and calls .connect() on it. "
                "Only the code.",
@@ -147,35 +147,35 @@ TASKS = PROJECT_TASKS + [
      "prompt": "Write a short Python function that appends a value to an optional list and "
                "returns the list, so a caller can omit the list on the first call. Only the code.",
      "guard": "guard: a mutable default argument (=[] or ={}) is created once and shared across "
-              "every call, so it accumulates — use =None and create the list inside the function."},
+              "every call, so it accumulates - use =None and create the list inside the function."},
     {"id": "bare-except", "check": chk_bare_except,
      "prompt": "Write a short Python function that parses a string into an int and returns 0 if "
                "it cannot. Only the code.",
      "guard": "guard: a bare `except:` also swallows KeyboardInterrupt/SystemExit and hides real "
-              "bugs — catch the specific exception (except ValueError)."},
+              "bugs - catch the specific exception (except ValueError)."},
     {"id": "div-zero", "check": chk_div_zero,
      "prompt": "Write a short Python function average(nums) that returns the mean of a list of "
                "numbers. Only the code.",
-     "guard": "guard: sum(nums)/len(nums) raises ZeroDivisionError on an empty list — handle the "
+     "guard": "guard: sum(nums)/len(nums) raises ZeroDivisionError on an empty list - handle the "
               "empty case explicitly."},
     {"id": "no-context-manager", "check": chk_no_context_manager,
      "prompt": "Write a short Python function read_lines(path) that returns the lines of a text "
                "file. Only the code.",
-     "guard": "guard: open() without a `with` block leaks the file handle if an error is raised — "
+     "guard": "guard: open() without a `with` block leaks the file handle if an error is raised - "
               "use `with open(path) as f:`."},
     {"id": "sql-format", "check": chk_sql_format,
      "prompt": "Write a short Python function get_user(cursor, user_id) that runs a SQL query to "
                "fetch a user row by its id. Only the code.",
-     "guard": "guard: building SQL by string-formatting the id is injectable — pass it as a "
+     "guard": "guard: building SQL by string-formatting the id is injectable - pass it as a "
               "parameter: cursor.execute('... WHERE id = ?', (user_id,))."},
     {"id": "float-eq", "check": chk_float_eq,
      "prompt": "Write a short Python function that returns True if a given float equals one third. "
                "Only the code.",
-     "guard": "guard: floating-point == is unreliable (0.1+0.2 != 0.3) — use math.isclose."},
+     "guard": "guard: floating-point == is unreliable (0.1+0.2 != 0.3) - use math.isclose."},
     {"id": "mutate-iter", "check": chk_mutate_iter,
      "prompt": "Write a short Python function drop_evens(lst) that removes the even numbers from "
                "the list in place. Only the code.",
-     "guard": "guard: removing from a list while iterating it skips elements — iterate over a copy "
+     "guard": "guard: removing from a list while iterating it skips elements - iterate over a copy "
               "(for x in lst[:]) or build a new list."},
     {"id": "eq-none", "check": chk_eq_none,
      "prompt": "Write a short Python function is_missing(x) that returns True when x is None. "
@@ -213,7 +213,7 @@ def make_caller(model="deepseek-chat", temperature=0.7, timeout=90):
 
 
 def make_ollama_caller(model="qwen2.5:3b", temperature=0.7, timeout=120):
-    """A plain-text caller for a LOCAL Ollama model — the 'weak agent' arm. No JSON mode (we
+    """A plain-text caller for a LOCAL Ollama model - the 'weak agent' arm. No JSON mode (we
     want code, not structured output), so a small model isn't fighting a format constraint."""
     def call(prompt):
         body = json.dumps({"model": model, "prompt": prompt, "stream": False,
@@ -366,7 +366,7 @@ def main():
     results = validate(TASKS, trials=trials, model=model, concurrency=concurrency, call=call)
     summ = _summarize(results, TASKS)
     print("=" * 74)
-    print(f"  LIVE VALIDATION — does a fired guard change a real model's output?  ({model})")
+    print(f"  LIVE VALIDATION - does a fired guard change a real model's output?  ({model})")
     print("=" * 74)
     print(f"  {'task':20} {'without':>8} {'with':>6} {'abs↓':>6} {'rel↓':>6} {'A-detect':>9}")
     for tid, r in results.items():

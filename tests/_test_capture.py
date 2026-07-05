@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Tests for nevertwice.capture — the generic, framework-agnostic capture surface
+"""Tests for nevertwice.capture - the generic, framework-agnostic capture surface
 (MemorySession, capture_chat, message parsing). api.capture_session is mocked, so no
 vault/LLM is touched; we assert what gets collected and when extraction fires."""
 import sys
@@ -79,7 +79,7 @@ def test_flush_resets_turns_no_duplicate_extraction():
 
 def test_flush_keeps_turns_on_nonraising_failure():
     # extraction that FAILS WITHOUT RAISING (malformed LLM JSON → stored=False) must keep
-    # the buffer so a retry can succeed — it used to wipe the conversation (code-review 2026-07)
+    # the buffer so a retry can succeed - it used to wipe the conversation (code-review 2026-07)
     with mock.patch.object(capture._api, "capture_session",
                            side_effect=[{"stored": False, "reason": "llm"},
                                         {"stored": True}]) as cs:

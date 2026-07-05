@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""RESEARCH — downstream consolidation eval (roadmap Phase 2): does REAL LLM principle-synthesis
+"""RESEARCH - downstream consolidation eval (roadmap Phase 2): does REAL LLM principle-synthesis
 close the 4A gap? (the decisive check before shipping consolidation).
 
 4A (ABSTRACTIVE.md) showed, on synthetic latent vectors, that averaging K episodic instances of a
-lesson recovers the latent rule better than any single instance — but flagged the load-bearing gap:
+lesson recovers the latent rule better than any single instance - but flagged the load-bearing gap:
 its "principle" is the *vector mean* of the cluster, an IDEALISATION. A production consolidation
-instead has an LLM summarise the cluster's *text* into a principle and embeds THAT — a different
+instead has an LLM summarise the cluster's *text* into a principle and embeds THAT - a different
 operator. This module measures the real operator on the live store, so the decision to ship
 abstractive consolidation (Phase 3) rests on a measured downstream number, not the synthetic upper
 bound.
@@ -15,9 +15,9 @@ cluster; a cluster of K>=3 spanning >1 date is a lesson re-encountered across se
 member held out as a SIMULATED NEW OCCURRENCE, synthesise a principle from the OTHER K-1 members'
 text (the LLM operator Phase 3 would ship), embed it, and ask two questions:
   1. Mechanism: does cosine(held-out, principle) beat cosine(held-out, best single episode), and does
-     it match the vector-mean idealisation (4A)? — i.e. is text-synthesis as good as the ideal mean?
+     it match the vector-mean idealisation (4A)? - i.e. is text-synthesis as good as the ideal mean?
   2. Downstream: in the FULL store, replacing the K-1 episodes with the 1 principle, is the held-out
-     occurrence's right topic still retrieved at top-3 — at K-1:1 compression? (vs the episodic store,
+     occurrence's right topic still retrieved at top-3 - at K-1:1 compression? (vs the episodic store,
      the production status quo, ~recall@3 0.71.)
 
 PRIVACY. Aggregate only: cosines, recall@k, win-rates, compression, cost. Reads the LOCAL cache
@@ -98,7 +98,7 @@ def synthesise_principle(texts, stats):
     """The real consolidation operator (prototype for Phase 3): summarise K notes that recur across
     sessions into the single general PRINCIPLE they teach. Returns principle text, or "" on failure."""
     lines = ["These memory notes recurred across different sessions and concern the SAME underlying",
-             "lesson. Write the single general PRINCIPLE they teach — the reusable takeaway, not the",
+             "lesson. Write the single general PRINCIPLE they teach - the reusable takeaway, not the",
              "specifics of any one instance.", "", "NOTES:"]
     for i, t in enumerate(texts):
         lines.append(f"[{i}] {(t or '')[:TEXT_CHARS]}")
@@ -131,11 +131,11 @@ def main():
              if isinstance(r, dict) and isinstance(r.get("vec"), list)]
     bar = "=" * 78
     print(bar)
-    print("  CONSOLIDATION DOWNSTREAM EVAL — does real LLM principle-synthesis preserve/beat raw")
+    print("  CONSOLIDATION DOWNSTREAM EVAL - does real LLM principle-synthesis preserve/beat raw")
     print("  episodes for retrieving a new occurrence? (closes the 4A vector-mean gap; aggregate-only)")
     print(bar)
     if len(notes) < 20:
-        print(f"  only {len(notes)} embedded notes — set NEVERTWICE_VAULT to a real, populated store.")
+        print(f"  only {len(notes)} embedded notes - set NEVERTWICE_VAULT to a real, populated store.")
         return
     by_proj = defaultdict(list)
     for s, r in notes:
@@ -156,10 +156,10 @@ def main():
     print(f"  {len(notes)} notes / {len(by_proj)} projects")
     print(f"  {len(clusters)} cross-session clusters (K>=3, >1 date), covering {n_notes_in} notes\n")
     if not clusters:
-        print("  no K>=3 cross-session clusters — store too young/sparse for a consolidation eval.")
+        print("  no K>=3 cross-session clusters - store too young/sparse for a consolidation eval.")
         return
     if not m.ollama_alive():
-        print("  Ollama not reachable — needed for synthesis + embedding. Start it and retry.")
+        print("  Ollama not reachable - needed for synthesis + embedding. Start it and retry.")
         return
 
     print(f"  synthesising principles (leave-one-out, model={MODEL}) ...")
@@ -201,19 +201,19 @@ def main():
                 con_hit += 1
     dt = time.time() - t0
     if not q:
-        print("  no principles synthesised (model failures) — check Ollama/model.")
+        print("  no principles synthesised (model failures) - check Ollama/model.")
         return
 
     avg = lambda xs: sum(xs) / len(xs)
     win = sum(1 for p, b in zip(prin, best_ep) if p >= b) / q          # principle >= best episode
     ideal = sum(1 for p, me in zip(prin, mean_ep) if p >= me) / q      # synthesis >= vector-mean
     epi_r, con_r = epi_hit / q, con_hit / q
-    print(f"\n— mechanism: cosine of the held-out new occurrence to ... ({q} leave-one-out queries) —")
+    print(f"\n- mechanism: cosine of the held-out new occurrence to ... ({q} leave-one-out queries) -")
     print(f"  best single episode (status quo):  {avg(best_ep):.3f}")
     print(f"  vector-mean of episodes (4A ideal): {avg(mean_ep):.3f}")
     print(f"  LLM-synthesised principle (real):   {avg(prin):.3f}")
     print(f"  principle >= best episode: {win:.0%} of queries   |   principle >= vector-mean: {ideal:.0%}")
-    print(f"\n— downstream: full-store recall@{K} for the right topic (compression {n_notes_in}->{len(clusters)}) —")
+    print(f"\n- downstream: full-store recall@{K} for the right topic (compression {n_notes_in}->{len(clusters)}) -")
     print(f"  episodic store (status quo):   {epi_r:.3f}")
     print(f"  consolidated store (principle):{con_r:.3f}   (Δ {con_r-epi_r:+.3f})")
     print(f"  cost: {stats['calls']} synthesis calls, {stats['errors']} errors, "
@@ -224,7 +224,7 @@ def main():
     if verdict_ship:
         print(f"  → SHIP-SUPPORTED: real LLM synthesis retrieves the new occurrence about as well as the")
         print(f"    best raw episode AND preserves full-store recall, while compressing {n_notes_in}->{len(clusters)}.")
-        print(f"    The 4A vector-mean result transfers to the real text operator — Phase 3 can ship it,")
+        print(f"    The 4A vector-mean result transfers to the real text operator - Phase 3 can ship it,")
         print(f"    archiving (not deleting) the episodes so instance detail stays one hop away.")
     else:
         print(f"  → SHIP-CAUTION: real synthesis underperforms raw episodes here (principle cosine")

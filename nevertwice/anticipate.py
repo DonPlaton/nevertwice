@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
-"""Active memory, axis B — anticipatory memory (predict the error BEFORE the action).
+"""Active memory, axis B - anticipatory memory (predict the error BEFORE the action).
 
-A guard (axis A) fires on an exact known code pattern: a sniper, high precision, low recall —
+A guard (axis A) fires on an exact known code pattern: a sniper, high precision, low recall -
 it only catches the *literal* repeat. Anticipatory memory is the early-warning radar: it fires
 when the agent's **current trajectory resembles a past failure situation**, catching a *novel*
 manifestation of a known failure mode that no regex would match. Given a description of what
 the agent is about to do (its plan, the files it is touching, the last few steps), it scores
 similarity to every past mistake and, only if the top risk clears an **adaptive threshold**,
-surfaces ONE precise warning — never a dump. See `research/ACTIVE_MEMORY.md`.
+surfaces ONE precise warning - never a dump. See `research/ACTIVE_MEMORY.md`.
 
 Token economy is the design center: below threshold it is **silent (0 tokens)**; above, it
 spends a single line (the single most-likely failure). Spend is proportional to predicted
-risk, not paid every turn. The threshold is Popperian — a failure-mode that keeps crying wolf
+risk, not paid every turn. The threshold is Popperian - a failure-mode that keeps crying wolf
 has its bar raised (its false alarms are recorded and it goes quiet), while one that keeps
 helping stays sensitive. Lexical by default (0-dep, no GPU); an optional embedding path
 sharpens the score when the local embedder is free.
@@ -66,7 +66,7 @@ def save_state(state: dict) -> None:
 
 
 def _content_tokens(text: str) -> set:
-    """Contentful tokens (length ≥ _MIN_TOKLEN) — drops short noise so similarity keys on the
+    """Contentful tokens (length ≥ _MIN_TOKLEN) - drops short noise so similarity keys on the
     distinctive terms of a failure, not on 'the'/'a'/'is'."""
     return {t for t in m._tokens(text or "") if len(t) >= _MIN_TOKLEN}
 
@@ -91,7 +91,7 @@ def build_signatures(project=None) -> list[dict]:
 
 
 def _recur_weight(recurrence: int) -> float:
-    """A failure that recurred is more worth a warning — a gentle, capped multiplier."""
+    """A failure that recurred is more worth a warning - a gentle, capped multiplier."""
     return 1.0 + 0.08 * min(max(recurrence - 1, 0), 5)
 
 
@@ -109,7 +109,7 @@ def build_idf(sigs) -> dict:
 
 def risk_score(traj_tokens: set, sig: dict, idf: dict | None = None) -> float:
     """Similarity of a trajectory to one failure signature, in [0,1]. IDF-weighted overlap
-    *coverage* — the share of the failure signature's distinctive mass the trajectory hits —
+    *coverage* - the share of the failure signature's distinctive mass the trajectory hits -
     softly damped so a lone-token coincidence can't fire, and recurrence-weighted. Coverage
     (not cosine) keeps short trajectories stable and the radar precise. Lexical: the
     always-available floor; the embedding blend in `anticipate()` is what lifts recall."""
@@ -139,7 +139,7 @@ def _effective_tau(state: dict, stem: str) -> float:
 def anticipate(trajectory: str, project=None, *, k: int = 1, sigs=None, state=None,
                use_embeddings: bool = False) -> list[dict]:
     """Predict the most likely failure the current `trajectory` is heading toward. Returns up
-    to `k` `{stem, risk, title, message}` whose risk clears the adaptive threshold — or `[]`
+    to `k` `{stem, risk, title, message}` whose risk clears the adaptive threshold - or `[]`
     (SILENT, 0 tokens) when nothing does. `k` defaults to 1: one precise warning, never a dump.
     Lexical by default; `use_embeddings=True` blends a semantic cosine when the embedder+cache
     are available (sharper, still 0-context-token). This is the radar; keep it quiet."""
@@ -154,7 +154,7 @@ def anticipate(trajectory: str, project=None, *, k: int = 1, sigs=None, state=No
     scored = []
     for sig in sigs:
         r = risk_score(traj_toks, sig, idf)
-        # blend the semantic signal only when there is SOME lexical overlap — otherwise bge-m3's
+        # blend the semantic signal only when there is SOME lexical overlap - otherwise bge-m3's
         # ~0.42 background cosine on unrelated text could fire a warning at zero lexical evidence
         # (code-review, 2026-07). The blend sharpens a real lexical hit; it never creates one.
         if emb_blend and r > 0 and sig["stem"] in emb_blend:
@@ -167,7 +167,7 @@ def anticipate(trajectory: str, project=None, *, k: int = 1, sigs=None, state=No
         prev = (sig.get("prevention") or "").strip()
         msg = f"resembles a past failure ({sig['title'][:60]}); risk {r:.2f}"
         if prev:
-            msg += f" — {prev[:120]}"
+            msg += f" - {prev[:120]}"
         out.append({"stem": sig["stem"], "risk": round(r, 3),
                     "title": sig["title"], "message": msg})
     return out
@@ -175,7 +175,7 @@ def anticipate(trajectory: str, project=None, *, k: int = 1, sigs=None, state=No
 
 def _embedding_blend(trajectory: str, sigs) -> dict | None:
     """Optional semantic sharpening: cosine of the trajectory vs each mistake's cached vector.
-    Returns {stem: cosine01} or None if the embedder/cache are unavailable — the lexical path
+    Returns {stem: cosine01} or None if the embedder/cache are unavailable - the lexical path
     always stands alone, so this never becomes a hard dependency."""
     try:
         if not m.embedder_available(2):
@@ -196,8 +196,8 @@ def _embedding_blend(trajectory: str, sigs) -> dict | None:
 
 
 def feedback(stem: str, outcome: str, *, state=None, persist: bool = True) -> dict:
-    """Adapt the predictor. `outcome`: 'helped' (a real, avoided failure — keep it sensitive)
-    or 'false_alarm' (fired but the situation was fine — raise its bar). Returns the updated
+    """Adapt the predictor. `outcome`: 'helped' (a real, avoided failure - keep it sensitive)
+    or 'false_alarm' (fired but the situation was fine - raise its bar). Returns the updated
     per-failure state. This is how a cry-wolf predictor goes quiet without a human editing a
     threshold."""
     owns = state is None
@@ -231,7 +231,7 @@ def main():
     hits = anticipate(traj, project=m.argval(argv, "project"),
                       k=int(m.argval(argv, "k", "1")), use_embeddings="--embed" in argv)
     if not hits:
-        print("ok — no anticipated failure above threshold (0 tokens spent).")
+        print("ok - no anticipated failure above threshold (0 tokens spent).")
         return
     for h in hits:
         print(f"  ⚠ (risk {h['risk']}) {h['message']}")

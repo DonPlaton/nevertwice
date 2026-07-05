@@ -74,7 +74,7 @@ def test_source_has_no_personal_data():
 
 
 def test_saved_metrics_are_aggregate_only():
-    """May read note text in-process, but persists ONLY aggregate metrics — no text field name in
+    """May read note text in-process, but persists ONLY aggregate metrics - no text field name in
     the save block."""
     src = Path(ce.__file__).read_text(encoding="utf-8")
     save_region = src.split("if SAVE", 1)[-1]

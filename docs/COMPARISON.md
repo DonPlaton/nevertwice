@@ -167,13 +167,13 @@ Effort tags kept for reference. ✅ = shipped.
 > disputed (the Mem0↔Zep LOCOMO war is unreconciled). **memanto's headline 89.8%
 > LongMemEval / 87.1% LoCoMo are answer-accuracy** (retrieval + LLM), a *different
 > axis* from the recall@k head-to-head above, and run on a **closed engine
-> (Moorcheh — `moorcheh-sdk` + a proprietary Docker image)**, so they are not
+> (Moorcheh - `moorcheh-sdk` + a proprietary Docker image)**, so they are not
 > independently reproducible the way this table's local, same-embedder numbers are.
 > Nevertwice's own answer-accuracy figure on the comparable axis (standard
 > LongMemEval-oracle, gold context) is **0.788** with an open reasoning reader
 > (deepseek-reasoner); a reader sweep walks it 0.61 → 0.68 → 0.75 → 0.79 with the memory
 > held fixed, localizing the ~0.11 gap to memanto's 0.898 as reader-model strength on hard
-> temporal/multi-session reasoning, not the memory — full decomposition (reader sweep, CoT
+> temporal/multi-session reasoning, not the memory - full decomposition (reader sweep, CoT
 > effect, a negative result on retrieving more) in
 > [`QA_ACCURACY.md`](../research/QA_ACCURACY.md). Mem0 (Apr-2026 rewrite)
 > and Letta (Feb-2026 MemFS) changed architecture recently; classic papers no longer

@@ -1,7 +1,7 @@
-# End-to-end QA accuracy on LongMemEval — the *answer* axis
+# End-to-end QA accuracy on LongMemEval - the *answer* axis
 
 `longmem_eval.py` measures **retrieval** (recall@k: is the evidence in the top-k?).
-This measures the thing vendors put on the slide: **answer-accuracy** — read the
+This measures the thing vendors put on the slide: **answer-accuracy** - read the
 evidence → answer → judge the answer against the gold, the same metric behind headlines
 like memanto's *"89.8% on LongMemEval"* or Mem0/Zep's LoCoMo numbers. The runner is
 [`qa_eval.py`](qa_eval.py); everything here reproduces from one command.
@@ -19,10 +19,10 @@ it) and the **retrieval setting** (gold context vs a harder pool).
 - **Metric:** answer-accuracy. An LLM judge marks the generated answer correct iff it
   conveys the gold answer's key fact (LongMemEval's grading rubric, one prompt).
 - **Two settings:**
-  - **oracle** — context = the question's gold evidence sessions. Because haystack == gold
-    here, **this is exactly the standard LongMemEval-oracle protocol** — the
+  - **oracle** - context = the question's gold evidence sessions. Because haystack == gold
+    here, **this is exactly the standard LongMemEval-oracle protocol** - the
     directly-vendor-comparable number. It isolates *reader + reasoning* from retrieval.
-  - **retrieved (global pool)** — our **own, harder** variant: pool **all 940** sessions
+  - **retrieved (global pool)** - our **own, harder** variant: pool **all 940** sessions
     into one store and make the ranker find each question's ~2 gold sessions among 938
     distractors before answering. Standard LongMemEval gives each question only its own
     tiny haystack (median **2** sessions); we deliberately stress the retriever far beyond
@@ -40,10 +40,10 @@ reasoning model), judge held at `deepseek-chat`:
 
 *500 questions, embedder bge-m3, reader deepseek-reasoner, judge deepseek-chat, 24k budget.*
 ¹ retrieved row is the deepseek-chat+CoT pipeline (the global-pool retrieval challenge is
-ranker-bound, not reader-bound — see the negative result below).
+ranker-bound, not reader-bound - see the negative result below).
 
 On the axis that matches a vendor headline, Nevertwice answers **78.8%** correct with a
-mid-tier open *reasoning* reader. The single-session categories are at 0.96–1.00; what
+mid-tier open *reasoning* reader. The single-session categories are at 0.96-1.00; what
 remains below 1.0 is reasoning difficulty (temporal date arithmetic 0.57, cross-session
 synthesis 0.81), where the *reader model* is the limiter, not the memory.
 
@@ -66,7 +66,7 @@ from terse-JSON to chain-of-thought, on the same questions:
 | `deepseek-chat` | chain-of-thought | 0.748 |
 | `deepseek-reasoner` (R1-class) | native reasoning | **0.788** |
 
-The climb is **monotone and the memory never changed** — only the reader did. Each upgrade
+The climb is **monotone and the memory never changed** - only the reader did. Each upgrade
 buys accuracy exactly on the reasoning-bound categories:
 
 - **A stronger chat judge alone adds little** (+0.064, qwen→deepseek-chat): the local-model
@@ -74,13 +74,13 @@ buys accuracy exactly on the reasoning-bound categories:
 - **Letting the model reason is the unlock** (+0.070 with CoT, +0.040 more with a true
   reasoning model): the terse-JSON prompt artificially suppressed the hard categories.
   Across the sweep, multi-session climbs **0.49 → 0.74 → 0.81** and
-  single-session-preference **0.40 → 0.53 → 0.67** — purely from a better reader. The
+  single-session-preference **0.40 → 0.53 → 0.67** - purely from a better reader. The
   memory held the answer at every step; the low early scores were *reader/prompt* artifacts.
   This is also how memory is used in production: the agent reasons over what it recalled.
 
 ## Negative result: retrieving *more* hurts
 
-The obvious lever for the global-pool gap — retrieve more sessions — **backfires**:
+The obvious lever for the global-pool gap - retrieve more sessions - **backfires**:
 
 | global-pool retrieved (deepseek, CoT) | overall | single-user | multi-session |
 |---|---|---|---|
@@ -91,9 +91,9 @@ At a fixed context budget, k=10 means **half the characters per session** plus f
 distractors, so single-session-user (the answer lives in *one* session) collapses
 0.586 → 0.314 and the aggregate drops. So the fix is not recall depth.
 
-But it is not reranking either. We took the obvious next lever — re-order the fusion top-30
+But it is not reranking either. We took the obvious next lever - re-order the fusion top-30
 with the **trained cross-encoder** (`bge-reranker-v2-m3`, the same one that lifts retrieval
-recall@1 0.55 → 0.61) before answering — and end-to-end accuracy is **flat: 0.464 → 0.468
+recall@1 0.55 → 0.61) before answering - and end-to-end accuracy is **flat: 0.464 → 0.468
 (+0.004)**, a wash that helps some categories and hurts others:
 
 | global-pool retrieved (deepseek, CoT) | overall | single-user | preference | knowledge-update |
@@ -103,14 +103,14 @@ recall@1 0.55 → 0.61) before answering — and end-to-end accuracy is **flat: 
 
 The reranker's recall@1 win **does not translate to answer accuracy at k=5**, because the
 reader already sees the top-5: promoting a gold session from rank 2 to rank 1 changes nothing
-when ranks 1–5 are all in the context. Reranking only helps the rare question whose gold sits
-at rank 6–30, and that is too small a set to move the aggregate.
+when ranks 1-5 are all in the context. Reranking only helps the rare question whose gold sits
+at rank 6-30, and that is too small a set to move the aggregate.
 
 **So both retrieval levers are negative.** Neither retrieving *more* (k=10, −0.06) nor ranking
 *better* (cross-encoder, +0.00) closes the global-pool gap at the answer level. The shipped
 fusion top-5 is already near its ceiling for the *answer* task; the residual gap is a
 first-stage **recall** problem (gold sessions ranked beyond top-30) and genuinely hard
-multi-evidence questions — a research problem, not a tuning knob. (Two clever-ideas-that-lose,
+multi-evidence questions - a research problem, not a tuning knob. (Two clever-ideas-that-lose,
 exactly what the lab exists to catch before they ship.)
 
 ## So: are we as accurate as memanto's 89.8%?
@@ -118,12 +118,12 @@ exactly what the lab exists to catch before they ship.)
 The honest, decomposed answer:
 
 - **On the comparable axis (LongMemEval-oracle, gold context), we are at 0.788** with a
-  mid-tier open *reasoning* reader (`deepseek-reasoner`). memanto reports 0.898 — a **~0.11
+  mid-tier open *reasoning* reader (`deepseek-reasoner`). memanto reports 0.898 - a **~0.11
   gap that the reader sweep localizes entirely to reader-model strength, not the memory.**
   Holding the memory fixed and only upgrading the reader walks accuracy 0.61 → 0.68 → 0.75 →
   **0.79**, monotonically, on exactly the reasoning-bound categories; the oracle setting
-  gives perfect retrieval and single-session sits at 0.96–1.00, so the store surfaces the
-  answer cleanly. `deepseek-reasoner` is **not** a frontier model — an o1 / GPT-4o / Claude
+  gives perfect retrieval and single-session sits at 0.96-1.00, so the store surfaces the
+  answer cleanly. `deepseek-reasoner` is **not** a frontier model - an o1 / GPT-4o / Claude
   class reader (which a vendor headline almost certainly uses, and which any user can plug
   in) would extend the same curve and close most of the remaining 0.11. We report the model
   openly at every step rather than quoting a naked percentage.
@@ -139,7 +139,7 @@ The honest, decomposed answer:
 **Bottom line:** the memory substrate is **not** the bottleneck. With gold context and an
 open reasoning reader we answer **78.8%** on the exact protocol vendors headline, and the
 reader sweep proves the remaining gap to ~90% is reader-model strength on hard temporal/
-multi-session reasoning — the part memory cannot fix and the part vendors close with a
+multi-session reasoning - the part memory cannot fix and the part vendors close with a
 frontier model that any user can swap in (the harness does, via `--reasoner`).
 
 ## Reproduce

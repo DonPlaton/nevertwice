@@ -6,7 +6,7 @@ note text (title + description + prevention) alongside each vector so lexical
 fallback and fact injection work without re-reading files, and records the
 prefix mode in .embeddings_meta.json so the query side always matches (audit H2).
 
-    python embed_index.py            # incremental — only notes not yet cached
+    python embed_index.py            # incremental - only notes not yet cached
     python embed_index.py --rebuild  # from scratch (use after changing the model
                                      #   or to upgrade a legacy unprefixed cache)
 """
@@ -23,7 +23,7 @@ except Exception:
 
 
 def note_fields(p: Path) -> tuple[str, str, str]:
-    """Parse (title, description, prevention) from a typed note for embedding — the shared
+    """Parse (title, description, prevention) from a typed note for embedding - the shared
     body parser (m._parse_note_body), so this can't drift from _note_meta/_note_snippet."""
     try:
         lines = p.read_text(encoding="utf-8", errors="replace").split("\n")
@@ -36,17 +36,17 @@ def note_fields(p: Path) -> tuple[str, str, str]:
 def main():
     if not m.embedder_available():
         if m.EMBED_PROVIDER == "ollama":
-            print("[embed_index] Ollama unreachable — aborting", file=sys.stderr)
+            print("[embed_index] Ollama unreachable - aborting", file=sys.stderr)
         else:
             print(f"[embed_index] embedding provider {m.EMBED_PROVIDER!r} has no API key "
-                  f"({m._EMBED_KEY_ENV.get(m.EMBED_PROVIDER, '?')}) — set it or "
+                  f"({m._EMBED_KEY_ENV.get(m.EMBED_PROVIDER, '?')}) - set it or "
                   "NEVERTWICE_EMBED_PROVIDER=ollama", file=sys.stderr)
         sys.exit(1)
     rebuild = "--rebuild" in sys.argv
     if not rebuild and not m.embed_cache_usable():
         # provider/model changed since the cache was built → old vectors live in a
         # different space; an incremental run would mix them, so force a full rebuild
-        print(f"[embed_index] embedder changed to {m.embed_signature()} — forcing "
+        print(f"[embed_index] embedder changed to {m.embed_signature()} - forcing "
               "--rebuild (old vectors are in a different space)", file=sys.stderr)
         rebuild = True
     cache = {} if rebuild else m.load_embed_cache()
@@ -80,16 +80,16 @@ def main():
                 or str(fm.get("status", "")).lower() == "resolved"
             conf = m._coerce_confidence(fm.get("confidence"))   # H2: read back in ranking
             # recurrence lives in the NOTE frontmatter (the source of truth, like resolved/
-            # confidence) — read it from there, not from the cache, else `--rebuild` (cache={})
+            # confidence) - read it from there, not from the cache, else `--rebuild` (cache={})
             # silently RESETS every recurrence to 1, dropping the accumulated count (matters now
-            # that recurrence grows via supersession — W15).
+            # that recurrence grows via supersession - W15).
             try:
                 recur = int(fm.get("recurrence")
                             or (cache.get(stem) or {}).get("recurrence", 1) or 1)
             except (TypeError, ValueError):
                 recur = 1
             # project gates the cloud embedder: a local-only project is never shipped
-            # to a cloud provider (audit 2026-06-18) — it stays text-only/lexical here
+            # to a cloud provider (audit 2026-06-18) - it stays text-only/lexical here
             vec = m.embed_text(f"{title}\n{desc}\n{prevention}".strip(), kind=kind, project=project)
             if vec:
                 entry = {"vec": vec, "ntype": ntype, "project": project,
@@ -112,7 +112,7 @@ def main():
     meta["prefixed"] = prefixed
     m.save_embed_meta(meta)
     # rebuild the SQLite scale index so the retrieval hot path reflects the
-    # refreshed cache (audit C2/C3) — derived & rebuildable, failures are ignored
+    # refreshed cache (audit C2/C3) - derived & rebuildable, failures are ignored
     m.rebuild_scale_index()
     print(f"[embed_index] done: +{added} new, {skipped} cached, {failed} failed, "
           f"{len(cache)} total (prefixed={prefixed})", file=sys.stderr)

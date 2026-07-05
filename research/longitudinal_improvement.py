@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""RESEARCH — axis D: the longitudinal improvement-per-token benchmark.
+"""RESEARCH - axis D: the longitudinal improvement-per-token benchmark.
 
 The axis no competitor measures. LongMemEval asks "can you recall a fact"; we showed that is
 reader-bound and commoditizing (`QA_ACCURACY.md`). The question that matters for an *agent's*
 memory is different:
 
-    Does the agent, because of memory, get measurably better over a SERIES of related tasks —
+    Does the agent, because of memory, get measurably better over a SERIES of related tasks -
     and does the memory cost fewer tokens than it saves?
 
 This harness measures exactly that, and it does so by isolating the MEMORY mechanism from the
@@ -15,19 +15,19 @@ controlled component with a base error rate and measure what each memory *design
 ## The model (faithful, not toy)
 
 A **task family** is a seeded sequence of N related tasks. Each task carries a *pitfall* (a
-mistake class), and pitfalls **recur** across the series — exactly like real coding, where the
+mistake class), and pitfalls **recur** across the series - exactly like real coding, where the
 same class of bug reappears. Three arms see the identical stream and the identical knowledge;
 they differ only in HOW and WHEN memory delivers it, and at what token cost:
 
-  * **no-mem**        — hits every pitfall independently at the base rate; repeats mistakes.
-  * **v1 always-inject** — recalls notes into context EVERY turn (the field's design): learns
+  * **no-mem**        - hits every pitfall independently at the base rate; repeats mistakes.
+  * **v1 always-inject** - recalls notes into context EVERY turn (the field's design): learns
                         each pitfall, but pays an injection tax on every task, pitfall or not.
-  * **v2 active (guards)** — 0 context tokens until a guard fires; a pitfall becomes a guard
+  * **v2 active (guards)** - 0 context tokens until a guard fires; a pitfall becomes a guard
                         after it bites once, and the guard then fires only on the tasks that
                         actually risk it. Pays only when it acts. Guards can misfire
                         (false-positive) and self-retire (Popperian), which we cost honestly.
 
-Both memory arms apply the **same** knowledge effect (`eff`) when the lesson is present — the
+Both memory arms apply the **same** knowledge effect (`eff`) when the lesson is present - the
 comparison is delivery economics, not who knows more. Token accounting is explicit and
 overridable; the default costs are conservative and matched to v1's measured injection size.
 
@@ -36,8 +36,8 @@ overridable; the default costs are conservative and matched to v1's measured inj
     python research/longitudinal_improvement.py --n 400 --seed 7
 
 Deterministic (seeded). Research dep: none for the sim; matplotlib optional for the figure.
-A --live mode (a handful of real tasks through an LLM) grounds the sim's one assumption — that
-a fired guard actually changes the model's output — and is a separate, opt-in validation.
+A --live mode (a handful of real tasks through an LLM) grounds the sim's one assumption - that
+a fired guard actually changes the model's output - and is a separate, opt-in validation.
 """
 import json
 import random
@@ -113,7 +113,7 @@ def run_arm(arm, tasks, base_fail, seed, *, guard_fp_rate=0.03, m_retire=3,
         elif arm == "v1":
             mem_tokens += c_inj                      # v1 injects on pitfall tasks here; the
             if lesson_present:                       # pitfall-free tasks are charged after the loop
-                fail_p = base_fail * (1 - eff)       # (v1's tax is unconditional — every task)
+                fail_p = base_fail * (1 - eff)       # (v1's tax is unconditional - every task)
         elif arm == "v2":
             st = guard_status.get(pit)
             if st and st != "retired":               # a live guard fires only on a real pitfall task
@@ -128,7 +128,7 @@ def run_arm(arm, tasks, base_fail, seed, *, guard_fp_rate=0.03, m_retire=3,
             if arm == "v2":
                 guard_status[pit] = "advisory"       # …and, for v2, an advisory guard
 
-    # v1 injects on EVERY task, not only pitfall tasks — charge the pitfall-free ones too.
+    # v1 injects on EVERY task, not only pitfall tasks - charge the pitfall-free ones too.
     if arm == "v1":
         mem_tokens += c_inj * sum(1 for p in tasks if p is None)
 
@@ -174,10 +174,10 @@ def _print(out, title=""):
 
 
 def sensitivity(save=False):
-    """Sweep base_fail and guard_fp_rate — the honesty check: where does v2 win, and where
+    """Sweep base_fail and guard_fp_rate - the honesty check: where does v2 win, and where
     does it NOT? (A benchmark that only ever flatters the home team is worthless.)"""
     rows = []
-    print("\nSENSITIVITY — v2 improvement-per-1k-tok vs v1, across regimes")
+    print("\nSENSITIVITY - v2 improvement-per-1k-tok vs v1, across regimes")
     print(f"  {'base_fail':>9} {'guard_fp':>9} {'v1 i/1k':>8} {'v2 i/1k':>8} {'v2 tok<v1?':>10} {'winner':>7}")
     for bf in (0.2, 0.4, 0.6):
         for fp in (0.0, 0.05, 0.15, 0.3):

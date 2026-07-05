@@ -1,28 +1,28 @@
 #!/usr/bin/env python3
-"""RESEARCH — abstractive memory consolidation (roadmap 4A; the other half of memory's value).
+"""RESEARCH - abstractive memory consolidation (roadmap 4A; the other half of memory's value).
 
 WHY THIS EXISTS. The real-trace studies (3A.2/3A.3) showed two things on a live store: relevance
 already saturates episode *recall* (recall@3 ≈ 0.71, no recurrence prior beats it), and the
 frequency prior is dormant. That raises the load-bearing question for the whole field: beyond a good
-retriever over raw logs, what is memory *for*? This module argues — and measures — the answer that
+retriever over raw logs, what is memory *for*? This module argues - and measures - the answer that
 the dormancy result points to: memory's marginal value is **abstraction** (turn many episodic
 instances of a lesson into one reusable principle) and **forgetting** (coverage-preserving
 compression, validated in 3A.3). Here we build and stress-test the abstraction half.
 
-THE MECHANISM. A lesson recurs across sessions as K *episodic* notes — each the same latent rule
+THE MECHANISM. A lesson recurs across sessions as K *episodic* notes - each the same latent rule
 seen through a different, noisy context (3A.2 found 37 such cross-session clusters on a real vault,
 slug-invisible). Consolidation replaces the cluster with one *principle* = the (normalised) mean of
 its members. Averaging is denoising: the shared rule direction reinforces while instance-specific
-context and noise (zero-mean across the cluster) cancel — so the principle recovers the latent rule
+context and noise (zero-mean across the cluster) cancel - so the principle recovers the latent rule
 that no single episode reveals cleanly. Variance of the off-rule component falls ~1/K.
 
 WHAT IT MEASURES (controlled, seeded; a mechanism benchmark, not an embedder test).
-  • novel-context rule recall — a query applying the rule in an UNSEEN context. The abstraction
+  • novel-context rule recall - a query applying the rule in an UNSEEN context. The abstraction
     claim: the denoised principle matches it better than any single context-bound episode.
-  • specific-instance recall — the honest trade-off: consolidation loses instance detail; we
+  • specific-instance recall - the honest trade-off: consolidation loses instance detail; we
     quantify it (and that rule-level recall, the link target, is preserved).
-  • compression — K episodes -> 1 principle.
-  • a sweep over context strength beta and cluster size K — where consolidation pays off.
+  • compression - K episodes -> 1 principle.
+  • a sweep over context strength beta and cluster size K - where consolidation pays off.
   • real-trace tie-in: how many of the real cross-session clusters are consolidation candidates
     (aggregate COUNT only; no note text read).
 
@@ -95,7 +95,7 @@ def _rule_of_top(qv, mem_flat, owner):
 
 
 def run(k, beta, seeds=SEEDS):
-    """Per seed: (1) rule-recovery — cosine of the principle vs the mean episode to the TRUE rule
+    """Per seed: (1) rule-recovery - cosine of the principle vs the mean episode to the TRUE rule
     (the direct denoising measure, free of distractor-floor confounds); (2) novel-context rule
     recall@1 over the full store, episodic vs consolidated; (3) specific-instance recall (no-harm)."""
     cos_prin, cos_epi, epi_hits, con_hits, spec_epi, spec_con = [], [], [], [], [], []
@@ -107,7 +107,7 @@ def run(k, beta, seeds=SEEDS):
         epi_owner = np.repeat(np.arange(R), k)
         con_flat = w["principles"]
         con_owner = np.arange(R)
-        # (1) rule recovery — how cleanly each memory aligns to the latent rule it came from
+        # (1) rule recovery - how cleanly each memory aligns to the latent rule it came from
         cos_prin.append(float(np.mean([con_flat[j] @ rules[j] for j in range(R)])))
         cos_epi.append(float(np.mean([w["episodes"][j, i] @ rules[j]
                                       for j in range(R) for i in range(k)])))
@@ -165,13 +165,13 @@ def _real_candidates():
 def main():
     bar = "=" * 78
     print(bar)
-    print("  ABSTRACTIVE CONSOLIDATION (4A) — does a denoised 'principle' recover the latent rule")
+    print("  ABSTRACTIVE CONSOLIDATION (4A) - does a denoised 'principle' recover the latent rule")
     print("  a recurring lesson teaches, better than its raw context-bound episodes? (mechanism)")
     print(bar)
 
-    # (1) THE MECHANISM — direct rule recovery, free of distractor-floor confounds
-    print(f"\n— rule recovery: cosine to the TRUE latent rule (K={K_DEFAULT}, D={D}, {SEEDS} seeds "
-          f"±95% CI) —")
+    # (1) THE MECHANISM - direct rule recovery, free of distractor-floor confounds
+    print(f"\n- rule recovery: cosine to the TRUE latent rule (K={K_DEFAULT}, D={D}, {SEEDS} seeds "
+          f"±95% CI) -")
     print(f"  {'beta':>6} {'mean episode':>16} {'principle':>16} {'gain':>8}")
     by_beta = {}
     for beta in BETAS:
@@ -179,11 +179,11 @@ def main():
         by_beta[beta] = r
         ce, cee = r["cos_epi"]; cp, cpe = r["cos_prin"]
         print(f"  {beta:>6.1f} {ce:>10.3f}±{cee:.3f} {cp:>10.3f}±{cpe:.3f} {cp-ce:>+8.3f}")
-    print(f"  (the principle is consistently closer to the rule — averaging cancels the "
+    print(f"  (the principle is consistently closer to the rule - averaging cancels the "
           f"instance-specific context)")
 
     # (2) variance reduction ~1/sqrt(K): the rule-recovery gain grows with cluster size
-    print(f"\n— rule-recovery gain vs cluster size K (beta=1.0) — variance reduction ~1/√K —")
+    print(f"\n- rule-recovery gain vs cluster size K (beta=1.0) - variance reduction ~1/√K -")
     print(f"  {'K':>6} {'mean episode':>14} {'principle':>12} {'gain':>8} {'compression':>12}")
     by_k = {}
     for k in KS:
@@ -195,18 +195,18 @@ def main():
     # (3) does cleaner recovery TRANSLATE to retrieval? Only when the rule is recoverable at all.
     op = by_beta[OP_BETA]
     re_, ree = op["recall_epi"]; rc, rce = op["recall_con"]
-    print(f"\n— downstream: novel-context rule recall@1 at a discriminable beta={OP_BETA} "
-          f"(K={K_DEFAULT}) —")
+    print(f"\n- downstream: novel-context rule recall@1 at a discriminable beta={OP_BETA} "
+          f"(K={K_DEFAULT}) -")
     print(f"  episodic {re_:.3f}±{ree:.3f}   consolidated {rc:.3f}±{rce:.3f}   gain {rc-re_:+.3f}"
           f"  (+{K_DEFAULT}x compression)")
     hb = by_beta[max(BETAS)]
     print(f"  HONEST BOUNDARY: at beta={max(BETAS)} both collapse toward chance "
-          f"(epi {hb['recall_epi'][0]:.3f}, con {hb['recall_con'][0]:.3f}, ~{1/R:.3f}=1/R) — when "
+          f"(epi {hb['recall_epi'][0]:.3f}, con {hb['recall_con'][0]:.3f}, ~{1/R:.3f}=1/R) - when "
           f"context\n    overwhelms the rule, consolidation amplifies a present signal, it cannot "
           f"manufacture one.")
 
     # (4) honest trade-off: specific-instance recall is sacrificed for abstraction + compression
-    print(f"\n— honest trade-off: specific-instance recall@1 (beta={OP_BETA}, K={K_DEFAULT}) —")
+    print(f"\n- honest trade-off: specific-instance recall@1 (beta={OP_BETA}, K={K_DEFAULT}) -")
     print(f"  episodic (exact instance)  {op['specific_epi'][0]:.3f}   consolidated (rule only) "
           f"{op['specific_con'][0]:.3f}")
     print(f"  (instance detail is sacrificed; reachable via a principle→episode link if episodes "
@@ -215,7 +215,7 @@ def main():
     d_rule = by_beta[1.0]["cos_prin"][0] - by_beta[1.0]["cos_epi"][0]
     print(f"\n  → HEADLINE: consolidation recovers the latent rule a recurring lesson teaches "
           f"(+{d_rule:.3f} cosine\n    at beta=1, growing with K), lifting novel-context recall "
-          f"+{rc-re_:.3f} at {K_DEFAULT}x compression — the\n    measurable case that memory's "
+          f"+{rc-re_:.3f} at {K_DEFAULT}x compression - the\n    measurable case that memory's "
           f"marginal value is ABSTRACTION, not episode recall (which relevance\n    already "
           f"saturates, 3A.2). The cost is instance detail, kept reachable by a link.")
 
@@ -223,9 +223,9 @@ def main():
     if REAL:
         real = _real_candidates()
         if real:
-            print(f"\n— real-trace tie-in (aggregate only) —")
+            print(f"\n- real-trace tie-in (aggregate only) -")
             print(f"  {real['candidates']} cross-session clusters on the live store are consolidation "
-                  f"candidates\n    (≥3 members, >1 date), covering {real['members']} episodic notes — "
+                  f"candidates\n    (≥3 members, >1 date), covering {real['members']} episodic notes - "
                   f"real abstraction opportunities.")
         else:
             print("\n  (--real: no populated vault cache found; set NEVERTWICE_VAULT)")

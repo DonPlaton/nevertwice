@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generic ingestion entrypoint — memory for ANY agent, not just Claude Code.
+"""Generic ingestion entrypoint - memory for ANY agent, not just Claude Code.
 
 Any tool that can run a command can push a finished session here. The same
 extraction → Patterns/Mistakes/Decisions → Context → embeddings pipeline runs,
@@ -8,7 +8,7 @@ tagged with the agent's name. No Claude Code JSONL or ~/.claude layout required.
     # inline text
     python ingest.py --project project_delta --agent my-bot --text "...transcript..."
 
-    # from a file — a transcript, OR a document (.pdf / .docx / .md / .html / .txt)
+    # from a file - a transcript, OR a document (.pdf / .docx / .md / .html / .txt)
     python ingest.py --project project_delta --agent my-bot --file run.log
     python ingest.py --project research --file paper.pdf      # mine a paper into memory
 
@@ -16,7 +16,7 @@ tagged with the agent's name. No Claude Code JSONL or ~/.claude layout required.
     echo '{"project":"project_delta","agent":"my-bot","text":"..."}' | python ingest.py
 
     # SWEEP a whole directory of transcripts (turnkey auto-capture for ANY agent that
-    # logs to disk — Cursor, Cline, Aider, Codex, …). Idempotent: an unchanged file is
+    # logs to disk - Cursor, Cline, Aider, Codex, …). Idempotent: an unchanged file is
     # skipped, a changed one re-ingested. Point it at the agent's log dir on a schedule:
     python ingest.py --dir ~/.codex/sessions --project myproj --agent codex
     python ingest.py --dir ./agent_logs --recursive --glob "*.jsonl,*.md"
@@ -71,7 +71,7 @@ def sweep_session_id(path: Path, text: str) -> str:
 
 
 def collect_transcripts(d: Path, globs, recursive: bool) -> list[Path]:
-    """Files under `d` matching any glob, de-duplicated, with symlink/escape guards —
+    """Files under `d` matching any glob, de-duplicated, with symlink/escape guards -
     the safe file list shared by the `--dir` sweep and the `watch` daemon. No side
     effects. A symlink (file or dir) whose REAL target escapes `d` is dropped, so a
     planted link to ~/.ssh/id_rsa or /etc/passwd can never be swept (audit 2026-06-18)."""
@@ -97,7 +97,7 @@ def ingest_files(files, project, agent, db, *, trigger="ingest-sweep",
     processed-db, INSIDE an already-held vault lock. Returns (new, skipped, stored, errors).
     The caller owns the lock and the post-pass (rebuild_index / archive / commit) so a
     multi-directory sweep does one lock + one commit. Shared by `--dir` and `watch`,
-    so both get the same DoS guard, content-hash idempotency and de-dup — no second copy
+    so both get the same DoS guard, content-hash idempotency and de-dup - no second copy
     of the logic to drift. A single bad file (exception in the extraction pipeline) is
     counted and skipped, never allowed to abort the rest of the sweep (audit 2026-06-18)."""
     new = skipped = stored = errors = 0
@@ -107,7 +107,7 @@ def ingest_files(files, project, agent, db, *, trigger="ingest-sweep",
                 skipped += 1                              # rather than block the lock on it
                 continue
             txt = docparse.extract_text(f)                # .pdf/.docx/.html → text; else raw read
-        except docparse.DocError as e:                    # missing PDF dep / corrupt doc — skip, don't abort
+        except docparse.DocError as e:                    # missing PDF dep / corrupt doc - skip, don't abort
             print(f"[ingest] skip {f.name}: {e}", file=sys.stderr)
             skipped += 1
             continue
@@ -152,11 +152,11 @@ def _sweep(args, project, agent) -> None:
         print(f"[ingest] no files matching {args.glob!r} in {d}", file=sys.stderr)
         sys.exit(1)
     if not m.llm_available():
-        print("[ingest] no LLM backend (cloud key unset + Ollama down) — aborting",
+        print("[ingest] no LLM backend (cloud key unset + Ollama down) - aborting",
               file=sys.stderr)
         sys.exit(2)
     if not m.acquire_lock(timeout_s=120):
-        print("[ingest] could not acquire vault lock — another process is busy",
+        print("[ingest] could not acquire vault lock - another process is busy",
               file=sys.stderr)
         sys.exit(3)
     try:
@@ -183,7 +183,7 @@ def main():
     ap.add_argument("--file", help="read transcript text from this file")
     ap.add_argument("--dir", help="SWEEP: ingest every transcript file in this dir (idempotent)")
     ap.add_argument("--glob", default="*.md,*.txt,*.log,*.jsonl,*.json,*.docx,*.html",
-                    help="--dir mode: comma-separated filename globs (add *.pdf for PDFs — "
+                    help="--dir mode: comma-separated filename globs (add *.pdf for PDFs - "
                          "needs `pip install pypdf`)")
     ap.add_argument("--recursive", action="store_true",
                     help="--dir mode: recurse into subdirectories")
@@ -218,12 +218,12 @@ def main():
     trigger = args.trigger or j.get("trigger") or "ingest"
 
     if not m.llm_available():
-        print("[ingest] no LLM backend (cloud key unset + Ollama down) — aborting",
+        print("[ingest] no LLM backend (cloud key unset + Ollama down) - aborting",
               file=sys.stderr)
         sys.exit(2)
 
     if not m.acquire_lock(timeout_s=120):
-        print("[ingest] could not acquire vault lock — another process is busy",
+        print("[ingest] could not acquire vault lock - another process is busy",
               file=sys.stderr)
         sys.exit(3)
     try:
@@ -240,11 +240,11 @@ def main():
             m.prune_processed_db(db)
             m.git_autocommit()
             r = run_log[-1] if run_log else {}
-            print(f"[ingest] OK — project={r.get('project','?')} agent={agent} "
+            print(f"[ingest] OK - project={r.get('project','?')} agent={agent} "
                   f"P={r.get('patterns',0)} M={r.get('mistakes',0)} D={r.get('decisions',0)}")
         else:
             print("[ingest] nothing stored (empty/duplicate/off-topic or LLM failure) "
-                  "— see status.txt / .logs", file=sys.stderr)
+                  "- see status.txt / .logs", file=sys.stderr)
         m.write_status("Ingest", agent, run_log, 0, sid)
     finally:
         m.release_lock()

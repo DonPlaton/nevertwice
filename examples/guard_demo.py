@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Nevertwice — the 15-second "memory that acts" GIF: a guard fires before a real mistake repeats.
+"""Nevertwice - the 15-second "memory that acts" GIF: a guard fires before a real mistake repeats.
 
 The single beat that earns the star. A throwaway vault, a mistake recorded once, then the agent
-about to repeat it — and memory speaks up *before* the edit lands, at zero cost until this moment.
+about to repeat it - and memory speaks up *before* the edit lands, at zero cost until this moment.
 
     python examples/guard_demo.py           # narrated, paced for a screen recording
 
@@ -54,19 +54,19 @@ def type_out(prefix, text, color=""):
 
 
 def main():
-    print(f"\n{BOLD}Nevertwice — memory that acts{X}  {DIM}(a guard fires before the mistake repeats){X}\n")
+    print(f"\n{BOLD}Nevertwice - memory that acts{X}  {DIM}(a guard fires before the mistake repeats){X}\n")
     beat()
 
     print(f"{DIM}Monday. Your agent hits a SQL-injection bug and Nevertwice records the lesson:{X}")
     beat(0.6)
     api.remember_lessons([{
         "type": "mistake", "title": "sql-built-by-fstring",
-        "description": "A filter was interpolated into the SQL string — an injection hole.",
-        "prevention": "Never build SQL by f-string — pass values as query parameters.",
+        "description": "A filter was interpolated into the SQL string - an injection hole.",
+        "prevention": "Never build SQL by f-string - pass values as query parameters.",
         "entities": ["database", "security"]}], project="app", embed=False)
     G.generate_from_vault("app", min_recurrence=1, use_llm=False)
     print(f"  {GREEN}✓ lesson stored{X}  {DIM}(one file under git; it now sits in a guard ledger, "
-          f"not your context — 0 tokens){X}")
+          f"not your context - 0 tokens){X}")
     beat()
 
     print(f"\n{DIM}Thursday. A fresh session, a new file. The agent is about to write:{X}")
@@ -79,7 +79,7 @@ def main():
     beat()
     hits = api.guards_check(action, project="app")
     if hits:
-        print(f"\n  {RED}⛔ guard fires — a past mistake is about to repeat:{X}")
+        print(f"\n  {RED}⛔ guard fires - a past mistake is about to repeat:{X}")
         print(f"     {BOLD}{hits[0]['message']}{X}")
         beat()
         print(f"\n{DIM}The agent corrects it before the bug ever lands:{X}")
@@ -88,11 +88,11 @@ def main():
         beat()
         clean = api.guards_check("cursor.execute(\"SELECT * FROM users WHERE name = ?\", (name,))",
                                  project="app")
-        print(f"  {GREEN}✓ clean — the guard stays silent now{X}" if not clean
-              else f"  {RED}⚠ guard still firing — unexpected{X}")
+        print(f"  {GREEN}✓ clean - the guard stays silent now{X}" if not clean
+              else f"  {RED}⚠ guard still firing - unexpected{X}")
     beat()
 
-    print(f"\n{CYAN}That's memory that acts.{X} {DIM}Not a wall of recalled text every turn — a "
+    print(f"\n{CYAN}That's memory that acts.{X} {DIM}Not a wall of recalled text every turn - a "
           f"single warning,{X}")
     print(f"{DIM}exactly when it matters, at zero tokens until it does.{X}")
     print(f"\n  {BOLD}github.com/DonPlaton/nevertwice{X}  {DIM}· local-first · MIT · works with your agent{X}\n")

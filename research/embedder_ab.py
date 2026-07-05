@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""RESEARCH — embedder A/B on LongMemEval-oracle (the W2 "stronger embedder" question).
+"""RESEARCH - embedder A/B on LongMemEval-oracle (the W2 "stronger embedder" question).
 
 Nevertwice ships bge-m3 as the drop-in embedder (NEVERTWICE_EMBED_MODEL). This sweeps
-candidate local embedders through the SAME production retrieval path — no prefixes, the
-same 2000-char truncation, the same hybrid RRF — and reports external recall@k against
+candidate local embedders through the SAME production retrieval path - no prefixes, the
+same 2000-char truncation, the same hybrid RRF - and reports external recall@k against
 LongMemEval ground truth. It is the honest "would swapping the embedder, and nothing else,
 improve recall?" test. A candidate ships as the recommended default ONLY if it beats bge-m3.
 
@@ -31,7 +31,7 @@ DATA = HERE / "data"
 PY = sys.executable
 
 # Multilingual-first candidate set (the store is bilingual; bge-m3 was chosen for that).
-# mxbai/bge-large are English-only — included as an English-ceiling reference, not as a
+# mxbai/bge-large are English-only - included as an English-ceiling reference, not as a
 # default recommendation for a multilingual store.
 DEFAULT_MODELS = [
     "bge-m3",                                # baseline (already cached)
@@ -48,12 +48,12 @@ def _slug(model):
 def run_one(model):
     env = dict(os.environ, NEVERTWICE_EMBED_MODEL=model)
     out = DATA / f"ab_{_slug(model)}.json"
-    print(f"\n=== {model} — embedding (cached models skip) ===", flush=True)
+    print(f"\n=== {model} - embedding (cached models skip) ===", flush=True)
     r = subprocess.run([PY, str(HERE / "longmem_eval.py"), "--embed"], env=env)
     if r.returncode != 0:
         print(f"  !! embed failed for {model}", flush=True)
         return None
-    print(f"=== {model} — evaluating ===", flush=True)
+    print(f"=== {model} - evaluating ===", flush=True)
     r = subprocess.run([PY, str(HERE / "longmem_eval.py"), "--save", f"--out={out}"], env=env)
     if r.returncode != 0 or not out.exists():
         print(f"  !! eval failed for {model}", flush=True)
@@ -73,7 +73,7 @@ def main():
         sys.exit(1)
     base = next((r for mdl, r in rows if mdl == "bge-m3"), rows[0][1])
     print("\n" + "=" * 92)
-    print("  Embedder A/B — LongMemEval-oracle, production drop-in (no prefix, hybrid RRF)")
+    print("  Embedder A/B - LongMemEval-oracle, production drop-in (no prefix, hybrid RRF)")
     print("=" * 92)
     hdr = (f"  {'embedder':34} {'sem@1':>6} {'sem@5':>6} {'hyb@5':>6} "
            f"{'hyb@10':>7} {'mrr':>6} {'dHyb@10':>8}")
@@ -91,7 +91,7 @@ def main():
               f"{d10:+8.3f}{flag}")
         summary[mdl] = {"semantic": sem, "hybrid": hyb, "delta_hybrid@10": d10}
     # the committed aggregate lives next to longmem_results.json (research/, in git);
-    # only aggregate metrics, never transcripts — DATA/ holds the gitignored per-model caches
+    # only aggregate metrics, never transcripts - DATA/ holds the gitignored per-model caches
     out_json = HERE / "embedder_ab.json"
     out_json.write_text(
         json.dumps({"baseline": "bge-m3", "models": summary}, ensure_ascii=False, indent=1),

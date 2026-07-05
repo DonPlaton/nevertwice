@@ -13,10 +13,10 @@ imported LAZILY (via `_m()`, only inside function bodies), so importing graph an
 memory_hook in either order is safe despite the re-export cycle, and a test that reassigns
 `memory_hook.VAULT` is honoured (the shared iterators run in memory_hook's live namespace).
 
-    entity_index / notes_for_entity / co_occurring / entity_graph   — Phase 1 (entities)
-    related_by / relation_graph                                     — Phase 2 (typed edges)
-    relation_expand                                                 — Phase 2b (recall expansion)
-    graph_export                                                    — visualization (mermaid/dot/json)
+    entity_index / notes_for_entity / co_occurring / entity_graph   - Phase 1 (entities)
+    related_by / relation_graph                                     - Phase 2 (typed edges)
+    relation_expand                                                 - Phase 2b (recall expansion)
+    graph_export                                                    - visualization (mermaid/dot/json)
 """
 import json
 import math
@@ -43,7 +43,7 @@ def _m():
 def _sql():
     """The SQLite scale-index module IF its graph tables are built and authoritative, else None
     (F4). When present, the entity/relation queries below run in SQL instead of an O(all-notes)
-    markdown scan; when absent, they fall back to the markdown read — which stays the source of
+    markdown scan; when absent, they fall back to the markdown read - which stays the source of
     truth, so dropping the .sqlite file only costs speed, never correctness."""
     try:
         try:
@@ -72,7 +72,7 @@ def entity_types_index(project: str | None = None) -> dict:
     """entity -> type (paper/method/dataset/...), read from notes' `entity_types`
     frontmatter (Brain layer, F1). Newest note wins when an entity is typed more than once,
     so a re-classification supersedes the old label. Empty until a brain profile has tagged
-    anything — a coding-only store never writes entity_types. Drives the entity cards (F2).
+    anything - a coding-only store never writes entity_types. Drives the entity cards (F2).
     Uses the SQLite graph index at scale (F4), else a markdown scan."""
     sx = _sql()
     if sx is not None:
@@ -99,10 +99,10 @@ def entities_by_type(etype: str, project: str | None = None) -> list:
 def entity_timeline(entity: str, project: str | None = None, sup: dict | None = None,
                     idx: dict | None = None) -> dict:
     """The chronological history of an entity across LIVE and SUPERSEDED notes (Brain layer, F3):
-    first/last seen, the dated mentions, and the EVOLUTION events — where an earlier note about it
+    first/last seen, the dated mentions, and the EVOLUTION events - where an earlier note about it
     was later superseded, i.e. the take changed. Reads the Superseded/ folders too, so it shows
     history that live recall hides; `sup` reuses a pre-built superseded index and `idx` the live
-    entity index across a card refresh (so the card's own scan is not repeated). Pull-only —
+    entity index across a card refresh (so the card's own scan is not repeated). Pull-only -
     surfaced in the entity card and via api.entity_timeline, never injected. Returns
     {entity, first_seen, last_seen, count, mentions:[...], evolution:[...]} or {} for an unknown one."""
     mh = _m()
@@ -129,9 +129,9 @@ def entity_timeline(entity: str, project: str | None = None, sup: dict | None = 
 
 def salience_index(project: str | None = None) -> dict:
     """stem -> salience in [0,1]: pure graph CENTRALITY (Brain F5). A note is salient when its
-    entities are referenced by the rest of the store — inbound relation edges + co-occurrence
+    entities are referenced by the rest of the store - inbound relation edges + co-occurrence
     degree. This is the NEW signal orthogonal to recurrence (the ranker already applies recurrence
-    separately, so salience deliberately does NOT re-fold it — double-counting it once compounded
+    separately, so salience deliberately does NOT re-fold it - double-counting it once compounded
     the keep/rank decision). Max-scaled across the corpus, so an entity-less / flat store → all 0
     (INERT, e.g. on a benchmark). Computed sleep-time, stamped by consolidation, read as a gentle
     ranking nudge. No embedder, no LLM."""

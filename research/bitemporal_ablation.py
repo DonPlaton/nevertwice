@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""RESEARCH — bi-temporal point-in-time recall ablation (companion to the
+"""RESEARCH - bi-temporal point-in-time recall ablation (companion to the
 recurrence study). Quantifies what a bi-temporal memory buys over the two flat
 baselines every other agent-memory store uses.
 
@@ -14,7 +14,7 @@ life. Three recall policies when asked about it:
 
 The question is not "is correct indexing correct" (it is, by construction) but the
 MAGNITUDE: how wrong is use-newest as a function of (a) how often the fact was
-revised and (b) how far in the past the query lands — and how much contradiction
+revised and (b) how far in the past the query lands - and how much contradiction
 does use-all dump on the agent. Fully seeded; CPU; seconds.
 
     python research/bitemporal_ablation.py [--save] [--quick]
@@ -133,7 +133,7 @@ def make_figure(by_rev, by_age, path):
     ax1.set_title("use-newest decays as ~1/revisions; bi-temporal stays exact")
     ax1.legend(fontsize=8)
     ax1.grid(alpha=0.3)
-    xs = [f"{int(100*b/AGE_BUCKETS)}–{int(100*(b+1)/AGE_BUCKETS)}%" for b in range(AGE_BUCKETS)]
+    xs = [f"{int(100*b/AGE_BUCKETS)}-{int(100*(b+1)/AGE_BUCKETS)}%" for b in range(AGE_BUCKETS)]
     ax2.plot(xs, [a["bitemporal_acc"] for a in by_age], "o-", label="bi-temporal")
     ax2.plot(xs, [a["newest_acc"] for a in by_age], "s-", label="use-newest")
     ax2.set_xlabel("query age (how far in the past, % of project life)")
@@ -150,21 +150,21 @@ def make_figure(by_rev, by_age, path):
 
 def main():
     print("=" * 78)
-    print("  BI-TEMPORAL POINT-IN-TIME RECALL ABLATION  —  bi-temporal vs use-newest")
+    print("  BI-TEMPORAL POINT-IN-TIME RECALL ABLATION  -  bi-temporal vs use-newest")
     print("  vs use-all, over revised facts on a 365-day project")
     print("=" * 78)
     print(f"  {FACTS} facts × {QUERIES_PER_FACT} point-in-time queries × {SEEDS} seeds; seeded, CPU")
     acc, ambiguity, age_curve = run()
     by_rev, by_age = summarize(acc, ambiguity, age_curve)
 
-    print(f"\n— point-in-time accuracy by revision count —")
+    print(f"\n- point-in-time accuracy by revision count -")
     print(f"  {'revisions':>9} {'bi-temporal':>12} {'use-newest':>11} {'advantage':>10} "
           f"{'use-all #ver':>12}")
     for r in by_rev:
         print(f"  {r['revisions']:>9} {r['bitemporal_acc']:>12.3f} {r['newest_acc']:>11.3f} "
               f"{r['advantage']:>+10.3f} {r['useall_avg_versions']:>12.2f}")
 
-    print(f"\n— accuracy vs query age (recent → old) —")
+    print(f"\n- accuracy vs query age (recent → old) -")
     print(f"  {'age band':>10} {'bi-temporal':>12} {'use-newest':>11}")
     for a, lab in zip(by_age, [f"{int(100*b/AGE_BUCKETS)}-{int(100*(b+1)/AGE_BUCKETS)}%"
                                for b in range(AGE_BUCKETS)]):
@@ -176,7 +176,7 @@ def main():
           f"{1-heavy['newest_acc']:.0%} of the time); bi-temporal stays exact. "
           f"use-all dumps {heavy['useall_avg_versions']:.1f} contradictory versions/query.")
     print(f"  → oldest-query band: use-newest {by_age[-1]['newest_acc']:.3f} vs "
-          f"bi-temporal {by_age[-1]['bitemporal_acc']:.3f} — 'just use the latest' is "
+          f"bi-temporal {by_age[-1]['bitemporal_acc']:.3f} - 'just use the latest' is "
           f"near-useless for historical questions.")
 
     if SAVE:

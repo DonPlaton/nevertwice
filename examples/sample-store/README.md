@@ -6,10 +6,10 @@ running it. A real store lives at `~/.nevertwice` (override with `NEVERTWICE_HOM
 Layout:
 
 ```
-Mistakes/   Patterns/   Decisions/   — typed lesson notes (one fact per file)
-Context/    — per-project "card" (status · stack · open gotchas · decisions)
-Sessions/   — one note per processed session (not shown here)
-graph.json  — navigable link graph (generated)
+Mistakes/   Patterns/   Decisions/   - typed lesson notes (one fact per file)
+Context/    - per-project "card" (status · stack · open gotchas · decisions)
+Sessions/   - one note per processed session (not shown here)
+graph.json  - navigable link graph (generated)
 ```
 
 Each note is plain markdown with YAML frontmatter and `[[wikilinks]]` between

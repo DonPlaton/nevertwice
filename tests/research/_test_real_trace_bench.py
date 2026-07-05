@@ -2,16 +2,16 @@
 """Tests for research/real_trace_bench.py (3A.2). Pins the measurement logic and the
 privacy invariant so the honest findings cannot silently rot:
 
-  • _date() extracts the date from a typed stem and degrades to "?" — this drives the
+  • _date() extracts the date from a typed stem and degrades to "?" - this drives the
     cross-session (>1 date) test that separates genuine recurrence from same-session dups;
   • _clusters() groups note vectors at a cosine threshold and drops singletons, on LIST
-    vectors (where m.cosine is correct — the numpy-array trap does not apply to cached lists);
+    vectors (where m.cosine is correct - the numpy-array trap does not apply to cached lists);
   • cross-session counting: a cluster spanning >1 date counts; a same-date cluster does not;
   • PRIVACY (source-level regression): the module never reads a note's content fields
-    (title/desc/prevention) — it may only touch vectors, project, recurrence. If a future
+    (title/desc/prevention) - it may only touch vectors, project, recurrence. If a future
     edit starts printing content, this fails.
 
-Stdlib only — builds a synthetic note list in-process, reads no vault.
+Stdlib only - builds a synthetic note list in-process, reads no vault.
 """
 import sys
 from pathlib import Path
@@ -47,8 +47,8 @@ ok(abs(m.cosine(C1, C2) - 0.53) < 0.02, f"sanity: C1·C2 cosine ≈0.53 ({m.cosi
 ok(m.cosine(A1, B) == 0.0, "sanity: A1·B orthogonal (cosine 0)")
 
 notes = [("2026-01-01-proj-mistake-a1", {"vec": A1}),
-         ("2026-02-01-proj-mistake-a2", {"vec": A2}),   # different date — cross-session
-         ("2026-01-01-proj-mistake-b", {"vec": B})]      # orthogonal — must stay a singleton
+         ("2026-02-01-proj-mistake-a2", {"vec": A2}),   # different date - cross-session
+         ("2026-01-01-proj-mistake-b", {"vec": B})]      # orthogonal - must stay a singleton
 groups = rt._clusters(notes, 0.55)
 ok(len(groups) == 1, f"_clusters: one multi-member group at thr=0.55 (got {len(groups)})")
 ok(len(groups[0]) == 2 and all("a" in s.rsplit('-', 1)[-1] for s in groups[0]),
@@ -66,7 +66,7 @@ ok(len({rt._date(x) for x in g_cross}) > 1, "cross-session: differing dates coun
 g_same = ["2026-01-01-proj-mistake-x", "2026-01-01-proj-mistake-y"]
 ok(len({rt._date(x) for x in g_same}) == 1, "same-session: identical dates NOT counted")
 
-# ── 4. PRIVACY — module never touches note content fields ────────────────
+# ── 4. PRIVACY - module never touches note content fields ────────────────
 src = (HERE.parent.parent / "research" / "real_trace_bench.py").read_text(encoding="utf-8")
 for field in ('title', 'desc', 'prevention'):
     ok(f'"{field}"' not in src and f"'{field}'" not in src,

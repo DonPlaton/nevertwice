@@ -1,27 +1,27 @@
 #!/usr/bin/env python3
-"""RESEARCH — principled forgetting under a budget (roadmap 1C).
+"""RESEARCH - principled forgetting under a budget (roadmap 1C).
 
 THESIS. When a memory store must be capped, WHICH notes to keep is a coreset problem.
 Pruning by salience alone (keep the highest-recurrence) over-concentrates on the busy
-topics and abandons the long tail — so queries about rarely-revisited topics miss
+topics and abandons the long tail - so queries about rarely-revisited topics miss
 entirely. Choosing the kept set to maximize utility-weighted COVERAGE
 
     F(S) = Σ_m u(m) · max_{s∈S} sim(m, s)            (facility location, submodular)
 
 keeps a diverse, high-utility coreset (greedy is within 1−1/e of optimal). This is the
-SAME selector the production cap uses (consolidate_memory.select_coreset) — token-Jaccard
-similarity, lazy-greedy, pure stdlib — so this benchmark tests the shipped code.
+SAME selector the production cap uses (consolidate_memory.select_coreset) - token-Jaccard
+similarity, lazy-greedy, pure stdlib - so this benchmark tests the shipped code.
 
 EXPERIMENT. Build the store of live lessons at the end of a 3A longitudinal run, prune
 it to a budget B by {coreset, salience-sort (the old cap), recency, random}, then measure
 recall of the stream's queries against the pruned store, swept over B. Recall here is
-TOPIC-coverage @k (a same-topic sibling answers the gotcha — the "a useful memory was
+TOPIC-coverage @k (a same-topic sibling answers the gotcha - the "a useful memory was
 surfaced" semantics), the regime where forgetting the tail hurts.
 
 CLAIM. "Memory consolidation as submodular coreset selection: budget-optimal forgetting
 preserves long-tail recall a salience sort discards." Honest scope: on frequency-weighted
 EXACT recall a salience sort is competitive (it keeps the head); the coreset's win is
-coverage of the tail — reported alongside, not hidden.
+coverage of the tail - reported alongside, not hidden.
 
     python research/forgetting.py            # report
     python research/forgetting.py --save     # + forgetting.json (+ .png if mpl)
@@ -107,7 +107,7 @@ def topic_recall(world, store, kept, queries, qrng):
 
 
 def topics_covered(world, kept):
-    """Fraction of all topics with ≥1 kept lesson — the coverage the coreset protects."""
+    """Fraction of all topics with ≥1 kept lesson - the coverage the coreset protects."""
     return len({int(world["topic"][i]) for i in kept}) / lb.N_TOPICS
 
 
@@ -134,9 +134,9 @@ def run():
         ids = [s["lid"] for s in store]
         rec_w = np.array([s["recurrence"] for s in store], dtype=float)
         qrng = np.random.default_rng(31337 + seed)
-        # HEAD queries: sampled ∝ recurrence (the busy topics — salience's home turf).
+        # HEAD queries: sampled ∝ recurrence (the busy topics - salience's home turf).
         head_q = qrng.choice(ids, size=N_QUERIES, p=rec_w / rec_w.sum()).tolist()
-        # UNIFORM queries: a topic chosen uniformly, then a lesson in it — future needs
+        # UNIFORM queries: a topic chosen uniformly, then a lesson in it - future needs
         # may concern ANY topic, not just the historically busy ones (coverage's turf).
         by_topic: dict = {}
         for s in store:
@@ -170,24 +170,24 @@ def _col(agg, metric, b):
 def main():
     bar = "=" * 78
     print(bar)
-    print("  PRINCIPLED FORGETTING UNDER A BUDGET (1C) — submodular coreset vs salience prune")
+    print("  PRINCIPLED FORGETTING UNDER A BUDGET (1C) - submodular coreset vs salience prune")
     print(bar)
     agg, full = run()
     print(f"  store = live lessons after a 3A run, {lb.SEEDS} seeds; keep-all recall@{KQ}: "
           f"head {full['head']:.3f}, uniform {full['uniform']:.3f}")
     hdr = f"  {'budget':>8}" + "".join(f"{m_:>11}" for m_ in METHODS)
 
-    print(f"\n— UNIFORM-over-topics recall@{KQ} (future may concern any topic — coverage matters) —")
+    print(f"\n- UNIFORM-over-topics recall@{KQ} (future may concern any topic - coverage matters) -")
     print(hdr)
     for b in BUDGETS:
         print(f"  {b:>8.0%}{_col(agg, 'uniform', b)}")
 
-    print(f"\n— HEAD recall@{KQ} (queries ∝ recurrence — the busy topics, salience's turf) —")
+    print(f"\n- HEAD recall@{KQ} (queries ∝ recurrence - the busy topics, salience's turf) -")
     print(hdr)
     for b in BUDGETS:
         print(f"  {b:>8.0%}{_col(agg, 'head', b)}")
 
-    print(f"\n— topics covered (fraction of {lb.N_TOPICS} topics with ≥1 kept lesson) —")
+    print(f"\n- topics covered (fraction of {lb.N_TOPICS} topics with ≥1 kept lesson) -")
     print(hdr)
     for b in BUDGETS:
         print(f"  {b:>8.0%}{_col(agg, 'cov', b)}")
@@ -198,8 +198,8 @@ def main():
     cc, sc = _ci(agg["coreset"][tight]["cov"])[0], _ci(agg["salience"][tight]["cov"])[0]
     cr, sr = _ci(agg["coreset"][tight]["red"])[0], _ci(agg["salience"][tight]["red"])[0]
     print(f"\n  → at a tight {tight:.0%} budget, coreset vs salience-sort:")
-    print(f"    UNIFORM recall {ct:.3f} vs {st:.3f} ({ct - st:+.3f}) — coverage protects rare topics.")
-    print(f"    HEAD recall    {chd:.3f} vs {shd:.3f} ({chd - shd:+.3f}) — the busy head is barely traded away.")
+    print(f"    UNIFORM recall {ct:.3f} vs {st:.3f} ({ct - st:+.3f}) - coverage protects rare topics.")
+    print(f"    HEAD recall    {chd:.3f} vs {shd:.3f} ({chd - shd:+.3f}) - the busy head is barely traded away.")
     print(f"    topics covered {cc:.3f} vs {sc:.3f}; redundancy {cr:.3f} vs {sr:.3f} (lower = diverse).")
 
     if SAVE:
@@ -219,7 +219,7 @@ def _figure(agg, full, path):
         matplotlib.use("Agg")
         import matplotlib.pyplot as plt
     except Exception as e:
-        print(f"  [figure skipped: matplotlib unavailable — {e}]")
+        print(f"  [figure skipped: matplotlib unavailable - {e}]")
         return
     fig, ax = plt.subplots(figsize=(7, 4.6))
     for meth, mark in (("coreset", "o"), ("salience", "s"), ("recency", "^"), ("random", "x")):

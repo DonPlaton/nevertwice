@@ -60,7 +60,7 @@ flowchart TD
 - **Links:** notes cross-link with `[[wikilinks]]`; `graph.json` is the machine-readable
   graph. Obsidian can render both, but is not required.
 - **Brain layer (opt-in):** a research/general profile turns the captured sessions into a
-  self-wiring knowledge graph — typed entities, per-entity cards (a cross-project rollup),
+  self-wiring knowledge graph - typed entities, per-entity cards (a cross-project rollup),
   an evolution timeline, and graph-centrality salience. It is **pull-only**: stored under
   `Entities/` (never in the recall pool) and read on demand, so the token-bounded hot path
   is byte-for-byte unchanged when off. See [BRAIN_LAYER_DESIGN.md](BRAIN_LAYER_DESIGN.md).

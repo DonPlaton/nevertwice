@@ -3,7 +3,7 @@
 Nevertwice's default pipeline distils a finished session into memory with an
 extraction LLM (a cloud key or local Ollama). But the agent in your loop is *already*
 an LLM. It can decide what it learned and write it directly. That turnkey path needs
-**no extraction model at all**, and it works for any agent, not just Claude Code.
+**no extraction model at all**, and it works for every agent, Claude Code included.
 
 Two neural steps exist in Nevertwice; self-extraction removes one of them:
 
@@ -71,10 +71,10 @@ Append this to any agent's system prompt to make it self-extract:
 
 ```
 You have a long-term memory. When you finish a task and learned something DURABLE and
-NON-OBVIOUS — a gotcha a future session must avoid, a fix that worked, or a decision
-and its rationale — record it. First search memory for the topic to avoid duplicates;
+NON-OBVIOUS - a gotcha a future session must avoid, a fix that worked, or a decision
+and its rationale - record it. First search memory for the topic to avoid duplicates;
 then write each lesson as: {type: mistake|pattern|decision, title, description,
-prevention (for mistakes), tags}. Keep 1–3 of the genuinely durable ones; never record
+prevention (for mistakes), tags}. Keep 1-3 of the genuinely durable ones; never record
 secrets, transient state, or restatements of the task.
 ```
 

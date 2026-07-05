@@ -2,7 +2,7 @@
 """Tests for the cloud embedding backend (#31) and embedder-free lexical recall
 (#32). Fully offline: every network call is mocked, so no Ollama, no cloud key, and
 no real vault are needed. The live cloud paths are runtime-blocked in this env (no
-keys) — these prove the request/response wiring and the self-invalidation logic the
+keys) - these prove the request/response wiring and the self-invalidation logic the
 runtime would exercise once a key is present."""
 import json
 import sys
@@ -186,7 +186,7 @@ def test_embed_ollama_still_default():
 # ── #32 lexical recall without an embedder ────────────────────────────────────────
 
 def _seed_textonly_vault(tmp):
-    """A vault whose embed cache holds ONLY text-only entries (no vectors) — the
+    """A vault whose embed cache holds ONLY text-only entries (no vectors) - the
     state of a store where no embedder ever ran."""
     cache = {
         "2026-06-18-proj-pattern-gpu-leak": {
@@ -261,7 +261,7 @@ def test_update_embeddings_stores_text_only_when_no_embedder():
             cache = m.load_embed_cache()
         assert "2026-06-18-proj-pattern-x" in cache
         e = cache["2026-06-18-proj-pattern-x"]
-        assert "vec" not in e                    # text-only — no vector
+        assert "vec" not in e                    # text-only - no vector
         assert e["title"] == "Title here" and e["desc"] == "a description"
 
 

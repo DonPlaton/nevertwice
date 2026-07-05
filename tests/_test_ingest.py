@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Tests for ingest.py — the generic / cross-agent capture entrypoint, focused on the
+"""Tests for ingest.py - the generic / cross-agent capture entrypoint, focused on the
 --dir sweep idempotency contract (#36). Fully offline: process_session and the vault
 ops are mocked, so no LLM, no vault, no git."""
 import sys

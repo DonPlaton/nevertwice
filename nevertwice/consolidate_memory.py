@@ -10,7 +10,7 @@ Does three things:
      so recurring lessons outrank one-offs.
   3. Compacts oversized Context files and archives aged notes/sessions.
 
-Safe by default — prints a plan and changes NOTHING. Pass --apply to execute.
+Safe by default - prints a plan and changes NOTHING. Pass --apply to execute.
 
     python consolidate_memory.py            # dry-run
     python consolidate_memory.py --apply
@@ -29,7 +29,7 @@ except Exception:
     pass
 
 SIM_THRESHOLD = float(__import__("os").environ.get("NEVERTWICE_DEDUP_SIM", "0.92"))
-# Per-project live-note cap (improvement P2). 0 = OFF — a memory store must not shed
+# Per-project live-note cap (improvement P2). 0 = OFF - a memory store must not shed
 # memory without being told to. When >0, the lowest-salience excess is archived.
 MAX_LIVE_PER_PROJECT = int(__import__("os").environ.get("NEVERTWICE_MAX_LIVE_PER_PROJECT", "0"))
 
@@ -72,14 +72,14 @@ def _fields(p: Path) -> tuple[str, str]:
 def _cluster_recurrence(cache: dict, cluster: list) -> int:
     """The recurrence a merged keeper inherits: the cluster size OR the HIGHEST recurrence
     of any member (a merged dup may have recurred more than the newest keeper), whichever is
-    larger — so a near-duplicate merge never drops the recall-boosting count (W15)."""
+    larger - so a near-duplicate merge never drops the recall-boosting count (W15)."""
     recs = [int((cache.get(s) or {}).get("recurrence", 1) or 1) for s in cluster]
     return max(len(cluster), max(recs) if recs else 1)
 
 
 def merge_into_keeper(keep_fp: Path, dup_fps: list[Path]) -> None:
     """Fold any unique description/prevention from the duplicates INTO the keeper
-    before they are archived — so 'merge' no longer silently drops a better
+    before they are archived - so 'merge' no longer silently drops a better
     older wording (audit H3). Idempotent: fragments already present are skipped."""
     try:
         ktext = keep_fp.read_text(encoding="utf-8", errors="replace")
@@ -122,7 +122,7 @@ def find_clusters(cache: dict) -> list[list[str]]:
     MIN_SHARED = 2          # a candidate pair must share ≥2 content tokens before cosine
     groups: dict[tuple, list[str]] = {}
     for stem, rec in cache.items():
-        # only valid-ntype records — a malformed/legacy entry must not crash the
+        # only valid-ntype records - a malformed/legacy entry must not crash the
         # later TYPE_FOLDER[rec['ntype']] lookup (audit C4)
         if not isinstance(rec, dict) or rec.get("ntype") not in m.TYPE_FOLDER:
             continue
@@ -231,14 +231,14 @@ def distill_patterns(cache: dict, apply: bool, max_distill: int = 3) -> int:
         prompt = ("Из ПОВТОРЯЮЩЕЙСЯ ошибки выведи ОБЩИЙ устойчивый паттерн-правило, как её "
                   "избегать в будущем. Верни ТОЛЬКО JSON "
                   '{"title": "короткое правило", "description": "1-2 предложения"}.\n\n'
-                  f"ОШИБКА (повторялась {r.get('recurrence')}×): {r.get('title','')} — "
+                  f"ОШИБКА (повторялась {r.get('recurrence')}×): {r.get('title','')} - "
                   f"{r.get('desc','')} {r.get('prevention','')}")
         res = m.generate_json(prompt, project=r.get("project"))
         title = (res.get("title") or "").strip() if isinstance(res, dict) else ""
         desc = (res.get("description") or "").strip() if isinstance(res, dict) else ""
         # Quality gate (audit M-e): only accept a REAL distilled rule, not model
         # junk. The round-1 code accepted anything with a title and stamped it as a
-        # learned pattern that RESOLVES the mistake — silently poisoning recall and
+        # learned pattern that RESOLVES the mistake - silently poisoning recall and
         # muting a real warning. Require a substantive title + description, and
         # reject a verbatim echo of the source mistake.
         src_title = (r.get("title", "") or "").strip().lower()
@@ -262,7 +262,7 @@ def distill_patterns(cache: dict, apply: bool, max_distill: int = 3) -> int:
 
 def select_coreset(ids, budget, utility_of, tokens_of):
     """Choose `budget` items maximizing the facility-location coverage
-    F(S) = Σ_m u(m)·max_{s∈S} sim(m, s), sim = token Jaccard — a monotone submodular
+    F(S) = Σ_m u(m)·max_{s∈S} sim(m, s), sim = token Jaccard - a monotone submodular
     objective, so lazy greedy (CELF) is within (1−1/e) of optimal (1C). Keeps a
     diverse, high-utility coreset: it won't hoard near-duplicates of one cluster while
     forgetting another (which a pure salience sort does). Pure stdlib; sparse via an
@@ -318,12 +318,12 @@ def select_coreset(ids, budget, utility_of, tokens_of):
 
 
 def cap_project_notes(cache: dict, apply: bool) -> int:
-    """Bound the live-note count per (project, ntype) — the storage counterpart to
+    """Bound the live-note count per (project, ntype) - the storage counterpart to
     the retrieval prefilter (P1), so a single project can't grow the cache/index/
     build time without bound. OFF by default (cap=0): a memory store should not
     silently shed memory. When NEVERTWICE_MAX_LIVE_PER_PROJECT>0, only the
     *lowest-salience* excess is archived into <folder>/Archive/ (still on disk, just
-    out of active recall) — high recurrence, then unresolved, then newest are kept.
+    out of active recall) - high recurrence, then unresolved, then newest are kept.
     A kept note's [[wikilinks]] to an archived one don't dangle: Obsidian resolves
     links by stem regardless of folder, and graph-hop recall skips non-cached stems."""
     if MAX_LIVE_PER_PROJECT <= 0:
@@ -369,7 +369,7 @@ def cap_project_notes(cache: dict, apply: bool) -> int:
 
 
 def stamp_salience(apply: bool) -> int:
-    """Brain F5: score every note's graph SALIENCE (pure centrality — inbound edges + degree;
+    """Brain F5: score every note's graph SALIENCE (pure centrality - inbound edges + degree;
     recurrence is applied separately by the ranker) and stamp it into frontmatter, so retrieval
     applies the gentle centrality nudge and the coreset/cards can prefer central notes. Sleep-time,
     GPU-free, idempotent (writes only on a meaningful change). Returns the count (re)stamped. Inert
@@ -410,20 +410,20 @@ def stamp_salience(apply: bool) -> int:
 def main():
     apply = "--apply" in sys.argv
     mode = "APPLY" if apply else "DRY-RUN"
-    # Don't abort without a backend (audit LOW): the GPU-free steps — near-dup
-    # merge, dynamic linking, archival, card refresh — still run. Only the
+    # Don't abort without a backend (audit LOW): the GPU-free steps - near-dup
+    # merge, dynamic linking, archival, card refresh - still run. Only the
     # LLM-dependent steps (distillation, context summaries) are skipped.
     has_llm = m.llm_available()
     if not has_llm:
-        print("[consolidate] No LLM backend — running GPU-free steps only "
+        print("[consolidate] No LLM backend - running GPU-free steps only "
               "(dedup · link · archival · cards); skipping distillation + "
               "context summaries.", file=sys.stderr)
     # Single-writer invariant: the APPLY path mutates the vault (merges, archival, context
-    # compaction, index rebuilds), so it must hold the SAME lock the live hook takes — else a
+    # compaction, index rebuilds), so it must hold the SAME lock the live hook takes - else a
     # concurrent SessionEnd write races this run and one clobbers the other (launch-round
     # audit). DRY-RUN is read-only and needs no lock.
     if apply and not m.acquire_lock(timeout_s=120):
-        print("[consolidate] vault lock busy — another writer is active; aborting",
+        print("[consolidate] vault lock busy - another writer is active; aborting",
               file=sys.stderr)
         sys.exit(2)
     try:
@@ -439,9 +439,9 @@ def _run_consolidation(apply, mode, has_llm):
     cache = m.load_embed_cache()
     if not cache:
         # First install / freshly cloned vault: no vectors yet, so the cosine dedup has
-        # nothing to do — but the GPU-free aging/archival/compaction below still should,
+        # nothing to do - but the GPU-free aging/archival/compaction below still should,
         # so warn and continue instead of aborting ALL maintenance (launch-round audit).
-        print("[consolidate] empty embedding cache — skipping near-dup merge (run "
+        print("[consolidate] empty embedding cache - skipping near-dup merge (run "
               "embed_index.py to enable it); continuing with archival/compaction.",
               file=sys.stderr)
 
@@ -464,11 +464,11 @@ def _run_consolidation(apply, mode, has_llm):
             dup_fps = [folder / f"{d}.md" for d in dups]
             if keep_fp.exists():
                 merge_into_keeper(keep_fp, [d for d in dup_fps if d.exists()])
-                # carry the cluster's HIGHEST recurrence forward, not just the keeper's — a
+                # carry the cluster's HIGHEST recurrence forward, not just the keeper's - a
                 # merged older dup may have recurred more than the (newest) keeper, and
                 # archiving it would otherwise SILENTLY DROP that count the recall boost
                 # depends on (extends the round-3 max fix; matters now that recurrence
-                # actually grows via supersession — W15).
+                # actually grows via supersession - W15).
                 rec_n = _cluster_recurrence(cache, cluster)
                 set_recurrence(keep_fp, rec_n)
                 if isinstance(cache.get(keep), dict):
@@ -497,7 +497,7 @@ def _run_consolidation(apply, mode, has_llm):
 
     # 3) compaction + aging. This is the designated heavy/non-interactive window,
     #    so LLM context summaries are allowed here (unlike the live hook path,
-    #    which is GPU-free to keep the vault lock off any model call — audit C4).
+    #    which is GPU-free to keep the vault lock off any model call - audit C4).
     print("[consolidate] context compaction + archival "
           f"({'applying' if apply else 'skipped in dry-run'})")
     if apply:
@@ -505,7 +505,7 @@ def _run_consolidation(apply, mode, has_llm):
         m.archive_old_typed()
         m.archive_old_sessions()
 
-    # 4) sleep-time reflection (M-1) + dynamic linking (M-7) — episodic→semantic
+    # 4) sleep-time reflection (M-1) + dynamic linking (M-7) - episodic→semantic
     #    distillation and a navigable note network. Reload cache (links/distil read it).
     distilled = distill_patterns(cache, apply) if has_llm else 0
     linked = link_related_notes(m.load_embed_cache() if apply else cache, apply)
@@ -532,7 +532,7 @@ def _run_consolidation(apply, mode, has_llm):
             print(f"[consolidate] guard generation skipped: {e}", file=sys.stderr)
 
     if apply:
-        m.rebuild_index()    # Index.md is itself OKF-valid now (type: index — audit H1/M-14)
+        m.rebuild_index()    # Index.md is itself OKF-valid now (type: index - audit H1/M-14)
         # the merges/archival/distillation above changed the note set → rebuild the
         # SQLite scale index so retrieval stays consistent (audit C2/C3)
         m.rebuild_scale_index()

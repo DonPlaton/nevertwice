@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""`nevertwice watch` — always-on auto-capture for ANY agent that logs to disk.
+"""`nevertwice watch` - always-on auto-capture for ANY agent that logs to disk.
 
 Claude Code is captured by hooks (zero config). Every *other* agent that writes its
-sessions to files — Codex, Cline, Roo Code, Aider, Gemini CLI … — gets the same
+sessions to files - Codex, Cline, Roo Code, Aider, Gemini CLI … - gets the same
 "magic" here: a tiny stdlib polling daemon that watches the known log directories and
 idempotently mines finished sessions into memory. No new dependencies, no native hooks
 required, no cron to configure.
@@ -20,7 +20,7 @@ cycle takes ONE vault lock with a short timeout and yields immediately if Claude
 hook is mid-write, so the daemon never starves the live agent.
 
 Why polling, not native file events: zero dependencies and identical behaviour on every
-OS. A finished session is captured within one interval — that is the honest scope.
+OS. A finished session is captured within one interval - that is the honest scope.
 """
 import argparse
 import os
@@ -45,7 +45,7 @@ except Exception:
 Target = namedtuple("Target", "agent dir globs recursive project")
 
 # Cap new transcripts mined per cycle so the daemon never holds the vault lock for minutes
-# on a first run over a huge log dir — the remainder is caught on the next sweep.
+# on a first run over a huge log dir - the remainder is caught on the next sweep.
 MAX_PER_CYCLE = int(os.environ.get("NEVERTWICE_WATCH_MAX_PER_CYCLE", "40"))
 # A transcript is only mined once its mtime has settled: a LIVE session file grows on every
 # poll, and since the content hash keys the processed-db, each growth would mint a fresh
@@ -81,28 +81,28 @@ def _project_roots() -> list[Path]:
 
 def known_targets() -> list[Target]:
     """Every known agent-log location that ACTUALLY EXISTS on this machine. Adding an
-    agent is one row here — the daemon and `--list` both read this registry.
+    agent is one row here - the daemon and `--list` both read this registry.
 
     Deliberately NOT included: Claude Code (`~/.claude/projects`) is already captured by
-    the hooks — sweeping it too would double-mine. Cursor/Windsurf *chat* lives in a
+    the hooks - sweeping it too would double-mine. Cursor/Windsurf *chat* lives in a
     `state.vscdb` SQLite blob, not plain files, so it can't be swept directly (export it
-    first — see docs/INTEGRATIONS.md); their extension transcripts (Cline/Roo) ARE files
+    first - see docs/INTEGRATIONS.md); their extension transcripts (Cline/Roo) ARE files
     and are covered below."""
     home = Path.home()
     out: list[Target] = []
     # Auto-detected agent logs are labelled by AGENT name, not by a project derived from
     # the log directory: a central log dir (e.g. ~/.codex/sessions) carries no real project,
-    # and deriving one from it could mislabel a session — and, if $HOME happens to be a git
+    # and deriving one from it could mislabel a session - and, if $HOME happens to be a git
     # repo, route a sensitive project's transcript to the cloud past the local-only gate
     # (audit 2026-06-18). Deterministic per-agent labels are safe; add an agent name to
     # NEVERTWICE_LOCAL_ONLY to keep that agent's captures off any cloud backend.
 
-    # Codex CLI — JSONL rollouts under ~/.codex
+    # Codex CLI - JSONL rollouts under ~/.codex
     for d in (home / ".codex" / "sessions", home / ".codex" / "history"):
         if d.is_dir():
             out.append(Target("codex", d, ["*.jsonl"], True, "codex"))
 
-    # Gemini CLI — JSON session logs under ~/.gemini/tmp
+    # Gemini CLI - JSON session logs under ~/.gemini/tmp
     g = home / ".gemini" / "tmp"
     if g.is_dir():
         out.append(Target("gemini-cli", g, ["*.json"], True, "gemini-cli"))
@@ -116,7 +116,7 @@ def known_targets() -> list[Target]:
             if tasks.is_dir():
                 out.append(Target(agent, tasks, ["*.json"], True, agent))
 
-    # Aider — a per-project .aider.chat.history.md in each project root. Here the dir IS a
+    # Aider - a per-project .aider.chat.history.md in each project root. Here the dir IS a
     # real project root, so derive the project per-file (project=None).
     for root in _project_roots():
         if list(root.glob(".aider.chat.history.md")) or list(root.glob("*/.aider.chat.history.md")):
@@ -136,7 +136,7 @@ def _mtime_ok(f: Path, now: float) -> bool:
 def poll_cycle(targets: list[Target]) -> int:
     """One sweep over every target, idempotent, in a single short-held vault lock.
     Returns the number of newly-mined transcripts. Yields (returns 0) immediately if no
-    LLM backend is up or the vault is busy — the live agent always wins the lock."""
+    LLM backend is up or the vault is busy - the live agent always wins the lock."""
     if not targets:
         return 0
     if not m.llm_available():
@@ -225,7 +225,7 @@ def main() -> int:
         return 0
 
     if not targets:
-        print("[watch] nothing to watch — no known agent logs found and no --dir given.",
+        print("[watch] nothing to watch - no known agent logs found and no --dir given.",
               file=sys.stderr)
         print("        Try:  python -m nevertwice.watch --list", file=sys.stderr)
         return 1
@@ -236,16 +236,16 @@ def main() -> int:
 
     if args.once:
         n = poll_cycle(targets)
-        print(f"[watch] one sweep done — {n} new transcript(s) captured.")
+        print(f"[watch] one sweep done - {n} new transcript(s) captured.")
         return 0
 
     _install_signal_handlers()
-    print(f"[watch] polling every {args.interval}s — Ctrl-C to stop.", flush=True)
+    print(f"[watch] polling every {args.interval}s - Ctrl-C to stop.", flush=True)
     while not _STOP:
         try:
             poll_cycle(targets)
         except Exception as e:                 # a bad cycle must not kill the daemon
-            print(f"[watch] cycle error ({type(e).__name__}: {e}) — continuing", file=sys.stderr)
+            print(f"[watch] cycle error ({type(e).__name__}: {e}) - continuing", file=sys.stderr)
         # sleep in short slices so a stop signal is honoured promptly
         for _ in range(max(1, args.interval)):
             if _STOP:

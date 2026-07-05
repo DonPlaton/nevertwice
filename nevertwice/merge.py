@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Conflict-aware merge for the memory vault — concurrent-agent / multi-machine sync (M-11+).
+"""Conflict-aware merge for the memory vault - concurrent-agent / multi-machine sync (M-11+).
 
 `sync.py` makes cross-machine sync "just git". This closes the one rough edge: when two machines
 (or two parallel agents) touch the *same* note before syncing, git raises a merge conflict. But
-Nevertwice notes are structured, and the usual collision is **not** a real disagreement — it is two
+Nevertwice notes are structured, and the usual collision is **not** a real disagreement - it is two
 sides independently bumping a recurrence counter or one side retiring the note via supersession
 while the body stays identical. A generic text merge turns that into a manual conflict; this merge
 driver resolves it the way the data model already says it should:
@@ -33,7 +33,7 @@ def _split(text: str):
     """(frontmatter_dict, body) for a note. Frontmatter is the YAML block between the first two
     `---` fences; everything after is the body. Values are kept as raw strings; a `tags` line is
     parsed into a list. Missing frontmatter → ({}, whole text). Known limitation: this is a
-    line-splitter, not a YAML parser — a block-list value (a line without `:`) is not preserved;
+    line-splitter, not a YAML parser - a block-list value (a line without `:`) is not preserved;
     Nevertwice notes only ever use inline scalars/lists, so that shape never occurs in practice."""
     if not text.startswith("---"):
         return {}, text
@@ -68,7 +68,7 @@ def _merge_front(base: dict, ours: dict, theirs: dict):
             continue
         if o is None or t is None:
             # one side added / kept a field the other lacks → keep the present value. Doing
-            # this FIRST means every typed rule below sees two real values — it also stops a
+            # this FIRST means every typed rule below sees two real values - it also stops a
             # literal "status: None" from being emitted when only one side had a status
             # (code-review 2026-07).
             merged[k] = o if o is not None else t
@@ -83,7 +83,7 @@ def _merge_front(base: dict, ours: dict, theirs: dict):
         elif k == "status":
             merged[k] = o if _STATUS_RANK.get(o, 0) >= _STATUS_RANK.get(t, 0) else t
         elif k in ("superseded_by", "resolved_by"):
-            # both sides retired the same note via DIFFERENT replacements — silently keeping
+            # both sides retired the same note via DIFFERENT replacements - silently keeping
             # one would drop the other supersession link with no trace. That is a genuine
             # disagreement; surface it as a conflict (code-review 2026-07).
             ok = False
@@ -125,7 +125,7 @@ def merge_note(base: str, ours: str, theirs: str):
 def _driver(base_path, ours_path, theirs_path) -> int:
     """git merge-driver entry: read the three files, write the result to `ours_path` (%A). Exit 0
     if resolved, non-zero for a conflict. CRITICAL: on conflict, a custom driver is itself
-    responsible for leaving conflict markers in %A — git does NOT add them for you, and returning
+    responsible for leaving conflict markers in %A - git does NOT add them for you, and returning
     1 with a clean-looking file makes some flows (rebase --continue) treat "ours" as the
     resolution and silently drop "theirs" (code-review 2026-07: verified data loss). So we write
     the standard <<<<<<</=======/>>>>>>> block ourselves before signalling the conflict."""

@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """Self-register and verify the memory system's Windows scheduled tasks (audit
 I-17). The safety-net tasks (catch-up, hourly health, weekly consolidation) were
-previously unverifiable from inside the system — a deleted or disabled task
+previously unverifiable from inside the system - a deleted or disabled task
 failed silently. This makes their state inspectable and re-creatable, and feeds
 a task-status line into the hourly health check.
 
-    python manage_tasks.py                       # check (read-only) — what's registered
+    python manage_tasks.py                       # check (read-only) - what's registered
     python manage_tasks.py --register            # create any MISSING tasks
     python manage_tasks.py --register --force     # (re)create ALL tasks
 
@@ -24,7 +24,7 @@ SCRIPTS = Path(__file__).resolve().parent
 def _console_encoding() -> str:
     """The codepage schtasks writes in. On a localised Windows (e.g. ru-RU) a
     redirected console app emits the OEM codepage (cp866), NOT the ANSI/locale
-    codepage Python's text mode assumes — decoding with the wrong one mangles
+    codepage Python's text mode assumes - decoding with the wrong one mangles
     the Cyrillic status fields. Falls back to utf-8 off Windows."""
     try:
         return f"cp{ctypes.windll.kernel32.GetOEMCP()}"
@@ -98,7 +98,7 @@ def query_task(name: str) -> dict:
 
 def register_task(spec: dict) -> tuple[bool, str]:
     """Create/replace one task pointing at its .bat wrapper. Always passes /F so
-    it never blocks on the interactive 'replace?' prompt — callers decide whether
+    it never blocks on the interactive 'replace?' prompt - callers decide whether
     to call it (skip-if-exists lives in the CLI)."""
     bat = spec["bat"]
     if not bat.exists():
@@ -114,7 +114,7 @@ def register_task(spec: dict) -> tuple[bool, str]:
 def tasks_health() -> tuple[str, bool]:
     """(summary, degrades) for the hourly health line (audit I-17). Only degrades
     when the user has opted into the scheduled setup (≥1 task present) yet one is
-    missing or disabled — a never-registered machine is informational, not a
+    missing or disabled - a never-registered machine is informational, not a
     failure."""
     states = [query_task(t["name"]) for t in TASKS]
     present = [s for s in states if s["exists"]]

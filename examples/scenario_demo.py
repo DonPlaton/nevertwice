@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Nevertwice — the full-scenario demo: every mechanism, on a realistic project, with numbers.
+"""Nevertwice - the full-scenario demo: every mechanism, on a realistic project, with numbers.
 
 Where `demo.py` is the 25-second "it remembered" moment, this is the complete tour: it seeds a
 throwaway vault with a realistic multi-session history of one web-app project, then exercises
-**every** mechanism end-to-end on the real system and prints what each one buys you — in tokens
+**every** mechanism end-to-end on the real system and prints what each one buys you - in tokens
 and in errors prevented. Nothing is mocked; nothing hits the network; your real vault is
 untouched. Deterministic and offline (lexical recall + deterministic guard distillation), so it
 prints the same story every run and can gate CI.
@@ -12,14 +12,14 @@ prints the same story every run and can gate CI.
     python examples/scenario_demo.py --json     # machine-readable metrics (for the README/DEMO)
 
 What it demonstrates, in order:
-  1. Recall + token economy  — surface the right lesson for a task, and the tokens that saves
+  1. Recall + token economy  - surface the right lesson for a task, and the tokens that saves
                                vs dumping the whole store into context.
-  2. Guards (active memory A) — a past mistake compiled into a check that fires BEFORE it repeats,
+  2. Guards (active memory A) - a past mistake compiled into a check that fires BEFORE it repeats,
                                at zero context tokens until it does.
-  3. Anticipation (B)        — predict the failure the current plan is heading toward.
-  4. Counterfactual (C)      — "what breaks if I change X?" answered from the induced causal graph,
+  3. Anticipation (B)        - predict the failure the current plan is heading toward.
+  4. Counterfactual (C)      - "what breaks if I change X?" answered from the induced causal graph,
                                not an episode dump.
-  5. Supersession            — a contradiction resolved at write time, surfaced in the ledger.
+  5. Supersession            - a contradiction resolved at write time, surfaced in the ledger.
 """
 import os
 import sys
@@ -66,7 +66,7 @@ def line(msg=""):
 
 PROJECT = "webapp"
 
-# A realistic multi-session history: the lessons a real agent would accrue building a web app —
+# A realistic multi-session history: the lessons a real agent would accrue building a web app -
 # recurring mistakes, the entities they touch, and the causal edges between them.
 LESSONS = [
     {"type": "mistake", "title": "n-plus-one-query-on-user-list",
@@ -78,7 +78,7 @@ LESSONS = [
      "relations": [{"rel": "caused-by", "target": "orm-lazy-loading"}]},
     {"type": "mistake", "title": "sql-built-by-fstring",
      "description": "A search filter was interpolated into the SQL string, opening an injection hole.",
-     "prevention": "Never build SQL by f-string or % — pass values as query parameters "
+     "prevention": "Never build SQL by f-string or % - pass values as query parameters "
                    "(cursor.execute(sql, params)).",
      "entities": ["database", "security"],
      "relations": [{"rel": "fixed-by", "target": "parameterized-queries"}]},
@@ -115,13 +115,13 @@ LESSONS = [
      "entities": ["database", "api-design"]},
     {"type": "mistake", "title": "n-plus-one-query-on-orders",
      "description": "The /orders endpoint repeated the same per-row query pattern that bit the "
-                    "users endpoint earlier — the same class of bug, a second time.",
+                    "users endpoint earlier - the same class of bug, a second time.",
      "prevention": "Eager-load related rows with a join; never lazy-load inside a serialization loop.",
      "entities": ["database", "orm", "orders-endpoint"],
      "relations": [{"rel": "caused-by", "target": "orm-lazy-loading"}]},
     {"type": "mistake", "title": "float-money-rounding-drift",
      "description": "Storing prices as floats accumulated rounding drift across a cart total.",
-     "prevention": "Store money as integer minor units (cents) or Decimal — never float.",
+     "prevention": "Store money as integer minor units (cents) or Decimal - never float.",
      "entities": ["billing", "data-types"]},
     {"type": "decision", "title": "auth-module-owns-session-store",
      "description": "The auth module is the single owner of the session store; other modules read "
@@ -143,7 +143,7 @@ NEW_DECISION = {"type": "decision", "title": "store-sessions-in-redis",
 
 def seed():
     # embed=True so recall is indexed (semantic via local bge-m3 if Ollama is up, else the
-    # text-only FTS path — either way real recall, no cloud). Guards distil deterministically.
+    # text-only FTS path - either way real recall, no cloud). Guards distil deterministically.
     api.remember_lessons([OLD_DECISION], project=PROJECT, embed=True)
     api.remember_lessons(LESSONS, project=PROJECT, embed=True)
     api.remember_lessons([NEW_DECISION], project=PROJECT, embed=True)    # retires the old one
@@ -154,13 +154,13 @@ def main():
     seed()
     metrics = {"project": PROJECT, "lessons_seeded": len(LESSONS) + 2}
 
-    line(f"{C['b']}Nevertwice — full-scenario demo{C['x']}  "
+    line(f"{C['b']}Nevertwice - full-scenario demo{C['x']}  "
          f"{C['d']}(throwaway vault, offline, deterministic){C['x']}")
     line(f"{C['d']}Seeded a realistic history of the '{PROJECT}' project: "
          f"{metrics['lessons_seeded']} lessons across {len(set(sum((l.get('entities', []) for l in LESSONS), [])))} entities.{C['x']}")
 
     # ── 1. Recall + token economy ──
-    say("(1) Recall + token economy — the right lesson, not the whole store")
+    say("(1) Recall + token economy - the right lesson, not the whole store")
     query = "loading a list endpoint is doing hundreds of database queries"
     hits = api.recall(query, project=PROJECT, k=3)
     top = hits[0] if hits else {}
@@ -180,7 +180,7 @@ def main():
          f"  → {C['g']}{metrics['recall']['savings_x']}× leaner{C['x']}")
 
     # ── 2. Guards (active memory A) ──
-    say("(2) Guards — a past mistake, caught BEFORE it repeats (0 tokens until it fires)")
+    say("(2) Guards - a past mistake, caught BEFORE it repeats (0 tokens until it fires)")
     clean = api.guards_check("orders = [serialize(o) for o in Order.objects.all()]", project=PROJECT)
     risky = api.guards_check("cursor.execute(f\"SELECT * FROM users WHERE name = '{name}'\")",
                              project=PROJECT)
@@ -194,7 +194,7 @@ def main():
     metrics["guards"] = {"count": guard_ct, "benign_silent": not clean, "caught_repeat": bool(risky)}
 
     # ── 3. Anticipation (B) ──
-    say("(3) Anticipation — the failure the current plan is heading toward")
+    say("(3) Anticipation - the failure the current plan is heading toward")
     traj = "adding a new /invoices list endpoint that serializes each invoice and its line items"
     pred = api.anticipate(traj, project=PROJECT, k=1)
     line(f"  plan: {C['d']}{traj}{C['x']}")
@@ -205,7 +205,7 @@ def main():
     metrics["anticipate"] = {"fired": bool(pred), "risk": pred[0]["risk"] if pred else None}
 
     # ── 4. Counterfactual (C) ──
-    say("(4) Counterfactual — what breaks if I change this?")
+    say("(4) Counterfactual - what breaks if I change this?")
     cf = api.what_breaks("session-store", project=PROJECT)
     answer = causal.counterfactual("session-store", PROJECT)
     line(f"  question: {C['d']}what breaks if I change `session-store`?{C['x']}")
@@ -221,7 +221,7 @@ def main():
          f"{C['d']}(vs {dump_related} to dump every note mentioning it){C['x']}")
 
     # ── 5. Supersession ──
-    say("(5) Supersession — a contradiction resolved at write time")
+    say("(5) Supersession - a contradiction resolved at write time")
     ledger = api.conflicts(PROJECT)
     if ledger:
         c = ledger[0]
@@ -231,14 +231,14 @@ def main():
     metrics["supersession"] = {"revised_facts": len(ledger)}
 
     # ── scoreboard ──
-    say("Scoreboard — what memory bought, on one realistic project")
+    say("Scoreboard - what memory bought, on one realistic project")
     r = metrics
     line(f"  {C['g']}✓{C['x']} recall is {C['b']}{r['recall']['savings_x']}×{C['x']} leaner than dumping the store")
     line(f"  {C['g']}✓{C['x']} {r['guards']['count']} guards catch repeats at {C['b']}0 tokens{C['x']} until they fire")
     line(f"  {C['g']}✓{C['x']} anticipation flags a novel repeat of a known failure class")
     if r['causal']['savings_x']:
         line(f"  {C['g']}✓{C['x']} a counterfactual answers in {C['b']}{r['causal']['savings_x']}×{C['x']} fewer tokens than a note dump")
-    line(f"  {C['g']}✓{C['x']} {r['supersession']['revised_facts']} contradiction resolved — recall stays consistent")
+    line(f"  {C['g']}✓{C['x']} {r['supersession']['revised_facts']} contradiction resolved - recall stays consistent")
 
     if JSON:
         import json
@@ -253,7 +253,7 @@ def _iter_all():
             for n in m._iter_project_notes(PROJECT)]
 
 
-# A battery of actions that each repeat one of the seeded mistakes — used to measure guard
+# A battery of actions that each repeat one of the seeded mistakes - used to measure guard
 # catch-rate at scale (offline: deterministic guards, regex-only check).
 _REPEAT_ACTIONS = [
     "cursor.execute(f\"SELECT * FROM t WHERE id = '{x}'\")",     # sql-built-by-fstring
@@ -265,7 +265,7 @@ _REPEAT_ACTIONS = [
 
 def scale(n_projects: int):
     """Large-scale check: seed the realistic history across N projects (offline, no embedder),
-    then measure the two advantages that do not need semantic recall — guard catch-rate on a
+    then measure the two advantages that do not need semantic recall - guard catch-rate on a
     battery of repeat-actions, and how the recall token-economy ratio grows with store size."""
     import json
     import memory_hook as m
@@ -276,7 +276,7 @@ def scale(n_projects: int):
     G.generate_from_vault(min_recurrence=1, use_llm=False)
     all_notes = m._iter_all_notes()
     guards_ct = len(G.load_guards())
-    # guard catch-rate: of the repeat-actions, how many does a guard fire on (within a project —
+    # guard catch-rate: of the repeat-actions, how many does a guard fire on (within a project -
     # guards are project-scoped by design, so a lesson in one service never noises another)?
     caught = sum(1 for a in _REPEAT_ACTIONS if G.check(a, project="svc-000"))
     # structural token economy: dumping the whole store vs a 5-note recall slice
@@ -292,13 +292,13 @@ def scale(n_projects: int):
     if JSON:
         print(json.dumps(out, ensure_ascii=False, indent=1))
     else:
-        line(f"{C['b']}Large-scale check{C['x']} — {n_projects} projects, "
+        line(f"{C['b']}Large-scale check{C['x']} - {n_projects} projects, "
              f"{C['b']}{out['total_notes']}{C['x']} notes")
         line(f"  guards distilled:      {C['g']}{out['guards']}{C['x']}")
         line(f"  repeat-actions caught: {C['g']}{caught}/{len(_REPEAT_ACTIONS)}{C['x']} "
              f"({int(out['catch_rate']*100)}%)")
         line(f"  recall vs full dump:   {C['g']}{out['recall_savings_x']}×{C['x']} leaner "
-             f"({recall_t} vs {dump_t} tokens) — the ratio grows with the store")
+             f"({recall_t} vs {dump_t} tokens) - the ratio grows with the store")
     return out
 
 

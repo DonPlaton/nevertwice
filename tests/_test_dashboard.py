@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Self-check for dashboard.py — verifies the HTML is well-formed, self-contained
+"""Self-check for dashboard.py - verifies the HTML is well-formed, self-contained
 (no external asset / network reference), reflects the store counts, and HTML-escapes
 note titles (an injection-shaped title must not break the page). Mocks the iterators."""
 import sys

@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
-"""Active memory, axis C — causal / counterfactual memory.
+"""Active memory, axis C - causal / counterfactual memory.
 
 Retrieval answers "what do I know about X" by dumping every note that mentions X. A memory that
 *understands* X answers a different, harder question in one line:
 
     "What breaks if I change / touch X?"
 
-This module induces a compact **causal model** from the episodes already in the store — the
+This module induces a compact **causal model** from the episodes already in the store - the
 typed relation edges lessons carry (`causes`, `caused-by`, `depends-on`, `requires`, `enables`,
-`prevents`, `part-of`, `uses`, …) plus the failure modes that mistakes attach to an entity —
+`prevents`, `part-of`, `uses`, …) plus the failure modes that mistakes attach to an entity -
 orients every edge into a single *impact* direction (cause → effect), and traverses it to answer
 counterfactuals. The output is a short synthesized consequence list with evidence stems, NOT the
 underlying notes: the token win is answering the question instead of returning the library. See
@@ -43,7 +43,7 @@ _REVERSE = {"caused-by", "depends-on", "requires", "uses", "part-of"}
 def build_impact_graph(project=None) -> dict:
     """Induce the causal impact graph: `{cause: [{effect, via, notes}]}`, where an edge means
     'changing `cause` may impact `effect`'. Oriented from the store's typed relation edges. A
-    compact artifact built from `relation_graph` — no note bodies, just the causal skeleton."""
+    compact artifact built from `relation_graph` - no note bodies, just the causal skeleton."""
     rg = m.relation_graph(m.slug_project(project) if project else None, top=10_000)
     impact: dict = {}
     for src, edges in rg.items():
@@ -62,7 +62,7 @@ def build_impact_graph(project=None) -> dict:
 
 
 def _failure_modes(entity, project=None, k=6) -> list[dict]:
-    """The mistakes that tag `entity` — the known ways touching it has gone wrong. `{title,
+    """The mistakes that tag `entity` - the known ways touching it has gone wrong. `{title,
     prevention, stem}`, most-recurrent first. This is the other half of the causal picture:
     not just what depends on X, but how X itself tends to fail."""
     try:
@@ -78,7 +78,7 @@ def _failure_modes(entity, project=None, k=6) -> list[dict]:
 def what_breaks(entity, project=None, *, depth=2, max_effects=8, impact=None) -> dict:
     """Counterfactual: what may break if you change / touch `entity`. Traverses the impact graph
     downstream (depth-limited, cycle-safe) and collects `entity`'s own failure modes. Returns
-    `{entity, impacts:[{effect, via, hops, notes}], failure_modes:[...], evidence:[stems]}` —
+    `{entity, impacts:[{effect, via, hops, notes}], failure_modes:[...], evidence:[stems]}` -
     a synthesized consequence set, ranked by proximity×weight, deduped. One answer, not a dump."""
     impact = build_impact_graph(project) if impact is None else impact
     seen = {entity}
@@ -122,7 +122,7 @@ def why(entity, project=None, *, depth=2, max_causes=8) -> dict:
 
 
 def counterfactual(entity, project=None) -> str:
-    """A one-paragraph synthesized answer to 'what happens if I change `entity`' — the
+    """A one-paragraph synthesized answer to 'what happens if I change `entity`' - the
     token-economical output: top consequences + failure modes in a few lines, with evidence
     stems, instead of the underlying notes. '' if the entity has no causal footprint."""
     wb = what_breaks(entity, project)
@@ -138,7 +138,7 @@ def counterfactual(entity, project=None) -> str:
     if wb["failure_modes"]:
         lines.append(f"Known failure modes when touching `{entity}`:")
         for f in wb["failure_modes"]:
-            tail = f" — {f['prevention'][:100]}" if f["prevention"] else ""
+            tail = f" - {f['prevention'][:100]}" if f["prevention"] else ""
             lines.append(f"  • {f['title']}{tail}")
     if wb["evidence"]:
         lines.append(f"  [evidence: {', '.join(wb['evidence'][:4])}]")

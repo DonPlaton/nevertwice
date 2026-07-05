@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""On-demand search over the memory vault — the recall tool ANY agent can shell
+"""On-demand search over the memory vault - the recall tool ANY agent can shell
 out to mid-task (audit C3). Read-only; never touches the write pipeline.
 
     python memory_search.py "gpu memory leak"               # all projects, with facts
@@ -35,7 +35,7 @@ _low_confidence = m._low_confidence
 
 
 def _linked(stem: str, ntype: str, limit: int = 6) -> list[str]:
-    """Sibling/linked notes of a hit — makes the wikilink graph usable from
+    """Sibling/linked notes of a hit - makes the wikilink graph usable from
     recall, not just Obsidian's graph view (audit H4)."""
     fp = m.VAULT / m.TYPE_FOLDER.get(ntype, "") / f"{stem}.md"
     try:
@@ -69,11 +69,11 @@ def _lex_overlap(qtok: set, r: dict, s: str) -> float:
 
 
 def _lexical_only(query: str, project: str | None, k: int, cache: dict) -> list[dict]:
-    """Pure lexical recall for a store with no usable embeddings (#32) — so a user
+    """Pure lexical recall for a store with no usable embeddings (#32) - so a user
     who never ran an embedder (no Ollama, no cloud key) still gets recall instead of
     nothing. Prefers the SQLite FTS5 index (bm25, scales, indexes text-only notes);
     falls back to token overlap over the cached note text when FTS is unavailable.
-    Always flagged low_confidence — lexical is a weaker signal than confident semantic."""
+    Always flagged low_confidence - lexical is a weaker signal than confident semantic."""
     try:
         idx = m._scale_index()
         if idx:
@@ -101,17 +101,17 @@ def _lexical_only(query: str, project: str | None, k: int, cache: dict) -> list[
 
 def search_core(query: str, project: str | None = None, k: int = 10,
                 rerank: bool | None = None, xrerank: bool | None = None):
-    """Rank memory notes for a query — calibrated score fusion of semantic (embedding
+    """Rank memory notes for a query - calibrated score fusion of semantic (embedding
     cosine) and lexical (BM25), recurrence-boosted, with a pure-lexical fallback when the
     GPU/Ollama is busy. Returns (results, mode); results is a list of dicts. Shared by the
     CLI and the MCP server (I-8) so both rank identically and stay DRY. The same fusion the
     hook injection path uses; NEVERTWICE_FUSION=rrf restores the legacy semantic-primary path.
 
     Two opt-in rerankers over an over-fetched candidate pool, both off by default:
-    - xrerank (NEVERTWICE_XRERANK=1): a trained cross-encoder (bge-reranker-v2-m3) —
+    - xrerank (NEVERTWICE_XRERANK=1): a trained cross-encoder (bge-reranker-v2-m3) -
       the measured precision win (LongMemEval R@1 0.55→0.61, MRR +0.06). Local GPU,
       needs the [reranker] extra. Takes precedence when both are set.
-    - rerank (I-3, NEVERTWICE_RERANK=1): a free cloud model reorders the top-k —
+    - rerank (I-3, NEVERTWICE_RERANK=1): a free cloud model reorders the top-k -
       higher precision at the cost of cloud latency.
     Never used on the hot hook paths."""
     if rerank is None:
@@ -126,13 +126,13 @@ def search_core(query: str, project: str | None = None, k: int = 10,
              and (not project or r.get("project") == project)]
     if not cands:
         # No embedded vectors for this filter. Before giving up, try a pure lexical
-        # answer — the FTS5 index covers text-only notes (#32), so a no-embedder user
+        # answer - the FTS5 index covers text-only notes (#32), so a no-embedder user
         # gets recall, not silence. Only fall through to the embed-rebuild hint when
         # lexical also finds nothing.
         lex = _lexical_only(query, project, k, cache)
         if lex:
             return lex, "lexical (no embedder)"
-        # "nothing embedded at all" ≠ "this project has no notes" — don't tell the
+        # "nothing embedded at all" ≠ "this project has no notes" - don't tell the
         # user to rebuild a perfectly good index when a filter just missed (audit A14)
         return [], ("empty" if not has_any and not cache else "empty-project")
 
@@ -158,7 +158,7 @@ def search_core(query: str, project: str | None = None, k: int = 10,
             mode = mode + " (low-confidence)"
     else:
         # embedder pinged OK but the query embed failed → weak token-overlap ranking. Mark it
-        # low-confidence like every other lexical path — `low_conf` below is derived from this
+        # low-confidence like every other lexical path - `low_conf` below is derived from this
         # string, so omitting it silently bypassed the abstention gate for programmatic callers
         # (code-review 2026-07, HIGH).
         mode = "lexical (Ollama/GPU busy) (low-confidence)"
@@ -168,9 +168,9 @@ def search_core(query: str, project: str | None = None, k: int = 10,
             if sc:
                 scored.append((sc, s, r))
     scored.sort(key=lambda x: -x[0])
-    # Mixed store: text-only notes (no vector — written while no embedder was up, #32)
+    # Mixed store: text-only notes (no vector - written while no embedder was up, #32)
     # never enter `cands`, so without this they'd be INVISIBLE to recall as soon as the
-    # store holds ANY embedded note (audit 2026-06-18 CRIT — the all-text-only path above
+    # store holds ANY embedded note (audit 2026-06-18 CRIT - the all-text-only path above
     # only fires when `cands` is empty). Supplement the ranking with their lexical
     # (token-overlap) matches so they stay reachable; they rank after vector hits and
     # carry low_confidence (lexical is a weaker signal than a confident semantic match).
@@ -187,7 +187,7 @@ def search_core(query: str, project: str | None = None, k: int = 10,
                 text_extra.append((sc, s, r))
     text_extra.sort(key=lambda x: -x[0])
     pool = max(k, m.RERANK_POOL) if (rerank or xrerank) else k
-    # carry the abstention signal ON the results too — api.recall() drops `mode`, so a
+    # carry the abstention signal ON the results too - api.recall() drops `mode`, so a
     # programmatic caller (integrations, custom agents) otherwise can't tell these are
     # nearest-but-weak matches the hook would not auto-inject (audit 2026-06-18).
     low_conf = "low-confidence" in mode
@@ -257,7 +257,7 @@ def main():
             if "--json" in flags:
                 print(json.dumps(rg, ensure_ascii=False, indent=2))
             else:
-                print(f"Relation graph{(' [' + proj + ']') if proj else ''} — {len(rg)} source(s):")
+                print(f"Relation graph{(' [' + proj + ']') if proj else ''} - {len(rg)} source(s):")
                 for src, edges in rg.items():
                     for e in edges:
                         print(f"  {src} --{e['rel']}--> {e['target']}  (x{e['notes']})")
@@ -266,7 +266,7 @@ def main():
             if "--json" in flags:
                 print(json.dumps(g, ensure_ascii=False, indent=2))
             else:
-                print(f"Entity graph{(' [' + proj + ']') if proj else ''} — {len(g)} entit(y/ies):")
+                print(f"Entity graph{(' [' + proj + ']') if proj else ''} - {len(g)} entit(y/ies):")
                 for e, info in g.items():
                     links = ", ".join(f"{le} x{lc}" for le, lc in info["links"])
                     print(f"  {e}  ({info['notes']} notes)" + (f"  -> {links}" if links else ""))
@@ -281,7 +281,7 @@ def main():
     query = rest[0]
     project = rest[1] if len(rest) > 1 else None
 
-    # M-5: point-in-time recall — what we believed about <project> on a given day
+    # M-5: point-in-time recall - what we believed about <project> on a given day
     if as_of_date:
         if not project:
             print("--as-of needs a project: memory_search.py <ignored> <project> --as-of=DATE",
@@ -302,7 +302,7 @@ def main():
     if "--expand-relations" in flags and top:        # Phase 2b: relation-aware expansion
         top = top + m.relation_expand(top, project, max_add=k)
     if mode == "empty":
-        print("(no memory stored yet — see it work with `python examples/demo.py`, or capture "
+        print("(no memory stored yet - see it work with `python examples/demo.py`, or capture "
               "a session, then `python nevertwice/embed_index.py`)", file=sys.stderr)
         sys.exit(1)
     if mode == "empty-project":
@@ -317,9 +317,9 @@ def main():
         print("(no results)")
         return
     if "low-confidence" in mode:
-        print("⚠ no confident match — nearest notes below may be off-topic:")
+        print("⚠ no confident match - nearest notes below may be off-topic:")
     print(f"Top {len(top)} for {query!r}" + (f" [{project}]" if project else "")
-          + f"  — {mode}")
+          + f"  - {mode}")
     for r in top:
         nt = r.get("ntype", "")
         title = m._strip_lead_icon(r.get("title") or r.get("stem", ""))

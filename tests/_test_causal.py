@@ -2,7 +2,7 @@
 """Self-check for causal.py (active memory, axis C). Verifies edge orientation into impact
 direction (forward vs reverse relations), downstream multi-hop traversal, cycle safety, that
 failure modes are pulled from mistakes tagging the entity, and that the counterfactual output
-is a short synthesized answer (bounded — not an episode dump). Mocks the relation graph."""
+is a short synthesized answer (bounded - not an episode dump). Mocks the relation graph."""
 import sys
 from pathlib import Path
 

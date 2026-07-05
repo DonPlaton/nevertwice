@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Tests for the always-on multi-agent capture: the `watch` daemon's poll cycle
-(idempotency — a finished transcript is mined exactly once) and the `auto_capture`
+(idempotency - a finished transcript is mined exactly once) and the `auto_capture`
 drop-in proxy for OpenAI-style clients. Fully offline: process_session / capture_session
 and the vault ops are mocked, so no LLM, no vault, no git, no network."""
 import sys
@@ -67,7 +67,7 @@ def test_watch_captures_new_transcript_exactly_once():
 
 
 def test_watch_waits_for_a_live_transcript_to_settle():
-    """A file whose mtime is fresher than SETTLE_S is a session still being written — it must
+    """A file whose mtime is fresher than SETTLE_S is a session still being written - it must
     NOT be mined this cycle (each growth would mint a new session id → note spam), and must be
     mined once its mtime is old enough."""
     import os

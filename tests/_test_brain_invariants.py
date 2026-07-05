@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""Brain layer — the INVARIANT guards (docs/BRAIN_LAYER_DESIGN.md §7). These are the tests
+"""Brain layer - the INVARIANT guards (docs/BRAIN_LAYER_DESIGN.md §7). These are the tests
 that keep the philosophy honest in CI:
 
-  1. SEPARATION — entity/Brain notes (under Entities/) NEVER enter the default recall pool.
-  2. BUDGET     — the SessionStart injection stays within INJECT_BUDGET_CHARS and is byte-for-byte
+  1. SEPARATION - entity/Brain notes (under Entities/) NEVER enter the default recall pool.
+  2. BUDGET     - the SessionStart injection stays within INJECT_BUDGET_CHARS and is byte-for-byte
                   UNCHANGED whether the Brain layer is on or off (entity cards must not leak in).
-  3. PRIVACY    — extraction for a LOCAL_ONLY project/agent NEVER calls the cloud, brain on or off.
-  4. OPT-IN     — a coding-only profile writes no entity_types and no Entities/ — today's system.
+  3. PRIVACY    - extraction for a LOCAL_ONLY project/agent NEVER calls the cloud, brain on or off.
+  4. OPT-IN     - a coding-only profile writes no entity_types and no Entities/ - today's system.
 
 No embedder / LLM / network needed.
 
@@ -68,7 +68,7 @@ def seed_vault(td):
 
 
 # ── 1. SEPARATION ────────────────────────────────────────────────────────────────
-print("INVARIANT 1 — separation (Entities/ never in the recall pool)")
+print("INVARIANT 1 - separation (Entities/ never in the recall pool)")
 with tempfile.TemporaryDirectory() as td:
     proj = seed_vault(td)
     card_dir = m.VAULT / "Entities"
@@ -95,7 +95,7 @@ with tempfile.TemporaryDirectory() as td:
 
 
 # ── 2. BUDGET (injection ≤ budget, brain-on == brain-off) ────────────────────────
-print("INVARIANT 2 — budget (injection bounded + unchanged on/off)")
+print("INVARIANT 2 - budget (injection bounded + unchanged on/off)")
 os.environ["NEVERTWICE_SALIENCE_BOOST"] = "0"     # isolate from the F5 nudge for an exact comparison
 with tempfile.TemporaryDirectory() as td:
     proj = seed_vault(td)
@@ -139,8 +139,8 @@ os.environ.pop("NEVERTWICE_SALIENCE_BOOST", None)
 
 
 # ── 3. PRIVACY (LOCAL_ONLY never reaches the cloud) ──────────────────────────────
-print("INVARIANT 3 — privacy (LOCAL_ONLY extraction stays local)")
-set_profile("research")                          # brain on — entity typing rides the SAME call
+print("INVARIANT 3 - privacy (LOCAL_ONLY extraction stays local)")
+set_profile("research")                          # brain on - entity typing rides the SAME call
 # LOCAL_ONLY_PROJECTS is resolved at import from the env (set before process start in production);
 # set the live module value directly here since we're mutating it after import.
 _p = {n: getattr(m, n) for n in ("call_cloud", "call_ollama", "ACTIVE_CLOUD", "cloud_key",
@@ -173,7 +173,7 @@ finally:
 
 
 # ── 4. OPT-IN (coding profile = today's system, byte-for-byte) ───────────────────
-print("INVARIANT 4 — opt-in (coding writes no Brain artefacts)")
+print("INVARIANT 4 - opt-in (coding writes no Brain artefacts)")
 with tempfile.TemporaryDirectory() as td:
     m.VAULT = Path(td)
     set_profile("coding")

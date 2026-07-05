@@ -24,7 +24,7 @@ _RES = [{"ntype": "pattern", "title": "Crash-safe writes", "description": "tmp t
 def test_lc_recall_to_documents_shape():
     docs = lc.recall_to_documents(_RES)
     assert len(docs) == 2
-    assert "PATTERN — Crash-safe writes" in docs[0]["page_content"]
+    assert "PATTERN - Crash-safe writes" in docs[0]["page_content"]
     assert "Prevention: never write partial files" in docs[0]["page_content"]
     md = docs[0]["metadata"]
     assert md["stem"] == "s1" and md["project"] == "pr" and md["source"] == "nevertwice"
@@ -35,14 +35,14 @@ def test_lc_format_memory_empty_and_nonempty():
     assert lc.format_memory([]) == ""
     s = lc.format_memory(_RES)
     assert "Relevant memory" in s
-    assert "- PATTERN — Crash-safe writes" in s and "- MISTAKE — OOM" in s
+    assert "- PATTERN - Crash-safe writes" in s and "- MISTAKE - OOM" in s
 
 
 # ── LlamaIndex mapping (framework-free) ─────────────────────────────────────────
 
 def test_li_recall_to_nodes_shape():
     nodes = li.recall_to_nodes(_RES)
-    assert nodes[0]["text"].startswith("PATTERN — Crash-safe writes")
+    assert nodes[0]["text"].startswith("PATTERN - Crash-safe writes")
     assert nodes[0]["score"] == 0.83
     assert nodes[0]["metadata"]["stem"] == "s1" and nodes[0]["metadata"]["source"] == "nevertwice"
 
@@ -65,7 +65,7 @@ def test_lc_retriever_raises_without_langchain():
 
 
 def test_lc_memory_load_save_and_flush_resets():
-    # NevertwiceMemory is a plain class (no BaseMemory) — works without langchain.
+    # NevertwiceMemory is a plain class (no BaseMemory) - works without langchain.
     mem = lc.NevertwiceMemory(project="pr", memory_key="hist", k=3)
     assert mem.memory_variables == ["hist"]
     with mock.patch.object(api, "recall", return_value=_RES):

@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Regression tests for the Brain layer — F1 (onboarding profiles + typed-entity layer).
+"""Regression tests for the Brain layer - F1 (onboarding profiles + typed-entity layer).
 
 Guards: profile gating (coding default = brain OFF), the entity_types normalizer
 (ontology-gated WRITE vs lenient profile-independent READ), the extraction prompt block
-(empty unless a brain profile is on), the storage round-trip, the graph type index, and —
-critically — the SEPARATION invariant: entity content under Entities/ never enters the
+(empty unless a brain profile is on), the storage round-trip, the graph type index, and -
+critically - the SEPARATION invariant: entity content under Entities/ never enters the
 default recall pool. No embedder / LLM / network needed.
 
     python _test_brain.py
@@ -153,7 +153,7 @@ with tempfile.TemporaryDirectory() as td:
         "---\ntype: entity\nentity_type: method\nproject: demo\n---\n# ResNet\nbody\n",
         encoding="utf-8")
     pool = m._iter_all_notes()
-    check("only the typed note is in the cross-project pool — Entities/ excluded",
+    check("only the typed note is in the cross-project pool - Entities/ excluded",
           len(pool) == 1 and pool[0]["title"] == "real lesson")
     check("_iter_project_notes also excludes Entities/",
           all(n["ntype"] in ("pattern", "mistake", "decision") for n in m._iter_project_notes("demo")))
@@ -196,7 +196,7 @@ with tempfile.TemporaryDirectory() as td:
           "ResNet checkpoint drops morph flag" in card and "fixed-by" in card)
 
     pool = m._iter_all_notes()
-    check("entity card is NOT in the recall pool — only the 3 typed notes (separation)",
+    check("entity card is NOT in the recall pool - only the 3 typed notes (separation)",
           len(pool) == 3 and all(p["ntype"] in ("pattern", "mistake", "decision") for p in pool))
 
     check("entity_card() reads the cached card", "🧠 resnet · method" in m.entity_card("resnet"))

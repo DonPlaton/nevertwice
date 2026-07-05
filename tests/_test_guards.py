@@ -2,7 +2,7 @@
 """Self-check for guards.py (active memory, axis A). Verifies the 0-token-until-fired hot
 path, scope matching, the Popperian lifecycle (advisory→blocking→retired), ReDoS-safe
 pattern validation, override-as-feedback, and deterministic generation from a mistake.
-Points the ledger at a temp dir and mocks the note iterators — no network, no real vault."""
+Points the ledger at a temp dir and mocks the note iterators - no network, no real vault."""
 import re
 import sys
 import tempfile
@@ -124,7 +124,7 @@ def test_antipattern_rules_match_the_bug():
     # not the fix (the deterministic anti-pattern rules, no LLM)
     note = {"stem": "s1", "ntype": "mistake", "project": "p", "title": "sql-built-by-fstring",
             "desc": "a filter was interpolated into the SQL string",
-            "prevention": "never build SQL by f-string — use query parameters"}
+            "prevention": "never build SQL by f-string - use query parameters"}
     g = G.propose_from_mistake(note, use_llm=False)
     assert g is not None
     assert re.search(g["pattern"], "cursor.execute(f\"SELECT * FROM t WHERE id='{x}'\")"), g["pattern"]

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Document → plain text for ingestion — so ANY document (a paper, a spec, meeting
+"""Document → plain text for ingestion - so ANY document (a paper, a spec, meeting
 notes, a Markdown design doc), not only a chat transcript, can be mined into memory.
 
 stdlib-first, in keeping with the project's zero-dependency core:
@@ -21,7 +21,7 @@ from pathlib import Path
 
 # read straight as UTF-8 text. `.csv`/`.tsv` are here on purpose: a small delimited file
 # reads fine as text and the extractor distills it like any note. `.xlsx` is deliberately
-# NOT supported — it needs a third-party dep (openpyxl) and dense tabular data does not
+# NOT supported - it needs a third-party dep (openpyxl) and dense tabular data does not
 # distill into mistakes/patterns/decisions, so it would add weight for little memory value
 # (parsing the input never changes the store, which stays Markdown either way).
 TEXT_EXTS = {".md", ".markdown", ".mdx", ".txt", ".text", ".log", ".rst",
@@ -36,14 +36,14 @@ MAX_DOC_BYTES = int(os.environ.get("NEVERTWICE_MAX_DOC_BYTES", str(50 * 1024 * 1
 
 class DocError(Exception):
     """Extraction failed for a reason worth surfacing (missing optional dep, corrupt
-    file, unsupported type) — the caller decides whether to skip or abort."""
+    file, unsupported type) - the caller decides whether to skip or abort."""
 
 
 def _docx_text(path: Path) -> str:
     """Plain text from a .docx: concatenate the <w:t> runs of word/document.xml, one
     line per <w:p> paragraph. Pure stdlib (a .docx is a zip of XML). ElementTree's expat
     backend does not resolve external entities (no XXE), and requires-python >= 3.10 rules out
-    the old billion-laughs expansion — the remaining intake risk is a zip bomb, capped below."""
+    the old billion-laughs expansion - the remaining intake risk is a zip bomb, capped below."""
     try:
         with zipfile.ZipFile(path) as z:
             # refuse a decompression bomb: check the DECLARED uncompressed size before reading,
@@ -88,7 +88,7 @@ class _HTMLStripper(HTMLParser):
 
 
 def _html_text(path: Path) -> str:
-    """Visible text from an HTML file — stdlib parser, script/style dropped."""
+    """Visible text from an HTML file - stdlib parser, script/style dropped."""
     p = _HTMLStripper()
     p.feed(path.read_text(encoding="utf-8", errors="replace"))
     return "\n".join(p.parts).strip()
@@ -121,7 +121,7 @@ def extract_text(path, raw_fallback: bool = True) -> str:
     """Plain text from a document, dispatched by extension. Structured formats
     (.docx/.html/.pdf) use the parsers above; plain-text extensions are read directly.
     An unknown extension is read as UTF-8 text when `raw_fallback` (default), else
-    raises DocError — so existing arbitrary-glob sweeps keep working while .pdf/.docx
+    raises DocError - so existing arbitrary-glob sweeps keep working while .pdf/.docx
     gain real parsing. Raises DocError on a parser failure or a missing PDF dep."""
     path = Path(path)
     ext = path.suffix.lower()

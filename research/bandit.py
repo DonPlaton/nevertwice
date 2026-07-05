@@ -1,28 +1,28 @@
 #!/usr/bin/env python3
-"""RESEARCH — learned salience from implicit feedback (roadmap 1B, the flagship).
+"""RESEARCH - learned salience from implicit feedback (roadmap 1B, the flagship).
 
 THE GAP. Nevertwice (like almost every agent-memory system) is STATIC: it injects
-memories but never learns whether an injection helped — a dead loop. 1B closes it.
+memories but never learns whether an injection helped - a dead loop. 1B closes it.
 Treat retrieval as a contextual bandit: each candidate memory is an arm with a feature
 context x = (relevance, log-recurrence, age, confidence, resolved); the agent "injects"
 the top-k; the implicit reward is whether the USEFUL memory (the lesson the session
-needed) was among them. Feedback is PARTIAL — we only observe a reward for what we
-surfaced (a recall miss teaches us nothing about the note we failed to show) — which is
+needed) was among them. Feedback is PARTIAL - we only observe a reward for what we
+surfaced (a recall miss teaches us nothing about the note we failed to show) - which is
 the research challenge. We learn a linear usefulness model online with LinUCB
 (Li et al. 2010): θ = A⁻¹b, rank by θ·x + α·√(xᵀA⁻¹x), update A,b from surfaced arms.
 
 EXPERIMENT (on the 3A longitudinal stream, in temporal order). Three rankers:
-  • heuristic — the shipped hand-tuned salience constants (static, never learns);
-  • bandit    — LinUCB, learns online from partial implicit feedback, from scratch;
-  • oracle    — the offline ridge optimum θ* fit on the WHOLE stream with full feedback
+  • heuristic - the shipped hand-tuned salience constants (static, never learns);
+  • bandit    - LinUCB, learns online from partial implicit feedback, from scratch;
+  • oracle    - the offline ridge optimum θ* fit on the WHOLE stream with full feedback
                 (the 1A posterior's reward-model cousin; the regret reference / ceiling).
 Plus a control: bandit with the reward signal SHUFFLED (credit to a random surfaced
-arm) — it must NOT learn, proving the gain comes from the signal, not the mechanism.
+arm) - it must NOT learn, proving the gain comes from the signal, not the mechanism.
 
 CLAIM. "Agent memory that learns what to remember: an implicit-feedback bandit beats the
 static hand-tuned ranker on long-horizon recall and recovers the offline optimum, with
 sublinear regret." Honest scope: the implicit reward here is the simulator's ground truth
-(a real hook must estimate it noisily — that production signal is the remaining 1B work);
+(a real hook must estimate it noisily - that production signal is the remaining 1B work);
 features reuse 1A's extraction; synthetic world, seeded, CPU.
 
     python research/bandit.py            # report
@@ -54,7 +54,7 @@ except Exception:
 SAVE = "--save" in sys.argv
 ALPHA = 1.0           # LinUCB exploration width
 RIDGE = 1.0           # ridge prior (A = RIDGE·I)
-K_METRIC = 1          # recall-utility@1 — the sharp metric (@3 saturates on an 8-wide pool)
+K_METRIC = 1          # recall-utility@1 - the sharp metric (@3 saturates on an 8-wide pool)
 K_FB = 3              # injected/surfaced set the bandit gets partial feedback on
 D = len(pm.FEATURES)
 BINS = 12             # timeline bins for the learning curve
@@ -64,7 +64,7 @@ BINS = 12             # timeline bins for the learning curve
 
 def streams():
     """Per-seed temporal query streams of (standardised feature matrix, target row).
-    Standardisation uses global feature stats — a fixed preprocessing (feature scaling
+    Standardisation uses global feature stats - a fixed preprocessing (feature scaling
     is not the learned part; the weights θ are) that keeps LinUCB's A well-conditioned."""
     per_seed = [pm.build_dataset([s]) for s in range(lb.SEEDS)]
     mean, std = pm.standardize_params([row for seed in per_seed for row in seed])
@@ -75,7 +75,7 @@ def streams():
 
 
 def ridge_offline(streams_):
-    """Offline ridge usefulness model on the WHOLE stream with FULL feedback — the
+    """Offline ridge usefulness model on the WHOLE stream with FULL feedback - the
     optimum θ* the online bandit is trying to recover."""
     A = RIDGE * np.eye(D)
     b = np.zeros(D)
@@ -97,7 +97,7 @@ def _hit(order, t, k):
 def run_bandit(seed_stream, theta_star, alpha=ALPHA, shuffle_reward=False, rng=None):
     """LinUCB over one temporal stream. EXPLORE (UCB) chooses the surfaced top-K_FB that
     get partial feedback (the learning); the reported utility is the EXPLOIT policy's
-    recall@K_METRIC (greedy θ̂·x — what a deployed bandit would serve once learned), and
+    recall@K_METRIC (greedy θ̂·x - what a deployed bandit would serve once learned), and
     regret = oracle − exploit (its gap to the optimum). Returns per-query
     (exploit-utility, regret, ‖θ̂−θ*‖cos)."""
     A = RIDGE * np.eye(D)
@@ -171,7 +171,7 @@ def main():
 
     bar = "=" * 78
     print(bar)
-    print("  LEARNED SALIENCE FROM FEEDBACK (1B) — online LinUCB vs static, on the 3A stream")
+    print("  LEARNED SALIENCE FROM FEEDBACK (1B) - online LinUCB vs static, on the 3A stream")
     print(bar)
     print(f"  {lb.SEEDS} longitudinal streams, {nq} queries total; LinUCB α={ALPHA}, ridge={RIDGE}, "
           f"recall-utility@{K_METRIC} (feedback on top-{K_FB}); CPU, seeded")
@@ -179,12 +179,12 @@ def main():
     # overall utility (mean over all queries & seeds)
     def overall(rows):
         return _ci(np.concatenate(rows))
-    print(f"\n— recall-utility@{K_METRIC} (useful memory ranked #1; feedback on top-{K_FB}; "
-          f"mean ± 95% CI) —")
+    print(f"\n- recall-utility@{K_METRIC} (useful memory ranked #1; feedback on top-{K_FB}; "
+          f"mean ± 95% CI) -")
     for name, rows in (("relevance-only (mismatched static)", rel_u),
                        ("heuristic (static, shipped)", heur_u),
                        ("bandit (online, learns)", bandit_u),
-                       ("bandit (shuffled reward — control)", shuf_u),
+                       ("bandit (shuffled reward - control)", shuf_u),
                        ("oracle θ* (offline optimum)", oracle_u)):
         mu, ci = overall(rows)
         print(f"  {name:36} {mu:.3f} ±{ci:.3f}")
@@ -194,7 +194,7 @@ def main():
     half = lambda rows: overall([r[len(r) // 2:] for r in rows])
     hb, hh, hr, ho = (half(x)[0] for x in (bandit_u, heur_u, rel_u, oracle_u))
     print(f"\n  → vs MISMATCHED static (relevance-only): bandit {hb:.3f} vs {hr:.3f} "
-          f"({hb - hr:+.3f}) — learning recovers the priors a fixed ranker ignores.")
+          f"({hb - hr:+.3f}) - learning recovers the priors a fixed ranker ignores.")
     print(f"  → vs WELL-TUNED static (shipped heuristic): {hb:.3f} vs {hh:.3f} ({hb - hh:+.3f}); "
           f"oracle ceiling {ho:.3f}. The edge scales with how mismatched the static config is.")
 
@@ -203,7 +203,7 @@ def main():
         return list(np.mean([_binned(r) for r in rows], axis=0))
     bc, hc, rc, oc = curve(bandit_u), curve(heur_u), curve(rel_u), curve(oracle_u)
     spark = lambda v: "".join("▁▂▃▄▅▆▇█"[min(7, int(x * 8))] for x in v)
-    print(f"\n— recall-utility@{K_METRIC} over the timeline (bandit climbs; static rankers are flat) —")
+    print(f"\n- recall-utility@{K_METRIC} over the timeline (bandit climbs; static rankers are flat) -")
     print(f"  bandit   {spark(bc)}  {bc[0]:.2f} → {bc[-1]:.2f}")
     print(f"  heuristic{spark(hc)}  {hc[0]:.2f} → {hc[-1]:.2f}")
     print(f"  relevance{spark(rc)}  {rc[0]:.2f} → {rc[-1]:.2f}")
@@ -213,17 +213,17 @@ def main():
     final_regret = _ci([r.sum() for r in bandit_r])
     early = np.mean([np.mean(c[:len(c) // 10]) for c in bandit_c])
     late = np.mean([np.mean(c[-len(c) // 10:]) for c in bandit_c])
-    print(f"\n— convergence —")
+    print(f"\n- convergence -")
     print(f"  cumulative regret vs oracle: {final_regret[0]:.1f} ±{final_regret[1]:.1f} "
           f"over {nq // lb.SEEDS} queries/stream (sublinear ⇒ learning)")
     print(f"  weight recovery ‖θ̂−θ*‖cos: {early:.3f} (first 10%) → {late:.3f} (last 10%) "
-          f"— learned weights approach the offline optimum")
+          f"- learned weights approach the offline optimum")
     print(f"  θ* (offline optimum, standardised): "
           + ", ".join(f"{pm.FEATURES[i]}={theta_star[i]:+.2f}" for i in range(D)))
 
     sb, _ = half(shuf_u)
     print(f"\n  → control: shuffled-reward bandit second-half utility {sb:.3f} "
-          f"(≈ no learning over heuristic {hh:.3f}) — the gain is from the feedback signal.")
+          f"(≈ no learning over heuristic {hh:.3f}) - the gain is from the feedback signal.")
 
     if SAVE:
         out = {"queries": nq, "seeds": lb.SEEDS, "alpha": ALPHA, "k_metric": K_METRIC, "k_fb": K_FB,
@@ -250,7 +250,7 @@ def _figure(bc, hc, rc, oc, bandit_c, path):
         matplotlib.use("Agg")
         import matplotlib.pyplot as plt
     except Exception as e:
-        print(f"  [figure skipped: matplotlib unavailable — {e}]")
+        print(f"  [figure skipped: matplotlib unavailable - {e}]")
         return
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(11, 4.3))
     x = range(len(bc))

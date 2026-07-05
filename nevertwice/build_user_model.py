@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Learned user / working model (I-6) — distil a cross-project profile of HOW the
+"""Learned user / working model (I-6) - distil a cross-project profile of HOW the
 user works from the whole vault, beyond what CLAUDE.md states by hand. Writes
 User/profile.md with a compact brief the hook injects at SessionStart.
 
 100% local, GPU-free, privacy-safe: pure structural analysis (tags, cross-project
-mistake themes, pattern themes, session signals) — no embeddings, no LLM, no cloud,
+mistake themes, pattern themes, session signals) - no embeddings, no LLM, no cloud,
 so it is safe even over local-only research projects.
 
     python build_user_model.py            # rebuild User/profile.md
@@ -95,7 +95,7 @@ def main():
         return
     projects = sorted({n["project"] for n in notes})
 
-    # 1) stack/themes — top tags overall
+    # 1) stack/themes - top tags overall
     tagc = Counter(t for n in notes for t in n["tags"] if t)
     top_tags = [t for t, _ in tagc.most_common(14)]
 
@@ -109,7 +109,7 @@ def main():
     def content(s):
         return {t for t in _toks(s) if df[t] <= ceil}
 
-    # 2) recurring CROSS-PROJECT gotchas — content tokens of mistakes spanning ≥2 projects
+    # 2) recurring CROSS-PROJECT gotchas - content tokens of mistakes spanning ≥2 projects
     tok_projects = defaultdict(set)
     tok_examples = {}
     for n in notes:
@@ -122,7 +122,7 @@ def main():
                    reverse=True)
     gotchas = [(t, tok_examples[t], n) for n, t in cross[:8]]
 
-    # 3) working-style — recurring pattern content themes (across ≥3 patterns)
+    # 3) working-style - recurring pattern content themes (across ≥3 patterns)
     pat_tok = Counter()
     for n in notes:
         if n["ntype"] == "pattern":
@@ -139,8 +139,8 @@ def main():
     counts = Counter(n["ntype"] for n in notes)
     brief = (f"Стек: {', '.join(top_tags[:8])}. "
              f"Повторяющиеся грабли (≥2 проектов): "
-             f"{', '.join(t for t, _, _ in gotchas[:5]) or '—'}. "
-             f"Рабочий стиль: {', '.join(style[:5]) or '—'}.")
+             f"{', '.join(t for t, _, _ in gotchas[:5]) or '-'}. "
+             f"Рабочий стиль: {', '.join(style[:5]) or '-'}.")
 
     lines = [
         m.fm_block({"type": "user_model", "date": datetime.now().strftime("%Y-%m-%d"),
@@ -150,14 +150,14 @@ def main():
         "Дополняет CLAUDE.md выученными паттернами. Обновить: `python build_user_model.py`._",
         "", "## Кратко (для инъекции)", "", brief,
         "", f"## Стек и темы (топ-{len(top_tags)} тегов)", "",
-        ", ".join(top_tags) or "—",
+        ", ".join(top_tags) or "-",
         "", "## Повторяющиеся грабли (кросс-проектные)", "",
     ]
-    lines += [f"- **{t}** — в {n} проектах (напр. `{ex}`)" for t, ex, n in gotchas] or ["—"]
+    lines += [f"- **{t}** - в {n} проектах (напр. `{ex}`)" for t, ex, n in gotchas] or ["-"]
     lines += ["", "## Рабочий стиль (повторяющиеся паттерны)", "",
-              ", ".join(style) or "—",
+              ", ".join(style) or "-",
               "", "## Проекты", ""]
-    lines += [f"- [[{p}]] — {by_proj[p][0]} заметок, активность до {by_proj[p][1]}"
+    lines += [f"- [[{p}]] - {by_proj[p][0]} заметок, активность до {by_proj[p][1]}"
               for p in sorted(by_proj, key=lambda p: -by_proj[p][0])]
     lines += ["", f"_Всего: {len(notes)} заметок "
               f"(P={counts['pattern']} M={counts['mistake']} D={counts['decision']}), "

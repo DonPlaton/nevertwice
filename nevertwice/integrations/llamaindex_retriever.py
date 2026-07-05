@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""LlamaIndex integration for Nevertwice — a retriever over agent memory.
+"""LlamaIndex integration for Nevertwice - a retriever over agent memory.
 
     from nevertwice.integrations.llamaindex_retriever import NevertwiceRetriever
     retriever = NevertwiceRetriever(project="myproj", k=5)
@@ -15,13 +15,13 @@ retriever class needs `pip install nevertwice-memory[llamaindex]`.
 import sys
 from pathlib import Path
 
-try:                                  # installed package — proper relative import (no sys.path/shadowing)
+try:                                  # installed package - proper relative import (no sys.path/shadowing)
     from .. import api as _api
-except ImportError:                   # flat-script use — fall back to a path insert
+except ImportError:                   # flat-script use - fall back to a path insert
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
     import api as _api
 
-INSTALL_HINT = "LlamaIndex not installed — `pip install nevertwice-memory[llamaindex]`"
+INSTALL_HINT = "LlamaIndex not installed - `pip install nevertwice-memory[llamaindex]`"
 
 try:
     from llama_index.core.retrievers import BaseRetriever
@@ -51,11 +51,11 @@ def recall_to_nodes(results: list[dict]) -> list[dict]:
 
 if _HAVE_LI:
     class NevertwiceRetriever(BaseRetriever):
-        """A LlamaIndex Retriever backed by Nevertwice recall — returns scored TextNodes."""
+        """A LlamaIndex Retriever backed by Nevertwice recall - returns scored TextNodes."""
 
         def __init__(self, project: str | None = None, k: int = 5,
                      rerank: bool = False, **kwargs):
-            # BaseRetriever is a Pydantic model in current LlamaIndex — init it FIRST,
+            # BaseRetriever is a Pydantic model in current LlamaIndex - init it FIRST,
             # then stash our non-field state via object.__setattr__ so Pydantic's field
             # validation (which rejects unknown attrs / would reset pre-init assignments)
             # never sees them. Works on both the Pydantic and the legacy plain base.

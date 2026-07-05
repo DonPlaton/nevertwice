@@ -4,11 +4,11 @@ so the conclusion ("semantic recurrence is NOT worth adding to the cap") cannot 
 to cherry-picking the best budget:
 
   • _topics() finds cross-session clusters (durable topics), drops singletons, sizes members;
-  • _verdict() judges on the WORST budget delta AND hoarding — never the best delta alone;
+  • _verdict() judges on the WORST budget delta AND hoarding - never the best delta alone;
   • PRIVACY: content fields (title/desc/prevention) are used only to build coreset tokens, never
     printed or written to the saved aggregate.
 
-Stdlib only — synthetic note list, reads no vault.
+Stdlib only - synthetic note list, reads no vault.
 """
 import sys
 from pathlib import Path

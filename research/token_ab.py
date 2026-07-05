@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""RESEARCH — token-economy A/B: memory-retrieval vs no-retrieval (#33).
+"""RESEARCH - token-economy A/B: memory-retrieval vs no-retrieval (#33).
 
 The README's token claim was a *conveyance* number (a distilled card is N× smaller
 than the raw journal). That is real but it is NOT a with-vs-without net: it ignores
@@ -8,7 +8,7 @@ on real data, with the counterfactual model stated up front instead of hidden.
 
 Model (stated, conservative, falsifiable):
   • WITHOUT memory the agent must put the relevant history in its context to answer
-    — cost = the question's full haystack (evidence + distractor sessions), in tokens.
+    - cost = the question's full haystack (evidence + distractor sessions), in tokens.
   • WITH memory it reads only the top-k retrieved sessions; on a MISS (evidence not in
     top-k) it escalates to the full haystack. So expected cost_with = topk + (1−p)·full,
     where p = recall@k (measured here, external GT = answer_session_ids).
@@ -17,7 +17,7 @@ Model (stated, conservative, falsifiable):
 This is honest in both directions: the saving exists ONLY because retrieval is accurate
 enough (high p) that escalation is rare; a weak retriever yields a NEGATIVE net, and the
 harness will print that. It is still a MODEL of agent behaviour, not a live two-arm agent
-run (that needs an API budget + an agent loop) — see the caveat printed at the end.
+run (that needs an API budget + an agent loop) - see the caveat printed at the end.
 
     python research/token_ab.py            # LongMemEval token A/B (needs the embeds cache)
     python research/token_ab.py --save     # + token_ab.json
@@ -56,7 +56,7 @@ def toks(s: str) -> int:
 
 def _ollama_gen(prompt: str, num_predict: int = 256, temperature: float = 0.0):
     """Local Ollama generate, returning (text, prompt_tokens, gen_tokens). prompt_tokens
-    is Ollama's own `prompt_eval_count` — a MEASURED input-token count, the currency of the
+    is Ollama's own `prompt_eval_count` - a MEASURED input-token count, the currency of the
     two-arm A/B. Returns (None, 0, 0) on failure (GPU busy / model absent)."""
     body = json.dumps({"model": _GEN_MODEL, "prompt": prompt, "stream": False,
                        "options": {"temperature": temperature, "num_predict": num_predict}})
@@ -91,7 +91,7 @@ def _save_distill_cache(cache: dict) -> None:
 
 def _distill(text: str, cache: dict) -> str:
     """Distil a session into a compact Nevertwice-style note via local Ollama, cached by
-    content hash (the Ollama calls are the slow part — re-runs are instant). This is the
+    content hash (the Ollama calls are the slow part - re-runs are instant). This is the
     REAL mechanism: Nevertwice stores the distilled note, never the raw session."""
     key = hashlib.sha1(text.encode("utf-8", "replace")).hexdigest()[:16]
     if key in cache:
@@ -120,7 +120,7 @@ def _rank(qid, qtext, pool_ids, svec, qvec, bm_idx):
 
 def longmem_ab():
     if not le.ORACLE.exists():
-        print(f"[token_ab] no dataset at {le.ORACLE} — see data/README.md", file=sys.stderr)
+        print(f"[token_ab] no dataset at {le.ORACLE} - see data/README.md", file=sys.stderr)
         return None
     data, pool = le.load()
     sess_tok = {s: toks(pool[s]) for s in pool}
@@ -134,7 +134,7 @@ def longmem_ab():
     ranker = "calibrated fusion (bge-m3 + BM25)" if have_vecs else "BM25 lexical-only (GPU-free)"
     # The token value of retrieval is ENTIRELY a function of what it replaces, so we
     # bracket the two honest counterfactuals: (a) the question's already-curated oracle
-    # haystack (small — the best case for "no memory"), and (b) the full accumulated
+    # haystack (small - the best case for "no memory"), and (b) the full accumulated
     # history a real long-lived agent holds (the realistic no-memory alternative, where
     # full-load is the only other option). Net = p*counterfactual − topk under the
     # escalate-on-miss model.
@@ -181,7 +181,7 @@ def longmem_ab():
 def vault_distillation_ab():
     """Independent angle: Nevertwice's real mechanism is DISTILLATION. Compare the
     tokens to convey a project's state via the structured card vs the full Context
-    journal — measured on the live store. Pure conveyance (no miss model)."""
+    journal - measured on the live store. Pure conveyance (no miss model)."""
     rows = []
     cdir = m.VAULT / "Context"
     if not cdir.exists():
@@ -224,7 +224,7 @@ def distillation_ab(sample_n=40):
     """The REAL Nevertwice lever, measured: distil each retrieved session into a compact
     note (local Ollama) and recompute the net. A distilled note is many times smaller than
     the raw session, so the per-hit cost collapses and the net flips POSITIVE even vs the
-    small curated haystack — the headline the raw-session model couldn't earn."""
+    small curated haystack - the headline the raw-session model couldn't earn."""
     if not le.ORACLE.exists():
         return None
     data, pool, pool_ids, sess_tok, rank = _ranked_cache()
@@ -273,14 +273,14 @@ def distillation_ab(sample_n=40):
 
 def live_two_arm_ab(sample_n=15, k=3):
     """A LIVE two-arm run (not modeled): the SAME local agent (Ollama) answers each question
-    twice — (A) no-memory, fed the question's full curated haystack; (B) with-memory, fed only
+    twice - (A) no-memory, fed the question's full curated haystack; (B) with-memory, fed only
     the top-k DISTILLED notes. We record Ollama's own prompt_eval_count (real input tokens) and
-    a crude answer-match for each arm. Small sample, local — MEASURED, not modeled."""
+    a crude answer-match for each arm. Small sample, local - MEASURED, not modeled."""
     if not le.ORACLE.exists():
         return None
     out, _, _ = _ollama_gen("ping", num_predict=1)
     if out is None:
-        return {"blocked": "Ollama not reachable — live two-arm arm skipped"}
+        return {"blocked": "Ollama not reachable - live two-arm arm skipped"}
     data, pool, pool_ids, sess_tok, rank = _ranked_cache()
     relset = set(pool_ids)
     sub = [e for e in data if set(e["answer_session_ids"]) & relset][:sample_n]
@@ -290,11 +290,11 @@ def live_two_arm_ab(sample_n=15, k=3):
     for e in sub:
         gold = str(e.get("answer", "")).strip().lower()
         ranked = rank(e)[:k]
-        # arm A — no memory: the full curated haystack for this question
+        # arm A - no memory: the full curated haystack for this question
         hay = "\n\n".join(pool[s] for s in e["haystack_session_ids"] if s in pool)[:24000]
         qa = (f"Using ONLY the context, answer concisely.\nCONTEXT:\n{hay}\n\nQUESTION: {e['question']}\nANSWER:")
         ra, pa, _ = _ollama_gen(qa, num_predict=64)
-        # arm B — memory: top-k distilled notes only
+        # arm B - memory: top-k distilled notes only
         notes = "\n".join(f"- {_distill(pool[s], cache)}" for s in ranked)
         qb = (f"Using ONLY the recalled notes, answer concisely.\nNOTES:\n{notes}\n\nQUESTION: {e['question']}\nANSWER:")
         rb, pb, _ = _ollama_gen(qb, num_predict=64)
@@ -335,12 +335,12 @@ def _flag_n(name, default):
 def main():
     bar = "=" * 78
     print(bar)
-    print("  TOKEN-ECONOMY A/B — memory retrieval vs no-retrieval (#33)")
+    print("  TOKEN-ECONOMY A/B - memory retrieval vs no-retrieval (#33)")
     print(bar)
     lm = longmem_ab()
     if lm:
-        print(f"\n— LongMemEval-oracle, {lm['questions']} questions, "
-              f"{lm['sessions']} sessions, ranker = {lm['ranker']} —")
+        print(f"\n- LongMemEval-oracle, {lm['questions']} questions, "
+              f"{lm['sessions']} sessions, ranker = {lm['ranker']} -")
         print(f"  Full accumulated history = {lm['global_history_tok']:,} tok. Net = p·counterfactual")
         print("  − top-k cost (escalate-on-miss). Two honest counterfactuals bracket the truth:")
         print(f"  {'k':>3} {'recall@k':>9} {'topk_tok':>9} {'net_vs_curated':>15} {'net_vs_history':>15}")
@@ -348,28 +348,28 @@ def main():
             print(f"  {r['k']:>3} {r['recall_at_k']:>9.3f} {r['mean_topk_tok']:>9} "
                   f"{r['net_vs_curated_haystack_tok']:>15,} {r['net_vs_full_history_tok']:>15,}")
         print("  → vs an ALREADY-CURATED small haystack, raw-session retrieval saves nothing")
-        print("    (often net-negative — the honest anti-overclaim: retrieval is not magic).")
+        print("    (often net-negative - the honest anti-overclaim: retrieval is not magic).")
         print("  → vs the FULL accumulated history (the real no-memory alternative at scale),")
-        print("    retrieval is overwhelmingly cheaper — it is what makes recall feasible at all.")
+        print("    retrieval is overwhelmingly cheaper - it is what makes recall feasible at all.")
         print("    Nevertwice adds a second lever the raw-session model omits: DISTILLATION")
         print("    (each session → a ~one-screen note), which shrinks the per-hit cost further.")
     else:
-        print("\n— LongMemEval token A/B: NOT RUN (dataset/embeds cache absent — runtime-blocked).")
+        print("\n- LongMemEval token A/B: NOT RUN (dataset/embeds cache absent - runtime-blocked).")
 
     vd = vault_distillation_ab()
     if vd:
-        print(f"\n— Vault distillation (live store, conveyance only) — {vd['projects']} projects —")
+        print(f"\n- Vault distillation (live store, conveyance only) - {vd['projects']} projects -")
         print(f"  structured card vs full Context journal: {vd['total_full_tok']}→{vd['total_card_tok']} tok "
               f"= {vd['overall_ratio']}x fewer to convey project state")
 
-    # distillation-aware A/B (the real lever) — Ollama-backed, opt-in (slow first run)
+    # distillation-aware A/B (the real lever) - Ollama-backed, opt-in (slow first run)
     dist = None
     dn = _flag_n("distill", 40)
     if dn:
         dist = distillation_ab(sample_n=dn)
         if dist:
-            print(f"\n— DISTILLATION A/B (local Ollama, {dist['questions']} questions, "
-                  f"{dist['distilled_sessions']} sessions) —")
+            print(f"\n- DISTILLATION A/B (local Ollama, {dist['questions']} questions, "
+                  f"{dist['distilled_sessions']} sessions) -")
             print(f"  distillation ratio: raw session → note = {dist['distill_ratio']}x smaller "
                   f"({dist['raw_tok_total']:,}→{dist['distilled_tok_total']:,} tok)")
             print(f"  {'k':>3} {'recall@k':>9} {'raw_topk':>9} {'dist_topk':>9} "
@@ -387,7 +387,7 @@ def main():
     if ln:
         live = live_two_arm_ab(sample_n=ln)
         if live and "blocked" not in live:
-            print(f"\n— LIVE TWO-ARM ({live['questions']} q, agent={live['agent']}, MEASURED tokens) —")
+            print(f"\n- LIVE TWO-ARM ({live['questions']} q, agent={live['agent']}, MEASURED tokens) -")
             print(f"  mean input tokens: no-memory {live['mean_prompt_tok_no_memory']:,} → "
                   f"with-memory {live['mean_prompt_tok_with_memory']:,} "
                   f"({live['input_token_reduction']*100:.0f}% fewer)")
@@ -395,13 +395,13 @@ def main():
                   f"with-memory {live['answer_match_with_memory']:.2f} "
                   f"(same/better answer at a fraction of the tokens)")
         elif live:
-            print(f"\n— LIVE TWO-ARM: {live['blocked']}")
+            print(f"\n- LIVE TWO-ARM: {live['blocked']}")
 
-    print("\n— HONEST CAVEAT —")
+    print("\n- HONEST CAVEAT -")
     if live and "blocked" not in (live or {}):
         print("  The LongMemEval net above is MODELED (escalate-on-miss); the distillation ratio is")
         print("  MEASURED; and the live two-arm run IS a real measurement (Ollama's own prompt-token")
-        print("  counts) — but on a SMALL sample with a local 3B reader, so treat its answer-match as")
+        print("  counts) - but on a SMALL sample with a local 3B reader, so treat its answer-match as")
         print("  indicative, not definitive. A large billed-token run on a frontier model still needs")
         print("  an API budget. Headline claim: distillation makes the net positive even vs a curated")
         print("  context, and the live arm shows the input-token cut is real (not just modeled).")

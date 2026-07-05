@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """Tests for research/longitudinal_bench.py (3A). Pins the two faithfulness claims
-the benchmark rests on — so a future edit cannot silently break them:
+the benchmark rests on - so a future edit cannot silently break them:
 
   • _salience() reproduces memory_hook._salience_mult EXACTLY (incl. the F2
     recurrence-slowed decay), across recurrence/resolved/confidence combinations;
   • _cos() equals memory_hook.cosine for unit vectors (the bug that made the first
-    cut rank by insertion order — m.cosine returns 0.0 on a numpy array, so the
+    cut rank by insertion order - m.cosine returns 0.0 on a numpy array, so the
     benchmark MUST use the dot-product shortcut, never m.cosine, on world vectors).
 
 Plus metric-math and determinism/smoke checks. Needs numpy (research dep).
@@ -50,7 +50,7 @@ for n in (1, 2, 5, 20):
                f"({prod:.6f} vs {bench:.6f})")
 
 # F2 specifically: a recurring note decays LESS than a one-off of the same age
-# (use a moderate age — a very old note floors both at DECAY_FLOOR and hides it)
+# (use a moderate age - a very old note floors both at DECAY_FLOOR and hides it)
 one_off = lb._salience({"age": 200, "recurrence": 1, "confidence": None})
 recurring = lb._salience({"age": 200, "recurrence": 20, "confidence": None})
 ok(recurring > one_off, f"F2: recurrence slows decay ({recurring:.3f} > {one_off:.3f})")
@@ -63,7 +63,7 @@ def _unit():
 worst = max(abs(lb._cos(a, b) - m.cosine(a.tolist(), b.tolist()))
             for a, b in ((_unit(), _unit()) for _ in range(50)))
 ok(worst < 1e-9, f"cosine: dot of unit vectors == m.cosine(list,list) (max err {worst:.1e})")
-# the trap that caused the original bug — m.cosine must NOT be used on numpy rows:
+# the trap that caused the original bug - m.cosine must NOT be used on numpy rows:
 ok(m.cosine(_unit(), _unit()) == 0.0,
    "guard: m.cosine on numpy arrays returns 0.0 (why the bench uses _cos)")
 

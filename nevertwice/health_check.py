@@ -49,7 +49,7 @@ def newest_processed(db: dict):
 def tasks_status() -> tuple[str, bool]:
     """Best-effort scheduled-task status (audit I-17): surfaces whether the
     safety-net tasks are registered/enabled so a silently-deleted task becomes
-    visible in health.txt. Never raises — a parsing/import problem just reports
+    visible in health.txt. Never raises - a parsing/import problem just reports
     'n/a' and does not affect the verdict."""
     try:
         import manage_tasks
@@ -61,7 +61,7 @@ def tasks_status() -> tuple[str, bool]:
 def main():
     ollama = m.ollama_alive()
     db = m.load_processed()
-    # always show the real queue size — backlog_count is filesystem-only and never calls
+    # always show the real queue size - backlog_count is filesystem-only and never calls
     # Ollama, so hiding it behind a down backend just masked a large queue until recovery
     # (launch-round audit). `healthy` below still requires the backend up.
     backlog = backlog_count()

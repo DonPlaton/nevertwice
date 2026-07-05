@@ -1,13 +1,13 @@
-# 3A.2 — Real-trace recurrence validation (results & findings)
+# 3A.2 - Real-trace recurrence validation (results & findings)
 
 *Companion to `research/real_trace_bench.py`. Reproduce on any populated store:
-`NEVERTWICE_VAULT=/path/to/vault python research/real_trace_bench.py --save` (CPU, no Ollama —
+`NEVERTWICE_VAULT=/path/to/vault python research/real_trace_bench.py --save` (CPU, no Ollama -
 reads the cached vectors only, ~3 s). Numbers below are from one real accumulated vault of
 **328 embedded notes across 11 projects**; rerun on yours for your own figures.*
 
 ## Why it exists
 
-3A built a benchmark where `P(target) ∝ recurrence` is **true by construction** — so its
+3A built a benchmark where `P(target) ∝ recurrence` is **true by construction** - so its
 recurrence lift is a consistency result for the ranker, not evidence that real agent workloads
 carry that structure. Its own caveat named the gap: *"that is what the real-trace variant (3A.2,
 future) is for."* This closes it, on a live store, two questions:
@@ -17,12 +17,12 @@ future) is for."* This closes it, on a live store, two questions:
 
 ## Method (privacy-safe by construction)
 
-Read **only** the local embedding cache — vectors + metadata, never raw note text. Within each
+Read **only** the local embedding cache - vectors + metadata, never raw note text. Within each
 project, greedily cluster notes at cosine ≥ a swept threshold (bge-m3 cosines bunch near a high
-background ≈ 0.42, so the threshold is swept *above* it — 0.50/0.55/0.60 — not the near-exact
+background ≈ 0.42, so the threshold is swept *above* it - 0.50/0.55/0.60 - not the near-exact
 0.92 the dedup uses). A cluster spanning **>1 date** is genuine cross-session recurrence: the
 same lesson re-encountered in a later session and re-written as a *distinct* note (different slug).
-Output is aggregate only — counts, fractions, recall numbers; no titles, descriptions, projects,
+Output is aggregate only - counts, fractions, recall numbers; no titles, descriptions, projects,
 or stems are printed or saved.
 
 ## Headline
@@ -40,10 +40,10 @@ or stems are printed or saved.
 > occurrence, so exact-slug matching never fires. Recurrence must be detected by **semantic
 > aggregation** (supersession / consolidation), not slug equality. This is the live-data
 > justification for the recurrence-loss fixes (W15: carry recurrence across supersession, merge,
-> and `--rebuild`) — without semantic aggregation the production counter is structurally blind to
+> and `--rebuild`) - without semantic aggregation the production counter is structurally blind to
 > the very signal 3A shows is valuable.
 
-## The honest negative — recurrence is NOT a recall re-ranker
+## The honest negative - recurrence is NOT a recall re-ranker
 
 The tempting next step is "boost recurring notes at recall time." We **falsified** it on real
 data. Query = a member of a cross-session cluster; ground truth = its same-cluster, other-date
@@ -62,12 +62,12 @@ relevance + an additive recurrence prior (`w · log(cluster size)`) swept across
 | 0.20 | 0.374 |
 
 **No weight beats relevance-only** (131 queries). Relevance alone is already at ceiling for
-same-topic recall; an additive cluster-size prior can only add noise — it promotes members of
+same-topic recall; an additive cluster-size prior can only add noise - it promotes members of
 *other* large clusters regardless of query relevance. The result is monotone past w ≈ 0.02.
 
 This is not a defeat for recurrence; it **locates** it. Recurrence earns its place in
-**retention / consolidation / decay** — *what to keep* when the store is over budget, and *how
-slowly a note forgets* (the F2 fix: effective age `= age / (1 + log n)`) — **not** in recall
+**retention / consolidation / decay** - *what to keep* when the store is over budget, and *how
+slowly a note forgets* (the F2 fix: effective age `= age / (1 + log n)`) - **not** in recall
 ranking, where relevance already wins. It is consistent with 3A's own stratified result: the
 recurrence lift there concentrated entirely in the highest-recurrence bucket and *hurt* one-offs;
 on a real store, where the recall ground truth is already the most-relevant note, that trade has
@@ -78,13 +78,13 @@ no upside left to capture.
 - **Validates** the supersession/merge/rebuild recurrence-carry fixes (W15) on real data: the
   counter is provably blind without them.
 - **Validates** placing recurrence in the salience/decay and coreset paths, not the recall scorer.
-- **Counsels against** a naive "recurrence boost" on the retrieval hot path — measured here to be
+- **Counsels against** a naive "recurrence boost" on the retrieval hot path - measured here to be
   neutral at best, harmful past a small weight.
 
-## 3A.3 — Does recurrence belong in the *cap*? (`retention_bench.py`)
+## 3A.3 - Does recurrence belong in the *cap*? (`retention_bench.py`)
 
 3A.2's negative was about recall. The natural follow-up: the production per-project cap
-(`consolidate_memory.cap_project_notes`) weights its keep-utility by `recurrence` — does that help
+(`consolidate_memory.cap_project_notes`) weights its keep-utility by `recurrence` - does that help
 retention, where 3A and FORGETTING showed recurrence pays off on synthetic data? We measured the
 **shipped** `select_coreset` (no new production code) on the same store, under three keep-utilities,
 at two budgets, scoring **durable-topic retention** = fraction of cross-session topics keeping ≥1
@@ -103,31 +103,31 @@ member:
 Two findings, both honest:
 
 1. **`slug ≡ coverage`, exactly.** The shipped cap's `recurrence·resolved` utility is *inert* on
-   real data (recurrence ≡ 1), so today's cap already behaves as pure facility-location coverage —
+   real data (recurrence ≡ 1), so today's cap already behaves as pure facility-location coverage -
    which preserves 86.5% / 97.3% of durable topics at 50% / 70% budget. The cap is therefore
    **safe to run** (non-destructive too: excess is archived to `<folder>/Archive/`, not deleted).
 
-2. **Semantic recurrence in the cap is NOT a win — it hoards.** Weighting by cluster size keeps
+2. **Semantic recurrence in the cap is NOT a win - it hoards.** Weighting by cluster size keeps
    **3.7 vs 2.3** members per topic: it stockpiles redundant copies of big clusters, *helping* at a
    loose budget (+0.027) but *hurting* at a tight one (−0.027) where that redundancy crowds out
    other topics. The submodular coverage objective already preserves durable topics without it.
-   **Conclusion: keep the coverage objective; do not add recurrence weighting to the cap** — it
+   **Conclusion: keep the coverage objective; do not add recurrence weighting to the cap** - it
    would be intuitive-but-bloat. (The honest verdict is judged on the *worst* budget and the
-   hoarding ratio, not a cherry-picked best — pinned by `_test_retention_bench.py`.)
+   hoarding ratio, not a cherry-picked best - pinned by `_test_retention_bench.py`.)
 
-## The full triangulation — the prior is *dormant* on a real young store
+## The full triangulation - the prior is *dormant* on a real young store
 
 3A.2 and 3A.3 rule out recall and the cap. The last channel is the F2 salience-decay slowdown
 (effective age `= age/(1+log n)`). On this store it is inert for the *same* reason: with recurrence
 ≡ 1, `1+log(1) = 1`, so the slowdown never fires. And the store is too young for decay to matter at
-all — ages span 2–44 days against a 365-day half-life (≤ 8% decay on the oldest note), so even a
+all - ages span 2-44 days against a 365-day half-life (≤ 8% decay on the oldest note), so even a
 *semantic* recurrence count of, say, 8 would move salience ≤ 5%.
 
 So the honest, complete picture: the frequency prior is **dormant across all three channels**
-(recall boost, cap utility, decay slowdown) on a real single-user store — not because the mechanism
+(recall boost, cap utility, decay slowdown) on a real single-user store - not because the mechanism
 is wrong (3A validates it where recurrence is present and stores age) but because the recurrence
 **signal** is slug-invisible (≡ 1) and the store is young. Capturing recurrence semantically would
-revive only the decay channel, and only marginally on an aged store — recall and the cap don't
+revive only the decay channel, and only marginally on an aged store - recall and the cap don't
 benefit even when fed semantic recurrence (3A.2 / 3A.3). The prior's near-term value on real
 single-user memory is small; it grows with store **age** and with multi-agent **reuse** that makes
 the same lesson genuinely recur. This is the load-bearing honesty caveat for the headline claim.
@@ -135,9 +135,9 @@ the same lesson genuinely recur. This is the load-bearing honesty caveat for the
 ## Caveats
 
 One real store (328 notes, 11 projects); absolute cluster counts and the retention numbers are
-workload-specific — rerun for your own. Cosine clustering is a *proxy* for "same lesson
+workload-specific - rerun for your own. Cosine clustering is a *proxy* for "same lesson
 re-encountered": a high-cosine cross-date pair is strong evidence but not a human-verified label
 (the privacy constraint forbids reading the text to adjudicate). The retention test scores keeping
 ≥1 member per durable topic; it does not model query-time value, and "durable topic" is itself
-defined by cross-session recurrence — so it measures *diversity-preservation under budget*, the
+defined by cross-session recurrence - so it measures *diversity-preservation under budget*, the
 property the cap exists to protect.

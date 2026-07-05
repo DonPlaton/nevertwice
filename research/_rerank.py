@@ -2,11 +2,11 @@
 """Shared LLM-as-reranker primitive (W2/W4). A cross-encoder substitute: jointly score a
 query against candidate texts and return one 0-10 relevance score each, in a single JSON call.
 
-Two backends — `ollama` (local, the local-first answer; Ollama is already a hard dependency) and
+Two backends - `ollama` (local, the local-first answer; Ollama is already a hard dependency) and
 `deepseek` (opt-in cloud, runtime-blocked without DEEPSEEK_API_KEY). Used by precision_bench and
 longmem_eval; promoted to a core opt-in recall mode only if it wins on an EXTERNAL benchmark.
 
-PRIVACY: pure transport — takes text the caller already holds, returns scores. Persists nothing.
+PRIVACY: pure transport - takes text the caller already holds, returns scores. Persists nothing.
 """
 import json
 import os
@@ -59,12 +59,12 @@ def parse_scores(obj, n):
 
 def build_prompt(query, items, char_budget=CHAR_BUDGET):
     lines = ["You score how relevant each candidate is to a QUERY.",
-             "Relevant = the SAME underlying topic, lesson, bug, or evidence — not mere word overlap.",
+             "Relevant = the SAME underlying topic, lesson, bug, or evidence - not mere word overlap.",
              "", "QUERY:", (query or "")[:char_budget], "", "CANDIDATES:"]
     for i, t in enumerate(items):
         lines.append(f"[{i}] {(t or '')[:char_budget]}")
     lines.append("")
-    lines.append('Return JSON {"scores":[...]} — one integer 0-10 per candidate, in the SAME order.')
+    lines.append('Return JSON {"scores":[...]} - one integer 0-10 per candidate, in the SAME order.')
     return "\n".join(lines)
 
 

@@ -1,4 +1,4 @@
-"""Opt-in research rankers — the W11 plugin boundary.
+"""Opt-in research rankers - the W11 plugin boundary.
 
 `retrieve_relevant` lazy-loads this module ONLY when `NEVERTWICE_RANKER=posterior` or
 `NEVERTWICE_DIVERGENCE>0`, so the default hot path never imports it and the core file carries no
@@ -16,7 +16,7 @@ except ImportError:                       # invoked as a top-level module (never
 def posterior_rerank(scores: dict, rec_of: dict) -> dict:
     """NEVERTWICE_RANKER=posterior (1A): rank by the explicit log-posterior
     w_rel·log(rrf) + w_freq·log(n) + w_sal·log(salience), replacing the additive-recurrence +
-    multiplicative-salience tail. Each prior is a separable, tunable term (POST_W) — recurrence as a
+    multiplicative-salience tail. Each prior is a separable, tunable term (POST_W) - recurrence as a
     true frequency prior nᵂ, salience as a log term. Safe logs: rrf>0 for any candidate in the
     fusion, n≥1, salience>0."""
     out = {}
@@ -35,7 +35,7 @@ def posterior_rerank(scores: dict, rec_of: dict) -> dict:
 def mmr_rerank(order: list, scores: dict, rec_of: dict, divergence: float) -> list:
     """Re-order candidates by Maximal Marginal Relevance (serendipity knob, 2B): balance the fused
     relevance score against dissimilarity to the already-picked notes, so recall is diverse (fewer
-    near-duplicates, more cross-topic surfacing) rather than redundant. Vector-only — a candidate
+    near-duplicates, more cross-topic surfacing) rather than redundant. Vector-only - a candidate
     without an embedding can't be diversified, so it rides its score. Scores are min-max normalised
     so the relevance↔diversity trade is scale-free."""
     lam = 1.0 - divergence

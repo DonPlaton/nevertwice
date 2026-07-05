@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Claude Code Memory Hook — extracts session knowledge into an Obsidian vault.
+"""Claude Code Memory Hook - extracts session knowledge into an Obsidian vault.
 
 Triggers:
   SessionEnd / PreCompact: process the just-finished session.
   SessionStart:            sweep transcripts left behind by abrupt closes
-                           (VS Code killed, OS crash — SessionEnd never fired).
+                           (VS Code killed, OS crash - SessionEnd never fired).
 
 Pipeline per session:
   read_transcript → call_ollama(format=json) → write Patterns / Mistakes /
@@ -76,7 +76,7 @@ def _norm_path(p: str) -> str:
 
 # Tracked-project roots. The system is agent-agnostic and machine-wide: a
 # "project" is any directory under a configured root OR (when TRACK_ANY_PROJECT)
-# any git repository — excluding system, agent-internal (~/.claude), the vault
+# any git repository - excluding system, agent-internal (~/.claude), the vault
 # itself, and transient (Temp/Recycle) paths. Multiple roots via
 # NEVERTWICE_PROJECT_ROOTS (os.pathsep- or comma-separated); the legacy
 # single NEVERTWICE_PROJECT_ROOT still works as a fallback. (audit C2)
@@ -88,7 +88,7 @@ PROJECT_ROOT_DISPLAY = PROJECT_ROOTS[0] if PROJECT_ROOTS else ""
 PROJECT_ROOT_FILTER = PROJECT_ROOT_DISPLAY.lower()  # back-compat: first root
 _ROOTS_NORM = [_norm_path(r) for r in PROJECT_ROOTS]
 
-# Track any git repo (not just configured roots) — the core of "memory for any
+# Track any git repo (not just configured roots) - the core of "memory for any
 # agent on the machine". Set NEVERTWICE_TRACK_ANY_PROJECT=0 to restrict to
 # configured roots only (the old behaviour).
 TRACK_ANY_PROJECT = os.environ.get("NEVERTWICE_TRACK_ANY_PROJECT", "1") != "0"
@@ -101,7 +101,7 @@ def _http_url(val: str, default: str) -> str:
     """Accept an outbound base URL only if it is http(s); otherwise fall back to the
     default. Blocks an env override (or a planted config) from redirecting a request
     carrying transcript content or an API key at a local file (file://) or another
-    scheme (SSRF / LFI defence-in-depth). Loopback http stays valid — that is the
+    scheme (SSRF / LFI defence-in-depth). Loopback http stays valid - that is the
     legitimate local Ollama target. Launch-round security pass 2026-06-20."""
     v = (val or "").strip()
     low = v.lower()
@@ -109,25 +109,25 @@ def _http_url(val: str, default: str) -> str:
         return v
     if v:
         # an override with a non-http(s) scheme is refused loudly, never honoured
-        log(f"Refusing non-http(s) outbound URL override ({v[:24]}…) — using default")
+        log(f"Refusing non-http(s) outbound URL override ({v[:24]}…) - using default")
     return default
 
 OLLAMA_URL = _http_url(os.environ.get("OLLAMA_URL"), "http://127.0.0.1:11434/api/generate")
 OLLAMA_TAGS_URL = _http_url(os.environ.get("OLLAMA_TAGS_URL"), "http://127.0.0.1:11434/api/tags")
 OLLAMA_EMBED_URL = _http_url(os.environ.get("OLLAMA_EMBED_URL"), "http://127.0.0.1:11434/api/embed")
-OLLAMA_MODEL = os.environ.get("NEVERTWICE_MODEL", "qwen3:8b")   # a real public Ollama tag — the
+OLLAMA_MODEL = os.environ.get("NEVERTWICE_MODEL", "qwen3:8b")   # a real public Ollama tag - the
 # "just works" local default. Bigger tags (qwen3:14b, qwen3:30b-a3b, qwen3:32b) extract better if
 # you have the VRAM; set NEVERTWICE_MODEL to pick one. The cloud backend is the recommended primary.
 # Embedding backend selector. Default: local Ollama (bge-m3). Set
 # NEVERTWICE_EMBED_PROVIDER=openai|voyage|cohere|gemini (or point
 # NEVERTWICE_EMBED_BASE_URL at any OpenAI-compatible /v1/embeddings host) to get
-# semantic recall with NO local model — one API key. Switching provider/model
+# semantic recall with NO local model - one API key. Switching provider/model
 # self-invalidates the cache via embed_signature() (stale vectors live in a
 # different space; cosine across spaces is meaningless), so retrieval abstains
 # until `embed_index.py --rebuild` instead of ranking against them.
 EMBED_PROVIDER = os.environ.get("NEVERTWICE_EMBED_PROVIDER", "ollama").strip().lower()
 # Per-provider default embedding model; NEVERTWICE_EMBED_MODEL overrides any.
-# bge-m3: multilingual — on this RU/EN bilingual vault it beat nomic-embed-text by
+# bge-m3: multilingual - on this RU/EN bilingual vault it beat nomic-embed-text by
 # +0.06 semantic R@5 / +0.044 MRR (ablation 2026-06-13, I-1); symmetric (no query/
 # doc task prefixes), so EMBED_USE_PREFIX defaults off.
 _EMBED_DEFAULT_MODEL = {"ollama": "bge-m3", "openai": "text-embedding-3-small",
@@ -140,7 +140,7 @@ EMBED_MODEL = (os.environ.get("NEVERTWICE_EMBED_MODEL")
 EMBED_BASE_URL = _http_url(os.environ.get("NEVERTWICE_EMBED_BASE_URL"), "")  # "" → per-provider
 # Task-prefix support (for nomic-style embedders that need search_query:/
 # search_document:). Tracked in EMBED_META so the query side always matches the
-# stored docs — switching models is safe via `embed_index.py --rebuild`.
+# stored docs - switching models is safe via `embed_index.py --rebuild`.
 EMBED_USE_PREFIX = os.environ.get("NEVERTWICE_EMBED_PREFIX", "0") != "0"
 EMBED_DOC_PREFIX = os.environ.get("NEVERTWICE_EMBED_DOC_PREFIX", "search_document: ")
 EMBED_QUERY_PREFIX = os.environ.get("NEVERTWICE_EMBED_QUERY_PREFIX", "search_query: ")
@@ -215,7 +215,7 @@ LOCAL_ONLY_PROJECTS = {p.strip().lower() for p in
                        os.environ.get("NEVERTWICE_LOCAL_ONLY", "").split(",")
                        if p.strip()}
 # Fail-safe allowlist: if set, ONLY these projects may use the cloud; every
-# other project — INCLUDING any new/unknown one — stays local. Takes precedence
+# other project - INCLUDING any new/unknown one - stays local. Takes precedence
 # over LOCAL_ONLY_PROJECTS so a forgotten project can never leak by default.
 CLOUD_ONLY_PROJECTS = {p.strip().lower() for p in
                        os.environ.get("NEVERTWICE_CLOUD_ONLY", "").split(",")
@@ -225,7 +225,7 @@ CLOUD_ONLY_PROJECTS = {p.strip().lower() for p in
 def is_local_only(project) -> bool:
     """Decide if a project must stay local. Allowlist mode (CLOUD_ONLY set):
     only listed projects use cloud, everything else (incl. unknown/empty) is
-    local — fail-safe. Else denylist mode: listed projects are local."""
+    local - fail-safe. Else denylist mode: listed projects are local."""
     p = (project or "").strip().lower()
     if CLOUD_ONLY_PROJECTS:
         return p not in CLOUD_ONLY_PROJECTS
@@ -234,7 +234,7 @@ def is_local_only(project) -> bool:
 
 def local_routing_desc() -> str:
     if CLOUD_ONLY_PROJECTS:
-        return "allowlist — cloud ONLY for: " + ", ".join(sorted(CLOUD_ONLY_PROJECTS))
+        return "allowlist - cloud ONLY for: " + ", ".join(sorted(CLOUD_ONLY_PROJECTS))
     if LOCAL_ONLY_PROJECTS:
         return "local-only: " + ", ".join(sorted(LOCAL_ONLY_PROJECTS))
     return "all tracked projects use cloud"
@@ -249,7 +249,7 @@ MAX_MESSAGE_CHARS = 2000  # per-event cap before global truncation
 
 # Sweep: this window is used ONLY for performance ordering, NEVER to skip a
 # never-processed transcript. Disk retention is ~30d, so the old 7d hard
-# cutoff silently lost memory (audit F28) — sweep_unprocessed now processes
+# cutoff silently lost memory (audit F28) - sweep_unprocessed now processes
 # any tracked-but-unprocessed transcript regardless of age.
 SWEEP_ORDER_DAYS = int(os.environ.get("NEVERTWICE_SWEEP_DAYS", "30"))
 SESSION_START_SWEEP_CAP = int(os.environ.get("NEVERTWICE_SWEEP_CAP", "8"))
@@ -276,7 +276,7 @@ INJECT_BUDGET_CHARS = int(os.environ.get("NEVERTWICE_INJECT_BUDGET_CHARS", "2200
 # Minimum cosine for a semantic hit to count, and how much a recurring lesson is
 # boosted in ranking (audit H4/LOW: recurrence was computed but never used).
 # 0.40 (was 0.30, which sat below the bge-m3 background and never fired): measured on the live
-# vault the real note↔note top-1 minimum is 0.418 (p1=0.46), while gibberish tops out ~0.43 — so
+# vault the real note↔note top-1 minimum is 0.418 (p1=0.46), while gibberish tops out ~0.43 - so
 # 0.40 is the highest floor with ZERO false-negatives on real notes, making the floor a non-inert
 # defense-in-depth layer that catches the lowest-scoring noise. It is NOT raised to ~0.45 (the
 # audit's suggestion) because real/noise OVERLAP at the boundary (the W2 compression ceiling), so a
@@ -284,20 +284,20 @@ INJECT_BUDGET_CHARS = int(os.environ.get("NEVERTWICE_INJECT_BUDGET_CHARS", "2200
 # below stays the PRIMARY abstention mechanism (it caught 6/6 gibberish where the floor can't).
 RETRIEVAL_SIM_FLOOR = float(os.environ.get("NEVERTWICE_SIM_FLOOR", "0.40"))
 # The nearest-neighbour inclusion floor for INTERACTIVE search (CLI / MCP / api.recall) and the
-# SQLite diagnostic path — deliberately permissive and DISTINCT from the confident-injection floor
+# SQLite diagnostic path - deliberately permissive and DISTINCT from the confident-injection floor
 # above. A user-initiated query returns the closest notes even when weak (the caller labels them
 # low-confidence); auto-injection on the hook path still uses RETRIEVAL_SIM_FLOOR. Named here so the
 # two floors stay in one place instead of a magic 0.15 copied across modules (audit 2026-06-18).
 RETRIEVAL_NEAR_FLOOR = float(os.environ.get("NEVERTWICE_NEAR_FLOOR", "0.15"))
 # Confidence gate (dogfood W1/W3): bge-m3 cosines bunch near a high background (~0.42 on a
-# real vault), so the absolute floor alone never fires — a nonsense query scores like a real
+# real vault), so the absolute floor alone never fires - a nonsense query scores like a real
 # one. A confident match must ALSO stand this far above the per-query MEDIAN similarity; below
 # it, the semantic signal is dropped so the hook injects lexical/nothing, not arbitrary notes.
 RETRIEVAL_CONFIDENT_MARGIN = float(os.environ.get("NEVERTWICE_CONFIDENT_MARGIN", "0.15"))
 # Two recurrence boosts on two scales (research/longitudinal_bench.py calibrates both):
 #   RECUR_BOOST (~0.03) is added to raw COSINE in single-signal paths (cf. _recur_boost);
 #   RECUR_RRF_BOOST (~0.0003) is added to fused RRF scores in retrieve_relevant, whose
-#   adjacent-rank gap is ~1/60 — so it is a deliberate gentle TIEBREAKER there (the 3A
+#   adjacent-rank gap is ~1/60 - so it is a deliberate gentle TIEBREAKER there (the 3A
 #   benchmark finds this small value Pareto-optimal; larger values hurt crisp queries).
 RETRIEVAL_RECUR_BOOST = float(os.environ.get("NEVERTWICE_RECUR_BOOST", "0.03"))
 RETRIEVAL_RECUR_RRF_BOOST = float(os.environ.get("NEVERTWICE_RECUR_RRF_BOOST", "0.0003"))
@@ -318,12 +318,12 @@ RETRIEVAL_DECAY_HALFLIFE = float(os.environ.get("NEVERTWICE_DECAY_HALFLIFE", "36
 RETRIEVAL_DECAY_FLOOR = float(os.environ.get("NEVERTWICE_DECAY_FLOOR", "0.5"))
 RETRIEVAL_RESOLVED_WEIGHT = float(os.environ.get("NEVERTWICE_RESOLVED_WEIGHT", "0.6"))
 # Confidence-aware ranking (H2): the per-note confidence (M-10) was stamped into
-# frontmatter and asked of the LLM but never READ — a write-only dead field. Now
+# frontmatter and asked of the LLM but never READ - a write-only dead field. Now
 # a low-confidence lesson is gently down-weighted in recall, floored so it's never
 # buried; a note without confidence is treated as fully confident (neutral).
 RETRIEVAL_CONF_FLOOR = float(os.environ.get("NEVERTWICE_CONF_FLOOR", "0.6"))
 # Salience nudge (Brain F5): a note central to the knowledge graph (its entities referenced by
-# the rest of the store) gets a gentle recall boost — recurrence generalised to centrality. The
+# the rest of the store) gets a gentle recall boost - recurrence generalised to centrality. The
 # score is stamped sleep-time by consolidation; UNSTAMPED notes read 0 → ×1.0, so this is INERT
 # on an entity-less/benchmark corpus and never moves the calibrated ranking there. Max +SALIENCE_BOOST.
 RETRIEVAL_SALIENCE_BOOST = float(os.environ.get("NEVERTWICE_SALIENCE_BOOST", "0.1"))
@@ -333,24 +333,24 @@ RETRIEVAL_SALIENCE_BOOST = float(os.environ.get("NEVERTWICE_SALIENCE_BOOST", "0.
 GRAPH_HOPS = int(os.environ.get("NEVERTWICE_GRAPH_HOPS", "0"))
 # Relation-aware injection (Phase 2b on the hot path): after ranking, append up to N
 # graph-connected lessons reached by the top hits' typed edges (a bug surfaces its fix).
-# 0 = off (default — keeps SessionStart injection precise + token-lean); applied ONLY at
+# 0 = off (default - keeps SessionStart injection precise + token-lean); applied ONLY at
 # SessionStart (a frontmatter scan, once per session), never on the per-prompt path.
 RELATION_EXPAND = int(os.environ.get("NEVERTWICE_RELATION_EXPAND", "0"))
 # Fact-vs-code staleness check (M-4): annotate injected notes whose referenced
-# file paths no longer exist. Off by default (a heuristic — opt in per project).
+# file paths no longer exist. Off by default (a heuristic - opt in per project).
 STALE_CHECK = os.environ.get("NEVERTWICE_STALE_CHECK", "0") != "0"
 # Weight of the semantic ranking in the hybrid RRF fusion. With a strong
 # multilingual embedder (bge-m3) semantic alone beats equal-weight hybrid, so we
 # let it lead while lexical still backs it up (ablation 2026-06-13).
 RETRIEVAL_SEM_WEIGHT = float(os.environ.get("NEVERTWICE_SEM_WEIGHT", "2.0"))
 # Fusion of the semantic + lexical signals. "calibrated" (default) z-normalises each
-# signal's SCORES over the candidate set and combines the magnitudes — measured to beat
+# signal's SCORES over the candidate set and combines the magnitudes - measured to beat
 # rank-fusion decisively (RRF throws the magnitudes away, so it trails even plain BM25;
 # calibrated fusion lifts LongMemEval R@5 0.66→0.80 and overtakes Mem0). "rrf" keeps the
 # legacy reciprocal-rank fusion as a fallback. See research/RETRIEVAL_FUSION.md.
 RETRIEVAL_FUSION = os.environ.get("NEVERTWICE_FUSION", "calibrated").strip().lower()
 # Dense (semantic) weight in calibrated fusion; the lexical (BM25) weight is fixed at 1.0.
-# Robust across 0.4–1.0 (every setting beat Mem0 in the sweep); 0.5 is the near-optimum.
+# Robust across 0.4-1.0 (every setting beat Mem0 in the sweep); 0.5 is the near-optimum.
 FUSION_SEM_WEIGHT = float(os.environ.get("NEVERTWICE_FUSION_SEM_WEIGHT", "0.5"))
 # Ranker selector (research/posterior_model.py, 1A). "hybrid" (default) = the shipped
 # additive-recurrence + multiplicative-salience tail. "posterior" = the same signals as
@@ -370,7 +370,7 @@ RETRIEVAL_DIVERGENCE = max(0.0, min(1.0, float(os.environ.get("NEVERTWICE_DIVERG
 RETRIEVAL_EMBED_TIMEOUT = int(os.environ.get("NEVERTWICE_RETRIEVAL_EMBED_TIMEOUT", "5"))
 # Above this many candidates, retrieval FTS-prefilters to the top-N lexical matches
 # before cosine, so one huge project can't stall a prompt with a full brute-force
-# scan (improvement P1). Smaller projects keep an exact full scan — no recall loss.
+# scan (improvement P1). Smaller projects keep an exact full scan - no recall loss.
 RETRIEVAL_PREFILTER_LIMIT = int(os.environ.get("NEVERTWICE_PREFILTER_LIMIT", "600"))
 # Cross-project transfer (I-7): surface a few lessons from OTHER projects that
 # are highly relevant (shared stack → transferable gotchas). Higher bar to keep
@@ -383,13 +383,13 @@ CROSS_PROJECT_SIM_FLOOR = float(os.environ.get("NEVERTWICE_CROSS_SIM_FLOOR", "0.
 INJECT_USER_MODEL = os.environ.get("NEVERTWICE_USER_MODEL", "1") != "0"
 # Cloud-as-judge rerank (I-3): reorder retrieval candidates with a free cloud
 # model. Opt-in (adds cloud latency, marginal over bge-m3) and never on the hot
-# injection paths — only deliberate on-demand search. On with NEVERTWICE_RERANK=1.
+# injection paths - only deliberate on-demand search. On with NEVERTWICE_RERANK=1.
 RERANK_ENABLED = os.environ.get("NEVERTWICE_RERANK", "0") != "0"
 RERANK_POOL = int(os.environ.get("NEVERTWICE_RERANK_POOL", "15"))
 # Structured project card (audit I-15): distil the project's live notes into a
 # high-signal block (status · stack · open gotchas · key decisions · recurring)
 # kept at the top of Context/<project>.md and injected instead of the raw journal
-# tail — cheaper to inject, higher signal. Off with NEVERTWICE_PROJECT_CARD=0.
+# tail - cheaper to inject, higher signal. Off with NEVERTWICE_PROJECT_CARD=0.
 PROJECT_CARD_ENABLED = os.environ.get("NEVERTWICE_PROJECT_CARD", "1") != "0"
 CARD_MAX_ITEMS = int(os.environ.get("NEVERTWICE_CARD_MAX_ITEMS", "5"))
 CARD_START = "<!-- PROJECT-CARD:START -->"
@@ -397,7 +397,7 @@ CARD_END = "<!-- PROJECT-CARD:END -->"
 CARD_HEADER = "## 🗂 Карточка проекта"
 # Task-aware recall (I-4): on UserPromptSubmit, retrieve by the actual PROMPT
 # text (not just project state) and inject targeted lessons. The single biggest
-# recall-quality win — the start-of-session injection can't know the task yet.
+# recall-quality win - the start-of-session injection can't know the task yet.
 # Off with NEVERTWICE_PROMPT_RECALL=0.
 PROMPT_RECALL_ENABLED = os.environ.get("NEVERTWICE_PROMPT_RECALL", "1") != "0"
 # Policy: 'smart' (substantial prompts, per-session dedup, capped) | 'once'
@@ -420,7 +420,7 @@ LOG_MAX_BYTES = 1_000_000
 LOCK_STALE_S = 600
 LOCK_RETRY_S = 0.5
 
-# Windows reserved device names — must never become a file stem (audit C3)
+# Windows reserved device names - must never become a file stem (audit C3)
 WIN_RESERVED = {"con", "prn", "aux", "nul",
                 *(f"com{i}" for i in range(1, 10)),
                 *(f"lpt{i}" for i in range(1, 10))}
@@ -433,9 +433,9 @@ EXTRACTION_PROMPT = """Проанализируй эту Claude Code сесси�
 
 Известные параметры:
   project (используй ровно это значение): {project_hint}
-  предпочитаемые теги (бери из списка где можно, lowercase, новый — только если ничего не подходит):
+  предпочитаемые теги (бери из списка где можно, lowercase, новый - только если ничего не подходит):
     {tag_vocab}
-  уже существующие в проекте заметки (НЕ дублируй — пропусти если суть совпадает):
+  уже существующие в проекте заметки (НЕ дублируй - пропусти если суть совпадает):
     patterns: {existing_patterns}
     mistakes: {existing_mistakes}
     decisions: {existing_decisions}
@@ -476,39 +476,39 @@ EXTRACTION_PROMPT = """Проанализируй эту Claude Code сесси�
   "tags": ["тег1", "тег2", "тег3"]
 }}
 
-Все теги в lowercase. Пустые категории = []. Если сессия тривиальная (чтение/обсуждение) — всё пусто, только session_summary.
+Все теги в lowercase. Пустые категории = []. Если сессия тривиальная (чтение/обсуждение) - всё пусто, только session_summary.
 
-ПОЛЕ project_relevant — КРИТИЧНО для чистоты памяти:
-  - true  — сессия реально про проект {project_hint} (его код/исследование/задачи).
-  - false — offtopic: посторонний вопрос, личный траблшутинг (игры, ОС, железо не по теме),
+ПОЛЕ project_relevant - КРИТИЧНО для чистоты памяти:
+  - true  - сессия реально про проект {project_hint} (его код/исследование/задачи).
+  - false - offtopic: посторонний вопрос, личный траблшутинг (игры, ОС, железо не по теме),
             другой проект, смена модели, пустой диалог. ТОГДА верни patterns/mistakes/
             decisions = [] и context_update = "", заполни ТОЛЬКО session_summary.
-  Не загрязняй знания проекта посторонним — лучше пусто, чем мимо темы.
+  Не загрязняй знания проекта посторонним - лучше пусто, чем мимо темы.
 
-ПОЛЕ supersedes (для каждого пункта) — для актуальности памяти:
+ПОЛЕ supersedes (для каждого пункта) - для актуальности памяти:
   Если пункт ЗАМЕНЯЕТ или ОПРОВЕРГАЕТ уже существующую заметку из списков выше
-  (статус изменился, решение пересмотрено, ошибка устранена) — впиши ТОЧНЫЙ
+  (статус изменился, решение пересмотрено, ошибка устранена) - впиши ТОЧНЫЙ
   заголовок той заметки. Иначе оставь "". Так старое не будет противоречить новому.
 
-ПОЛЕ resolves (только у pattern/decision) — связать решение с устранённой ошибкой:
-  Если этот паттерн/решение УСТРАНЯЕТ конкретную ошибку из списка mistakes выше —
+ПОЛЕ resolves (только у pattern/decision) - связать решение с устранённой ошибкой:
+  Если этот паттерн/решение УСТРАНЯЕТ конкретную ошибку из списка mistakes выше -
   впиши ТОЧНЫЙ заголовок той ошибки. Иначе "". Решённая ошибка перестаёт быть
   активным предупреждением (помечается «решено»), но остаётся в истории.
 
-ПОЛЕ contradicts — детект противоречий (M-2):
+ПОЛЕ contradicts - детект противоречий (M-2):
   Если пункт ПРЯМО ПРОТИВОРЕЧИТ существующей заметке выше (несовместимое
-  утверждение/выбор, не просто обновление) — впиши ТОЧНЫЙ заголовок той заметки.
+  утверждение/выбор, не просто обновление) - впиши ТОЧНЫЙ заголовок той заметки.
   Противоречащая старая заметка будет ретайрнута, останется текущая истина.
 
-ПОЛЕ confidence (0.0–1.0) — насколько это устойчивое знание, а не разовая деталь.
-  Высокое (0.8–1.0) для проверенных фактов; низкое (<0.5) для догадок.
+ПОЛЕ confidence (0.0-1.0) - насколько это устойчивое знание, а не разовая деталь.
+  Высокое (0.8-1.0) для проверенных фактов; низкое (<0.5) для догадок.
 
-ПОЛЯ entities/relations (опционально) — граф знаний:
-  entities — 2-5 ключевых сущностей урока (инструменты/концепты/файлы), lowercase kebab-case,
-  без версий. relations — рёбра {{"rel": тип, "target": сущность}}, target в том же стиле; rel
+ПОЛЯ entities/relations (опционально) - граф знаний:
+  entities - 2-5 ключевых сущностей урока (инструменты/концепты/файлы), lowercase kebab-case,
+  без версий. relations - рёбра {{"rel": тип, "target": сущность}}, target в том же стиле; rel
   из набора: causes, caused-by, fixes, fixed-by, depends-on, requires, part-of, alternative-to,
   related-to. Напр. для CUDA-OOM: entities ["cuda","batch-size"], relations
-  [{{"rel":"fixed-by","target":"gradient-checkpointing"}}]. Неясно — [].{brain_block}"""
+  [{{"rel":"fixed-by","target":"gradient-checkpointing"}}]. Неясно - [].{brain_block}"""
 
 
 def log(msg):
@@ -543,7 +543,7 @@ def argval(argv, name: str, default=None):
 def write_atomic(path: Path, text: str, encoding: str = "utf-8") -> None:
     """Crash-safe write: temp file in the same dir + os.replace (atomic on
     NTFS). A crash mid-write can no longer truncate the live file (audit
-    F1/F3/F30 — the corruption that triggered mass re-processing)."""
+    F1/F3/F30 - the corruption that triggered mass re-processing)."""
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     # pid in the temp name avoids collisions between concurrent hook processes;
@@ -572,7 +572,7 @@ def cosine(a, b) -> float:
     except (TypeError, ValueError):
         return 0.0
     # a NaN/inf in a (malformed) cloud embedding would make every comparison False and
-    # so slip past the confidence gate as a phantom top hit — treat a non-finite vector
+    # so slip past the confidence gate as a phantom top hit - treat a non-finite vector
     # as no signal (0.0) instead (launch-round audit 2026-06-20).
     if not (math.isfinite(na) and math.isfinite(nb) and math.isfinite(s)):
         return 0.0
@@ -580,7 +580,7 @@ def cosine(a, b) -> float:
 
 
 def _strip_json_fence(raw: str) -> str:
-    """Strip an outer ```json / ``` code fence from a model response — WITHOUT
+    """Strip an outer ```json / ``` code fence from a model response - WITHOUT
     re.MULTILINE (audit M-j). The round-1 `re.sub(r"^```...|```$", flags=re.M)`
     matched a fence on ANY line, so a JSON whose string value contained a ```
     code block was truncated mid-document. Here only the single outermost fence
@@ -597,7 +597,7 @@ def _strip_json_fence(raw: str) -> str:
 def _truncate_utf8_bytes(text: str, max_bytes: int) -> str:
     """Truncate `text` to at most `max_bytes` UTF-8 bytes on a CHARACTER boundary
     (audit M-g). Slicing encoded bytes then decoding with errors='ignore' drops a
-    partial trailing code point — corrupting the tail of multibyte (e.g. Cyrillic)
+    partial trailing code point - corrupting the tail of multibyte (e.g. Cyrillic)
     text. This walks back to the last whole character that fits."""
     if len(text.encode("utf-8")) <= max_bytes:
         return text
@@ -670,7 +670,7 @@ def slug_project(name: str) -> str:
 def _strip_lead_icon(t: str) -> str:
     """Drop a leading type-icon the LLM sometimes echoes into a title, so the
     note heading doesn't render the icon twice (audit C5)."""
-    t = re.sub(r'^[\s✅⚠️\U0001f3af•·\-–—]+', '',
+    t = re.sub(r'^[\s✅⚠️\U0001f3af•·\---]+', '',
                t or '')
     return t.strip() or "untitled"
 
@@ -763,7 +763,7 @@ def _norm_relations(raw, cap: int = 8) -> list:
     """Canonical typed edges for the knowledge graph (Phase 2): [{rel, target}] dicts
     with rel and target normalised to lowercase kebab tokens (reusing _norm_entities, so
     an injection payload can only survive as a harmless token, 'Caused By' merges with
-    'caused-by', and the target is the SAME token space as `entities` — edges connect to
+    'caused-by', and the target is the SAME token space as `entities` - edges connect to
     the entity graph). Drops malformed / self-edges, dedups (rel,target), caps."""
     if not isinstance(raw, (list, tuple)):
         return []
@@ -793,7 +793,7 @@ def _norm_entity_types(raw, cap: int = 8, gate: bool = True) -> dict:
                (config.entity_types()); a coding-only install therefore writes none, and
                junk / an injection payload in the type slot is dropped.
     gate=False (reading a note BACK): the stored type is kept as a clean token regardless of
-               which profile is active now — recall must not depend on the current profile,
+               which profile is active now - recall must not depend on the current profile,
                since the type was already validated at write time."""
     if not isinstance(raw, dict):
         return {}
@@ -816,8 +816,8 @@ def _norm_entity_types(raw, cap: int = 8, gate: bool = True) -> dict:
 
 def _brain_prompt_block() -> str:
     """The extra extraction instruction that asks the model to TYPE the entities it tags
-    (paper/method/dataset/...). Empty string for a coding-only install, so the prompt — and
-    the model's job — is byte-for-byte unchanged unless a brain profile is on."""
+    (paper/method/dataset/...). Empty string for a coding-only install, so the prompt - and
+    the model's job - is byte-for-byte unchanged unless a brain profile is on."""
     if not _cfg.brain_enabled():
         return ""
     types = ", ".join(_cfg.entity_types())
@@ -828,9 +828,9 @@ def _brain_prompt_block() -> str:
     return (
         "\n\nKNOWLEDGE-ГРАФ (профиль второго мозга включён): в каждой категории, для тех "
         "entities, что являются реальными ОБЪЕКТАМИ ЗНАНИЯ (не файлы/переменные/код), добавь "
-        'поле "entity_types" — словарь {"сущность": "тип"}. Допустимые типы: ' + types + ". "
+        'поле "entity_types" - словарь {"сущность": "тип"}. Допустимые типы: ' + types + ". "
         'Пример: "entity_types": {"gears": "method", "imagenet": "dataset"}.' + rel_line +
-        " Код-сущности НЕ типизируй — пропусти их."
+        " Код-сущности НЕ типизируй - пропусти их."
     )
 
 
@@ -853,15 +853,15 @@ _NOISE_UPDATE_RE = re.compile(
 
 def _is_noise_update(text: str) -> bool:
     """A 'nothing happened' context_update the LLM sometimes emits despite being
-    told to leave it empty — keep it out of the living context (audit M4)."""
+    told to leave it empty - keep it out of the living context (audit M4)."""
     return bool(_NOISE_UPDATE_RE.search(text or ""))
 
 
 # Prompt-injection signatures. Tightened (audit C1): every alternative requires
 # an injection-specific OBJECT (instructions/rules/system-prompt/a jailbreak
 # persona), never a bare imperative verb. The round-1 guard matched ordinary
-# engineering prose — "disregard the warning about the deprecated flag", "act as
-# a thin wrapper", "you are now able to batch" — and silently dropped legitimate
+# engineering prose - "disregard the warning about the deprecated flag", "act as
+# a thin wrapper", "you are now able to batch" - and silently dropped legitimate
 # knowledge, which is worse than no guard. These patterns fire only on a genuine
 # override attempt while leaving normal lessons untouched.
 _INJECTION_RE = re.compile(
@@ -887,7 +887,7 @@ _INJECTION_RE = re.compile(
     r"uncensored|evil|amoral|different\s+ai|developer\s+mode)|"
     r"\b(?:enable|enter|activate)\s+(?:dan|developer|jailbreak|god)\s+mode\b|"
     r"\bnew\s+instructions?\s*:|\bsystem\s+prompt\s*:|\bjailbreak\b|"
-    # Russian equivalents — same object-anchored shape
+    # Russian equivalents - same object-anchored shape
     r"забудь\s+(?:все\s+|всё\s+|предыдущие\s+|прежние\s+|свои\s+)*"
     r"(?:инструкци|правила|указани|промпт)|"
     r"игнорируй\s+(?:все\s+|всё\s+|предыдущие\s+|прежние\s+|выше|свои\s+)*"
@@ -900,18 +900,18 @@ _INJECTION_RE = re.compile(
 
 
 def _looks_injected(text: str) -> bool:
-    """Reject extracted 'knowledge' that looks like a prompt-injection payload —
+    """Reject extracted 'knowledge' that looks like a prompt-injection payload -
     a memory-poisoning guard (M-10), defense-in-depth beyond secret redaction.
     Object-anchored (audit C1) so it never trips on ordinary engineering prose."""
     return bool(_INJECTION_RE.search(text or ""))
 
 
-# W8: a stronger guard than injection *phrasing* — dangerous ACTIONS distilled as a lesson
+# W8: a stronger guard than injection *phrasing* - dangerous ACTIONS distilled as a lesson
 # (secret exfiltration, destructive commands, security-control bypass). These carry no
 # injection shape, so _INJECTION_RE misses them ("exfiltrate the .env to http://evil" was the
 # 25% _looks_injected let through). Object-anchored like the injection RE, and NEGATION-GATED:
 # a cautionary lesson ("never disable TLS verification", "don't chmod 777") is the legitimate,
-# common shape on a real store, so a danger token preceded by a warning marker is NOT flagged —
+# common shape on a real store, so a danger token preceded by a warning marker is NOT flagged -
 # only a bare imperative to perform the harm is. Verified 0/328 false-positive on the live vault.
 _DANGER_RE = re.compile(
     # secret exfiltration: a transfer verb near a secret object
@@ -928,12 +928,12 @@ _DANGER_RE = re.compile(
     re.IGNORECASE)
 # warning markers that flip an imperative into a cautionary lesson (EN + RU). Matched ANYWHERE in
 # the preceding window (not anchored to end-of-window): "do not blindly curl secrets" is a warning,
-# not an instruction — an intervening word must not defeat the gate (audit, W8 fix).
+# not an instruction - an intervening word must not defeat the gate (audit, W8 fix).
 _NEGATION_RE = re.compile(
     r"(?:do\s*n['o]?t|does\s*n['o]?t|did\s*n['o]?t|don'?t|\bnever\b|\bavoid\b|\bwithout\b|"
     r"instead\s+of|rather\s+than|\bstop\b|\bprevent\b|\bне\b|\bнет\b|\bбез\b|вместо|нельзя|избегай)",
     re.IGNORECASE)
-# "don't FORGET to exfiltrate" / "never FAIL to disable TLS" — a forget/hesitate/fail/neglect
+# "don't FORGET to exfiltrate" / "never FAIL to disable TLS" - a forget/hesitate/fail/neglect
 # between the negation and the danger token flips the polarity back to an imperative, so the
 # danger STANDS. Without this guard the 36-char negation window is a trivial one-word bypass
 # (audit 2026-06-18, CRIT): prepending "Don't forget to " neutralised the entire W8 gate.
@@ -945,7 +945,7 @@ _NEG_FLIP_RE = re.compile(
 
 def _looks_dangerous(text: str) -> bool:
     """True when `text` instructs a dangerous action (exfiltration / destruction / security
-    bypass) as an imperative — NOT when it warns against one (negation-gated). W8."""
+    bypass) as an imperative - NOT when it warns against one (negation-gated). W8."""
     text = text or ""
     for mt in _DANGER_RE.finditer(text):
         pre = text[max(0, mt.start() - 36):mt.start()]   # window before the danger token
@@ -964,12 +964,12 @@ def _looks_unsafe(text: str) -> bool:
     return _looks_injected(text) or _looks_dangerous(text)
 
 
-# W7 corroboration-gated quarantine — OFF by default. On a single-user store the user owns every
+# W7 corroboration-gated quarantine - OFF by default. On a single-user store the user owns every
 # session, so the threat it defends (adversarial sessions planting a lone false "lesson") does not
 # apply and quarantine would only risk hiding legitimate memory. For a MULTI-TENANT / shared-store /
 # untrusted-content deployment set NEVERTWICE_QUARANTINE=1: a single-source note that is ALSO
 # suspicious (near-max self-declared confidence, or superseding a corroborated multi-session note)
-# is diverted to <folder>/Quarantine/ — on disk, out of active recall — so one uncorroborated actor
+# is diverted to <folder>/Quarantine/ - on disk, out of active recall - so one uncorroborated actor
 # cannot spoof trust or displace corroborated truth. Two genuine sessions still establish a lesson.
 QUARANTINE_MODE = os.environ.get("NEVERTWICE_QUARANTINE", "0") != "0"
 QUARANTINE_CONF = float(os.environ.get("NEVERTWICE_QUARANTINE_CONF", "0.95"))
@@ -1048,7 +1048,7 @@ def _is_excluded_path(norm: str) -> bool:
 
 def _find_repo_root(cwd: str) -> Path | None:
     """Nearest ancestor (incl. cwd) containing a .git entry, else None. Pure
-    filesystem walk — no subprocess, safe to call in the hot path and in tests."""
+    filesystem walk - no subprocess, safe to call in the hot path and in tests."""
     raw = (cwd or "").strip()
     if not raw:
         return None
@@ -1072,10 +1072,10 @@ def _find_repo_root(cwd: str) -> Path | None:
 def is_tracked_project(cwd: str) -> bool:
     """True if cwd belongs to a real project worth remembering.
 
-    Strictly under a configured root, OR (TRACK_ANY_PROJECT) inside a git repo —
+    Strictly under a configured root, OR (TRACK_ANY_PROJECT) inside a git repo -
     excluding system / installed-software / agent-internal (~/.claude) / the
     vault / transient (Temp, Recycle) paths. A configured root *container* itself
-    is never a project — you must be in a subdirectory of it (audit C2)."""
+    is never a project - you must be in a subdirectory of it (audit C2)."""
     norm = _norm_path(cwd)
     if not norm or _is_excluded_path(norm):
         return False
@@ -1119,7 +1119,7 @@ def derive_project_from_cwd(cwd: str) -> str:
 
 # Vault-introspection grounding for the extraction prompt: existing tags +
 # per-project note titles. Cached per-process and FOLDED FORWARD with each
-# session's writes (audit M-k) — the round-1 code cleared the whole cache after
+# session's writes (audit M-k) - the round-1 code cleared the whole cache after
 # every session in a sweep, re-scanning all notes O(N×sessions). The vault is
 # locked during processing, so the snapshot can't drift mid-run.
 _TAG_COUNTS: dict[str, int] | None = None
@@ -1216,7 +1216,7 @@ def _pid_alive(pid: int) -> bool:
     """Best-effort liveness check for a lock-holder PID, cross-platform. Returns True when
     uncertain so we never steal a lock from a process that might be alive.
 
-    POSIX (macOS/Linux): `os.kill(pid, 0)` — ESRCH means dead, EPERM means alive-but-not-ours
+    POSIX (macOS/Linux): `os.kill(pid, 0)` - ESRCH means dead, EPERM means alive-but-not-ours
     (still alive). Windows: OpenProcess. Without the POSIX branch a crashed holder's lock could
     only be reclaimed by the age guard (up to LOCK_STALE_S), wedging every writer on Mac/Linux
     for minutes after a crash."""
@@ -1267,7 +1267,7 @@ def acquire_lock(timeout_s: float = 30) -> bool:
                 pass
             return True
         except FileExistsError:
-            # Only reclaim a stale lock whose holder PID is actually dead —
+            # Only reclaim a stale lock whose holder PID is actually dead -
             # avoids two processes both deleting a fresh lock (audit F12 TOCTOU).
             try:
                 age = time.time() - LOCK_FILE.stat().st_mtime
@@ -1275,13 +1275,13 @@ def acquire_lock(timeout_s: float = 30) -> bool:
                     holder = int((LOCK_FILE.read_text() or "0").strip() or 0)
                 except (ValueError, OSError):
                     holder = 0
-                # Steal a lock whose holder is provably dead IMMEDIATELY — don't wait
+                # Steal a lock whose holder is provably dead IMMEDIATELY - don't wait
                 # out LOCK_STALE_S, or a crashed holder with a fresh mtime wedges every
                 # writer for 10 min (audit A19). An unknown/empty pid (holder crashed
                 # between create and pid-write) still falls back to the age guard. The
                 # outer age ceiling (10× stale) breaks the one remaining wedge: a crashed
                 # holder whose PID was RE-USED by an unrelated live process would otherwise
-                # hold the lock forever (code-review 2026-07) — no legitimate hook run
+                # hold the lock forever (code-review 2026-07) - no legitimate hook run
                 # lasts 100 minutes.
                 reclaim = ((not _pid_alive(holder)) if holder > 0 else age > LOCK_STALE_S) \
                     or age > LOCK_STALE_S * 10
@@ -1335,7 +1335,7 @@ def archive_old_sessions(days: int = ARCHIVE_AFTER_DAYS) -> int:
 def archive_old_typed(days: int = TYPED_ARCHIVE_AFTER_DAYS) -> int:
     """Move typed notes (Patterns/Mistakes/Decisions) older than `days` into a
     per-folder Archive/ subdir. Knowledge is preserved (moved, never deleted),
-    but the live folders — and the dedup-grounding glob that scans them — stop
+    but the live folders - and the dedup-grounding glob that scans them - stop
     growing without bound (audit F24). Obsidian resolves [[stem]] regardless of
     folder, so existing wikilinks keep working after the move."""
     moved = 0
@@ -1380,7 +1380,7 @@ def prune_processed_db(db: dict, days: int = PRUNE_DB_AFTER_DAYS) -> int:
     pruned = 0
     for sid in list(db.keys()):
         entry = db[sid]
-        if not isinstance(entry, dict):  # corrupt/legacy value — drop it
+        if not isinstance(entry, dict):  # corrupt/legacy value - drop it
             del db[sid]
             pruned += 1
             continue
@@ -1413,7 +1413,7 @@ def load_processed() -> dict:
             continue
         if isinstance(data, dict):
             if f is not PROCESSED_DB:
-                log("Primary processed-DB unreadable — recovered from .bak")
+                log("Primary processed-DB unreadable - recovered from .bak")
             return data
     return {}
 
@@ -1442,19 +1442,19 @@ def mark_processed(db: dict, session_id: str, transcript_path: str):
 
 # Defense-in-depth: scrub common secret shapes BEFORE the transcript reaches
 # Ollama or any written note, so a pasted key can't leak into the (Obsidian-
-# Sync'd) vault (audit C2). Not full DLP — high-confidence patterns only.
-# key=value / key: value form — redact the value, keep the key (group sub)
+# Sync'd) vault (audit C2). Not full DLP - high-confidence patterns only.
+# key=value / key: value form - redact the value, keep the key (group sub)
 _SECRET_KV = re.compile(
     r'(?i)(api[_-]?key|secret[_-]?access[_-]?key|access[_-]?key[_-]?id|'
     r'secret[_-]?key|private[_-]?key|client[_-]?secret|secret|password|'
     r'passwd|access[_-]?token|token)'
     r'(\s*["\']?\s*[:=]\s*["\']?)([^\s"\',]{8,})')
-# connection string — redact only the password between user: and @, keep host/db
+# connection string - redact only the password between user: and @, keep host/db
 _SECRET_CONN = re.compile(
     r'(?i)((?:postgres(?:ql)?|mysql|mongodb(?:\+srv)?|redis|amqps?)://[^:\s/@]+:)'
     r'([^@\s/]{3,})(@)')
 # full-redact, high-confidence token shapes (no entropy heuristics → no false
-# positives on legitimate hashes/ids in code) — audit M1/I-14
+# positives on legitimate hashes/ids in code) - audit M1/I-14
 _SECRET_PATTERNS = [
     re.compile(r'-----BEGIN[\s\S]{1,4000}?-----END[ A-Z]*-----'),
     re.compile(r'\bsk-[A-Za-z0-9_-]{20,}'),       # OpenAI/Anthropic/OpenRouter sk-…
@@ -1489,7 +1489,7 @@ def redact_secrets(text: str) -> str:
 
 
 def truncate_smart(text: str, max_chars: int) -> str:
-    """Keep head (project setup) + tail (final decisions) — middle is least useful."""
+    """Keep head (project setup) + tail (final decisions) - middle is least useful."""
     if len(text) <= max_chars:
         return text
     sep = "\n\n[...середина транскрипта вырезана...]\n\n"
@@ -1507,7 +1507,7 @@ def _iter_events(path: str):
         return
     try:
         # errors="replace": one bad byte in a transcript must degrade (per-line
-        # JSON parse skips the mojibake line), never raise UnicodeDecodeError —
+        # JSON parse skips the mojibake line), never raise UnicodeDecodeError -
         # which is a ValueError, slips past `except OSError`, and crashed the hook
         # mid-sweep, aborting every later session in the batch (audit A1).
         with open(path, encoding="utf-8", errors="replace") as f:
@@ -1524,7 +1524,7 @@ def _iter_events(path: str):
 
 
 def _evt_meta(evt: dict) -> tuple:
-    """Pluck (cwd, timestamp) out of an event — either is may be None."""
+    """Pluck (cwd, timestamp) out of an event - either is may be None."""
     cwd = evt.get("cwd") or (evt.get("metadata") or {}).get("cwd")
     ts = evt.get("timestamp") or (evt.get("snapshot") or {}).get("timestamp")
     return cwd, ts
@@ -1580,7 +1580,7 @@ def _format_event(evt: dict, cap: int) -> list[str]:
 
 
 def read_transcript(path: str) -> dict:
-    """Single full pass — returns {body, cwd, timestamp}.
+    """Single full pass - returns {body, cwd, timestamp}.
 
     Body lines are individually capped at MAX_MESSAGE_CHARS so one giant paste
     cannot starve the rest; the global budget is then applied by truncate_smart.
@@ -1644,22 +1644,22 @@ def call_ollama(prompt: str) -> dict:
                 return {}
             parsed = json.loads(_strip_json_fence(raw))
             return parsed if isinstance(parsed, dict) else {}
-        except urllib.error.HTTPError as e:  # real HTTP response — don't retry
+        except urllib.error.HTTPError as e:  # real HTTP response - don't retry
             body = ""
             try:
                 body = e.read().decode("utf-8", errors="replace")[:300]
             except Exception:
                 pass
-            # 404 / "model not found" means the tag was never pulled — give the exact
+            # 404 / "model not found" means the tag was never pulled - give the exact
             # fix instead of a bare HTTP code (the #1 first-run stumble, launch audit).
             if e.code == 404 or "not found" in body.lower():
-                log(f"Ollama model {OLLAMA_MODEL!r} not found — run: ollama pull {OLLAMA_MODEL} "
+                log(f"Ollama model {OLLAMA_MODEL!r} not found - run: ollama pull {OLLAMA_MODEL} "
                     f"(or set NEVERTWICE_MODEL / a cloud key)")
             else:
                 log(f"Ollama HTTP {e.code} {e.reason} | {_scrub_for_log(body)}")
             return {}
         except (urllib.error.URLError, TimeoutError) as e:
-            # transient connection/timeout — retry with backoff before giving up.
+            # transient connection/timeout - retry with backoff before giving up.
             # Only fires on a path that would otherwise have failed outright.
             if attempt < OLLAMA_RETRIES:
                 time.sleep(OLLAMA_RETRY_BACKOFF * (attempt + 1))
@@ -1702,8 +1702,8 @@ def call_gemini(prompt: str) -> dict:
                 block = (data.get("promptFeedback") or {}).get("blockReason")
                 if block:
                     log(f"Gemini blocked: {block}")
-                    return {}  # deterministic content block — don't retry
-                if not last:  # transient empty-candidates — retry (audit B1)
+                    return {}  # deterministic content block - don't retry
+                if not last:  # transient empty-candidates - retry (audit B1)
                     time.sleep(GEMINI_RETRY_BACKOFF * (attempt + 1))
                     continue
                 log(f"Gemini: no candidates ({str(data)[:120]})")
@@ -1718,8 +1718,8 @@ def call_gemini(prompt: str) -> dict:
                     continue
                 log(f"Gemini: empty text (finishReason={fin})")
                 return {}
-            if fin and fin != "STOP":  # MAX_TOKENS/SAFETY — log for diagnosability
-                log(f"Gemini finishReason={fin} — response may be truncated")
+            if fin and fin != "STOP":  # MAX_TOKENS/SAFETY - log for diagnosability
+                log(f"Gemini finishReason={fin} - response may be truncated")
             parsed = json.loads(_strip_json_fence(txt))
             return parsed if isinstance(parsed, dict) else {}
         except urllib.error.HTTPError as e:
@@ -1733,14 +1733,14 @@ def call_gemini(prompt: str) -> dict:
                 continue
             log(f"Gemini HTTP {e.code}: {_scrub_for_log(msg)}")
             if e.code in (401, 403, 429, 500, 503):
-                _CLOUD_DEAD = True  # bad key or exhausted transient — skip rest of run
+                _CLOUD_DEAD = True  # bad key or exhausted transient - skip rest of run
             return {}
         except (urllib.error.URLError, TimeoutError) as e:
             if not last:
                 time.sleep(GEMINI_RETRY_BACKOFF * (attempt + 1))
                 continue
             log(f"Gemini unreachable: {getattr(e, 'reason', e)}")
-            _CLOUD_DEAD = True  # network down — skip Gemini for the rest of this run
+            _CLOUD_DEAD = True  # network down - skip Gemini for the rest of this run
             return {}
         except (json.JSONDecodeError, KeyError, TypeError) as e:
             log(f"Gemini parse failed: {e}")
@@ -1859,9 +1859,9 @@ def generate_json(prompt: str, project: str | None = None) -> dict:
         if res:
             _LLM_STATS["cloud"] += 1
             return res
-        log(f"Cloud ({ACTIVE_CLOUD}) failed — falling back to local Ollama")
+        log(f"Cloud ({ACTIVE_CLOUD}) failed - falling back to local Ollama")
     if not local_only and _OLLAMA_DOWN and cloud_on:
-        # Ollama already failed this run and a cloud backend is primary — don't
+        # Ollama already failed this run and a cloud backend is primary - don't
         # burn another timeout; leave this session for a later retry.
         _LLM_STATS["fail"] += 1
         return {}
@@ -1887,7 +1887,7 @@ def llm_backend_desc() -> str:
 
 
 def backend_report(timeout_s: float = 2.0) -> str:
-    """Human-readable summary of the backends auto-detected *right now* — what
+    """Human-readable summary of the backends auto-detected *right now* - what
     extraction and recall will actually use with zero config. install.py prints this
     so a newcomer sees the chosen default instead of editing env vars to find out.
     Pure detection (no writes, short timeouts); safe to call anywhere."""
@@ -1898,18 +1898,18 @@ def backend_report(timeout_s: float = 2.0) -> str:
     elif ollama_alive(timeout_s):
         lines.append(f"  extraction : local Ollama {OLLAMA_MODEL}  (no key needed)")
     else:
-        lines.append("  extraction : paused — no cloud key and Ollama is down; sessions are kept"
+        lines.append("  extraction : paused - no cloud key and Ollama is down; sessions are kept"
                      " and retried (start Ollama or add one key to begin)")
     if EMBED_PROVIDER != "ollama":
         if _embed_key():
             lines.append(f"  recall     : cloud embedder {EMBED_PROVIDER}:{EMBED_MODEL}  (semantic + lexical)")
         else:
-            lines.append(f"  recall     : lexical only (FTS5) — {EMBED_PROVIDER} selected but"
+            lines.append(f"  recall     : lexical only (FTS5) - {EMBED_PROVIDER} selected but"
                          f" {_EMBED_KEY_ENV.get(EMBED_PROVIDER, 'its key')} is unset")
     elif embedder_available(timeout_s):
         lines.append(f"  recall     : local Ollama {EMBED_MODEL}  (semantic + lexical, hybrid)")
     else:
-        lines.append("  recall     : lexical only (FTS5) — start Ollama (bge-m3) for semantic recall")
+        lines.append("  recall     : lexical only (FTS5) - start Ollama (bge-m3) for semantic recall")
     # Surface the opt-in precision lever when its deps are already on the machine, so the
     # cross-encoder that closes most of the W2/W4 embedding-compression gap is discoverable
     # instead of hidden behind an env var nobody knows to set.
@@ -1961,7 +1961,7 @@ def embed_cache_usable() -> bool:
     """True when the persisted vectors were produced by the live embedder. After a
     provider/model switch this is False until `embed_index.py --rebuild`, so the
     semantic paths abstain rather than cosine the query against a foreign vector
-    space — self-invalidation, not silent garbage. (Lexical/FTS recall, being
+    space - self-invalidation, not silent garbage. (Lexical/FTS recall, being
     provider-independent, keeps answering meanwhile.)"""
     return _embed_sig_current(load_embed_meta().get("model"))
 
@@ -1990,7 +1990,7 @@ _SAFE_MODEL_RE = re.compile(r"[^A-Za-z0-9._-]")
 
 
 def _safe_model_seg(model: str) -> str:
-    """Sanitise a model name before it is interpolated into a provider URL — defence
+    """Sanitise a model name before it is interpolated into a provider URL - defence
     against SSRF / path & query smuggling via NEVERTWICE_EMBED_MODEL / NEVERTWICE_GEMINI_MODEL
     (drop anything outside [A-Za-z0-9._-], so '/', '?', '#', '@' can't redirect the request
     to an internal host). audit 2026-06-18."""
@@ -2006,7 +2006,7 @@ _KEYHDR_RE = re.compile(r"(?i)(x-goog-api-key|api[-_]?key)[\"'\s:=]+[A-Za-z0-9._
 
 def _scrub_for_log(s: str) -> str:
     """Strip bearer tokens and provider key headers from a third-party error body
-    before it is logged (and git-committed) — a hostile endpoint could echo the
+    before it is logged (and git-committed) - a hostile endpoint could echo the
     Authorization / x-goog-api-key header back to leak the key into the log. audit
     2026-06-18, extended 2026-06-20."""
     s = _BEARER_RE.sub("Bearer <redacted>", s or "")
@@ -2050,7 +2050,7 @@ def _embed_cloud(text: str, kind: str | None, timeout: int | None):
     key = _embed_key()
     if not key:
         log(f"Embedding provider {EMBED_PROVIDER!r} selected but {_EMBED_KEY_ENV.get(EMBED_PROVIDER, '?')}"
-            " is unset — semantic recall blocked (set the key or NEVERTWICE_EMBED_PROVIDER=ollama)")
+            " is unset - semantic recall blocked (set the key or NEVERTWICE_EMBED_PROVIDER=ollama)")
         return None
     if EMBED_PROVIDER == "gemini":
         seg = _safe_model_seg(EMBED_MODEL)        # SSRF guard: no '/?#@' into the URL
@@ -2061,7 +2061,7 @@ def _embed_cloud(text: str, kind: str | None, timeout: int | None):
                            {"x-goog-api-key": key}, timeout)
         emb = (data or {}).get("embedding")
         # {"embedding": {"values": [...]}} is the documented shape, but some model
-        # variants return a flat {"embedding": [...]} — accept both (launch-round audit).
+        # variants return a flat {"embedding": [...]} - accept both (launch-round audit).
         v = emb.get("values") if isinstance(emb, dict) else (emb if isinstance(emb, list) else None)
         return v if isinstance(v, list) else None
     if EMBED_PROVIDER == "cohere":
@@ -2094,13 +2094,13 @@ def embed_text(text: str, kind: str | None = None, timeout: int | None = None,
 
     `project` enforces the SAME privacy boundary as extraction (audit 2026-06-18 CRIT):
     when a CLOUD embedder is configured, a project in LOCAL_ONLY_PROJECTS is NEVER sent
-    to it — embedding is skipped (→ text-only / lexical recall) so local-only note text
+    to it - embedding is skipped (→ text-only / lexical recall) so local-only note text
     and query prompts can't leave the machine. Ollama is local, so it needs no gate."""
     raw = (text or "")[:2000]
     if EMBED_PROVIDER != "ollama":
         if project is not None and is_local_only(project):
             log(f"Cloud embedding skipped for local-only project {project!r} "
-                f"(provider {EMBED_PROVIDER}) — data stays on the machine; recall is "
+                f"(provider {EMBED_PROVIDER}) - data stays on the machine; recall is "
                 "lexical here (use NEVERTWICE_EMBED_PROVIDER=ollama for local semantic recall)")
             return None
         return _embed_cloud(raw, kind, timeout)
@@ -2124,7 +2124,7 @@ def embed_text(text: str, kind: str | None = None, timeout: int | None = None,
 def load_embed_cache() -> dict:
     """Load the embedding cache, falling back to the .bak generation and logging
     LOUDLY on corruption (audit M-f). The round-1 code swallowed a JSONDecodeError
-    into {} — a half-written cache silently disabled semantic recall (dropping to
+    into {} - a half-written cache silently disabled semantic recall (dropping to
     recency) with no signal. Now a corrupt primary is recovered from .bak, and an
     unrecoverable cache is announced so it gets rebuilt instead of degrading mutely."""
     bak = EMBED_CACHE.with_name(EMBED_CACHE.name + ".bak")
@@ -2138,10 +2138,10 @@ def load_embed_cache() -> dict:
             continue
         if isinstance(data, dict):
             if f is not EMBED_CACHE:
-                log("Primary embed cache corrupt — recovered from .bak")
+                log("Primary embed cache corrupt - recovered from .bak")
             return data
     if EMBED_CACHE.exists():
-        log("Embed cache corrupt and no valid .bak — semantic recall DISABLED "
+        log("Embed cache corrupt and no valid .bak - semantic recall DISABLED "
             "until `embed_index.py --rebuild`")
     return {}
 
@@ -2175,7 +2175,7 @@ def save_embed_meta(meta: dict):
 def cache_is_prefixed() -> bool:
     """Whether stored vectors used task prefixes. Explicit meta wins; otherwise
     an empty cache adopts the configured default and a populated legacy cache is
-    treated as unprefixed — so we never query a cache in a mismatched mode."""
+    treated as unprefixed - so we never query a cache in a mismatched mode."""
     meta = load_embed_meta()
     if "prefixed" in meta:
         return bool(meta["prefixed"])
@@ -2194,8 +2194,8 @@ def query_embed_kind() -> str | None:
 # The JSON embedding cache stays the durable, human-diffable rebuild source and
 # the consolidation substrate. But parsing it whole on every prompt does not
 # scale (63 MB / ~0.7 s at 3k notes, linear). The retrieval hot path therefore
-# reads candidates from a derived SQLite index — opened instantly, project-
-# filtered in SQL — which the hook keeps current incrementally. Lazy import keeps
+# reads candidates from a derived SQLite index - opened instantly, project-
+# filtered in SQL - which the hook keeps current incrementally. Lazy import keeps
 # the dependency one-way (index_sqlite imports memory_hook, not vice-versa).
 
 def _scale_index():
@@ -2212,7 +2212,7 @@ def _scale_index():
 
 def scale_index_ready() -> bool:
     """True when the SQLite index exists AND was built for the live embedding
-    model — only then can the hot path skip the whole-cache JSON parse without
+    model - only then can the hot path skip the whole-cache JSON parse without
     ranking the query against stale-model vectors (audit A5). An unstamped legacy
     index (no meta) is accepted as current so an upgrade doesn't force a rebuild."""
     idx = _scale_index()
@@ -2220,7 +2220,7 @@ def scale_index_ready() -> bool:
         if not idx:
             return False
         # A current index always carries a stamped `meta`, so its presence doubles as
-        # the existence check — one connection, not index_exists()+index_meta() (round 3).
+        # the existence check - one connection, not index_exists()+index_meta() (round 3).
         meta = idx.index_meta()
         if not meta or meta.get("vec_format") != idx.VEC_FORMAT:
             return False        # absent/legacy/stale-format → ensure() rebuilds; cache meanwhile
@@ -2232,16 +2232,16 @@ def scale_index_ready() -> bool:
 def ensure_scale_index() -> None:
     """Build the SQLite index on first need so the fast retrieval path is actually
     taken (audit A2): the accelerator otherwise stayed dormant until the next write,
-    leaving every prompt to parse the whole JSON cache. Builds only when ABSENT —
+    leaving every prompt to parse the whole JSON cache. Builds only when ABSENT -
     a model-stale index is left to `scale_index_ready()`/`embed_index --rebuild`,
     never rebuilt here (that would loop every session on an un-re-embedded store)."""
     idx = _scale_index()
     if not idx:
         return
     try:
-        meta = idx.index_meta()      # {} when absent/legacy — one connection (round 3)
+        meta = idx.index_meta()      # {} when absent/legacy - one connection (round 3)
         # present AND current pack format → nothing to do. A model-stale index is
-        # deliberately NOT rebuilt here (it needs a re-embed, not a rebuild — that
+        # deliberately NOT rebuilt here (it needs a re-embed, not a rebuild - that
         # would loop every session); only absence or a format change triggers a
         # build, and a format change is always fixable from the float32 cache (P3).
         if meta and meta.get("vec_format") == idx.VEC_FORMAT:
@@ -2264,7 +2264,7 @@ def _scale_candidates(project: str, cross: bool = False, query: str | None = Non
     try:
         # Gate on scale_index_ready(), NOT just index_exists(): a stale-format or
         # stale-model index must fall through to the JSON cache instead of being read
-        # (P3 reads float16 — a misread of a legacy float32 BLOB is garbage). ensure()
+        # (P3 reads float16 - a misread of a legacy float32 BLOB is garbage). ensure()
         # normally rebuilds first, but if its rebuild failed we must still not read it.
         if not scale_index_ready():
             return None
@@ -2273,14 +2273,14 @@ def _scale_candidates(project: str, cross: bool = False, query: str | None = Non
             limit = RETRIEVAL_PREFILTER_LIMIT
         return idx.iter_candidates(project, cross=cross, query=query, limit=limit)
     except Exception as e:
-        log(f"scale-index read failed — falling back to JSON cache: {e}")
+        log(f"scale-index read failed - falling back to JSON cache: {e}")
         return None
 
 
 def sync_scale_index(records: dict | None = None, delete: list | None = None) -> None:
     """Keep the SQLite accelerator current: build it from the cache if missing,
     else upsert `records` (stem->record) and delete `delete` stems. Derived &
-    rebuildable, so any failure is logged and swallowed — the JSON cache remains
+    rebuildable, so any failure is logged and swallowed - the JSON cache remains
     the source of truth and retrieval falls back to it."""
     idx = _scale_index()
     if not idx:
@@ -2307,7 +2307,7 @@ def sync_scale_index(records: dict | None = None, delete: list | None = None) ->
 
 
 def rebuild_scale_index() -> None:
-    """Full rebuild of the SQLite index from the current cache — for after bulk
+    """Full rebuild of the SQLite index from the current cache - for after bulk
     mutations (consolidation merges/archival, embed_index --rebuild) where an
     incremental sync can't track every change. Derived & rebuildable: failures
     are logged and ignored."""
@@ -2323,7 +2323,7 @@ def rebuild_scale_index() -> None:
 def _retrieval_candidates(project: str, cross: bool, cache: dict | None,
                           query: str | None = None):
     """Unified candidate source for the rankers: the SQLite index when present
-    (no whole-cache parse — audit C2; FTS-prefiltered on large projects — P1), else
+    (no whole-cache parse - audit C2; FTS-prefiltered on large projects - P1), else
     the in-memory/JSON cache (small stores, or a passed-in cache the caller holds)."""
     rows = _scale_candidates(project, cross=cross, query=query)
     if rows is not None:
@@ -2407,7 +2407,7 @@ def _live_typed_paths(folder_path: Path, project: str, ntype: str,
 def supersede_note(p: Path, new_stem: str) -> bool:
     """Retire a superseded note: stamp status, move into <folder>/Superseded/
     (Obsidian still resolves [[stem]]), drop it from the embedding cache so
-    recall surfaces only current truth — contradictory facts no longer coexist
+    recall surfaces only current truth - contradictory facts no longer coexist
     (audit H1)."""
     if p.stem == new_stem:
         return False
@@ -2431,7 +2431,7 @@ def supersede_note(p: Path, new_stem: str) -> bool:
         p.unlink(missing_ok=True)
     except OSError as e:
         # the copy landed in Superseded/ but the original would not delete (Windows: Obsidian /
-        # AV / OneDrive holding it open). Roll the copy back — leaving BOTH would mean two
+        # AV / OneDrive holding it open). Roll the copy back - leaving BOTH would mean two
         # contradictory "live" notes, exactly what this mechanism exists to prevent
         # (code-review 2026-07).
         try:
@@ -2452,7 +2452,7 @@ def supersede_note(p: Path, new_stem: str) -> bool:
 def mark_resolved(mistake_fp: Path, by_stem: str) -> bool:
     """Flag a mistake as resolved by a later decision/pattern (audit I-18). The
     mistake stays LIVE (still history, still searchable), but recall stops
-    treating it as an active 'do-not-repeat' warning — see _note_snippet/emit."""
+    treating it as an active 'do-not-repeat' warning - see _note_snippet/emit."""
     try:
         text = mistake_fp.read_text(encoding="utf-8", errors="replace")
     except OSError:
@@ -2460,7 +2460,7 @@ def mark_resolved(mistake_fp: Path, by_stem: str) -> bool:
     write_atomic(mistake_fp, _stamp_frontmatter(
         text, {"status": "resolved", "resolved_by": by_stem}))
     # Propagate the flag to the retrieval substrate NOW so the salience de-weight
-    # actually applies — it was otherwise dead until the next full embed --rebuild,
+    # actually applies - it was otherwise dead until the next full embed --rebuild,
     # because the live cache/index never carried `resolved` (critic round 3).
     cache = load_embed_cache()
     rec = cache.get(mistake_fp.stem)
@@ -2485,9 +2485,9 @@ RECUR_SOURCES_CAP = 25      # bound the stored provenance set; the count is the 
 
 def _note_recur_sources(p: Path) -> tuple[int, set]:
     """Recurrence count + the DISTINCT sessions that contributed to a note, from ONE
-    frontmatter read (the supersede loop needs both — reading once avoids a double parse).
+    frontmatter read (the supersede loop needs both - reading once avoids a double parse).
     Recurrence counts distinct sources, so re-stating a false lesson from one session can't
-    inflate its salience past 1 — anti-gaming defence-in-depth beyond write idempotency (C5)."""
+    inflate its salience past 1 - anti-gaming defence-in-depth beyond write idempotency (C5)."""
     fm = _read_frontmatter_file(p)
     try:
         n = int(fm.get("recurrence", 1) or 1)
@@ -2504,7 +2504,7 @@ def _note_recur_sources(p: Path) -> tuple[int, set]:
 
 def _embed_recurrence(stem: str, ntype: str, cache: dict) -> int:
     """Recurrence for a freshly embedded note: the note's own frontmatter wins
-    (write_typed_note carries the count forward on a re-statement — audit A3),
+    (write_typed_note carries the count forward on a re-statement - audit A3),
     else the prior cache entry for that stem."""
     folder = TYPE_FOLDER.get(ntype)
     if folder and (r := _note_recurrence(VAULT / folder / f"{stem}.md")) > 1:
@@ -2513,7 +2513,7 @@ def _embed_recurrence(stem: str, ntype: str, cache: dict) -> int:
 
 
 def _note_resolved(stem: str, ntype: str) -> bool:
-    """True when the note's frontmatter marks it resolved — read at embed time so the
+    """True when the note's frontmatter marks it resolved - read at embed time so the
     live update_embeddings path carries `resolved` like embed_index.py does, instead
     of leaving the salience de-weight dead until a --rebuild (critic round 3)."""
     folder = TYPE_FOLDER.get(ntype)
@@ -2549,7 +2549,7 @@ def write_typed_note(folder: str, item, project: str, date: str,
         entity_types = {}
 
     # M-10/W8 memory-poisoning guard: refuse to persist extracted "knowledge" that looks like an
-    # injection payload OR a bare dangerous imperative (exfiltration/destruction/security-bypass) —
+    # injection payload OR a bare dangerous imperative (exfiltration/destruction/security-bypass) -
     # defense-in-depth beyond secret redaction. Negation-gated so cautionary lessons survive.
     if _looks_unsafe(f"{title} {desc} {prevention}"):
         log(f"Rejected note (unsafe payload): {title[:50]!r}")
@@ -2561,8 +2561,8 @@ def write_typed_note(folder: str, item, project: str, date: str,
     base_stem = typed_stem(date, project, ntype, title)
 
     # Per-session idempotency (audit C5): if THIS session already wrote a live
-    # note with the same identity — e.g. a prior run crashed after writing it but
-    # before marking the session processed — return that note instead of creating
+    # note with the same identity - e.g. a prior run crashed after writing it but
+    # before marking the session processed - return that note instead of creating
     # a -2 duplicate. This is what lets process_session mark the session AFTER the
     # writes (so a crash retries) without the retry duplicating notes.
     if session_stem_:
@@ -2596,7 +2596,7 @@ def write_typed_note(folder: str, item, project: str, date: str,
     for old in _live_typed_paths(p, project, ntype, slug):
         if old.stem != base_stem:
             # A same-slug note is THIS lesson recurring: read its count + contributing sessions
-            # BEFORE supersede drops it from the cache, then carry forward below — otherwise
+            # BEFORE supersede drops it from the cache, then carry forward below - otherwise
             # recurrence is pinned at 1 forever and the recurrence-boost signal is dead (audit A3).
             r_old, s_old = _note_recur_sources(old)        # one frontmatter read for both
             prior_recur = max(prior_recur, r_old)
@@ -2609,7 +2609,7 @@ def write_typed_note(folder: str, item, project: str, date: str,
         if o_slug and o_slug != slug:
             for old in _live_typed_paths(p, project, ntype, o_slug):
                 # An explicit supersede/contradict (incl. the M-2 write-time semantic path) is ALSO a
-                # re-encounter of that lesson — carry its recurrence + sources forward, else
+                # re-encounter of that lesson - carry its recurrence + sources forward, else
                 # recurrence only grows on the rare exact-slug re-statement (measured: 328/328 were 1).
                 r_old, s_old = _note_recur_sources(old)
                 prior_recur = max(prior_recur, r_old)
@@ -2619,7 +2619,7 @@ def write_typed_note(folder: str, item, project: str, date: str,
                 to_retire.append(old)
 
     # W7 corroboration-gated quarantine (opt-in; see QUARANTINE_MODE). Divert a single-source note
-    # that is also suspicious to <folder>/Quarantine/ instead of trusting it — retiring NOTHING.
+    # that is also suspicious to <folder>/Quarantine/ instead of trusting it - retiring NOTHING.
     dest = p
     quarantine_reason = ""
     if QUARANTINE_MODE:
@@ -2658,7 +2658,7 @@ def write_typed_note(folder: str, item, project: str, date: str,
         fm["session"] = session_stem_          # provenance (M-10)
     cval = _coerce_confidence(confidence)
     if cval is not None:
-        fm["confidence"] = round(cval, 2)   # M-10 (read back in ranking — H2)
+        fm["confidence"] = round(cval, 2)   # M-10 (read back in ranking - H2)
     if entities:
         fm["entities"] = entities           # entity graph (Phase 1): faceted recall + co-occurrence
     if relations:
@@ -2672,7 +2672,7 @@ def write_typed_note(folder: str, item, project: str, date: str,
     # session can't inflate its salience. No provenance (session=None) → legacy +1 (an
     # anonymous source can't be deduped). A known session already in the set adds nothing.
     # A quarantined note must NOT inherit the trust history (recurrence/sources) of notes it did
-    # not retire — else, if later promoted, it arrives with corroboration it never earned (W7 audit).
+    # not retire - else, if later promoted, it arrives with corroboration it never earned (W7 audit).
     if (prior_recur or prior_sources) and not quarantine_reason:
         if session_stem_ is None:
             fm["recurrence"] = prior_recur + 1                  # anonymous source: legacy +1
@@ -2721,7 +2721,7 @@ def write_session_note(project: str, date: str, time_str: str, summary: str,
     p = VAULT / "Sessions"
     p.mkdir(exist_ok=True)
     # _unique_path (not a bare {stem}.md) so two distinct sessions never silently
-    # overwrite each other on a stem collision — the 8-char id slice is weak for
+    # overwrite each other on a stem collision - the 8-char id slice is weak for
     # prefixed ids ("ingest-<hex>" varies in ~1 hex char), audit 2026-06-18 HIGH.
     fp = _unique_path(p, session_stem(date, time_str, project, session_id))
     stem = fp.stem
@@ -2732,7 +2732,7 @@ def write_session_note(project: str, date: str, time_str: str, summary: str,
 
     sections = [
         fm_block(fm), "",
-        f"# Session — {project} ({time_str})", "",
+        f"# Session - {project} ({time_str})", "",
         summary, "",
         f"**Каталог:** `{cwd}`",
         f"**Триггер:** {trigger}",
@@ -2788,7 +2788,7 @@ def compact_context_if_needed(fp: Path, project: str, allow_llm: bool = True):
     runs in scheduled maintenance (`maintain_contexts` from process_now/consolidate,
     `allow_llm=True`). Compaction only rewrites the file when a real summary is
     produced; on a backend failure it leaves the file UNCHANGED rather than dropping
-    entry bodies — no data loss (failure-injection probes). The SessionStart payload
+    entry bodies - no data loss (failure-injection probes). The SessionStart payload
     reads the bounded project card, not the raw file, so a briefly-oversized Context
     never bloats injection."""
     try:
@@ -2798,7 +2798,7 @@ def compact_context_if_needed(fp: Path, project: str, allow_llm: bool = True):
     if len(text.encode("utf-8")) <= CONTEXT_MAX_BYTES:
         return
     if not allow_llm:
-        return  # defer to scheduled maintenance — never call the LLM under the lock
+        return  # defer to scheduled maintenance - never call the LLM under the lock
     head, entries = _split_context(text)
     if len(entries) < 2:
         return  # nothing to compress
@@ -2836,7 +2836,7 @@ def compact_context_if_needed(fp: Path, project: str, allow_llm: bool = True):
     res = generate_json(prompt, project=project)
     state = res.get("state") if isinstance(res, dict) else None
     if not isinstance(state, str) or not state.strip():
-        # leave the file UNCHANGED on a backend failure — never drop entry bodies
+        # leave the file UNCHANGED on a backend failure - never drop entry bodies
         # without a summary (no data loss); the next maintenance run retries.
         log(f"Context compaction skipped for {project} (no summary)")
         return
@@ -2861,7 +2861,7 @@ def compact_context_if_needed(fp: Path, project: str, allow_llm: bool = True):
                        + " ".join(f"[[{lk}]]" for lk in old_links))
     new_text = head + "\n\n" + compressed + "\n\n" + "\n\n".join(recent) + "\n"
     # Hard guard: if the summary came back long, truncate the file to the cap
-    # rather than silently exceed it (audit M2) — on a character boundary so the
+    # rather than silently exceed it (audit M2) - on a character boundary so the
     # multibyte tail is never corrupted (audit M-g).
     if len(new_text.encode("utf-8")) > CONTEXT_MAX_BYTES:
         new_text = _truncate_utf8_bytes(new_text, CONTEXT_MAX_BYTES).rstrip() + "\n"
@@ -2890,7 +2890,7 @@ def maintain_contexts(allow_llm: bool = True) -> None:
 # A distilled, regenerated rollup of a project's live notes, kept at the top of
 # Context/<project>.md. Replaces the raw journal tail as the SessionStart
 # injection surface: organised by KIND of fact (status / stack / open gotchas /
-# decisions / recurring) instead of chronologically — bounded, deterministic,
+# decisions / recurring) instead of chronologically - bounded, deterministic,
 # GPU-free (no LLM). Cheaper to inject, higher signal per token than the journal.
 
 def _one_line(s: str, limit: int) -> str:
@@ -2900,10 +2900,10 @@ def _one_line(s: str, limit: int) -> str:
 
 
 def _read_frontmatter(text: str) -> tuple[dict, str]:
-    """(frontmatter dict, body). Inline-JSON values are parsed back to their type —
-    arrays to lists (entities/relations), maps to dicts (entity_types) — and double-quoted
+    """(frontmatter dict, body). Inline-JSON values are parsed back to their type -
+    arrays to lists (entities/relations), maps to dicts (entity_types) - and double-quoted
     scalars unquoted; everything else stays a raw string. Tolerant of a missing/short
-    frontmatter — used by the project-card distillation."""
+    frontmatter - used by the project-card distillation."""
     if text[:1] == "﻿":          # a BOM-writing editor must not blank the header (audit A7)
         text = text[1:]
     if not text.startswith("---"):
@@ -3002,7 +3002,7 @@ def _note_meta(p: Path, ntype: str, parsed: dict) -> dict | None:
 
 def _coerce_salience(v) -> float:
     """A stamped salience (Brain F5) clamped to [0,1]; 0.0 when absent/garbage so an unstamped
-    note is neutral in ranking — the boost is inert until consolidation scores the graph."""
+    note is neutral in ranking - the boost is inert until consolidation scores the graph."""
     try:
         f = float(v)
     except (TypeError, ValueError):
@@ -3011,7 +3011,7 @@ def _coerce_salience(v) -> float:
 
 
 def _note_meta_for_stem(stem: str) -> dict | None:
-    """Note meta for a bare stem — the SQLite graph upsert (F4) reads only the touched files
+    """Note meta for a bare stem - the SQLite graph upsert (F4) reads only the touched files
     by stem. None if the stem is unparseable or its live file is gone (superseded/archived →
     the caller just drops the graph rows for it)."""
     parsed = parse_typed_stem(stem)
@@ -3031,7 +3031,7 @@ def _note_meta_for_stem(stem: str) -> dict | None:
 
 def _iter_superseded_notes(project: str | None = None) -> list[dict]:
     """Superseded notes (retired to <folder>/Superseded/) as metas carrying status +
-    superseded_by — the history live recall hides, for the F3 entity timeline. O(superseded)
+    superseded_by - the history live recall hides, for the F3 entity timeline. O(superseded)
     scan; superseded notes are a small minority, and this runs only on the pull-only path."""
     out = []
     for ntype, folder in TYPE_FOLDER.items():
@@ -3052,7 +3052,7 @@ def _iter_superseded_notes(project: str | None = None) -> list[dict]:
 
 
 def _superseded_index(project: str | None = None) -> dict:
-    """entity -> [superseded note metas], one scan — shared across an entity-card refresh so a
+    """entity -> [superseded note metas], one scan - shared across an entity-card refresh so a
     bulk pass reads the Superseded/ folders once, not once per entity (F3)."""
     idx: dict = {}
     for n in _iter_superseded_notes(project):
@@ -3132,14 +3132,14 @@ def _card_item(n: dict) -> str:
         snip = f"{snip} → {n['prevention']}" if snip else n["prevention"]
     mark = "✅ " if n.get("resolved") else ""
     rec = f" ×{n['recurrence']}" if n.get("recurrence", 1) >= 2 else ""
-    body = f" — {_one_line(snip, 160)}" if snip else ""
+    body = f" - {_one_line(snip, 160)}" if snip else ""
     return f"- {mark}**{_one_line(n.get('title', ''), 80)}**{rec}{body}"
 
 
 def build_project_card(project: str, status_hint: str = "") -> str:
     """Distil a project's live notes into a structured card (audit I-15):
     status · stack · open gotchas · key decisions · recurring lessons. Pure
-    structural rollup — deterministic, GPU-free, no LLM. Returns the full block
+    structural rollup - deterministic, GPU-free, no LLM. Returns the full block
     (START/END markers included) or '' when there is nothing worth showing."""
     notes = _iter_project_notes(project)
     section = []
@@ -3251,7 +3251,7 @@ def refresh_project_card(project: str, fp: Path | None = None) -> None:
 # ── Entity cards (Brain layer, F2) ───────────────────────────────────────────────
 # A distilled, regenerated card per first-class (TYPED) entity: where it is used across ALL
 # projects, its typed neighbours, and the lessons grouped by kind. The SAME deterministic,
-# GPU-free rollup as the project card — but stored as a standalone file under Entities/, which
+# GPU-free rollup as the project card - but stored as a standalone file under Entities/, which
 # is NOT a TYPE_FOLDER, so a card NEVER enters the recall pool (separation invariant). Pull-only:
 # read via api.entity_card / the MCP surface / an explicit request, never auto-injected.
 ENTITIES_FOLDER = "Entities"
@@ -3269,8 +3269,8 @@ def build_entity_card(entity: str, etype: str | None = None, idx: dict | None = 
                       sup: dict | None = None) -> str:
     """Distil every live note tagged with `entity` (across ALL projects) into a standalone
     markdown card: type · where-used · typed neighbours · co-occurring entities · lessons grouped
-    by kind, a first/last-seen line, and (F3) the EVOLUTION of the take — where an earlier note was
-    later superseded. Deterministic structural rollup — no LLM, no embedder. Returns the full file
+    by kind, a first/last-seen line, and (F3) the EVOLUTION of the take - where an earlier note was
+    later superseded. Deterministic structural rollup - no LLM, no embedder. Returns the full file
     text (frontmatter + body), or '' when nothing references it. `idx` reuses a pre-built
     entity_index and `sup` a pre-built superseded index, so a full refresh scans the vault once."""
     norm = _norm_entities([entity])
@@ -3328,7 +3328,7 @@ def build_entity_card(entity: str, etype: str | None = None, idx: dict | None = 
 def write_entity_card(entity: str, etype: str | None = None, idx: dict | None = None,
                       sup: dict | None = None) -> str:
     """(Re)generate ONE entity card under Entities/ and write it atomically, only on change.
-    Returns the stem when a card was actually WRITTEN, or '' when there was nothing to write —
+    Returns the stem when a card was actually WRITTEN, or '' when there was nothing to write -
     unchanged (idempotent no-op), no notes, junk entity, or no brain profile active. The 'only
     on change' return is what keeps a full refresh from churning git on a no-op pass."""
     if not _cfg.brain_enabled():
@@ -3356,7 +3356,7 @@ def write_entity_card(entity: str, etype: str | None = None, idx: dict | None = 
 
 def refresh_entity_cards(entities: list | None = None) -> int:
     """Regenerate entity cards (Brain layer, F2). With `entities` given, refresh just those
-    typed entities (the ones a session touched — the per-session path); otherwise refresh EVERY
+    typed entities (the ones a session touched - the per-session path); otherwise refresh EVERY
     typed entity in the store (the sleep-time pass). Off entirely unless a brain profile is
     active. With the SQLite graph built the cards query it directly (F4); otherwise ONE markdown
     scan is shared across all cards. Returns the count written; never raises."""
@@ -3387,7 +3387,7 @@ def refresh_entity_cards(entities: list | None = None) -> int:
 
 def entity_card(entity: str) -> str:
     """Read an entity's card text (Brain layer, F2), building it on the fly if no file exists
-    yet. '' when the entity has no notes. The pull-only read surface for api / MCP / search —
+    yet. '' when the entity has no notes. The pull-only read surface for api / MCP / search -
     this is how Brain knowledge reaches an agent: by explicit request, never by injection."""
     norm = _norm_entities([entity])
     if not norm:
@@ -3395,7 +3395,7 @@ def entity_card(entity: str) -> str:
     ent = norm[0]
     # Cache hit: a card file is named "<type>-<entity>.md". Glob by the entity suffix and confirm
     # via its `name` so we don't pay a corpus-wide entity_types_index() scan just to locate a file
-    # already on disk (the glob alone is ambiguous — "method-gears" vs an entity "some-gears").
+    # already on disk (the glob alone is ambiguous - "method-gears" vs an entity "some-gears").
     d = VAULT / ENTITIES_FOLDER
     try:
         for fp in d.glob(f"*-{ent}.md"):
@@ -3469,13 +3469,13 @@ def rebuild_index():
     # consolidation (audit H1). One file, both roles, no collision.
     lines = [
         fm_block({"type": "index", "title": "Nevertwice memory store",
-                  "description": "Long-term agent memory — typed notes (patterns/"
+                  "description": "Long-term agent memory - typed notes (patterns/"
                                  "mistakes/decisions), per-project cards, sessions."}),
         "",
-        "# Claude Memory Vault — Index",
+        "# Claude Memory Vault - Index",
         "",
         "> Точка входа. Claude Code читает ТОЛЬКО этот файл при старте сессии.",
-        "> Не сканируй все папки — переходи через wikilinks из этого индекса.",
+        "> Не сканируй все папки - переходи через wikilinks из этого индекса.",
         "> Open Knowledge Format bundle: markdown + YAML frontmatter, каждая " +
         "заметка несёт `type`; навигация через `[[wikilinks]]` и `graph.json`.",
         "",
@@ -3484,7 +3484,7 @@ def rebuild_index():
         "| Папка | Что хранится |",
         "|---|---|",
         "| Patterns/ | Паттерны и подходы которые сработали |",
-        "| Mistakes/ | Ошибки, баги, антипаттерны — чего избегать |",
+        "| Mistakes/ | Ошибки, баги, антипаттерны - чего избегать |",
         "| Decisions/ | Архитектурные решения с обоснованием |",
         "| Context/ | Состояние каждого проекта (один файл = один проект) |",
         "| Sessions/ | Автологи сессий (последние 30 дней) |",
@@ -3499,7 +3499,7 @@ def rebuild_index():
         lines.append("_(пока нет проектов)_")
     lines += ["", "## Последние сессии", ""]
     if sessions:
-        lines += [f"- **{mtime}** — [[{name}]]" for name, mtime in sessions]
+        lines += [f"- **{mtime}** - [[{name}]]" for name, mtime in sessions]
     else:
         lines.append("_(пока нет сессий)_")
     lines += ["", "#index"]
@@ -3516,19 +3516,19 @@ def process_session(session_id: str, cwd: str, transcript_path: str,
                     transcript_text: str | None = None,
                     project_override: str | None = None) -> bool:
     if session_id in processed_db:
-        log(f"Skip {session_id[:8]} — already processed at "
+        log(f"Skip {session_id[:8]} - already processed at "
             f"{processed_db[session_id].get('processed_at')}")
         return False
 
     # Project resolution. An explicit override (generic ingestion from any agent)
     # bypasses the cwd-based gate; otherwise the cwd must be a tracked project
-    # (under a configured root or a git repo) — audit C2.
+    # (under a configured root or a git repo) - audit C2.
     if project_override:
         project_hint = slug_project(project_override)
     elif is_tracked_project(cwd):
         project_hint = derive_project_from_cwd(cwd)
     else:
-        log(f"Skip {session_id[:8]} — cwd '{cwd}' is not a tracked project")
+        log(f"Skip {session_id[:8]} - cwd '{cwd}' is not a tracked project")
         mark_processed(processed_db, session_id, transcript_path)
         return False
 
@@ -3537,7 +3537,7 @@ def process_session(session_id: str, cwd: str, transcript_path: str,
     else:
         parsed = read_transcript(transcript_path)
     if not parsed["body"]:
-        log(f"Empty transcript for {session_id[:8]} — marked, nothing to extract")
+        log(f"Empty transcript for {session_id[:8]} - marked, nothing to extract")
         mark_processed(processed_db, session_id, transcript_path)
         return False
 
@@ -3552,7 +3552,7 @@ def process_session(session_id: str, cwd: str, transcript_path: str,
     prompt = EXTRACTION_PROMPT.format(
         transcript=transcript_full,
         project_hint=project_hint,
-        tag_vocab=", ".join(tag_vocab) if tag_vocab else "(пусто — выбирай свободно)",
+        tag_vocab=", ".join(tag_vocab) if tag_vocab else "(пусто - выбирай свободно)",
         existing_patterns=", ".join(existing["pattern"]) or "(нет)",
         existing_mistakes=", ".join(existing["mistake"]) or "(нет)",
         existing_decisions=", ".join(existing["decision"]) or "(нет)",
@@ -3560,13 +3560,13 @@ def process_session(session_id: str, cwd: str, transcript_path: str,
     )
     extraction = generate_json(prompt, project=project_hint)
     if not extraction:
-        log(f"Extraction failed for {session_id[:8]} — left for retry")
+        log(f"Extraction failed for {session_id[:8]} - left for retry")
         return False
 
     # The session is marked processed at the END, AFTER its notes are durably
     # written (audit C5): a crash mid-write then RETRIES instead of losing the
     # notes. write_typed_note is idempotent per-session (it reuses a note this
-    # same session already wrote), so the retry can't spawn -2/-3 duplicates —
+    # same session already wrote), so the retry can't spawn -2/-3 duplicates -
     # which is the failure mode the round-1 "mark first" ordering guarded against.
 
     started = _parse_iso(parsed["timestamp"]) or datetime.now()
@@ -3584,7 +3584,7 @@ def process_session(session_id: str, cwd: str, transcript_path: str,
     # Relevance gate (audit C1): file project knowledge ONLY when the session is
     # genuinely about this project. Off-topic sessions (personal troubleshooting,
     # model switches, empty chats) still get a Session note for the record, but
-    # contribute NO typed notes and NO context update — zero contamination.
+    # contribute NO typed notes and NO context update - zero contamination.
     relevant = _is_relevant(extraction.get("project_relevant", True))
 
     sess_stem = session_stem(date, time_str, project, session_id)
@@ -3617,12 +3617,12 @@ def process_session(session_id: str, cwd: str, transcript_path: str,
         for item in items_of(nt):
             stem = write_typed_note(TYPE_FOLDER[nt], item, project, date, tags, nt,
                                     session_stem_=sess_stem, siblings=all_siblings)
-            if not stem:                 # rejected (injection-shaped, M-10) — skip
+            if not stem:                 # rejected (injection-shaped, M-10) - skip
                 continue
             links[nt].append(stem)
             # redact BEFORE the embed path too: write_typed_note redacts what lands in the .md,
             # but these raw fields feed update_embeddings → the embeddings cache (plaintext on
-            # disk) and, with a cloud embedder, the provider — the same secret the note path
+            # disk) and, with a cloud embedder, the provider - the same secret the note path
             # just scrubbed would leak through the side channel (code-review 2026-07, HIGH).
             desc = redact_secrets(item.get("description", "")) if isinstance(item, dict) else ""
             prevention = redact_secrets(item.get("prevention", "")) if isinstance(item, dict) else ""
@@ -3645,8 +3645,8 @@ def process_session(session_id: str, cwd: str, transcript_path: str,
         update_embeddings(new_notes)
 
     # distil the structured project card from this session's writes (audit I-15).
-    # Runs whenever the session was project-relevant — independent of whether a
-    # context_update fired — so a notes-only session still refreshes the card.
+    # Runs whenever the session was project-relevant - independent of whether a
+    # context_update fired - so a notes-only session still refreshes the card.
     if relevant:
         refresh_project_card(project)
 
@@ -3686,7 +3686,7 @@ def sweep_unprocessed(processed_db: dict,
     """Find unprocessed transcripts and run them through process_session.
 
     Processes ANY tracked transcript not yet in processed_db, regardless of
-    age — the old SWEEP_DAYS hard cutoff silently lost sessions that aged past
+    age - the old SWEEP_DAYS hard cutoff silently lost sessions that aged past
     7 days while still on disk (audit F28). `max_n` caps how many get extracted
     per call (Ollama-bound) so SessionStart need not hold the lock for ages.
     """
@@ -3713,7 +3713,7 @@ def sweep_unprocessed(processed_db: dict,
         if not is_tracked_project(cwd):
             mark_processed(processed_db, sid, str(jl))
             continue
-        # cap on ATTEMPTS, not successes — a slow/failing backend must not let a
+        # cap on ATTEMPTS, not successes - a slow/failing backend must not let a
         # backlog hold the vault lock unbounded (audit C3/B16)
         if max_n is not None and attempts >= max_n:
             log(f"Sweep cap reached ({max_n} attempts); leaving the rest for later")
@@ -3726,8 +3726,8 @@ def sweep_unprocessed(processed_db: dict,
                 n += 1
         except Exception as e:
             # a write crash must not abort the sweep or silently lose the session
-            # — un-mark so it retries next run instead (audit B18)
-            log(f"process_session crashed for {sid[:8]}: {e} — un-marking for retry")
+            # - un-mark so it retries next run instead (audit B18)
+            log(f"process_session crashed for {sid[:8]}: {e} - un-marking for retry")
             processed_db.pop(sid, None)
             save_processed(processed_db)
     return n
@@ -3742,7 +3742,7 @@ def write_status(event: str, trigger: str, sessions_processed: list[dict],
     total = len(sessions_processed)
 
     lines = [
-        "=== Claude Memory Vault — Status ===",
+        "=== Claude Memory Vault - Status ===",
         f"Last update    : {ts}",
         f"Trigger        : {event or 'manual'} ({trigger})",
         f"Extraction LLM : {llm_backend_desc()}",
@@ -3752,7 +3752,7 @@ def write_status(event: str, trigger: str, sessions_processed: list[dict],
         f"Vault          : {VAULT}",
         f"Sessions saved : {total} (current run)",
         f"Swept (extra)  : {swept_count}",
-        f"Health         : {('DEGRADED — ' + degraded) if degraded else 'OK'}",
+        f"Health         : {('DEGRADED - ' + degraded) if degraded else 'OK'}",
         "",
     ]
     if sessions_processed:
@@ -3778,12 +3778,12 @@ def write_status(event: str, trigger: str, sessions_processed: list[dict],
             history = []
 
     if degraded:
-        new_entry = f"[{ts}] {event or 'manual'} — DEGRADED: {degraded}"
+        new_entry = f"[{ts}] {event or 'manual'} - DEGRADED: {degraded}"
     elif sessions_processed:
         ids = ", ".join(f"{s['project']}:{s['session_id'][:8]}" for s in sessions_processed)
-        new_entry = f"[{ts}] {event or 'manual'} — {total} session(s): {ids}"
+        new_entry = f"[{ts}] {event or 'manual'} - {total} session(s): {ids}"
     else:
-        new_entry = (f"[{ts}] {event or 'manual'} — no new sessions "
+        new_entry = (f"[{ts}] {event or 'manual'} - no new sessions "
                      f"(current_id={current_session_id[:8]})")
 
     history = ([new_entry] + history)[:STATUS_HISTORY_LIMIT]
@@ -3802,18 +3802,18 @@ def update_embeddings(new_notes):
     re-read (audit C3/H5). Document prefix matches the cache's mode (audit H2)."""
     cache = load_embed_cache()
     if not embed_cache_usable():
-        # The embedder changed since these vectors were written — they live in a
+        # The embedder changed since these vectors were written - they live in a
         # foreign space, so cosine against them is meaningless. Demote them to
         # text-only (keeps lexical/FTS recall working) rather than mix spaces; a full
         # semantic re-embed is `embed_index.py --rebuild` (W2/provider-switch).
         for e in cache.values():
             if isinstance(e, dict):
                 e.pop("vec", None)
-        log(f"Embedder changed to {embed_signature()} — demoted stale vectors to "
+        log(f"Embedder changed to {embed_signature()} - demoted stale vectors to "
             "text-only (run embed_index.py --rebuild to re-embed all notes)")
         # the new embedder defines its own prefix policy; reset it BEFORE embedding so
         # doc_embed_kind() (reads meta) and the stamp below match the NEW vectors, not the
-        # old provider's flag (audit 2026-06-18 — a stale prefixed flag mis-prefixes q vs doc)
+        # old provider's flag (audit 2026-06-18 - a stale prefixed flag mis-prefixes q vs doc)
         _meta0 = load_embed_meta()
         _meta0["prefixed"] = (EMBED_PROVIDER == "ollama") and EMBED_USE_PREFIX
         save_embed_meta(_meta0)
@@ -3849,12 +3849,12 @@ def update_embeddings(new_notes):
             log(f"Embedded {n_vec} note(s) into cache")
         else:
             log(f"Embedded {n_vec}/{len(added)} note(s); {len(added) - n_vec} stored "
-                "text-only (no embedder) — lexically recallable, run embed_index.py to vectorise")
+                "text-only (no embedder) - lexically recallable, run embed_index.py to vectorise")
 
 
 def _recur_boost(rec: dict) -> float:
     """Ranking bump for a lesson that recurred across sessions (audit H4). LOG
-    frequency prior — log(n), not linear (n−1): the recurrence ablation
+    frequency prior - log(n), not linear (n−1): the recurrence ablation
     (research/ABLATION_RESULTS.md) shows log fuses better (avg recall@1 0.81 vs 0.69)
     because frequency evidence is log-scaled (cf. IDF) and linear (n−1) lets one very
     frequent lesson dominate a cluster regardless of relevance. n≥1 → log(1)=0, so a
@@ -3867,14 +3867,14 @@ def _recur_boost(rec: dict) -> float:
 
 
 def _ambiguity(sims_desc) -> float:
-    """Relevance ambiguity in [0,1] from DESCENDING similarity scores — the
+    """Relevance ambiguity in [0,1] from DESCENDING similarity scores - the
     ambiguity-adaptive fusion the recurrence ablation identified as the ceiling
     (research/ABLATION_RESULTS.md). ~1 when the top candidates are bunched (no clear
     winner → lean on the recurrence prior); ~0 when one candidate clearly leads
     (→ suppress recurrence so it can't displace a crisp match). Callers multiply the
     recurrence boost by this. Returns 1.0 (full boost = legacy behaviour) when the
     feature is off or there is nothing to compare. Inert when recurrence=1 (boost is
-    0 regardless), so it cannot regress pure-relevance retrieval — confirmed on
+    0 regardless), so it cannot regress pure-relevance retrieval - confirmed on
     LongMemEval. Tune with NEVERTWICE_AMBIGUITY_K; disable with NEVERTWICE_ADAPTIVE_RECUR=0."""
     if not ADAPTIVE_RECUR or len(sims_desc) < 2:
         return 1.0
@@ -3888,7 +3888,7 @@ def _low_confidence(sims_desc) -> bool:
     it doesn't stand RETRIEVAL_CONFIDENT_MARGIN above the per-query MEDIAN. bge-m3 cosines
     bunch near a high background, so the absolute floor alone never fires. `sims_desc` is
     the descending similarity list; a tiny pool (<4) can't estimate a background, so only
-    the floor applies there. The canonical gate — memory_search reuses it (DRY)."""
+    the floor applies there. The canonical gate - memory_search reuses it (DRY)."""
     if not sims_desc:
         return True
     if sims_desc[0] < RETRIEVAL_SIM_FLOOR:
@@ -3923,10 +3923,10 @@ def _salience_mult(stem: str, rec: dict) -> float:
     """Gentle multiplicative re-weight: recency decay (M-3, floored so old gold
     isn't buried) × a down-weight for resolved mistakes (no longer active
     warnings) × confidence (H2, low-confidence lessons nudged down, floored).
-    Relevance still dominates — this only nudges ties.
+    Relevance still dominates - this only nudges ties.
 
     Recurrence SLOWS the decay (effective age = age / (1+log n)): a lesson re-seen
-    across sessions stays fresh — a frequency prior on survival. Without it the
+    across sessions stays fresh - a frequency prior on survival. Without it the
     decay buries old-but-recurring lessons (creation-dated, but repeatedly relevant)
     and the tiny additive recurrence tiebreak cannot rescue them (3A bench finding F2)."""
     mult = 1.0
@@ -3952,7 +3952,7 @@ def _salience_mult(stem: str, rec: dict) -> float:
 
 
 # letter-runs ≥3, plus pure-digit runs ≥3 so number queries (RTX 5090, port 8080,
-# CVE / error codes, years) are recallable — bare digits were dropped before (round 4)
+# CVE / error codes, years) are recallable - bare digits were dropped before (round 4)
 _TOKEN_RE = re.compile(r"[^\W\d_]{3,}|\d{3,}", re.UNICODE)
 
 
@@ -3962,15 +3962,15 @@ def _tokens(s: str) -> set:
 
 _PATH_REF_RE = re.compile(r"`([^`\n]+?\.[A-Za-z0-9]{1,8})`")
 # bare path-like token: at least one separator AND a file extension. Lets the
-# staleness check see paths NOT wrapped in backticks — most notes don't wrap
+# staleness check see paths NOT wrapped in backticks - most notes don't wrap
 # them, so the round-1 backtick-only matcher almost never fired (audit M-b).
 _BARE_PATH_RE = re.compile(
     r"(?<![\w/\\.])([A-Za-z0-9_.\-]+(?:[/\\][A-Za-z0-9_.\-]+)+\.[A-Za-z0-9]{1,8})")
 
 
 def _referenced_paths(text: str) -> set:
-    """File-path-looking tokens a note references — backtick-quoted OR bare (a
-    path with a separator and an extension) — for the fact-vs-code staleness
+    """File-path-looking tokens a note references - backtick-quoted OR bare (a
+    path with a separator and an extension) - for the fact-vs-code staleness
     check (M-4). Skips URLs and wikilinks (audit M-b)."""
     out = set()
     text = text or ""
@@ -3989,7 +3989,7 @@ def _referenced_paths(text: str) -> set:
 def _note_stale(stem: str, ntype: str, project_dir) -> bool:
     """M-4 fact-vs-code validation: True if the note references code paths that no
     longer exist under project_dir (a refactor likely made the lesson stale).
-    Conservative — returns False when it references no checkable path, or when at
+    Conservative - returns False when it references no checkable path, or when at
     least one referenced path still resolves (so it only flags clear misses)."""
     if not project_dir:
         return False
@@ -4011,7 +4011,7 @@ def _note_stale(stem: str, ntype: str, project_dir) -> bool:
 
 def _note_links(stem: str, ntype: str) -> list[str]:
     """The `[[wikilinks]]` a note points at (siblings, RESOLVES/SUPERSEDES, auto
-    links) — the edges for graph multi-hop expansion (M-6)."""
+    links) - the edges for graph multi-hop expansion (M-6)."""
     folder = TYPE_FOLDER.get(ntype)
     if not folder:
         return []
@@ -4041,13 +4041,13 @@ def _rrf_scores(rankings: list, k0: int = 60, weights: list | None = None) -> di
 
 
 def _token_list(s: str) -> list:
-    """Same tokenisation as `_tokens` but keeps term frequencies (a list, not a set) —
+    """Same tokenisation as `_tokens` but keeps term frequencies (a list, not a set) -
     BM25 needs counts. Unicode-aware, so RU/EN both tokenise."""
     return _TOKEN_RE.findall((s or "").lower())
 
 
 def _bm25_scores(qtokens: set, cands: list, k1: float = 1.5, b: float = 0.75) -> dict:
-    """BM25 lexical scores (stem -> score) over the candidate notes — a properly
+    """BM25 lexical scores (stem -> score) over the candidate notes - a properly
     IDF-weighted lexical signal, far stronger than raw token-overlap. IDF is computed over
     the candidate set; a note's searchable text is title+desc+prevention+stem (the same
     fields the overlap path scored). Pure stdlib for the in-memory path; at scale the FTS5
@@ -4133,7 +4133,7 @@ def _age_marker(stem: str, recurrence=None) -> str:
 
 
 def _recency_fallback(project: str, k: int) -> list[dict]:
-    """Newest typed notes for the project, mistakes first — last resort when no
+    """Newest typed notes for the project, mistakes first - last resort when no
     embeddings/lexical signal is available."""
     out = []
     for ntype in ("mistake", "pattern", "decision"):
@@ -4174,15 +4174,15 @@ def retrieve_relevant(project: str, query: str, k: int,
                       recency_fallback: bool = True) -> list[dict]:
     """Top-k relevant typed notes for the project (audit C3/H4/H5/I-2).
 
-    Hybrid Reciprocal Rank Fusion of two rankings — semantic (embedding cosine,
+    Hybrid Reciprocal Rank Fusion of two rankings - semantic (embedding cosine,
     computed only if Ollama answers a fast ping, so a busy GPU never stalls
-    SessionStart) and lexical (token overlap, always available) — with a gentle
+    SessionStart) and lexical (token overlap, always available) - with a gentle
     recurrence tiebreaker. Falls back to whichever signal exists, then to recency.
     Hybrid measured to beat semantic-alone (eval harness). Returns ntype/title/stem.
 
     embed_timeout/alive_timeout default to the SessionStart budget; the per-prompt
     recall path (I-4) passes tighter values so it never delays an interactive
-    prompt — a busy GPU just drops it to the lexical ranking. `cache` lets a caller
+    prompt - a busy GPU just drops it to the lexical ranking. `cache` lets a caller
     that already loaded the embedding cache reuse it (avoids a re-parse on the hot
     per-prompt path)."""
     if embed_timeout is None:
@@ -4192,7 +4192,7 @@ def retrieve_relevant(project: str, query: str, k: int,
         return _recency_fallback(project, k) if recency_fallback else []
     rec_of = {s: r for s, r in cands}
 
-    # semantic signal — scores per candidate, only when Ollama answers quickly (no GPU stall)
+    # semantic signal - scores per candidate, only when Ollama answers quickly (no GPU stall)
     sem_scores = {}
     amb = 1.0                           # relevance ambiguity → scales the recurrence prior
     if query and embed_cache_usable() and embedder_available(alive_timeout):
@@ -4202,18 +4202,18 @@ def retrieve_relevant(project: str, query: str, k: int,
             sims_desc = sorted((sim for sim, _ in scored), reverse=True)
             amb = _ambiguity(sims_desc)
             # confidence gate (W3): if no candidate stands a margin above the background,
-            # the semantic signal is noise — drop it so the hook injects lexical/nothing,
+            # the semantic signal is noise - drop it so the hook injects lexical/nothing,
             # not arbitrary neighbours. A confident query keeps the floored semantic scores.
             if not _low_confidence(sims_desc):
                 sem_scores = {s: sim for sim, s in scored if sim > RETRIEVAL_SIM_FLOOR}
 
-    # lexical signal — BM25 over the candidate notes (IDF-weighted, no GPU)
+    # lexical signal - BM25 over the candidate notes (IDF-weighted, no GPU)
     qtok = _tokens(query)
     lex_scores = _bm25_scores(qtok, cands) if qtok else {}
 
     if not sem_scores and not lex_scores:
         # no semantic (confident) or lexical signal: recent-notes fallback is useful project
-        # context at SessionStart, but on the per-prompt path it would inject off-topic noise —
+        # context at SessionStart, but on the per-prompt path it would inject off-topic noise -
         # so that caller opts out (recency_fallback=False) and we stay silent instead (W3).
         return _recency_fallback(project, k) if recency_fallback else []
     # Calibrated score fusion (default) keeps the signal magnitudes; RRF (legacy / the input
@@ -4278,7 +4278,7 @@ def retrieve_relevant(project: str, query: str, k: int,
 
 def as_of(project: str, date: str) -> list[dict]:
     """Point-in-time recall (M-5 bi-temporal): every note whose belief interval
-    [valid_from, valid_to) contains `date` — what the project's memory held on
+    [valid_from, valid_to) contains `date` - what the project's memory held on
     that day, INCLUDING facts later superseded. Scans live + Superseded/. ISO
     date strings compare lexicographically, so no parsing needed."""
     out = []
@@ -4291,7 +4291,7 @@ def as_of(project: str, date: str) -> list[dict]:
                 parsed = parse_typed_stem(p.stem)
                 if not parsed or parsed["project"] != project:
                     continue
-                fm = _read_frontmatter_file(p)   # header only — O(N) scan (audit M-a)
+                fm = _read_frontmatter_file(p)   # header only - O(N) scan (audit M-a)
                 vf = str(fm.get("valid_from") or parsed["date"])
                 vt = str(fm.get("valid_to") or "")
                 if vf <= date and (not vt or date < vt):
@@ -4304,7 +4304,7 @@ def as_of(project: str, date: str) -> list[dict]:
 def retrieve_cross_project(project: str, query: str, k: int = CROSS_PROJECT_K,
                            cache: dict | None = None, embed_timeout: int | None = None,
                            alive_timeout: int = 2) -> list[dict]:
-    """Lessons from OTHER projects relevant to this one — transferable gotchas
+    """Lessons from OTHER projects relevant to this one - transferable gotchas
     across a shared stack (audit I-7). Same hybrid ranking as retrieve_relevant
     but inverted project filter and a higher bar (semantic floor + ≥2 shared
     lexical tokens) so cross-project noise stays out. GPU-free under a busy GPU
@@ -4377,9 +4377,9 @@ def rerank_notes(query: str, results: list[dict], k: int = RETRIEVAL_TOP_K,
 
 def _context_brief(fp: Path, max_chars: int = 1100) -> str:
     """Compact 'current state' snippet for SessionStart. Prefers the structured
-    project card (audit I-15) — highest signal per token; falls back to the
+    project card (audit I-15) - highest signal per token; falls back to the
     compressed-state block, else the project description plus the two most recent
-    session entries — progressive disclosure so start cost stays small (F35)."""
+    session entries - progressive disclosure so start cost stays small (F35)."""
     try:
         text = fp.read_text(encoding="utf-8", errors="replace")
     except OSError:
@@ -4425,7 +4425,7 @@ def _note_snippet(stem: str, ntype: str, max_chars: int = 220) -> str:
     if prevention:
         out = f"{out} → {prevention}" if out else prevention
     if resolved:
-        out = ("✅ решено — " + out) if out else "✅ решено"
+        out = ("✅ решено - " + out) if out else "✅ решено"
     return out[:max_chars].rstrip()
 
 
@@ -4435,11 +4435,11 @@ def _fact_line(r: dict, stale: bool = False) -> str:
     marker = _age_marker(r.get("stem", ""), r.get("recurrence"))
     flag = " ⚠️_(возможно устарело: файл не найден)_" if stale else ""
     via = f" _(связано: {r['via']})_" if r.get("via") else ""   # graph-expanded lesson (Phase 2b)
-    return f"- **{title}**" + (f" — {snip}" if snip else "") + marker + via + flag
+    return f"- **{title}**" + (f" - {snip}" if snip else "") + marker + via + flag
 
 
 def _user_brief(max_chars: int = 320) -> str:
-    """Learned cross-project working profile for SessionStart — the 'knows the
+    """Learned cross-project working profile for SessionStart - the 'knows the
     user' layer beyond the hand-written CLAUDE.md (audit I-6; built by
     build_user_model.py → User/profile.md)."""
     try:
@@ -4453,7 +4453,7 @@ def _user_brief(max_chars: int = 320) -> str:
 def emit_session_start_context(cwd: str) -> None:
     """Print a SessionStart additionalContext payload to stdout so the agent
     starts each session already knowing the project's recent state and past
-    lessons — active recall, not a passive log (audit F35). Now injects the
+    lessons - active recall, not a passive log (audit F35). Now injects the
     lesson body, not just titles (audit C3). Best-effort; the only stdout the
     hook ever prints."""
     if not INJECT_CONTEXT or not is_tracked_project(cwd):
@@ -4471,8 +4471,8 @@ def emit_session_start_context(cwd: str) -> None:
     # Budget-aware assembly (M-15/M-d): the cap bounds the WHOLE payload, not just
     # the fact list. The round-1 code injected the card (≤1100) and profile (≤320)
     # verbatim and only trimmed facts, so the budget never touched what took the
-    # most room (audit M-d). Sections are added by priority — profile → card →
-    # mistakes → patterns → cross-project — each trimmed to the remaining budget.
+    # most room (audit M-d). Sections are added by priority - profile → card →
+    # mistakes → patterns → cross-project - each trimmed to the remaining budget.
     hdr = f"🧠 Память проекта **{project}** (Obsidian-vault):"
     # The footer is fixed and essential; reserve its room UP FRONT so the budget bounds the WHOLE
     # payload (audit: cross-project + footer used to be appended past the cap, overshooting ~3-17%).
@@ -4536,7 +4536,7 @@ def emit_session_start_context(cwd: str) -> None:
             for r in cross:
                 snip = _note_snippet(r["stem"], r["ntype"])
                 line = (f"- [{r.get('project')}] **{r.get('title','').strip()}**"
-                        + (f" — {snip}" if snip else ""))
+                        + (f" - {snip}" if snip else ""))
                 if added and used[0] + len(line) > INJECT_BUDGET_CHARS:   # budget-aware (audit)
                     break
                 xs.append(line)
@@ -4556,7 +4556,7 @@ def emit_session_start_context(cwd: str) -> None:
 
 
 # ── Task-aware recall on UserPromptSubmit (audit I-4) ─────────────────
-# The SessionStart payload is built from project STATE — it can't know the task
+# The SessionStart payload is built from project STATE - it can't know the task
 # yet. This hook fires on each submitted prompt, retrieves by the prompt text,
 # and injects targeted lessons. Smart-throttled (substantial prompts, per-session
 # dedup, capped) so it stays high-signal and cheap. State lives per session under
@@ -4569,7 +4569,7 @@ _TRIVIAL_PROMPT_RE = re.compile(
 
 
 def _is_trivial_prompt(prompt: str) -> bool:
-    """A prompt with no retrieval signal — affirmations, 'continue', a slash- or
+    """A prompt with no retrieval signal - affirmations, 'continue', a slash- or
     !-command, or simply too short. Keeps per-prompt recall off the noise."""
     s = (prompt or "").strip()
     if len(s) < PROMPT_RECALL_MIN_CHARS:
@@ -4623,7 +4623,7 @@ def emit_prompt_recall(cwd: str, prompt: str, session_id: str) -> None:
     """UserPromptSubmit injection (audit I-4): retrieve lessons by the actual
     prompt text and inject them so recall is task-aware. Smart-throttled
     (substantial prompts only, per-session dedup, capped per session). Best-effort
-    and fast — any error or a busy GPU injects nothing rather than block or break
+    and fast - any error or a busy GPU injects nothing rather than block or break
     the prompt. The ONLY stdout this path prints is the additionalContext JSON."""
     if not (PROMPT_RECALL_ENABLED and INJECT_CONTEXT) or not is_tracked_project(cwd):
         return
@@ -4669,7 +4669,7 @@ def emit_prompt_recall(cwd: str, prompt: str, session_id: str) -> None:
         for c in cross:
             snip = _note_snippet(c["stem"], c["ntype"])
             parts.append(f"- [{c.get('project')}] **{c.get('title', '').strip()}**"
-                         + (f" — {snip}" if snip else ""))
+                         + (f" - {snip}" if snip else ""))
 
     payload = {"hookSpecificOutput": {
         "hookEventName": "UserPromptSubmit",
@@ -4703,7 +4703,7 @@ def _project_dir_for_cwd(cwd: str) -> Path | None:
 
 def regen_graph_for_project(cwd: str) -> None:
     """Best-effort incremental graph.json refresh for the current project so
-    the navigation graph never goes stale (audit F39). Silent on any failure —
+    the navigation graph never goes stale (audit F39). Silent on any failure -
     memory must never block on graphify."""
     try:
         if not is_tracked_project(cwd):
@@ -4721,7 +4721,7 @@ def regen_graph_for_project(cwd: str) -> None:
 
 
 # Derived / machine-local files kept OUT of the vault's git history (mirror of
-# install.py's list). An AUTO-initialised store (the git_autocommit fallback init —
+# install.py's list). An AUTO-initialised store (the git_autocommit fallback init -
 # never touched by install.py) must not commit the embeddings cache, the SQLite index,
 # or .logs/ (which can hold third-party error bodies / key fragments). audit 2026-06-18.
 _VAULT_GITIGNORE = (
@@ -4737,7 +4737,7 @@ _VAULT_GITIGNORE = (
 
 
 def _ensure_vault_gitignore() -> None:
-    """Write a .gitignore covering derived/machine-local files when the vault has none —
+    """Write a .gitignore covering derived/machine-local files when the vault has none -
     so an auto-initialised store never commits caches, the index, or .logs/."""
     gi = VAULT / ".gitignore"
     try:
@@ -4751,7 +4751,7 @@ def git_autocommit():
     """Best-effort vault snapshot after each memory update, so a bad write or
     manual slip is always recoverable from git history (audit C1). When a remote
     exists and NEVERTWICE_GIT_PUSH=1, also push for an off-machine copy
-    (audit H6). Silent and bounded — memory must never block on git."""
+    (audit H6). Silent and bounded - memory must never block on git."""
     try:
         import subprocess
 
@@ -4764,7 +4764,7 @@ def git_autocommit():
             # for EVERY store, not just one the user manually `git init`-ed (audit A8).
             if _git("init", "-q").returncode != 0 or not (VAULT / ".git").exists():
                 return
-            # a fresh box may have no commit identity at all — set a LOCAL fallback
+            # a fresh box may have no commit identity at all - set a LOCAL fallback
             # only when none resolves, so the user's real global identity is untouched.
             if not _git("config", "user.email").stdout.strip():
                 _git("config", "user.email", "nevertwice@localhost")
@@ -4780,7 +4780,7 @@ def git_autocommit():
             if has_remote:
                 r = _git("push", "--quiet")
                 if r.returncode != 0:
-                    log("git push failed (off-machine backup not updated) — "
+                    log("git push failed (off-machine backup not updated) - "
                         "commit is safe locally")
     except Exception as e:
         log(f"git autocommit skipped: {e}")
@@ -4791,7 +4791,7 @@ def git_autocommit():
 # ── Active Memory on the hot path: axis-A guards on PreToolUse ─────────
 # The moat, made automatic. Before a code-writing tool runs, check what it is about to write
 # against the learned guards. The check is REGEX-ONLY (no LLM, no embedder, no network) and
-# SILENT when clear, so it adds 0 context tokens until a guard actually catches a repeat — the
+# SILENT when clear, so it adds 0 context tokens until a guard actually catches a repeat - the
 # token-economy invariant holds. Advisory by default (surfaces a warning, never blocks); set
 # NEVERTWICE_GUARD_ENFORCE=1 to let a 'blocking'-status guard deny the call. Popperian guards
 # self-retire on false positives, so this never boxes the agent in.
@@ -4820,7 +4820,7 @@ def _action_text_from_tool(tool_name: str, tool_input: dict) -> tuple[str, str |
 
 def emit_pretooluse_guard(session: dict, cwd: str) -> None:
     """PreToolUse (axis A). Silent (no stdout → 0 tokens) unless a guard fires; on a hit,
-    emit a one-line warning as additionalContext (advisory) — or, under NEVERTWICE_GUARD_ENFORCE,
+    emit a one-line warning as additionalContext (advisory) - or, under NEVERTWICE_GUARD_ENFORCE,
     deny a blocking-status guard. Read-only, no lock, regex-only: safe to run before every edit."""
     if not GUARDS_HOTPATH or session.get("tool_name", "") not in _GUARDABLE_TOOLS:
         return
@@ -4842,13 +4842,13 @@ def emit_pretooluse_guard(session: dict, cwd: str) -> None:
     if not hits:
         return
     try:
-        _g.record_fired([h["id"] for h in hits])           # one load, one atomic write — and only
+        _g.record_fired([h["id"] for h in hits])           # one load, one atomic write - and only
     except Exception:                                      # on the rare hit path; telemetry only,
         pass                                               # never fatal on the hot path
     lines = [("⛔ " if h["status"] == "blocking" else "⚠ ") + h["message"] for h in hits]
     payload = {"hookSpecificOutput": {
         "hookEventName": "PreToolUse",
-        "additionalContext": "**Nevertwice guard — a past mistake may be repeating:**\n"
+        "additionalContext": "**Nevertwice guard - a past mistake may be repeating:**\n"
                              + "\n".join(f"- {l}" for l in lines),
     }}
     blocking = [h for h in hits if h["status"] == "blocking"]
@@ -4883,7 +4883,7 @@ def main():
 
     VAULT.mkdir(parents=True, exist_ok=True)
 
-    # SessionStart: inject recall context to stdout FIRST — read-only, no lock
+    # SessionStart: inject recall context to stdout FIRST - read-only, no lock
     # needed (atomic writes guarantee reads see a complete file).
     if event == "SessionStart":
         try:
@@ -4892,7 +4892,7 @@ def main():
             log(f"additionalContext failed: {e}")
 
     # UserPromptSubmit: task-aware recall by the prompt text (audit I-4). Read-only,
-    # no lock, fast; returns immediately — a prompt event never processes a session.
+    # no lock, fast; returns immediately - a prompt event never processes a session.
     if event == "UserPromptSubmit":
         try:
             prompt = (session.get("prompt") or session.get("user_prompt")
@@ -4902,7 +4902,7 @@ def main():
             log(f"prompt recall failed: {e}")
         return
 
-    # PreToolUse: active memory (axis A) — guard the action a code-writing tool is about to
+    # PreToolUse: active memory (axis A) - guard the action a code-writing tool is about to
     # apply. Read-only, no lock, regex-only, silent unless a guard fires (0 tokens when clear).
     if event == "PreToolUse":
         try:
@@ -4914,18 +4914,18 @@ def main():
     # The vault lock (single-writer) is held only across extraction + the fast
     # file writes. Recall (SessionStart / UserPromptSubmit) already returned above
     # WITHOUT taking it, and context-summary compaction is off this path entirely
-    # (GPU-free here; the LLM summary runs in scheduled maintenance) — so no model
+    # (GPU-free here; the LLM summary runs in scheduled maintenance) - so no model
     # call other than the one extraction is ever made under the lock (audit C4).
     lock_timeout = 180 if event in ("SessionEnd", "PreCompact") else 30
     if not acquire_lock(timeout_s=lock_timeout):
-        log("Could not acquire vault lock — another process is busy. Aborting.")
+        log("Could not acquire vault lock - another process is busy. Aborting.")
         return
 
     try:
         # Fail loudly if the extraction LLM is unreachable instead of silently
         # dropping the session (audit F29).
         if not llm_available():
-            log("No LLM backend available (cloud key unset + Ollama down) — paused")
+            log("No LLM backend available (cloud key unset + Ollama down) - paused")
             write_status(event, trigger, [], 0, session_id,
                          degraded="No LLM backend (cloud key unset + Ollama down)")
             return
@@ -4951,7 +4951,7 @@ def main():
             git_autocommit()
 
         if event == "SessionStart":
-            # The session that's just starting has an empty transcript — skip it.
+            # The session that's just starting has an empty transcript - skip it.
             # Sweep older transcripts left by abrupt closes / OS crashes (capped
             # so launch isn't blocked; the scheduled process_now.py and the next
             # SessionEnd/PreCompact pick up whatever remains).
@@ -4959,9 +4959,9 @@ def main():
                                   run_log=run_log, max_n=SESSION_START_SWEEP_CAP)
             if n:
                 finalize(n)
-                log(f"SessionStart sweep done — recovered {n} session(s)")
+                log(f"SessionStart sweep done - recovered {n} session(s)")
             else:
-                log("SessionStart sweep — nothing to recover (status not bumped)")
+                log("SessionStart sweep - nothing to recover (status not bumped)")
             return
 
         processed_now = False
@@ -4972,7 +4972,7 @@ def main():
                     run_log=run_log, agent=agent, transcript_text=transcript_text,
                     project_override=project_override)
             except Exception as e:
-                log(f"process_session crashed for {session_id[:8]}: {e} — un-marking")
+                log(f"process_session crashed for {session_id[:8]}: {e} - un-marking")
                 processed_db.pop(session_id, None)
                 save_processed(processed_db)
 
@@ -4986,7 +4986,7 @@ def main():
                         else f"Ollama errors during run ({OLLAMA_URL})")
             write_status(event, trigger, [], 0, session_id, degraded=degraded)
         else:
-            log("No work performed — status.txt not updated")
+            log("No work performed - status.txt not updated")
         log(f"Run done | this_session_processed={processed_now} swept={swept}")
     finally:
         release_lock()

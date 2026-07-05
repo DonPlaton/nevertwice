@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Nevertwice — stable in-process Python API.
+"""Nevertwice - stable in-process Python API.
 
 The CLIs (`memory_search`, `remember`, `ingest`) and the MCP server are the
-universal interface, but a Python caller — a framework adapter, a custom agent, a
-notebook — shouldn't have to shell out. This module is that library surface: one thin
+universal interface, but a Python caller - a framework adapter, a custom agent, a
+notebook - shouldn't have to shell out. This module is that library surface: one thin
 function per capability (recall/remember/capture, the entity graph, digest/conflicts/
 dashboard, guards/anticipation/causal, interop), stdlib-only, no argparse, no
 `sys.exit`. Every function delegates to the engine modules, so there is exactly one
@@ -13,7 +13,7 @@ or this API) a call came from.
     from nevertwice.api import recall, remember, capture_session
 
     remember("Crash-safe writes", project="myproj", type="pattern",
-             prevention="write to a tmp file then os.replace — never partial files")
+             prevention="write to a tmp file then os.replace - never partial files")
     hits = recall("how do I persist files safely", project="myproj", k=5)
     capture_session(transcript_text, project="myproj", agent="my-bot")
 """
@@ -55,12 +55,12 @@ def recall(query: str, project: str | None = None, k: int = 5,
 
 def format_note(result: dict) -> str:
     """Render a `recall()` result as a compact block for an LLM context window or a
-    human: 'TYPE — title' then the description, then 'Prevention: …' (empties omitted).
+    human: 'TYPE - title' then the description, then 'Prevention: …' (empties omitted).
     Shared by the LangChain/LlamaIndex adapters and the capture helpers so every
     surface renders a memory the same way."""
     nt = (result.get("ntype") or "").strip()
     head = (result.get("title") or "").strip()
-    lines = [f"{nt.upper()} — {head}" if nt and head else (head or nt)]
+    lines = [f"{nt.upper()} - {head}" if nt and head else (head or nt)]
     desc = (result.get("description") or "").strip()
     prev = (result.get("prevention") or "").strip()
     if desc:
@@ -125,15 +125,15 @@ def graph_export(project: str | None = None, fmt: str = "mermaid", top: int = 40
 
 def entity_card(entity: str) -> str:
     """The Brain-layer card for a first-class entity (paper / method / dataset / ...): a
-    distilled, cross-project rollup of everything the memory knows about it — where it is used,
+    distilled, cross-project rollup of everything the memory knows about it - where it is used,
     its typed neighbours, and the lessons grouped by kind. Built on the fly if not cached.
-    PULL-ONLY by design: this is how Brain knowledge reaches an agent — by explicit request,
+    PULL-ONLY by design: this is how Brain knowledge reaches an agent - by explicit request,
     never by injection. '' when the entity has no notes (or no brain profile is active)."""
     return m.entity_card(entity)
 
 
 def entities_by_type(etype: str, project: str | None = None) -> list:
-    """Every entity classified as `etype` (e.g. all 'method' or 'paper' entities), sorted —
+    """Every entity classified as `etype` (e.g. all 'method' or 'paper' entities), sorted -
     the enumeration behind the entity cards. Empty until a brain profile has typed something."""
     return m.entities_by_type(etype, project)
 
@@ -141,23 +141,23 @@ def entities_by_type(etype: str, project: str | None = None) -> list:
 def entity_timeline(entity: str, project: str | None = None) -> dict:
     """The chronological history of an entity across LIVE and SUPERSEDED notes (Brain F3):
     `{entity, first_seen, last_seen, count, mentions, evolution}`. `evolution` lists the points
-    where an earlier take was superseded — how the understanding of the entity changed over time.
-    Pull-only — surfaced in the entity card and here, never injected. `{}` for an unknown entity."""
+    where an earlier take was superseded - how the understanding of the entity changed over time.
+    Pull-only - surfaced in the entity card and here, never injected. `{}` for an unknown entity."""
     return m.entity_timeline(entity, project)
 
 
 def conflicts(project: str | None = None, limit: int = 50) -> list[dict]:
-    """The contradiction / supersession ledger — every fact the memory revised, newest
+    """The contradiction / supersession ledger - every fact the memory revised, newest
     first: `[{kind, project, ntype, old_stem, old_title, old_date, new_stem, new_title,
     new_date, resolved}]`. Nevertwice resolves contradictions at write time (M-2: a new
     fact supersedes the old, retired to `Superseded/`), so this IS that audit trail.
-    `resolved=False` flags a still-evolving chain. Pure frontmatter scan — no embedder,
+    `resolved=False` flags a still-evolving chain. Pure frontmatter scan - no embedder,
     no LLM, no network. The read-side answer to memanto's `conflicts`."""
     return _digest.compute_conflicts(m.slug_project(project) if project else None, limit=limit)
 
 
 def digest(project: str | None = None, days: int = 7) -> dict:
-    """A point-in-time rollup of the store — what was added/revised in the last `days`,
+    """A point-in-time rollup of the store - what was added/revised in the last `days`,
     per project and type, plus the most-connected entities: `{generated, window_days,
     totals, by_project, recent, changed, top_entities}`. Read-only synthesis (the
     daily/weekly "what's new" view); no embedder, no LLM, no network."""
@@ -166,18 +166,18 @@ def digest(project: str | None = None, days: int = 7) -> dict:
 
 def dashboard(project: str | None = None, days: int = 30) -> str:
     """Render the whole memory store to one self-contained HTML string (inline CSS, no
-    server, no external asset) — stats, per-project breakdown, recent notes, the
+    server, no external asset) - stats, per-project breakdown, recent notes, the
     contradiction ledger, and the most-connected entities. Write it to a `.html` file and
     open it in a browser. Read-only frontmatter scan; no embedder, no LLM, no network."""
     return _dashboard.build_html(project, days=days)
 
 
 def what_breaks(entity: str, project: str | None = None, *, depth: int = 2) -> dict:
-    """Active memory, axis C — the counterfactual. What may break if you change / touch
+    """Active memory, axis C - the counterfactual. What may break if you change / touch
     `entity`: `{entity, impacts:[{effect, via, hops, notes}], failure_modes:[...], evidence}`,
     induced by traversing the causal model (the store's typed relation edges, oriented into a
     cause→effect impact graph) plus the failure modes mistakes attach to the entity. A
-    synthesized consequence set, not an episode dump — the whole point is answering the
+    synthesized consequence set, not an episode dump - the whole point is answering the
     question at a fraction of the tokens a recall-everything would spend."""
     return _causal.what_breaks(entity, project, depth=depth)
 
@@ -197,8 +197,8 @@ def why(entity: str, project: str | None = None, *, depth: int = 2) -> dict:
 
 def guards_check(action_text: str, *, project: str | None = None,
                  path: str | None = None, tool: str | None = None) -> list[dict]:
-    """Active memory, axis A — the 0-token hot path. Return the guards that fire for a
-    proposed action (a diff, command, or code the agent is about to write), or `[]` — and
+    """Active memory, axis A - the 0-token hot path. Return the guards that fire for a
+    proposed action (a diff, command, or code the agent is about to write), or `[]` - and
     NOTHING reaches context unless one matches. Each hit is `{id, status, message, scope}`;
     a `blocking` status means stop and comply or override-with-reason. Pure regex+scope
     match: no embedder, no LLM, no network. See `research/ACTIVE_MEMORY.md`."""
@@ -217,16 +217,16 @@ def guard_feedback(guard_id: str, outcome: str, *, session_id: str | None = None
     {'helped', 'false_positive', 'corroborated'}. K distinct-session 'helped' promote an
     advisory guard to blocking; M 'false_positive' demote/retire it; a `reason` on an
     override is stored as a learned exception that narrows the guard. Returns the updated
-    guard. This is how reality falsifies a wrong guard — memory proposes, reality disposes."""
+    guard. This is how reality falsifies a wrong guard - memory proposes, reality disposes."""
     return _guards.feedback(guard_id, outcome, session_id=session_id, reason=reason)
 
 
 def anticipate(trajectory: str, project: str | None = None, *, k: int = 1,
                use_embeddings: bool = False) -> list[dict]:
-    """Active memory, axis B — predict the failure the current `trajectory` (the plan / files /
+    """Active memory, axis B - predict the failure the current `trajectory` (the plan / files /
     recent steps the agent is about to act on) is heading toward, by resemblance to past
     mistakes. Returns up to `k` `{stem, risk, title, message}` above an adaptive threshold, or
-    `[]` (SILENT, 0 tokens) — one precise warning, never a dump; token spend ∝ predicted risk.
+    `[]` (SILENT, 0 tokens) - one precise warning, never a dump; token spend ∝ predicted risk.
     Lexical by default; `use_embeddings=True` adds a semantic blend when the embedder is free.
     Pair with `guard_feedback`-style `anticipate` feedback to keep a cry-wolf predictor quiet."""
     return _anticipate.anticipate(trajectory, project, k=k, use_embeddings=use_embeddings)
@@ -234,7 +234,7 @@ def anticipate(trajectory: str, project: str | None = None, *, k: int = 1,
 
 def anticipate_feedback(mistake_stem: str, outcome: str) -> dict:
     """Adapt axis B: `outcome` ∈ {'helped','false_alarm'}. A false alarm raises that failure
-    mode's firing bar (Popperian — a cry-wolf predictor goes quiet); 'helped' keeps it
+    mode's firing bar (Popperian - a cry-wolf predictor goes quiet); 'helped' keeps it
     sensitive. Returns the updated per-failure state."""
     return _anticipate.feedback(mistake_stem, outcome)
 
@@ -268,7 +268,7 @@ def remember(title: str, *, project: str, type: str = "pattern",
             "prevention": prevention or "", "supersedes": supersedes or "",
             "entities": ent, "relations": list(relations or [])}
     if not m.acquire_lock(timeout_s=60):
-        raise RuntimeError("vault busy (lock held by another process) — try again")
+        raise RuntimeError("vault busy (lock held by another process) - try again")
     try:
         date = datetime.now().strftime("%Y-%m-%d")
         stem = m.write_typed_note(m.TYPE_FOLDER[type], item, proj, date, tag_list, type)
@@ -285,7 +285,7 @@ def remember(title: str, *, project: str, type: str = "pattern",
 
 
 def remember_lessons(lessons, *, project: str, embed: bool = True) -> list[str]:
-    """Write a BATCH of agent-extracted lessons — the turnkey "the agent is the
+    """Write a BATCH of agent-extracted lessons - the turnkey "the agent is the
     extractor" path (#34). No separate extraction model runs: the agent (Claude Code
     or any LLM) decides what it learned, emits structured lessons, and this persists
     them through the same write path as `remember()`. Each lesson is a dict with keys
@@ -293,7 +293,7 @@ def remember_lessons(lessons, *, project: str, embed: bool = True) -> list[str]:
     `prevention`, `tags`, `supersedes`. Returns the written stems (lessons that are
     malformed, untitled, or rejected as injection-shaped are skipped, not raised).
 
-    One vault lock / one index rebuild / one git commit for the whole batch — so an
+    One vault lock / one index rebuild / one git commit for the whole batch - so an
     agent recording five lessons at end-of-task doesn't produce five commits. Empty
     list → no-op. Raises RuntimeError only if the vault lock can't be acquired."""
     if not project:
@@ -311,7 +311,7 @@ def remember_lessons(lessons, *, project: str, embed: bool = True) -> list[str]:
     if not valid:
         return []
     if not m.acquire_lock(timeout_s=60):
-        raise RuntimeError("vault busy (lock held by another process) — try again")
+        raise RuntimeError("vault busy (lock held by another process) - try again")
     try:
         date = datetime.now().strftime("%Y-%m-%d")
         written, embed_recs = [], []
@@ -325,7 +325,7 @@ def remember_lessons(lessons, *, project: str, embed: bool = True) -> list[str]:
                     "entities": ln.get("entities") or [],
                     "relations": ln.get("relations") or []}
             stem = m.write_typed_note(m.TYPE_FOLDER[typ], item, proj, date, tag_list, typ)
-            if stem:                       # None == rejected (injection-shaped) — skip it
+            if stem:                       # None == rejected (injection-shaped) - skip it
                 written.append(stem)
                 embed_recs.append((stem, typ, proj, title,
                                    item["description"], item["prevention"]))
@@ -359,7 +359,7 @@ def capture_session(text: str, *, project: str | None = None,
     if not m.llm_available():
         raise RuntimeError("no LLM backend (cloud key unset + Ollama down)")
     if not m.acquire_lock(timeout_s=120):
-        raise RuntimeError("could not acquire vault lock — another process is busy")
+        raise RuntimeError("could not acquire vault lock - another process is busy")
     try:
         m.VAULT.mkdir(parents=True, exist_ok=True)
         db = m.load_processed()

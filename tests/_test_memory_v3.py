@@ -55,7 +55,7 @@ def sandbox():
 
 
 # ── C2: generalized project tracking (OS-aware) ───────────────────────
-print("# C2 — tracking generalization")
+print("# C2 - tracking generalization")
 check("configured-root subdir tracked", m.is_tracked_project(os.path.join(_ROOT, "proj")))
 check("configured root itself rejected", not m.is_tracked_project(_ROOT))
 check("system dir excluded", not m.is_tracked_project(_SYSDIR))
@@ -82,7 +82,7 @@ finally:
 
 
 # ── M5: tag normalization ─────────────────────────────────────────────
-print("# M5 — tag vocabulary")
+print("# M5 - tag vocabulary")
 check("space and hyphen collapse to one tag",
       m._norm_tags(["quantum computing", "quantum-computing", "PyTorch"])
       == ["quantum_computing", "pytorch"])
@@ -90,7 +90,7 @@ check("non-str / empty dropped", m._norm_tags(["ok", "", 5, None]) == ["ok"])
 
 
 # ── C1: relevance flag + M4: noise guard ──────────────────────────────
-print("# C1/M4 — relevance + noise helpers")
+print("# C1/M4 - relevance + noise helpers")
 check("relevant default True (missing)", m._is_relevant(None) is True)
 check("relevant False bool", m._is_relevant(False) is False)
 check("relevant 'false' str", m._is_relevant("false") is False)
@@ -99,7 +99,7 @@ check("real update not noise", not m._is_noise_update("Реализован мо
 
 
 # ── H2: embedding prefix / meta consistency ───────────────────────────
-print("# H2 — embed prefix + meta")
+print("# H2 - embed prefix + meta")
 sandbox()
 check("empty cache adopts configured default",
       m.cache_is_prefixed() == m.EMBED_USE_PREFIX)
@@ -113,7 +113,7 @@ check("no prefix when kind None", m._embed_prefix(None) == "")
 
 
 # ── H1: supersession (same-slug, newer date retires older) ────────────
-print("# H1 — supersession")
+print("# H1 - supersession")
 sandbox()
 s1 = m.write_typed_note("Mistakes", {"title": "Cuda OOM", "description": "d1",
                                      "prevention": "p1"}, "proj", "2026-05-01",
@@ -141,7 +141,7 @@ check("explicit supersedes retires named note",
 
 
 # ── C3: fact snippet from a note (description + prevention) ───────────
-print("# C3 — fact snippet")
+print("# C3 - fact snippet")
 sandbox()
 sm = m.write_typed_note("Mistakes", {"title": "VRAM leak",
                                      "description": "CuPy contexts pile up on spawn",
@@ -152,11 +152,11 @@ check("snippet has description", "CuPy" in snip)
 check("snippet has prevention", "reuse" in snip)
 check("fact line bolds title + body",
       m._fact_line({"stem": sm, "ntype": "mistake", "title": "VRAM leak"})
-      .startswith("- **VRAM leak** —"))
+      .startswith("- **VRAM leak** -"))
 
 
 # ── H5: lexical retrieval when the embedder is unavailable ────────────
-print("# H5 — lexical fallback (GPU busy)")
+print("# H5 - lexical fallback (GPU busy)")
 sandbox()
 m.save_embed_cache({
     "2026-05-01-proj-mistake-cuda-oom": {
@@ -200,7 +200,7 @@ finally:
 
 
 # ── M3: head share of truncation grew ─────────────────────────────────
-print("# M3 — transcript head budget")
+print("# M3 - transcript head budget")
 out = m.truncate_smart("A" * 100 + "B" * 50000 + "Z" * 100, 12000)
 sep = "\n\n[...середина транскрипта вырезана...]\n\n"
 head_part = out.split(sep)[0]
@@ -210,7 +210,7 @@ check("head/tail preserved", out.startswith("A" * 100) and out.endswith("Z" * 10
 
 
 # ── M2: hard context byte cap ─────────────────────────────────────────
-print("# M2 — context byte cap is hard")
+print("# M2 - context byte cap is hard")
 d = sandbox()
 m.generate_json = lambda prompt, project=None: {"state": "- compact state line"}
 fp = d / "Context" / "proj.md"
@@ -225,8 +225,8 @@ check("compacted file within cap", len(fp.read_bytes()) <= m.CONTEXT_MAX_BYTES)
 check("state block present", "Накопленное состояние" in fp.read_text(encoding="utf-8"))
 
 
-# ── C1: full pipeline — off-topic session contributes no project knowledge ──
-print("# C1 — relevance gate end-to-end")
+# ── C1: full pipeline - off-topic session contributes no project knowledge ──
+print("# C1 - relevance gate end-to-end")
 d = sandbox()
 m.update_embeddings = lambda notes: None
 m.generate_json = lambda prompt, project=None: {
@@ -295,7 +295,7 @@ check("generic ingest wrote to overridden project",
 
 
 # ── I-5: agent self-write (remember / forget), GPU-free ───────────────
-print("# I-5 — agent self-write")
+print("# I-5 - agent self-write")
 import argparse as _ap
 import remember as rem
 d = sandbox()
@@ -317,7 +317,7 @@ if mist:
 
 
 # ── I-18: RESOLVES edge (mistake <- resolving decision) ───────────────
-print("# I-18 — RESOLVES edge")
+print("# I-18 - RESOLVES edge")
 d = sandbox()
 mk = m.write_typed_note("Mistakes", {"title": "the bug", "description": "it broke"},
                         "proj", "2026-05-01", ["t"], "mistake")
@@ -334,7 +334,7 @@ check("resolved mistake marked in recall snippet",
 
 
 # ── I-7: cross-project transfer (GPU-free lexical path) ───────────────
-print("# I-7 — cross-project transfer")
+print("# I-7 - cross-project transfer")
 sandbox()   # dead store removed (d unused here)
 m.save_embed_cache({
     "2026-05-01-proja-mistake-cuda-oom-spawn": {
@@ -358,7 +358,7 @@ finally:
 
 
 # ── I-14: expanded secret redaction ───────────────────────────────────
-print("# I-14 — secret redaction coverage")
+print("# I-14 - secret redaction coverage")
 red = m.redact_secrets("\n".join([
     "hf_" + "a" * 30,
     "sk_live_" + "b" * 24,
@@ -380,7 +380,7 @@ check("normal prose / short sha survives", "a1b2c3d4 that must survive" in red)
 
 
 # ── I-6: learned user model (structural, GPU-free) ───────────────────
-print("# I-6 — learned user model")
+print("# I-6 - learned user model")
 import build_user_model as um
 d = sandbox()
 m.write_typed_note("Mistakes", {"title": "windows path bug",
@@ -403,7 +403,7 @@ if prof.exists():
 
 
 # ── I-15: structured project card (distilled, GPU-free) ──────────────
-print("# I-15 — structured project card")
+print("# I-15 - structured project card")
 import re as _re
 d = sandbox()
 m.write_typed_note("Decisions", {"title": "use bge-m3 embedder",
@@ -470,13 +470,13 @@ check("compacted file within cap", len(ctx.read_bytes()) <= m.CONTEXT_MAX_BYTES)
 
 
 # ── I-17: scheduled-task self-check / register (mocked schtasks) ──────
-print("# I-17 — scheduled task management")
+print("# I-17 - scheduled task management")
 import manage_tasks as mt
 
 check("three safety-net tasks defined", len(mt.TASKS) == 3)
 check("task names namespaced", all(t["name"].startswith("Nevertwice_") for t in mt.TASKS))
 check("each task points at a .bat wrapper", all(str(t["bat"]).endswith(".bat") for t in mt.TASKS))
-# wrappers are generated at install time, not shipped — point the specs at temp
+# wrappers are generated at install time, not shipped - point the specs at temp
 # files so the register-path checks below stay hermetic.
 import tempfile as _tf
 _wrapdir = Path(_tf.mkdtemp(prefix="anam_wrap_"))
@@ -548,7 +548,7 @@ finally:
 
 
 # ── I-4: task-aware recall on UserPromptSubmit (mocked retrieval) ─────
-print("# I-4 — task-aware prompt recall")
+print("# I-4 - task-aware prompt recall")
 import io as _io
 import contextlib as _ctx
 d = sandbox()
@@ -629,7 +629,7 @@ finally:
 
 
 # ── I-8: MCP server (zero-dep stdio JSON-RPC) ────────────────────────
-print("# I-8 — MCP server")
+print("# I-8 - MCP server")
 _saved_stdout = sys.stdout
 import mcp_server as mcp
 sys.stdout = _saved_stdout              # undo the module's import-time redirect
@@ -738,7 +738,7 @@ finally:
 
 
 # ── I-3: cloud-as-judge rerank (mocked LLM) ──────────────────────────
-print("# I-3 — cloud rerank")
+print("# I-3 - cloud rerank")
 _res = [
     {"stem": "a", "title": "alpha", "description": "x"},
     {"stem": "b", "title": "beta", "description": "y"},
@@ -792,7 +792,7 @@ finally:
 
 
 # ── P-7: SQLite scale index (derived accelerator) ────────────────────
-print("# P-7 — SQLite scale index")
+print("# P-7 - SQLite scale index")
 import index_sqlite as idx
 sandbox()   # dead store removed (d unused here)
 m.save_embed_cache({
@@ -829,7 +829,7 @@ finally:
 
 
 # ── M-3 / M-12 / M-15: decay+salience, age markers, budget injection ─
-print("# M-3/M-12/M-15 — ranking decay, age markers, injection budget")
+print("# M-3/M-12/M-15 - ranking decay, age markers, injection budget")
 sandbox()   # dead store removed (d unused here)
 m.save_embed_cache({
     "2025-01-01-proj-pattern-retry-old": {"vec": [0.1], "ntype": "pattern", "project": "proj",
@@ -903,7 +903,7 @@ finally:
 
 
 # ── M-2 / M-10: contradiction edge, provenance/confidence, injection guard ──
-print("# M-2/M-10 — contradiction edge + provenance + injection guard")
+print("# M-2/M-10 - contradiction edge + provenance + injection guard")
 d = sandbox()
 a = m.write_typed_note("Decisions", {"title": "use adam"}, "proj", "2026-05-01", ["t"], "decision")
 b = m.write_typed_note("Decisions", {"title": "use sgd", "contradicts": "use adam",
@@ -934,7 +934,7 @@ check("M-10 remember rejects injection (rc=2)", rem.do_remember(ns_inj) == 2)
 
 
 # ── M-1 / M-7: sleep-time distillation + dynamic linking (consolidate) ──
-print("# M-1/M-7 — sleep-time distillation + dynamic linking")
+print("# M-1/M-7 - sleep-time distillation + dynamic linking")
 import consolidate_memory as cons
 d = sandbox()
 s1 = m.write_typed_note("Mistakes", {"title": "cache invalidation race",
@@ -983,7 +983,7 @@ finally:
 
 
 # ── M-5 / M-6: bi-temporal point-in-time + graph multi-hop ───────────
-print("# M-5/M-6 — bi-temporal point-in-time + graph multi-hop")
+print("# M-5/M-6 - bi-temporal point-in-time + graph multi-hop")
 d = sandbox()
 m.write_typed_note("Decisions", {"title": "use adam"}, "proj", "2026-05-01", ["t"], "decision")
 m.write_typed_note("Decisions", {"title": "use sgd", "supersedes": "use adam"},
@@ -1022,7 +1022,7 @@ finally:
 
 
 # ── M-4 / M-13 / M-14 / M-11 / M-9: validation, interop, sync, benchmark ──
-print("# M-4/M-13/M-14/M-11/M-9 — staleness · AGENTS.md/OKF · sync · benchmark")
+print("# M-4/M-13/M-14/M-11/M-9 - staleness · AGENTS.md/OKF · sync · benchmark")
 import interop
 import sync as sync_mod
 

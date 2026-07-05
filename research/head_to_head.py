@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
-"""RESEARCH — head-to-head vs the market leaders on the SAME LongMemEval stand (#35).
+"""RESEARCH - head-to-head vs the market leaders on the SAME LongMemEval stand (#35).
 
 The only comparison worth anything is a controlled run where every system ingests the SAME
 940 haystack sessions and is scored on the SAME 500 questions with the SAME metric. This
-file IS that run — and, crucially, it runs the competitors **locally on Ollama + Docker**,
+file IS that run - and, crucially, it runs the competitors **locally on Ollama + Docker**,
 so it needs NO paid API key (the dev box has the GPU for it).
 
 Scoring (identical for every system): each haystack session is ingested tagged with its
 session_id; for each question we retrieve top-k and count a hit when a returned item's
-session_id is in the question's human-annotated answer_session_ids — exactly the metric
+session_id is in the question's human-annotated answer_session_ids - exactly the metric
 `longmem_eval.py` uses for Nevertwice, so the columns are directly comparable. Nevertwice is
 RE-SCORED here through the very same score() on the very same question subset (not pasted
 from its own file), so there is no metric drift between us and them.
@@ -86,7 +86,7 @@ def _dedup(seq):
 
 def score(ranked_by_q: dict, data, pool_ids) -> dict:
     """R@k + MRR over the canonical question subset (questions whose answer sessions are in
-    the pool) — the identical denominator for every system. ranked_by_q maps question_id to
+    the pool) - the identical denominator for every system. ranked_by_q maps question_id to
     a best-first list of retrieved session_ids."""
     relset = set(pool_ids)
     hit = {k: 0 for k in KS}
@@ -121,11 +121,11 @@ def run_nevertwice(data, pool) -> dict:
     if not emb.exists():
         res = HERE / "longmem_results.json"
         if not res.exists():
-            return {"blocked": "no embed cache and no longmem_results.json — run longmem_eval.py --embed --save"}
+            return {"blocked": "no embed cache and no longmem_results.json - run longmem_eval.py --embed --save"}
         d = json.loads(res.read_text(encoding="utf-8")).get("methods", {}).get("hybrid", {})
         return {"recall@1": d.get("recall@1"), "recall@5": d.get("recall@5"),
                 "recall@10": d.get("recall@10"), "mrr": d.get("mrr"),
-                "note": "from committed file (embed cache absent — not re-scored on this subset)",
+                "note": "from committed file (embed cache absent - not re-scored on this subset)",
                 "setup": "local bge-m3 via Ollama (0 deps, no server)"}
     cache = json.loads(emb.read_text(encoding="utf-8"))
     svec, qvec = cache["sessions"], cache["questions"]
@@ -156,7 +156,7 @@ def run_mem0(data, pool) -> dict:
     try:
         from mem0 import Memory
     except ImportError:
-        return {"blocked": "mem0 not installed — `pip install mem0ai ollama`"}
+        return {"blocked": "mem0 not installed - `pip install mem0ai ollama`"}
     infer = ARGS.mem0_infer
     bench_dir = Path(os.environ.get("H2H_DATA") or (Path(tempfile.gettempdir()) / "nevertwice_h2h"))
     store = bench_dir / "qdrant_mem0"
@@ -206,11 +206,11 @@ def run_langmem(data, pool) -> dict:
     try:
         from langgraph.store.memory import InMemoryStore
     except ImportError:
-        return {"blocked": "langgraph not installed — `pip install langgraph langmem langchain-ollama`"}
+        return {"blocked": "langgraph not installed - `pip install langgraph langmem langchain-ollama`"}
     try:
         from langchain_ollama import OllamaEmbeddings
     except ImportError:
-        return {"blocked": "langchain-ollama not installed — `pip install langchain-ollama`"}
+        return {"blocked": "langchain-ollama not installed - `pip install langchain-ollama`"}
     try:
         emb = OllamaEmbeddings(model=EMBED_MODEL, base_url=OLLAMA_BASE)
         store = InMemoryStore(index={"embed": emb, "dims": 1024, "fields": ["text"]})
@@ -243,7 +243,7 @@ def run_amem(data, pool) -> dict:
     try:
         import chromadb
     except ImportError:
-        return {"blocked": "chromadb not installed — `pip install chromadb` (A-MEM uses it as the store)"}
+        return {"blocked": "chromadb not installed - `pip install chromadb` (A-MEM uses it as the store)"}
     try:
         import urllib.request
 
@@ -288,11 +288,11 @@ def run_amem(data, pool) -> dict:
 
 def run_zep(data, pool) -> dict:
     if not (os.environ.get("NEO4J_URI") or os.environ.get("FALKORDB_HOST")):
-        return {"blocked": "Graphiti/Zep needs Neo4j or FalkorDB (Docker) — set NEO4J_URI / FALKORDB_HOST"}
+        return {"blocked": "Graphiti/Zep needs Neo4j or FalkorDB (Docker) - set NEO4J_URI / FALKORDB_HOST"}
     try:
         from graphiti_core import Graphiti                      # noqa: F401
     except ImportError:
-        return {"blocked": "graphiti-core not installed — `pip install graphiti-core`"}
+        return {"blocked": "graphiti-core not installed - `pip install graphiti-core`"}
     return {"blocked": "Graphiti adapter present but the graph build over 940 sessions on a "
             "local LLM is the slow path; bring up the DB + run with H2H_LLM set to attempt."}
 
@@ -301,7 +301,7 @@ def run_cognee(data, pool) -> dict:
     try:
         import cognee                                       # noqa: F401
     except ImportError:
-        return {"blocked": "cognee not installed — `pip install cognee`; configure LLM+embedder "
+        return {"blocked": "cognee not installed - `pip install cognee`; configure LLM+embedder "
                 "to local Ollama (LLM_PROVIDER=ollama, EMBEDDING_PROVIDER=ollama) and a local "
                 "graph/vector store, then add an ingest+search adapter here"}
     return {"blocked": "cognee installed but its graph build over 940 sessions on a local LLM is "
@@ -314,7 +314,7 @@ ADAPTERS = {"nevertwice": run_nevertwice, "mem0": run_mem0, "langmem": run_langm
 
 def main():
     if not le.ORACLE.exists():
-        print("Dataset absent — see data/README.md", file=sys.stderr)
+        print("Dataset absent - see data/README.md", file=sys.stderr)
         sys.exit(1)
     data = json.loads(le.ORACLE.read_text(encoding="utf-8"))
     if ARGS.limit:
@@ -324,7 +324,7 @@ def main():
 
     bar = "=" * 80
     print(bar)
-    print(f"  HEAD-TO-HEAD — LongMemEval-oracle, {len(pool)} sessions / {len(data)} questions")
+    print(f"  HEAD-TO-HEAD - LongMemEval-oracle, {len(pool)} sessions / {len(data)} questions")
     print(f"  same metric as longmem_eval.py · competitors on LOCAL Ollama ({EMBED_MODEL})")
     print(bar)
 
@@ -340,9 +340,9 @@ def main():
     for name in want:
         fn = ADAPTERS.get(name)
         if not fn:
-            print(f"\n— {name} — unknown system (have: {', '.join(ADAPTERS)})")
+            print(f"\n- {name} - unknown system (have: {', '.join(ADAPTERS)})")
             continue
-        print(f"\n— {name} —", flush=True)
+        print(f"\n- {name} -", flush=True)
         t0 = time.time()
         r = fn(data, pool)
         r["_wall_s"] = round(time.time() - t0, 1)
@@ -357,7 +357,7 @@ def main():
                 print("  " + "  ".join(f"{k}={v}" for k, v in extra.items()))
 
     # honest verdict
-    print("\n— VERDICT —")
+    print("\n- VERDICT -")
     ranked = {k: v for k, v in results.items() if isinstance(v, dict) and "recall@5" in v}
     if "nevertwice" in ranked and len(ranked) > 1:
         a = ranked["nevertwice"]["recall@5"]
@@ -366,7 +366,7 @@ def main():
                 continue
             d = a - v["recall@5"]
             verb = "ahead of" if d > 0.01 else ("behind" if d < -0.01 else "tied with")
-            print(f"  Nevertwice (hybrid) R@5 {a:.3f} — {verb} {k} ({v['recall@5']:.3f}, Δ{d:+.3f})")
+            print(f"  Nevertwice (hybrid) R@5 {a:.3f} - {verb} {k} ({v['recall@5']:.3f}, Δ{d:+.3f})")
     else:
         print("  Run ≥2 systems (e.g. --only=nevertwice,mem0) for a head-to-head verdict.")
     print("  NB: same embedder (bge-m3) for everyone → this isolates the MEMORY pipeline, not the")

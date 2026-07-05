@@ -92,7 +92,7 @@ def test_ollama_bad_json_returns_none():
 
 
 def test_ollama_tolerant_missing_commas():
-    # small models drop commas: `{"scores":[10 9 8]}` — the regex fallback must still recover them
+    # small models drop commas: `{"scores":[10 9 8]}` - the regex fallback must still recover them
     st = {"calls": 0, "errors": 0, "prompt_chars": 0}
     with _fake_urlopen({"response": '{"scores":[10 9 8]}'}):
         scores = rr.ollama_rerank("q", ["a", "b", "c"], "test-model", st)
@@ -134,7 +134,7 @@ def test_rocchio_beta0_is_baseline():
 
 def test_source_has_no_personal_data():
     """Privacy regression: the committed modules embed NO personal data. precision_bench DOES read
-    note text at runtime (for the reranker) but ONLY from the local cache — never hard-coded or
+    note text at runtime (for the reranker) but ONLY from the local cache - never hard-coded or
     persisted. Real project/name markers are supplied via NEVERTWICE_PRIVACY_MARKERS locally
     (hard-coding the denylist here would itself leak it into the public repo); the built-in default
     catches generic personal signatures (vault path, email, user home)."""

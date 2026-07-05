@@ -10,10 +10,10 @@
 
 What it does (all idempotent, re-runnable):
   1. Create the memory store dir (default ~/.nevertwice; honours NEVERTWICE_HOME).
-  2. Merge the Claude Code hooks into ~/.claude/settings.json — backing the file up
-     first — so SessionStart / UserPromptSubmit / SessionEnd / PreCompact run the
+  2. Merge the Claude Code hooks into ~/.claude/settings.json - backing the file up
+     first - so SessionStart / UserPromptSubmit / SessionEnd / PreCompact run the
      engine, and PreToolUse runs the active-memory guard before a code-writing tool
-     (Edit/Write/Bash) — silent unless a past mistake is about to repeat. Existing
+     (Edit/Write/Bash) - silent unless a past mistake is about to repeat. Existing
      hooks from other tools are preserved.
   3. Print the MCP-client snippet (Cursor / Claude Desktop / Cline / Zed).
   4. (--ollama) pull bge-m3 + qwen3.  (--tasks) register the scheduled tasks.
@@ -21,7 +21,7 @@ What it does (all idempotent, re-runnable):
      On macOS/Linux --tasks installs three `# nevertwice`-tagged crontab jobs; on
      Windows it registers per-user scheduled tasks. Both are idempotent.
   5. Close with the options the user has: profiles, and how to bring in projects
-     they already have — so a first-time install is self-explanatory.
+     they already have - so a first-time install is self-explanatory.
 
 Uses the current interpreter (sys.executable); no hard-coded paths.
 """
@@ -65,11 +65,11 @@ def store_dir() -> Path:
     if explicit:
         return Path(os.path.expanduser(explicit))
     new, old = Path.home() / ".nevertwice", Path.home() / ".anamnesis"
-    # v1 installs keep their existing store in place — we never relocate user data silently
+    # v1 installs keep their existing store in place - we never relocate user data silently
     return old if (old.exists() and not new.exists()) else new
 
 
-# Derived / machine-local files: regenerated every run, so they are gitignored —
+# Derived / machine-local files: regenerated every run, so they are gitignored -
 # cross-machine sync then only ever merges real memory (typed notes, Context,
 # Sessions), never these (audit H4). Index.md and User/profile.md are rebuilt each
 # session; .processed_sessions.json is per-machine processing state.
@@ -103,7 +103,7 @@ def ensure_gitignore(d: Path) -> None:
     if DRY:
         print(f"  would add {len(missing)} line(s) to .gitignore")
         return
-    header = "" if existing else ("# Nevertwice store — derived/local files "
+    header = "" if existing else ("# Nevertwice store - derived/local files "
                                   "(regenerated; kept out of git for clean sync)\n")
     body = (existing.rstrip() + "\n" if existing.strip() else "") + header + \
         "\n".join(missing) + "\n"
@@ -149,7 +149,7 @@ def wire_hooks() -> None:
         if ours:
             # a bare substring match used to report "already present" even when the hook
             # pointed at a MOVED/stale copy, so a reinstall never repointed it (code-review
-            # 2026-07). Update the command in place — never append a second hook beside a
+            # 2026-07). Update the command in place - never append a second hook beside a
             # stale one (that would double-fire every event).
             for h in ours:
                 if h.get("command") != _cmd():
@@ -191,7 +191,7 @@ def mcp_snippet() -> None:
 
 def pull_models() -> None:
     if not shutil.which("ollama"):
-        print("[ollama] not found on PATH — skip (install from https://ollama.com)")
+        print("[ollama] not found on PATH - skip (install from https://ollama.com)")
         return
     # Embedder + extraction model defaults, read from the package so install never
     # drifts from the runtime defaults (audit L-b).
@@ -246,7 +246,7 @@ def _register_tasks_cron() -> None:
     """Idempotently install the periodic jobs into the user's crontab (POSIX).
     Each line is tagged `# nevertwice` so re-running replaces, never duplicates."""
     if not shutil.which("crontab"):
-        print("[cron] `crontab` not found — add these lines to your scheduler manually:")
+        print("[cron] `crontab` not found - add these lines to your scheduler manually:")
         for script, args, sched in _JOBS:
             print(f"    {sched} {PYTHON} {PKG / script} {args}".rstrip())
         return
@@ -272,7 +272,7 @@ def detect_backends() -> None:
     sys.path.insert(0, str(PKG))
     try:
         import memory_hook as _m
-        print("[backends] auto-detected (zero config — override in .env only if you want to):")
+        print("[backends] auto-detected (zero config - override in .env only if you want to):")
         print(_m.backend_report())
     except Exception as exc:                       # detection is best-effort, never fatal
         print(f"[backends] detection skipped ({type(exc).__name__})")
@@ -290,7 +290,7 @@ def configure_profile() -> str | None:
     valid = {"coding", "research", "general"}
     parts = [p.strip().lower() for p in raw.split(",") if p.strip()]
     if not parts or any(p not in valid for p in parts):
-        print(f"[profile] --profile expects a comma-list of {sorted(valid)}; got {raw!r} — skipped")
+        print(f"[profile] --profile expects a comma-list of {sorted(valid)}; got {raw!r} - skipped")
         return None
     value = ",".join(dict.fromkeys(parts))         # dedup, preserve order
     envf = PKG / ".env"
@@ -307,9 +307,9 @@ def configure_profile() -> str | None:
 
 
 def print_next_steps(profile: str | None) -> None:
-    """The closing message: spell out the choices a new user actually has — which
+    """The closing message: spell out the choices a new user actually has - which
     profile is active and how to change it, and how to bring in projects they already
-    have — so onboarding never leaves the Brain layer or backfill undiscovered."""
+    have - so onboarding never leaves the Brain layer or backfill undiscovered."""
     active = profile or "coding"
     brain_on = any(p in active for p in ("research", "general"))
     print("\n--- Your options " + "-" * 47)
@@ -331,7 +331,7 @@ def print_next_steps(profile: str | None) -> None:
 
 
 def main() -> int:
-    print(f"Nevertwice installer ({'DRY-RUN' if DRY else 'apply'}) — python {PYTHON}\n")
+    print(f"Nevertwice installer ({'DRY-RUN' if DRY else 'apply'}) - python {PYTHON}\n")
     ensure_store()
     wire_hooks()
     profile = configure_profile()
@@ -345,7 +345,7 @@ def main() -> int:
     mcp_snippet()
     print_next_steps(profile)
     print("\nDone. Restart your agent so the new hooks load."
-          + ("  (dry-run — nothing was written)" if DRY else ""))
+          + ("  (dry-run - nothing was written)" if DRY else ""))
     return 0
 
 

@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""RESEARCH — end-to-end QA-accuracy on LongMemEval-oracle (answer-correctness).
+"""RESEARCH - end-to-end QA-accuracy on LongMemEval-oracle (answer-correctness).
 
 Companion to `longmem_eval.py` (which reports retrieval recall@k). This adds the
-*answer* axis: retrieve -> read -> answer -> LLM-judge against the gold answer — the
+*answer* axis: retrieve -> read -> answer -> LLM-judge against the gold answer - the
 same metric vendors quote as "X% on LongMemEval" (e.g. memanto's 89.8%). We report it
 on the comparable axis and stay honest about two things vendors usually elide:
 
@@ -11,9 +11,9 @@ on the comparable axis and stay honest about two things vendors usually elide:
      used automatically if present (same router as production). The judge is stamped
      into the results so the number is never quoted naked.
   2. The retrieval SETTING:
-       * oracle    — context = the gold evidence sessions (`answer_session_ids`):
+       * oracle    - context = the gold evidence sessions (`answer_session_ids`):
                      the answer/reasoning CEILING given perfect retrieval.
-       * retrieved — context = our shipped hybrid ranker's top-k over the 940-session
+       * retrieved - context = our shipped hybrid ranker's top-k over the 940-session
                      global pool: the FULL pipeline, the number comparable to vendors.
      The gap between the two is exactly how much retrieval (not the LLM) costs us.
 
@@ -50,7 +50,7 @@ DATA = HERE / "data"
 QTYPES_ORDER = ("single-session-user", "single-session-assistant", "single-session-preference",
                 "multi-session", "temporal-reasoning", "knowledge-update")
 
-# CLI flags are read only as a script — importing this module (e.g. from a test) must
+# CLI flags are read only as a script - importing this module (e.g. from a test) must
 # NOT pick up the importer's sys.argv (the longmem_eval audit caught exactly this).
 _ARGV = sys.argv if __name__ == "__main__" else []
 LIMIT = next((int(a.split("=", 1)[1]) for a in _ARGV if a.startswith("--limit=")), None)
@@ -81,7 +81,7 @@ REASONER = "--reasoner" in _ARGV
 REASONER_MODEL = next((a.split("=", 1)[1] for a in _ARGV if a.startswith("--reasoner-model=")),
                       "deepseek-reasoner")
 # --xrerank: in the retrieved setting, re-order the calibrated-fusion top-N with the trained
-# cross-encoder (bge-reranker-v2-m3) before taking top-k — the product lever the k=10 negative
+# cross-encoder (bge-reranker-v2-m3) before taking top-k - the product lever the k=10 negative
 # result pointed at (ranking precision, not recall depth). Needs torch+transformers (opt-in).
 XRERANK = "--xrerank" in _ARGV
 XRERANK_N = int(next((a.split("=", 1)[1] for a in _ARGV if a.startswith("--xrerank-n=")), "30"))
@@ -105,7 +105,7 @@ MODEL ANSWER: {pred}
 
 # --cot variant: let the model reason before committing to the final answer. The judge still
 # scores only `answer`, but the scratch space lifts the date-arithmetic / cross-session
-# categories — which is how a memory is used in practice (the agent reasons over what it recalled).
+# categories - which is how a memory is used in practice (the agent reasons over what it recalled).
 ANSWER_PROMPT_COT = """You answer a question using ONLY the CONTEXT below, which are excerpts from a user's past chat sessions with an assistant. Reason step by step over the relevant facts and any dates, then give the final concise answer. If the context lacks the answer, give your single best one-sentence guess from what is present. Reply ONLY as JSON: {{"reasoning": "<brief step-by-step>", "answer": "<your concise final answer>"}}.
 
 CONTEXT:
@@ -125,7 +125,7 @@ def make_deepseek_reasoner(model="deepseek-reasoner", timeout=240, retries=3):
     import os
     key = os.environ.get("DEEPSEEK_API_KEY", "").strip()
     if not key:
-        raise RuntimeError("DEEPSEEK_API_KEY is not set — needed for --reasoner")
+        raise RuntimeError("DEEPSEEK_API_KEY is not set - needed for --reasoner")
 
     def _call(prompt):
         body = json.dumps({"model": model,
@@ -179,7 +179,7 @@ def _save_cache(c: dict) -> None:
 def _context(sids, pool, budget) -> str:
     """Concatenate the chosen sessions as the answer model's context, within `budget`
     chars total (so the prompt fits a 16k-ctx local model). Raw session text in original
-    turn order, an equal char slice each — an answer model wants coherent context, not the
+    turn order, an equal char slice each - an answer model wants coherent context, not the
     high-overlap line cherry-picking a *reranker* wants (that excerpting lives in
     longmem_eval._passage and is deliberately NOT used here)."""
     sids = [s for s in sids if s in pool]
@@ -190,7 +190,7 @@ def _context(sids, pool, budget) -> str:
 
 
 def _rank_topk(qvec_row, pool_ids, svec, bm, qtokens):
-    """The shipped hybrid ranker (calibrated score fusion) at session level — identical
+    """The shipped hybrid ranker (calibrated score fusion) at session level - identical
     to longmem_eval's `hybrid`. Returns pool ids best-first."""
     cos = {s: m.cosine(qvec_row, svec[s]) for s in pool_ids}
     bmv = le.bm25_scores(qtokens, pool_ids, *bm)
@@ -204,7 +204,7 @@ def evaluate(data, pool, settings, k, budget, llm, *, svec=None, qvec=None,
     """Core loop, LLM injected for testability. `llm(prompt) -> dict` is the production
     router (memory_hook.generate_json); a {} return means the backend is down, which
     invalidates the metric, so we raise rather than silently score those wrong.
-    `concurrency` > 1 runs the per-question (answer→judge) pipeline across a thread pool —
+    `concurrency` > 1 runs the per-question (answer→judge) pipeline across a thread pool -
     questions are independent, so a cloud judge with no rate cap finishes ~Nx faster; the
     default sequential path is byte-identical and is what the tests and local Ollama use.
     A distinct `judge_llm` holds the grader constant while the answerer changes (the
@@ -220,7 +220,7 @@ def evaluate(data, pool, settings, k, budget, llm, *, svec=None, qvec=None,
             sids = list(e["answer_session_ids"])
         else:
             if not qvec or qid not in qvec:
-                return None                                      # never embedded — skip, don't fake
+                return None                                      # never embedded - skip, don't fake
             ranked = _rank_topk(qvec[qid], pool_ids, svec, bm, m._tokens(e["question"]))
             sids = rerank_fn(e["question"], ranked, k) if rerank_fn else ranked[:k]
         # config-aware key: budget/k/cot/rerank change → fresh answer, so re-runs don't reuse stale ctx
@@ -231,7 +231,7 @@ def evaluate(data, pool, settings, k, budget, llm, *, svec=None, qvec=None,
         ctx = _context(sids, pool, budget)
         ares = llm((ANSWER_PROMPT_COT if cot else ANSWER_PROMPT).format(context=ctx, question=e["question"]))
         if not ares:
-            raise RuntimeError("LLM backend returned nothing on an ANSWER call — is the "
+            raise RuntimeError("LLM backend returned nothing on an ANSWER call - is the "
                                "backend up / a key set? (prior answers are cached)")
         pred = (ares.get("answer") or "") if isinstance(ares, dict) else ""
         jres = judge_llm(JUDGE_PROMPT.format(question=e["question"], gold=e["answer"], pred=pred))
@@ -241,7 +241,7 @@ def evaluate(data, pool, settings, k, budget, llm, *, svec=None, qvec=None,
 
     def _safe(it):
         """Run one item; return (ck, verdict) or (ck, None) on a transient failure so a
-        single dead call never aborts a 500-question run — failures are retried, then
+        single dead call never aborts a 500-question run - failures are retried, then
         excluded from the metric with a logged count rather than crashing or faking a score."""
         try:
             return it[3], _answer_and_judge(it[0], it[2])
@@ -286,11 +286,11 @@ def evaluate(data, pool, settings, k, budget, llm, *, svec=None, qvec=None,
         if missing and len(missing) == len(todo) and todo:
             # nothing at all got answered → the backend is down, not flaky: fail loudly
             # (preserves the "no key / Ollama down" contract) rather than report 0/0.
-            raise RuntimeError("LLM backend returned nothing for every question — is the "
+            raise RuntimeError("LLM backend returned nothing for every question - is the "
                                "backend up / a key set? (prior answers are cached)")
         if missing:
             print(f"  [{setting}] WARNING: {len(missing)}/{len(items)} questions had no "
-                  f"backend response after retries — EXCLUDED from accuracy (not scored wrong).",
+                  f"backend response after retries - EXCLUDED from accuracy (not scored wrong).",
                   file=sys.stderr)
         cc, tt = collections.Counter(), collections.Counter()   # correct / total per type
         for e, qtype, sids, ck in items:
@@ -319,7 +319,7 @@ def run():
     data, pool = le.load()                       # full 940-session pool (le.LIMIT is None on import)
     if LIMIT:
         data = data[:LIMIT]                      # answer only the first N questions; pool stays full
-    if STRATIFY:                                 # N per type — a balanced sample, pool still full
+    if STRATIFY:                                 # N per type - a balanced sample, pool still full
         bytype = {}
         for e in data:
             bytype.setdefault(e.get("question_type", "?"), []).append(e)
@@ -328,7 +328,7 @@ def run():
     svec = qvec = pool_ids = bm = None
     if "retrieved" in settings:
         if not le.EMB.exists():
-            print("No embeddings cache — run: python research/longmem_eval.py --embed", file=sys.stderr)
+            print("No embeddings cache - run: python research/longmem_eval.py --embed", file=sys.stderr)
             sys.exit(1)
         emb = json.loads(le.EMB.read_text(encoding="utf-8"))
         svec, qvec = emb["sessions"], emb["questions"]
@@ -370,7 +370,7 @@ def run():
             print("--xrerank needs torch+transformers (pip install nevertwice-memory[reranker])",
                   file=sys.stderr)
             sys.exit(1)
-        print(f"[qa] xrerank ON — {rc.MODEL}, fusion top-{XRERANK_N} → cross-encoder → top-{K}",
+        print(f"[qa] xrerank ON - {rc.MODEL}, fusion top-{XRERANK_N} → cross-encoder → top-{K}",
               file=sys.stderr)
 
         def rerank_fn(question, ranked, k):
@@ -405,7 +405,7 @@ def run():
 
     bar = "=" * 74
     print(bar)
-    print("  LongMemEval-oracle — END-TO-END QA ACCURACY (answer-correctness)")
+    print("  LongMemEval-oracle - END-TO-END QA ACCURACY (answer-correctness)")
     print(f"  judge={model}   embedder={m.EMBED_MODEL}   k={K}   budget={CHAR_BUDGET} chars")
     print(bar)
     for setting in settings:
@@ -429,7 +429,7 @@ def run():
             "embedder": m.EMBED_MODEL, "answer_model": model, "judge_model": model,
             "backend": backend, "k": K, "char_budget": CHAR_BUDGET, "cot": COT,
             "reader_model": model, "reasoner": REASONER,
-            "metric": "answer-accuracy (LLM-judge vs gold answer) — comparable to vendor "
+            "metric": "answer-accuracy (LLM-judge vs gold answer) - comparable to vendor "
                       "'X% on LongMemEval' headlines",
             "settings": results,
         }

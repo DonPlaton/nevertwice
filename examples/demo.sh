@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Nevertwice 25-second demo — the "it remembered" moment, for the README GIF.
+# Nevertwice 25-second demo - the "it remembered" moment, for the README GIF.
 # Self-contained: uses a throwaway temp store (your real vault is untouched).
 # Best with Ollama running (semantic recall); falls back to lexical without it.
 #
@@ -19,7 +19,7 @@ run x "python nevertwice/remember.py --project demo --type mistake \
   --prevention 'lower batch size or enable gradient checkpointing'"
 run x "python nevertwice/remember.py --project demo --type pattern \
   --title 'Crash-safe writes' \
-  --prevention 'write to a tmp file then os.replace — never partial files'"
+  --prevention 'write to a tmp file then os.replace - never partial files'"
 run x "python nevertwice/remember.py --project demo --type decision \
   --title 'Chose Postgres over Mongo' \
   --prevention 'relational integrity mattered more than schema flexibility'"
@@ -27,7 +27,7 @@ run x "python nevertwice/remember.py --project demo --type decision \
 say "② Days later. A fresh agent, a new prompt. Does it remember?"
 run x "python nevertwice/memory_search.py 'training keeps crashing out of gpu memory' demo"
 
-say "③ Different topic — still finds the right lesson, not keyword soup:"
+say "③ Different topic - still finds the right lesson, not keyword soup:"
 run x "python nevertwice/memory_search.py 'how should I persist files safely' demo"
 
 say "④ And it knows when it doesn't know (calibrated abstention):"

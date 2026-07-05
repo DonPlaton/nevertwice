@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generic capture — give ANY agent long-term memory, not just Claude Code.
+"""Generic capture - give ANY agent long-term memory, not just Claude Code.
 
 Claude Code feeds sessions in through the hook; everyone else uses this. Collect an
 agent's turns in a `MemorySession`, and on close the whole session is run through the
@@ -68,7 +68,7 @@ class MemorySession:
 
     `with MemorySession(...) as mem:` extracts on a clean exit (unless extract=False).
     `flush()` extracts on demand and returns api.capture_session's summary dict. The
-    session is agent-agnostic — feed it turns from any framework or none."""
+    session is agent-agnostic - feed it turns from any framework or none."""
 
     def __init__(self, project: str | None = None, agent: str | None = None,
                  session_id: str | None = None, *, extract: bool = True,
@@ -80,13 +80,13 @@ class MemorySession:
         self.turns: list[tuple[str, str]] = []
         self.result: dict | None = None
         # auto_flush: mine whatever is buffered at interpreter exit, so an API agent never
-        # has to remember to call flush() — capture becomes hands-off. flush() resets the
+        # has to remember to call flush() - capture becomes hands-off. flush() resets the
         # buffer, so an explicit flush at a conversation boundary makes the atexit one a no-op.
         if auto_flush:
             atexit.register(self._flush_quietly)
 
     def _flush_quietly(self) -> None:
-        """flush(), but swallow everything — runs at interpreter shutdown where a raised
+        """flush(), but swallow everything - runs at interpreter shutdown where a raised
         exception (no LLM, lock busy) would be noise, not signal. Turns are kept on failure
         by flush() itself, so nothing is silently lost mid-run."""
         try:
@@ -112,11 +112,11 @@ class MemorySession:
         return "\n\n".join(f"{role}: {text}" for role, text in self.turns)
 
     def flush(self) -> dict:
-        """Extract from the collected turns, then RESET — so a later flush() does not
+        """Extract from the collected turns, then RESET - so a later flush() does not
         re-extract the same turns and duplicate notes in the vault (audit 2026-06-18 CRIT).
-        No-op (stored=False) when empty. If extraction fails — whether it raises (no LLM /
+        No-op (stored=False) when empty. If extraction fails - whether it raises (no LLM /
         lock busy) or returns stored=False without raising (malformed LLM JSON, a transient
-        cloud error) — the turns are KEPT so the caller (or the atexit auto-flush) can retry
+        cloud error) - the turns are KEPT so the caller (or the atexit auto-flush) can retry
         without losing the conversation (code-review 2026-07, HIGH: the non-raising failure
         used to wipe the buffer with nothing left to retry)."""
         if not self.turns:
@@ -125,14 +125,14 @@ class MemorySession:
         self.result = _api.capture_session(self.transcript, project=self.project,
                                            agent=self.agent, session_id=self.session_id)
         if self.result.get("stored"):
-            self.turns = []      # consumed — a second flush must not re-mine the same turns
+            self.turns = []      # consumed - a second flush must not re-mine the same turns
         return self.result
 
     def __enter__(self) -> "MemorySession":
         return self
 
     def __exit__(self, exc_type, exc, tb) -> bool:
-        # only auto-extract on a clean exit — a crashing agent shouldn't have its
+        # only auto-extract on a clean exit - a crashing agent shouldn't have its
         # half-session mined for lessons; the caller can still flush() explicitly.
         if self.extract and exc_type is None and self.turns:
             self.flush()
@@ -143,10 +143,10 @@ def capture_chat(project: str | None = None, agent: str | None = None, *,
                  session_id: str | None = None, auto_flush: bool = False):
     """Decorator for an OpenAI-style chat fn `f(messages, ...) -> reply`. Each call logs the
     latest user turn and the reply into a single shared `wrapper.memory` (a MemorySession).
-    Call `wrapper.memory.flush()` at each conversation boundary to extract durable lessons —
+    Call `wrapper.memory.flush()` at each conversation boundary to extract durable lessons -
     flush() resets the buffer, so the next conversation starts clean. For a short-lived
     script, pass `auto_flush=True` to mine whatever is buffered at process exit so you don't
-    have to call anything (off by default — a long-running service should flush per
+    have to call anything (off by default - a long-running service should flush per
     conversation, not dump a whole day's turns as one session at shutdown). One shared
     session is deliberate (one decorated bot = one rolling memory); for concurrent or
     multi-user chats, give each conversation its own MemorySession. One line, no rewrite."""
@@ -171,7 +171,7 @@ def capture_chat(project: str | None = None, agent: str | None = None, *,
 # ── Drop-in proxy for OpenAI-style clients (the "magic" for API agents) ───────
 
 def _reply_text(resp) -> str:
-    """Best-effort assistant text from an OpenAI-style response — chat.completions
+    """Best-effort assistant text from an OpenAI-style response - chat.completions
     (`.choices[0].message.content`) or the Responses API (`.output_text`). Anything we
     can't parse returns '' so capture is skipped, never wrong."""
     try:
@@ -199,7 +199,7 @@ _CREATE_PATHS = {("chat", "completions", "create"), ("responses", "create")}
 
 class _CapturingProxy:
     """Transparent attribute proxy over an OpenAI-style client. It intercepts only the
-    `<client>.chat.completions.create(...)` and `<client>.responses.create(...)` calls —
+    `<client>.chat.completions.create(...)` and `<client>.responses.create(...)` calls -
     logging the user turn + the reply into a shared MemorySession, then returning the real
     response untouched. Every other attribute passes straight through. Capture is
     best-effort: any parsing error is swallowed, so the proxy can never break a real call."""
@@ -215,7 +215,7 @@ class _CapturingProxy:
         sess = object.__getattribute__(self, "_sess")
         path = object.__getattribute__(self, "_path") + (name,)
         # `proxy.memory` → the MemorySession (for an explicit flush()). Only at the top
-        # level, and only if the wrapped client has no real `.memory` — so we never
+        # level, and only if the wrapped client has no real `.memory` - so we never
         # silently shadow a genuine client attribute (audit 2026-06-18).
         if (name == "memory" and not object.__getattribute__(self, "_path")
                 and not hasattr(target, "memory")):
@@ -224,7 +224,7 @@ class _CapturingProxy:
         if path in _CREATE_PATHS and callable(attr):
             return self._wrap_create(attr, sess)
         # descend through namespace objects toward a create() path. Gate on PATH being a
-        # strict prefix of a create path — not on callability (some SDK resource objects
+        # strict prefix of a create path - not on callability (some SDK resource objects
         # are callable, which the old check wrongly skipped).
         if any(len(cp) > len(path) and cp[:len(path)] == path for cp in _CREATE_PATHS):
             return _CapturingProxy(attr, sess, path)
@@ -256,7 +256,7 @@ class _CapturingProxy:
 
 def auto_capture(client, project: str | None = None, agent: str | None = None, *,
                  session_id: str | None = None, auto_flush: bool = False):
-    """Wrap an OpenAI-style client so every chat/responses call is captured automatically —
+    """Wrap an OpenAI-style client so every chat/responses call is captured automatically -
     no decorator, no per-call logging, no rewrite. Works with any client that exposes the
     OpenAI shape (`openai`, Azure OpenAI, Groq, Together, DeepSeek, Ollama's OpenAI-compat …):
 
@@ -265,7 +265,7 @@ def auto_capture(client, project: str | None = None, agent: str | None = None, *
         client = auto_capture(OpenAI(), project="myproj", agent="my-bot")
         client.chat.completions.create(model="gpt-4o", messages=[...])   # captured
 
-    The wrapped client behaves exactly like the original — every attribute passes through;
+    The wrapped client behaves exactly like the original - every attribute passes through;
     only the create() calls are observed. Call `client.memory.flush()` at a conversation
     boundary to extract lessons, or pass `auto_flush=True` for a short script to mine the
     buffer at process exit automatically."""

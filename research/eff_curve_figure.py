@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""RESEARCH — the eff-vs-capability curve for the Active Memory live validation.
+"""RESEARCH - the eff-vs-capability curve for the Active Memory live validation.
 
 Reads the saved `live_validation*.json` runs across models of increasing capability and plots how
 much of a delivered memory the agent actually *applies* (`eff`) as a function of model strength.
-The finding: memory's payoff scales monotonically with the agent — and, on project-specific
+The finding: memory's payoff scales monotonically with the agent - and, on project-specific
 knowledge, jumps sharply around ~7B, i.e. a small model often cannot apply a fact even when told.
 Memory removes the knowledge bottleneck, not the capability one.
 
@@ -35,7 +35,7 @@ def main():
         matplotlib.use("Agg")
         import matplotlib.pyplot as plt
     except Exception as e:
-        print(f"[eff_curve skipped: matplotlib unavailable — {e}]")
+        print(f"[eff_curve skipped: matplotlib unavailable - {e}]")
         return
 
     labels, eff, effp, base = [], [], [], []
@@ -52,9 +52,9 @@ def main():
     green, blue, grey = "#2ea043", "#1f6feb", "#8b949e"
 
     fig, ax = plt.subplots(figsize=(8.6, 5.0))
-    ax.plot(x, eff, "-o", color=green, lw=2.4, ms=9, label="eff — overall (memory applied)")
+    ax.plot(x, eff, "-o", color=green, lw=2.4, ms=9, label="eff - overall (memory applied)")
     ax.plot(x, effp, "--s", color=blue, lw=2.2, ms=8,
-            label="eff — project-specific (unknowable facts)")
+            label="eff - project-specific (unknowable facts)")
     ax.plot(x, base, ":^", color=grey, lw=1.6, ms=7, label="base error rate (no memory)")
     for xi, v in zip(x, eff):
         ax.annotate(f"{v:.2f}", (xi, v), textcoords="offset points", xytext=(0, 9),
@@ -67,7 +67,7 @@ def main():
     ax.set_ylim(0, 1.0)
     ax.set_ylabel("fraction (higher = memory helps more)")
     ax.set_xlabel("agent capability  →")
-    ax.set_title("Memory's payoff scales with the agent — and jumps ~7B on project knowledge\n"
+    ax.set_title("Memory's payoff scales with the agent - and jumps ~7B on project knowledge\n"
                  "(memory removes the knowledge bottleneck, not the capability one)", fontsize=11)
     ax.legend(fontsize=9, loc="center right")
     ax.grid(alpha=0.25)

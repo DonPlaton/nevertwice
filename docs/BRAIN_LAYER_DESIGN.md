@@ -1,7 +1,7 @@
-# Brain Layer — Design
+# Brain Layer - Design
 
 Status: **implemented** (F1 entity layer + profiles · F2 entity cards · F4 SQLite scale-tier ·
-F3 temporal/evolution · F5 salience · invariant tests — all green). This doc is the contract the
+F3 temporal/evolution · F5 salience · invariant tests - all green). This doc is the contract the
 implementation follows. Anything not consistent with the **Invariants** section is a bug, not a
 feature. Guards live in `nevertwice/_test_brain*.py` (102 checks); the invariants are enforced by
 `_test_brain_invariants.py` (separation · budget byte-parity on/off · privacy · opt-in).
@@ -10,24 +10,24 @@ feature. Guards live in `nevertwice/_test_brain*.py` (102 checks); the invariant
 
 Nevertwice today is *operational* memory for a coding agent: one fact per file
 (mistake / pattern / decision), auto-captured from finished sessions, injected
-token-lean at SessionStart and per-prompt. It has no durable *world knowledge* — the
+token-lean at SessionStart and per-prompt. It has no durable *world knowledge* - the
 cross-session entities a user actually thinks in (for a researcher: papers, methods,
 datasets, experiments; for a generalist: topics, people, works, ideas).
 
-GBrain (Garry Tan) ships exactly such a "Brain" layer — a self-wiring entity graph —
+GBrain (Garry Tan) ships exactly such a "Brain" layer - a self-wiring entity graph -
 but on a VC's ontology (people / companies / `invested_in`), backed by Postgres, and
 fed by *manual* capture. We take the **idea**, not the implementation:
 
 - **Re-ontologised** to the user's real world (research / general), not a VC's.
-- **Auto-fed** from the sessions Nevertwice already mines — no manual capture.
-- **Zero-dep / local / markdown** — no Postgres, no external service; SQLite (stdlib)
+- **Auto-fed** from the sessions Nevertwice already mines - no manual capture.
+- **Zero-dep / local / markdown** - no Postgres, no external service; SQLite (stdlib)
   is the only scale tier.
 
 The payoff also serves the core mission (*agents burn context re-deriving what they
 already knew*): one dense entity card replaces re-reading N files to reconstruct
 "what do we know about method X across all projects".
 
-## 2. Invariants (non-negotiable — the philosophy)
+## 2. Invariants (non-negotiable - the philosophy)
 
 1. **Budget.** Hot-path injection (SessionStart card + UserPromptSubmit recall) stays
    char-budget-bounded (`INJECT_BUDGET_CHARS`). Byte-for-byte unchanged from today for
@@ -41,7 +41,7 @@ already knew*): one dense entity card replaces re-reading N files to reconstruct
    `sqlite3` for scale. No Postgres / pgvector / external services / new pip deps.
 4. **Local-first privacy.** Brain extraction obeys `LOCAL_ONLY` (per-project AND
    per-agent). Research IP can be pinned to local Ollama; cloud stays unreachable-by-code
-   for gated projects/agents — same gate as session extraction.
+   for gated projects/agents - same gate as session extraction.
 5. **Opt-in.** The Brain layer is OFF by default. It turns on only per the onboarding
    profile. A default ("coding") user gets today's lean system, unchanged.
 
@@ -53,7 +53,7 @@ First run asks once: **"What will you use Nevertwice for?"** (multi-select):
 
 | Profile     | Brain layer | Ontology enabled                                   |
 |-------------|-------------|----------------------------------------------------|
-| `coding`    | OFF (default) | — (sessions → mistakes/patterns/decisions only)  |
+| `coding`    | OFF (default) | - (sessions → mistakes/patterns/decisions only)  |
 | `research`  | ON          | paper, method, architecture, model, dataset, benchmark, metric, task, concept, experiment, result, tool, venue, person |
 | `general`   | ON          | topic, person, place, work, idea                   |
 
@@ -65,14 +65,14 @@ First run asks once: **"What will you use Nevertwice for?"** (multi-select):
 
 ## 4. Features
 
-### F1 — Entity layer (extends `graph.py`)
+### F1 - Entity layer (extends `graph.py`)
 - First-class entity **types** beyond code symbols, gated by active profile:
   - research (wide): `paper`, `method`, `architecture`, `model`, `dataset`, `benchmark`,
     `metric`, `task`, `concept`, `experiment`, `result`, `tool`, `venue`, `person`
   - general:  `topic`, `person`, `place`, `work`, `idea`
-- Typed **edge hints** (`config.RELATION_HINTS`, suggested not allow-listed): research —
+- Typed **edge hints** (`config.RELATION_HINTS`, suggested not allow-listed): research -
   `cites`, `builds-on`, `extends`, `evaluated-on`, `trained-on`, `reproduces`, `refutes`,
-  `outperforms`, `authored-by`, `submitted-to`; general — `relates-to`, `part-of`, `influenced-by`.
+  `outperforms`, `authored-by`, `submitted-to`; general - `relates-to`, `part-of`, `influenced-by`.
 - **Extraction**: the SessionEnd / sleep-time extractor gains an entity pass, added to
   the prompt ONLY when a Brain profile is active. Recognises arXiv IDs, method/arch
   names, metric names, dataset names. Runs on the SAME backend routing (local Ollama for
@@ -80,36 +80,36 @@ First run asks once: **"What will you use Nevertwice for?"** (multi-select):
 - **Storage**: entities + edges in the graph; entity notes live under a dedicated
   `Entities/` namespace **excluded from the default recall pool** (Invariant 2).
 
-### F2 — Entity cards (generalise the project card)
+### F2 - Entity cards (generalise the project card)
 - A distilled, regenerated card per first-class entity, aggregating every note/session
   touching it: what it is · where used (cross-project) · what reproduced/failed ·
   related entities · timeline.
 - Generated sleep-time / on-demand; stored as markdown; **pull-only** (search / MCP /
   explicit request), never auto-injected. Reuses the project-card machinery.
 
-### F3 — Temporal / evolution
+### F3 - Temporal / evolution
 - Each entity carries a timeline: first-seen, mentions over time, and how the take
   evolved (supersession chain over the entity's facts).
 - Surfaced inside the entity card and on demand. Builds on the `research/`
   temporal-graph prototype.
 
-### F4 — SQLite scale-tier
+### F4 - SQLite scale-tier
 - Promote the optional SQLite FTS5 + vector index to the official scale path. Markdown
   stays the source of truth; SQLite is derived and rebuildable.
 - Index entities/edges for fast faceted + graph queries. Verify hybrid recall stays
-  fast at 10K–100K notes.
+  fast at 10K-100K notes.
 
-### F5 — Salience (sleep-time)
+### F5 - Salience (sleep-time)
 - `consolidate_memory.py` scores note salience as pure graph **centrality** (inbound relation
-  edges + co-occurrence degree) — the signal ORTHOGONAL to recurrence, which the ranker already
+  edges + co-occurrence degree) - the signal ORTHOGONAL to recurrence, which the ranker already
   applies separately (folding recurrence into salience too would double-count it). Stamped into
   frontmatter, read as a gentle ranking nudge and a keep-over-archive prior. Runs weekly on local
-  GPU — zero agent-context tokens; inert on an entity-less store.
-- Contradiction detection: **optional / later** — supersession already covers most.
+  GPU - zero agent-context tokens; inert on an entity-less store.
+- Contradiction detection: **optional / later** - supersession already covers most.
 
 ## 5. Out of scope (explicitly rejected)
-- `think` synthesis command — marginal over the agent reading notes itself. Dropped.
-- Life-ingestion channels (email / voice / calendar / mobile) — wrong layer, breaks
+- `think` synthesis command - marginal over the agent reading notes itself. Dropped.
+- Life-ingestion channels (email / voice / calendar / mobile) - wrong layer, breaks
   focus + zero-dep + local.
 - Postgres / pgvector, multi-user / OAuth / team, cloud reranker as default.
 

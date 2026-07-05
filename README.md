@@ -14,7 +14,7 @@ its tokens.*
 
 **No database. No server. No cloud. No API keys required. Zero pip dependencies. Works with every agent.**
 
-<sub>Formerly **Anamnesis** — renamed 2026-07 (same project, same store, old env vars still work).</sub>
+<sub>Formerly **Anamnesis** - renamed 2026-07 (same project, same store, old env vars still work).</sub>
 
 [![tests](https://github.com/DonPlaton/nevertwice/actions/workflows/ci.yml/badge.svg)](https://github.com/DonPlaton/nevertwice/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/DonPlaton/nevertwice/actions/workflows/codeql.yml/badge.svg)](https://github.com/DonPlaton/nevertwice/actions/workflows/codeql.yml)
@@ -113,7 +113,7 @@ Claude Code, Cursor, Cline, Codex, Zed, and anything else that speaks MCP or wri
 
 |  | Nevertwice | Mem0 / Zep / Letta / Cognee / memanto / Hindsight |
 |---|---|---|
-| **Acts, not just recalls** | ✅ guards + anticipation + counterfactual, **0 tokens until they fire** | ✗ retrieve-and-inject only (taxes every turn) |
+| **Acts before the mistake** | ✅ guards + anticipation + counterfactual, **0 tokens until they fire** | ✗ retrieve-and-inject only (taxes every turn) |
 | **Runs** | your machine, local files | a service, vector DB, or cloud (memanto: closed engine) |
 | **Store format** | human-readable Markdown + Git | opaque DB rows and embeddings |
 | **Dependencies** | **0** Python packages (stdlib core), local Ollama for embeddings (or an optional cloud embedder) | many, usually a server plus a DB |
@@ -129,7 +129,7 @@ You own every byte of your agent's memory, and you can read it.
 
 <p align="center"><img src="docs/tour.gif" alt="Nevertwice full tour: a guard fires before a recorded SQL-injection mistake repeats, then recall (5.9x fewer tokens than dumping the store), anticipation on a new endpoint, a counterfactual answered from the causal graph, and a contradiction resolved by supersession" width="740"></p>
 
-<p align="center"><sub>Recorded from the real system (<code>examples/guard_demo.py</code> + <code>examples/scenario_demo.py</code>, throwaway vault) — every number on screen is measured live, nothing is mocked.</sub></p>
+<p align="center"><sub>Recorded from the real system (<code>examples/guard_demo.py</code> + <code>examples/scenario_demo.py</code>, throwaway vault) - every number on screen is measured live, nothing is mocked.</sub></p>
 
 ```
 $ # session 1: you hit a CUDA OOM, Nevertwice quietly records the lesson

@@ -1,22 +1,22 @@
 #!/usr/bin/env python3
-"""RESEARCH — evaluation harness for the memory vault. GPU-free: leave-one-out
+"""RESEARCH - evaluation harness for the memory vault. GPU-free: leave-one-out
 over the EXISTING embedding cache (cached vectors used as queries → CPU cosine),
 lexical token overlap, and structural temporal QA. No new embeddings, no network.
 
 Three tasks (the measurable foundation for every retrieval claim, incl. I-2/I-3):
-  A. Retrieval recall@k & MRR — SEMANTIC vs LEXICAL vs HYBRID (RRF). IMPORTANT
+  A. Retrieval recall@k & MRR - SEMANTIC vs LEXICAL vs HYBRID (RRF). IMPORTANT
      (audit H7): the ground truth here is the notes' own `[[wikilink]]` neighbours,
      which the SAME system writes. So Task A measures INTERNAL-LINKAGE RECOVERY /
-     ranker self-consistency — "does the ranker resurface a note's own siblings"
-     — NOT relevance to an external information need. It is a fair RELATIVE
+     ranker self-consistency - "does the ranker resurface a note's own siblings"
+     - NOT relevance to an external information need. It is a fair RELATIVE
      comparator of the three rankers on identical ground truth (which is what I-2
      uses it for), but its absolute number is NOT an external quality benchmark
      and must not be quoted as one. For that, use Task D (--longmem) with an
      independent dataset.
-  B. Temporal point-in-time QA — given a date, return the version of a fact that
+  B. Temporal point-in-time QA - given a date, return the version of a fact that
      was current THEN. Compares the bi-temporal graph vs flat "use newest" vs
      flat "return all" (ambiguous). Auto-generated from supersession families.
-  C. Token economy — tokens per recall: full-Context read vs flat top-k vs
+  C. Token economy - tokens per recall: full-Context read vs flat top-k vs
      temporal current-snapshot, averaged across projects.
 
     python research/eval_harness.py            # report
@@ -39,7 +39,7 @@ except Exception:
 
 KS = (1, 3, 5)
 # --fresh-query: re-embed each query's TEXT with the query prefix (real retrieval
-# scenario) instead of reusing its stored doc vector — needed to measure the
+# scenario) instead of reusing its stored doc vector - needed to measure the
 # query/doc prefix asymmetry and to compare embedders faithfully (uses GPU).
 FRESH = "--fresh-query" in sys.argv
 
@@ -198,13 +198,13 @@ def task_c(nodes):
 def task_longmem(path):
     """Recall@k against an external benchmark (M-9): a JSON list of
     {"question": str, "relevant": [stem, ...]}. We target LongMemEval / BEAM (NOT
-    LOCOMO — academically discredited, BM25≈0.94); the dataset is downloaded
+    LOCOMO - academically discredited, BM25≈0.94); the dataset is downloaded
     separately and converted to this shape. GPU-free lexical runner so it always
     works; swap in semantic by embedding the questions if the GPU is free."""
     try:
         data = json.loads(Path(path).read_text(encoding="utf-8", errors="replace"))
     except (OSError, ValueError) as e:
-        print(f"\n— TASK D: external benchmark — could not read {path}: {e}")
+        print(f"\n- TASK D: external benchmark - could not read {path}: {e}")
         return
     cache = m.load_embed_cache()
     textmap = {s: m._tokens(f"{r.get('title','')} {r.get('desc','')} {r.get('prevention','')}")
@@ -220,7 +220,7 @@ def task_longmem(path):
         for k in hits:
             if rel & set(ranked[:k]):
                 hits[k] += 1
-    print(f"\n— TASK D: external benchmark recall ({n} queries from {Path(path).name}) —")
+    print(f"\n- TASK D: external benchmark recall ({n} queries from {Path(path).name}) -")
     for k in (1, 3, 5):
         print(f"  recall@{k}: {hits[k] / n:.3f}" if n else f"  recall@{k}: n/a")
 
@@ -236,11 +236,11 @@ def main():
 
     bar = "=" * 76
     print(bar)
-    print("  MEMORY EVAL HARNESS — GPU-free (leave-one-out on cached vectors + lexical)")
+    print("  MEMORY EVAL HARNESS - GPU-free (leave-one-out on cached vectors + lexical)")
     print(bar)
-    print(f"\n— TASK A: INTERNAL-LINKAGE recall@k / MRR  (n={n_q} queries) —")
+    print(f"\n- TASK A: INTERNAL-LINKAGE recall@k / MRR  (n={n_q} queries) -")
     print("  ground truth = each note's own [[wikilink]] neighbours (system-written);")
-    print("  this RELATIVELY compares the three rankers — it is NOT an external")
+    print("  this RELATIVELY compares the three rankers - it is NOT an external")
     print("  relevance benchmark and its absolute value must not be quoted as one (H7).")
     print(f"  {'method':10} {'R@1':>7} {'R@3':>7} {'R@5':>7} {'MRR':>7}")
     for meth in ("semantic", "lexical", "hybrid"):
@@ -251,8 +251,8 @@ def main():
     print(f"  → best (relative): {best}.  Hybrid lift over semantic: "
           f"{a['hybrid']['recall@5'] - a['semantic']['recall@5']:+.3f}  (ranker ablation, I-2)")
 
-    print(f"\n— TASK B: temporal point-in-time QA  ({b['questions']} questions, "
-          f"{b['families_tested']} revised facts) —")
+    print(f"\n- TASK B: temporal point-in-time QA  ({b['questions']} questions, "
+          f"{b['families_tested']} revised facts) -")
     print(f"  bi-temporal graph accuracy : {b['temporal_accuracy']:.3f}")
     print(f"  flat 'use newest' accuracy : {b['flat_newest_accuracy']:.3f}")
     print(f"  flat 'return all' ambiguity: {b['flat_all_avg_versions_returned']:.2f} "
@@ -260,7 +260,7 @@ def main():
     print(f"  → temporal advantage on point-in-time recall: "
           f"{b['temporal_accuracy'] - b['flat_newest_accuracy']:+.3f}")
 
-    print(f"\n— TASK C: token economy per project (tokens to convey project state) —")
+    print(f"\n- TASK C: token economy per project (tokens to convey project state) -")
     print(f"  {'project':24} {'cur':>4} {'fullCtx':>8} {'flat5':>6} {'temporalNow':>12}")
     tot_ctx = tot_snap = 0
     for proj, ncur, ctx_t, flat_t, snap_t in sorted(c, key=lambda r: -r[2]):
@@ -281,7 +281,7 @@ def main():
         print("  [longmem] usage: --longmem=PATH.json  (target LongMemEval/BEAM, "
               "converted to [{question, relevant:[stem,...]}])")
     else:
-        print("\n— TASK D: external benchmark — NOT RUN (audit M-c). No public "
+        print("\n- TASK D: external benchmark - NOT RUN (audit M-c). No public "
               "number is claimed; Task A above is internal-linkage only. Run with "
               "--longmem=PATH.json (LongMemEval/BEAM, downloaded separately) for an "
               "independent recall figure.")

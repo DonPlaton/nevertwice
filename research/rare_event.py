@@ -1,25 +1,25 @@
 #!/usr/bin/env python3
-"""RESEARCH — rare-event / black-swan memory (roadmap 2C).
+"""RESEARCH - rare-event / black-swan memory (roadmap 2C).
 
-THESIS & THE PRODUCTIVE TENSION. 1A's recurrence prior says *frequent ⇒ valuable* — right for
+THESIS & THE PRODUCTIVE TENSION. 1A's recurrence prior says *frequent ⇒ valuable* - right for
 the common gotcha you keep hitting. But a black-swan **precursor** is the opposite: seen rarely
 (once, before the last regime change), yet decisive. Frequency weighting BURIES it. The fix is
 the *inverse*: an inverse-frequency × **consequence** salience that up-weights the rare-but-high-
-impact memory. The same boost that helps recurring-lesson recall (1A) therefore HURTS tail recall —
+impact memory. The same boost that helps recurring-lesson recall (1A) therefore HURTS tail recall -
 no single global salience is right for both. This module quantifies that tension and shows a
 risk-mode salience recovers tail-event analogues a recurrence-weighted ranker discards.
 
 WORLD. A regime-change stream: N_NORMAL common pattern clusters (high recurrence, consequence≈0)
-plus N_PREC rare **precursors**, each sitting just off a normal cluster (SUBTLE — it looks almost
-normal, so relevance is ambiguous) with recurrence 1–2 and a high consequence; each precedes a
+plus N_PREC rare **precursors**, each sitting just off a normal cluster (SUBTLE - it looks almost
+normal, so relevance is ambiguous) with recurrence 1-2 and a high consequence; each precedes a
 catastrophe by a lead time. Two query kinds: a precursor recurs (tail) → gold = the matching
 precursor memory; a normal pattern recurs (common) → gold = a high-recurrence normal memory.
 
 RANKERS (cosine + W·normalised salience):  relevance | recurrence (log n, 1A) |
-rare-event (consequence / (1+log n) — inverse-frequency × consequence).
+rare-event (consequence / (1+log n) - inverse-frequency × consequence).
 
 METRICS. tail-recall@k (right precursor surfaced) & warned lead-time; common-recall@k; and the
-false-alarm rate (a precursor surfaced on a NORMAL query — the cost of risk-weighting).
+false-alarm rate (a precursor surfaced on a NORMAL query - the cost of risk-weighting).
 
     python research/rare_event.py            # report
     python research/rare_event.py --save     # + rare_event.json (+ .png if mpl)
@@ -149,30 +149,30 @@ def _m(xs):
 def main():
     bar = "=" * 78
     print(bar)
-    print("  RARE-EVENT / BLACK-SWAN MEMORY (2C) — inverse-frequency × consequence salience")
+    print("  RARE-EVENT / BLACK-SWAN MEMORY (2C) - inverse-frequency × consequence salience")
     print(bar)
     print(f"  world: {N_NORMAL} common clusters × {NORMAL_PER} + {N_PREC} rare precursors (dim {DIM}); "
           f"{QUERIES}×{SEEDS} queries; top-{K}, W={W}")
     M = run()
 
-    print(f"\n— the productive tension: same boost, opposite effect by query kind —")
+    print(f"\n- the productive tension: same boost, opposite effect by query kind -")
     print(f"  {'salience':12} {'TAIL-recall@'+str(K):>14} {'COMMON-recall@'+str(K):>16} {'false-alarm':>12}")
     for md in MODES:
         print(f"  {md:12} {_m(M[md]['tail']):>14.3f} {_m(M[md]['common']):>16.3f} "
               f"{_m(M[md]['falsealarm']):>12.3f}")
     tr, rr = _m(M["rare-event"]["tail"]), _m(M["recurrence"]["tail"])
     cr, cc = _m(M["recurrence"]["common"]), _m(M["rare-event"]["common"])
-    print(f"\n  → TAIL: rare-event {tr:.3f} vs recurrence {rr:.3f} ({tr - rr:+.3f}) — the inverse term "
+    print(f"\n  → TAIL: rare-event {tr:.3f} vs recurrence {rr:.3f} ({tr - rr:+.3f}) - the inverse term "
           f"surfaces the rare precursor that frequency-weighting (1A) buries.")
     print(f"  → COMMON: recurrence {cr:.3f} vs rare-event {cc:.3f} ({cc - cr:+.3f}); no single global "
-          f"salience wins both — frequency and inverse-frequency are opposite priors.")
+          f"salience wins both - frequency and inverse-frequency are opposite priors.")
     fg, fr = _m(M["rare-gated"]["falsealarm"]), _m(M["rare-event"]["falsealarm"])
     print(f"  → the cost is false alarms: always-on rare-event cries wolf ({fr:.3f}); the "
           f"relevance-GATED variant keeps tail-recall {_m(M['rare-gated']['tail']):.3f} while cutting "
-          f"\n    false alarms to {fg:.3f} — the practical risk operating point (sensitivity↔specificity).")
+          f"\n    false alarms to {fg:.3f} - the practical risk operating point (sensitivity↔specificity).")
 
     lr, lf = _m(M["rare-gated"]["lead"]), _m(M["recurrence"]["lead"])
-    print(f"\n— warned lead-time (steps of warning before the catastrophe; 0 = missed) —")
+    print(f"\n- warned lead-time (steps of warning before the catastrophe; 0 = missed) -")
     print(f"  rare-gated {lr:.2f}   recurrence {lf:.2f}   → risk-mode memory warns "
           f"{lr - lf:+.2f} steps earlier on average.")
 
@@ -192,7 +192,7 @@ def _figure(M, path):
         matplotlib.use("Agg")
         import matplotlib.pyplot as plt
     except Exception as e:
-        print(f"  [figure skipped: matplotlib unavailable — {e}]")
+        print(f"  [figure skipped: matplotlib unavailable - {e}]")
         return
     modes = ("relevance", "recurrence", "rare-event")
     fig, ax = plt.subplots(figsize=(7.5, 4.4))

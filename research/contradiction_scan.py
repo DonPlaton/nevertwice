@@ -1,18 +1,18 @@
 #!/usr/bin/env python3
-"""RESEARCH (I-12) — detect cross-title semantic contradictions / redundancies
+"""RESEARCH (I-12) - detect cross-title semantic contradictions / redundancies
 that same-slug supersession misses (the §6 gap of the temporal-graph work).
 
-Two notes can describe the same thing with DIFFERENT titles — so the structural
+Two notes can describe the same thing with DIFFERENT titles - so the structural
 supersession (same project+ntype+slug) and the 0.92 dedup never link them, yet
 one may contradict or duplicate the other. This scans for that band.
 
 Core is GPU-free and 100% local: CPU cosine over the EXISTING embedding cache.
 Candidate band: same project, different slug, both currently-valid, cosine in
-[NEAR, DEDUP) — "very related, differently titled".
+[NEAR, DEDUP) - "very related, differently titled".
 
 Optional `--adjudicate` asks the cloud LLM (Cerebras, zero-retention, no GPU) to
 classify each pair {redundant|contradict|distinct} + recommend an action. It is
-SKIPPED for local-only projects (privacy routing is respected — nothing sensitive
+SKIPPED for local-only projects (privacy routing is respected - nothing sensitive
 leaves the machine).
 
     python research/contradiction_scan.py                 # local CPU scan
@@ -70,9 +70,9 @@ def find_candidates(nodes, near, dedup):
 
 ADJ_PROMPT = """Две заметки памяти агента из одного проекта. Классифицируй связь.
 Верни ТОЛЬКО JSON: {{"relation": "redundant|contradict|distinct", "action": "<одна строка: что сделать>"}}.
-  redundant — об одном и том же, дублируют (слить);
-  contradict — утверждают разное/противоположное (нужна реконсиляция, какая верна);
-  distinct — связаны, но это разные валидные факты (оставить оба).
+  redundant - об одном и том же, дублируют (слить);
+  contradict - утверждают разное/противоположное (нужна реконсиляция, какая верна);
+  distinct - связаны, но это разные валидные факты (оставить оба).
 
 A [{a_type}] {a_title}: {a_desc}
 B [{b_type}] {b_title}: {b_desc}
@@ -85,7 +85,7 @@ def adjudicate(pair):
         a_type=a["ntype"], a_title=a["slug"], a_desc=(a["desc"] or "")[:300],
         b_type=b["ntype"], b_title=b["slug"], b_desc=(b["desc"] or "")[:300])
     # Force Cerebras directly (cloud, zero-retention, no GPU). generate_json would
-    # route local-only projects to Ollama (GPU) — we skip those before calling.
+    # route local-only projects to Ollama (GPU) - we skip those before calling.
     res = m.call_cerebras(prompt)
     rel = (res or {}).get("relation", "?")
     act = (res or {}).get("action", "")
@@ -104,7 +104,7 @@ def main():
 
     bar = "=" * 76
     print(bar)
-    print(f"  SEMANTIC CONTRADICTION / REDUNDANCY SCAN (I-12)  —  band [{near}, {dedup})")
+    print(f"  SEMANTIC CONTRADICTION / REDUNDANCY SCAN (I-12)  -  band [{near}, {dedup})")
     print(bar)
     print(f"  candidate cross-title pairs: {len(pairs)}   (scan {dt:.2f}s, CPU, local)")
     print()
@@ -113,11 +113,11 @@ def main():
     for s, a, b in shown:
         local = m.is_local_only(a["project"])
         print(f"  cos={s:.3f}  [{a['project']}]")
-        print(f"     A {ICON.get(a['ntype'],'·')} {a['slug']} — {(a['desc'] or '')[:80]}")
-        print(f"     B {ICON.get(b['ntype'],'·')} {b['slug']} — {(b['desc'] or '')[:80]}")
+        print(f"     A {ICON.get(a['ntype'],'·')} {a['slug']} - {(a['desc'] or '')[:80]}")
+        print(f"     B {ICON.get(b['ntype'],'·')} {b['slug']} - {(b['desc'] or '')[:80]}")
         if do_adj:
             if local:
-                print("     adjudication: SKIPPED (local-only project — privacy)")
+                print("     adjudication: SKIPPED (local-only project - privacy)")
             elif not (m.CEREBRAS_API_KEY and m.ACTIVE_CLOUD != "none"):
                 print("     adjudication: no cloud backend")
             else:
@@ -131,7 +131,7 @@ def main():
         print(f"\n  adjudicated (cloud-ok projects): {adj_counts}")
     print(bar)
     print("  Finding: these pairs are invisible to slug-supersession and to the 0.92")
-    print("  dedup — exactly the cross-title reconciliation gap (temporal-graph §6).")
+    print("  dedup - exactly the cross-title reconciliation gap (temporal-graph §6).")
     print(bar)
 
     if "--save" in sys.argv:

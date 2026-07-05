@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Optional trained cross-encoder reranker — the one precision lever that actually works.
+"""Optional trained cross-encoder reranker - the one precision lever that actually works.
 
 Measured on LongMemEval-oracle (940 sessions / 500 questions, external ground truth):
 reranking the calibrated-fusion top-10 with the purpose-trained cross-encoder bge-reranker-v2-m3
 lifts recall@1 0.550 → 0.614 and MRR 0.657 → 0.712. This is the
-opposite of a *promptable* LLM reranker, which DEGRADES recall@1 — see
+opposite of a *promptable* LLM reranker, which DEGRADES recall@1 - see
 research/W2_PRECISION.md. So this is the reranker Nevertwice ships, and it is OFF by default.
 
 Enable with NEVERTWICE_XRERANK=1. Heavy deps (torch + transformers) are imported lazily
@@ -21,7 +21,7 @@ _state = {}
 
 
 def available() -> bool:
-    """True iff torch + transformers import — the opt-in deps. Never required by core."""
+    """True iff torch + transformers import - the opt-in deps. Never required by core."""
     try:
         import torch  # noqa: F401
         import transformers  # noqa: F401
@@ -65,7 +65,7 @@ def rerank_scores(query: str, passages, batch_size: int = 16):
 
 def _note_text(r: dict) -> str:
     """Cross-encoder input for a recall result: its title + description + prevention.
-    (No TYPE prefix — relevance scoring wants the content, not the label.)"""
+    (No TYPE prefix - relevance scoring wants the content, not the label.)"""
     parts = [r.get("title") or "", r.get("description") or "", r.get("prevention") or ""]
     return " ".join(p for p in parts if p).strip()
 
@@ -82,6 +82,6 @@ def reorder(query: str, results: list[dict], k: int) -> list[dict]:
         return results[:k]
     if not scores or len(scores) != len(results):
         return results[:k]
-    # return fresh dicts (don't mutate the caller's results in place — audit 2026-06-18)
+    # return fresh dicts (don't mutate the caller's results in place - audit 2026-06-18)
     order = sorted(range(len(results)), key=lambda i: -scores[i])[:k]
     return [{**results[i], "xrerank_score": round(float(scores[i]), 3)} for i in order]

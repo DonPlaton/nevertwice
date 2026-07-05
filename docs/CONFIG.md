@@ -159,7 +159,7 @@ After setting `NEVERTWICE_EMBED_QUANT`, rebuild the index once the same way.
 | Variable | Default | Notes |
 |---|---|---|
 | `NEVERTWICE_AGENT` | `claude-code` | Agent label stamped on captured notes. |
-| `NEVERTWICE_TRACK_ANY_PROJECT` | `1` | Track any git repo you work in, not just configured roots. |
+| `NEVERTWICE_TRACK_ANY_PROJECT` | `1` | Track any git repo you work in, beyond the configured roots. |
 | `NEVERTWICE_MAX_TRANSCRIPT` | `12000` | Max transcript chars sent to extraction. |
 | `NEVERTWICE_MAX_SWEEP_BYTES` | `10485760` | Per-file cap for the `--dir` sweep / `watch` (DoS guard). |
 | `NEVERTWICE_SWEEP_DAYS` | `30` | Only sweep transcripts modified in the last N days. |

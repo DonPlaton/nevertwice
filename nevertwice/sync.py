@@ -38,7 +38,7 @@ def _git(*args, check=False):
 
 def main() -> int:
     if not (m.VAULT / ".git").exists():
-        print(f"[sync] {m.VAULT} is not a git repo — nothing to sync.", file=sys.stderr)
+        print(f"[sync] {m.VAULT} is not a git repo - nothing to sync.", file=sys.stderr)
         return 0
     if not (_git("remote").stdout or "").strip():
         print("[sync] no git remote configured (add one: git remote add origin <url>).",
@@ -48,7 +48,7 @@ def main() -> int:
     # conflict state, so stop loudly instead (code-review 2026-07)
     gitdir = m.VAULT / ".git"
     if (gitdir / "rebase-merge").exists() or (gitdir / "rebase-apply").exists():
-        print("[sync] a rebase is already in progress — resolve it first "
+        print("[sync] a rebase is already in progress - resolve it first "
               "(git -C <vault> rebase --continue / --abort).", file=sys.stderr)
         return 1
 
@@ -60,7 +60,7 @@ def main() -> int:
         import merge as _merge
     _merge.register(m.VAULT)
 
-    # 1) commit local changes (if any) — and only claim success when git agrees
+    # 1) commit local changes (if any) - and only claim success when git agrees
     if (_git("status", "--porcelain").stdout or "").strip():
         _git("add", "-A")
         msg = f"sync: memory snapshot {datetime.now():%Y-%m-%d %H:%M}"
@@ -71,7 +71,7 @@ def main() -> int:
         print(f"[sync] committed local changes: {msg}")
 
     # 2) rebase on remote (autostash keeps any leftover state out of the way). A fresh vault
-    #    whose branch has no upstream yet is not a conflict — bootstrap it with push -u instead.
+    #    whose branch has no upstream yet is not a conflict - bootstrap it with push -u instead.
     pull = _git("pull", "--rebase", "--autostash")
     if pull.returncode != 0:
         err = (pull.stderr or "") + (pull.stdout or "")

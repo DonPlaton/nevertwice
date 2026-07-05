@@ -35,7 +35,7 @@ ok(b.bio_memory("NMN NAD lifespan")["id"] == "nmn",
 
 # flat-newest IS fooled by hype (the failure bio-memory fixes)
 ok(b.flat_newest("does resveratrol extend lifespan")["id"] == "resv_hype",
-   "flat-newest returns the newest (hype) claim — the baseline failure")
+   "flat-newest returns the newest (hype) claim - the baseline failure")
 
 # entity gating: an antioxidant query must not return a caloric-restriction claim
 ok("caloric" not in b.bio_memory("antioxidant lifespan")["interv"],

@@ -1,5 +1,5 @@
 # Keep the SHA-pinned GitHub Actions current so pinning never goes stale.
-# (Runtime code is stdlib-only — there is no pip/npm ecosystem to track.)
+# (Runtime code is stdlib-only - there is no pip/npm ecosystem to track.)
 version: 2
 updates:
   - package-ecosystem: "github-actions"

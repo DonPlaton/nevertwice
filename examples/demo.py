@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Nevertwice 25-second demo — the "it remembered" moment, on any OS.
+"""Nevertwice 25-second demo - the "it remembered" moment, on any OS.
 
 Pure standard library, no bash. Seeds a throwaway temp store (your real vault is
 untouched), then recalls from it. Best with Ollama running for semantic recall; it

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Self-check for live_validation.py — validates the MEASUREMENT INSTRUMENT (a wrong check
+"""Self-check for live_validation.py - validates the MEASUREMENT INSTRUMENT (a wrong check
 silently fabricates a result), plus the paired accounting with a mocked model (no network,
 no key). The live run itself needs DEEPSEEK_API_KEY; this guards its logic."""
 import sys

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Self-check for merge.py (conflict-aware vault merge). Verifies the structured auto-merge of
 frontmatter collisions (recurrence, supersession, tags) and that genuine body/scalar divergence
-falls through to git. Pure logic — no git, no files."""
+falls through to git. Pure logic - no git, no files."""
 import sys
 from pathlib import Path
 
@@ -91,7 +91,7 @@ def test_missing_status_never_emits_none():
 
 
 def test_divergent_retirements_conflict():
-    # both sides retired the same note via DIFFERENT successors — a real disagreement;
+    # both sides retired the same note via DIFFERENT successors - a real disagreement;
     # silently keeping one would drop the other supersession link with no trace
     ours = _note(status="superseded", superseded_by="2026-02-01-p-decision-a")
     theirs = _note(status="superseded", superseded_by="2026-02-02-p-decision-b")

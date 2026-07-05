@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Agent self-write (I-5) — let an agent (or you) commit a memory mid-task or
+"""Agent self-write (I-5) - let an agent (or you) commit a memory mid-task or
 retire a wrong one, instead of only receiving memory passively. The universal
 interface is this CLI, so ANY agent can call it (like ingest.py / memory_search.py).
 
@@ -85,16 +85,16 @@ def do_remember(a) -> int:
     if not stem:
         # write_typed_note returns "" for EITHER an injection-shaped payload OR (when
         # NEVERTWICE_QUARANTINE=1) a single uncorroborated note diverted to Quarantine/.
-        # Don't assert "injection" — that misreports a quarantined write (audit 2026-06-18).
+        # Don't assert "injection" - that misreports a quarantined write (audit 2026-06-18).
         print("[remember] not written to active memory: content is injection-shaped, or was "
               "quarantined as a single uncorroborated source (NEVERTWICE_QUARANTINE)",
               file=sys.stderr)
         return 2
     print(f"[remember] wrote {a.type} → {stem}")
     # ground truth: a note is semantically recallable only once it's in the embed
-    # cache (un-embedded notes are invisible to recall — audit A15). Report honestly.
+    # cache (un-embedded notes are invisible to recall - audit A15). Report honestly.
     print("  (recallable now)" if stem in m.load_embed_cache() else
-          "  (written — run `python embed_index.py` to make it searchable)")
+          "  (written - run `python embed_index.py` to make it searchable)")
     return 0
 
 

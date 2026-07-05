@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Tests for nevertwice.api — the in-process library surface (recall/remember/
+"""Tests for nevertwice.api - the in-process library surface (recall/remember/
 capture_session/format_note). Fully offline: memory_hook + memory_search are mocked,
 so no vault, Ollama, or git is touched."""
 import sys
@@ -21,7 +21,7 @@ _IDENT = lambda x: x if isinstance(x, list) else list(x)
 def test_format_note_full():
     s = api.format_note({"ntype": "mistake", "title": "OOM",
                          "description": "ran out of memory", "prevention": "lower batch"})
-    assert "MISTAKE — OOM" in s
+    assert "MISTAKE - OOM" in s
     assert "ran out of memory" in s
     assert "Prevention: lower batch" in s
 
@@ -32,7 +32,7 @@ def test_format_note_title_only():
 
 def test_format_note_omits_empty_fields():
     s = api.format_note({"ntype": "pattern", "title": "T", "description": "", "prevention": ""})
-    assert s == "PATTERN — T"
+    assert s == "PATTERN - T"
 
 
 # ── recall ──────────────────────────────────────────────────────────────────────

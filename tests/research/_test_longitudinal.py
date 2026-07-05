@@ -2,7 +2,7 @@
 """Self-check for longitudinal_improvement.py (axis D). Verifies the token-accounting
 invariants, determinism, that memory reduces errors, that v2 spends far fewer memory
 tokens than v1 for the same knowledge, and that a high false-positive rate honestly
-erodes v2's edge (the anti-rigging check). Pure sim — no network, no LLM."""
+erodes v2's edge (the anti-rigging check). Pure sim - no network, no LLM."""
 import sys
 from pathlib import Path
 
@@ -46,7 +46,7 @@ def test_v1_taxes_every_task():
 def test_high_false_positive_erodes_v2_honestly():
     clean = L.evaluate(n=200, base_fail=0.4, trials=25, guard_fp_rate=0.0)
     noisy = L.evaluate(n=200, base_fail=0.4, trials=25, guard_fp_rate=0.3)
-    # the anti-rigging check: a noisy guard population is Popperian — it self-retires under
+    # the anti-rigging check: a noisy guard population is Popperian - it self-retires under
     # false positives, which costs prevention. So the honest signal is a LOWER
     # improvement-per-token and NOT-FEWER errors, i.e. the benchmark does not always flatter v2.
     assert noisy["v2"]["improvement_per_1k_tok"] < clean["v2"]["improvement_per_1k_tok"], \

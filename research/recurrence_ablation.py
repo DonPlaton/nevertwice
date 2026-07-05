@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""RESEARCH — recurrence-as-salience ablation (longitudinal agent memory).
+"""RESEARCH - recurrence-as-salience ablation (longitudinal agent memory).
 
 THESIS. An agent that re-encounters a "gotcha" should recall it more readily the
 more often it has recurred. We frame recurrence-boosting as *approximate Bayesian
@@ -12,13 +12,13 @@ so the rank score should fuse a relevance term (cosine) with a recurrence prior.
 Nevertwice ships exactly such a fusion (`_recur_boost` + the `_salience_mult`
 re-weight). This harness asks the questions a reviewer would:
 
-  Q1  Does fusing recurrence with relevance beat relevance-only — and WHEN?
+  Q1  Does fusing recurrence with relevance beat relevance-only - and WHEN?
       (hypothesis: only when relevance is AMBIGUOUS, i.e. several stored lessons
       look alike; with a crisp relevance signal recurrence is a no-op.)
   Q2  What is the optimal fusion weight w*, and does the SHIPPED coefficient land
       near it? (the production additive boost uses 0.03 in `_recur_boost` but an
-      inline 0.0003 in `retrieve_relevant` — are either well-calibrated?)
-  Q3  Linear recurrence (n−1, shipped) vs a log frequency prior log(n) — which
+      inline 0.0003 in `retrieve_relevant` - are either well-calibrated?)
+  Q3  Linear recurrence (n−1, shipped) vs a log frequency prior log(n) - which
       fuses better? (a frequency prior is log-scaled in theory.)
 
 METHOD. A controlled, fully-seeded longitudinal world: C topic clusters, each with
@@ -199,7 +199,7 @@ def make_figure(rows, sweep_mid, sigma_mid, path):
         matplotlib.use("Agg")
         import matplotlib.pyplot as plt
     except Exception as e:
-        print(f"  [figure skipped: matplotlib unavailable — {e}]")
+        print(f"  [figure skipped: matplotlib unavailable - {e}]")
         return None
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(11, 4.2))
     sig = [r["sigma"] for r in rows]
@@ -232,7 +232,7 @@ def make_figure(rows, sweep_mid, sigma_mid, path):
 
 def main():
     print("=" * 78)
-    print("  RECURRENCE-AS-SALIENCE ABLATION  —  relevance × recurrence as a Bayesian")
+    print("  RECURRENCE-AS-SALIENCE ABLATION  -  relevance × recurrence as a Bayesian")
     print("  frequency prior on a controlled longitudinal agent-memory workload")
     print("=" * 78)
     print(f"  world: {N_CLUSTERS} clusters × {PER_CLUSTER} near-dup lessons (dim {DIM}), "
@@ -244,7 +244,7 @@ def main():
     sigma_mid = SIGMAS[len(SIGMAS) // 2]
     sweep_mid = coeff_sweep(res, sigma_mid)
 
-    print(f"\n— recall@1 vs ambiguity σ  (relevance-only vs best relevance×recurrence) —")
+    print(f"\n- recall@1 vs ambiguity σ  (relevance-only vs best relevance×recurrence) -")
     print(f"  {'σ':>4} {'rel-only':>10} {'best w*':>8} {'fusion':>10} {'lift':>8} "
           f"{'shipped':>9} {'log-prior':>10}")
     for r in rows:
@@ -255,18 +255,18 @@ def main():
     # headline numbers
     crisp = rows[0]
     amb = max(rows, key=lambda r: r["fusion_lift"])
-    print(f"\n  Q1 — crisp relevance (σ=0): fusion lift {crisp['fusion_lift']:+.3f} "
+    print(f"\n  Q1 - crisp relevance (σ=0): fusion lift {crisp['fusion_lift']:+.3f} "
           f"(recurrence is ~a no-op when relevance is clean).")
     print(f"       ambiguous (σ={amb['sigma']}): fusion lift {amb['fusion_lift']:+.3f} "
           f"recall@1 ({amb['relevance_only_R@1']:.3f} → {amb['best_fusion_R@1']:.3f}); "
           f"best blend w*={amb['best_fusion_w']}.")
-    print(f"  Q2 — optimal blend at σ={sigma_mid}: "
+    print(f"  Q2 - optimal blend at σ={sigma_mid}: "
           f"w*={max(sweep_mid, key=lambda t: t[1])[0]} "
           f"(w=0 relevance-only={sweep_mid[0][1]:.3f}; "
           f"w=1 recurrence-only={sweep_mid[-1][1]:.3f}).")
     log_avg = np.mean([r["log_prior_R@1"] for r in rows])
     fus_avg = np.mean([r["best_fusion_R@1"] for r in rows])
-    print(f"  Q3 — log frequency prior vs linear (n−1): "
+    print(f"  Q3 - log frequency prior vs linear (n−1): "
           f"log avg R@1={log_avg:.3f} vs linear-best avg={fus_avg:.3f} "
           f"({'log wins' if log_avg > fus_avg else 'linear competitive'}).")
 

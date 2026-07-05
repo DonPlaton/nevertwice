@@ -75,7 +75,7 @@ check("Ollama empty-state compaction: file UNCHANGED", fp.read_text(encoding="ut
 
 
 # ════════════════════════════════════════════════════════════════════
-print("\n# PROBE 2: compaction SUCCESS — are wikilinks/decisions preserved?")
+print("\n# PROBE 2: compaction SUCCESS - are wikilinks/decisions preserved?")
 d = fresh_vault()
 fp = d / "Context" / f"{proj}.md"
 fp.write_text(head + "\n\n".join(entries) + "\n", encoding="utf-8")
@@ -144,7 +144,7 @@ check("bootstrap-only: head == whole file (nothing swallowed)",
 
 
 # ════════════════════════════════════════════════════════════════════
-print("\n# PROBE 5: retrieve_relevant / emit_session_start — cosine dim mismatch + empty")
+print("\n# PROBE 5: retrieve_relevant / emit_session_start - cosine dim mismatch + empty")
 fresh_vault()   # dead store removed (d unused here)
 # poison cache: one good vec, one wrong-dimension vec, one non-list
 cache = {
@@ -212,7 +212,7 @@ check("SessionStart stdout is empty-or-single-JSON", ok_json, f"got: {sout!r}")
 
 
 # ════════════════════════════════════════════════════════════════════
-print("\n# PROBE 7: redact_secrets — backtracking + over/under redaction")
+print("\n# PROBE 7: redact_secrets - backtracking + over/under redaction")
 # catastrophic backtracking probe: BEGIN block with no END, 4000 'A's
 payload = "-----BEGIN PRIVATE KEY-----\n" + ("A"*5000)
 t0 = time.time()

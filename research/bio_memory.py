@@ -1,21 +1,21 @@
 #!/usr/bin/env python3
-"""RESEARCH — replication-weighted, bi-temporal memory for scientific claims (roadmap 2A).
+"""RESEARCH - replication-weighted, bi-temporal memory for scientific claims (roadmap 2A).
 
 MISSION MAPPING. The agent-memory machinery maps cleanly onto the longevity-research domain:
   recurrence            → #independent replications (a result seen 5× is more trustworthy)
   bi-temporal valid_to  → scientific belief revision ("what did we believe about X in 2008?")
   supersession/contradicts → a refuted or revised claim
 So the same primitives (recurrence boost, `as_of`, supersession) should surface the
-*currently best-supported* finding — resisting the latest single-study hype and excluding
-refuted claims — better than flat retrieval. This is the part that serves the life-extension
+*currently best-supported* finding - resisting the latest single-study hype and excluding
+refuted claims - better than flat retrieval. This is the part that serves the life-extension
 mission directly.
 
 CORPUS. A curated set of well-known aging findings WITH their real replication/revision arcs
 (resveratrol→SIRT1 artifact, antioxidant null, GDF11 reversal, telomere Mendelian-randomization,
-CR-primate NIA-vs-Wisconsin, parabiosis dilution, plus recent low-replication hype) — public
+CR-primate NIA-vs-Wisconsin, parabiosis dilution, plus recent low-replication hype) - public
 knowledge, so the gold labels are defensible and the study is fully offline & reproducible.
 `ingest_drugage()` shows the adapter for a real structured source (DrugAge/GenAge); the curated
-set is the shipped demonstration. Relevance is lexical token overlap (offline, no embedder) —
+set is the shipped demonstration. Relevance is lexical token overlap (offline, no embedder) -
 the contribution is the replication/time/contradiction LAYERS on top, not the matcher.
 
 TASKS vs flat retrieval (use-newest / lexical-only):
@@ -50,19 +50,19 @@ NOW = 2026
 # id · text · interv (topic key) · support (#replications) · vf/vt (belief window) ·
 # status (supported|refuted|contested|superseded) · contradicts (id this overturns)
 CLAIMS = [
-    # rapamycin / mTOR — robustly replicated (ITP)
+    # rapamycin / mTOR - robustly replicated (ITP)
     dict(id="rapa_pre", text="whether mTOR inhibition extends mammalian lifespan is unproven",
          interv="rapamycin mTOR", support=1, vf=2000, vt=2009, status="superseded", contradicts=None),
     dict(id="rapa", text="rapamycin extends lifespan in mice via mTOR inhibition, replicated across labs",
          interv="rapamycin mTOR", support=9, vf=2009, vt=None, status="supported", contradicts="rapa_pre"),
-    # caloric restriction — strong; primate result revised (NIA vs Wisconsin)
+    # caloric restriction - strong; primate result revised (NIA vs Wisconsin)
     dict(id="cr", text="caloric restriction extends lifespan across many model species",
          interv="caloric restriction", support=8, vf=1935, vt=None, status="supported", contradicts=None),
     dict(id="cr_prim_old", text="caloric restriction robustly extends primate lifespan (Wisconsin)",
          interv="caloric restriction primate", support=2, vf=2009, vt=2012, status="superseded", contradicts=None),
     dict(id="cr_prim", text="primate caloric restriction lifespan benefit is diet and control dependent (NIA null)",
          interv="caloric restriction primate", support=3, vf=2012, vt=None, status="supported", contradicts="cr_prim_old"),
-    # resveratrol / SIRT1 — the replication crisis, plus recent hype
+    # resveratrol / SIRT1 - the replication crisis, plus recent hype
     dict(id="resv_old", text="resveratrol activates SIRT1 and extends lifespan",
          interv="resveratrol sirtuin", support=2, vf=2003, vt=2010, status="refuted", contradicts=None),
     dict(id="resv", text="resveratrol SIRT1 activation is largely a fluorophore assay artifact; lifespan effect does not robustly replicate",
@@ -75,34 +75,34 @@ CLAIMS = [
     # senolytics
     dict(id="seno", text="senolytics dasatinib quercetin clear senescent cells and improve healthspan in mice",
          interv="senolytics senescence", support=6, vf=2015, vt=None, status="supported", contradicts=None),
-    # NAD+ / NMN — modest, plus hype
+    # NAD+ / NMN - modest, plus hype
     dict(id="nmn", text="NMN and NR boost NAD+ and improve some aging markers and healthspan",
          interv="NMN NAD", support=4, vf=2016, vt=None, status="supported", contradicts=None),
     dict(id="nmn_hype", text="NMN extends human lifespan according to a single 2024 trial",
          interv="NMN NAD", support=1, vf=2024, vt=None, status="supported", contradicts=None),
-    # antioxidants — early hype then refuted
+    # antioxidants - early hype then refuted
     dict(id="aox_old", text="dietary antioxidants extend lifespan by reducing oxidative damage",
          interv="antioxidant oxidative", support=1, vf=1956, vt=2009, status="refuted", contradicts=None),
     dict(id="aox", text="antioxidant supplementation does not extend lifespan and can be harmful",
          interv="antioxidant oxidative", support=7, vf=2009, vt=None, status="supported", contradicts="aox_old"),
-    # GDF11 — famous reversal
+    # GDF11 - famous reversal
     dict(id="gdf_old", text="GDF11 declines with age and restoring it rejuvenates tissue",
          interv="GDF11 rejuvenation", support=1, vf=2013, vt=2015, status="refuted", contradicts=None),
     dict(id="gdf", text="GDF11 rejuvenation claims do not replicate and GDF11 may inhibit regeneration",
          interv="GDF11 rejuvenation", support=3, vf=2015, vt=None, status="supported", contradicts="gdf_old"),
-    # telomeres — Mendelian randomization reversal
+    # telomeres - Mendelian randomization reversal
     dict(id="telo_old", text="longer telomeres straightforwardly cause human longevity",
          interv="telomere length", support=1, vf=2000, vt=2015, status="refuted", contradicts=None),
     dict(id="telo", text="telomere length effect is trait dependent and longer telomeres raise some cancer risk by Mendelian randomization",
          interv="telomere length", support=4, vf=2015, vt=None, status="supported", contradicts="telo_old"),
-    # genetics / pathways — well replicated
+    # genetics / pathways - well replicated
     dict(id="foxo3", text="FOXO3 genetic variants associate with human longevity across cohorts",
          interv="FOXO3 longevity gene", support=6, vf=2008, vt=None, status="supported", contradicts=None),
     dict(id="klotho", text="klotho overexpression extends lifespan in mice",
          interv="klotho", support=3, vf=2005, vt=None, status="supported", contradicts=None),
     dict(id="sirt6", text="SIRT6 overexpression extends lifespan in male mice",
          interv="SIRT6 sirtuin", support=2, vf=2012, vt=None, status="supported", contradicts=None),
-    # parabiosis / young blood — dilution reframing
+    # parabiosis / young blood - dilution reframing
     dict(id="blood_old", text="young plasma broadly reverses aging via youthful factors in parabiosis",
          interv="parabiosis young blood", support=2, vf=2005, vt=2016, status="superseded", contradicts=None),
     dict(id="blood", text="parabiosis benefits come largely from dilution of old blood factors not youth factors",
@@ -132,7 +132,7 @@ def ingest_drugage(rows):
 
 # ── retrieval ───────────────────────────────────────────────────────────
 INTERV_W = 3        # an intervention/entity-token match weighs more than a generic word
-REP_W = 2.0         # replication tiebreak weight (ADDITIVE — relevance stays primary, so
+REP_W = 2.0         # replication tiebreak weight (ADDITIVE - relevance stays primary, so
 #                     support breaks ties between equally-relevant claims, never overrides a
 #                     clear entity match: the same "gentle tiebreak" discipline as the ranker)
 
@@ -146,7 +146,7 @@ def relevance(query, c):
 
 def matches(query):
     """Candidate claims, ENTITY-GATED: a claim qualifies only if the query names its
-    intervention (shares an interv token) — claims about a different intervention don't
+    intervention (shares an interv token) - claims about a different intervention don't
     compete just because they share a generic word. Falls back to any lexical overlap if
     nothing names an entity. The SAME candidate set feeds every method, so the comparison
     isolates the validity/replication/contradiction layers, not entity hygiene."""
@@ -171,7 +171,7 @@ def lexical_only(query):
 
 def bio_memory(query, as_of=NOW):
     """Ours: among matches CURRENT as-of `as_of` (valid window contains it) and not refuted-
-    by-`as_of`, rank by relevance + REP_W·log(1+replications) — replication-weighted (additive,
+    by-`as_of`, rank by relevance + REP_W·log(1+replications) - replication-weighted (additive,
     so relevance leads), bi-temporal, contradiction-aware."""
     out = []
     for rel, c in matches(query):
@@ -275,12 +275,12 @@ def eval_contradiction():
 def main():
     bar = "=" * 78
     print(bar)
-    print("  BIO/LONGEVITY RESEARCH-MEMORY (2A) — replication-weighted, bi-temporal claims")
+    print("  BIO/LONGEVITY RESEARCH-MEMORY (2A) - replication-weighted, bi-temporal claims")
     print(bar)
     print(f"  curated corpus: {len(CLAIMS)} longevity claims with real replication/revision arcs")
 
     acc, served = eval_best()
-    print(f"\n— current best-supported finding (accuracy over {len(BEST_Q)} topics) —")
+    print(f"\n- current best-supported finding (accuracy over {len(BEST_Q)} topics) -")
     print(f"  {'method':14} {'accuracy':>9} {'served-contradicted':>20}")
     for name in ("flat-newest", "lexical-only", "bio-memory"):
         print(f"  {name:14} {acc[name]:>9.3f} {served[name]:>20.3f}")
@@ -289,13 +289,13 @@ def main():
           f"serves a contradicted finding {served['bio-memory']:.0%} vs {served['flat-newest']:.0%}.")
 
     af = eval_asof()
-    print(f"\n— as-of belief (bi-temporal, accuracy over {len(ASOF_Q)} era-queries) —")
+    print(f"\n- as-of belief (bi-temporal, accuracy over {len(ASOF_Q)} era-queries) -")
     print(f"  bio-memory (as_of)  {af['bio-memory']:.3f}    flat-newest (anachronistic)  {af['flat-newest']:.3f}")
     print(f"  → returning the version current THEN, not the latest: "
           f"{af['bio-memory'] - af['flat-newest']:+.3f}.")
 
     cf = eval_contradiction()
-    print(f"\n— contradiction detection (F1 over {cf['n_contradicted']} overturned claims) —")
+    print(f"\n- contradiction detection (F1 over {cf['n_contradicted']} overturned claims) -")
     print(f"  structure-aware {cf['structure-aware']:.3f}   recency-baseline {cf['recency-baseline']:.3f}")
     print(f"  → supersession/contradicts links recover overturned claims a recency heuristic misranks.")
 

@@ -1,28 +1,28 @@
 #!/usr/bin/env python3
-"""RESEARCH — serendipitous / divergent recall (roadmap 2B).
+"""RESEARCH - serendipitous / divergent recall (roadmap 2B).
 
 THESIS. Everyone optimizes relevance (convergence). Sometimes the useful memory is the
-distant-but-bridgeable one — a note connecting two active-but-unlinked clusters, which a
+distant-but-bridgeable one - a note connecting two active-but-unlinked clusters, which a
 pure-relevance ranker buries under nearer in-cluster notes. A controllable knob
 `NEVERTWICE_DIVERGENCE ∈ [0,1]` should trade convergence↔serendipity WITHOUT destroying
 relevance, and a bridge-aware variant should surface those connectors specifically.
 
 THREE recall modes (select top-k from the pool for a query active in cluster i):
-  • relevance — top-k by cosine (convergent; the baseline).
-  • MMR       — Maximal Marginal Relevance: λ·rel − (1−λ)·max-sim-to-selected, λ=1−div
-                (diverse, but diversity ≠ bridging — it may pick any far note).
-  • bridge    — (1−div)·rel + div·bridge(m), bridge(m)=product of m's top-2 cosines to the
+  • relevance - top-k by cosine (convergent; the baseline).
+  • MMR       - Maximal Marginal Relevance: λ·rel − (1−λ)·max-sim-to-selected, λ=1−div
+                (diverse, but diversity ≠ bridging - it may pick any far note).
+  • bridge    - (1−div)·rel + div·bridge(m), bridge(m)=product of m's top-2 cosines to the
                 cluster centroids: a query-independent betweenness proxy, high for a note that
                 sits between two clusters (the graph machinery's structural bridge, made cheap).
 
 EXPERIMENT (synthetic world with planted bridge notes = normalize(c_a + c_b)):
-  • bridge-recall@k — does a bridge FROM the active cluster appear in the top-k? (swept over div)
-  • relevance ↔ novelty Pareto — top-k mean relevance vs mean distance-from-home-cluster (the
+  • bridge-recall@k - does a bridge FROM the active cluster appear in the top-k? (swept over div)
+  • relevance ↔ novelty Pareto - top-k mean relevance vs mean distance-from-home-cluster (the
     controllable frontier)
-  • cross-cluster surfacing rate — fraction of top-k outside the home cluster
+  • cross-cluster surfacing rate - fraction of top-k outside the home cluster
 
-CLAIM. "Divergent recall: controllable serendipity in agent memory, and the relevance–surprise
-frontier." Honest scope: structural metrics only — the LLM-judged "did this spark a useful
+CLAIM. "Divergent recall: controllable serendipity in agent memory, and the relevance-surprise
+frontier." Honest scope: structural metrics only - the LLM-judged "did this spark a useful
 connection" is the fuzzy part left to a human/LLM study; synthetic, seeded, CPU.
 
     python research/divergent.py            # report
@@ -86,7 +86,7 @@ def gen_world(rng):
 
 
 def bridge_score(world):
-    """Betweenness proxy per note: product of its top-2 cosines to the cluster centroids —
+    """Betweenness proxy per note: product of its top-2 cosines to the cluster centroids -
     high when a note sits between two clusters, ~0 when it's firmly inside one."""
     sims = world["vec"] @ world["cent"].T            # (N, N_CLUSTERS)
     top2 = np.sort(sims, axis=1)[:, -2:]
@@ -151,13 +151,13 @@ def _m(xs):
 def main():
     bar = "=" * 78
     print(bar)
-    print("  SERENDIPITOUS / DIVERGENT RECALL (2B) — controllable convergence↔surprise")
+    print("  SERENDIPITOUS / DIVERGENT RECALL (2B) - controllable convergence↔surprise")
     print(bar)
     print(f"  world: {N_CLUSTERS} clusters × {PER_CLUSTER} notes + {N_BRIDGES} planted bridges (dim {DIM}); "
           f"{QUERIES}×{SEEDS} queries; top-{K}")
     agg = run()
 
-    print(f"\n— bridge-recall@{K} (a bridge FROM the active cluster surfaced) vs divergence —")
+    print(f"\n- bridge-recall@{K} (a bridge FROM the active cluster surfaced) vs divergence -")
     print(f"  {'divergence':>11}" + "".join(f"{d:>8}" for d in DIVS))
     for md in ("relevance", "mmr", "bridge"):
         cells = "".join(f"{_m(agg[md][d]['br']):>8.3f}" for d in DIVS)
@@ -166,9 +166,9 @@ def main():
     bb = _m(agg["bridge"][0.75]["br"])
     mm = _m(agg["mmr"][0.75]["br"])
     print(f"  → at div=0 (pure relevance) bridge-recall {base:.3f}; bridge-aware@0.75 {bb:.3f}, "
-          f"MMR@0.75 {mm:.3f} — bridges are specifically recovered, diversity alone less so.")
+          f"MMR@0.75 {mm:.3f} - bridges are specifically recovered, diversity alone less so.")
 
-    print(f"\n— relevance ↔ novelty Pareto (bridge mode, top-{K} means) vs divergence —")
+    print(f"\n- relevance ↔ novelty Pareto (bridge mode, top-{K} means) vs divergence -")
     print(f"  {'div':>5} {'relevance':>10} {'novelty':>9} {'cross-cluster':>14}")
     for d in DIVS:
         print(f"  {d:>5} {_m(agg['bridge'][d]['rel']):>10.3f} {_m(agg['bridge'][d]['nov']):>9.3f} "
@@ -195,7 +195,7 @@ def _figure(agg, path):
         matplotlib.use("Agg")
         import matplotlib.pyplot as plt
     except Exception as e:
-        print(f"  [figure skipped: matplotlib unavailable — {e}]")
+        print(f"  [figure skipped: matplotlib unavailable - {e}]")
         return
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(11, 4.3))
     for md, mark in (("relevance", "o"), ("mmr", "s"), ("bridge", "^")):
@@ -211,7 +211,7 @@ def _figure(agg, path):
         ax2.annotate(f"{d}", (_m(agg["bridge"][d]["rel"]), _m(agg["bridge"][d]["nov"])), fontsize=7)
     ax2.set_xlabel("top-k relevance")
     ax2.set_ylabel("top-k novelty (distance from home)")
-    ax2.set_title("Relevance–surprise frontier (bridge mode)")
+    ax2.set_title("Relevance-surprise frontier (bridge mode)")
     ax2.grid(alpha=0.3)
     fig.tight_layout()
     fig.savefig(path, dpi=130)

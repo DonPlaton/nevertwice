@@ -11,7 +11,7 @@ Semantics:
   - Skips sessions already in .processed_sessions.json (delete that file to
     force full reprocessing).
   - Sessions whose cwd is not a tracked project (a configured root or a git
-    repo, excluding system/agent-internal paths) are recorded as skipped —
+    repo, excluding system/agent-internal paths) are recorded as skipped -
     the same rule as the live hook (audit C2).
 """
 
@@ -51,7 +51,7 @@ BAR = "=" * 72
 
 def main():
     print(BAR)
-    print("  Claude Memory — Process NOW (полный скан, без ограничения по дате)")
+    print("  Claude Memory - Process NOW (полный скан, без ограничения по дате)")
     print(BAR)
     print(f"  Vault          : {_mh.VAULT}")
     print(f"  Projects root  : {PROJECTS_ROOT}")
@@ -64,7 +64,7 @@ def main():
         sys.exit(1)
 
     if not acquire_lock(timeout_s=60):
-        print("[ERROR] Не смог взять lock на vault — другой процесс держит его. Выход.")
+        print("[ERROR] Не смог взять lock на vault - другой процесс держит его. Выход.")
         sys.exit(2)
 
     try:
@@ -83,7 +83,7 @@ def _stat_or_none(p: Path):
 def _run(t0: float):
     db = load_processed()
 
-    # One stat() per transcript — cache mtime AND size in one pass.
+    # One stat() per transcript - cache mtime AND size in one pass.
     seen = []
     for jl in PROJECTS_ROOT.rglob("*.jsonl"):   # recursive: don't miss nested (audit LOW)
         st = _stat_or_none(jl)
@@ -104,7 +104,7 @@ def _run(t0: float):
 
         if sid in db:
             skipped_done += 1
-            print(f"{prefix} {jl.parent.name[:32]:<32} {sid[:8]} — already processed",
+            print(f"{prefix} {jl.parent.name[:32]:<32} {sid[:8]} - already processed",
                   flush=True)
             continue
 
@@ -115,11 +115,11 @@ def _run(t0: float):
             mark_processed(db, sid, str(jl))
             skipped_outside += 1
             print(f"{prefix} {jl.parent.name[:32]:<32} {sid[:8]} ({size_kb:>5} KB) "
-                  f"— outside {PROJECT_ROOT_DISPLAY}, skip", flush=True)
+                  f"- outside {PROJECT_ROOT_DISPLAY}, skip", flush=True)
             continue
 
         print(f"{prefix} {jl.parent.name[:32]:<32} {sid[:8]} ({size_kb:>5} KB) "
-              f"— extracting...", flush=True)
+              f"- extracting...", flush=True)
         ts = time.time()
         ok = process_session(sid, cwd, str(jl), "process_now", db, run_log=run_log)
         dt = time.time() - ts
@@ -131,7 +131,7 @@ def _run(t0: float):
                   f"D={last.get('decisions',0)}", flush=True)
         else:
             failed += 1
-            print(f"           FAIL after {dt:5.1f}s  (LLM extraction failed — check "
+            print(f"           FAIL after {dt:5.1f}s  (LLM extraction failed - check "
                   f"Gemini key + Ollama; see status.txt)", flush=True)
 
     if new:
@@ -140,7 +140,7 @@ def _run(t0: float):
         archive_old_typed()
         prune_processed_db(db)
     # LLM context-summary compaction belongs to this non-interactive heavy path,
-    # not the live hook (which stays GPU-free under the vault lock — audit C4)
+    # not the live hook (which stays GPU-free under the vault lock - audit C4)
     maintain_contexts()
     write_status("ProcessNOW", "manual_button", run_log, 0, "process_now_full_scan")
 
@@ -154,7 +154,7 @@ def _run(t0: float):
     print(f"  Ошибки                  : {failed}")
     print(BAR)
     if new:
-        print("Index.md перестроен. Подробности — в status.txt.")
+        print("Index.md перестроен. Подробности - в status.txt.")
     else:
         print("Новых сессий не было. Index.md без изменений.")
     print()

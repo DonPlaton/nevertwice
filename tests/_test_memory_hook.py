@@ -33,7 +33,7 @@ def check(name, ok, detail=""):
 
 
 def test_slug_helpers():
-    print("\n— slug helpers —")
+    print("\n- slug helpers -")
     check("slugify lowercases", mh.slugify("Hello World") == "hello-world")
     # slugify only strips Windows-forbidden chars; '!' / '?' are passed through.
     check("slugify strips colon", mh.slugify("Fix: TypeError") == "fix-typeerror")
@@ -45,7 +45,7 @@ def test_slug_helpers():
 
 
 def test_stem_parse():
-    print("\n— stem parsing —")
+    print("\n- stem parsing -")
     typed = mh.typed_stem("2026-05-13", "project_epsilon", "pattern",
                           "Code Review And Fix Loop")
     check("typed_stem builds",
@@ -73,7 +73,7 @@ def test_stem_parse():
 
 
 def test_project_filter():
-    print("\n— project filter / derivation —")
+    print("\n- project filter / derivation -")
     sub = os.path.join(_ROOT, "Project_Epsilon")
     deep = os.path.join(_ROOT, "Project_Epsilon", "src", "foo")
     outside = os.path.join((r"C:\Nowhere" if os.name == "nt" else "/nowhere"), "x")
@@ -98,7 +98,7 @@ def test_project_filter():
 
 
 def test_yaml_quoting():
-    print("\n— YAML scalar quoting —")
+    print("\n- YAML scalar quoting -")
     fm = mh.fm_block({
         "date": "2026-05-13",
         "project": "project_epsilon",
@@ -120,7 +120,7 @@ def test_yaml_quoting():
 
 
 def test_truncate_smart():
-    print("\n— truncate_smart —")
+    print("\n- truncate_smart -")
     txt = "A" * 100 + "B" * 50000 + "Z" * 100
     out = mh.truncate_smart(txt, 12000)
     check("under-budget passes through",
@@ -132,7 +132,7 @@ def test_truncate_smart():
 
 
 def test_lock():
-    print("\n— advisory lock —")
+    print("\n- advisory lock -")
     check("acquire fresh", mh.acquire_lock(timeout_s=1))
     check("acquire reentrant fails", not mh.acquire_lock(timeout_s=1))
     mh.release_lock()
@@ -141,7 +141,7 @@ def test_lock():
 
 
 def test_archive_filename_date():
-    print("\n— archive_old_sessions: filename-date based —")
+    print("\n- archive_old_sessions: filename-date based -")
     sess = mh.VAULT / "Sessions"
     sess.mkdir(parents=True, exist_ok=True)
     # Dates are relative to TODAY so the test never time-bombs when the calendar
@@ -151,7 +151,7 @@ def test_archive_filename_date():
     # Old filename (well past cutoff) but freshly touched mtime → must still archive.
     old = sess / f"{old_date}-1200-demo-session-deadbeef.md"
     old.write_text("# old", encoding="utf-8")
-    os.utime(old, None)  # touch — fresh mtime
+    os.utime(old, None)  # touch - fresh mtime
     # New filename (today), fresh mtime → must NOT archive.
     new = sess / f"{new_date}-1200-demo-session-cafebabe.md"
     new.write_text("# new", encoding="utf-8")
@@ -163,7 +163,7 @@ def test_archive_filename_date():
 
 
 def test_unique_path_collision():
-    print("\n— write_typed_note collision handling —")
+    print("\n- write_typed_note collision handling -")
     patterns = mh.VAULT / "Patterns"
     patterns.mkdir(parents=True, exist_ok=True)
     item = {"title": "code-review-loop", "description": "demo"}
@@ -178,7 +178,7 @@ def test_unique_path_collision():
 
 
 def test_processed_db_guard():
-    print("\n— process_session re-entry guard —")
+    print("\n- process_session re-entry guard -")
     db = {"sid123": {"transcript": "x", "processed_at": "2026-05-13T10:00:00"}}
     ok = mh.process_session("sid123", os.path.join(_ROOT, "demo"), "irrelevant",
                             "test", db)
@@ -187,7 +187,7 @@ def test_processed_db_guard():
 
 
 def test_collect_existing_titles():
-    print("\n— collect_existing_titles tolerates similar project names —")
+    print("\n- collect_existing_titles tolerates similar project names -")
     pat = mh.VAULT / "Patterns"
     pat.mkdir(parents=True, exist_ok=True)
     (pat / "2026-05-13-foo-pattern-aaa.md").write_text("x", encoding="utf-8")
@@ -214,6 +214,6 @@ if __name__ == "__main__":
             failures.append(f"{fn.__name__}:exception")
     print()
     if failures:
-        print(f"FAILED: {len(failures)} — " + ", ".join(failures))
+        print(f"FAILED: {len(failures)} - " + ", ".join(failures))
         sys.exit(1)
     print("ALL TESTS PASSED")

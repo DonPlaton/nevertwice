@@ -21,7 +21,7 @@ This creates your memory store at `~/.nevertwice` (plain Markdown + Git), wires 
 Claude Code hooks, and **prints the backend it auto-detected**. For example:
 
 ```
-[backends] auto-detected (zero config — override in .env only if you want to):
+[backends] auto-detected (zero config - override in .env only if you want to):
   extraction : local Ollama qwen3:8b  (no key needed)
   recall     : local Ollama bge-m3  (semantic + lexical, hybrid)
 ```
@@ -54,8 +54,8 @@ python examples/demo.py
 ```
 
 It seeds three lessons, then recalls the right one from a fresh prompt and abstains on nonsense.
-For the whole machine at once — a guard firing before a repeat mistake, anticipation, the causal
-graph, supersession, every number measured live — run `python examples/scenario_demo.py`.
+For the whole machine at once - a guard firing before a repeat mistake, anticipation, the causal
+graph, supersession, every number measured live - run `python examples/scenario_demo.py`.
 Once you have captured real sessions, search the memory by hand any time:
 
 ```bash

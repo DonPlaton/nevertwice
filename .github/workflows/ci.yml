@@ -11,7 +11,7 @@ permissions:
 jobs:
   test:
     # Cross-platform: the path/tracking layer is OS-aware (P-2). Tests are
-    # stdlib-only and mock the LLM/embedder — no network, no GPU.
+    # stdlib-only and mock the LLM/embedder - no network, no GPU.
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false

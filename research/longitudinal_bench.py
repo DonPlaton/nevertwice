@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""RESEARCH — a recurrence-bearing longitudinal agent-memory benchmark (roadmap 3A).
+"""RESEARCH - a recurrence-bearing longitudinal agent-memory benchmark (roadmap 3A).
 
 WHY THIS EXISTS. LongMemEval (research/longmem_eval.py) gives a real external recall
-number, but every one of its sessions is distinct — recurrence is always 1, so it
+number, but every one of its sessions is distinct - recurrence is always 1, so it
 cannot tell us whether exploiting *lesson recurrence* helps. No public benchmark
 carries a natural recurrence signal. This module builds one: a controlled, fully
 seeded longitudinal world where an agent works tasks over many sessions, the same
@@ -15,11 +15,11 @@ WHAT IT MEASURES.
   • recall@k / MRR / nDCG of the SHIPPED ranker vs ablated rankers, on ground truth
     that is an external need (the lesson the session hit), NOT internal wikilink
     self-consistency (cf. eval_harness Task A's honesty note).
-  • recurrence-stratified recall — does the ranker exploit recurrence WHEN PRESENT
+  • recurrence-stratified recall - does the ranker exploit recurrence WHEN PRESENT
     (the question LongMemEval cannot pose).
-  • recall-utility over time — the learning curve as memory fills (the signal 1B's
+  • recall-utility over time - the learning curve as memory fills (the signal 1B's
     online learner optimises).
-  • temporal ambiguity — how many stale versions a supersession-blind store surfaces.
+  • temporal ambiguity - how many stale versions a supersession-blind store surfaces.
 
 FAITHFULNESS. The ranker modes reproduce memory_hook.retrieve_relevant exactly: the
 floored semantic list, lexical token overlap, weighted RRF (RETRIEVAL_SEM_WEIGHT),
@@ -31,7 +31,7 @@ parity test (_test_longitudinal_bench.py) pins the salience re-implementation to
 shipped function.
 
 Synthetic latent vectors + synthetic token bags make ambiguity and recurrence
-controlled variables — a mechanism benchmark, reproducible on CPU in seconds, NOT an
+controlled variables - a mechanism benchmark, reproducible on CPU in seconds, NOT an
 embedder test. It also EMITS the implicit-feedback log 1B needs (--emit-feedback).
 
     python research/longitudinal_bench.py                 # leaderboard
@@ -68,7 +68,7 @@ EMIT_FEEDBACK = "--emit-feedback" in sys.argv
 # ── world configuration (all fixed; reproducible) ──────────────────────
 # Calibrated so the BASE task is genuinely ambiguous (no signal is an oracle): the
 # pool is large enough that recall@k does not saturate, semantic is the primary but
-# confusable signal, and lexical is a weak/noisy secondary — the regime where a
+# confusable signal, and lexical is a weak/noisy secondary - the regime where a
 # recurrence prior can actually act (cf. the leaderboard's first cut, where trivially
 # separable tokens let lexical nail R@1 and recurrence was inert by construction).
 DIM = 48
@@ -85,7 +85,7 @@ DAYS_PER_SESSION = 0.25           # session gap → note age (drives decay salie
 T_SESSIONS = 400 if QUICK else 1600
 SEEDS = 3 if QUICK else 6
 SIGMA_MAIN = None                 # headline leaderboard: a per-query MIXTURE of crisp &
-# ambiguous queries (drawn below) — the realistic regime, and the only one in which
+# ambiguous queries (drawn below) - the realistic regime, and the only one in which
 # ambiguity-ADAPTIVE recurrence can differ from fixed (a single σ makes every query
 # equally ambiguous, so amb is ~constant and adaptive ≡ fixed).
 MIX_AMBIG_P = 0.6                 # share of ambiguous queries in the mixture
@@ -106,7 +106,7 @@ TIME_BINS = 10
 def gen_world(rng):
     """A topic-clustered lesson space with latent vectors, noisy token bags and a
     Zipf recurrence propensity per lesson. Each lesson draws L_UNIQUE tokens from its
-    topic's vocabulary of TOPIC_VOCAB — siblings overlap (shared topic words) but each
+    topic's vocabulary of TOPIC_VOCAB - siblings overlap (shared topic words) but each
     differs, so lexical overlap is informative yet noisy, not an oracle."""
     cent = rng.normal(size=(N_TOPICS, DIM))
     cent /= np.linalg.norm(cent, axis=1, keepdims=True)
@@ -173,7 +173,7 @@ def simulate(rng, world):
 
 
 def _query_sigma(rng, sigma):
-    """A fixed σ, or — when sigma is None — a per-query draw from the crisp/ambiguous
+    """A fixed σ, or - when sigma is None - a per-query draw from the crisp/ambiguous
     mixture (so crisp and ambiguous queries coexist, which is what lets the
     ambiguity-adaptive recurrence term differ from a fixed one)."""
     if sigma is not None:
@@ -196,10 +196,10 @@ def make_query(rng, world, lid, sigma):
     return qv, qt
 
 
-# ── ranker modes — faithful to memory_hook.retrieve_relevant ────────────
+# ── ranker modes - faithful to memory_hook.retrieve_relevant ────────────
 
 def _salience(rec):
-    """Mirror of m._salience_mult with an explicit (controlled) age — incl. the
+    """Mirror of m._salience_mult with an explicit (controlled) age - incl. the
     recurrence-slowed decay (effective age = age/(1+log n), 3A finding F2). Reads the
     SAME constants so it tracks any retuning; parity-pinned in the companion test."""
     n = max(1, int(rec.get("recurrence", 1) or 1))
@@ -230,7 +230,7 @@ _MODE_CFG = {
 
 def _cos(qv, vec):
     """Cosine of two UNIT vectors = their dot product. Equivalent to m.cosine for
-    normalized vectors but vectorized — m.cosine takes python lists (returns 0.0 on a
+    normalized vectors but vectorized - m.cosine takes python lists (returns 0.0 on a
     numpy array), so it must not be called with the world's numpy rows. Matches
     recurrence_ablation's `vecs @ qv`."""
     return float(qv @ vec)
@@ -289,7 +289,7 @@ _WORLD_CACHE = {}
 
 
 def _world_events(seed):
-    """(world, events) for a seed — deterministic and σ-independent, so cache it
+    """(world, events) for a seed - deterministic and σ-independent, so cache it
     (the σ and coefficient sweeps would otherwise rebuild the same worlds)."""
     if seed not in _WORLD_CACHE:
         world = gen_world(np.random.default_rng(2000 + seed))
@@ -318,7 +318,7 @@ def run(sigma, feedback_sink=None):
                 agg[mode]["ndcg"].append(ndcg)
                 if mode in STRAT_MODES:
                     strat[mode][_bucket(ev["recurrence"])].append(rec[1])
-            # learning curve (recall@1 — @5 saturates on an 8-wide pool) + temporal
+            # learning curve (recall@1 - @5 saturates on an 8-wide pool) + temporal
             curve[min(TIME_BINS - 1, ev["t"] * TIME_BINS // T_SESSIONS)].append(
                 agg["shipped"]["r@1"][-1])
             if ev["n_retired"]:
@@ -335,7 +335,7 @@ def coef_sweep(sigma):
     """recall@1 of hybrid+recurrence vs the RRF-scale recurrence coefficient, for BOTH
     fixed and ambiguity-adaptive scaling (paired query streams). Locates the calibrated
     optimum, shows where the shipped value sits, and exposes WHEN the adaptive scaling
-    actually matters — the calibration LongMemEval could not provide (no recurrence)."""
+    actually matters - the calibration LongMemEval could not provide (no recurrence)."""
     out = {}
     for coef in RECUR_COEFS:
         row = {}
@@ -359,7 +359,7 @@ def coef_sweep(sigma):
 def _log_feedback(sink, world, ev, qv, qt, seed, sigma):
     """One JSONL row per query: per-candidate features (relevance, recurrence,
     recency, confidence, resolved, lexical-overlap) + the shipped top-k and whether
-    the target was surfaced — the implicit reward 1B's bandit learns from."""
+    the target was surfaced - the implicit reward 1B's bandit learns from."""
     ranked = rank(world, ev, qv, qt, "shipped")
     topk = ranked[:m.RETRIEVAL_TOP_K]
     feats = {int(j): {"relevance": round(_cos(qv, world["vec"][j]), 4),
@@ -381,7 +381,7 @@ def _log_feedback(sink, world, ev, qv, qt, seed, sigma):
 def main():
     bar = "=" * 80
     print(bar)
-    print("  LONGITUDINAL AGENT-MEMORY BENCHMARK (3A) — recurrence-bearing, point-in-time")
+    print("  LONGITUDINAL AGENT-MEMORY BENCHMARK (3A) - recurrence-bearing, point-in-time")
     print(bar)
     print(f"  world: {N_TOPICS} topics × {LESSONS_PER_TOPIC} near-dup lessons (dim {DIM}); "
           f"Zipf(a={ZIPF_A}) recurrence; {P_SUPERSEDE:.0%} supersede")
@@ -391,7 +391,7 @@ def main():
     feedback = [] if EMIT_FEEDBACK else None
     agg, strat, curve, temporal = run(SIGMA_MAIN, feedback_sink=feedback)
 
-    print(f"\n— leaderboard at σ=mixture (crisp+ambiguous)  (mean ± 95% CI over {SEEDS} seeds) —")
+    print(f"\n- leaderboard at σ=mixture (crisp+ambiguous)  (mean ± 95% CI over {SEEDS} seeds) -")
     print(f"  {'mode':20} {'R@1':>13} {'R@3':>11} {'R@5':>11} {'MRR':>8} {'nDCG':>7}")
     lead = {}
     for mode in MODES:
@@ -406,13 +406,13 @@ def main():
     salience_lift = lead["shipped"]["r@1"] - lead["hybrid+recur_fixed"]["r@1"]
     adapt = lead["hybrid+recur"]["r@1"] - lead["hybrid+recur_fixed"]["r@1"]
     print(f"\n  → recurrence over recurrence-blind hybrid @1: {recur_lift:+.3f} "
-          f"(small, and concentrated on recurring lessons — see strata)")
+          f"(small, and concentrated on recurring lessons - see strata)")
     print(f"  → salience stack (shipped − hybrid+recur) @1: {salience_lift:+.3f} "
           f"← recency-decay buries old-but-recurring lessons (finding F2)")
     print(f"  → ambiguity-adaptive vs fixed recurrence @1: {adapt:+.3f} "
-          f"(inert/negative at the shipped tiebreaker coef — see calibration)")
+          f"(inert/negative at the shipped tiebreaker coef - see calibration)")
 
-    print(f"\n— recall@1 stratified by target recurrence (does the ranker exploit it?) —")
+    print(f"\n- recall@1 stratified by target recurrence (does the ranker exploit it?) -")
     print(f"  {'ranker':18}" + "".join(f"{lab:>9}" for _, _, lab in RECUR_BUCKETS))
     for mode in STRAT_MODES:
         cells = [f"{_ci(strat[mode][lab])[0]:>9.3f}" for _, _, lab in RECUR_BUCKETS]
@@ -424,20 +424,20 @@ def main():
     print("  → recurrence-aware − blind (hybrid+recur − hybrid), by bucket: "
           + " ".join(f"{lab}:{g[lab]:+.3f}" for _, _, lab in RECUR_BUCKETS))
 
-    print(f"\n— recall@1 over the timeline (shipped; the pool fills as memory grows — "
-          f"the static-ranker\n    baseline the 1B feedback-learner aims to beat) —")
+    print(f"\n- recall@1 over the timeline (shipped; the pool fills as memory grows - "
+          f"the static-ranker\n    baseline the 1B feedback-learner aims to beat) -")
     binvals = [_ci(b)[0] for b in curve]
     spark = "".join("▁▂▃▄▅▆▇█"[min(7, int(v * 8))] for v in binvals)
     print(f"  {spark}   (first→last decile)  {binvals[0]:.2f} → {binvals[-1]:.2f}")
 
     avg_versions = (sum(temporal) / len(temporal)) if temporal else 1.0
-    print(f"\n— temporal ambiguity: a supersession-blind 'use-all' store would surface "
+    print(f"\n- temporal ambiguity: a supersession-blind 'use-all' store would surface "
           f"{avg_versions:.2f}\n    versions/query for revised lessons; the bi-temporal store returns 1 (live).")
 
-    # ambiguity sweep — the validation LongMemEval could not give (recurrence present).
+    # ambiguity sweep - the validation LongMemEval could not give (recurrence present).
     # Isolate recurrence cleanly (blind hybrid vs +recurrence), NOT shipped−semantic
     # (which the salience regression would confound).
-    print(f"\n— recurrence's value vs query ambiguity σ  (recall@1; blind hybrid vs +recur) —")
+    print(f"\n- recurrence's value vs query ambiguity σ  (recall@1; blind hybrid vs +recur) -")
     print(f"  {'σ':>5} {'hybrid':>10} {'+recur':>10} {'Δ(recur)':>10}")
     sweep = {}
     for sg in SIGMAS:
@@ -450,7 +450,7 @@ def main():
 
     # coefficient calibration: where does the shipped coef sit, and WHEN does the
     # ambiguity-adaptive scaling actually change anything?
-    print(f"\n— recurrence-coefficient calibration at σ=mixture  (recall@1; fixed vs adaptive) —")
+    print(f"\n- recurrence-coefficient calibration at σ=mixture  (recall@1; fixed vs adaptive) -")
     csweep = coef_sweep(SIGMA_MAIN)
     print(f"  {'coef':>8} {'fixed':>8} {'adaptive':>9} {'Δ(adapt−fixed)':>15}")
     for c in RECUR_COEFS:
@@ -497,7 +497,7 @@ def _figure(lead, strat, curve, sweep, path):
         matplotlib.use("Agg")
         import matplotlib.pyplot as plt
     except Exception as e:
-        print(f"  [figure skipped: matplotlib unavailable — {e}]")
+        print(f"  [figure skipped: matplotlib unavailable - {e}]")
         return
     fig, axes = plt.subplots(1, 3, figsize=(15, 4.3))
     modes = list(lead)

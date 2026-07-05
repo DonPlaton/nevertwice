@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""RESEARCH (launch round, A1) — does a learned-sparse signal (SPLADE) beat BM25
+"""RESEARCH (launch round, A1) - does a learned-sparse signal (SPLADE) beat BM25
 as the lexical arm of the calibrated fusion?
 
 Encodes the 940 sessions + 500 questions with a SPLADE checkpoint (max-pooled
@@ -106,7 +106,7 @@ def main():
 
     # SPLADE score matrix aligned to rnd_launch's pool order
     C, B, rl_pool, qrel = R.load()
-    assert rl_pool == pool_ids, "pool mismatch — rebuild rnd_launch first"
+    assert rl_pool == pool_ids, "pool mismatch - rebuild rnd_launch first"
     Sp = np.zeros((len(used), len(pool_ids)))
     for i, e in enumerate(used):
         qsp = q_sparse[e["question_id"]]
@@ -114,7 +114,7 @@ def main():
             Sp[i, j] = sparse_dot(qsp, s_sparse[sid])
 
     print("=" * 74)
-    print(f"  SPLADE vs BM25 as the lexical arm — {len(used)} q / {len(pool_ids)} sessions")
+    print(f"  SPLADE vs BM25 as the lexical arm - {len(used)} q / {len(pool_ids)} sessions")
     print("=" * 74)
     print(f"  {'method':28} " + " ".join(f"{'R@'+str(k):>7}" for k in KS) + f" {'MRR':>7}")
     rows = {}
@@ -127,10 +127,10 @@ def main():
         print(R.fmt(name, r))
     base = rows["calibrated(dense,BM25)"]["recall@5"]
     spl = rows["calibrated(dense,SPLADE)"]["recall@5"]
-    verdict = ("WIN — SPLADE beats BM25, ship as opt-in lexical signal"
+    verdict = ("WIN - SPLADE beats BM25, ship as opt-in lexical signal"
                if spl > base + 0.005 else
-               "NO WIN — BM25 matches/beats SPLADE here; keep stdlib BM25 (honest negative)")
-    print(f"\n  → R@5 SPLADE {spl:.3f} vs BM25 {base:.3f} ({spl-base:+.3f}) — {verdict}")
+               "NO WIN - BM25 matches/beats SPLADE here; keep stdlib BM25 (honest negative)")
+    print(f"\n  → R@5 SPLADE {spl:.3f} vs BM25 {base:.3f} ({spl-base:+.3f}) - {verdict}")
     (HERE / "splade_eval.json").write_text(json.dumps(
         {"model": MODEL, "maxlen": MAXLEN, "rows": rows, "verdict": verdict}, indent=1))
     print("=" * 74)

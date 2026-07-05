@@ -1,7 +1,7 @@
 """Shared helpers for the research benches (W12 DRY boundary).
 
 The standalone benches each computed the same mean ± 95% CI inline; this is the one canonical home
-for such cross-bench utilities (alongside _rerank.py). gen_world stays per-module on purpose — each
+for such cross-bench utilities (alongside _rerank.py). gen_world stays per-module on purpose - each
 experiment's synthetic world is a distinct generator, not duplicated boilerplate.
 """
 import numpy as np

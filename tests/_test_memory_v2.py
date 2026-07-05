@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Regression tests for the audit fixes — the LLM-output -> disk path that the
+"""Regression tests for the audit fixes - the LLM-output -> disk path that the
 original suite never covered (audit C6). Mocks call_ollama and asserts on the
 files actually written to a throwaway vault.
 

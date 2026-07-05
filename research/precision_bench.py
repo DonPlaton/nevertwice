@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""RESEARCH — W2 precision ceiling: can we beat the bi-encoder on a real store? (roadmap Phase 1).
+"""RESEARCH - W2 precision ceiling: can we beat the bi-encoder on a real store? (roadmap Phase 1).
 
 W2 (WEAKNESSES.md): bge-m3 cosines for short multilingual notes bunch near a high background, so a
-genuinely-relevant note clears the median by only ~0.16 and retrieval precision saturates —
+genuinely-relevant note clears the median by only ~0.16 and retrieval precision saturates -
 real-trace recall@3 ~0.71 with relevance alone (3A.2), no recurrence prior beats it. The audit names
 three candidate fixes (W4/W2): a stronger embedder, a cross-encoder reranker, or query expansion.
 Two are tested here on the live store, against the SAME cross-session-cluster ground truth the 3A.2
@@ -10,7 +10,7 @@ number uses (apples-to-apples):
 
   Experiment 1 (default, cache-only, zero-dep): embedding-space pseudo-relevance feedback (Rocchio).
     q' = (1-beta)*unit(q) + beta*unit(mean(topK0 neighbours)). Same averaging-as-denoising as 4A
-    abstractive consolidation, applied at QUERY time — re-weights the existing geometry, needs no
+    abstractive consolidation, applied at QUERY time - re-weights the existing geometry, needs no
     model and no text. Tests whether the bi-encoder ceiling is liftable without a new relevance model.
 
   Experiment 2 (--rerank, needs Ollama): a local LLM-as-reranker (cross-encoder substitute). Takes
@@ -155,7 +155,7 @@ def _rocchio(beta, k0):
 
 
 def run_rocchio(queries, base_r, base_m):
-    print(f"  Rocchio PRF sweep — recall@{K} (Δ vs baseline) / MRR:")
+    print(f"  Rocchio PRF sweep - recall@{K} (Δ vs baseline) / MRR:")
     print(f"  {'beta\\K0':>8}" + "".join(f"{k0:>14}" for k0 in K0S))
     best = (base_r, base_m, 0.0, 0)
     grid = {}
@@ -175,7 +175,7 @@ def run_rocchio(queries, base_r, base_m):
               f"(+{br-base_r:.3f}). Embedding-space PRF denoises the query on this geometry.")
     else:
         print(f"  → HONEST NEGATIVE: no (beta,K0) beats baseline by >{EPS:.3f} (best {br:.3f}).")
-        print(f"    The top-K0 neighbourhood is too distractor-heavy for the centroid to denoise —")
+        print(f"    The top-K0 neighbourhood is too distractor-heavy for the centroid to denoise -")
         print(f"    query-time PRF cannot lift the bi-encoder ceiling. The gap is in the encoder")
         print(f"    (W2/W4): it needs a different relevance model (Experiment 2), not re-weighting.")
     return grid, {"recall": br, "mrr": bm, "beta": bbeta, "k0": bk0,
@@ -183,7 +183,7 @@ def run_rocchio(queries, base_r, base_m):
 
 
 # ── Experiment 2: LLM-as-reranker (local Ollama, opt-in DeepSeek) ──────────────
-# The reranker primitive is shared (research/_rerank.py) — same code the LongMemEval
+# The reranker primitive is shared (research/_rerank.py) - same code the LongMemEval
 # external test and a future core opt-in mode use.
 
 def run_rerank(queries, base_r, base_m):
@@ -197,7 +197,7 @@ def run_rerank(queries, base_r, base_m):
         print("  → Ollama not reachable → cannot run the local reranker. Start Ollama and retry.")
         return None
 
-    print(f"  LLM-as-reranker — backend={BACKEND} model={RERANK_MODEL if BACKEND=='local' else 'deepseek'} "
+    print(f"  LLM-as-reranker - backend={BACKEND} model={RERANK_MODEL if BACKEND=='local' else 'deepseek'} "
           f"N={RERANK_N}")
     stats = {"calls": 0, "errors": 0, "prompt_chars": 0}
     pool_hit = rer_hit = rer_mrr = 0.0
@@ -231,7 +231,7 @@ def run_rerank(queries, base_r, base_m):
     if rer_r > base_r + EPS:
         print(f"\n  → WIN: the LLM reranker lifts recall@{K} {base_r:.3f}→{rer_r:.3f} (+{rer_r-base_r:.3f}) "
               f"toward the {pool_r:.3f} pool ceiling.")
-        print(f"    A different relevance signal DOES beat the bi-encoder — ship as opt-in recall mode.")
+        print(f"    A different relevance signal DOES beat the bi-encoder - ship as opt-in recall mode.")
     else:
         print(f"\n  → NO WIN: the reranker does not beat baseline by >{EPS:.3f} on this GT.")
         print(f"    Either the cosine top-3 is already near the {pool_r:.3f} pool ceiling (little")
@@ -249,11 +249,11 @@ def main():
              if isinstance(r, dict) and isinstance(r.get("vec"), list)]
     bar = "=" * 78
     print(bar)
-    print("  W2 PRECISION — can a re-weighting (Rocchio) or a reranker beat the bi-encoder")
+    print("  W2 PRECISION - can a re-weighting (Rocchio) or a reranker beat the bi-encoder")
     print("  on real cross-session ground truth? (aggregate-only)")
     print(bar)
     if len(notes) < 20:
-        print(f"  only {len(notes)} embedded notes — set NEVERTWICE_VAULT to a real, populated store.")
+        print(f"  only {len(notes)} embedded notes - set NEVERTWICE_VAULT to a real, populated store.")
         return
     by_proj = defaultdict(list)
     for s, r in notes:
@@ -263,7 +263,7 @@ def main():
     queries = _build_queries(by_proj)
     print(f"  {len(notes)} notes / {len(by_proj)} projects / {len(queries)} cross-session queries")
     if not queries:
-        print("  no cross-session clusters — store too young or too sparse.")
+        print("  no cross-session clusters - store too young or too sparse.")
         return
     has_text = sum(1 for s in TEXT if TEXT[s]) / max(1, len(TEXT))
     base_r, base_m = _eval(_baseline, queries)
@@ -274,7 +274,7 @@ def main():
 
     if RERANK:
         if has_text < 0.5:
-            print(f"  → cache stores text for only {has_text:.0%} of notes — rebuild embeddings "
+            print(f"  → cache stores text for only {has_text:.0%} of notes - rebuild embeddings "
                   f"(embed_index.py) to run the reranker on full text.")
             return
         out["rerank"] = run_rerank(queries, base_r, base_m)
@@ -283,7 +283,7 @@ def main():
         out["rocchio_grid"], out["rocchio_best"] = grid, best
         print(f"\n  CAVEAT: ground truth is built from the SAME cosine signal (clusters >=0.55), so")
         print(f"  this is an upper bound on re-weighting the existing geometry, not a test of a new")
-        print(f"  relevance model — run --rerank for that.")
+        print(f"  relevance model - run --rerank for that.")
 
     if SAVE and out.get("rerank") is not None or (SAVE and not RERANK):
         p = HERE / "precision_bench.json"

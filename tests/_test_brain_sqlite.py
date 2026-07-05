@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""F4 — SQLite entity/relation graph scale-index.
+"""F4 - SQLite entity/relation graph scale-index.
 
 Proves the SQLite fast path returns results IDENTICAL to the markdown scan (the source of
 truth), that incremental upsert/delete keep it in sync, and that it stays fast as the store
 grows. The graph index is self-sufficient (its rows carry project/date), so it works without
-any embeddings — these tests build it via reindex_graph(), no embed cache needed.
+any embeddings - these tests build it via reindex_graph(), no embed cache needed.
 
     python _test_brain_sqlite.py
 """

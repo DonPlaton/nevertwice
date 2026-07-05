@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
-"""Nevertwice — `conflicts` and `digest`: the two pull-only review commands.
+"""Nevertwice - `conflicts` and `digest`: the two pull-only review commands.
 
 Most memory systems hide what they changed. Nevertwice resolves contradictions at
 write time (M-2: a new fact that supersedes an old one retires the loser to
 `<folder>/Superseded/`), so the *contradiction ledger* and the *supersession history*
-are the same thing — and both are plain files. These two read-only commands surface
+are the same thing - and both are plain files. These two read-only commands surface
 them for a human or an agent, with NO embedder and NO LLM:
 
-  * conflicts — every fact the memory revised: old note -> the note that superseded it,
+  * conflicts - every fact the memory revised: old note -> the note that superseded it,
                 newest first. The audit trail behind "the memory stays consistent."
-  * digest    — a point-in-time rollup: what was added / revised in the last N days,
+  * digest    - a point-in-time rollup: what was added / revised in the last N days,
                 per project and type, plus the store's most-connected entities.
 
     python -m nevertwice.digest                 # 7-day digest, all projects
@@ -76,12 +76,12 @@ def _cutoff(days):
 def compute_digest(project=None, days=7, top_entities=8, recent_n=12):
     """A read-only rollup of the store. `{generated, window_days, totals, by_project,
     recent, changed, top_entities}`:
-      * totals     — live notes, superseded notes, projects, and recent counts
-      * by_project — {project: {total, added, superseded, by_type:{...}}}
-      * recent     — the newest notes added inside the window (title/type/project/date)
-      * changed    — facts revised inside the window (the conflicts ledger, windowed)
-      * top_entities — the most-connected entities (entity graph), each {entity, notes}
-    Dates are 'YYYY-MM-DD' so the window is a lexical compare — no parsing, no tz."""
+      * totals     - live notes, superseded notes, projects, and recent counts
+      * by_project - {project: {total, added, superseded, by_type:{...}}}
+      * recent     - the newest notes added inside the window (title/type/project/date)
+      * changed    - facts revised inside the window (the conflicts ledger, windowed)
+      * top_entities - the most-connected entities (entity graph), each {entity, notes}
+    Dates are 'YYYY-MM-DD' so the window is a lexical compare - no parsing, no tz."""
     project = m.slug_project(project) if project else None
     live = _live_notes(project)
     sup = m._iter_superseded_notes(project)
@@ -133,9 +133,9 @@ def compute_digest(project=None, days=7, top_entities=8, recent_n=12):
 
 def _print_conflicts(rows):
     if not rows:
-        print("No revised facts on record — the memory has not had to supersede anything yet.")
+        print("No revised facts on record - the memory has not had to supersede anything yet.")
         return
-    print(f"CONTRADICTION / SUPERSESSION LEDGER — {len(rows)} revised fact(s), newest first\n")
+    print(f"CONTRADICTION / SUPERSESSION LEDGER - {len(rows)} revised fact(s), newest first\n")
     for r in rows:
         flag = "" if r["resolved"] else "  (still evolving)"
         print(f"• [{r['new_date'] or r['old_date']}] {r['project']} / {r['ntype']}{flag}")
@@ -145,12 +145,12 @@ def _print_conflicts(rows):
         else:
             print("    now: (successor archived)")
     print(f"\nThese are the write-time contradictions M-2 caught and resolved into "
-          f"supersessions — the audit trail under Superseded/.")
+          f"supersessions - the audit trail under Superseded/.")
 
 
 def _print_digest(d):
     t = d["totals"]
-    print(f"NEVERTWICE DIGEST — {d['project']}   (last {d['window_days']} days)   {d['generated']}")
+    print(f"NEVERTWICE DIGEST - {d['project']}   (last {d['window_days']} days)   {d['generated']}")
     print(f"  store: {t['live_notes']} live notes across {t['projects']} project(s), "
           f"{t['superseded_notes']} superseded")
     print(f"  window: +{t['added_in_window']} added, {t['revised_in_window']} revised\n")
@@ -193,7 +193,7 @@ def main():
 
 
 def conflicts_main():
-    """Console-script entry for `nevertwice-conflicts` — same module, conflicts view."""
+    """Console-script entry for `nevertwice-conflicts` - same module, conflicts view."""
     if "--conflicts" not in sys.argv:
         sys.argv.append("--conflicts")
     main()

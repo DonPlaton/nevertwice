@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-Graphify — a code-graph generator for coding agents.
+Graphify - a code-graph generator for coding agents.
 Writes graph.json at the project root: a light index of files with their imports and
 exports, which an agent reads for navigation instead of scanning every file. The real
-token saving is computed on the fly (stats.savings_*) and depends on the project — on
+token saving is computed on the fly (stats.savings_*) and depends on the project - on
 large codebases the graph only pays off if it stays small, hence the hard caps below
 (audit F20/F21/F22: a bloated graph.json costs more than reading the right files).
 Run: python graphify.py [project_path] [--incremental]
@@ -21,7 +21,7 @@ except Exception:
 
 # Refuse to graph the whole projects root (audit F22: that produced an 8.6 MB
 # whole-disk dump). Only individual project subdirs are valid targets. Default to the
-# current working directory (the project you're in) — never a hard-coded machine path.
+# current working directory (the project you're in) - never a hard-coded machine path.
 PROJECT_ROOT = Path(os.environ.get("NEVERTWICE_PROJECT_ROOT") or os.getcwd())
 
 SKIP_DIRS = {'.git','__pycache__','node_modules','.venv','venv','env','dist','build',
@@ -39,7 +39,7 @@ CODE_EXTS  = {'.py','.js','.ts','.tsx','.jsx','.rs','.go','.java','.cpp','.c','.
               '.cuh','.cs','.rb','.php','.sh','.ps1','.r','.jl','.v','.sv','.vhd'}
 MAX_SIZE   = 50_000
 MAX_FILES  = int(os.environ.get("NEVERTWICE_GRAPH_MAX_FILES", "800"))
-# ~30k tokens at /4 — graph above this stops saving tokens vs reading files.
+# ~30k tokens at /4 - graph above this stops saving tokens vs reading files.
 MAX_GRAPH_BYTES = int(os.environ.get("NEVERTWICE_GRAPH_MAX_BYTES", "120000"))
 
 
@@ -103,7 +103,7 @@ def load_extra_skips(root: Path) -> set:
 
 
 def _newest_source_mtime(root: Path):
-    """Newest mtime among indexable files — drives --incremental (audit F39)."""
+    """Newest mtime among indexable files - drives --incremental (audit F39)."""
     skip_dirs = SKIP_DIRS | load_extra_skips(root)
     newest = None
     for r, dns, fns in os.walk(root):
@@ -195,13 +195,13 @@ def main():
     flags = {a for a in sys.argv[1:] if a.startswith("--")}
     root = Path(args[0]).resolve() if args else Path.cwd()
 
-    # Guard: never graph the projects root itself (audit F22 — 8.6 MB dump).
+    # Guard: never graph the projects root itself (audit F22 - 8.6 MB dump).
     if str(root).rstrip("\\/").lower() == str(PROJECT_ROOT.resolve()).rstrip("\\/").lower():
-        print(f"[graphify] refusing to graph the projects root {root} — pass a "
+        print(f"[graphify] refusing to graph the projects root {root} - pass a "
               f"project subdir", file=sys.stderr)
         sys.exit(2)
 
-    # Guard: never graph the memory vault itself — it's notes, not code, and a
+    # Guard: never graph the memory vault itself - it's notes, not code, and a
     # self-graph is pure noise (audit M6).
     if (root / ".processed_sessions.json").exists() or (
             (root / "Index.md").exists() and (root / "Context").is_dir()
@@ -213,12 +213,12 @@ def main():
     if "--incremental" in flags and out.exists():
         newest = _newest_source_mtime(root)
         if newest is not None and out.stat().st_mtime >= newest:
-            print(f"[graphify] {root.name}: up to date — skipped", file=sys.stderr)
+            print(f"[graphify] {root.name}: up to date - skipped", file=sys.stderr)
             return
 
     print(f"[graphify] Scanning: {root}", file=sys.stderr)
     graph = build(root)
-    tmp = out.with_name(out.name + ".tmp")  # atomic write — no corrupt graph on kill (B7)
+    tmp = out.with_name(out.name + ".tmp")  # atomic write - no corrupt graph on kill (B7)
     tmp.write_text(json.dumps(graph, ensure_ascii=False), encoding="utf-8")
     os.replace(tmp, out)
     s = graph["stats"]

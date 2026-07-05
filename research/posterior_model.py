@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""RESEARCH — retrieval as posterior inference (roadmap 1A).
+"""RESEARCH - retrieval as posterior inference (roadmap 1A).
 
 THESIS. Nevertwice ranks with a hand-tuned stack: a cosine relevance score, an additive
 log-recurrence boost, and a multiplicative salience re-weight (recency decay × resolved
@@ -14,19 +14,19 @@ log-recurrence boost, and a multiplicative salience re-weight (recency decay × 
   • reliability           P_rel  ∝ exp(β·conf)    → w_conf·conf
   • status gate           resolved/superseded     → w_res·[resolved]  (superseded excluded)
 
-so the per-query ranking is a LINEAR score in (cos, log n, age, conf, resolved) — a
+so the per-query ranking is a LINEAR score in (cos, log n, age, conf, resolved) - a
 conditional-logit / Plackett-Luce top-1 model. We FIT the weights by maximum likelihood
 on labeled retrieval data from the 3A longitudinal world (train seeds), then on HELD-OUT
 seeds compare the fitted posterior against the shipped hand-tuned heuristic, ablate each
 prior (leave-one-out), and check calibration (does cos/T predict relevance?).
 
-Honest scope: relevance here is the SEMANTIC cosine (no lexical/RRF — this isolates the
+Honest scope: relevance here is the SEMANTIC cosine (no lexical/RRF - this isolates the
 salience-stack question); numbers therefore differ from the 3A leaderboard's fused ranker.
 The posterior is fit to recall on this world, so out-performing the heuristic in-distribution
-is partly by construction — the contribution is that the stack is a *calibratable, inter-
+is partly by construction - the contribution is that the stack is a *calibratable, inter-
 pretable* posterior whose fitted priors can be read off and compared to the hand-tuned ones,
 not a claim of magic. On a no-recurrence corpus (LongMemEval) the priors are inert and the
-posterior reduces to relevance-only — see the note printed at the end.
+posterior reduces to relevance-only - see the note printed at the end.
 
     python research/posterior_model.py            # fit + report
     python research/posterior_model.py --save     # + posterior_model.json (+ .png if mpl)
@@ -68,7 +68,7 @@ PRIORS = {1: "frequency", 2: "recency", 3: "reliability", 4: "status"}   # cols 
 
 def build_dataset(seeds, sigma=None):
     """Per query: (raw feature matrix [n_cand × 5], target row index). Reuses the 3A
-    longitudinal world — candidates carry the real (cos, recurrence, age, confidence,
+    longitudinal world - candidates carry the real (cos, recurrence, age, confidence,
     resolved) the production ranker sees."""
     data = []
     for seed in seeds:
@@ -100,7 +100,7 @@ def standardize_params(data):
 def compile_dataset(data, mean, std):
     """Flatten the per-query matrices into one (ΣnCand × d) array with group offsets,
     so the conditional-logit gradient is a few whole-array ops (reduceat over groups)
-    instead of a Python loop per query — the difference between ~2 min and <1 s."""
+    instead of a Python loop per query - the difference between ~2 min and <1 s."""
     Xs = [(X - mean) / std for X, _ in data]
     counts = np.array([len(X) for X in Xs])
     starts = np.zeros(len(Xs), dtype=int)
@@ -145,7 +145,7 @@ def score_relevance(X_raw):
 
 def score_heuristic(X_raw):
     """The SHIPPED stack on the cosine basis: (cos + RECUR_BOOST·log n) × salience_mult
-    (recurrence-slowed decay × resolved × confidence), with production constants —
+    (recurrence-slowed decay × resolved × confidence), with production constants -
     the hand-tuned comparator the posterior must match or beat."""
     cos, logn, age, conf, res = (X_raw[:, i] for i in range(5))
     base = cos + m.RETRIEVAL_RECUR_BOOST * logn
@@ -211,7 +211,7 @@ def main():
 
     bar = "=" * 78
     print(bar)
-    print("  RETRIEVAL AS POSTERIOR INFERENCE (1A) — the salience stack as a calibrated")
+    print("  RETRIEVAL AS POSTERIOR INFERENCE (1A) - the salience stack as a calibrated")
     print("  conditional-logit posterior, fit on the 3A longitudinal world")
     print(bar)
     print(f"  train: {len(train)} queries (seeds {train_seeds});  "
@@ -220,7 +220,7 @@ def main():
     rankers = {"relevance-only": score_relevance,
                "heuristic (shipped)": score_heuristic,
                "posterior (fitted)": lambda X: score_posterior(X, w, mean, std)}
-    print(f"\n— held-out ranking quality —")
+    print(f"\n- held-out ranking quality -")
     print(f"  {'ranker':22} {'R@1':>7} {'R@3':>7} {'R@5':>7} {'MRR':>7} {'nDCG':>7}")
     res = {}
     for name, fn in rankers.items():
@@ -232,7 +232,7 @@ def main():
     print(f"\n  → posterior − heuristic @1: {lift:+.3f} "
           f"(in-distribution; the stack is a calibratable posterior, not a free lunch)")
 
-    print(f"\n— fitted posterior weights (standardized; sign = direction, |·| = importance) —")
+    print(f"\n- fitted posterior weights (standardized; sign = direction, |·| = importance) -")
     for i, name in enumerate(FEATURES):
         print(f"  {name:16} {w[i]:+.3f}")
     # interpretability: the fitted recency weight implies a hazard rate vs the shipped half-life
@@ -240,7 +240,7 @@ def main():
         print(f"  → recency: fitted weight is negative (older ⇒ less useful), as the survival "
               f"model predicts; shipped uses a fixed {m.RETRIEVAL_DECAY_HALFLIFE:g}-day half-life.")
 
-    print(f"\n— leave-one-prior-out (refit without each prior; Δ = recall@1 lost) —")
+    print(f"\n- leave-one-prior-out (refit without each prior; Δ = recall@1 lost) -")
     full = res["posterior (fitted)"]["recall@1"]
     loo = {}
     for col, pname in PRIORS.items():
@@ -255,12 +255,12 @@ def main():
           f"relevance (cosine) is always kept.")
 
     pred, emp, cnt, ece = calibration(test, w, mean, std)
-    print(f"\n— calibration (ECE = {ece:.3f}; lower = predicted P matches empirical relevance) —")
+    print(f"\n- calibration (ECE = {ece:.3f}; lower = predicted P matches empirical relevance) -")
     print(f"  predicted P : " + " ".join(f"{p:.2f}" for p in pred))
     print(f"  empirical   : " + " ".join(f"{e:.2f}" for e in emp))
 
     print(f"\n  NOTE: on a no-recurrence, no-metadata corpus (LongMemEval: recurrence=1, no age/"
-          f"confidence) the priors are inert and the posterior reduces to relevance-only — the "
+          f"confidence) the priors are inert and the posterior reduces to relevance-only - the "
           f"\n  priors help only where the metadata is informative (the 3A regime).")
 
     if SAVE:
@@ -282,7 +282,7 @@ def _figure(w, loo, pred, emp, cnt, path):
         matplotlib.use("Agg")
         import matplotlib.pyplot as plt
     except Exception as e:
-        print(f"  [figure skipped: matplotlib unavailable — {e}]")
+        print(f"  [figure skipped: matplotlib unavailable - {e}]")
         return
     fig, axes = plt.subplots(1, 3, figsize=(15, 4.3))
     axes[0].barh(range(len(FEATURES)), w)

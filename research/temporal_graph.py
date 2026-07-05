@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
-"""RESEARCH PROTOTYPE — bi-temporal knowledge graph retrofitted onto the existing
+"""RESEARCH PROTOTYPE - bi-temporal knowledge graph retrofitted onto the existing
 file-based Obsidian memory vault. GPU-free: structural parsing + CPU cosine over
 the embeddings cache that already exists. No new embeddings, no network.
 
 Goal: demonstrate that the temporal-KG capabilities of Zep/Graphiti
-(arXiv:2501.13956) — bi-temporal facts, point-in-time recall, belief evolution,
-contradiction timelines — can be reconstructed on plain markdown + git, fully
+(arXiv:2501.13956) - bi-temporal facts, point-in-time recall, belief evolution,
+contradiction timelines - can be reconstructed on plain markdown + git, fully
 local and $0, without Neo4j or a cloud service.
 
 Bi-temporal model (per fact/node), mirroring Graphiti's four timestamps:
-  valid_from / valid_to     — VALID time: when the fact held true in the project
-  txn_from   / txn_to       — TRANSACTION time: when the system recorded it
+  valid_from / valid_to     - VALID time: when the fact held true in the project
+  txn_from   / txn_to       - TRANSACTION time: when the system recorded it
 A fact is "current" iff valid_to is None. Supersession is recovered from
 same-(project,ntype,slug) families ordered by date (implicit), and from explicit
 `superseded_by` frontmatter (the live system stamps this going forward).
@@ -126,7 +126,7 @@ def load_nodes():
 def apply_supersession(nodes):
     """Recover supersession history: within a (project,ntype,slug) family ordered
     by valid date, each older version is superseded by the next. Sets valid_to /
-    txn_to / status — the bi-temporal invalidation Graphiti does via LLM conflict
+    txn_to / status - the bi-temporal invalidation Graphiti does via LLM conflict
     detection, here recovered structurally for free."""
     by_id = {n["id"]: n for n in nodes}
     fam = {}
@@ -239,7 +239,7 @@ def main():
     edges = sum(len(n["links"]) for n in nodes) + chains + len(nodes)  # links + supersede + in-project
     bar = "=" * 74
     print(bar)
-    print("  BI-TEMPORAL KNOWLEDGE GRAPH — prototype on the live vault (GPU-free)")
+    print("  BI-TEMPORAL KNOWLEDGE GRAPH - prototype on the live vault (GPU-free)")
     print(bar)
     print(f"  nodes (facts)        : {len(nodes)}  (live={len(live)}, "
           f"superseded/archived={len(nodes)-len(live)})")
@@ -254,7 +254,7 @@ def main():
     print()
 
     # 1) belief evolution (the headline temporal capability)
-    print("— 1. BELIEF EVOLUTION (a fact the system revised over time) —")
+    print("- 1. BELIEF EVOLUTION (a fact the system revised over time) -")
     fam = contradictions(nodes)
     if fam:
         (proj, nt, slug), _ = max(fam.items(), key=lambda kv: len(kv[1]))
@@ -267,7 +267,7 @@ def main():
     print()
 
     # 2) point-in-time recall: valid-time slice then vs now
-    print("— 2. POINT-IN-TIME RECALL (as_of valid-time) —")
+    print("- 2. POINT-IN-TIME RECALL (as_of valid-time) -")
     early, late = "2026-05-20", datetime.now().strftime("%Y-%m-%d")
     for d in (early, late):
         v = as_of_valid(nodes, d)
@@ -279,17 +279,17 @@ def main():
     if changed:
         c = changed[0]
         print(f"   e.g. on {early} the project believed: "
-              f"\"{(c['desc'] or c['slug'])[:80]}\" — later revised.")
+              f"\"{(c['desc'] or c['slug'])[:80]}\" - later revised.")
     print()
 
     # 3) transaction-time: how the knowledge base grew
-    print("— 3. KNOWLEDGE GROWTH (belief_at transaction-time) —")
+    print("- 3. KNOWLEDGE GROWTH (belief_at transaction-time) -")
     for d in ("2026-05-15", "2026-06-01", datetime.now().strftime("%Y-%m-%d")):
         print(f"   by {d}: system had {len(belief_at(nodes, d))} facts on record")
     print()
 
     # 4) cross-project transferable knowledge (community subgraph)
-    print("— 4. CROSS-PROJECT TRANSFER (semantic communities spanning projects) —")
+    print("- 4. CROSS-PROJECT TRANSFER (semantic communities spanning projects) -")
     for c in sorted(cross, key=len, reverse=True)[:3]:
         projs = sorted({nid.split("-")[3] for nid in c if len(nid.split("-")) > 3})
         titles = [next((n["desc"][:48] or n["slug"] for n in nodes if n["id"] == nid), nid)
@@ -302,7 +302,7 @@ def main():
     print()
 
     # 5) token economy: point-in-time project state vs reading full Context
-    print("— 5. TOKEN ECONOMY (point-in-time state vs full Context read) —")
+    print("- 5. TOKEN ECONOMY (point-in-time state vs full Context read) -")
     proj = max({n["project"] for n in nodes},
                key=lambda p: sum(1 for n in nodes if n["project"] == p))
     cur = [n for n in current if n["project"] == proj]

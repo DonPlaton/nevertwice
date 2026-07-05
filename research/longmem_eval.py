@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
-"""RESEARCH — LongMemEval external retrieval benchmark for Nevertwice.
+"""RESEARCH - LongMemEval external retrieval benchmark for Nevertwice.
 
-Fills the "external benchmark — NOT RUN" gap (eval_harness Task D) with a REAL,
+Fills the "external benchmark - NOT RUN" gap (eval_harness Task D) with a REAL,
 independent recall@k number, and confirms the recurrence/salience fusion is
 *inert* on a no-recurrence corpus (the Pareto-safety check the ablation flagged for
-real embeddings — every LongMemEval session is distinct, recurrence=1, so a
+real embeddings - every LongMemEval session is distinct, recurrence=1, so a
 relevance×recurrence blend must leave relevance retrieval unchanged).
 
 Setup: the GLOBAL-pool variant of LongMemEval-oracle. All 940 unique haystack
 sessions become one shared memory store (a real agent's memory); each of the 500
 questions must retrieve its evidence session(s) (`answer_session_ids`) from the
-whole pool — sessions from other questions are distractors. Sessions and questions
+whole pool - sessions from other questions are distractors. Sessions and questions
 are embedded once with the production embedder (`bge-m3` via `m.embed_text`, with the
 production doc/query prefixes) and cached to disk, so re-ranking (e.g. before/after a
 ranker change) is instant.
@@ -19,7 +19,7 @@ ranker change) is instant.
     python research/longmem_eval.py             # rank + report recall@k (fast; needs the cache)
     python research/longmem_eval.py --limit=150 # first N questions only
 
-Data: data/longmemeval_oracle.json (download separately — see README/this dir).
+Data: data/longmemeval_oracle.json (download separately - see README/this dir).
 Research dep: none beyond the package (uses m.cosine, m.embed_text, m._tokens).
 """
 import collections
@@ -84,7 +84,7 @@ def _zmap(d):
 
 def calibrated(sem_scores, lex_scores, sem_w=None):
     """Calibrated score fusion (z-normalise each signal, combine magnitudes, logistic →
-    (0,1)) — identical to memory_hook._calibrated_fusion. {sid: fused score}."""
+    (0,1)) - identical to memory_hook._calibrated_fusion. {sid: fused score}."""
     if sem_w is None:
         sem_w = getattr(m, "FUSION_SEM_WEIGHT", 0.5)
     zs, zl = _zmap(sem_scores), _zmap(lex_scores)
@@ -117,16 +117,16 @@ def _emb_path(model=None):
 EMB = _emb_path()
 KS = (1, 3, 5, 10)
 MAXCHARS = 28000        # bge-m3 ~8k tokens; keep the whole session, cap pathological outliers
-# CLI flags are read only when run as a script — importing this module (e.g. from a test)
+# CLI flags are read only when run as a script - importing this module (e.g. from a test)
 # must NOT pick up the importer's sys.argv (audit 2026-06-18: a test runner passing --xrerank
 # would silently flip XRERANK at import time).
 _ARGV = sys.argv if __name__ == "__main__" else []
 LIMIT = next((int(a.split("=", 1)[1]) for a in _ARGV if a.startswith("--limit=")), None)
 # W2 reranker: re-order the first-stage (hybrid) top-N with a local LLM cross-encoder substitute.
-# This is the DECISIVE precision test — external GT (answer_session_ids), not cosine-circular.
+# This is the DECISIVE precision test - external GT (answer_session_ids), not cosine-circular.
 RERANK = "--rerank" in _ARGV
 # W2 reranker (trained): re-order the top-N with a purpose-trained cross-encoder
-# (bge-reranker-v2-m3), the standard precision tool — distinct from the LLM reranker above.
+# (bge-reranker-v2-m3), the standard precision tool - distinct from the LLM reranker above.
 XRERANK = "--xrerank" in _ARGV
 RERANK_N = int(os.environ.get("NEVERTWICE_RERANK_N", "10"))      # matches the R@10 pool ceiling
 RERANK_SNIP = int(os.environ.get("NEVERTWICE_RERANK_SNIP", "700"))   # per-session passage budget
@@ -209,7 +209,7 @@ def _recall_mrr(ranked, relevant):
 def evaluate():
     data, pool = load()
     if not EMB.exists():
-        print("No embeddings — run: python research/longmem_eval.py --embed", file=sys.stderr)
+        print("No embeddings - run: python research/longmem_eval.py --embed", file=sys.stderr)
         sys.exit(1)
     cache = json.loads(EMB.read_text(encoding="utf-8"))
     svec = cache["sessions"]
@@ -226,7 +226,7 @@ def evaluate():
     if XRERANK:
         import _xreranker as xr
         if not xr.available():
-            print("xrerank needs torch+transformers — `pip install transformers`", file=sys.stderr)
+            print("xrerank needs torch+transformers - `pip install transformers`", file=sys.stderr)
             sys.exit(1)
         print(f"[xrerank] loading cross-encoder {xr.MODEL} …", file=sys.stderr)
         xr._load()                                     # warm the model once, up front
@@ -241,13 +241,13 @@ def evaluate():
         cos = {s: m.cosine(q, svec[s]) for s in pool_ids}
         bm = bm25_scores(qt, pool_ids, bm_tf, bm_dl, bm_df, bm_avgdl)
         sem = sorted(pool_ids, key=lambda s: (-cos[s], s))
-        lex = sorted(bm, key=lambda s: (-bm[s], s))           # BM25 (IDF-weighted) — the real lexical signal
+        lex = sorted(bm, key=lambda s: (-bm[s], s))           # BM25 (IDF-weighted) - the real lexical signal
         # hybrid = calibrated score fusion (the shipped production ranker): z-normalise each
         # signal and combine magnitudes (beats rank-fusion, which discards them).
         cal = calibrated(cos, bm)
         hyb = sorted(cal, key=lambda s: (-cal[s], s))
         # semantic + the production recurrence boost (recurrence=1 here → boost=0:
-        # this must NOT change the ranking — the Pareto-safety check on real vectors)
+        # this must NOT change the ranking - the Pareto-safety check on real vectors)
         semr = sorted(pool_ids,
                       key=lambda s: -(m.cosine(q, svec[s]) + m._recur_boost({"recurrence": 1})))
         n += 1
@@ -283,7 +283,7 @@ def evaluate():
                 agg[mth][0][k] += rec[k]
             agg[mth][1][0] += mr
     print("=" * 74)
-    print(f"  LongMemEval-oracle (global pool) — external retrieval recall@k")
+    print(f"  LongMemEval-oracle (global pool) - external retrieval recall@k")
     print(f"  {len(pool_ids)} sessions in the shared store, {n} questions, embedder={m.EMBED_MODEL}")
     print("=" * 74)
     print(f"  {'method':16} " + " ".join(f"{'R@'+str(k):>7}" for k in KS) + f" {'MRR':>7}")
@@ -297,15 +297,15 @@ def evaluate():
               + f" {row['mrr']:7.3f}")
     hy, se = out["hybrid"]["recall@5"], out["semantic"]["recall@5"]
     print(f"\n  → calibrated hybrid vs semantic-only @5: {hy - se:+.3f} "
-          f"(external GT, not internal-linkage — this is a real recall number)")
+          f"(external GT, not internal-linkage - this is a real recall number)")
     inert = all(abs(out["semantic"][f"recall@{k}"] - out["semantic+recur"][f"recall@{k}"]) < 1e-9
                 for k in KS)
     # NB: every session here is distinct (recurrence=1 → _recur_boost=0), so this is a
-    # by-CONSTRUCTION no-harm floor — relevance retrieval is provably unchanged by the
-    # recurrence prior — NOT an empirical test of the adaptive scaling (no public corpus
+    # by-CONSTRUCTION no-harm floor - relevance retrieval is provably unchanged by the
+    # recurrence prior - NOT an empirical test of the adaptive scaling (no public corpus
     # carries a natural recurrence signal; that benefit is shown on the synthetic study).
     print(f"  → recurrence boost on this no-recurrence corpus (recurrence=1, boost=0): "
-          f"{'inert by construction — relevance retrieval provably unchanged ✓' if inert else 'CHANGED ranking (!)'}")
+          f"{'inert by construction - relevance retrieval provably unchanged ✓' if inert else 'CHANGED ranking (!)'}")
     rerank_cost = None
     if RERANK and "hybrid+rerank" in out:
         hr, hb = out["hybrid+rerank"], out["hybrid"]
@@ -321,9 +321,9 @@ def evaluate():
               f"   R@5 {hb['recall@5']:.3f}→{hr['recall@5']:.3f} ({hr['recall@5']-hb['recall@5']:+.3f})")
         print(f"    cost: {rstats['calls']} calls, {rstats['errors']} errors, "
               f"~{rstats['prompt_chars']//4} prompt tok, {dt:.0f}s wall ({dt/max(1,n)*1000:.0f} ms/q)")
-        verdict = ("WIN — a cross-encoder reranker lifts external precision; ship as opt-in"
+        verdict = ("WIN - a cross-encoder reranker lifts external precision; ship as opt-in"
                    if hr["recall@1"] > hb["recall@1"] + 0.005 else
-                   "NO WIN — reranking the bi-encoder top-N does not raise external precision here")
+                   "NO WIN - reranking the bi-encoder top-N does not raise external precision here")
         print(f"    → {verdict}")
     xrerank_cost = None
     if XRERANK and "hybrid+xrerank" in out:
@@ -336,9 +336,9 @@ def evaluate():
         print(f"    R@1 {hb['recall@1']:.3f}→{hr['recall@1']:.3f} ({hr['recall@1']-hb['recall@1']:+.3f})"
               f"   R@3 {hb['recall@3']:.3f}→{hr['recall@3']:.3f} ({hr['recall@3']-hb['recall@3']:+.3f})"
               f"   R@5 {hb['recall@5']:.3f}→{hr['recall@5']:.3f} ({hr['recall@5']-hb['recall@5']:+.3f})")
-        verdict = ("WIN — the trained cross-encoder lifts external precision; ship as opt-in"
+        verdict = ("WIN - the trained cross-encoder lifts external precision; ship as opt-in"
                    if hr["recall@1"] > hb["recall@1"] + 0.005 else
-                   "NO WIN — even a trained cross-encoder does not raise external precision here")
+                   "NO WIN - even a trained cross-encoder does not raise external precision here")
         print(f"    → {verdict}")
     if "--save" in sys.argv:
         res = {"sessions": len(pool_ids), "questions": n, "embedder": m.EMBED_MODEL,

@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Active memory, axis A — experience compiled into executable guards (Popperian).
+"""Active memory, axis A - experience compiled into executable guards (Popperian).
 
 A *mistake* is not just a note to recall; it is a hypothesis about a failure pattern. This
 module turns high-recurrence mistakes into **guards**: tiny scoped checks that fire when the
-agent is about to repeat the pattern. The point is token economy — a guard costs **zero
+agent is about to repeat the pattern. The point is token economy - a guard costs **zero
 context tokens until it fires** (it lives in a JSON ledger, not in the prompt), then spends
 one line. Memory stops taxing every turn and instead acts only when it has something worth
 saying. See `research/ACTIVE_MEMORY.md`.
@@ -13,7 +13,7 @@ The danger of a memory that can constrain the agent is ossification, so **no gua
   * born **advisory** (warns, never blocks),
   * promoted advisory→blocking only after K *distinct-session* corroborations,
   * **self-retires** after M false positives (overrides or fired-but-fine),
-  * always overridable with a reason — and the override is feedback that narrows the guard,
+  * always overridable with a reason - and the override is feedback that narrows the guard,
     not defiance.
 
 Reality is allowed to kill a wrong guard. Memory proposes; reality disposes.
@@ -25,7 +25,7 @@ Reality is allowed to kill a wrong guard. Memory proposes; reality disposes.
 
 Stdlib-only; the ledger is `<vault>/guards.json` (atomic writes). Guard *generation* from
 mistakes uses the same cloud/Ollama router as extraction, with a deterministic fallback, and
-runs at consolidation time (sleep-time) — never on the hot path.
+runs at consolidation time (sleep-time) - never on the hot path.
 """
 import fnmatch
 import hashlib
@@ -78,7 +78,7 @@ def save_guards(guards: list[dict]) -> None:
 # dangerous shapes and cap length, then require the regex to compile. Two families of
 # exponential backtracking are refused:
 #   * nested quantifiers on a group/class:      (ab+)+  ,  [ab]+{
-#   * a quantified group containing alternation: (a|aa)+ ,  (foo|foobar)*  — the classic
+#   * a quantified group containing alternation: (a|aa)+ ,  (foo|foobar)*  - the classic
 #     overlapping-alternation blowup the round-1 check missed (code-review, 2026-07).
 # stdlib `re` has no match timeout, so validation-at-creation is the only guard; combined with
 # the 20k input cap in check(), a guard that passes here cannot stall the agent.
@@ -153,7 +153,7 @@ def _scope_matches(g: dict, project, path, tool) -> bool:
 
 def check(action_text: str, *, project=None, path=None, tool=None,
           guards: list[dict] | None = None) -> list[dict]:
-    """The hot path. Return the guards that fire for a proposed action — and NOTHING reaches
+    """The hot path. Return the guards that fire for a proposed action - and NOTHING reaches
     context unless one matches (the token-economy core). Retired guards never fire. Each hit
     is `{id, status, message, scope}`; a `blocking` hit means the agent should stop and either
     comply or override-with-reason. Pure regex+scope match, input length-capped (no LLM, no
@@ -164,7 +164,7 @@ def check(action_text: str, *, project=None, path=None, tool=None,
     if project:
         project = m.slug_project(project)      # guards are stored under the slugged project name;
                                                # slug the arg so a raw name ("svc-000") still matches
-                                               # ("svc_000"). Idempotent — slug(slug(x)) == slug(x).
+                                               # ("svc_000"). Idempotent - slug(slug(x)) == slug(x).
     guards = load_guards() if guards is None else guards
     hits = []
     for g in guards:
@@ -192,12 +192,12 @@ def _find(guards, guard_id):
 def feedback(guard_id: str, outcome: str, *, session_id=None, reason=None,
              guards: list[dict] | None = None, persist: bool = True) -> dict | None:
     """Record what happened after a guard fired and run the lifecycle. `outcome`:
-      * 'helped'         — the agent heeded it / it prevented the mistake. Counts as a
+      * 'helped'         - the agent heeded it / it prevented the mistake. Counts as a
                            distinct-session corroboration; K of them promote advisory→blocking.
-      * 'false_positive' — overridden, or fired on a case that was actually fine. M of them
+      * 'false_positive' - overridden, or fired on a case that was actually fine. M of them
                            demote (blocking→advisory→retired). `reason` is stored as a learned
                            exception that narrows the guard.
-      * 'corroborated'   — confirmed relevant without a heed/override decision (a soft +).
+      * 'corroborated'   - confirmed relevant without a heed/override decision (a soft +).
     Returns the updated guard (or None if unknown). Reality disposes: a guard that keeps
     misfiring retires itself; one that keeps helping hardens."""
     owns = guards is None
@@ -243,7 +243,7 @@ def _confidence(g: dict) -> float:
 
 
 def record_fired(guard_ids, guards=None, persist=True) -> None:
-    """Bump the fired counters for a set of hits in ONE pass and (at most) one atomic write —
+    """Bump the fired counters for a set of hits in ONE pass and (at most) one atomic write -
     the telemetry behind `guards list`'s fired= column, distinct from the helped/false-positive
     verdict. Every check surface (the PreToolUse hot path, api.guards_check, the MCP tool)
     funnels through this, so there is a single implementation and no per-hit write amplification."""
@@ -302,7 +302,7 @@ def _antipattern_for(note: dict) -> str | None:
 
 # Distinctive code-like tokens that make a usable literal pattern, in preference order: a
 # backtick-quoted symbol, a dotted call (`torch.device`), a quoted string literal ('cpu'),
-# then an assert target. Case-insensitive. Used only when no LLM is up — the LLM path is the
+# then an assert target. Case-insensitive. Used only when no LLM is up - the LLM path is the
 # real generator (it is prompted to match the mistake-REPEAT; this fallback just matches the
 # most distinctive code token mentioned, a coarser but safe net).
 _CODEISH = re.compile(
@@ -344,7 +344,7 @@ PREVENTION: {prevention}
 def propose_from_mistake(note: dict, *, use_llm: bool = True) -> dict | None:
     """Turn one mistake-note meta into an advisory guard. Tries the LLM (specific regex +
     message) and falls back to a deterministic literal pattern. Returns None if neither
-    yields a safe pattern. Off the hot path — called at consolidation."""
+    yields a safe pattern. Off the hot path - called at consolidation."""
     project = note.get("project")
     if use_llm and m.llm_available() and not m.is_local_only(project):
         try:
@@ -394,7 +394,7 @@ def generate_from_vault(project=None, *, min_recurrence=1, limit=None, use_llm=T
 
 def _print_hits(hits):
     if not hits:
-        print("ok — no guard fires for this action.")
+        print("ok - no guard fires for this action.")
         return
     for h in hits:
         tag = "BLOCK" if h["status"] == "blocking" else "warn "

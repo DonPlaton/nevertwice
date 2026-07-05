@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""RESEARCH (launch round) — fast vector-search R&D harness on the LongMemEval stand.
+"""RESEARCH (launch round) - fast vector-search R&D harness on the LongMemEval stand.
 
 Loads the cached bge-m3 vectors once, builds the dense cosine matrix (one matmul) and
 the BM25 matrix, caches both to .npy, then runs a battery of retrieval hypotheses
@@ -201,7 +201,7 @@ def main():
     only = next((a.split("=", 1)[1] for a in sys.argv if a.startswith("--only=")), None)
     C, B, pool_ids, qrel = load()
     print("=" * 74)
-    print(f"  RND launch battery — {C.shape[0]} questions / {len(pool_ids)} sessions (bge-m3 cached)")
+    print(f"  RND launch battery - {C.shape[0]} questions / {len(pool_ids)} sessions (bge-m3 cached)")
     print("=" * 74)
     print(f"  {'method':28} " + " ".join(f"{'R@'+str(k):>7}" for k in KS) + f" {'MRR':>7}")
 
