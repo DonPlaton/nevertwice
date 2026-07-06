@@ -45,6 +45,10 @@ Open Claude Code and work as usual. Nevertwice captures each session automatical
 the start of the next one, injects the project card plus the lessons relevant to what
 you're doing. The agent just already knows.
 
+Memory builds from what you do, so the first session or two mostly *records*. Recall kicks in
+as soon as there's something relevant to recall, and the guards that catch a repeat mistake
+appear once that mistake has happened once. Give it a few sessions and it starts paying you back.
+
 ## 4. Watch it remember
 
 See the whole loop in 25 seconds on a throwaway store (your real vault is untouched), on any OS:

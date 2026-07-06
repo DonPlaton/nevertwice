@@ -19,7 +19,6 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 _TMP = tempfile.mkdtemp(prefix="nevertwice-guard-")
 os.environ["NEVERTWICE_HOME"] = _TMP
-os.environ["VAULT"] = _TMP
 os.environ["NEVERTWICE_CLOUD"] = "none"
 sys.path.insert(0, str(ROOT / "nevertwice"))
 

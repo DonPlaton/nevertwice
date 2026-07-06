@@ -35,7 +35,7 @@ $ python nevertwice/memory_search.py "training crashes out of gpu memory" myproj
     → lower batch size or enable gradient checkpointing; it recurred twice.
 ```
 
-<sub>▶ See it live in 25 seconds: **`python examples/demo.py`** (any OS) or **`bash examples/demo.sh`** · recording a GIF: [docs/DEMO.md](docs/DEMO.md)</sub>
+<sub>▶ See a guard fire: **`python examples/guard_demo.py`** · the whole machine on one project: **`python examples/scenario_demo.py`** · the 25-second recall demo: **`python examples/demo.py`** (any OS). All use a throwaway store; your real vault is untouched. Recording the GIF: [docs/DEMO.md](docs/DEMO.md)</sub>
 
 </div>
 
@@ -89,11 +89,14 @@ prompt, taxing every single turn. We measured that axis to its end and found it 
 the variable. So Nevertwice does something no other memory does. It treats memory as a set of
 **token-budgeted interventions** that stay silent until they have something worth saying.
 
-- **Guards (A).** A *guard* is a small executable check distilled from a past mistake. It fires
-  *before* you repeat that mistake, at **zero context tokens until it fires** (it lives in a file,
-  not your prompt). The design is Popperian: a guard is advisory until corroborated, retires itself
-  on false positives, and is always overridable. Memory proposes, reality disposes, and the agent
-  is never boxed in.
+- **Guards (A).** A *guard* is a tiny pattern distilled from a past mistake, stored as one line in
+  a JSON ledger (not your prompt). Before your agent writes code, the pattern is checked against
+  the edit; on a match, a one-line warning fires, at **zero context tokens until it does**. Concrete:
+  the mistake `cursor.execute(f"SELECT ... '{name}'")` becomes the guard `execute\(\s*f["']`, and
+  the next time the agent reaches for an f-string SQL query it sees *"past mistake: build SQL with
+  query parameters, never an f-string."* The design is Popperian: a guard is advisory until
+  corroborated across sessions, retires itself after false positives, and is always overridable.
+  Memory proposes, reality disposes, and the agent is never boxed in.
 - **Anticipation (B).** Predicts the failure your current plan is heading toward by resemblance
   to past ones, and surfaces *one* precise warning. Spend is proportional to risk, not paid per turn.
 - **Counterfactual (C).** *"What breaks if I change X?"* answered from an induced causal graph in

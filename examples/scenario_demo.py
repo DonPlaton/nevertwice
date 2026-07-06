@@ -31,7 +31,6 @@ ROOT = Path(__file__).resolve().parent.parent
 # and force the offline/deterministic path so the demo is reproducible and touches no network.
 _TMP = tempfile.mkdtemp(prefix="nevertwice-scenario-")
 os.environ["NEVERTWICE_HOME"] = _TMP
-os.environ["VAULT"] = _TMP
 os.environ["NEVERTWICE_CLOUD"] = "none"
 sys.path.insert(0, str(ROOT / "nevertwice"))
 
