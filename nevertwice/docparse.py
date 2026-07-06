@@ -46,13 +46,20 @@ def _docx_text(path: Path) -> str:
     the old billion-laughs expansion - the remaining intake risk is a zip bomb, capped below."""
     try:
         with zipfile.ZipFile(path) as z:
-            # refuse a decompression bomb: check the DECLARED uncompressed size before reading,
-            # so a tiny .docx that inflates to gigabytes can't exhaust memory (a real risk for an
-            # `ingest` / MCP path that accepts arbitrary external documents).
+            # refuse a decompression bomb. The declared uncompressed size (getinfo().file_size)
+            # is a cheap first reject, but it lives in the zip's central directory and is
+            # attacker-controlled - a crafted .docx can understate it and still inflate to
+            # gigabytes. So we ALSO bound the actual read: z.open() streams the decompression,
+            # and read(cap+1) never inflates more than the cap into memory, catching a forged
+            # size (code-review 2026-07 - a real risk on the ingest/MCP document intake path).
             info = z.getinfo("word/document.xml")
             if info.file_size > MAX_DOC_BYTES:
                 raise DocError(f".docx body too large ({info.file_size} bytes > {MAX_DOC_BYTES})")
-            xml = z.read("word/document.xml")
+            with z.open("word/document.xml") as fh:
+                xml = fh.read(MAX_DOC_BYTES + 1)
+            if len(xml) > MAX_DOC_BYTES:
+                raise DocError(".docx body exceeded the cap while decompressing "
+                               "(declared size was understated)")
     except DocError:
         raise
     except (zipfile.BadZipFile, KeyError, OSError) as e:
