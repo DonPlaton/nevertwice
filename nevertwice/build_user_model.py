@@ -68,16 +68,7 @@ def _notes():
             if isinstance(raw_tags, str):
                 raw_tags = [t for t in re.split(r"[,\s]+", raw_tags) if t]
             tags = m._norm_tags(raw_tags)
-            desc = ""
-            seen = False
-            for ln in text.split("\n"):
-                s = ln.strip()
-                if s.startswith("# "):
-                    seen = True
-                    continue
-                if seen and s and not s.startswith(("**", "#", "-", "_", "[[", "|")):
-                    desc = s
-                    break
+            _, desc, _ = m._parse_note_body(text.split("\n"))   # shared parser (also excludes '---')
             out.append({"project": parsed["project"], "ntype": ntype,
                         "slug": parsed["slug"], "date": parsed["date"],
                         "tags": tags, "desc": desc})

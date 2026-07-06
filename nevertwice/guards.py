@@ -263,11 +263,6 @@ def record_fired(guard_ids, guards=None, persist=True) -> None:
         save_guards(guards)
 
 
-def mark_fired(guard_id: str, session_id=None, guards=None, persist=True) -> None:
-    """Single-guard convenience wrapper over record_fired (kept for API stability)."""
-    record_fired([guard_id], guards=guards, persist=persist)
-
-
 # ── generation from mistakes (sleep-time, off the hot path) ───────────
 
 # Well-known coding anti-patterns: if a mistake's text matches all the keywords, use the precise

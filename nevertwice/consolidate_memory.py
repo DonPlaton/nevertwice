@@ -49,23 +49,13 @@ def date_of(stem: str) -> str:
 
 
 def _fields(p: Path) -> tuple[str, str]:
-    """(description, prevention) from a typed note body."""
-    desc, prevention, seen = "", "", False
+    """(description, prevention) from a typed note body - the shared parser (m._parse_note_body)
+    so it can't drift from the other note-body readers."""
     try:
         lines = p.read_text(encoding="utf-8", errors="replace").split("\n")
     except OSError:
-        return desc, prevention
-    for ln in lines:
-        s = ln.strip()
-        if s.startswith("# "):
-            seen = True
-            continue
-        if not seen or not s:
-            continue
-        if s.startswith("**Как избежать:**"):
-            prevention = s.replace("**Как избежать:**", "").strip()
-        elif not desc and not s.startswith(("**", "#", "-", "_", "---", "[[", "|")):
-            desc = s
+        return "", ""
+    _, desc, prevention = m._parse_note_body(lines)
     return desc, prevention
 
 
