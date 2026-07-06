@@ -217,8 +217,9 @@ current truth, and a fix links back to the bug it resolved.
 
 ## Memory for any agent
 
-Claude Code is the zero-config case. `install.py` wires four hooks and capture is automatic from
-then on, with nothing to configure.
+Claude Code is the zero-config case. `install.py` wires five hooks (four for capture and recall,
+plus a PreToolUse guard that fires before a repeat mistake) and capture is automatic from then on,
+with nothing to configure.
 
 Every other agent that writes its sessions to disk (Codex, Cline, Roo, Aider, Gemini CLI) is
 covered by `nevertwice watch`, a small stdlib polling daemon that finds the known log folders on
