@@ -17,8 +17,9 @@ Nothing to `pip install`. The core is standard-library Python (3.10+).
 python install.py
 ```
 
-This creates your memory store at `~/.nevertwice` (plain Markdown + Git), wires the four
-Claude Code hooks, and **prints the backend it auto-detected**. For example:
+This creates your memory store at `~/.nevertwice` (plain Markdown + Git), wires the five
+Claude Code hooks (capture, recall, and the pre-tool guard), and **prints the backend it
+auto-detected**. For example:
 
 ```
 [backends] auto-detected (zero config - override in .env only if you want to):
@@ -48,6 +49,16 @@ you're doing. The agent just already knows.
 Memory builds from what you do, so the first session or two mostly *records*. Recall kicks in
 as soon as there's something relevant to recall, and the guards that catch a repeat mistake
 appear once that mistake has happened once. Give it a few sessions and it starts paying you back.
+
+**Want a guard firing on day one?** Guards are distilled from *your* mistakes, so a fresh store
+has none yet. One command seeds the universal pack - 11 classic pitfalls (eval on input,
+`shell=True`, `verify=False`, `== None`, weak hashes, ...) that warn from the very first session,
+advisory-only, zero tokens until one fires:
+
+```bash
+python -m nevertwice.guards pack
+python -m nevertwice.guards check "subprocess.run(cmd, shell=True)"   # watch it fire
+```
 
 ## 4. Watch it remember
 
@@ -83,3 +94,9 @@ That's the happy path. When you want more:
   including `nevertwice watch`, which makes auto-capture always-on for any of them.
 - **Tune anything** (cloud backend, embedder, retrieval, retention)? → [docs/CONFIG.md](docs/CONFIG.md)
 - **How and why it works?** → [README.md](README.md) · [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
+
+**Something looks off?** The store keeps its own diary: `~/.nevertwice/status.txt` records every
+run, including *why* one degraded (Ollama down, cloud key missing). `python -m nevertwice.guards
+list` shows the guard ledger with fired/helped counts. And if recall stays silent on a vague
+query, that is the abstention gate doing its job - ask with a more specific phrase rather than
+trusting a confident wrong answer.

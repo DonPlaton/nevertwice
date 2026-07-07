@@ -3,6 +3,34 @@
 All notable changes to Nevertwice. Format loosely follows [Keep a Changelog](https://keepachangelog.com);
 versions are [semantic](https://semver.org). Dates are UTC.
 
+## [Unreleased]
+
+A hostile-critique hardening round: every finding below was verified by execution before fixing,
+and each fix carries a regression test.
+
+### Added
+- **Universal guard pack** (`NEVERTWICE_GUARD_PACK=1` or `python -m nevertwice.guards pack`):
+  11 high-precision classic pitfalls that warn from the first session with no model and no
+  history. Advisory-only, never promotes to blocking, self-retires like any guard.
+- Benchmark infographic in the README; a measured **Speed** section in docs/BENCHMARKS.md with
+  `research/latency_bench.py` to reproduce it anywhere.
+- Community surface: CODE_OF_CONDUCT, issue/PR templates, ROADMAP, docs and examples indexes.
+- `env_int`/`env_float`: a mistyped numeric env var now degrades to the default with a warning
+  instead of crashing the import.
+
+### Fixed
+- Idle SessionStart no longer pays the LLM liveness probe: 2,188 ms -> 80 ms measured. Every
+  hook process sheds two lazy imports: PreToolUse end-to-end 146 -> 76-85 ms.
+- AGENTS.md refresh crashed on a Windows path in the project card (regex replacement template).
+- 3 of the 12 MCP tools were advertised but not dispatchable (memory_why, memory_guard_feedback,
+  memory_anticipate_feedback); a parity test now pins TOOLS == dispatch.
+- The git merge driver silently dropped block-style YAML lists (as written by Obsidian's
+  Properties panel); that shape now surfaces as a real conflict instead of losing tags.
+- The ReDoS filter missed bounded repetition of a quantified group, e.g. `(a{1,2}){38}`.
+- `.docx` was the only size-capped document format; the cap now guards every format and stdin.
+- install.py could claim a foreign script that happened to be named memory_hook.py.
+- Larger, more readable dashboard type; the dashboard also builds from one vault scan (was three).
+
 ## [2.0.0] - 2026-07-04
 
 The project was **renamed from Anamnesis to Nevertwice**, and the headline feature became Active

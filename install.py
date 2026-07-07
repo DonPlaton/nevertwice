@@ -352,6 +352,8 @@ def print_next_steps(profile: str | None) -> None:
     print("  * Past Claude Code sessions backfill on the catch-up sweep (no action needed).")
     print("  * Seed a rich card for a big existing project right now:")
     print("        python -m nevertwice.bootstrap_contexts /path/to/project")
+    print("  * Want guards from day one (before any history)? Seed the universal pack:")
+    print("        python -m nevertwice.guards pack")
     print("\nLearn more:  docs/CONFIG.md (all tunables) and docs/BRAIN_LAYER_DESIGN.md (Brain layer)")
     print("-" * 64)
 

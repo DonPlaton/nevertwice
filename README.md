@@ -9,10 +9,16 @@
 *Your coding agent forgets everything when a session ends. Nevertwice remembers: the bug you hit
 last week, the pattern that worked, the reason you picked Postgres over Mongo. Then it does what
 other memory tools don't. Instead of padding every prompt with recalled text, it stays quiet until
-it has something useful, then acts by catching the mistake before you repeat it. Memory that earns
-its tokens.*
+it has something useful, then acts by catching the mistake before you repeat it - measured live,
+a fired guard cut a real model's repeat-error rate by **86%**
+([the harness is in the repo](research/LIVE_VALIDATION.md)). Memory that earns its tokens.*
 
-**No database. No server. No cloud. No API keys required. Zero pip dependencies. Works with every agent.**
+**No database. No server. No account. No telemetry. Zero pip dependencies.**
+
+<sub>The core is stdlib-only and recall works fully offline (lexical fallback, no model). Lesson
+*extraction* wants a local [Ollama](https://ollama.com) **or** one optional cloud key. Claude Code
+is wired natively by `install.py`; Cursor, Codex, Zed and the rest connect via MCP or the watch
+daemon ([details](docs/INTEGRATIONS.md)).</sub>
 
 <sub>Formerly **Anamnesis** - renamed 2026-07 (same project, same store, old env vars still work).</sub>
 
