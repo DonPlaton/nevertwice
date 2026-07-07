@@ -30,25 +30,34 @@ _STATUS_RANK = {"": 0, "current": 0, "resolved": 1, "superseded": 2}
 
 
 def _split(text: str):
-    """(frontmatter_dict, body) for a note. Frontmatter is the YAML block between the first two
-    `---` fences; everything after is the body. Values are kept as raw strings; a `tags` line is
-    parsed into a list. Missing frontmatter → ({}, whole text). Known limitation: this is a
-    line-splitter, not a YAML parser - a block-list value (a line without `:`) is not preserved;
-    Nevertwice notes only ever use inline scalars/lists, so that shape never occurs in practice."""
+    """(frontmatter_dict, body, opaque) for a note. Frontmatter is the YAML block between the
+    first two `---` fences; everything after is the body. Values are kept as raw strings; a
+    `tags` line is parsed into a list. Missing frontmatter → ({}, whole text, False).
+
+    `opaque=True` means the frontmatter contains a shape this line-splitter cannot represent -
+    a block-style YAML list or a folded value (Obsidian's Properties panel rewrites inline tags
+    into exactly that). Nevertwice never writes it, but a vault edited in Obsidian can hold it,
+    and silently dropping the item lines lost data (critic 2026-07, verified: two tags merged
+    into `tags:` empty with exit 0). Opaque notes are surfaced as a git conflict instead."""
     if not text.startswith("---"):
-        return {}, text
+        return {}, text, False
     end = text.find("\n---", 3)
     if end == -1:
-        return {}, text
+        return {}, text, False
     fm_block = text[3:end].strip("\n")
     body = text[end + 4:].lstrip("\n")
-    fm = {}
+    fm, opaque = {}, False
     for line in fm_block.splitlines():
         if ":" not in line:
+            if line.strip():                      # a block-list item / folded continuation
+                opaque = True
+            continue
+        if line[:1] in (" ", "\t"):               # an indented "k: v" nested under a block key
+            opaque = True
             continue
         k, v = line.split(":", 1)
         fm[k.strip()] = v.strip()
-    return fm, body
+    return fm, body, opaque
 
 
 def _tags(v: str):
@@ -111,9 +120,11 @@ def merge_note(base: str, ours: str, theirs: str):
     """Merge three versions of a note. Returns merged text, or None if the bodies genuinely
     differ / a scalar disagrees (let git surface the conflict). Auto-resolves the structured
     frontmatter collisions (recurrence bump, supersession, tag union) that are the common case."""
-    fb, bb = _split(base)
-    fo, bo = _split(ours)
-    ft, bt = _split(theirs)
+    fb, bb, ob = _split(base)
+    fo, bo, oo = _split(ours)
+    ft, bt, ot = _split(theirs)
+    if ob or oo or ot:
+        return None            # YAML shape we can't re-emit faithfully → let git show the conflict
     if bo.strip() != bt.strip():
         return None                                            # real content divergence → git
     merged_fm, ok = _merge_front(fb, fo, ft)

@@ -555,6 +555,9 @@ _DISPATCH = {
     "memory_guard_check": _tool_memory_guard_check,
     "memory_anticipate": _tool_memory_anticipate,
     "memory_what_breaks": _tool_memory_what_breaks,
+    "memory_why": _tool_memory_why,
+    "memory_guard_feedback": _tool_memory_guard_feedback,
+    "memory_anticipate_feedback": _tool_memory_anticipate_feedback,
 }
 
 

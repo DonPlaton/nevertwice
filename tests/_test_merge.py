@@ -143,7 +143,19 @@ def test_end_to_end_real_git_merge():
     print("ok test_end_to_end_real_git_merge")
 
 
+def test_block_style_yaml_surfaces_conflict():
+    # Obsidian's Properties panel rewrites inline tags into a block list; the line-splitter
+    # cannot re-emit that shape, so it must surface a conflict instead of silently dropping
+    # the items (critic 2026-07: two tags used to merge into an empty `tags:` with exit 0).
+    base = "---\ndate: 2026-01-01\nproject: p\ntags:\n  - cuda\n  - windows\n---\n\nbody\n"
+    ours = base.replace("2026-01-01", "2026-01-02")
+    theirs = base.replace("2026-01-01", "2026-01-03")
+    assert M.merge_note(base, ours, theirs) is None
+    print("ok test_block_style_yaml_surfaces_conflict")
+
+
 if __name__ == "__main__":
+    test_block_style_yaml_surfaces_conflict()
     test_recurrence_takes_the_max()
     test_supersession_wins()
     test_tags_union()

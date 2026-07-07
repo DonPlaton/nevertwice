@@ -54,7 +54,13 @@ def _payload_from_stdin() -> dict:
     if sys.stdin is None or sys.stdin.isatty():
         return {}
     try:
-        raw = sys.stdin.read()
+        # bounded read: the sweep path caps file sizes, so the pipe path gets the same
+        # cap instead of buffering an arbitrarily large payload (critic 2026-07)
+        raw = sys.stdin.read(MAX_SWEEP_BYTES + 1)
+        if len(raw) > MAX_SWEEP_BYTES:
+            print(f"[ingest] stdin payload over {MAX_SWEEP_BYTES} bytes - refused "
+                  f"(raise NEVERTWICE_MAX_SWEEP_BYTES to override)", file=sys.stderr)
+            return {}
         return json.loads(raw) if raw.strip() else {}
     except (json.JSONDecodeError, ValueError):
         return {}

@@ -129,8 +129,19 @@ def extract_text(path, raw_fallback: bool = True) -> str:
     (.docx/.html/.pdf) use the parsers above; plain-text extensions are read directly.
     An unknown extension is read as UTF-8 text when `raw_fallback` (default), else
     raises DocError - so existing arbitrary-glob sweeps keep working while .pdf/.docx
-    gain real parsing. Raises DocError on a parser failure or a missing PDF dep."""
+    gain real parsing. Raises DocError on a parser failure or a missing PDF dep.
+
+    The on-disk size is capped HERE, at the shared dispatch point, so every format and
+    every caller (--file, MCP ingest, future ones) is bounded - the .docx zip-bomb cap
+    guarded only one format while pdf/html/raw stayed unbounded (critic 2026-07)."""
     path = Path(path)
+    try:
+        size = path.stat().st_size
+    except OSError as e:
+        raise DocError(f"cannot stat {path.name} ({type(e).__name__})")
+    if size > MAX_DOC_BYTES:
+        raise DocError(f"{path.name} too large ({size} bytes > {MAX_DOC_BYTES}; "
+                       f"raise NEVERTWICE_MAX_DOC_BYTES to override)")
     ext = path.suffix.lower()
     if ext == ".docx":
         return _docx_text(path)

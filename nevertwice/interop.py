@@ -45,8 +45,11 @@ def write_agents_md(project: str, target_dir) -> Path:
         except OSError:
             existing = ""
     if AGENTS_START in existing and AGENTS_END in existing:
+        # the replacement goes through a lambda: a plain string here is a regex TEMPLATE,
+        # so a Windows path in the card ("C:\Users\...") would be read as escapes and
+        # crash the idempotent refresh with "bad escape" (critic 2026-07, verified)
         merged = re.sub(re.escape(AGENTS_START) + r".*?" + re.escape(AGENTS_END),
-                        block, existing, flags=re.S)
+                        lambda _m: block, existing, flags=re.S)
     elif existing.strip():
         merged = existing.rstrip() + "\n\n" + block + "\n"
     else:

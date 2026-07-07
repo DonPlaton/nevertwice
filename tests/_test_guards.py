@@ -203,6 +203,18 @@ def test_pretooluse_enforce_denies_blocking():
     print("ok test_pretooluse_enforce_denies_blocking")
 
 
+def test_bounded_repeat_redos_rejected():
+    # (x{1,2}){38} fits every length cap yet backtracks Fibonacci-style (measured 4s at
+    # N=38); the widened filter must reject the family without losing a single legit pattern
+    for pat in (r"(a{1,2}){38}b", r"(a{1,2}){60}b", r"(a+){20}", r"(.*a){20}", r"(a?)+$"):
+        assert not G.safe_pattern(pat), pat
+    for pat, _ in G._UNIVERSAL_GUARDS:
+        assert G.safe_pattern(pat), pat
+    for _, pat in G._ANTIPATTERN_RULES:
+        assert G.safe_pattern(pat), pat
+    print("ok test_bounded_repeat_redos_rejected")
+
+
 def test_universal_pack_safe_fires_and_stays_advisory():
     # the weak-PC / cloud-agent cold-start pack: high-precision, ReDoS-safe, fires on the
     # footgun and stays silent on the fix, all with NO model and NO history
@@ -260,6 +272,7 @@ if __name__ == "__main__":
     test_check_slugs_project_argument()
     test_pretooluse_hotpath_silent_and_fires()
     test_pretooluse_enforce_denies_blocking()
+    test_bounded_repeat_redos_rejected()
     test_universal_pack_safe_fires_and_stays_advisory()
     test_pack_guard_never_promotes_to_blocking()
     test_guard_pack_opt_in_via_env()

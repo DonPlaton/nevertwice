@@ -83,9 +83,14 @@ def save_guards(guards: list[dict]) -> None:
 # stdlib `re` has no match timeout, so validation-at-creation is the only guard; combined with
 # the 20k input cap in check(), a guard that passes here cannot stall the agent.
 _NESTED_QUANT = re.compile(
-    r"(\([^)]*[+*][^)]*\)[+*])"            # nested quantifier: (…+…)+
+    r"(\([^)]*[+*?][^)]*\)[+*])"           # nested quantifier: (…+…)+ , (a?)+
     r"|(\[[^\]]*\][+*]\{)"                 # class then +/* then {
     r"|(\([^)]*\|[^)]*\)\s*[+*])"          # quantified alternation group: (a|aa)+
+    # bounded repetition of a group that itself contains a quantifier: (x{1,2}){38} grows
+    # Fibonacci-style (measured 4s at N=38 on CPython 3.14) yet fits every length cap, so the
+    # round-2 check missed it (critic 2026-07). {N} over a quantified group is never needed by
+    # a real guard; reject the shape outright.
+    r"|(\([^)]*(?:[+*?]|\{\d[^}]*\})[^)]*\)\s*\{\d)"
 )
 
 

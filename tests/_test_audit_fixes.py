@@ -857,6 +857,68 @@ import index_sqlite as _ix
 check("_unpack empty blob → []", _ix._unpack(b"") == [])
 check("_unpack odd-length float16 blob → [] (no struct.error)", _ix._unpack(b"\x01\x02\x03") == [])
 
+# ── 2026-07 hostile-critic round ──────────────────────────────────────
+
+# C-i2: every advertised MCP tool must be dispatchable (3 of 12 were schema-only)
+import mcp_server as _mcp
+check("MCP: TOOLS == _DISPATCH keys (no schema-only tools)",
+      {t["name"] for t in _mcp.TOOLS} == set(_mcp._DISPATCH))
+
+# C-i1: AGENTS.md idempotent refresh must survive a Windows path / regex template in the card
+import tempfile as _tf
+import interop as _io
+with _tf.TemporaryDirectory() as _t:
+    _evil = "card with C:\\Users\\person \\1 \\g<name> backrefs"
+    _orig_block = _io.agents_md_block
+    _io.agents_md_block = lambda project=None: (_io.AGENTS_START + "\n" + _evil + "\n" + _io.AGENTS_END)
+    try:
+        _io.write_agents_md(project=None, target_dir=_t)
+        _p2 = _io.write_agents_md(project=None, target_dir=_t)   # the refresh used to crash
+        _txt = _p2.read_text(encoding="utf-8")
+        check("interop: idempotent refresh survives Windows-path card", _evil in _txt)
+        check("interop: refresh does not duplicate the block", _txt.count(_io.AGENTS_START) == 1)
+    finally:
+        _io.agents_md_block = _orig_block
+
+# H-i5: install must not claim a foreign script that merely shares the filename
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+import install as _inst
+_claimed = list(_inst._our_hook_entries([{"hooks": [
+    {"command": "python C:/Users/u/.claude/scripts/memory_hook.py"},        # foreign: left alone
+    {"command": 'python "D:/some/checkout/nevertwice/memory_hook.py"'},     # ours
+    {"command": r'py "D:\other\NEVERTWICE\memory_hook.py"'},                # ours, backslashes
+]}]))
+check("install: foreign memory_hook.py entry is left alone", len(_claimed) == 2)
+
+# H-i6: the shared extract_text dispatch refuses an over-cap file for EVERY format
+import docparse as _dp
+with _tf.TemporaryDirectory() as _t:
+    _big = Path(_t) / "big.txt"
+    _big.write_text("x" * 1024, encoding="utf-8")
+    _old_cap = _dp.MAX_DOC_BYTES
+    _dp.MAX_DOC_BYTES = 512
+    try:
+        try:
+            _dp.extract_text(_big)
+            check("docparse: over-cap file refused at the shared dispatch", False)
+        except _dp.DocError:
+            check("docparse: over-cap file refused at the shared dispatch", True)
+    finally:
+        _dp.MAX_DOC_BYTES = _old_cap
+
+# H-i6b: ingest stdin payload is bounded
+import io as _iomod
+import ingest as _ing
+_old_stdin, _old_max = sys.stdin, _ing.MAX_SWEEP_BYTES
+try:
+    _ing.MAX_SWEEP_BYTES = 64
+    sys.stdin = _iomod.StringIO('{"text": "' + "y" * 200 + '"}')
+    check("ingest: oversized stdin payload refused", _ing._payload_from_stdin() == {})
+    sys.stdin = _iomod.StringIO('{"text": "ok"}')
+    check("ingest: small stdin payload still parses", _ing._payload_from_stdin().get("text") == "ok")
+finally:
+    sys.stdin, _ing.MAX_SWEEP_BYTES = _old_stdin, _old_max
+
 print()
 print(f"audit-fixes: {P} passed, {F} failed")
 sys.exit(1 if F else 0)

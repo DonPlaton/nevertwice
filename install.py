@@ -125,10 +125,16 @@ def ensure_store() -> None:
 
 
 def _our_hook_entries(groups: list):
-    """Every hook dict in these groups that points at A memory_hook.py (ours or a stale copy)."""
+    """Every hook dict in these groups that points at OUR packaged hook - matched by the
+    `nevertwice/memory_hook.py` path suffix, not the bare filename. A filename-substring
+    match would also claim (and silently repoint) a foreign or pre-rename script that
+    happens to be called memory_hook.py, like a hand-rolled ~/.claude/scripts copy
+    (critic 2026-07). Old installs of THIS package always contain the package dir in
+    the path, so re-installs still adopt their stale entries."""
     for g in groups or []:
         for h in g.get("hooks", []):
-            if "memory_hook.py" in (h.get("command") or ""):
+            cmd = (h.get("command") or "").replace("\\", "/").lower()
+            if "nevertwice/memory_hook.py" in cmd:
                 yield h
 
 
