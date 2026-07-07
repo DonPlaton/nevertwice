@@ -213,7 +213,8 @@ def feedback(guard_id: str, outcome: str, *, session_id=None, reason=None,
             g["corroborations"] += 1
         elif not sid:
             g["corroborations"] += 1
-        if g["status"] == "advisory" and g["corroborations"] >= K_PROMOTE:
+        if (g["status"] == "advisory" and g["corroborations"] >= K_PROMOTE
+                and not g.get("pack")):              # pack guards stay advisory - never block on a heuristic
             g["status"] = "blocking"                 # earned the right to block
     elif outcome == "false_positive":
         g["false_positives"] += 1
@@ -282,6 +283,12 @@ _ANTIPATTERN_RULES = [
     (("iterat", "modif"), r"for\s+\w+\s+in\s+\w+\s*:"),
     (("eval",), r"\beval\s*\("),
     (("shell", "true"), r"shell\s*=\s*True"),
+    (("== none",), r"[!=]=\s*None\b"),
+    (("isinstance",), r"\btype\s*\([^)]{1,40}\)\s*=="),
+    (("os.system",), r"\bos\.system\s*\("),
+    (("pickle",), r"pickle\.loads?\s*\("),
+    (("yaml", "load"), r"yaml\.load\s*\("),
+    (("verify", "false"), r"verify\s*=\s*False"),
 ]
 
 
@@ -293,6 +300,45 @@ def _antipattern_for(note: dict) -> str | None:
         if all(kw in blob for kw in keywords) and safe_pattern(pat):
             return pat
     return None
+
+
+# ── universal cold-start guard pack (weak-PC / cloud-agent, opt-in) ────
+# High-precision pitfalls that are almost always a smell, so they are safe to fire on ANY
+# project with NO history and NO model behind them. This is the weak-PC / cloud-agent story:
+# `NEVERTWICE_GUARD_PACK=1` and common footguns are guarded from the first session, pure stdlib,
+# zero network. Pack guards are advisory and NEVER promote to blocking (they must never box the
+# agent in on a heuristic), and self-retire like any guard if they cry wolf. Every pattern here
+# is ReDoS-safe (asserted by a test).
+_UNIVERSAL_GUARDS = [
+    (r"[!=]=\s*None\b", "compare with `is None` / `is not None`, not `==` / `!=`"),
+    (r"\btype\s*\([^)]{1,40}\)\s*==", "use isinstance() for type checks, not `type(x) ==`"),
+    (r"except\s*:", "catch a specific exception, not a bare `except:`"),
+    (r"\beval\s*\(", "eval() on any dynamic input is remote code execution - avoid it"),
+    (r"\bexec\s*\(", "exec() on any dynamic input is remote code execution - avoid it"),
+    (r"\bos\.system\s*\(", "os.system runs a shell; use subprocess.run([...]) with a list"),
+    (r"pickle\.loads?\s*\(", "pickle on untrusted data is remote code execution; prefer json"),
+    (r"shell\s*=\s*True", "subprocess with shell=True and a string command is injection-prone"),
+    (r"verify\s*=\s*False", "verify=False disables TLS certificate validation"),
+    (r"yaml\.load\s*\(", "use yaml.safe_load(); yaml.load can construct arbitrary objects"),
+    (r"hashlib\.(md5|sha1)\s*\(", "md5/sha1 are unsafe for passwords/signatures; use a strong KDF"),
+]
+
+
+def universal_pack() -> list[dict]:
+    """Build the global cold-start guard pack (advisory, project-wide, non-promoting). Stdlib
+    only, no model, no history - instant value on a fresh install or a weak machine."""
+    out = []
+    for pat, msg in _UNIVERSAL_GUARDS:
+        g = make_guard(pat, msg, born_from=["universal-pack"])
+        if g:
+            g["pack"] = True                     # advisory-only: feedback() never promotes it
+            out.append(g)
+    return out
+
+
+def ensure_universal_pack(guards: list[dict]) -> int:
+    """Add any missing universal-pack guards to the ledger (idempotent). Returns count added."""
+    return sum(1 for g in universal_pack() if register(guards, g))
 
 
 # Distinctive code-like tokens that make a usable literal pattern, in preference order: a
@@ -374,6 +420,8 @@ def generate_from_vault(project=None, *, min_recurrence=1, limit=None, use_llm=T
         mistakes = mistakes[:limit]
     guards = load_guards()
     added = 0
+    if os.environ.get("NEVERTWICE_GUARD_PACK", "").strip() not in ("", "0", "false", "no"):
+        added += ensure_universal_pack(guards)        # opt-in cold-start pack (weak-PC / no model)
     for n in mistakes:
         if any(n.get("stem", "") in g.get("born_from", []) for g in guards):
             continue                                  # already distilled this mistake
@@ -403,9 +451,17 @@ def main():
     argv = sys.argv[1:]
     if not argv:
         print("usage: guards check <text> | list | feedback <id> <helped|false_positive> "
-              "[--reason ..] | generate [--project P] [--limit N]")
+              "[--reason ..] | generate [--project P] [--limit N] | pack")
         return
     cmd = argv[0]
+    if cmd == "pack":
+        guards = load_guards()
+        n = ensure_universal_pack(guards)
+        if n:
+            save_guards(guards)
+        print(f"universal guard pack: {n} added, {len(_UNIVERSAL_GUARDS)} total "
+              f"(advisory, global) → {_ledger_path()}")
+        return
     if cmd == "check":
         text = argv[1] if len(argv) > 1 and not argv[1].startswith("--") else ""
         hits = check(text, project=m.argval(argv, "project"), path=m.argval(argv, "path"))

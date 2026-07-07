@@ -160,6 +160,29 @@ memory (eff 0.79 vs 0.44) - told a constraint, the 3B model often still can't ap
 removes the *knowledge* bottleneck; it cannot remove the *capability* one. A stronger agent is
 worth *more* memory, not less - the same "the reader is the variable" lesson as the retrieval axis.
 
+## 5c. Cold start on a weak machine (the cloud-agent case)
+
+The active layer is model-independent by construction: a guard is an executable check, not an
+embedding, so it needs no GPU and no local model to run or even to be *generated* (the
+deterministic path distils guards from mistake text with pure stdlib). That is what makes it the
+right investment for a future the retrieval axis cannot promise: it does not age when models
+change, and it runs on a weak laptop driving a cloud coding agent, where a local embedder would be
+a non-starter.
+
+Two consequences shipped:
+
+- The **deterministic anti-pattern table** was widened, so the no-LLM generator matches more
+  real repeat-mistakes without ever calling a model.
+- A **universal guard pack** (`NEVERTWICE_GUARD_PACK=1`, or `guards pack`) seeds a small set of
+  high-precision, almost-always-a-smell pitfalls (eval / `shell=True` / `verify=False` /
+  `pickle.loads` / `== None` / bare `except` / `yaml.load` / weak hashes / …). Measured on a fresh
+  install with **no model and no history**, catch-rate on a footgun battery goes **0/11 → 11/11**.
+  The pack is advisory and *never* promotes to blocking - a heuristic must not box the agent in -
+  and self-retires like any guard if it cries wolf.
+
+So the weak-PC story is not a degraded mode: the part of the memory that *acts* is exactly the
+part that needs nothing heavy.
+
 ## 6. What stays sacred
 
 Everything v1 earned is preserved: plain-markdown-under-git substrate, zero required deps,

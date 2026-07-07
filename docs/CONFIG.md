@@ -178,6 +178,19 @@ After setting `NEVERTWICE_EMBED_QUANT`, rebuild the index once the same way.
 | `NEVERTWICE_GRAPH_MAX_FILES` | `800` | File cap for graph generation. |
 | `NEVERTWICE_GRAPH_MAX_BYTES` | `120000` | Byte cap for `graph.json`. |
 
+## Active memory (guards / anticipation)
+
+The active layer is stdlib-only and needs no model on the hot path, so it works fully on a weak
+machine and against a cloud coding agent.
+
+| Variable | Default | Notes |
+|---|---|---|
+| `NEVERTWICE_GUARD_PACK` | `0` | `1` installs the **universal guard pack** at consolidation: high-precision, almost-always-a-smell pitfalls (eval, `shell=True`, `verify=False`, `pickle.loads`, `== None`, bare `except`, `yaml.load`, weak hashes, …) that fire from the first session with no history and no model. Advisory-only and never promotes to blocking. Add anytime with `python -m nevertwice.guards pack`. |
+| `NEVERTWICE_GUARD_PROMOTE` | `3` | Distinct-session corroborations before an advisory guard earns `blocking` (pack guards never promote). |
+| `NEVERTWICE_GUARD_RETIRE` | `3` | False positives before a guard demotes / self-retires. |
+| `NEVERTWICE_GUARD_ENFORCE` | `0` | `1` lets a `blocking` guard actually deny the PreToolUse edit; default only warns (advisory). |
+| `NEVERTWICE_ANTICIPATE_TAU` | `0.22` | Min trajectory-resemblance risk before anticipation surfaces one warning (silent below). |
+
 ## Privacy & data routing
 
 | Variable | Default | Notes |

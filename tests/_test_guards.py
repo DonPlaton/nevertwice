@@ -203,6 +203,52 @@ def test_pretooluse_enforce_denies_blocking():
     print("ok test_pretooluse_enforce_denies_blocking")
 
 
+def test_universal_pack_safe_fires_and_stays_advisory():
+    # the weak-PC / cloud-agent cold-start pack: high-precision, ReDoS-safe, fires on the
+    # footgun and stays silent on the fix, all with NO model and NO history
+    for pat, _ in G._UNIVERSAL_GUARDS:
+        assert G.safe_pattern(pat), pat
+    pack = G.universal_pack()
+    assert len(pack) == len(G._UNIVERSAL_GUARDS)
+    assert all(g["status"] == "advisory" and g.get("pack") for g in pack)
+    footguns = {"x = eval(s)": True, "evaluate(s)": False,
+                "run(c, shell=True)": True, "run([c])": False,
+                "if v == None:": True, "if v is None:": False,
+                "pickle.loads(b)": True, "json.loads(b)": False}
+    for action, should_fire in footguns.items():
+        fired = any(re.search(p, action) for p, _ in G._UNIVERSAL_GUARDS)
+        assert fired == should_fire, (action, should_fire)
+    print("ok test_universal_pack_safe_fires_and_stays_advisory")
+
+
+def test_pack_guard_never_promotes_to_blocking():
+    with tempfile.TemporaryDirectory() as t:
+        _isolate(t)
+        G.save_guards(G.universal_pack())
+        gid = G.load_guards()[0]["id"]
+        for s in ("s1", "s2", "s3", "s4", "s5"):     # well past K_PROMOTE distinct sessions
+            G.feedback(gid, "helped", session_id=s)
+        g = next(x for x in G.load_guards() if x["id"] == gid)
+        assert g["status"] == "advisory", g["status"]   # a heuristic pack guard must never block
+        print("ok test_pack_guard_never_promotes_to_blocking")
+
+
+def test_guard_pack_opt_in_via_env():
+    with tempfile.TemporaryDirectory() as t:
+        _isolate(t)
+        m._iter_all_notes = lambda: []
+        m.llm_available = lambda: False
+        import os
+        os.environ.pop("NEVERTWICE_GUARD_PACK", None)
+        assert G.generate_from_vault() == 0            # off by default: nothing installed
+        os.environ["NEVERTWICE_GUARD_PACK"] = "1"
+        try:
+            assert G.generate_from_vault() == len(G._UNIVERSAL_GUARDS)   # opt-in installs the pack
+        finally:
+            os.environ.pop("NEVERTWICE_GUARD_PACK", None)
+        print("ok test_guard_pack_opt_in_via_env")
+
+
 if __name__ == "__main__":
     test_safe_pattern_rejects_redos_and_junk()
     test_check_is_silent_until_a_match()
@@ -214,4 +260,7 @@ if __name__ == "__main__":
     test_check_slugs_project_argument()
     test_pretooluse_hotpath_silent_and_fires()
     test_pretooluse_enforce_denies_blocking()
+    test_universal_pack_safe_fires_and_stays_advisory()
+    test_pack_guard_never_promotes_to_blocking()
+    test_guard_pack_opt_in_via_env()
     print("\nall guards self-checks passed")
