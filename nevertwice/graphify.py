@@ -38,9 +38,9 @@ TEXT_EXTS  = {'.py','.js','.ts','.tsx','.jsx','.rs','.go','.java','.cpp','.c','.
 CODE_EXTS  = {'.py','.js','.ts','.tsx','.jsx','.rs','.go','.java','.cpp','.c','.h','.cu',
               '.cuh','.cs','.rb','.php','.sh','.ps1','.r','.jl','.v','.sv','.vhd'}
 MAX_SIZE   = 50_000
-MAX_FILES  = int(os.environ.get("NEVERTWICE_GRAPH_MAX_FILES", "800"))
+MAX_FILES  = m.env_int("NEVERTWICE_GRAPH_MAX_FILES", 800)
 # ~30k tokens at /4 - graph above this stops saving tokens vs reading files.
-MAX_GRAPH_BYTES = int(os.environ.get("NEVERTWICE_GRAPH_MAX_BYTES", "120000"))
+MAX_GRAPH_BYTES = m.env_int("NEVERTWICE_GRAPH_MAX_BYTES", 120000)
 
 
 def py_imports(src):

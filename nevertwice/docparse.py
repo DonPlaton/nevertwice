@@ -31,7 +31,12 @@ DOC_EXTS = {".docx", ".pdf", ".html", ".htm"}
 SUPPORTED = TEXT_EXTS | DOC_EXTS
 
 _W = "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}"
-MAX_DOC_BYTES = int(os.environ.get("NEVERTWICE_MAX_DOC_BYTES", str(50 * 1024 * 1024)))  # zip-bomb cap
+# zip-bomb cap. This module stays import-standalone (no memory_hook), so the safe-int
+# fallback is inlined rather than imported: a mistyped env var degrades, never crashes.
+try:
+    MAX_DOC_BYTES = int(os.environ.get("NEVERTWICE_MAX_DOC_BYTES", "") or 50 * 1024 * 1024)
+except ValueError:
+    MAX_DOC_BYTES = 50 * 1024 * 1024
 
 
 class DocError(Exception):

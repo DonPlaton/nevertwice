@@ -397,9 +397,13 @@ prof = d / "User" / "profile.md"
 check("user profile written", prof.exists())
 if prof.exists():
     t = prof.read_text(encoding="utf-8")
-    check("profile has brief block", "Кратко" in t)
+    check("profile has brief block", "## Brief" in t)
     check("learned cross-project gotcha surfaced (windows)", "windows" in t.lower())
     check("_user_brief() returns the brief", bool(m._user_brief()))
+    # back-compat: a pre-2026-07 profile on disk (Russian heading) must still inject
+    prof.write_text(t.replace("## Brief (what gets injected)", "## Кратко (для инъекции)"),
+                    encoding="utf-8")
+    check("_user_brief() still parses a legacy Russian-heading profile", bool(m._user_brief()))
 
 
 # ── I-15: structured project card (distilled, GPU-free) ──────────────

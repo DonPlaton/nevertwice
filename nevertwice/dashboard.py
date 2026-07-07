@@ -185,8 +185,7 @@ def _type_class(nt: str) -> str:
 def build_html(project=None, days=30, conflicts_limit=40) -> str:
     """Render the whole dashboard to one self-contained, premium HTML string."""
     d = _digest.compute_digest(project, days=days, top_entities=20, recent_n=20)
-    conflicts = _digest.compute_conflicts(m.slug_project(project) if project else None,
-                                          limit=conflicts_limit)
+    conflicts = d["conflicts"][:conflicts_limit]      # digest already built the full ledger
     t = d["totals"]
     scope = d["project"]
     ri = [0]                                              # stagger index for entrance reveals

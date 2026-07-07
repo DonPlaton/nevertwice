@@ -457,13 +457,14 @@ def _tool_memory_guard_check(args: dict) -> tuple[str, bool]:
     project = (args.get("project") or "").strip() or None
     path = (args.get("path") or "").strip() or None
     try:
-        hits = _guards.check(text, project=project, path=path)
+        ledger = _guards.load_guards()                      # one read shared by check + telemetry
+        hits = _guards.check(text, project=project, path=path, guards=ledger)
     except Exception as exc:
         return f"error: {type(exc).__name__}", True
     if not hits:
         return "clear - no guard fires for this action.", False
     try:
-        _guards.record_fired([h["id"] for h in hits])       # telemetry (guards list fired=)
+        _guards.record_fired([h["id"] for h in hits], guards=ledger)   # guards list fired=
     except Exception:
         pass
     lines = []

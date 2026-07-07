@@ -46,13 +46,13 @@ Target = namedtuple("Target", "agent dir globs recursive project")
 
 # Cap new transcripts mined per cycle so the daemon never holds the vault lock for minutes
 # on a first run over a huge log dir - the remainder is caught on the next sweep.
-MAX_PER_CYCLE = int(os.environ.get("NEVERTWICE_WATCH_MAX_PER_CYCLE", "40"))
+MAX_PER_CYCLE = m.env_int("NEVERTWICE_WATCH_MAX_PER_CYCLE", 40)
 # A transcript is only mined once its mtime has settled: a LIVE session file grows on every
 # poll, and since the content hash keys the processed-db, each growth would mint a fresh
 # session id → one new Session note + one LLM extraction per poll interval for an hours-long
 # session (code-review 2026-07, HIGH). Waiting until the file stops changing means one mine
 # per finished session. 0 disables (tests).
-SETTLE_S = int(os.environ.get("NEVERTWICE_WATCH_SETTLE_S", "120"))
+SETTLE_S = m.env_int("NEVERTWICE_WATCH_SETTLE_S", 120)
 
 _STOP = False
 

@@ -30,10 +30,16 @@ except ImportError:
     import memory_hook as m
 
 
-def _git(*args, check=False):
-    return subprocess.run(["git", "-C", str(m.VAULT), *args],
-                          capture_output=True, text=True, check=check,
-                          encoding="utf-8", errors="replace")
+def _git(*args, check=False, timeout=180):
+    """git against the vault, bounded: an HTTPS remote prompting for credentials would
+    otherwise hang an unattended cron/Task-Scheduler run forever (critic 2026-07)."""
+    try:
+        return subprocess.run(["git", "-C", str(m.VAULT), *args],
+                              capture_output=True, text=True, check=check,
+                              encoding="utf-8", errors="replace", timeout=timeout)
+    except subprocess.TimeoutExpired:
+        return subprocess.CompletedProcess(
+            args, 124, "", f"git {' '.join(args)} timed out after {timeout}s")
 
 
 def main() -> int:

@@ -128,31 +128,31 @@ def main():
             by_proj[n["project"]][1] = n["date"]
 
     counts = Counter(n["ntype"] for n in notes)
-    brief = (f"Стек: {', '.join(top_tags[:8])}. "
-             f"Повторяющиеся грабли (≥2 проектов): "
+    brief = (f"Stack: {', '.join(top_tags[:8])}. "
+             f"Recurring cross-project gotchas: "
              f"{', '.join(t for t, _, _ in gotchas[:5]) or '-'}. "
-             f"Рабочий стиль: {', '.join(style[:5]) or '-'}.")
+             f"Working style: {', '.join(style[:5]) or '-'}.")
 
     lines = [
         m.fm_block({"type": "user_model", "date": datetime.now().strftime("%Y-%m-%d"),
                     "tags": ["user", "profile"]}),
         "", "# Learned User Model",
-        "", "_Выведено структурно из всего vault (теги, кросс-проектные темы). " +
-        "Дополняет CLAUDE.md выученными паттернами. Обновить: `python build_user_model.py`._",
-        "", "## Кратко (для инъекции)", "", brief,
-        "", f"## Стек и темы (топ-{len(top_tags)} тегов)", "",
+        "", "_Derived structurally from the whole vault (tags, cross-project themes). " +
+        "Complements what CLAUDE.md states by hand. Rebuild: `python build_user_model.py`._",
+        "", "## Brief (what gets injected)", "", brief,
+        "", f"## Stack and themes (top {len(top_tags)} tags)", "",
         ", ".join(top_tags) or "-",
-        "", "## Повторяющиеся грабли (кросс-проектные)", "",
+        "", "## Recurring gotchas (cross-project)", "",
     ]
-    lines += [f"- **{t}** - в {n} проектах (напр. `{ex}`)" for t, ex, n in gotchas] or ["-"]
-    lines += ["", "## Рабочий стиль (повторяющиеся паттерны)", "",
+    lines += [f"- **{t}** - in {n} projects (e.g. `{ex}`)" for t, ex, n in gotchas] or ["-"]
+    lines += ["", "## Working style (recurring patterns)", "",
               ", ".join(style) or "-",
-              "", "## Проекты", ""]
-    lines += [f"- [[{p}]] - {by_proj[p][0]} заметок, активность до {by_proj[p][1]}"
+              "", "## Projects", ""]
+    lines += [f"- [[{p}]] - {by_proj[p][0]} notes, active through {by_proj[p][1]}"
               for p in sorted(by_proj, key=lambda p: -by_proj[p][0])]
-    lines += ["", f"_Всего: {len(notes)} заметок "
+    lines += ["", f"_Total: {len(notes)} notes "
               f"(P={counts['pattern']} M={counts['mistake']} D={counts['decision']}), "
-              f"{len(projects)} проектов._"]
+              f"{len(projects)} projects._"]
 
     fp = m.VAULT / "User" / "profile.md"
     m.write_atomic(fp, "\n".join(lines))

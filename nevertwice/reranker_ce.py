@@ -15,7 +15,10 @@ The model (~2 GB) downloads from HuggingFace on first use and runs best on a GPU
 import os
 
 MODEL = os.environ.get("NEVERTWICE_XRERANK_MODEL", "BAAI/bge-reranker-v2-m3")
-MAX_LEN = int(os.environ.get("NEVERTWICE_XRERANK_MAXLEN", "512"))
+try:                                     # optional module stays standalone; degrade, don't crash
+    MAX_LEN = int(os.environ.get("NEVERTWICE_XRERANK_MAXLEN", "") or 512)
+except ValueError:
+    MAX_LEN = 512
 ENABLED = os.environ.get("NEVERTWICE_XRERANK", "0") != "0"
 _state = {}
 

@@ -80,12 +80,13 @@ def what_breaks(entity, project=None, *, depth=2, max_effects=8, impact=None) ->
     downstream (depth-limited, cycle-safe) and collects `entity`'s own failure modes. Returns
     `{entity, impacts:[{effect, via, hops, notes}], failure_modes:[...], evidence:[stems]}` -
     a synthesized consequence set, ranked by proximity×weight, deduped. One answer, not a dump."""
+    from collections import deque
     impact = build_impact_graph(project) if impact is None else impact
     seen = {entity}
-    frontier = [(entity, 0)]
+    frontier = deque([(entity, 0)])
     found: dict = {}
     while frontier:
-        node, d = frontier.pop(0)
+        node, d = frontier.popleft()
         if d >= depth:
             continue
         for e in impact.get(node, []):

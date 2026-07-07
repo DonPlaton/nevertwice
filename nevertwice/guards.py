@@ -45,8 +45,8 @@ except Exception:
 
 # Popperian lifecycle constants (env-overridable for experiments).
 import os
-K_PROMOTE = int(os.environ.get("NEVERTWICE_GUARD_PROMOTE", "3"))   # distinct-session corroborations → blocking
-M_RETIRE = int(os.environ.get("NEVERTWICE_GUARD_RETIRE", "3"))     # false positives → demote/retire
+K_PROMOTE = m.env_int("NEVERTWICE_GUARD_PROMOTE", 3)   # distinct-session corroborations → blocking
+M_RETIRE = m.env_int("NEVERTWICE_GUARD_RETIRE", 3)     # false positives → demote/retire
 MAX_PATTERN = 200            # ReDoS guard: cap LLM-authored pattern length
 MAX_CHECK_CHARS = 20000      # cap the text we scan, so a huge diff can't stall the hot path
 STATUSES = ("advisory", "blocking", "retired")
@@ -256,8 +256,7 @@ def record_fired(guard_ids, guards=None, persist=True) -> None:
     ids = set(guard_ids)
     if not ids:
         return
-    owns = guards is None
-    guards = load_guards() if owns else guards
+    guards = load_guards() if guards is None else guards
     stamp = datetime.now().strftime("%Y-%m-%d %H:%M")
     hit = False
     for g in guards:
@@ -265,7 +264,10 @@ def record_fired(guard_ids, guards=None, persist=True) -> None:
             g["fired"] = g.get("fired", 0) + 1
             g["last_fired"] = stamp
             hit = True
-    if hit and persist and owns:
+    if hit and persist:
+        # persist regardless of who loaded the list: every check surface hands us the
+        # ledger it already read (one load per event, critic 2026-07), and none of them
+        # writes it back themselves - pass persist=False to batch externally.
         save_guards(guards)
 
 
@@ -285,7 +287,7 @@ _ANTIPATTERN_RULES = [
     (("json", "response.ok"), r"\.json\(\)"),
     (("bare", "except"), r"except\s*:"),
     (("mutable", "default"), r"def\s+\w+\([^)]*=\s*(\[\s*\]|\{\s*\})"),
-    (("iterat", "modif"), r"for\s+\w+\s+in\s+\w+\s*:"),
+    (("iterat", "modif"), r"\.(remove|pop|insert|discard)\s*\("),   # the mutating call, not any for-loop
     (("eval",), r"\beval\s*\("),
     (("shell", "true"), r"shell\s*=\s*True"),
     (("== none",), r"[!=]=\s*None\b"),

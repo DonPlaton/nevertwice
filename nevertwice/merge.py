@@ -168,10 +168,12 @@ def register(vault: Path) -> bool:
     # ModuleNotFoundError on every merge and the driver silently never fired (code-review 2026-07).
     me = str(Path(__file__).resolve()).replace("\\", "/")
     driver = f'"{py}" "{me}" %O %A %B'
-    subprocess.run(["git", "-C", str(vault), "config", "merge.nevertwice.name",
-                    "Nevertwice structured note merge"], capture_output=True)
-    subprocess.run(["git", "-C", str(vault), "config", "merge.nevertwice.driver", driver],
-                   capture_output=True)
+    rc1 = subprocess.run(["git", "-C", str(vault), "config", "merge.nevertwice.name",
+                          "Nevertwice structured note merge"], capture_output=True)
+    rc2 = subprocess.run(["git", "-C", str(vault), "config", "merge.nevertwice.driver", driver],
+                         capture_output=True)
+    if rc1.returncode or rc2.returncode:
+        return False              # a failed `git config` must not report the driver as installed
     ga = vault / ".gitattributes"
     rule = "*.md merge=nevertwice"
     existing = ga.read_text(encoding="utf-8") if ga.exists() else ""

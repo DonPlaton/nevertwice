@@ -21,6 +21,34 @@ import time
 from datetime import datetime, timedelta
 from pathlib import Path
 
+
+def env_int(name: str, default: int) -> int:
+    """int(os.environ[name]) with a safe fallback. One mistyped env var (the primary
+    configuration surface, docs/CONFIG.md) must degrade to the default with a warning,
+    not crash every import in the pipeline (critic 2026-07: ~38 bare int() conversions
+    made NEVERTWICE_RETRIEVAL_K=notanumber an import-time ValueError)."""
+    raw = os.environ.get(name)
+    if raw is None or not raw.strip():
+        return default
+    try:
+        return int(raw.strip())
+    except ValueError:
+        sys.stderr.write(f"[memory_hook] {name}={raw!r} is not an integer - using {default}\n")
+        return default
+
+
+def env_float(name: str, default: float) -> float:
+    """float twin of env_int - same rationale."""
+    raw = os.environ.get(name)
+    if raw is None or not raw.strip():
+        return default
+    try:
+        return float(raw.strip())
+    except ValueError:
+        sys.stderr.write(f"[memory_hook] {name}={raw!r} is not a number - using {default}\n")
+        return default
+
+
 # ── Config ────────────────────────────────────────────────────────────
 # Paths come from config.py (cross-platform, env-overridable) so the same code
 # runs on any machine. Importable both as a package and as a flat script dir.
@@ -141,10 +169,10 @@ EMBED_BASE_URL = _http_url(os.environ.get("NEVERTWICE_EMBED_BASE_URL"), "")  # "
 EMBED_USE_PREFIX = os.environ.get("NEVERTWICE_EMBED_PREFIX", "0") != "0"
 EMBED_DOC_PREFIX = os.environ.get("NEVERTWICE_EMBED_DOC_PREFIX", "search_document: ")
 EMBED_QUERY_PREFIX = os.environ.get("NEVERTWICE_EMBED_QUERY_PREFIX", "search_query: ")
-OLLAMA_TIMEOUT = int(os.environ.get("NEVERTWICE_TIMEOUT", "120"))
-EMBED_TIMEOUT = int(os.environ.get("NEVERTWICE_EMBED_TIMEOUT", "20"))
-OLLAMA_RETRIES = int(os.environ.get("NEVERTWICE_RETRIES", "2"))
-OLLAMA_RETRY_BACKOFF = float(os.environ.get("NEVERTWICE_RETRY_BACKOFF", "1.5"))
+OLLAMA_TIMEOUT = env_int("NEVERTWICE_TIMEOUT", 120)
+EMBED_TIMEOUT = env_int("NEVERTWICE_EMBED_TIMEOUT", 20)
+OLLAMA_RETRIES = env_int("NEVERTWICE_RETRIES", 2)
+OLLAMA_RETRY_BACKOFF = env_float("NEVERTWICE_RETRY_BACKOFF", 1.5)
 
 # Cloud API keys are loaded from .env by _cfg.load_dotenv() above (kept out of
 # git/code). See .env.example for the supported keys.
@@ -172,9 +200,9 @@ CEREBRAS_URL = _http_url(os.environ.get("CEREBRAS_URL"),
 DEEPSEEK_URL = _http_url(os.environ.get("DEEPSEEK_URL"),
                          "https://api.deepseek.com/v1/chat/completions")
 
-GEMINI_TIMEOUT = int(os.environ.get("NEVERTWICE_GEMINI_TIMEOUT", "60"))
-GEMINI_RETRIES = int(os.environ.get("NEVERTWICE_GEMINI_RETRIES", "2"))
-GEMINI_RETRY_BACKOFF = float(os.environ.get("NEVERTWICE_GEMINI_BACKOFF", "2.0"))
+GEMINI_TIMEOUT = env_int("NEVERTWICE_GEMINI_TIMEOUT", 60)
+GEMINI_RETRIES = env_int("NEVERTWICE_GEMINI_RETRIES", 2)
+GEMINI_RETRY_BACKOFF = env_float("NEVERTWICE_GEMINI_BACKOFF", 2.0)
 
 # Cerebras sits behind Cloudflare and 403s the default Python-urllib UA.
 _UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
@@ -236,40 +264,40 @@ def local_routing_desc() -> str:
         return "local-only: " + ", ".join(sorted(LOCAL_ONLY_PROJECTS))
     return "all tracked projects use cloud"
 
-MAX_TRANSCRIPT_CHARS = int(os.environ.get("NEVERTWICE_MAX_TRANSCRIPT", "12000"))
+MAX_TRANSCRIPT_CHARS = env_int("NEVERTWICE_MAX_TRANSCRIPT", 12000)
 # Head share of the budget when a long transcript is split head+tail (audit M3:
 # a fixed 2000-char head lost the project setup on long sessions). 0-override via
 # NEVERTWICE_TRUNCATE_HEAD_CHARS; else derived from the fraction.
-TRUNCATE_HEAD_FRAC = float(os.environ.get("NEVERTWICE_TRUNCATE_HEAD_FRAC", "0.4"))
-TRUNCATE_HEAD_CHARS = int(os.environ.get("NEVERTWICE_TRUNCATE_HEAD_CHARS", "0"))
+TRUNCATE_HEAD_FRAC = env_float("NEVERTWICE_TRUNCATE_HEAD_FRAC", 0.4)
+TRUNCATE_HEAD_CHARS = env_int("NEVERTWICE_TRUNCATE_HEAD_CHARS", 0)
 MAX_MESSAGE_CHARS = 2000  # per-event cap before global truncation
 
 # Sweep: this window is used ONLY for performance ordering, NEVER to skip a
 # never-processed transcript. Disk retention is ~30d, so the old 7d hard
 # cutoff silently lost memory (audit F28) - sweep_unprocessed now processes
 # any tracked-but-unprocessed transcript regardless of age.
-SWEEP_ORDER_DAYS = int(os.environ.get("NEVERTWICE_SWEEP_DAYS", "30"))
-SESSION_START_SWEEP_CAP = int(os.environ.get("NEVERTWICE_SWEEP_CAP", "8"))
-SESSION_END_SWEEP_CAP = int(os.environ.get("NEVERTWICE_SWEEP_CAP_END", "25"))
-ARCHIVE_AFTER_DAYS = int(os.environ.get("NEVERTWICE_ARCHIVE_DAYS", "30"))
-TYPED_ARCHIVE_AFTER_DAYS = int(os.environ.get("NEVERTWICE_TYPED_ARCHIVE_DAYS", "90"))
-PRUNE_DB_AFTER_DAYS = int(os.environ.get("NEVERTWICE_PRUNE_DAYS", "90"))
+SWEEP_ORDER_DAYS = env_int("NEVERTWICE_SWEEP_DAYS", 30)
+SESSION_START_SWEEP_CAP = env_int("NEVERTWICE_SWEEP_CAP", 8)
+SESSION_END_SWEEP_CAP = env_int("NEVERTWICE_SWEEP_CAP_END", 25)
+ARCHIVE_AFTER_DAYS = env_int("NEVERTWICE_ARCHIVE_DAYS", 30)
+TYPED_ARCHIVE_AFTER_DAYS = env_int("NEVERTWICE_TYPED_ARCHIVE_DAYS", 90)
+PRUNE_DB_AFTER_DAYS = env_int("NEVERTWICE_PRUNE_DAYS", 90)
 
 # Context compaction (audit F4/F23/F37): cap unbounded append-only growth.
-CONTEXT_MAX_BYTES = int(os.environ.get("NEVERTWICE_CONTEXT_MAX_BYTES", "12000"))
-CONTEXT_KEEP_RECENT = int(os.environ.get("NEVERTWICE_CONTEXT_KEEP_RECENT", "12"))
+CONTEXT_MAX_BYTES = env_int("NEVERTWICE_CONTEXT_MAX_BYTES", 12000)
+CONTEXT_KEEP_RECENT = env_int("NEVERTWICE_CONTEXT_KEEP_RECENT", 12)
 # Floor for how many recent entries to keep verbatim when the byte cap forces
 # aggressive compaction (audit M2: the cap is now hard, not "12 entries of any size").
-CONTEXT_KEEP_MIN = int(os.environ.get("NEVERTWICE_CONTEXT_KEEP_MIN", "3"))
-CONTEXT_LINK_ARCHIVE_MAX = int(os.environ.get("NEVERTWICE_CONTEXT_LINKS_MAX", "60"))
+CONTEXT_KEEP_MIN = env_int("NEVERTWICE_CONTEXT_KEEP_MIN", 3)
+CONTEXT_LINK_ARCHIVE_MAX = env_int("NEVERTWICE_CONTEXT_LINKS_MAX", 60)
 
 # SessionStart retrieval injection (audit F35/F36)
-RETRIEVAL_TOP_K = int(os.environ.get("NEVERTWICE_RETRIEVAL_K", "5"))
+RETRIEVAL_TOP_K = env_int("NEVERTWICE_RETRIEVAL_K", 5)
 INJECT_CONTEXT = os.environ.get("NEVERTWICE_INJECT", "1") != "0"
 # Budget-aware injection (M-15): cap the SessionStart payload so it never bloats
 # the context window. Sections are added by priority (card → mistakes → patterns →
 # cross-project) until the budget is hit. ~2200 chars ≈ 550 tokens.
-INJECT_BUDGET_CHARS = int(os.environ.get("NEVERTWICE_INJECT_BUDGET_CHARS", "2200"))
+INJECT_BUDGET_CHARS = env_int("NEVERTWICE_INJECT_BUDGET_CHARS", 2200)
 # Minimum cosine for a semantic hit to count, and how much a recurring lesson is
 # boosted in ranking (audit H4/LOW: recurrence was computed but never used).
 # 0.40 (was 0.30, which sat below the bge-m3 background and never fired): measured on the live
@@ -279,67 +307,67 @@ INJECT_BUDGET_CHARS = int(os.environ.get("NEVERTWICE_INJECT_BUDGET_CHARS", "2200
 # audit's suggestion) because real/noise OVERLAP at the boundary (the W2 compression ceiling), so a
 # higher floor would abstain on genuinely-weak-but-real queries; the corpus-adaptive margin gate
 # below stays the PRIMARY abstention mechanism (it caught 6/6 gibberish where the floor can't).
-RETRIEVAL_SIM_FLOOR = float(os.environ.get("NEVERTWICE_SIM_FLOOR", "0.40"))
+RETRIEVAL_SIM_FLOOR = env_float("NEVERTWICE_SIM_FLOOR", 0.40)
 # The nearest-neighbour inclusion floor for INTERACTIVE search (CLI / MCP / api.recall) and the
 # SQLite diagnostic path - deliberately permissive and DISTINCT from the confident-injection floor
 # above. A user-initiated query returns the closest notes even when weak (the caller labels them
 # low-confidence); auto-injection on the hook path still uses RETRIEVAL_SIM_FLOOR. Named here so the
 # two floors stay in one place instead of a magic 0.15 copied across modules (audit 2026-06-18).
-RETRIEVAL_NEAR_FLOOR = float(os.environ.get("NEVERTWICE_NEAR_FLOOR", "0.15"))
+RETRIEVAL_NEAR_FLOOR = env_float("NEVERTWICE_NEAR_FLOOR", 0.15)
 # Confidence gate (dogfood W1/W3): bge-m3 cosines bunch near a high background (~0.42 on a
 # real vault), so the absolute floor alone never fires - a nonsense query scores like a real
 # one. A confident match must ALSO stand this far above the per-query MEDIAN similarity; below
 # it, the semantic signal is dropped so the hook injects lexical/nothing, not arbitrary notes.
-RETRIEVAL_CONFIDENT_MARGIN = float(os.environ.get("NEVERTWICE_CONFIDENT_MARGIN", "0.15"))
+RETRIEVAL_CONFIDENT_MARGIN = env_float("NEVERTWICE_CONFIDENT_MARGIN", 0.15)
 # Two recurrence boosts on two scales (research/longitudinal_bench.py calibrates both):
 #   RECUR_BOOST (~0.03) is added to raw COSINE in single-signal paths (cf. _recur_boost);
 #   RECUR_RRF_BOOST (~0.0003) is added to fused RRF scores in retrieve_relevant, whose
 #   adjacent-rank gap is ~1/60 - so it is a deliberate gentle TIEBREAKER there (the 3A
 #   benchmark finds this small value Pareto-optimal; larger values hurt crisp queries).
-RETRIEVAL_RECUR_BOOST = float(os.environ.get("NEVERTWICE_RECUR_BOOST", "0.03"))
-RETRIEVAL_RECUR_RRF_BOOST = float(os.environ.get("NEVERTWICE_RECUR_RRF_BOOST", "0.0003"))
+RETRIEVAL_RECUR_BOOST = env_float("NEVERTWICE_RECUR_BOOST", 0.03)
+RETRIEVAL_RECUR_RRF_BOOST = env_float("NEVERTWICE_RECUR_RRF_BOOST", 0.0003)
 # Calibrated fusion produces logistic scores in (0,1) (vs RRF's ~1/60 gaps), so the
 # recurrence tiebreak needs a proportionally larger constant to stay a gentle tiebreak.
 # Inert on a no-recurrence corpus (log(1)=0), so it never moves the benchmark.
-RETRIEVAL_RECUR_FUSION_BOOST = float(os.environ.get("NEVERTWICE_RECUR_FUSION_BOOST", "0.02"))
+RETRIEVAL_RECUR_FUSION_BOOST = env_float("NEVERTWICE_RECUR_FUSION_BOOST", 0.02)
 # Ambiguity-adaptive recurrence (research/ABLATION_RESULTS.md): the recurrence prior
 # is scaled by how ambiguous the relevance signal is (bunched top sims → up; a clear
 # leader → down), so recurrence helps exactly when relevance can't decide and never
 # displaces a crisp match. Inert when recurrence=1 (confirmed no-harm on LongMemEval).
 ADAPTIVE_RECUR = os.environ.get("NEVERTWICE_ADAPTIVE_RECUR", "1") != "0"
-AMBIGUITY_K = float(os.environ.get("NEVERTWICE_AMBIGUITY_K", "15"))
+AMBIGUITY_K = env_float("NEVERTWICE_AMBIGUITY_K", 15)
 # Time-decay + salience (M-3): gently favour recent lessons without burying old gold.
 # A note keeps at least DECAY_FLOOR of its score; half-life in days (0 disables).
 # Resolved mistakes are down-weighted (no longer active warnings).
-RETRIEVAL_DECAY_HALFLIFE = float(os.environ.get("NEVERTWICE_DECAY_HALFLIFE", "365"))
-RETRIEVAL_DECAY_FLOOR = float(os.environ.get("NEVERTWICE_DECAY_FLOOR", "0.5"))
-RETRIEVAL_RESOLVED_WEIGHT = float(os.environ.get("NEVERTWICE_RESOLVED_WEIGHT", "0.6"))
+RETRIEVAL_DECAY_HALFLIFE = env_float("NEVERTWICE_DECAY_HALFLIFE", 365)
+RETRIEVAL_DECAY_FLOOR = env_float("NEVERTWICE_DECAY_FLOOR", 0.5)
+RETRIEVAL_RESOLVED_WEIGHT = env_float("NEVERTWICE_RESOLVED_WEIGHT", 0.6)
 # Confidence-aware ranking (H2): the per-note confidence (M-10) was stamped into
 # frontmatter and asked of the LLM but never READ - a write-only dead field. Now
 # a low-confidence lesson is gently down-weighted in recall, floored so it's never
 # buried; a note without confidence is treated as fully confident (neutral).
-RETRIEVAL_CONF_FLOOR = float(os.environ.get("NEVERTWICE_CONF_FLOOR", "0.6"))
+RETRIEVAL_CONF_FLOOR = env_float("NEVERTWICE_CONF_FLOOR", 0.6)
 # Salience nudge (Brain F5): a note central to the knowledge graph (its entities referenced by
 # the rest of the store) gets a gentle recall boost - recurrence generalised to centrality. The
 # score is stamped sleep-time by consolidation; UNSTAMPED notes read 0 → ×1.0, so this is INERT
 # on an entity-less/benchmark corpus and never moves the calibrated ranking there. Max +SALIENCE_BOOST.
-RETRIEVAL_SALIENCE_BOOST = float(os.environ.get("NEVERTWICE_SALIENCE_BOOST", "0.1"))
+RETRIEVAL_SALIENCE_BOOST = env_float("NEVERTWICE_SALIENCE_BOOST", 0.1)
 # Graph multi-hop expansion (M-6): after ranking, pull in notes linked from the
 # top hits (RESOLVES/SUPERSEDES/[[wikilinks]]) so "A→B→C" chains are reachable.
 # 0 = off (keeps injection lean); set NEVERTWICE_GRAPH_HOPS=1 to enable by default.
-GRAPH_HOPS = int(os.environ.get("NEVERTWICE_GRAPH_HOPS", "0"))
+GRAPH_HOPS = env_int("NEVERTWICE_GRAPH_HOPS", 0)
 # Relation-aware injection (Phase 2b on the hot path): after ranking, append up to N
 # graph-connected lessons reached by the top hits' typed edges (a bug surfaces its fix).
 # 0 = off (default - keeps SessionStart injection precise + token-lean); applied ONLY at
 # SessionStart (a frontmatter scan, once per session), never on the per-prompt path.
-RELATION_EXPAND = int(os.environ.get("NEVERTWICE_RELATION_EXPAND", "0"))
+RELATION_EXPAND = env_int("NEVERTWICE_RELATION_EXPAND", 0)
 # Fact-vs-code staleness check (M-4): annotate injected notes whose referenced
 # file paths no longer exist. Off by default (a heuristic - opt in per project).
 STALE_CHECK = os.environ.get("NEVERTWICE_STALE_CHECK", "0") != "0"
 # Weight of the semantic ranking in the hybrid RRF fusion. With a strong
 # multilingual embedder (bge-m3) semantic alone beats equal-weight hybrid, so we
 # let it lead while lexical still backs it up (ablation 2026-06-13).
-RETRIEVAL_SEM_WEIGHT = float(os.environ.get("NEVERTWICE_SEM_WEIGHT", "2.0"))
+RETRIEVAL_SEM_WEIGHT = env_float("NEVERTWICE_SEM_WEIGHT", 2.0)
 # Fusion of the semantic + lexical signals. "calibrated" (default) z-normalises each
 # signal's SCORES over the candidate set and combines the magnitudes - measured to beat
 # rank-fusion decisively (RRF throws the magnitudes away, so it trails even plain BM25;
@@ -348,7 +376,7 @@ RETRIEVAL_SEM_WEIGHT = float(os.environ.get("NEVERTWICE_SEM_WEIGHT", "2.0"))
 RETRIEVAL_FUSION = os.environ.get("NEVERTWICE_FUSION", "calibrated").strip().lower()
 # Dense (semantic) weight in calibrated fusion; the lexical (BM25) weight is fixed at 1.0.
 # Robust across 0.4-1.0 (every setting beat Mem0 in the sweep); 0.5 is the near-optimum.
-FUSION_SEM_WEIGHT = float(os.environ.get("NEVERTWICE_FUSION_SEM_WEIGHT", "0.5"))
+FUSION_SEM_WEIGHT = env_float("NEVERTWICE_FUSION_SEM_WEIGHT", 0.5)
 # Ranker selector (research/posterior_model.py, 1A). "hybrid" (default) = the shipped
 # additive-recurrence + multiplicative-salience tail. "posterior" = the same signals as
 # an explicit log-linear posterior: w_rel·log(rrf) + w_freq·log(n) + w_sal·log(salience),
@@ -356,25 +384,25 @@ FUSION_SEM_WEIGHT = float(os.environ.get("NEVERTWICE_FUSION_SEM_WEIGHT", "0.5"))
 # research module showed the FITTED posterior beats the hand-tuned heuristic in-distribution;
 # defaults here keep relevance dominant and recurrence a frequency prior.
 RANKER = os.environ.get("NEVERTWICE_RANKER", "hybrid").strip().lower()
-POST_W = {k: float(os.environ.get(f"NEVERTWICE_POST_W_{k.upper()}", d))
-          for k, d in (("rel", "1.0"), ("freq", "0.3"), ("sal", "1.0"))}
+POST_W = {k: env_float(f"NEVERTWICE_POST_W_{k.upper()}", d)
+          for k, d in (("rel", 1.0), ("freq", 0.3), ("sal", 1.0))}
 # Divergent/serendipitous recall (research/divergent.py, 2B): >0 re-ranks the top
 # candidates by Maximal Marginal Relevance, trading a little relevance for diversity
 # (fewer near-duplicates, more cross-topic surfacing). 0 (default) = convergent, no change.
-RETRIEVAL_DIVERGENCE = max(0.0, min(1.0, float(os.environ.get("NEVERTWICE_DIVERGENCE", "0"))))
+RETRIEVAL_DIVERGENCE = max(0.0, min(1.0, env_float("NEVERTWICE_DIVERGENCE", 0)))
 # Short embed timeout for interactive retrieval: fail fast to lexical when the
 # GPU is busy instead of stalling SessionStart up to EMBED_TIMEOUT (audit H5).
-RETRIEVAL_EMBED_TIMEOUT = int(os.environ.get("NEVERTWICE_RETRIEVAL_EMBED_TIMEOUT", "5"))
+RETRIEVAL_EMBED_TIMEOUT = env_int("NEVERTWICE_RETRIEVAL_EMBED_TIMEOUT", 5)
 # Above this many candidates, retrieval FTS-prefilters to the top-N lexical matches
 # before cosine, so one huge project can't stall a prompt with a full brute-force
 # scan (improvement P1). Smaller projects keep an exact full scan - no recall loss.
-RETRIEVAL_PREFILTER_LIMIT = int(os.environ.get("NEVERTWICE_PREFILTER_LIMIT", "600"))
+RETRIEVAL_PREFILTER_LIMIT = env_int("NEVERTWICE_PREFILTER_LIMIT", 600)
 # Cross-project transfer (I-7): surface a few lessons from OTHER projects that
 # are highly relevant (shared stack → transferable gotchas). Higher bar to keep
 # noise out. Toggle off with NEVERTWICE_CROSS_PROJECT=0.
 INJECT_CROSS_PROJECT = os.environ.get("NEVERTWICE_CROSS_PROJECT", "1") != "0"
-CROSS_PROJECT_K = int(os.environ.get("NEVERTWICE_CROSS_K", "2"))
-CROSS_PROJECT_SIM_FLOOR = float(os.environ.get("NEVERTWICE_CROSS_SIM_FLOOR", "0.5"))
+CROSS_PROJECT_K = env_int("NEVERTWICE_CROSS_K", 2)
+CROSS_PROJECT_SIM_FLOOR = env_float("NEVERTWICE_CROSS_SIM_FLOOR", 0.5)
 # Learned user model (I-6): inject a short cross-project working profile (built
 # by build_user_model.py → User/profile.md). Off with NEVERTWICE_USER_MODEL=0.
 INJECT_USER_MODEL = os.environ.get("NEVERTWICE_USER_MODEL", "1") != "0"
@@ -382,13 +410,13 @@ INJECT_USER_MODEL = os.environ.get("NEVERTWICE_USER_MODEL", "1") != "0"
 # model. Opt-in (adds cloud latency, marginal over bge-m3) and never on the hot
 # injection paths - only deliberate on-demand search. On with NEVERTWICE_RERANK=1.
 RERANK_ENABLED = os.environ.get("NEVERTWICE_RERANK", "0") != "0"
-RERANK_POOL = int(os.environ.get("NEVERTWICE_RERANK_POOL", "15"))
+RERANK_POOL = env_int("NEVERTWICE_RERANK_POOL", 15)
 # Structured project card (audit I-15): distil the project's live notes into a
 # high-signal block (status · stack · open gotchas · key decisions · recurring)
 # kept at the top of Context/<project>.md and injected instead of the raw journal
 # tail - cheaper to inject, higher signal. Off with NEVERTWICE_PROJECT_CARD=0.
 PROJECT_CARD_ENABLED = os.environ.get("NEVERTWICE_PROJECT_CARD", "1") != "0"
-CARD_MAX_ITEMS = int(os.environ.get("NEVERTWICE_CARD_MAX_ITEMS", "5"))
+CARD_MAX_ITEMS = env_int("NEVERTWICE_CARD_MAX_ITEMS", 5)
 CARD_START = "<!-- PROJECT-CARD:START -->"
 CARD_END = "<!-- PROJECT-CARD:END -->"
 CARD_HEADER = "## 🗂 Карточка проекта"
@@ -400,16 +428,16 @@ PROMPT_RECALL_ENABLED = os.environ.get("NEVERTWICE_PROMPT_RECALL", "1") != "0"
 # Policy: 'smart' (substantial prompts, per-session dedup, capped) | 'once'
 # (first substantial prompt only) | 'every' (every non-trivial prompt).
 PROMPT_RECALL_MODE = os.environ.get("NEVERTWICE_PROMPT_RECALL_MODE", "smart").strip().lower()
-PROMPT_RECALL_K = int(os.environ.get("NEVERTWICE_PROMPT_RECALL_K", "3"))
+PROMPT_RECALL_K = env_int("NEVERTWICE_PROMPT_RECALL_K", 3)
 # Soft ceiling on injections per session, so a long session can't keep paying the
 # recall cost indefinitely (dedup already self-throttles).
-PROMPT_RECALL_MAX_PER_SESSION = int(os.environ.get("NEVERTWICE_PROMPT_RECALL_MAX", "6"))
+PROMPT_RECALL_MAX_PER_SESSION = env_int("NEVERTWICE_PROMPT_RECALL_MAX", 6)
 # Prompts shorter than this (after trimming) are treated as trivial → skipped.
-PROMPT_RECALL_MIN_CHARS = int(os.environ.get("NEVERTWICE_PROMPT_RECALL_MIN_CHARS", "16"))
+PROMPT_RECALL_MIN_CHARS = env_int("NEVERTWICE_PROMPT_RECALL_MIN_CHARS", 16)
 # Tight budget so recall never noticeably delays an interactive prompt: a busy
 # GPU fails the ping fast and the path drops to lexical-only.
-PROMPT_RECALL_EMBED_TIMEOUT = int(os.environ.get("NEVERTWICE_PROMPT_RECALL_EMBED_TIMEOUT", "2"))
-PROMPT_RECALL_ALIVE_TIMEOUT = int(os.environ.get("NEVERTWICE_PROMPT_RECALL_ALIVE_TIMEOUT", "1"))
+PROMPT_RECALL_EMBED_TIMEOUT = env_int("NEVERTWICE_PROMPT_RECALL_EMBED_TIMEOUT", 2)
+PROMPT_RECALL_ALIVE_TIMEOUT = env_int("NEVERTWICE_PROMPT_RECALL_ALIVE_TIMEOUT", 1)
 PROMPT_RECALL_STATE_DIR = VAULT / ".prompt_recall"
 
 STATUS_HISTORY_LIMIT = 50
@@ -972,7 +1000,7 @@ def _looks_unsafe(text: str) -> bool:
 # is diverted to <folder>/Quarantine/ - on disk, out of active recall - so one uncorroborated actor
 # cannot spoof trust or displace corroborated truth. Two genuine sessions still establish a lesson.
 QUARANTINE_MODE = os.environ.get("NEVERTWICE_QUARANTINE", "0") != "0"
-QUARANTINE_CONF = float(os.environ.get("NEVERTWICE_QUARANTINE_CONF", "0.95"))
+QUARANTINE_CONF = env_float("NEVERTWICE_QUARANTINE_CONF", 0.95)
 
 
 _YAML_NEEDS_QUOTE = re.compile(r'[:#&*!|>\'"%@`{}\[\],]|^\s|\s$')
@@ -4481,7 +4509,9 @@ def _user_brief(max_chars: int = 320) -> str:
         text = (VAULT / "User" / "profile.md").read_text(encoding="utf-8", errors="replace")
     except OSError:
         return ""
-    mt = re.search(r"##\s*Кратко[^\n]*\n+(.+?)(?:\n##|\Z)", text, re.S)
+    # accept both heading generations: "## Brief" (current, English) and "## Кратко"
+    # (profiles written before the 2026-07 English pass still sit on disk unchanged)
+    mt = re.search(r"##\s*(?:Brief|Кратко)[^\n]*\n+(.+?)(?:\n##|\Z)", text, re.S)
     return mt.group(1).strip()[:max_chars] if mt else ""
 
 
@@ -4877,7 +4907,7 @@ def emit_pretooluse_guard(session: dict, cwd: str) -> None:
     if not hits:
         return
     try:
-        _g.record_fired([h["id"] for h in hits])           # one load, one atomic write - and only
+        _g.record_fired([h["id"] for h in hits], guards=ledger)   # reuse the loaded ledger - and only
     except Exception:                                      # on the rare hit path; telemetry only,
         pass                                               # never fatal on the hot path
     lines = [("⛔ " if h["status"] == "blocking" else "⚠ ") + h["message"] for h in hits]

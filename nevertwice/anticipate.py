@@ -36,11 +36,11 @@ try:
 except Exception:
     pass
 
-BASE_TAU = float(os.environ.get("NEVERTWICE_ANTICIPATE_TAU", "0.22"))   # min risk to fire
+BASE_TAU = m.env_float("NEVERTWICE_ANTICIPATE_TAU", 0.22)   # min risk to fire
 # ↑ calibrated on the real vault: generic trajectories top out ~0.19 (kept silent) while strong
 # failure-resemblances clear it. Lexical B is precision-first (few false alarms) with moderate
 # recall; the adaptive threshold silences any leak, and the embedding blend lifts recall.
-FP_STEP = float(os.environ.get("NEVERTWICE_ANTICIPATE_FP_STEP", "0.06"))  # bar raise per false alarm
+FP_STEP = m.env_float("NEVERTWICE_ANTICIPATE_FP_STEP", 0.06)  # bar raise per false alarm
 MAX_CHECK_CHARS = 20000
 _MIN_TOKLEN = 4              # only contentful tokens count toward similarity (drop noise)
 

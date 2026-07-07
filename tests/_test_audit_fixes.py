@@ -859,6 +859,15 @@ check("_unpack odd-length float16 blob → [] (no struct.error)", _ix._unpack(b"
 
 # ── 2026-07 hostile-critic round ──────────────────────────────────────
 
+# M-i9: a mistyped integer env var degrades with a warning instead of crashing the import
+os.environ["NEVERTWICE_TEST_INTVAR"] = "notanumber"
+check("env_int falls back on junk", m.env_int("NEVERTWICE_TEST_INTVAR", 7) == 7)
+os.environ["NEVERTWICE_TEST_INTVAR"] = " 42 "
+check("env_int parses with whitespace", m.env_int("NEVERTWICE_TEST_INTVAR", 7) == 42)
+del os.environ["NEVERTWICE_TEST_INTVAR"]
+check("env_int default when unset", m.env_int("NEVERTWICE_TEST_INTVAR", 7) == 7)
+check("env_float falls back on junk", m.env_float("NEVERTWICE_TEST_FLOATVAR", 0.5) == 0.5)
+
 # C-i2: every advertised MCP tool must be dispatchable (3 of 12 were schema-only)
 import mcp_server as _mcp
 check("MCP: TOOLS == _DISPATCH keys (no schema-only tools)",

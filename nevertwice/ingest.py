@@ -47,7 +47,7 @@ import docparse                  # .pdf/.docx/.html/.md → text, so any documen
 
 # DoS guard for --dir sweeps: skip files larger than this (a swept dir could hold a
 # huge/sparse file that would block the vault lock for the whole read). audit 2026-06-18.
-MAX_SWEEP_BYTES = int(os.environ.get("NEVERTWICE_MAX_SWEEP_BYTES", str(10 * 1024 * 1024)))
+MAX_SWEEP_BYTES = m.env_int("NEVERTWICE_MAX_SWEEP_BYTES", 10 * 1024 * 1024)
 
 
 def _payload_from_stdin() -> dict:

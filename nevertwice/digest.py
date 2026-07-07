@@ -39,15 +39,19 @@ def _live_notes(project=None):
     return m._iter_project_notes(project) if project else m._iter_all_notes()
 
 
-def compute_conflicts(project=None, limit=50):
+def compute_conflicts(project=None, limit=50, *, live=None, sup=None):
     """The supersession / contradiction ledger: each record is a fact that was revised.
     `{kind, project, ntype, old_stem, old_title, old_date, new_stem, new_title,
     new_date, resolved}`. `resolved` is False when the superseding note was itself later
     superseded (a still-evolving chain). Newest revision first. kind is always
     'superseded' today (M-2 turns a detected contradiction into a supersession at write
     time); the field is kept so an explicit unresolved-CONTRADICTS kind can join later."""
-    sup = m._iter_superseded_notes(project)
-    by_stem = {n["stem"]: n for n in (_live_notes(project) + sup) if "stem" in n}
+    # `live`/`sup` let a caller that already scanned the vault (compute_digest, and the
+    # dashboard through it) share the lists instead of re-reading every note (critic 2026-07:
+    # one dashboard build scanned the vault three times).
+    sup = m._iter_superseded_notes(project) if sup is None else sup
+    live = _live_notes(project) if live is None else live
+    by_stem = {n["stem"]: n for n in (live + sup) if "stem" in n}
     out = []
     for old in sup:
         succ_stem = (old.get("superseded_by") or "").strip()
@@ -87,7 +91,7 @@ def compute_digest(project=None, days=7, top_entities=8, recent_n=12):
     sup = m._iter_superseded_notes(project)
     cutoff = _cutoff(days)
     recent = [n for n in live if n.get("date", "") >= cutoff]
-    conflicts = compute_conflicts(project, limit=0)
+    conflicts = compute_conflicts(project, limit=0, live=live, sup=sup)
     changed = [c for c in conflicts if (c["new_date"] or c["old_date"]) >= cutoff]
 
     by_project = {}
@@ -125,6 +129,7 @@ def compute_digest(project=None, days=7, top_entities=8, recent_n=12):
                     "project": n.get("project", ""), "title": n.get("title", "")}
                    for n in recent_sorted],
         "changed": changed[:recent_n],
+        "conflicts": conflicts,        # the full ledger, so downstream (dashboard) needn't rescan
         "top_entities": top_ents,
     }
 

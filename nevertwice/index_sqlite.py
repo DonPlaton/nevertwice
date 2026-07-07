@@ -632,6 +632,12 @@ def search(query: str, project: str | None = None, k: int = 10):
                 sims = [(m.cosine(qvec, _unpack(r[8])), r) for r in con.execute(sql, params)]
                 amb = m._ambiguity(sorted((s for s, _ in sims), reverse=True))  # adaptive recurrence
                 scored = []
+                # NOTE deliberate divergence from memory_search's calibrated fusion: this is
+                # the SCALE index fast path, ranking raw cosine (0..1), so the recurrence
+                # boost and confidence multiplier are sized to that scale, not to z-scores.
+                # If you touch these constants, run tests/_test_brain_sqlite.py and
+                # tests/research quant suites - drift here is intentional and measured,
+                # not an accident (critic 2026-07 flagged it; kept, documented).
                 for sim, row in sims:
                     if sim > SIM_FLOOR:
                         boost = 0.0003 * math.log(max(1, int(row[6] or 1))) * amb  # log prior × ambiguity

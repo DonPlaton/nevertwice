@@ -202,10 +202,11 @@ def guards_check(action_text: str, *, project: str | None = None,
     NOTHING reaches context unless one matches. Each hit is `{id, status, message, scope}`;
     a `blocking` status means stop and comply or override-with-reason. Pure regex+scope
     match: no embedder, no LLM, no network. See `research/ACTIVE_MEMORY.md`."""
-    hits = _guards.check(action_text, project=project, path=path, tool=tool)
+    ledger = _guards.load_guards()                          # one read shared by check + telemetry
+    hits = _guards.check(action_text, project=project, path=path, tool=tool, guards=ledger)
     if hits:
         try:
-            _guards.record_fired([h["id"] for h in hits])   # telemetry (guards list fired=)
+            _guards.record_fired([h["id"] for h in hits], guards=ledger)   # guards list fired=
         except Exception:
             pass
     return hits
