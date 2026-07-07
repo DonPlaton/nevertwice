@@ -232,13 +232,34 @@ def test_version_is_single_sourced():
     check("mcp SERVER_VERSION matches", mcp_server.SERVER_VERSION == cfg.VERSION)
 
 
+def test_has_unprocessed_gate():
+    print("\n- has_unprocessed: the SessionStart LLM-probe gate (perf audit A1) -")
+    import tempfile
+    with tempfile.TemporaryDirectory() as t:
+        old_root = mh.PROJECTS_ROOT
+        try:
+            mh.PROJECTS_ROOT = Path(t) / "missing"
+            check("missing root -> False (no probe)", mh.has_unprocessed({}) is False)
+            root = Path(t) / "projects"; (root / "proj").mkdir(parents=True)
+            mh.PROJECTS_ROOT = root
+            check("empty root -> False", mh.has_unprocessed({}) is False)
+            (root / "proj" / "s1.jsonl").write_text("{}", encoding="utf-8")
+            check("one candidate -> True", mh.has_unprocessed({}) is True)
+            check("already processed -> False", mh.has_unprocessed({"s1": {}}) is False)
+            check("current session excluded -> False",
+                  mh.has_unprocessed({}, exclude_session_id="s1") is False)
+        finally:
+            mh.PROJECTS_ROOT = old_root
+
+
 if __name__ == "__main__":
     print("=== memory_hook unit tests (sandbox: %s) ===" % mh.VAULT)
     for fn in [test_slug_helpers, test_stem_parse, test_project_filter,
               test_yaml_quoting, test_truncate_smart, test_lock,
               test_archive_filename_date, test_unique_path_collision,
               test_processed_db_guard, test_collect_existing_titles,
-              test_strip_lead_icon, test_version_is_single_sourced]:
+              test_strip_lead_icon, test_version_is_single_sourced,
+              test_has_unprocessed_gate]:
         try:
             fn()
         except Exception as e:

@@ -14,13 +14,10 @@ Pipeline per session:
 
 import json
 import math
-import statistics
 import os
 import re
 import sys
 import time
-import urllib.error
-import urllib.request
 from datetime import datetime, timedelta
 from pathlib import Path
 
@@ -1618,6 +1615,9 @@ _LLM_STATS = {"cloud": 0, "ollama": 0, "fail": 0}  # backend usage this run
 def ollama_alive(timeout_s: float = 4) -> bool:
     """Cheap liveness ping so the hook fails loudly instead of silently
     dropping a session when Ollama is down / reloading a model (audit F29)."""
+    # deferred: keep the guard/recall hot path free of this import cost (perf audit A2)
+    import urllib.error
+    import urllib.request
     try:
         with urllib.request.urlopen(OLLAMA_TAGS_URL, timeout=timeout_s) as r:
             return getattr(r, "status", 200) == 200
@@ -1626,6 +1626,9 @@ def ollama_alive(timeout_s: float = 4) -> bool:
 
 
 def call_ollama(prompt: str) -> dict:
+    # deferred: keep the guard/recall hot path free of this import cost (perf audit A2)
+    import urllib.error
+    import urllib.request
     global _OLLAMA_DOWN
     payload = json.dumps({
         "model": OLLAMA_MODEL,
@@ -1685,6 +1688,9 @@ def call_ollama(prompt: str) -> dict:
 def call_gemini(prompt: str) -> dict:
     """Gemini generateContent in JSON mode. Returns {} on any failure so the
     caller can fall back to Ollama. Retries transient 503/429/500/timeout."""
+    # deferred: keep the guard/recall hot path free of this import cost (perf audit A2)
+    import urllib.error
+    import urllib.request
     global _CLOUD_DEAD
     url = GEMINI_URL.format(model=_safe_model_seg(GEMINI_MODEL))   # SSRF guard on the model seg
     body = json.dumps({
@@ -1759,6 +1765,9 @@ def _call_openai_chat(prompt: str, base_url: str, api_key: str, model: str,
     """OpenAI-compatible chat completion in JSON mode (Cerebras, Groq). Returns
     {} on any failure so the caller falls back to Ollama. Browser UA because
     Cerebras sits behind Cloudflare. Retries transient 503/429/500/timeout."""
+    # deferred: keep the guard/recall hot path free of this import cost (perf audit A2)
+    import urllib.error
+    import urllib.request
     global _CLOUD_DEAD
     body = json.dumps({
         "model": model,
@@ -2028,6 +2037,9 @@ def embedder_available(timeout_s: float = 4) -> bool:
 def _embed_http(url: str, payload: dict, headers: dict, timeout: int | None):
     """POST JSON to a cloud embeddings endpoint, return the parsed dict or None.
     One place for the UA/timeout/error logging shared by every cloud provider."""
+    # deferred: keep the guard/recall hot path free of this import cost (perf audit A2)
+    import urllib.error
+    import urllib.request
     req = urllib.request.Request(
         url, data=json.dumps(payload).encode("utf-8"),
         headers={"Content-Type": "application/json", "User-Agent": _UA, **headers})
@@ -2099,6 +2111,9 @@ def embed_text(text: str, kind: str | None = None, timeout: int | None = None,
     when a CLOUD embedder is configured, a project in LOCAL_ONLY_PROJECTS is NEVER sent
     to it - embedding is skipped (→ text-only / lexical recall) so local-only note text
     and query prompts can't leave the machine. Ollama is local, so it needs no gate."""
+    # deferred: keep the guard/recall hot path free of this import cost (perf audit A2)
+    import urllib.error
+    import urllib.request
     raw = (text or "")[:2000]
     if EMBED_PROVIDER != "ollama":
         if project is not None and is_local_only(project):
@@ -3736,6 +3751,21 @@ def sweep_unprocessed(processed_db: dict,
     return n
 
 
+def has_unprocessed(processed_db: dict, exclude_session_id: str | None = None) -> bool:
+    """True if at least one transcript would be a sweep candidate. This is the cheap
+    filesystem-only gate SessionStart uses to skip the LLM liveness probe when the
+    backlog is empty - an idle start must not wait on a network timeout (perf audit A1;
+    measured 2.2s per start against a down Ollama before the gate). Fail-open: a
+    candidate that sweep_unprocessed later filters out just means the probe ran once."""
+    if not PROJECTS_ROOT.exists():
+        return False
+    for jl in PROJECTS_ROOT.rglob("*.jsonl"):
+        sid = jl.stem
+        if sid != exclude_session_id and sid not in processed_db:
+            return True
+    return False
+
+
 # ── Status file ───────────────────────────────────────────────────────
 
 def write_status(event: str, trigger: str, sessions_processed: list[dict],
@@ -3892,6 +3922,8 @@ def _low_confidence(sims_desc) -> bool:
     bunch near a high background, so the absolute floor alone never fires. `sims_desc` is
     the descending similarity list; a tiny pool (<4) can't estimate a background, so only
     the floor applies there. The canonical gate - memory_search reuses it (DRY)."""
+    # deferred: keep the guard/recall hot path free of this import cost (perf audit A2)
+    import statistics
     if not sims_desc:
         return True
     if sims_desc[0] < RETRIEVAL_SIM_FLOOR:
@@ -4925,6 +4957,16 @@ def main():
         return
 
     try:
+        processed_db = load_processed()
+        run_log: list[dict] = []
+
+        # An idle SessionStart (no unprocessed transcripts) has no LLM work, so it
+        # must not pay the liveness probe - up to 4s against a down Ollama on the
+        # very machines the weak-PC promise is about (perf audit A1).
+        if event == "SessionStart" and not has_unprocessed(processed_db, session_id):
+            log("SessionStart sweep - nothing to recover (LLM probe skipped)")
+            return
+
         # Fail loudly if the extraction LLM is unreachable instead of silently
         # dropping the session (audit F29).
         if not llm_available():
@@ -4932,9 +4974,6 @@ def main():
             write_status(event, trigger, [], 0, session_id,
                          degraded="No LLM backend (cloud key unset + Ollama down)")
             return
-
-        processed_db = load_processed()
-        run_log: list[dict] = []
 
         def finalize(swept_count: int):
             rebuild_index()
