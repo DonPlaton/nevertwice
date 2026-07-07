@@ -37,6 +37,12 @@ and uses the **same local embedder (bge-m3 via Ollama)**, so the table isolates 
 pipeline*, not the embedder. Competitors run **locally** (Ollama plus their own store; no OpenAI
 key, no cloud).
 
+Vendor blogs quote much higher LongMemEval numbers than any column below. Those come from other
+protocols: answer accuracy with an LLM judge, oracle context handed to a reader, closed embedders,
+sometimes different question subsets. This table is retrieval R@k with every variable pinned except
+the memory pipeline itself, so compare methodology before headlines. `research/head_to_head.py`
+reruns the whole stand, on the competitors' own packages, with one command.
+
 | System (same bge-m3) | R@1 | R@5 | R@10 | MRR | ingest | store |
 |---|---|---|---|---|---|---|
 | **Nevertwice: calibrated fusion (shipped default, 0 deps)** | 0.550 | **0.802** | **0.858** | 0.657 | n/a | files |

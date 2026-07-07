@@ -103,6 +103,9 @@ the variable. So Nevertwice does something no other memory does. It treats memor
   a few lines rather than an episode dump, at about **7× fewer tokens** than recalling every
   related note.
 
+Every intervention is explainable (it cites the note it was born from), overridable in one line,
+and off by default where it could be noisy. A memory that acts must earn the right to.
+
 These are **measured on real tasks**, with the harness to reproduce each one. The samples are small
 and run by one person; the point is that the harness is in the repo and the numbers are checkable,
 not that they are the last word.
@@ -236,6 +239,8 @@ SQLite blob rather than plain files, so they need an export step before the watc
 
 ## Benchmarks
 
+<p align="center"><img src="docs/benchmarks.png" alt="Same-stand LongMemEval-oracle R@5 bars: Nevertwice 0.826 with the opt-in cross-encoder and 0.802 with the shipped zero-dep fusion, ahead of Mem0 0.758 and LangMem and A-MEM at 0.692. Beside them the four numbers that matter: repeat-error rate -86% with a guard on, recall 9.1x leaner than dumping the store, 0 tokens until a guard fires, 85 ms full hook cost per tool call" width="880"></p>
+
 External and reproducible, on **LongMemEval-oracle** (940 sessions in one shared store, 500
 human-annotated questions, local `bge-m3`). Nevertwice's own numbers reproduce with the zero-dep
 core; the head-to-head against Mem0 / LangMem / A-MEM installs those competitors' own packages to
@@ -262,6 +267,12 @@ for all four. We are careful about what is a moat: calibrated score fusion is cl
 the durable edge is the substrate (plain files, $0, local, no server), and we publish the full table
 plus what we tried and cut in [COMPARISON.md](docs/COMPARISON.md) and
 [research/RETRIEVAL_FUSION.md](research/RETRIEVAL_FUSION.md).
+
+**Compare methodology, not headlines.** Vendor posts quote LongMemEval scores from other protocols:
+answer accuracy with an LLM judge, oracle context handed to a reader, closed embedders, different
+question subsets. The tables above are retrieval R@k on one open stand with every variable pinned
+except the memory pipeline itself, and one command reruns the whole thing on the competitors' own
+packages. When a bigger number appears somewhere, first ask what it measures.
 
 ### What we measured, and what we cut
 
@@ -310,6 +321,10 @@ key and recall goes through that instead. With no embedder at all, recall falls 
 full-text search rather than going dark. Extraction is local-first, and an optional cloud key
 (Cerebras, Groq, DeepSeek, or Gemini, all zero-retention) only ever speeds it up. Secrets are
 redacted before anything is written or sent. The store is yours, on your disk, under your git.
+
+And there is **no telemetry**: no account, no usage pings, no phone-home. The only network calls
+are the ones you configured yourself (your Ollama endpoint, or your own cloud key), and
+`NEVERTWICE_LOCAL_ONLY` pins named projects to local-only for good.
 
 ## Install
 

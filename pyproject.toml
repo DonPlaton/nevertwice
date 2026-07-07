@@ -34,6 +34,8 @@ llamaindex = ["llama-index-core"]      # NevertwiceRetriever for LlamaIndex
 [project.urls]
 Homepage = "https://github.com/DonPlaton/nevertwice"
 Repository = "https://github.com/DonPlaton/nevertwice"
+Issues = "https://github.com/DonPlaton/nevertwice/issues"
+Changelog = "https://github.com/DonPlaton/nevertwice/blob/master/CHANGELOG.md"
 
 [project.scripts]
 nevertwice-search = "nevertwice.memory_search:main"

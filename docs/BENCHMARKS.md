@@ -6,6 +6,28 @@ Two kinds of number here, and the difference matters:
   on a real bilingual (RU/EN) store of ~320 notes across 11 projects (`research/eval_harness.py`,
   GPU-free, $0).
 
+## Speed: what the hot paths cost
+
+A memory that hooks every tool call has to be fast on modest hardware, so the costs are
+measured end to end (real subprocess, stdin event to exit) with no model and no network,
+the exact profile of a weak machine driving a cloud agent. Ryzen 7 7700, Windows 11,
+Python 3.14; reproduce anywhere with `python research/latency_bench.py`:
+
+| hot path | cost | when it is paid |
+|---|---|---|
+| PreToolUse end-to-end | **85 ms** | every tool call (interpreter start included) |
+| UserPromptSubmit end-to-end | 68 ms | per prompt (task-aware recall) |
+| SessionStart end-to-end, idle | 73 ms | per session start with no backlog |
+| cold import of the engine | 25 ms | once per hook process (inside the numbers above) |
+| `guards.check()`, 61 guards, 2 KB | 0.18 ms | the actual guard match, pure regex |
+| lexical recall, no embedder | 0.2 ms | the zero-model floor recall falls back to |
+
+Two of these were 10-30x worse until a 2026-07 perf audit: an idle SessionStart used to
+pay a 4-second-timeout LLM liveness probe before checking whether it had any work
+(2,188 ms measured; now gated to 73 ms), and every hook process imported network
+machinery the guard path never uses (59 ms import, now 25 ms). The lesson generalizes:
+hooks get measured end to end, because module-level convenience is a per-tool-call tax.
+
 ## External retrieval: LongMemEval-oracle (the headline)
 
 940 real agent sessions in one shared store, 500 questions, each with **human-annotated**
