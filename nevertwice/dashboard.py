@@ -51,14 +51,14 @@ _CSS = """
 html{-webkit-text-size-adjust:100%}
 body{
  background:var(--bg);color:var(--fg);font-family:var(--sans);
- font-size:15px;line-height:1.55;letter-spacing:-.01em;
+ font-size:16.5px;line-height:1.62;letter-spacing:-.006em;
  -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;
  background-image:
   radial-gradient(900px 480px at 82% -8%,rgba(52,211,153,.10),transparent 60%),
   radial-gradient(760px 420px at 8% -12%,rgba(124,169,255,.07),transparent 55%);
  background-attachment:fixed;min-height:100vh;
 }
-.wrap{max-width:1080px;margin:0 auto;padding:56px 28px 96px}
+.wrap{max-width:1120px;margin:0 auto;padding:60px 32px 100px}
 a{color:var(--accent);text-decoration:none}
 .num{font-family:var(--mono);font-variant-numeric:tabular-nums;letter-spacing:-.02em}
 
@@ -66,55 +66,58 @@ a{color:var(--accent);text-decoration:none}
 .rv{animation:fadeUp .6s var(--ease) both;animation-delay:calc(var(--i,0)*70ms)}
 @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
 @media (prefers-reduced-motion:reduce){.rv{animation:none}}
+/* never let the entrance reveal trap content invisible in a static capture: this file is meant
+   to be mailed / committed / printed to PDF, so print contexts show everything immediately. */
+@media print{.rv{animation:none}}
 
 /* header */
 header{display:flex;align-items:center;gap:16px;margin-bottom:8px}
-.mark{width:44px;height:44px;border-radius:13px;flex:none;display:grid;place-items:center;
+.mark{width:52px;height:52px;border-radius:13px;flex:none;display:grid;place-items:center;
  background:linear-gradient(145deg,var(--accent),var(--accent-2));
  box-shadow:0 8px 22px -6px rgba(34,197,94,.5),inset 0 1px 0 rgba(255,255,255,.35)}
-.mark svg{width:24px;height:24px;color:#06210f}
+.mark svg{width:28px;height:28px;color:#06210f}
 .brand{display:flex;flex-direction:column;gap:2px}
-.brand h1{font-size:23px;font-weight:700;letter-spacing:-.02em;line-height:1}
+.brand h1{font-size:28px;font-weight:700;letter-spacing:-.02em;line-height:1}
 .brand h1 b{background:linear-gradient(90deg,var(--accent),#7ef0c0);
  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;font-weight:800}
-.brand .sub{color:var(--muted);font-size:13px;letter-spacing:0}
+.brand .sub{color:var(--muted);font-size:15px;letter-spacing:0}
 .rule{height:1px;background:linear-gradient(90deg,var(--line-2),transparent);margin:22px 0 26px}
 
 /* stat cards */
-.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(168px,1fr));gap:14px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:16px}
 .card{position:relative;background:linear-gradient(180deg,var(--surface-2),var(--surface));
- border:1px solid var(--line);border-radius:var(--r);padding:18px 18px 16px;overflow:hidden;
+ border:1px solid var(--line);border-radius:var(--r);padding:22px 22px 20px;overflow:hidden;
  box-shadow:var(--sh-sm);transition:transform .28s var(--ease),border-color .28s var(--ease),box-shadow .28s var(--ease)}
 .card::before{content:"";position:absolute;inset:0 0 auto 0;height:1px;
  background:linear-gradient(90deg,transparent,var(--line-2),transparent)}
 .card:hover{transform:translateY(-3px);border-color:var(--line-2);box-shadow:var(--sh-md)}
-.card .l{color:var(--muted);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em}
-.card .n{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:33px;font-weight:600;
- line-height:1.05;margin-top:12px;letter-spacing:-.03em}
+.card .l{color:var(--muted);font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:.07em}
+.card .n{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:44px;font-weight:650;
+ line-height:1.02;margin-top:14px;letter-spacing:-.03em}
 .card.hero .n{background:linear-gradient(120deg,var(--accent),#8ff0c6);
  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
-.card .foot{color:var(--faint);font-size:11.5px;margin-top:5px}
+.card .foot{color:var(--faint);font-size:13.5px;margin-top:7px}
 
 /* section heads */
-h2{display:flex;align-items:center;gap:9px;font-size:13px;font-weight:600;letter-spacing:.03em;
+h2{display:flex;align-items:center;gap:10px;font-size:15px;font-weight:600;letter-spacing:.03em;
  text-transform:uppercase;color:var(--muted);margin:38px 0 14px}
-h2 svg{width:15px;height:15px;color:var(--accent);opacity:.9}
-h2 .c{margin-left:auto;font-family:var(--mono);font-size:12px;color:var(--faint);
+h2 svg{width:18px;height:18px;color:var(--accent);opacity:.9}
+h2 .c{margin-left:auto;font-family:var(--mono);font-size:13.5px;color:var(--faint);
  text-transform:none;letter-spacing:0;font-weight:400}
 
 /* tables */
 .panel{background:linear-gradient(180deg,var(--surface),rgba(15,21,36,.6));
  border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
-table{width:100%;border-collapse:collapse;font-size:13.5px}
-th{text-align:left;color:var(--faint);font-weight:600;font-size:11px;text-transform:uppercase;
- letter-spacing:.06em;padding:12px 16px;border-bottom:1px solid var(--line)}
-td{padding:11px 16px;border-bottom:1px solid var(--line);vertical-align:middle;color:var(--fg)}
+table{width:100%;border-collapse:collapse;font-size:15.5px}
+th{text-align:left;color:var(--faint);font-weight:600;font-size:12.5px;text-transform:uppercase;
+ letter-spacing:.05em;padding:14px 18px;border-bottom:1px solid var(--line)}
+td{padding:14px 18px;border-bottom:1px solid var(--line);vertical-align:middle;color:var(--fg)}
 tr:last-child td{border-bottom:0}
 tbody tr{transition:background .18s var(--ease)}
 tbody tr:hover td{background:rgba(148,163,184,.045)}
 .proj{font-weight:600;letter-spacing:-.01em}
 .count{font-family:var(--mono);font-variant-numeric:tabular-nums;color:var(--fg)}
-.dim{color:var(--muted);font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:12.5px}
+.dim{color:var(--muted);font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:14px}
 
 /* project bars */
 .bar-cell{width:180px}
@@ -123,7 +126,7 @@ tbody tr:hover td{background:rgba(148,163,184,.045)}
  box-shadow:0 0 12px -2px rgba(52,211,153,.5)}
 
 /* type pills */
-.pill{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;color:var(--muted);
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);
  font-family:var(--mono);margin-right:9px}
 .pill i{width:6px;height:6px;border-radius:50%;display:inline-block}
 .dot-mistake{background:var(--danger)} .dot-pattern{background:var(--accent)} .dot-decision{background:var(--violet)}
@@ -132,22 +135,22 @@ tbody tr:hover td{background:rgba(148,163,184,.045)}
 /* entity chips */
 .chips{display:flex;flex-wrap:wrap;gap:8px}
 .chip{display:inline-flex;align-items:center;gap:7px;background:var(--surface-2);
- border:1px solid var(--line);border-radius:999px;padding:6px 13px;font-size:12.5px;
+ border:1px solid var(--line);border-radius:999px;padding:7px 15px;font-size:14px;
  transition:border-color .2s var(--ease),transform .2s var(--ease)}
 .chip:hover{border-color:var(--accent-dim);transform:translateY(-1px)}
 .chip b{color:var(--fg);font-weight:600} .chip span{color:var(--faint);font-family:var(--mono);
- font-variant-numeric:tabular-nums;font-size:11.5px}
+ font-variant-numeric:tabular-nums;font-size:13px}
 
 /* ledger */
 .arrow{color:var(--faint);margin:0 8px}
 .was{color:var(--muted)} .now{color:var(--fg);font-weight:500}
-.tag{display:inline-block;font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;
+.tag{display:inline-block;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;
  color:var(--amber);background:rgba(251,191,36,.12);border:1px solid rgba(251,191,36,.22);
  border-radius:999px;padding:2px 9px}
-.empty{color:var(--muted);padding:18px 16px;font-size:13.5px}
+.empty{color:var(--muted);padding:20px 18px;font-size:15.5px}
 
 footer{margin-top:52px;padding-top:22px;border-top:1px solid var(--line);
- display:flex;align-items:center;gap:8px;color:var(--faint);font-size:12.5px}
+ display:flex;align-items:center;gap:8px;color:var(--faint);font-size:14px}
 footer .g{width:6px;height:6px;border-radius:50%;background:var(--accent);
  box-shadow:0 0 8px var(--accent)}
 footer a{color:var(--muted)} footer a:hover{color:var(--accent)}
