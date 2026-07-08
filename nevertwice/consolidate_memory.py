@@ -132,7 +132,7 @@ def _union_meta_into_keeper(keep_fp: Path, member_fps: list[Path]) -> None:
         return v if isinstance(v, list) else ([v] if v not in (None, "") else [])
 
     merged = {}
-    for field in ("tags", "entities", "entity_types", "sources"):
+    for field in ("tags", "entities", "sources"):        # plain list fields
         seen, out = set(), []
         for fm in fms:
             for item in _as_list(fm.get(field)):
@@ -142,6 +142,16 @@ def _union_meta_into_keeper(keep_fp: Path, member_fps: list[Path]) -> None:
                     out.append(item)
         if out and out != _as_list(kfm.get(field)):
             merged[field] = out
+    # entity_types is a MAP ({name: type}), not a list: union as a dict (keeper wins on a
+    # conflict) - folding it through _as_list produced a list-of-dicts that every later reader
+    # then silently reset to {} (critic R3, the fix-review found this in its own fix).
+    et: dict = {}
+    for fm in reversed(fms):                              # kfm is fms[0] → applied last → wins
+        v = fm.get("entity_types")
+        if isinstance(v, dict):
+            et.update(v)
+    if et and et != (kfm.get("entity_types") if isinstance(kfm.get("entity_types"), dict) else {}):
+        merged["entity_types"] = et
     # relations are list-of-maps: de-dup by canonical JSON
     seen_rel, rels = set(), []
     for fm in fms:

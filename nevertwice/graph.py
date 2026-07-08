@@ -275,6 +275,10 @@ def relation_expand(hits, project: str | None = None, max_add: int = 5, rels=Non
     # notes_for_entity, which uses the SQLite graph tier (only the matching stems' files are
     # read). The old full-markdown scan stayed ~400ms while every other graph query got 60-145x
     # faster once the scale tier was built (critic R3).
+    # when the SQLite graph tier is absent, notes_for_entity falls back to a full vault scan;
+    # build that index ONCE and share it, else we'd re-scan per target and be slower than the
+    # old code we replaced (fix-review R3). With the tier built, idx stays None (SQL per target).
+    idx = None if _sql() is not None else entity_index(project)
     present = {h.get("stem") for h in hits}
     added, seen_targets = [], set()
     for h in hits:
@@ -286,7 +290,7 @@ def relation_expand(hits, project: str | None = None, max_add: int = 5, rels=Non
             if not t or t in seen_targets or (rfilter and rel not in rfilter):
                 continue
             seen_targets.add(t)
-            for n in notes_for_entity(t, project, k=max_add + len(present)):
+            for n in notes_for_entity(t, project, k=max_add + len(present), idx=idx):
                 if n["stem"] in present or len(added) >= max_add:
                     continue
                 present.add(n["stem"])

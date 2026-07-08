@@ -208,9 +208,16 @@ def test_bounded_repeat_redos_rejected():
     # N=38); the widened filter must reject the family without losing a single legit pattern.
     # Round 3 (critic 2026-07): N adjacent quantified groups (a+)(a+)...(a+)b - each matches the
     # same run, exponential partitions, 20s on 38 chars - also rejected, escape-aware.
+    # the dynamic subprocess probe is shape-agnostic: it rejects genuinely catastrophic patterns
+    # (many adjacent quantified atoms - exponential) regardless of shape, INCLUDING the paren-less
+    # a+a+...b and \w+\w+... shapes the static denylist kept missing, while correctly ACCEPTING
+    # merely-linear cases like (a+)(a+)b (2 groups = 63 splits, fast) that a static count over-rejected
     for pat in (r"(a{1,2}){38}b", r"(a{1,2}){60}b", r"(a+){20}", r"(.*a){20}", r"(a?)+$",
-                r"(a+)(a+)(a+)(a+)(a+)(a+)(a+)(a+)(a+)(a+)b", r"(a+)(a+)b", r"(\w+)(\w+)x"):
+                r"(a+)(a+)(a+)(a+)(a+)(a+)(a+)(a+)(a+)(a+)b",
+                r"a+a+a+a+a+a+a+a+a+a+b", r"\w+\w+\w+\w+\w+\w+\w+\w+!"):
         assert not G.safe_pattern(pat), pat
+    for safe in (r"(a+)(a+)b", r"execute\s*\(\s*f[\"']", r"\w+\s*=\s*\w+"):   # linear/benign: accepted
+        assert G.safe_pattern(safe), safe
     # a real guard with escaped parens and a single quantified group must still pass
     assert G.safe_pattern(r"def\s+\w+\([^)]*=\s*(\[\s*\]|\{\s*\})")
     for pat, _ in G._UNIVERSAL_GUARDS:

@@ -94,29 +94,46 @@ _NESTED_QUANT = re.compile(
 )
 
 
-def _quantified_group_count(pat: str) -> int:
-    """How many capturing groups contain an unbounded quantifier (`+`/`*`), escape-aware.
-    Two or more such groups adjacent (`(a+)(a+)...(a+)b`) are the catastrophic-backtracking
-    shape the round-1/2 checks miss: each group can match the same run of input, so the engine
-    explores exponentially many partitions. A real distilled-mistake guard never needs two
-    separately-quantified groups, so rejecting them costs nothing and stops shape after shape
-    without another denylist round (critic R3: this was the 3rd ReDoS shape found in 3 rounds)."""
-    stripped = re.sub(r"\\.", "", pat)       # drop escaped chars so `\(`/`\+` aren't miscounted
-    return len(re.findall(r"\([^)]*[+*]", stripped))
+_REDOS_PROBE = (
+    "import re,sys\n"
+    "p=sys.stdin.buffer.read().decode('utf-8','replace')\n"
+    "rx=re.compile(p)\n"
+    # adversarial inputs that force maximal backtracking (long runs + a final mismatch)\n"
+    "for s in ('a'*64+'!','ab'*48+'!','0'*64+'!',' '*64+'x','x'*96,'a'*40+' '*40,'a '*40+'!'):\n"
+    "    rx.search(s)\n"
+)
+
+
+def _redos_safe(pat: str) -> bool:
+    """Empirically confirm `pat` runs fast on adversarial input. Static ReDoS denylists are a
+    losing game - one has now missed a fresh catastrophic shape FOUR review rounds running
+    (nested `(a+)+`, quantified-alternation `(a|aa)+`, bounded-repeat `(a{1,2}){38}`, and
+    paren-less adjacent quantifiers `a+a+...b`). So instead of enumerating shapes, RUN the
+    compiled pattern under a HARD timeout. A thread can't be timed out - CPython's `re` holds the
+    GIL through a catastrophic match - but a subprocess can: the OS kills it. This is called only
+    at guard CREATION (sleep-time consolidation); the PreToolUse hot path never calls safe_pattern,
+    so the ~80 ms spawn is irrelevant."""
+    import subprocess
+    try:
+        r = subprocess.run([sys.executable, "-c", _REDOS_PROBE], input=pat.encode("utf-8"),
+                           capture_output=True, timeout=0.6)
+        return r.returncode == 0                 # finished within the budget → safe
+    except subprocess.TimeoutExpired:
+        return False                             # still backtracking after 0.6s → reject
+    except Exception:
+        return True                              # a spawn hiccup must not block guard creation
 
 
 def safe_pattern(pat: str) -> bool:
     if not pat or len(pat) > MAX_PATTERN:
         return False
-    if _NESTED_QUANT.search(pat):        # nested quantifier / quantified alternation / bounded-repeat
-        return False
-    if _quantified_group_count(pat) >= 2:   # N adjacent quantified groups (round-3 shape)
+    if _NESTED_QUANT.search(pat):        # cheap fast-reject for the obvious nested/alternation shapes
         return False
     try:
         re.compile(pat)
-        return True
     except re.error:
         return False
+    return _redos_safe(pat)              # authoritative, shape-agnostic: reject any real backtracker
 
 
 def _guard_id(pattern: str, scope: dict) -> str:

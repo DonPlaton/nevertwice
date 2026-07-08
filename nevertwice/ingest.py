@@ -57,6 +57,9 @@ def _flatten_agent_jsonl(text: str) -> str:
     consume the entire truncation head budget and mine ZERO real message content (critic R3,
     measured on a real 57MB corpus). Extract the user/assistant turns; fall back to the raw text
     if this doesn't look like agent JSONL."""
+    def _s(v):                       # coerce any content value to str - a non-string 'text'
+        return v if isinstance(v, str) else ("" if v is None else str(v))
+
     lines = text.splitlines()
     out, parsed = [], 0
     for ln in lines:
@@ -69,17 +72,29 @@ def _flatten_agent_jsonl(text: str) -> str:
             continue
         parsed += 1
         obj = o.get("payload") if isinstance(o.get("payload"), dict) else o
+        ptype = obj.get("type") or o.get("type")
         role = obj.get("role")
         content = obj.get("content")
         if isinstance(content, list):
-            parts = [(c.get("text") or c.get("input_text") or "") if isinstance(c, dict) else
-                     (c if isinstance(c, str) else "") for c in content]
+            parts = [_s(c.get("text") or c.get("input_text")) if isinstance(c, dict) else _s(c)
+                     for c in content]
             body = " ".join(p for p in parts if p).strip()
         else:
-            body = content.strip() if isinstance(content, str) else ""
+            body = _s(content).strip()
         if role in ("user", "assistant") and body:
             out.append(f"{role}: {body}")
-    # only rewrite if it really parsed as JSONL and yielded turns, else keep the original
+        # capture the technical substance too - tool calls and their output are where the
+        # real work (and the mistakes worth remembering) live (fix-review R3)
+        elif ptype == "function_call":
+            name = _s(obj.get("name")).strip()
+            args = _s(obj.get("arguments")).strip()[:2000]
+            if name or args:
+                out.append(f"tool[{name}]: {args}")
+        elif ptype in ("function_call_output", "tool_result"):
+            res = _s(obj.get("output") or obj.get("result") or content).strip()[:2000]
+            if res:
+                out.append(f"tool_output: {res}")
+    # only rewrite if it really parsed as JSONL and yielded content, else keep the original
     if parsed >= max(2, len(lines) // 2) and out:
         return "\n\n".join(out)
     return text
@@ -153,7 +168,10 @@ def ingest_files(files, project, agent, db, *, trigger="ingest-sweep",
                 continue
             txt = docparse.extract_text(f)                # .pdf/.docx/.html → text; else raw read
             if f.suffix.lower() == ".jsonl":
-                txt = _flatten_agent_jsonl(txt)           # keep the turns, drop 15-25KB of scaffolding
+                try:
+                    txt = _flatten_agent_jsonl(txt)       # keep the turns, drop 15-25KB of scaffolding
+                except Exception:
+                    pass                                  # a malformed line must not abort the sweep
         except docparse.DocError as e:                    # missing PDF dep / corrupt doc - skip, don't abort
             print(f"[ingest] skip {f.name}: {e}", file=sys.stderr)
             skipped += 1
