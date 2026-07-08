@@ -47,7 +47,7 @@ $ python nevertwice/memory_search.py "training crashes out of gpu memory" myproj
 
 ---
 
-## The pitch
+## Overview
 
 Every morning your agent starts from zero. It re-reads the same files, rediscovers the same
 gotchas, and now and then repeats the exact mistake it made on Tuesday. You are paying tokens to
