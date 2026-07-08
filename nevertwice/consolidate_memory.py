@@ -109,6 +109,59 @@ def merge_into_keeper(keep_fp: Path, dup_fps: list[Path]) -> None:
     m.write_atomic(keep_fp, ktext.rstrip() + "\n" + block)
 
 
+def _union_meta_into_keeper(keep_fp: Path, member_fps: list[Path]) -> None:
+    """Union the graph-bearing frontmatter of every cluster member into the keeper before the
+    duplicates are archived. Recurrence already carries forward as the cluster max, but its
+    siblings - tags, entities, entity_types, relations, sources, confidence - were keeper-only,
+    so each merge silently shrank the entity graph and dropped provenance (critic R3, same class
+    as the recurrence fix, left open for every other field). List fields are de-duplicated
+    (relations by identity); confidence takes the max. Idempotent."""
+    try:
+        ktext = keep_fp.read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return
+    kfm, _ = m._read_frontmatter(ktext)
+    fms = [kfm]
+    for fp in member_fps:
+        try:
+            fms.append(m._read_frontmatter(fp.read_text(encoding="utf-8", errors="replace"))[0])
+        except OSError:
+            continue
+
+    def _as_list(v):
+        return v if isinstance(v, list) else ([v] if v not in (None, "") else [])
+
+    merged = {}
+    for field in ("tags", "entities", "entity_types", "sources"):
+        seen, out = set(), []
+        for fm in fms:
+            for item in _as_list(fm.get(field)):
+                key = str(item)
+                if key not in seen:
+                    seen.add(key)
+                    out.append(item)
+        if out and out != _as_list(kfm.get(field)):
+            merged[field] = out
+    # relations are list-of-maps: de-dup by canonical JSON
+    seen_rel, rels = set(), []
+    for fm in fms:
+        for r in _as_list(fm.get("relations")):
+            key = __import__("json").dumps(r, sort_keys=True, ensure_ascii=False) if isinstance(r, dict) else str(r)
+            if key not in seen_rel:
+                seen_rel.add(key)
+                rels.append(r)
+    if rels and rels != _as_list(kfm.get("relations")):
+        merged["relations"] = rels
+    # confidence: the cluster's strongest
+    confs = [m._coerce_confidence(fm.get("confidence")) for fm in fms]
+    confs = [c for c in confs if c is not None]
+    if confs and max(confs) != m._coerce_confidence(kfm.get("confidence")):
+        merged["confidence"] = round(max(confs), 3)
+
+    if merged:
+        m.write_atomic(keep_fp, m._stamp_frontmatter(ktext, merged))
+
+
 def _cluster_tokens(rec: dict) -> set:
     return set(m._tokens(f"{rec.get('title','')} {rec.get('desc','')} {rec.get('prevention','')}"))
 
@@ -374,7 +427,11 @@ def stamp_salience(apply: bool) -> int:
     recurrence is applied separately by the ranker) and stamp it into frontmatter, so retrieval
     applies the gentle centrality nudge and the coreset/cards can prefer central notes. Sleep-time,
     GPU-free, idempotent (writes only on a meaningful change). Returns the count (re)stamped. Inert
-    on an entity-less store (salience {})."""
+    on an entity-less store (salience {}) AND on a coding-only install: the brain layer is opt-in,
+    so a default install must not accumulate salience frontmatter the ranker then (previously)
+    applied on the hot path (critic R3)."""
+    if not m._cfg.brain_enabled():
+        return 0
     sal = m.salience_index()                   # {stem: [0,1]}; {} → nothing central → no-op
     if not sal:
         return 0
@@ -464,7 +521,9 @@ def _run_consolidation(apply, mode, has_llm):
             keep_fp = folder / f"{keep}.md"
             dup_fps = [folder / f"{d}.md" for d in dups]
             if keep_fp.exists():
-                merge_into_keeper(keep_fp, [d for d in dup_fps if d.exists()])
+                live_dups = [d for d in dup_fps if d.exists()]
+                merge_into_keeper(keep_fp, live_dups)
+                _union_meta_into_keeper(keep_fp, live_dups)   # keep the graph edges + provenance
                 # carry the cluster's HIGHEST recurrence forward, not just the keeper's - a
                 # merged older dup may have recurred more than the (newest) keeper, and
                 # archiving it would otherwise SILENTLY DROP that count the recall boost

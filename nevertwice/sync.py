@@ -40,6 +40,11 @@ def _git(*args, check=False, timeout=180):
     except subprocess.TimeoutExpired:
         return subprocess.CompletedProcess(
             args, 124, "", f"git {' '.join(args)} timed out after {timeout}s")
+    except OSError as e:
+        # git not on PATH (FileNotFoundError) or otherwise unlaunchable: every OTHER failure
+        # mode already degrades to a friendly '[sync] ...' line, so this one must too rather
+        # than crash an unattended cron/Task-Scheduler run with a raw traceback (critic R3).
+        return subprocess.CompletedProcess(args, 127, "", f"git not runnable: {e}")
 
 
 def main() -> int:

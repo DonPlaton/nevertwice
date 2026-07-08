@@ -4018,7 +4018,10 @@ def _salience_mult(stem: str, rec: dict) -> float:
         if c is not None:
             mult *= RETRIEVAL_CONF_FLOOR + (1.0 - RETRIEVAL_CONF_FLOOR) * c
         sal = rec.get("salience")        # Brain F5: gentle centrality boost, inert when unstamped (0)
-        if sal and RETRIEVAL_SALIENCE_BOOST > 0:
+        # gated on the brain profile so a coding-only (default) install's hot-path ranking is
+        # byte-identical even for notes that happen to carry a stale stamped salience - the
+        # "brain layer is opt-in" claim was otherwise false (critic R3: ~10% swing with brain off)
+        if sal and RETRIEVAL_SALIENCE_BOOST > 0 and _cfg.brain_enabled():
             mult *= 1.0 + RETRIEVAL_SALIENCE_BOOST * _coerce_salience(sal)   # already clamped to [0,1]
     return mult
 

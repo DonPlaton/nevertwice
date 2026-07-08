@@ -115,13 +115,12 @@ def slugify(s, max_len=55):
 
 
 def slug_project(name):
-    """Match memory_hook.slug_project: lowercase, '_'-joined, never '-'. Keeps
-    bootstrap-created Context filenames consistent with the hook so they never
-    case-split (audit F9)."""
-    s = slugify(name, 40)
-    if s == "untitled":
-        return "general"
-    return s.replace('-', '_').strip('._') or "general"
+    """The project slug for a Context filename. Delegates to memory_hook.slug_project so it is
+    byte-identical to what the live hook reads back - the local copy had drifted and did NOT
+    transliterate non-ASCII, so a Cyrillic project name ('Мой_проект') was bootstrapped to a
+    different file than SessionStart injects from, making the seed permanently invisible
+    (critic R3). One source of truth."""
+    return m.slug_project(name)
 
 
 def slug_tag(t):
