@@ -30,6 +30,15 @@ python research/longmem_eval.py --xrerank   # + the trained cross-encoder ([rera
 python research/embedder_ab.py              # A/B local embedders (each pulled in Ollama)
 ```
 
+## Reproducibility of the head-to-head
+
+`research/head_to_head.py` installs each competitor's own package and runs it on this same pool
+with the same local `bge-m3` embedder. Because results move with a competitor's version, the
+runner **records the exact installed version** of every system it compared against (via
+`importlib.metadata`) into `head_to_head.json` and the printed report, alongside the Python and
+OS it ran on. So a published table is always traceable to the versions that produced it rather than
+to whatever happened to be on the machine. Pin those versions when you cite a number.
+
 ## Generated caches (also ignored)
 
 `--embed` writes per-embedder vector caches here (`longmem_embeds*.json`) so re-ranking is instant.

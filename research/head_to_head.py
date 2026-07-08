@@ -47,6 +47,27 @@ OLLAMA_BASE = os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434")
 EMBED_MODEL = os.environ.get("NEVERTWICE_EMBED_MODEL", "bge-m3")    # same embedder for all → fair
 COMP_LLM = os.environ.get("H2H_LLM", "qwen2.5:3b")                 # competitor extraction LLM
 
+# The pip package each adapter actually imports, so the run records the versions it compared
+# against - "same stand, reproducible" is only credible if the competitor versions are pinned in
+# the output rather than left to whatever happened to be installed (critic 2026-07).
+_PKG = {"mem0": "mem0ai", "langmem": "langmem", "amem": "chromadb",
+        "cognee": "cognee", "zep": "graphiti-core", "nevertwice": "nevertwice"}
+
+
+def _pkg_ver(system: str) -> str:
+    """Installed version of a competitor's package, or '?' if unavailable."""
+    pkg = _PKG.get(system)
+    if not pkg:
+        return "?"
+    try:
+        from importlib.metadata import version, PackageNotFoundError
+        try:
+            return f"{pkg}=={version(pkg)}"
+        except PackageNotFoundError:
+            return f"{pkg} (not installed)"
+    except Exception:
+        return "?"
+
 
 def _args():
     ap = argparse.ArgumentParser()
@@ -346,13 +367,14 @@ def main():
         t0 = time.time()
         r = fn(data, pool)
         r["_wall_s"] = round(time.time() - t0, 1)
+        r["version"] = _pkg_ver(name)          # record what we actually compared against
         results[name] = r
         if "blocked" in r:
             print(f"  BLOCKED: {r['blocked']}")
         else:
             print("  " + "  ".join(f"{k} {r[k]}" for k in
                   ("recall@1", "recall@3", "recall@5", "recall@10", "mrr", "n") if k in r))
-            extra = {k: r[k] for k in ("ingest_s", "query_s", "mode", "setup") if k in r}
+            extra = {k: r[k] for k in ("ingest_s", "query_s", "mode", "setup", "version") if k in r}
             if extra:
                 print("  " + "  ".join(f"{k}={v}" for k, v in extra.items()))
 

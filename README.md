@@ -278,7 +278,37 @@ plus what we tried and cut in [COMPARISON.md](docs/COMPARISON.md) and
 answer accuracy with an LLM judge, oracle context handed to a reader, closed embedders, different
 question subsets. The tables above are retrieval R@k on one open stand with every variable pinned
 except the memory pipeline itself, and one command reruns the whole thing on the competitors' own
-packages. When a bigger number appears somewhere, first ask what it measures.
+packages (which records the exact versions it compared against). When a bigger number appears
+somewhere, first ask what it measures.
+
+### After retrieval: the axis that actually separates memory
+
+<p align="center"><img src="docs/post_retrieval.png" alt="Post-retrieval correctness: contradictions resolved at write time via supersession (competitors are ADD-only or manual); poisoning attacks blocked 88 percent with prompt-injection caught 100 percent and an honest 50 percent on plausible-false facts; a submodular forgetting coreset keeps 0.14 more topic coverage per token at a 20 percent budget; and we publish negative results such as consolidation-by-replacement halving recall, so we do not ship it" width="880"></p>
+
+Here is the uncomfortable truth about memory benchmarks in 2026: **retrieval R@k has stopped
+discriminating.** Independent analysis finds that across LongMemEval, LoCoMo and peers, retrieval-
+miss dominates the error budget while retrieval-hit-but-wrong-answer is rare, so the headline
+scores mostly measure *"did the right note come back"* - and every serious system now scores high
+there. The gap that shows up in production (Mem0's own 91.6 on LoCoMo drops to ~49% effective at
+50k sessions once stale data and contradictions enter) lives **after** retrieval: does the memory
+resolve contradictions, resist poisoning, and forget the right things?
+
+That is the axis Nevertwice is built for, and every number is measured with a harness in `research/`:
+
+- **Contradictions resolve at write time.** A newer fact retires the older one to `Superseded/`, so
+  recall only ever returns the current truth and the `conflicts` ledger keeps the audit trail.
+  Most competitors are add-only or leave deletion to you ([COMPARISON.md](docs/COMPARISON.md)).
+- **Poisoning defence, measured.** 88% of memory-poisoning acceptance attacks blocked (precision
+  0.91), prompt-injection caught 100%, and - stated plainly because honesty is the point - only
+  ~50% of *plausible-false* facts ([research/POISONING.md](research/POISONING.md)).
+- **Forgetting is a policy, not neglect.** A submodular coreset keeps **+0.14 more topic coverage**
+  than recency-sorting at a tight 20% retention budget, with less redundancy
+  ([research/FORGETTING.md](research/FORGETTING.md)).
+- **We publish the negative results.** Consolidating episodes by replacement halved downstream
+  recall in our own test, so it is not shipped ([research/CONSOLIDATION_EVAL.md](research/CONSOLIDATION_EVAL.md)).
+
+Retrieval is table stakes; this is the moat, and it is the part a competitor cannot copy by
+swapping in a better embedder.
 
 ### What we measured, and what we cut
 
