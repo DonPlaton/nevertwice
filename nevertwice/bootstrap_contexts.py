@@ -21,8 +21,9 @@ except Exception:
 
 # Prefer the shared Gemini→Ollama backend from memory_hook (fast, off-GPU);
 # fall back to this script's own Ollama call if it can't be imported.
+sys.path.insert(0, str(Path(__file__).parent))
+import memory_hook as m               # the one source for slug/split/atomic-write/index helpers
 try:
-    sys.path.insert(0, str(Path(__file__).parent))
     from memory_hook import generate_json as _shared_generate, redact_secrets
 except Exception:
     _shared_generate = None
@@ -332,9 +333,23 @@ def write_context(project_name: str, project_path: Path, ctx: dict):
         "",
         body_tags,
     ]
+    head = "\n".join(sections)
 
-    fp.write_text("\n".join(sections), encoding="utf-8")
-    print(f"  [ok] Context/{project_name}.md")
+    # Preserve the accumulated session history: the hook appends dated `## YYYY-MM-DD` blocks
+    # (and a rolling `## Накопленное состояние`) below the seed over the life of the project.
+    # Re-seeding - including `--force` - must splice the fresh head IN FRONT of that tail, not
+    # erase it. `--force` used to overwrite the whole file, destroying every accumulated entry
+    # (critic R3, same data-loss class as db19ecb but through the escape hatch). Atomic write.
+    tail = ""
+    if fp.exists():
+        try:
+            _h, entries = m._split_context(fp.read_text(encoding="utf-8", errors="replace"))
+            if entries:
+                tail = "\n" + "\n".join(entries).strip() + "\n"
+        except OSError:
+            pass
+    m.write_atomic(fp, head + tail)
+    print(f"  [ok] Context/{project_name}.md" + (" (session history preserved)" if tail else ""))
 
 
 def rebuild_index():

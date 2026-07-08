@@ -92,7 +92,7 @@ def _lexical_only(query: str, project: str | None, k: int, cache: dict) -> list[
         sc = _lex_overlap(qtok, r, s)
         if sc:
             scored.append((sc, s, r))
-    scored.sort(key=lambda x: -x[0])
+    scored.sort(key=lambda x: (-x[0], x[1]))   # stem tie-break: stable across hash seeds
     return [{"score": round(sc, 3), "ntype": r.get("ntype"), "project": r.get("project"),
              "title": r.get("title"), "stem": s, "description": r.get("desc", ""),
              "prevention": r.get("prevention", ""), "low_confidence": True}
@@ -167,7 +167,7 @@ def search_core(query: str, project: str | None = None, k: int = 10,
             sc = _lex_overlap(qtok, r, s)
             if sc:
                 scored.append((sc, s, r))
-    scored.sort(key=lambda x: -x[0])
+    scored.sort(key=lambda x: (-x[0], x[1]))   # stem tie-break: stable across hash seeds
     # Mixed store: text-only notes (no vector - written while no embedder was up, #32)
     # never enter `cands`, so without this they'd be INVISIBLE to recall as soon as the
     # store holds ANY embedded note (audit 2026-06-18 CRIT - the all-text-only path above
@@ -185,7 +185,7 @@ def search_core(query: str, project: str | None = None, k: int = 10,
             sc = _lex_overlap(qtok, r, s)
             if sc:
                 text_extra.append((sc, s, r))
-    text_extra.sort(key=lambda x: -x[0])
+    text_extra.sort(key=lambda x: (-x[0], x[1]))
     pool = max(k, m.RERANK_POOL) if (rerank or xrerank) else k
     # carry the abstention signal ON the results too - api.recall() drops `mode`, so a
     # programmatic caller (integrations, custom agents) otherwise can't tell these are

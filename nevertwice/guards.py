@@ -94,10 +94,23 @@ _NESTED_QUANT = re.compile(
 )
 
 
+def _quantified_group_count(pat: str) -> int:
+    """How many capturing groups contain an unbounded quantifier (`+`/`*`), escape-aware.
+    Two or more such groups adjacent (`(a+)(a+)...(a+)b`) are the catastrophic-backtracking
+    shape the round-1/2 checks miss: each group can match the same run of input, so the engine
+    explores exponentially many partitions. A real distilled-mistake guard never needs two
+    separately-quantified groups, so rejecting them costs nothing and stops shape after shape
+    without another denylist round (critic R3: this was the 3rd ReDoS shape found in 3 rounds)."""
+    stripped = re.sub(r"\\.", "", pat)       # drop escaped chars so `\(`/`\+` aren't miscounted
+    return len(re.findall(r"\([^)]*[+*]", stripped))
+
+
 def safe_pattern(pat: str) -> bool:
     if not pat or len(pat) > MAX_PATTERN:
         return False
-    if _NESTED_QUANT.search(pat):
+    if _NESTED_QUANT.search(pat):        # nested quantifier / quantified alternation / bounded-repeat
+        return False
+    if _quantified_group_count(pat) >= 2:   # N adjacent quantified groups (round-3 shape)
         return False
     try:
         re.compile(pat)

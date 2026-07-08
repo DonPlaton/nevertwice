@@ -38,15 +38,22 @@ def env_int(name: str, default: int) -> int:
 
 
 def env_float(name: str, default: float) -> float:
-    """float twin of env_int - same rationale."""
+    """float twin of env_int - same rationale. NaN/Inf parse without raising, so they are
+    rejected explicitly: a NaN weight silently poisons every downstream comparison (NaN loses
+    every < and >), which is exactly the "degrade, never surprise" contract this helper exists
+    to keep (critic 2026-07 round 3: NEVERTWICE_FUSION_SEM_WEIGHT=nan collapsed all ranking)."""
     raw = os.environ.get(name)
     if raw is None or not raw.strip():
         return default
     try:
-        return float(raw.strip())
+        v = float(raw.strip())
     except ValueError:
         sys.stderr.write(f"[memory_hook] {name}={raw!r} is not a number - using {default}\n")
         return default
+    if not math.isfinite(v):
+        sys.stderr.write(f"[memory_hook] {name}={raw!r} is not finite - using {default}\n")
+        return default
+    return v
 
 
 # ── Config ────────────────────────────────────────────────────────────
@@ -2968,8 +2975,10 @@ def _read_frontmatter(text: str) -> tuple[dict, str]:
         if (v.startswith("[") and v.endswith("]")) or (v.startswith("{") and v.endswith("}")):
             try:
                 v = json.loads(v)          # JSON array OR map (e.g. entity_types) → list/dict
-            except ValueError:
-                pass
+            except (ValueError, RecursionError):
+                pass                        # a deeply-nested value is not parseable metadata; keep
+                                            # the raw string rather than let a stack overflow abort
+                                            # every vault-wide scan that reads this note (critic R3)
         elif len(v) >= 2 and v[0] == '"' and v[-1] == '"':
             v = v[1:-1].replace('\\"', '"').replace("\\\\", "\\")
         fm[k] = v
@@ -4145,9 +4154,18 @@ def _bm25_scores(qtokens: set, cands: list, k1: float = 1.5, b: float = 0.75) ->
 
 
 def _zscore_map(d: dict) -> dict:
-    """Z-normalise a score map over its own values (mean 0, sd 1). Empty → empty."""
+    """Z-normalise a score map over its own values (mean 0, sd 1). Empty → empty.
+
+    A single candidate cannot be z-scored (it IS the mean, so the naive formula collapses it
+    to 0.0 - "perfectly average"), which then loses to noise in the other signal. But a lone
+    candidate that cleared the retrieval floor is the signal's sole and therefore top evidence,
+    so it gets a clear positive standin instead of 0. Without this, a query where only one note
+    clears the embedding floor ranked that (often excellent) note dead last (critic R3, verified
+    end to end: a cosine 0.9999 target excluded from the top 5)."""
     if not d:
         return {}
+    if len(d) == 1:
+        return {k: 1.0 for k in d}       # sole hit in this signal → clearly present, not "average"
     vals = list(d.values())
     mu = sum(vals) / len(vals)
     sd = (sum((v - mu) ** 2 for v in vals) / len(vals)) ** 0.5 or 1.0

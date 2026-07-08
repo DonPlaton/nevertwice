@@ -928,6 +928,40 @@ try:
 finally:
     sys.stdin, _ing.MAX_SWEEP_BYTES = _old_stdin, _old_max
 
+# ── 2026-07 hostile-critic round 3 (six execution-verified CRITICALs) ──
+import math
+
+# C1: fusion must not collapse a lone candidate to 0 (z-score of a 1-element signal).
+# A single strong semantic hit that also shares query tokens must rank first, not last.
+_fus = m._calibrated_fusion({"TARGET": 0.95}, {"TARGET": 1.9, "A": 1.2, "B": 1.0, "C": 0.8})
+check("fusion: lone semantic hit ranks first (n=1 z-collapse fixed)",
+      max(_fus, key=lambda k: _fus[k]) == "TARGET")
+# determinism: no secondary-sort-free hash-order ranking
+_fa = m._calibrated_fusion({"a": 0.9, "b": 0.9, "c": 0.9}, {"a": 0.9})
+check("fusion output is finite for every key", all(math.isfinite(v) for v in _fa.values()))
+
+# env_float rejects NaN/Inf (they parse without raising and poison every comparison)
+os.environ["NEVERTWICE_TESTF"] = "nan"
+check("env_float rejects NaN", m.env_float("NEVERTWICE_TESTF", 0.5) == 0.5)
+os.environ["NEVERTWICE_TESTF"] = "inf"
+check("env_float rejects Inf", m.env_float("NEVERTWICE_TESTF", 0.5) == 0.5)
+del os.environ["NEVERTWICE_TESTF"]
+
+# C2: a deeply-nested JSON frontmatter value must not crash the note reader (RecursionError,
+# a RuntimeError subclass, was not caught by `except ValueError`).
+_deep = "entities: " + "[" * 20000 + "]" * 20000
+_fm, _body = m._read_frontmatter("---\nproject: p\n" + _deep + "\n---\n\nbody\n")
+check("frontmatter: deeply-nested value doesn't crash the reader", isinstance(_fm, dict))
+
+# C5: consolidate's recurrence cast survives a non-numeric cache value
+import consolidate_memory as _con
+check("consolidate _int1 degrades on junk", _con._int1("abc") == 1 and _con._int1("5") == 5)
+
+# C4: embed_index takes the vault lock around its cache read-modify-write (mirrors consolidate)
+import inspect as _insp
+import embed_index as _ei
+check("embed_index acquires the vault lock", "acquire_lock" in _insp.getsource(_ei))
+
 print()
 print(f"audit-fixes: {P} passed, {F} failed")
 sys.exit(1 if F else 0)

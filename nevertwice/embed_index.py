@@ -49,6 +49,22 @@ def main():
         print(f"[embed_index] embedder changed to {m.embed_signature()} - forcing "
               "--rebuild (old vectors are in a different space)", file=sys.stderr)
         rebuild = True
+    # single-writer lock around the whole cache read-modify-write, matching
+    # consolidate_memory.py --apply (which locks the SAME .embeddings_cache.json). Without it
+    # the two racing on one vault corrupted the cache: embed_index finished on a stale pre-merge
+    # snapshot and resurrected an archived duplicate + reverted a merged recurrence (critic R3,
+    # reproduced). A normal run is incremental (few new notes); a --rebuild is a deliberate,
+    # rare operator action.
+    if not m.acquire_lock(timeout_s=120):
+        print("[embed_index] vault lock busy - another writer is active; aborting", file=sys.stderr)
+        sys.exit(2)
+    try:
+        _run_embed(rebuild)
+    finally:
+        m.release_lock()
+
+
+def _run_embed(rebuild: bool):
     cache = {} if rebuild else m.load_embed_cache()
     # On rebuild we (re)embed everything with the configured prefix mode; on an
     # incremental run we MATCH whatever the existing cache already uses so query

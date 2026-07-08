@@ -205,9 +205,14 @@ def test_pretooluse_enforce_denies_blocking():
 
 def test_bounded_repeat_redos_rejected():
     # (x{1,2}){38} fits every length cap yet backtracks Fibonacci-style (measured 4s at
-    # N=38); the widened filter must reject the family without losing a single legit pattern
-    for pat in (r"(a{1,2}){38}b", r"(a{1,2}){60}b", r"(a+){20}", r"(.*a){20}", r"(a?)+$"):
+    # N=38); the widened filter must reject the family without losing a single legit pattern.
+    # Round 3 (critic 2026-07): N adjacent quantified groups (a+)(a+)...(a+)b - each matches the
+    # same run, exponential partitions, 20s on 38 chars - also rejected, escape-aware.
+    for pat in (r"(a{1,2}){38}b", r"(a{1,2}){60}b", r"(a+){20}", r"(.*a){20}", r"(a?)+$",
+                r"(a+)(a+)(a+)(a+)(a+)(a+)(a+)(a+)(a+)(a+)b", r"(a+)(a+)b", r"(\w+)(\w+)x"):
         assert not G.safe_pattern(pat), pat
+    # a real guard with escaped parens and a single quantified group must still pass
+    assert G.safe_pattern(r"def\s+\w+\([^)]*=\s*(\[\s*\]|\{\s*\})")
     for pat, _ in G._UNIVERSAL_GUARDS:
         assert G.safe_pattern(pat), pat
     for _, pat in G._ANTIPATTERN_RULES:

@@ -28,10 +28,21 @@ try:                                      # never crash printing → / Cyrillic 
 except Exception:
     pass
 
-SIM_THRESHOLD = float(__import__("os").environ.get("NEVERTWICE_DEDUP_SIM", "0.92"))
+SIM_THRESHOLD = m.env_float("NEVERTWICE_DEDUP_SIM", 0.92)   # safe-cast: a mistyped env var
 # Per-project live-note cap (improvement P2). 0 = OFF - a memory store must not shed
 # memory without being told to. When >0, the lowest-salience excess is archived.
-MAX_LIVE_PER_PROJECT = int(__import__("os").environ.get("NEVERTWICE_MAX_LIVE_PER_PROJECT", "0"))
+MAX_LIVE_PER_PROJECT = m.env_int("NEVERTWICE_MAX_LIVE_PER_PROJECT", 0)  # degrades, never crashes
+
+
+def _int1(x) -> int:
+    """recurrence as a positive int, preserving `int(x or 1)` semantics but never crashing on a
+    non-numeric CACHE value. Note frontmatter is validated on write; the embeddings cache can hold
+    a foreign/merge-conflicted/hand-edited value, and one bad entry used to abort the entire
+    consolidation run - dedup, archival, guard-gen, index rebuild, all of it (critic R3)."""
+    try:
+        return int(x or 1)
+    except (TypeError, ValueError):
+        return 1
 
 
 def set_recurrence(p: Path, n: int):
@@ -63,7 +74,7 @@ def _cluster_recurrence(cache: dict, cluster: list) -> int:
     """The recurrence a merged keeper inherits: the cluster size OR the HIGHEST recurrence
     of any member (a merged dup may have recurred more than the newest keeper), whichever is
     larger - so a near-duplicate merge never drops the recall-boosting count (W15)."""
-    recs = [int((cache.get(s) or {}).get("recurrence", 1) or 1) for s in cluster]
+    recs = [_int1((cache.get(s) or {}).get("recurrence", 1)) for s in cluster]
     return max(len(cluster), max(recs) if recs else 1)
 
 
@@ -122,7 +133,7 @@ def find_clusters(cache: dict) -> list[list[str]]:
     for stems in groups.values():
         # seed clustering from the highest-recurrence note, tie-broken by stem, so the merge
         # is deterministic run-to-run and the most-proven note anchors its cluster (audit)
-        stems = sorted(stems, key=lambda s: (-int(cache[s].get("recurrence", 1) or 1), s))
+        stems = sorted(stems, key=lambda s: (-_int1(cache[s].get("recurrence", 1)), s))
         toks = {s: _cluster_tokens(cache[s]) for s in stems}
         inv: dict = {}                          # token → stems sharing it
         for s in stems:
@@ -210,8 +221,8 @@ def distill_patterns(cache: dict, apply: bool, max_distill: int = 3) -> int:
     (cf. Letta sleep-time, ChatGPT Dreaming)."""
     cand = [(s, r) for s, r in cache.items()
             if isinstance(r, dict) and r.get("ntype") == "mistake"
-            and int(r.get("recurrence", 1) or 1) >= 2]
-    cand.sort(key=lambda sr: -int(sr[1].get("recurrence", 1) or 1))
+            and _int1(r.get("recurrence", 1)) >= 2]
+    cand.sort(key=lambda sr: -_int1(sr[1].get("recurrence", 1)))
     made = 0
     for s, r in cand[:max_distill]:
         print(f"  distil recurring mistake -> pattern: {s}")
@@ -330,7 +341,7 @@ def cap_project_notes(cache: dict, apply: bool) -> int:
         rec_of = dict(items)
         def _util(stem, _r=rec_of, _s=sal):          # query-independent value (1A frequency prior)
             r = _r[stem]
-            n = int(r.get("recurrence", 1) or 1)
+            n = _int1(r.get("recurrence", 1))
             base = n * (m.RETRIEVAL_RESOLVED_WEIGHT if r.get("resolved") else 1.0)
             return base * (1.0 + _s.get(stem, 0.0))  # a graph-central note is kept over a peripheral one
         def _toks(stem, _r=rec_of):
