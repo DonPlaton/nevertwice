@@ -36,3 +36,4 @@ graph.json
 # fetch instructions tracked so a cloner knows where to get the data.
 nevertwice/research/data/*
 !nevertwice/research/data/README.md
+*.log
