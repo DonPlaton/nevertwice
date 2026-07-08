@@ -50,6 +50,41 @@ import docparse                  # .pdf/.docx/.html/.md → text, so any documen
 MAX_SWEEP_BYTES = m.env_int("NEVERTWICE_MAX_SWEEP_BYTES", 10 * 1024 * 1024)
 
 
+def _flatten_agent_jsonl(text: str) -> str:
+    """Turn an agent-log JSONL transcript into just its conversational turns. Codex rollout logs
+    are `{timestamp, type, payload}` per line where a single `session_meta`/`turn_context` line
+    is 10-25KB of system scaffolding - so treating the file as flat text let that scaffolding
+    consume the entire truncation head budget and mine ZERO real message content (critic R3,
+    measured on a real 57MB corpus). Extract the user/assistant turns; fall back to the raw text
+    if this doesn't look like agent JSONL."""
+    lines = text.splitlines()
+    out, parsed = [], 0
+    for ln in lines:
+        ln = ln.strip()
+        if not ln.startswith("{"):
+            continue
+        try:
+            o = json.loads(ln)
+        except ValueError:
+            continue
+        parsed += 1
+        obj = o.get("payload") if isinstance(o.get("payload"), dict) else o
+        role = obj.get("role")
+        content = obj.get("content")
+        if isinstance(content, list):
+            parts = [(c.get("text") or c.get("input_text") or "") if isinstance(c, dict) else
+                     (c if isinstance(c, str) else "") for c in content]
+            body = " ".join(p for p in parts if p).strip()
+        else:
+            body = content.strip() if isinstance(content, str) else ""
+        if role in ("user", "assistant") and body:
+            out.append(f"{role}: {body}")
+    # only rewrite if it really parsed as JSONL and yielded turns, else keep the original
+    if parsed >= max(2, len(lines) // 2) and out:
+        return "\n\n".join(out)
+    return text
+
+
 def _payload_from_stdin() -> dict:
     if sys.stdin is None or sys.stdin.isatty():
         return {}
@@ -113,6 +148,8 @@ def ingest_files(files, project, agent, db, *, trigger="ingest-sweep",
                 skipped += 1                              # rather than block the lock on it
                 continue
             txt = docparse.extract_text(f)                # .pdf/.docx/.html → text; else raw read
+            if f.suffix.lower() == ".jsonl":
+                txt = _flatten_agent_jsonl(txt)           # keep the turns, drop 15-25KB of scaffolding
         except docparse.DocError as e:                    # missing PDF dep / corrupt doc - skip, don't abort
             print(f"[ingest] skip {f.name}: {e}", file=sys.stderr)
             skipped += 1

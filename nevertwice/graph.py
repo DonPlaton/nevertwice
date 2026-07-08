@@ -270,16 +270,15 @@ def relation_expand(hits, project: str | None = None, max_add: int = 5, rels=Non
         return []
     mh = _m()
     rfilter = {x for r in (rels or ()) for x in mh._norm_entities([r])} or None
-    notes = mh._iter_project_notes(project) if project else mh._iter_all_notes()
-    by_stem = {n["stem"]: n for n in notes}
-    idx: dict = {}
-    for n in notes:
-        for e in n.get("entities") or []:
-            idx.setdefault(e, []).append(n)
+    # This runs on the SessionStart hot path, so it must NOT scan the whole vault: read only
+    # each hit's own note (O(1) by stem) for its edges, then pull target notes through
+    # notes_for_entity, which uses the SQLite graph tier (only the matching stems' files are
+    # read). The old full-markdown scan stayed ~400ms while every other graph query got 60-145x
+    # faster once the scale tier was built (critic R3).
     present = {h.get("stem") for h in hits}
     added, seen_targets = [], set()
     for h in hits:
-        meta = by_stem.get(h.get("stem"))
+        meta = mh._note_meta_for_stem(h.get("stem"))
         if not meta:
             continue
         for edge in meta.get("relations") or []:
@@ -287,7 +286,7 @@ def relation_expand(hits, project: str | None = None, max_add: int = 5, rels=Non
             if not t or t in seen_targets or (rfilter and rel not in rfilter):
                 continue
             seen_targets.add(t)
-            for n in idx.get(t, []):
+            for n in notes_for_entity(t, project, k=max_add + len(present)):
                 if n["stem"] in present or len(added) >= max_add:
                     continue
                 present.add(n["stem"])
