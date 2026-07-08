@@ -100,8 +100,11 @@ def _run_embed(rebuild: bool):
             # silently RESETS every recurrence to 1, dropping the accumulated count (matters now
             # that recurrence grows via supersession - W15).
             try:
-                recur = int(fm.get("recurrence")
-                            or (cache.get(stem) or {}).get("recurrence", 1) or 1)
+                # round(float(...)) not int(...): a "2.7" string used to raise (→ reset to 1,
+                # losing the count) and a fractional value truncated silently; floor at 1 so a
+                # stray negative can't down-weight recall (critic R3).
+                recur = max(1, round(float(fm.get("recurrence")
+                            or (cache.get(stem) or {}).get("recurrence", 1) or 1)))
             except (TypeError, ValueError):
                 recur = 1
             # project gates the cloud embedder: a local-only project is never shipped

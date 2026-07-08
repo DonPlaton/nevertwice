@@ -145,6 +145,10 @@ def ingest_files(files, project, agent, db, *, trigger="ingest-sweep",
     for f in files:
         try:
             if f.stat().st_size > MAX_SWEEP_BYTES:        # DoS guard: skip a huge file
+                # say WHICH file, so an oversized session isn't silently absent forever with no
+                # clue why (critic R3: a real 16.8MB Codex session was invisibly excluded)
+                print(f"[ingest] skip {f.name}: {f.stat().st_size} bytes > cap {MAX_SWEEP_BYTES} "
+                      f"(raise NEVERTWICE_MAX_SWEEP_BYTES)", file=sys.stderr)
                 skipped += 1                              # rather than block the lock on it
                 continue
             txt = docparse.extract_text(f)                # .pdf/.docx/.html → text; else raw read

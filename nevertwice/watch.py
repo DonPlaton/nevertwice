@@ -75,7 +75,7 @@ def _project_roots() -> list[Path]:
     """Roots that hold real projects (for per-project log files like Aider's)."""
     roots = [Path.cwd()]
     raw = os.environ.get("NEVERTWICE_PROJECT_ROOTS", "")
-    roots += [Path(os.path.expanduser(p)) for p in raw.split(os.pathsep) if p.strip()]
+    roots += [Path(os.path.expanduser(p.strip())) for p in raw.split(os.pathsep) if p.strip()]
     return [r for r in dict.fromkeys(roots) if r.is_dir()]
 
 

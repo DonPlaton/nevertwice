@@ -352,59 +352,11 @@ def write_context(project_name: str, project_path: Path, ctx: dict):
 
 
 def rebuild_index():
-    """Перестроить Index.md из текущего vault."""
-    fp = VAULT / "Index.md"
-    ctx_dir = VAULT / "Context"
-    sess_dir = VAULT / "Sessions"
-
-    projects = []
-    if ctx_dir.exists():
-        for cf in sorted(ctx_dir.glob("*.md")):
-            mtime = datetime.fromtimestamp(cf.stat().st_mtime).strftime("%Y-%m-%d %H:%M")
-            projects.append((cf.stem, mtime))
-
-    sessions = []
-    if sess_dir.exists():
-        files = sorted(sess_dir.glob("*.md"), key=lambda x: x.stat().st_mtime, reverse=True)[:20]
-        for sf in files:
-            mtime = datetime.fromtimestamp(sf.stat().st_mtime).strftime("%Y-%m-%d %H:%M")
-            sessions.append((sf.stem, mtime))
-
-    lines = [
-        "# Claude Memory Vault - Index",
-        "",
-        "> Точка входа. Claude Code читает ТОЛЬКО этот файл при старте сессии.",
-        "> Не сканируй все папки - переходи через wikilinks из этого индекса.",
-        "",
-        "## Структура",
-        "",
-        "| Папка | Что хранится |",
-        "|---|---|",
-        "| Patterns/ | Паттерны и подходы которые сработали |",
-        "| Mistakes/ | Ошибки, баги, антипаттерны - чего избегать |",
-        "| Decisions/ | Архитектурные решения с обоснованием |",
-        "| Context/ | Состояние каждого проекта (один файл = один проект) |",
-        "| Sessions/ | Автологи сессий (последние 30 дней) |",
-        "",
-        "## Активные проекты",
-        "",
-    ]
-    if projects:
-        lines += ["| Проект | Обновлён |", "|---|---|"]
-        for name, mtime in projects:
-            lines.append(f"| [[{name}]] | {mtime} |")
-    else:
-        lines.append("_(пока нет проектов)_")
-    lines += ["", "## Последние сессии", ""]
-    if sessions:
-        for name, mtime in sessions:
-            lines.append(f"- **{mtime}** - [[{name}]]")
-    else:
-        lines.append("_(пока нет сессий)_")
-    lines += ["", "#index"]
-
-    fp.write_text("\n".join(lines), encoding="utf-8")
-    print(f"[ok] Index rebuilt ({len(projects)} projects)")
+    """Rebuild Index.md. Delegates to memory_hook.rebuild_index so it is byte-identical to what
+    the hook and consolidate write - the local copy had drifted and omitted the `type: index`
+    frontmatter, so Index.md visibly flipped between having/lacking it depending on which tool
+    ran last, and wrote non-atomically (critic R3). One source of truth."""
+    m.rebuild_index()
 
 
 def process(project_path: Path):

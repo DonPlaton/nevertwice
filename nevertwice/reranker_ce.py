@@ -54,6 +54,8 @@ def rerank_scores(query: str, passages, batch_size: int = 16):
     """Relevance logit per passage for `query` (higher = more relevant). Empty → []."""
     if not passages:
         return []
+    if batch_size <= 0:                  # range(0,n,0) raises; a negative step silently drops all
+        raise ValueError("batch_size must be positive")
     st = _load()
     tok, model, dev, torch = st["tok"], st["model"], st["dev"], st["torch"]
     out = []
