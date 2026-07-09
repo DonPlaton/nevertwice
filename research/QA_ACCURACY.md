@@ -164,5 +164,5 @@ python research/qa_eval.py --setting=both --budget=24000 --save
 
 Answers + verdicts are cached per (setting, model, budget, k, cot), so re-runs are instant
 and resumable; a flaky cloud call is retried, then excluded from the metric (never scored
-wrong). The self-check is [`_test_qa_eval.py`](_test_qa_eval.py) (mocked LLM, no network,
+wrong). The self-check is [`_test_qa_eval.py`](../tests/research/_test_qa_eval.py) (mocked LLM, no network,
 runs in CI alongside the core suites).

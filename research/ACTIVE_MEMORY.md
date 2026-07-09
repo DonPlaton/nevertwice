@@ -65,17 +65,17 @@ the selection pressure that defines the system.
 
 The four research axes are all interventions of different *action* type:
 
-| axis | trigger | action | context-token cost |
+| intervention | trigger | action | context-token cost |
 |---|---|---|---|
-| **A - controller** | a proposed action/diff matches a known failure pattern | run an executable **guard** (assert / lint / test) | **0** until it fires, then ~1 line |
-| **B - anticipatory** | current trajectory resembles a past failure trajectory | emit **one** precise pre-action warning | spend ∝ predicted risk, not always-on |
-| **C - causal** | the agent asks a counterfactual | answer from a compact **causal model** | one answer, not an episode dump |
-| **D - benchmark** | - | *measures* lift-per-token across a task series | defines the axis |
+| **guards** (the controller) | a proposed action/diff matches a known failure pattern | run an executable **guard** (assert / lint / test) | **0** until it fires, then ~1 line |
+| **anticipation** | current trajectory resembles a past failure trajectory | emit **one** precise pre-action warning | spend ∝ predicted risk, not always-on |
+| **counterfactual** (causal) | the agent asks a counterfactual | answer from a compact **causal model** | one answer, not an episode dump |
+| **the bench** | - | *measures* lift-per-token across a task series | defines the axis |
 
-A/B/C are the system; **D is the bench that keeps them honest** - true to this project's
-ethos (`research/README.md`): we measure the clever idea and cut it if it loses.
+Guards, anticipation, and counterfactual are the system; **the bench keeps them honest** - true
+to this project's ethos (`research/README.md`): we measure the clever idea and cut it if it loses.
 
-## 4. Axis A and the ossification problem - Popperian memory
+## 4. Guards and the ossification problem - Popperian memory
 
 Memory-as-controller has an obvious failure mode, and it is the right one to fear: **a guard
 that is wrong, or outdated, traps the agent in a constraint reality no longer warrants.** A
@@ -104,10 +104,10 @@ exact inverse of a static rules engine - the rules are alive, and the agent's fr
 
 ## 5. Build order
 
-1. **D (the bench) and A (guards) together.** A proves the 0-token-controller thesis and the
-   Popperian safety; D measures whether it actually lifts a task series net of tokens. Neither
-   ships on faith.
-2. **B (anticipatory).** *Built* (`anticipate.py`). The trigger is trajectory-similarity to a
+1. **The bench and the guards together.** Guards prove the zero-token-controller thesis and the
+   Popperian safety; the bench measures whether they actually lift a task series net of tokens.
+   Neither ships on faith.
+2. **Anticipation.** *Built* (`anticipate.py`). The trigger is trajectory-similarity to a
    past failure, not a static pattern, so it catches novel manifestations a regex misses. It is
    **precision-first**: an IDF-weighted overlap-coverage score, calibrated on the real vault so
    generic trajectories stay silent (~0 false alarms) while strong resemblances fire ONE warning.
@@ -115,17 +115,17 @@ exact inverse of a static rules engine - the rules are alive, and the agent's fr
    long note); the optional embedding blend lifts it, and the adaptive threshold silences any
    leak (a cry-wolf failure-mode has its bar raised, capped at 0.9 so an overwhelming signal
    always breaks through). 0 tokens below threshold.
-3. **C (causal).** *Built* (`causal.py`). Induces a compact causal model from the store's typed
+3. **Counterfactual.** *Built* (`causal.py`). Induces a compact causal model from the store's typed
    relation edges (`causes`, `caused-by`, `depends-on`, `requires`, `enables`, `part-of`, …),
    orienting each into a single impact direction, and answers the counterfactual **"what breaks
    if I change X?"** by traversing it downstream plus the failure modes mistakes attach to X. On
    the real vault it induces a **507-node / 1014-edge** impact graph, and a full counterfactual
    for `prism-orchestrator` (its downstream impact + six real failure modes + evidence) costs
    **~300 tokens** - versus ~2,250 to dump the 15 notes that mention it. **~7× cheaper, and it
-   answers the question instead of returning the library.** That ratio is axis C's token thesis
-   in one number.
+   answers the question instead of returning the library.** That ratio is the counterfactual's
+   token thesis in one number.
 
-## 5b. First measured result (axis D, and it holds up)
+## 5b. First measured result from the bench (and it holds up)
 
 The bench exists (`longitudinal_improvement.py`), and the first numbers land where the thesis
 predicts - over a 200-task family, 25 seeds, same knowledge given to both memory arms:
@@ -150,8 +150,8 @@ DeepSeek across 12 coding tasks: the guard cut the real pitfall rate **0.36 → 
 a measured effect **`eff` = 0.88** (the sim assumed a *conservative* 0.75). The help concentrates
 exactly where the thesis says it should - **project-specific constraints the model cannot know
 from training** (eff 0.79), while doing no harm on the textbook pitfalls a strong model already
-avoids. Feeding the measured 0.88 back into D leaves the ~30× improvement-per-token and the net
-token saving intact. The number rests on measurement now, not an assumption.
+avoids. Feeding the measured 0.88 back into the bench leaves the ~30× improvement-per-token and
+the net token saving intact. The number rests on measurement now, not an assumption.
 
 Re-running the same experiment on a **weak local agent** (`qwen2.5:3b`) surfaced a truth the
 simulation could not: memory's payoff **scales with the agent's ability to use it**. Both models

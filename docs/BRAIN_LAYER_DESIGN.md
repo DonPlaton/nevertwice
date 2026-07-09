@@ -1,7 +1,7 @@
 # Brain Layer - Design
 
-Status: **implemented** (F1 entity layer + profiles · F2 entity cards · F4 SQLite scale-tier ·
-F3 temporal/evolution · F5 salience · invariant tests - all green). This doc is the contract the
+Status: **implemented** (entity layer + profiles · entity cards · SQLite scale-tier ·
+temporal/evolution · salience · invariant tests - all green). This doc is the contract the
 implementation follows. Anything not consistent with the **Invariants** section is a bug, not a
 feature. Guards live in `nevertwice/_test_brain*.py` (102 checks); the invariants are enforced by
 `_test_brain_invariants.py` (separation · budget byte-parity on/off · privacy · opt-in).
@@ -65,7 +65,7 @@ First run asks once: **"What will you use Nevertwice for?"** (multi-select):
 
 ## 4. Features
 
-### F1 - Entity layer (extends `graph.py`)
+### Entity layer (extends `graph.py`)
 - First-class entity **types** beyond code symbols, gated by active profile:
   - research (wide): `paper`, `method`, `architecture`, `model`, `dataset`, `benchmark`,
     `metric`, `task`, `concept`, `experiment`, `result`, `tool`, `venue`, `person`
@@ -80,26 +80,26 @@ First run asks once: **"What will you use Nevertwice for?"** (multi-select):
 - **Storage**: entities + edges in the graph; entity notes live under a dedicated
   `Entities/` namespace **excluded from the default recall pool** (Invariant 2).
 
-### F2 - Entity cards (generalise the project card)
+### Entity cards (generalise the project card)
 - A distilled, regenerated card per first-class entity, aggregating every note/session
   touching it: what it is · where used (cross-project) · what reproduced/failed ·
   related entities · timeline.
 - Generated sleep-time / on-demand; stored as markdown; **pull-only** (search / MCP /
   explicit request), never auto-injected. Reuses the project-card machinery.
 
-### F3 - Temporal / evolution
+### Temporal / evolution
 - Each entity carries a timeline: first-seen, mentions over time, and how the take
   evolved (supersession chain over the entity's facts).
 - Surfaced inside the entity card and on demand. Builds on the `research/`
   temporal-graph prototype.
 
-### F4 - SQLite scale-tier
+### SQLite scale-tier
 - Promote the optional SQLite FTS5 + vector index to the official scale path. Markdown
   stays the source of truth; SQLite is derived and rebuildable.
 - Index entities/edges for fast faceted + graph queries. Verify hybrid recall stays
   fast at 10K-100K notes.
 
-### F5 - Salience (sleep-time)
+### Salience (sleep-time)
 - `consolidate_memory.py` scores note salience as pure graph **centrality** (inbound relation
   edges + co-occurrence degree) - the signal ORTHOGONAL to recurrence, which the ranker already
   applies separately (folding recurrence into salience too would double-count it). Stamped into
@@ -114,11 +114,11 @@ First run asks once: **"What will you use Nevertwice for?"** (multi-select):
 - Postgres / pgvector, multi-user / OAuth / team, cloud reranker as default.
 
 ## 6. Implementation order
-1. F1 entity layer (foundation) + profile plumbing.
-2. F2 entity cards.
-3. F4 SQLite scale-tier.
-4. F3 temporal.
-5. F5 salience.
+1. Entity layer (the foundation) + profile plumbing.
+2. Entity cards.
+3. SQLite scale-tier.
+4. Temporal / evolution.
+5. Salience.
 
 Develop in this repo; keep the live deployment untouched until tests are green, then
 redeploy. Tests (`pytest`) at every step.

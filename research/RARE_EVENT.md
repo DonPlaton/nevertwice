@@ -1,11 +1,11 @@
-# 2C - Rare-event / black-swan memory (results & findings)
+# Rare-event / black-swan memory (results & findings)
 
 *Companion to `research/rare_event.py`. Reproduce: `python research/rare_event.py --save`
 (CPU, seeded, ~0.5 s). 10 common clusters × 20 notes + 8 rare precursors, top-5, W=0.35.*
 
-## The thesis & the productive tension (1A ↔ 2C)
+## The thesis & the productive tension (recurrence ↔ rare-event)
 
-1A's recurrence prior says *frequent ⇒ valuable* - right for the gotcha you keep hitting. A
+The recurrence prior (`POSTERIOR_MODEL.md`) says *frequent ⇒ valuable* - right for the gotcha you keep hitting. A
 black-swan **precursor** is the exact inverse: seen rarely (once, before the last regime change)
 yet decisive. Frequency weighting **buries** it. The fix is the opposite term - an
 **inverse-frequency × consequence** salience that up-weights the rare-but-high-impact memory.
@@ -21,11 +21,11 @@ recurrence and a high consequence, each preceding a catastrophe by a lead time.
 | salience | TAIL-recall | COMMON-recall | false-alarm |
 |---|---|---|---|
 | relevance | 0.548 | 0.685 | 0.221 |
-| **recurrence (1A)** | **0.013** | 0.637 | 0.001 |
+| **recurrence (frequency prior)** | **0.013** | 0.637 | 0.001 |
 | **rare-event (always-on)** | **0.948** | 0.527 | **0.901** |
 | **rare-gated (relevance-gated)** | 0.758 | 0.661 | 0.477 |
 
-- **Frequency weighting is catastrophic for the tail: 0.013.** The recurrence boost (1A) lifts the
+- **Frequency weighting is catastrophic for the tail: 0.013.** The recurrence boost lifts the
   common notes over the rare precursor, so the black-swan analogue is essentially never recalled -
   a vivid demonstration that the recurrence prior is *actively wrong* for tail-risk queries.
 - **Inverse-frequency × consequence recovers it: 0.948.** The rare precursor is surfaced where
@@ -55,5 +55,6 @@ recurrence and a high consequence, each preceding a catastrophe by a lead time.
 Research demonstration of the salience inversion - **no core schema change**. A production
 risk-mode would add a `consequence`/`impact` field on notes (analogous to `confidence`) and a
 relevance-gated risk weighting; without that field the term is inert, so it is kept out of the
-general-purpose core (the same discipline as 2A). Synthetic, seeded; the lead-time is a structural
+general-purpose core (the same discipline as the scientific-claims study, `BIO_MEMORY.md`).
+Synthetic, seeded; the lead-time is a structural
 proxy (warning issued ⇔ precursor recalled), not a forecasting result.

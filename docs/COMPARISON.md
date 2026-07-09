@@ -115,7 +115,7 @@ LLM entity/relation **knowledge graph** (Zep/Cognee), a production **server/scal
 ## Gaps vs leaders → **all addressed (2026-06-15)**
 
 The gaps below are what Nevertwice lacked *relative to leaders*; each now has an
-implementation (see the backlog table; every M-item is done, v3 188 tests green).
+implementation (see the backlog table below; every item is done, 188 tests green).
 Kept here for context on *why* each feature exists.
 
 ## Gaps vs leaders (the original analysis)
@@ -133,41 +133,41 @@ Kept here for context on *why* each feature exists.
 
 ## Improvement backlog: **DONE (all 15 implemented 2026-06-15)**
 
-Every item below is implemented and tested (v1 + v2 + v3 = 188 checks green).
+Every item below is implemented and tested (188 checks green).
 Effort tags kept for reference. ✅ = shipped.
 
 **Tier 1: high value, matches what leaders ship**
 
-| ID | Idea | From / why | Effort |
-|---|---|---|---|
-| ✅ **M-1** | **Sleep-time consolidation:** LLM pass that dedupes, merges fragments, distills recurring mistakes → general patterns (episodic→semantic) | Letta sleep-time, ChatGPT Dreaming; the #1 absent leader feature | M |
-| ✅ **M-2** | **Write-time contradiction detection:** embed new fact, fetch similar, LLM emits SUPERSEDES/CONTRADICTS, auto-retire loser | Zep invalidation, LangMem reconcile-on-write; kills stacked contradictions | M |
-| ✅ **M-3** | **Time-decay + salience scoring** in RRF (type-weighted; TTL-archive untouched notes) | Mem0 decay, Copilot 28-day; stops monotonic growth | L |
-| ✅ **M-4** | **Fact-vs-code staleness validation:** check referenced path/symbol still exists via `graph.json` before injecting | Copilot validate-vs-branch; precision win for *coding* memory | M |
-| ✅ **M-15** | **Budget-aware injection + profile IDF cleanup:** cap injection tokens; fix noise words in learned profile | battle-test (start ≈644 tok; profile noise) | L |
+| Idea | From / why | Effort |
+|---|---|---|
+| ✅ **Sleep-time consolidation:** LLM pass that dedupes, merges fragments, distills recurring mistakes → general patterns (episodic→semantic) | Letta sleep-time, ChatGPT Dreaming; the #1 absent leader feature | M |
+| ✅ **Write-time contradiction detection:** embed new fact, fetch similar, LLM emits SUPERSEDES/CONTRADICTS, auto-retire loser | Zep invalidation, LangMem reconcile-on-write; kills stacked contradictions | M |
+| ✅ **Time-decay + salience scoring** in RRF (type-weighted; TTL-archive untouched notes) | Mem0 decay, Copilot 28-day; stops monotonic growth | L |
+| ✅ **Fact-vs-code staleness validation:** check referenced path/symbol still exists via `graph.json` before injecting | Copilot validate-vs-branch; precision win for *coding* memory | M |
+| ✅ **Budget-aware injection + profile IDF cleanup:** cap injection tokens; fix noise words in learned profile | battle-test (start ≈644 tok; profile noise) | L |
 
 **Tier 2: differentiating, builds on existing assets**
 
-| ID | Idea | From / why | Effort |
-|---|---|---|---|
-| ✅ **M-5** | **Activate bi-temporal:** real `valid_from/valid_to` frontmatter + point-in-time query in `memory_search` | Zep's headline edge; prototype already exists | M-H |
-| ✅ **M-6** | **Graph-aware multi-hop retrieval:** 1-2 hop expansion over RESOLVES/SUPERSEDES/`[[links]]` after RRF (GraphRAG without a graph DB) | Zep/Cognee; edges already stored | M |
-| ✅ **M-7** | **Autonomous Zettelkasten linking on ingest:** auto-propose `[[links]]` to top-k related notes (LLM-filtered) | A-MEM; turns flat notes into a navigable net | M |
-| ✅ **M-8** | **Procedural loop:** synthesize highest-recurrence patterns into the always-injected project card / CLAUDE.md suggestions | LangMem prompt-optimizer; closes experience→behavior | M |
-| ✅ **M-14** | **OKF format alignment:** `type` frontmatter, `index.md`/`log.md`, relative links | interop with any OKF agent + standards alignment | L-M |
+| Idea | From / why | Effort |
+|---|---|---|
+| ✅ **Activate bi-temporal:** real `valid_from/valid_to` frontmatter + point-in-time query in `memory_search` | Zep's headline edge; prototype already exists | M-H |
+| ✅ **Graph-aware multi-hop retrieval:** 1-2 hop expansion over RESOLVES/SUPERSEDES/`[[links]]` after RRF (GraphRAG without a graph DB) | Zep/Cognee; edges already stored | M |
+| ✅ **Autonomous Zettelkasten linking on ingest:** auto-propose `[[links]]` to top-k related notes (LLM-filtered) | A-MEM; turns flat notes into a navigable net | M |
+| ✅ **Procedural loop:** synthesize highest-recurrence patterns into the always-injected project card / CLAUDE.md suggestions | LangMem prompt-optimizer; closes experience→behavior | M |
+| ✅ **OKF format alignment:** `type` frontmatter, `index.md`/`log.md`, relative links | interop with any OKF agent + standards alignment | L-M |
 
 **Tier 3: robustness, credibility, reach**
 
-| ID | Idea | From / why | Effort |
-|---|---|---|---|
-| ✅ **M-9** | **Benchmark on LongMemEval / BEAM** (NOT LOCOMO: academically discredited, BM25 ~94%) | comparability + credibility | M |
-| ✅ **M-10** | **Memory-poisoning / provenance guard:** per-note source + confidence; reject injection-shaped extractions | 2026 ER-MIA security work | L-M |
-| ✅ **M-11** | **Operationalize git for cross-machine + concurrent agents:** sync/merge convention, conflict rules | Letta MemFS proves git-as-substrate | M |
-| ✅ **M-12** | **Surface age + recurrence in injected context** so the agent weighs stale vs fresh | cheap mitigation for the no-decay gap | L |
-| ✅ **M-13** | **AGENTS.md interop:** emit/consume the standard so the project card is portable to Cursor/Windsurf/Copilot/Codex | the one genuinely cross-tool substrate (Linux Foundation, 60k+ projects) | L |
+| Idea | From / why | Effort |
+|---|---|---|
+| ✅ **Benchmark on LongMemEval / BEAM** (NOT LOCOMO: academically discredited, BM25 ~94%) | comparability + credibility | M |
+| ✅ **Memory-poisoning / provenance guard:** per-note source + confidence; reject injection-shaped extractions | 2026 ER-MIA security work | L-M |
+| ✅ **Operationalize git for cross-machine + concurrent agents:** sync/merge convention, conflict rules | Letta MemFS proves git-as-substrate | M |
+| ✅ **Surface age + recurrence in injected context** so the agent weighs stale vs fresh | cheap mitigation for the no-decay gap | L |
+| ✅ **AGENTS.md interop:** emit/consume the standard so the project card is portable to Cursor/Windsurf/Copilot/Codex | the one genuinely cross-tool substrate (Linux Foundation, 60k+ projects) | L |
 
-**Suggested order:** M-15 → M-14 → M-3 → M-1 → M-2 → M-4 → M-6 → M-5 → M-9.
-(Quick wins + interop first; then the consolidation/contradiction/graph features that close the biggest gaps; then benchmark + reach.)
+**The order they shipped in:** quick wins and interop first, then the consolidation, contradiction,
+and graph features that close the biggest gaps, then benchmark and reach.
 
 > Caveats: Mem0/Zep/Cognee/memanto benchmark numbers are vendor-self-published and
 > disputed (the Mem0↔Zep LOCOMO war is unreconciled). **memanto's headline 89.8%

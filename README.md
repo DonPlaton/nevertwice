@@ -1,10 +1,10 @@
 <div align="center">
 
-<img src="docs/banner.png" alt="Nevertwice: local-first long-term memory for AI coding agents · plain Markdown + Git · zero dependencies · private by default · readable by design" width="880">
+<img src="docs/banner.png" alt="Nevertwice: proactive, local-first memory for AI coding agents that acts before your agent repeats a mistake · plain Markdown + Git · zero dependencies · private by default" width="880">
 
 # 🧠 Nevertwice
 
-### Local-first memory for AI coding agents that catches the mistake before your agent repeats it.
+### Proactive, local-first memory for AI coding agents - it acts before your agent repeats a mistake.
 
 *Your coding agent forgets everything when a session ends. Nevertwice remembers: the bug you hit
 last week, the pattern that worked, the reason you picked Postgres over Mongo. Then it does what
@@ -95,7 +95,7 @@ prompt, taxing every single turn. We measured that axis to its end and found it 
 the variable. So Nevertwice does something no other memory does. It treats memory as a set of
 **token-budgeted interventions** that stay silent until they have something worth saying.
 
-- **Guards (A).** A *guard* is a tiny pattern distilled from a past mistake, stored as one line in
+- **Guards.** A *guard* is a tiny pattern distilled from a past mistake, stored as one line in
   a JSON ledger (not your prompt). Before your agent writes code, the pattern is checked against
   the edit; on a match, a one-line warning fires, at **zero context tokens until it does**. Concrete:
   the mistake `cursor.execute(f"SELECT ... '{name}'")` becomes the guard `execute\(\s*f["']`, and
@@ -103,9 +103,9 @@ the variable. So Nevertwice does something no other memory does. It treats memor
   query parameters, never an f-string."* The design is Popperian: a guard is advisory until
   corroborated across sessions, retires itself after false positives, and is always overridable.
   Memory proposes, reality disposes, and the agent is never boxed in.
-- **Anticipation (B).** Predicts the failure your current plan is heading toward by resemblance
+- **Anticipation.** Predicts the failure your current plan is heading toward by resemblance
   to past ones, and surfaces *one* precise warning. Spend is proportional to risk, not paid per turn.
-- **Counterfactual (C).** *"What breaks if I change X?"* answered from an induced causal graph in
+- **Counterfactual.** *"What breaks if I change X?"* answered from an induced causal graph in
   a few lines rather than an episode dump, at about **7× fewer tokens** than recalling every
   related note.
 
@@ -128,7 +128,7 @@ strong model applies a delivered lesson and captures most of the benefit; a smal
 about half. Memory removes the *knowledge* bottleneck, not the reasoning one
 ([LIVE_VALIDATION.md](research/LIVE_VALIDATION.md)).
 
-All three axes are on the Python API **and** the MCP server (Model Context Protocol, the open
+All three interventions are on the Python API **and** the MCP server (Model Context Protocol, the open
 standard agents use to call tools), so this works on **every agent**: Claude Code, Cursor, Cline,
 Codex, Zed, and anything else that speaks MCP or writes session logs to disk
 ([INTEGRATIONS.md](docs/INTEGRATIONS.md)).[^cursor] The moat isn't a better database. It's plain
@@ -156,7 +156,7 @@ You own every byte of your agent's memory, and you can read it.
 
 ## See it work
 
-<p align="center"><img src="docs/tour.gif" alt="Nevertwice full tour: a guard fires before a recorded SQL-injection mistake repeats, then recall (5.9x fewer tokens than dumping the store), anticipation on a new endpoint, a counterfactual answered from the causal graph, and a contradiction resolved by supersession" width="740"></p>
+<p align="center"><img src="docs/tour.gif" alt="Nevertwice full tour: a guard fires before a recorded SQL-injection mistake repeats, then recall returns far fewer tokens than dumping the store (5.9x on this small demo project, and it grows with the store - 9.1x and up on a larger one), anticipation on a new endpoint, a counterfactual answered from the causal graph, and a contradiction resolved by supersession" width="740"></p>
 
 <p align="center"><sub>Recorded from the real system (<code>examples/guard_demo.py</code> + <code>examples/scenario_demo.py</code>, throwaway vault) - every number on screen is measured live, nothing is mocked.</sub></p>
 

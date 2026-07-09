@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "nevertwice"
 version = "2.0.0"
-description = "Local-first memory for AI coding agents that catches a mistake before it repeats. Formerly Anamnesis."
+description = "Proactive, local-first memory for AI coding agents - it acts before your agent repeats a mistake. Formerly Anamnesis."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
@@ -25,7 +25,7 @@ classifiers = [
 ]
 dependencies = []   # standard library only; Ollama/cloud are reached over HTTP
 
-# Everything below is OPTIONAL — the core stays stdlib-only. Install only what you use.
+# Everything below is OPTIONAL - the core stays stdlib-only. Install only what you use.
 [project.optional-dependencies]
 reranker = ["torch", "transformers"]   # trained cross-encoder precision boost (NEVERTWICE_XRERANK=1)
 langchain = ["langchain-core"]         # NevertwiceRetriever / NevertwiceMemory adapters

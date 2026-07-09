@@ -1,4 +1,4 @@
-# 2B - Serendipitous / divergent recall (results & findings)
+# Serendipitous / divergent recall (results & findings)
 
 *Companion to `research/divergent.py`. Reproduce: `python research/divergent.py --save`
 (CPU, seeded, ~3 s). 12 clusters × 10 notes + 18 planted bridge notes (each = a normalised

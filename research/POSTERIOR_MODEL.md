@@ -1,7 +1,8 @@
-# 1A - Retrieval as posterior inference (results & findings)
+# Retrieval as posterior inference (results & findings)
 
 *Companion to `research/posterior_model.py`. Reproduce: `python research/posterior_model.py --save`
-(CPU, seeded, ~2.4 s). Fit on the 3A longitudinal world, train seeds {0,1,2,3}, held-out test
+(CPU, seeded, ~2.4 s). Fit on the longitudinal benchmark world (`LONGITUDINAL_BENCH.md`), train
+seeds {0,1,2,3}, held-out test
 seeds {4,5}; relevance = semantic cosine (no lexical/RRF - this isolates the salience stack).*
 
 ## The model
@@ -20,7 +21,7 @@ log-posterior of one generative model, `score(m│q) = log P(q│m) + Σ_k log P
 
 So per-query ranking is **linear** in `(cos, log n, age, conf, resolved)` - a conditional-logit /
 Plackett-Luce top-1 model. We fit the weights by maximum likelihood (the per-query softmax) on the
-3A train seeds and evaluate generalization on held-out seeds.
+train seeds and evaluate generalization on held-out seeds.
 
 ## Results (held-out test, recall@1)
 
@@ -54,7 +55,7 @@ shipped fixed 365-day half-life), `confidence −0.02` and `resolved +0.10` (nea
 **Frequency (recurrence) is the load-bearing prior** - the single most valuable signal beyond
 relevance, validating the recurrence-as-salience thesis from the other direction. The
 recency/confidence/status priors contribute ≈0 **in this world** - *not* because they are useless
-in general, but because the 3A world does not make old / low-confidence / resolved notes less
+in general, but because the benchmark world does not make old / low-confidence / resolved notes less
 likely to be the answer (no such correlation is built in). The honest reading: a calibrated
 posterior **learns to down-weight priors that are uninformative for the workload** - which is
 precisely why it beats the heuristic that applies them uniformly. A real corpus where age or
@@ -71,14 +72,15 @@ well-calibrated on held-out data, so `P(q│m)` genuinely predicts relevance rat
 multiplicative-salience tail with the explicit log-linear posterior
 `w_rel·log(rrf) + w_freq·log(n) + w_sal·log(salience)` (`POST_W`, env-tunable). Default ranker
 stays `hybrid` (zero regression - all suites green). Recurrence enters as a true frequency prior
-`nᵂ` rather than an additive ε. This static log-linear form is the basis the **1B** feedback
-bandit will learn online.
+`nᵂ` rather than an additive ε. This static log-linear form is the basis the feedback bandit
+(`BANDIT.md`) learns online.
 
 ## Caveats
 
-Relevance here is semantic cosine only (no lexical/RRF), so absolute numbers differ from the 3A
-fused leaderboard - this isolates the salience-stack question. The priors are inert on a
+Relevance here is semantic cosine only (no lexical/RRF), so absolute numbers differ from the
+longitudinal benchmark's fused leaderboard - this isolates the salience-stack question. The priors are inert on a
 no-recurrence/no-metadata corpus (LongMemEval: recurrence ≡ 1, no age/confidence), where the
 posterior reduces to relevance-only - consistent with that benchmark's by-construction inertness.
 The +0.070 is in-distribution generalization across seeds of one synthetic world, not a real-trace
-result; that is what 1B's implicit-feedback stream and a future real-trace 3A variant are for.
+result; that is what the bandit's implicit-feedback stream and the real-trace replay
+(`REAL_TRACE.md`) are for.

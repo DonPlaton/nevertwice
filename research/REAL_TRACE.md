@@ -1,4 +1,4 @@
-# 3A.2 - Real-trace recurrence validation (results & findings)
+# Real-trace recurrence validation (results & findings)
 
 *Companion to `research/real_trace_bench.py`. Reproduce on any populated store:
 `NEVERTWICE_VAULT=/path/to/vault python research/real_trace_bench.py --save` (CPU, no Ollama -
@@ -7,10 +7,11 @@ reads the cached vectors only, ~3 s). Numbers below are from one real accumulate
 
 ## Why it exists
 
-3A built a benchmark where `P(target) ∝ recurrence` is **true by construction** - so its
+The longitudinal benchmark (`LONGITUDINAL_BENCH.md`) built a world where `P(target) ∝ recurrence`
+is **true by construction** - so its
 recurrence lift is a consistency result for the ranker, not evidence that real agent workloads
-carry that structure. Its own caveat named the gap: *"that is what the real-trace variant (3A.2,
-future) is for."* This closes it, on a live store, two questions:
+carry that structure. Its own caveat named the gap and deferred it to a real-trace study. This is
+that study. It closes the gap on a live store, with two questions:
 
 1. **Does genuine cross-session recurrence exist** in a real accumulated memory?
 2. **Does the production slug-based recurrence counter capture it?**
@@ -39,9 +40,9 @@ or stems are printed or saved.
 > recorded 0.** Real recurrence is present yet **slug-invisible**: the extractor rephrases each
 > occurrence, so exact-slug matching never fires. Recurrence must be detected by **semantic
 > aggregation** (supersession / consolidation), not slug equality. This is the live-data
-> justification for the recurrence-loss fixes (W15: carry recurrence across supersession, merge,
+> justification for the recurrence-loss fixes (carry recurrence across supersession, merge,
 > and `--rebuild`) - without semantic aggregation the production counter is structurally blind to
-> the very signal 3A shows is valuable.
+> the very signal the longitudinal benchmark shows is valuable.
 
 ## The honest negative - recurrence is NOT a recall re-ranker
 
@@ -67,25 +68,25 @@ same-topic recall; an additive cluster-size prior can only add noise - it promot
 
 This is not a defeat for recurrence; it **locates** it. Recurrence earns its place in
 **retention / consolidation / decay** - *what to keep* when the store is over budget, and *how
-slowly a note forgets* (the F2 fix: effective age `= age / (1 + log n)`) - **not** in recall
-ranking, where relevance already wins. It is consistent with 3A's own stratified result: the
+slowly a note forgets* (the decay fix: effective age `= age / (1 + log n)`) - **not** in recall
+ranking, where relevance already wins. It is consistent with the longitudinal benchmark's own stratified result: the
 recurrence lift there concentrated entirely in the highest-recurrence bucket and *hurt* one-offs;
 on a real store, where the recall ground truth is already the most-relevant note, that trade has
 no upside left to capture.
 
 ## What this changes
 
-- **Validates** the supersession/merge/rebuild recurrence-carry fixes (W15) on real data: the
+- **Validates** the supersession/merge/rebuild recurrence-carry fixes on real data: the
   counter is provably blind without them.
 - **Validates** placing recurrence in the salience/decay and coreset paths, not the recall scorer.
 - **Counsels against** a naive "recurrence boost" on the retrieval hot path - measured here to be
   neutral at best, harmful past a small weight.
 
-## 3A.3 - Does recurrence belong in the *cap*? (`retention_bench.py`)
+## Does recurrence belong in the *cap*? (`retention_bench.py`)
 
-3A.2's negative was about recall. The natural follow-up: the production per-project cap
+The negative above was about recall. The natural follow-up: the production per-project cap
 (`consolidate_memory.cap_project_notes`) weights its keep-utility by `recurrence` - does that help
-retention, where 3A and FORGETTING showed recurrence pays off on synthetic data? We measured the
+retention, where the longitudinal benchmark and `FORGETTING.md` showed recurrence pays off on synthetic data? We measured the
 **shipped** `select_coreset` (no new production code) on the same store, under three keep-utilities,
 at two budgets, scoring **durable-topic retention** = fraction of cross-session topics keeping ≥1
 member:
@@ -117,7 +118,7 @@ Two findings, both honest:
 
 ## The full triangulation - the prior is *dormant* on a real young store
 
-3A.2 and 3A.3 rule out recall and the cap. The last channel is the F2 salience-decay slowdown
+The two studies above rule out recall and the cap. The last channel is the salience-decay slowdown
 (effective age `= age/(1+log n)`). On this store it is inert for the *same* reason: with recurrence
 ≡ 1, `1+log(1) = 1`, so the slowdown never fires. And the store is too young for decay to matter at
 all - ages span 2-44 days against a 365-day half-life (≤ 8% decay on the oldest note), so even a
@@ -125,10 +126,10 @@ all - ages span 2-44 days against a 365-day half-life (≤ 8% decay on the oldes
 
 So the honest, complete picture: the frequency prior is **dormant across all three channels**
 (recall boost, cap utility, decay slowdown) on a real single-user store - not because the mechanism
-is wrong (3A validates it where recurrence is present and stores age) but because the recurrence
+is wrong (the longitudinal benchmark validates it where recurrence is present and stores age) but because the recurrence
 **signal** is slug-invisible (≡ 1) and the store is young. Capturing recurrence semantically would
 revive only the decay channel, and only marginally on an aged store - recall and the cap don't
-benefit even when fed semantic recurrence (3A.2 / 3A.3). The prior's near-term value on real
+benefit even when fed semantic recurrence, as measured above. The prior's near-term value on real
 single-user memory is small; it grows with store **age** and with multi-agent **reuse** that makes
 the same lesson genuinely recur. This is the load-bearing honesty caveat for the headline claim.
 

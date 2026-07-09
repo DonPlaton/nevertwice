@@ -24,7 +24,7 @@ the system would fire:
 **Mean pitfall rate 0.36 → 0.05 - an 86% reduction in real errors.** On the five tasks where the
 model actually made the mistake, the guard eliminated it on four and cut it sharply on the fifth.
 **Measured `eff` (relative reduction where a pitfall occurred) = 0.88** - *higher* than the 0.75
-the D simulation assumed, so that simulation was **conservative**, not optimistic.
+the improvement-per-token simulation assumed, so that simulation was **conservative**, not optimistic.
 
 ## The honest structure of the win
 
@@ -38,7 +38,7 @@ the D simulation assumed, so that simulation was **conservative**, not optimisti
   the model already writes `x is None`, `with open(...)`, `math.isclose`, a `None` sentinel). A
   strong model needs no memory for textbook mistakes - and the guard **does no harm** there (with
   rate stayed 0). Where it *did* err (div-zero, sql-format), the guard eliminated it.
-- **Feeding the measured `eff` back into D closes the loop.** Re-running the improvement-per-token
+- **Feeding the measured `eff` back closes the loop.** Re-running the improvement-per-token
   simulation with the *measured* 0.88 (not the assumed 0.75): v2 active memory reaches
   **improvement-per-token 13.4 vs always-inject's 0.45 (~30×)** and a **net −25k-token saving**.
   The headline survives on measured ground, and gets stronger.

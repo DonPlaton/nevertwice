@@ -1,7 +1,8 @@
-# 1C - Principled forgetting under a budget (results & findings)
+# Principled forgetting under a budget (results & findings)
 
 *Companion to `research/forgetting.py`. Reproduce: `python research/forgetting.py --save`
-(CPU, seeded, ~1.5 s). Prunes the live store of a 3A run to a budget by four methods,
+(CPU, seeded, ~1.5 s). Prunes the store left by a longitudinal-benchmark run
+(`LONGITUDINAL_BENCH.md`) to a budget by four methods,
 then measures recall of held-out queries. The selector under test is the SHIPPED one
 (`consolidate_memory.select_coreset`), so this benchmarks production, not a fork.*
 
@@ -14,7 +15,7 @@ abandon the long tail. We instead keep the set maximizing utility-weighted **cov
     F(S) = Σ_m u(m) · max_{s∈S} sim(m, s)      (facility location - monotone submodular)
 
 so lazy greedy (CELF) is within (1−1/e) of optimal. `sim` is token-Jaccard (sparse via an
-inverted index, pure stdlib - no numpy, no N²·dim), `u(m)` is the recurrence (1A frequency)
+inverted index, pure stdlib - no numpy, no N²·dim), `u(m)` is the recurrence (frequency)
 prior. A utility tiebreak keeps the highest-value representative among near-duplicates.
 
 ## What the data shows (6 seeds, budget = fraction of the store kept)

@@ -101,7 +101,7 @@ below is read in context:
   SQLite index removes on the per-event hook (it reads candidates from SQLite, never parsing the
   JSON), and the FTS-prefilter caps per-query cosine work past 600 candidates. The hook loads the
   cache once per event and reuses it, so no redundant parses. The scale path is already covered by
-  the P1 prefilter test (bound + no-query-full-set) - confirmed, no gap.
+  the prefilter test (bound + no-query-full-set) - confirmed, no gap.
 
 ## Weaknesses
 
@@ -148,11 +148,11 @@ below is read in context:
   (minor, by design): the read-only `memory_search` CLI / MCP parse the JSON cache directly rather
   than reading the index, so a *standalone* recall doesn't get the FTS-prefilter - fine for
   on-demand single queries, a perf note only at very large scale.
-- **W6 [FIXED] Double frontmatter read.** The 3B `sources` work made the supersede loop parse
+- **W6 [FIXED] Double frontmatter read.** The poisoning-defense `sources` work made the supersede loop parse
   each old note's YAML twice (`_note_recurrence` + `_note_sources`). Folded into one
   `_note_recur_sources` read - a self-inflicted efficiency regression, now closed.
 
-### Security (from 3B)
+### Security (from the poisoning study, `research/POISONING.md`)
 - **W7 [PARTIAL - addressed 2026-06-17] Plausible-false-fact poisoning.** A wrong-but-plausible
   lesson with ordinary confidence is indistinguishable *by form* from a real one - the irreducible
   open core. **Shipped two things that shrink it:** (a) the W8 `_looks_dangerous` guard now hard-
@@ -186,15 +186,16 @@ below is read in context:
   unbounded, but this is a deliberate choice ("never silently shed memory") and **retrieval cost is
   already bounded** regardless of size: past `NEVERTWICE_PREFILTER_LIMIT=600` the FTS-prefilter caps
   the per-query cosine work, so growth is a *storage* concern, not a latency one. A default cap would
-  silently drop the user's memory - against the design. The opt-in submodular cap (1C) is there for
-  anyone who wants bounded storage. Left as-is. **`retention_bench.py` (3A.3) now quantifies the
+  silently drop the user's memory - against the design. The opt-in submodular cap
+  (`research/FORGETTING.md`) is there for
+  anyone who wants bounded storage. Left as-is. **`retention_bench.py` now quantifies the
   cap on a real store:** it preserves **86.5% / 97.3%** of durable (cross-session) topics at 50% /
   70% budget and **archives** (never deletes) the excess - so it is *safe* if anyone enables it.
   Two measured corollaries: (a) the cap's `recurrence·resolved` utility is **inert on real data**
-  (recurrence ≡ 1 - see W15/3A.2), so today's cap already behaves as pure coverage; (b) wiring
+  (recurrence ≡ 1 - see W15 and `research/REAL_TRACE.md`), so today's cap already behaves as pure coverage; (b) wiring
   **semantic** recurrence into that utility is **NOT worth it** - it hoards (3.7 vs 2.3 members per
   topic) and hurts at tight budgets. So the cap should keep the coverage objective; no change made.
-  **POLICY DECISION (2026-06-17, resolves the P2 sign-off): keep the cap OPT-IN (default 0).** For a
+  **POLICY DECISION (2026-06-17): keep the cap OPT-IN (default 0).** For a
   *memory* system "never silently shed memory" is the load-bearing trust property; retrieval cost is
   already bounded by the FTS-prefilter regardless of store size (so there is no performance reason to
   cap by default); storage is cheap and the store grows slowly (328 notes). A default-on cap would
@@ -208,7 +209,7 @@ below is read in context:
   `retrieve_relevant` (`_load_rankers()`) ONLY when `NEVERTWICE_RANKER=posterior` or
   `NEVERTWICE_DIVERGENCE>0` - a one-way import mirroring `index_sqlite`, so the default hot path never
   imports the code and the core carries no maintenance surface for it. Behaviour bit-identical
-  (E3/E5 tests + all 5 core suites green; the default ranker never touches the plugin).
+  (the posterior and divergence regression tests + all 5 core suites green; the default ranker never touches the plugin).
 - **W12 [FIXED 2026-06-17] Shared `research/` helper extracted.** The mean±95%CI `_ci` duplicated
   across 5 benches now lives in `research/_common.py` (alongside `_rerank.py`); the benches import it
   (all research tests green). `gen_world` stays per-module by design - each experiment's synthetic
@@ -216,10 +217,10 @@ below is read in context:
 - **W15 [PARTIALLY FIXED - the biggest practical finding] The recurrence/confidence machinery is
   nearly inert on real data.** Measured on the live 328-note vault: **328/328 notes have
   recurrence = 1** and **0/328 carry a confidence field**. So the recurrence prior (the through-line
-  of 1A/3A/1B/2C), the distinct-session anti-gaming, and confidence-aware ranking **never fire in
+  of the recurrence research in `research/`), the distinct-session anti-gaming, and confidence-aware ranking **never fire in
   practice** - the elegant research is theoretically sound but dormant on actual usage. Root cause:
   recurrence only grew on an *exact-slug* re-statement, which is rare because the extractor phrases
-  each lesson differently; and explicit `supersedes`/`contradicts` (including the M-2 *semantic*
+  each lesson differently; and explicit `supersedes`/`contradicts` (including the *semantic*
   supersession path) **dropped** the recurrence instead of carrying it. **Fixed the second half**:
   explicit/semantic supersession now carries recurrence + sources forward (a superseded lesson is a
   re-encounter), so recurrence grows whenever the contradiction engine fires, not only on a slug
@@ -229,8 +230,9 @@ below is read in context:
   2026-06-16 while every note was written 2026-05-04…06-15, i.e. *before* the field existed. New
   notes populate it; the term is kept (removing correct-but-dormant code is the opposite mistake).
   Same shape as time-decay sitting ~1.0 on a ≤44-day vault - dormant on old data, correct on new.
-- **W13 [info] The headline research wins are mechanism-level**, on synthetic worlds (3A/1A/1B/
-  1C/2B/2C) or a curated corpus (2A); only LongMemEval (semantic R@5 = 0.65) is external. The
+- **W13 [info] The headline research wins are mechanism-level**, on synthetic worlds (the
+  longitudinal, posterior, bandit, forgetting, divergent, and rare-event studies) or a curated
+  corpus (the scientific-claims study); only LongMemEval (semantic R@5 = 0.65) is external. The
   posterior/bandit gains are in-distribution generalisation, disclosed in each doc - not external
   SOTA claims.
 - **W14 [info] `sources` frontmatter** adds bounded store bloat (≤25 session stems) on recurring
@@ -255,9 +257,9 @@ preserved end-to-end.
 - **`embed_index` - bug 3 above, fixed + first test.** `--rebuild` reset recurrence to 1 (read
   from `cache={}` instead of the note); now reads `fm.get('recurrence')` like resolved/confidence.
 - **`process_now.py` - clean.** Idempotent: skips sessions already in `.processed_sessions.json`,
-  and `write_typed_note` is per-session idempotent (C5) even if a session were re-processed.
+  and `write_typed_note` is per-session idempotent even if a session were re-processed.
 - **`mcp_server.py` - clean.** Tools declare `required` fields; `_tool_memory_search` validates
-  `query`, coerces `k` with try/except, and `isError` is structured (H8), not substring-guessed.
+  `query`, coerces `k` with try/except, and `isError` is structured, not substring-guessed.
 - **`sync.py` - clean.** A thin `add → commit → pull --rebase --autostash → push` wrapper; on a
   rebase conflict it stops cleanly (returns 1, manual resolution) - git holds everything, no data
   loss. Derived/machine-local files are gitignored so sync merges only real memory.
@@ -322,13 +324,13 @@ Ran four parallel hostile audits (bug-hunt, token-economy dogfood, dead-code/sca
 each tasked to prove the system is a broken toy. It is not - but they found **5 real issues, 3 of them
 in the just-shipped W7/W8 security code** (exactly what a capstone is for). All fixed + tested:
 
-1. **[W8, mine] negation gate too strict.** `_NEGATION_RE` anchored with `\W*$`, so an intervening word
+1. **[W8, new code] negation gate too strict.** `_NEGATION_RE` anchored with `\W*$`, so an intervening word
    defeated it: "do not blindly curl secrets" was flagged as an attack (false-positive on a cautionary
    lesson). Fixed: match a negation marker ANYWHERE in the preceding window; widened the window to 36.
-2. **[W7, mine] quarantined note inherited trust it never earned.** A quarantined note was stamped with
+2. **[W7, new code] quarantined note inherited trust it never earned.** A quarantined note was stamped with
    the `recurrence`/`sources` of notes it did not retire - so if later promoted it arrived with fake
    corroboration. Fixed: no recurrence/sources carry-forward when quarantining.
-3. **[W7, mine] quarantine not idempotent.** A crash-retry after a quarantine write didn't scan
+3. **[W7, new code] quarantine not idempotent.** A crash-retry after a quarantine write didn't scan
    `Quarantine/`, so it could duplicate the note. Fixed: the idempotency check now also scans
    `Quarantine/` (gated on the opt-in mode → zero hot-path cost when off).
 4. **[injection, pre-existing] SessionStart budget breached by ~3-17%.** The cross-project section had
@@ -349,7 +351,7 @@ the new modules (rankers, _rerank, _common - every function is reached). Token e
 Context compression). Competitive review: the system has *already* measured-and-rejected the tempting
 additions (cross-encoder rerank, abstractive consolidation, recurrence boost); the only design-compatible
 open lever is a **stronger local embedder** via the existing `NEVERTWICE_EMBED_MODEL` knob (attacks the W2
-ceiling with zero new dependency) plus optional minimal LLM-emitted **typed edges** (P2) - both documented,
+ceiling with zero new dependency) plus optional minimal LLM-emitted **typed edges** - both documented,
 neither shipped speculatively.
 
 ## Verdict

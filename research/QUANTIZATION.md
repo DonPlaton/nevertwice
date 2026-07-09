@@ -10,7 +10,7 @@ as `longmem_eval.py`. Reproduce with `python research/rnd_launch.py`.
 Nevertwice keeps three layers. The markdown notes are the source of truth. The JSON embedding
 cache holds float32 vectors and is the rebuild source. The hot retrieval path reads a derived
 SQLite index, which already packs vectors as float16 (half the size of float32, cosine loss
-negligible). The question for this round: can the index go smaller still, and does the brute
+negligible). Two questions follow: can the index go smaller still, and does the brute
 force scan need an ANN structure as a vault grows.
 
 ## Binary codes cost almost no recall

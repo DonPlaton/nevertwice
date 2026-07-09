@@ -70,13 +70,13 @@ log change below; `best fusion` and `log prior` are the intrinsic normalized ble
 | 1.6 | 0.254 | 0.516 (w 0.5) | +0.263 | 0.352 | 0.692 |
 | 2.0 | 0.227 | 0.511 (w 0.6) | **+0.284** | 0.318 | 0.681 |
 
-**Q1 - recurrence helps iff relevance is ambiguous.** At σ=0 the lift is exactly
+**Finding 1: recurrence helps iff relevance is ambiguous.** At σ=0 the lift is exactly
 **+0.000**: when relevance already nails the target, the prior is correctly inert. As
 σ rises the lift grows **monotonically to +0.284**, more than doubling recall@1
 (0.227 → 0.511). This is precisely the Bayesian prediction - the prior carries the
 inference exactly to the degree the likelihood cannot.
 
-**Q2 - the optimal blend scales with ambiguity, and a *fixed additive* boost cannot
+**Finding 2: the optimal blend scales with ambiguity, and a *fixed additive* boost cannot
 track it.** w\* climbs 0.0 → 0.2 → 0.3 → 0.4 → 0.5 → 0.5 → 0.6 as σ grows (right
 panel: a clean concave optimum, w\*=0.4 at σ=0.9). A fixed recurrence weight is
 therefore mis-specified across regimes. The **linear** `(n−1)` boost Nevertwice
@@ -88,7 +88,7 @@ look-alike. Switching to log (below) removes that - the shipped curve now starts
 normalized optimum uses in the very-ambiguous tail, so shipped (log) trails
 best-fusion there.
 
-**Q3 - log frequency prior beats linear, in shape.** On the *normalized* blends
+**Finding 3: the log frequency prior beats linear, in shape.** On the *normalized* blends
 (shape isolated from magnitude), the log prior dominates linear `(n−1)` at every σ
 (avg recall@1 **0.814 vs 0.685**) - unsurprising: frequency evidence is log-scaled
 throughout IR (IDF), and linear `(n−1)` lets one very-frequent lesson dominate a
@@ -101,7 +101,7 @@ to best-fusion at high σ is the additive mechanism's fixed *magnitude*, not its
 
 - **`_recur_boost` → log scaling** (`RETRIEVAL_RECUR_BOOST·(n−1)` → `·ln(n)`, n≥1 so a
   one-off contributes 0), plus the two inline recurrence tiebreaks in `retrieve_relevant`
-  and `index_sqlite.search`. This adopts the better shape (Q3) and, as an additive term,
+  and `index_sqlite.search`. This adopts the better shape (finding 3) and, as an additive term,
   now **never displaces a crisp relevance match** - the shipped curve is ≥ relevance-only
   at every σ, strictly safer than the linear form it replaces. Production embeddings keep
   relevance fairly informative (low-to-mid σ), exactly where the log change *helps* and
@@ -118,8 +118,8 @@ flagged that real-embedding *no-harm* needed an external check. We ran one.
 unique haystack sessions form one shared store; each of 500 questions must retrieve
 its evidence session(s) from the whole pool (the others are distractors). Sessions
 and questions embedded with the production `bge-m3`. This is a **real external
-recall number** - independent ground truth, not the internal-linkage of Task A - and
-fills the "external benchmark - NOT RUN" gap:
+recall number** - independent ground truth, not the internal linkage of `eval_harness.py`'s
+Task A - and fills a gap that had stood open (no external benchmark had been run):
 
 | method | R@1 | R@3 | R@5 | R@10 | MRR |
 |---|---:|---:|---:|---:|---:|

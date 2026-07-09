@@ -1,13 +1,14 @@
-# 1B - Learned salience from feedback (results & findings)
+# Learned salience from feedback (results & findings)
 
 *Companion to `research/bandit.py` (the flagship). Reproduce: `python research/bandit.py --save`
-(CPU, seeded, ~1.5 s). LinUCB over the 3A longitudinal stream, 6 streams × ~1530 queries;
-features reuse 1A's extraction; recall-utility@1, feedback on the surfaced top-3.*
+(CPU, seeded, ~1.5 s). LinUCB over the longitudinal benchmark stream (`LONGITUDINAL_BENCH.md`),
+6 streams × ~1530 queries; features reuse the posterior model's extraction (`POSTERIOR_MODEL.md`);
+recall-utility@1, feedback on the surfaced top-3.*
 
 ## The gap it closes
 
 Nevertwice - like almost every agent-memory system - is **static**: it injects memories but
-never learns whether an injection *helped*. 1B closes that loop. Retrieval is a contextual
+never learns whether an injection *helped*. This study closes that loop. Retrieval is a contextual
 bandit: each candidate is an arm with context `x = (relevance, log-recurrence, age, confidence,
 resolved)`; the agent surfaces the top arms; the implicit reward is whether the **useful** memory
 was among them. Feedback is **partial** - a recall miss teaches nothing about the note we failed
@@ -32,7 +33,8 @@ to show - which is the research challenge. A linear usefulness model is learned 
   learning recovers the priors a fixed ranker ignores (chiefly recurrence: `θ*` puts the largest
   positive weight, after relevance, on `log-recurrence`).
 - **It matches a well-tuned static ranker within noise** (−0.011 vs the shipped heuristic, inside
-  the ±0.01 CIs). Honest reading: the shipped heuristic - after the 3A F2 fix - is *already* near
+  the ±0.01 CIs). Honest reading: the shipped heuristic - after the longitudinal bench's
+  recency-decay fix - is *already* near
   the linear optimum for this stationary world, so there is little for online learning to add.
   **The bandit's edge scales with how mismatched the static config is**: large vs relevance-only,
   ~zero vs an already-tuned ranker.
@@ -51,17 +53,17 @@ noisier; that estimator is the remaining production work. The setting where onli
 **decisively** beats any fixed config is **non-stationary** workloads (the optimal weights drift as
 a project evolves) - the natural next experiment, where a static ranker structurally cannot keep up.
 
-## Deployment (no new production code - reuses 1A)
+## Deployment (no new production code - reuses the posterior ranker)
 
-The learned `θ` deploys through the **existing** `NEVERTWICE_RANKER=posterior` ranker (1A): its
+The learned `θ` deploys through the **existing** `NEVERTWICE_RANKER=posterior` ranker: its
 log-linear weights `POST_W` are exactly the bandit's feature weights, env-settable
-(`NEVERTWICE_POST_W_REL/FREQ/SAL`). So 1B needs **no** hollow new ranker mode - the research learns
+(`NEVERTWICE_POST_W_REL/FREQ/SAL`). So this needs **no** hollow new ranker mode - the research learns
 the weights, the posterior ranker serves them. Closing the production loop (a `Feedback/` log of
 injected stems + next-session outcome attribution feeding an online update) is scoped but not wired
 here, deliberately: shipping a bandit ranker with no real feedback source would be dead code.
 
 ## Caveats
 
-Synthetic, seeded, stationary world; relevance = semantic cosine (1A basis). θ* is the best *linear*
+Synthetic, seeded, stationary world; relevance = semantic cosine (the posterior model's basis). θ* is the best *linear*
 reward model (a fair ceiling for a linear bandit, not a global optimum). Standardisation uses global
 feature stats (fixed scaling, not label-peeking; the learned part is θ). LinUCB α=1, ridge=1.

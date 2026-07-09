@@ -1,4 +1,4 @@
-# 4A - Abstractive consolidation: the other half of memory's value (results & findings)
+# Abstractive consolidation: the other half of memory's value (results & findings)
 
 *Companion to `research/abstractive.py`. Reproduce: `python research/abstractive.py --save`
 (CPU, seeded, ~5 s; `--real` adds the live-vault candidate count). A **mechanism** benchmark on
@@ -7,18 +7,20 @@ is not an embedder test, and absolute recall is not an external quality number.*
 
 ## Why it exists
 
-The real-trace studies settled two things on a live store: relevance already **saturates episode
-recall** (recall@3 ≈ 0.71; no recurrence prior beats it - 3A.2) and the frequency prior is
-**dormant** (3A.2/3A.3). That forces the field's load-bearing question: beyond a good retriever over
+The real-trace studies (`REAL_TRACE.md`) settled two things on a live store: relevance already
+**saturates episode recall** (recall@3 ≈ 0.71; no recurrence prior beats it) and the frequency
+prior is **dormant**. That forces the field's load-bearing question: beyond a good retriever over
 raw logs, what is memory *for*? The dormancy result points at the answer - memory's marginal value
 is **abstraction** (many episodic instances of a lesson → one reusable principle) and **forgetting**
-(coverage-preserving compression, already validated on real data in 3A.3). This module builds and
-stress-tests the abstraction half, the piece no prior agent-memory benchmark isolates.
+(coverage-preserving compression, already validated on real data by the retention study there).
+This module builds and stress-tests the abstraction half, the piece no prior agent-memory
+benchmark isolates.
 
 ## The mechanism
 
 A lesson recurs across sessions as K *episodic* notes - each the same latent rule **r** seen through
-a different, noisy context (3A.2 found 37 such cross-session clusters on a real vault, slug-invisible).
+a different, noisy context (the real-trace study found 37 such cross-session clusters on a real
+vault, invisible to slug matching).
 Each episode is `unit(α·r + β·contextᵢ + noise)`: the rule is shared across the cluster, the context
 and noise are instance-specific and zero-mean across it. **Consolidation** replaces the cluster with
 one *principle* = the unit-mean of its members. Averaging is denoising: the shared **r** reinforces
@@ -74,18 +76,18 @@ the right lesson for an unseen application.
   This result is therefore evidence that the *ideal* aggregation recovers the rule and helps - a
   motivation and an upper bound - **not** proof that LLM synthesis attains it. Closing that gap needs
   a real consolidation step measured on a downstream agent task (future work), which is also why we
-  do **not** ship LLM principle-synthesis on the strength of this benchmark alone (anti-bloat: 3A.2/
-  3A.3 already showed intuitive recurrence uses that did not survive measurement).
-  **[GAP CLOSED 2026-06-17 - `CONSOLIDATION_EVAL.md`]** The real operator is now measured on the live
+  do **not** ship LLM principle-synthesis on the strength of this benchmark alone (anti-bloat: the
+  real-trace studies already showed intuitive recurrence uses that did not survive measurement).
+  **Update (2026-06-17): that gap is now closed - `CONSOLIDATION_EVAL.md`.** The real operator is now measured on the live
   store (108 leave-one-out queries): the LLM-synthesised principle recovers the held-out occurrence
   *worse* than the vector-mean idealisation (cosine **0.542 vs 0.684**) and worse than the best raw
   episode (**0.642**), and replacing episodes with principles cuts full-store recall@3 **0.824 →
   0.352**. The idealisation does **not** transfer to text synthesis, and - decisively - even the
   model-independent vector-mean ceiling clears the best episode by only +0.042, so no synthesiser
   makes consolidation-by-replacement a same-topic-retrieval win. **Consolidation is therefore NOT
-  shipped** (Phase 3): on real single-user data the episodic bi-encoder store beats abstraction for
-  the same-topic recall that is ~every real query. 4A stands as the synthetic mechanism; this is the
-  honest real-data verdict.
+  shipped**: on real single-user data the episodic bi-encoder store beats abstraction for
+  the same-topic recall that is ~every real query. The synthetic mechanism result above stands;
+  this is the honest real-data verdict.
 
 ## Real-trace tie-in (aggregate only)
 
@@ -95,7 +97,7 @@ never aggregates. (Counts only; no note text is read.)
 
 ## What it changes
 
-Triangulated with 3A.2/3A.3, the thesis is complete: episode **recall** is saturated by relevance
+Triangulated with the real-trace studies, the thesis is complete: episode **recall** is saturated by relevance
 and the frequency **prior** is dormant on real single-user data - so the defensible marginal value
 of agent memory is **abstraction + principled forgetting**. Consolidation is the abstraction
 operator, and this is its mechanism benchmark: it recovers the latent rule a recurring lesson

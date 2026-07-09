@@ -1,4 +1,4 @@
-# 2A - Replication-weighted, bi-temporal memory for scientific claims (results)
+# Replication-weighted, bi-temporal memory for scientific claims (results)
 
 *Companion to `research/bio_memory.py`. Reproduce: `python research/bio_memory.py --save`
 (CPU, stdlib, instant). The part of the roadmap that serves the life-extension mission directly.*
@@ -57,6 +57,6 @@ bio-memory is designed to return. The diagnostic results are the **baselines' sp
 (flat-newest 0.70 on hype; lexical-only serving refuted claims; flat-newest 0.30 on era-queries),
 which the existing primitives fix with no domain-specific code. A real GenAge/DrugAge ingestion
 (via the adapter) and a held-out claim set would turn this into a quantitative benchmark - the
-natural P2 (mission paper) follow-up. No core schema change was made: the claim-memory is a
+natural follow-up for the mission paper. No core schema change was made: the claim-memory is a
 research application of the shipped `as_of`/recurrence/supersession primitives, deliberately kept
 out of the general-purpose core.

@@ -102,7 +102,7 @@ The project **card** (the SessionStart surface) vs dumping the full Context jour
 Overall current-snapshot vs full Context: **2.5× fewer tokens**, point-in-time and
 contradiction-free.
 
-## Token A/B: retrieval vs no-retrieval, controlled on LongMemEval (#33)
+## Token A/B: retrieval vs no-retrieval, controlled on LongMemEval
 
 Most "agent memory saves tokens" claims are never measured against the prompts where retrieval
 **misses**. We measured it. `research/token_ab.py` runs a controlled A/B on the 500-question

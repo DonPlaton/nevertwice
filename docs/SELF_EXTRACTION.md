@@ -81,7 +81,7 @@ secrets, transient state, or restatements of the task.
 ## Why this is safe
 
 Self-written lessons go through the **same** write path as everything else: secret
-redaction, the danger-content guard (W8), atomic writes, supersession, and git
+redaction, the danger-content guard, atomic writes, supersession, and git
 versioning all apply. A lesson that looks like a prompt-injection payload is rejected
 (the write returns no stem) rather than stored. You review and `git diff` the store
 like any other file.

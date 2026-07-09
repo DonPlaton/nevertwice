@@ -29,7 +29,7 @@ and falls back to lexical search when the GPU/Ollama is busy. `remember` writes 
 
 Most memory is something you *read* - it taxes every turn with injected text. Nevertwice also
 *acts*, and stays silent until it has something worth saying, so it costs **zero context tokens
-until an intervention earns its place**. All three axes are on the Python API **and** the MCP
+until an intervention earns its place**. All three interventions are on the Python API **and** the MCP
 server, so Cursor / Cline / Codex / Zed / any MCP client get the same active memory Claude Code gets. Full
 thesis + measurements: [`research/ACTIVE_MEMORY.md`](../research/ACTIVE_MEMORY.md).
 

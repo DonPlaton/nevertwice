@@ -1,4 +1,4 @@
-# W2 - Retrieval precision under embedding compression (results & findings)
+# Retrieval precision under embedding compression (results & findings)
 
 *Companion to `research/precision_bench.py`. Reproduce: `NEVERTWICE_VAULT=/path python
 research/precision_bench.py` (Experiment 1, cache-only, ~1 s) and `… --rerank` (Experiment 2,
@@ -6,13 +6,14 @@ calls Ollama). Aggregate-only: the bench reads the local embedding cache (vector
 title/desc/prevention text the embedder stored) in-process and prints recall/MRR/cost - never note
 content.*
 
-## The problem (from the hostile audit)
+## The problem (from the hostile audit, `docs/WEAKNESSES.md`)
 
-W2 is the honest ceiling of the whole system: bge-m3 cosines for short, multilingual notes bunch
+This is the honest ceiling of the whole system: bge-m3 cosines for short, multilingual notes bunch
 near a high background (note↔note median ≈ 0.42), so a genuinely-relevant note clears the per-query
-median by only ~0.16 and a no-match by ~0.13 - a ~0.03 separation. The adaptive margin gate (W1/W3)
+median by only ~0.16 and a no-match by ~0.13 - a ~0.03 separation. The adaptive margin gate
 keeps abstention honest, but it cannot *sharpen* ranking. On the real 328-note vault, same-topic
-**recall@3 = 0.710** with relevance alone (MRR 0.547), and no recurrence prior beats it (3A.2). The
+**recall@3 = 0.710** with relevance alone (MRR 0.547), and no recurrence prior beats it
+(`REAL_TRACE.md`). The
 audit names three candidate fixes: a stronger embedder, a cross-encoder reranker, or query expansion.
 This study tests the two that need no new model dependency.
 
@@ -20,13 +21,14 @@ This study tests the two that need no new model dependency.
 >1 date is the same lesson re-encountered across sessions. Query = one member; ground truth = its
 same-cluster members written on other dates; candidates = all other in-project notes. 131 such
 cross-session queries exist on the live store. The baseline bi-encoder reproduces recall@3 = 0.710
-exactly, matching 3A.2 - the methodology is sound.
+exactly, matching the real-trace study - the methodology is sound.
 
 ## Experiment 1 - Embedding-space pseudo-relevance feedback (Rocchio), cache-only
 
 The cheapest possible fix: re-weight the *existing* geometry, no model, no text. Move the query
 toward the centroid of its top-K0 neighbours - `q' = (1-β)·unit(q) + β·unit(mean(topK0))` - then
-re-rank by cosine. This is the same averaging-as-denoising mechanism as 4A abstractive consolidation,
+re-rank by cosine. This is the same averaging-as-denoising mechanism as abstractive consolidation
+(`ABSTRACTIVE.md`),
 applied at query time: if the neighbourhood is on-topic the centroid denoises the query; if it is
 distractor-heavy it drifts.
 
@@ -54,13 +56,13 @@ no free lunch in vector arithmetic here. To beat the ceiling you need a *differe
 
 A cross-encoder *jointly* reads (query, candidate) and scores relevance - the precision tool Zep/Cognee
 use. Ollama is already a hard dependency, so a local chat model scoring relevance is a cross-encoder
-substitute at **no new dependency**. First attempt: take the cosine top-N (N=12) of the 3A.2 query set
+substitute at **no new dependency**. First attempt: take the cosine top-N (N=12) of the real-trace query set
 and have `qwen3:30b-a3b` score each candidate 0-10, re-order.
 
 **Result:** baseline recall@3 = 0.710, **pool ceiling = 0.985** (a true twin is in the cosine top-12
 almost always - huge headroom), but reranked recall@3 = **0.542 (−0.168)**. The reranker *loses*.
 
-This is a methodological lesson, not a verdict on reranking: the 3A.2 ground truth is **built from the
+This is a methodological lesson, not a verdict on reranking: the real-trace ground truth is **built from the
 cosine signal** (twins = cosine ≥ 0.55), so any reranker using a *different* notion of relevance is
 penalised for disagreeing with cosine - the GT rewards cosine by construction. A fair reranker test
 needs a **cosine-independent** ground truth. Hence Experiment 3. (The one durable fact here: the right
@@ -144,7 +146,7 @@ Updated verdict (Exp 5 reverses the earlier "ship nothing"):
 - **Ships as opt-in (`nevertwice.reranker_ce`, `NEVERTWICE_XRERANK=1`, `pip install nevertwice[reranker]`):**
   the bge-reranker-v2-m3 cross-encoder. Off by default; heavy deps (torch+transformers) imported lazily only
   when enabled; degrades safely to first-stage order if the model/GPU is absent. `memory_search --xrerank`
-  and `search_core(xrerank=True)` expose it. This is the audit's P1 fix, now **measured and shipped** without
+  and `search_core(xrerank=True)` expose it. This is the fix the audit ranked highest, now **measured and shipped** without
   touching the local-first promise of the default.
 
 The promptable rerankers (`research/_rerank.py`) and benches stay as **research artifacts** - they *are* the
