@@ -5,10 +5,17 @@ versions are [semantic](https://semver.org). Dates are UTC.
 
 ## [Unreleased]
 
+## [2.1.0] - 2026-07-09
+
 A hostile-critique hardening round: every finding below was verified by execution before fixing,
 and each fix carries a regression test.
 
 ### Added
+- **Token-savings counter** (`nevertwice stats`, `python -m nevertwice.stats`): a best-effort ledger
+  of what the active layer bought - tokens saved vs re-injecting the whole store each turn, guard
+  fires, counterfactuals - shown as a terminal panel with a 14-day activity sparkline, a dashboard
+  card, and a one-line digest summary. Stdlib, atomic, hot-path-safe (a failure here can never
+  affect the recall it measures).
 - **Universal guard pack** (`NEVERTWICE_GUARD_PACK=1` or `python -m nevertwice.guards pack`):
   11 high-precision classic pitfalls that warn from the first session with no model and no
   history. Advisory-only, never promotes to blocking, self-retires like any guard.
@@ -26,10 +33,27 @@ and each fix carries a regression test.
   memory_anticipate_feedback); a parity test now pins TOOLS == dispatch.
 - The git merge driver silently dropped block-style YAML lists (as written by Obsidian's
   Properties panel); that shape now surfaces as a real conflict instead of losing tags.
-- The ReDoS filter missed bounded repetition of a quantified group, e.g. `(a{1,2}){38}`.
+- The ReDoS filter is now a shape-agnostic subprocess probe with a hard 0.6s timeout and fails
+  closed; a static denylist had missed several catastrophic patterns across review rounds
+  (including a paren-less `a+a+...b` and the bounded `(a{1,2}){38}`).
+- Calibrated score fusion no longer sinks a lone hit to the bottom of the ranking (a single-signal
+  z-score collapsed to zero); one relevant note now ranks correctly in default retrieval.
+- Recall survives a malformed note whose frontmatter triggers a RecursionError (now caught with the
+  other parse errors instead of aborting the sweep).
+- `embed_index` takes the vault lock, so a rebuild can no longer race consolidation's cache writes;
+  consolidation no longer crashes on a cached recurrence float; `bootstrap --force` no longer erases
+  a project's Context history.
 - `.docx` was the only size-capped document format; the cap now guards every format and stdin.
 - install.py could claim a foreign script that happened to be named memory_hook.py.
 - Larger, more readable dashboard type; the dashboard also builds from one vault scan (was three).
+- Two research figures baked the pre-rename name into their title; regenerated. The post-retrieval
+  infographic's footer line overlapped the bottom cards; canvas raised so it clears them.
+
+### Changed
+- The tagline leads with the active layer: *"Proactive, local-first memory for AI coding agents -
+  it acts before your agent repeats a mistake."* Reader-facing docs no longer carry internal
+  tracking codes; the recall-leanness numbers read as one honest range across the tour and the
+  infographic.
 
 ## [2.0.0] - 2026-07-04
 

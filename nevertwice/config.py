@@ -13,7 +13,7 @@ from pathlib import Path
 
 # Single source of truth for the runtime version. __init__.py and mcp_server.py both read this,
 # and a test asserts it matches pyproject.toml, so the three can never drift again.
-VERSION = "2.0.0"
+VERSION = "2.1.0"
 
 # ── v2.0 rename bridge (Anamnesis → Nevertwice) ───────────────────────
 # Mirror every legacy-prefixed variable into its NEVERTWICE_* twin (never overriding an
