@@ -3,7 +3,9 @@ Everyone scores ~0.9 on retrieval; the gap is contradictions/poisoning/staleness
 Brand style matches docs/benchmarks.png (OLED slate + green, large type, offline)."""
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
 
-W, H = 1800, 1010
+# H leaves room below the 2x2 cards (which end at cy0 + 2*ch + gap = 940) for the footer line
+# and byline; the footer offsets below are measured from the bottom edge, so it clears the cards.
+W, H = 1800, 1070
 BG = (8, 11, 20); SURFACE = (15, 21, 36)
 FG = (233, 238, 248); MUTED = (139, 150, 173); FAINT = (90, 100, 120)
 GREEN = (52, 211, 153); GREEN_2 = (34, 197, 94); AMBER = (251, 191, 36)
@@ -65,6 +67,7 @@ d.ellipse([80, H-54, 92, H-42], fill=GREEN)
 d.text((104, H-60), "github.com/DonPlaton/nevertwice   ·   retrieval is table stakes; this is the moat",
        font=f_foot, fill=MUTED)
 
-out = r"C:\Users\Platon\AppData\Local\Temp\claude\D--Obsidian-Claude-Memory\ae92cfb9-d53d-4c4d-8c4e-f9a2532b6c05\scratchpad\post_retrieval.png"
+import os
+out = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "docs", "post_retrieval.png")
 img.save(out)
 print("saved", out)
