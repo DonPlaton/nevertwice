@@ -24,7 +24,6 @@ Reads mistake notes from the vault; the small adaptation state lives in
 """
 import json
 import math
-import os
 import sys
 from pathlib import Path
 

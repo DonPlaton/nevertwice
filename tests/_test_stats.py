@@ -5,7 +5,6 @@ Verifies: recording accumulates totals + daily buckets; the recall-saving is
 store_tokens - injected (floored); the panel renders aligned; and - the load-bearing
 guarantee - a broken ledger never raises out of record()/recall_saving(). Temp vault,
 no network, no model."""
-import os
 import sys
 import tempfile
 from pathlib import Path

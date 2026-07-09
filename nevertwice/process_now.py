@@ -7,7 +7,7 @@ This is the Claude Code catch-up adapter (it walks Claude's JSONL store). Other
 agents push sessions directly via ingest.py instead.
 
 Semantics:
-  - Walks every *.jsonl in CLAUDE_PROJECTS_ROOT, no time cutoff.
+  - Walks every *.jsonl in NEVERTWICE_PROJECTS_ROOT, no time cutoff.
   - Skips sessions already in .processed_sessions.json (delete that file to
     force full reprocessing).
   - Sessions whose cwd is not a tracked project (a configured root or a git
@@ -30,7 +30,6 @@ import memory_hook as _mh
 from memory_hook import (  # noqa: E402
     llm_backend_desc,
     PROJECT_ROOT_DISPLAY,
-    PROJECTS_ROOT,
     acquire_lock,
     archive_old_sessions,
     archive_old_typed,
@@ -54,13 +53,13 @@ def main():
     print("  Claude Memory - Process NOW (полный скан, без ограничения по дате)")
     print(BAR)
     print(f"  Vault          : {_mh.VAULT}")
-    print(f"  Projects root  : {PROJECTS_ROOT}")
+    print(f"  Projects root  : {_mh.PROJECTS_ROOT}")
     print(f"  Extraction LLM : {llm_backend_desc()}")
     print(BAR)
     print()
 
-    if not PROJECTS_ROOT.exists():
-        print(f"[ERROR] Projects dir not found: {PROJECTS_ROOT}")
+    if not _mh.PROJECTS_ROOT.exists():
+        print(f"[ERROR] Projects dir not found: {_mh.PROJECTS_ROOT}")
         sys.exit(1)
 
     if not acquire_lock(timeout_s=60):
@@ -85,7 +84,7 @@ def _run(t0: float):
 
     # One stat() per transcript - cache mtime AND size in one pass.
     seen = []
-    for jl in PROJECTS_ROOT.rglob("*.jsonl"):   # recursive: don't miss nested (audit LOW)
+    for jl in _mh.PROJECTS_ROOT.rglob("*.jsonl"):   # recursive: don't miss nested (audit LOW)
         st = _stat_or_none(jl)
         if st is not None:
             seen.append((jl, st.st_mtime, st.st_size))

@@ -24,11 +24,12 @@ except Exception:
 sys.path.insert(0, str(Path(__file__).parent))
 import memory_hook as m               # the one source for slug/split/atomic-write/index helpers
 try:
-    from memory_hook import generate_json as _shared_generate, redact_secrets
+    _shared_generate = m.generate_json     # access via the module handle (already imported above)
+    redact_secrets = m.redact_secrets
 except Exception:
     _shared_generate = None
 
-    def redact_secrets(t):  # fallback no-op if memory_hook can't be imported
+    def redact_secrets(t):  # fallback no-op if the shared helpers aren't available
         return t
 
 
