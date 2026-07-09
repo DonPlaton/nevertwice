@@ -37,3 +37,6 @@ graph.json
 nevertwice/research/data/*
 !nevertwice/research/data/README.md
 *.log
+
+# generated dashboard output (python -m nevertwice.dashboard)
+memory_dashboard.html
