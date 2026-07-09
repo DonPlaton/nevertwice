@@ -33,9 +33,11 @@ daemon ([details](docs/INTEGRATIONS.md)).</sub>
 [![Active Memory](https://img.shields.io/badge/active%20memory-%E2%88%9286%25%20errors%20%C2%B7%200--token%20guards-2ea043)](#memory-that-acts)
 
 ```text
+$ pip install nevertwice
+
 $ # days ago, a different session, your agent hit a CUDA OOM and Nevertwice recorded the lesson.
 $ # now, a fresh agent, a new prompt:
-$ python nevertwice/memory_search.py "training crashes out of gpu memory" myproject
+$ nevertwice-search "training crashes out of gpu memory" myproject
 
 ⚠ 1 relevant lesson recalled (confidence 0.68):
   • [mistake] CUDA OOM at batch=64 on this GPU
