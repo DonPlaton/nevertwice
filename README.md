@@ -9,7 +9,7 @@
 *Your coding agent forgets everything when a session ends. Nevertwice remembers: the bug you hit
 last week, the pattern that worked, the reason you picked Postgres over Mongo. Then it does what
 other memory tools don't. Instead of padding every prompt with recalled text, it stays quiet until
-it has something useful, then acts by catching the mistake before you repeat it - measured live,
+it has something useful, then acts by catching the mistake before your agent repeats it - measured live,
 a fired guard cut a real model's repeat-error rate by **86%**
 ([the harness is in the repo](research/LIVE_VALIDATION.md)). Memory that earns its tokens.*
 
@@ -158,7 +158,7 @@ You own every byte of your agent's memory, and you can read it.
 
 <p align="center"><img src="docs/tour.gif" alt="Nevertwice full tour: a guard fires before a recorded SQL-injection mistake repeats, then recall returns far fewer tokens than dumping the store (5.9x on this small demo project, and it grows with the store - 9.1x and up on a larger one), anticipation on a new endpoint, a counterfactual answered from the causal graph, and a contradiction resolved by supersession" width="740"></p>
 
-<p align="center"><sub>Recorded from the real system (<code>examples/guard_demo.py</code> + <code>examples/scenario_demo.py</code>, throwaway vault) - every number on screen is measured live, nothing is mocked.</sub></p>
+<p align="center"><sub>Recorded from the real system (<code>examples/guard_demo.py</code> + <code>examples/scenario_demo.py</code>, throwaway vault) - every number on screen is measured live, nothing is mocked. The 5.9x recall saving shown is for this small demo project; it grows with the store (9.1x on the default, 44x at ~220 notes).</sub></p>
 
 ```
 $ # session 1: you hit a CUDA OOM, Nevertwice quietly records the lesson
@@ -286,12 +286,13 @@ somewhere, first ask what it measures.
 <p align="center"><img src="docs/post_retrieval.png" alt="Post-retrieval correctness: contradictions resolved at write time via supersession (competitors are ADD-only or manual); poisoning attacks blocked 88 percent with prompt-injection caught 100 percent and an honest 50 percent on plausible-false facts; a submodular forgetting coreset keeps 0.14 more topic coverage per token at a 20 percent budget; and we publish negative results such as consolidation-by-replacement halving recall, so we do not ship it" width="880"></p>
 
 Here is the uncomfortable truth about memory benchmarks in 2026: **retrieval R@k has stopped
-discriminating.** Independent analysis finds that across LongMemEval, LoCoMo and peers, retrieval-
-miss dominates the error budget while retrieval-hit-but-wrong-answer is rare, so the headline
-scores mostly measure *"did the right note come back"* - and every serious system now scores high
-there. The gap that shows up in production (Mem0's own 91.6 on LoCoMo drops to ~49% effective at
-50k sessions once stale data and contradictions enter) lives **after** retrieval: does the memory
-resolve contradictions, resist poisoning, and forget the right things?
+discriminating.** [Independent analysis](https://mem0.ai/blog/ai-memory-benchmarks-in-2026) finds
+that across LongMemEval, LoCoMo and peers, retrieval-miss dominates the error budget while
+retrieval-hit-but-wrong-answer is rare, so the headline scores mostly measure *"did the right note
+come back"* - and every serious system now scores high there. The gap that shows up in production
+([Mem0's own 91.6 on LoCoMo drops to ~49% effective at 50k sessions](https://mem0.ai/blog/ai-memory-benchmarks-in-2026)
+once stale data and contradictions enter) lives **after** retrieval: does the memory resolve
+contradictions, resist poisoning, and forget the right things?
 
 That is the axis Nevertwice is built for, and every number is measured with a harness in `research/`:
 
@@ -334,12 +335,14 @@ Everything here ships today, not on a roadmap:
 - Recall walks `[[wikilinks]]` for multi-hop answers, abstains instead of guessing, and carries
   lessons across projects.
 - Secrets are redacted before anything is written. A poisoning guard caught every injection,
-  exfiltration, and destruction attempt we threw at a 328-note vault, with zero false positives.
+  exfiltration, and destruction attempt in the study; across the full acceptance-attack set it
+  blocks 88% at precision 0.91 (details in [research/POISONING.md](research/POISONING.md)).
 - A SQLite index keeps per-query cost flat into tens of thousands of notes; a submodular
   forgetting cap stops unbounded growth.
 - Sync between machines is `git pull`. Concurrent edits to the same note auto-merge
   field-by-field (recurrence takes the max, a retirement wins, tags union).
-- The project card travels: AGENTS.md and OKF in and out, so other tools can read what yours knows.
+- The project card travels: it exports to and imports from AGENTS.md and the Open Knowledge Format
+  (OKF, the draft Google/Anthropic interchange spec), so other tools can read what yours knows.
 
 An opt-in **Brain layer** turns the same captured sessions into a self-wiring knowledge graph for
 research or personal knowledge: typed entities (paper, method, dataset, benchmark, …), per-entity

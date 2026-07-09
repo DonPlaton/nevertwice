@@ -217,7 +217,7 @@ def build_html(project=None, days=30, conflicts_limit=40) -> str:
              (t["revised_in_window"], f"revised · {days}d", "contradictions resolved", False)]
     if _saved:                               # lead with what the memory bought you
         cards.insert(0, (f"~{_saved}", "tokens saved",
-                         f"{_sv.get('guards_fired', 0)} guards · {_sv.get('recalls', 0)} recalls", True))
+                         "vs dumping the whole store each turn", True))
     parts.append(f'<div class="cards"{rv()}>')
     for n, lbl, foot, hero in cards:
         parts.append(f'<div class="card{" hero" if hero else ""}"><div class="l">{_e(lbl)}</div>'

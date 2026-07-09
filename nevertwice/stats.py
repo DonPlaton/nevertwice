@@ -107,7 +107,10 @@ def refresh_store_tokens() -> int:
 
 
 def store_tokens() -> int:
-    return int(load().get("store_tokens", 0) or 0)
+    v = int(load().get("store_tokens", 0) or 0)
+    if v <= 0:                           # cold start: price the baseline on first read so a
+        v = refresh_store_tokens()       # session-1 recall records a real saving, not ~0
+    return v
 
 
 def recall_saving(injected_text: str) -> int:
@@ -128,9 +131,13 @@ def sparkline(values: list) -> str:
 def _human(n: int) -> str:
     n = int(n)
     for unit, div in (("M", 1_000_000), ("k", 1_000)):
-        if n >= div:
+        if round(n / div, 1) >= 1:       # promote 999_999 to 1.0M, not 1000.0k
             return f"{n / div:.1f}{unit}"
     return str(n)
+
+
+def _plural(n: int, noun: str, suffix: str = "") -> str:
+    return f"{n} {noun}{'' if n == 1 else 's'}{suffix}"
 
 
 def last_days(d: dict, days: int = 14) -> list:
@@ -157,8 +164,11 @@ def render_panel(d: dict | None = None) -> str:
             text = text[:W]
         return f"│{text}{' ' * (W - len(text))}│"
 
-    counts = (f"  {t.get('recalls', 0)} recalls    {t.get('guards_fired', 0)} guards fired"
-              f"    {t.get('counterfactuals', 0)} counterfactuals")
+    def _c(n, noun, suffix=""):          # human count + correct plural, so a 5-digit count fits
+        return f"{_human(n)} {noun}{'' if n == 1 else 's'}{suffix}"
+    counts = (f"  {_c(t.get('recalls', 0), 'recall')}   "
+              f"{_c(t.get('guards_fired', 0), 'guard', ' fired')}   "
+              f"{_c(t.get('counterfactuals', 0), 'counterfactual')}")
     out = [
         "╭" + "─" * W + "╮",
         row("  Nevertwice - what the memory bought you"),
@@ -181,8 +191,9 @@ def summary_line(d: dict | None = None) -> str:
     t = d.get("totals", {})
     if not t.get("interventions"):
         return ""
-    return (f"Nevertwice: ~{_human(t.get('tokens_saved', 0))} tokens saved so far "
-            f"({t.get('interventions', 0)} interventions, {t.get('guards_fired', 0)} guards fired).")
+    return (f"Nevertwice: ~{_human(t.get('tokens_saved', 0))} tokens saved so far vs re-injecting "
+            f"the whole store each turn ({_plural(t.get('interventions', 0), 'intervention')}, "
+            f"{_plural(t.get('guards_fired', 0), 'guard', ' fired')}).")
 
 
 def main() -> None:
