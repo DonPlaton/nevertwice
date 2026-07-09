@@ -204,11 +204,20 @@ def build_html(project=None, days=30, conflicts_limit=40) -> str:
 <div class="rule"></div>"""]
 
     # ── stat cards ──
+    try:                                     # the token-savings headline, if the ledger has data
+        import stats as _stats
+        _sv = _stats.load().get("totals", {})
+        _saved = _stats._human(_sv.get("tokens_saved", 0)) if _sv.get("interventions") else None
+    except Exception:
+        _saved, _sv = None, {}
     cards = [(t["live_notes"], "live notes", "across the store", True),
              (t["projects"], "projects", "tracked", False),
              (t["superseded_notes"], "superseded", "history kept", False),
              (t["added_in_window"], f"added · {days}d", "new lessons", False),
              (t["revised_in_window"], f"revised · {days}d", "contradictions resolved", False)]
+    if _saved:                               # lead with what the memory bought you
+        cards.insert(0, (f"~{_saved}", "tokens saved",
+                         f"{_sv.get('guards_fired', 0)} guards · {_sv.get('recalls', 0)} recalls", True))
     parts.append(f'<div class="cards"{rv()}>')
     for n, lbl, foot, hero in cards:
         parts.append(f'<div class="card{" hero" if hero else ""}"><div class="l">{_e(lbl)}</div>'

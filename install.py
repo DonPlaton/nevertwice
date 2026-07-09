@@ -79,7 +79,7 @@ _GITIGNORE_LINES = [
     ".embeddings_cache.json", ".embeddings_meta.json",
     ".index.sqlite", ".index.sqlite-wal", ".index.sqlite-shm",
     ".processed_sessions.json",
-    "graph.json", "status.txt", "health.txt",
+    "graph.json", "status.txt", "health.txt", "savings.json",
     "eval_results.json", "temporal_graph.json", "contradiction_candidates.json",
     "Index.md", "User/profile.md",
 ]

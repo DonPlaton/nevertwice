@@ -179,7 +179,14 @@ def what_breaks(entity: str, project: str | None = None, *, depth: int = 2) -> d
     cause→effect impact graph) plus the failure modes mistakes attach to the entity. A
     synthesized consequence set, not an episode dump - the whole point is answering the
     question at a fraction of the tokens a recall-everything would spend."""
-    return _causal.what_breaks(entity, project, depth=depth)
+    res = _causal.what_breaks(entity, project, depth=depth)
+    try:                                     # credit the counterfactual: each evidence note it
+        import stats as _st                  # synthesised from is a note it did NOT have to dump
+        notes_not_dumped = len(res.get("evidence", []) or []) + len(res.get("impacts", []) or [])
+        _st.record("counterfactual", saved=notes_not_dumped * 60)   # ~60 tok/note, conservative
+    except Exception:
+        pass
+    return res
 
 
 def counterfactual(entity: str, project: str | None = None) -> str:

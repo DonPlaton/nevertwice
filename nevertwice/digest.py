@@ -149,7 +149,7 @@ def _print_conflicts(rows):
             print(f"    now: {r['new_title']}  ({r['new_date']})")
         else:
             print("    now: (successor archived)")
-    print(f"\nThese are the write-time contradictions M-2 caught and resolved into "
+    print(f"\nThese are the contradictions the store caught at write time and resolved into "
           f"supersessions - the audit trail under Superseded/.")
 
 
@@ -158,7 +158,15 @@ def _print_digest(d):
     print(f"NEVERTWICE DIGEST - {d['project']}   (last {d['window_days']} days)   {d['generated']}")
     print(f"  store: {t['live_notes']} live notes across {t['projects']} project(s), "
           f"{t['superseded_notes']} superseded")
-    print(f"  window: +{t['added_in_window']} added, {t['revised_in_window']} revised\n")
+    print(f"  window: +{t['added_in_window']} added, {t['revised_in_window']} revised")
+    try:                                     # what the memory has bought, if it has been used
+        import stats as _stats
+        _sl = _stats.summary_line()
+        if _sl:
+            print(f"  {_sl}")
+    except Exception:
+        pass
+    print()
     if d["by_project"]:
         print("  by project:")
         for p, v in sorted(d["by_project"].items(), key=lambda kv: -kv[1]["total"]):

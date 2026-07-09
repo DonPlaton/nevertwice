@@ -4631,9 +4631,12 @@ def emit_session_start_context(cwd: str) -> None:
             if added:
                 parts.extend(xs)
     parts += footer
+    _si = "\n".join(parts)
+    if len(parts) > len(footer):             # something real was injected, not just the footer
+        _record_recall_saving(_si)
     payload = {"hookSpecificOutput": {
         "hookEventName": "SessionStart",
-        "additionalContext": "\n".join(parts),
+        "additionalContext": _si,
     }}
     # ensure_ascii=True: the hook's stdout is a pipe in cp1251 under Claude Code;
     # emoji/Cyrillic must be \uXXXX-escaped or print() raises UnicodeEncodeError
@@ -4705,6 +4708,17 @@ def _prune_prompt_recall_state(max_age_days: int = 3) -> None:
         pass
 
 
+def _record_recall_saving(injected_text: str) -> None:
+    """Log the tokens this recall saved vs a memory that re-injects the whole store every turn.
+    Lazy-imported (stats imports this module) and fully swallowed - the ledger is cosmetic and
+    must never affect the recall it is measuring."""
+    try:
+        import stats as _st
+        _st.record("recall", saved=_st.recall_saving(injected_text))
+    except Exception:
+        pass
+
+
 def emit_prompt_recall(cwd: str, prompt: str, session_id: str) -> None:
     """UserPromptSubmit injection (audit I-4): retrieve lessons by the actual
     prompt text and inject them so recall is task-aware. Smart-throttled
@@ -4757,9 +4771,11 @@ def emit_prompt_recall(cwd: str, prompt: str, session_id: str) -> None:
             parts.append(f"- [{c.get('project')}] **{c.get('title', '').strip()}**"
                          + (f" - {snip}" if snip else ""))
 
+    injected = "\n".join(parts)
+    _record_recall_saving(injected)          # best-effort token-savings ledger (never blocks)
     payload = {"hookSpecificOutput": {
         "hookEventName": "UserPromptSubmit",
-        "additionalContext": "\n".join(parts),
+        "additionalContext": injected,
     }}
     print(json.dumps(payload))
 
@@ -4816,7 +4832,7 @@ _VAULT_GITIGNORE = (
     ".embeddings_cache.json", ".embeddings_meta.json",
     ".index.sqlite", ".index.sqlite-wal", ".index.sqlite-shm",
     ".processed_sessions.json",
-    "graph.json", "status.txt", "health.txt",
+    "graph.json", "status.txt", "health.txt", "savings.json",
     "eval_results.json", "temporal_graph.json", "contradiction_candidates.json",
     "Index.md", "User/profile.md",
 )
@@ -4931,6 +4947,12 @@ def emit_pretooluse_guard(session: dict, cwd: str) -> None:
         _g.record_fired([h["id"] for h in hits], guards=ledger)   # reuse the loaded ledger - and only
     except Exception:                                      # on the rare hit path; telemetry only,
         pass                                               # never fatal on the hot path
+    try:                                                   # a fired guard caught a repeat at ~0 tokens
+        import stats as _st
+        for _h in hits:
+            _st.record("guard", saved=_st.est_tokens(_h.get("message", "")))
+    except Exception:
+        pass
     lines = [("⛔ " if h["status"] == "blocking" else "⚠ ") + h["message"] for h in hits]
     payload = {"hookSpecificOutput": {
         "hookEventName": "PreToolUse",
@@ -5033,6 +5055,11 @@ def main():
             prune_processed_db(processed_db)
             if event in ("SessionEnd", "PreCompact"):
                 regen_graph_for_project(cwd)
+            try:                              # refresh the 'dump the whole store' price for the
+                import stats as _st           # savings ledger, at sleep-time so recall stays cheap
+                _st.refresh_store_tokens()
+            except Exception:
+                pass
             if _LLM_STATS["fail"]:
                 degraded = f"{_LLM_STATS['fail']} LLM call(s) failed (both backends)"
             elif _OLLAMA_DOWN and not (cloud_key() and ACTIVE_CLOUD != "none"):
