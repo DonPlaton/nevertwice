@@ -25,6 +25,7 @@ daemon ([details](docs/INTEGRATIONS.md)).</sub>
 [![tests](https://github.com/DonPlaton/nevertwice/actions/workflows/ci.yml/badge.svg)](https://github.com/DonPlaton/nevertwice/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/DonPlaton/nevertwice/actions/workflows/codeql.yml/badge.svg)](https://github.com/DonPlaton/nevertwice/actions/workflows/codeql.yml)
 [![OpenSSF Scorecard](https://github.com/DonPlaton/nevertwice/actions/workflows/scorecard.yml/badge.svg)](https://github.com/DonPlaton/nevertwice/actions/workflows/scorecard.yml)
+[![PyPI](https://img.shields.io/pypi/v/nevertwice)](https://pypi.org/project/nevertwice/)
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue)](#install)
 [![Core deps](https://img.shields.io/badge/core%20deps-0%20(stdlib)-orange)](#why-nevertwice)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
@@ -366,6 +367,18 @@ are the ones you configured yourself (your Ollama endpoint, or your own cloud ke
 `NEVERTWICE_LOCAL_ONLY` pins named projects to local-only for good.
 
 ## Install
+
+**pip** gets you the package, the `nevertwice-*` commands, and the MCP server:
+
+```bash
+pip install nevertwice
+```
+
+That covers using it as a library, from the CLI, or over MCP (Cursor, Cline, Zed, and Claude
+Desktop connect through `nevertwice-mcp`).
+
+For **Claude Code's** native wiring (the five hooks that capture, recall, and run the PreToolUse
+guard), clone the repo and run the installer:
 
 ```bash
 git clone https://github.com/DonPlaton/nevertwice && cd nevertwice
