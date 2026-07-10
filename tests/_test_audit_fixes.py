@@ -49,7 +49,6 @@ def sandbox():
     m.EMBED_META = d / ".embeddings_meta.json"
     m.PROCESSED_DB = d / ".processed_sessions.json"
     m.STATUS_FILE = d / "status.txt"
-    m.LOCK_FILE = d / ".lock"
     m.collect_existing_titles.cache_clear()
     m.collect_existing_tags.cache_clear()
     return d

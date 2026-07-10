@@ -72,7 +72,7 @@ VAULT = _cfg.VAULT
 # (write_atomic creates parents; acquire_lock/save_processed/main mkdir explicitly).
 PROCESSED_DB = VAULT / ".processed_sessions.json"
 STATUS_FILE = VAULT / "status.txt"
-LOCK_FILE = VAULT / ".lock"
+# NB: the vault lock has no module-level path constant - see _lock_file() (call-time derived)
 EMBED_CACHE = VAULT / ".embeddings_cache.json"
 EMBED_META = VAULT / ".embeddings_meta.json"   # records whether the cache is prefixed
 LOG_FILE = VAULT / ".logs" / "memory_hook.log"
@@ -1282,12 +1282,21 @@ def _pid_alive(pid: int) -> bool:
         return True
 
 
+def _lock_file() -> Path:
+    # Derived from VAULT at CALL time, never snapshotted at import: an import-time
+    # `VAULT / ".lock"` constant diverges from a VAULT that tests (or embedders of the
+    # library) repoint after import - the mkdir then targets the new vault while the
+    # lock opens inside the old, missing one (FileNotFoundError on any fresh box).
+    return VAULT / ".lock"
+
+
 def acquire_lock(timeout_s: float = 30) -> bool:
     VAULT.mkdir(parents=True, exist_ok=True)
+    lock = _lock_file()
     deadline = time.monotonic() + timeout_s
     while time.monotonic() < deadline:
         try:
-            fd = os.open(str(LOCK_FILE), os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+            fd = os.open(str(lock), os.O_CREAT | os.O_EXCL | os.O_WRONLY)
             try:
                 os.write(fd, str(os.getpid()).encode())
             finally:
@@ -1297,7 +1306,7 @@ def acquire_lock(timeout_s: float = 30) -> bool:
             # pid that survives in it is the real owner, the other backs off
             # instead of both proceeding into the critical section (audit LOW).
             try:
-                if (LOCK_FILE.read_text() or "").strip() != str(os.getpid()):
+                if (lock.read_text() or "").strip() != str(os.getpid()):
                     time.sleep(LOCK_RETRY_S)
                     continue
             except OSError:
@@ -1307,9 +1316,9 @@ def acquire_lock(timeout_s: float = 30) -> bool:
             # Only reclaim a stale lock whose holder PID is actually dead -
             # avoids two processes both deleting a fresh lock (audit F12 TOCTOU).
             try:
-                age = time.time() - LOCK_FILE.stat().st_mtime
+                age = time.time() - lock.stat().st_mtime
                 try:
-                    holder = int((LOCK_FILE.read_text() or "0").strip() or 0)
+                    holder = int((lock.read_text() or "0").strip() or 0)
                 except (ValueError, OSError):
                     holder = 0
                 # Steal a lock whose holder is provably dead IMMEDIATELY - don't wait
@@ -1323,7 +1332,7 @@ def acquire_lock(timeout_s: float = 30) -> bool:
                 reclaim = ((not _pid_alive(holder)) if holder > 0 else age > LOCK_STALE_S) \
                     or age > LOCK_STALE_S * 10
                 if reclaim:
-                    LOCK_FILE.unlink(missing_ok=True)
+                    lock.unlink(missing_ok=True)
                     continue
             except (FileNotFoundError, OSError):
                 pass
@@ -1333,7 +1342,7 @@ def acquire_lock(timeout_s: float = 30) -> bool:
 
 def release_lock():
     try:
-        LOCK_FILE.unlink(missing_ok=True)
+        _lock_file().unlink(missing_ok=True)
     except OSError:
         pass
 

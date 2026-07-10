@@ -25,7 +25,6 @@ def fresh_vault():
     m.PROCESSED_DB = d / ".processed_sessions.json"
     m.EMBED_CACHE = d / ".embeddings_cache.json"
     m.STATUS_FILE = d / "status.txt"
-    m.LOCK_FILE = d / ".memory.lock"
     m.LOG_FILE = d / ".logs" / "memory_hook.log"
     for sub in ("Context", "Patterns", "Mistakes", "Decisions", "Sessions"):
         (d / sub).mkdir(parents=True, exist_ok=True)

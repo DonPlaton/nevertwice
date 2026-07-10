@@ -25,7 +25,6 @@ import memory_hook as mh  # noqa: E402
 mh.VAULT = _sandbox
 mh.PROCESSED_DB = _sandbox / ".processed_sessions.json"
 mh.STATUS_FILE = _sandbox / "status.txt"
-mh.LOCK_FILE = _sandbox / ".lock"
 
 failures: list[str] = []
 
