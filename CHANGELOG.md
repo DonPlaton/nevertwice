@@ -5,6 +5,43 @@ versions are [semantic](https://semver.org). Dates are UTC.
 
 ## [Unreleased]
 
+## [2.1.1] - 2026-07-10
+
+A launch-audit round: two independent execution-verified reviews (published-package
+e2e + hot-path bug-hunt), a TRIZ contradiction probe, and a council verdict. Every
+fix carries a test or an executed repro.
+
+### Fixed
+- **The pip first-touch loop on a no-model box.** With no Ollama and no cloud key,
+  `nevertwice-remember` wrote the note but `nevertwice-search` answered "(no memory
+  stored yet)": `api.remember` gated `update_embeddings` on embedder availability, so
+  the note never got its text-only FTS record (batch writes already had one). Both
+  paths now share the contract - vectors when an embedder is up, else a text-only
+  record that lexical recall serves immediately. Regression test pins remember->recall
+  with the embedder down; the flagship `examples/demo.py` now produces a real hit
+  with no model at all.
+- A real lexical hit could display **score 0.00** (bm25 on a tiny corpus is ~0) and
+  agents filtering `score > 0` dropped it; the FTS score now floors at the
+  token-overlap score.
+- The token-savings baseline could trigger a full vault scan inside the per-prompt
+  hook (measured 14.9 s on a 2.6k-note store): the hot path now reads only the cached
+  value, and the sleep-time refresh sums the baseline from the SQLite index (8 ms).
+- `nevertwice-search --help` exited 1; it now prints usage titled `nevertwice-search`
+  and exits 0.
+- Recovery hints use pip-valid forms (`python -m nevertwice.embed_index`); the
+  empty-store message no longer points pip users at repo-relative files.
+- Importing the engine no longer creates the store directory as a side effect, so
+  `install.py --print` is a true dry run.
+- `examples/demo.py` propagates child exit codes instead of always exiting 0.
+- The embed-failure log line ascii-escapes OS-localized error text (codepage-proof).
+- Import hygiene: one import style per module (the last two CodeQL notes), unused
+  imports dropped, and a stray generated `memory_dashboard.html` untracked+ignored.
+
+### Changed
+- Docs: the watch daemon is spelled `nevertwice-watch` everywhere; the guard-pack
+  comment no longer overstates seeding immediacy; `pip install nevertwice` leads the
+  README hero block and the install section.
+
 ## [2.1.0] - 2026-07-09
 
 A hostile-critique hardening round: every finding below was verified by execution before fixing,
