@@ -44,7 +44,8 @@ def enabled() -> bool:
     'auto') means ON when the deps are installed AND the model is already downloaded -
     so one `NEVERTWICE_XRERANK=1` run fetches it, and from then on it stays on by
     itself, while a machine that merely has torch for other work is never surprised
-    with a 2 GB download. find_spec + a dir check keep this to a few ms."""
+    with a 2 GB download. Any other value reads as auto. find_spec + a dir check
+    keep this to a few ms."""
     v = os.environ.get("NEVERTWICE_XRERANK", "auto").strip().lower()
     if v in ("1", "true", "yes", "on"):
         return True

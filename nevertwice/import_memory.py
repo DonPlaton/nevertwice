@@ -73,6 +73,8 @@ def parse_claude(root: Path) -> list[dict]:
             meta, body = _frontmatter(f.read_text(encoding="utf-8", errors="replace"))
         except OSError:
             continue
+        if not meta and not body.strip():    # an empty file has nothing to remember
+            continue
         title = meta.get("description") or meta.get("name") or f.stem
         desc = body or meta.get("description") or ""
         out.append({"type": _CLAUDE_TYPE.get((meta.get("type") or "").lower(), "pattern"),
@@ -150,8 +152,12 @@ def _ledger_path() -> Path:
 def _ledger_load() -> set:
     try:
         d = json.loads(_ledger_path().read_text(encoding="utf-8"))
-        return set(d) if isinstance(d, list) else set()
-    except (OSError, ValueError):
+        # keep only string hashes: a hand-edited ledger holding numbers/lists used to
+        # crash BOTH load (unhashable) and save (unsortable mix) - and the crash sat
+        # between the note writes and the ledger update, so every retry duplicated
+        # the whole batch (launch-audit F-1)
+        return {x for x in d if isinstance(x, str)} if isinstance(d, list) else set()
+    except (OSError, ValueError, TypeError):
         return set()
 
 
@@ -174,7 +180,18 @@ def run_import(source: str, path: Path, project: str, dry_run: bool = False) -> 
               "cursor": parse_cursor, "agents": parse_agents}[source]
     lessons = parser(path)
     seen = _ledger_load()
-    fresh = [(ln, _hash(source, ln)) for ln in lessons if _hash(source, ln) not in seen]
+    fresh, batch = [], set()
+    for ln in lessons:
+        h = _hash(source, ln)               # hashed BEFORE any title rewrite, so reruns
+        if h in seen or h in batch:         # recognize the item; batch-set drops in-batch
+            continue                        # duplicates (two files, same content - F-5)
+        batch.add(h)
+        if m.slugify(ln["title"]) == "untitled":
+            # a CJK/emoji-only title slugs to "untitled"; two such notes on different
+            # days would read as the same lesson recurring and retire each other (F-2) -
+            # a stable content-hash suffix keeps distinct memories distinct
+            ln = {**ln, "title": _clip(ln["title"], MAX_TITLE - 9) + " " + h[:8]}
+        fresh.append((ln, h))
     res = {"found": len(lessons), "new": len(fresh),
            "skipped": len(lessons) - len(fresh), "written": 0}
     if dry_run or not fresh:
@@ -208,6 +225,14 @@ def main() -> int:
         return 2
     if not path.exists():
         print(f"[import] source not found: {path}", file=sys.stderr)
+        return 2
+    if a.source in ("chatgpt", "agents") and not path.is_file():
+        print(f"[import] --from {a.source} expects a file, got a directory: {path}",
+              file=sys.stderr)
+        return 2
+    if a.source in ("claude", "cursor") and not path.is_dir():
+        print(f"[import] --from {a.source} expects a directory, got a file: {path}",
+              file=sys.stderr)
         return 2
     project = a.project or ("user" if a.source in ("claude", "chatgpt")
                             else (path.parent.name if path.is_file() else path.name) or "user")

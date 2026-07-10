@@ -19,7 +19,9 @@ PY = sys.executable
 
 
 def say(msg):
-    print(f"\n\033[1;36m{msg}\033[0m")
+    # flush: the parent is block-buffered when piped, the children are not - without
+    # this the narration prints after all results in `demo.py > log` / CI capture
+    print(f"\n\033[1;36m{msg}\033[0m", flush=True)
 
 
 FAILED = 0
@@ -27,7 +29,7 @@ FAILED = 0
 
 def run(args):
     global FAILED
-    print(f"\033[2m$ python {' '.join(args)}\033[0m")
+    print(f"\033[2m$ python {' '.join(args)}\033[0m", flush=True)
     r = subprocess.run([PY, str(PKG / args[0]), *args[1:]], cwd=str(ROOT), env=ENV)
     FAILED |= r.returncode                 # a demo that silently swallows failures can't be trusted
 

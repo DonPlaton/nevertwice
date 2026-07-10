@@ -104,6 +104,49 @@ def test_cursor_and_agents():
                                                  for h in hits))
 
 
+def test_hostile_review_regressions():
+    # F-1: a hand-edited ledger with non-string entries must not crash (and must not
+    # start the write->crash->rewrite duplication loop)
+    with tempfile.TemporaryDirectory() as src, tempfile.TemporaryDirectory() as vault:
+        exp = Path(src) / "m.txt"
+        exp.write_text("Prefers concise answers over long explanations.\n", encoding="utf-8")
+        p1, p2, p3, p4 = _no_model_vault(vault)
+        with p1, p2, p3, p4:
+            (Path(vault) / ".imported.json").write_text("[1, 2, 3]", encoding="utf-8")
+            r1 = im.run_import("chatgpt", exp, "user")
+            check("F-1: numeric ledger tolerated, import completes", r1["written"] == 1)
+            r2 = im.run_import("chatgpt", exp, "user")
+            check("F-1: rerun after bad ledger does not duplicate", r2["written"] == 0)
+            (Path(vault) / ".imported.json").write_text("[[1]]", encoding="utf-8")
+            check("F-1: nested-list ledger tolerated", im._ledger_load() == set())
+
+    # F-2: two distinct CJK-only memories (slug would be 'untitled' for both) must get
+    # distinct titles so the write path can't read them as one recurring lesson
+    with tempfile.TemporaryDirectory() as src, tempfile.TemporaryDirectory() as vault:
+        exp = Path(src) / "m.txt"
+        exp.write_text("喜欢简洁的回答风格\n\n项目使用五零九零显卡训练\n", encoding="utf-8")
+        p1, p2, p3, p4 = _no_model_vault(vault)
+        with p1, p2, p3, p4:
+            r = im.run_import("chatgpt", exp, "user")
+            check("F-2: both CJK memories written", r["written"] == 2)
+            stems = {p.stem for p in (Path(vault) / m.TYPE_FOLDER["pattern"]).glob("*.md")}
+            check("F-2: distinct disambiguated stems, none plain 'untitled'",
+                  len(stems) == 2 and not any(s.endswith("-untitled") for s in stems))
+
+    # F-5: the same content in two source files is written once, not twice
+    with tempfile.TemporaryDirectory() as src, tempfile.TemporaryDirectory() as vault:
+        mem = Path(src) / "P--x" / "memory"
+        mem.mkdir(parents=True)
+        same = ("---\nname: dup\ndescription: identical fact stated twice\n---\n\nSame body.\n")
+        (mem / "a.md").write_text(same, encoding="utf-8")
+        (mem / "b.md").write_text(same, encoding="utf-8")
+        p1, p2, p3, p4 = _no_model_vault(vault)
+        with p1, p2, p3, p4:
+            r = im.run_import("claude", Path(src), "user")
+            check("F-5: in-batch duplicate collapses to one note",
+                  r["found"] == 2 and r["written"] == 1)
+
+
 def test_frontmatter_parser_never_raises():
     ok = im._frontmatter("no frontmatter at all")[0] == {}
     ok2 = im._frontmatter("---\nbroken")[0] == {}
@@ -118,6 +161,7 @@ if __name__ == "__main__":
     test_claude_import_end_to_end()
     test_chatgpt_and_dry_run()
     test_cursor_and_agents()
+    test_hostile_review_regressions()
     test_frontmatter_parser_never_raises()
     print(f"\nimport: {P} passed, {F} failed")
     sys.exit(1 if F else 0)

@@ -333,6 +333,11 @@ def main():
         print("⚠ no confident match - nearest notes below may be off-topic:")
     print(f"Top {len(top)} for {query!r}" + (f" [{project}]" if project else "")
           + f"  - {mode}")
+    if "+ xrerank" in mode and "--xrerank" not in flags:
+        # engaged by auto, not the flag: the cold model load costs seconds per CLI
+        # process, so say once how to switch it off (long-lived callers amortize it)
+        print("  (cross-encoder rerank auto-active; NEVERTWICE_XRERANK=0 disables it)",
+              file=sys.stderr)
     for r in top:
         nt = r.get("ntype", "")
         title = m._strip_lead_icon(r.get("title") or r.get("stem", ""))
