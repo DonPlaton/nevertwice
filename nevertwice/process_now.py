@@ -26,24 +26,7 @@ except Exception:
     pass
 
 sys.path.insert(0, str(Path(__file__).parent))
-import memory_hook as _mh
-from memory_hook import (  # noqa: E402
-    llm_backend_desc,
-    PROJECT_ROOT_DISPLAY,
-    acquire_lock,
-    archive_old_sessions,
-    archive_old_typed,
-    is_tracked_project,
-    load_processed,
-    maintain_contexts,
-    mark_processed,
-    process_session,
-    prune_processed_db,
-    read_session_meta,
-    rebuild_index,
-    release_lock,
-    write_status,
-)
+import memory_hook as _mh  # noqa: E402  (single import style; everything is _mh.<name>)
 
 BAR = "=" * 72
 
@@ -54,7 +37,7 @@ def main():
     print(BAR)
     print(f"  Vault          : {_mh.VAULT}")
     print(f"  Projects root  : {_mh.PROJECTS_ROOT}")
-    print(f"  Extraction LLM : {llm_backend_desc()}")
+    print(f"  Extraction LLM : {_mh.llm_backend_desc()}")
     print(BAR)
     print()
 
@@ -62,14 +45,14 @@ def main():
         print(f"[ERROR] Projects dir not found: {_mh.PROJECTS_ROOT}")
         sys.exit(1)
 
-    if not acquire_lock(timeout_s=60):
+    if not _mh.acquire_lock(timeout_s=60):
         print("[ERROR] Не смог взять lock на vault - другой процесс держит его. Выход.")
         sys.exit(2)
 
     try:
         _run(t0=time.time())
     finally:
-        release_lock()
+        _mh.release_lock()
 
 
 def _stat_or_none(p: Path):
@@ -80,7 +63,7 @@ def _stat_or_none(p: Path):
 
 
 def _run(t0: float):
-    db = load_processed()
+    db = _mh.load_processed()
 
     # One stat() per transcript - cache mtime AND size in one pass.
     seen = []
@@ -108,19 +91,19 @@ def _run(t0: float):
             continue
 
         size_kb = size // 1024
-        cwd = read_session_meta(str(jl)).get("cwd") or str(jl.parent)
+        cwd = _mh.read_session_meta(str(jl)).get("cwd") or str(jl.parent)
 
-        if not is_tracked_project(cwd):
-            mark_processed(db, sid, str(jl))
+        if not _mh.is_tracked_project(cwd):
+            _mh.mark_processed(db, sid, str(jl))
             skipped_outside += 1
             print(f"{prefix} {jl.parent.name[:32]:<32} {sid[:8]} ({size_kb:>5} KB) "
-                  f"- outside {PROJECT_ROOT_DISPLAY}, skip", flush=True)
+                  f"- outside {_mh.PROJECT_ROOT_DISPLAY}, skip", flush=True)
             continue
 
         print(f"{prefix} {jl.parent.name[:32]:<32} {sid[:8]} ({size_kb:>5} KB) "
               f"- extracting...", flush=True)
         ts = time.time()
-        ok = process_session(sid, cwd, str(jl), "process_now", db, run_log=run_log)
+        ok = _mh.process_session(sid, cwd, str(jl), "process_now", db, run_log=run_log)
         dt = time.time() - ts
         if ok:
             new += 1
@@ -134,14 +117,14 @@ def _run(t0: float):
                   f"Gemini key + Ollama; see status.txt)", flush=True)
 
     if new:
-        rebuild_index()
-        archive_old_sessions()
-        archive_old_typed()
-        prune_processed_db(db)
+        _mh.rebuild_index()
+        _mh.archive_old_sessions()
+        _mh.archive_old_typed()
+        _mh.prune_processed_db(db)
     # LLM context-summary compaction belongs to this non-interactive heavy path,
     # not the live hook (which stays GPU-free under the vault lock - audit C4)
-    maintain_contexts()
-    write_status("ProcessNOW", "manual_button", run_log, 0, "process_now_full_scan")
+    _mh.maintain_contexts()
+    _mh.write_status("ProcessNOW", "manual_button", run_log, 0, "process_now_full_scan")
 
     elapsed = time.time() - t0
     print()
@@ -149,7 +132,7 @@ def _run(t0: float):
     print(f"DONE за {elapsed:.1f}s")
     print(f"  Новые сессии обработаны : {new}")
     print(f"  Уже были обработаны     : {skipped_done}")
-    print(f"  Вне {PROJECT_ROOT_DISPLAY} (skip): {skipped_outside}")
+    print(f"  Вне {_mh.PROJECT_ROOT_DISPLAY} (skip): {skipped_outside}")
     print(f"  Ошибки                  : {failed}")
     print(BAR)
     if new:

@@ -56,7 +56,7 @@ OLLAMA_URL = "http://127.0.0.1:11434/api/generate"
 # "qwen3:32b" had drifted from the system default and left two different model
 # defaults in one package. Pull it from memory_hook so there is one source.
 try:
-    from memory_hook import OLLAMA_MODEL
+    OLLAMA_MODEL = m.OLLAMA_MODEL          # via the module handle - one import style (CodeQL)
 except Exception:
     OLLAMA_MODEL = os.environ.get("NEVERTWICE_MODEL", "qwen3:8b")
 OLLAMA_TIMEOUT = 240
