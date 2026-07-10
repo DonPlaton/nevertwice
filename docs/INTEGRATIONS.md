@@ -149,6 +149,28 @@ DeepSeek, Ollama's OpenAI-compatible endpoint) and passes every other attribute 
 only `…chat.completions.create` / `…responses.create` are observed, and a parse error never breaks
 the real call.
 
+## Import the memory other tools already built
+
+`nevertwice-import` turns what another tool learned about you into ordinary typed notes,
+so a fresh agent starts with your history instead of a blank slate:
+
+```bash
+nevertwice-import --from claude                        # Claude Code auto-memory (~/.claude/projects/*/memory)
+nevertwice-import --from chatgpt --path memories.txt   # ChatGPT: copy Settings -> Personalization ->
+                                                       #   Manage memories into a text file first
+nevertwice-import --from cursor --path <repo>          # .cursor/rules/*.mdc + legacy .cursorrules
+nevertwice-import --from agents --path AGENTS.md       # each top-level bullet becomes a note
+```
+
+Where things land: claude/chatgpt default to the `user` project (override with `--project`),
+cursor/agents default to the directory name. Every item goes through the same write path as
+`remember` (secrets are redacted, injection-shaped content is rejected, and the note is
+recallable at once even with no model), and a content-hash ledger (`<vault>/.imported.json`)
+makes re-runs no-ops.
+`--dry-run` prints the plan and writes nothing. The Nevertwice-managed block inside an
+AGENTS.md is skipped automatically: that text came out of this store, importing it back
+would feed the memory its own output.
+
 ## Self-extraction: the agent is the extractor (no separate model)
 
 `capture_session` runs an extraction LLM over a transcript. But your agent is already an LLM:
@@ -252,10 +274,12 @@ engine = RetrieverQueryEngine.from_args(retriever)
 
 A purpose-trained cross-encoder (bge-reranker-v2-m3) reorders recall results for a precision
 gain on top of the calibrated fusion: **recall@1 0.55 → 0.61, MRR +0.06 on LongMemEval** (see
-[BENCHMARKS](BENCHMARKS.md) / `research/RETRIEVAL_FUSION.md`). Off by default; enable with
-`NEVERTWICE_XRERANK=1` (it imports torch+transformers lazily, runs best on a GPU, and degrades
-safely to first-stage order if unavailable). It flows through everything above: `recall`, the
-CLI (`memory_search --xrerank`), and both framework retrievers.
+[BENCHMARKS](BENCHMARKS.md) / `research/RETRIEVAL_FUSION.md`). Opting in:
+`pip install nevertwice[reranker]`, then one run with `NEVERTWICE_XRERANK=1` (that first run
+downloads the ~2 GB model). From then on it stays on by itself; `=0` forces it off. It imports
+torch+transformers lazily, runs best on a GPU, degrades safely to first-stage order if
+unavailable, and flows through everything above: `recall`, the CLI (`memory_search --xrerank`),
+and both framework retrievers.
 
 ## Optional: a cloud embedder (no local model for recall)
 

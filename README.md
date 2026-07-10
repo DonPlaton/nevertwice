@@ -265,8 +265,9 @@ run them on the same stand (their deps, not ours), and the dataset is fetched se
 
 The shipped ranker fuses the semantic and lexical signals with calibrated score fusion, which lifts
 R@5 from 0.66 under the rank fusion most systems ship to 0.80. The optional cross-encoder
-(bge-reranker-v2-m3, `NEVERTWICE_XRERANK=1`, `[reranker]` extra) then takes top-1 to 0.61. Reproduce
-with `python research/longmem_eval.py [--xrerank]` (the dataset is fetched separately).
+(bge-reranker-v2-m3) then takes top-1 to 0.61: `pip install nevertwice[reranker]`, run once with
+`NEVERTWICE_XRERANK=1` (that first run downloads the model), and it stays on by itself from then
+on. Reproduce with `python research/longmem_eval.py [--xrerank]` (the dataset is fetched separately).
 
 **The head-to-head, run locally and reported straight.** On the same stand with the same local
 embedder for everyone, we ran Mem0, LangMem, and A-MEM end to end on Ollama, no paid key. Nevertwice
@@ -344,8 +345,26 @@ Everything here ships today, not on a roadmap:
   forgetting cap stops unbounded growth.
 - Sync between machines is `git pull`. Concurrent edits to the same note auto-merge
   field-by-field (recurrence takes the max, a retirement wins, tags union).
-- The project card travels: it exports to and imports from AGENTS.md and the Open Knowledge Format
-  (OKF, the draft Google/Anthropic interchange spec), so other tools can read what yours knows.
+- The project card travels: it exports to AGENTS.md and the Open Knowledge Format (OKF, the
+  draft Google/Anthropic interchange spec), so other tools can read what yours knows.
+
+### Bring the memory you already have
+
+Your other tools have been learning about you for months - and each one keeps that to itself.
+One command moves it in:
+
+```bash
+nevertwice-import --from claude                        # Claude Code auto-memory
+nevertwice-import --from chatgpt --path memories.txt   # a pasted ChatGPT memory export
+nevertwice-import --from cursor                        # .cursor/rules + .cursorrules
+nevertwice-import --from agents                        # bullets from any AGENTS.md
+```
+
+Imports go through the same write path as everything else (secret redaction, injection
+rejection, recallable at once even with no model) and re-running is safe: a content ledger
+skips what is already in. After that the store is the one copy every agent reads: point
+Claude Code, Codex, a new account, or a second machine at it and each starts from the
+same history.
 
 An opt-in **Brain layer** turns the same captured sessions into a self-wiring knowledge graph for
 research or personal knowledge: typed entities (paper, method, dataset, benchmark, …), per-entity
