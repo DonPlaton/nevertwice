@@ -126,7 +126,7 @@ def search_core(query: str, project: str | None = None, k: int = 10,
     if rerank is None:
         rerank = m.RERANK_ENABLED
     if xrerank is None:
-        xrerank = _ce.ENABLED
+        xrerank = _ce.enabled()
     cache = m.load_embed_cache()
     has_any = any(isinstance(r, dict) and isinstance(r.get("vec"), list)
                   for r in cache.values())

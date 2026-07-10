@@ -1976,9 +1976,16 @@ def backend_report(timeout_s: float = 2.0) -> str:
             from . import reranker_ce as _rc
         except ImportError:
             import reranker_ce as _rc
-        if _rc.available() and not _rc.ENABLED:
-            lines.append("  precision  : trained cross-encoder available (torch detected); set "
-                         "NEVERTWICE_XRERANK=1 for a measured +0.06 recall@1")
+        if _rc.available():
+            if _rc.enabled():
+                lines.append("  precision  : trained cross-encoder active "
+                             "(NEVERTWICE_XRERANK=0 turns it off)")
+            elif not _rc._model_cached():
+                lines.append("  precision  : cross-encoder deps detected; run once with "
+                             "NEVERTWICE_XRERANK=1 (downloads ~2 GB) - it then stays on")
+            else:
+                lines.append("  precision  : trained cross-encoder switched off "
+                             "(NEVERTWICE_XRERANK=0)")
     except Exception:
         pass
     return "\n".join(lines)
@@ -5031,6 +5038,17 @@ def main():
         except Exception as e:
             log(f"pretooluse guard failed: {e}")
         return
+
+    # PreCompact: compaction is about to wipe the previously-injected notes out of
+    # the agent's context, so the per-session "already shown" dedup must forget them
+    # too - otherwise a multi-hour (loop) session starves recall exactly when it
+    # loses the notes. The session continues under the same id after compaction, so
+    # dropping the state file lets the same lessons re-inject when relevant again.
+    if event == "PreCompact":
+        try:
+            _prompt_recall_state_path(session_id).unlink(missing_ok=True)
+        except OSError:
+            pass
 
     # The vault lock (single-writer) is held only across extraction + the fast
     # file writes. Recall (SessionStart / UserPromptSubmit) already returned above

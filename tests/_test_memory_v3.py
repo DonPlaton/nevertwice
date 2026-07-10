@@ -785,7 +785,9 @@ try:
         "ranked": ["2026-05-01-proj-pattern-bbb", "2026-05-01-proj-pattern-aaa"]}
     try:
         import memory_search as ms
-        top, mode = ms.search_core("retry logic", "proj", k=2, rerank=True)
+        # xrerank pinned off: this check isolates the cloud-judge stage, and on a dev
+        # box with torch + a cached model the auto cross-encoder would win over it
+        top, mode = ms.search_core("retry logic", "proj", k=2, rerank=True, xrerank=False)
         check("search_core rerank puts the judge's pick first",
               bool(top) and top[0]["stem"].endswith("bbb") and "rerank" in mode)
     finally:

@@ -71,8 +71,8 @@ flowchart TD
 (BM25), recurrence-weighted, behind an abstention gate (`NEVERTWICE_FUSION=rrf` restores the
 legacy rank fusion). The semantic side runs only if the local embedder answers a fast ping,
 so a busy GPU degrades gracefully to lexical, then to recency; recall never blocks. Two
-opt-in second stages exist for deliberate search: a trained cross-encoder
-(`NEVERTWICE_XRERANK=1`, the measured precision win) and a cloud-judge rerank.
+opt-in second stages exist for deliberate search: a trained cross-encoder (the measured
+precision win; auto-on once its deps and model are present locally) and a cloud-judge rerank.
 
 ## Privacy
 

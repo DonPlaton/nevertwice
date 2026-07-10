@@ -88,7 +88,7 @@ After setting `NEVERTWICE_EMBED_QUANT`, rebuild the index once the same way.
 | `NEVERTWICE_AMBIGUITY_K` | `15` | Pool size used to judge query ambiguity. |
 | `NEVERTWICE_RERANK` | `0` | Cloud-judge rerank for on-demand search (opt-in). |
 | `NEVERTWICE_RERANK_POOL` | `15` | First-stage pool size fed to the reranker. |
-| `NEVERTWICE_XRERANK` | `0` | Trained cross-encoder rerank (opt-in; needs `[reranker]` extra). |
+| `NEVERTWICE_XRERANK` | `auto` | Trained cross-encoder rerank. `auto` = on once the `[reranker]` deps are installed AND the model is in the local HF cache (one `=1` run downloads it); `1`/`0` forces it. |
 | `NEVERTWICE_XRERANK_MODEL` | `BAAI/bge-reranker-v2-m3` | Cross-encoder model. |
 | `NEVERTWICE_XRERANK_MAXLEN` | `512` | Cross-encoder max sequence length. |
 

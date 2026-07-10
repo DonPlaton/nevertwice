@@ -5,22 +5,57 @@ Measured on LongMemEval-oracle (940 sessions / 500 questions, external ground tr
 reranking the calibrated-fusion top-10 with the purpose-trained cross-encoder bge-reranker-v2-m3
 lifts recall@1 0.550 → 0.614 and MRR 0.657 → 0.712. This is the
 opposite of a *promptable* LLM reranker, which DEGRADES recall@1 - see
-research/W2_PRECISION.md. So this is the reranker Nevertwice ships, and it is OFF by default.
+research/W2_PRECISION.md. So this is the reranker Nevertwice ships.
 
-Enable with NEVERTWICE_XRERANK=1. Heavy deps (torch + transformers) are imported lazily
-ONLY when enabled, so the stdlib core stays dependency-free for everyone else. Install:
-    pip install nevertwice-memory[reranker]
-The model (~2 GB) downloads from HuggingFace on first use and runs best on a GPU.
+Opting in: `pip install nevertwice[reranker]`, then one run with NEVERTWICE_XRERANK=1
+(that first run downloads the ~2 GB model from HuggingFace). From then on it stays on by
+itself - `auto` means "deps installed AND model already cached", so a machine that merely
+has torch for other work never gets a surprise download. NEVERTWICE_XRERANK=1/0 forces it
+either way. Heavy deps (torch + transformers) import lazily ONLY when a rerank actually
+runs, so the stdlib core stays dependency-free for everyone else. Runs best on a GPU.
 """
+import importlib.util
 import os
+from pathlib import Path
 
 MODEL = os.environ.get("NEVERTWICE_XRERANK_MODEL", "BAAI/bge-reranker-v2-m3")
 try:                                     # optional module stays standalone; degrade, don't crash
     MAX_LEN = int(os.environ.get("NEVERTWICE_XRERANK_MAXLEN", "") or 512)
 except ValueError:
     MAX_LEN = 512
-ENABLED = os.environ.get("NEVERTWICE_XRERANK", "0") != "0"
 _state = {}
+
+
+def _model_cached() -> bool:
+    """True when the reranker model is already in the local HuggingFace cache. The auto
+    switch requires this so it can never trigger a surprise ~2 GB download: torch on the
+    machine proves nothing (every ML box has torch for other reasons)."""
+    hub = Path(os.environ.get("HUGGINGFACE_HUB_CACHE")
+               or Path(os.environ.get("HF_HOME") or Path.home() / ".cache" / "huggingface") / "hub")
+    leaf = "models--" + MODEL.replace("/", "--")
+    try:
+        return (hub / leaf).is_dir()
+    except OSError:
+        return False
+
+
+def enabled() -> bool:
+    """Resolve the switch: an explicit NEVERTWICE_XRERANK=1/0 always wins. Unset (or
+    'auto') means ON when the deps are installed AND the model is already downloaded -
+    so one `NEVERTWICE_XRERANK=1` run fetches it, and from then on it stays on by
+    itself, while a machine that merely has torch for other work is never surprised
+    with a 2 GB download. find_spec + a dir check keep this to a few ms."""
+    v = os.environ.get("NEVERTWICE_XRERANK", "auto").strip().lower()
+    if v in ("1", "true", "yes", "on"):
+        return True
+    if v in ("0", "false", "no", "off"):
+        return False
+    try:
+        return bool(importlib.util.find_spec("torch")
+                    and importlib.util.find_spec("transformers")
+                    and _model_cached())
+    except Exception:                    # a broken package on sys.path must not kill recall
+        return False
 
 
 def available() -> bool:

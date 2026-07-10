@@ -50,7 +50,8 @@ local competitor on the same stand (Mem0 0.758, LangMem and A-MEM 0.692; see
 score magnitudes and scores below plain BM25; the full study is in
 [`research/RETRIEVAL_FUSION.md`](../research/RETRIEVAL_FUSION.md).
 
-The optional reranker (bge-reranker-v2-m3, `NEVERTWICE_XRERANK=1`, `[reranker]` extra) then stacks on
+The optional reranker (bge-reranker-v2-m3, `[reranker]` extra; one `NEVERTWICE_XRERANK=1` run
+downloads the model, after which it stays on automatically) then stacks on
 top, taking **top-1 recall to 0.614** and MRR to 0.712. A *promptable* LLM reranker, by contrast,
 degraded top-1, so we ship the trained one and not the LLM one. The embedder A/B (no local embedder
 beat bge-m3 as a drop-in) and the consolidation negative are in
