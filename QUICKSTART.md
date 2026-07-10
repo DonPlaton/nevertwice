@@ -91,7 +91,7 @@ answer.
 That's the happy path. When you want more:
 
 - **A different agent** (Cursor, Aider, Cline, Codex, Windsurf…)? → [docs/INTEGRATIONS.md](docs/INTEGRATIONS.md),
-  including `nevertwice watch`, which makes auto-capture always-on for any of them.
+  including `nevertwice-watch`, which makes auto-capture always-on for any of them.
 - **Tune anything** (cloud backend, embedder, retrieval, retention)? → [docs/CONFIG.md](docs/CONFIG.md)
 - **How and why it works?** → [README.md](README.md) · [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 

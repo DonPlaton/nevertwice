@@ -342,8 +342,8 @@ def _antipattern_for(note: dict) -> str | None:
 # ── universal cold-start guard pack (weak-PC / cloud-agent, opt-in) ────
 # High-precision pitfalls that are almost always a smell, so they are safe to fire on ANY
 # project with NO history and NO model behind them. This is the weak-PC / cloud-agent story:
-# `NEVERTWICE_GUARD_PACK=1` and common footguns are guarded from the first session, pure stdlib,
-# zero network. Pack guards are advisory and NEVER promote to blocking (they must never box the
+# with `NEVERTWICE_GUARD_PACK=1` the pack is seeded at the next consolidation (or right away
+# via `python -m nevertwice.guards pack`), pure stdlib, zero network. Pack guards are advisory and NEVER promote to blocking (they must never box the
 # agent in on a heuristic), and self-retire like any guard if they cry wolf. Every pattern here
 # is ReDoS-safe (asserted by a test).
 _UNIVERSAL_GUARDS = [

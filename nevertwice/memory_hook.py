@@ -67,7 +67,9 @@ except ImportError:  # run directly (sys.path includes this dir)
 _cfg.load_dotenv()                 # pull cloud keys from .env if present
 
 VAULT = _cfg.VAULT
-VAULT.mkdir(parents=True, exist_ok=True)
+# no mkdir at import time: read-only consumers (install.py --print, search on a fresh box)
+# must not create the store as a side effect. Every write path mkdirs at its use site
+# (write_atomic creates parents; acquire_lock/save_processed/main mkdir explicitly).
 PROCESSED_DB = VAULT / ".processed_sessions.json"
 STATUS_FILE = VAULT / "status.txt"
 LOCK_FILE = VAULT / ".lock"
@@ -2165,7 +2167,8 @@ def embed_text(text: str, kind: str | None = None, timeout: int | None = None,
         with urllib.request.urlopen(req, timeout=timeout or EMBED_TIMEOUT) as r:
             data = json.loads(r.read())
     except Exception as e:
-        log(f"Embed failed: {type(e).__name__}: {e}")
+        log(f"Embed failed: {type(e).__name__}: {str(e)!a}")   # ascii-escape: OS-localized
+        # error text (e.g. Russian WinError) must not depend on the log reader's codepage
         return None
     embs = data.get("embeddings")
     if isinstance(embs, list) and embs and isinstance(embs[0], list):
@@ -3880,7 +3883,7 @@ def update_embeddings(new_notes):
             if isinstance(e, dict):
                 e.pop("vec", None)
         log(f"Embedder changed to {embed_signature()} - demoted stale vectors to "
-            "text-only (run embed_index.py --rebuild to re-embed all notes)")
+            "text-only (run python -m nevertwice.embed_index --rebuild to re-embed all notes)")
         # the new embedder defines its own prefix policy; reset it BEFORE embedding so
         # doc_embed_kind() (reads meta) and the stamp below match the NEW vectors, not the
         # old provider's flag (audit 2026-06-18 - a stale prefixed flag mis-prefixes q vs doc)
@@ -3919,7 +3922,8 @@ def update_embeddings(new_notes):
             log(f"Embedded {n_vec} note(s) into cache")
         else:
             log(f"Embedded {n_vec}/{len(added)} note(s); {len(added) - n_vec} stored "
-                "text-only (no embedder) - lexically recallable, run embed_index.py to vectorise")
+                "text-only (no embedder) - lexically recallable; python -m nevertwice.embed_index "
+                "vectorises them later")
 
 
 def _recur_boost(rec: dict) -> float:

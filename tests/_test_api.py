@@ -248,6 +248,27 @@ def test_capture_session_happy_path_summary():
     assert res["session_id"].startswith("ingest-")
 
 
+def test_remember_is_recallable_with_no_embedder():
+    # The pip first-touch loop on a no-model box: remember -> recall must hit via the
+    # text-only lexical record. api.remember used to gate update_embeddings on
+    # embedder_available, which left the note invisible to search until something
+    # embedded it (launch-audit HIGH).
+    with tempfile.TemporaryDirectory() as td:
+        tmp = Path(td)
+        with mock.patch.object(m, "VAULT", tmp), \
+             mock.patch.object(m, "embedder_available", lambda *a, **k: False), \
+             mock.patch.object(m, "embed_text", lambda *a, **k: None), \
+             mock.patch.object(m, "git_autocommit"):
+            stem = api.remember("CUDA OOM at batch=64 on the GPU", project="demo",
+                                type="mistake",
+                                prevention="lower batch size or enable gradient checkpointing")
+            assert stem, "remember returned no stem"
+            hits = api.recall("training crashes out of gpu memory", project="demo", k=3)
+        assert hits and any("CUDA OOM" in (h.get("title") or "") for h in hits), \
+            f"note invisible to recall on a no-embedder box: {hits!r}"
+        assert all((h.get("score") or 0) > 0 for h in hits), f"zero-score hit: {hits!r}"
+
+
 if __name__ == "__main__":
     fns = [v for k, v in sorted(globals().items()) if k.startswith("test_") and callable(v)]
     failed = 0

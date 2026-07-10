@@ -170,7 +170,7 @@ For Claude Code, drop in the [`nevertwice-remember` skill](../skills/nevertwice-
 for any MCP client, the `memory_remember` tool does the same. Full guide, the JSON contract, and a
 provider-agnostic system-prompt template: [SELF_EXTRACTION.md](SELF_EXTRACTION.md).
 
-## Always-on auto-capture for ANY agent: `nevertwice watch`
+## Always-on auto-capture for ANY agent: `nevertwice-watch`
 
 Claude Code captures automatically via hooks. Every *other* agent that writes its sessions to
 disk gets the same "magic" from the **watch daemon**: a tiny stdlib polling loop (no new deps)

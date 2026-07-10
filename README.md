@@ -234,7 +234,7 @@ plus a PreToolUse guard that fires before a repeat mistake) and capture is autom
 with nothing to configure.
 
 Every other agent that writes its sessions to disk (Codex, Cline, Roo, Aider, Gemini CLI) is
-covered by `nevertwice watch`, a small stdlib polling daemon that finds the known log folders on
+covered by `nevertwice-watch`, a small stdlib polling daemon that finds the known log folders on
 your machine and mines finished sessions as they land. Start it once at login and forget it. The
 same engine also runs as a one-shot sweep if you prefer cron over a resident process.
 
@@ -396,7 +396,7 @@ self-explanatory.
 
 For cloud extraction, copy `.env.example` to `.env` and add one key. With no key it uses local
 Ollama. To skip a local model for recall too, set `NEVERTWICE_EMBED_PROVIDER` with the matching key
-and run `embed_index.py --rebuild` once. With no backend at all, extraction pauses loudly (sessions
+and run `python -m nevertwice.embed_index --rebuild` once. With no backend at all, extraction pauses loudly (sessions
 are kept and retried, never dropped) and recall runs on lexical full-text search until an embedder
 shows up.
 

@@ -282,7 +282,10 @@ def remember(title: str, *, project: str, type: str = "pattern",
         stem = m.write_typed_note(m.TYPE_FOLDER[type], item, proj, date, tag_list, type)
         if not stem:
             return None
-        if embed and m.embedder_available(2):
+        if embed:
+            # vectors when an embedder is up, else a text-only record (still FTS-recallable) -
+            # same contract as remember_lessons. Gating this on embedder_available used to
+            # leave the note invisible to search on a no-model box until something embedded it.
             m.update_embeddings([(stem, type, proj, title,
                                   description or "", prevention or "")])
         m.rebuild_index()

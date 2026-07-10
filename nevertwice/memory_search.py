@@ -79,7 +79,16 @@ def _lexical_only(query: str, project: str | None, k: int, cache: dict) -> list[
         if idx:
             hits, mode = idx.search(query, project or None, k)
             if hits and "lexical" in mode:
-                return [_as_result(h, True) for h in hits]
+                out = [_as_result(h, True) for h in hits]
+                qtok = m._tokens(query)
+                for h in out:
+                    # bm25 on a tiny corpus is legitimately ~0 - floor it with the token-overlap
+                    # score so a real hit never reads as 0.0 (agents filtering score>0 kept them)
+                    if h["score"] <= 0 and qtok:
+                        h["score"] = round(_lex_overlap(qtok, {
+                            "title": h["title"], "desc": h["description"],
+                            "prevention": h["prevention"]}, h["stem"]), 3)
+                return out
     except Exception:
         pass
     qtok = m._tokens(query)
@@ -272,11 +281,14 @@ def main():
                     print(f"  {e}  ({info['notes']} notes)" + (f"  -> {links}" if links else ""))
         return
 
+    usage = ("usage: nevertwice-search <query> [project] [--k=N] [--expand] [--expand-relations] "
+             "[--json] [--brief] [--rerank] [--xrerank] [--as-of=YYYY-MM-DD] | --entity=X [project] | "
+             "--entities [project] | --relations [project] | --graph[=mermaid|dot|json] [project]")
+    if "--help" in flags or "--h" in flags:
+        print(usage)                       # asking for help is not an error
+        return
     if not rest:
-        print("usage: memory_search.py <query> [project] [--k=N] [--expand] [--expand-relations] "
-              "[--json] [--brief] [--rerank] [--xrerank] [--as-of=YYYY-MM-DD] | --entity=X [project] | "
-              "--entities [project] | --relations [project] | --graph[=mermaid|dot|json] [project]",
-              file=sys.stderr)
+        print(usage, file=sys.stderr)
         sys.exit(1)
     query = rest[0]
     project = rest[1] if len(rest) > 1 else None
@@ -302,8 +314,9 @@ def main():
     if "--expand-relations" in flags and top:        # Phase 2b: relation-aware expansion
         top = top + m.relation_expand(top, project, max_add=k)
     if mode == "empty":
-        print("(no memory stored yet - see it work with `python examples/demo.py`, or capture "
-              "a session, then `python nevertwice/embed_index.py`)", file=sys.stderr)
+        print("(no memory stored yet - add a lesson with `nevertwice-remember`, or capture a "
+              "session; `python -m nevertwice.embed_index` vectorises text-only notes)",
+              file=sys.stderr)
         sys.exit(1)
     if mode == "empty-project":
         print(f"(no memory for project {project!r})")

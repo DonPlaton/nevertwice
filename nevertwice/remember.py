@@ -94,7 +94,7 @@ def do_remember(a) -> int:
     # ground truth: a note is semantically recallable only once it's in the embed
     # cache (un-embedded notes are invisible to recall - audit A15). Report honestly.
     print("  (recallable now)" if stem in m.load_embed_cache() else
-          "  (written - run `python embed_index.py` to make it searchable)")
+          "  (written - run `python -m nevertwice.embed_index` to make it searchable)")
     return 0
 
 

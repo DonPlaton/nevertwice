@@ -22,9 +22,14 @@ def say(msg):
     print(f"\n\033[1;36m{msg}\033[0m")
 
 
+FAILED = 0
+
+
 def run(args):
+    global FAILED
     print(f"\033[2m$ python {' '.join(args)}\033[0m")
-    subprocess.run([PY, str(PKG / args[0]), *args[1:]], cwd=str(ROOT), env=ENV)
+    r = subprocess.run([PY, str(PKG / args[0]), *args[1:]], cwd=str(ROOT), env=ENV)
+    FAILED |= r.returncode                 # a demo that silently swallows failures can't be trusted
 
 
 # throwaway store so the real vault is never touched
@@ -61,3 +66,4 @@ try:
 finally:
     import shutil
     shutil.rmtree(_tmp, ignore_errors=True)
+sys.exit(1 if FAILED else 0)
