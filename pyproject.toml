@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "nevertwice"
-version = "2.1.1"
+version = "2.2.0"
 description = "Proactive, local-first memory for AI coding agents - it acts before your agent repeats a mistake. Formerly Anamnesis."
 readme = "README.md"
 requires-python = ">=3.10"

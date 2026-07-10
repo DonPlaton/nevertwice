@@ -5,6 +5,32 @@ versions are [semantic](https://semver.org). Dates are UTC.
 
 ## [Unreleased]
 
+## [2.2.0] - 2026-07-11
+
+Personalization and long-session round: bring the memory you already have, keep recall
+alive through compaction, and let the precision reranker manage itself.
+
+### Added
+- **`nevertwice-import`** - one-shot importers that turn what other tools learned about
+  you into ordinary typed notes: `--from claude` (Claude Code auto-memory),
+  `--from chatgpt` (a pasted memory export), `--from cursor` (`.cursor/rules` +
+  `.cursorrules`), `--from agents` (top-level bullets of any AGENTS.md; the
+  Nevertwice-managed block is skipped so the store never eats its own output).
+  Everything lands through the same write path as `remember` - secret redaction,
+  injection-shaped rejection, recallable at once even with no model - and a
+  content-hash ledger makes re-runs no-ops. `--dry-run` shows the plan.
+
+### Changed
+- **PreCompact resets the per-session recall dedup.** Compaction wipes the injected
+  notes out of the agent's context; the "already shown" state now goes with them, so a
+  multi-hour (loop) session keeps recalling instead of starving. SessionEnd still keeps
+  the state - a resumed session returns with its context intact.
+- **The trained cross-encoder manages itself.** `NEVERTWICE_XRERANK` defaults to `auto`:
+  on when the `[reranker]` deps are installed AND the model is already in the local HF
+  cache. One `=1` run downloads it; from then on the measured precision win (top-1
+  0.550 -> 0.614) stays on by itself. The cache gate means a machine that merely has
+  torch for other work never gets a surprise ~2 GB download. `1`/`0` still forces it.
+
 ## [2.1.1] - 2026-07-10
 
 A launch-audit round: two independent execution-verified reviews (published-package
