@@ -64,6 +64,23 @@ def test_panel_rows_are_aligned():
         check("sparkline renders", "activity (14d)" in st.render_panel())
 
 
+def test_hot_path_never_scans_the_vault():
+    # The contract that keeps recall fast: store_tokens() returns the CACHE only (0 when
+    # unstamped), even when notes exist; only refresh_store_tokens() pays the scan.
+    with tempfile.TemporaryDirectory() as t:
+        m.VAULT = Path(t)
+        d = Path(t) / m.TYPE_FOLDER["mistake"]
+        d.mkdir(parents=True)
+        (d / "2026-01-01-proj-mistake-slug.md").write_text(
+            "---\ndate: 2026-01-01\nproject: proj\ntype: mistake\n---\n\n# t\n\nbody\n",
+            encoding="utf-8")
+        check("unstamped store_tokens is 0 (no scan on the hot path)", st.store_tokens() == 0)
+        check("no stamp file was created by the read", not (Path(t) / "savings.json").exists())
+        refreshed = st.refresh_store_tokens()
+        check("refresh_store_tokens counts the note", refreshed > 0)
+        check("after the stamp, store_tokens serves the cache", st.store_tokens() == refreshed)
+
+
 def test_broken_ledger_never_raises():
     with tempfile.TemporaryDirectory() as t:
         m.VAULT = Path(t)
@@ -79,6 +96,7 @@ if __name__ == "__main__":
     test_record_accumulates()
     test_recall_saving_is_store_minus_injected()
     test_panel_rows_are_aligned()
+    test_hot_path_never_scans_the_vault()
     test_broken_ledger_never_raises()
     print(f"\nstats: {P} passed, {F} failed")
     sys.exit(1 if F else 0)

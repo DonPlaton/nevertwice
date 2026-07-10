@@ -91,13 +91,39 @@ def record(kind: str, saved: int = 0) -> None:
         pass
 
 
+def _store_tokens_sql() -> int | None:
+    """Sum the baseline straight from the SQLite index when one exists - milliseconds on a
+    vault where the file scan takes seconds. None = no usable index, caller falls back."""
+    try:
+        try:
+            import index_sqlite as sq            # flat install (scripts dir on sys.path)
+        except ImportError:
+            from . import index_sqlite as sq     # packaged form
+        if not sq.index_exists():
+            return None
+        con = sq._connect()
+        try:
+            row = con.execute(
+                "SELECT COALESCE(SUM((LENGTH(COALESCE(title,'')) + LENGTH(COALESCE(descr,''))"
+                " + LENGTH(COALESCE(prevention,'')) + 2) / 4), 0) FROM notes").fetchone()
+        finally:
+            con.close()
+        return int(row[0] or 0)
+    except Exception:
+        return None
+
+
 def refresh_store_tokens() -> int:
     """Cache the size of the live store in tokens, so the hot path can price 'dump the whole
-    store' without re-scanning every note. Called at sleep-time (SessionEnd / consolidation)."""
+    store' without scanning anything. Called at sleep-time (SessionEnd / consolidation) and
+    from the stats CLI - NEVER from a hook hot path: on a mature vault the file-scan fallback
+    takes seconds (measured ~15 s on 2.6k notes; the SQL path is ~ms)."""
     try:
-        total = 0
-        for n in m._iter_all_notes():
-            total += est_tokens(f"{n.get('title','')} {n.get('desc','')} {n.get('prevention','')}")
+        total = _store_tokens_sql()
+        if total is None:                        # no SQL index - the honest slow path
+            total = 0
+            for n in m._iter_all_notes():
+                total += est_tokens(f"{n.get('title','')} {n.get('desc','')} {n.get('prevention','')}")
         d = load()
         d["store_tokens"] = total
         _save(d)
@@ -107,10 +133,10 @@ def refresh_store_tokens() -> int:
 
 
 def store_tokens() -> int:
-    v = int(load().get("store_tokens", 0) or 0)
-    if v <= 0:                           # cold start: price the baseline on first read so a
-        v = refresh_store_tokens()       # session-1 recall records a real saving, not ~0
-    return v
+    """Cached baseline ONLY - hook hot paths call this, so it must never scan the vault.
+    Returns 0 until the first sleep-time stamp; a recall in that window records saved=0
+    (an honest undercount, never a latency hit)."""
+    return int(load().get("store_tokens", 0) or 0)
 
 
 def recall_saving(injected_text: str) -> int:
@@ -199,6 +225,9 @@ def summary_line(d: dict | None = None) -> str:
 def main() -> None:
     argv = sys.argv[1:]
     d = load()
+    if int(d.get("store_tokens", 0) or 0) <= 0:
+        refresh_store_tokens()           # user-invoked path: ok to pay the scan once, stamps
+        d = load()                       # the cache so future recalls record real savings
     if "--json" in argv:
         print(json.dumps({"totals": d.get("totals", {}), "store_tokens": d.get("store_tokens", 0),
                           "by_day": d.get("by_day", {})}, ensure_ascii=False, indent=1))
