@@ -1,0 +1,50 @@
+# First-touch smoke against the REAL distribution channel: install the given version
+# from PyPI on all three OSes and run the storefront loop with no model anywhere.
+# Manual trigger only - run it right after `twine upload`, before any promotion post.
+# Exists because a green suite once shipped a broken first touch (2.1.0): the built
+# wheel and the uploaded artifact are not the same test.
+name: pypi-smoke
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version on PyPI to smoke-test (e.g. 2.2.0)"
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  first-touch:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: "3.12"
+      - name: Install from PyPI (the artifact users actually get)
+        run: pip install "nevertwice==${{ github.event.inputs.version }}"
+      - name: First-touch loop, no model, clean machine
+        shell: bash
+        env:
+          NEVERTWICE_HOME: ${{ runner.temp }}/nv-store
+          NEVERTWICE_CLOUD: none
+          OLLAMA_URL: http://127.0.0.1:1
+          NEVERTWICE_XRERANK: "0"
+        run: |
+          set -e
+          nevertwice-remember --project demo --type mistake \
+            --title "CUDA OOM at batch=64" --prevention "lower batch size"
+          nevertwice-search "training crashes out of gpu memory" demo --json \
+            | python -c "import json,sys; h=json.load(sys.stdin); assert h and h[0]['score']>0, h; print('search hit:', h[0]['title'], h[0]['score'])"
+          printf 'Prefers concise answers without preamble.\n' > mem.txt
+          nevertwice-import --from chatgpt --path mem.txt
+          nevertwice-search "concise answers" user --json \
+            | python -c "import json,sys; h=json.load(sys.stdin); assert h, 'imported memory not recallable'; print('import recallable')"
+          python -m nevertwice.stats
+          nevertwice-dashboard --out "$RUNNER_TEMP/dash.html" --no-open
+          echo "first touch OK on ${{ matrix.os }}"
