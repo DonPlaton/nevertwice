@@ -27,7 +27,18 @@ jobs:
         with:
           python-version: "3.12"
       - name: Install from PyPI (the artifact users actually get)
-        run: pip install "nevertwice==${{ github.event.inputs.version }}"
+        shell: bash
+        # unpinned BY DESIGN (Scorecard alert dismissed with reason): this job's whole
+        # purpose is the exact command a stranger runs. A fresh upload can take minutes
+        # to reach every index edge, so retry instead of flaking.
+        run: |
+          for i in $(seq 1 12); do
+            pip install "nevertwice==${{ github.event.inputs.version }}" && exit 0
+            echo "index edge does not have it yet (attempt $i/12) - retrying in 15s"
+            sleep 15
+          done
+          echo "::error::version never appeared on the index"
+          exit 1
       - name: First-touch loop, no model, clean machine
         shell: bash
         env:
@@ -38,13 +49,16 @@ jobs:
         run: |
           set -e
           nevertwice-remember --project demo --type mistake \
-            --title "CUDA OOM at batch=64" --prevention "lower batch size"
-          nevertwice-search "training crashes out of gpu memory" demo --json \
-            | python -c "import json,sys; h=json.load(sys.stdin); assert h and h[0]['score']>0, h; print('search hit:', h[0]['title'], h[0]['score'])"
+            --title "CUDA OOM at batch=64 on the GPU" \
+            --prevention "lower batch size or enable gradient checkpointing"
+          nevertwice-search "training crashes out of gpu memory" demo --json > hits.json \
+            || { echo "::error::search exited nonzero; stdout was:"; cat hits.json; exit 1; }
+          python -c "import json; h=json.load(open('hits.json')); assert h and h[0]['score']>0, h; print('search hit:', h[0]['title'], h[0]['score'])"
           printf 'Prefers concise answers without preamble.\n' > mem.txt
           nevertwice-import --from chatgpt --path mem.txt
-          nevertwice-search "concise answers" user --json \
-            | python -c "import json,sys; h=json.load(sys.stdin); assert h, 'imported memory not recallable'; print('import recallable')"
+          nevertwice-search "concise answers without preamble" user --json > hits2.json \
+            || { echo "::error::import search exited nonzero; stdout was:"; cat hits2.json; exit 1; }
+          python -c "import json; h=json.load(open('hits2.json')); assert h, 'imported memory not recallable'; print('import recallable:', h[0]['title'])"
           python -m nevertwice.stats
           nevertwice-dashboard --out "$RUNNER_TEMP/dash.html" --no-open
           echo "first touch OK on ${{ matrix.os }}"
