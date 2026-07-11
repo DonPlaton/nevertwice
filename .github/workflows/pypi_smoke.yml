@@ -32,11 +32,12 @@ jobs:
           VER: ${{ github.event.inputs.version }}
         # Hash-pinned: the sha256 digests come from the PyPI JSON API for exactly the
         # requested release, so pip verifies the downloaded artifact against them
-        # (--require-hashes). A fresh upload can take minutes to reach every index
-        # edge, so the JSON fetch retries instead of flaking.
+        # (--require-hashes). The JSON API and pip's simple index are SEPARATE CDNs
+        # that can lag each other for minutes after an upload (the 2.2.1 run: digests
+        # up, one index edge still on 2.2.0) - so the retry wraps fetch AND install.
         run: |
           for i in $(seq 1 12); do
-            python - <<'PY' && break
+            python - <<'PY' || true
           import json, os, urllib.request
           v = os.environ["VER"]
           d = json.load(urllib.request.urlopen(f"https://pypi.org/pypi/nevertwice/{v}/json"))
@@ -45,11 +46,14 @@ jobs:
           open("req.txt", "w").write(req + "\n")
           print("pinned:", req)
           PY
-            echo "index does not serve $VER yet (attempt $i/12) - retrying in 15s"
+            if [ -f req.txt ] && pip install --require-hashes -r req.txt; then
+              exit 0
+            fi
+            echo "index edge does not serve $VER yet (attempt $i/12) - retrying in 15s"
             sleep 15
           done
-          test -f req.txt || { echo "::error::version never appeared on the index"; exit 1; }
-          pip install --require-hashes -r req.txt
+          echo "::error::version never became installable from the index"
+          exit 1
       - name: First-touch loop, no model, clean machine
         shell: bash
         env:
