@@ -28,17 +28,28 @@ jobs:
           python-version: "3.12"
       - name: Install from PyPI (the artifact users actually get)
         shell: bash
-        # unpinned BY DESIGN (Scorecard alert dismissed with reason): this job's whole
-        # purpose is the exact command a stranger runs. A fresh upload can take minutes
-        # to reach every index edge, so retry instead of flaking.
+        env:
+          VER: ${{ github.event.inputs.version }}
+        # Hash-pinned: the sha256 digests come from the PyPI JSON API for exactly the
+        # requested release, so pip verifies the downloaded artifact against them
+        # (--require-hashes). A fresh upload can take minutes to reach every index
+        # edge, so the JSON fetch retries instead of flaking.
         run: |
           for i in $(seq 1 12); do
-            pip install "nevertwice==${{ github.event.inputs.version }}" && exit 0
-            echo "index edge does not have it yet (attempt $i/12) - retrying in 15s"
+            python - <<'PY' && break
+          import json, os, urllib.request
+          v = os.environ["VER"]
+          d = json.load(urllib.request.urlopen(f"https://pypi.org/pypi/nevertwice/{v}/json"))
+          req = f"nevertwice=={v} " + " ".join(
+              f"--hash=sha256:{u['digests']['sha256']}" for u in d["urls"])
+          open("req.txt", "w").write(req + "\n")
+          print("pinned:", req)
+          PY
+            echo "index does not serve $VER yet (attempt $i/12) - retrying in 15s"
             sleep 15
           done
-          echo "::error::version never appeared on the index"
-          exit 1
+          test -f req.txt || { echo "::error::version never appeared on the index"; exit 1; }
+          pip install --require-hashes -r req.txt
       - name: First-touch loop, no model, clean machine
         shell: bash
         env:
