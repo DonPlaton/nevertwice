@@ -5,6 +5,24 @@ versions are [semantic](https://semver.org). Dates are UTC.
 
 ## [Unreleased]
 
+## [2.2.1] - 2026-07-11
+
+### Changed
+- **The engine speaks English everywhere it writes or prompts.** The extraction /
+  compaction / consolidation / rerank prompts, the note and project-card markers
+  (`**Prevention:**`, `## Accumulated state`, `## Project card`, `## Merged from
+  duplicates`, `## Related (auto)`), the SessionStart / prompt-recall injection
+  headers, Index.md, and the `process_now` console are English now - a store created
+  by any user reads naturally. Note content still follows the session: the prompts
+  explicitly keep titles/descriptions in the language the session was written in.
+- **A pre-2.2.1 store keeps working forever, unmigrated.** Every legacy Russian
+  marker is dual-read (`**Как избежать:**`, `## Накопленное состояние`, the old
+  type labels, consolidation headers), pinned by a new compat suite
+  (`_test_legacy_markers`). Deliberately kept bilingual because they are functional,
+  not cosmetic: the RU/EN stopword list (IDF profile), the injection/off-topic
+  filter regexes, the Cyrillic transliteration table, and the localized
+  Task-Scheduler output parsing.
+
 ## [2.2.0] - 2026-07-11
 
 Personalization and long-session round: bring the memory you already have, keep recall

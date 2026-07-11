@@ -104,7 +104,9 @@ def merge_into_keeper(keep_fp: Path, dup_fps: list[Path]) -> None:
                 extra.append(frag)
     if not extra:
         return
-    header = "" if "## Слито из дублей" in ktext else "\n\n## Слито из дублей\n"
+    header = ("" if ("## Merged from duplicates" in ktext
+                     or "## Слито из дублей" in ktext)      # legacy header, dual-read
+              else "\n\n## Merged from duplicates\n")
     block = header + "\n".join(f"- {e}" for e in extra) + "\n"
     m.write_atomic(keep_fp, ktext.rstrip() + "\n" + block)
 
@@ -223,7 +225,7 @@ def find_clusters(cache: dict) -> list[list[str]]:
     return clusters
 
 
-AUTO_LINK_HEADER = "## Связанные (авто)"
+AUTO_LINK_HEADER = "## Related (auto)"
 
 
 def link_related_notes(cache: dict, apply: bool, k: int = 3, min_overlap: int = 3) -> int:
@@ -265,8 +267,8 @@ def link_related_notes(cache: dict, apply: bool, k: int = 3, min_overlap: int = 
                 text = fp.read_text(encoding="utf-8", errors="replace")
             except OSError:
                 continue
-            if AUTO_LINK_HEADER in text:           # already auto-linked
-                continue
+            if AUTO_LINK_HEADER in text or "## Связанные (авто)" in text:
+                continue                           # already auto-linked (either generation)
             fresh = [x for x in related if f"[[{x}]]" not in text]
             if not fresh:
                 continue
@@ -292,10 +294,10 @@ def distill_patterns(cache: dict, apply: bool, max_distill: int = 3) -> int:
         if not apply:
             made += 1
             continue
-        prompt = ("Из ПОВТОРЯЮЩЕЙСЯ ошибки выведи ОБЩИЙ устойчивый паттерн-правило, как её "
-                  "избегать в будущем. Верни ТОЛЬКО JSON "
-                  '{"title": "короткое правило", "description": "1-2 предложения"}.\n\n'
-                  f"ОШИБКА (повторялась {r.get('recurrence')}×): {r.get('title','')} - "
+        prompt = ("From this RECURRING mistake derive the GENERAL durable pattern-rule for "
+                  "avoiding it in the future, in the language the mistake is written in. "
+                  'Return ONLY JSON {"title": "short rule", "description": "1-2 sentences"}.\n\n'
+                  f"MISTAKE (recurred {r.get('recurrence')}x): {r.get('title','')} - "
                   f"{r.get('desc','')} {r.get('prevention','')}")
         res = m.generate_json(prompt, project=r.get("project"))
         title = (res.get("title") or "").strip() if isinstance(res, dict) else ""

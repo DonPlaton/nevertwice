@@ -428,7 +428,7 @@ PROJECT_CARD_ENABLED = os.environ.get("NEVERTWICE_PROJECT_CARD", "1") != "0"
 CARD_MAX_ITEMS = env_int("NEVERTWICE_CARD_MAX_ITEMS", 5)
 CARD_START = "<!-- PROJECT-CARD:START -->"
 CARD_END = "<!-- PROJECT-CARD:END -->"
-CARD_HEADER = "## 🗂 Карточка проекта"
+CARD_HEADER = "## 🗂 Project card"
 # Task-aware recall (I-4): on UserPromptSubmit, retrieve by the actual PROMPT
 # text (not just project state) and inject targeted lessons. The single biggest
 # recall-quality win - the start-of-session injection can't know the task yet.
@@ -463,86 +463,91 @@ TYPED_TYPES = ("pattern", "mistake", "decision")
 TYPE_FOLDER = {"pattern": "Patterns", "mistake": "Mistakes", "decision": "Decisions"}
 TYPE_ICON = {"pattern": "✅", "mistake": "⚠️", "decision": "🎯"}
 
-EXTRACTION_PROMPT = """Проанализируй эту Claude Code сессию и извлеки знания.
+EXTRACTION_PROMPT = """Analyze this agent session and extract the durable knowledge.
 
-Известные параметры:
-  project (используй ровно это значение): {project_hint}
-  предпочитаемые теги (бери из списка где можно, lowercase, новый - только если ничего не подходит):
+Known parameters:
+  project (use exactly this value): {project_hint}
+  preferred tags (pick from this list when one fits, lowercase; invent a new one only if nothing fits):
     {tag_vocab}
-  уже существующие в проекте заметки (НЕ дублируй - пропусти если суть совпадает):
+  notes that already exist in this project (do NOT duplicate - skip an item whose substance matches):
     patterns: {existing_patterns}
     mistakes: {existing_mistakes}
     decisions: {existing_decisions}
 
-СЕССИЯ:
+SESSION:
 {transcript}
 
-Верни ТОЛЬКО валидный JSON. Никакого markdown, никаких пояснений.
+Return ONLY valid JSON. No markdown, no commentary.
 
-Схема:
+Schema:
 {{
   "project": "{project_hint}",
   "project_relevant": true,
   "patterns": [
-    {{"title": "короткий заголовок (3-7 слов, kebab-case или фраза)",
-      "description": "что именно сработало и почему (1-3 предложения)",
+    {{"title": "short title (3-7 words, kebab-case or a phrase)",
+      "description": "what worked and why (1-3 sentences)",
       "supersedes": "", "contradicts": "", "resolves": "",
-      "entities": ["ключевая-сущность", "ещё-одна"],
-      "relations": [{{"rel": "fixes", "target": "сущность"}}], "confidence": 0.9}}
+      "entities": ["key-entity", "another-one"],
+      "relations": [{{"rel": "fixes", "target": "entity"}}], "confidence": 0.9}}
   ],
   "mistakes": [
-    {{"title": "короткий заголовок ошибки",
-      "description": "что было неправильно",
-      "prevention": "одна строка: конкретное действие/проверка чтобы не повторить",
+    {{"title": "short title of the mistake",
+      "description": "what went wrong",
+      "prevention": "one line: the concrete action/check that avoids a repeat",
       "supersedes": "", "contradicts": "",
-      "entities": ["ключевая-сущность", "ещё-одна"],
-      "relations": [{{"rel": "caused-by", "target": "сущность"}}], "confidence": 0.9}}
+      "entities": ["key-entity", "another-one"],
+      "relations": [{{"rel": "caused-by", "target": "entity"}}], "confidence": 0.9}}
   ],
   "decisions": [
-    {{"title": "короткий заголовок решения",
-      "description": "что решено и обоснование",
+    {{"title": "short title of the decision",
+      "description": "what was decided and the reasoning",
       "supersedes": "", "contradicts": "", "resolves": "",
-      "entities": ["ключевая-сущность", "ещё-одна"],
-      "relations": [{{"rel": "alternative-to", "target": "сущность"}}], "confidence": 0.9}}
+      "entities": ["key-entity", "another-one"],
+      "relations": [{{"rel": "alternative-to", "target": "entity"}}], "confidence": 0.9}}
   ],
-  "context_update": "обновление контекста проекта (1-3 предложения о текущем состоянии)",
-  "session_summary": "что сделано за сессию (2-4 предложения)",
-  "tags": ["тег1", "тег2", "тег3"]
+  "context_update": "project-context update (1-3 sentences on the current state)",
+  "session_summary": "what the session accomplished (2-4 sentences)",
+  "tags": ["tag1", "tag2", "tag3"]
 }}
 
-Все теги в lowercase. Пустые категории = []. Если сессия тривиальная (чтение/обсуждение) - всё пусто, только session_summary.
+LANGUAGE: write title/description/prevention/context_update/session_summary in the
+dominant language of the SESSION content (a Russian session gets Russian notes, an
+English session English ones). Tags and entities stay lowercase ASCII kebab-case.
 
-ПОЛЕ project_relevant - КРИТИЧНО для чистоты памяти:
-  - true  - сессия реально про проект {project_hint} (его код/исследование/задачи).
-  - false - offtopic: посторонний вопрос, личный траблшутинг (игры, ОС, железо не по теме),
-            другой проект, смена модели, пустой диалог. ТОГДА верни patterns/mistakes/
-            decisions = [] и context_update = "", заполни ТОЛЬКО session_summary.
-  Не загрязняй знания проекта посторонним - лучше пусто, чем мимо темы.
+All tags lowercase. Empty categories = []. If the session is trivial (reading/discussion),
+return everything empty and fill only session_summary.
 
-ПОЛЕ supersedes (для каждого пункта) - для актуальности памяти:
-  Если пункт ЗАМЕНЯЕТ или ОПРОВЕРГАЕТ уже существующую заметку из списков выше
-  (статус изменился, решение пересмотрено, ошибка устранена) - впиши ТОЧНЫЙ
-  заголовок той заметки. Иначе оставь "". Так старое не будет противоречить новому.
+FIELD project_relevant - CRITICAL for memory hygiene:
+  - true  - the session is genuinely about project {project_hint} (its code/research/tasks).
+  - false - offtopic: an unrelated question, personal troubleshooting (games, OS, hardware
+            off-topic), a different project, a model switch, an empty dialog. THEN return
+            patterns/mistakes/decisions = [] and context_update = "", fill ONLY session_summary.
+  Never pollute a project's knowledge with offtopic material - empty beats wrong.
 
-ПОЛЕ resolves (только у pattern/decision) - связать решение с устранённой ошибкой:
-  Если этот паттерн/решение УСТРАНЯЕТ конкретную ошибку из списка mistakes выше -
-  впиши ТОЧНЫЙ заголовок той ошибки. Иначе "". Решённая ошибка перестаёт быть
-  активным предупреждением (помечается «решено»), но остаётся в истории.
+FIELD supersedes (on every item) - keeps the memory current:
+  If an item REPLACES or REFUTES a note already listed above (status changed, decision
+  revised, mistake eliminated) - put that note's EXACT title. Otherwise leave "".
+  That way the old note can never contradict the new one.
 
-ПОЛЕ contradicts - детект противоречий (M-2):
-  Если пункт ПРЯМО ПРОТИВОРЕЧИТ существующей заметке выше (несовместимое
-  утверждение/выбор, не просто обновление) - впиши ТОЧНЫЙ заголовок той заметки.
-  Противоречащая старая заметка будет ретайрнута, останется текущая истина.
+FIELD resolves (pattern/decision only) - link a fix to the mistake it removes:
+  If this pattern/decision ELIMINATES a specific mistake from the lists above - put that
+  mistake's EXACT title. Otherwise "". A resolved mistake stops being an active warning
+  (it is marked solved) but stays in the history.
 
-ПОЛЕ confidence (0.0-1.0) - насколько это устойчивое знание, а не разовая деталь.
-  Высокое (0.8-1.0) для проверенных фактов; низкое (<0.5) для догадок.
+FIELD contradicts - contradiction detection:
+  If an item DIRECTLY CONTRADICTS an existing note above (an incompatible claim/choice,
+  not a mere update) - put that note's EXACT title. The contradicted old note is retired
+  and the current truth remains.
 
-ПОЛЯ entities/relations (опционально) - граф знаний:
-  entities - 2-5 ключевых сущностей урока (инструменты/концепты/файлы), lowercase kebab-case,
-  без версий. relations - рёбра {{"rel": тип, "target": сущность}}, target в том же стиле; rel
-  из набора: causes, caused-by, fixes, fixed-by, depends-on, requires, part-of, alternative-to,
-  related-to. Напр. для CUDA-OOM: entities ["cuda","batch-size"], relations
-  [{{"rel":"fixed-by","target":"gradient-checkpointing"}}]. Неясно - [].{brain_block}"""
+FIELD confidence (0.0-1.0) - how durable this knowledge is, versus a one-off detail.
+  High (0.8-1.0) for verified facts; low (<0.5) for guesses.
+
+FIELDS entities/relations (optional) - the knowledge graph:
+  entities - 2-5 key entities of the lesson (tools/concepts/files), lowercase kebab-case,
+  no versions. relations - edges {{"rel": type, "target": entity}}, target in the same style;
+  rel from: causes, caused-by, fixes, fixed-by, depends-on, requires, part-of, alternative-to,
+  related-to. E.g. for a CUDA OOM: entities ["cuda","batch-size"], relations
+  [{{"rel":"fixed-by","target":"gradient-checkpointing"}}]. Unclear - [].{brain_block}"""
 
 
 def log(msg):
@@ -859,15 +864,15 @@ def _brain_prompt_block() -> str:
         return ""
     types = ", ".join(_cfg.entity_types())
     hints = _cfg.relation_hints()
-    rel_line = (' Для рёбер relations предпочитай связи знания: ' + ", ".join(hints) + "."
+    rel_line = (' For relations edges prefer the knowledge relations: ' + ", ".join(hints) + "."
                 if hints else "")
     # Inserted as a .format() VALUE (not itself re-formatted), so braces are single here.
     return (
-        "\n\nKNOWLEDGE-ГРАФ (профиль второго мозга включён): в каждой категории, для тех "
-        "entities, что являются реальными ОБЪЕКТАМИ ЗНАНИЯ (не файлы/переменные/код), добавь "
-        'поле "entity_types" - словарь {"сущность": "тип"}. Допустимые типы: ' + types + ". "
-        'Пример: "entity_types": {"gears": "method", "imagenet": "dataset"}.' + rel_line +
-        " Код-сущности НЕ типизируй - пропусти их."
+        "\n\nKNOWLEDGE GRAPH (a second-brain profile is on): in every category, for the "
+        "entities that are real OBJECTS OF KNOWLEDGE (not files/variables/code), add an "
+        '"entity_types" field - a dict {"entity": "type"}. Allowed types: ' + types + ". "
+        'Example: "entity_types": {"gears": "method", "imagenet": "dataset"}.' + rel_line +
+        " Do NOT type code entities - skip them."
     )
 
 
@@ -1538,7 +1543,7 @@ def truncate_smart(text: str, max_chars: int) -> str:
     """Keep head (project setup) + tail (final decisions) - middle is least useful."""
     if len(text) <= max_chars:
         return text
-    sep = "\n\n[...середина транскрипта вырезана...]\n\n"
+    sep = "\n\n[...middle of the transcript trimmed...]\n\n"
     head_cap = TRUNCATE_HEAD_CHARS or int(max_chars * TRUNCATE_HEAD_FRAC)
     head_len = min(head_cap, max_chars - len(sep) - 100)
     if head_len <= 0:
@@ -2417,7 +2422,9 @@ def _retrieval_candidates(project: str, cross: bool, cache: dict | None,
 #   - source session   (Sessions/<session>.md)
 #   - sibling notes    (other extractions from the same session)
 
-NTYPE_LABEL_RU = {"pattern": "Паттерны", "mistake": "Ошибки", "decision": "Решения"}
+NTYPE_LABEL = {"pattern": "Patterns", "mistake": "Mistakes", "decision": "Decisions"}
+# legacy labels written by pre-2.2.1 builds - still recognized when compacting old entries
+_NTYPE_LABEL_LEGACY = ("Паттерны", "Ошибки", "Решения")
 
 
 def _unique_path(folder: Path, base_stem: str) -> Path:
@@ -2764,18 +2771,18 @@ def write_typed_note(folder: str, item, project: str, date: str,
     if desc:
         body += [desc, ""]
     if prevention:
-        body += [f"**Как избежать:** {prevention}", ""]
-    body += [f"**Проект:** [[{project}]]", f"**Дата:** {date}"]
+        body += [f"**Prevention:** {prevention}", ""]
+    body += [f"**Project:** [[{project}]]", f"**Date:** {date}"]
     if session_stem_:
-        body.append(f"**Сессия:** [[{session_stem_}]]")
+        body.append(f"**Session:** [[{session_stem_}]]")
     if retired:
-        body += ["", "_Заменяет: " + ", ".join(f"[[{s}]]" for s in retired) + "_"]
+        body += ["", "_Supersedes: " + ", ".join(f"[[{s}]]" for s in retired) + "_"]
     if resolved:
-        body += ["", "_Решает: " + ", ".join(f"[[{s}]]" for s in resolved) + "_"]
+        body += ["", "_Resolves: " + ", ".join(f"[[{s}]]" for s in resolved) + "_"]
 
     related = [s for s in (siblings or []) if s and s != stem]
     if related:
-        body += ["", "## Связанные заметки", *(f"- [[{s}]]" for s in related)]
+        body += ["", "## Related notes", *(f"- [[{s}]]" for s in related)]
 
     body += ["", body_tags]
     write_atomic(fp, "\n".join(body))
@@ -2806,13 +2813,13 @@ def write_session_note(project: str, date: str, time_str: str, summary: str,
         fm_block(fm), "",
         f"# Session - {project} ({time_str})", "",
         summary, "",
-        f"**Каталог:** `{cwd}`",
-        f"**Триггер:** {trigger}",
-        f"**Проект:** [[{project}]]",
+        f"**Directory:** `{cwd}`",
+        f"**Trigger:** {trigger}",
+        f"**Project:** [[{project}]]",
         "",
     ]
     for nt in TYPED_TYPES:
-        block = _link_section(links.get(nt, []), NTYPE_LABEL_RU[nt])
+        block = _link_section(links.get(nt, []), NTYPE_LABEL[nt])
         if block:
             sections += [block, ""]
     sections.append(body_tags)
@@ -2829,7 +2836,7 @@ def _split_context(text: str) -> tuple[str, list[str]]:
     lines = text.split("\n")
     idx = None
     for i, ln in enumerate(lines):
-        if re.match(r"^##\s+(\d{4}-\d{2}-\d{2}|Накопленное состояние)", ln):
+        if re.match(r"^##\s+(\d{4}-\d{2}-\d{2}|Накопленное состояние|Accumulated state)", ln):
             idx = i
             break
     if idx is None:
@@ -2839,7 +2846,7 @@ def _split_context(text: str) -> tuple[str, list[str]]:
     for ln in lines[idx:]:
         # anchor boundaries to REAL entry headers only (date or state), so a
         # '## subheading' inside an entry/state body stays attached (audit D4)
-        if re.match(r"^##\s+(\d{4}-\d{2}-\d{2}|Накопленное состояние)", ln):
+        if re.match(r"^##\s+(\d{4}-\d{2}-\d{2}|Накопленное состояние|Accumulated state)", ln):
             if cur:
                 entries.append("\n".join(cur).rstrip())
             cur = [ln]
@@ -2898,11 +2905,12 @@ def compact_context_if_needed(fp: Path, project: str, allow_llm: bool = True):
         old, recent = entries[:1], entries[1:]
 
     prompt = (
-        f"Сожми историю проекта '{project}' в краткое накопленное состояние.\n"
-        f"Сохрани: ключевые решения с датами, текущий статус, нерешённые "
-        f"вопросы, важные грабли. Убери воду и дубли. 8-15 строк, маркдаун-"
-        f"буллеты. Верни ТОЛЬКО JSON: {{\"state\": \"<сжатый текст>\"}}.\n\n"
-        f"ИСТОРИЯ:\n" + truncate_smart(redact_secrets("\n\n".join(old)),
+        f"Compact the history of project '{project}' into a brief accumulated state.\n"
+        f"Keep: key decisions with dates, the current status, open questions, "
+        f"important pitfalls. Drop filler and duplicates. 8-15 lines, markdown "
+        f"bullets, in the language the history is written in. Return ONLY JSON: "
+        f'{{"state": "<compacted text>"}}.\n\n'
+        f"HISTORY:\n" + truncate_smart(redact_secrets("\n\n".join(old)),
                                        MAX_TRANSCRIPT_CHARS)
     )
     res = generate_json(prompt, project=project)
@@ -2926,10 +2934,10 @@ def compact_context_if_needed(fp: Path, project: str, allow_llm: bool = True):
     m_old = re.search(r"(\d{4}-\d{2}-\d{2})", old[0])
     m_new = re.search(r"(\d{4}-\d{2}-\d{2})", old[-1])
     span = f" ({m_old.group(1)} → {m_new.group(1)})" if (m_old and m_new) else ""
-    compressed = (f"## Накопленное состояние (сжато){span}\n\n{state.strip()}\n\n"
-                  f"_Сжато из {len(old)} ранних записей._")
+    compressed = (f"## Accumulated state (compacted){span}\n\n{state.strip()}\n\n"
+                  f"_Compacted from {len(old)} earlier entries._")
     if old_links:
-        compressed += ("\n\n**Архив ссылок:** "
+        compressed += ("\n\n**Link archive:** "
                        + " ".join(f"[[{lk}]]" for lk in old_links))
     new_text = head + "\n\n" + compressed + "\n\n" + "\n\n".join(recent) + "\n"
     # Hard guard: if the summary came back long, truncate the file to the cap
@@ -3026,9 +3034,11 @@ def _read_frontmatter_file(p: Path) -> dict:
 def _parse_note_body(lines) -> tuple[str, str, str]:
     """The ONE body parser for a typed note → (title, desc, prevention). Title is the first
     `# ` heading (icon-stripped, "" if none); desc is the first plain line after it; prevention
-    is the `**Как избежать:**` line. _note_meta, _note_snippet, and embed_index.note_fields all
-    ride this so the three copies can't drift again (code-review 2026-07: _note_snippet's
-    exclude-tuple had already lost "---" and could pick a horizontal rule as the description)."""
+    is the `**Prevention:**` line (the legacy `**Как избежать:**` marker from pre-2.2.1 notes
+    is accepted forever - the store is the user's data, never migrated). _note_meta,
+    _note_snippet, and embed_index.note_fields all ride this so the copies can't drift again
+    (code-review 2026-07: _note_snippet's exclude-tuple had already lost "---" and could pick
+    a horizontal rule as the description)."""
     title, desc, prevention, seen = "", "", "", False
     for ln in lines:
         s = ln.strip()
@@ -3038,7 +3048,9 @@ def _parse_note_body(lines) -> tuple[str, str, str]:
             continue
         if not seen or not s:
             continue
-        if s.startswith("**Как избежать:**"):
+        if s.startswith("**Prevention:**"):
+            prevention = s.replace("**Prevention:**", "").strip()
+        elif s.startswith("**Как избежать:**"):          # legacy marker, dual-read
             prevention = s.replace("**Как избежать:**", "").strip()
         elif not desc and not s.startswith(("**", "#", "-", "_", "---", "[[", "|")):
             desc = s
@@ -3222,7 +3234,7 @@ def build_project_card(project: str, status_hint: str = "") -> str:
     if not status and notes:
         status = _one_line(max(notes, key=lambda n: (n["date"], n["stem"]))["title"], 200)
     if status:
-        section.append(f"**Статус:** {status}")
+        section.append(f"**Status:** {status}")
 
     freq = {}
     for n in notes:
@@ -3232,7 +3244,7 @@ def build_project_card(project: str, status_hint: str = "") -> str:
             freq[t] = freq.get(t, 0) + 1
     stack = [t for t, _ in sorted(freq.items(), key=lambda x: (-x[1], x[0]))[:8]]
     if stack:
-        section.append("**Стек/темы:** " + ", ".join(stack))
+        section.append("**Stack/topics:** " + ", ".join(stack))
 
     open_gotchas = sorted((n for n in notes if n["ntype"] == "mistake" and not n["resolved"]),
                           key=lambda n: (n["recurrence"], n["date"]), reverse=True)
@@ -3244,13 +3256,13 @@ def build_project_card(project: str, status_hint: str = "") -> str:
 
     blocks = []
     if open_gotchas:
-        blocks.append(["", "**⚠️ Открытые грабли (не повтори):**"]
+        blocks.append(["", "**⚠️ Open pitfalls (do not repeat):**"]
                       + [_card_item(n) for n in open_gotchas[:CARD_MAX_ITEMS]])
     if decisions:
-        blocks.append(["", "**🎯 Ключевые решения:**"]
+        blocks.append(["", "**🎯 Key decisions:**"]
                       + [_card_item(n) for n in decisions[:CARD_MAX_ITEMS]])
     if recurring:
-        blocks.append(["", "**🔁 Повторяется (recurrence≥2):**"]
+        blocks.append(["", "**🔁 Recurring (recurrence≥2):**"]
                       + [_card_item(n) for n in recurring[:3]])
 
     if not section and not blocks:
@@ -3272,7 +3284,7 @@ def _insert_card(text: str, card: str) -> str:
     """Place the card just before the first journal/state entry (its home in the
     file head). Assumes any prior card was already stripped."""
     block = card.rstrip() + "\n"
-    mt = re.search(r"^##\s+(\d{4}-\d{2}-\d{2}|Накопленное состояние)", text, flags=re.M)
+    mt = re.search(r"^##\s+(\d{4}-\d{2}-\d{2}|Накопленное состояние|Accumulated state)", text, flags=re.M)
     if mt:
         i = mt.start()
         return text[:i].rstrip() + "\n\n" + block + "\n" + text[i:].lstrip("\n")
@@ -3297,14 +3309,14 @@ def refresh_project_card(project: str, fp: Path | None = None) -> None:
         if e != -1:
             body = body[e + 4:]
     _head, entries = _split_context(_strip_card(body))
-    labels = tuple(NTYPE_LABEL_RU.values())
+    labels = tuple(NTYPE_LABEL.values()) + _NTYPE_LABEL_LEGACY
     hint = ""
     for entry in reversed(entries):
         if not re.match(r"^##\s+\d{4}-\d{2}-\d{2}", entry):
             continue
         for ln in entry.split("\n")[1:]:
             s = ln.strip()
-            if s and not s.startswith(("Сессия:", "[[", "**", "#")) \
+            if s and not s.startswith(("Session:", "Сессия:", "[[", "**", "#")) \
                     and not any(s.startswith(lbl + ":") for lbl in labels):
                 hint = s
                 break
@@ -3371,30 +3383,30 @@ def build_entity_card(entity: str, etype: str | None = None, idx: dict | None = 
     if edges:
         rel_bits.append("  ·  ".join(f"{e['rel']} → {e['target']}" for e in edges[:5]))
     if cooc:
-        rel_bits.append("рядом: " + ", ".join(cooc[:6]))
+        rel_bits.append("nearby: " + ", ".join(cooc[:6]))
 
     by_type = {"mistake": [], "pattern": [], "decision": []}
     for n in notes:
         if n["ntype"] in by_type:
             by_type[n["ntype"]].append(n)
     lines = [f"# 🧠 {ent} · {etype}", "",
-             f"**Где встречается:** {', '.join(projects)}  ({len(notes)} заметок)"
-             if projects else f"**Заметок:** {len(notes)}"]
+             f"**Where it appears:** {', '.join(projects)}  ({len(notes)} notes)"
+             if projects else f"**Notes:** {len(notes)}"]
     if rel_bits:
-        lines.append("**Связано:** " + "  ·  ".join(rel_bits))
+        lines.append("**Related:** " + "  ·  ".join(rel_bits))
     if first_seen:
-        span = f"_Впервые: {first_seen} · последний раз: {last_seen}"
-        span += f" · упоминаний: {tl.get('count', len(notes))}_" if tl else "_"
+        span = f"_First seen: {first_seen} · last seen: {last_seen}"
+        span += f" · mentions: {tl.get('count', len(notes))}_" if tl else "_"
         lines.append(span)
-    for kind, label in (("mistake", "**⚠️ Грабли:**"), ("pattern", "**✅ Паттерны:**"),
-                        ("decision", "**🎯 Решения:**")):
+    for kind, label in (("mistake", "**⚠️ Pitfalls:**"), ("pattern", "**✅ Patterns:**"),
+                        ("decision", "**🎯 Decisions:**")):
         if by_type[kind]:
             lines += ["", label] + [_card_item(n) for n in by_type[kind][:CARD_MAX_ITEMS]]
     if evo:                                              # F3: how the understanding changed
-        lines += ["", "**🕓 Эволюция понимания:**"]
+        lines += ["", "**🕓 How the understanding evolved:**"]
         for r in evo[-CARD_MAX_ITEMS:]:
             nd = (parse_typed_stem(r.get("superseded_by", "")) or {}).get("date", "")
-            arrow = f" → пересмотрено {nd}" if nd else " → пересмотрено позже"
+            arrow = f" → revised {nd}" if nd else " → revised later"
             lines.append(f"- {r.get('date', '')}: «{_one_line(r.get('title', ''), 70)}»{arrow}")
     return fm_block(fm) + "\n" + "\n".join(lines) + "\n"
 
@@ -3496,7 +3508,7 @@ def update_context(project: str, update: str, tags: list, date: str, time_str: s
             "",
             f"# Context: {project}",
             "",
-            "Живой контекст проекта. Обновляется автоматически hook'ом после каждой сессии.",
+            "Living project context. Updated automatically by the hook after every session.",
             "",
             body_tags,
             "",
@@ -3504,11 +3516,11 @@ def update_context(project: str, update: str, tags: list, date: str, time_str: s
             "",
         ])
 
-    entry = ["", f"## {date} {time_str}", update, "", f"Сессия: [[{session_link}]]"]
+    entry = ["", f"## {date} {time_str}", update, "", f"Session: [[{session_link}]]"]
     for nt in TYPED_TYPES:
         items = links.get(nt, [])
         if items:
-            entry.append(f"{NTYPE_LABEL_RU[nt]}: " + ", ".join(f"[[{x}]]" for x in items))
+            entry.append(f"{NTYPE_LABEL[nt]}: " + ", ".join(f"[[{x}]]" for x in items))
 
     write_atomic(fp, existing + "\n".join(entry) + "\n")
     log(f"Context updated: {project}")
@@ -3548,34 +3560,34 @@ def rebuild_index():
         "",
         "# Claude Memory Vault - Index",
         "",
-        "> Точка входа. Claude Code читает ТОЛЬКО этот файл при старте сессии.",
-        "> Не сканируй все папки - переходи через wikilinks из этого индекса.",
-        "> Open Knowledge Format bundle: markdown + YAML frontmatter, каждая " +
-        "заметка несёт `type`; навигация через `[[wikilinks]]` и `graph.json`.",
+        "> Entry point. An agent reads ONLY this file at session start.",
+        "> Do not scan every folder - navigate via the wikilinks from this index.",
+        "> Open Knowledge Format bundle: markdown + YAML frontmatter, every " +
+        "note carries `type`; navigate via `[[wikilinks]]` and `graph.json`.",
         "",
-        "## Структура",
+        "## Layout",
         "",
-        "| Папка | Что хранится |",
+        "| Folder | What lives there |",
         "|---|---|",
-        "| Patterns/ | Паттерны и подходы которые сработали |",
-        "| Mistakes/ | Ошибки, баги, антипаттерны - чего избегать |",
-        "| Decisions/ | Архитектурные решения с обоснованием |",
-        "| Context/ | Состояние каждого проекта (один файл = один проект) |",
-        "| Sessions/ | Автологи сессий (последние 30 дней) |",
+        "| Patterns/ | Approaches that worked |",
+        "| Mistakes/ | Mistakes, bugs, antipatterns - what to avoid |",
+        "| Decisions/ | Architectural decisions with reasoning |",
+        "| Context/ | Each project's state (one file = one project) |",
+        "| Sessions/ | Session auto-logs (last 30 days) |",
         "",
-        "## Активные проекты",
+        "## Active projects",
         "",
     ]
     if projects:
-        lines += ["| Проект | Обновлён |", "|---|---|"]
+        lines += ["| Project | Updated |", "|---|---|"]
         lines += [f"| [[{name}]] | {mtime} |" for name, mtime in projects]
     else:
-        lines.append("_(пока нет проектов)_")
-    lines += ["", "## Последние сессии", ""]
+        lines.append("_(no projects yet)_")
+    lines += ["", "## Recent sessions", ""]
     if sessions:
         lines += [f"- **{mtime}** - [[{name}]]" for name, mtime in sessions]
     else:
-        lines.append("_(пока нет сессий)_")
+        lines.append("_(no sessions yet)_")
     lines += ["", "#index"]
 
     write_atomic(fp, "\n".join(lines))
@@ -3626,10 +3638,10 @@ def process_session(session_id: str, cwd: str, transcript_path: str,
     prompt = EXTRACTION_PROMPT.format(
         transcript=transcript_full,
         project_hint=project_hint,
-        tag_vocab=", ".join(tag_vocab) if tag_vocab else "(пусто - выбирай свободно)",
-        existing_patterns=", ".join(existing["pattern"]) or "(нет)",
-        existing_mistakes=", ".join(existing["mistake"]) or "(нет)",
-        existing_decisions=", ".join(existing["decision"]) or "(нет)",
+        tag_vocab=", ".join(tag_vocab) if tag_vocab else "(empty - pick freely)",
+        existing_patterns=", ".join(existing["pattern"]) or "(none)",
+        existing_mistakes=", ".join(existing["mistake"]) or "(none)",
+        existing_decisions=", ".join(existing["decision"]) or "(none)",
         brain_block=_brain_prompt_block(),     # F1: typed-entity ask, "" unless a brain profile is on
     )
     extraction = generate_json(prompt, project=project_hint)
@@ -3651,7 +3663,7 @@ def process_session(session_id: str, cwd: str, transcript_path: str,
     tags = extraction.get("tags")
     tags = tags if isinstance(tags, list) else []  # qwen3 may return a str (audit F5)
     tags = _norm_tags(tags)                          # canonical vocabulary (audit M5)
-    summary = extraction.get("session_summary") or "Сессия завершена"
+    summary = extraction.get("session_summary") or "Session completed"
     if not isinstance(summary, str):
         summary = str(summary)
 
@@ -4232,7 +4244,7 @@ def _age_marker(stem: str, recurrence=None) -> str:
     age = _note_age_days(stem)
     if age >= 90:
         months = int(age // 30)
-        bits.append(f"~{months}мес" if months < 12 else f"~{age/365:.0f}г")
+        bits.append(f"~{months}mo" if months < 12 else f"~{age/365:.0f}y")
     return f"  _({' · '.join(bits)})_" if bits else ""
 
 
@@ -4461,10 +4473,10 @@ def rerank_notes(query: str, results: list[dict], k: int = RETRIEVAL_TOP_K,
         f'{(r.get("description") or "")[:160]}'
         for i, r in enumerate(results))
     prompt = (
-        "Ранжируй заметки памяти по релевантности к ЗАПРОСУ (самые релевантные "
-        "первыми). Используй ТОЛЬКО перечисленные id. Верни ТОЛЬКО JSON вида "
+        "Rank these memory notes by relevance to the QUERY (most relevant first). "
+        "Use ONLY the listed ids. Return ONLY JSON of the form "
         '{"ranked": ["<id>", "<id>", ...]}.\n\n'
-        f"ЗАПРОС: {query}\n\nЗАМЕТКИ:\n{truncate_smart(items, MAX_TRANSCRIPT_CHARS)}")
+        f"QUERY: {query}\n\nNOTES:\n{truncate_smart(items, MAX_TRANSCRIPT_CHARS)}")
     try:
         res = generate_json(prompt, project=project)
     except Exception:
@@ -4497,7 +4509,7 @@ def _context_brief(fp: Path, max_chars: int = 1100) -> str:
         if end != -1:
             text = text[end + 4:]
     head, entries = _split_context(text)
-    state = next((e for e in entries if e.startswith("## Накопленное состояние")), "")
+    state = next((e for e in entries if e.startswith(("## Accumulated state", "## Накопленное состояние"))), "")
     if state:
         brief = state
     else:
@@ -4529,7 +4541,7 @@ def _note_snippet(stem: str, ntype: str, max_chars: int = 220) -> str:
     if prevention:
         out = f"{out} → {prevention}" if out else prevention
     if resolved:
-        out = ("✅ решено - " + out) if out else "✅ решено"
+        out = ("✅ solved - " + out) if out else "✅ solved"
     return out[:max_chars].rstrip()
 
 
@@ -4537,8 +4549,8 @@ def _fact_line(r: dict, stale: bool = False) -> str:
     snip = _note_snippet(r.get("stem", ""), r.get("ntype", ""))
     title = r.get("title", "").strip()
     marker = _age_marker(r.get("stem", ""), r.get("recurrence"))
-    flag = " ⚠️_(возможно устарело: файл не найден)_" if stale else ""
-    via = f" _(связано: {r['via']})_" if r.get("via") else ""   # graph-expanded lesson (Phase 2b)
+    flag = " ⚠️_(possibly stale: file not found)_" if stale else ""
+    via = f" _(related: {r['via']})_" if r.get("via") else ""   # graph-expanded lesson (Phase 2b)
     return f"- **{title}**" + (f" - {snip}" if snip else "") + marker + via + flag
 
 
@@ -4579,11 +4591,11 @@ def emit_session_start_context(cwd: str) -> None:
     # verbatim and only trimmed facts, so the budget never touched what took the
     # most room (audit M-d). Sections are added by priority - profile → card →
     # mistakes → patterns → cross-project - each trimmed to the remaining budget.
-    hdr = f"🧠 Память проекта **{project}** (Obsidian-vault):"
+    hdr = f"🧠 Project memory **{project}**:"
     # The footer is fixed and essential; reserve its room UP FRONT so the budget bounds the WHOLE
     # payload (audit: cross-project + footer used to be appended past the cap, overshooting ~3-17%).
-    footer = ["", f"_Поиск по памяти: `python memory_search.py \"<запрос>\" {project}`._",
-              f"_Полная история: Context/{project}.md в vault._"]
+    footer = ["", f"_Search the memory: `python memory_search.py \"<query>\" {project}`._",
+              f"_Full history: Context/{project}.md in the store._"]
     footer_len = len("\n".join(footer)) + 1
     parts = [hdr]
     used = [len(hdr) + footer_len]
@@ -4597,7 +4609,7 @@ def emit_session_start_context(cwd: str) -> None:
         if ub:
             ub = ub[:_room()]
             if ub:
-                seg = ["", "👤 **Профиль (выучено):** " + ub]
+                seg = ["", "👤 **Profile (learned):** " + ub]
                 parts += seg
                 used[0] += len("\n".join(seg)) + 1
     # dedup facts against the FULL card titles even if the injected brief is
@@ -4606,7 +4618,7 @@ def emit_session_start_context(cwd: str) -> None:
     if brief:
         shown = brief[:_room()]
         if shown:
-            seg = ["", "**Текущее состояние:**", shown]
+            seg = ["", "**Current state:**", shown]
             parts += seg
             used[0] += len("\n".join(seg)) + 1
     relevant = [r for r in relevant if r.get("title", "").strip().lower() not in card_titles]
@@ -4633,12 +4645,12 @@ def emit_session_start_context(cwd: str) -> None:
         if added:
             parts.extend(section)
 
-    _add_facts("**⚠️ Не повтори эти ошибки:**", mistakes)
-    _add_facts("**✅ Рабочие паттерны/решения:**", others)
+    _add_facts("**⚠️ Do not repeat these mistakes:**", mistakes)
+    _add_facts("**✅ Working patterns/decisions:**", others)
     if INJECT_CROSS_PROJECT and used[0] < INJECT_BUDGET_CHARS:
         cross = retrieve_cross_project(project, brief or project, cache=rcache)
         if cross:
-            xs, added = ["", "**🔗 Похожие уроки из других проектов:**"], False
+            xs, added = ["", "**🔗 Similar lessons from other projects:**"], False
             for r in cross:
                 snip = _note_snippet(r["stem"], r["ntype"])
                 line = (f"- [{r.get('project')}] **{r.get('title','').strip()}**"
@@ -4777,15 +4789,15 @@ def emit_prompt_recall(cwd: str, prompt: str, session_id: str) -> None:
     if not fresh and not cross:
         return  # nothing new for this prompt → stay silent (self-throttling)
 
-    parts = [f"🧠 Память по запросу (проект **{project}**):"]
+    parts = [f"🧠 Memory for this prompt (project **{project}**):"]
     mistakes = [h for h in fresh if h["ntype"] == "mistake"]
     others = [h for h in fresh if h["ntype"] != "mistake"]
     if mistakes:
-        parts += ["", "**⚠️ Связанные ошибки:**"] + [_fact_line(h) for h in mistakes]
+        parts += ["", "**⚠️ Related mistakes:**"] + [_fact_line(h) for h in mistakes]
     if others:
-        parts += ["", "**✅ Связанные паттерны/решения:**"] + [_fact_line(h) for h in others]
+        parts += ["", "**✅ Related patterns/decisions:**"] + [_fact_line(h) for h in others]
     if cross:
-        parts += ["", "**🔗 Из других проектов:**"]
+        parts += ["", "**🔗 From other projects:**"]
         for c in cross:
             snip = _note_snippet(c["stem"], c["ntype"])
             parts.append(f"- [{c.get('project')}] **{c.get('title', '').strip()}**"

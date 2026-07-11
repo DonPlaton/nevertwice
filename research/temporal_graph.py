@@ -63,7 +63,9 @@ def _body_fields(text: str):
             links.append(lk.strip())
         if not seen or not s:
             continue
-        if s.startswith("**Как избежать:**"):
+        if s.startswith("**Prevention:**"):
+            prevention = s.replace("**Prevention:**", "").strip()
+        elif s.startswith("**Как избежать:**"):          # legacy marker, dual-read
             prevention = s.replace("**Как избежать:**", "").strip()
         elif not desc and not s.startswith(("**", "#", "-", "_", "[[", "|", "##")):
             desc = s

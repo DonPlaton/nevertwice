@@ -33,7 +33,7 @@ BAR = "=" * 72
 
 def main():
     print(BAR)
-    print("  Claude Memory - Process NOW (полный скан, без ограничения по дате)")
+    print("  Nevertwice - Process NOW (full scan, no date cutoff)")
     print(BAR)
     print(f"  Vault          : {_mh.VAULT}")
     print(f"  Projects root  : {_mh.PROJECTS_ROOT}")
@@ -46,7 +46,7 @@ def main():
         sys.exit(1)
 
     if not _mh.acquire_lock(timeout_s=60):
-        print("[ERROR] Не смог взять lock на vault - другой процесс держит его. Выход.")
+        print("[ERROR] Could not take the vault lock - another process holds it. Exiting.")
         sys.exit(2)
 
     try:
@@ -73,8 +73,8 @@ def _run(t0: float):
             seen.append((jl, st.st_mtime, st.st_size))
     seen.sort(key=lambda x: x[1])
     total = len(seen)
-    print(f"Найдено transcripts : {total}")
-    print(f"Уже обработано      : {len(db)}")
+    print(f"Transcripts found   : {total}")
+    print(f"Already processed   : {len(db)}")
     print()
 
     new = skipped_outside = skipped_done = failed = 0
@@ -129,16 +129,16 @@ def _run(t0: float):
     elapsed = time.time() - t0
     print()
     print(BAR)
-    print(f"DONE за {elapsed:.1f}s")
-    print(f"  Новые сессии обработаны : {new}")
-    print(f"  Уже были обработаны     : {skipped_done}")
-    print(f"  Вне {_mh.PROJECT_ROOT_DISPLAY} (skip): {skipped_outside}")
-    print(f"  Ошибки                  : {failed}")
+    print(f"DONE in {elapsed:.1f}s")
+    print(f"  New sessions processed  : {new}")
+    print(f"  Previously processed    : {skipped_done}")
+    print(f"  Outside {_mh.PROJECT_ROOT_DISPLAY} (skip): {skipped_outside}")
+    print(f"  Failures                : {failed}")
     print(BAR)
     if new:
-        print("Index.md перестроен. Подробности - в status.txt.")
+        print("Index.md rebuilt. Details in status.txt.")
     else:
-        print("Новых сессий не было. Index.md без изменений.")
+        print("No new sessions. Index.md unchanged.")
     print()
 
 

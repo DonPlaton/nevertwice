@@ -308,7 +308,7 @@ dup.write_text("---\ndate: 2026-06-01\n---\n\n# dup\n\ncache\n", encoding="utf-8
 cons.merge_into_keeper(keep, [dup])
 ktext = keep.read_text(encoding="utf-8")
 check("unique short fragment merged despite being a substring elsewhere",
-      "## Слито из дублей" in ktext and "- cache" in ktext)
+      "## Merged from duplicates" in ktext and "- cache" in ktext)
 
 
 # ── M-h: build_user_model parses unquoted YAML tags ────────────────────

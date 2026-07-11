@@ -132,7 +132,7 @@ def test_truncate_smart():
     check("output length within budget", len(out) <= 12000, len(out))
     check("head preserved", out.startswith("A" * 100))
     check("tail preserved", out.endswith("Z" * 100))
-    check("middle marker", "[...середина транскрипта вырезана...]" in out)
+    check("middle marker", "[...middle of the transcript trimmed...]" in out)
 
 
 def test_lock():

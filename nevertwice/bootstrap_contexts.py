@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 """
-Bootstrap Context/<project>.md для существующих проектов.
-Читает README + ключевые конфиги + структуру верхнего уровня,
-просит локальную модель построить структурированный контекст,
-пишет в Markdown vault с wikilinks и тегами.
+Bootstrap Context/<project>.md for existing projects.
+Reads the README + key configs + the top-level layout, asks the model to build a
+structured context, writes it into the Markdown store with wikilinks and tags.
 
-Запуск: python bootstrap_contexts.py <project_path> [<project_path>...]
+Run: python bootstrap_contexts.py <project_path> [<project_path>...]
 """
 
 import sys, json, re, os
@@ -78,34 +77,34 @@ TEXT_EXTS = {'.py','.js','.ts','.tsx','.jsx','.rs','.go','.java','.cpp','.c','.h
              '.rb','.php','.md','.json','.yaml','.yml','.toml','.sh','.bat','.ps1',
              '.swift','.kt','.scala','.r','.jl','.cu','.cuh','.v','.sv','.vhd','.vhdl'}
 
-EXTRACTION_PROMPT = """Проанализируй структуру проекта и извлеки контекст в JSON.
+EXTRACTION_PROMPT = """Analyze the project structure and extract its context as JSON.
 
-ПРОЕКТ: {project}
-ПУТЬ: {path}
+PROJECT: {project}
+PATH: {path}
 
-КОНФИГИ И README:
+CONFIGS AND README:
 {configs}
 
-СТРУКТУРА (top-level):
+LAYOUT (top-level):
 {structure}
 
-СТАТИСТИКА:
+STATS:
 {stats}
 
-Верни ТОЛЬКО валидный JSON:
+Return ONLY valid JSON:
 {{
-  "description": "что это за проект (1-2 предложения, по существу)",
+  "description": "what this project is (1-2 sentences, to the point)",
   "stack": ["Python 3.12", "PyTorch", "CUDA", "..."],
-  "purpose": "цель и контекст (исследовательский / продуктовый / учебный, что решает)",
-  "current_state": "текущее состояние (если упомянуто в README/коде, иначе 'in development')",
-  "structure_overview": "что где лежит (2-4 предложения о структуре)",
-  "key_files": ["относительный/путь/к/важному/файлу.py", "..."],
-  "publication_target": "если research-проект - куда планируется (Zenodo/arXiv/конференция), иначе ''",
+  "purpose": "goal and context (research / product / learning, what it solves)",
+  "current_state": "current state (if the README/code says so, else 'in development')",
+  "structure_overview": "what lives where (2-4 sentences about the layout)",
+  "key_files": ["relative/path/to/an/important/file.py", "..."],
+  "publication_target": "for a research project - the intended venue (Zenodo/arXiv/conference), else ''",
   "tags": ["ml", "research", "pytorch", "..."],
-  "next_steps": ["что логично делать дальше", "..."]
+  "next_steps": ["the logical next move", "..."]
 }}
 
-Никакого markdown, никаких пояснений вне JSON. Будь конкретен и краток."""
+Answer in the language the README is written in. No markdown, no commentary outside the JSON. Be concrete and brief."""
 
 
 def slugify(s, max_len=55):
@@ -200,9 +199,9 @@ def collect_structure(root: Path) -> tuple[str, dict]:
             files.append(e.name)
 
     if dirs:
-        lines.append("Папки: " + ", ".join(dirs[:30]))
+        lines.append("Dirs: " + ", ".join(dirs[:30]))
     if files:
-        lines.append("Файлы: " + ", ".join(files[:25]))
+        lines.append("Files: " + ", ".join(files[:25]))
 
     # walk for code-file sample
     code_samples = []
@@ -229,7 +228,7 @@ def collect_structure(root: Path) -> tuple[str, dict]:
             break  # safety
 
     if code_samples:
-        lines.append("Примеры кода: " + ", ".join(code_samples[:15]))
+        lines.append("Code samples: " + ", ".join(code_samples[:15]))
 
     stats = {
         "total_files_scanned": total_files,
@@ -293,50 +292,50 @@ def write_context(project_name: str, project_path: Path, ctx: dict):
         "",
         f"# {project_name}",
         "",
-        description or "_(описание не извлечено)_",
+        description or "_(no description extracted)_",
         "",
-        f"**Путь:** `{project_path}`",
+        f"**Path:** `{project_path}`",
         f"**Bootstrapped:** {date} {time_str}",
         "",
     ]
 
     if purpose:
-        sections += ["## Цель и контекст", "", purpose, ""]
+        sections += ["## Goal and context", "", purpose, ""]
 
     if stack:
-        sections += ["## Стек", "", "- " + "\n- ".join(stack), ""]
+        sections += ["## Stack", "", "- " + "\n- ".join(stack), ""]
 
     if overview:
-        sections += ["## Структура", "", overview, ""]
+        sections += ["## Layout", "", overview, ""]
 
     if key_files:
-        sections += ["## Ключевые файлы", ""]
+        sections += ["## Key files", ""]
         for f in key_files:
             sections.append(f"- `{f}`")
         sections.append("")
 
     if state:
-        sections += ["## Текущее состояние", "", state, ""]
+        sections += ["## Current state", "", state, ""]
 
     if pub:
-        sections += ["## Публикация", "", pub, ""]
+        sections += ["## Publication", "", pub, ""]
 
     if next_steps:
-        sections += ["## Следующие шаги", "", "- " + "\n- ".join(next_steps), ""]
+        sections += ["## Next steps", "", "- " + "\n- ".join(next_steps), ""]
 
     sections += [
         "---",
         "",
-        "## История сессий",
+        "## Session history",
         "",
-        "_(автоматически обновляется hook'ом после каждой сессии)_",
+        "_(updated automatically by the hook after every session)_",
         "",
         body_tags,
     ]
     head = "\n".join(sections)
 
     # Preserve the accumulated session history: the hook appends dated `## YYYY-MM-DD` blocks
-    # (and a rolling `## Накопленное состояние`) below the seed over the life of the project.
+    # (and a rolling `## Accumulated state`) below the seed over the life of the project.
     # Re-seeding - including `--force` - must splice the fresh head IN FRONT of that tail, not
     # erase it. `--force` used to overwrite the whole file, destroying every accumulated entry
     # (critic R3, same data-loss class as db19ecb but through the escape hatch). Atomic write.

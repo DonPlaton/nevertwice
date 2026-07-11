@@ -99,7 +99,7 @@ with tempfile.TemporaryDirectory() as td:
           "#p #y #t" not in ptext and "tags: []" in ptext)
     mist = list((Path(td) / "Mistakes").glob("*.md"))
     check("F46: prevention rendered in mistake note",
-          bool(mist) and "Как избежать" in mist[0].read_text(encoding="utf-8"))
+          bool(mist) and "**Prevention:**" in mist[0].read_text(encoding="utf-8"))
 
 print()
 print(f"v2: {P} passed, {F} failed")

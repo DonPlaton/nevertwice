@@ -221,7 +221,7 @@ fp.write_text(head + entries, encoding="utf-8")
 check("fixture exceeds cap", len(fp.read_bytes()) > m.CONTEXT_MAX_BYTES)
 m.compact_context_if_needed(fp, "proj")
 check("compacted file within cap", len(fp.read_bytes()) <= m.CONTEXT_MAX_BYTES)
-check("state block present", "Накопленное состояние" in fp.read_text(encoding="utf-8"))
+check("state block present", "Accumulated state" in fp.read_text(encoding="utf-8"))
 
 
 # ── C1: full pipeline - off-topic session contributes no project knowledge ──
@@ -329,7 +329,7 @@ check("mistake flagged resolved_by the decision", "resolved_by:" in mk_text and 
 check("mistake status = resolved", "status: resolved" in mk_text)
 check("decision records what it resolves", "resolves:" in dec_text and mk in dec_text)
 check("resolved mistake marked in recall snippet",
-      m._note_snippet(mk, "mistake").startswith("✅ решено"))
+      m._note_snippet(mk, "mistake").startswith("✅ solved"))
 
 
 # ── I-7: cross-project transfer (GPU-free lexical path) ───────────────
@@ -431,7 +431,7 @@ card = m.build_project_card("cardproj", status_hint="working on retrieval qualit
 check("card has markers + header",
       m.CARD_START in card and m.CARD_HEADER in card and m.CARD_END in card)
 check("card status from hint", "working on retrieval quality" in card)
-check("card lists stack/themes", "Стек/темы" in card and "cuda" in card)
+check("card lists stack/themes", "Stack/topics" in card and "cuda" in card)
 check("card shows open gotcha (unresolved mistake)", "cuda oom on batch" in card)
 check("card excludes resolved mistake entirely", "wrong seed" not in card)
 check("card shows key decisions", "use bge-m3 embedder" in card and "fix the seed" in card)
@@ -457,7 +457,7 @@ check("refresh idempotent (single card block)",
 
 brief = m._context_brief(ctx)
 check("_context_brief prefers the card",
-      "Карточка проекта" in brief and "cuda oom on batch" in brief)
+      "Project card" in brief and "cuda oom on batch" in brief)
 
 # card lives in the file head → survives Context compaction
 m.generate_json = lambda prompt, project=None: {"state": "- compacted state"}
@@ -869,7 +869,7 @@ finally:
 line = m._fact_line({"stem": "2025-01-01-proj-pattern-old", "ntype": "pattern",
                      "title": "T", "recurrence": 4})
 check("M-12 fact line shows recurrence ×N", "×4" in line)
-check("M-12 fact line shows age for old note", "мес" in line or "г" in line)
+check("M-12 fact line shows age for old note", "mo" in line or "y" in line)
 fresh = m._fact_line({"stem": "2026-06-14-proj-pattern-fresh", "ntype": "pattern",
                       "title": "T", "recurrence": 1})
 check("M-12 fresh single note: no marker", "_(" not in fresh)
@@ -1045,7 +1045,7 @@ check("M-4 stale when referenced file is missing", m._note_stale(s_gone, "patter
 check("M-4 fresh when referenced file exists", m._note_stale(s_live, "pattern", projdir) is False)
 check("M-4 no path refs → not stale", m._note_stale(s_none, "pattern", projdir) is False)
 check("M-4 fact line flags stale",
-      "устарел" in m._fact_line({"stem": s_gone, "ntype": "pattern", "title": "T"}, stale=True))
+      "stale" in m._fact_line({"stem": s_gone, "ntype": "pattern", "title": "T"}, stale=True))
 
 sandbox()   # dead store removed (d unused here)
 m.write_typed_note("Decisions", {"title": "adopt cursor pagination", "description": "6x faster"},

@@ -116,13 +116,13 @@ fp.write_text(head + "\n\n".join(big_entries) + "\n", encoding="utf-8")
 m.generate_json = lambda *a, **k: {"state": "STATE-SUMMARY-BLOCK " + "z"*200}
 m.compact_context_if_needed(fp, proj)
 mid = fp.read_text(encoding="utf-8")
-n_state_1 = mid.count("## Накопленное состояние")
+n_state_1 = mid.count("## Накопленное состояние") + mid.count("## Accumulated state")
 check("after 1st compaction: exactly 1 state block", n_state_1 == 1, f"count={n_state_1}")
 # 2nd compaction (still >12KB because 12 recent * 1400 bytes ~ 17KB)
 print(f"    [info] post-1st-compaction bytes={len(mid.encode())}")
 m.compact_context_if_needed(fp, proj)
 end = fp.read_text(encoding="utf-8")
-n_state_2 = end.count("## Накопленное состояние")
+n_state_2 = end.count("## Накопленное состояние") + end.count("## Accumulated state")
 check("after 2nd compaction: still exactly 1 state block (no stacking/dup)",
       n_state_2 == 1, f"count={n_state_2} -- OLD state block may be lost or duplicated")
 # Is the FIRST state block (containing summary of entries 0-7) preserved into 2nd?

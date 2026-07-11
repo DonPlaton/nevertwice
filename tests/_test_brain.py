@@ -250,8 +250,8 @@ with tempfile.TemporaryDirectory() as td:
 
     m.refresh_entity_cards()
     card = (m.VAULT / "Entities" / "method-seqmodel.md").read_text(encoding="utf-8")
-    check("card surfaces the evolution section", "Эволюция понимания" in card and "RNN" in card)
-    check("card span counts the full history", "2026-05-01" in card and "упоминаний: 3" in card)
+    check("card surfaces the evolution section", "How the understanding evolved" in card and "RNN" in card)
+    check("card span counts the full history", "2026-05-01" in card and "mentions: 3" in card)
     check("api.entity_timeline works", api.entity_timeline("seqmodel").get("count") == 3)
 
     m.write_typed_note("Patterns", {"title": "Adam optimizer", "entities": ["adam"],
