@@ -2,7 +2,7 @@
 
 <img src="docs/banner.png" alt="Nevertwice: proactive, local-first memory for AI coding agents that acts before your agent repeats a mistake · plain Markdown + Git · zero dependencies · private by default" width="880">
 
-#  Nevertwice
+# Nevertwice
 
 ### Proactive, local-first memory for AI coding agents - it acts before your agent repeats a mistake.
 
