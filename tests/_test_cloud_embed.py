@@ -247,10 +247,16 @@ def test_search_core_lexical_fallback_no_embedder():
 
 
 def test_search_core_empty_when_no_notes_at_all():
+    # review 2026-08 round 2 contract: with a project FILTER the miss reports
+    # "empty-project" (the store may simply have nothing for that project); the
+    # bare "empty" (= "run embed_index") is reserved for unfiltered queries, so a
+    # text-only store is never mislabeled as "no memory for None".
     with mock.patch.object(m, "load_embed_cache", return_value={}), \
          mock.patch.object(m, "_scale_index", return_value=None):
-        results, mode = ms.search_core("anything", "proj", k=5)
-    assert results == [] and mode == "empty"
+        r1, m1 = ms.search_core("anything", "proj", k=5)
+        r2, m2 = ms.search_core("anything", None, k=5)
+    assert r1 == [] and m1 == "empty-project"
+    assert r2 == [] and m2 == "empty"
 
 
 def test_update_embeddings_stores_text_only_when_no_embedder():
