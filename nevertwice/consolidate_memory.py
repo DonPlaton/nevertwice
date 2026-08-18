@@ -555,6 +555,18 @@ def _run_consolidation(apply, mode, has_llm):
             arch.mkdir(exist_ok=True)
             for src in dup_fps:
                 if src.exists():
+                    # Stamp the keeper BEFORE archiving: without `duplicate_of` the cluster
+                    # relationship evaporated the moment apply ran - unauditable, and it
+                    # threw away free labeled training pairs for twin-detection /
+                    # embedding-specialization research (2026-08-18: 103 freshly-archived
+                    # duplicates had to be reconstructed by similarity because nothing
+                    # recorded which keeper each one merged into).
+                    try:
+                        text = src.read_text(encoding="utf-8", errors="replace")
+                        m.write_atomic(src, m._stamp_frontmatter(
+                            text, {"duplicate_of": keep}))
+                    except OSError:
+                        pass
                     target = arch / src.name
                     if target.exists():
                         target.unlink()
