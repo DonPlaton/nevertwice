@@ -103,11 +103,22 @@ are too easy) - only the real vault discriminates, which is why it is the criter
   them the GGUF loads as a completion model and Ollama's runner dies with a stack-buffer
   error (0xc0000409). With them: `Capabilities: embedding`, clean load.
 
+## Deployment status
+
+**The reference machine RUNS nevertwice-embed since 2026-08-18** (full re-embed 4319/4319,
+recall verified end-to-end). The new space is dramatically better separated: distinct
+same-project pairs max **0.437** (bge-m3: 0.737), twins median 0.683 - the margin flipped
+from −0.05 to **+0.25**. Recalibrated thresholds for this space (env, not code - code
+defaults stay bge-m3-calibrated until the product default flips):
+`WRITE_DEDUP_PREFILTER=0.45, WRITE_DEDUP_SIM=0.50, WRITE_DEDUP_TWIN_P=0.80,
+DEDUP_SIM=0.62` (consolidator); `SIM_FLOOR=0.40` stays (weakest real query top-1: 0.478,
+noise now ~0.16). The twin classifier retrained in the new space composes to
+**AUC 0.9989, precision 1.000 / twin-recall 0.902** (bge-m3 composition: 0.852).
+
 ## Remaining owner steps
 
-1. HF upload of `universal_v1_merged` + the GGUF (owner's account) → users get
-   `ollama pull`-able distribution.
-2. Product default flip: `NEVERTWICE_EMBED_MODEL=nevertwice-embed` with bge-m3 fallback
-   (embed_signature change triggers the documented full re-embed). Recalibrate the
-   cosine thresholds (SIM_FLOOR / write gate / consolidator) on the new space - the
-   calibration scripts exist.
+1. `huggingface-cli login` then `python hf_publish.py` → publishes the model card, merged
+   checkpoint, LoRA adapter and f16 GGUF to `<you>/nevertwice-embed` (users then
+   `ollama pull hf.co/<you>/nevertwice-embed`).
+2. Product default flip (repo-wide): `NEVERTWICE_EMBED_MODEL=nevertwice-embed` default +
+   ship the new-space classifier weights + threshold defaults in one release.
