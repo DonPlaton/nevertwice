@@ -5,6 +5,94 @@ versions are [semantic](https://semver.org). Dates are UTC.
 
 ## [Unreleased]
 
+## [2.3.0] - 2026-08-18
+
+### Added
+- **Graph laws (`nevertwice-integrity`).** The knowledge graph is now checked against its own
+  algebra rather than only for broken links: relation targets must resolve, `rel` types must be
+  defined somewhere, the causal orientation must be acyclic, and no pair may be asserted with a
+  relation *and* its converse. It also reports **vocabulary coherence** - the drift between the
+  relation types extraction writes and the ones the causal model reads, a class of bug no
+  per-note validation can see. `--strict` turns it into a CI gate. On a 3.4k-note store it runs
+  in 0.4 s and found 20+ causal cycles, 4 converse contradictions, 142 edges with undefined
+  types, 86 dead wikilinks, and a 73% unreachable-edge rate.
+- **Refraction (`nevertwice-lens`).** A small algebra of pure `store -> View` projections:
+  relational primitives (`where` / `order_by` / `top` / `select`) plus semantic lenses a
+  relational view cannot express. The headline lens is the **falsification frontier** - the
+  beliefs nearest to being wrong, ranked by `(1 - confidence) x recurrence x revision history`,
+  the first surface that answers *what do I believe that I should test first?* Emitters render
+  one View as markdown, mermaid, JSON, or an Obsidian `.base` file, which honestly declares
+  which columns a Base cannot express.
+- **Injection receipt.** The SessionStart payload now reports what it cost, how many lessons the
+  budget refused, and what it saved: `_memory: ~430 tok - 5 lessons (2 held back) - saved ~11.2k_`.
+  Budget-driven truncation used to be entirely silent. It takes no reservation and degrades or
+  disappears rather than displace a lesson; `NEVERTWICE_INJECT_RECEIPT=0` restores the exact
+  previous payload.
+
+### Fixed
+- **Live-pipeline review round (2026-08-18, /code-review max over a production deployment;
+  13 findings, all fixed here and ported to the live install).**
+  (1) *Watermark delta-mining*: `--dir` sweeps keyed idempotency on path+content hash, so a
+  resumed/growing transcript was re-mined IN FULL every sweep (one Codex rollout six times,
+  another sixteen; ~61% of watch-path LLM spend was repeat work). A per-file byte watermark
+  (`.ingest_watermarks.json`) now mines only the appended tail; a rewritten file re-mines
+  once. (2) *Near-duplicate write gate*: the LLM re-states one lesson under twin titles that
+  exact-slug reconcile cannot see - a calibrated embedding gate (0.80; measured on 4.2k live
+  vectors: distinct pairs top out at 0.737, twins median 0.833 - the first-shipped 0.92 was
+  measured near-inert) retires the older twin and carries recurrence forward. The weekly
+  consolidator's threshold was recalibrated the same way (0.92 -> 0.86; it had accumulated
+  141 exact-slug twin pairs while nominally deduplicating). (3) *Session identity*: stems
+  used `session_id[:8]`, collapsing every prefix-constant ingest id to the literal
+  'ingest-f' (34 notes) and conflating same-minute transcripts - now a hash of the whole id,
+  with the collision-free stem reserved BEFORE typed notes stamp it as provenance, and a
+  same-day same-slug re-encounter from another session ABSORBED into the existing note
+  (recurrence/sources bumped) instead of minting a '-2' twin. (4) *Card slots*: day-granular
+  date sort over glob order made the five card slots "alphabetically-first five of today" -
+  ties now break by recurrence, then stated confidence, then stem. (5) *Sentence-aware card
+  truncation*: Status lines were hard-sliced mid-word with no marker. (6) *Honest token
+  ledger*: the "tokens saved" headline booked a full-store-re-paste counterfactual (one
+  recall booked +190k) that grew with duplicate bloat - the ledger now records REAL injected
+  tokens first and labels the bound as a bound; the injection receipt no longer quotes it.
+  (7) *Anti-confabulation*: repeated injected boilerplate (global CLAUDE.md, project
+  rosters, system reminders) is collapsed before extraction and the prompt forbids
+  attributing work to projects named only there (a live card had credited VPN work to an
+  unrelated project). (8) *Relation-target reachability*: edge targets are auto-tagged as
+  entities on the asserting note, so typed edges resolve by construction.
+- **`fixes` / `fixed-by` now reach the causal model.** They were the store's most common typed
+  edges (517 of 2400) and the impact graph oriented neither, so `what_breaks` / `why` reasoned
+  over a graph missing a fifth of its edges - including the fix-relations the "never repeat a
+  mistake" premise rests on. Measured on the live store: entities the causal model can answer
+  for went 102 -> 210 of the top 300 (34% -> 70%), impact edges +38.9%. Cost: 26 -> 85 cycles,
+  each a real data contradiction that `nevertwice-integrity` now lists. See
+  `research/CAUSAL_VOCAB.md`.
+- **The SessionStart budget really does bound the whole payload now.** Two leaks broke the
+  audited M-15/M-d invariant on real data: the "show at least one lesson" guarantee appended the
+  first line of every section regardless of the cap, and section headings were never charged to
+  the budget at all. Measured before the fix: 11 of 12 projects overshot a 1200-char budget and
+  one reached 2418 against a cap of 2200. An oversized lesson is now trimmed into its snippet
+  with the title kept whole, and dropped entirely rather than shown under a truncated name.
+- **`confidence` reaches the metadata layer.** M-10 stamped it into every note and the ranker
+  read it off the embed cache, but `_note_meta` dropped it - so every read surface built on note
+  metadata (digest, dashboard, graph, lenses) was blind to how sure the memory is of what it
+  knows.
+- **Adversarial-review hardening (2026-08, 15 findings + 5 runner-ups, all fixed).** The sharp
+  ones: (1) the new test harnesses patched `m.VAULT` but not the import-time `EMBED_CACHE`
+  constant, so one test run overwrote a real deployment's embedding cache AND its `.bak` with
+  fixture data - harnesses now patch every vault-derived path (mirroring `sandbox()`), pinned
+  by a canary test; (2) cycle detection rewritten from simple-path DFS (exponential on dense
+  ACYCLIC graphs - a 61-node lattice took ~12s and `--strict` would hang CI on healthy stores)
+  to Tarjan SCC, O(V+E) always, with EXACT uncapped region totals (the old totals silently
+  capped at 20); (3) a missing `receipt.py` in a flat deployment no longer kills the whole hook
+  at import; (4) one more budget off-by-one (the accept predicate omitted the joining newline -
+  payloads landed at budget+1 on exact-boundary budgets); (5) mixed cause/fix cycles downgraded
+  to warnings (a `caused-by` + `fixes` pair can be consistent); (6) `causal_closure` no longer
+  draws synthetic root->effect edges - mermaid shows only the store's real typed edges among
+  shown nodes; (7) the frontier's revision factor silently zeroed for non-slug project names;
+  (8) integrity reads the causal orientation FROM `causal.py` instead of mirroring it; plus
+  scoped-run entity universes, case-insensitive wikilink resolution, markdown/mermaid escaping,
+  project-scoped `.base` emission, type-stable `order_by`, UTF-8 `--json`, and `human()`
+  rounding at the 999_999 boundary.
+
 ## [2.2.1] - 2026-07-11
 
 ### Changed

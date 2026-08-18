@@ -33,11 +33,25 @@ except Exception:
 
 # Orient each relation into a single impact direction (cause → effect), so "what does changing
 # X impact" is one downstream traversal. FORWARD: edge (src --rel--> tgt) means src impacts tgt.
-# REVERSE: it means tgt impacts src (e.g. "A depends-on B" ⇒ changing B breaks A ⇒ B→A). The
-# rest (fixes/alternative-to/…) are not breakage-causal and are excluded from the impact graph.
+# REVERSE: it means tgt impacts src (e.g. "A depends-on B" ⇒ changing B breaks A ⇒ B→A).
+#
+# `fixes` / `fixed-by` belong here (added 2026-08, after integrity.py's vocabulary-coherence
+# check measured the gap): a fix IS causal - touch the fix and the problem it holds down comes
+# back - and they are the store's MOST common typed edges (457 + 60 of 2400), the pair the
+# extraction prompt asks for by name, and the pair the whole "never repeat a mistake" premise
+# rests on. Excluding them meant reasoning over a graph missing a fifth of its edges.
+# Measured on the live store (research/CAUSAL_VOCAB.md): entities the model answers for went 102 -> 210
+# of the top 300 (34% -> 70%), impact edges +38.9%. The cost is 26 -> 85 cycles, each a genuine
+# contradiction in the data ("A fixes B" AND "A fixed-by B") that `nevertwice-integrity` lists
+# for cleanup; traversal is cycle-safe, so the failure mode is an over-broad answer, which for
+# "what might break" beats the silence it replaced. Consistent statements ("A fixes B" plus
+# "B fixed-by A") orient to the SAME edge and add no cycle.
+#
+# Still excluded: `alternative-to` / `related-to` are symmetric and carry no direction, so they
+# would add edges without adding causality.
 _FORWARD = {"causes", "enables", "prevents", "implements", "improves", "enforces",
-            "standardizes", "exposes"}
-_REVERSE = {"caused-by", "depends-on", "requires", "uses", "part-of"}
+            "standardizes", "exposes", "fixes"}
+_REVERSE = {"caused-by", "depends-on", "requires", "uses", "part-of", "fixed-by"}
 
 
 def build_impact_graph(project=None) -> dict:
@@ -109,8 +123,12 @@ def what_breaks(entity, project=None, *, depth=2, max_effects=8, impact=None) ->
 
 
 def why(entity, project=None, *, depth=2, max_causes=8) -> dict:
-    """The upstream counterfactual: what causes / underlies `entity` (traverse the impact graph
-    in reverse). `{entity, causes:[{cause, via, hops}]}`."""
+    """The upstream counterfactual: what sits UPSTREAM of `entity` in the impact graph
+    (reverse traversal). `{entity, causes:[{cause, via, hops}]}` - the key stays `causes`
+    for API/MCP compatibility, but with fixes/fixed-by in the vocabulary an upstream factor
+    is not always a cause: a `via: fixes` entry means the entity is HELD DOWN by that fix
+    (touch the fix and the entity comes back), so phrase output rel-aware, never as
+    'caused by' unconditionally (review 2026-08)."""
     impact = build_impact_graph(project)
     reverse: dict = {}
     for cause, edges in impact.items():
@@ -167,7 +185,7 @@ def main():
         if not r["causes"]:
             print(f"no upstream causes recorded for `{ent}`.")
         else:
-            print(f"`{ent}` is caused / underpinned by:")
+            print(f"upstream of `{ent}` (causes, dependencies, and fixes holding it down):")
             for c in r["causes"]:
                 print(f"  ← {c['effect']}  (via {c['via']})")
     else:

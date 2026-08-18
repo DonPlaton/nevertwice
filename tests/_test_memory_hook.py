@@ -63,11 +63,18 @@ def test_stem_parse():
 
     sess = mh.session_stem("2026-05-13", "14:35", "project_alpha",
                            "abcdef1234567890")
+    # The id8 is a HASH of the whole id, not id[:8] (review 2026-08: the positional
+    # slice collapsed every prefix-constant ingest id to the literal 'ingest-f').
     check("session_stem builds",
-          sess == "2026-05-13-1435-project_alpha-session-abcdef12", sess)
+          sess == f"2026-05-13-1435-project_alpha-session-{mh._sid8('abcdef1234567890')}",
+          sess)
+    check("prefix-constant ids yield distinct stems (the 'ingest-f' collapse)",
+          mh.session_stem("2026-05-13", "14:35", "p", "ingest-file-aa-11")
+          != mh.session_stem("2026-05-13", "14:35", "p", "ingest-file-aa-22"))
     s = mh.parse_session_stem(sess)
     check("parse_session roundtrip", s is not None
-          and s["project"] == "project_alpha" and s["id8"] == "abcdef12", repr(s))
+          and s["project"] == "project_alpha"
+          and s["id8"] == mh._sid8("abcdef1234567890"), repr(s))
 
     check("parse_typed rejects session", mh.parse_typed_stem(sess) is None)
     check("parse_session rejects typed", mh.parse_session_stem(typed) is None)
@@ -176,7 +183,15 @@ def test_unique_path_collision():
     s2 = mh.write_typed_note("Patterns", item, "demo", "2026-05-13", ["t"],
                              "pattern", session_stem_="sess-b")
     check("first write keeps base stem", s1.endswith("code-review-loop"), s1)
-    check("second write gets -2 suffix", s2.endswith("code-review-loop-2"), s2)
+    # Review 2026-08: a same-day same-slug write from a DIFFERENT session used to mint a
+    # '-2' twin standing as a second current truth (both reconciles were blind to it).
+    # It is now ABSORBED: the base note is reused with recurrence/sources bumped.
+    check("second session is absorbed into the base note, no -2 twin",
+          s2 == s1 and not (patterns / f"{s1}-2.md").exists(), s2)
+    fm2 = mh._read_frontmatter((patterns / f"{s1}.md").read_text(encoding="utf-8"))[0]
+    check("absorption recorded both sessions",
+          int(fm2.get("recurrence") or 0) >= 2
+          and set(fm2.get("sources") or []) >= {"sess-a", "sess-b"}, repr(fm2))
     check("both files exist on disk",
           (patterns / f"{s1}.md").exists() and (patterns / f"{s2}.md").exists())
 

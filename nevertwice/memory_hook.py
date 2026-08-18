@@ -12,6 +12,7 @@ Pipeline per session:
   old sessions, prune old DB rows.
 """
 
+import hashlib
 import json
 import math
 import os
@@ -63,6 +64,29 @@ try:
     from . import config as _cfg
 except ImportError:  # run directly (sys.path includes this dir)
     import config as _cfg
+
+# Injection accounting (pure, dependency-free - see receipt.py). Imported here rather than
+# lazily because it is on the SessionStart path and costs nothing: no I/O, no package imports.
+# MISSING receipt.py must not kill the hook (review 2026-08): the live deployment is a flat
+# selective-copy of scripts, and a cosmetic feature crashing SessionStart/SessionEnd/guards
+# would violate its own contract ("must never affect the recall it is measuring") - so a
+# flat dir without receipt.py degrades to no-receipt instead of ModuleNotFoundError.
+try:
+    from . import receipt as _receipt
+except ImportError:
+    try:
+        import receipt as _receipt
+    except ImportError:
+        _receipt = None
+
+
+class _NoReceipt:
+    """Inert stand-in when receipt.py is absent: assembly calls show/hold unconditionally."""
+    def show(self, n: int = 1) -> None:
+        pass
+
+    def hold(self, n: int = 1) -> None:
+        pass
 
 _cfg.load_dotenv()                 # pull cloud keys from .env if present
 
@@ -307,6 +331,11 @@ INJECT_CONTEXT = os.environ.get("NEVERTWICE_INJECT", "1") != "0"
 # the context window. Sections are added by priority (card → mistakes → patterns →
 # cross-project) until the budget is hit. ~2200 chars ≈ 550 tokens.
 INJECT_BUDGET_CHARS = env_int("NEVERTWICE_INJECT_BUDGET_CHARS", 2200)
+# The injection reports its own cost, what the budget refused, and what it saved (receipt.py).
+# NO room is reserved: the payload is assembled exactly as without a receipt and the line is
+# appended only into leftover slack (degrading/vanishing rather than displacing a lesson) -
+# so 0 disables it and the payload is byte-identical to a receipt-less build either way.
+INJECT_RECEIPT = os.environ.get("NEVERTWICE_INJECT_RECEIPT", "1") != "0"
 # Minimum cosine for a semantic hit to count, and how much a recurring lesson is
 # boosted in ranking (audit H4/LOW: recurrence was computed but never used).
 # 0.40 (was 0.30, which sat below the bge-m3 background and never fired): measured on the live
@@ -465,6 +494,12 @@ TYPE_ICON = {"pattern": "✅", "mistake": "⚠️", "decision": "🎯"}
 
 EXTRACTION_PROMPT = """Analyze this agent session and extract the durable knowledge.
 
+RULE - injected boilerplate is NOT session content. Transcripts often carry the agent's
+configuration re-sent every turn: global instructions (CLAUDE.md), "Active Projects"
+lists, system reminders, tool definitions. NEVER extract knowledge from such blocks and
+NEVER attribute work to a project merely because its name appears in them - project
+attribution comes only from the actual commands, files and paths the session worked on.
+
 Known parameters:
   project (use exactly this value): {project_hint}
   preferred tags (pick from this list when one fits, lowercase; invent a new one only if nothing fits):
@@ -546,8 +581,10 @@ FIELDS entities/relations (optional) - the knowledge graph:
   entities - 2-5 key entities of the lesson (tools/concepts/files), lowercase kebab-case,
   no versions. relations - edges {{"rel": type, "target": entity}}, target in the same style;
   rel from: causes, caused-by, fixes, fixed-by, depends-on, requires, part-of, alternative-to,
-  related-to. E.g. for a CUDA OOM: entities ["cuda","batch-size"], relations
-  [{{"rel":"fixed-by","target":"gradient-checkpointing"}}]. Unclear - [].{brain_block}"""
+  related-to. Every relations target must ALSO appear in some lesson's entities (add it to
+  this lesson's entities if nothing else carries it) - an edge to an entity no lesson is
+  tagged with cannot be followed. E.g. for a CUDA OOM: entities ["cuda","batch-size"],
+  relations [{{"rel":"fixed-by","target":"gradient-checkpointing"}}]. Unclear - [].{brain_block}"""
 
 
 def log(msg):
@@ -725,8 +762,39 @@ def typed_stem(date: str, project: str, ntype: str, title: str) -> str:
     return f"{date}-{project}-{ntype}-{slugify(title)}"
 
 
+def _sid8(session_id: str) -> str:
+    """8 stable chars of session identity - a HASH of the whole id, never a positional
+    slice. Claude Code ids are UUIDs (entropy at the head) but watch/ingest ids are
+    prefix-constant ('ingest-file-<hash>-...', entropy at the TAIL), so `id[:8]` collapsed
+    every ingest ever to the literal constant 'ingest-f' (34 live notes shared it; review
+    2026-08) - conflating same-minute transcripts and letting the per-session idempotency
+    guard silently drop a same-slug lesson mined from a DIFFERENT transcript."""
+    return hashlib.sha1((session_id or "unknown").encode("utf-8", "replace")).hexdigest()[:8]
+
+
 def session_stem(date: str, time_str: str, project: str, session_id: str) -> str:
-    return f"{date}-{time_str.replace(':','')}-{project}-session-{session_id[:8]}"
+    return f"{date}-{time_str.replace(':','')}-{project}-session-{_sid8(session_id)}"
+
+
+def reserve_session_stem(date: str, time_str: str, project: str, session_id: str) -> str:
+    """The FINAL session-note stem, resolved BEFORE any typed note is written. The round-1
+    flow computed a base stem, stamped it into typed notes' `session` frontmatter, and only
+    then let write_session_note uniquify a collision to '-2' - so same-minute transcripts
+    conflated: their typed notes all claimed the first transcript's session, and the
+    idempotency guard dropped same-slug lessons across DIFFERENT transcripts (review
+    2026-08, manifest in-tree). Crash-retry safe: a session note already on disk carrying
+    THIS exact session_id wins, so a retried session reuses its stem instead of minting -2."""
+    base = session_stem(date, time_str, project, session_id)
+    p = VAULT / "Sessions"
+    if p.exists():
+        for cand in sorted(p.glob(base + "*.md")):
+            try:
+                fm, _ = _read_frontmatter(cand.read_text(encoding="utf-8", errors="replace"))
+            except OSError:
+                continue
+            if fm.get("session_id") in (session_id, session_id[:8]):   # full id; [:8] = legacy notes
+                return cand.stem
+    return _unique_path(p, base).stem
 
 
 def parse_typed_stem(stem: str) -> dict | None:
@@ -1015,6 +1083,24 @@ def _looks_unsafe(text: str) -> bool:
 # cannot spoof trust or displace corroborated truth. Two genuine sessions still establish a lesson.
 QUARANTINE_MODE = os.environ.get("NEVERTWICE_QUARANTINE", "0") != "0"
 QUARANTINE_CONF = env_float("NEVERTWICE_QUARANTINE_CONF", 0.95)
+# Write-time near-duplicate reconcile (review 2026-08): the LLM routinely re-states the
+# same lesson under a different title (slugs differing by one word), which the exact-slug
+# reconcile in write_typed_note cannot see - measured on a live store: THREE live patterns
+# for one lesson, twin mistakes carrying CONTRADICTORY resolutions, and the recurrence
+# signal starved because each re-encounter minted a fresh note at recurrence 1. A new note
+# whose embedding is at least this cosine-similar to an existing live sibling (same
+# project + type) is treated exactly like a same-slug re-statement: the old note retires
+# to Superseded/ and its recurrence/sources carry forward. 0 disables the gate;
+# embedder down = gate skipped.
+# 0.80 is CALIBRATED on a live 4.2k-vector store (2026-08-18): random DISTINCT
+# same-project/type pairs top out at cosine 0.737 (p99.9 = 0.735, n=1326), while
+# exact-slug twin pairs have median 0.833 and the hidden-twin tail sits at 0.84-0.90.
+# 0.80 clears the distinct maximum by +0.06 and catches the twin majority. The first
+# shipped default copied the consolidator's 0.92 - measured NEAR-INERT: real bge-m3
+# re-phrasings of one lesson score ~0.78-0.83, so 0.92 caught only near-verbatim copies
+# (the reviewer predicted exactly this; a 164-note flood confirmed it empirically).
+WRITE_DEDUP_SIM = env_float("NEVERTWICE_WRITE_DEDUP_SIM", 0.80)
+WRITE_DEDUP_MAX_RETIRE = 3   # safety valve: never retire more than this many per new note
 
 
 _YAML_NEEDS_QUOTE = re.compile(r'[:#&*!|>\'"%@`{}\[\],]|^\s|\s$')
@@ -1537,6 +1623,38 @@ def redact_secrets(text: str) -> str:
     for pat in _SECRET_PATTERNS:
         out = pat.sub('[REDACTED]', out)
     return out
+
+
+_SYSREM_RE = re.compile(r"<system-reminder>.*?</system-reminder>", re.S)
+
+
+def strip_injected_boilerplate(body: str, min_len: int = 200, min_repeats: int = 3) -> str:
+    """Remove harness-injected scaffolding before extraction: <system-reminder> blocks,
+    and any paragraph of >= min_len chars that repeats VERBATIM >= min_repeats times
+    (injected global instructions - CLAUDE.md, 'Active Projects' rosters - are re-sent
+    with every turn, so they dominate the transcript without being session content).
+    Repeated blocks keep their FIRST occurrence, so genuinely-quoted config is still
+    visible once. This is the mechanical half of the anti-confabulation defense; the
+    extraction prompt's boilerplate RULE is the semantic half (review 2026-08: a live
+    extractor credited one project's work to an unrelated project whose name occurred
+    only in per-turn instruction boilerplate)."""
+    body = _SYSREM_RE.sub(" ", body or "")
+    paras = body.split("\n\n")
+    if len(paras) < min_repeats:
+        return body
+    counts: dict = {}
+    for para in paras:
+        if len(para) >= min_len:
+            counts[para] = counts.get(para, 0) + 1
+    seen: set = set()
+    out = []
+    for para in paras:
+        if len(para) >= min_len and counts.get(para, 0) >= min_repeats:
+            if para in seen:
+                continue                    # drop the 2nd..Nth verbatim copy
+            seen.add(para)
+        out.append(para)
+    return "\n\n".join(out)
 
 
 def truncate_smart(text: str, max_chars: int) -> str:
@@ -2470,6 +2588,52 @@ def _stamp_frontmatter(text: str, fields: dict) -> str:
     return "\n".join(out) + body
 
 
+_NDUP_MEMO: list = [None, None]        # [cache-file mtime, parsed cache] - reload on change
+
+
+def _near_duplicate_paths(folder_path: Path, project: str, ntype: str,
+                          title: str, desc: str, prevention: str,
+                          exclude: set) -> list[Path]:
+    """Live sibling notes (same project + type) whose stored embedding is at least
+    WRITE_DEDUP_SIM cosine-similar to the note about to be written - the re-statements the
+    exact-slug reconcile cannot see (review 2026-08: three live patterns for one lesson,
+    twin mistakes with contradictory resolutions). Embeds with the SAME text shape and
+    document prefix as update_embeddings, so the cosine is computed in the cache's space.
+    Best-effort and fail-open: no embedder, a changed embedding space, or an unreadable
+    cache returns [] and the write proceeds exactly as before the gate existed."""
+    if WRITE_DEDUP_SIM <= 0:
+        return []
+    try:
+        if not embed_cache_usable():
+            return []
+        vec = embed_text(f"{title}\n{desc}\n{prevention}".strip(),
+                         kind=doc_embed_kind(), project=project)
+        if not vec:
+            return []
+        try:
+            mtime = EMBED_CACHE.stat().st_mtime_ns
+        except OSError:
+            return []
+        if _NDUP_MEMO[0] != mtime:              # one parse per cache generation, not per note
+            _NDUP_MEMO[0] = mtime
+            _NDUP_MEMO[1] = load_embed_cache()
+        scored = []
+        for stem, e in (_NDUP_MEMO[1] or {}).items():
+            if (not isinstance(e, dict) or e.get("project") != project
+                    or e.get("ntype") != ntype or stem in exclude or not e.get("vec")):
+                continue
+            if not (folder_path / f"{stem}.md").exists():   # retired/archived cache leftovers
+                continue
+            sim = cosine(vec, e["vec"])
+            if sim >= WRITE_DEDUP_SIM:
+                scored.append((sim, stem))
+        scored.sort(key=lambda x: (-x[0], x[1]))
+        return [folder_path / f"{s}.md" for _, s in scored[:WRITE_DEDUP_MAX_RETIRE]]
+    except Exception as e:
+        log(f"near-dup gate skipped ({type(e).__name__}: {e})")
+        return []
+
+
 def _live_typed_paths(folder_path: Path, project: str, ntype: str,
                       slug: str) -> list[Path]:
     """Live (non-archived, non-superseded) notes matching project+ntype+slug,
@@ -2627,6 +2791,17 @@ def write_typed_note(folder: str, item, project: str, date: str,
         relations = []
         entity_types = {}
 
+    # Every relation target becomes reachable BY CONSTRUCTION (review 2026-08; the
+    # integrity checker measured 73% of live edges pointing at entities no note carried,
+    # so relation_expand / notes_for_entity silently returned nothing for them). A note
+    # that asserts an edge about X IS evidence about X - tagging the target here gives
+    # every edge at least one anchor note. Both lists are already normalized to the same
+    # safe token space; bounded at 8 entities + up to 8 targets = 16 max.
+    for _edge in relations:
+        _tgt = _edge.get("target")
+        if _tgt and _tgt not in entities:
+            entities.append(_tgt)
+
     # M-10/W8 memory-poisoning guard: refuse to persist extracted "knowledge" that looks like an
     # injection payload OR a bare dangerous imperative (exfiltration/destruction/security-bypass) -
     # defense-in-depth beyond secret redaction. Negation-gated so cautionary lessons survive.
@@ -2653,6 +2828,28 @@ def write_typed_note(folder: str, item, project: str, date: str,
             if fm.get("session") == session_stem_:
                 log(f"Idempotent skip (already written this session): {old.stem}")
                 return old.stem
+            if old.stem == base_stem:
+                # Same day, same slug, DIFFERENT session: the same lesson re-encountered.
+                # supersede_note refuses self-stem retirement and _unique_path would mint a
+                # '-2' twin standing as a second current truth (review 2026-08: four such
+                # pairs in one live sweep, invisible to both reconciles). ABSORB instead:
+                # bump recurrence/sources in place and reuse the note - the re-encounter is
+                # recorded, no twin is born. A crash-retry of the absorbing session finds
+                # itself in `sources` and returns without a second bump.
+                r_old, s_old = _note_recur_sources(old)
+                if session_stem_ in s_old:
+                    return old.stem
+                sources = sorted(s_old | {session_stem_})[:RECUR_SOURCES_CAP]
+                try:
+                    text = old.read_text(encoding="utf-8", errors="replace")
+                    text = _stamp_frontmatter(text, {
+                        "recurrence": max(r_old + 1, len(sources)), "sources": sources})
+                    write_atomic(old, text)
+                    log(f"Absorbed same-stem re-encounter into {old.stem} "
+                        f"(recurrence -> {max(r_old + 1, len(sources))})")
+                except OSError:
+                    pass
+                return old.stem
         if QUARANTINE_MODE:        # a crash-retry must not duplicate a note already quarantined this session
             for old in _live_typed_paths(p / "Quarantine", project, ntype, slug):
                 try:
@@ -2677,6 +2874,9 @@ def write_typed_note(folder: str, item, project: str, date: str,
             # A same-slug note is THIS lesson recurring: read its count + contributing sessions
             # BEFORE supersede drops it from the cache, then carry forward below - otherwise
             # recurrence is pinned at 1 forever and the recurrence-boost signal is dead (audit A3).
+            # (old.stem == base_stem - same day, same slug, different session - never reaches
+            # here: the idempotency block above ABSORBS it into the existing note, because
+            # supersede_note refuses self-stem retirement; review 2026-08.)
             r_old, s_old = _note_recur_sources(old)        # one frontmatter read for both
             prior_recur = max(prior_recur, r_old)
             prior_sources |= s_old
@@ -2696,6 +2896,24 @@ def write_typed_note(folder: str, item, project: str, date: str,
                 if r_old >= 2:
                     superseded_corroborated = True         # W7: a lone note retiring corroborated truth
                 to_retire.append(old)
+
+    # Near-duplicate reconcile (review 2026-08): catch the re-statements exact-slug matching
+    # cannot see - the LLM re-mining the same work titles the lesson slightly differently
+    # ('...-with-verification' vs '...-and-verification') and both stand as current truth,
+    # sometimes with CONTRADICTORY resolutions. A found sibling joins to_retire exactly like
+    # a same-slug older note: its recurrence/sources carry into the new note, so the lesson
+    # RECURS instead of fragmenting into twins.
+    if WRITE_DEDUP_SIM > 0:
+        _nd_exclude = {base_stem} | {o.stem for o in to_retire}
+        for old in _near_duplicate_paths(p, project, ntype, title, desc, prevention,
+                                         _nd_exclude):
+            r_old, s_old = _note_recur_sources(old)
+            prior_recur = max(prior_recur, r_old)
+            prior_sources |= s_old
+            if r_old >= 2:
+                superseded_corroborated = True
+            to_retire.append(old)
+            log(f"Near-duplicate reconcile: {old.stem} retires in favor of {base_stem}")
 
     # W7 corroboration-gated quarantine (opt-in; see QUARANTINE_MODE). Divert a single-source note
     # that is also suspicious to <folder>/Quarantine/ instead of trusting it - retiring NOTHING.
@@ -2796,17 +3014,26 @@ def write_typed_note(folder: str, item, project: str, date: str,
 def write_session_note(project: str, date: str, time_str: str, summary: str,
                        cwd: str, session_id: str, tags: list,
                        links: dict[str, list[str]], trigger: str,
-                       agent: str = DEFAULT_AGENT) -> str:
+                       agent: str = DEFAULT_AGENT, stem: str | None = None) -> str:
     p = VAULT / "Sessions"
     p.mkdir(exist_ok=True)
-    # _unique_path (not a bare {stem}.md) so two distinct sessions never silently
-    # overwrite each other on a stem collision - the 8-char id slice is weak for
-    # prefixed ids ("ingest-<hex>" varies in ~1 hex char), audit 2026-06-18 HIGH.
-    fp = _unique_path(p, session_stem(date, time_str, project, session_id))
+    if stem:
+        # The caller reserved the collision-free stem BEFORE typed notes stamped it as
+        # provenance (reserve_session_stem) - writing to exactly that name keeps the
+        # frontmatter `session` links true. If the file already exists it is this same
+        # session's crash-retry (the reservation reuses a stem only when the on-disk
+        # note carries our session_id), so overwriting refreshes rather than duplicates.
+        fp = p / f"{stem}.md"
+    else:
+        # Legacy path (no reservation): _unique_path so two distinct sessions never
+        # silently overwrite each other on a stem collision (audit 2026-06-18 HIGH).
+        fp = _unique_path(p, session_stem(date, time_str, project, session_id))
     stem = fp.stem
 
+    # session_id is stored WHOLE: the 8-char slice made notes untraceable to their source
+    # transcript ('ingest-f' x34) and broke the identity checks built on it (review 2026-08).
     fm = {"date": date, "project": project, "tags": tags, "type": "session",
-          "session_id": session_id[:8], "trigger": trigger, "agent": agent}
+          "session_id": session_id, "trigger": trigger, "agent": agent}
     body_tags = render_body_tags(tags, [f"project/{project}", "session"])
 
     sections = [
@@ -2974,9 +3201,22 @@ def maintain_contexts(allow_llm: bool = True) -> None:
 # GPU-free (no LLM). Cheaper to inject, higher signal per token than the journal.
 
 def _one_line(s: str, limit: int) -> str:
-    """Collapse whitespace to a single line and hard-truncate (card fields)."""
+    """Collapse whitespace to a single line and cap at `limit` - at a SENTENCE boundary
+    when one exists past 40% of the budget, else at a word boundary with a truncation
+    marker. The old hard `s[:limit]` slice amputated card Status lines mid-word and
+    mid-noun-phrase («подтверждена работа всех пяти» - five WHAT?), and nothing told the
+    reader the final clause carried no information (review 2026-08). A sentence-boundary
+    cut needs no marker: what is shown is a complete statement; a word-boundary cut gets
+    '…' so an amputated line can never masquerade as a complete one."""
     s = re.sub(r"\s+", " ", (s or "")).strip()
-    return s[:limit].rstrip()
+    if len(s) <= limit:
+        return s
+    head = s[:limit - 1]
+    cut = max(head.rfind(". "), head.rfind("! "), head.rfind("? "), head.rfind("; "))
+    if cut >= int(limit * 0.4):
+        return head[:cut + 1]
+    sp = head.rfind(" ")
+    return (head[:sp] if sp >= int(limit * 0.4) else head).rstrip() + "…"
 
 
 def _read_frontmatter(text: str) -> tuple[dict, str]:
@@ -3083,6 +3323,11 @@ def _note_meta(p: Path, ntype: str, parsed: dict) -> dict | None:
             "relations": _norm_relations(fm.get("relations")),
             "entity_types": _norm_entity_types(fm.get("entity_types"), gate=False),
             "salience": _coerce_salience(fm.get("salience")),
+            # M-10 stamps a per-note confidence and the RANKER reads it off the embed-cache
+            # record, but the metadata layer dropped it - so every read surface built on note
+            # metadata (digest, dashboard, graph, lenses) was blind to how sure the memory is
+            # of what it knows. None = unstated, which callers treat as fully confident.
+            "confidence": _coerce_confidence(fm.get("confidence")),
             "superseded_by": str(fm.get("superseded_by") or "")}    # "" for live notes (F3 timeline)
 
 
@@ -3246,13 +3491,29 @@ def build_project_card(project: str, status_hint: str = "") -> str:
     if stack:
         section.append("**Stack/topics:** " + ", ".join(stack))
 
+    # Card-slot ranking (review 2026-08): dates are day-granular, so a date-only key over
+    # unsorted glob order made the five decision slots "the alphabetically-first five of
+    # today" - a busy day (13 same-day decisions) evicted the deliberate hostname-filter
+    # decision in favor of a bullet topically redundant with the slot above it, and the
+    # card churned to a new alphabetical top-5 every commit. Ties now break by how EARNED
+    # a note is (recurrence, then stated confidence), and finally by stem so the order is
+    # deterministic rather than filesystem-dependent.
+    def _slot_key(n):
+        conf = n.get("confidence")
+        return (n["date"], n.get("recurrence", 1) or 1,
+                conf if conf is not None else 1.0, n["stem"])
+
     open_gotchas = sorted((n for n in notes if n["ntype"] == "mistake" and not n["resolved"]),
-                          key=lambda n: (n["recurrence"], n["date"]), reverse=True)
+                          key=lambda n: (n.get("recurrence", 1) or 1, n["date"],
+                                         n.get("confidence") if n.get("confidence") is not None
+                                         else 1.0, n["stem"]),
+                          reverse=True)
     decisions = sorted((n for n in notes if n["ntype"] == "decision"),
-                       key=lambda n: n["date"], reverse=True)
+                       key=_slot_key, reverse=True)
     open_stems = {n["stem"] for n in open_gotchas[:CARD_MAX_ITEMS]}
     recurring = sorted((n for n in notes if n["recurrence"] >= 2 and n["stem"] not in open_stems),
-                       key=lambda n: n["recurrence"], reverse=True)
+                       key=lambda n: (n.get("recurrence", 1) or 1, n["date"], n["stem"]),
+                       reverse=True)
 
     blocks = []
     if open_gotchas:
@@ -3627,8 +3888,9 @@ def process_session(session_id: str, cwd: str, transcript_path: str,
         mark_processed(processed_db, session_id, transcript_path)
         return False
 
+    body = strip_injected_boilerplate(parsed["body"])   # anti-confabulation (review 2026-08)
     transcript_full = truncate_smart(
-        redact_secrets(f"Working directory: {cwd}\nTrigger: {trigger}\n\n{parsed['body']}"),
+        redact_secrets(f"Working directory: {cwd}\nTrigger: {trigger}\n\n{body}"),
         MAX_TRANSCRIPT_CHARS,
     )
 
@@ -3673,7 +3935,10 @@ def process_session(session_id: str, cwd: str, transcript_path: str,
     # contribute NO typed notes and NO context update - zero contamination.
     relevant = _is_relevant(extraction.get("project_relevant", True))
 
-    sess_stem = session_stem(date, time_str, project, session_id)
+    # The FINAL (collision-resolved) session stem, fixed before any typed note stamps it
+    # as provenance - see reserve_session_stem for why pre-uniquified stems conflated
+    # same-minute transcripts (review 2026-08).
+    sess_stem = reserve_session_stem(date, time_str, project, session_id)
 
     def items_of(nt: str) -> list:
         if not relevant:
@@ -3719,7 +3984,7 @@ def process_session(session_id: str, cwd: str, transcript_path: str,
 
     sess_link = write_session_note(
         project, date, time_str, summary, cwd, session_id, tags, links, trigger,
-        agent=agent,
+        agent=agent, stem=sess_stem,
     )
 
     cu = extraction.get("context_update")
@@ -4545,6 +4810,26 @@ def _note_snippet(stem: str, ntype: str, max_chars: int = 220) -> str:
     return out[:max_chars].rstrip()
 
 
+def _fit_fact_line(line: str, room: int) -> str:
+    """Trim a fact line to `room` characters, keeping the bolded TITLE whole and cutting only
+    into the snippet that follows it - a lesson identified by name is still actionable, a
+    lesson cut mid-name is not. Returns "" when not even the title fits.
+
+    This is what makes the "show at least one" guarantee budget-safe: it used to append the
+    first line of every section regardless of the cap, so a payload could overshoot by a full
+    fact line per section (measured on the live store: 2418 chars against a 2200 budget)."""
+    if room <= 0:
+        return ""
+    if len(line) <= room:
+        return line
+    opening = line.find("**")
+    closing = line.find("**", opening + 2) if opening != -1 else -1
+    head = line[:closing + 2] if closing != -1 else ""
+    if not head or len(head) > room:
+        return ""
+    return head if len(head) == room else line[:room - 1].rstrip() + "…"
+
+
 def _fact_line(r: dict, stale: bool = False) -> str:
     snip = _note_snippet(r.get("stem", ""), r.get("ntype", ""))
     title = r.get("title", "").strip()
@@ -4597,6 +4882,12 @@ def emit_session_start_context(cwd: str) -> None:
     footer = ["", f"_Search the memory: `python memory_search.py \"<query>\" {project}`._",
               f"_Full history: Context/{project}.md in the store._"]
     footer_len = len("\n".join(footer)) + 1
+    # The receipt takes NO reservation: assembly below is byte-for-byte what it would be
+    # without it, and the line is appended afterwards only into room already left over
+    # (receipt.py, constraint 1). Measured on the live store, reserving room up front cost a
+    # lesson in 4 of 12 projects at a 1200-char budget - so the reservation was removed and
+    # "never displaces content" became structural instead of merely usually-true.
+    rcpt = _receipt.Receipt(INJECT_BUDGET_CHARS) if _receipt is not None else _NoReceipt()
     parts = [hdr]
     used = [len(hdr) + footer_len]
     margin = 40  # headroom for labels/separators
@@ -4629,19 +4920,40 @@ def emit_session_start_context(cwd: str) -> None:
 
     def _add_facts(header_line, items):
         if not items or used[0] >= INJECT_BUDGET_CHARS:
+            rcpt.hold(len(items or ()))
             return
         section, added = ["", header_line], False
-        for r in items:
+        # The section's own heading costs room too. It used to be free in the accounting
+        # (only fact lines were counted), so three sections leaked ~110 chars past a margin
+        # of 40 - the second half of the overshoot _fit_fact_line addresses.
+        hdr_cost = len(header_line) + 2
+        for i, r in enumerate(items):
             stale = STALE_CHECK and _note_stale(r.get("stem", ""), r.get("ntype", ""), proj_dir)
             line = _fact_line(r, stale=stale)
-            # A precise hit keeps the "show at least one" guarantee (the first item bypasses
-            # the cap). A graph-expanded note (carries `via`) is ALWAYS budget-gated, so the
-            # opt-in relation expansion can never overshoot the card (audit 2026-06-20).
-            if (added or r.get("via")) and used[0] + len(line) > INJECT_BUDGET_CHARS:
+            extra = 0 if added else hdr_cost
+            # +1 = the joining newline the accounting charges below; without it a line that
+            # exactly fills the bare remainder lands the payload at budget+1 (review 2026-08:
+            # measured at boundary budgets 279/309/509 -> payloads 280/310/510).
+            over = used[0] + extra + len(line) + 1 > INJECT_BUDGET_CHARS
+            # A precise hit keeps the "show at least one" guarantee. A graph-expanded note
+            # (carries `via`) is ALWAYS budget-gated, so the opt-in relation expansion can
+            # never overshoot the card (audit 2026-06-20).
+            if over and (added or r.get("via")):
+                rcpt.hold(len(items) - i)     # this one and every one after it - refused
                 break
+            if over:
+                # honour the guarantee WITHOUT breaking the cap: trim into the snippet
+                # -1 for the newline that joins this line to the payload: the accounting
+                # below charges len(line)+1, so fitting to the bare remainder lands one
+                # character over the cap (measured: 7/12 projects at exactly +1).
+                line = _fit_fact_line(line, INJECT_BUDGET_CHARS - used[0] - extra - 1)
+                if not line:
+                    rcpt.hold(len(items) - i)
+                    break
             section.append(line)
-            used[0] += len(line) + 1
+            used[0] += len(line) + 1 + extra
             added = True
+            rcpt.show()
         if added:
             parts.extend(section)
 
@@ -4650,22 +4962,43 @@ def emit_session_start_context(cwd: str) -> None:
     if INJECT_CROSS_PROJECT and used[0] < INJECT_BUDGET_CHARS:
         cross = retrieve_cross_project(project, brief or project, cache=rcache)
         if cross:
-            xs, added = ["", "**🔗 Similar lessons from other projects:**"], False
-            for r in cross:
+            xs_hdr = "**🔗 Similar lessons from other projects:**"
+            xs, added = ["", xs_hdr], False
+            xs_cost = len(xs_hdr) + 2
+            for i, r in enumerate(cross):
                 snip = _note_snippet(r["stem"], r["ntype"])
                 line = (f"- [{r.get('project')}] **{r.get('title','').strip()}**"
                         + (f" - {snip}" if snip else ""))
-                if added and used[0] + len(line) > INJECT_BUDGET_CHARS:   # budget-aware (audit)
+                extra = 0 if added else xs_cost
+                # +1 for the joining newline - same boundary fix as _add_facts above
+                over = used[0] + extra + len(line) + 1 > INJECT_BUDGET_CHARS   # budget-aware (audit)
+                if over and added:
+                    rcpt.hold(len(cross) - i)
                     break
+                if over:
+                    line = _fit_fact_line(line, INJECT_BUDGET_CHARS - used[0] - extra - 1)
+                    if not line:
+                        rcpt.hold(len(cross) - i)
+                        break
                 xs.append(line)
-                used[0] += len(line) + 1
+                used[0] += len(line) + 1 + extra
                 added = True
+                rcpt.show()
             if added:
                 parts.extend(xs)
     parts += footer
     _si = "\n".join(parts)
     if len(parts) > len(footer):             # something real was injected, not just the footer
-        _record_recall_saving(_si)
+        saved = _record_recall_saving(_si)
+        # The receipt accounts for the payload as the agent receives it, so it is measured on
+        # the sealed text and appended last. best_line picks the richest form that fits the
+        # leftover room and degrades (or returns "") rather than overshoot the cap - content
+        # is never displaced, and the invariant that the budget bounds the WHOLE payload
+        # (audit M-d) is preserved.
+        if INJECT_RECEIPT and _receipt is not None:
+            _rline = rcpt.seal(_si, saved).best_line(len(_si))
+            if _rline:
+                _si = f"{_si}\n{_rline}"
     payload = {"hookSpecificOutput": {
         "hookEventName": "SessionStart",
         "additionalContext": _si,
@@ -4740,15 +5073,22 @@ def _prune_prompt_recall_state(max_age_days: int = 3) -> None:
         pass
 
 
-def _record_recall_saving(injected_text: str) -> None:
-    """Log the tokens this recall saved vs a memory that re-injects the whole store every turn.
-    Lazy-imported (stats imports this module) and fully swallowed - the ledger is cosmetic and
-    must never affect the recall it is measuring."""
+def _record_recall_saving(injected_text: str) -> int:
+    """Ledger both truths about this recall: the REAL injected token count, and the
+    counterfactual upper-bound "saved vs full-store re-paste" (stats.recall_saving - a
+    trend line, not realized savings; review 2026-08). Returns 0 ALWAYS, deliberately:
+    the return feeds the injection receipt's `saved` clause, and quoting the inflated
+    bound there would present it as a per-session fact - the receipt now reports only
+    its real numbers (cost + lessons held back). Lazy-imported (stats imports this
+    module) and fully swallowed - the ledger is cosmetic and must never affect the
+    recall it is measuring."""
     try:
         import stats as _st
-        _st.record("recall", saved=_st.recall_saving(injected_text))
+        _st.record("recall", saved=_st.recall_saving(injected_text),
+                   injected=_st.est_tokens(injected_text))
     except Exception:
         pass
+    return 0
 
 
 def emit_prompt_recall(cwd: str, prompt: str, session_id: str) -> None:

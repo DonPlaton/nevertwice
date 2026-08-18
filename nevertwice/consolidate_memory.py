@@ -28,7 +28,13 @@ try:                                      # never crash printing → / Cyrillic 
 except Exception:
     pass
 
-SIM_THRESHOLD = m.env_float("NEVERTWICE_DEDUP_SIM", 0.92)   # safe-cast: a mistyped env var
+# 0.86, calibrated on a live 4.2k-vector store (2026-08-18): random DISTINCT same-
+# project/type pairs top out at cosine 0.737, real same-lesson re-phrasings sit at
+# 0.78-0.90. The old 0.92 default was measured NEAR-INERT - it caught only near-verbatim
+# copies, which is how a store accumulated 141 exact-slug twin pairs under a weekly
+# consolidator. Merging is heavier than the write-time gate's retire (0.80), so this
+# stays a notch more conservative.
+SIM_THRESHOLD = m.env_float("NEVERTWICE_DEDUP_SIM", 0.86)   # safe-cast: a mistyped env var
 # Per-project live-note cap (improvement P2). 0 = OFF - a memory store must not shed
 # memory without being told to. When >0, the lowest-salience excess is archived.
 MAX_LIVE_PER_PROJECT = m.env_int("NEVERTWICE_MAX_LIVE_PER_PROJECT", 0)  # degrades, never crashes

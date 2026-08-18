@@ -38,6 +38,9 @@ flowchart TD
 | `api.py` | The one-import Python surface (`recall`, `remember`, `guards_check`, …). |
 | `capture.py` / `watch.py` | Wrap any LLM client in one line / polling daemon that mines other agents' session logs. |
 | `guards.py` · `anticipate.py` · `causal.py` | Active Memory: executable guards (PreToolUse hot path), trajectory-resemblance warnings, induced causal graph (`what_breaks` / `counterfactual`). |
+| `integrity.py` | **Graph laws.** Checks the knowledge graph against its own algebra: relation targets resolve, `rel` types are defined, the causal orientation is acyclic, no pair is asserted with a relation *and* its converse, `[[wikilinks]]` resolve. Also reports **vocabulary coherence** - drift between the relation types extraction writes and the ones the causal model reads. Read-only; `--strict` makes it a CI gate. |
+| `lenses.py` / `emit.py` | **Refraction.** A small algebra of pure `store -> View` projections: relational primitives (`where` / `order_by` / `top` / `select`) plus semantic lenses a row-view cannot express - `falsification_frontier` (beliefs nearest to being wrong) and `causal_closure`. Emitters render one View as markdown, mermaid, JSON, or an Obsidian `.base`. |
+| `receipt.py` | The SessionStart injection accounts for itself: what it cost, what the budget refused, what it saved. Never displaces content (appended into leftover room only). |
 | `digest.py` / `dashboard.py` | Read-only rollups: what changed, the contradiction ledger; a self-contained HTML snapshot. |
 | `docparse.py` | .docx / HTML / text intake for `ingest` (stdlib, size-capped). |
 | `sync.py` + `merge.py` | Cross-machine git sync with a structured merge driver (concurrent edits to one note auto-resolve). |

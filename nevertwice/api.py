@@ -31,6 +31,9 @@ import dashboard as _dashboard
 import guards as _guards
 import anticipate as _anticipate
 import causal as _causal
+import integrity as _integrity
+import lenses as _lenses
+import emit as _emit
 
 
 def recall(query: str, project: str | None = None, k: int = 5,
@@ -154,6 +157,37 @@ def conflicts(project: str | None = None, limit: int = 50) -> list[dict]:
     `resolved=False` flags a still-evolving chain. Pure frontmatter scan - no embedder,
     no LLM, no network. The read-side answer to memanto's `conflicts`."""
     return _digest.compute_conflicts(m.slug_project(project) if project else None, limit=limit)
+
+
+def integrity(project: str | None = None, links: bool = True) -> dict:
+    """Check the knowledge graph against its own laws: every relation target resolves to a
+    known entity, every `rel` is a type some part of the system defines, the causal
+    orientation is acyclic, no pair is asserted with a relation AND its converse, and
+    `[[wikilinks]]` resolve. Returns `{stats, totals, findings, vocabulary}`.
+    `stats.dangling_rate` is the headline - the share of typed edges the graph cannot
+    traverse - and `vocabulary` reports drift between the relation types extraction WRITES
+    and the ones the causal model READS. Read-only: it reports, it never edits."""
+    return _integrity.check_store(project, links=links)
+
+
+def frontier(project: str | None = None, k: int = 20, fmt: str | None = None):
+    """The falsification frontier: the beliefs nearest to being wrong, most-testable first,
+    ranked by (1 - confidence) x recurrence x revision history. Returns the rows by default,
+    or a rendered string when `fmt` is given ("markdown", "json", "base" - the last being an
+    Obsidian Base approximating what a relational view can express of it; a table view has
+    no edges, so "mermaid" falls back to markdown rather than discard the rows).
+    The question no memory system asks itself: what do I believe that I should test first?"""
+    v = _lenses.falsification_frontier(project, k)
+    return _emit.emit(v, fmt) if fmt else v.rows
+
+
+def lens_causal(entity: str, project: str | None = None, depth: int = 2,
+                fmt: str | None = None):
+    """The causal closure of `entity` - everything a change to it can reach, following typed
+    impact edges. Rows by default; `fmt="mermaid"` renders a graph that Obsidian and GitHub
+    display without any tool installed."""
+    v = _lenses.causal_closure(entity, project, depth=depth)
+    return _emit.emit(v, fmt) if fmt else v.rows
 
 
 def digest(project: str | None = None, days: int = 7) -> dict:

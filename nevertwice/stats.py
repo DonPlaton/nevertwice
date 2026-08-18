@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
-"""Token-savings ledger and activity view - proof, in numbers, that the memory is working.
+"""Token ledger and activity view - what the memory actually did, in numbers.
 
-Every recall injects the *relevant* slice of the store instead of what a passive memory does:
-re-paste the whole store into every prompt. The difference, summed across turns, is real tokens
-you did not spend. This module records that (and guard fires, counterfactuals) into a tiny JSON
-ledger next to the notes, and renders a terminal panel with an activity sparkline so you can watch
-the memory earn its keep.
+Two numbers per recall, deliberately kept apart (review 2026-08):
+  injected - REAL: the tokens this recall actually put into the context (targeted slice).
+  saved    - a counterfactual UPPER BOUND vs the maximally naive baseline (re-paste the
+             whole store every turn). No real system runs that baseline, and it inflates
+             as the store grows, so it is a trend line - never a claim of realized savings.
+This module records both (plus guard fires and counterfactuals) into a tiny JSON ledger
+next to the notes, and renders a terminal panel with an activity sparkline.
 
     python -m nevertwice.stats            # the panel
     python -m nevertwice.stats --json     # machine-readable
@@ -63,14 +65,21 @@ def _save(d: dict) -> None:
         pass                     # a cosmetic counter must never break a real operation
 
 
-def record(kind: str, saved: int = 0) -> None:
-    """Log one intervention. `kind` in {'recall','guard','counterfactual'}; `saved` is the
-    estimated tokens it avoided. Best-effort: any failure is swallowed. An atomic write keeps the
-    file uncorrupted under the rare concurrent hook; a lost update at worst under-counts."""
+def record(kind: str, saved: int = 0, injected: int = 0) -> None:
+    """Log one intervention. `kind` in {'recall','guard','counterfactual'}.
+
+    `injected` is the REAL number: tokens this intervention actually put into the context.
+    `saved` is a counterfactual UPPER BOUND (see recall_saving), kept for the trend line -
+    never a claim of realized savings: the review (2026-08) measured a single recall
+    booking +190k "saved" against a baseline no real system would run, and that baseline
+    grows with every duplicate note, so the old headline literally rewarded vault bloat.
+    Best-effort: any failure is swallowed; an atomic write keeps the file uncorrupted
+    under the rare concurrent hook; a lost update at worst under-counts."""
     try:
         d = load()
         t = d["totals"]
         t["tokens_saved"] = t.get("tokens_saved", 0) + max(0, int(saved or 0))
+        t["tokens_injected"] = t.get("tokens_injected", 0) + max(0, int(injected or 0))
         t["interventions"] = t.get("interventions", 0) + 1
         key = {"recall": "recalls", "guard": "guards_fired",
                "counterfactual": "counterfactuals"}.get(kind)
@@ -80,6 +89,7 @@ def record(kind: str, saved: int = 0) -> None:
         day = d.setdefault("by_day", {}).setdefault(
             today, {"saved": 0, "recalls": 0, "guards": 0, "counterfactuals": 0})
         day["saved"] += max(0, int(saved or 0))
+        day["injected"] = day.get("injected", 0) + max(0, int(injected or 0))
         day[{"recall": "recalls", "guard": "guards",
              "counterfactual": "counterfactuals"}.get(kind, "recalls")] += 1
         # keep the daily log bounded (a year is plenty for the sparkline)
@@ -140,8 +150,11 @@ def store_tokens() -> int:
 
 
 def recall_saving(injected_text: str) -> int:
-    """Tokens a passive 'dump the whole store each turn' memory would have spent here, minus what
-    this recall actually injected. Floored at 0."""
+    """UPPER BOUND, not realized savings: tokens a maximally naive memory (re-paste the
+    ENTIRE store every turn) would have spent here, minus what this recall actually
+    injected. No real system runs that baseline, and the bound inflates with every note
+    added to the store - treat it as a trend line only; the honest per-recall number is
+    the INJECTED token count recorded alongside it (review 2026-08). Floored at 0."""
     return max(0, store_tokens() - est_tokens(injected_text))
 
 
@@ -199,8 +212,12 @@ def render_panel(d: dict | None = None) -> str:
         "╭" + "─" * W + "╮",
         row("  Nevertwice - what the memory bought you"),
         "├" + "─" * W + "┤",
-        row(f"  ~{_human(t.get('tokens_saved', 0))} tokens saved"),
-        row("  vs re-injecting the whole store into every prompt"),
+        # The REAL number leads; the counterfactual is explicitly an upper bound (review
+        # 2026-08: the old headline presented the bound as realized savings, and the
+        # bound grows with store size - including duplicate-note bloat).
+        row(f"  ~{_human(t.get('tokens_injected', 0))} tokens actually injected, targeted"),
+        row(f"  ≤{_human(t.get('tokens_saved', 0))} saved vs a full-store re-paste"),
+        row("  (upper bound - no real system runs that baseline)"),
         row(),
         row(counts),
         row(),
@@ -217,8 +234,9 @@ def summary_line(d: dict | None = None) -> str:
     t = d.get("totals", {})
     if not t.get("interventions"):
         return ""
-    return (f"Nevertwice: ~{_human(t.get('tokens_saved', 0))} tokens saved so far vs re-injecting "
-            f"the whole store each turn ({_plural(t.get('interventions', 0), 'intervention')}, "
+    return (f"Nevertwice: ~{_human(t.get('tokens_injected', 0))} tokens of targeted memory "
+            f"injected (≤{_human(t.get('tokens_saved', 0))} vs full-store re-paste, upper "
+            f"bound; {_plural(t.get('interventions', 0), 'intervention')}, "
             f"{_plural(t.get('guards_fired', 0), 'guard', ' fired')}).")
 
 

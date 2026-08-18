@@ -118,7 +118,8 @@ After setting `NEVERTWICE_EMBED_QUANT`, rebuild the index once the same way.
 | Variable | Default | Notes |
 |---|---|---|
 | `NEVERTWICE_INJECT` | `1` | Inject the project card + lessons at SessionStart. |
-| `NEVERTWICE_INJECT_BUDGET_CHARS` | `2200` | Char budget for injected memory. |
+| `NEVERTWICE_INJECT_BUDGET_CHARS` | `2200` | Char budget for injected memory (bounds the WHOLE payload). |
+| `NEVERTWICE_INJECT_RECEIPT` | `1` | Append the one-line injection receipt (cost / lessons held back by the budget / tokens saved). `0` makes the payload byte-identical to a receipt-less build. |
 | `NEVERTWICE_PROJECT_CARD` | `1` | Maintain & inject the per-project card. |
 | `NEVERTWICE_CARD_MAX_ITEMS` | `5` | Max items per card section. |
 | `NEVERTWICE_CONTEXT_MAX_BYTES` | `12000` | Byte cap for `Context/<project>.md`. |
