@@ -155,6 +155,12 @@ TRACK_ANY_PROJECT = os.environ.get("NEVERTWICE_TRACK_ANY_PROJECT", "1") != "0"
 # via the "agent" field on stdin; Claude Code's hook has no such field.
 DEFAULT_AGENT = os.environ.get("NEVERTWICE_AGENT", "claude-code")
 
+# Messages produced before log() is defined (this module logs from module-level
+# config code). Calling log() here raised NameError at IMPORT for any scheme-less
+# URL env var, killing every hook event (review 2026-08, reproduced). Flushed by
+# the first log() call.
+_EARLY_WARNINGS: list[str] = []
+
 def _http_url(val: str, default: str) -> str:
     """Accept an outbound base URL only if it is http(s); otherwise fall back to the
     default. Blocks an env override (or a planted config) from redirecting a request
@@ -167,7 +173,8 @@ def _http_url(val: str, default: str) -> str:
         return v
     if v:
         # an override with a non-http(s) scheme is refused loudly, never honoured
-        log(f"Refusing non-http(s) outbound URL override ({v[:24]}…) - using default")
+        _EARLY_WARNINGS.append(
+            f"Refusing non-http(s) outbound URL override ({v[:24]}…) - using default")
     return default
 
 OLLAMA_URL = _http_url(os.environ.get("OLLAMA_URL"), "http://127.0.0.1:11434/api/generate")
@@ -588,6 +595,11 @@ FIELDS entities/relations (optional) - the knowledge graph:
 
 
 def log(msg):
+    global _EARLY_WARNINGS
+    if _EARLY_WARNINGS:                 # config-time messages queued before log existed
+        pending, _EARLY_WARNINGS = _EARLY_WARNINGS, []
+        for w in pending:
+            log(w)
     line = f"[memory_hook {datetime.now():%Y-%m-%d %H:%M:%S}] {msg}"
     print(line, file=sys.stderr)
     try:  # also persist to a rotating file so hook failures are debuggable
@@ -793,6 +805,21 @@ def reserve_session_stem(date: str, time_str: str, project: str, session_id: str
             except OSError:
                 continue
             if fm.get("session_id") in (session_id, session_id[:8]):   # full id; [:8] = legacy notes
+                return cand.stem
+        # Same DAY, different minute: transcript_text ingestion stamps time from
+        # datetime.now() at processing time, so a crash-retry minutes later missed the
+        # minute-keyed glob above, minted a fresh stem, and the absorb path counted one
+        # real session as two distinct sources (review 2026-08). The session_id (a
+        # content hash for ingested text) is the stable identity - match it day-wide.
+        for cand in sorted(p.glob(f"{date}-*.md")):
+            meta = parse_session_stem(cand.stem)
+            if not meta or meta["project"] != project:
+                continue
+            try:
+                fm, _ = _read_frontmatter(cand.read_text(encoding="utf-8", errors="replace"))
+            except OSError:
+                continue
+            if fm.get("session_id") == session_id:
                 return cand.stem
     return _unique_path(p, base).stem
 
@@ -1124,6 +1151,26 @@ _TWIN_B = -3.057724
 _TWIN_MU = (0.621251, 0.196803, 0.183766, 0.095122, 0.88883)
 _TWIN_SD = (0.133751, 0.145667, 0.364025, 0.250373, 0.086981)
 _TWIN_WORD_RE = re.compile(r"[a-zа-я0-9]{3,}")
+# The embedding space these weights were calibrated on. Cosines from a different
+# embedder pushed through this standardization are off-distribution for a
+# note-RETIRING gate (review 2026-08: nothing invalidated the classifier when
+# embed_signature changed - the vectors self-invalidate, the weights did not).
+# On a space mismatch the gate falls back to the plain cosine threshold, loudly,
+# once. After retraining the weights for a new space, set NEVERTWICE_TWIN_SPACE
+# to that model name (see research/TWIN_GATE.md).
+_TWIN_SPACE = os.environ.get("NEVERTWICE_TWIN_SPACE", "bge-m3").strip()
+_TWIN_SPACE_WARNED = [False]
+
+
+def _twin_space_ok() -> bool:
+    if EMBED_MODEL == _TWIN_SPACE:
+        return True
+    if not _TWIN_SPACE_WARNED[0]:
+        _TWIN_SPACE_WARNED[0] = True
+        log(f"twin-gate weights calibrated for '{_TWIN_SPACE}' but the embed model is "
+            f"'{EMBED_MODEL}' - using the cosine gate instead (retrain + set "
+            f"NEVERTWICE_TWIN_SPACE to re-enable; research/TWIN_GATE.md)")
+    return False
 
 
 def _twin_words(s: str) -> set:
@@ -1156,6 +1203,11 @@ def _yaml_scalar(v) -> str:
     if isinstance(v, (list, dict)):
         return json.dumps(v, ensure_ascii=False)   # inline JSON is valid YAML (lists + maps, e.g. entity_types)
     s = str(v)
+    if "\n" in s or "\r" in s:
+        # Every frontmatter field is single-line by design. An embedded newline in an
+        # LLM-controlled value (e.g. valid_from) would otherwise be emitted raw -
+        # closing the frontmatter fence early / injecting lines (review 2026-08).
+        s = " ".join(s.replace("\r", "\n").split()).strip()
     if s == "" or _YAML_NEEDS_QUOTE.search(s):
         return '"' + s.replace('\\', '\\\\').replace('"', '\\"') + '"'
     return s
@@ -1469,7 +1521,22 @@ def acquire_lock(timeout_s: float = 30) -> bool:
                 reclaim = ((not _pid_alive(holder)) if holder > 0 else age > LOCK_STALE_S) \
                     or age > LOCK_STALE_S * 10
                 if reclaim:
-                    lock.unlink(missing_ok=True)
+                    # Reclaim by atomic RENAME, never a blind unlink: between our
+                    # stat/read and the delete another waiter may have already
+                    # reclaimed and re-created the lock - a delayed unlink would then
+                    # destroy the NEW owner's fresh lock and let two writers into the
+                    # critical section (review 2026-08 TOCTOU). Exactly one contender
+                    # wins the rename; losers see FileNotFoundError and re-loop.
+                    stale = lock.with_name(f"{lock.name}.stale.{os.getpid()}")
+                    try:
+                        os.replace(lock, stale)     # replace: survives a leftover .stale
+                    except OSError:
+                        time.sleep(LOCK_RETRY_S)
+                        continue
+                    try:
+                        stale.unlink(missing_ok=True)
+                    except OSError:
+                        pass
                     continue
             except (FileNotFoundError, OSError):
                 pass
@@ -1569,9 +1636,15 @@ def prune_processed_db(db: dict, days: int = PRUNE_DB_AFTER_DAYS) -> int:
             continue
         try:
             t = datetime.fromisoformat(entry.get("processed_at", ""))
+            # a tz-suffixed stamp (hand-edit / foreign writer) parses AWARE; comparing
+            # it against the naive cutoff raised TypeError OUTSIDE the guard, and the
+            # poisoned entry then wedged every finalize permanently (review 2026-08)
+            if t.tzinfo is not None:
+                t = t.astimezone().replace(tzinfo=None)
+            stale = t < cutoff
         except (ValueError, TypeError):
             continue
-        if t < cutoff:
+        if stale:
             del db[sid]
             pruned += 1
     if pruned:
@@ -1613,12 +1686,42 @@ def save_processed(db: dict):
     write_atomic(PROCESSED_DB.with_name(PROCESSED_DB.name + ".bak"), text)
 
 
-def mark_processed(db: dict, session_id: str, transcript_path: str):
-    db[session_id] = {
+def mark_processed(db: dict, session_id: str, transcript_path: str,
+                   size: int | None = None):
+    """Record a session as processed. `size` is the transcript's byte size AT THE
+    MOMENT ITS CONTENT WAS READ (not at mark time - it may have grown during
+    extraction); it is what lets _transcript_grew detect a post-compaction tail.
+    None → best-effort stat now (callers that never re-visit, e.g. untracked cwd)."""
+    entry = {
         "transcript": transcript_path,
         "processed_at": datetime.now().isoformat(timespec="seconds"),
     }
+    if size is None and transcript_path:
+        try:
+            size = os.path.getsize(transcript_path)
+        except OSError:
+            size = 0
+    if size:
+        entry["bytes"] = int(size)
+    db[session_id] = entry
     save_processed(db)
+
+
+def _transcript_grew(entry, path) -> bool:
+    """True when a processed transcript has grown past the byte size recorded at
+    processing time. This is how the pipeline sees the post-compaction half of a
+    long session: PreCompact processes the transcript-so-far and marks the sid,
+    the session continues under the SAME id, and the blanket 'already processed'
+    skip silently lost everything after the first compaction - on exactly the
+    longest, richest sessions (review 2026-08). Legacy entries without `bytes`
+    never re-trigger (no mass re-mining on upgrade)."""
+    if not isinstance(entry, dict):
+        return False
+    try:
+        rec = int(entry.get("bytes") or 0)
+        return rec > 0 and os.path.getsize(path) > rec
+    except (OSError, ValueError, TypeError):
+        return False
 
 
 # ── Transcript reading ────────────────────────────────────────────────
@@ -2571,13 +2674,17 @@ def _retrieval_candidates(project: str, cross: bool, cache: dict | None,
         return rows
     if cache is None:
         cache = load_embed_cache()
+    # vec-less (text-only) records STAY candidates: update_embeddings deliberately
+    # stores them when the embedder is down so notes remain lexically recallable via
+    # BM25. The old isinstance(vec, list) filter silently dropped exactly those notes
+    # whenever retrieval fell back to the JSON cache (review 2026-08 A3); the SQLite
+    # path has always included them.
     if cross:
         return [(s, r) for s, r in cache.items()
-                if isinstance(r, dict) and isinstance(r.get("vec"), list)
+                if isinstance(r, dict)
                 and r.get("project") and r.get("project") != project]
     return [(s, r) for s, r in cache.items()
-            if isinstance(r, dict) and isinstance(r.get("vec"), list)
-            and r.get("project") == project]
+            if isinstance(r, dict) and r.get("project") == project]
 
 
 # ── Note writers (Zettelkasten edition) ───────────────────────────────
@@ -2635,6 +2742,27 @@ def _stamp_frontmatter(text: str, fields: dict) -> str:
 
 
 _NDUP_MEMO: list = [None, None]        # [cache-file mtime, parsed cache] - reload on change
+# Notes written by THIS process whose vectors are not in the on-disk cache yet -
+# update_embeddings refreshes the cache once AFTER the whole write loop, so without
+# this registry the gate was blind to a twin written seconds earlier in the SAME
+# extraction (review 2026-08: one LLM output emitting two titles for one lesson is
+# the gate's most common trigger). Entries carry the query vec the gate already
+# computed, so scoring them costs no extra embed call; entries visible in a newer
+# cache generation are pruned on reload.
+_NDUP_PENDING: list[dict] = []
+_NDUP_LAST_VEC: list = [None]          # vec of the most recent gate query (for registration)
+
+
+def _ndup_register(stem: str, project: str, ntype: str, title: str,
+                   desc: str, prevention: str, entities) -> None:
+    """Record a just-written live note for same-process near-dup gating."""
+    vec = _NDUP_LAST_VEC[0]
+    _NDUP_LAST_VEC[0] = None
+    if vec:
+        _NDUP_PENDING[:] = [d for d in _NDUP_PENDING if d["stem"] != stem]
+        _NDUP_PENDING.append({"stem": stem, "project": project, "ntype": ntype,
+                              "title": title, "desc": desc, "prevention": prevention,
+                              "entities": list(entities or ()), "vec": vec})
 
 
 def _near_duplicate_paths(folder_path: Path, project: str, ntype: str,
@@ -2652,6 +2780,7 @@ def _near_duplicate_paths(folder_path: Path, project: str, ntype: str,
     update_embeddings, so the cosine is computed in the cache's space. Best-effort and
     fail-open: no embedder, a changed embedding space, or an unreadable cache returns []
     and the write proceeds exactly as before the gate existed."""
+    _NDUP_LAST_VEC[0] = None            # never let a previous note's vec leak into registration
     if WRITE_DEDUP_SIM <= 0:
         return []
     try:
@@ -2668,10 +2797,18 @@ def _near_duplicate_paths(folder_path: Path, project: str, ntype: str,
         if _NDUP_MEMO[0] != mtime:              # one parse per cache generation, not per note
             _NDUP_MEMO[0] = mtime
             _NDUP_MEMO[1] = load_embed_cache()
-        twin_mode = WRITE_DEDUP_MODE != "cosine"
+            if _NDUP_PENDING:                   # entries now visible in the cache are done
+                _NDUP_PENDING[:] = [d for d in _NDUP_PENDING
+                                    if d["stem"] not in _NDUP_MEMO[1]]
+        _NDUP_LAST_VEC[0] = vec                 # for _ndup_register after a successful write
+        twin_mode = WRITE_DEDUP_MODE != "cosine" and _twin_space_ok()
         floor = WRITE_DEDUP_PREFILTER if twin_mode else WRITE_DEDUP_SIM
         scored = []
-        for stem, e in (_NDUP_MEMO[1] or {}).items():
+        cache_gen = _NDUP_MEMO[1] or {}
+        pending = [d for d in _NDUP_PENDING
+                   if d["project"] == project and d["ntype"] == ntype
+                   and d["stem"] not in cache_gen]
+        for stem, e in cache_gen.items():
             if (not isinstance(e, dict) or e.get("project") != project
                     or e.get("ntype") != ntype or stem in exclude or not e.get("vec")):
                 continue
@@ -2686,6 +2823,20 @@ def _near_duplicate_paths(folder_path: Path, project: str, ntype: str,
                 p_twin = _twin_probability(sim, title, desc, entities,
                                            e.get("title", ""), e.get("desc", ""),
                                            cand_ents)
+                if p_twin >= WRITE_DEDUP_TWIN_P:
+                    scored.append((p_twin, stem))
+            else:
+                scored.append((sim, stem))
+        for d in pending:                       # same-process writes the cache can't see yet
+            stem = d["stem"]
+            if stem in exclude or not (folder_path / f"{stem}.md").exists():
+                continue
+            sim = cosine(vec, d["vec"])
+            if sim < floor:
+                continue
+            if twin_mode:
+                p_twin = _twin_probability(sim, title, desc, entities,
+                                           d["title"], d["desc"], d["entities"])
                 if p_twin >= WRITE_DEDUP_TWIN_P:
                     scored.append((p_twin, stem))
             else:
@@ -2877,59 +3028,55 @@ def write_typed_note(folder: str, item, project: str, date: str,
     slug = slugify(title)
     base_stem = typed_stem(date, project, ntype, title)
 
-    # Per-session idempotency (audit C5): if THIS session already wrote a live
-    # note with the same identity - e.g. a prior run crashed after writing it but
-    # before marking the session processed - return that note instead of creating
-    # a -2 duplicate. This is what lets process_session mark the session AFTER the
-    # writes (so a crash retries) without the retry duplicating notes.
-    if session_stem_:
-        for old in _live_typed_paths(p, project, ntype, slug):
+    # Per-session idempotency (audit C5) + same-day same-stem ABSORB (review 2026-08).
+    # Idempotency: if THIS session already wrote a live note with the same identity -
+    # e.g. a prior run crashed after writing it but before marking the session
+    # processed - return that note instead of creating a -2 duplicate. This is what
+    # lets process_session mark the session AFTER the writes (so a crash retries)
+    # without the retry duplicating notes.
+    absorb_into = None
+    absorb_recur, absorb_sources = 0, set()
+    for old in _live_typed_paths(p, project, ntype, slug):
+        try:
+            prev_fm, _ = _read_frontmatter(old.read_text(encoding="utf-8", errors="replace"))
+        except OSError:
+            continue
+        if session_stem_ and prev_fm.get("session") == session_stem_:
+            log(f"Idempotent skip (already written this session): {old.stem}")
+            return old.stem
+        if old.stem == base_stem:
+            # Same day, same slug, different (or unknown) session: the same lesson
+            # re-encountered. supersede_note refuses self-stem retirement and
+            # _unique_path would mint a '-2' twin standing as a second current truth.
+            # ABSORB: the note is REWRITTEN IN PLACE below with the NEW statement and
+            # carried recurrence/sources. Two review-2026-08 defects died here: the old
+            # stamp-only absorb kept stale text on disk while update_embeddings pushed
+            # the new text into cache/index (a split-brain no incremental path healed),
+            # and session-less writers (api.remember retries, weekly distill re-runs)
+            # bypassed absorb entirely, minting '-2' twins.
+            r_old, s_old = _note_recur_sources(old)
+            if session_stem_ and session_stem_ in s_old:
+                return old.stem                 # crash-retry of the absorbing session
+            absorb_into = old
+            absorb_recur, absorb_sources = r_old, set(s_old)
+    if session_stem_ and QUARANTINE_MODE:
+        # a crash-retry must not duplicate a note already quarantined this session
+        for old in _live_typed_paths(p / "Quarantine", project, ntype, slug):
             try:
-                fm, _ = _read_frontmatter(old.read_text(encoding="utf-8", errors="replace"))
+                qfm, _ = _read_frontmatter(old.read_text(encoding="utf-8", errors="replace"))
             except OSError:
                 continue
-            if fm.get("session") == session_stem_:
-                log(f"Idempotent skip (already written this session): {old.stem}")
-                return old.stem
-            if old.stem == base_stem:
-                # Same day, same slug, DIFFERENT session: the same lesson re-encountered.
-                # supersede_note refuses self-stem retirement and _unique_path would mint a
-                # '-2' twin standing as a second current truth (review 2026-08: four such
-                # pairs in one live sweep, invisible to both reconciles). ABSORB instead:
-                # bump recurrence/sources in place and reuse the note - the re-encounter is
-                # recorded, no twin is born. A crash-retry of the absorbing session finds
-                # itself in `sources` and returns without a second bump.
-                r_old, s_old = _note_recur_sources(old)
-                if session_stem_ in s_old:
-                    return old.stem
-                sources = sorted(s_old | {session_stem_})[:RECUR_SOURCES_CAP]
-                try:
-                    text = old.read_text(encoding="utf-8", errors="replace")
-                    text = _stamp_frontmatter(text, {
-                        "recurrence": max(r_old + 1, len(sources)), "sources": sources})
-                    write_atomic(old, text)
-                    log(f"Absorbed same-stem re-encounter into {old.stem} "
-                        f"(recurrence -> {max(r_old + 1, len(sources))})")
-                except OSError:
-                    pass
-                return old.stem
-        if QUARANTINE_MODE:        # a crash-retry must not duplicate a note already quarantined this session
-            for old in _live_typed_paths(p / "Quarantine", project, ntype, slug):
-                try:
-                    qfm, _ = _read_frontmatter(old.read_text(encoding="utf-8", errors="replace"))
-                except OSError:
-                    continue
-                if qfm.get("session") == session_stem_:
-                    log(f"Idempotent skip (already quarantined this session): {old.stem}")
-                    return ""
+            if qfm.get("session") == session_stem_:
+                log(f"Idempotent skip (already quarantined this session): {old.stem}")
+                return ""
 
     # Reconcile (audit H1 + M-2): retire prior versions / contradicted notes so current truth stays
     # single. (a) older same-slug note = a re-statement; (b) explicit `supersedes`/`contradicts`.
     # Retirement is DEFERRED into `to_retire` and executed only AFTER the W7 quarantine decision, so
     # a quarantined (uncorroborated, suspicious) note never retires a corroborated true one.
     retired: list[str] = []
-    prior_recur = 0
-    prior_sources: set = set()
+    prior_recur = absorb_recur          # the absorbed note's history carries forward
+    prior_sources: set = set(absorb_sources)
     to_retire: list = []
     superseded_corroborated = False
     for old in _live_typed_paths(p, project, ntype, slug):
@@ -2943,6 +3090,12 @@ def write_typed_note(folder: str, item, project: str, date: str,
             r_old, s_old = _note_recur_sources(old)        # one frontmatter read for both
             prior_recur = max(prior_recur, r_old)
             prior_sources |= s_old
+            if r_old >= 2:
+                # W7: a lone re-statement retiring corroborated truth is exactly as
+                # suspicious here as on the supersedes/near-dup paths below - this
+                # branch alone lacked the flag, so the outcome depended on whether the
+                # LLM reproduced the exact title or a variant (review 2026-08 G3)
+                superseded_corroborated = True
             to_retire.append(old)
     for other_title in (supersedes_title, contradicts_title):
         if not other_title:
@@ -2993,12 +3146,19 @@ def write_typed_note(folder: str, item, project: str, date: str,
             dest = p / "Quarantine"
             dest.mkdir(exist_ok=True)
 
-    if not quarantine_reason:                              # trusted → execute the deferred retirement
-        for old in to_retire:
-            if supersede_note(old, base_stem):
-                retired.append(old.stem)
+    if not quarantine_reason:
+        # PLAN the retirement here (the stems feed the new note's frontmatter/body
+        # links) but EXECUTE it only after the replacement is durably on disk - a
+        # hook-timeout kill between retire and write used to leave the lesson retired
+        # with a dangling superseded_by and nothing live, resetting its recurrence
+        # provenance forever (review 2026-08 B5).
+        retired = [old.stem for old in to_retire if old.stem != base_stem]
 
-    fp = _unique_path(dest, base_stem)
+    if absorb_into is not None and not quarantine_reason:
+        fp = absorb_into                # rewrite in place: same stem, no '-2' twin
+        log(f"Absorbing same-stem re-encounter into {absorb_into.stem}")
+    else:
+        fp = _unique_path(dest, base_stem)
     stem = fp.stem
 
     # Link a resolving pattern/decision to the mistake it fixes (audit I-18): the
@@ -3013,7 +3173,12 @@ def write_typed_note(folder: str, item, project: str, date: str,
                     resolved.append(mp.stem)
 
     fm = {"date": date, "project": project, "tags": tags, "type": ntype}
-    fm["valid_from"] = (item.get("valid_from") if isinstance(item, dict) else None) or date  # M-5
+    # M-5. Unlike every other frontmatter field, valid_from used to pass the raw LLM
+    # value through - a crafted multi-line string could close the YAML fence early
+    # (review 2026-08). Only a bare ISO date is accepted; anything else → today.
+    _vf = item.get("valid_from") if isinstance(item, dict) else None
+    _vf = _vf.strip() if isinstance(_vf, str) else ""
+    fm["valid_from"] = _vf if re.fullmatch(r"\d{4}-\d{2}-\d{2}", _vf) else date
     if session_stem_:
         fm["session"] = session_stem_          # provenance (M-10)
     cval = _coerce_confidence(confidence)
@@ -3036,11 +3201,17 @@ def write_typed_note(folder: str, item, project: str, date: str,
     if (prior_recur or prior_sources) and not quarantine_reason:
         if session_stem_ is None:
             fm["recurrence"] = prior_recur + 1                  # anonymous source: legacy +1
+            if prior_sources:                                   # keep provenance across an absorb rewrite
+                fm["sources"] = sorted(prior_sources)[-RECUR_SOURCES_CAP:]
         else:
             sources = prior_sources | {session_stem_}
             grew = session_stem_ not in prior_sources           # a known session adds nothing
             fm["recurrence"] = max(prior_recur + (1 if grew else 0), len(sources))
-            fm["sources"] = sorted(sources)[:RECUR_SOURCES_CAP]
+            # Cap keeps the NEWEST stems (date-prefixed → lexicographic = chronological):
+            # sorted()[:cap] used to drop the newest, so the absorb idempotency check
+            # ('session already in sources') could never fire again at the cap and every
+            # crash-retry re-bumped recurrence (review 2026-08).
+            fm["sources"] = sorted(sources)[-RECUR_SOURCES_CAP:]
     if retired:
         fm["supersedes"] = retired
     if resolved:
@@ -3070,6 +3241,15 @@ def write_typed_note(folder: str, item, project: str, date: str,
     if quarantine_reason:
         log(f"Quarantined note ({quarantine_reason}): {folder}/Quarantine/{fp.name}")
         return ""                       # on disk for review, but NOT embedded/recalled (W7)
+    # Deferred retirement (B5): the replacement is on disk - now the old truth may go.
+    # A failure here leaves the old note live BESIDE the new one (recoverable by the
+    # weekly consolidator), never a retired lesson with no live successor.
+    failed_retire = [old.stem for old in to_retire
+                     if old.stem != base_stem and not supersede_note(old, stem)]
+    if failed_retire:
+        log(f"WARNING: supersede failed after write for {', '.join(failed_retire[:3])}"
+            f"{'…' if len(failed_retire) > 3 else ''} - old note(s) still live beside {stem}")
+    _ndup_register(stem, project, ntype, title, desc, prevention, entities)
     log(f"Written: {folder}/{fp.name}")
     return stem
 
@@ -3382,7 +3562,12 @@ def _note_meta(p: Path, ntype: str, parsed: dict) -> dict | None:
     return {"stem": p.stem, "ntype": ntype, "date": parsed["date"],
             "title": title.strip(), "desc": desc, "prevention": prevention,
             "tags": _norm_tags(raw_tags), "resolved": resolved, "recurrence": rec,
-            "entities": _norm_entities(fm.get("entities")),
+            # cap=16, NOT the default 8: the write path stores up to 8 extracted
+            # entities PLUS up to 8 appended relation targets ('reachable by
+            # construction'); re-capping at 8 on read silently dropped exactly the
+            # appended targets, resurrecting the dangling-edge LAW-1 violation the
+            # write-side merge exists to prevent (review 2026-08)
+            "entities": _norm_entities(fm.get("entities"), cap=16),
             "relations": _norm_relations(fm.get("relations")),
             "entity_types": _norm_entity_types(fm.get("entity_types"), gate=False),
             "salience": _coerce_salience(fm.get("salience")),
@@ -3925,10 +4110,21 @@ def process_session(session_id: str, cwd: str, transcript_path: str,
                     run_log: list | None = None, agent: str = DEFAULT_AGENT,
                     transcript_text: str | None = None,
                     project_override: str | None = None) -> bool:
-    if session_id in processed_db:
-        log(f"Skip {session_id[:8]} - already processed at "
-            f"{processed_db[session_id].get('processed_at')}")
-        return False
+    prior = processed_db.get(session_id)
+    if prior is not None:
+        # Growth check (review 2026-08 / B1): a PreCompact-marked session continues
+        # under the same id; if its transcript grew past the recorded size, re-process
+        # instead of skipping. The re-extraction is additive, not duplicating: typed
+        # notes hit the per-session idempotency/absorb in write_typed_note, and the
+        # session note refreshes in place via reserve_session_stem.
+        if transcript_path and transcript_text is None \
+                and _transcript_grew(prior, transcript_path):
+            log(f"Re-processing {session_id[:8]} - transcript grew past the "
+                f"{prior.get('bytes')}-byte mark (post-compaction tail)")
+        else:
+            log(f"Skip {session_id[:8]} - already processed at "
+                f"{prior.get('processed_at') if isinstance(prior, dict) else '?'}")
+            return False
 
     # Project resolution. An explicit override (generic ingestion from any agent)
     # bypasses the cwd-based gate; otherwise the cwd must be a tracked project
@@ -3944,7 +4140,14 @@ def process_session(session_id: str, cwd: str, transcript_path: str,
 
     if transcript_text is not None:        # generic ingestion path (raw text)
         parsed = {"body": transcript_text.strip(), "cwd": cwd, "timestamp": None}
+        t_size = 0                         # sid is a content hash - growth cannot occur
     else:
+        # Size BEFORE reading: if the transcript grows during extraction, the smaller
+        # recorded size makes the tail re-processable rather than silently skipped.
+        try:
+            t_size = os.path.getsize(transcript_path)
+        except OSError:
+            t_size = 0
         parsed = read_transcript(transcript_path)
     if not parsed["body"]:
         log(f"Empty transcript for {session_id[:8]} - marked, nothing to extract")
@@ -3980,11 +4183,23 @@ def process_session(session_id: str, cwd: str, transcript_path: str,
     # same session already wrote), so the retry can't spawn -2/-3 duplicates -
     # which is the failure mode the round-1 "mark first" ordering guarded against.
 
-    started = _parse_iso(parsed["timestamp"]) or datetime.now()
+    # .astimezone() so BOTH branches are aware - _parse_iso returns aware datetimes,
+    # and mixing the naive fallback in would TypeError on any future arithmetic
+    # between the two (review 2026-08 P6)
+    started = _parse_iso(parsed["timestamp"]) or datetime.now().astimezone()
     date = started.strftime("%Y-%m-%d")
     time_str = started.strftime("%H:%M")
 
-    project = slug_project(extraction.get("project") or project_hint)
+    # The extractor's `project` field is UNTRUSTED model output over untrusted
+    # transcript text - honoring it let a steered (or merely confused) model file
+    # notes and Context updates into another project's canon AND run the LOCAL_ONLY
+    # embedding privacy gate against the renamed identity (review 2026-08 A2). The
+    # cwd-derived hint (or the caller's explicit override) IS the identity; a
+    # differing LLM value is logged and ignored.
+    project = slug_project(project_hint)
+    _llm_proj = slug_project(extraction.get("project") or "")
+    if _llm_proj and _llm_proj != project:
+        log(f"Extractor proposed project '{_llm_proj}' - keeping '{project}'")
     tags = extraction.get("tags")
     tags = tags if isinstance(tags, list) else []  # qwen3 may return a str (audit F5)
     tags = _norm_tags(tags)                          # canonical vocabulary (audit M5)
@@ -4052,8 +4267,15 @@ def process_session(session_id: str, cwd: str, transcript_path: str,
 
     cu = extraction.get("context_update")
     if relevant and isinstance(cu, str) and cu.strip() and not _is_noise_update(cu):
-        update_context(project, redact_secrets(cu), tags, date, time_str,
-                       links, sess_link)
+        if _looks_unsafe(cu):
+            # The one write surface that skipped the M-10/W8 injection screen (review
+            # 2026-08 S1): context_update feeds the project card, which _context_brief
+            # injects as the FIRST block of every future SessionStart - the exact
+            # persistence vector the typed-note gate exists to close.
+            log(f"Rejected context_update (unsafe payload): {cu[:60]!r}")
+        else:
+            update_context(project, redact_secrets(cu), tags, date, time_str,
+                           links, sess_link)
 
     if new_notes:
         update_embeddings(new_notes)
@@ -4073,8 +4295,9 @@ def process_session(session_id: str, cwd: str, transcript_path: str,
     # All of this session's notes/session-note/context are now durably written →
     # mark it processed LAST (audit C5). A crash before this point leaves the
     # session unmarked so it retries; the writes above are per-session idempotent,
-    # so the retry reuses them instead of duplicating.
-    mark_processed(processed_db, session_id, transcript_path)
+    # so the retry reuses them instead of duplicating. The size recorded is the one
+    # captured at read time (B1: growth during extraction stays re-processable).
+    mark_processed(processed_db, session_id, transcript_path, size=t_size)
 
     # fold this session's writes into the grounding caches so the next session in
     # a multi-session sweep needs no full disk rescan (audit M-k)
@@ -4109,13 +4332,29 @@ def sweep_unprocessed(processed_db: dict,
         return 0
 
     candidates: list[tuple[Path, float]] = []
+    now = time.time()
+    settle_s = env_int("NEVERTWICE_SWEEP_SETTLE_S", 120)
     for jl in PROJECTS_ROOT.rglob("*.jsonl"):   # recursive: don't miss nested (audit LOW)
         sid = jl.stem
-        if sid == exclude_session_id or sid in processed_db:
+        if sid == exclude_session_id:
+            continue
+        prior = processed_db.get(sid)
+        # a processed transcript that GREW since its mark is a sweep candidate again -
+        # the post-compaction tail of a session whose SessionEnd never fired (B1)
+        if prior is not None and not _transcript_grew(prior, jl):
             continue
         try:
             mtime = jl.stat().st_mtime
         except OSError:
+            continue
+        # Settle guard (review 2026-08): a transcript modified seconds ago is a LIVE
+        # session. exclude_session_id alone did not protect it - a malformed hook
+        # payload (e.g. an stdin decode failure) left session_id="unknown", and the
+        # sweep then mined the active session mid-conversation and marked it
+        # processed, so its real SessionEnd was skipped and everything after the
+        # sweep point was never extracted. Recently-written transcripts wait for
+        # the next cycle.
+        if now - mtime < settle_s:
             continue
         candidates.append((jl, mtime))
 
@@ -4157,7 +4396,10 @@ def has_unprocessed(processed_db: dict, exclude_session_id: str | None = None) -
         return False
     for jl in PROJECTS_ROOT.rglob("*.jsonl"):
         sid = jl.stem
-        if sid != exclude_session_id and sid not in processed_db:
+        if sid == exclude_session_id:
+            continue
+        prior = processed_db.get(sid)
+        if prior is None or _transcript_grew(prior, jl):   # grown = candidate again (B1)
             return True
     return False
 
@@ -4643,7 +4885,13 @@ def retrieve_relevant(project: str, query: str, k: int,
         qvec = embed_text(query, kind=query_embed_kind(), timeout=embed_timeout, project=project)
         if qvec:
             scored = [(cosine(qvec, r.get("vec") or []), s) for s, r in cands]
-            sims_desc = sorted((sim for sim, _ in scored), reverse=True)
+            # Ambiguity/confidence statistics are computed over EMBEDDED candidates
+            # only: text-only records score a structural 0.0, and a store with many
+            # of them dragged the per-query median toward 0 - the W1/W3 abstention
+            # gate then passed ANY query, gibberish included (review 2026-08 A5).
+            _embedded = {s for s, r in cands if r.get("vec")}
+            sims_desc = sorted((sim for sim, s in scored if s in _embedded),
+                               reverse=True)
             amb = _ambiguity(sims_desc)
             # confidence gate (W3): if no candidate stands a margin above the background,
             # the semantic signal is noise - drop it so the hook injects lexical/nothing,
@@ -5146,7 +5394,10 @@ def _record_recall_saving(injected_text: str) -> int:
     module) and fully swallowed - the ledger is cosmetic and must never affect the
     recall it is measuring."""
     try:
-        import stats as _st
+        try:
+            from . import stats as _st      # package mode; bare import was silently dead there (review 2026-08)
+        except ImportError:
+            import stats as _st
         _st.record("recall", saved=_st.recall_saving(injected_text),
                    injected=_st.est_tokens(injected_text))
     except Exception:
@@ -5383,7 +5634,10 @@ def emit_pretooluse_guard(session: dict, cwd: str) -> None:
     except Exception:                                      # on the rare hit path; telemetry only,
         pass                                               # never fatal on the hot path
     try:                                                   # a fired guard caught a repeat at ~0 tokens
-        import stats as _st
+        try:
+            from . import stats as _st
+        except ImportError:
+            import stats as _st
         for _h in hits:
             _st.record("guard", saved=_st.est_tokens(_h.get("message", "")))
     except Exception:
@@ -5403,9 +5657,20 @@ def emit_pretooluse_guard(session: dict, cwd: str) -> None:
 
 def main():
     try:
+        # Claude Code writes the hook payload in UTF-8; on a cp1251 console (the
+        # production reality on Windows/RU) Python decoded the pipe with the locale
+        # codec - a prompt containing 'И' (bytes D0 98; 0x98 is unmapped in cp1251)
+        # raised UnicodeDecodeError, silently swallowed below as ValueError, and the
+        # whole event degraded to session={} (review 2026-08). stdout got this fix
+        # long ago; stdin had not.
+        sys.stdin.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+    try:
         raw = sys.stdin.read()
         session = json.loads(raw) if raw.strip() else {}
-    except (json.JSONDecodeError, ValueError):
+    except (json.JSONDecodeError, ValueError) as e:
+        log(f"hook payload unreadable ({type(e).__name__}: {e}) - degrading to empty event")
         session = {}
 
     session_id = session.get("session_id", "unknown")
@@ -5502,7 +5767,10 @@ def main():
             if event in ("SessionEnd", "PreCompact"):
                 regen_graph_for_project(cwd)
             try:                              # refresh the 'dump the whole store' price for the
-                import stats as _st           # savings ledger, at sleep-time so recall stays cheap
+                try:                          # savings ledger, at sleep-time so recall stays cheap
+                    from . import stats as _st
+                except ImportError:
+                    import stats as _st
                 _st.refresh_store_tokens()
             except Exception:
                 pass

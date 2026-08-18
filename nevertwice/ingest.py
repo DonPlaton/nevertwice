@@ -38,6 +38,7 @@ import hashlib
 import json
 import os
 import sys
+import time
 import uuid
 from datetime import datetime
 from pathlib import Path
@@ -111,6 +112,14 @@ def _payload_from_stdin() -> dict:
     if sys.stdin is None or sys.stdin.isatty():
         return {}
     try:
+        # Agents pipe UTF-8 JSON; on a cp1251 console Python decoded the pipe with the
+        # locale codec - a Russian transcript either died on byte 0x98 ('И'), silently
+        # swallowed below, or was ingested as mojibake and extracted into permanent
+        # garbage notes (review 2026-08 P3).
+        sys.stdin.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+    try:
         # bounded read: the sweep path caps file sizes, so the pipe path gets the same
         # cap instead of buffering an arbitrarily large payload (critic 2026-07)
         raw = sys.stdin.read(MAX_SWEEP_BYTES + 1)
@@ -119,7 +128,9 @@ def _payload_from_stdin() -> dict:
                   f"(raise NEVERTWICE_MAX_SWEEP_BYTES to override)", file=sys.stderr)
             return {}
         return json.loads(raw) if raw.strip() else {}
-    except (json.JSONDecodeError, ValueError):
+    except (json.JSONDecodeError, ValueError) as e:
+        print(f"[ingest] stdin payload unreadable ({type(e).__name__}: {e})",
+              file=sys.stderr)
         return {}
 
 
@@ -174,8 +185,12 @@ def save_watermarks(wm: dict) -> None:
     try:
         m.write_atomic(_watermark_path(), text)
         m.write_atomic(_watermark_path().with_suffix(".json.bak"), text)
-    except OSError:
-        pass                                           # best-effort; worst case = one re-mine
+    except OSError as e:
+        # NOT silent (review 2026-08 I8): a persistently unwritable watermark file
+        # means every sweep re-mines every growing transcript in full, forever -
+        # the exact cost this tier exists to kill. Still non-fatal.
+        print(f"[ingest] WARNING: cannot save watermarks ({e}) - "
+              f"growing transcripts will re-mine until this is fixed", file=sys.stderr)
 
 
 def collect_transcripts(d: Path, globs, recursive: bool) -> list[Path]:
@@ -200,7 +215,7 @@ def collect_transcripts(d: Path, globs, recursive: bool) -> list[Path]:
 
 
 def ingest_files(files, project, agent, db, *, trigger="ingest-sweep",
-                 max_new=None) -> tuple[int, int, int, int]:
+                 max_new=None, settle_s: int | None = None) -> tuple[int, int, int, int]:
     """Idempotently mine each transcript into memory against an ALREADY-LOADED
     processed-db, INSIDE an already-held vault lock. Returns (new, skipped, stored, errors).
     The caller owns the lock and the post-pass (rebuild_index / archive / commit) so a
@@ -209,13 +224,20 @@ def ingest_files(files, project, agent, db, *, trigger="ingest-sweep",
     of the logic to drift. A single bad file (exception in the extraction pipeline) is
     counted and skipped, never allowed to abort the rest of the sweep (audit 2026-06-18)."""
     new = skipped = stored = errors = 0
+    if settle_s is None:                       # watch pre-filters by mtime and passes 0
+        settle_s = m.env_int("NEVERTWICE_SWEEP_SETTLE_S", 120)
     watermarks = load_watermarks()
     wm_dirty = False
 
-    def _advance(hp: str, raw: str, path: Path) -> None:
+    def _advance(hp: str, consumed: str, path: Path, size: int) -> None:
+        """Record that `consumed` (a PREFIX of the file's text) has been mined.
+        `size` is the file's byte size statted BEFORE reading - never stat here, the
+        file may have grown during extraction and a late stat would make the size
+        fast-skip below hide that growth (review 2026-08)."""
         nonlocal wm_dirty
-        watermarks[hp] = {"chars": len(raw), "hash8": _text_hash(raw),
-                          "path": str(path), "last": datetime.now().isoformat(timespec="seconds")}
+        watermarks[hp] = {"chars": len(consumed), "hash8": _text_hash(consumed),
+                          "bytes": size, "path": str(path),
+                          "last": datetime.now().isoformat(timespec="seconds")}
         wm_dirty = True
 
     for f in files:
@@ -223,18 +245,40 @@ def ingest_files(files, project, agent, db, *, trigger="ingest-sweep",
         delta_capable = suffix in _WATERMARK_SUFFIXES
         hp = _path_hash(f)
         rec = watermarks.get(hp) if delta_capable else None
+        if not isinstance(rec, dict):          # a corrupt entry crashed the whole sweep (Dc5)
+            rec = None
         try:
-            if f.stat().st_size > MAX_SWEEP_BYTES and not rec:
+            st_size = f.stat().st_size
+        except OSError:
+            continue
+        # Size fast-skip (review 2026-08 D2): the old "cheapest possible skip" still
+        # READ and prefix-HASHED the whole file every sweep - a 40MB rollout was fully
+        # decoded every 4 hours just to be skipped. An unchanged byte size now skips
+        # without a read; any change falls through to the prefix-hash proof.
+        if rec and rec.get("bytes") == st_size and rec.get("chars"):
+            skipped += 1
+            continue
+        try:
+            if st_size > MAX_SWEEP_BYTES and not rec:
                 # DoS guard: skip a huge UNWATERMARKED file (mining it whole would block the
                 # vault lock). Say WHICH file, so an oversized session isn't silently absent
                 # forever with no clue why (critic R3: a real 16.8MB Codex session was
                 # invisibly excluded). A watermarked file is exempt from the stat-gate: only
                 # its DELTA is mined, and the delta gets its own cap below.
-                print(f"[ingest] skip {f.name}: {f.stat().st_size} bytes > cap {MAX_SWEEP_BYTES} "
+                print(f"[ingest] skip {f.name}: {st_size} bytes > cap {MAX_SWEEP_BYTES} "
                       f"(raise NEVERTWICE_MAX_SWEEP_BYTES)", file=sys.stderr)
                 skipped += 1                              # rather than block the lock on it
                 continue
-            raw = docparse.extract_text(f)                # .pdf/.docx/.html → text; else raw read
+            if rec:
+                # A watermarked file is by construction a plain-text format, and
+                # docparse's separate MAX_DOC_BYTES gate raised DocError BEFORE the
+                # delta logic could run - past 50MB the appended tail became permanently
+                # invisible, with the skip message naming a different env var than the
+                # one that could fix it (review 2026-08 D2). Read directly (same
+                # utf-8/replace read docparse uses for text).
+                raw = f.read_text(encoding="utf-8", errors="replace")
+            else:
+                raw = docparse.extract_text(f)            # .pdf/.docx/.html → text; else raw read
         except docparse.DocError as e:                    # missing PDF dep / corrupt doc - skip, don't abort
             print(f"[ingest] skip {f.name}: {e}", file=sys.stderr)
             skipped += 1
@@ -246,23 +290,59 @@ def ingest_files(files, project, agent, db, *, trigger="ingest-sweep",
 
         # ── Watermark tier (review 2026-08): a grown text file mines ONLY its appended
         # tail. The recorded prefix-hash proves the old content is unchanged underneath;
-        # a rewritten/rotated file fails that check and re-mines in full, once.
+        # a rewritten/rotated file fails that check, DROPS the stale watermark and
+        # re-mines in full once (under the normal unwatermarked size cap).
         delta_from = 0
         if rec:
             chars = rec.get("chars", 0)
             if (isinstance(chars, int) and 0 < chars <= len(raw)
                     and _text_hash(raw[:chars]) == rec.get("hash8")):
-                if chars == len(raw):                     # unchanged: cheapest possible skip
+                if chars == len(raw):                     # unchanged content
+                    _advance(hp, raw, f, st_size)         # refresh the byte size for the fast-skip
                     skipped += 1
                     continue
                 delta_from = chars
+            else:
+                # rotation/truncation: abandon the watermark as documented - the stale
+                # entry otherwise forced a full read + silent skip forever (D2)
+                watermarks.pop(hp, None)
+                wm_dirty = True
+                rec = None
+                if st_size > MAX_SWEEP_BYTES:             # back to the unwatermarked regime
+                    print(f"[ingest] skip {f.name}: rewritten file, {st_size} bytes > cap "
+                          f"{MAX_SWEEP_BYTES} (raise NEVERTWICE_MAX_SWEEP_BYTES)", file=sys.stderr)
+                    skipped += 1
+                    continue
         mine_raw = raw[delta_from:]
-        if len(mine_raw) > MAX_SWEEP_BYTES:               # cap applies to what is actually mined
-            if delta_from:                                # a >cap DELTA would stay invisible forever
-                print(f"[ingest] skip {f.name}: delta {len(mine_raw)} chars > cap "
-                      f"{MAX_SWEEP_BYTES} (raise NEVERTWICE_MAX_SWEEP_BYTES)", file=sys.stderr)
-            skipped += 1                                  # (full file when unwatermarked, else delta)
-            continue
+        if suffix == ".jsonl" and mine_raw and not mine_raw.endswith("\n"):
+            # A LIVE writer may be mid-flush: consume only COMPLETE lines. The old code
+            # recorded the watermark mid-line, so the head of the split line was dropped
+            # by the flattener this sweep and its tail failed the JSON parse next sweep -
+            # that turn was silently lost (review 2026-08 D10). The partial tail stays
+            # beyond the watermark and mines once the line is whole. Applies only while
+            # the file is still being written (mtime within settle_s): a SETTLED file's
+            # unterminated final line is final content, not a flush in progress.
+            try:
+                live = settle_s > 0 and (time.time() - f.stat().st_mtime) < settle_s
+            except OSError:
+                live = False
+            if live:
+                cut = mine_raw.rfind("\n")
+                if cut < 0:
+                    skipped += 1                          # nothing complete yet; no advance
+                    continue
+                mine_raw = mine_raw[:cut + 1]
+        consumed = raw[:delta_from + len(mine_raw)]
+        # The cap is in BYTES; comparing len() (chars) let a Russian-language delta
+        # through at nearly double the cap (review 2026-08 D2). Encode only when the
+        # char lower-bound cannot prove the text is under it.
+        mine_bytes = (len(mine_raw) if len(mine_raw) * 4 <= MAX_SWEEP_BYTES
+                      else len(mine_raw.encode("utf-8", "replace")))
+        if mine_bytes > MAX_SWEEP_BYTES:                  # cap applies to what is actually mined
+            print(f"[ingest] skip {f.name}: {'delta ' if delta_from else ''}{mine_bytes} bytes "
+                  f"> cap {MAX_SWEEP_BYTES} (raise NEVERTWICE_MAX_SWEEP_BYTES)", file=sys.stderr)
+            skipped += 1                                  # watermark NOT advanced: content stays
+            continue                                      # minable after the cap is raised
 
         txt = mine_raw
         if suffix == ".jsonl":
@@ -272,18 +352,24 @@ def ingest_files(files, project, agent, db, *, trigger="ingest-sweep",
                 pass                                      # a malformed line must not abort the sweep
         if not txt.strip():                               # grew by non-content only (metadata lines,
             if delta_capable:                             # whitespace) - advance and move on, no LLM
-                _advance(hp, raw, f)
+                _advance(hp, consumed, f, st_size)
             skipped += 1
             continue
 
         sid = (f"ingest-file-{hp}-w{delta_from}-{_text_hash(mine_raw)}" if delta_from
                else sweep_session_id(f, raw))
-        if sid in db:                          # this exact file state already mined → skip
+        # Pre-watermark builds hashed the FLATTENED .jsonl text, not the raw file, so no
+        # legacy processed-db entry matches the raw-hash id - without this check the
+        # first post-upgrade sweep re-mined every historical rollout in full, one cloud
+        # extraction each (review 2026-08 D3).
+        legacy_sid = (f"ingest-file-{hp}-{_text_hash(txt)}"
+                      if not delta_from and txt is not mine_raw else None)
+        if sid in db or (legacy_sid and legacy_sid in db):
             skipped += 1
             # Migration + belt-and-braces: a previously-mined file without a (current)
             # watermark gets one now, so its NEXT growth delta-mines instead of re-mining.
             if delta_capable and (not rec or rec.get("chars", 0) != len(raw)):
-                _advance(hp, raw, f)
+                _advance(hp, raw, f, st_size)
             continue
         run_log: list[dict] = []
         try:
@@ -300,7 +386,7 @@ def ingest_files(files, project, agent, db, *, trigger="ingest-sweep",
         # marks the db on success and on deliberate skips, but an extraction failure leaves
         # the sid unmarked for retry, and the watermark must retry with it.
         if delta_capable and sid in db:
-            _advance(hp, raw, f)
+            _advance(hp, consumed, f, st_size)
         if max_new and new >= max_new:         # bound lock-hold per cycle; rest caught next sweep
             break
     if wm_dirty:

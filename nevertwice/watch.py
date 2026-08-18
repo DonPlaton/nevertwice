@@ -72,10 +72,15 @@ def _vscode_globalstorage_bases() -> list[Path]:
 
 
 def _project_roots() -> list[Path]:
-    """Roots that hold real projects (for per-project log files like Aider's)."""
+    """Roots that hold real projects (for per-project log files like Aider's).
+    Delegates the env parsing to memory_hook._split_roots - this local copy split
+    only on os.pathsep while the hook also accepts commas, so the SAME config value
+    silently meant different things in the two consumers and comma-separated roots
+    were never watched (review 2026-08 C6)."""
     roots = [Path.cwd()]
-    raw = os.environ.get("NEVERTWICE_PROJECT_ROOTS", "")
-    roots += [Path(os.path.expanduser(p.strip())) for p in raw.split(os.pathsep) if p.strip()]
+    raw = (os.environ.get("NEVERTWICE_PROJECT_ROOTS", "").strip()
+           or os.environ.get("NEVERTWICE_PROJECT_ROOT", ""))
+    roots += [Path(os.path.expanduser(p)) for p in m._split_roots(raw)]
     return [r for r in dict.fromkeys(roots) if r.is_dir()]
 
 
@@ -158,8 +163,12 @@ def poll_cycle(targets: list[Target]) -> int:
             if not files:
                 continue
             budget = max(1, MAX_PER_CYCLE - total_new)     # share the per-cycle cap across targets
+            # settle_s=0: the SETTLE_S filter above already dropped still-being-written
+            # files, so ingest_files must not re-apply its own live-flush heuristic
+            # (it would defer a settled file's final unterminated line)
             new, skipped, stored, errors = ig.ingest_files(files, t.project, t.agent, db,
-                                                           trigger="watch", max_new=budget)
+                                                           trigger="watch", max_new=budget,
+                                                           settle_s=0)
             if new or errors:
                 total_new += new
                 print(f"[watch] {t.agent}: {new} new, {stored} produced memory"

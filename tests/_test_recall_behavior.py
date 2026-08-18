@@ -67,10 +67,19 @@ def _hook(evt, env):
 def test_precompact_resets_dedup_state():
     with tempfile.TemporaryDirectory() as t:
         vault = Path(t) / "store"
+        # Hermeticity (incident 2026-08-13 class, re-hit 2026-08-18): strip EVERY
+        # store-config var, not just API keys - a machine-wide NEVERTWICE_VAULT
+        # out-precedes the NEVERTWICE_HOME sandbox below and the subprocess hook then
+        # runs against the LIVE vault.
         env = {k: v for k, v in os.environ.items()
-               if not any(s in k for s in ("CEREBRAS", "GROQ", "DEEPSEEK", "GEMINI", "OPENAI"))}
+               if not any(s in k for s in ("CEREBRAS", "GROQ", "DEEPSEEK", "GEMINI",
+                                           "OPENAI", "NEVERTWICE", "ANAMNESIS",
+                                           "CLAUDE_MEMORY"))}
         env.update({"NEVERTWICE_HOME": str(vault), "NEVERTWICE_CLOUD": "none",
-                    "OLLAMA_URL": "http://127.0.0.1:1"})
+                    "OLLAMA_URL": "http://127.0.0.1:1",
+                    # keep the post-event sweep away from the REAL ~/.claude/projects -
+                    # with a dead backend it would grind through every live transcript
+                    "NEVERTWICE_PROJECTS_ROOT": str(Path(t) / "projects")})
         state_dir = vault / ".prompt_recall"
         state_dir.mkdir(parents=True)
         (state_dir / "sess_pc.json").write_text('{"injected": ["a"], "count": 3}',

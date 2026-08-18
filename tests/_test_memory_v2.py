@@ -88,9 +88,12 @@ with tempfile.TemporaryDirectory() as td:
     ok = m.process_session("sid12345", os.path.join(_ROOT, "testproj"), str(tp), "test", {})
     check("process_session succeeded", ok)
     ctx = list((Path(td) / "Context").glob("*.md"))
-    check("C3: project '..' neutralized (general.md, no '..')",
+    # review 2026-08 A2: the extractor's `project` field is untrusted output and is
+    # now IGNORED outright - notes file under the cwd-derived identity, so the
+    # traversal attempt never even reaches slug_project's neutralization
+    check("C3/A2: LLM project '..' ignored (cwd project used, no '..')",
           bool(ctx) and all(".." not in f.name for f in ctx)
-          and any(f.stem == "general" for f in ctx))
+          and any(f.stem == "testproj" for f in ctx))
     pats = list((Path(td) / "Patterns").glob("*.md"))
     check("F40: cyrillic title -> ASCII filename",
           bool(pats) and all(p.stem.isascii() for p in pats))
