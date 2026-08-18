@@ -64,6 +64,50 @@ merge adapter → GGUF (llama.cpp convert) → HF upload (owner's account) → N
 defaults `NEVERTWICE_EMBED_MODEL=nevertwice-embed` with bge-m3 fallback; `embed_signature`
 change triggers the documented full re-embed on user machines.
 
-## Results
+## Results (2026-08-18)
 
-*(filled by evaluate.py runs)*
+Corpus: **2848 synthetic lessons** over 21 external sources (~30% Russian, natively
+generated), **1354 training pairs** (twins + supersede-revisions), held-out domains
+excluded from training end-to-end. Training: 3 epochs LoRA, ~40s on one RTX 5090.
+
+| metric | stock bge-m3 | vault-r1 | **universal v1** |
+|---|---|---|---|
+| REAL vault: twin AUC | 0.964 | 0.972 | **0.972** |
+| REAL vault: twin recall @ 1% FPR | 0.220 | 0.339 | **0.475** |
+| REAL vault: guard title R@1 | 0.877 | 0.933 | 0.890 |
+| REAL vault: guard hard R@1 | 0.993 | 0.953 | **0.993** |
+| synth held-out: twin AUC | 1.000 | 1.000 | 1.000 |
+| synth held-out: guard R@1 | 0.973 | 0.975 | 0.963 |
+
+**Verdict: criteria met, decisively.** On the REAL vault - pure transfer, zero of its
+pairs trained on - universal v1 more than DOUBLES stock bge-m3's twin-recall at 1% FPR
+(0.220 → 0.475) and even beats the vault-specialized r1 (0.339) **while paying none of
+r1's regressions**: hard-query retrieval stays exactly at stock (0.993 vs r1's 0.953).
+Domain-diverse synthetic supervision generalized BETTER than training on the target vault
+itself - the headline result for the paper.
+
+Honest caveats: (1) the synthetic twin test saturates for all three models (LLM rewrites
+are too easy) - only the real vault discriminates, which is why it is the criterion;
+(2) title-query R@1 trails r1 (0.890 vs 0.933) - r1 memorized vault phrasing;
+(3) single seed, single base model.
+
+## Shipped artifacts (this machine)
+
+- `models/universal_v1/` - LoRA adapter (a few MB, the retrainable artifact)
+- `models/universal_v1_merged/` - merged HF checkpoint (**verified identical** to the
+  adapter model: cosine 1.000000)
+- `models/nevertwice-embed-f16.gguf` (1.15 GB) - imported into Ollama as
+  **`nevertwice-embed`**, embedding parity with the HF model **1.0000** incl. Russian.
+- **GGUF gotcha (cost one crash):** convert_hf_to_gguf must see the sentence-transformers
+  pooling files (`1_Pooling/`, `modules.json`) next to the plain HF checkpoint - without
+  them the GGUF loads as a completion model and Ollama's runner dies with a stack-buffer
+  error (0xc0000409). With them: `Capabilities: embedding`, clean load.
+
+## Remaining owner steps
+
+1. HF upload of `universal_v1_merged` + the GGUF (owner's account) → users get
+   `ollama pull`-able distribution.
+2. Product default flip: `NEVERTWICE_EMBED_MODEL=nevertwice-embed` with bge-m3 fallback
+   (embed_signature change triggers the documented full re-embed). Recalibrate the
+   cosine thresholds (SIM_FLOOR / write gate / consolidator) on the new space - the
+   calibration scripts exist.

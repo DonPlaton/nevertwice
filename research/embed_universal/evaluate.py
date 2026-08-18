@@ -39,10 +39,13 @@ def twin_metrics(cos, labels):
     pos = [c for c, y in zip(cos, labels) if y == 1]
     neg = [c for c, y in zip(cos, labels) if y == 0]
     thr1 = float(np.quantile(neg, 0.99))
-    return {"auc": round(auc(pos, neg), 4),
-            "recall_1fpr": round(sum(1 for c in pos if c >= thr1) / len(pos), 3),
-            "recall_0fp": round(sum(1 for c in pos if c >= max(neg) + 0.01) / len(pos), 3),
-            "margin": round(float(np.median(pos)) - max(neg), 3)}
+    return {"auc": round(float(auc(pos, neg)), 4),
+            "recall_1fpr": round(float(sum(1 for c in pos if c >= thr1) / len(pos)), 3),
+            "recall_0fp": round(float(sum(1 for c in pos if c >= max(neg) + 0.01)
+                                      / len(pos)), 3),
+            # every operand cast: max() over numpy elements yields np.float32, which
+            # json.dumps refuses - the first full run died on exactly this at the finish
+            "margin": round(float(np.median(pos)) - float(max(neg)), 3)}
 
 
 def retrieval(model, queries, targets, docs_vec, stems):
