@@ -226,6 +226,23 @@ try:
 finally:
     m.embed_text, m.embedder_available, m.embed_cache_usable = _emb, _avail, _usable
 
+# ── stage 0: learned twin gate ────────────────────────────────────────────────
+print("stage 0 - learned twin classifier")
+check("a re-phrased twin scores high (same meaning, different words)",
+      m._twin_probability(0.95, "deterministic qr generation",
+                          "generate qr and verify by decode", ["qr-codes"],
+                          "deterministic qr rendering",
+                          "produce qr, verify decode-back", ["qr-codes"]) > 0.9)
+check("distinct lessons score low even at moderate cosine",
+      m._twin_probability(0.55, "hostname filter for nodes",
+                          "filter nodes by hostname", ["hostname"],
+                          "docker compose cleanup",
+                          "remove compose resources after tests", ["docker"]) < 0.3)
+check("probability is bounded and total on empty inputs",
+      0.0 <= m._twin_probability(0.0, "", "", [], "", "", []) <= 1.0)
+check("twin mode is the default, cosine stays the kill-switch",
+      m.WRITE_DEDUP_MODE == "twin" and m.WRITE_DEDUP_TWIN_P == 0.90)
+
 # ── 2b. same-day same-slug from a DIFFERENT session: reconcile, never a '-2' twin ──
 print("fix 2b - same-stem cross-session reconcile")
 d = sandbox()

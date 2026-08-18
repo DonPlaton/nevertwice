@@ -1101,6 +1101,52 @@ QUARANTINE_CONF = env_float("NEVERTWICE_QUARANTINE_CONF", 0.95)
 # (the reviewer predicted exactly this; a 164-note flood confirmed it empirically).
 WRITE_DEDUP_SIM = env_float("NEVERTWICE_WRITE_DEDUP_SIM", 0.80)
 WRITE_DEDUP_MAX_RETIRE = 3   # safety valve: never retire more than this many per new note
+# Gate mode: "twin" scores candidates with the learned twin-classifier below; "cosine"
+# restores the plain threshold gate (the kill-switch). In twin mode candidates first pass
+# a cheap cosine PREFILTER, then the full feature score decides.
+WRITE_DEDUP_MODE = os.environ.get("NEVERTWICE_WRITE_DEDUP_MODE", "twin").strip().lower()
+WRITE_DEDUP_TWIN_P = env_float("NEVERTWICE_WRITE_DEDUP_TWIN_P", 0.90)
+WRITE_DEDUP_PREFILTER = env_float("NEVERTWICE_WRITE_DEDUP_PREFILTER", 0.70)
+
+# ── Learned twin-gate (stage 0 of embedding specialization, 2026-08-18) ──────────────
+# Logistic regression over 5 write-time-computable pair features, trained on pairs mined
+# from the memory's OWN LIFECYCLE: 207 positives (99 explicit supersede pairs + 108
+# same-slug '-N' twins) vs 800 random distinct same-project/type pairs, embeddings by the
+# production bge-m3. Held-out test (302 pairs): AUC 0.998 vs 0.991 for cosine alone, and
+# at the default 0.90 operating point precision 1.000 / twin-recall 0.852 - versus the
+# calibrated cosine@0.80 gate's 0.977 / 0.689. The interesting learned fact: word-overlap
+# carries a NEGATIVE weight given cosine - at matched cosine, true twins are re-PHRASINGS
+# (same meaning, different words) while high word overlap signals template-similar but
+# distinct notes. Weights are baked so the production gate stays stdlib-only; retraining
+# lives in the research script (see research/TWIN_GATE.md).
+_TWIN_W = (3.684473, -1.879536, 2.19829, 0.21404, -0.122378)
+_TWIN_B = -3.057724
+_TWIN_MU = (0.621251, 0.196803, 0.183766, 0.095122, 0.88883)
+_TWIN_SD = (0.133751, 0.145667, 0.364025, 0.250373, 0.086981)
+_TWIN_WORD_RE = re.compile(r"[a-zа-я0-9]{3,}")
+
+
+def _twin_words(s: str) -> set:
+    return set(_TWIN_WORD_RE.findall((s or "").lower()))
+
+
+def _twin_probability(cos_sim: float, title_a: str, desc_a: str, ents_a,
+                      title_b: str, desc_b: str, ents_b) -> float:
+    """P(same lesson) for a candidate pair - the five features mirror the training script
+    exactly: cosine, word-jaccard of title+desc, title-token jaccard, entity overlap
+    (|A∩B|/min, 0 when either side is untagged), and length ratio."""
+    wa, wb = _twin_words(f"{title_a} {desc_a}"), _twin_words(f"{title_b} {desc_b}")
+    ta, tb = _twin_words(title_a), _twin_words(title_b)
+    ea, eb = set(ents_a or ()), set(ents_b or ())
+    x = (cos_sim,
+         len(wa & wb) / len(wa | wb) if (wa or wb) else 0.0,
+         len(ta & tb) / len(ta | tb) if (ta or tb) else 0.0,
+         len(ea & eb) / min(len(ea), len(eb)) if ea and eb else 0.0,
+         (lambda ca, cb: min(ca, cb) / max(ca, cb))(
+             max(1, len(title_a) + len(desc_a)), max(1, len(title_b) + len(desc_b))))
+    zsum = _TWIN_B + sum(w * (v - mu) / sd for w, v, mu, sd
+                         in zip(_TWIN_W, x, _TWIN_MU, _TWIN_SD))
+    return 1.0 / (1.0 + math.exp(-max(-60.0, min(60.0, zsum))))
 
 
 _YAML_NEEDS_QUOTE = re.compile(r'[:#&*!|>\'"%@`{}\[\],]|^\s|\s$')
@@ -2593,14 +2639,19 @@ _NDUP_MEMO: list = [None, None]        # [cache-file mtime, parsed cache] - relo
 
 def _near_duplicate_paths(folder_path: Path, project: str, ntype: str,
                           title: str, desc: str, prevention: str,
-                          exclude: set) -> list[Path]:
-    """Live sibling notes (same project + type) whose stored embedding is at least
-    WRITE_DEDUP_SIM cosine-similar to the note about to be written - the re-statements the
-    exact-slug reconcile cannot see (review 2026-08: three live patterns for one lesson,
-    twin mistakes with contradictory resolutions). Embeds with the SAME text shape and
-    document prefix as update_embeddings, so the cosine is computed in the cache's space.
-    Best-effort and fail-open: no embedder, a changed embedding space, or an unreadable
-    cache returns [] and the write proceeds exactly as before the gate existed."""
+                          exclude: set, entities=None) -> list[Path]:
+    """Live sibling notes (same project + type) that restate the lesson about to be
+    written - the twins the exact-slug reconcile cannot see (review 2026-08: three live
+    patterns for one lesson, twin mistakes with contradictory resolutions).
+
+    Two-stage in the default "twin" mode: a cheap cosine PREFILTER over the cache, then
+    the learned twin-classifier (_twin_probability) on the survivors - candidate entities
+    are read from frontmatter only for prefilter-passers, so the extra IO is a handful of
+    reads per genuinely-suspicious note. "cosine" mode restores the plain calibrated
+    threshold (the kill-switch). Embeds with the SAME text shape and document prefix as
+    update_embeddings, so the cosine is computed in the cache's space. Best-effort and
+    fail-open: no embedder, a changed embedding space, or an unreadable cache returns []
+    and the write proceeds exactly as before the gate existed."""
     if WRITE_DEDUP_SIM <= 0:
         return []
     try:
@@ -2617,15 +2668,27 @@ def _near_duplicate_paths(folder_path: Path, project: str, ntype: str,
         if _NDUP_MEMO[0] != mtime:              # one parse per cache generation, not per note
             _NDUP_MEMO[0] = mtime
             _NDUP_MEMO[1] = load_embed_cache()
+        twin_mode = WRITE_DEDUP_MODE != "cosine"
+        floor = WRITE_DEDUP_PREFILTER if twin_mode else WRITE_DEDUP_SIM
         scored = []
         for stem, e in (_NDUP_MEMO[1] or {}).items():
             if (not isinstance(e, dict) or e.get("project") != project
                     or e.get("ntype") != ntype or stem in exclude or not e.get("vec")):
                 continue
-            if not (folder_path / f"{stem}.md").exists():   # retired/archived cache leftovers
+            fp = folder_path / f"{stem}.md"
+            if not fp.exists():                             # retired/archived cache leftovers
                 continue
             sim = cosine(vec, e["vec"])
-            if sim >= WRITE_DEDUP_SIM:
+            if sim < floor:
+                continue
+            if twin_mode:
+                cand_ents = _read_frontmatter_file(fp).get("entities") or []
+                p_twin = _twin_probability(sim, title, desc, entities,
+                                           e.get("title", ""), e.get("desc", ""),
+                                           cand_ents)
+                if p_twin >= WRITE_DEDUP_TWIN_P:
+                    scored.append((p_twin, stem))
+            else:
                 scored.append((sim, stem))
         scored.sort(key=lambda x: (-x[0], x[1]))
         return [folder_path / f"{s}.md" for _, s in scored[:WRITE_DEDUP_MAX_RETIRE]]
@@ -2906,7 +2969,7 @@ def write_typed_note(folder: str, item, project: str, date: str,
     if WRITE_DEDUP_SIM > 0:
         _nd_exclude = {base_stem} | {o.stem for o in to_retire}
         for old in _near_duplicate_paths(p, project, ntype, title, desc, prevention,
-                                         _nd_exclude):
+                                         _nd_exclude, entities=entities):
             r_old, s_old = _note_recur_sources(old)
             prior_recur = max(prior_recur, r_old)
             prior_sources |= s_old

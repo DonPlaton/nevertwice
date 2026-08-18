@@ -5,6 +5,17 @@ versions are [semantic](https://semver.org). Dates are UTC.
 
 ## [Unreleased]
 
+### Added
+- **Learned twin-gate** (stage 0 of embedding specialization). The write-time dedup gate
+  now scores candidates with a logistic classifier over five pair features, trained on
+  labels mined from the memory's own lifecycle (supersede pairs + slug twins vs random
+  distinct pairs) - no hand labeling. Held-out: precision 1.000 / twin-recall 0.852 at
+  the default 0.90 operating point, vs 0.977 / 0.689 for the calibrated cosine gate;
+  AUC 0.998 vs 0.991. Notable learned fact: word-overlap carries a NEGATIVE weight given
+  cosine - true twins are re-phrasings, high word overlap signals template-similar but
+  distinct notes. `NEVERTWICE_WRITE_DEDUP_MODE=cosine` is the kill-switch. See
+  `research/TWIN_GATE.md`.
+
 ## [2.3.0] - 2026-08-18
 
 ### Added
