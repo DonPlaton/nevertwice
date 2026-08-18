@@ -43,29 +43,50 @@ def _find_note(stem: str):
 
 
 def do_forget(stem: str) -> int:
-    fp, folder = _find_note(stem)
-    if not fp:
-        print(f"[remember] live note not found: {stem}", file=sys.stderr)
-        return 1
+    # Under the vault lock (review 2026-08 B2): this is a full file+cache+index+git
+    # mutation, advertised for agents to call MID-TASK - exactly when hooks fire. The
+    # unlocked version raced the hook's cache RMW both ways: a stale forget-save wiped
+    # freshly-embedded notes from the cache, or a stale hook-save resurrected the
+    # "forgotten" stem into cache and SQLite.
+    if not m.acquire_lock(timeout_s=60):
+        print("[remember] memory store is busy (lock) - try again", file=sys.stderr)
+        return 3
     try:
-        text = fp.read_text(encoding="utf-8", errors="replace")
-    except OSError as e:
-        print(f"[remember] read failed: {e}", file=sys.stderr)
-        return 1
-    text = m._stamp_frontmatter(text, {"status": "forgotten",
-                                       "forgotten_at": datetime.now().isoformat(timespec="seconds")})
-    dest = fp.parent / "Superseded"
-    dest.mkdir(exist_ok=True)
-    m.write_atomic(dest / fp.name, text)
-    fp.unlink(missing_ok=True)
-    cache = m.load_embed_cache()
-    if cache.pop(stem, None) is not None:
-        m.save_embed_cache(cache)
-    m.sync_scale_index(delete=[stem])     # drop from the SQLite index too (C2/C3)
-    m.rebuild_index()
-    m.git_autocommit()
-    print(f"[remember] forgotten → {folder}/Superseded/{fp.name}")
-    return 0
+        fp, folder = _find_note(stem)
+        if not fp:
+            print(f"[remember] live note not found: {stem}", file=sys.stderr)
+            return 1
+        try:
+            text = fp.read_text(encoding="utf-8", errors="replace")
+        except OSError as e:
+            print(f"[remember] read failed: {e}", file=sys.stderr)
+            return 1
+        text = m._stamp_frontmatter(text, {"status": "forgotten",
+                                           "forgotten_at": datetime.now().isoformat(timespec="seconds")})
+        dest = fp.parent / "Superseded"
+        dest.mkdir(exist_ok=True)
+        m.write_atomic(dest / fp.name, text)
+        try:
+            fp.unlink(missing_ok=True)
+        except OSError as e:
+            # roll back the Superseded/ copy - two live copies is the state this
+            # mechanism exists to prevent (mirror supersede_note's Windows guard)
+            try:
+                (dest / fp.name).unlink(missing_ok=True)
+            except OSError:
+                pass
+            print(f"[remember] forget failed (unlink: {e}) - rolled back", file=sys.stderr)
+            return 1
+        cache = m.load_embed_cache()
+        if cache.pop(stem, None) is not None:
+            m.save_embed_cache(cache)
+        m.sync_scale_index(delete=[stem])     # drop from the SQLite index too (C2/C3)
+        m.rebuild_index()
+        m.git_autocommit()
+        print(f"[remember] forgotten → {folder}/Superseded/{fp.name}")
+        return 0
+    finally:
+        m.release_lock()
 
 
 def do_remember(a) -> int:

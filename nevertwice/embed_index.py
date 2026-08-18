@@ -10,7 +10,7 @@ prefix mode in .embeddings_meta.json so the query side always matches (audit H2)
     python embed_index.py --rebuild  # from scratch (use after changing the model
                                      #   or to upgrade a legacy unprefixed cache)
 """
-import math
+import json
 import sys
 from pathlib import Path
 
@@ -65,8 +65,25 @@ def main():
         m.release_lock()
 
 
+def _checkpoint(cache: dict, rebuild: bool, stage_fp: Path) -> None:
+    """Periodic progress save. A partial REBUILD must never touch the live cache:
+    the old code's first 25-note checkpoint atomically overwrote both the primary
+    and its .bak with a 25-entry cache, so a kill mid-rebuild left no valid
+    generation anywhere (review 2026-08 B8). Rebuilds stage to a sibling file and
+    swap only on completion; incremental runs still checkpoint in place (their
+    cache is a superset of the live one)."""
+    if rebuild:
+        try:
+            m.write_atomic(stage_fp, json.dumps(cache, ensure_ascii=False))
+        except OSError:
+            pass
+    else:
+        m.save_embed_cache(cache)
+
+
 def _run_embed(rebuild: bool):
     cache = {} if rebuild else m.load_embed_cache()
+    stage_fp = m.EMBED_CACHE.with_name(m.EMBED_CACHE.name + ".rebuild")
     # On rebuild we (re)embed everything with the configured prefix mode; on an
     # incremental run we MATCH whatever the existing cache already uses so query
     # and document vectors never end up in different spaces (audit H2).
@@ -98,18 +115,11 @@ def _run_embed(rebuild: bool):
             conf = m._coerce_confidence(fm.get("confidence"))   # H2: read back in ranking
             # recurrence lives in the NOTE frontmatter (the source of truth, like resolved/
             # confidence) - read it from there, not from the cache, else `--rebuild` (cache={})
-            # silently RESETS every recurrence to 1, dropping the accumulated count (matters now
-            # that recurrence grows via supersession - W15).
-            try:
-                # round(float(...)) not int(...): a "2.7" string used to raise (→ reset to 1,
-                # losing the count) and a fractional value truncated silently; floor at 1 so a
-                # stray negative can't down-weight recall (critic R3). isfinite guard: round(inf)
-                # raises OverflowError (a non-ValueError), which would abort the whole batch.
-                _rv = float(fm.get("recurrence")
-                            or (cache.get(stem) or {}).get("recurrence", 1) or 1)
-                recur = max(1, round(_rv)) if math.isfinite(_rv) else 1
-            except (TypeError, ValueError):
-                recur = 1
+            # silently RESETS every recurrence to 1 (W15). Parsed by the ONE shared rule
+            # (m._coerce_recurrence) - this block had drifted from the live readers, so a
+            # note's count depended on which path last touched it (review 2026-08 R2).
+            recur = m._coerce_recurrence(fm.get("recurrence")
+                                         or (cache.get(stem) or {}).get("recurrence", 1))
             # project gates the cloud embedder: a local-only project is never shipped
             # to a cloud provider (audit 2026-06-18) - it stays text-only/lexical here
             vec = m.embed_text(f"{title}\n{desc}\n{prevention}".strip(), kind=kind, project=project)
@@ -123,12 +133,29 @@ def _run_embed(rebuild: bool):
                 cache[stem] = entry
                 added += 1
                 if added % 25 == 0:
-                    m.save_embed_cache(cache)
+                    _checkpoint(cache, rebuild, stage_fp)
                     print(f"  ... {added} embedded", file=sys.stderr)
             else:
                 failed += 1
                 print(f"  [warn] no embedding for {stem}", file=sys.stderr)
+    if rebuild and failed and failed >= added:
+        # The embedder died mid-rebuild: swapping in a mostly-empty cache would make
+        # every unreached note invisible to retrieval AND rebuild SQLite from the
+        # shrunken set (review 2026-08 B8). Keep the previous generation; the staging
+        # file is discarded and the operator re-runs after fixing the embedder.
+        print(f"[embed_index] ABORT: {failed} failures vs {added} embedded - the "
+              f"previous cache generation is left untouched; fix the embedder and "
+              f"re-run --rebuild", file=sys.stderr)
+        try:
+            stage_fp.unlink(missing_ok=True)
+        except OSError:
+            pass
+        sys.exit(3)
     m.save_embed_cache(cache)
+    try:
+        stage_fp.unlink(missing_ok=True)
+    except OSError:
+        pass
     meta = m.load_embed_meta()
     meta["model"] = m.embed_signature()
     meta["prefixed"] = prefixed

@@ -127,6 +127,11 @@ def search_core(query: str, project: str | None = None, k: int = 10,
         rerank = m.RERANK_ENABLED
     if xrerank is None:
         xrerank = _ce.enabled()
+    # Writers normalize the project via slug_project; comparing the RAW caller value
+    # ('My-App') against stored slugs ('my_app') silently returned zero hits for
+    # exactly the repo-name shapes slug_project rewrites (review 2026-08 C2). Every
+    # search surface (CLI, MCP, api.recall) funnels through here.
+    project = m.slug_project(project) if project else None
     cache = m.load_embed_cache()
     has_any = any(isinstance(r, dict) and isinstance(r.get("vec"), list)
                   for r in cache.values())

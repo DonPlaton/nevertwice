@@ -213,10 +213,20 @@ machine and against a cloud coding agent.
 |---|---|---|
 | `NEVERTWICE_DIVERGENCE` | `0` | Divergent-retrieval experiment (off). |
 | `NEVERTWICE_STALE_CHECK` | `0` | Periodic stale-note check (off by default). |
-| `NEVERTWICE_DEDUP_SIM` | `0.92` | Cosine threshold for the weekly consolidation merge (sleep-time dedup). |
+| `NEVERTWICE_DEDUP_SIM` | `0.86` | Cosine threshold for the weekly consolidation merge (sleep-time dedup). The old 0.92 default was measured near-inert on real bge-m3 cosines. |
 | `NEVERTWICE_POST_W_REL` / `_FREQ` / `_SAL` | `1.0` / `0.3` / `0.2` | Weights for the opt-in posterior ranker (`NEVERTWICE_RANKER=posterior`). |
+
+## Write-time near-duplicate gate (v2.3)
+
+| Variable | Default | Notes |
+|---|---|---|
+| `NEVERTWICE_WRITE_DEDUP_SIM` | `0.80` | Cosine threshold for the write-time twin reconcile (`0` disables the gate). Calibrated on a live store: distinct pairs top out at 0.737, re-phrasings sit at 0.78–0.90. |
+| `NEVERTWICE_WRITE_DEDUP_MODE` | `twin` | `twin` scores candidates with the learned five-feature classifier; `cosine` restores the plain threshold gate (the kill-switch). |
+| `NEVERTWICE_WRITE_DEDUP_TWIN_P` | `0.90` | Classifier probability above which a candidate is treated as the same lesson (precision 1.000 / twin-recall 0.852 at this point on the calibration store). |
+| `NEVERTWICE_WRITE_DEDUP_PREFILTER` | `0.70` | Cheap cosine prefilter in `twin` mode; only survivors get the full feature score. |
+| `NEVERTWICE_TWIN_SPACE` | `bge-m3` | The embedding space the baked classifier weights were calibrated on. On a mismatch with the active embed model the gate falls back to `cosine` mode, loudly. Set after retraining the weights for a new space. |
 
 ---
 
-*Generated against the codebase on 2026-06-20. If you find a knob that isn't here, it's
-experimental and unsupported; open an issue.*
+*Generated against the codebase on 2026-06-20; dedup section refreshed 2026-08-18. If you
+find a knob that isn't here, it's experimental and unsupported; open an issue.*

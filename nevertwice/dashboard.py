@@ -204,20 +204,29 @@ def build_html(project=None, days=30, conflicts_limit=40) -> str:
 <div class="rule"></div>"""]
 
     # ── stat cards ──
-    try:                                     # the token-savings headline, if the ledger has data
-        import stats as _stats
+    try:                                     # the token headline, if the ledger has data
+        try:
+            from . import stats as _stats
+        except ImportError:
+            import stats as _stats
         _sv = _stats.load().get("totals", {})
+        _inj = _stats._human(_sv.get("tokens_injected", 0)) if _sv.get("interventions") else None
         _saved = _stats._human(_sv.get("tokens_saved", 0)) if _sv.get("interventions") else None
     except Exception:
-        _saved, _sv = None, {}
+        _inj, _saved, _sv = None, None, {}
     cards = [(t["live_notes"], "live notes", "across the store", True),
              (t["projects"], "projects", "tracked", False),
              (t["superseded_notes"], "superseded", "history kept", False),
              (t["added_in_window"], f"added · {days}d", "new lessons", False),
              (t["revised_in_window"], f"revised · {days}d", "contradictions resolved", False)]
-    if _saved:                               # lead with what the memory bought you
-        cards.insert(0, (f"~{_saved}", "tokens saved",
-                         "vs dumping the whole store each turn", True))
+    # Honest-ledger presentation (review 2026-08 D13): the hero card LEADS with the
+    # real number (tokens actually injected); the saved figure is shown as the labeled
+    # upper bound it is - the old card asserted the bound as realized savings, the
+    # exact framing the 2026-08 review removed from the terminal panel.
+    if _inj:
+        cards.insert(0, (f"~{_inj}", "tokens injected",
+                         f"targeted recall · ≤{_saved} vs full-store re-paste (bound)"
+                         if _saved else "targeted recall", True))
     parts.append(f'<div class="cards"{rv()}>')
     for n, lbl, foot, hero in cards:
         parts.append(f'<div class="card{" hero" if hero else ""}"><div class="l">{_e(lbl)}</div>'

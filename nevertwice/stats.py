@@ -192,7 +192,11 @@ def render_panel(d: dict | None = None) -> str:
     d = load() if d is None else d
     t = d.get("totals", {})
     span = last_days(d, 14)
-    saved_series = [x.get("saved", 0) for x in span]
+    # the sparkline plots the REAL per-day injected tokens; the old series plotted the
+    # saved-BOUND under an unqualified label, so the trend graphic rose with store
+    # size (duplicate bloat included) rather than with real injections (review
+    # 2026-08 D13 - day['injected'] was recorded but rendered nowhere)
+    inj_series = [x.get("injected", 0) for x in span]
     act_series = [x.get("recalls", 0) + x.get("guards", 0) + x.get("counterfactuals", 0)
                   for x in span]
     W = 60
@@ -222,7 +226,7 @@ def render_panel(d: dict | None = None) -> str:
         row(counts),
         row(),
         row(f"  activity (14d)  {sparkline(act_series)}"),
-        row(f"  tokens   (14d)  {sparkline(saved_series)}"),
+        row(f"  injected (14d)  {sparkline(inj_series)}"),
         "╰" + "─" * W + "╯",
     ]
     return "\n".join(out)

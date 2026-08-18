@@ -49,19 +49,30 @@ def _state_path() -> Path:
 
 
 def load_state() -> dict:
+    """Primary, then .bak, loudly on recovery (review 2026-08 I3): a silently-reset
+    state also resets the adaptive false-alarm thresholds, so a corrupt file
+    re-enabled every alarm the user had silenced."""
     p = _state_path()
-    if not p.exists():
-        return {}
-    try:
-        d = json.loads(p.read_text(encoding="utf-8"))
-        return d if isinstance(d, dict) else {}
-    except (OSError, ValueError):
-        return {}
+    for fp in (p, p.with_name(p.name + ".bak")):
+        if not fp.exists():
+            continue
+        try:
+            d = json.loads(fp.read_text(encoding="utf-8"))
+            if isinstance(d, dict):
+                if fp is not p:
+                    m.log(f"anticipate.json unreadable - recovered from {fp.name}")
+                return d
+        except (OSError, ValueError) as e:
+            m.log(f"ERROR reading {fp.name}: {type(e).__name__}: {e}")
+            continue
+    return {}
 
 
 def save_state(state: dict) -> None:
     m.VAULT.mkdir(parents=True, exist_ok=True)
-    m.write_atomic(_state_path(), json.dumps(state, ensure_ascii=False, indent=1))
+    text = json.dumps(state, ensure_ascii=False, indent=1)
+    m.write_atomic(_state_path(), text)
+    m.write_atomic(_state_path().with_name(_state_path().name + ".bak"), text)
 
 
 def _content_tokens(text: str) -> set:

@@ -143,7 +143,8 @@ PROJECT_ROOTS = _split_roots(
     or os.environ.get("NEVERTWICE_PROJECT_ROOT", ""))   # empty default → rely on
 #   git-repo detection below; set NEVERTWICE_PROJECT_ROOTS to also track a flat root
 PROJECT_ROOT_DISPLAY = PROJECT_ROOTS[0] if PROJECT_ROOTS else ""
-PROJECT_ROOT_FILTER = PROJECT_ROOT_DISPLAY.lower()  # back-compat: first root
+# (PROJECT_ROOT_FILTER deleted - zero readers; it invited new code back into the
+# single-root assumption _split_roots removed; review 2026-08 G8)
 _ROOTS_NORM = [_norm_path(r) for r in PROJECT_ROOTS]
 
 # Track any git repo (not just configured roots) - the core of "memory for any
@@ -2929,12 +2930,22 @@ def mark_resolved(mistake_fp: Path, by_stem: str) -> bool:
     return True
 
 
-def _note_recurrence(p: Path) -> int:
-    """Recurrence count from a note's YAML header (default 1, tolerant of junk)."""
+def _coerce_recurrence(v) -> int:
+    """Recurrence as a positive int - THE one parse rule (review 2026-08 R2: this
+    logic had drifted between embed_index and the live readers, so a note's count
+    depended on which path last touched it: round(float) tolerates "2.7" where
+    int() raised and reset the count to 1; the floor keeps a stray negative from
+    down-weighting recall; isfinite guards round(inf) -> OverflowError)."""
     try:
-        return int(_read_frontmatter_file(p).get("recurrence", 1) or 1)
+        f = float(v if v not in (None, "") else 1)
+        return max(1, round(f)) if math.isfinite(f) else 1
     except (TypeError, ValueError):
         return 1
+
+
+def _note_recurrence(p: Path) -> int:
+    """Recurrence count from a note's YAML header (default 1, tolerant of junk)."""
+    return _coerce_recurrence(_read_frontmatter_file(p).get("recurrence", 1))
 
 
 RECUR_SOURCES_CAP = 25      # bound the stored provenance set; the count is the ranking signal
@@ -2946,10 +2957,7 @@ def _note_recur_sources(p: Path) -> tuple[int, set]:
     Recurrence counts distinct sources, so re-stating a false lesson from one session can't
     inflate its salience past 1 - anti-gaming defence-in-depth beyond write idempotency (C5)."""
     fm = _read_frontmatter_file(p)
-    try:
-        n = int(fm.get("recurrence", 1) or 1)
-    except (TypeError, ValueError):
-        n = 1
+    n = _coerce_recurrence(fm.get("recurrence", 1))
     src = fm.get("sources")
     if isinstance(src, list):
         sources = {str(s) for s in src if s}
@@ -2966,7 +2974,7 @@ def _embed_recurrence(stem: str, ntype: str, cache: dict) -> int:
     folder = TYPE_FOLDER.get(ntype)
     if folder and (r := _note_recurrence(VAULT / folder / f"{stem}.md")) > 1:
         return r
-    return int((cache.get(stem) or {}).get("recurrence", 1) or 1)
+    return _coerce_recurrence((cache.get(stem) or {}).get("recurrence", 1))
 
 
 def _note_resolved(stem: str, ntype: str) -> bool:
@@ -2977,7 +2985,10 @@ def _note_resolved(stem: str, ntype: str) -> bool:
     if not folder:
         return False
     fm = _read_frontmatter_file(VAULT / folder / f"{stem}.md")
-    return fm.get("status") == "resolved" or bool(fm.get("resolved_by"))
+    # .lower(): embed_index and _note_meta compare case-insensitively - a note with
+    # `status: Resolved` was de-weighted by the batch path but kept full salience on
+    # this live path (review 2026-08 R2)
+    return str(fm.get("status", "")).lower() == "resolved" or bool(fm.get("resolved_by"))
 
 
 def write_typed_note(folder: str, item, project: str, date: str,
@@ -3642,7 +3653,11 @@ def _superseded_index(project: str | None = None) -> dict:
 
 def _iter_project_notes(project: str) -> list[dict]:
     """All live (non-archived, non-superseded) typed notes for a project, as
-    metadata dicts. Flat glob → Superseded/ and Archive/ subdirs are skipped."""
+    metadata dicts. Flat glob → Superseded/ and Archive/ subdirs are skipped.
+    The project arg is slugged here - every WRITER normalizes via slug_project, so a
+    raw caller value ('My-App') matched nothing on disk ('my_app') and the entity/
+    graph read surfaces silently returned empty (review 2026-08 C3)."""
+    project = slug_project(project)
     out = []
     for ntype, folder in TYPE_FOLDER.items():
         d = VAULT / folder
@@ -5300,16 +5315,18 @@ def emit_session_start_context(cwd: str) -> None:
     parts += footer
     _si = "\n".join(parts)
     if len(parts) > len(footer):             # something real was injected, not just the footer
-        saved = _record_recall_saving(_si)
         # The receipt accounts for the payload as the agent receives it, so it is measured on
         # the sealed text and appended last. best_line picks the richest form that fits the
         # leftover room and degrades (or returns "") rather than overshoot the cap - content
         # is never displaced, and the invariant that the budget bounds the WHOLE payload
         # (audit M-d) is preserved.
         if INJECT_RECEIPT and _receipt is not None:
-            _rline = rcpt.seal(_si, saved).best_line(len(_si))
+            _rline = rcpt.seal(_si, 0).best_line(len(_si))
             if _rline:
                 _si = f"{_si}\n{_rline}"
+        # ledger AFTER the receipt line lands: the injected-token count must cover the
+        # payload as the agent actually receives it, receipt included (review 2026-08 Dc6)
+        _record_recall_saving(_si)
     payload = {"hookSpecificOutput": {
         "hookEventName": "SessionStart",
         "additionalContext": _si,
@@ -5382,6 +5399,19 @@ def _prune_prompt_recall_state(max_age_days: int = 3) -> None:
                 pass
     except OSError:
         pass
+
+
+def _degraded_status() -> str:
+    """The ONE degraded-status rule (review 2026-08 G6: two hand-synced copies had
+    diverged - one was fixed to stay quiet when a healthy cloud primary made Ollama
+    irrelevant, the other still reported DEGRADED for the same backend state; and
+    both kept an unreachable Ollama-only arm, since every path that sets
+    _OLLAMA_DOWN also increments the fail counter)."""
+    if _LLM_STATS["fail"]:
+        return f"{_LLM_STATS['fail']} LLM call(s) failed (both backends)"
+    if _OLLAMA_DOWN and not (cloud_key() and ACTIVE_CLOUD != "none"):
+        return f"Ollama errors during run ({OLLAMA_URL})"
+    return ""
 
 
 def _record_recall_saving(injected_text: str) -> int:
@@ -5774,14 +5804,8 @@ def main():
                 _st.refresh_store_tokens()
             except Exception:
                 pass
-            if _LLM_STATS["fail"]:
-                degraded = f"{_LLM_STATS['fail']} LLM call(s) failed (both backends)"
-            elif _OLLAMA_DOWN and not (cloud_key() and ACTIVE_CLOUD != "none"):
-                degraded = f"Ollama errors during run ({OLLAMA_URL})"
-            else:
-                degraded = ""
             write_status(event, trigger, run_log, swept_count, session_id,
-                         degraded=degraded)
+                         degraded=_degraded_status())
             git_autocommit()
 
         if event == "SessionStart":
@@ -5814,11 +5838,8 @@ def main():
                                   run_log=run_log, max_n=SESSION_END_SWEEP_CAP)
         if processed_now or swept:
             finalize(swept)
-        elif _LLM_STATS["fail"] or _OLLAMA_DOWN:
-            degraded = (f"{_LLM_STATS['fail']} LLM call(s) failed (both backends)"
-                        if _LLM_STATS["fail"]
-                        else f"Ollama errors during run ({OLLAMA_URL})")
-            write_status(event, trigger, [], 0, session_id, degraded=degraded)
+        elif _degraded_status():
+            write_status(event, trigger, [], 0, session_id, degraded=_degraded_status())
         else:
             log("No work performed - status.txt not updated")
         log(f"Run done | this_session_processed={processed_now} swept={swept}")

@@ -462,8 +462,9 @@ def render(report: dict) -> str:
         for law in sorted(by_law):
             items = by_law[law]
             total = totals.get(law, len(items))
-            note = " (cycle search capped)" if law == "acyclicity" and s["cycles_capped"] else ""
-            lines.append(f"  {law} - {total}{note}:")
+            # ("cycle search capped" note removed: cycles_capped is hardcoded False -
+            # SCC counting is exact - so the branch could never fire; review 2026-08 G8)
+            lines.append(f"  {law} - {total}:")
             for f in items[:12]:
                 where = f" [{f['stem']}]" if f["stem"] else ""
                 lines.append(f"    {_ICON.get(f['severity'], '[?]')} {f['detail']}{where}")

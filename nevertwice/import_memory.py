@@ -47,6 +47,10 @@ def _clip(s: str, n: int) -> str:
 def _frontmatter(text: str) -> tuple[dict, str]:
     """Minimal YAML-ish frontmatter split: {key: value} pairs + the body. Nested keys
     (metadata:) are flattened one level. Never raises; unparseable header -> ({}, text)."""
+    if text[:1] == "﻿":
+        # BOM tolerance (audit A7, ported here - review 2026-08 R3): a BOM'd export
+        # parsed as "no frontmatter" and the whole raw header became the note body
+        text = text[1:]
     if not text.startswith("---"):
         return {}, text
     parts = text.split("---", 2)
@@ -196,11 +200,20 @@ def run_import(source: str, path: Path, project: str, dry_run: bool = False) -> 
            "skipped": len(lessons) - len(fresh), "written": 0}
     if dry_run or not fresh:
         return res
-    written = api.remember_lessons([ln for ln, _ in fresh], project=project)
-    res["written"] = len(written)
-    # ledger everything attempted: a lesson the write path rejects (injection-shaped)
-    # is rejected deterministically - retrying it forever would just spam the log
-    _ledger_save(seen | {h for _, h in fresh})
+    # Chunked writes with a merge-save after each chunk (review 2026-08 B7): the old
+    # single batch saved the ledger only at the very end, so a mid-batch kill re-ran
+    # the ENTIRE import; and the blind `seen | fresh` save clobbered any hashes a
+    # concurrent import had written. Re-loading before each union keeps both. A
+    # lesson the write path rejects (injection-shaped) is still ledgered: rejection
+    # is deterministic, retrying forever would just spam the log.
+    written_total = 0
+    CHUNK = 10
+    for i in range(0, len(fresh), CHUNK):
+        part = fresh[i:i + CHUNK]
+        written = api.remember_lessons([ln for ln, _ in part], project=project)
+        written_total += len(written)
+        _ledger_save(_ledger_load() | {h for _, h in part})
+    res["written"] = written_total
     return res
 
 

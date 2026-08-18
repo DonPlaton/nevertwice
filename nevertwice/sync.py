@@ -55,6 +55,23 @@ def main() -> int:
         print("[sync] no git remote configured (add one: git remote add origin <url>).",
               file=sys.stderr)
         return 0
+    # The vault lock, like every other writer (review 2026-08 B3): commit + rebase
+    # REWRITE THE WORKING TREE. Unlocked, a scheduled sync could commit a hook's
+    # half-finished write set and then rebase remote versions underneath the hook's
+    # in-memory reads - the hook's subsequent write_atomic landed a stale pre-rebase
+    # read over the remote-merged file, silently discarding the other machine's
+    # entries and pushing the loss onward.
+    if not m.acquire_lock(timeout_s=120):
+        print("[sync] could not acquire vault lock - another process is busy; "
+              "try again later.", file=sys.stderr)
+        return 3
+    try:
+        return _sync_locked()
+    finally:
+        m.release_lock()
+
+
+def _sync_locked() -> int:
     # a previous sync may have stopped mid-rebase; committing on top would steamroll the
     # conflict state, so stop loudly instead (code-review 2026-07)
     gitdir = m.VAULT / ".git"

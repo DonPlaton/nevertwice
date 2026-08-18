@@ -101,6 +101,13 @@ def evaluate(tag, path):
     sp = HERE / "data" / "test_synth.jsonl"
     if sp.exists():
         pairs = jl(sp)
+        _np_ = sum(1 for p in pairs if p["label"])
+        if _np_ < 10 or len(pairs) - _np_ < 10:
+            # validate composition BEFORE the GPU work: a one-sided test set used to
+            # crash twin_metrics at the END of the three-model encoding run,
+            # discarding all results (review 2026-08 D15)
+            raise SystemExit(f"degenerate test_synth.jsonl ({_np_} pos / "
+                             f"{len(pairs) - _np_} neg) - regenerate pairs first")
         a, b = enc([p["a"] for p in pairs]), enc([p["b"] for p in pairs])
         out["synth_twin"] = twin_metrics((a * b).sum(axis=1), [p["label"] for p in pairs])
         guard = jl(HERE / "data" / "guard_synth.jsonl")

@@ -273,8 +273,22 @@ def upsert(records: dict) -> int:
             v = r.get("vec")
             if v is not None and not isinstance(v, list):
                 continue
+            # Preserve the stamped salience (Brain F5): cache records carry no
+            # `salience` field, so a bare upsert zeroed the column on every
+            # incremental write (a recurrence re-embed, a mark_resolved sync) and the
+            # ranking nudge silently decayed row by row until the next full build()
+            # (review 2026-08 C5).
+            sal_keep = 0.0
+            if "salience" not in r:
+                try:
+                    got = cur.execute("SELECT salience FROM notes WHERE stem = ?",
+                                      (stem,)).fetchone()
+                    if got and got[0]:
+                        sal_keep = float(got[0])
+                except (sqlite3.Error, TypeError, ValueError):
+                    pass
             try:
-                row = _row(stem, r)   # vec=None → text-only FTS row (no-embedder, #32)
+                row = _row(stem, r, salience=sal_keep)   # vec=None → text-only FTS row (no-embedder, #32)
             except (TypeError, ValueError, OverflowError, struct.error):
                 continue        # poisoned/out-of-range vector - skip the row, not the
                                 # whole batch (mirror build()'s A10 guard; P3 struct.pack
@@ -609,6 +623,8 @@ def search(query: str, project: str | None = None, k: int = 10):
     the hook's hot path uses iter_candidates() + the shared ranker instead."""
     if not index_exists():
         return [], "no-index"
+    # writers store slugged projects - a raw 'My-App' filter matched nothing (C2)
+    project = m.slug_project(project) if project else None
     # Self-migrate a stale-format index before _unpack reads it (CLI path) - but only
     # when the cache can repopulate it; never rebuild to empty and throw away working
     # lexical (FTS) data. If we can't migrate, skip the (garbage) semantic branch and
@@ -670,8 +686,12 @@ def search(query: str, project: str | None = None, k: int = 10):
 
 
 def _safe_terms(query: str):
-    """Alphanumeric tokens for an FTS5 MATCH (avoids syntax errors on punctuation)."""
-    return list(m._tokens(query))[:24]      # m._tokens is always defined (dropped dead fallback, audit)
+    """Alphanumeric tokens for an FTS5 MATCH (avoids syntax errors on punctuation).
+    First-occurrence order, NOT set order: m._tokens returns a set, and slicing a
+    set's iteration order made which 24 tokens survive depend on the per-process
+    hash seed - identical queries returned different lexical hits run to run
+    (review 2026-08 P5)."""
+    return list(dict.fromkeys(m._TOKEN_RE.findall((query or "").lower())))[:24]
 
 
 def main() -> int:

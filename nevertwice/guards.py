@@ -57,19 +57,31 @@ def _ledger_path() -> Path:
 
 
 def load_guards() -> list[dict]:
+    """Primary, then .bak, LOUDLY on recovery (review 2026-08 I3): guards are active
+    protection - a silently-swallowed corrupt ledger meant every guard stopped
+    firing with no trace, the exact silent-reset the processed-db already defends
+    against."""
     p = _ledger_path()
-    if not p.exists():
-        return []
-    try:
-        data = json.loads(p.read_text(encoding="utf-8"))
-        return data if isinstance(data, list) else []
-    except (OSError, ValueError):
-        return []
+    for fp in (p, p.with_name(p.name + ".bak")):
+        if not fp.exists():
+            continue
+        try:
+            data = json.loads(fp.read_text(encoding="utf-8"))
+            if isinstance(data, list):
+                if fp is not p:
+                    m.log(f"guards.json unreadable - recovered from {fp.name}")
+                return data
+        except (OSError, ValueError) as e:
+            m.log(f"ERROR reading {fp.name}: {type(e).__name__}: {e}")
+            continue
+    return []
 
 
 def save_guards(guards: list[dict]) -> None:
     m.VAULT.mkdir(parents=True, exist_ok=True)
-    m.write_atomic(_ledger_path(), json.dumps(guards, ensure_ascii=False, indent=1))
+    text = json.dumps(guards, ensure_ascii=False, indent=1)
+    m.write_atomic(_ledger_path(), text)
+    m.write_atomic(_ledger_path().with_name(_ledger_path().name + ".bak"), text)
 
 
 # ── ReDoS-safe pattern validation ─────────────────────────────────────
@@ -175,11 +187,26 @@ def register(guards: list[dict], guard: dict) -> bool:
 
 # ── the hot path: 0-token-until-fired check ───────────────────────────
 
+def _glob_matches(path: str, glob: str) -> bool:
+    """Separator-normalized glob match against the full path, its basename, and every
+    relative tail. The old full-absolute-path fnmatch could never match a relative
+    glob like `src/*.py` on Windows (`D:\\proj\\src\\x.py`), so directory-scoped
+    guards existed, cost a check per PreToolUse, and protected nothing (review
+    2026-08 P7)."""
+    p = (path or "").replace("\\", "/")
+    g = (glob or "").replace("\\", "/")
+    if fnmatch.fnmatch(p, g):
+        return True
+    parts = [x for x in p.split("/") if x]
+    # every relative tail: a/b/c.py -> b/c.py -> c.py
+    return any(fnmatch.fnmatch("/".join(parts[i:]), g) for i in range(1, len(parts)))
+
+
 def _scope_matches(g: dict, project, path, tool) -> bool:
     sc = g.get("scope", {})
     if sc.get("project") and sc["project"] != (project or ""):
         return False
-    if sc.get("path_glob") and not (path and fnmatch.fnmatch(path, sc["path_glob"])):
+    if sc.get("path_glob") and not (path and _glob_matches(str(path), sc["path_glob"])):
         return False
     if sc.get("tool") and sc["tool"] != (tool or ""):
         return False

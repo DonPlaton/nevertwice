@@ -101,7 +101,13 @@ def main():
     seen = set()
     want = min(600, sum(len(v) * (len(v) - 1) // 2 for v in by_dom.values()))
     tries = 0
-    while len(test) - len(test_pos_src) < want and tries < want * 40:
+    # count against the twins that actually SUCCEEDED, not the 90 attempted: every
+    # failed twin generation otherwise added one surplus negative, skewing the
+    # neg-quantile behind every recall@FPR number - and with the generator fully
+    # down, the script exited 0 having written a 100%-negative test set that killed
+    # evaluate.py at the very END of the three-model GPU run (review 2026-08 D15)
+    n_pos = len(test)
+    while len(test) - n_pos < want and tries < want * 40:
         tries += 1
         dom = random.choice([d for d, v in by_dom.items() if len(v) >= 2])
         a, b = random.sample(by_dom[dom], 2)
@@ -110,6 +116,14 @@ def main():
             continue
         seen.add(k)
         test.append({"a": ntext(a), "b": ntext(b), "label": 0, "domain": dom})
+    # validate BEFORE writing: a one-sided test set must fail here, in seconds, not
+    # in evaluate.py after all the GPU encoding (review 2026-08 D15)
+    n_p = sum(1 for t in test if t["label"])
+    n_n = len(test) - n_p
+    if n_p < 10 or n_n < 10:
+        print(f"FATAL: degenerate test set ({n_p} pos / {n_n} neg) - twin generation "
+              f"mostly failed (Ollama down?); nothing written", flush=True)
+        sys.exit(2)
     with (HERE / "data" / "test_synth.jsonl").open("w", encoding="utf-8") as f:
         for t in test:
             f.write(json.dumps(t, ensure_ascii=False) + "\n")

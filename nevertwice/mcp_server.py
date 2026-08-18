@@ -50,10 +50,21 @@ for _stream in (_REAL_STDOUT, sys.stderr):
         _stream.reconfigure(encoding="utf-8", errors="replace")
     except Exception:
         pass
+try:
+    # MCP clients send JSON-RPC as UTF-8; without this, a cp1251 locale decoded the
+    # pipe with the locale codec - a query containing 'И' (byte 0x98, unmapped in
+    # cp1251) raised UnicodeDecodeError INSIDE the stdin iterator, killing the whole
+    # server, and other Cyrillic arrived as mojibake so recall over a Russian store
+    # silently returned nothing (review 2026-08 P1). stdout/stderr were fixed above
+    # long ago; stdin had been forgotten.
+    sys.stdin.reconfigure(encoding="utf-8", errors="replace")
+except Exception:
+    pass
 sys.stdout = sys.stderr        # any stray print() from imported modules → stderr
 
 sys.path.insert(0, str(Path(__file__).parent))
 import memory_hook as m          # noqa: E402
+import api as _api               # noqa: E402  (the one capture/write path)
 import memory_search             # noqa: E402  (search_core, shared ranker)
 import remember as _remember     # noqa: E402  (do_remember validation/lock path)
 import digest as _digest         # noqa: E402  (conflicts + digest review commands)
@@ -345,23 +356,21 @@ def _tool_memory_ingest(args: dict) -> tuple[str, bool]:
     agent = (args.get("agent") or "mcp").strip() or "mcp"
     if not project or not text.strip():
         return "error: 'project' and non-empty 'text' are required", True
-    if not m.llm_available():
-        return "error: no extraction backend (cloud key unset and Ollama down).", True
-    session_id = "mcp-" + datetime.now().strftime("%Y%m%d%H%M%S")
-    if not m.acquire_lock(timeout_s=60):
-        return "error: memory store is busy (lock) - try again.", True
+    # Delegate to api.capture_session - the ONE capture write path (review 2026-08
+    # G2: this hand-rolled copy had already drifted - a 60s lock instead of 120s, no
+    # archive/prune maintenance, and a timestamp-minted sid so a client RETRY
+    # double-mined the same text; capture_session's content-stable id is idempotent).
+    import hashlib
+    sid = "mcp-" + hashlib.sha1(
+        f"{m.slug_project(project)}\n{text}".encode("utf-8", "replace")).hexdigest()[:16]
     try:
-        db = m.load_processed()
-        ok = m.process_session(session_id, "", "", "mcp-ingest", db,
-                               agent=agent, transcript_text=text,
-                               project_override=m.slug_project(project))
-        m.rebuild_index()
-        m.git_autocommit()
+        r = _api.capture_session(text, project=m.slug_project(project), agent=agent,
+                                 session_id=sid, trigger="mcp-ingest")
+    except (RuntimeError, ValueError) as exc:
+        return f"error: {exc}", True
     except Exception as exc:
         return f"ingest failed: {exc}", True
-    finally:
-        m.release_lock()
-    return ((f"Ingested into '{project}'.", False) if ok
+    return ((f"Ingested into '{project}'.", False) if r.get("stored")
             else ("Nothing stored (no project-relevant knowledge found).", False))
 
 
@@ -514,7 +523,7 @@ def _tool_memory_why(args: dict) -> tuple[str, bool]:
     if not r.get("causes"):
         return f"no upstream causes recorded for `{entity}`.", False
     lines = [f"`{entity}` is caused / underpinned by:"]
-    lines += [f"  <- {c['effect']}  (via {c['via']})" for c in r["causes"]]
+    lines += [f"  <- {c['cause']}  (via {c['via']})" for c in r["causes"]]
     return "\n".join(lines), False
 
 

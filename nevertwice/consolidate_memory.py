@@ -16,6 +16,7 @@ Safe by default - prints a plan and changes NOTHING. Pass --apply to execute.
     python consolidate_memory.py --apply
 """
 import heapq
+import os
 import re
 import sys
 from pathlib import Path
@@ -191,7 +192,18 @@ def find_clusters(cache: dict) -> list[list[str]]:
     always share vocabulary, so the weekly scan that was quadratic (10k notes in one
     bucket ≈ 87 min of Python cosine) becomes roughly linear and finds the same
     clusters."""
-    MIN_SHARED = 2          # a candidate pair must share ≥2 content tokens before cosine
+    # ≥1 shared content token (was 2): the twin classifier's own learned fact is that
+    # true twins are re-PHRASINGS with LOW word overlap, so the 2-token prefilter was
+    # biased against exactly the pairs worth merging (review 2026-08 D9). One shared
+    # token still bounds the candidate set via the inverted index.
+    MIN_SHARED = 1
+    # The write-time twin gate shipped only into write_typed_note; the consolidator -
+    # the only mechanism that can merge twins ALREADY in the store - kept scoring raw
+    # cosine at a threshold most historical twin pairs sit below (median 0.833 vs
+    # 0.86). When the learned gate's calibration space matches the active embedder, a
+    # confident classifier verdict now also merges (review 2026-08 D9); plain-cosine
+    # merging at SIM_THRESHOLD is unchanged, and "cosine" mode disables the extra path.
+    twin_mode = m.WRITE_DEDUP_MODE != "cosine" and m._twin_space_ok()
     groups: dict[tuple, list[str]] = {}
     for stem, rec in cache.items():
         # only valid-ntype records - a malformed/legacy entry must not crash the
@@ -221,14 +233,37 @@ def find_clusters(cache: dict) -> list[list[str]]:
                         shared[b] = shared.get(b, 0) + 1
             cluster = [a]
             for b, ov in shared.items():
-                if ov >= MIN_SHARED and \
-                        m.cosine(cache[a].get("vec") or [], cache[b].get("vec") or []) >= SIM_THRESHOLD:
+                if ov < MIN_SHARED:
+                    continue
+                sim = m.cosine(cache[a].get("vec") or [], cache[b].get("vec") or [])
+                merge = sim >= SIM_THRESHOLD
+                if (not merge and twin_mode and sim >= m.WRITE_DEDUP_PREFILTER):
+                    ra, rb = cache[a], cache[b]
+                    p_twin = m._twin_probability(
+                        sim, ra.get("title", ""), ra.get("desc", ""),
+                        _note_entities(a, ra),
+                        rb.get("title", ""), rb.get("desc", ""),
+                        _note_entities(b, rb))
+                    merge = p_twin >= m.WRITE_DEDUP_TWIN_P
+                if merge:
                     cluster.append(b)
                     used.add(b)
             if len(cluster) > 1:
                 used.add(a)
                 clusters.append(cluster)
     return clusters
+
+
+def _note_entities(stem: str, rec: dict) -> list:
+    """A note's frontmatter entities for the twin-gate features (read only for pairs
+    that already passed the cosine prefilter, like the write-time gate)."""
+    folder = m.TYPE_FOLDER.get(rec.get("ntype"))
+    if not folder:
+        return []
+    try:
+        return m._read_frontmatter_file(m.VAULT / folder / f"{stem}.md").get("entities") or []
+    except OSError:
+        return []
 
 
 AUTO_LINK_HEADER = "## Related (auto)"
@@ -431,10 +466,14 @@ def cap_project_notes(cache: dict, apply: bool) -> int:
         for stem, _ in excess:
             src = folder / f"{stem}.md"
             if src.exists():
-                target = arch / src.name
-                if target.exists():
-                    target.unlink()
-                src.rename(target)
+                # os.replace + per-file guard (review 2026-08 P4): a transiently-locked
+                # note (Obsidian/AV/sync) must cost ONE skip, not the whole weekly run
+                try:
+                    os.replace(src, arch / src.name)
+                except OSError as e:
+                    print(f"      archive failed for {src.name} ({e}) - left live",
+                          file=sys.stderr)
+                    continue
             cache.pop(stem, None)
             archived += 1
     return archived
@@ -538,19 +577,36 @@ def _run_consolidation(apply, mode, has_llm):
         if apply:
             keep_fp = folder / f"{keep}.md"
             dup_fps = [folder / f"{d}.md" for d in dups]
-            if keep_fp.exists():
-                live_dups = [d for d in dup_fps if d.exists()]
-                merge_into_keeper(keep_fp, live_dups)
-                _union_meta_into_keeper(keep_fp, live_dups)   # keep the graph edges + provenance
-                # carry the cluster's HIGHEST recurrence forward, not just the keeper's - a
-                # merged older dup may have recurred more than the (newest) keeper, and
-                # archiving it would otherwise SILENTLY DROP that count the recall boost
-                # depends on (extends the round-3 max fix; matters now that recurrence
-                # actually grows via supersession - W15).
-                rec_n = _cluster_recurrence(cache, cluster)
-                set_recurrence(keep_fp, rec_n)
-                if isinstance(cache.get(keep), dict):
-                    cache[keep]["recurrence"] = rec_n     # so recall boosts it (H4)
+            if not keep_fp.exists():
+                # The keeper exists only in the cache (manual deletion, a crash between
+                # file ops and the cache save). Archiving the rest of the cluster anyway
+                # removed EVERY live representative of the lesson, stamped with a
+                # duplicate_of pointing at a nonexistent note (review 2026-08 B6).
+                # Promote the newest EXISTING member instead; none → drop the stale
+                # cache entry and leave the cluster alone.
+                live = [d for d in dup_fps if d.exists()]
+                if not live:
+                    cache.pop(keep, None)
+                    print(f"      keeper {keep} missing on disk and no live members - "
+                          f"cluster skipped", file=sys.stderr)
+                    continue
+                cache.pop(keep, None)
+                keep_fp = sorted(live, key=lambda p: p.stem, reverse=True)[0]
+                keep = keep_fp.stem
+                dup_fps = [d for d in live if d is not keep_fp]
+                print(f"      keeper missing on disk - promoted {keep}", file=sys.stderr)
+            live_dups = [d for d in dup_fps if d.exists()]
+            merge_into_keeper(keep_fp, live_dups)
+            _union_meta_into_keeper(keep_fp, live_dups)   # keep the graph edges + provenance
+            # carry the cluster's HIGHEST recurrence forward, not just the keeper's - a
+            # merged older dup may have recurred more than the (newest) keeper, and
+            # archiving it would otherwise SILENTLY DROP that count the recall boost
+            # depends on (extends the round-3 max fix; matters now that recurrence
+            # actually grows via supersession - W15).
+            rec_n = _cluster_recurrence(cache, cluster)
+            set_recurrence(keep_fp, rec_n)
+            if isinstance(cache.get(keep), dict):
+                cache[keep]["recurrence"] = rec_n     # so recall boosts it (H4)
             arch = folder / "Archive"
             arch.mkdir(exist_ok=True)
             for src in dup_fps:
@@ -567,10 +623,17 @@ def _run_consolidation(apply, mode, has_llm):
                             text, {"duplicate_of": keep}))
                     except OSError:
                         pass
-                    target = arch / src.name
-                    if target.exists():
-                        target.unlink()
-                    src.rename(target)
+                    # Per-file guards (review 2026-08 P4): the store is a live Obsidian
+                    # vault - the indexer/AV/sync briefly holding one note open raised
+                    # PermissionError and aborted the WHOLE weekly run mid-loop, with
+                    # already-popped cache entries saved only on loop completion.
+                    # os.replace: atomic overwrite, no unlink→rename race window.
+                    try:
+                        os.replace(src, arch / src.name)
+                    except OSError as e:
+                        print(f"      archive failed for {src.name} ({e}) - left live",
+                              file=sys.stderr)
+                        continue
                     cache.pop(src.stem, None)
                     merged += 1
     if apply and (merged or clusters):

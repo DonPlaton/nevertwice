@@ -60,11 +60,17 @@ def main():
             print(f"repo {name}: already present")
             ok += 1
             continue
-        r = subprocess.run(["git", "clone", "--depth", "1", "--quiet", url, str(dest)],
-                           capture_output=True, text=True, timeout=600)
-        print(f"repo {name}: {'OK' if r.returncode == 0 else 'FAIL ' + r.stderr[:120]}")
-        ok += r.returncode == 0
-        fail += r.returncode != 0
+        try:
+            r = subprocess.run(["git", "clone", "--depth", "1", "--quiet", url, str(dest)],
+                               capture_output=True, text=True, timeout=600)
+            rc, err = r.returncode, r.stderr
+        except (subprocess.TimeoutExpired, OSError) as e:
+            # best-effort means BEST-EFFORT: a hung clone or a missing git binary
+            # must cost one source, not the whole fetch (review 2026-08 Dc1)
+            rc, err = 1, f"{type(e).__name__}: {e}"
+        print(f"repo {name}: {'OK' if rc == 0 else 'FAIL ' + str(err)[:120]}")
+        ok += rc == 0
+        fail += rc != 0
 
     bd = RAW / "books"
     bd.mkdir(exist_ok=True)

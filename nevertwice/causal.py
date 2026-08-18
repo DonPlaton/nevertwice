@@ -137,7 +137,13 @@ def why(entity, project=None, *, depth=2, max_causes=8) -> dict:
                                                          "notes": e["notes"]})
     r = what_breaks(entity, project, depth=depth, max_effects=max_causes,
                     impact=reverse)
-    return {"entity": entity, "causes": r["impacts"]}
+    # Deliver the documented row shape: the reverse traversal reuses what_breaks, whose
+    # rows carry the key `effect` - semantically backwards here and a KeyError for any
+    # caller following the docstring's `causes:[{cause, via, hops}]` (review 2026-08 C4).
+    # `effect` is kept as an alias one release for old consumers.
+    causes = [{"cause": it["effect"], "effect": it["effect"], "via": it["via"],
+               "hops": it["hops"], "notes": it.get("notes")} for it in r["impacts"]]
+    return {"entity": entity, "causes": causes}
 
 
 def counterfactual(entity, project=None) -> str:
@@ -187,7 +193,7 @@ def main():
         else:
             print(f"upstream of `{ent}` (causes, dependencies, and fixes holding it down):")
             for c in r["causes"]:
-                print(f"  ← {c['effect']}  (via {c['via']})")
+                print(f"  ← {c['cause']}  (via {c['via']})")
     else:
         print(f"unknown command: {cmd}")
 

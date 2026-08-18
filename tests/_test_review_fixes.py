@@ -63,6 +63,14 @@ def sandbox():
     m.collect_existing_titles.cache_clear()
     m.collect_existing_tags.cache_clear()
     m.git_autocommit = lambda *a, **k: None
+    # Hermeticity (review 2026-08 D14, same class as the 2026-08-13 incident, via the
+    # network instead of paths): no section may reach the LIVE embedder - on a
+    # cloud-provider machine that ships fixture text to the provider every test run,
+    # and with Ollama down it adds a connect-timeout per typed-note write. Sections
+    # exercising the near-dup gate install their own fakes on top of these stubs.
+    m.embed_text = lambda *a, **k: None
+    m.embedder_available = lambda *a, **k: False
+    m.embed_cache_usable = lambda: False
     return d
 
 
@@ -296,8 +304,9 @@ ns = [note("aaa-alpha-first", "decision", "2026-08-17", conf=0.9),
       note("mmm-confident", "decision", "2026-08-17", conf=0.99),
       note("bbb-unstamped", "decision", "2026-08-17"),
       note("newer-day", "decision", "2026-08-16")]
-# exercise the exact key build_project_card now uses (mirrored; the builder's own
-# integration is covered by the card-content check below)
+# the key semantics, mirrored for readability (the builder itself is exercised
+# end-to-end right below - review 2026-08 Dc2: the promised "card-content check
+# below" did not exist, so a regression in build_project_card passed unseen)
 dec = sorted((n for n in ns if n["ntype"] == "decision"),
              key=lambda n: (n["date"], n.get("recurrence", 1) or 1,
                             n.get("confidence") if n.get("confidence") is not None else 1.0,
@@ -309,6 +318,26 @@ check("stated confidence breaks the next tie (0.99 above 0.9, alphabet ignored)"
 check("an unstamped note keeps the fully-confident convention (ranks as 1.0)",
       order.index("bbb-unstamped") < order.index("mmm-confident"))
 check("date still dominates overall", order[-1] == "newer-day")
+
+# the REAL builder, end-to-end: three same-day decisions on disk, ranked in the card
+d = sandbox()
+for _title, _rec, _conf in (("alpha first", 1, 0.9),
+                            ("zzz earned", 3, None),
+                            ("mmm confident", 1, 0.99)):
+    _it = {"title": _title, "description": "x"}
+    if _conf is not None:
+        _it["confidence"] = _conf
+    _st = m.write_typed_note("Decisions", _it, "proj", "2026-08-17", ["t"], "decision",
+                             session_stem_=f"s-{_title.split()[0]}")
+    if _rec > 1:
+        _fp = m.VAULT / "Decisions" / f"{_st}.md"
+        m.write_atomic(_fp, m._stamp_frontmatter(_fp.read_text(encoding="utf-8"),
+                                                 {"recurrence": _rec}))
+_card = m.build_project_card("proj")
+_iz, _im, _ia = (_card.find("zzz earned"), _card.find("mmm confident"),
+                 _card.find("alpha first"))
+check("REAL card: earned-first on a same-day tie, then confidence, then alphabet",
+      0 <= _iz < _im < _ia)
 
 # ── 5. ONE-LINE: sentence-aware truncation ────────────────────────────────────
 print("fix 5 - _one_line")
