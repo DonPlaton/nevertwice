@@ -14,6 +14,16 @@ import os, sys, json, ast, re
 from pathlib import Path
 from datetime import datetime
 
+# The env_int migration (2026-07 critique round) converted the constants below to the
+# shared helper but never added this import - the module died with NameError on import
+# for over a month while regen_graph_for_project's fire-and-forget subprocess wrapper
+# logged "graph.json refreshed" on every crashed run (review 2026-08, reproduced).
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+try:
+    from . import memory_hook as m
+except ImportError:                       # run directly (script dir on sys.path)
+    import memory_hook as m
+
 try:                                      # never crash printing non-ASCII on a cp1251 console
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 except Exception:
