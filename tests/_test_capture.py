@@ -13,6 +13,7 @@ try:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 except Exception:
     pass
+import _env_guard  # noqa: F401  hermetic: scrub store env BEFORE package imports bake path constants (incidents 2026-08-13 / 2026-08-18)
 import capture
 MemorySession, capture_chat = capture.MemorySession, capture.capture_chat
 _last_user, _text_of = capture._last_user, capture._text_of

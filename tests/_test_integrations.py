@@ -14,6 +14,7 @@ try:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 except Exception:
     pass
+import _env_guard  # noqa: F401  hermetic: scrub store env BEFORE package imports bake path constants (incidents 2026-08-13 / 2026-08-18)
 import api
 from integrations import langchain_memory as lc
 from integrations import llamaindex_retriever as li

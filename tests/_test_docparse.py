@@ -12,6 +12,7 @@ try:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 except Exception:
     pass
+import _env_guard  # noqa: F401  hermetic: scrub store env BEFORE package imports bake path constants (incidents 2026-08-13 / 2026-08-18)
 import docparse as dp            # noqa: E402
 
 _W = "http://schemas.openxmlformats.org/wordprocessingml/2006/main"

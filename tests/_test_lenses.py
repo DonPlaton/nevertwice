@@ -24,6 +24,7 @@ except Exception:
     pass
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "nevertwice"))
+import _env_guard  # noqa: F401  hermetic: scrub store env BEFORE package imports bake path constants (incidents 2026-08-13 / 2026-08-18)
 import lenses as L               # noqa: E402
 import emit as em                # noqa: E402
 import api                       # noqa: E402
