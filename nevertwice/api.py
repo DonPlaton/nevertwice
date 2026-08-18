@@ -303,30 +303,20 @@ def remember(title: str, *, project: str, type: str = "pattern",
         raise ValueError(f"type must be one of {sorted(m.TYPED_TYPES)}")
     if not project or not title:
         raise ValueError("project and title are required")
-    proj = m.slug_project(project)
-    tag_list = m._norm_tags(tags.split(",") if isinstance(tags, str) else list(tags))
+    # One write path (review 2026-08 G7): this used to re-implement remember_lessons
+    # for the single-item case - same lock, same write, same embed/index/commit tail -
+    # and every write-path fix had to be made twice (both docstrings carry the same
+    # "gating on embedder_available left the note invisible" scar). Now it is
+    # argument validation plus delegation.
     ent = entities.split(",") if isinstance(entities, str) else list(entities)
-    item = {"title": title, "description": description or "",
-            "prevention": prevention or "", "supersedes": supersedes or "",
-            "entities": ent, "relations": list(relations or [])}
-    if not m.acquire_lock(timeout_s=60):
-        raise RuntimeError("vault busy (lock held by another process) - try again")
-    try:
-        date = datetime.now().strftime("%Y-%m-%d")
-        stem = m.write_typed_note(m.TYPE_FOLDER[type], item, proj, date, tag_list, type)
-        if not stem:
-            return None
-        if embed:
-            # vectors when an embedder is up, else a text-only record (still FTS-recallable) -
-            # same contract as remember_lessons. Gating this on embedder_available used to
-            # leave the note invisible to search on a no-model box until something embedded it.
-            m.update_embeddings([(stem, type, proj, title,
-                                  description or "", prevention or "")])
-        m.rebuild_index()
-        m.git_autocommit()
-        return stem
-    finally:
-        m.release_lock()
+    stems = remember_lessons([{"type": type, "title": title,
+                               "description": description or "",
+                               "prevention": prevention or "",
+                               "tags": tags, "supersedes": supersedes or "",
+                               "entities": ent,
+                               "relations": list(relations or [])}],
+                             project=project, embed=embed)
+    return stems[0] if stems else None
 
 
 def remember_lessons(lessons, *, project: str, embed: bool = True) -> list[str]:

@@ -50,7 +50,13 @@ try:
 except ImportError:
     import config as _cfg
 VAULT = _cfg.VAULT
-OLLAMA_URL = "http://127.0.0.1:11434/api/generate"
+# Ollama endpoint from the shared config, not a local hardcode: the drifted copy
+# ignored the OLLAMA_URL env override AND memory_hook's non-http(s) SSRF guard
+# (review 2026-08 I4).
+try:
+    OLLAMA_URL = m.OLLAMA_URL
+except Exception:
+    OLLAMA_URL = "http://127.0.0.1:11434/api/generate"
 # Model default from the shared config (audit L-b): the round-1 hardcoded
 # "qwen3:32b" had drifted from the system default and left two different model
 # defaults in one package. Pull it from memory_hook so there is one source.
@@ -69,13 +75,13 @@ CONFIG_FILES = [
     ".env.example", "config.yaml", "config.yml",
     "Makefile",
 ]
-SKIP_DIRS = {'.git','__pycache__','node_modules','.venv','venv','env','dist','build',
-             '.next','.nuxt','target','.claude','.idea','.vscode','.pytest_cache',
-             'data','datasets','models','checkpoints','logs','wandb','outputs',
-             '.mypy_cache','.ruff_cache','htmlcov','.tox'}
-TEXT_EXTS = {'.py','.js','.ts','.tsx','.jsx','.rs','.go','.java','.cpp','.c','.h','.cs',
-             '.rb','.php','.md','.json','.yaml','.yml','.toml','.sh','.bat','.ps1',
-             '.swift','.kt','.scala','.r','.jl','.cu','.cuh','.v','.sv','.vhd','.vhdl'}
+# shared with graphify - the local copies had drifted (review 2026-08 R7)
+try:
+    from . import graphify as _gr
+except ImportError:
+    import graphify as _gr
+SKIP_DIRS = _gr.SKIP_DIRS
+TEXT_EXTS = _gr.TEXT_EXTS
 
 EXTRACTION_PROMPT = """Analyze the project structure and extract its context as JSON.
 
@@ -107,59 +113,31 @@ Return ONLY valid JSON:
 Answer in the language the README is written in. No markdown, no commentary outside the JSON. Be concrete and brief."""
 
 
-def slugify(s, max_len=55):
-    s = re.sub(r'[<>:"/\\|?*\n\r\t]', ' ', s or "")
-    s = re.sub(r'\s+', '-', s.strip())
-    s = re.sub(r'-+', '-', s).strip('-')
-    return s[:max_len].lower() or "untitled"
-
+# Slug/frontmatter helpers all DELEGATE to memory_hook - the exact incident class
+# slug_project already fixed (its local copy skipped transliteration and seeded a
+# Context file the hook could never find). Review 2026-08 R8 found three more
+# drifted siblings still local: slugify (dead code, no transliteration), slug_tag
+# (no lowercase + it stripped '-', so a seeded '#GPU_Training' never matched the
+# hook's 'gpu_training' and the seed never linked up with live notes), and
+# _yaml_scalar/fm_block (no dict handling - a dict value serialized as a Python
+# repr the reader can't parse). One source of truth now.
 
 def slug_project(name):
-    """The project slug for a Context filename. Delegates to memory_hook.slug_project so it is
-    byte-identical to what the live hook reads back - the local copy had drifted and did NOT
-    transliterate non-ASCII, so a Cyrillic project name ('Мой_проект') was bootstrapped to a
-    different file than SessionStart injects from, making the seed permanently invisible
-    (critic R3). One source of truth."""
+    """Delegates to memory_hook.slug_project (byte-identical to what the live hook
+    reads back; critic R3)."""
     return m.slug_project(name)
 
 
 def slug_tag(t):
-    t = (t or "").strip().replace(' ', '_')
-    return re.sub(r'[^\w/]', '', t)
+    return m.slug_tag(t)
 
 
 def render_body_tags(*groups):
-    seen, out = set(), []
-    for g in groups:
-        for t in (g or []):
-            tag = slug_tag(t)
-            if tag and tag not in seen:
-                seen.add(tag)
-                out.append(f"#{tag}")
-    return " ".join(out)
-
-
-_YAML_NEEDS_QUOTE = re.compile(r'''[:#&*!|>'"%@`{}\[\],]|^\s|\s$''')
-
-
-def _yaml_scalar(v):
-    """Quote YAML scalars that would otherwise be ambiguous - notably Windows
-    paths whose drive-letter colon broke parsing (audit F8). Mirrors the hook."""
-    s = str(v)
-    if s == "" or _YAML_NEEDS_QUOTE.search(s):
-        return '"' + s.replace('\\', '\\\\').replace('"', '\\"') + '"'
-    return s
+    return m.render_body_tags(*groups)
 
 
 def fm_block(fm):
-    lines = ["---"]
-    for k, v in fm.items():
-        if isinstance(v, list):
-            lines.append(f"{k}: {json.dumps(v, ensure_ascii=False)}")
-        else:
-            lines.append(f"{k}: {_yaml_scalar(v)}")
-    lines.append("---")
-    return "\n".join(lines)
+    return m.fm_block(fm)
 
 
 def collect_configs(root: Path) -> str:

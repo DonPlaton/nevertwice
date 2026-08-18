@@ -39,6 +39,12 @@ def _split(text: str):
     into exactly that). Nevertwice never writes it, but a vault edited in Obsidian can hold it,
     and silently dropping the item lines lost data (critic 2026-07, verified: two tags merged
     into `tags:` empty with exit 0). Opaque notes are surfaced as a git conflict instead."""
+    if text[:1] == "﻿":
+        # BOM tolerance (audit A7, ported - review 2026-08 R5): a BOM'd note parsed as
+        # "no frontmatter", the sides then "genuinely differed", and the driver wrote
+        # conflict markers for exactly the recurrence-bump collision it exists to
+        # auto-resolve - silently (exit 1 looks like a normal conflict).
+        text = text[1:]
     if not text.startswith("---"):
         return {}, text, False
     end = text.find("\n---", 3)

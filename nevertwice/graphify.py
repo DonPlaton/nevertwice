@@ -29,11 +29,19 @@ try:                                      # never crash printing non-ASCII on a 
 except Exception:
     pass
 
-# Refuse to graph the whole projects root (audit F22: that produced an 8.6 MB
-# whole-disk dump). Only individual project subdirs are valid targets. Default to the
-# current working directory (the project you're in) - never a hard-coded machine path.
-PROJECT_ROOT = Path(os.environ.get("NEVERTWICE_PROJECT_ROOT") or os.getcwd())
+# Refuse to graph any configured projects root (audit F22: that produced an 8.6 MB
+# whole-disk dump). Only individual project subdirs are valid targets. Roots come
+# from the SAME parser the hook uses (review 2026-08 C7: this module read only the
+# legacy singular env var directly, and because it runs as a fresh subprocess,
+# config.py's legacy-prefix bridge never applied - a NEVERTWICE_PROJECT_ROOTS user
+# had a dead guard). cwd stays a guarded root as before.
+_ROOTS_RAW = (os.environ.get("NEVERTWICE_PROJECT_ROOTS", "").strip()
+              or os.environ.get("NEVERTWICE_PROJECT_ROOT", ""))
+GUARDED_ROOTS = [Path(p) for p in m._split_roots(_ROOTS_RAW)] or [Path(os.getcwd())]
 
+# Canonical skip/text sets, shared with bootstrap_contexts (review 2026-08 R7: the
+# two copies had diverged - bootstrap seeded contexts from dirs graphify skipped and
+# vice versa; each addition below is the union of both histories).
 SKIP_DIRS = {'.git','__pycache__','node_modules','.venv','venv','env','dist','build',
              '.next','.nuxt','target','.claude','.idea','.vscode','.pytest_cache',
              'data','datasets','models','checkpoints','logs','wandb','outputs','runs',
@@ -44,7 +52,7 @@ SKIP_EXTS = {'.pyc','.pyo','.pyd','.so','.dll','.exe','.bin','.jpg','.jpeg','.pn
              '.tmp','.pkl','.pickle','.onnx','.safetensors','.wav','.mp4','.pdf'}
 TEXT_EXTS  = {'.py','.js','.ts','.tsx','.jsx','.rs','.go','.java','.cpp','.c','.h','.cu',
               '.cuh','.cs','.rb','.php','.md','.json','.yaml','.yml','.toml','.sh','.bat',
-              '.ps1','.env','.r','.jl','.v','.sv','.vhd'}
+              '.ps1','.env','.r','.jl','.v','.sv','.vhd','.vhdl','.swift','.kt','.scala'}
 CODE_EXTS  = {'.py','.js','.ts','.tsx','.jsx','.rs','.go','.java','.cpp','.c','.h','.cu',
               '.cuh','.cs','.rb','.php','.sh','.ps1','.r','.jl','.v','.sv','.vhd'}
 MAX_SIZE   = 50_000
@@ -205,11 +213,17 @@ def main():
     flags = {a for a in sys.argv[1:] if a.startswith("--")}
     root = Path(args[0]).resolve() if args else Path.cwd()
 
-    # Guard: never graph the projects root itself (audit F22 - 8.6 MB dump).
-    if str(root).rstrip("\\/").lower() == str(PROJECT_ROOT.resolve()).rstrip("\\/").lower():
-        print(f"[graphify] refusing to graph the projects root {root} - pass a "
-              f"project subdir", file=sys.stderr)
-        sys.exit(2)
+    # Guard: never graph a projects root itself (audit F22 - 8.6 MB dump).
+    _norm_root = str(root).rstrip("\\/").lower()
+    for _g in GUARDED_ROOTS:
+        try:
+            _gn = str(_g.resolve()).rstrip("\\/").lower()
+        except OSError:
+            continue
+        if _norm_root == _gn:
+            print(f"[graphify] refusing to graph the projects root {root} - pass a "
+                  f"project subdir", file=sys.stderr)
+            sys.exit(2)
 
     # Guard: never graph the memory vault itself - it's notes, not code, and a
     # self-graph is pure noise (audit M6).
@@ -228,9 +242,11 @@ def main():
 
     print(f"[graphify] Scanning: {root}", file=sys.stderr)
     graph = build(root)
-    tmp = out.with_name(out.name + ".tmp")  # atomic write - no corrupt graph on kill (B7)
-    tmp.write_text(json.dumps(graph, ensure_ascii=False), encoding="utf-8")
-    os.replace(tmp, out)
+    # m.write_atomic, not a fixed-name .tmp (review 2026-08 R7): the hand-rolled copy
+    # orphaned graph.json.tmp inside the USER'S repo on a kill (polluting git status)
+    # and two concurrent runs shared one temp name - write_atomic is pid-suffixed
+    # with exception cleanup.
+    m.write_atomic(out, json.dumps(graph, ensure_ascii=False))
     s = graph["stats"]
     note = f" (truncated from {s['full_file_count']})" if s.get("truncated_to") else ""
     print(f"[graphify] Done: {s['total_files']} files{note}, {s['graph_kb']} KB, "
