@@ -3,8 +3,12 @@
 
 Triggers:
   SessionEnd / PreCompact: process the just-finished session.
-  SessionStart:            sweep transcripts left behind by abrupt closes
-                           (VS Code killed, OS crash - SessionEnd never fired).
+  SessionStart:            inject project context + top lessons; on a backlog,
+                           detach a catch-up sweep (transcripts left behind by
+                           abrupt closes - VS Code killed, SessionEnd never fired).
+  UserPromptSubmit:        task-aware recall - inject lessons matching the prompt.
+  PreToolUse:              active-memory guards (axis A) - warn/block on a
+                           learned failure pattern in the pending tool action.
 
 Pipeline per session:
   read_transcript → call_ollama(format=json) → write Patterns / Mistakes /
@@ -104,12 +108,37 @@ LOG_FILE = VAULT / ".logs" / "memory_hook.log"
 PROJECTS_ROOT = _cfg.PROJECTS_ROOT
 
 
+def _rebase_vault(path) -> None:
+    """Point VAULT and EVERY vault-derived module constant at `path` in one call.
+    FOR TESTS/TOOLING ONLY. This exists because sandboxing by patching `m.VAULT`
+    alone is a trap: the sibling constants above are baked at import from the
+    REAL vault, so a test that patched only VAULT still wrote the LIVE embedding
+    cache and log - which is exactly how the 2026-08-13 hermeticity incident
+    clobbered the production cache, and how a partial patch did it AGAIN on
+    2026-08-18. One call, no forgotten constants."""
+    global VAULT, PROCESSED_DB, STATUS_FILE, EMBED_CACHE, EMBED_META, LOG_FILE, \
+        PROMPT_RECALL_STATE_DIR
+    VAULT = Path(path)
+    PROCESSED_DB = VAULT / ".processed_sessions.json"
+    STATUS_FILE = VAULT / "status.txt"
+    EMBED_CACHE = VAULT / ".embeddings_cache.json"
+    EMBED_META = VAULT / ".embeddings_meta.json"
+    LOG_FILE = VAULT / ".logs" / "memory_hook.log"
+    PROMPT_RECALL_STATE_DIR = VAULT / ".prompt_recall"
+    _EMBED_CACHE_MEMO["sig"] = None
+    _EMBED_CACHE_MEMO["data"] = None
+
+
 def _split_roots(raw: str) -> list[str]:
     out = []
     for chunk in (raw or "").replace(os.pathsep, ",").split(","):
         c = chunk.strip().rstrip("\\/")
         if c:
-            out.append(c)
+            # expanduser HERE, in the one shared parser: watch.py expanded '~'
+            # locally while this module compared cwd against the literal '~/...'
+            # string - the same config value silently meant different things in
+            # the two consumers (review 2026-08).
+            out.append(os.path.expanduser(c))
     return out
 
 
@@ -326,6 +355,9 @@ PRUNE_DB_AFTER_DAYS = env_int("NEVERTWICE_PRUNE_DAYS", 90)
 
 # Context compaction (audit F4/F23/F37): cap unbounded append-only growth.
 CONTEXT_MAX_BYTES = env_int("NEVERTWICE_CONTEXT_MAX_BYTES", 12000)
+# One journal entry's cap (chars): a single unbounded LLM context_update could
+# otherwise blow the whole file budget in one append (review 2026-08).
+CONTEXT_ENTRY_MAX_CHARS = env_int("NEVERTWICE_CONTEXT_ENTRY_MAX", 4000)
 CONTEXT_KEEP_RECENT = env_int("NEVERTWICE_CONTEXT_KEEP_RECENT", 12)
 # Floor for how many recent entries to keep verbatim when the byte cap forces
 # aggressive compaction (audit M2: the cap is now hard, not "12 entries of any size").
@@ -649,14 +681,18 @@ def write_atomic(path: Path, text: str, encoding: str = "utf-8") -> None:
         raise
 
 
-def cosine(a, b) -> float:
+def cosine(a, b, na: float | None = None) -> float:
     # robust to corrupt cache entries: non-list, mismatched length, or
-    # non-numeric elements all score 0.0 instead of crashing (fuzz PROBE 5)
+    # non-numeric elements all score 0.0 instead of crashing (fuzz PROBE 5).
+    # `na` = precomputed norm of `a`: the scoring loops compare ONE query vector
+    # against hundreds of candidates, and recomputing its norm per candidate was
+    # a third of the whole scoring cost (perf review 2026-08).
     if not isinstance(a, list) or not isinstance(b, list) or len(a) != len(b):
         return 0.0
     try:
         s = sum(x * y for x, y in zip(a, b))
-        na = math.sqrt(sum(x * x for x in a))
+        if na is None:
+            na = math.sqrt(sum(x * x for x in a))
         nb = math.sqrt(sum(y * y for y in b))
     except (TypeError, ValueError):
         return 0.0
@@ -763,6 +799,12 @@ def _strip_lead_icon(t: str) -> str:
     # escaped individually (\-) NOT as a range: a bare '-' between two chars in a class is a
     # set-difference/range and Python 3.14 warns on it (FutureWarning). Keep hyphen, en dash,
     # em dash, bullets.
+    # str() coercion first: the LLM occasionally emits a non-string title (int/list),
+    # and re.sub over it raised TypeError - crashing process_session BEFORE the
+    # session was marked, so every later hook event re-extracted and re-crashed
+    # (review 2026-08, same type-drift class as the tags 'may return a str' fix).
+    if not isinstance(t, str):
+        t = "" if t is None else str(t)
     t = re.sub('^[\\s✅⚠️\U0001f3af•·\\-–—]+', '', t or '')
     return t.strip() or "untitled"
 
@@ -983,16 +1025,23 @@ def _is_relevant(flag) -> bool:
 
 
 _NOISE_UPDATE_RE = re.compile(
-    r"не\s+содержит\s+полезн|только\s+метаданны|тривиальн|нет\s+полезн|"
-    r"не\s+предостав|пуст(ой|ая)\s+(диалог|сесси)|только\s+(что\s+)?стартова|"
-    r"no\s+useful|nothing\s+to\s+(extract|report)|trivial|session\s+just\s+started|"
+    r"не\s+содержит\s+полезн|только\s+метаданны|(?<![\w-])тривиальн|нет\s+полезн|"
+    r"не\s+предоставил|пуст(ой|ая)\s+(диалог|сесси)|только\s+(что\s+)?стартова|"
+    r"no\s+useful|nothing\s+to\s+(extract|report)|(?<![\w-])trivial|session\s+just\s+started|"
     r"empty\s+(session|transcript|chat)", re.IGNORECASE)
+
+# Above this length an update that merely CONTAINS a noise phrase is real content:
+# unanchored substrings ('non-trivial CUDA OOM', 'API не предоставляет batch
+# endpoint') were silently discarding legitimate engineering prose (review 2026-08).
+_NOISE_MAX_CHARS = 160
 
 
 def _is_noise_update(text: str) -> bool:
     """A 'nothing happened' context_update the LLM sometimes emits despite being
-    told to leave it empty - keep it out of the living context (audit M4)."""
-    return bool(_NOISE_UPDATE_RE.search(text or ""))
+    told to leave it empty - keep it out of the living context (audit M4). Only a
+    SHORT update is classified by phrase match; a long one is content by definition."""
+    text = text or ""
+    return len(text) <= _NOISE_MAX_CHARS and bool(_NOISE_UPDATE_RE.search(text))
 
 
 # Prompt-injection signatures. Tightened (audit C1): every alternative requires
@@ -1092,6 +1141,15 @@ def _looks_dangerous(text: str) -> bool:
         # "forget/fail to …" after the negation flips it back to a command → keep flagging.
         if neg and not _NEG_FLIP_RE.search(pre[neg.end():]):
             continue
+        # Verb-first cautionary shape (review 2026-08): "Send the token in the header,
+        # never in the URL" starts WITH the transfer verb, so the pre-window is empty
+        # and legitimate security lessons were rejected. Accept a negation in the SAME
+        # sentence right after the match (bounded window, flip-guarded the same way).
+        post = text[mt.end():mt.end() + 60]
+        post = re.split(r"[.\n]", post, 1)[0]
+        pneg = _NEGATION_RE.search(post)
+        if pneg and not _NEG_FLIP_RE.search(post[:pneg.start()]):
+            continue
         return True
     return False
 
@@ -1164,7 +1222,15 @@ _TWIN_SPACE_WARNED = [False]
 
 
 def _twin_space_ok() -> bool:
-    if EMBED_MODEL == _TWIN_SPACE:
+    # Compare through the same normalization the vector cache uses: accept the bare
+    # model name OR the full provider:model signature, and treat an Ollama ':latest'
+    # tag as the untagged name - the bare string equality either kept the gate on in
+    # a foreign space (same model name, different provider) or silently downgraded it
+    # on a mere tag variant (review 2026-08).
+    def _norm(s: str) -> str:
+        s = (s or "").strip()
+        return s[:-len(":latest")] if s.endswith(":latest") else s
+    if _norm(_TWIN_SPACE) in (_norm(EMBED_MODEL), _norm(embed_signature())):
         return True
     if not _TWIN_SPACE_WARNED[0]:
         _TWIN_SPACE_WARNED[0] = True
@@ -1546,13 +1612,51 @@ def acquire_lock(timeout_s: float = 30) -> bool:
 
 
 def release_lock():
+    lock = _lock_file()
     try:
-        _lock_file().unlink(missing_ok=True)
+        # Only release a lock we still OWN: after a stale-steal the file belongs to
+        # the new holder, and the old holder's unconditional unlink admitted a third
+        # writer into the critical section (review 2026-08). A positively-foreign
+        # pid means back off; an unreadable file keeps the old unlink behavior.
+        if (lock.read_text() or "").strip() not in ("", str(os.getpid())):
+            return
+    except OSError:
+        pass
+    try:
+        lock.unlink(missing_ok=True)
+    except OSError:
+        pass
+
+
+def refresh_lock() -> None:
+    """Touch the lock's mtime. Long LEGITIMATE holds exist (a 25-transcript sweep on
+    the Ollama fallback, process_now over a big backlog) and the holder never updated
+    the mtime, so past the 10x-stale ceiling a concurrent hook STOLE the lock from a
+    live process (review 2026-08). Every per-transcript unit calls this."""
+    try:
+        os.utime(_lock_file())
     except OSError:
         pass
 
 
 # ── Gardening: archive old session notes, prune old DB entries ────────
+
+def _archive_dest(arch: Path, name: str) -> Path:
+    """Collision-safe destination in an Archive/-style folder: a bare
+    os.replace(p, arch/p.name) silently OVERWROTE an already-archived note with
+    the same stem (a re-mined old transcript re-creates old stems dated by the
+    ORIGINAL session date) - destroying the earlier copy's merged fragments and
+    provenance (review 2026-08). Suffix -2, -3, ... instead."""
+    t = arch / name
+    if not t.exists():
+        return t
+    stem, ext = os.path.splitext(name)
+    for i in range(2, 100):
+        t = arch / f"{stem}-{i}{ext}"
+        if not t.exists():
+            return t
+    return arch / name
+
 
 def archive_old_sessions(days: int = ARCHIVE_AFTER_DAYS) -> int:
     sess = VAULT / "Sessions"
@@ -1573,8 +1677,7 @@ def archive_old_sessions(days: int = ARCHIVE_AFTER_DAYS) -> int:
         if note_date >= cutoff:
             continue
         try:
-            target = arch / p.name
-            os.replace(p, target)   # atomic overwrite on POSIX and Windows (no unlink+rename race)
+            os.replace(p, _archive_dest(arch, p.name))   # atomic; collision-safe name
             moved += 1
         except OSError as e:
             log(f"Archive failed for {p.name}: {e}")
@@ -1606,8 +1709,7 @@ def archive_old_typed(days: int = TYPED_ARCHIVE_AFTER_DAYS) -> int:
             if note_date >= cutoff:
                 continue
             try:
-                target = arch / p.name
-                os.replace(p, target)   # atomic overwrite on POSIX and Windows (no unlink+rename race)
+                os.replace(p, _archive_dest(arch, p.name))   # atomic; collision-safe name
                 moved += 1
                 archived_stems.append(p.stem)
             except OSError as e:
@@ -1701,8 +1803,12 @@ def mark_processed(db: dict, session_id: str, transcript_path: str,
         try:
             size = os.path.getsize(transcript_path)
         except OSError:
-            size = 0
-    if size:
+            size = None                      # file unreadable NOW - record no watermark
+    # `if size:` (falsy-zero) never recorded a 0-byte watermark, so a session first
+    # seen with an empty transcript could NEVER re-trigger once it grew - the whole
+    # session's knowledge was permanently lost (review 2026-08). Store 0 explicitly;
+    # _transcript_grew treats any recorded size, including 0, as the growth baseline.
+    if size is not None:
         entry["bytes"] = int(size)
     db[session_id] = entry
     save_processed(db)
@@ -1716,11 +1822,11 @@ def _transcript_grew(entry, path) -> bool:
     skip silently lost everything after the first compaction - on exactly the
     longest, richest sessions (review 2026-08). Legacy entries without `bytes`
     never re-trigger (no mass re-mining on upgrade)."""
-    if not isinstance(entry, dict):
-        return False
+    if not isinstance(entry, dict) or "bytes" not in entry:
+        return False                         # legacy entry: no watermark, never re-trigger
     try:
         rec = int(entry.get("bytes") or 0)
-        return rec > 0 and os.path.getsize(path) > rec
+        return os.path.getsize(path) > rec   # rec may legitimately be 0 (empty at mark time)
     except (OSError, ValueError, TypeError):
         return False
 
@@ -1815,6 +1921,13 @@ def truncate_smart(text: str, max_chars: int) -> str:
     head_cap = TRUNCATE_HEAD_CHARS or int(max_chars * TRUNCATE_HEAD_FRAC)
     head_len = min(head_cap, max_chars - len(sep) - 100)
     if head_len <= 0:
+        # Distinguish "the user asked for tail-only" (HEAD_FRAC=0 → honor it: keep
+        # the END, where the final decisions live) from "max_chars is too tiny for
+        # a split" (fall back to a head slice). The old blanket `text[:max_chars]`
+        # returned the exact INVERSE of a requested tail-only split, with no
+        # truncation marker (review 2026-08).
+        if head_cap <= 0 and max_chars > len(sep) + 100:
+            return sep.lstrip() + text[-(max_chars - len(sep)):]
         return text[:max_chars]
     tail_len = max_chars - head_len - len(sep)
     return text[:head_len] + sep + text[-tail_len:]
@@ -2425,6 +2538,9 @@ def _embed_cloud(text: str, kind: str | None, timeout: int | None):
     return None
 
 
+_EMBED_TEXT_MEMO: dict = {"key": None, "vec": None}
+
+
 def embed_text(text: str, kind: str | None = None, timeout: int | None = None,
                project: str | None = None):
     """Return an embedding vector for `text`, or None on failure. Dispatches on
@@ -2441,13 +2557,30 @@ def embed_text(text: str, kind: str | None = None, timeout: int | None = None,
     import urllib.error
     import urllib.request
     raw = (text or "")[:2000]
+    # One-slot memo: retrieve_relevant and retrieve_cross_project embed the IDENTICAL
+    # query back-to-back on every injection event - two Ollama round-trips (0.2-2s)
+    # for bitwise-identical vectors (perf review 2026-08). Same text+kind+backend →
+    # the previous vector.
+    memo_key = (raw, kind, EMBED_PROVIDER, EMBED_MODEL)
+    if _EMBED_TEXT_MEMO["key"] == memo_key and _EMBED_TEXT_MEMO["vec"] is not None:
+        return _EMBED_TEXT_MEMO["vec"]
     if EMBED_PROVIDER != "ollama":
-        if project is not None and is_local_only(project):
-            log(f"Cloud embedding skipped for local-only project {project!r} "
+        # Default-DENY when the caller has no project context (review 2026-08): with
+        # a local-only boundary configured, `project=None` used to fall straight
+        # through to the cloud call - so callers that simply didn't thread the
+        # kwarg (trajectory/query text) bypassed the exact boundary this gate
+        # exists to enforce. Privacy is now a property of the resolver, not of
+        # caller diligence.
+        if (project is None and LOCAL_ONLY_PROJECTS) or (
+                project is not None and is_local_only(project)):
+            log(f"Cloud embedding skipped for {'unattributed text' if project is None else f'local-only project {project!r}'} "
                 f"(provider {EMBED_PROVIDER}) - data stays on the machine; recall is "
                 "lexical here (use NEVERTWICE_EMBED_PROVIDER=ollama for local semantic recall)")
             return None
-        return _embed_cloud(raw, kind, timeout)
+        vec = _embed_cloud(raw, kind, timeout)
+        if vec:
+            _EMBED_TEXT_MEMO["key"], _EMBED_TEXT_MEMO["vec"] = memo_key, vec
+        return vec
     payload = json.dumps({"model": EMBED_MODEL,
                           "input": _embed_prefix(kind) + raw}).encode("utf-8")
     req = urllib.request.Request(OLLAMA_EMBED_URL, data=payload,
@@ -2460,10 +2593,31 @@ def embed_text(text: str, kind: str | None = None, timeout: int | None = None,
         # error text (e.g. Russian WinError) must not depend on the log reader's codepage
         return None
     embs = data.get("embeddings")
+    vec = None
     if isinstance(embs, list) and embs and isinstance(embs[0], list):
-        return embs[0]
-    one = data.get("embedding")
-    return one if isinstance(one, list) else None
+        vec = embs[0]
+    else:
+        one = data.get("embedding")
+        vec = one if isinstance(one, list) else None
+    if vec:
+        _EMBED_TEXT_MEMO["key"], _EMBED_TEXT_MEMO["vec"] = memo_key, vec
+    return vec
+
+
+# In-process memo for the (large) embed cache: one run re-parsed and re-serialized
+# the same ~90MB JSON once PER PROCESSED SESSION (~1s parse + ~1.6s dumps each,
+# measured) though the vault lock makes this process the only writer. Keyed by
+# (path, mtime_ns, size) so an external change - another process between our runs -
+# still forces a real reload. save_embed_cache refreshes the memo after writing.
+_EMBED_CACHE_MEMO: dict = {"sig": None, "data": None}
+
+
+def _embed_cache_sig():
+    try:
+        st = EMBED_CACHE.stat()
+        return (str(EMBED_CACHE), st.st_mtime_ns, st.st_size)
+    except OSError:
+        return None
 
 
 def load_embed_cache() -> dict:
@@ -2472,6 +2626,10 @@ def load_embed_cache() -> dict:
     into {} - a half-written cache silently disabled semantic recall (dropping to
     recency) with no signal. Now a corrupt primary is recovered from .bak, and an
     unrecoverable cache is announced so it gets rebuilt instead of degrading mutely."""
+    sig = _embed_cache_sig()
+    if sig is not None and sig == _EMBED_CACHE_MEMO["sig"] \
+            and _EMBED_CACHE_MEMO["data"] is not None:
+        return _EMBED_CACHE_MEMO["data"]
     bak = EMBED_CACHE.with_name(EMBED_CACHE.name + ".bak")
     for f in (EMBED_CACHE, bak):
         if not f.exists():
@@ -2484,6 +2642,8 @@ def load_embed_cache() -> dict:
         if isinstance(data, dict):
             if f is not EMBED_CACHE:
                 log("Primary embed cache corrupt - recovered from .bak")
+            elif sig is not None:
+                _EMBED_CACHE_MEMO["sig"], _EMBED_CACHE_MEMO["data"] = sig, data
             return data
     if EMBED_CACHE.exists():
         log("Embed cache corrupt and no valid .bak - semantic recall DISABLED "
@@ -2498,21 +2658,40 @@ def save_embed_cache(cache: dict):
     try:
         write_atomic(EMBED_CACHE, text)
         write_atomic(EMBED_CACHE.with_name(EMBED_CACHE.name + ".bak"), text)
+        _EMBED_CACHE_MEMO["sig"], _EMBED_CACHE_MEMO["data"] = _embed_cache_sig(), cache
     except OSError as e:
         log(f"Embed cache save failed: {e}")
 
 
 def load_embed_meta() -> dict:
-    try:
-        d = json.loads(EMBED_META.read_text(encoding="utf-8", errors="replace"))
-        return d if isinstance(d, dict) else {}
-    except (json.JSONDecodeError, OSError):
-        return {}
+    """Primary then .bak, loudly on recovery: the meta stamp is the ONLY thing
+    standing between a stale-space cache and cross-model cosine garbage (both
+    bge-m3 and its successors are 1024-dim, so no dimension guard can catch it) -
+    silently mapping a corrupt meta to {} made _embed_sig_current fail open."""
+    bak = EMBED_META.with_name(EMBED_META.name + ".bak")
+    for f in (EMBED_META, bak):
+        if not f.exists():
+            continue
+        try:
+            d = json.loads(f.read_text(encoding="utf-8", errors="replace"))
+        except (json.JSONDecodeError, OSError) as e:
+            log(f"Embed meta unreadable ({f.name}): {e}")
+            continue
+        if isinstance(d, dict):
+            if f is not EMBED_META:
+                log("Primary embed meta corrupt - recovered from .bak")
+            return d
+    if EMBED_META.exists():
+        log("Embed meta corrupt and no valid .bak - the cache's embedding space is "
+            "UNKNOWN; run embed_index.py --rebuild to re-stamp it")
+    return {}
 
 
 def save_embed_meta(meta: dict):
     try:
         write_atomic(EMBED_META, json.dumps(meta, ensure_ascii=False))
+        write_atomic(EMBED_META.with_name(EMBED_META.name + ".bak"),
+                     json.dumps(meta, ensure_ascii=False))
     except OSError as e:
         log(f"Embed meta save failed: {e}")
 
@@ -2880,8 +3059,20 @@ def supersede_note(p: Path, new_stem: str) -> bool:
     text = _stamp_frontmatter(text, fields)
     dest_dir = p.parent / "Superseded"
     dest_dir.mkdir(exist_ok=True)
+    # Collision-safe destination (review 2026-08): a stem retired before can be
+    # re-minted live (the live-folder-only _unique_path check) and retired again -
+    # overwriting the EARLIER retired note's history, and the Windows rollback
+    # below then deleted that pre-existing file outright (a note this call never
+    # created). Write to a suffixed name instead so the rollback can only ever
+    # remove OUR copy.
+    dest_fp = dest_dir / p.name
+    if dest_fp.exists():
+        i = 2
+        while (dest_dir / f"{p.stem}-{i}{p.suffix}").exists():
+            i += 1
+        dest_fp = dest_dir / f"{p.stem}-{i}{p.suffix}"
     try:
-        write_atomic(dest_dir / p.name, text)
+        write_atomic(dest_fp, text)
     except OSError as e:
         log(f"Supersede failed for {p.name}: {e}")
         return False
@@ -2893,7 +3084,7 @@ def supersede_note(p: Path, new_stem: str) -> bool:
         # contradictory "live" notes, exactly what this mechanism exists to prevent
         # (code-review 2026-07).
         try:
-            (dest_dir / p.name).unlink(missing_ok=True)
+            dest_fp.unlink(missing_ok=True)
         except OSError:
             pass
         log(f"Supersede failed for {p.name} (unlink: {e}); rolled back the Superseded/ copy")
@@ -3053,8 +3244,18 @@ def write_typed_note(folder: str, item, project: str, date: str,
         except OSError:
             continue
         if session_stem_ and prev_fm.get("session") == session_stem_:
-            log(f"Idempotent skip (already written this session): {old.stem}")
-            return old.stem
+            # Same-session re-encounter (crash retry OR the B1 grown-transcript
+            # re-process): REFRESH the note in place instead of the old stamp-only
+            # skip. The caller pushes THIS extraction into the embedding cache and
+            # SQLite, so returning without rewriting left stale text on disk while
+            # retrieval ranked on text the note did not contain - the same
+            # split-brain the absorb branch below already fixes (review 2026-08).
+            # A pure crash retry rewrites identical content - harmless.
+            r_old, s_old = _note_recur_sources(old)
+            absorb_into = old
+            absorb_recur, absorb_sources = r_old, set(s_old)
+            log(f"Same-session refresh (absorb): {old.stem}")
+            break
         if old.stem == base_stem:
             # Same day, same slug, different (or unknown) session: the same lesson
             # re-encountered. supersede_note refuses self-stem retirement and
@@ -3066,8 +3267,6 @@ def write_typed_note(folder: str, item, project: str, date: str,
             # and session-less writers (api.remember retries, weekly distill re-runs)
             # bypassed absorb entirely, minting '-2' twins.
             r_old, s_old = _note_recur_sources(old)
-            if session_stem_ and session_stem_ in s_old:
-                return old.stem                 # crash-retry of the absorbing session
             absorb_into = old
             absorb_recur, absorb_sources = r_old, set(s_old)
     if session_stem_ and QUARANTINE_MODE:
@@ -3091,6 +3290,8 @@ def write_typed_note(folder: str, item, project: str, date: str,
     to_retire: list = []
     superseded_corroborated = False
     for old in _live_typed_paths(p, project, ntype, slug):
+        if absorb_into is not None and old == absorb_into:
+            continue                    # the absorb target is refreshed in place, never retired
         if old.stem != base_stem:
             # A same-slug note is THIS lesson recurring: read its count + contributing sessions
             # BEFORE supersede drops it from the cache, then carry forward below - otherwise
@@ -3108,11 +3309,18 @@ def write_typed_note(folder: str, item, project: str, date: str,
                 # LLM reproduced the exact title or a variant (review 2026-08 G3)
                 superseded_corroborated = True
             to_retire.append(old)
+    _retire_slugs_seen: set = set()
     for other_title in (supersedes_title, contradicts_title):
         if not other_title:
             continue
         o_slug = slugify(other_title)
-        if o_slug and o_slug != slug:
+        # Dedup between the two fields (review 2026-08): the LLM often fills
+        # supersedes AND contradicts with the SAME title - the double append made
+        # supersede_note run twice on one path (second call fails: file already
+        # moved), firing a spurious 'supersede failed' warning and listing the
+        # stem twice in the frontmatter/body.
+        if o_slug and o_slug != slug and o_slug not in _retire_slugs_seen:
+            _retire_slugs_seen.add(o_slug)
             for old in _live_typed_paths(p, project, ntype, o_slug):
                 # An explicit supersede/contradict (incl. the M-2 write-time semantic path) is ALSO a
                 # re-encounter of that lesson - carry its recurrence + sources forward, else
@@ -3174,14 +3382,18 @@ def write_typed_note(folder: str, item, project: str, date: str,
 
     # Link a resolving pattern/decision to the mistake it fixes (audit I-18): the
     # mistake is flagged resolved (no longer an active warning) but kept.
+    # PLAN here, EXECUTE after the write (same B5 deferral as retirement): calling
+    # mark_resolved before the resolver was durably on disk meant a hook-timeout
+    # kill left the mistake de-weighted with resolved_by pointing at a note that
+    # never landed (review 2026-08).
     resolved: list[str] = []
+    resolve_targets: list[Path] = []
     if resolves_title and ntype in ("pattern", "decision") and not quarantine_reason:
         r_slug = slugify(resolves_title)
         if r_slug:
-            for mp in _live_typed_paths(VAULT / TYPE_FOLDER["mistake"],
-                                        project, "mistake", r_slug):
-                if mark_resolved(mp, stem):
-                    resolved.append(mp.stem)
+            resolve_targets = list(_live_typed_paths(VAULT / TYPE_FOLDER["mistake"],
+                                                     project, "mistake", r_slug))
+            resolved = [mp.stem for mp in resolve_targets]
 
     fm = {"date": date, "project": project, "tags": tags, "type": ntype}
     # M-5. Unlike every other frontmatter field, valid_from used to pass the raw LLM
@@ -3230,11 +3442,31 @@ def write_typed_note(folder: str, item, project: str, date: str,
     icon = TYPE_ICON.get(ntype, "")
     body_tags = render_body_tags(tags, [f"project/{project}", ntype])
 
+    # Absorb must not DISCARD the previous statement (review 2026-08): the rewrite
+    # replaced the whole file with the new extraction, so a worse (hallucinated)
+    # re-extraction silently destroyed the earlier description/prevention with no
+    # Superseded/ copy. Carry differing old fragments under a bounded block, the
+    # same idea as consolidation's 'Merged from duplicates'.
+    absorbed_prev: list[str] = []
+    if absorb_into is not None and not quarantine_reason:
+        try:
+            _old_lines = absorb_into.read_text(encoding="utf-8",
+                                               errors="replace").split("\n")
+            _, _d_old, _p_old = _parse_note_body(_old_lines)
+        except OSError:
+            _d_old = _p_old = ""
+        for _frag in (_d_old, _p_old):
+            _frag = (_frag or "").strip()
+            if _frag and _frag not in desc and _frag not in prevention:
+                absorbed_prev.append(_frag[:400])
+
     body = [fm_block(fm), "", f"# {icon} {title}".strip(), ""]
     if desc:
         body += [desc, ""]
     if prevention:
         body += [f"**Prevention:** {prevention}", ""]
+    if absorbed_prev:
+        body += ["## Previous statement", *(f"- {f}" for f in absorbed_prev), ""]
     body += [f"**Project:** [[{project}]]", f"**Date:** {date}"]
     if session_stem_:
         body.append(f"**Session:** [[{session_stem_}]]")
@@ -3260,6 +3492,12 @@ def write_typed_note(folder: str, item, project: str, date: str,
     if failed_retire:
         log(f"WARNING: supersede failed after write for {', '.join(failed_retire[:3])}"
             f"{'…' if len(failed_retire) > 3 else ''} - old note(s) still live beside {stem}")
+    # Deferred resolve-marking (same B5 rationale): the resolver is on disk - now the
+    # mistakes may be de-weighted. A failure leaves the warning active (safe side).
+    failed_resolve = [mp.stem for mp in resolve_targets if not mark_resolved(mp, stem)]
+    if failed_resolve:
+        log(f"WARNING: mark_resolved failed for {', '.join(failed_resolve[:3])} - "
+            f"mistake(s) stay active despite resolver {stem}")
     _ndup_register(stem, project, ntype, title, desc, prevention, entities)
     log(f"Written: {folder}/{fp.name}")
     return stem
@@ -3358,7 +3596,41 @@ def compact_context_if_needed(fp: Path, project: str, allow_llm: bool = True):
     if len(text.encode("utf-8")) <= CONTEXT_MAX_BYTES:
         return
     if not allow_llm:
-        return  # defer to scheduled maintenance - never call the LLM under the lock
+        # Deferred to scheduled maintenance - never call the LLM under the lock.
+        # But the cap must not depend on those tasks being alive (review 2026-08:
+        # with the safety net down the file grew without bound): at 4x the cap,
+        # spill the oldest entries VERBATIM to Context/Archive/<project>-overflow.md
+        # - no LLM, no data loss - and keep the newest under the cap.
+        if len(text.encode("utf-8")) <= CONTEXT_MAX_BYTES * 4:
+            return
+        head, entries = _split_context(text)
+        if len(entries) < 2:
+            return
+        budget = max(0, CONTEXT_MAX_BYTES - len(head.encode("utf-8")) - 200)
+        recent, used = [], 0
+        for e in reversed(entries):
+            b = len(e.encode("utf-8")) + 2
+            if recent and used + b > budget:
+                break
+            recent.append(e)
+            used += b
+        recent.reverse()
+        old = entries[:len(entries) - len(recent)]
+        if not old:
+            return
+        arch_dir = VAULT / "Context" / "Archive"
+        arch_dir.mkdir(parents=True, exist_ok=True)
+        afp = arch_dir / f"{project}-overflow.md"
+        try:
+            prev = afp.read_text(encoding="utf-8", errors="replace") if afp.exists() else ""
+        except OSError:
+            prev = ""
+        write_atomic(afp, (prev.rstrip() + "\n\n" if prev.strip() else "")
+                     + "\n\n".join(old) + "\n")
+        write_atomic(fp, head + "\n\n" + "\n\n".join(recent) + "\n")
+        log(f"Context emergency-capped for {project}: {len(old)} entr(ies) spilled "
+            f"to Context/Archive/{afp.name} (LLM compaction still pending)")
+        return
     head, entries = _split_context(text)
     if len(entries) < 2:
         return  # nothing to compress
@@ -3379,7 +3651,13 @@ def compact_context_if_needed(fp: Path, project: str, allow_llm: bool = True):
     recent.reverse()
     lo = min(CONTEXT_KEEP_MIN, len(entries) - 1)        # continuity floor
     hi = min(CONTEXT_KEEP_RECENT, len(entries) - 1)     # ceiling
-    n_keep = max(lo, min(len(recent), hi))
+    n_fit = len(recent)                                 # newest entries that FIT the budget
+    n_keep = max(lo, min(n_fit, hi))
+    # The floor is a preference; the byte cap is the contract. Forcing the floor
+    # past the budget made the final hard-truncate chop the NEWEST kept entries'
+    # tails without summarization (review 2026-08) - shrink below the floor instead.
+    if n_keep > n_fit:
+        n_keep = max(1, n_fit)
     recent = entries[len(entries) - n_keep:] if n_keep else []
     old = entries[:len(entries) - n_keep]
     if not old:
@@ -4024,6 +4302,22 @@ def update_context(project: str, update: str, tags: list, date: str, time_str: s
 
     if fp.exists():
         existing = fp.read_text(encoding="utf-8", errors="replace")
+        # Per-session idempotency (review 2026-08): the B1 grown-transcript
+        # re-process (PreCompact then SessionEnd) called this twice for the same
+        # session, appending duplicate '## date time' blocks. Replace this
+        # session's earlier entry instead - matched on the exact 'Session: [[..]]'
+        # marker line, so the Accumulated-state link archive is never touched.
+        marker = f"Session: [[{session_link}]]"
+        if marker in existing:
+            try:
+                head_, entries_ = _split_context(existing)
+                kept = [e for e in entries_ if marker not in e]
+                if len(kept) != len(entries_):
+                    existing = (head_.rstrip() + "\n\n"
+                                + ("\n\n".join(kept) + "\n" if kept else ""))
+                    log(f"Context entry refreshed (same session): {project}")
+            except Exception:
+                pass
     else:
         body_tags = render_body_tags(tags, [f"project/{project}", "context"])
         existing = "\n".join([
@@ -4040,6 +4334,10 @@ def update_context(project: str, update: str, tags: list, date: str, time_str: s
             "",
         ])
 
+    # Bound a single entry: nothing capped `update`, so one oversized LLM output
+    # could blow the whole context budget in one append (review 2026-08).
+    if len(update) > CONTEXT_ENTRY_MAX_CHARS:
+        update = truncate_smart(update, CONTEXT_ENTRY_MAX_CHARS)
     entry = ["", f"## {date} {time_str}", update, "", f"Session: [[{session_link}]]"]
     for nt in TYPED_TYPES:
         items = links.get(nt, [])
@@ -4125,6 +4423,8 @@ def process_session(session_id: str, cwd: str, transcript_path: str,
                     run_log: list | None = None, agent: str = DEFAULT_AGENT,
                     transcript_text: str | None = None,
                     project_override: str | None = None) -> bool:
+    refresh_lock()      # every long lock holder runs per-transcript through here:
+    #                     keep the mtime fresh so a live sweep is never "stale-stolen"
     prior = processed_db.get(session_id)
     if prior is not None:
         # Growth check (review 2026-08 / B1): a PreCompact-marked session continues
@@ -4271,7 +4571,11 @@ def process_session(session_id: str, cwd: str, transcript_path: str,
             desc = redact_secrets(item.get("description", "")) if isinstance(item, dict) else ""
             prevention = redact_secrets(item.get("prevention", "")) if isinstance(item, dict) else ""
             conf = item.get("confidence") if isinstance(item, dict) else None
-            new_notes.append((stem, nt, project, title_of(item), desc, prevention, conf))
+            # the TITLE takes the same scrub: it is embedded, cached in plaintext,
+            # FTS-indexed and injected verbatim by _fact_line - the one field that
+            # skipped redaction on this side channel (review 2026-08)
+            new_notes.append((stem, nt, project, redact_secrets(title_of(item)),
+                              desc, prevention, conf))
             if brain and isinstance(item, dict):
                 touched_entities |= set(_norm_entity_types(item.get("entity_types")))
 
@@ -4375,10 +4679,24 @@ def sweep_unprocessed(processed_db: dict,
 
     candidates.sort(key=lambda x: x[1])  # oldest first
     n = attempts = 0
-    for jl, _ in candidates:
+    for jl, jl_mtime in candidates:
         sid = jl.stem
-        cwd = read_session_meta(str(jl)).get("cwd") or str(jl.parent)
+        meta_cwd = read_session_meta(str(jl)).get("cwd")
+        cwd = meta_cwd or str(jl.parent)
         if not is_tracked_project(cwd):
+            # A missing cwd can be a TRANSIENT read failure (AV/indexer lock →
+            # _iter_events swallows the OSError and yields nothing) - and the
+            # jl.parent fallback lives under ~/.claude/projects, which is NEVER
+            # tracked, so marking here lost the session permanently on one glitch
+            # (review 2026-08). Defer marking for recent files; only a week-old
+            # transcript that still yields no cwd is genuinely untracked.
+            try:
+                _sz = jl.stat().st_size
+            except OSError:
+                _sz = 0
+            if meta_cwd is None and _sz > 0 and now - jl_mtime < 7 * 86400:
+                log(f"Sweep: {sid[:8]} meta unreadable - left for retry")
+                continue
             mark_processed(processed_db, sid, str(jl))
             continue
         # cap on ATTEMPTS, not successes - a slow/failing backend must not let a
@@ -4899,7 +5217,11 @@ def retrieve_relevant(project: str, query: str, k: int,
     if query and embed_cache_usable() and embedder_available(alive_timeout):
         qvec = embed_text(query, kind=query_embed_kind(), timeout=embed_timeout, project=project)
         if qvec:
-            scored = [(cosine(qvec, r.get("vec") or []), s) for s, r in cands]
+            try:
+                _qn = math.sqrt(sum(x * x for x in qvec))
+            except (TypeError, ValueError):
+                _qn = None
+            scored = [(cosine(qvec, r.get("vec") or [], na=_qn), s) for s, r in cands]
             # Ambiguity/confidence statistics are computed over EMBEDDED candidates
             # only: text-only records score a structural 0.0, and a store with many
             # of them dragged the per-query median toward 0 - the W1/W3 abstention
@@ -5027,7 +5349,11 @@ def retrieve_cross_project(project: str, query: str, k: int = CROSS_PROJECT_K,
     if query and embed_cache_usable() and embedder_available(alive_timeout):
         qvec = embed_text(query, kind=query_embed_kind(), timeout=embed_timeout, project=project)
         if qvec:
-            scored = [(cosine(qvec, r.get("vec") or []), s) for s, r in cands]
+            try:
+                _qn = math.sqrt(sum(x * x for x in qvec))
+            except (TypeError, ValueError):
+                _qn = None
+            scored = [(cosine(qvec, r.get("vec") or [], na=_qn), s) for s, r in cands]
             sem = [s for sim, s in sorted(scored, key=lambda x: -x[0])
                    if sim > CROSS_PROJECT_SIM_FLOOR]
     lex = []
@@ -5314,7 +5640,10 @@ def emit_session_start_context(cwd: str) -> None:
                 parts.extend(xs)
     parts += footer
     _si = "\n".join(parts)
-    if len(parts) > len(footer):             # something real was injected, not just the footer
+    # +1 for the unconditional header: `> len(footer)` was a tautology (min parts =
+    # header + footer), so the receipt/savings fired even for a content-free payload
+    # (review 2026-08 off-by-one).
+    if len(parts) > 1 + len(footer):         # something real was injected, not just header+footer
         # The receipt accounts for the payload as the agent receives it, so it is measured on
         # the sealed text and appended last. best_line picks the richest form that fits the
         # leftover room and degrades (or returns "") rather than overshoot the cap - content
@@ -5531,9 +5860,17 @@ def regen_graph_for_project(cwd: str) -> None:
         if not proj_dir or not proj_dir.exists() or not script.exists():
             return
         import subprocess
-        subprocess.run([sys.executable, str(script), str(proj_dir), "--incremental"],
-                       timeout=60, capture_output=True)
-        log(f"graph.json refreshed for {proj_dir.name}")
+        r = subprocess.run([sys.executable, str(script), str(proj_dir), "--incremental"],
+                           timeout=60, capture_output=True)
+        # Check the exit code (review 2026-08): the fire-and-forget wrapper logged
+        # "refreshed" while graphify had CRASHED or refused for over a month -
+        # twice - and the stale graph persisted with a green log line.
+        if r.returncode != 0:
+            tail = (r.stderr or r.stdout or b"").decode("utf-8", "replace").strip()
+            log(f"graphify FAILED for {proj_dir.name} (rc={r.returncode}): "
+                f"{tail.splitlines()[-1][:200] if tail else 'no output'}")
+        else:
+            log(f"graph.json refreshed for {proj_dir.name}")
     except Exception as e:
         log(f"graphify refresh skipped: {e}")
 
@@ -5547,7 +5884,7 @@ _VAULT_GITIGNORE = (
     ".prompt_recall/", ".logs/",
     ".embeddings_cache.json", ".embeddings_meta.json",
     ".index.sqlite", ".index.sqlite-wal", ".index.sqlite-shm",
-    ".processed_sessions.json",
+    ".processed_sessions.json", ".ingest_watermarks.json", "anticipate.json",
     "graph.json", "status.txt", "health.txt", "savings.json",
     "eval_results.json", "temporal_graph.json", "contradiction_candidates.json",
     "Index.md", "User/profile.md",
@@ -5555,12 +5892,23 @@ _VAULT_GITIGNORE = (
 
 
 def _ensure_vault_gitignore() -> None:
-    """Write a .gitignore covering derived/machine-local files when the vault has none -
-    so an auto-initialised store never commits caches, the index, or .logs/."""
+    """Write a .gitignore covering derived/machine-local files when the vault has
+    none, and RECONCILE an existing one with any missing entries (review 2026-08:
+    write-once-if-absent meant a vault created before a telemetry file was added
+    committed that file forever - savings.json alone produced dozens of pure-churn
+    auto-commits and cross-machine sync conflicts the merge driver can't cover)."""
     gi = VAULT / ".gitignore"
     try:
         if not gi.exists():
             write_atomic(gi, "\n".join(_VAULT_GITIGNORE) + "\n")
+            return
+        existing = gi.read_text(encoding="utf-8", errors="replace")
+        have = {ln.strip() for ln in existing.splitlines()}
+        missing = [e for e in _VAULT_GITIGNORE if e not in have]
+        if missing:
+            write_atomic(gi, existing.rstrip() + "\n"
+                         + "\n".join(missing) + "\n")
+            log(f"vault .gitignore reconciled (+{len(missing)}): {', '.join(missing)}")
     except OSError as e:
         log(f"vault .gitignore write skipped: {e}")
 
@@ -5685,6 +6033,27 @@ def emit_pretooluse_guard(session: dict, cwd: str) -> None:
     print(json.dumps(payload))                              # ascii-safe: json.dumps escapes non-ASCII
 
 
+def _spawn_detached_catchup() -> None:
+    """Run process_now.py as a DETACHED background process. Stdio must go to
+    DEVNULL: an inherited stdout pipe would make Claude Code wait for its EOF and
+    the SessionStart stall this exists to remove would come right back. The child
+    takes the vault lock itself (and exits if a writer already holds it); its
+    progress lands in the vault log/status.txt, not on any console."""
+    import subprocess
+    script = Path(__file__).resolve().parent / "process_now.py"
+    flags = 0
+    if os.name == "nt":
+        flags = subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP
+    try:
+        subprocess.Popen([sys.executable, str(script)],
+                         stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
+                         stderr=subprocess.DEVNULL, creationflags=flags,
+                         close_fds=True)
+        log("SessionStart - backlog found, catch-up detached (process_now.py)")
+    except Exception as e:
+        log(f"detached catch-up spawn failed: {e}")
+
+
 def main():
     try:
         # Claude Code writes the hook payload in UTF-8; on a cp1251 console (the
@@ -5728,6 +6097,25 @@ def main():
             emit_session_start_context(cwd)
         except Exception as e:
             log(f"additionalContext failed: {e}")
+        # Backlog catch-up (review 2026-08, two fixes): (1) the cheap filesystem-only
+        # backlog check runs BEFORE any lock - an idle start used to spin up to 30s
+        # against a running sweep's lock for nothing; (2) with a backlog, the sweep
+        # is DETACHED into process_now.py - the injection above is already printed,
+        # so blocking the session launch on up to 8 synchronous LLM extractions
+        # bought nothing, and Claude Code's 60s hook timeout killed the sweep
+        # mid-run anyway. The vault lock + mark-after-write make a background run
+        # safe. NEVERTWICE_START_SWEEP_DETACH=0 restores the inline sweep.
+        try:
+            if not has_unprocessed(load_processed(), session_id):
+                log("SessionStart - no backlog (lock never taken)")
+                return
+            if os.environ.get("NEVERTWICE_START_SWEEP_DETACH", "1") != "0":
+                _spawn_detached_catchup()
+                return
+        except Exception as e:
+            log(f"SessionStart backlog check failed: {e}")
+            return
+        # NEVERTWICE_START_SWEEP_DETACH=0: fall through to the inline locked sweep
 
     # UserPromptSubmit: task-aware recall by the prompt text (audit I-4). Read-only,
     # no lock, fast; returns immediately - a prompt event never processes a session.

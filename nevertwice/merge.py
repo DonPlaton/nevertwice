@@ -22,6 +22,7 @@ store (see `register`), invoked by git as: driver %O %A %B (base, ours, theirs);
     python -m nevertwice.merge --register        # install the driver on the store (idempotent)
     python -m nevertwice.merge <base> <ours> <theirs>   # git calls this; writes merged → <ours>
 """
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -184,9 +185,23 @@ def register(vault: Path) -> bool:
     rule = "*.md merge=nevertwice"
     existing = ga.read_text(encoding="utf-8") if ga.exists() else ""
     if rule not in existing:
-        ga.write_text((existing.rstrip() + "\n" if existing.strip() else "")
-                      + "# Nevertwice: structured auto-merge for note frontmatter (recurrence, "
-                      + "supersession, tags)\n" + rule + "\n", encoding="utf-8")
+        text = ((existing.rstrip() + "\n" if existing.strip() else "")
+                + "# Nevertwice: structured auto-merge for note frontmatter (recurrence, "
+                + "supersession, tags)\n" + rule + "\n")
+        # tmp + os.replace like every other vault write: a crash mid-write left a
+        # truncated .gitattributes and the merge driver silently stopped applying.
+        # (Local copy, not memory_hook.write_atomic - this module stays import-free
+        # so git can invoke it as a bare merge driver.)
+        tmp = ga.with_name(f"{ga.name}.tmp{os.getpid()}")
+        try:
+            tmp.write_text(text, encoding="utf-8")
+            os.replace(tmp, ga)
+        except OSError:
+            try:
+                tmp.unlink(missing_ok=True)
+            except OSError:
+                pass
+            return False
     return True
 
 

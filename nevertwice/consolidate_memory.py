@@ -42,14 +42,12 @@ MAX_LIVE_PER_PROJECT = m.env_int("NEVERTWICE_MAX_LIVE_PER_PROJECT", 0)  # degrad
 
 
 def _int1(x) -> int:
-    """recurrence as a positive int, preserving `int(x or 1)` semantics but never crashing on a
-    non-numeric CACHE value. Note frontmatter is validated on write; the embeddings cache can hold
-    a foreign/merge-conflicted/hand-edited value, and one bad entry used to abort the entire
-    consolidation run - dedup, archival, guard-gen, index rebuild, all of it (critic R3)."""
-    try:
-        return int(x or 1)
-    except (TypeError, ValueError):
-        return 1
+    """recurrence as a positive int. Delegates to m._coerce_recurrence - THE one parse
+    rule (review 2026-08 R2): the local `int(x or 1)` variant mapped '2.7'→1 where the
+    shared rule rounds to 3, let negatives through into sort keys/thresholds, and did
+    not catch OverflowError on inf - so the keeper's merged count disagreed with what
+    retrieval used for the same notes."""
+    return m._coerce_recurrence(x)
 
 
 def set_recurrence(p: Path, n: int):
@@ -85,14 +83,32 @@ def _cluster_recurrence(cache: dict, cluster: list) -> int:
     return max(len(cluster), max(recs) if recs else 1)
 
 
-def merge_into_keeper(keep_fp: Path, dup_fps: list[Path]) -> None:
+def _archive_target(arch: Path, name: str) -> Path:
+    """Collision-safe destination inside Archive/: a bare os.replace(src, arch/name)
+    silently OVERWROTE an already-archived note with the same stem (a re-mined old
+    session recreates old stems) - permanent loss of the earlier copy's merged
+    fragments and duplicate_of provenance (review 2026-08). Suffix -2, -3, ..."""
+    t = arch / name
+    if not t.exists():
+        return t
+    base, ext = (name.rsplit(".", 1) + [""])[:2]
+    for i in range(2, 100):
+        t = arch / f"{base}-{i}.{ext}" if ext else arch / f"{base}-{i}"
+        if not t.exists():
+            return t
+    return arch / name                     # 100 same-stem copies: give up, overwrite
+
+
+def merge_into_keeper(keep_fp: Path, dup_fps: list[Path]) -> list[str]:
     """Fold any unique description/prevention from the duplicates INTO the keeper
     before they are archived - so 'merge' no longer silently drops a better
-    older wording (audit H3). Idempotent: fragments already present are skipped."""
+    older wording (audit H3). Idempotent: fragments already present are skipped.
+    Returns the fragments actually added (callers use it to refresh the keeper's
+    cache/index text - review 2026-08: merged-in content was unsearchable)."""
     try:
         ktext = keep_fp.read_text(encoding="utf-8", errors="replace")
     except OSError:
-        return
+        return []
     # Compare by normalized whole-line equality, NOT substring containment (audit
     # M-i): the round-1 `frag not in ktext` dropped a unique fragment whenever it
     # happened to occur as a substring of an unrelated line (e.g. inside a wikilink
@@ -110,12 +126,13 @@ def merge_into_keeper(keep_fp: Path, dup_fps: list[Path]) -> None:
                 existing.add(nf)
                 extra.append(frag)
     if not extra:
-        return
+        return []
     header = ("" if ("## Merged from duplicates" in ktext
                      or "## Слито из дублей" in ktext)      # legacy header, dual-read
               else "\n\n## Merged from duplicates\n")
     block = header + "\n".join(f"- {e}" for e in extra) + "\n"
     m.write_atomic(keep_fp, ktext.rstrip() + "\n" + block)
+    return extra
 
 
 def _union_meta_into_keeper(keep_fp: Path, member_fps: list[Path]) -> None:
@@ -469,7 +486,7 @@ def cap_project_notes(cache: dict, apply: bool) -> int:
                 # os.replace + per-file guard (review 2026-08 P4): a transiently-locked
                 # note (Obsidian/AV/sync) must cost ONE skip, not the whole weekly run
                 try:
-                    os.replace(src, arch / src.name)
+                    os.replace(src, _archive_target(arch, src.name))
                 except OSError as e:
                     print(f"      archive failed for {src.name} ({e}) - left live",
                           file=sys.stderr)
@@ -560,8 +577,39 @@ def _run_consolidation(apply, mode, has_llm):
               "embed_index.py to enable it); continuing with archival/compaction.",
               file=sys.stderr)
 
+    # 1a) SPACE GATE (review 2026-08): every retrieval path abstains via
+    #     embed_cache_usable() when the cached vectors were produced by a different
+    #     embedding model - the DESTRUCTIVE dedup below must abstain too, or it
+    #     clusters cross-space cosines with thresholds calibrated for the live
+    #     space and mass-merges distinct notes.
+    dedup_ok = bool(cache) and m.embed_cache_usable()
+    if cache and not dedup_ok:
+        print("[consolidate] embedding cache is from a different embedding space - "
+              "SKIPPING near-dup merge (run embed_index.py --rebuild); "
+              "continuing with archival/compaction.", file=sys.stderr)
+
+    # 1b) self-heal: upgrade text-only entries (written while the embedder was down,
+    #     #32) to real vectors - the docstring's step 1, previously unimplemented:
+    #     nothing else on the scheduled paths ever ran embed_index, so those notes
+    #     stayed lexical-only forever.
+    if apply and dedup_ok and m.embedder_available(2):
+        kind = "document" if m.cache_is_prefixed() else None
+        upgraded = 0
+        for s, r in cache.items():
+            if not isinstance(r, dict) or r.get("vec"):
+                continue
+            vec = m.embed_text(
+                f"{r.get('title', '')}\n{r.get('desc', '')}\n{r.get('prevention', '')}".strip(),
+                kind=kind, project=r.get("project"))
+            if vec:
+                r["vec"] = vec
+                upgraded += 1
+        if upgraded:
+            m.save_embed_cache(cache)
+            print(f"[consolidate] embedded {upgraded} text-only note(s) (index self-heal)")
+
     # 2) near-duplicate merge
-    clusters = find_clusters(cache) if cache else []
+    clusters = find_clusters(cache) if dedup_ok else []
     print(f"[consolidate] {mode} | {len(clusters)} near-duplicate cluster(s) "
           f"(sim>={SIM_THRESHOLD})")
     merged = 0
@@ -596,7 +644,7 @@ def _run_consolidation(apply, mode, has_llm):
                 dup_fps = [d for d in live if d is not keep_fp]
                 print(f"      keeper missing on disk - promoted {keep}", file=sys.stderr)
             live_dups = [d for d in dup_fps if d.exists()]
-            merge_into_keeper(keep_fp, live_dups)
+            merged_frags = merge_into_keeper(keep_fp, live_dups)
             _union_meta_into_keeper(keep_fp, live_dups)   # keep the graph edges + provenance
             # carry the cluster's HIGHEST recurrence forward, not just the keeper's - a
             # merged older dup may have recurred more than the (newest) keeper, and
@@ -606,7 +654,25 @@ def _run_consolidation(apply, mode, has_llm):
             rec_n = _cluster_recurrence(cache, cluster)
             set_recurrence(keep_fp, rec_n)
             if isinstance(cache.get(keep), dict):
-                cache[keep]["recurrence"] = rec_n     # so recall boosts it (H4)
+                krec = cache[keep]
+                krec["recurrence"] = rec_n            # so recall boosts it (H4)
+                if merged_frags:
+                    # The merge promised to preserve the duplicates' unique wording, but
+                    # the keeper's cache/FTS/vector text stayed pre-merge, so a query
+                    # matching only the merged-in wording found NOTHING (review 2026-08).
+                    # Fold the fragments into the indexed desc and re-embed; if the
+                    # embedder is down the old vector stays (still valid for the
+                    # keeper's own text) and FTS covers the fragments after the
+                    # rebuild_scale_index below.
+                    krec["desc"] = (f"{krec.get('desc', '')} | merged: "
+                                    + " ; ".join(merged_frags))[:800].strip()
+                    vec = m.embed_text(
+                        f"{krec.get('title', '')}\n{krec.get('desc', '')}\n"
+                        f"{krec.get('prevention', '')}".strip(),
+                        kind=("document" if m.cache_is_prefixed() else None),
+                        project=krec.get("project"))
+                    if vec:
+                        krec["vec"] = vec
             arch = folder / "Archive"
             arch.mkdir(exist_ok=True)
             for src in dup_fps:
@@ -629,7 +695,7 @@ def _run_consolidation(apply, mode, has_llm):
                     # already-popped cache entries saved only on loop completion.
                     # os.replace: atomic overwrite, no unlink→rename race window.
                     try:
-                        os.replace(src, arch / src.name)
+                        os.replace(src, _archive_target(arch, src.name))
                     except OSError as e:
                         print(f"      archive failed for {src.name} ({e}) - left live",
                               file=sys.stderr)

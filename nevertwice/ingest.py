@@ -333,6 +333,12 @@ def ingest_files(files, project, agent, db, *, trigger="ingest-sweep",
                     continue
                 mine_raw = mine_raw[:cut + 1]
         consumed = raw[:delta_from + len(mine_raw)]
+        # When the live-flush cut left a partial tail unconsumed, the stored byte size
+        # must NOT equal the on-disk size: the size fast-skip would otherwise skip the
+        # file forever if the writer never appends another byte (dies mid-flush), and
+        # the final line would never mine even after settling. -1 forces the next sweep
+        # through the prefix-hash path, which mines the tail once the file settles.
+        wm_size = st_size if len(consumed) == len(raw) else -1
         # The cap is in BYTES; comparing len() (chars) let a Russian-language delta
         # through at nearly double the cap (review 2026-08 D2). Encode only when the
         # char lower-bound cannot prove the text is under it.
@@ -352,7 +358,7 @@ def ingest_files(files, project, agent, db, *, trigger="ingest-sweep",
                 pass                                      # a malformed line must not abort the sweep
         if not txt.strip():                               # grew by non-content only (metadata lines,
             if delta_capable:                             # whitespace) - advance and move on, no LLM
-                _advance(hp, consumed, f, st_size)
+                _advance(hp, consumed, f, wm_size)
             skipped += 1
             continue
 
@@ -386,7 +392,7 @@ def ingest_files(files, project, agent, db, *, trigger="ingest-sweep",
         # marks the db on success and on deliberate skips, but an extraction failure leaves
         # the sid unmarked for retry, and the watermark must retry with it.
         if delta_capable and sid in db:
-            _advance(hp, consumed, f, st_size)
+            _advance(hp, consumed, f, wm_size)
         if max_new and new >= max_new:         # bound lock-hold per cycle; rest caught next sweep
             break
     if wm_dirty:
@@ -453,7 +459,10 @@ def main():
         _sweep(args, args.project, agent)
         return
 
-    j = _payload_from_stdin()
+    # Read stdin only when the transcript is not already supplied by flag: the read
+    # blocks until pipe EOF, so a wrapper that spawns `ingest --text ...` with an
+    # open (never-closed) stdin pipe hung forever on text it would never use.
+    j = {} if (args.text or args.file) else _payload_from_stdin()
     file_text = None
     if args.file:
         try:

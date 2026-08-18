@@ -33,19 +33,27 @@ def _console_encoding() -> str:
 
 # Canonical safety-net tasks. Keep in sync with README "Scheduled tasks" and the
 # mem_*.bat wrappers (which capture each run's log under %TEMP%).
+# "legacy" is the pre-rename (v1.x Anamnesis) task name: live installs registered
+# under it keep working, so existence checks accept EITHER name (review 2026-08:
+# matching only the new names reported a permanently-false "not-registered" and
+# --register would have created a duplicate parallel task set).
 TASKS = [
-    {"name": "Nevertwice_Catchup",
+    {"name": "Nevertwice_Catchup", "legacy": "Anamnesis_Catchup",
      "bat": SCRIPTS / "mem_catchup.bat",
      "schedule": ["/SC", "HOURLY", "/MO", "4"],
      "desc": "catch up missed transcripts (every 4 h)"},
-    {"name": "Nevertwice_Health",
+    {"name": "Nevertwice_Health", "legacy": "Anamnesis_Health",
      "bat": SCRIPTS / "mem_health.bat",
      "schedule": ["/SC", "HOURLY", "/MO", "1"],
      "desc": "liveness/backlog check -> health.txt (hourly)"},
-    {"name": "Nevertwice_Consolidate",
+    {"name": "Nevertwice_Consolidate", "legacy": "Anamnesis_Consolidate",
      "bat": SCRIPTS / "mem_consolidate.bat",
      "schedule": ["/SC", "WEEKLY", "/D", "SUN", "/ST", "03:00"],
      "desc": "weekly dedup + compaction (Sun 03:00)"},
+    {"name": "Nevertwice_Watch", "legacy": "Anamnesis_Watch",
+     "bat": SCRIPTS / "mem_watch.bat",
+     "schedule": ["/SC", "MINUTE", "/MO", "15"],
+     "desc": "foreign-agent transcript sweep (every 15 min)"},
 ]
 
 
@@ -96,15 +104,28 @@ def query_task(name: str) -> dict:
             "status": status or None}
 
 
+def resolve_task(spec: dict) -> dict:
+    """Status of a spec under its current OR legacy name - whichever exists.
+    Prefers the new name when both are registered."""
+    st = query_task(spec["name"])
+    if not st["exists"] and spec.get("legacy"):
+        st = query_task(spec["legacy"])
+    return st
+
+
 def register_task(spec: dict) -> tuple[bool, str]:
     """Create/replace one task pointing at its .bat wrapper. Always passes /F so
     it never blocks on the interactive 'replace?' prompt - callers decide whether
-    to call it (skip-if-exists lives in the CLI)."""
+    to call it (skip-if-exists lives in the CLI). The action is wrapped in
+    run_hidden.vbs when present, matching how the live tasks are registered -
+    a bare .bat action flashes a console window on every scheduled run."""
     bat = spec["bat"]
     if not bat.exists():
         return False, f"wrapper missing: {bat.name}"
+    vbs = SCRIPTS / "run_hidden.vbs"
+    action = f'wscript.exe "{vbs}" "{bat}"' if vbs.exists() else f'"{bat}"'
     rc, out, err = _schtasks("/Create", "/TN", spec["name"],
-                             "/TR", f'"{bat}"', *spec["schedule"], "/F")
+                             "/TR", action, *spec["schedule"], "/F")
     if rc == 0:
         return True, "ok"
     tail = (err or out).strip().splitlines()
@@ -116,7 +137,7 @@ def tasks_health() -> tuple[str, bool]:
     when the user has opted into the scheduled setup (≥1 task present) yet one is
     missing or disabled - a never-registered machine is informational, not a
     failure."""
-    states = [query_task(t["name"]) for t in TASKS]
+    states = [resolve_task(t) for t in TASKS]
     present = [s for s in states if s["exists"]]
     if not present:
         return "not-registered", False
@@ -136,16 +157,16 @@ def cmd_check() -> int:
     print("Scheduled tasks (memory safety net):")
     bad = 0
     for spec in TASKS:
-        st = query_task(spec["name"])
+        st = resolve_task(spec)
         if not st["exists"]:
             bad += 1
             print(f"  [MISSING]  {spec['name']:26s} - {spec['desc']}")
         elif st["enabled"] is False:
             bad += 1
-            print(f"  [DISABLED] {spec['name']:26s} - {spec['desc']}")
+            print(f"  [DISABLED] {st['name']:26s} - {spec['desc']}")
         else:
             nr = f" | next: {st['next_run']}" if st["next_run"] else ""
-            print(f"  [OK]       {spec['name']:26s} - {st['status'] or 'present'}{nr}")
+            print(f"  [OK]       {st['name']:26s} - {st['status'] or 'present'}{nr}")
     if bad:
         print(f"\n{bad} task(s) need attention. Register with:"
               f"\n    python manage_tasks.py --register")
@@ -158,13 +179,19 @@ def cmd_register(force: bool) -> int:
     print(f"Registering scheduled tasks ({'force-recreate all' if force else 'missing only'}):")
     fail = 0
     for spec in TASKS:
-        st = query_task(spec["name"])
+        st = resolve_task(spec)
         if st["exists"] and not force:
-            print(f"  =  {spec['name']:26s} already present (use --force to recreate)")
+            print(f"  =  {st['name']:26s} already present (use --force to recreate)")
             continue
         ok, msg = register_task(spec)
         print(f"  {'+' if ok else '!'}  {spec['name']:26s} {msg}")
         fail += 0 if ok else 1
+        # A successful (re)create under the new name must retire a legacy-named
+        # twin, or both fire on the same schedule (duplicate sweeps).
+        if ok and spec.get("legacy") and query_task(spec["legacy"])["exists"]:
+            rc, _, _ = _schtasks("/Delete", "/TN", spec["legacy"], "/F")
+            print(f"     {'-' if rc == 0 else '!'} legacy {spec['legacy']} "
+                  f"{'removed' if rc == 0 else 'NOT removed - delete manually'}")
     if fail:
         print(f"\n{fail} task(s) failed to register (run from a normal user shell; "
               f"check the .bat wrappers exist).")

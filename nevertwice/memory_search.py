@@ -13,6 +13,7 @@ Works even with the GPU fully busy: if Ollama can't embed the query it falls
 back to lexical token overlap over the cached note text (audit H5).
 """
 import json
+import math
 import re
 import sys
 from pathlib import Path
@@ -26,7 +27,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 import memory_hook as m
 import reranker_ce as _ce          # opt-in trained cross-encoder (lazy heavy deps)
 
-ICON = {"mistake": "⚠️", "pattern": "✅", "decision": "🎯"}
+ICON = m.TYPE_ICON        # the one type→icon map (write_typed_note stamps these into headings)
 # Adaptive abstention lives in the core (memory_hook._low_confidence) so the CLI and the
 # SessionStart/per-prompt hook gate identically (DRY). CONFIDENT_SIM kept as the absolute-floor
 # alias for back-compat; the relative margin is NEVERTWICE_CONFIDENT_MARGIN.
@@ -36,19 +37,10 @@ _low_confidence = m._low_confidence
 
 def _linked(stem: str, ntype: str, limit: int = 6) -> list[str]:
     """Sibling/linked notes of a hit - makes the wikilink graph usable from
-    recall, not just Obsidian's graph view (audit H4)."""
-    fp = m.VAULT / m.TYPE_FOLDER.get(ntype, "") / f"{stem}.md"
-    try:
-        text = fp.read_text(encoding="utf-8", errors="replace")
-    except OSError:
-        return []
-    seen, out = set(), []
-    for l in re.findall(r"\[\[([^]|#]+)", text):
-        l = l.strip()
-        if l and l != stem and l not in seen:
-            seen.add(l)
-            out.append(l)
-    return out[:limit]
+    recall, not just Obsidian's graph view (audit H4). Delegates to the hook's
+    _note_links so --expand and retrieval's multi-hop expansion read the SAME
+    edges (the line-for-line local copy had started to drift, review 2026-08)."""
+    return m._note_links(stem, ntype)[:limit]
 
 
 def _as_result(h: dict, low: bool) -> dict:
@@ -147,8 +139,10 @@ def search_core(query: str, project: str | None = None, k: int = 10,
         if lex:
             return lex, "lexical (no embedder)"
         # "nothing embedded at all" ≠ "this project has no notes" - don't tell the
-        # user to rebuild a perfectly good index when a filter just missed (audit A14)
-        return [], ("empty" if not has_any and not cache else "empty-project")
+        # user to rebuild a perfectly good index when a filter just missed (audit A14).
+        # 'empty-project' only when a project FILTER was given: with no filter a
+        # text-only store used to mislabel as empty-project ("no memory for None").
+        return [], ("empty-project" if project else "empty")
 
     scored, mode = [], "semantic"
     qvec = (m.embed_text(query, kind=m.query_embed_kind(), project=project)
@@ -165,8 +159,17 @@ def search_core(query: str, project: str | None = None, k: int = 10,
         else:                                                     # calibrated fusion (shipped default)
             sem_scores = {s: sim for sim, s, r in sims if sim > m.RETRIEVAL_NEAR_FLOOR}
             fused = m._calibrated_fusion(sem_scores, m._bm25_scores(m._tokens(query), cands))
+            # SAME post-fusion tail as the hook's injection ranker: the fusion-scale
+            # recurrence constant (not the cosine-scale _recur_boost, which is 50%
+            # larger on logistic scores) and the salience/resolved/confidence
+            # multiplier - the CLI/MCP/api previously ranked resolved mistakes and
+            # low-confidence notes at full weight while injection down-weighted them.
             for s, fsc in fused.items():
-                scored.append((fsc + m._recur_boost(rec_of.get(s, {})) * amb, s, rec_of.get(s, {})))
+                r = rec_of.get(s, {})
+                n = m._coerce_recurrence(r.get("recurrence"))
+                fsc += m.RETRIEVAL_RECUR_FUSION_BOOST * math.log(max(1, n)) * amb
+                fsc *= m._salience_mult(s, r)
+                scored.append((fsc, s, r))
             mode = "hybrid"
         if _low_confidence(raw):
             mode = mode + " (low-confidence)"
@@ -319,12 +322,17 @@ def main():
     if "--expand-relations" in flags and top:        # Phase 2b: relation-aware expansion
         top = top + m.relation_expand(top, project, max_add=k)
     if mode == "empty":
+        if "--json" in flags:       # the --json contract: stdout is ALWAYS valid JSON
+            print("[]")
         print("(no memory stored yet - add a lesson with `nevertwice-remember`, or capture a "
               "session; `python -m nevertwice.embed_index` vectorises text-only notes)",
               file=sys.stderr)
         sys.exit(1)
     if mode == "empty-project":
-        print(f"(no memory for project {project!r})")
+        if "--json" in flags:
+            print("[]")
+        else:
+            print(f"(no memory for project {project!r})")
         return
 
     if "--json" in flags:

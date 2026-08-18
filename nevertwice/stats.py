@@ -37,9 +37,10 @@ def _ledger_path() -> Path:
     return m.VAULT / "savings.json"
 
 
-def est_tokens(s: str) -> int:
-    """Rough token count: ~4 characters per token (the usual back-of-envelope)."""
-    return max(0, len(s or "") // 4)
+try:                                   # receipt is import-free, so no cycle: it is THE
+    from receipt import est_tokens     # one chars→tokens rule (stats/receipt/stats_24h
+except ImportError:                    # each carried a private copy that had drifted)
+    from .receipt import est_tokens  # type: ignore  # noqa: F401  (package mode)
 
 
 def load() -> dict:

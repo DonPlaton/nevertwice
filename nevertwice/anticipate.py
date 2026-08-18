@@ -160,7 +160,7 @@ def anticipate(trajectory: str, project=None, *, k: int = 1, sigs=None, state=No
     sigs = build_signatures(project) if sigs is None else sigs
     state = load_state() if state is None else state
     idf = build_idf(sigs)
-    emb_blend = _embedding_blend(traj, sigs) if use_embeddings else None
+    emb_blend = _embedding_blend(traj, sigs, project=project) if use_embeddings else None
     scored = []
     for sig in sigs:
         r = risk_score(traj_toks, sig, idf)
@@ -183,14 +183,21 @@ def anticipate(trajectory: str, project=None, *, k: int = 1, sigs=None, state=No
     return out
 
 
-def _embedding_blend(trajectory: str, sigs) -> dict | None:
+def _embedding_blend(trajectory: str, sigs, project=None) -> dict | None:
     """Optional semantic sharpening: cosine of the trajectory vs each mistake's cached vector.
     Returns {stem: cosine01} or None if the embedder/cache are unavailable - the lexical path
     always stands alone, so this never becomes a hard dependency."""
     try:
-        if not m.embedder_available(2):
+        # embed_cache_usable: every other semantic path abstains when the cached
+        # vectors are from a different embedding space - without this gate a model
+        # flip turned cross-space noise into 0.6-0.8 blend values that lifted weak
+        # lexical overlaps over the firing threshold (spurious warnings).
+        if not m.embed_cache_usable() or not m.embedder_available(2):
             return None
-        qv = m.embed_text(trajectory, kind=m.query_embed_kind())
+        # project= so the local-only privacy gate applies: with a cloud embed
+        # provider the raw session trajectory of a LOCAL_ONLY project must never
+        # leave the machine.
+        qv = m.embed_text(trajectory, kind=m.query_embed_kind(), project=project)
         if not qv:
             return None
         cache = m.load_embed_cache()

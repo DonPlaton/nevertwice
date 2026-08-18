@@ -10,8 +10,6 @@ Run: python bootstrap_contexts.py <project_path> [<project_path>...]
 import sys, json, re, os
 from pathlib import Path
 from datetime import datetime
-import urllib.request
-import urllib.error
 
 try:                                      # never crash printing → / Cyrillic on a cp1251 console
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -50,21 +48,12 @@ try:
 except ImportError:
     import config as _cfg
 VAULT = _cfg.VAULT
-# Ollama endpoint from the shared config, not a local hardcode: the drifted copy
-# ignored the OLLAMA_URL env override AND memory_hook's non-http(s) SSRF guard
-# (review 2026-08 I4).
-try:
-    OLLAMA_URL = m.OLLAMA_URL
-except Exception:
-    OLLAMA_URL = "http://127.0.0.1:11434/api/generate"
-# Model default from the shared config (audit L-b): the round-1 hardcoded
-# "qwen3:32b" had drifted from the system default and left two different model
-# defaults in one package. Pull it from memory_hook so there is one source.
+# Model name from the shared config (audit L-b) - display only; the actual call
+# path (endpoint, timeout, retries, fence-strip) is memory_hook.call_ollama.
 try:
     OLLAMA_MODEL = m.OLLAMA_MODEL          # via the module handle - one import style (CodeQL)
 except Exception:
     OLLAMA_MODEL = os.environ.get("NEVERTWICE_MODEL", "qwen3:8b")
-OLLAMA_TIMEOUT = 240
 
 CONFIG_FILES = [
     "README.md", "README.rst", "README.txt", "README",
@@ -217,24 +206,13 @@ def collect_structure(root: Path) -> tuple[str, dict]:
 
 
 def call_ollama(prompt: str) -> dict:
-    payload = json.dumps({
-        "model": OLLAMA_MODEL,
-        "prompt": prompt,
-        "format": "json",
-        "stream": False,
-        "options": {"temperature": 0.2, "num_ctx": 16384}
-    }).encode("utf-8")
-    req = urllib.request.Request(OLLAMA_URL, data=payload,
-                                 headers={"Content-Type": "application/json"})
+    """Delegates to memory_hook.call_ollama - the ONE Ollama call path. The local
+    HTTP copy had drifted three ways (review 2026-08): it re-introduced the exact
+    multiline fence-strip bug _strip_json_fence fixed (audit M-j), omitted
+    "think": False (qwen3.x thinking leaks structured output), and hardcoded a
+    240s single-shot timeout ignoring NEVERTWICE_TIMEOUT / NEVERTWICE_RETRIES."""
     try:
-        with urllib.request.urlopen(req, timeout=OLLAMA_TIMEOUT) as r:
-            data = json.loads(r.read())
-            raw = data.get("response", "").strip()
-            if not raw:
-                return {}
-            raw = re.sub(r"^```json|^```|```$", "", raw, flags=re.M).strip()
-            parsed = json.loads(raw)
-            return parsed if isinstance(parsed, dict) else {}
+        return m.call_ollama(prompt)
     except Exception as e:
         print(f"  [error] Ollama: {e}", file=sys.stderr)
         return {}

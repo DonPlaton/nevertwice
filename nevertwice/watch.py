@@ -78,9 +78,10 @@ def _project_roots() -> list[Path]:
     silently meant different things in the two consumers and comma-separated roots
     were never watched (review 2026-08 C6)."""
     roots = [Path.cwd()]
-    raw = (os.environ.get("NEVERTWICE_PROJECT_ROOTS", "").strip()
-           or os.environ.get("NEVERTWICE_PROJECT_ROOT", ""))
-    roots += [Path(os.path.expanduser(p)) for p in m._split_roots(raw)]
+    # m.PROJECT_ROOTS is the hook's already-parsed constant (same env pair, same
+    # split rule, expanduser applied inside _split_roots) - re-reading the env here
+    # had already drifted once (local expanduser the hook lacked, review 2026-08).
+    roots += [Path(p) for p in m.PROJECT_ROOTS]
     return [r for r in dict.fromkeys(roots) if r.is_dir()]
 
 
@@ -162,7 +163,9 @@ def poll_cycle(targets: list[Target]) -> int:
                          if _mtime_ok(f, now)]
             if not files:
                 continue
-            budget = max(1, MAX_PER_CYCLE - total_new)     # share the per-cycle cap across targets
+            budget = MAX_PER_CYCLE - total_new  # share the per-cycle cap across targets
+            if budget <= 0:                     # cap spent - later targets wait for the
+                break                           # next cycle (the cap bounds lock time)
             # settle_s=0: the SETTLE_S filter above already dropped still-being-written
             # files, so ingest_files must not re-apply its own live-flush heuristic
             # (it would defer a settled file's final unterminated line)
@@ -244,7 +247,12 @@ def main() -> int:
         print(f"        • {t.agent}: {t.dir}", flush=True)
 
     if args.once:
-        n = poll_cycle(targets)
+        try:
+            n = poll_cycle(targets)
+        except Exception as e:  # the scheduled --once run must report, not traceback:
+            # its stderr lands in an unread %TEMP% log and the task keeps "succeeding"
+            print(f"[watch] sweep failed ({type(e).__name__}: {e})", file=sys.stderr)
+            return 1
         print(f"[watch] one sweep done - {n} new transcript(s) captured.")
         return 0
 

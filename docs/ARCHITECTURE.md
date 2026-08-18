@@ -79,7 +79,9 @@ precision win; auto-on once its deps and model are present locally) and a cloud-
 
 ## Privacy
 
-Embeddings are local (Ollama). Extraction is cloud-first (configurable, e.g. a
-zero-retention provider) or fully local. Secrets are regex-redacted before anything is
-written or sent. Per-project routing (`NEVERTWICE_LOCAL_ONLY` / `NEVERTWICE_CLOUD_ONLY`)
+Embeddings are local by default (Ollama); setting `NEVERTWICE_EMBED_PROVIDER` to a
+cloud provider sends note and query text to that provider too (local-only projects
+stay exempt). Extraction is cloud-first (configurable, e.g. a zero-retention
+provider) or fully local. Secrets are regex-redacted before anything is written or
+sent. Per-project routing (`NEVERTWICE_LOCAL_ONLY` / `NEVERTWICE_CLOUD_ONLY`)
 keeps sensitive projects off the network entirely.

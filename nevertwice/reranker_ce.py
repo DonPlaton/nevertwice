@@ -30,7 +30,12 @@ def _model_cached() -> bool:
     """True when the reranker model is already in the local HuggingFace cache. The auto
     switch requires this so it can never trigger a surprise ~2 GB download: torch on the
     machine proves nothing (every ML box has torch for other reasons)."""
-    hub = Path(os.environ.get("HUGGINGFACE_HUB_CACHE")
+    # HF_HUB_CACHE is the CURRENT canonical override (huggingface_hub gives it
+    # precedence); HUGGINGFACE_HUB_CACHE is its legacy alias; HF_HOME moves the
+    # whole tree. Missing HF_HUB_CACHE made auto-enable never engage for users
+    # who relocated the cache with the modern variable.
+    hub = Path(os.environ.get("HF_HUB_CACHE")
+               or os.environ.get("HUGGINGFACE_HUB_CACHE")
                or Path(os.environ.get("HF_HOME") or Path.home() / ".cache" / "huggingface") / "hub")
     leaf = "models--" + MODEL.replace("/", "--")
     try:

@@ -128,7 +128,10 @@ def _row(stem: str, r: dict, salience: float = 0.0) -> tuple:
     sal = m._coerce_salience(r.get("salience") or salience)
     return (stem, r.get("project"), r.get("ntype"), r.get("title"),
             r.get("desc", ""), r.get("prevention", ""),
-            int(r.get("recurrence", 1) or 1),
+            # THE one recurrence parse rule (m._coerce_recurrence): a bare int() here
+            # raised on junk like '2.7'/'2x', and the callers' poisoned-vector except
+            # silently dropped the whole note from semantic AND FTS recall.
+            m._coerce_recurrence(r.get("recurrence")),
             1 if r.get("resolved") else 0, _conf(r), sal,
             len(vec), _pack(vec))
 
@@ -455,7 +458,13 @@ def graph_index_ready() -> bool:
 
 def _pfilter(project, col="project"):
     """(SQL fragment, params) for the project filter on a graph table's OWN project column -
-    no join with `notes`, so the graph index works without any embeddings. '' = all projects."""
+    no join with `notes`, so the graph index works without any embeddings. '' = all projects.
+    The stored value is always the SLUG (lowercase, sanitized) - normalize here so a raw
+    caller value ('Nexus', 'GEARS_experiments') matches, exactly as the non-SQL scan path
+    does internally (review 2026-08: the SQL tier silently returned zero rows for any
+    project name slug_project rewrites, while the fallback tier answered)."""
+    if project:
+        project = m.slug_project(project)
     return (f" AND {col} = ?", [project]) if project else ("", [])
 
 
@@ -631,9 +640,14 @@ def search(query: str, project: str | None = None, k: int = 10):
     # let the format-independent FTS lexical fallback answer (critic round 3).
     stale = (index_meta() or {}).get("vec_format") != VEC_FORMAT
     if stale and m.load_embed_cache():
-        build()
-        stale = False
-    qvec = (m.embed_text(query, kind=m.query_embed_kind())
+        try:
+            build()
+            stale = False
+        except sqlite3.Error as e:     # a concurrent writer past busy_timeout must not
+            print(f"[index] migrate skipped ({e}) - lexical fallback", file=sys.stderr)
+    # project= so the local-only privacy gate applies to the query text too (a cloud
+    # embed provider must never see a local-only project's queries).
+    qvec = (m.embed_text(query, kind=m.query_embed_kind(), project=project)
             if (not stale and m.embed_cache_usable() and m.embedder_available(2)) else None)
     con = _connect()      # busy_timeout, and the semantic branch is guarded (audit A9)
     try:

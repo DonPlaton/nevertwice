@@ -477,7 +477,8 @@ check("compacted file within cap", len(ctx.read_bytes()) <= m.CONTEXT_MAX_BYTES)
 print("# I-17 - scheduled task management")
 import manage_tasks as mt
 
-check("three safety-net tasks defined", len(mt.TASKS) == 3)
+# four since review 2026-08 round 2: the Watch daemon joined the safety net
+check("four safety-net tasks defined", len(mt.TASKS) == 4)
 check("task names namespaced", all(t["name"].startswith("Nevertwice_") for t in mt.TASKS))
 check("each task points at a .bat wrapper", all(str(t["bat"]).endswith(".bat") for t in mt.TASKS))
 # wrappers are generated at install time, not shipped - point the specs at temp
@@ -512,7 +513,7 @@ try:
     # health: all present → not degraded
     mt._schtasks = lambda *a, **k: (0, "TaskName: x\nStatus: Ready\n", "")
     summ, deg = mt.tasks_health()
-    check("all-present → 3/3 ok, not degraded", deg is False and "3/3" in summ)
+    check("all-present → 4/4 ok, not degraded", deg is False and "4/4" in summ)
 
     # health: nothing registered → informational only
     mt._schtasks = lambda *a, **k: (1, "", "not found")
@@ -817,7 +818,9 @@ check("index file created", idx.db_path().exists())
 
 _al, _et = m.ollama_alive, m.embed_text
 m.ollama_alive = lambda timeout_s=4: True
-m.embed_text = lambda text, kind=None, timeout=None: [1.0, 0.0, 0.0]  # aligns with cuda-oom
+m.embed_text = lambda text, kind=None, timeout=None, project=None: [1.0, 0.0, 0.0]  # aligns with cuda-oom
+# (project kwarg: index_sqlite.search now threads the project through embed_text so
+# the LOCAL_ONLY privacy gate can attribute the query - review 2026-08 round 2)
 try:
     res, mode = idx.search("vram", "proj", 5)
     check("semantic search works + mode", bool(res) and mode == "semantic")

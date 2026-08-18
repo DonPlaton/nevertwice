@@ -96,8 +96,16 @@ def what_breaks(entity, project=None, *, depth=2, max_effects=8, impact=None) ->
     a synthesized consequence set, ranked by proximity×weight, deduped. One answer, not a dump."""
     from collections import deque
     impact = build_impact_graph(project) if impact is None else impact
-    seen = {entity}
-    frontier = deque([(entity, 0)])
+    # The impact graph is keyed by CANONICAL entity names (lowercase-kebab, the
+    # _norm_entities form stamped at write time) - a naturally-cased query ('CUDA',
+    # 'memory_hook.py') matched nothing while _failure_modes (which normalizes
+    # internally) still answered, yielding an inconsistent half-empty result.
+    try:
+        seed = (m._norm_entities([entity]) or [entity])[0]
+    except Exception:
+        seed = entity
+    seen = {seed}
+    frontier = deque([(seed, 0)])
     found: dict = {}
     while frontier:
         node, d = frontier.popleft()
@@ -105,7 +113,7 @@ def what_breaks(entity, project=None, *, depth=2, max_effects=8, impact=None) ->
             continue
         for e in impact.get(node, []):
             eff = e["effect"]
-            if eff == entity:                                 # the thing being changed is not its own impact
+            if eff == seed:                                   # the thing being changed is not its own impact
                 continue
             score = e["notes"] / (d + 1)                      # closer + better-attested = higher
             if eff not in found or score > found[eff]["score"]:

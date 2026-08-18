@@ -31,13 +31,27 @@ except Exception:
 
 # Refuse to graph any configured projects root (audit F22: that produced an 8.6 MB
 # whole-disk dump). Only individual project subdirs are valid targets. Roots come
-# from the SAME parser the hook uses (review 2026-08 C7: this module read only the
-# legacy singular env var directly, and because it runs as a fresh subprocess,
-# config.py's legacy-prefix bridge never applied - a NEVERTWICE_PROJECT_ROOTS user
-# had a dead guard). cwd stays a guarded root as before.
-_ROOTS_RAW = (os.environ.get("NEVERTWICE_PROJECT_ROOTS", "").strip()
-              or os.environ.get("NEVERTWICE_PROJECT_ROOT", ""))
-GUARDED_ROOTS = [Path(p) for p in m._split_roots(_ROOTS_RAW)] or [Path(os.getcwd())]
+# from the SAME parsed constant the hook uses (review 2026-08 C7). The old
+# `or [Path(os.getcwd())]` fallback is gone: with no roots configured it made cwd
+# a guarded root, and the hook spawns this script with cwd = the project dir - so
+# every hook-triggered refresh exited 2 while the caller logged "refreshed"
+# (review 2026-08: graph.json regeneration was silently dead on unconfigured
+# installs). The no-config F22 protection now lives in _looks_like_projects_root.
+GUARDED_ROOTS = [Path(p) for p in m.PROJECT_ROOTS]
+
+
+def _looks_like_projects_root(root: Path) -> bool:
+    """Heuristic F22 guard for installs with no configured roots: a directory that
+    is not itself a repo but holds several sibling git repos is a projects root
+    (e.g. D:\\Coding), not a project - graphing it dumps the whole disk."""
+    if (root / ".git").exists():
+        return False
+    try:
+        repos = sum(1 for d in root.iterdir()
+                    if d.is_dir() and (d / ".git").exists())
+    except OSError:
+        return False
+    return repos >= 3
 
 # Canonical skip/text sets, shared with bootstrap_contexts (review 2026-08 R7: the
 # two copies had diverged - bootstrap seeded contexts from dirs graphify skipped and
@@ -79,9 +93,12 @@ def js_imports(src):
     return list(set(hits))[:20]
 
 
-def analyze(path: Path, root: Path) -> dict:
+def analyze(path: Path, root: Path) -> dict | None:
     rel  = str(path.relative_to(root)).replace("\\", "/")
-    size = path.stat().st_size
+    try:                       # the file can vanish between build()'s stat and this one
+        size = path.stat().st_size
+    except OSError:
+        return None
     node = {"path": rel, "size": size, "ext": path.suffix, "imports": [], "exports": [], "summary": ""}
     if size > MAX_SIZE or path.suffix not in TEXT_EXTS:
         return node
@@ -154,6 +171,8 @@ def build(root: Path) -> dict:
             except OSError:
                 continue
             n = analyze(fp, root)
+            if n is None:
+                continue
             files.append(n); df.append(n["path"]); total += n["size"]
         if df: dirs[rel] = df
 
@@ -166,7 +185,9 @@ def build(root: Path) -> dict:
                      key=lambda f: f.get("size", 0))
     kept, budget = [], 0
     for f in code + noncode:
-        node_sz = len(json.dumps(f, ensure_ascii=False)) + 2
+        # BYTES of the UTF-8 the file is written in, not len() chars - Cyrillic
+        # summaries are 2 bytes/char and blew the cap 2x (same fix as ingest D2).
+        node_sz = len(json.dumps(f, ensure_ascii=False).encode("utf-8")) + 2
         if kept and (len(kept) >= MAX_FILES or budget + node_sz > MAX_GRAPH_BYTES):
             continue
         kept.append(f)
@@ -198,7 +219,7 @@ def build(root: Path) -> dict:
     }
     # Honest savings ratio on the actual serialized graph (audit F21: the
     # hard-coded "71x" claim was unsubstantiated and misleading).
-    graph_bytes = len(json.dumps(result, ensure_ascii=False))
+    graph_bytes = len(json.dumps(result, ensure_ascii=False).encode("utf-8"))
     result["stats"]["graph_kb"] = round(graph_bytes / 1024, 1)
     result["stats"]["savings_vs_full_read"] = round(total / graph_bytes, 1) if graph_bytes else None
     result["stats"]["savings_vs_code_only"] = round(code_bytes / graph_bytes, 1) if graph_bytes else None
@@ -224,6 +245,10 @@ def main():
             print(f"[graphify] refusing to graph the projects root {root} - pass a "
                   f"project subdir", file=sys.stderr)
             sys.exit(2)
+    if not GUARDED_ROOTS and _looks_like_projects_root(root):
+        print(f"[graphify] {root} looks like a projects root (several sibling git "
+              f"repos, no .git of its own) - pass a project subdir", file=sys.stderr)
+        sys.exit(2)
 
     # Guard: never graph the memory vault itself - it's notes, not code, and a
     # self-graph is pure noise (audit M6).

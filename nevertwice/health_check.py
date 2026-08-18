@@ -9,6 +9,7 @@ instead of silent.
     python health_check.py
 """
 import sys
+import time
 from datetime import datetime
 from pathlib import Path
 
@@ -16,16 +17,28 @@ sys.path.insert(0, str(Path(__file__).parent))
 import memory_hook as m
 
 HEALTH_FILE = m.VAULT / "health.txt"
+# A transcript still being written is an OPEN session, not backlog - it is only
+# processed at SessionEnd. Without this exemption every working afternoon showed
+# hourly "DEGRADED backlog=1" (review 2026-08), training the user to ignore the
+# one signal real failures use. 30 min of quiet ≈ the session is really done.
+SETTLE_S = m.env_int("NEVERTWICE_HEALTH_SETTLE_S", 1800)
 
 
 def backlog_count() -> int:
-    """Tracked-but-unprocessed transcripts under the projects root."""
+    """Tracked-but-unprocessed transcripts under the projects root, excluding
+    recently-active (open-session) ones."""
     if not m.PROJECTS_ROOT.exists():
         return 0
     db = m.load_processed()
+    now = time.time()
     n = 0
     for jl in m.PROJECTS_ROOT.rglob("*.jsonl"):   # recursive: match the sweep (audit LOW)
         if jl.stem in db:
+            continue
+        try:
+            if now - jl.stat().st_mtime < SETTLE_S:
+                continue                          # live session, not backlog
+        except OSError:
             continue
         cwd = m.read_session_meta(str(jl)).get("cwd") or str(jl.parent)
         if m.is_tracked_project(cwd):
@@ -41,6 +54,11 @@ def newest_processed(db: dict):
                 t = datetime.fromisoformat(v["processed_at"])
             except ValueError:
                 continue
+            # A foreign writer may stamp a tz-aware ISO string; comparing it to the
+            # naive majority raises TypeError and killed the hourly check outright
+            # (the same normalization prune_processed_db applies).
+            if t.tzinfo is not None:
+                t = t.astimezone().replace(tzinfo=None)
             if newest is None or t > newest:
                 newest = t
     return newest

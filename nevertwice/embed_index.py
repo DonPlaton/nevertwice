@@ -137,7 +137,18 @@ def _run_embed(rebuild: bool):
                     print(f"  ... {added} embedded", file=sys.stderr)
             else:
                 failed += 1
-                print(f"  [warn] no embedding for {stem}", file=sys.stderr)
+                # Store a TEXT-ONLY entry (the same #32 fallback update_embeddings
+                # uses): the note stays reachable via FTS/lexical recall and a later
+                # run upgrades it to a vector. Dropping it entirely made a partial
+                # rebuild shed the note from ALL recall paths (review 2026-08).
+                entry = {"ntype": ntype, "project": project, "title": title,
+                         "desc": desc, "prevention": prevention,
+                         "resolved": resolved, "recurrence": recur}
+                if conf is not None:
+                    entry["confidence"] = conf
+                cache[stem] = entry
+                print(f"  [warn] no embedding for {stem} (stored text-only)",
+                      file=sys.stderr)
     if rebuild and failed and failed >= added:
         # The embedder died mid-rebuild: swapping in a mostly-empty cache would make
         # every unreached note invisible to retrieval AND rebuild SQLite from the

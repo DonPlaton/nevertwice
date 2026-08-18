@@ -45,23 +45,16 @@ def _clip(s: str, n: int) -> str:
 
 
 def _frontmatter(text: str) -> tuple[dict, str]:
-    """Minimal YAML-ish frontmatter split: {key: value} pairs + the body. Nested keys
-    (metadata:) are flattened one level. Never raises; unparseable header -> ({}, text)."""
-    if text[:1] == "﻿":
-        # BOM tolerance (audit A7, ported here - review 2026-08 R3): a BOM'd export
-        # parsed as "no frontmatter" and the whole raw header became the note body
-        text = text[1:]
-    if not text.startswith("---"):
+    """Frontmatter split: {key: value} pairs + the body. Delegates to the hook's
+    _read_frontmatter - the one parser (BOM tolerance, JSON array/map values,
+    quoted-scalar unescape, RecursionError guard); the local regex copy needed
+    every fix hand-ported twice (review 2026-08 R3). This wrapper preserves the
+    import contract: lowercase keys, stripped body, never raises."""
+    try:
+        meta, body = m._read_frontmatter(text)
+    except Exception:
         return {}, text
-    parts = text.split("---", 2)
-    if len(parts) < 3:
-        return {}, text
-    meta = {}
-    for line in parts[1].splitlines():
-        mm = re.match(r"^\s*([A-Za-z_][\w-]*):\s*(.*)$", line)
-        if mm:
-            meta[mm.group(1).strip().lower()] = mm.group(2).strip().strip("'\"")
-    return meta, parts[2].strip()
+    return ({str(k).lower(): v for k, v in meta.items()}, body.strip())
 
 
 # ── source parsers: each yields lesson dicts {type,title,description,tags} ──────

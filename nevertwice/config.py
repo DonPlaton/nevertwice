@@ -20,10 +20,20 @@ VERSION = "2.3.0"
 # explicitly-set new name). This module is imported before any config read, so EVERY
 # `os.environ.get("NEVERTWICE_X")` across the codebase transparently honours an existing
 # ANAMNESIS_X / CLAUDE_MEMORY_X - one release of painless back-compat, one block of code.
-for _k in list(os.environ):
-    for _old in ("ANAMNESIS_", "CLAUDE_MEMORY_"):
-        if _k.startswith(_old):
-            os.environ.setdefault("NEVERTWICE_" + _k[len(_old):], os.environ[_k])
+def _bridge_legacy_prefixes() -> None:
+    """Mirror ANAMNESIS_*/CLAUDE_MEMORY_* into NEVERTWICE_* (setdefault - an explicit
+    new-prefix value always wins). Runs at import AND again after load_dotenv(): a
+    legacy-prefixed key that exists only in .env/.secrets.env enters the environment
+    after this module was imported, so without the re-run it was never mirrored
+    (review 2026-08: the local-only privacy pins and the Ollama model pin in
+    .secrets.env were silently ignored by every NEVERTWICE_* reader)."""
+    for _k in list(os.environ):
+        for _old in ("ANAMNESIS_", "CLAUDE_MEMORY_"):
+            if _k.startswith(_old):
+                os.environ.setdefault("NEVERTWICE_" + _k[len(_old):], os.environ[_k])
+
+
+_bridge_legacy_prefixes()
 
 
 def env(name: str, default: str | None = None) -> str | None:
@@ -152,3 +162,6 @@ def load_dotenv() -> None:
                     os.environ.setdefault(k.strip(), v.strip().strip('"').strip("'"))
         except OSError:
             pass
+    # Legacy-prefixed keys loaded from the files above must reach the NEVERTWICE_*
+    # readers too - the import-time bridge ran before these keys existed.
+    _bridge_legacy_prefixes()

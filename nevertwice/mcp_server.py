@@ -76,6 +76,9 @@ import config as _cfg            # noqa: E402
 SERVER_NAME = "nevertwice"
 SERVER_VERSION = _cfg.VERSION    # single source: config.VERSION (never drift from pyproject)
 DEFAULT_PROTOCOL = "2025-06-18"
+# Revisions this server's behavior actually implements (all share the same
+# tools/initialize semantics we use). Anything else negotiates down to DEFAULT.
+SUPPORTED_PROTOCOLS = {"2024-11-05", "2025-03-26", "2025-06-18"}
 
 TOOLS = [
     {
@@ -356,6 +359,13 @@ def _tool_memory_ingest(args: dict) -> tuple[str, bool]:
     agent = (args.get("agent") or "mcp").strip() or "mcp"
     if not project or not text.strip():
         return "error: 'project' and non-empty 'text' are required", True
+    # Same payload cap as every other ingest surface (stdin and sweep refuse over
+    # MAX_SWEEP_BYTES): without it one oversized call hashed an arbitrary blob and
+    # held the vault lock through a full-text scrub of it.
+    cap = m.env_int("NEVERTWICE_MAX_SWEEP_BYTES", 10 * 1024 * 1024)
+    if len(text.encode("utf-8", "replace")) > cap:
+        return (f"error: text over {cap} bytes - refused "
+                f"(raise NEVERTWICE_MAX_SWEEP_BYTES to override)"), True
     # Delegate to api.capture_session - the ONE capture write path (review 2026-08
     # G2: this hand-rolled copy had already drifted - a 60s lock instead of 120s, no
     # archive/prune maintenance, and a timestamp-minted sid so a client RETRY
@@ -423,8 +433,7 @@ def _tool_memory_conflicts(args: dict) -> tuple[str, bool]:
     except (TypeError, ValueError):
         limit = 25
     try:
-        rows = _digest.compute_conflicts(m.slug_project(project) if project else None,
-                                         limit=max(1, min(limit, 200)))
+        rows = _api.conflicts(project, limit=max(1, min(limit, 200)))
     except Exception as exc:
         return f"error: {type(exc).__name__}", True
     if not rows:
@@ -444,7 +453,7 @@ def _tool_memory_digest(args: dict) -> tuple[str, bool]:
     except (TypeError, ValueError):
         days = 7
     try:
-        d = _digest.compute_digest(project, days=max(1, days))
+        d = _api.digest(project, days=max(1, days))
     except Exception as exc:
         return f"error: {type(exc).__name__}", True
     t = d["totals"]
@@ -466,16 +475,13 @@ def _tool_memory_guard_check(args: dict) -> tuple[str, bool]:
     project = (args.get("project") or "").strip() or None
     path = (args.get("path") or "").strip() or None
     try:
-        ledger = _guards.load_guards()                      # one read shared by check + telemetry
-        hits = _guards.check(text, project=project, path=path, guards=ledger)
+        # api.guards_check is the ONE check path (load + check + fired-telemetry) -
+        # the hand-rolled copy here had already drifted from it (review 2026-08).
+        hits = _api.guards_check(text, project=project, path=path)
     except Exception as exc:
         return f"error: {type(exc).__name__}", True
     if not hits:
         return "clear - no guard fires for this action.", False
-    try:
-        _guards.record_fired([h["id"] for h in hits], guards=ledger)   # guards list fired=
-    except Exception:
-        pass
     lines = []
     for h in hits:
         tag = "BLOCK" if h["status"] == "blocking" else "warn"
@@ -490,7 +496,7 @@ def _tool_memory_anticipate(args: dict) -> tuple[str, bool]:
         return "error: 'trajectory' is required", True
     project = (args.get("project") or "").strip() or None
     try:
-        hits = _anticipate.anticipate(traj, project=project, k=1)
+        hits = _api.anticipate(traj, project=project, k=1)
     except Exception as exc:
         return f"error: {type(exc).__name__}", True
     if not hits:
@@ -505,7 +511,7 @@ def _tool_memory_what_breaks(args: dict) -> tuple[str, bool]:
         return "error: 'entity' is required", True
     project = (args.get("project") or "").strip() or None
     try:
-        out = _causal.counterfactual(entity, project)
+        out = _api.counterfactual(entity, project)   # facade face: records the savings credit
     except Exception as exc:
         return f"error: {type(exc).__name__}", True
     return (out or f"no causal footprint recorded for `{entity}`."), False
@@ -594,7 +600,12 @@ def _handle(msg: dict) -> None:
     is_request = "id" in msg          # JSON-RPC: a request HAS an id (even null); a notification has none
 
     if method == "initialize":
-        proto = (msg.get("params") or {}).get("protocolVersion") or DEFAULT_PROTOCOL
+        # MCP version negotiation: answer with the requested version only when we
+        # actually support it, else with our latest supported one - echoing an
+        # arbitrary client string claimed compliance with semantics we don't have.
+        proto = (msg.get("params") or {}).get("protocolVersion")
+        if proto not in SUPPORTED_PROTOCOLS:
+            proto = DEFAULT_PROTOCOL
         _result(req_id, {
             "protocolVersion": proto,
             "capabilities": {"tools": {"listChanged": False}},

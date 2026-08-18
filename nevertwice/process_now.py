@@ -79,21 +79,45 @@ def _run(t0: float):
 
     new = skipped_outside = skipped_done = failed = 0
     run_log: list[dict] = []
+    settle_s = _mh.env_int("NEVERTWICE_SWEEP_SETTLE_S", 120)   # same guard as the sweep
+    now = time.time()
 
-    for i, (jl, _, size) in enumerate(seen, 1):
+    for i, (jl, mtime, size) in enumerate(seen, 1):
         sid = jl.stem
         prefix = f"[{i:3d}/{total}]"
 
-        if sid in db:
+        # Growth re-check (B1), same as sweep_unprocessed: a PreCompact-marked
+        # session whose transcript grew afterwards must be re-mined, not skipped -
+        # the bare `sid in db` skip left the post-compaction tail unrecovered.
+        prior = db.get(sid)
+        if sid in db and not _mh._transcript_grew(prior, str(jl)):
             skipped_done += 1
             print(f"{prefix} {jl.parent.name[:32]:<32} {sid[:8]} - already processed",
                   flush=True)
             continue
 
+        # Settle guard (same as the sweep's): a transcript modified moments ago is a
+        # LIVE session - mining it now would extract a half-finished conversation
+        # and litter the vault with premature notes.
+        if settle_s and now - mtime < settle_s:
+            print(f"{prefix} {jl.parent.name[:32]:<32} {sid[:8]} - active session, "
+                  f"left for a later run", flush=True)
+            continue
+
         size_kb = size // 1024
-        cwd = _mh.read_session_meta(str(jl)).get("cwd") or str(jl.parent)
+        meta_cwd = _mh.read_session_meta(str(jl)).get("cwd")
+        cwd = meta_cwd or str(jl.parent)
 
         if not _mh.is_tracked_project(cwd):
+            # No cwd in the meta can mean a TRANSIENT read failure (AV lock) - the
+            # jl.parent fallback is never tracked, so marking here lost the session
+            # permanently. Defer marking for recent files; only a week-old transcript
+            # that still yields no cwd is treated as genuinely untracked.
+            if meta_cwd is None and size > 0 and now - mtime < 7 * 86400:
+                skipped_outside += 1
+                print(f"{prefix} {jl.parent.name[:32]:<32} {sid[:8]} ({size_kb:>5} KB) "
+                      f"- meta unreadable, left for retry", flush=True)
+                continue
             _mh.mark_processed(db, sid, str(jl))
             skipped_outside += 1
             print(f"{prefix} {jl.parent.name[:32]:<32} {sid[:8]} ({size_kb:>5} KB) "

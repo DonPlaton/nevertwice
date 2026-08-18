@@ -65,14 +65,23 @@ def do_forget(stem: str) -> int:
                                            "forgotten_at": datetime.now().isoformat(timespec="seconds")})
         dest = fp.parent / "Superseded"
         dest.mkdir(exist_ok=True)
-        m.write_atomic(dest / fp.name, text)
+        # Collision-safe destination (review 2026-08): a stem superseded before can
+        # be re-minted live and forgotten again - overwriting the earlier retired
+        # copy (and the old rollback then DELETED it, a file this call never wrote).
+        dest_fp = dest / fp.name
+        if dest_fp.exists():
+            i = 2
+            while (dest / f"{fp.stem}-{i}{fp.suffix}").exists():
+                i += 1
+            dest_fp = dest / f"{fp.stem}-{i}{fp.suffix}"
+        m.write_atomic(dest_fp, text)
         try:
             fp.unlink(missing_ok=True)
         except OSError as e:
-            # roll back the Superseded/ copy - two live copies is the state this
+            # roll back OUR Superseded/ copy - two live copies is the state this
             # mechanism exists to prevent (mirror supersede_note's Windows guard)
             try:
-                (dest / fp.name).unlink(missing_ok=True)
+                dest_fp.unlink(missing_ok=True)
             except OSError:
                 pass
             print(f"[remember] forget failed (unlink: {e}) - rolled back", file=sys.stderr)
@@ -81,9 +90,13 @@ def do_forget(stem: str) -> int:
         if cache.pop(stem, None) is not None:
             m.save_embed_cache(cache)
         m.sync_scale_index(delete=[stem])     # drop from the SQLite index too (C2/C3)
+        try:
+            m._unregister_slug(stem)          # keep the grounding cache honest (audit A16,
+        except Exception:                     # mirrors supersede_note - was missing here)
+            pass
         m.rebuild_index()
         m.git_autocommit()
-        print(f"[remember] forgotten → {folder}/Superseded/{fp.name}")
+        print(f"[remember] forgotten → {folder}/Superseded/{dest_fp.name}")
         return 0
     finally:
         m.release_lock()

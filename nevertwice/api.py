@@ -227,7 +227,14 @@ def counterfactual(entity: str, project: str | None = None) -> str:
     """The one-paragraph synthesized answer to 'what happens if I change `entity`' (axis C):
     top downstream impacts + known failure modes + evidence stems, in a few lines. '' when the
     entity has no causal footprint. This is the token-economical face of causal memory."""
-    return _causal.counterfactual(entity, project)
+    out = _causal.counterfactual(entity, project)
+    if out:
+        try:                                 # same ledger credit as what_breaks: each synthesized
+            import stats as _st              # line stands in for a note that was NOT dumped
+            _st.record("counterfactual", saved=max(1, out.count("\n") + 1) * 60)
+        except Exception:
+            pass
+    return out
 
 
 def why(entity: str, project: str | None = None, *, depth: int = 2) -> dict:
