@@ -167,24 +167,15 @@ def _watermark_path() -> Path:
 
 
 def load_watermarks() -> dict:
-    for f in (_watermark_path(), _watermark_path().with_suffix(".json.bak")):
-        try:
-            d = json.loads(f.read_text(encoding="utf-8", errors="replace"))
-            if isinstance(d, dict):
-                return d
-        except (OSError, json.JSONDecodeError, ValueError):
-            continue
-    return {}
+    return m._load_json_generations(_watermark_path(), "ingest watermarks") or {}
 
 
 def save_watermarks(wm: dict) -> None:
     if len(wm) > _WATERMARK_CAP:                       # bound the file; oldest entries go
         for k in sorted(wm, key=lambda k: wm[k].get("last", ""))[:len(wm) - _WATERMARK_CAP]:
             wm.pop(k, None)
-    text = json.dumps(wm, ensure_ascii=False)
     try:
-        m.write_atomic(_watermark_path(), text)
-        m.write_atomic(_watermark_path().with_suffix(".json.bak"), text)
+        m._save_json_generations(_watermark_path(), json.dumps(wm, ensure_ascii=False))
     except OSError as e:
         # NOT silent (review 2026-08 I8): a persistently unwritable watermark file
         # means every sweep re-mines every growing transcript in full, forever -

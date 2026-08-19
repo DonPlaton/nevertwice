@@ -52,27 +52,13 @@ def check(name, cond):
         print(f"  [FAIL] {name}")
 
 
+from _sandbox import make_sandbox
+
+
 def sandbox():
-    d = Path(tempfile.mkdtemp(prefix="revfix_"))
-    m.VAULT = d
-    m.EMBED_CACHE = d / ".embeddings_cache.json"
-    m.EMBED_META = d / ".embeddings_meta.json"
-    m.LOG_FILE = d / ".logs" / "memory_hook.log"
-    m.PROCESSED_DB = d / ".processed_sessions.json"
-    m.STATUS_FILE = d / "status.txt"
-    m.PROMPT_RECALL_STATE_DIR = d / ".pr"
-    m.collect_existing_titles.cache_clear()
-    m.collect_existing_tags.cache_clear()
-    m.git_autocommit = lambda *a, **k: None
-    # Hermeticity (review 2026-08 D14, same class as the 2026-08-13 incident, via the
-    # network instead of paths): no section may reach the LIVE embedder - on a
-    # cloud-provider machine that ships fixture text to the provider every test run,
-    # and with Ollama down it adds a connect-timeout per typed-note write. Sections
-    # exercising the near-dup gate install their own fakes on top of these stubs.
-    m.embed_text = lambda *a, **k: None
-    m.embedder_available = lambda *a, **k: False
-    m.embed_cache_usable = lambda: False
-    return d
+    # offline=True: hermeticity (review 2026-08 D14) - no section may reach the LIVE
+    # embedder or repo. Sections exercising the near-dup gate install their own fakes.
+    return make_sandbox(m, "revfix_", offline=True)
 
 
 # ── 1. WATERMARK: delta-mining of growing transcripts ─────────────────────────

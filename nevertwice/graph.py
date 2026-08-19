@@ -46,10 +46,7 @@ def _sql():
     markdown scan; when absent, they fall back to the markdown read - which stays the source of
     truth, so dropping the .sqlite file only costs speed, never correctness."""
     try:
-        try:
-            from . import index_sqlite as sx
-        except ImportError:
-            import index_sqlite as sx
+        sx = _m()._sibling("index_sqlite")
         return sx if sx.graph_index_ready() else None
     except Exception:
         return None

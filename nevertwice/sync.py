@@ -82,10 +82,7 @@ def _sync_locked() -> int:
 
     # 0) install the structured merge driver so a concurrent-write conflict on a note
     #    (recurrence bump / supersession) auto-resolves instead of stopping the sync (idempotent).
-    try:
-        from . import merge as _merge
-    except ImportError:
-        import merge as _merge
+    _merge = m._sibling("merge")
     _merge.register(m.VAULT)
 
     # 1) commit local changes (if any) - and only claim success when git agrees

@@ -37,5 +37,5 @@ any behaviour change. The suites assert on real files written to a throwaway sto
 
 ## Commits
 
-`type(scope): description` (feat / fix / refactor / docs / test / chore). Keep commits
-small and atomic.
+`type(scope): description` (feat / fix / perf / refactor / docs / test / chore /
+research - the last one for work under `research/`). Keep commits small and atomic.

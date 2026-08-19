@@ -74,10 +74,7 @@ PRODUCED_VOCAB = frozenset({
 # exists to catch). Literal fallback only for a pathological deployment missing causal.py.
 def _causal_orientation():
     try:
-        try:
-            from . import causal as cz
-        except ImportError:
-            import causal as cz
+        cz = _m()._sibling("causal")
         return frozenset(cz._FORWARD), frozenset(cz._REVERSE)
     except Exception:
         return (frozenset({"causes", "enables", "prevents", "implements", "improves",
@@ -93,10 +90,7 @@ CONSUMED_VOCAB = CAUSAL_FORWARD | CAUSAL_REVERSE
 # through config so enabling a profile cannot make its own relations look "unknown".
 def _profile_vocab() -> frozenset:
     try:
-        try:
-            from . import config as cfg
-        except ImportError:
-            import config as cfg
+        cfg = _m()._sibling("config")
         return frozenset(r for rels in cfg.RELATION_HINTS.values() for r in rels)
     except Exception:
         return frozenset()

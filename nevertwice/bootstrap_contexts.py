@@ -65,10 +65,7 @@ CONFIG_FILES = [
     "Makefile",
 ]
 # shared with graphify - the local copies had drifted (review 2026-08 R7)
-try:
-    from . import graphify as _gr
-except ImportError:
-    import graphify as _gr
+_gr = m._sibling("graphify")
 SKIP_DIRS = _gr.SKIP_DIRS
 TEXT_EXTS = _gr.TEXT_EXTS
 

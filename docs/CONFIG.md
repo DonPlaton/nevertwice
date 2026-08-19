@@ -23,7 +23,7 @@ These are the only vars in [`.env.example`](../.env.example). Most people set ze
 |---|---|---|
 | `NEVERTWICE_CLOUD` | `auto` | Cloud extraction backend: `cerebras` / `groq` / `deepseek` / `gemini` / `none` / `auto` (picks whichever key is present, else local Ollama). |
 | `CEREBRAS_API_KEY` · `GROQ_API_KEY` · `DEEPSEEK_API_KEY` · `GEMINI_API_KEY` | n/a | One key enables fast off-GPU extraction. None → local Ollama. |
-| `NEVERTWICE_HOME` | `~/.nevertwice` | Where the Markdown + Git store lives. |
+| `NEVERTWICE_HOME` | `~/.nevertwice` | Where the Markdown + Git store lives. `NEVERTWICE_VAULT` wins over it when both are set. Either may live in `.env`/`.secrets.env`: the env files load before the paths resolve, so a per-machine store location needs no code edit. |
 | `NEVERTWICE_PROJECTS_ROOT` | `~/.claude/projects` | Host-agent transcript dir for the catch-up sweep. |
 | `NEVERTWICE_PROJECT_ROOTS` | n/a | Extra roots whose git repos are tracked as projects (`os.pathsep`-separated). |
 | `NEVERTWICE_EMBED_PROVIDER` | `ollama` | Embedder for semantic recall: `ollama` (local) / `openai` / `voyage` / `cohere` / `gemini`. |
@@ -224,7 +224,8 @@ machine and against a cloud coding agent.
 | `NEVERTWICE_WRITE_DEDUP_MODE` | `twin` | `twin` scores candidates with the learned five-feature classifier; `cosine` restores the plain threshold gate (the kill-switch). |
 | `NEVERTWICE_WRITE_DEDUP_TWIN_P` | `0.90` | Classifier probability above which a candidate is treated as the same lesson (precision 1.000 / twin-recall 0.852 at this point on the calibration store). |
 | `NEVERTWICE_WRITE_DEDUP_PREFILTER` | `0.70` | Cheap cosine prefilter in `twin` mode; only survivors get the full feature score. |
-| `NEVERTWICE_TWIN_SPACE` | `bge-m3` | The embedding space the baked classifier weights were calibrated on. On a mismatch with the active embed model the gate falls back to `cosine` mode, loudly. Set after retraining the weights for a new space. |
+| `NEVERTWICE_TWIN_SPACE` | `bge-m3` | The embedding space the classifier weights were calibrated on. On a mismatch with the active embed model the gate falls back to `cosine` mode, loudly. Overrides the space label from the calibration file / baked default. |
+| `NEVERTWICE_TWIN_FILE` | `twin_calibration.json` next to the code | Retrained twin-gate calibration as data: `{"space", "w", "b", "mu", "sd"}` (five features, see `research/TWIN_GATE.md`). Absent → the baked bge-m3 calibration. Lets a machine with a custom embedder carry its own weights without forking `memory_hook.py`. |
 
 ---
 

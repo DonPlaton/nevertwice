@@ -57,31 +57,18 @@ def _ledger_path() -> Path:
 
 
 def load_guards() -> list[dict]:
-    """Primary, then .bak, LOUDLY on recovery (review 2026-08 I3): guards are active
-    protection - a silently-swallowed corrupt ledger meant every guard stopped
-    firing with no trace, the exact silent-reset the processed-db already defends
-    against."""
-    p = _ledger_path()
-    for fp in (p, p.with_name(p.name + ".bak")):
-        if not fp.exists():
-            continue
-        try:
-            data = json.loads(fp.read_text(encoding="utf-8"))
-            if isinstance(data, list):
-                if fp is not p:
-                    m.log(f"guards.json unreadable - recovered from {fp.name}")
-                return data
-        except (OSError, ValueError) as e:
-            m.log(f"ERROR reading {fp.name}: {type(e).__name__}: {e}")
-            continue
-    return []
+    """Two-generation load, LOUDLY on recovery (review 2026-08 I3): guards are
+    active protection - a silently-swallowed corrupt ledger meant every guard
+    stopped firing with no trace, the exact silent-reset the processed-db already
+    defends against."""
+    data = m._load_json_generations(_ledger_path(), "guards ledger", expect=list)
+    return data if data is not None else []
 
 
 def save_guards(guards: list[dict]) -> None:
     m.VAULT.mkdir(parents=True, exist_ok=True)
-    text = json.dumps(guards, ensure_ascii=False, indent=1)
-    m.write_atomic(_ledger_path(), text)
-    m.write_atomic(_ledger_path().with_name(_ledger_path().name + ".bak"), text)
+    m._save_json_generations(_ledger_path(),
+                             json.dumps(guards, ensure_ascii=False, indent=1))
 
 
 # ── ReDoS-safe pattern validation ─────────────────────────────────────

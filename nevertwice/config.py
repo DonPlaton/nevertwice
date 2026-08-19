@@ -56,6 +56,46 @@ def _default_vault() -> str:
     return str(new)
 
 
+def load_dotenv() -> None:
+    """Load KEY=VALUE pairs from a .env so cloud API keys stay out of git/code.
+    Searched (FIXED, trusted locations only): $NEVERTWICE_ENV_FILE, then .env /
+    .secrets.env next to the package and at the repo root (where .env.example says to
+    put it). Never overrides an already-set var.
+
+    Deliberately NOT the current working directory: the hook and the --dir sweep often
+    run with cwd inside an untrusted repo, where a planted `./.env` could inject an
+    attacker's API key / relay endpoint and observe what gets sent (audit 2026-06-18).
+    Point NEVERTWICE_ENV_FILE at a custom location if you need one elsewhere."""
+    here = Path(__file__).resolve().parent
+    candidates = []
+    custom = os.environ.get("NEVERTWICE_ENV_FILE")
+    if custom:
+        candidates.append(Path(custom))
+    candidates += [here / ".env", here / ".secrets.env",
+                   here.parent / ".env", here.parent / ".secrets.env"]
+    for fp in candidates:
+        try:
+            if not fp.is_file():
+                continue
+            for ln in fp.read_text(encoding="utf-8", errors="replace").splitlines():
+                ln = ln.strip()
+                if ln and not ln.startswith("#") and "=" in ln:
+                    k, v = ln.split("=", 1)
+                    os.environ.setdefault(k.strip(), v.strip().strip('"').strip("'"))
+        except OSError:
+            pass
+    # Legacy-prefixed keys loaded from the files above must reach the NEVERTWICE_*
+    # readers too - the import-time bridge ran before these keys existed.
+    _bridge_legacy_prefixes()
+
+
+# The env files load BEFORE the paths below resolve: a vault location that lives only
+# in .env/.secrets.env must shape VAULT itself, not just readers that run later. Until
+# 2026-08 the call sat in memory_hook AFTER `config.VAULT` was already computed, so
+# pinning the store per-machine required editing this file - the exact
+# hardcode-in-a-synced-file trap the live install kept having to re-apply.
+load_dotenv()
+
 # ── Core paths (cross-platform defaults under the user's home) ────────
 # The memory store. Default: ~/.nevertwice (an existing ~/.anamnesis is honoured - see
 # _default_vault). Override with NEVERTWICE_HOME (or legacy ANAMNESIS_HOME / *_VAULT).
@@ -132,36 +172,3 @@ def relation_hints() -> list:
             if r not in out:
                 out.append(r)
     return out
-
-
-def load_dotenv() -> None:
-    """Load KEY=VALUE pairs from a .env so cloud API keys stay out of git/code.
-    Searched (FIXED, trusted locations only): $NEVERTWICE_ENV_FILE, then .env /
-    .secrets.env next to the package and at the repo root (where .env.example says to
-    put it). Never overrides an already-set var.
-
-    Deliberately NOT the current working directory: the hook and the --dir sweep often
-    run with cwd inside an untrusted repo, where a planted `./.env` could inject an
-    attacker's API key / relay endpoint and observe what gets sent (audit 2026-06-18).
-    Point NEVERTWICE_ENV_FILE at a custom location if you need one elsewhere."""
-    here = Path(__file__).resolve().parent
-    candidates = []
-    custom = os.environ.get("NEVERTWICE_ENV_FILE")
-    if custom:
-        candidates.append(Path(custom))
-    candidates += [here / ".env", here / ".secrets.env",
-                   here.parent / ".env", here.parent / ".secrets.env"]
-    for fp in candidates:
-        try:
-            if not fp.is_file():
-                continue
-            for ln in fp.read_text(encoding="utf-8", errors="replace").splitlines():
-                ln = ln.strip()
-                if ln and not ln.startswith("#") and "=" in ln:
-                    k, v = ln.split("=", 1)
-                    os.environ.setdefault(k.strip(), v.strip().strip('"').strip("'"))
-        except OSError:
-            pass
-    # Legacy-prefixed keys loaded from the files above must reach the NEVERTWICE_*
-    # readers too - the import-time bridge ran before these keys existed.
-    _bridge_legacy_prefixes()

@@ -85,3 +85,8 @@ stay exempt). Extraction is cloud-first (configurable, e.g. a zero-retention
 provider) or fully local. Secrets are regex-redacted before anything is written or
 sent. Per-project routing (`NEVERTWICE_LOCAL_ONLY` / `NEVERTWICE_CLOUD_ONLY`)
 keeps sensitive projects off the network entirely.
+
+Injection-side: typed notes pass an unsafe-content check at write time, but that
+check is deliberately narrow (legitimate prose about prompts and overrides must
+survive), so every injected payload is framed as *recalled reference, not
+instructions* - the agent reads memory as data, not as a directive channel.

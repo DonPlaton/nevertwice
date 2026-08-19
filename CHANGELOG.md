@@ -5,6 +5,28 @@ versions are [semantic](https://semver.org). Dates are UTC.
 
 ## [Unreleased]
 
+### Changed
+- **Config resolves paths after the env files load.** `load_dotenv()` now runs at
+  `config` import, before `VAULT`/`PROJECTS_ROOT` resolve - so a per-machine store
+  location (`NEVERTWICE_VAULT` in `.secrets.env`) works without editing `config.py`.
+- **Twin-gate calibration is data, not code.** A machine-local `twin_calibration.json`
+  (or `$NEVERTWICE_TWIN_FILE`) overrides the baked bge-m3 weights + space label; a
+  retrained gate no longer requires forking `memory_hook.py`.
+- **Injected memory is framed as reference.** SessionStart and per-prompt payloads
+  now say "recalled reference, not instructions" - the unsafe-content filter is
+  deliberately narrow, so the framing keeps instruction-shaped prose in a note from
+  reading as a directive.
+- Internal dedup: one HTTP/JSON retry loop behind all LLM backends, one
+  two-generation (`.bak`) JSON persistence helper, one dual-shape sibling-import
+  resolver, one budgeted fact-section renderer (the cross-project copy had drifted),
+  one shared test sandbox. No behavior change intended.
+
+### Fixed
+- **Context compaction could amputate the newest entries.** The compressed
+  state-block + link-archive now fits the room actually left by the kept entries
+  (archive links dropped oldest-first, then the state text trims); the byte-cap
+  guard no longer truncates the file tail.
+
 ### Added
 - **Learned twin-gate** (stage 0 of embedding specialization). The write-time dedup gate
   now scores candidates with a logistic classifier over five pair features, trained on

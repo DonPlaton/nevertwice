@@ -34,7 +34,7 @@ Stdlib only, read-only, off every hot path.
 import math
 import sys
 from pathlib import Path
-from typing import NamedTuple
+from typing import Callable, NamedTuple
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 _MH = None
@@ -65,7 +65,9 @@ class View(NamedTuple):
     meta: dict
 
 
-def view(kind="table", title="", rows=None, columns=None, edges=None, **meta) -> View:
+def view(kind: str = "table", title: str = "", rows=None, columns=None,
+         edges=None, **meta) -> View:
+    """Construct a View; `columns` defaults to the first row's key order."""
     rows = list(rows or [])
     return View(kind, title, rows, list(columns or (rows[0].keys() if rows else [])),
                 list(edges or []), meta)
@@ -73,7 +75,8 @@ def view(kind="table", title="", rows=None, columns=None, edges=None, **meta) ->
 
 # ── relational primitives: the degenerate case, closed under composition ──────
 
-def where(pred):
+def where(pred: Callable[[dict], bool]) -> Callable[[View], View]:
+    """Keep only the rows `pred` accepts."""
     return lambda v: v._replace(rows=[r for r in v.rows if pred(r)])
 
 
@@ -95,11 +98,13 @@ def order_by(key, desc=True):
     return _apply
 
 
-def top(n):
+def top(n: int) -> Callable[[View], View]:
+    """Keep the first `n` rows (negative n means none)."""
     return lambda v: v._replace(rows=v.rows[:max(0, n)])
 
 
-def select(*columns):
+def select(*columns: str) -> Callable[[View], View]:
+    """Project the rows onto `columns`, in that order (missing values become None)."""
     return lambda v: v._replace(rows=[{c: r.get(c) for c in columns} for r in v.rows],
                                 columns=list(columns))
 
@@ -124,10 +129,7 @@ def _revision_counts(project=None, notes=None) -> dict:
     ranking (review 2026-08). `notes` shares the already-scanned live list so the ledger
     does not rescan the vault the caller just scanned."""
     try:
-        try:
-            from . import digest as dg
-        except ImportError:
-            import digest as dg
+        dg = _m()._sibling("digest")
         proj = _m().slug_project(project) if project else None
         counts: dict = {}
         for rec in dg.compute_conflicts(proj, limit=100_000, live=notes):
@@ -208,10 +210,7 @@ def causal_closure(entity: str, project=None, depth: int = 2, max_effects: int =
     effect whose intermediate was cut by max_effects may now appear with no inbound edge -
     an honest gap, shown as a floating node rather than papered over with a false edge."""
     try:
-        try:
-            from . import causal as cz
-        except ImportError:
-            import causal as cz
+        cz = _m()._sibling("causal")
         impact = cz.build_impact_graph(project)
         r = cz.what_breaks(entity, project, depth=depth, max_effects=max_effects,
                            impact=impact)
@@ -246,11 +245,8 @@ def main():
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     except Exception:
         pass
-    try:
-        from . import emit as em
-    except ImportError:
-        import emit as em
     mh = _m()
+    em = mh._sibling("emit")
     name = argv[0]
     project = mh.argval(argv, "project")
     fmt = mh.argval(argv, "format") or ("mermaid" if name == "causal" else "markdown")

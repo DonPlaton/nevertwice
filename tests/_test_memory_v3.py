@@ -42,16 +42,11 @@ def check(name, cond):
         print(f"  [FAIL] {name}")
 
 
+from _sandbox import make_sandbox
+
+
 def sandbox():
-    d = Path(tempfile.mkdtemp(prefix="memv3_"))
-    m.VAULT = d
-    m.EMBED_CACHE = d / ".embeddings_cache.json"
-    m.EMBED_META = d / ".embeddings_meta.json"
-    m.PROCESSED_DB = d / ".processed_sessions.json"
-    m.STATUS_FILE = d / "status.txt"
-    m.collect_existing_titles.cache_clear()
-    m.collect_existing_tags.cache_clear()
-    return d
+    return make_sandbox(m, "memv3_")
 
 
 # ── C2: generalized project tracking (OS-aware) ───────────────────────

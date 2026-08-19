@@ -205,10 +205,7 @@ def build_html(project=None, days=30, conflicts_limit=40) -> str:
 
     # ── stat cards ──
     try:                                     # the token headline, if the ledger has data
-        try:
-            from . import stats as _stats
-        except ImportError:
-            import stats as _stats
+        _stats = m._sibling("stats")
         _sv = _stats.load().get("totals", {})
         _inj = _stats._human(_sv.get("tokens_injected", 0)) if _sv.get("interventions") else None
         _saved = _stats._human(_sv.get("tokens_saved", 0)) if _sv.get("interventions") else None

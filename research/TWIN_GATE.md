@@ -66,3 +66,18 @@ before: no embedder → no gate.
 The same lifecycle supervision, used not for a pair-classifier but to LoRA-specialize the
 embedder itself (`nevertwice-embed`): widen the twin/distinct margin in the embedding
 space, guard against general-retrieval regression on the store's own query→note bench.
+
+## Deploying retrained weights
+
+Since 2026-08 the production gate reads its calibration as **data**: drop a
+`twin_calibration.json` next to the code (or point `NEVERTWICE_TWIN_FILE` at one):
+
+```json
+{"space": "<embed model the weights were trained on>",
+ "w": [...5 floats...], "b": 0.0, "mu": [...5...], "sd": [...5...]}
+```
+
+Absent or invalid → the baked bge-m3 calibration, loudly. `NEVERTWICE_TWIN_SPACE`
+still overrides the space label alone. This replaces the old procedure of editing
+the `_TWIN_*` constants in `memory_hook.py` - a per-machine code fork that every
+sync had to re-apply by hand.
