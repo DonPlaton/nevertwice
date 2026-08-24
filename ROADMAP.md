@@ -5,7 +5,8 @@ Done items move to [CHANGELOG.md](CHANGELOG.md).
 
 ## Near term
 
-- **PyPI release** so install is `pip install nevertwice` instead of a git URL.
+- **Release automation.** Publish the repository's current 2.3.x release to PyPI and
+  replace manual uploads with PyPI Trusted Publishing plus a tagged-release workflow.
 - **Universal guard pack default-on decision.** The pack (11 high-precision pitfalls,
   0 tokens until they fire) is opt-in today; measuring false-positive rates in real
   use decides whether it becomes the default.

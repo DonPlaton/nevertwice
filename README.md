@@ -426,13 +426,16 @@ point the bootstrapper at it: `python -m nevertwice.bootstrap_contexts /path/to/
 
 ## Tests
 
-Thirty-seven suites, standard library only, LLM and embedder fully mocked. No network, no GPU:
+Forty-eight hermetic suites; LLMs, embedders, the optional reranker, network and GPU
+execution are disabled or mocked by default. After `pip install -e ".[dev]"`:
 
 ```bash
-for t in tests/_test_*.py tests/research/_test_*.py; do python "$t" || break; done
+python -m pytest -q
 ```
 
-CI runs them on Linux, Windows, and macOS across Python 3.10, 3.12, and 3.13.
+The underlying standard-library self-checks remain directly runnable. CI runs the core
+suite on Linux, Windows, and macOS across Python 3.10, 3.12, 3.13, and 3.14, plus the
+research suite on Python 3.13.
 
 ## Docs
 

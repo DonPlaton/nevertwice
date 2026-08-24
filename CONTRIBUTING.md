@@ -19,21 +19,24 @@ simple to deploy**. Please keep changes in that spirit.
 
 ```bash
 git clone https://github.com/DonPlaton/nevertwice && cd nevertwice
+python -m pip install -e ".[dev]"
 python install.py --print     # see what install would do (writes nothing)
 ```
 
 ## Tests
 
-Standard-library only, fully mocked (no network, no GPU). Run all three:
+The 48 standalone suites are hermetic: network, LLMs, embedders, the optional
+cross-encoder and GPU execution are disabled or mocked by default. Run all of them with:
 
 ```bash
-python nevertwice/_test_memory_hook.py
-python nevertwice/_test_memory_v2.py
-python nevertwice/_test_memory_v3.py
+python -m pytest -q
 ```
 
-CI runs them on Linux, Windows and macOS across Python 3.10/3.12/3.13. Add a test for
-any behaviour change. The suites assert on real files written to a throwaway store.
+Each underlying suite remains directly runnable, for example
+`python tests/_test_memory_v3.py`. CI runs the core suites on Linux, Windows and
+macOS across Python 3.10/3.12/3.13/3.14, plus the research suites on Python 3.13.
+Add a regression check for every behaviour change. The suites assert on real files
+written to a throwaway store.
 
 ## Commits
 

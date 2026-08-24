@@ -6,6 +6,12 @@ versions are [semantic](https://semver.org). Dates are UTC.
 ## [Unreleased]
 
 ### Changed
+- Brain ontologies and relation hints now follow declaration order for every
+  `PYTHONHASHSEED`, making multi-profile extraction prompts reproducible.
+- The CLI now says that newly written notes are immediately available to lexical
+  recall; embedding is correctly described as enabling semantic recall.
+- Contributor docs now expose one cross-platform `python -m pytest -q` entry point
+  for all 48 standalone suites and match the current Python 3.10-3.14 CI matrix.
 - **Config resolves paths after the env files load.** `load_dotenv()` now runs at
   `config` import, before `VAULT`/`PROJECTS_ROOT` resolve - so a per-machine store
   location (`NEVERTWICE_VAULT` in `.secrets.env`) works without editing `config.py`.
@@ -23,6 +29,18 @@ versions are [semantic](https://semver.org). Dates are UTC.
   otherwise; backend log lines gained a try count and a scrubbed URL.
 
 ### Fixed
+- **Project scanners no longer follow file symlinks.** `graphify` and the context
+  bootstrapper skip linked files (and linked directories while collecting layout),
+  preventing content outside the selected project from entering a graph or cloud prompt.
+- **MCP notifications are silent as required by JSON-RPC.** `ping`, `tools/list`,
+  `initialize` and `tools/call` only emit results for requests; malformed parameter
+  objects return `-32602`, including requests whose explicit id is `null`.
+- Optional LangChain, LlamaIndex and reranker install errors now name the real PyPI
+  distribution, `nevertwice`, instead of the nonexistent `nevertwice-memory`.
+- The shared test sandbox forces the optional cross-encoder off, so a developer's
+  cached model cannot silently load Torch or a GPU during ordinary tests.
+- Packaging metadata now uses an SPDX license expression and an explicit license
+  file, removing setuptools' overdue license-table/classifier deprecations.
 - **Context compaction could amputate the newest entries.** The compressed
   state-block + link-archive now fits the room actually left by the kept entries
   (archive links dropped oldest-first, then the state text trims). When even the
