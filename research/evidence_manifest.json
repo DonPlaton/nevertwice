@@ -4,7 +4,8 @@
   "scope": {
     "docs": [
       "README.md",
-      "docs/BENCHMARKS.md"
+      "docs/BENCHMARKS.md",
+      "research/BASELINES.md"
     ],
     "excludes": [
       "fenced code blocks - shell commands and illustrative terminal output, not measurements",
@@ -402,6 +403,11 @@
       "target": null,
       "note": "evidence-bearing numbers not yet registered; the budget is a ceiling that may only be lowered",
       "budget_metric": "evidence-bearing numeric tokens: numbers outside fenced blocks, excluding years, months, Python versions and bare single digits"
+    },
+    "research/BASELINES.md": {
+      "governance": "governed",
+      "generator": "tools/render_claims.py",
+      "note": "the baseline policy, registry, verdict matrix and summary are generated from this manifest; the prose around them names the three gaps"
     }
   },
   "claims": [
@@ -665,7 +671,39 @@
         "README.md",
         "docs/BENCHMARKS.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "headline": true,
+      "baseline_verdicts": {
+        "lexical_recall": {
+          "verdict": "beats",
+          "note": "0.802 against BM25's 0.752 on identical questions and the same embedder-free lexical arm",
+          "evidence": "research/longmem_results.json: methods.hybrid.recall@5 vs methods.lexical.recall@5"
+        },
+        "no_memory": {
+          "verdict": "not_applicable",
+          "note": "recall@k has no memory-off arm; with no store there is nothing to retrieve"
+        },
+        "full_history": {
+          "verdict": "not_applicable",
+          "note": "this is a ranking metric, not a token comparison; the token trade is measured separately in token_ab"
+        },
+        "curated_haystack": {
+          "verdict": "not_applicable",
+          "note": "the curated haystack is a token counterfactual; this claim is a ranking metric, so there is nothing to trade tokens against"
+        },
+        "curated_agents_md": {
+          "verdict": "not_applicable",
+          "note": "a hand-written instructions file is not a 940-session retrieval corpus"
+        },
+        "llm_session_summary": {
+          "verdict": "not_compared",
+          "note": "a summarise-each-session-then-retrieve arm is constructible on this exact dataset and has not been run"
+        },
+        "linter_or_test": {
+          "verdict": "not_applicable",
+          "note": "no static check retrieves past sessions, so there is no linter arm to construct for a retrieval metric"
+        }
+      }
     },
     {
       "id": "longmem.hybrid.recall_at_10",
@@ -1190,7 +1228,39 @@
       "cited_in": [
         "README.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "headline": true,
+      "baseline_verdicts": {
+        "no_memory": {
+          "verdict": "beats",
+          "note": "the without-memory arm IS this baseline: same model, same 12 tasks, same 8 trials, 0.365 -> 0.052",
+          "evidence": "research/live_validation_results.json: summary.mean_rate_without vs summary.mean_rate_with, same 12 tasks x 8 trials"
+        },
+        "full_history": {
+          "verdict": "not_compared",
+          "note": "no arm has ever pasted the whole prior session instead of firing a guard"
+        },
+        "lexical_recall": {
+          "verdict": "not_applicable",
+          "note": "a guard is a write-time regex intervention, not a ranked retrieval; there is no list to score"
+        },
+        "curated_agents_md": {
+          "verdict": "not_compared",
+          "note": "THE closest competitor and untested: the guard's payload is one line, which a person could put in AGENTS.md by hand. Until this runs, the headline does not distinguish 'memory works' from 'a written-down rule works'"
+        },
+        "llm_session_summary": {
+          "verdict": "not_compared",
+          "note": "no arm has asked the model to summarise the prior session and injected that summary at the same token budget as the guard line"
+        },
+        "linter_or_test": {
+          "verdict": "not_compared",
+          "note": "several of the 12 tasks (f-string SQL, division by zero) are already covered by ruff or bandit rules. A guard that duplicates a linter is a worse linter, and this has not been measured"
+        },
+        "curated_haystack": {
+          "verdict": "not_applicable",
+          "note": "a pitfall rate on coding micro-tasks has no haystack to curate; the task prompt is the whole context"
+        }
+      }
     },
     {
       "id": "live_validation.measured_eff",
@@ -1278,7 +1348,38 @@
       },
       "cited_in": [
         "README.md"
-      ]
+      ],
+      "headline": true,
+      "baseline_verdicts": {
+        "no_memory": {
+          "verdict": "not_compared",
+          "note": "the oracle setting hands the reader gold context; a no-context arm on the same questions has not been run"
+        },
+        "full_history": {
+          "verdict": "not_compared",
+          "note": "the 940-session pool has never been fed to the reader at an equal token budget, so the oracle setting has not been tested against simply loading everything"
+        },
+        "curated_haystack": {
+          "verdict": "not_compared",
+          "note": "the oracle context IS a curated haystack, so this measures the reader rather than the memory - which is the finding, but it means the memory is not on trial in this number"
+        },
+        "lexical_recall": {
+          "verdict": "not_compared",
+          "note": "a lexical-only retrieval arm feeding the same reader would isolate the ranker's contribution"
+        },
+        "curated_agents_md": {
+          "verdict": "not_applicable",
+          "note": "a QA benchmark over chat sessions is not an instructions file"
+        },
+        "llm_session_summary": {
+          "verdict": "not_compared",
+          "note": "no arm summarises each session and answers from the summaries, which is the cheapest thing a reader could do instead"
+        },
+        "linter_or_test": {
+          "verdict": "not_applicable",
+          "note": "no static check answers open questions about a conversation history"
+        }
+      }
     },
     {
       "id": "poisoning.block_rate",
@@ -1734,7 +1835,40 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "headline": true,
+      "baseline_verdicts": {
+        "full_history": {
+          "verdict": "beats",
+          "note": "distilled retrieval nets +3.2M tokens against loading the whole 3.3M-token history",
+          "evidence": "research/token_ab.json: distillation_ab.by_k[*].net_distilled_vs_history"
+        },
+        "curated_haystack": {
+          "verdict": "beats",
+          "note": "distilled retrieval nets +6,967 to +7,534 tokens per question against the conservative curated counterfactual, where raw-session retrieval was negative",
+          "evidence": "research/token_ab.json: distillation_ab.by_k[*].net_distilled_vs_curated"
+        },
+        "no_memory": {
+          "verdict": "not_applicable",
+          "note": "a compression ratio is a property of the distiller; with the memory off there is nothing to compress and no ratio to compare"
+        },
+        "lexical_recall": {
+          "verdict": "not_applicable",
+          "note": "the ratio measures how much the distiller shrinks a session, which is independent of how the session was found"
+        },
+        "curated_agents_md": {
+          "verdict": "not_compared",
+          "note": "a hand-written instructions file is not produced per session, so there is no matched arm yet; building one would mean comparing distilled notes against a human-maintained file of the same size"
+        },
+        "llm_session_summary": {
+          "verdict": "not_compared",
+          "note": "distillation is mechanically an LLM summary of a session, so this baseline may BE the mechanism. Until it is run as a separate arm, the finding may reduce to 'summarising helps' rather than anything specific to this system"
+        },
+        "linter_or_test": {
+          "verdict": "not_applicable",
+          "note": "no static check compresses a session transcript"
+        }
+      }
     },
     {
       "id": "token_ab.distill.raw_tok_total",
@@ -2246,7 +2380,39 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "headline": true,
+      "baseline_verdicts": {
+        "curated_haystack": {
+          "verdict": "loses_to",
+          "note": "input tokens fell 93% (5,132 -> 348) but crude answer-match fell with them, 0.467 -> 0.267 on 15 questions. The policy requires matched accuracy, and this does not have it: as a token claim it wins, as a memory claim under matched conditions it does not pass",
+          "evidence": "research/token_ab.json: live_two_arm.answer_match_no_memory vs answer_match_with_memory, the arm that fails the matched-accuracy condition"
+        },
+        "no_memory": {
+          "verdict": "not_applicable",
+          "note": "the no-memory arm in this run IS the curated haystack, so the two would be the same comparison counted twice"
+        },
+        "full_history": {
+          "verdict": "not_compared",
+          "note": "the full 3.3M-token pool was never fed to the reader; only the curated subset was, which makes this the conservative direction but leaves the loose one untested"
+        },
+        "lexical_recall": {
+          "verdict": "not_compared",
+          "note": "no arm retrieved the top-3 lexically and fed those to the same reader, which would separate the distiller's contribution from the ranker's"
+        },
+        "curated_agents_md": {
+          "verdict": "not_compared",
+          "note": "no arm injected a hand-written file of the same ~348 tokens, which is the obvious cheap alternative to three distilled notes"
+        },
+        "llm_session_summary": {
+          "verdict": "not_compared",
+          "note": "not run, and it matters here: the with-memory arm already feeds LLM-distilled notes, so a plain summarise-then-answer arm may reach the same token count"
+        },
+        "linter_or_test": {
+          "verdict": "not_applicable",
+          "note": "no static check answers open questions about a conversation history"
+        }
+      }
     },
     {
       "id": "token_ab.live_two_arm.answer_match_no_memory",
@@ -2337,7 +2503,40 @@
       "cited_in": [
         "README.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "headline": true,
+      "baseline_verdicts": {
+        "no_memory": {
+          "verdict": "beats",
+          "note": "the simulation carries a no-memory arm: 46.88 errors against v2's 17.64",
+          "evidence": "research/longitudinal_results.json: arms.nomem.errors vs arms.v2.errors"
+        },
+        "full_history": {
+          "verdict": "beats",
+          "note": "v1 always-inject IS this baseline: the same prevention for 80,000 memory tokens against v2's 2,581",
+          "evidence": "research/longitudinal_results.json: arms.v1.mem_tokens vs arms.v2.mem_tokens at equal errors_prevented"
+        },
+        "lexical_recall": {
+          "verdict": "not_applicable",
+          "note": "the simulation models guards firing on a task family; it contains no retrieval step to replace with a lexical one"
+        },
+        "curated_haystack": {
+          "verdict": "not_applicable",
+          "note": "the simulation has no document pool, so there is no haystack to curate"
+        },
+        "curated_agents_md": {
+          "verdict": "not_compared",
+          "note": "an always-present hand-written file is close to the v1 arm but cheaper; it has not been simulated"
+        },
+        "llm_session_summary": {
+          "verdict": "not_compared",
+          "note": "the simulation has no summarisation arm; adding one would mean modelling a per-session summary cost against the guard-fire cost"
+        },
+        "linter_or_test": {
+          "verdict": "not_compared",
+          "note": "the simulation assumes every pitfall needs memory to prevent; a linter arm would model the share that a static check would have caught for free, and it has not been added"
+        }
+      }
     },
     {
       "id": "counterfactual.token_ratio",
@@ -3648,8 +3847,80 @@
       "pattern": "^(0|2|200|405|043|9286|80)$",
       "context": "img.shields.io",
       "reason": "percent-encoding fragments inside a badge URL; the badge's human-readable claim is covered by its own claim entry"
+    },
+    {
+      "pattern": "^\\d{1,3}$",
+      "context": "headline claims x",
+      "reason": "the count of headline claims, baselines and pairs, tallied by the renderer from this manifest rather than measured"
+    },
+    {
+      "pattern": "^\\d{1,3}$",
+      "context": "^\\| `(beats|ties|loses_to|not_compared|not_applicable)` \\|",
+      "reason": "a verdict tally in the generated baseline summary, counted by the renderer from this manifest"
     }
   ],
   "drift_note": "A drift entry records a number a document prints that the stored raw result contradicts. All five entries opened by task B1 were closed by task B2: the tables are generated from this manifest now, and the prose around them was corrected to the stored values. Open a new entry when a published figure is found to disagree and cannot be corrected in the same change; the test fails once the document no longer prints it, so an entry cannot outlive its fix.",
-  "drift": []
+  "drift": [],
+  "baseline_policy": {
+    "rule": "A headline is publishable only when it clears every applicable baseline below under matched conditions. A baseline that was not run is recorded as `not_compared`, never omitted: an unrun baseline is the most likely explanation a reader will reach for.",
+    "matched_conditions": [
+      "equal reader model - the same LLM answers in both arms",
+      "equal context-token budget - neither arm is allowed more room",
+      "equal latency tier - a baseline is not handicapped by being run slower",
+      "matched false-positive rate - an intervention that fires more often is not better, it is louder; compare at the same FP rate or report the full curve"
+    ],
+    "verdicts": {
+      "beats": "measured, under matched conditions, and the claim wins",
+      "ties": "measured and within the interval of the baseline",
+      "loses_to": "measured and the baseline wins - the claim must be narrowed or dropped",
+      "not_compared": "not measured yet; the claim is provisional against this baseline",
+      "not_applicable": "the baseline cannot be constructed for this metric; a reason is required"
+    },
+    "evidence_rule": "A measured verdict (beats / ties / loses_to) must name where the comparison lives: a raw result file, or the claim ids of the two arms. A verdict without evidence is an assertion, and flipping `not_compared` to `beats` must therefore cost something."
+  },
+  "baselines": {
+    "no_memory": {
+      "name": "no memory",
+      "definition": "the same agent, same task, with the memory system switched off",
+      "why": "the floor. Any memory that cannot beat its own absence is overhead.",
+      "how": "run the harness with the memory arm disabled"
+    },
+    "full_history": {
+      "name": "full-history injection",
+      "definition": "paste the entire accumulated history into the context instead of retrieving",
+      "why": "the dumb baseline that often wins when the history is small; it is what a user does by hand before installing anything.",
+      "how": "python research/token_ab.py (the `net vs the full history` column)"
+    },
+    "lexical_recall": {
+      "name": "lexical recall (BM25)",
+      "definition": "term-overlap retrieval with no embedder and no model",
+      "why": "zero-dependency, zero-latency, and repeatedly close to far more complicated systems. LoCoMo was discredited partly because BM25 nearly won it.",
+      "how": "python research/longmem_eval.py (the `lexical` row)"
+    },
+    "curated_agents_md": {
+      "name": "a curated AGENTS.md",
+      "definition": "one hand-written instructions file that a person maintains",
+      "why": "the honest competitor for most of what agent memory claims. If a human writing five lines gets the same prevention, the machinery is not earning its place.",
+      "how": "not yet built - would need a matched arm that injects a hand-written file of the same token size"
+    },
+    "llm_session_summary": {
+      "name": "an LLM session summary",
+      "definition": "ask the model to summarise the session and inject that summary next time",
+      "why": "the cheapest possible 'memory', available in one prompt with no system at all",
+      "how": "not yet built - would need a summarise-then-inject arm at an equal token budget"
+    },
+    "linter_or_test": {
+      "name": "the relevant linter or test",
+      "definition": "the existing static check that already catches the same class of mistake",
+      "why": "several guard-shaped pitfalls (f-string SQL, bare except, missing close) are caught by ruff, bandit or a unit test. A guard that duplicates a linter is not memory, it is a worse linter.",
+      "how": "not yet built - would need each live-validation task run through the linter that covers it"
+    },
+    "curated_haystack": {
+      "name": "an already-curated small haystack",
+      "definition": "the handful of sessions that actually contain the answer, pasted whole",
+      "why": "stricter than full-history injection at small scale, and this project already runs it. Recording only the six the policy names would hide the harder test.",
+      "how": "python research/token_ab.py (the `net vs a curated small haystack` column)",
+      "additional": true
+    }
+  }
 }

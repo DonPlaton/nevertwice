@@ -49,6 +49,7 @@ class Claims:
     """Lookup over the manifest, so a renderer names a claim id, never a number."""
 
     def __init__(self, manifest: dict):
+        self.manifest = manifest
         self._by_id = {c["id"]: c for c in manifest["claims"]}
 
     def value(self, claim_id: str):
@@ -227,6 +228,58 @@ def render_token_ab_live(c: Claims) -> str:
     ])
 
 
+VERDICT_MARK = {"beats": "**beats**", "ties": "ties", "loses_to": "**LOSES**",
+                "not_compared": "not compared", "not_applicable": "n/a"}
+
+
+def render_baselines_conditions(c: Claims) -> str:
+    policy = c.manifest["baseline_policy"]
+    lines = [policy["rule"], ""]
+    lines += [f"{i + 1}. {cond}" for i, cond in
+              enumerate(policy["matched_conditions"])]
+    lines += ["", policy["evidence_rule"]]
+    return "\n".join(lines)
+
+
+def render_baselines_registry(c: Claims) -> str:
+    rows = []
+    for bid, b in c.manifest["baselines"].items():
+        rows.append([f"`{bid}`", b["name"] + (" *(additional)*" if b.get("additional")
+                                              else ""),
+                     b["definition"], b["why"], b["how"]])
+    return _table(["id", "baseline", "what it is", "why it is the test", "how to run it"],
+                  rows)
+
+
+def _headline_claims(c: Claims) -> list[dict]:
+    return [x for x in c.manifest["claims"] if x.get("headline")]
+
+
+def render_baselines_matrix(c: Claims) -> str:
+    baselines = list(c.manifest["baselines"])
+    rows = []
+    for claim in _headline_claims(c):
+        verdicts = claim["baseline_verdicts"]
+        rows.append([f"`{claim['id']}`"] +
+                    [VERDICT_MARK[verdicts[b]["verdict"]] if b in verdicts else "**missing**"
+                     for b in baselines])
+    return _table(["headline claim"] + [f"`{b}`" for b in baselines], rows)
+
+
+def render_baselines_summary(c: Claims) -> str:
+    counts: dict[str, int] = {}
+    for claim in _headline_claims(c):
+        for entry in claim["baseline_verdicts"].values():
+            counts[entry["verdict"]] = counts.get(entry["verdict"], 0) + 1
+    order = ("beats", "ties", "loses_to", "not_compared", "not_applicable")
+    total = sum(counts.values())
+    rows = [[f"`{v}`", str(counts.get(v, 0)),
+             c.manifest["baseline_policy"]["verdicts"][v]] for v in order]
+    head = _table(["verdict", "count", "what it means"], rows)
+    return (f"{len(_headline_claims(c))} headline claims x "
+            f"{len(c.manifest['baselines'])} baselines = {total} pairs.\n\n{head}")
+
+
 RENDERERS = {
     "longmem-readme": render_longmem_readme,
     "longmem-benchmarks": render_longmem_benchmarks,
@@ -238,6 +291,10 @@ RENDERERS = {
     "token-ab-raw": render_token_ab_raw,
     "token-ab-distill": render_token_ab_distill,
     "token-ab-live": render_token_ab_live,
+    "baselines-conditions": render_baselines_conditions,
+    "baselines-registry": render_baselines_registry,
+    "baselines-matrix": render_baselines_matrix,
+    "baselines-summary": render_baselines_summary,
 }
 
 
