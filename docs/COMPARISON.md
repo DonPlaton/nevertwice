@@ -54,18 +54,19 @@ reruns the whole stand, on the competitors' own packages, with one command.
 
 **The honest reading:**
 
-- **Nevertwice leads on every metric.** Its shipped ranker reaches R@5 0.802 against Mem0's 0.758,
+- **Nevertwice leads every metric in this table** (run recorded 2026-07-05). Its shipped ranker reaches R@5 0.802 against Mem0's 0.758,
   R@1 0.550 against 0.478, R@10 0.858 against 0.846, and the best MRR in the table. The opt-in
   trained cross-encoder then takes top-1 to 0.614.
 - **The win is the fusion, not the embedder** (everyone here uses the same bge-m3). The popular
-  reciprocal rank fusion that most systems ship, and that Nevertwice used to ship, discards the
+  reciprocal rank fusion that Nevertwice used to ship, and that Mem0 documents as `rank-fused`, discards the
   score magnitudes and so scores *below plain BM25*. Nevertwice now uses **calibrated score fusion**:
   z-normalise each signal and combine the magnitudes. The full study, including the ideas we tested
   and cut, is in [`research/RETRIEVAL_FUSION.md`](../research/RETRIEVAL_FUSION.md).
 - **We are honest about what is and is not a moat.** Calibrated linear score fusion is classic
   information retrieval (CombSUM, 1994), not our invention; the contribution is measuring that it
-  beats the rank fusion the field actually ships. The durable moat is the substrate: plain files,
-  $0, fully local, Obsidian-readable, no server or vector DB, which none of the competitors offer.
+  beats the reciprocal rank fusion Nevertwice itself shipped until 2026-07. The durable moat is the substrate: plain files,
+  $0, fully local, Obsidian-readable, no server or vector DB - a combination none of the systems in
+  the table above offered as of the mid-2026 survey.
   We also measured chunk-level late interaction (R@5 0.814) and deliberately did **not** ship it,
   because our distillation front-end already gives short notes the concentration it buys for long
   raw sessions (details in the study).
@@ -79,27 +80,27 @@ the blocker rather than a fabricated number. Bring up the DB and set the Ollama 
 
 ## Differentiators
 
-1. **No-DB, git-versioned, human-readable substrate, and it's now where the field is moving.** Letta's Feb-2026 rebuild *abandoned its database for git-backed markdown edited by bash*; OpenAI Codex writes local files under `~/.codex/`; Google/Anthropic's **OKF draft independently specifies markdown+YAML+git**. Nevertwice got there earlier and more purely (Obsidian-readable, zero server), while Mem0/Zep/Letta-classic/Cognee/LangMem still need a DB or server for full features. OKF is only the *format*; Nevertwice is the *system* on top of it.
+1. **No-DB, git-versioned, human-readable substrate, and at least one funded system moved toward it in 2026.** Letta's Feb-2026 rebuild *abandoned its database for git-backed markdown edited by bash*; OpenAI Codex writes local files under `~/.codex/`; Google/Anthropic's **OKF draft independently specifies markdown+YAML+git**. Nevertwice got there earlier and more purely (Obsidian-readable, zero server), while Mem0/Zep/Letta-classic/Cognee/LangMem still need a DB or server for full features. OKF is only the *format*; Nevertwice is the *system* on top of it.
 2. **Truly local + $0, including local embeddings.** bge-m3 on-device; only opt-in extraction touches cloud (with redaction + Ollama fallback). Mem0/Letta/LangMem default to an external key; ChatGPT/Claude.ai/Cursor/Copilot are account-locked.
 3. **Hybrid semantic+lexical RRF with graceful lexical fallback when the GPU is busy.** Rare robustness; most hard-depend on an embed/LLM call.
-4. **Explicit supersession with audit trail + RESOLVES edges + typed ontology** (mistakes/patterns/decisions): contradiction handling is the field's weakest area; more structured than the generic "facts" of Mem0/ChatGPT.
+4. **Explicit supersession with audit trail + RESOLVES edges + typed ontology** (mistakes/patterns/decisions): contradiction handling is the weakest area across the systems above; more structured than the generic "facts" of Mem0/ChatGPT.
 5. **Cross-project knowledge transfer.** Most competitors scope to one project/user/thread.
-6. **Built-in eval harness.** Almost no competitor ships its own; the vendor benchmark scene is mutually disputed.
+6. **Built-in eval harness.** We found none shipped by the systems above as of the mid-2026 survey; the vendor benchmark scene is mutually disputed.
 7. **Three independent on-ramps** (hooks + zero-dep MCP + ingest) with no framework runtime to adopt.
 
-## Research-stage differentiators (2026-06): ahead of the field on *method*
+## Research-stage differentiators (2026-06): method not documented by the systems above
 
 A cluster of mechanisms no shipping agent-memory system has (all in `research/`, with
 honest scope notes; the production-facing ones are opt-in and off by default):
 
 - **Retrieval as a calibrated posterior:** the ad-hoc salience stack derived as one
   conditional-logit model; the *fitted* form beats the hand-tuned weights (+0.07 R@1, ECE 0.004)
-  and is interpretable. No competitor frames recall as a calibratable posterior.
+  and is interpretable. None of the systems above documented recall as a calibratable posterior at the mid-2026 survey.
 - **Memory that learns what to remember:** an online contextual bandit (LinUCB) that updates
-  retrieval weights from *implicit feedback* and recovers the offline optimum. Every leader is
-  **static**; this closes the dead loop (injection → did it help? → adjust).
+  retrieval weights from *implicit feedback* and recovers the offline optimum. The retrieval weighting
+  documented by the systems above is **static**; this closes the dead loop (injection → did it help? → adjust).
 - **Forgetting as submodular coreset selection:** budget-bounded keep-set with a 1−1/e coverage
-  guarantee vs the field's recency/salience pruning.
+  guarantee, against the recency/salience pruning the systems above document.
 - **Domain bridges:** replication-weighted bi-temporal memory for scientific claims (resists
   single-study hype, contradiction-aware); controllable **divergent/serendipitous** recall
   (relevance×novelty frontier); **rare-event** salience (the deliberate inverse of recurrence for

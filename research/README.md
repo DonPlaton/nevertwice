@@ -29,7 +29,7 @@ be lowered - so a new document cannot quietly start publishing unevidenced numbe
 
 Two things the manifest makes visible rather than hides: **45 of 125 claims have no
 committed raw artifact** (each says why - `eval_harness.py` saves into the user's vault,
-`latency_bench.py` saves nothing, some studies are published only as prose), and **2,208
+`latency_bench.py` saves nothing, some studies are published only as prose), and **1,398
 numbers across 23 study write-ups are still unregistered**, held under a ratchet that lets
 that surface shrink but never grow.
 
@@ -39,10 +39,10 @@ that surface shrink but never grow.
 |---|---|---|
 | External retrieval benchmark (LongMemEval-oracle, 940 sessions / 500 questions) | [`longmem_eval.py`](longmem_eval.py) → [`longmem_results.json`](longmem_results.json) | calibrated fusion R@5 **0.80** / R@10 **0.86**; +trained cross-encoder R@1 **0.55→0.61** |
 | **End-to-end QA accuracy** (the *answer* axis - read→answer→judge, the metric vendors headline) | [`qa_eval.py`](qa_eval.py) → [`QA_ACCURACY.md`](QA_ACCURACY.md) | standard LongMemEval-oracle **0.788** (deepseek-reasoner); a reader sweep walks it 0.61→0.68→0.75→0.79 with the memory fixed → the gap to memanto's 0.898 is reader strength, not memory; retrieving *more* hurts (−0.06) |
-| **★ Improvement-per-token** (the metric no one measures) | [`longitudinal_improvement.py`](longitudinal_improvement.py) → [`ACTIVE_MEMORY.md`](ACTIVE_MEMORY.md) | over a 200-task family, **active memory (guards) matches always-inject's error-prevention for 31× fewer tokens** and is a *net* token saving; improvement-per-token **~30× v1**. The field's always-inject design is a net cost. |
+| **★ Improvement-per-token** (no published measurement found, mid-2026) | [`longitudinal_improvement.py`](longitudinal_improvement.py) → [`ACTIVE_MEMORY.md`](ACTIVE_MEMORY.md) | over a 200-task family, **active memory (guards) matches always-inject's error-prevention for 31× fewer tokens** and is a *net* token saving; improvement-per-token **~30× v1**. On this bench always-inject is a net cost. |
 | **★ Active Memory** (memory that acts instead of waiting to be read) | [`ACTIVE_MEMORY.md`](ACTIVE_MEMORY.md) · `guards.py` · `anticipate.py` · `causal.py` | Guards: experience→executable check (0 tokens until it fires, Popperian self-retire). Anticipation: one warning by trajectory-resemblance (precision-first, 0 below threshold). Counterfactual: "what breaks if I change X" from an induced 507-node causal graph - **~7× cheaper than dumping the notes**. |
 | **★ Live validation** (does it work on a real model, outside the simulator?) | [`live_validation.py`](live_validation.py) → [`LIVE_VALIDATION.md`](LIVE_VALIDATION.md) | on DeepSeek, a fired guard cuts the real pitfall rate **0.36→0.05 (−86%)**; measured `eff`=0.88 (sim assumed a conservative 0.75); help concentrates on project-specific knowledge the model can't know. **Weak-vs-strong twist**: a 3B agent extracts *half* the benefit (eff 0.44 vs 0.79) - memory is necessary but not sufficient, the agent's ability to apply a fact bounds the payoff. |
-| **Calibrated score fusion** (why we beat rank fusion and the leaders) | [`RETRIEVAL_FUSION.md`](RETRIEVAL_FUSION.md) | RRF discards score magnitudes (trails plain BM25); calibrated fusion lifts R@5 0.66→**0.80** and tops Mem0 |
+| **Calibrated score fusion** (why it beat rank fusion and the three measured leaders) | [`RETRIEVAL_FUSION.md`](RETRIEVAL_FUSION.md) | RRF discards score magnitudes (trails plain BM25); calibrated fusion lifts R@5 0.66→**0.80** and tops Mem0 |
 | Precision: rerankers & "stronger" embedders | [`W2_PRECISION.md`](W2_PRECISION.md) | promptable LLM reranker & 4 alt embedders **lose** to bge-m3 on top-1; only a *trained* cross-encoder wins → shipped opt-in |
 | Abstractive consolidation ("summarise notes into a principle") | [`CONSOLIDATION_EVAL.md`](CONSOLIDATION_EVAL.md) · [`ABSTRACTIVE.md`](ABSTRACTIVE.md) | craters recall@3 0.82→0.35 → **not shipped** |
 | Token economy (does memory actually save tokens?) | [`token_ab.py`](token_ab.py) | net-negative vs a small curated context, hugely positive vs full history: honest, not a headline |

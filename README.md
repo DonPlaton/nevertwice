@@ -68,8 +68,8 @@ cloud competitor can copy without giving up their business model. Embeddings run
 by default, or on a single cloud key if you would rather not run a local model.
 
 And it is not a toy. On the public LongMemEval benchmark, with the same local embedder for every
-system, Nevertwice out-retrieves the funded hosted leaders (Mem0, LangMem, A-MEM) on every metric,
-and you can reproduce that in one command. The numbers, and an honest account of what we tried and
+system, Nevertwice scored above Mem0, LangMem and A-MEM on every recall metric in the run
+recorded on 2026-07-05, and you can reproduce that in one command. The numbers, and an honest account of what we tried and
 cut to get there, are [below](#benchmarks).
 
 Want more than coding memory? Flip on the opt-in **Brain layer** and the same captured sessions
@@ -92,10 +92,10 @@ starts with its memory already loaded. The five-minute walkthrough is in [QUICKS
 
 ## Memory that acts
 
-Every other memory system is a better **library**. It retrieves text and injects it into the
-prompt, taxing every single turn. We measured that axis to its end and found it is
+The memory systems surveyed in [COMPARISON.md](docs/COMPARISON.md) are all better **libraries**:
+they retrieve text and inject it into the prompt, taxing every single turn. We measured that axis to its end and found it is
 [reader-bound and commoditizing](research/QA_ACCURACY.md): the LLM, not the memory, is
-the variable. So Nevertwice does something no other memory does. It treats memory as a set of
+the variable. So Nevertwice does something none of those systems did as of that survey. It treats memory as a set of
 **token-budgeted interventions** that stay silent until they have something worth saying.
 
 - **Guards.** A *guard* is a tiny pattern distilled from a past mistake, stored as one line in
@@ -233,7 +233,7 @@ Claude Code is the zero-config case. `install.py` wires five hooks (four for cap
 plus a PreToolUse guard that fires before a repeat mistake) and capture is automatic from then on,
 with nothing to configure.
 
-Every other agent that writes its sessions to disk (Codex, Cline, Roo, Aider, Gemini CLI) is
+Agents that write their sessions to disk (Codex, Cline, Roo, Aider, Gemini CLI) are
 covered by `nevertwice-watch`, a small stdlib polling daemon that finds the known log folders on
 your machine and mines finished sessions as they land. Start it once at login and forget it. The
 same engine also runs as a one-shot sweep if you prefer cron over a resident process.
@@ -266,7 +266,7 @@ run them on the same stand (their deps, not ours), and the dataset is fetched se
 <!-- /claims:longmem-readme -->
 
 The shipped ranker fuses the semantic and lexical signals with calibrated score fusion, which lifts
-R@5 from 0.66 under the rank fusion most systems ship to 0.80. The optional cross-encoder
+R@5 from 0.66 under reciprocal rank fusion - the ranker Nevertwice itself shipped until 2026-07 - to 0.80. The optional cross-encoder
 (bge-reranker-v2-m3) then takes top-1 to 0.61: `pip install nevertwice[reranker]`, run once with
 `NEVERTWICE_XRERANK=1` (that first run downloads the model), and it stays on by itself from then
 on. Reproduce with `python research/longmem_eval.py [--xrerank]` (the dataset is fetched separately).

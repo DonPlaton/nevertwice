@@ -48,9 +48,9 @@ this is a real recall number, not a self-grade. Reproduce:
 <!-- /claims:longmem-benchmarks -->
 
 The shipped ranker fuses the two signals with **calibrated score fusion** (z-normalise each, combine
-the magnitudes), which lifts R@5 from 0.66 under the old rank fusion to **0.80**, and beats every
-local competitor on the same stand (Mem0 0.758, LangMem and A-MEM 0.692; see
-[COMPARISON.md](COMPARISON.md)). The popular reciprocal rank fusion most systems ship discards the
+the magnitudes), which lifts R@5 from 0.66 under the old rank fusion to **0.80**, and scored above the
+three local competitors measured on the same stand on 2026-07-05 (Mem0 0.758, LangMem and A-MEM 0.692; see
+[COMPARISON.md](COMPARISON.md)). Reciprocal rank fusion, which Nevertwice itself shipped until 2026-07, discards the
 score magnitudes and scores below plain BM25; the full study is in
 [`research/RETRIEVAL_FUSION.md`](../research/RETRIEVAL_FUSION.md).
 

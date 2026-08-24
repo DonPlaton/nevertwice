@@ -38,9 +38,10 @@ Two quantities, jointly:
   every turn to lift task success by 1% is a *net loss*. We measured exactly this in v1
   (`token_ab.py`): always-inject memory is net-negative against a small curated context.
 
-The metric is **improvement per token**. This is the axis no competitor measures, because on
-it the whole field's design - *always-inject a wall of recalled text* - is a liability, not a
-feature.
+The metric is **improvement per token**. None of the systems surveyed in
+[COMPARISON.md](../docs/COMPARISON.md) reported it as of mid-2026, because on
+it the design those systems share - *always-inject a wall of recalled text* - is a liability, not
+a feature.
 
 ## 3. The unifying primitive: the token-budgeted intervention
 
@@ -141,7 +142,7 @@ Both memory designs prevent ~the same errors (the knowledge is identical); **v2 
 while v1's always-inject tax makes memory a net *cost*. Improvement-per-token: **v2 is ~30×
 v1**. And it is not rigged - the sensitivity sweep shows v2's edge **shrinks honestly** as the
 guard false-positive rate rises (Popperian retirement trades prevention for safety), it just
-never inverts in the tested regimes. This is the axis the field does not measure, and on it the
+never inverts in the tested regimes. This is an axis we found no published measurement of, and on it the
 field's own design - always-inject - is the liability.
 
 **And it survives contact with a real model** ([`LIVE_VALIDATION.md`](LIVE_VALIDATION.md)). The sim's one
