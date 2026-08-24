@@ -243,10 +243,11 @@
     },
     "docs/COMPARISON.md": {
       "governance": "backlog",
-      "budget": 71,
+      "budget": 25,
       "target": "B4",
-      "note": "evidence-bearing numbers not yet registered; the budget is a ceiling that may only be lowered",
-      "budget_metric": "evidence-bearing numeric tokens: numbers outside fenced blocks, excluding years, months, Python versions and bare single digits"
+      "note": "The vendor matrix, repository activity, verified-run and retrieval tables are generated from docs/comparison_data.json, docs/comparison_snapshot.json and the evidence manifest; the budget covers only the prose that remains.",
+      "budget_metric": "evidence-bearing numeric tokens: numbers outside fenced blocks, excluding years, months, Python versions and bare single digits",
+      "generator": "tools/comparison_snapshot.py"
     },
     "docs/WEAKNESSES.md": {
       "governance": "backlog",
@@ -3366,6 +3367,210 @@
         "README.md"
       ],
       "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "head_to_head.nevertwice.recall_at_10",
+      "statement": "nevertwice reaches RECALL@10 0.858 on the same stand (same dataset, same local embedder, one run)",
+      "value": 0.858,
+      "printed": [
+        "0.858",
+        "0.86"
+      ],
+      "unit": "recall@10",
+      "dataset": "longmemeval_oracle",
+      "environment": "local_bge_m3_competitors",
+      "n": 500,
+      "command": "python research/head_to_head.py",
+      "raw": "research/head_to_head.json",
+      "pointer": "nevertwice.recall@10",
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "ci": {
+        "method": "wilson",
+        "level": 0.95,
+        "low": 0.8247,
+        "high": 0.8859
+      },
+      "ci_note": null,
+      "cited_in": [
+        "README.md",
+        "docs/BENCHMARKS.md"
+      ]
+    },
+    {
+      "id": "head_to_head.nevertwice.mrr",
+      "statement": "nevertwice reaches MRR 0.6511 on the same stand (same dataset, same local embedder, one run)",
+      "value": 0.6511,
+      "printed": [
+        "0.65",
+        "0.651"
+      ],
+      "unit": "mrr",
+      "dataset": "longmemeval_oracle",
+      "environment": "local_bge_m3_competitors",
+      "n": 500,
+      "command": "python research/head_to_head.py",
+      "raw": "research/head_to_head.json",
+      "pointer": "nevertwice.mrr",
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "ci": null,
+      "ci_note": "MRR is a mean of reciprocal ranks, not a proportion.",
+      "cited_in": [
+        "README.md",
+        "docs/BENCHMARKS.md"
+      ]
+    },
+    {
+      "id": "head_to_head.mem0.recall_at_10",
+      "statement": "mem0 reaches RECALL@10 0.846 on the same stand (same dataset, same local embedder, one run)",
+      "value": 0.846,
+      "printed": [
+        "0.846",
+        "0.85"
+      ],
+      "unit": "recall@10",
+      "dataset": "longmemeval_oracle",
+      "environment": "local_bge_m3_competitors",
+      "n": 500,
+      "command": "python research/head_to_head.py",
+      "raw": "research/head_to_head.json",
+      "pointer": "mem0.recall@10",
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "ci": {
+        "method": "wilson",
+        "level": 0.95,
+        "low": 0.8117,
+        "high": 0.875
+      },
+      "ci_note": null,
+      "cited_in": [
+        "README.md",
+        "docs/BENCHMARKS.md"
+      ]
+    },
+    {
+      "id": "head_to_head.mem0.mrr",
+      "statement": "mem0 reaches MRR 0.6026 on the same stand (same dataset, same local embedder, one run)",
+      "value": 0.6026,
+      "printed": [
+        "0.60",
+        "0.603"
+      ],
+      "unit": "mrr",
+      "dataset": "longmemeval_oracle",
+      "environment": "local_bge_m3_competitors",
+      "n": 500,
+      "command": "python research/head_to_head.py",
+      "raw": "research/head_to_head.json",
+      "pointer": "mem0.mrr",
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "ci": null,
+      "ci_note": "MRR is a mean of reciprocal ranks, not a proportion.",
+      "cited_in": [
+        "README.md",
+        "docs/BENCHMARKS.md"
+      ]
+    },
+    {
+      "id": "head_to_head.langmem.recall_at_10",
+      "statement": "langmem reaches RECALL@10 0.782 on the same stand (same dataset, same local embedder, one run)",
+      "value": 0.782,
+      "printed": [
+        "0.78",
+        "0.782"
+      ],
+      "unit": "recall@10",
+      "dataset": "longmemeval_oracle",
+      "environment": "local_bge_m3_competitors",
+      "n": 500,
+      "command": "python research/head_to_head.py",
+      "raw": "research/head_to_head.json",
+      "pointer": "langmem.recall@10",
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "ci": {
+        "method": "wilson",
+        "level": 0.95,
+        "low": 0.7437,
+        "high": 0.816
+      },
+      "ci_note": null,
+      "cited_in": [
+        "README.md",
+        "docs/BENCHMARKS.md"
+      ]
+    },
+    {
+      "id": "head_to_head.langmem.mrr",
+      "statement": "langmem reaches MRR 0.5427 on the same stand (same dataset, same local embedder, one run)",
+      "value": 0.5427,
+      "printed": [
+        "0.54",
+        "0.543"
+      ],
+      "unit": "mrr",
+      "dataset": "longmemeval_oracle",
+      "environment": "local_bge_m3_competitors",
+      "n": 500,
+      "command": "python research/head_to_head.py",
+      "raw": "research/head_to_head.json",
+      "pointer": "langmem.mrr",
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "ci": null,
+      "ci_note": "MRR is a mean of reciprocal ranks, not a proportion.",
+      "cited_in": [
+        "README.md",
+        "docs/BENCHMARKS.md"
+      ]
+    },
+    {
+      "id": "head_to_head.amem.recall_at_10",
+      "statement": "amem reaches RECALL@10 0.782 on the same stand (same dataset, same local embedder, one run)",
+      "value": 0.782,
+      "printed": [
+        "0.78",
+        "0.782"
+      ],
+      "unit": "recall@10",
+      "dataset": "longmemeval_oracle",
+      "environment": "local_bge_m3_competitors",
+      "n": 500,
+      "command": "python research/head_to_head.py",
+      "raw": "research/head_to_head.json",
+      "pointer": "amem.recall@10",
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "ci": {
+        "method": "wilson",
+        "level": 0.95,
+        "low": 0.7437,
+        "high": 0.816
+      },
+      "ci_note": null,
+      "cited_in": [
+        "README.md",
+        "docs/BENCHMARKS.md"
+      ]
+    },
+    {
+      "id": "head_to_head.amem.mrr",
+      "statement": "amem reaches MRR 0.5437 on the same stand (same dataset, same local embedder, one run)",
+      "value": 0.5437,
+      "printed": [
+        "0.54",
+        "0.544"
+      ],
+      "unit": "mrr",
+      "dataset": "longmemeval_oracle",
+      "environment": "local_bge_m3_competitors",
+      "n": 500,
+      "command": "python research/head_to_head.py",
+      "raw": "research/head_to_head.json",
+      "pointer": "amem.mrr",
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "ci": null,
+      "ci_note": "MRR is a mean of reciprocal ranks, not a proportion.",
+      "cited_in": [
+        "README.md",
+        "docs/BENCHMARKS.md"
+      ]
     }
   ],
   "external_citations": [

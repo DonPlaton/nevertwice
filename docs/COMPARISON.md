@@ -1,32 +1,58 @@
 # Nevertwice vs the field (2025-2026)
 
 How Nevertwice compares to current long-term-memory systems for agents, and what to
-borrow from each. Landscape as of mid-2026; vendor specifics shift fast (treat as a
-map, not a datasheet). Vendor benchmark numbers are self-published and mutually
-disputed; the load-bearing sources here are the cited papers/docs.
+borrow from each. Vendor benchmark numbers are self-published and mutually disputed;
+the load-bearing sources here are the cited papers and docs.
 
-## Comparison
+<!-- comparison:snapshot-note -->
+> **Snapshot.** Repository activity below was fetched from the GitHub API on **2026-08-24**. Capability rows are what each vendor documents, surveyed **2026-06**. The measured rows come from the head-to-head run in `research/head_to_head.json`, recorded **2026-07-05** - The date is when research/head_to_head.json was committed. The run itself recorded no timestamp, so this is the latest date the result can be attributed to, not the exact run date. Regenerate with `python tools/comparison_snapshot.py --fetch --write`.
+>
+> Retrieval recall@k and end-to-end answer accuracy are different axes and never share a table. Answer accuracy depends on the reader model as much as on the memory; ranking the two together would compare a retrieval pipeline against a retrieval pipeline plus an LLM.
+<!-- /comparison:snapshot-note -->
 
-Axes: **Substrate · Retrieval · Temporal/contradiction · Agent-agnostic · Local & privacy · Deploy**
+## What each vendor documents
 
-| System | Substrate | Retrieval | Temporal & contradictions | Agent-agnostic | Local & privacy | Deploy |
-|---|---|---|---|---|---|---|
-| **Nevertwice** | **markdown + JSON under git**; no DB/server | **hybrid** semantic (bge-m3 local) + lexical, **calibrated score fusion** (RRF fallback), recurrence-boost | supersession (→`Superseded/`) + RESOLVES edges + bi-temporal `as_of` | **yes**: hooks · MCP · ingest | **fully local, $0**; cloud only for opt-in extraction; secret redaction | **trivial, files only** |
-| Mem0 | vector DB (graph on Pro) | hybrid dense+BM25+entity, rank-fused | **ADD-only** ("nothing deleted"); read-time decay | yes (SDK/MCP) | self-host or cloud; **defaults to OpenAI key** | low (pip); local needs Ollama+Qdrant |
-| Zep / Graphiti | **temporal KG** (Neo4j/FalkorDB) | hybrid + **BFS graph traversal** + rerankers | **true bi-temporal** (valid/invalid + created/expired); LLM invalidation, never deletes | Graphiti Py; Zep API/MCP | Graphiti self-host; **Zep CE deprecated Apr 2025** → cloud | moderate (graph DB + LLM) |
-| **Letta (MemGPT)** | **→ git-backed markdown "MemFS" (Feb 2026)**; was Postgres+vector | self-editing in-context blocks + archival vector; **sleep-time compute** | agent rewrites blocks; **git = versioned history, auto-commit per change** | framework/runtime (some lock-in) | self-host or cloud | **high**: server + Postgres + volume |
-| A-MEM | ChromaDB + in-note links | vector + **Zettelkasten autonomous linking** | **in-place note "evolution"** (LLM rewrites linked notes); no version history | library (MIT) | fully local (Chroma+MiniLM+Ollama) | lowest (pip) |
-| Cognee | vector + graph + SQL (file-based default) | **graph-RAG**, ~14 modes, LLM routing | event-time; bi-temporal via Graphiti backend | yes (MCP) | full local + Ollama | minimal (pip) |
-| **memanto** (moorcheh, 2026) | **closed "Moorcheh" engine** (opaque store; `moorcheh-sdk` + on-prem Docker image); markdown **export-only** | proprietary **"information-theoretic"** single-query ("zero indexing"); 13 typed memory kinds | versioning + **`--as-of`/`--changed-since`** + **`conflicts`** + `daily-summary` | **yes**: `connect` to 8+ (Claude/Cursor/Codex/Windsurf/Cline/Goose/Copilot) | on-prem Docker (no key) but **engine is closed**; cloud tier needs **Moorcheh API key** | **server**: FastAPI `serve`/`ui` + Docker(+Ollama); pip |
-| **Hindsight** (vectorize.io, 2026) | server-side store behind a **Docker service** (API :8888 + web UI) | LLM-driven `retain` (fact/entity/temporal extraction + normalization) → `recall`; "learn, not just remember" (opinion/belief formation) | temporal facts; belief revision server-side | clients: pip `hindsight-client` / npm; REST | self-host Docker but **defaults to an OpenAI key**; managed Cloud tier | **server**: Docker + LLM key |
-| LangMem / LangGraph | KV+vector BaseStore (Postgres/Redis) | vector + namespace filter | manager upsert/update/invalidate; **procedural prompt-optimizer** | core agnostic; persistence **LangGraph-tied** | self-host or platform | low SDK; DB for prod |
-| ChatGPT memory | cloud account | **always-injected** + opaque profile | edit/delete; **auto-supersession ("Dreaming V3", Jun 2026)** | no (account-locked) | cloud | n/a (managed) |
-| Claude memory | CLAUDE.md (repo) · auto-memory (`~/.claude`, local) · API memory tool · claude.ai | CLAUDE.md/`MEMORY.md` always-injected; topic files model-read | agent-curated; no formal supersession engine | CLAUDE.md portable; rest locked | CLAUDE.md + auto-memory **local** | low (built-in) |
-| Cursor / Windsurf(→Devin) | repo rules + memories (Windsurf local `~/.codeium/...`) | semantic / model-judged | manual edit/delete; **no contradiction engine** | no (tool-locked); AGENTS.md portable | Cursor needs Privacy-Mode-off; Windsurf local | built-in |
-| GitHub Copilot Memory | **GitHub cloud** (not repo files) | auto-extracted facts, **validated vs current branch** | **28-day auto-expiry**; stale-guard | no (account-locked) | cloud | built-in |
-| **OKF** (Google/Anthropic draft) | **markdown + YAML + git** (format only) | n/a (interchange *format*, no engine) | optional `log.md`/`timestamp`; **no conflict resolution** | yes (portable) | both | none (a spec) |
+Read from each system's own documentation, papers and repository at the survey date
+above. These are **claims**, not measurements - what was measured here is the next
+section.
 
-*Sources: [Mem0](https://docs.mem0.ai/changelog) · [arXiv:2504.19413](https://arxiv.org/abs/2504.19413); [Graphiti](https://github.com/getzep/graphiti) · [arXiv:2501.13956](https://arxiv.org/abs/2501.13956) · [bi-temporal](https://blog.getzep.com/beyond-static-knowledge-graphs/); [Letta MemFS](https://www.letta.com/blog/context-repositories) · [sleep-time](https://www.letta.com/blog/sleep-time-compute); [A-MEM arXiv:2502.12110](https://arxiv.org/abs/2502.12110); [Cognee](https://github.com/topoteretes/cognee); [LangMem](https://langchain-ai.github.io/langmem/concepts/conceptual_guide/); [ChatGPT Dreaming](https://openai.com/index/chatgpt-memory-dreaming/); [Claude Code memory](https://code.claude.com/docs/en/memory); [Copilot Memory](https://docs.github.com/en/copilot/concepts/agents/copilot-memory); [AGENTS.md](https://agents.md/); [memanto](https://github.com/moorcheh-ai/memanto) · [arXiv:2604.22085](https://arxiv.org/abs/2604.22085); [Hindsight](https://github.com/vectorize-io/hindsight) · [arXiv:2512.12818](https://arxiv.org/abs/2512.12818); OKF SPEC.md (GoogleCloudPlatform/knowledge-catalog).*
+<!-- comparison:vendor-matrix -->
+| System | Substrate | Retrieval | Temporal & contradictions | Agent-agnostic | Local & privacy | Deploy | source |
+|---|---|---|---|---|---|---|---|
+| **Nevertwice** | markdown + JSON under git; no DB/server | hybrid semantic (bge-m3 local) + lexical, calibrated score fusion (RRF fallback), recurrence-boost | supersession (→`Superseded/`) + RESOLVES edges + bi-temporal `as_of` | yes: hooks · MCP · ingest | fully local, $0; cloud only for opt-in extraction; secret redaction | files only | - |
+| Mem0 | vector DB (graph on Pro) | hybrid dense+BM25+entity, rank-fused | ADD-only ("nothing deleted"); read-time decay | yes (SDK/MCP) | self-host or cloud; defaults to an OpenAI key | low (pip); local needs Ollama+Qdrant | [1](https://docs.mem0.ai/changelog) · [2](https://arxiv.org/abs/2504.19413) |
+| Zep / Graphiti | temporal KG (Neo4j/FalkorDB) | hybrid + BFS graph traversal + rerankers | true bi-temporal (valid/invalid + created/expired); LLM invalidation, never deletes | Graphiti Py; Zep API/MCP | Graphiti self-host; Zep CE deprecated Apr 2025 → cloud | moderate (graph DB + LLM) | [1](https://github.com/getzep/graphiti) · [2](https://arxiv.org/abs/2501.13956) · [3](https://blog.getzep.com/beyond-static-knowledge-graphs/) |
+| Letta (MemGPT) | git-backed markdown "MemFS" (Feb 2026); was Postgres+vector | self-editing in-context blocks + archival vector; sleep-time compute | agent rewrites blocks; git = versioned history, auto-commit per change | framework/runtime (some lock-in) | self-host or cloud | high: server + Postgres + volume | [1](https://www.letta.com/blog/context-repositories) · [2](https://www.letta.com/blog/sleep-time-compute) |
+| A-MEM | ChromaDB + in-note links | vector + Zettelkasten autonomous linking | in-place note "evolution" (LLM rewrites linked notes); no version history | library (MIT) | fully local (Chroma+MiniLM+Ollama) | lowest (pip) | [1](https://arxiv.org/abs/2502.12110) |
+| Cognee | vector + graph + SQL (file-based default) | graph-RAG, ~14 modes, LLM routing | event-time; bi-temporal via Graphiti backend | yes (MCP) | full local + Ollama | minimal (pip) | [1](https://github.com/topoteretes/cognee) |
+| memanto (moorcheh) | closed "Moorcheh" engine (opaque store; `moorcheh-sdk` + on-prem Docker image); markdown export-only | proprietary "information-theoretic" single-query ("zero indexing"); 13 typed memory kinds | versioning + `--as-of`/`--changed-since` + `conflicts` + `daily-summary` | yes: `connect` to 8+ (Claude/Cursor/Codex/Windsurf/Cline/Goose/Copilot) | on-prem Docker (no key) but the engine is closed; cloud tier needs a Moorcheh API key | server: FastAPI `serve`/`ui` + Docker(+Ollama); pip | [1](https://github.com/moorcheh-ai/memanto) · [2](https://arxiv.org/abs/2604.22085) |
+| Hindsight (vectorize.io) | server-side store behind a Docker service (API :8888 + web UI) | LLM-driven `retain` (fact/entity/temporal extraction + normalization) → `recall` | temporal facts; belief revision server-side | clients: pip `hindsight-client` / npm; REST | self-host Docker but defaults to an OpenAI key; managed Cloud tier | server: Docker + LLM key | [1](https://github.com/vectorize-io/hindsight) · [2](https://arxiv.org/abs/2512.12818) |
+| LangMem / LangGraph | KV+vector BaseStore (Postgres/Redis) | vector + namespace filter | manager upsert/update/invalidate; procedural prompt-optimizer | core agnostic; persistence LangGraph-tied | self-host or platform | low SDK; DB for prod | [1](https://langchain-ai.github.io/langmem/concepts/conceptual_guide/) |
+| ChatGPT memory | cloud account | always-injected + opaque profile | edit/delete; auto-supersession ("Dreaming V3", Jun 2026) | no (account-locked) | cloud | n/a (managed) | [1](https://openai.com/index/chatgpt-memory-dreaming/) |
+| Claude memory | CLAUDE.md (repo) · auto-memory (`~/.claude`, local) · API memory tool · claude.ai | CLAUDE.md/`MEMORY.md` always-injected; topic files model-read | agent-curated; no formal supersession engine | CLAUDE.md portable; rest locked | CLAUDE.md + auto-memory local | low (built-in) | [1](https://code.claude.com/docs/en/memory) |
+| Cursor / Windsurf (→Devin) | repo rules + memories (Windsurf local `~/.codeium/...`) | semantic / model-judged | manual edit/delete; no contradiction engine | no (tool-locked); AGENTS.md portable | Cursor needs Privacy-Mode-off; Windsurf local | built-in | [1](https://agents.md/) |
+| GitHub Copilot Memory | GitHub cloud (not repo files) | auto-extracted facts, validated vs current branch | 28-day auto-expiry; stale-guard | no (account-locked) | cloud | built-in | [1](https://docs.github.com/en/copilot/concepts/agents/copilot-memory) |
+| OKF (Google/Anthropic draft) | markdown + YAML + git (format only) | n/a (interchange format, no engine) | optional `log.md`/`timestamp`; no conflict resolution | yes (portable) | both | none (a spec) | [1](https://github.com/GoogleCloudPlatform/knowledge-catalog) |
+<!-- /comparison:vendor-matrix -->
+
+### Repository activity
+
+Pulled from the GitHub API, so the reader can see at a glance which of these is still
+moving. Activity is not quality; it is the one thing a stale comparison table hides.
+
+<!-- comparison:activity -->
+| repository | stars | forks | last push | state | license |
+|---|---|---|---|---|---|
+| [Mem0](https://github.com/mem0ai/mem0) | 63,960 | 7,477 | 2026-08-24 | active | Apache-2.0 |
+| [Zep / Graphiti](https://github.com/getzep/graphiti) | 30,263 | 3,064 | 2026-08-21 | active | Apache-2.0 |
+| [Cognee](https://github.com/topoteretes/cognee) | 30,227 | 2,953 | 2026-08-24 | active | Apache-2.0 |
+| [Letta (MemGPT)](https://github.com/letta-ai/letta) | 24,410 | 2,592 | 2026-08-23 | active | Apache-2.0 |
+| [Hindsight (vectorize.io)](https://github.com/vectorize-io/hindsight) | 21,036 | 1,631 | 2026-08-24 | active | MIT |
+| [memanto (moorcheh)](https://github.com/moorcheh-ai/memanto) | 1,836 | 626 | 2026-08-24 | active | MIT |
+| [LangMem / LangGraph](https://github.com/langchain-ai/langmem) | 1,623 | 186 | 2026-08-11 | active | MIT |
+| [A-MEM](https://github.com/agiresearch/A-mem) | 1,156 | 121 | 2025-12-12 | active | MIT |
+| [Nevertwice](https://github.com/DonPlaton/nevertwice) | 1 | 0 | 2026-08-24 | active | MIT |
+<!-- /comparison:activity -->
 
 ## Head-to-head on one stand: MEASURED (local, no paid key)
 
@@ -43,20 +69,38 @@ sometimes different question subsets. This table is retrieval R@k with every var
 the memory pipeline itself, so compare methodology before headlines. `research/head_to_head.py`
 reruns the whole stand, on the competitors' own packages, with one command.
 
-| System (same bge-m3) | R@1 | R@5 | R@10 | MRR | ingest | store |
-|---|---|---|---|---|---|---|
-| **Nevertwice: calibrated fusion (shipped default, 0 deps)** | 0.550 | **0.802** | **0.858** | 0.657 | n/a | files |
-| **Nevertwice: + trained cross-encoder** (opt-in) | **0.614** | **0.826** | 0.858 | **0.712** | n/a | files |
-| Mem0 (`infer=False`, dense+BM25) | 0.478 | 0.758 | 0.846 | 0.603 | 343 s | qdrant |
-| LangMem (LangGraph InMemoryStore) | 0.426 | 0.692 | 0.782 | 0.543 | 229 s | memory |
-| A-MEM (ChromaDB) | 0.428 | 0.692 | 0.782 | 0.544 | 180 s | chroma |
-| Cognee · Zep/Graphiti · Letta | n/a | n/a | n/a | n/a | n/a | *blocked (below)* |
+### What could actually be run
+
+<!-- comparison:verified -->
+| System | outcome | ingest | query | what that means |
+|---|---|---|---|---|
+| **Nevertwice** | ran here | n/a | 53 s | no ingest step: the store is the repository of notes itself |
+| Mem0 | ran here | 191 s | 120 s | run as `infer=False` (retrieval-only, one memory per session) so the comparison is retrieval against retrieval |
+| LangMem / LangGraph | ran here | 229 s | 129 s | LangGraph InMemoryStore; no server needed for the stand |
+| A-MEM | ran here | 180 s | 82 s | A-MEM's own ChromaDB vector store with Ollama embeddings |
+| Zep / Graphiti | **could not be run** | - | - | needs Neo4j or FalkorDB in Docker; the adapter records the blocker rather than a fabricated number |
+| Cognee | **could not be run** | - | - | needs a local graph/vector store plus an ingest+search adapter; the adapter records the blocker rather than a fabricated number |
+| Letta (MemGPT) | *not attempted* | - | - | no `run_letta` adapter exists in research/head_to_head.py, so it was never put on the stand - it needs a server plus Postgres and a heavy per-session build, but that is a reason, not a result |
+<!-- /comparison:verified -->
+
+### Retrieval recall on that stand
+
+<!-- comparison:head-to-head -->
+| System (same bge-m3, same 500 questions, one run) | R@1 | R@5 | R@10 | MRR |
+|---|---|---|---|---|
+| **Nevertwice** (calibrated fusion, shipped default, 0 deps) | **0.550** | **0.802** | **0.858** | **0.651** |
+| Mem0 (`infer=False`, dense+BM25) | 0.478 | 0.758 | 0.846 | 0.603 |
+| LangMem (LangGraph InMemoryStore) | 0.426 | 0.692 | 0.782 | 0.543 |
+| A-MEM (ChromaDB) | 0.428 | 0.692 | 0.782 | 0.544 |
+<!-- /comparison:head-to-head -->
 
 **The honest reading:**
 
-- **Nevertwice leads every metric in this table** (run recorded 2026-07-05). Its shipped ranker reaches R@5 0.802 against Mem0's 0.758,
-  R@1 0.550 against 0.478, R@10 0.858 against 0.846, and the best MRR in the table. The opt-in
-  trained cross-encoder then takes top-1 to 0.614.
+- **Nevertwice leads every column in the table above** - that is the whole finding, and the
+  table states it; restating the figures here is how the two drift apart. The opt-in trained
+  cross-encoder lifts top-1 further, but it was measured in the retrieval study rather than on
+  this stand, so it is deliberately absent from a one-run table
+  ([`docs/BENCHMARKS.md`](BENCHMARKS.md) has it).
 - **The win is the fusion, not the embedder** (everyone here uses the same bge-m3). The popular
   reciprocal rank fusion that Nevertwice used to ship, and that Mem0 documents as `rank-fused`, discards the
   score magnitudes and so scores *below plain BM25*. Nevertwice now uses **calibrated score fusion**:
@@ -71,9 +115,10 @@ reruns the whole stand, on the competitors' own packages, with one command.
   because our distillation front-end already gives short notes the concentration it buys for long
   raw sessions (details in the study).
 
-**Still blocked (honest):** Cognee, Zep/Graphiti and Letta need a graph DB or Postgres server plus
-a heavy per-session LLM graph build; the adapters are present (`run_cognee` / `run_zep`) and record
-the blocker rather than a fabricated number. Bring up the DB and set the Ollama env and they fill in.
+The rows that are not a number are not omissions. Zep/Graphiti and Cognee have adapters
+(`run_zep`, `run_cognee`) that record the blocker instead of a fabricated result; bring up the
+database, set the Ollama environment, and they fill in. Letta has **no adapter at all**, so it
+was never put on the stand - that is a gap in this comparison, not a finding about Letta.
 
 *Reproduce:* `python research/head_to_head.py --only=nevertwice,mem0,langmem,amem --save`
 (needs the dataset + `pip install mem0ai ollama fastembed langgraph langchain-ollama chromadb`).
