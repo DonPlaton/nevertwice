@@ -109,6 +109,17 @@ def test_mcp_jsonrpc_notification_and_validation() -> None:
                                             "message": "internal error"})
 
 
+def test_distribution_name_is_consistent() -> None:
+    paths = [
+        PKG / "integrations" / "__init__.py",
+        PKG / "integrations" / "langchain_memory.py",
+        PKG / "integrations" / "llamaindex_retriever.py",
+        ROOT / "research" / "qa_eval.py",
+    ]
+    stale = [p for p in paths if "nevertwice-memory" in p.read_text(encoding="utf-8")]
+    check("optional-dependency install hints use the real PyPI name", not stale)
+
+
 if __name__ == "__main__":
     tests = [v for k, v in sorted(globals().items())
              if k.startswith("test_") and callable(v)]

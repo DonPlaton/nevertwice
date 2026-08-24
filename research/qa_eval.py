@@ -367,7 +367,7 @@ def run():
         except ImportError:
             import reranker_ce as rc
         if not rc.available():
-            print("--xrerank needs torch+transformers (pip install nevertwice-memory[reranker])",
+            print("--xrerank needs torch+transformers (pip install nevertwice[reranker])",
                   file=sys.stderr)
             sys.exit(1)
         print(f"[qa] xrerank ON - {rc.MODEL}, fusion top-{XRERANK_N} → cross-encoder → top-{K}",

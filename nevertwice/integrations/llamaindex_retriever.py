@@ -10,7 +10,7 @@
 
 Recall goes through nevertwice.api (stdlib core, unchanged). The mapping helper
 `recall_to_nodes` is framework-free and unit-tested without LlamaIndex installed; the
-retriever class needs `pip install nevertwice-memory[llamaindex]`.
+retriever class needs `pip install nevertwice[llamaindex]`.
 """
 import sys
 from pathlib import Path
@@ -21,7 +21,7 @@ except ImportError:                   # flat-script use - fall back to a path in
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
     import api as _api
 
-INSTALL_HINT = "LlamaIndex not installed - `pip install nevertwice-memory[llamaindex]`"
+INSTALL_HINT = "LlamaIndex not installed - `pip install nevertwice[llamaindex]`"
 
 try:
     from llama_index.core.retrievers import BaseRetriever

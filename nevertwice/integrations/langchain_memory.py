@@ -12,7 +12,7 @@
     memory.flush()                                                  # extract durable lessons
 
 `NevertwiceRetriever` is a real LangChain `BaseRetriever` (needs `pip install
-nevertwice-memory[langchain]`). `NevertwiceMemory` implements the classic memory-variables
+nevertwice[langchain]`). `NevertwiceMemory` implements the classic memory-variables
 protocol as a **plain class** - LangChain 1.x removed `BaseMemory` from `langchain-core`,
 so subclassing it would break on the very version the extra installs; a plain class with
 the same methods works on every version and needs no framework at all. Reads/writes go
@@ -29,7 +29,7 @@ except ImportError:                   # flat-script use - fall back to a path in
     import api as _api
     from capture import MemorySession
 
-INSTALL_HINT = "LangChain not installed - `pip install nevertwice-memory[langchain]`"
+INSTALL_HINT = "LangChain not installed - `pip install nevertwice[langchain]`"
 
 try:
     from langchain_core.documents import Document
