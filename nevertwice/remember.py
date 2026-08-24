@@ -125,10 +125,11 @@ def do_remember(a) -> int:
               file=sys.stderr)
         return 2
     print(f"[remember] wrote {a.type} → {stem}")
-    # ground truth: a note is semantically recallable only once it's in the embed
-    # cache (un-embedded notes are invisible to recall - audit A15). Report honestly.
-    print("  (recallable now)" if stem in m.load_embed_cache() else
-          "  (written - run `python -m nevertwice.embed_index` to make it searchable)")
+    # Every note is immediately available to lexical recall. Embedding adds
+    # semantic matching; it is an upgrade, not a prerequisite for search.
+    print("  (lexically searchable now; semantic search ready)" if stem in m.load_embed_cache() else
+          "  (lexically searchable now - run `python -m nevertwice.embed_index` "
+          "for semantic search)")
     return 0
 
 
