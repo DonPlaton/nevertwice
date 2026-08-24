@@ -245,8 +245,20 @@ def _tracked_markdown() -> list[str] | None:
 
 
 def _numeric_tokens(doc: str) -> int:
+    """Evidence-bearing numeric tokens in a document.
+
+    Tokens matched by a context-free non-metric rule - a year, a month, a Python
+    version, a bare single digit - are excluded. Otherwise dating a comparative claim
+    ("measured 2026-07-05") would count as *adding* unevidenced numbers and trip the
+    ratchet, punishing exactly the change task B3 asks for.
+    """
     text = FENCE.sub("", (ROOT / doc).read_text(encoding="utf-8", errors="replace"))
-    return len(NUMBER.findall(text))
+    ignore = [re.compile(n["pattern"]) for n in MANIFEST["non_metrics"]
+              if "pattern" in n and not n.get("context")]
+    literals = {n["literal"] for n in MANIFEST["non_metrics"]
+                if "literal" in n and not n.get("context")}
+    return sum(1 for t in NUMBER.findall(text)
+               if t not in literals and not any(rx.match(t) for rx in ignore))
 
 
 def test_document_register_covers_every_tracked_markdown() -> None:

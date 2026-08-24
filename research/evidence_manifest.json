@@ -243,141 +243,164 @@
     },
     "docs/COMPARISON.md": {
       "governance": "backlog",
-      "budget": 152,
+      "budget": 71,
       "target": "B4",
-      "note": "evidence-bearing numbers not yet registered; the budget is a ceiling that may only be lowered"
+      "note": "evidence-bearing numbers not yet registered; the budget is a ceiling that may only be lowered",
+      "budget_metric": "evidence-bearing numeric tokens: numbers outside fenced blocks, excluding years, months, Python versions and bare single digits"
     },
     "docs/WEAKNESSES.md": {
       "governance": "backlog",
-      "budget": 336,
+      "budget": 146,
       "target": null,
-      "note": "evidence-bearing numbers not yet registered; the budget is a ceiling that may only be lowered"
+      "note": "evidence-bearing numbers not yet registered; the budget is a ceiling that may only be lowered",
+      "budget_metric": "evidence-bearing numeric tokens: numbers outside fenced blocks, excluding years, months, Python versions and bare single digits"
     },
     "research/ABLATION_RESULTS.md": {
       "governance": "backlog",
-      "budget": 214,
+      "budget": 150,
       "target": null,
-      "note": "evidence-bearing numbers not yet registered; the budget is a ceiling that may only be lowered"
+      "note": "evidence-bearing numbers not yet registered; the budget is a ceiling that may only be lowered",
+      "budget_metric": "evidence-bearing numeric tokens: numbers outside fenced blocks, excluding years, months, Python versions and bare single digits"
     },
     "research/ABSTRACTIVE.md": {
       "governance": "backlog",
-      "budget": 74,
+      "budget": 52,
       "target": null,
-      "note": "evidence-bearing numbers not yet registered; the budget is a ceiling that may only be lowered"
+      "note": "evidence-bearing numbers not yet registered; the budget is a ceiling that may only be lowered",
+      "budget_metric": "evidence-bearing numeric tokens: numbers outside fenced blocks, excluding years, months, Python versions and bare single digits"
     },
     "research/ACTIVE_MEMORY.md": {
       "governance": "backlog",
-      "budget": 89,
+      "budget": 41,
       "target": null,
-      "note": "evidence-bearing numbers not yet registered; the budget is a ceiling that may only be lowered"
+      "note": "evidence-bearing numbers not yet registered; the budget is a ceiling that may only be lowered",
+      "budget_metric": "evidence-bearing numeric tokens: numbers outside fenced blocks, excluding years, months, Python versions and bare single digits"
     },
     "research/BANDIT.md": {
       "governance": "backlog",
-      "budget": 27,
+      "budget": 21,
       "target": null,
-      "note": "evidence-bearing numbers not yet registered; the budget is a ceiling that may only be lowered"
+      "note": "evidence-bearing numbers not yet registered; the budget is a ceiling that may only be lowered",
+      "budget_metric": "evidence-bearing numeric tokens: numbers outside fenced blocks, excluding years, months, Python versions and bare single digits"
     },
     "research/BIO_MEMORY.md": {
       "governance": "backlog",
-      "budget": 37,
+      "budget": 22,
       "target": null,
-      "note": "evidence-bearing numbers not yet registered; the budget is a ceiling that may only be lowered"
+      "note": "evidence-bearing numbers not yet registered; the budget is a ceiling that may only be lowered",
+      "budget_metric": "evidence-bearing numeric tokens: numbers outside fenced blocks, excluding years, months, Python versions and bare single digits"
     },
     "research/CAUSAL_VOCAB.md": {
       "governance": "backlog",
-      "budget": 30,
+      "budget": 27,
       "target": null,
-      "note": "evidence-bearing numbers not yet registered; the budget is a ceiling that may only be lowered"
+      "note": "evidence-bearing numbers not yet registered; the budget is a ceiling that may only be lowered",
+      "budget_metric": "evidence-bearing numeric tokens: numbers outside fenced blocks, excluding years, months, Python versions and bare single digits"
     },
     "research/CONSOLIDATION_EVAL.md": {
       "governance": "backlog",
-      "budget": 39,
+      "budget": 23,
       "target": null,
-      "note": "evidence-bearing numbers not yet registered; the budget is a ceiling that may only be lowered"
+      "note": "evidence-bearing numbers not yet registered; the budget is a ceiling that may only be lowered",
+      "budget_metric": "evidence-bearing numeric tokens: numbers outside fenced blocks, excluding years, months, Python versions and bare single digits"
     },
     "research/DIVERGENT.md": {
       "governance": "backlog",
-      "budget": 63,
+      "budget": 49,
       "target": null,
-      "note": "evidence-bearing numbers not yet registered; the budget is a ceiling that may only be lowered"
+      "note": "evidence-bearing numbers not yet registered; the budget is a ceiling that may only be lowered",
+      "budget_metric": "evidence-bearing numeric tokens: numbers outside fenced blocks, excluding years, months, Python versions and bare single digits"
     },
     "research/EMBED_SPECIALIZE.md": {
       "governance": "backlog",
-      "budget": 83,
+      "budget": 51,
       "target": null,
-      "note": "evidence-bearing numbers not yet registered; the budget is a ceiling that may only be lowered"
+      "note": "evidence-bearing numbers not yet registered; the budget is a ceiling that may only be lowered",
+      "budget_metric": "evidence-bearing numeric tokens: numbers outside fenced blocks, excluding years, months, Python versions and bare single digits"
     },
     "research/FORGETTING.md": {
       "governance": "backlog",
-      "budget": 41,
+      "budget": 29,
       "target": null,
-      "note": "evidence-bearing numbers not yet registered; the budget is a ceiling that may only be lowered"
+      "note": "evidence-bearing numbers not yet registered; the budget is a ceiling that may only be lowered",
+      "budget_metric": "evidence-bearing numeric tokens: numbers outside fenced blocks, excluding years, months, Python versions and bare single digits"
     },
     "research/LIVE_VALIDATION.md": {
       "governance": "backlog",
-      "budget": 93,
+      "budget": 71,
       "target": null,
-      "note": "evidence-bearing numbers not yet registered; the budget is a ceiling that may only be lowered"
+      "note": "evidence-bearing numbers not yet registered; the budget is a ceiling that may only be lowered",
+      "budget_metric": "evidence-bearing numeric tokens: numbers outside fenced blocks, excluding years, months, Python versions and bare single digits"
     },
     "research/LONGITUDINAL_BENCH.md": {
       "governance": "backlog",
-      "budget": 88,
+      "budget": 66,
       "target": null,
-      "note": "evidence-bearing numbers not yet registered; the budget is a ceiling that may only be lowered"
+      "note": "evidence-bearing numbers not yet registered; the budget is a ceiling that may only be lowered",
+      "budget_metric": "evidence-bearing numeric tokens: numbers outside fenced blocks, excluding years, months, Python versions and bare single digits"
     },
     "research/POISONING.md": {
       "governance": "backlog",
-      "budget": 51,
+      "budget": 34,
       "target": null,
-      "note": "evidence-bearing numbers not yet registered; the budget is a ceiling that may only be lowered"
+      "note": "evidence-bearing numbers not yet registered; the budget is a ceiling that may only be lowered",
+      "budget_metric": "evidence-bearing numeric tokens: numbers outside fenced blocks, excluding years, months, Python versions and bare single digits"
     },
     "research/POSTERIOR_MODEL.md": {
       "governance": "backlog",
-      "budget": 51,
+      "budget": 35,
       "target": null,
-      "note": "evidence-bearing numbers not yet registered; the budget is a ceiling that may only be lowered"
+      "note": "evidence-bearing numbers not yet registered; the budget is a ceiling that may only be lowered",
+      "budget_metric": "evidence-bearing numeric tokens: numbers outside fenced blocks, excluding years, months, Python versions and bare single digits"
     },
     "research/QA_ACCURACY.md": {
       "governance": "backlog",
-      "budget": 115,
+      "budget": 85,
       "target": null,
-      "note": "evidence-bearing numbers not yet registered; the budget is a ceiling that may only be lowered"
+      "note": "evidence-bearing numbers not yet registered; the budget is a ceiling that may only be lowered",
+      "budget_metric": "evidence-bearing numeric tokens: numbers outside fenced blocks, excluding years, months, Python versions and bare single digits"
     },
     "research/QUANTIZATION.md": {
       "governance": "backlog",
-      "budget": 71,
+      "budget": 60,
       "target": null,
-      "note": "evidence-bearing numbers not yet registered; the budget is a ceiling that may only be lowered"
+      "note": "evidence-bearing numbers not yet registered; the budget is a ceiling that may only be lowered",
+      "budget_metric": "evidence-bearing numeric tokens: numbers outside fenced blocks, excluding years, months, Python versions and bare single digits"
     },
     "research/RARE_EVENT.md": {
       "governance": "backlog",
-      "budget": 33,
+      "budget": 27,
       "target": null,
-      "note": "evidence-bearing numbers not yet registered; the budget is a ceiling that may only be lowered"
+      "note": "evidence-bearing numbers not yet registered; the budget is a ceiling that may only be lowered",
+      "budget_metric": "evidence-bearing numeric tokens: numbers outside fenced blocks, excluding years, months, Python versions and bare single digits"
     },
     "research/REAL_TRACE.md": {
       "governance": "backlog",
-      "budget": 100,
+      "budget": 73,
       "target": null,
-      "note": "evidence-bearing numbers not yet registered; the budget is a ceiling that may only be lowered"
+      "note": "evidence-bearing numbers not yet registered; the budget is a ceiling that may only be lowered",
+      "budget_metric": "evidence-bearing numeric tokens: numbers outside fenced blocks, excluding years, months, Python versions and bare single digits"
     },
     "research/RETRIEVAL_FUSION.md": {
       "governance": "backlog",
-      "budget": 114,
+      "budget": 81,
       "target": null,
-      "note": "evidence-bearing numbers not yet registered; the budget is a ceiling that may only be lowered"
+      "note": "evidence-bearing numbers not yet registered; the budget is a ceiling that may only be lowered",
+      "budget_metric": "evidence-bearing numeric tokens: numbers outside fenced blocks, excluding years, months, Python versions and bare single digits"
     },
     "research/TWIN_GATE.md": {
       "governance": "backlog",
-      "budget": 51,
+      "budget": 37,
       "target": null,
-      "note": "evidence-bearing numbers not yet registered; the budget is a ceiling that may only be lowered"
+      "note": "evidence-bearing numbers not yet registered; the budget is a ceiling that may only be lowered",
+      "budget_metric": "evidence-bearing numeric tokens: numbers outside fenced blocks, excluding years, months, Python versions and bare single digits"
     },
     "research/W2_PRECISION.md": {
       "governance": "backlog",
-      "budget": 256,
+      "budget": 147,
       "target": null,
-      "note": "evidence-bearing numbers not yet registered; the budget is a ceiling that may only be lowered"
+      "note": "evidence-bearing numbers not yet registered; the budget is a ceiling that may only be lowered",
+      "budget_metric": "evidence-bearing numeric tokens: numbers outside fenced blocks, excluding years, months, Python versions and bare single digits"
     }
   },
   "claims": [
