@@ -256,12 +256,14 @@ core; the head-to-head against Mem0 / LangMem / A-MEM installs those competitors
 run them on the same stand (their deps, not ours), and the dataset is fetched separately
 ([research/data/README.md](research/data/README.md)):
 
+<!-- claims:longmem-readme -->
 | method | R@1 | R@5 | R@10 | MRR |
 |---|---|---|---|---|
-| semantic | 0.42 | 0.65 | 0.73 | 0.53 |
+| semantic (bge-m3) | 0.42 | 0.65 | 0.73 | 0.53 |
 | lexical (BM25) | 0.52 | 0.75 | 0.83 | 0.62 |
-| **calibrated fusion (shipped default, 0 deps)** | 0.55 | **0.80** | **0.86** | 0.66 |
-| **+ trained cross-encoder (opt-in)** | **0.61** | **0.83** | 0.86 | **0.71** |
+| **calibrated fusion (shipped default, 0 deps)** | 0.55 | 0.80 | **0.86** | 0.66 |
+| **+ trained cross-encoder (opt-in)** | **0.61** | **0.83** | **0.86** | **0.71** |
+<!-- /claims:longmem-readme -->
 
 The shipped ranker fuses the semantic and lexical signals with calibrated score fusion, which lifts
 R@5 from 0.66 under the rank fusion most systems ship to 0.80. The optional cross-encoder
@@ -270,9 +272,18 @@ R@5 from 0.66 under the rank fusion most systems ship to 0.80. The optional cros
 on. Reproduce with `python research/longmem_eval.py [--xrerank]` (the dataset is fetched separately).
 
 **The head-to-head, run locally and reported straight.** On the same stand with the same local
-embedder for everyone, we ran Mem0, LangMem, and A-MEM end to end on Ollama, no paid key. Nevertwice
-leads every metric: R@5 0.80 against Mem0's 0.758, LangMem and A-MEM at 0.692, and top-1 0.55 (0.61
-with the reranker) against Mem0's 0.478. The win is the fusion, not the embedder, which is identical
+embedder for everyone, we ran Mem0, LangMem, and A-MEM end to end on Ollama, no paid key:
+
+<!-- claims:head-to-head -->
+| system | R@1 | R@5 |
+|---|---|---|
+| **Nevertwice (calibrated fusion)** | **0.550** | **0.802** |
+| Mem0 | 0.478 | 0.758 |
+| LangMem | 0.426 | 0.692 |
+| A-MEM | 0.428 | 0.692 |
+<!-- /claims:head-to-head -->
+
+The win is the fusion, not the embedder, which is identical
 for all four. We are careful about what is a moat: calibrated score fusion is classic retrieval, so
 the durable edge is the substrate (plain files, $0, local, no server), and we publish the full table
 plus what we tried and cut in [COMPARISON.md](docs/COMPARISON.md) and
@@ -307,7 +318,7 @@ That is the axis Nevertwice is built for, and every number is measured with a ha
   0.91), prompt-injection caught 100%, and - stated plainly because honesty is the point - only
   ~50% of *plausible-false* facts ([research/POISONING.md](research/POISONING.md)).
 - **Forgetting is a policy, not neglect.** A submodular coreset keeps **+0.14 more topic coverage**
-  than recency-sorting at a tight 20% retention budget, with less redundancy
+  than the salience baseline at a tight 20% retention budget, with less redundancy
   ([research/FORGETTING.md](research/FORGETTING.md)).
 - **We publish the negative results.** Consolidating episodes by replacement halved downstream
   recall in our own test, so it is not shipped ([research/CONSOLIDATION_EVAL.md](research/CONSOLIDATION_EVAL.md)).

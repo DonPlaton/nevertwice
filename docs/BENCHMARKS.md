@@ -13,6 +13,7 @@ measured end to end (real subprocess, stdin event to exit) with no model and no 
 the exact profile of a weak machine driving a cloud agent. Ryzen 7 7700, Windows 11,
 Python 3.14; reproduce anywhere with `python research/latency_bench.py`:
 
+<!-- claims:latency -->
 | hot path | cost | when it is paid |
 |---|---|---|
 | PreToolUse end-to-end | **85 ms** | every tool call (interpreter start included) |
@@ -21,6 +22,7 @@ Python 3.14; reproduce anywhere with `python research/latency_bench.py`:
 | cold import of the engine | 25 ms | once per hook process (inside the numbers above) |
 | `guards.check()`, 61 guards, 2 KB | 0.18 ms | the actual guard match, pure regex |
 | lexical recall, no embedder | 0.2 ms | the zero-model floor recall falls back to |
+<!-- /claims:latency -->
 
 Two of these were 10-30x worse until a 2026-07 perf audit: an idle SessionStart used to
 pay a 4-second-timeout LLM liveness probe before checking whether it had any work
@@ -36,12 +38,14 @@ this is a real recall number, not a self-grade. Reproduce:
 `python research/longmem_eval.py [--xrerank]` (dataset fetched separately, see
 [`research/data/README.md`](../research/data/README.md)).
 
+<!-- claims:longmem-benchmarks -->
 | method | R@1 | R@5 | R@10 | MRR |
 |---|---|---|---|---|
 | semantic (bge-m3) | 0.422 | 0.652 | 0.728 | 0.528 |
 | lexical (BM25) | 0.522 | 0.752 | 0.834 | 0.623 |
-| **calibrated fusion (shipped default, 0 deps)** | 0.550 | **0.802** | **0.858** | 0.657 |
-| **+ trained cross-encoder (opt-in)** | **0.614** | 0.826 | 0.858 | **0.712** |
+| **calibrated fusion (shipped default, 0 deps)** | 0.550 | 0.802 | **0.858** | 0.657 |
+| **+ trained cross-encoder (opt-in)** | **0.614** | **0.826** | **0.858** | **0.712** |
+<!-- /claims:longmem-benchmarks -->
 
 The shipped ranker fuses the two signals with **calibrated score fusion** (z-normalise each, combine
 the magnitudes), which lifts R@5 from 0.66 under the old rank fusion to **0.80**, and beats every
@@ -69,11 +73,13 @@ beat bge-m3 as a drop-in) and the consolidation negative are in
 > see the LongMemEval-oracle section above** (external human-annotated GT). That is the
 > one to cite; this self-consistency table is kept only as a relative ranker comparison.
 
+<!-- claims:task-a -->
 | method | R@1 | R@3 | R@5 | MRR |
 |---|---|---|---|---|
-| semantic (bge-m3) | 0.661 | 0.817 | **0.881** | 0.755 |
+| semantic (bge-m3) | **0.661** | **0.817** | **0.881** | **0.755** |
 | lexical | 0.581 | 0.761 | 0.829 | 0.689 |
 | hybrid (RRF) | 0.645 | 0.813 | 0.875 | 0.747 |
+<!-- /claims:task-a -->
 
 Relative reading only: with a strong multilingual embedder, semantic leads on this
 self-consistency task; lexical is the graceful fallback when the GPU is busy. (On an
@@ -81,10 +87,12 @@ earlier weaker embedder, hybrid led; the fusion is kept as a robustness floor.)
 
 ## Temporal correctness (Task B: point-in-time QA)
 
-| | accuracy |
+<!-- claims:task-b -->
+|  | accuracy |
 |---|---|
 | bi-temporal graph | **1.000** |
 | flat "use newest" | 0.455 |
+<!-- /claims:task-b -->
 
 Flat "return all versions" surfaces **2.27 contradictory versions/query**. The
 bi-temporal model answers "what did we believe about X at time T" correctly where a
@@ -94,11 +102,13 @@ flat store either guesses or dumps contradictions.
 
 The project **card** (the SessionStart surface) vs dumping the full Context journal:
 
+<!-- claims:task-c -->
 | project | card | full Context | ratio |
 |---|---|---|---|
-| project_alpha | 111 | 3836 | **35×** |
-| project_beta | 63 | 2936 | 47× |
-| project_delta | 20 | 2300 | 115× |
+| project_alpha | 111 | 3836 | 34.6× |
+| project_beta | 63 | 2936 | 46.6× |
+| project_delta | 20 | 2300 | **115×** |
+<!-- /claims:task-c -->
 
 Overall current-snapshot vs full Context: **2.5× fewer tokens**, point-in-time and
 contradiction-free.
@@ -113,11 +123,13 @@ miss, so **net = recall@k · counterfactual − top-k cost**. The value of retri
 on *what it replaces*, so we report both honest bounds (full history = **3.3M tok** across 940
 sessions) rather than cherry-picking the flattering one:
 
+<!-- claims:token-ab-raw -->
 | k | recall@k | top-k cost (tok) | net vs a curated small haystack | net vs the full history |
 |---|---|---|---|---|
-| 3 | 0.722 | 10,137 | **−5,331** | +2,370,699 |
-| 5 | 0.802 | 17,065 | **−11,726** | +2,627,576 |
-| 10 | 0.858 | 34,619 | **−28,908** | +2,794,684 |
+| 3 | 0.722 | 10,137 | **-5,331** | +2,370,699 |
+| 5 | 0.802 | 17,065 | **-11,726** | +2,627,576 |
+| 10 | 0.858 | 34,619 | **-28,908** | +2,794,684 |
+<!-- /claims:token-ab-raw -->
 
 Read honestly, both directions:
 - **Against an already-curated small context, raw-session retrieval saves nothing, often
@@ -132,18 +144,20 @@ Read honestly, both directions:
 Nevertwice never stores raw sessions; it stores **distilled notes**. We measured that lever directly:
 distil each retrieved session into a compact note via local Ollama, then recompute the net
 (`research/token_ab.py --distill`). On a 40-question sample the distiller compressed
-**968,715 → 31,517 tokens = 30.7× smaller**, and the per-hit cost collapsed:
+**1,013,847 → 32,263 tokens = 31.4× smaller**, and the per-hit cost collapsed:
 
+<!-- claims:token-ab-distill -->
 | k | recall@k | raw top-k (tok) | **distilled top-k (tok)** | net raw vs curated | **net distilled vs curated** |
 |---|---|---|---|---|---|
-| 3 | 0.83 | 10,629 | **344** | −3,965 | **+6,320** |
-| 5 | 0.93 | 17,703 | **560** | −10,232 | **+6,911** |
-| 10 | 0.98 | 35,224 | **1,136** | −27,349 | **+6,738** |
+| 3 | 0.975 | 10,356 | **341** | -2,481 | **+7,534** |
+| 5 | 1.000 | 17,456 | **566** | -9,380 | **+7,511** |
+| 10 | 1.000 | 34,742 | **1,109** | -26,665 | **+6,967** |
+<!-- /claims:token-ab-distill -->
 
 **This is the headline that raw-session retrieval couldn't earn:** with distillation, memory is
 **net-positive even against the already-curated small haystack**, the conservative counterfactual.
 (Sample is 40 questions, higher-variance than the 500-set above; the low-variance finding is
-the **30.7× compression** and the **sign flip** from negative to positive.)
+the **31.4× compression** and the **sign flip** from negative to positive.)
 
 ### Live two-arm run: measured, not modeled
 
@@ -151,19 +165,21 @@ A real two-arm run (`--live`): the same local agent (qwen2.5:3b) answers each qu
 fed the full curated haystack (no memory), once fed only the top-3 **distilled notes**, recording
 Ollama's own `prompt_eval_count` (actual input tokens) for each. 15 questions:
 
+<!-- claims:token-ab-live -->
 | arm | mean input tokens | answer-match (crude) |
 |---|---|---|
-| no memory (full haystack) | **5,132** | 0.47 |
-| with memory (top-3 distilled) | **345** | 0.33 |
+| no memory (full haystack) | **5,132** | 0.467 |
+| with memory (top-3 distilled) | **348** | 0.267 |
+<!-- /claims:token-ab-live -->
 
-**Memory cut input tokens 93%** (5,132 → 345), a *measured* number, not modeled. Honest caveat: on
-this tiny sample with a weak 3B reader, crude answer-match was *lower* with memory (0.33 vs 0.47).
+**Memory cut input tokens 93%** (5,132 → 348), a *measured* number, not modeled. Honest caveat: on
+this tiny sample with a weak 3B reader, crude answer-match was *lower* with memory (0.267 vs 0.467).
 The distilled notes sometimes drop a detail the full context kept, so the token saving is **real but
 not free**. A larger sample on a stronger reader is needed to pin the accuracy trade; we report the
 dip rather than hide it.
 
 **Bottom line:** raw-session retrieval is net-negative vs a small curated context (we publish that);
-**distillation flips it positive** (30.7× compression, net +6.3-6.9k tok/query even vs the curated
+**distillation flips it positive** (31.4× compression, net +6,967 to +7,534 tok/query even vs the curated
 haystack), and a **live two-arm run measures a 93% input-token cut**, with an honest accuracy caveat
 on a small local-model sample. The defensible headline is *distillation makes memory token-positive*,
 not "saves X tokens unconditionally." Reproduce: `python research/token_ab.py --distill --live`.
@@ -179,8 +195,9 @@ Honest accounting on a live project (`project_alpha`):
   already-shown notes deduped; capped per session).
 
 **Payoff:**
-- **State conveyance is ~5-35× cheaper** than the alternative of reading the full
-  Context journal to orient (111-tok card vs 3836-tok journal).
+- **State conveyance is 34.6× cheaper on `project_alpha`** than reading the full
+  Context journal to orient (111-tok card vs 3836-tok journal), and 46.6× and 115× on
+  the other two projects measured. Across the whole snapshot the ratio is 2.5×.
 - **It surfaces the exact prior lesson.** For the prompt *"how to avoid CX regression
   when integrating a new QSD algorithm"*, recall returned precisely the past mistake
   `naive-swap-regression` ("naive swap in QSD caused CX/time regression; benchmark
@@ -189,7 +206,7 @@ Honest accounting on a live project (`project_alpha`):
   an entire wasted code+test+debug iteration (thousands of tokens).
 
 **Verdict (honest about the counterfactual).** The *measured* facts: state
-conveyance is ~5-35× cheaper as a representation (card vs journal), and recall
+conveyance is 34.6-115× cheaper as a representation (card vs journal), and recall
 surfaced the exact prior lesson in live queries. The *unmeasured* part: whether
 memory nets out cheaper **overall** depends on the counterfactual "the agent would
 have re-explored the codebase." The controlled token A/B above quantifies exactly this
