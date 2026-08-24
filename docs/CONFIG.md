@@ -225,7 +225,7 @@ machine and against a cloud coding agent.
 | `NEVERTWICE_WRITE_DEDUP_TWIN_P` | `0.90` | Classifier probability above which a candidate is treated as the same lesson (precision 1.000 / twin-recall 0.852 at this point on the calibration store). |
 | `NEVERTWICE_WRITE_DEDUP_PREFILTER` | `0.70` | Cheap cosine prefilter in `twin` mode; only survivors get the full feature score. |
 | `NEVERTWICE_TWIN_SPACE` | `bge-m3` | The embedding space the classifier weights were calibrated on. On a mismatch with the active embed model the gate falls back to `cosine` mode, loudly. Overrides the space label from the calibration file / baked default. |
-| `NEVERTWICE_TWIN_FILE` | `twin_calibration.json` next to the code | Retrained twin-gate calibration as data: `{"space", "w", "b", "mu", "sd"}` (five features, see `research/TWIN_GATE.md`). Absent → the baked bge-m3 calibration. Lets a machine with a custom embedder carry its own weights without forking `memory_hook.py`. |
+| `NEVERTWICE_TWIN_FILE` | `twin_calibration.json` next to the code | Retrained twin-gate calibration as data: `{"space", "w", "b", "mu", "sd"}` (five features, see `research/TWIN_GATE.md`). Bounds-checked (`sd >= 1e-6`, `\|w\|,\|mu\|,\|b\| <= 1e3`); invalid → baked weights, loudly; absent → baked weights, silently. A `NEVERTWICE_TWIN_SPACE` that contradicts the file's own `space` is refused, so the gate can never run with weights from another embedding space. |
 
 ---
 

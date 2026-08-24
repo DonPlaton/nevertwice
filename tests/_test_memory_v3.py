@@ -551,8 +551,7 @@ finally:
 print("# I-4 - task-aware prompt recall")
 import io as _io
 import contextlib as _ctx
-d = sandbox()
-m.PROMPT_RECALL_STATE_DIR = d / ".prompt_recall"
+d = sandbox()          # _rebase_vault already points PROMPT_RECALL_STATE_DIR into it
 
 check("short prompt is trivial", m._is_trivial_prompt("fix"))
 check("affirmation is trivial", m._is_trivial_prompt("продолжай"))

@@ -77,7 +77,19 @@ Since 2026-08 the production gate reads its calibration as **data**: drop a
  "w": [...5 floats...], "b": 0.0, "mu": [...5...], "sd": [...5...]}
 ```
 
-Absent or invalid → the baked bge-m3 calibration, loudly. `NEVERTWICE_TWIN_SPACE`
-still overrides the space label alone. This replaces the old procedure of editing
-the `_TWIN_*` constants in `memory_hook.py` - a per-machine code fork that every
-sync had to re-apply by hand.
+Values are bounds-checked before they are trusted (five finite `w`/`mu`/`sd`,
+`sd >= 1e-6`, `|w|,|mu|,|b| <= 1e3`): this gate RETIRES notes, and a near-zero `sd`
+saturates the sigmoid at p = 1.0 for every candidate that clears the cosine
+prefilter. An **invalid** file falls back to the baked bge-m3 calibration loudly; an
+**absent** one falls back silently - having no file is the ordinary case.
+
+The `space` field is what keeps the gate honest: it must name the embedding space the
+weights were trained in, because `_twin_space_ok()` disables the learned gate (plain
+cosine threshold instead, logged once) when it disagrees with the active embedder.
+`NEVERTWICE_TWIN_SPACE` can relabel the baked weights, but a value contradicting a
+loaded file's own `space` is **refused with a warning** - otherwise a stale env pin
+plus a deleted or foreign calibration file silently re-enables a note-retiring gate
+in a space its weights were never calibrated for (review 2026-08-24).
+
+This replaces the old procedure of editing the `_TWIN_*` constants in
+`memory_hook.py` - a per-machine code fork that every sync had to re-apply by hand.

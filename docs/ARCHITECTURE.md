@@ -88,5 +88,7 @@ keeps sensitive projects off the network entirely.
 
 Injection-side: typed notes pass an unsafe-content check at write time, but that
 check is deliberately narrow (legitimate prose about prompts and overrides must
-survive), so every injected payload is framed as *recalled reference, not
-instructions* - the agent reads memory as data, not as a directive channel.
+survive), so every agent-facing payload built from note text is framed as *recalled
+reference, not instructions* - the SessionStart card, the per-prompt recall, the
+PreToolUse guard warning and the MCP `memory_search` result. The agent reads memory
+as data, not as a directive channel.

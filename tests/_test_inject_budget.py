@@ -68,7 +68,7 @@ check("the cross-project shape keeps its title too (closing **, not the opening 
 
 # ── the invariant, end to end ─────────────────────────────────────────────────
 
-def emit(budget, n_facts=12, title_len=90, receipt=True):
+def emit(budget, n_facts=12, title_len=90, receipt=True, project="proj"):
     # Patches every vault-derived path constant (EMBED_CACHE/EMBED_META/LOG_FILE are
     # import-time constants - patching VAULT alone lets save_embed_cache clobber the LIVE
     # store's cache; review 2026-08). Mirrors _test_memory_v3.sandbox().
@@ -84,14 +84,14 @@ def emit(budget, n_facts=12, title_len=90, receipt=True):
     m.INJECT_BUDGET_CHARS, m.INJECT_RECEIPT = budget, receipt
     m.RETRIEVAL_TOP_K = n_facts
     m.is_tracked_project = lambda cwd: True
-    m.derive_project_from_cwd = lambda cwd: "proj"
+    m.derive_project_from_cwd = lambda cwd: project
     m.ollama_alive = lambda timeout_s=4: False
     try:
         cache = {}
         for i in range(n_facts):
             # long titles are what makes a single fact line overshoot a whole section
-            cache[f"2026-06-{i + 1:02d}-proj-mistake-bug{i}"] = {
-                "vec": [0.1], "ntype": "mistake" if i % 2 else "pattern", "project": "proj",
+            cache[f"2026-06-{i + 1:02d}-{project}-mistake-bug{i}"] = {
+                "vec": [0.1], "ntype": "mistake" if i % 2 else "pattern", "project": project,
                 "title": f"lesson {i} " + "x" * title_len,
                 "desc": "a recurring problem in the training pipeline " * 3,
                 "recurrence": 1}
@@ -115,6 +115,15 @@ print("the payload never exceeds its budget")
 for b in (2200, 1600, 1200, 900, 784, 700, 688, 509, 500, 400, 309, 300, 279, 200):
     p = emit(b)
     check(f"budget={b}: payload {len(p)} <= {b}", len(p) <= b)
+
+# The header and footer are never trimmed, so they are a FLOOR - and the floor scales
+# with the PROJECT NAME. The sweep above only ever used a 4-char name, which hid a
+# 39-char framing addition that pushed long-named projects past a small budget
+# (review 2026-08-24). Both the framing and the search hint must degrade instead.
+for name in ("parabola_tau_black_swans", "GEARS_experiments"):
+    for b in (300, 200, 150):
+        p = emit(b, project=name)
+        check(f"budget={b} project={name}: payload {len(p)} <= {b}", len(p) <= b)
 
 print("both leaks, isolated")
 # One very long lesson against a small budget: the show-at-least-one path.

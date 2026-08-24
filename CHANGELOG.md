@@ -19,13 +19,37 @@ versions are [semantic](https://semver.org). Dates are UTC.
 - Internal dedup: one HTTP/JSON retry loop behind all LLM backends, one
   two-generation (`.bak`) JSON persistence helper, one dual-shape sibling-import
   resolver, one budgeted fact-section renderer (the cross-project copy had drifted),
-  one shared test sandbox. No behavior change intended.
+  one shared test sandbox. Behavior-preserving except where the review below found
+  otherwise; backend log lines gained a try count and a scrubbed URL.
 
 ### Fixed
 - **Context compaction could amputate the newest entries.** The compressed
   state-block + link-archive now fits the room actually left by the kept entries
-  (archive links dropped oldest-first, then the state text trims); the byte-cap
-  guard no longer truncates the file tail.
+  (archive links dropped oldest-first, then the state text trims). When even the
+  kept tail crowds the cap, the oldest kept entries spill VERBATIM to
+  `Context/Archive/<project>-overflow.md` and a single oversized entry is truncated
+  with a marker pointing at its archived copy - the byte-cap guard no longer
+  truncates the file tail, and the emergency (no-LLM) spill path now respects the
+  cap too.
+- **Compaction could re-fire forever.** The cap guard truncated to exactly
+  `CONTEXT_MAX_BYTES` and then appended a newline, writing cap+1 bytes; since the
+  entry gate is `<= cap`, every scheduled maintenance pass recompacted that project
+  again, re-summarizing its own summary and burning an LLM call each time.
+- **Corrupt state files could beat their own backups.** The shared two-generation
+  loader decoded with `errors="replace"`, so a bit flip inside a `guards.json`
+  pattern parsed as valid JSON with a U+FFFD in it: the guard silently stopped
+  matching and the intact `.bak` was never read. Decoding is strict now, and a
+  merely absent primary no longer logs a corruption that never happened.
+- **Twin-gate calibration is bounds-checked**, and a `NEVERTWICE_TWIN_SPACE` that
+  contradicts a calibration file's own `space` is refused with a warning. Either
+  gap could silently retire correct notes: `sd = 1e-12` saturates the classifier at
+  p = 1.0 for every prefilter survivor, and a stale space label re-enabled the gate
+  for weights from a different embedder.
+- **The injection budget bounds the payload again for long project names.** The
+  "recalled reference" framing added 39 never-trimmed characters; header and footer
+  now degrade before the budget is exceeded.
+- A store that resolves to an empty directory while a populated one exists at a
+  default location now says so in the log instead of returning nothing forever.
 
 ### Added
 - **Learned twin-gate** (stage 0 of embedding specialization). The write-time dedup gate

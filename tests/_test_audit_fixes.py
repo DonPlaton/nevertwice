@@ -14,7 +14,6 @@ Pure logic + disk; the LLM/embedder/GPU are mocked. No network.
 import json
 import os
 import sys
-import tempfile
 from pathlib import Path
 
 try:
