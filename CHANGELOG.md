@@ -79,6 +79,19 @@ versions are [semantic](https://semver.org). Dates are UTC.
   the README and CONTRIBUTING tell a contributor to follow.
 
 ### Changed
+- **The roadmap says what already exists.** Three entries had gone stale. The
+  tagged-release workflow they promised now ships, so the entry is reduced to the part
+  that is genuinely blocked - a `pypi` environment and a Trusted Publishing registration
+  only the maintainer can create. `Structural guard signatures` did not mention that a
+  keyword-driven anti-pattern generator already covers the common pitfalls offline, and
+  `Order-aware anticipation` still described the scorer as lexical after an optional
+  embedding blend shipped. Every open item now carries a **Today:** clause stating the
+  current state next to the promise, and `tests/_test_roadmap.py` fails if an item drops
+  it or if a shipped feature reappears as future work.
+
+  It also stopped contradicting its own research: LoCoMo was listed as a candidate
+  benchmark while the study pages call it discredited (plain BM25 scores about 94% on
+  it). It is now named as excluded, with the reason.
 - **Comparative claims are dated and scoped instead of absolute.** Sixteen statements
   across the README, `docs/BENCHMARKS.md`, `docs/COMPARISON.md` and two research
   write-ups asserted something about *all* rival systems, or about the state of the
