@@ -35,6 +35,19 @@ REQUIRED_BASELINES = ("no_memory", "full_history", "lexical_recall",
                       "curated_agents_md", "llm_session_summary", "linter_or_test")
 VERDICTS = ("beats", "ties", "loses_to", "not_compared", "not_applicable")
 NEEDS_REASON = ("not_compared", "not_applicable", "loses_to")
+MEASURED = ("beats", "ties", "loses_to")
+
+# The claims the project leads with - banner, badges, first screen of the README.
+# Naming them here rather than in the manifest means a claim cannot escape the gate by
+# quietly dropping its `headline` flag; removing one from this list is a visible edit.
+REQUIRED_HEADLINES = (
+    "live_validation.relative_reduction",
+    "longmem.hybrid.recall_at_5",
+    "qa.oracle.answer_accuracy",
+    "longitudinal.active_vs_inject_token_ratio",
+    "token_ab.distill.ratio",
+    "token_ab.live_two_arm.input_token_reduction",
+)
 
 PASSED = 0
 FAILED = 0
@@ -90,8 +103,10 @@ def test_every_headline_declares_a_verdict_for_every_baseline() -> None:
     """The gap this closes: dropping the one baseline a claim would fail against."""
     print("\n- no headline may skip a baseline -")
     claims = headline_claims()
-    check("the manifest marks some claims as headlines", len(claims) >= 5,
-          str(len(claims)))
+    marked = {c["id"] for c in claims}
+    demoted = [c for c in REQUIRED_HEADLINES if c not in marked]
+    check("every claim the project leads with is still marked a headline", not demoted,
+          ", ".join(demoted))
 
     registered = list(MANIFEST["baselines"])
     holes = []
@@ -113,6 +128,31 @@ def test_every_headline_declares_a_verdict_for_every_baseline() -> None:
              for b in (c.get("baseline_verdicts") or {})
              if b not in registered]
     check("no verdict names an unregistered baseline", not stray, "; ".join(stray[:5]))
+
+
+def test_measured_verdicts_name_their_evidence() -> None:
+    """Otherwise flipping `not_compared` to `beats` is free, which would make the whole
+    matrix decorative."""
+    print("\n- a measured verdict says where the comparison lives -")
+    unevidenced = []
+    for claim in headline_claims():
+        for baseline, entry in (claim.get("baseline_verdicts") or {}).items():
+            if entry.get("verdict") in MEASURED and not (entry.get("evidence") or "").strip():
+                unevidenced.append(f"{claim['id']} x {baseline}")
+    check("every beats / ties / loses_to names a raw file or the arms it compared",
+          not unevidenced, "; ".join(unevidenced[:5]))
+
+    unrooted = []
+    for claim in headline_claims():
+        for baseline, entry in (claim.get("baseline_verdicts") or {}).items():
+            ev = entry.get("evidence") or ""
+            if entry.get("verdict") in MEASURED and "research/" not in ev:
+                unrooted.append(f"{claim['id']} x {baseline}")
+    check("that evidence points at a committed result file", not unrooted,
+          "; ".join(unrooted[:5]))
+
+    check("the policy states the evidence rule",
+          bool(MANIFEST["baseline_policy"].get("evidence_rule")))
 
 
 def test_soft_verdicts_carry_a_reason() -> None:
