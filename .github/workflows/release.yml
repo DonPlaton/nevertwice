@@ -1,0 +1,215 @@
+# Release: build once, verify the artifact everywhere, then publish it.
+#
+# The rule this encodes is that the thing tested and the thing published are the same
+# bytes. `build` produces the sdist and wheel exactly once; every later job downloads
+# those artifacts rather than rebuilding, so a green verify cannot describe a different
+# wheel than the one that reaches PyPI. A green suite once shipped a broken first touch
+# (2.1.0) precisely because the built wheel and the uploaded artifact were not the same
+# test.
+#
+# `workflow_dispatch` is the dry run: it builds, verifies, generates the SBOM and the
+# checksums, and publishes nothing. Publishing is reachable only from a pushed tag, and
+# the PyPI job additionally needs the `pypi` environment to exist with Trusted Publishing
+# configured - that configuration is the owner's to make (gate G1) and cannot be done
+# from here.
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.contract.outputs.version }}
+      prerelease: ${{ steps.contract.outputs.prerelease }}
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          fetch-depth: 0   # the version contract compares against the tag
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: "3.12"
+      - name: Install the build environment
+        run: python -m pip install -e ".[dev]"
+      - name: Version contract
+        id: contract
+        shell: bash
+        # On a tag this runs in --release mode: HEAD must carry the matching vX.Y.Z tag
+        # and that tag must not already exist elsewhere. A dry run cannot demand a tag.
+        run: |
+          set -e
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            python tools/check_version.py --release
+          else
+            python tools/check_version.py
+          fi
+          version=$(python -c "import re,pathlib;print(re.search(r'^version = \"([^\"]+)\"',pathlib.Path('pyproject.toml').read_text(encoding='utf-8'),re.M).group(1))")
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          if echo "$version" | grep -qE '(a|b|rc|\.dev)[0-9]*$'; then
+            echo "prerelease=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "prerelease=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Build sdist and wheel
+        run: python -m build
+      - name: Version contract in the built artifacts
+        run: python tools/check_version.py --dist dist
+      - name: Software bill of materials
+        shell: bash
+        run: |
+          set -e
+          python tools/make_sbom.py --dist dist --out "dist/nevertwice-${{ steps.contract.outputs.version }}.cdx.json" \
+            --serial "urn:uuid:$(python -c 'import uuid;print(uuid.uuid4())')" \
+            --timestamp "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+      - name: Checksums
+        shell: bash
+        working-directory: dist
+        run: |
+          set -e
+          sha256sum * > SHA256SUMS
+          cat SHA256SUMS
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: dist
+          path: dist/
+          if-no-files-found: error
+
+  # Install the built artifacts into an empty virtualenv on each OS and prove the
+  # distribution is usable: the version it reports matches, and every console entry point
+  # the metadata declares actually resolves to a callable.
+  verify:
+    needs: build
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        artifact: [wheel, sdist]
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: "3.12"
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: dist
+          path: dist
+      - name: Install ${{ matrix.artifact }} into a clean environment
+        shell: bash
+        run: |
+          set -e
+          python -m venv .release-venv
+          if [ -d .release-venv/Scripts ]; then
+            PY=.release-venv/Scripts/python.exe
+          else
+            PY=.release-venv/bin/python
+          fi
+          echo "RELEASE_PY=$PY" >> "$GITHUB_ENV"
+          if [ "${{ matrix.artifact }}" = "wheel" ]; then
+            "$PY" -m pip install --no-cache-dir dist/*.whl
+          else
+            "$PY" -m pip install --no-cache-dir dist/*.tar.gz
+          fi
+      - name: The installed distribution reports the built version
+        shell: bash
+        run: |
+          set -e
+          got=$("$RELEASE_PY" -c "import nevertwice;print(nevertwice.__version__)")
+          echo "installed: $got, built: ${{ needs.build.outputs.version }}"
+          test "$got" = "${{ needs.build.outputs.version }}"
+      - name: Every console entry point is wired
+        run: python tools/console_smoke.py --python "$RELEASE_PY"
+        shell: bash
+      - name: Checksums still match what was built
+        shell: bash
+        working-directory: dist
+        run: |
+          set -e
+          grep -v 'SHA256SUMS' SHA256SUMS > expected.txt
+          sha256sum -c expected.txt
+
+  # A signed statement, from GitHub's own signing identity, that these exact bytes were
+  # produced by this workflow from this commit. Tags only: a dry run has nothing durable
+  # to attest to.
+  provenance:
+    needs: [build, verify]
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: dist
+          path: dist
+      - uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: "dist/*.whl,dist/*.tar.gz"
+
+  github-release:
+    needs: [build, verify, provenance]
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write   # the only job that writes to the repository
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: dist
+          path: dist
+      - name: Create the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -e
+          notes=$(mktemp)
+          {
+            echo "Artifacts are attested with build provenance; verify with:"
+            echo
+            echo '```'
+            echo "gh attestation verify dist/nevertwice-${{ needs.build.outputs.version }}-py3-none-any.whl --repo ${{ github.repository }}"
+            echo '```'
+            echo
+            echo "\`SHA256SUMS\` and a CycloneDX SBOM are attached. Changelog: CHANGELOG.md"
+          } > "$notes"
+          gh release create "${GITHUB_REF_NAME}" dist/* \
+            --title "${GITHUB_REF_NAME}" \
+            --notes-file "$notes" \
+            $([ "${{ needs.build.outputs.prerelease }}" = "true" ] && echo --prerelease)
+
+  # Trusted Publishing: no API token anywhere, PyPI verifies the workflow identity.
+  # Blocked until the owner creates the `pypi` environment and registers this workflow as
+  # a trusted publisher on PyPI - that is gate G1, and it is deliberately not automatable.
+  pypi:
+    needs: [build, verify, provenance]
+    # A pre-release tag is the dry run the release process is meant to be
+    # rehearsed with: it exercises build, verify, provenance and the GitHub
+    # release, and stops here. Only a final version reaches PyPI.
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+      && needs.build.outputs.prerelease == 'false'
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/project/nevertwice/
+    permissions:
+      id-token: write   # OIDC for Trusted Publishing; no password, no token
+    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: dist
+          path: dist
+      - name: Keep only the distribution files
+        # SHA256SUMS and the SBOM travel with the GitHub release, not to PyPI, which
+        # rejects anything that is not an sdist or a wheel.
+        run: find dist -type f ! -name '*.whl' ! -name '*.tar.gz' -delete
+      - uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # v1.14.2
