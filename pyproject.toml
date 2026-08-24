@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=61.0"]
+requires = ["setuptools>=77.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -8,13 +8,13 @@ version = "2.3.0"
 description = "Proactive, local-first memory for AI coding agents - it acts before your agent repeats a mistake. Formerly Anamnesis."
 readme = "README.md"
 requires-python = ">=3.10"
-license = { text = "MIT" }
+license = "MIT"
+license-files = ["LICENSE"]
 authors = [{ name = "Platon Chernov" }]
 keywords = ["memory", "llm", "agents", "mcp", "claude", "rag", "embeddings", "zettelkasten"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
@@ -30,6 +30,7 @@ dependencies = []   # standard library only; Ollama/cloud are reached over HTTP
 reranker = ["torch", "transformers"]   # trained cross-encoder precision boost (NEVERTWICE_XRERANK=1)
 langchain = ["langchain-core"]         # NevertwiceRetriever / NevertwiceMemory adapters
 llamaindex = ["llama-index-core"]      # NevertwiceRetriever for LlamaIndex
+dev = ["pytest>=8", "pyflakes>=3", "build>=1"]  # local checks and wheel validation
 
 [project.urls]
 Homepage = "https://github.com/DonPlaton/nevertwice"
@@ -65,3 +66,8 @@ packages = ["nevertwice", "nevertwice.integrations"]
 
 [tool.setuptools.package-data]
 nevertwice = ["*.md"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = "-p no:cacheprovider"
