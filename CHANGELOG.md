@@ -6,6 +6,17 @@ versions are [semantic](https://semver.org). Dates are UTC.
 ## [Unreleased]
 
 ### Added
+- **The comparison document is generated and dated.** `tools/comparison_snapshot.py`
+  pulls repository activity - stars, forks, last push, archived, licence - from the GitHub
+  API into a committed `docs/comparison_snapshot.json`, then renders four tables in
+  `docs/COMPARISON.md`: what each vendor **documents** (with a source link per row, at a
+  stated survey date), repository activity, what could actually be **run here**, and the
+  retrieval recall from that one run. Vendor claim and measurement are now separate tables
+  rather than one matrix that mixed them. `--fetch` is the only mode that touches the
+  network and is never run in CI; checking and rendering are offline and byte-stable, and
+  CI fails if the document drifts from the data.
+- Registered eight more head-to-head claims (R@10 and MRR for each system) so the
+  comparison's retrieval table comes from the evidence manifest, like the README's.
 - **The published tables are generated, not typed.** `tools/render_claims.py` renders the
   ten benchmark tables in the README and `docs/BENCHMARKS.md` from the evidence manifest
   into marked regions, and CI re-renders and fails on any difference - so a table cannot
@@ -16,10 +27,10 @@ versions are [semantic](https://semver.org). Dates are UTC.
 - **Every tracked Markdown file has a governance mode.** The manifest's document register
   marks each one governed (every number must resolve to a claim), exempt with a stated
   reason, or backlog with a numeric budget that may only be lowered. A new document
-  cannot quietly start publishing unevidenced numbers, and the 1,398 numbers still
+  cannot quietly start publishing unevidenced numbers, and the 1,352 numbers still
   unregistered across 23 study write-ups can only shrink.
 - **Every published number now resolves to its evidence.**
-  `research/evidence_manifest.json` registers all 125 figures printed in the README and
+  `research/evidence_manifest.json` registers all 133 figures printed in the README and
   `docs/BENCHMARKS.md` with the dataset, sample size, model, hardware, exact command, raw
   result file and pointer, confidence interval where one applies, and the caveat that
   belongs with the number. `tests/_test_evidence_manifest.py` fails if a printed number
@@ -72,6 +83,11 @@ versions are [semantic](https://semver.org). Dates are UTC.
   otherwise; backend log lines gained a try count and a scrubbed URL.
 
 ### Fixed
+- **The comparison implied Letta had been benchmarked and blocked.** There is no
+  `run_letta` adapter in `research/head_to_head.py`, so it was never put on the stand at
+  all. The verified table now distinguishes *ran here*, *could not be run* (an adapter
+  exists and recorded a blocker) and *not attempted* - a gap in the comparison rather
+  than a finding about the system.
 - **Five published figures disagreed with the stored results.** The distillation A/B table
   and its prose were from an older run than `research/token_ab.json` (30.7x compression
   from 968,715 -> 31,517; the stored result is **31.4x from 1,013,847 -> 32,263**, with

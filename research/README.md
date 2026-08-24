@@ -29,7 +29,7 @@ be lowered - so a new document cannot quietly start publishing unevidenced numbe
 
 Two things the manifest makes visible rather than hides: **45 of 125 claims have no
 committed raw artifact** (each says why - `eval_harness.py` saves into the user's vault,
-`latency_bench.py` saves nothing, some studies are published only as prose), and **1,398
+`latency_bench.py` saves nothing, some studies are published only as prose), and **1,352
 numbers across 23 study write-ups are still unregistered**, held under a ratchet that lets
 that surface shrink but never grow.
 
