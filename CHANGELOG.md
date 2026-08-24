@@ -6,6 +6,21 @@ versions are [semantic](https://semver.org). Dates are UTC.
 ## [Unreleased]
 
 ### Added
+- **Baseline gates are written policy, and machine-checked.** `research/BASELINES.md`
+  names the six baselines a headline has to clear - no memory, full-history injection,
+  lexical recall, a curated `AGENTS.md`, an LLM session summary, and the relevant linter
+  or test - plus a seventh this project already runs (an already-curated small haystack).
+  The manifest carries a verdict for every headline against every baseline, and
+  `tests/_test_baselines.py` fails if a headline skips one, if `not_compared` or
+  `not_applicable` is asserted without an argument, or if a `beats` verdict cannot name
+  the raw file the comparison lives in.
+
+  The current matrix is 6 beats, 1 loses, 19 not compared, 16 not applicable. Three
+  things it makes visible: the repeat-error headline has never been run against a
+  hand-written `AGENTS.md` carrying the same one-line rule, nor against the linter that
+  already catches several of those pitfalls; and the live two-arm token claim **fails**
+  its gate, because input tokens and answer accuracy fell together and the policy
+  requires matched accuracy.
 - **The comparison document is generated and dated.** `tools/comparison_snapshot.py`
   pulls repository activity - stars, forks, last push, archived, licence - from the GitHub
   API into a committed `docs/comparison_snapshot.json`, then renders four tables in
