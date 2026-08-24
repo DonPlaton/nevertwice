@@ -155,9 +155,15 @@ def brain_enabled() -> bool:
 def entity_types() -> list:
     """Distinct entity types for the active brain profiles, in declaration order.
     Empty for a coding-only install."""
+    active = profiles()
     out: list = []
-    for p in profiles():
-        for t in ONTOLOGY.get(p, []):
+    # `profiles()` is a set. Iterating it made prompt bytes depend on
+    # PYTHONHASHSEED when more than one Brain profile was enabled. Walk the
+    # declared ontology instead so extraction is reproducible across processes.
+    for p, types in ONTOLOGY.items():
+        if p not in active:
+            continue
+        for t in types:
             if t not in out:
                 out.append(t)
     return out
@@ -166,9 +172,12 @@ def entity_types() -> list:
 def relation_hints() -> list:
     """Suggested typed-edge names for the active brain profiles (e.g. cites / evaluated-on),
     in declaration order. Empty for a coding-only install - the generic rel set is used then."""
+    active = profiles()
     out: list = []
-    for p in profiles():
-        for r in RELATION_HINTS.get(p, []):
+    for p, hints in RELATION_HINTS.items():
+        if p not in active:
+            continue
+        for r in hints:
             if r not in out:
                 out.append(r)
     return out
