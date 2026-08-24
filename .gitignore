@@ -40,3 +40,7 @@ nevertwice/research/data/*
 
 # generated dashboard output (python -m nevertwice.dashboard)
 memory_dashboard.html
+
+# internal execution plan and progress ledger for the audit follow-up — the public
+# roadmap carries the outcomes; this carries the gates, credentials notes and sequencing.
+.loop/
