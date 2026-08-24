@@ -35,6 +35,7 @@ _LOCATION_VARS = (
     "NEVERTWICE_ENV_FILE",          # would re-introduce any of the above from a file
     "NEVERTWICE_EMBED_MODEL",       # a machine-local embedder pin must not leak in
     "NEVERTWICE_TWIN_FILE", "NEVERTWICE_TWIN_SPACE",   # ditto, twin-gate calibration
+    "NEVERTWICE_TEST_XRERANK",      # expensive research opt-in must be explicit per test run
 )
 for _k in _LOCATION_VARS:
     os.environ.pop(_k, None)
@@ -42,4 +43,7 @@ for _k in _LOCATION_VARS:
 _TMP_HOME = tempfile.mkdtemp(prefix="nevertwice_test_home_")
 os.environ["NEVERTWICE_HOME"] = _TMP_HOME
 os.environ["NEVERTWICE_VAULT"] = _TMP_HOME     # wins over any env-file value (setdefault)
+# A cached optional cross-encoder auto-enables in production. Test fixtures must
+# never load that ~2 GB model or touch a GPU unless a test overrides this switch.
+os.environ["NEVERTWICE_XRERANK"] = "0"
 atexit.register(lambda: shutil.rmtree(_TMP_HOME, ignore_errors=True))
