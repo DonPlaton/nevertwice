@@ -426,7 +426,7 @@ point the bootstrapper at it: `python -m nevertwice.bootstrap_contexts /path/to/
 
 ## Tests
 
-Forty-eight hermetic suites; LLMs, embedders, the optional reranker, network and GPU
+Fifty hermetic suites; LLMs, embedders, the optional reranker, network and GPU
 execution are disabled or mocked by default. After `pip install -e ".[dev]"`:
 
 ```bash
@@ -434,8 +434,8 @@ python -m pytest -q
 ```
 
 The underlying standard-library self-checks remain directly runnable. CI runs the core
-suite on Linux, Windows, and macOS across Python 3.10, 3.12, 3.13, and 3.14, plus the
-research suite on Python 3.13.
+suite on Linux, Windows, and macOS across Python 3.10, 3.12, 3.13, and 3.14, the research
+suite on Python 3.13, and one job that follows the contributor path above end to end.
 
 ## Docs
 

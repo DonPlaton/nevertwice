@@ -5,6 +5,15 @@ versions are [semantic](https://semver.org). Dates are UTC.
 
 ## [Unreleased]
 
+### Added
+- **The version contract is enforced, not documented.** `tools/check_version.py` checks
+  that `pyproject.toml`, the runtime `__version__`, the MCP server's reported version, the
+  git tag and the built distribution's metadata all carry the same version - and that the
+  metadata still declares the SPDX `License-Expression`. CI runs it on every push, before
+  and after building, so a release cannot be cut on a mismatched tag or a stale wheel.
+- A `packaging` CI job installs `.[dev]` and runs `python -m pytest -q` - the exact path
+  the README and CONTRIBUTING tell a contributor to follow.
+
 ### Changed
 - Brain ontologies and relation hints now follow declaration order for every
   `PYTHONHASHSEED`, making multi-profile extraction prompts reproducible.
@@ -29,6 +38,12 @@ versions are [semantic](https://semver.org). Dates are UTC.
   otherwise; backend log lines gained a try count and a scrubbed URL.
 
 ### Fixed
+- **The research suites were outside the test sandbox.** All fourteen ran without
+  `tests/_env_guard.py`, and five of them import `memory_hook` directly - so on a machine
+  whose shell exports `NEVERTWICE_VAULT`, they baked live store paths into import-time
+  constants: exactly the setup behind the 2026-08-13 and 2026-08-18 incidents. Every suite
+  now arms the guard before its first project import, and `tests/_test_hermeticity.py`
+  fails if one forgets or if a hostile environment survives the guard.
 - **Project scanners no longer follow file symlinks.** `graphify` and the context
   bootstrapper skip linked files (and linked directories while collecting layout),
   preventing content outside the selected project from entering a graph or cloud prompt.
