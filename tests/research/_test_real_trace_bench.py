@@ -19,6 +19,8 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parent.parent / "nevertwice"))
 sys.path.insert(0, str(HERE.parent.parent / "research"))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))   # tests/
+import _env_guard  # noqa: F401, E402 - sandbox the store before any project import
 
 try:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
