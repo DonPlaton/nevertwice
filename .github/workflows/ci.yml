@@ -43,3 +43,27 @@ jobs:
         run: |
           set -e
           for t in tests/research/_test_*.py; do python "$t"; done
+
+  # The path a contributor actually follows. The matrix above proves the suites pass when
+  # run directly; this proves they pass the way README and CONTRIBUTING tell people to run
+  # them - installed from the dev extra, through pytest - and that the release identity
+  # (version, tag, distribution metadata) agrees with itself before anything is published.
+  packaging:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          fetch-depth: 0   # tags are half of the version contract; a shallow clone has none
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: "3.12"
+      - name: Install the documented dev environment
+        run: python -m pip install -e ".[dev]"
+      - name: Run the documented test command
+        run: python -m pytest -q
+      - name: Version contract - pyproject, runtime, MCP, git tag
+        run: python tools/check_version.py
+      - name: Build sdist and wheel
+        run: python -m build
+      - name: Version contract - built distribution metadata
+        run: python tools/check_version.py --dist dist
