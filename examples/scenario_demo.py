@@ -30,7 +30,9 @@ ROOT = Path(__file__).resolve().parent.parent
 # Point the store at a throwaway dir BEFORE importing the engine (VAULT is resolved at import),
 # and force the offline/deterministic path so the demo is reproducible and touches no network.
 _TMP = tempfile.mkdtemp(prefix="nevertwice-scenario-")
-os.environ["NEVERTWICE_HOME"] = _TMP
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import _sandbox  # noqa: F401, E402 - throwaway store, before any project import
+_TMP = _sandbox.STORE
 os.environ["NEVERTWICE_CLOUD"] = "none"
 sys.path.insert(0, str(ROOT / "nevertwice"))
 

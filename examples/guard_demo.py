@@ -1,10 +1,28 @@
 #!/usr/bin/env python3
-"""Nevertwice - the 15-second "memory that acts" GIF: a guard fires before a real mistake repeats.
+"""Nevertwice - the canonical story: a mistake in one session, prevented in the next.
 
-The single beat that earns the star. A throwaway vault, a mistake recorded once, then the agent
-about to repeat it - and memory speaks up *before* the edit lands, at zero cost until this moment.
+Four beats, on a throwaway vault, with no model, no key and no network:
+
+    session A   the mistake happens and the lesson is recorded
+    session A   a guard is distilled from it - into a ledger, not your context
+    session B   a fresh session is about to repeat it, and the guard fires
+    session B   the corrected action passes clean
 
     python examples/guard_demo.py           # narrated, paced for a screen recording
+    python examples/guard_demo.py --check   # deterministic transcript, fixed exit codes
+
+`--check` is what CI runs. Its stdout is byte-identical on Linux, Windows and macOS and
+across runs: no colours, no pauses, no timestamps, no temporary paths. The engine's own
+log lines go to stderr, so stdout carries the transcript alone.
+
+Exit codes are fixed, so a failure says which beat broke:
+
+    0  all four beats held
+    1  an unexpected error
+    2  the lesson was not recorded
+    3  no guard was distilled from it
+    4  the repeat was NOT flagged - the prevention claim is what failed
+    5  the corrected action was flagged anyway - a false positive
 
 Record it for the README:
     asciinema rec -c "python examples/guard_demo.py" guard.cast
@@ -12,14 +30,12 @@ Record it for the README:
 """
 import os
 import sys
-import tempfile
 import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-_TMP = tempfile.mkdtemp(prefix="nevertwice-guard-")
-os.environ["NEVERTWICE_HOME"] = _TMP
-os.environ["NEVERTWICE_CLOUD"] = "none"
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import _sandbox  # noqa: F401, E402 - throwaway store, before any project import
 sys.path.insert(0, str(ROOT / "nevertwice"))
 
 import api      # noqa: E402
@@ -50,6 +66,64 @@ def type_out(prefix, text, color=""):
         sys.stdout.flush()
         time.sleep(0.012)
     sys.stdout.write("\n")
+
+
+MISTAKE = {
+    "type": "mistake", "title": "sql-built-by-fstring",
+    "description": "A filter was interpolated into the SQL string - an injection hole.",
+    "prevention": "Never build SQL by f-string - pass values as query parameters.",
+    "entities": ["database", "security"],
+}
+REPEAT = "cursor.execute(f\"SELECT * FROM users WHERE name = '{name}'\")"
+CORRECTED = 'cursor.execute("SELECT * FROM users WHERE name = ?", (name,))'
+
+
+def check() -> int:
+    """The same four beats, printed as a transcript a machine can diff.
+
+    Every value printed here is fixed by the inputs above: the note stem, the regex the
+    offline generator distils, and the guard's message. Nothing carries a date, a path or
+    a duration, which is what lets CI compare this byte for byte across three platforms.
+    """
+    # `newline=""` stops Windows translating \n to \r\n, so the transcript is identical
+    # on every platform rather than merely equivalent.
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="strict", newline="")
+    except Exception:                             # pragma: no cover - very old streams
+        pass
+
+    def line(beat: str, session: str, label: str, detail: str) -> None:
+        sys.stdout.write(f"{beat} session {session}  {label:<22}{detail}\n")
+
+    sys.stdout.write("nevertwice: prevented repeat (no model, no key, no network)\n")
+
+    stems = api.remember_lessons([MISTAKE], project="app", embed=False)
+    if not stems:
+        sys.stdout.write("FAIL the lesson was not recorded\n")
+        return 2
+    line("1", "A", "mistake recorded", stems[0].split("-app-", 1)[-1]
+         if "-app-" in stems[0] else stems[0])
+
+    G.generate_from_vault("app", min_recurrence=1, use_llm=False)
+    ledger = G.load_guards()
+    if not ledger:
+        sys.stdout.write("FAIL no guard was distilled from the lesson\n")
+        return 3
+    line("2", "A", "guard distilled", ledger[0]["pattern"])
+
+    hits = api.guards_check(REPEAT, project="app")
+    if not hits:
+        sys.stdout.write("FAIL the repeat was not flagged\n")
+        return 4
+    line("3", "B", "repeat flagged", hits[0]["message"])
+
+    if api.guards_check(CORRECTED, project="app"):
+        sys.stdout.write("FAIL the corrected action was flagged too\n")
+        return 5
+    line("4", "B", "correction clean", "no guard fires")
+
+    sys.stdout.write("OK 4/4 beats\n")
+    return 0
 
 
 def main():
@@ -98,4 +172,12 @@ def main():
 
 
 if __name__ == "__main__":
+    if "--check" in sys.argv[1:]:
+        try:
+            raise SystemExit(check())
+        except SystemExit:
+            raise
+        except Exception as exc:                  # noqa: BLE001 - report, do not traceback
+            sys.stdout.write(f"FAIL unexpected error: {type(exc).__name__}: {exc}\n")
+            raise SystemExit(1) from None
     main()

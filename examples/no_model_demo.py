@@ -16,7 +16,8 @@ import sys
 import tempfile
 from pathlib import Path
 
-os.environ["NEVERTWICE_HOME"] = tempfile.mkdtemp()
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import _sandbox  # noqa: F401, E402 - throwaway store, before any project import
 os.environ["NEVERTWICE_CLOUD"] = "none"          # no cloud extraction
 os.environ["NEVERTWICE_GUARD_PACK"] = "1"        # seed the universal pack (no history needed)
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "nevertwice"))
