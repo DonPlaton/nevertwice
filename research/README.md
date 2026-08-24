@@ -18,11 +18,20 @@ the confidence interval where one applies, and the caveat that belongs with the 
 disagrees with the raw result it points at, or if a claim without a committed artifact
 does not say so.
 
-Two things it makes visible rather than hides: **45 of 123 claims have no committed raw
-artifact** (each says why - `eval_harness.py` saves into the user's vault,
-`latency_bench.py` saves nothing, some studies are published only as prose), and the
-manifest carries a **drift register** of figures the documents currently print that the
-stored results contradict. Regenerating those tables from the manifest is the next task.
+The tables in those documents are **generated** from the manifest by
+[`render_claims.py`](../tools/render_claims.py) into marked regions; CI re-renders them and
+fails on any difference, so a table cannot drift from the result it reports. The same tool
+emits a chart's evidence footer: `python tools/render_claims.py --footer <claim-id>`.
+
+Every tracked Markdown file is registered as **governed** (every number must resolve to a
+claim), **exempt** with a stated reason, or **backlog** with a numeric budget that may only
+be lowered - so a new document cannot quietly start publishing unevidenced numbers.
+
+Two things the manifest makes visible rather than hides: **45 of 125 claims have no
+committed raw artifact** (each says why - `eval_harness.py` saves into the user's vault,
+`latency_bench.py` saves nothing, some studies are published only as prose), and **2,208
+numbers across 23 study write-ups are still unregistered**, held under a ratchet that lets
+that surface shrink but never grow.
 
 ## Start here
 

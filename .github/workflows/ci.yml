@@ -67,3 +67,8 @@ jobs:
         run: python -m build
       - name: Version contract - built distribution metadata
         run: python tools/check_version.py --dist dist
+      - name: Published tables match the evidence manifest
+        # The suites already run this through tests/_test_evidence_manifest.py; running
+        # it as its own step means a stale table is named in the CI summary rather than
+        # buried in one suite's output.
+        run: python tools/render_claims.py

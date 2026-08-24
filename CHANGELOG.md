@@ -6,6 +6,18 @@ versions are [semantic](https://semver.org). Dates are UTC.
 ## [Unreleased]
 
 ### Added
+- **The published tables are generated, not typed.** `tools/render_claims.py` renders the
+  ten benchmark tables in the README and `docs/BENCHMARKS.md` from the evidence manifest
+  into marked regions, and CI re-renders and fails on any difference - so a table cannot
+  drift from the result it reports. It also emits chart evidence footers
+  (`--footer <claim-id>`: n, dataset, model, interval, commit, repro command) for the
+  figures. Table emphasis now follows a stated rule - the best value in each column -
+  instead of hand-applied bold that outlives the number it was highlighting.
+- **Every tracked Markdown file has a governance mode.** The manifest's document register
+  marks each one governed (every number must resolve to a claim), exempt with a stated
+  reason, or backlog with a numeric budget that may only be lowered. A new document
+  cannot quietly start publishing unevidenced numbers, and the 2,208 numbers still
+  unregistered across 23 study write-ups can only shrink.
 - **Every published number now resolves to its evidence.**
   `research/evidence_manifest.json` registers all 123 figures printed in the README and
   `docs/BENCHMARKS.md` with the dataset, sample size, model, hardware, exact command, raw
@@ -49,6 +61,19 @@ versions are [semantic](https://semver.org). Dates are UTC.
   otherwise; backend log lines gained a try count and a scrubbed URL.
 
 ### Fixed
+- **Five published figures disagreed with the stored results.** The distillation A/B table
+  and its prose were from an older run than `research/token_ab.json` (30.7x compression
+  from 968,715 -> 31,517; the stored result is **31.4x from 1,013,847 -> 32,263**, with
+  every per-k row different). The live two-arm memory arm read 345 tokens and 0.33
+  answer-match; the stored result is **348 and 0.267** - the document was understating its
+  own honest accuracy caveat. The `~5-35x` state-conveyance range was a hand-rounding of
+  one project's ratio; the measured figures are 34.6x, 46.6x and 115x. And the +0.14
+  forgetting gain is measured against the **salience** baseline, not recency-sorting as the
+  README said (against recency the gap is 0.096). All corrected from the raw results.
+- **The head-to-head table now quotes one run.** Nevertwice's row was taken from the
+  retrieval study while the competitors' rows came from the head-to-head run; both now come
+  from `research/head_to_head.json`, which is the only thing that makes "the same stand"
+  mean anything.
 - **The research suites were outside the test sandbox.** All fourteen ran without
   `tests/_env_guard.py`, and five of them import `memory_hook` directly - so on a machine
   whose shell exports `NEVERTWICE_VAULT`, they baked live store paths into import-time
