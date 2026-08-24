@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import io
 import subprocess
 import sys
 import tempfile
@@ -19,6 +20,10 @@ import _env_guard  # noqa: F401, E402 - must run before package imports
 
 import bootstrap_contexts as bootstrap  # noqa: E402
 import graphify  # noqa: E402
+
+_stdout = sys.stdout
+import mcp_server as mcp  # noqa: E402 - redirects stdout while serving stdio
+sys.stdout = _stdout
 
 
 PASSED = 0
@@ -67,6 +72,41 @@ def test_project_scanners_skip_symlinked_files() -> None:
         check("graphify skips symlinked project files",
               all(node["path"] != "README.md" for node in graph["files"]))
         check("bootstrap skips symlinked config files", "DO NOT INDEX" not in configs)
+
+
+def test_mcp_jsonrpc_notification_and_validation() -> None:
+    sent: list[dict] = []
+    with mock.patch.object(mcp, "_send", side_effect=sent.append):
+        mcp._handle({"jsonrpc": "2.0", "method": "ping"})
+        mcp._handle({"jsonrpc": "2.0", "method": "tools/list"})
+        mcp._handle({"jsonrpc": "2.0", "method": "tools/call",
+                     "params": {"name": "does-not-exist"}})
+    check("MCP notifications never receive JSON-RPC responses", sent == [])
+
+    sent.clear()
+    crashed = False
+    with mock.patch.object(mcp, "_send", side_effect=sent.append):
+        try:
+            mcp._handle({"jsonrpc": "2.0", "id": None, "method": "initialize",
+                         "params": []})
+        except Exception:
+            crashed = True
+    check("MCP invalid params do not crash the dispatcher", not crashed)
+    check("MCP invalid params return -32602 even for id=null",
+          bool(sent) and sent[0].get("id", "missing") is None
+          and sent[0].get("error", {}).get("code") == -32602)
+
+    sent.clear()
+    with mock.patch.object(mcp, "_send", side_effect=sent.append), \
+         mock.patch.object(mcp, "_handle", side_effect=RuntimeError("private path")), \
+         mock.patch.object(sys, "stdin", io.StringIO(
+             '{"jsonrpc":"2.0","id":null,"method":"ping"}\n')), \
+         mock.patch.object(sys, "stderr", io.StringIO()):
+        mcp.main()
+    check("MCP internal errors answer explicit id=null without leaking details",
+          bool(sent) and sent[0].get("id", "missing") is None
+          and sent[0].get("error", {}) == {"code": -32603,
+                                            "message": "internal error"})
 
 
 if __name__ == "__main__":

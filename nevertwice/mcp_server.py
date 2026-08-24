@@ -604,26 +604,48 @@ def _handle(msg: dict) -> None:
     is_request = "id" in msg          # JSON-RPC: a request HAS an id (even null); a notification has none
 
     if method == "initialize":
+        params = msg.get("params")
+        if params is not None and not isinstance(params, dict):
+            if is_request:
+                _error(req_id, -32602, "invalid params: expected an object")
+            return
         # MCP version negotiation: answer with the requested version only when we
         # actually support it, else with our latest supported one - echoing an
         # arbitrary client string claimed compliance with semantics we don't have.
-        proto = (msg.get("params") or {}).get("protocolVersion")
+        proto = (params or {}).get("protocolVersion")
         if proto not in SUPPORTED_PROTOCOLS:
             proto = DEFAULT_PROTOCOL
-        _result(req_id, {
-            "protocolVersion": proto,
-            "capabilities": {"tools": {"listChanged": False}},
-            "serverInfo": {"name": SERVER_NAME, "version": SERVER_VERSION},
-        })
+        if is_request:
+            _result(req_id, {
+                "protocolVersion": proto,
+                "capabilities": {"tools": {"listChanged": False}},
+                "serverInfo": {"name": SERVER_NAME, "version": SERVER_VERSION},
+            })
     elif method == "tools/list":
-        _result(req_id, {"tools": TOOLS})
+        if is_request:
+            _result(req_id, {"tools": TOOLS})
     elif method == "tools/call":
-        params = msg.get("params") or {}
+        params = msg.get("params")
+        if params is not None and not isinstance(params, dict):
+            if is_request:
+                _error(req_id, -32602, "invalid params: expected an object")
+            return
+        params = params or {}
         name = params.get("name")
-        args = params.get("arguments") or {}
+        if not isinstance(name, str):
+            if is_request:
+                _error(req_id, -32602, "invalid params: name must be a string")
+            return
+        args = params.get("arguments")
+        if args is not None and not isinstance(args, dict):
+            if is_request:
+                _error(req_id, -32602, "invalid params: arguments must be an object")
+            return
+        args = args or {}
         fn = _DISPATCH.get(name)
         if fn is None:
-            _error(req_id, -32602, f"unknown tool: {name}")
+            if is_request:
+                _error(req_id, -32602, f"unknown tool: {name}")
             return
         try:
             text, is_error = fn(args)          # tools report their own status (H8)
@@ -631,10 +653,12 @@ def _handle(msg: dict) -> None:
             # log the detail (paths, types) to stderr; never leak it to the client
             print(f"[mcp] tool {name!r} crashed: {type(exc).__name__}: {exc}", file=sys.stderr)
             text, is_error = "internal tool error", True
-        _result(req_id, {"content": [{"type": "text", "text": text}],
-                         "isError": is_error})
+        if is_request:
+            _result(req_id, {"content": [{"type": "text", "text": text}],
+                             "isError": is_error})
     elif method == "ping":
-        _result(req_id, {})
+        if is_request:
+            _result(req_id, {})
     elif is_request:
         # any other request method we don't implement
         _error(req_id, -32601, f"method not found: {method}")
@@ -660,9 +684,11 @@ def main() -> None:
         try:
             _handle(msg)
         except Exception as exc:
-            rid = msg.get("id") if isinstance(msg, dict) else None
-            if rid is not None:
-                _error(rid, -32603, f"internal error: {exc}")
+            # An explicit null id is still a request. Log diagnostic detail only
+            # on stderr; exposing exception strings can leak local paths/state.
+            print(f"[mcp] request crashed: {type(exc).__name__}: {exc}", file=sys.stderr)
+            if "id" in msg:
+                _error(msg.get("id"), -32603, "internal error")
 
 
 if __name__ == "__main__":
