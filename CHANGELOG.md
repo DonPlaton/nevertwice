@@ -6,6 +6,22 @@ versions are [semantic](https://semver.org). Dates are UTC.
 ## [Unreleased]
 
 ### Added
+- **Release automation.** `.github/workflows/release.yml` is tag-triggered and builds the
+  sdist and wheel exactly once; every later job downloads that artifact instead of
+  rebuilding, so the bytes that are verified are the bytes that get published. Verification
+  installs each artifact into an empty virtualenv on Linux, Windows and macOS, checks the
+  installed version against the built one, re-checks the checksums, and proves every console
+  entry point resolves to a callable. The build also emits a CycloneDX SBOM
+  (`tools/make_sbom.py`, generated from the wheel's own metadata) and `SHA256SUMS`, and a
+  tagged run attests build provenance so a downloaded artifact can be verified with
+  `gh attestation verify`.
+
+  Publishing is reachable only from a pushed tag: `workflow_dispatch` is a dry run that
+  produces every artifact and publishes nothing, and a **pre-release tag runs the whole
+  path and stops before PyPI**. The PyPI upload uses Trusted Publishing, so no API token
+  exists anywhere, and it waits on a `pypi` environment that only the repository owner can
+  create. `tests/_test_release_workflow.py` fails if a publishing gate is removed, if a
+  second job starts building, or if an action stops being pinned to a commit sha.
 - **Baseline gates are written policy, and machine-checked.** `research/BASELINES.md`
   names the six baselines a headline has to clear - no memory, full-history injection,
   lexical recall, a curated `AGENTS.md`, an LLM session summary, and the relevant linter

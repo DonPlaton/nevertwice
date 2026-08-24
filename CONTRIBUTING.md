@@ -55,6 +55,13 @@ python -m build && python tools/check_version.py --dist dist
 
 `--release` additionally demands that HEAD carry the matching `vX.Y.Z` tag.
 
+Pushing that tag runs [`release.yml`](.github/workflows/release.yml): it builds once,
+installs the artifact into a clean virtualenv on three operating systems, checks every
+console entry point, emits an SBOM and checksums, attests provenance, and creates the
+GitHub release. A **pre-release tag** (`v2.4.0rc1`) runs that whole path and stops before
+PyPI, so the process can be rehearsed without publishing anything. Dispatching the
+workflow by hand is a dry run that publishes nothing at all.
+
 ## Commits
 
 `type(scope): description` (feat / fix / perf / refactor / docs / test / chore /
