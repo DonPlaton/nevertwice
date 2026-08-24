@@ -5,7 +5,9 @@ from __future__ import annotations
 import os
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
+from unittest import mock
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent
@@ -14,6 +16,9 @@ sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(PKG))
 
 import _env_guard  # noqa: F401, E402 - must run before package imports
+
+import bootstrap_contexts as bootstrap  # noqa: E402
+import graphify  # noqa: E402
 
 
 PASSED = 0
@@ -44,6 +49,24 @@ def test_brain_profile_order_is_deterministic() -> None:
     only = next(iter(outputs), "")
     check("Brain ontology follows declared profile order", only.startswith("paper|method|"))
     check("Brain relation hints follow declared profile order", "\ncites|builds-on|" in only)
+
+
+def test_project_scanners_skip_symlinked_files() -> None:
+    with tempfile.TemporaryDirectory(prefix="nevertwice_audit_scan_") as tmp:
+        root = Path(tmp)
+        leak = root / "README.md"
+        leak.write_text("# DO NOT INDEX THIS SECRET\n", encoding="utf-8")
+        original = Path.is_symlink
+
+        def fake_is_symlink(path: Path) -> bool:
+            return path == leak or original(path)
+
+        with mock.patch.object(Path, "is_symlink", fake_is_symlink):
+            graph = graphify.build(root)
+            configs = bootstrap.collect_configs(root)
+        check("graphify skips symlinked project files",
+              all(node["path"] != "README.md" for node in graph["files"]))
+        check("bootstrap skips symlinked config files", "DO NOT INDEX" not in configs)
 
 
 if __name__ == "__main__":

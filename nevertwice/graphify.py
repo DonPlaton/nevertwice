@@ -145,7 +145,10 @@ def _newest_source_mtime(root: Path):
         dns[:] = [d for d in dns if d not in skip_dirs and not d.startswith('.')]
         for fn in fns:
             fp = Path(r) / fn
-            if fp.suffix in SKIP_EXTS:
+            # A repository can contain a file symlink that resolves outside its
+            # root. Never inspect that target or let its mtime invalidate the
+            # graph cache; users can index the real file at its own location.
+            if fp.is_symlink() or fp.suffix in SKIP_EXTS:
                 continue
             try:
                 mt = fp.stat().st_mtime
@@ -167,7 +170,9 @@ def build(root: Path) -> dict:
         for fn in sorted(fns):
             fp = rp / fn
             try:
-                if fp.suffix in SKIP_EXTS or fp.stat().st_size > 5_000_000: continue
+                if (fp.is_symlink() or fp.suffix in SKIP_EXTS
+                        or fp.stat().st_size > 5_000_000):
+                    continue
             except OSError:
                 continue
             n = analyze(fp, root)

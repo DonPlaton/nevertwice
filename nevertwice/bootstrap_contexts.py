@@ -130,7 +130,10 @@ def collect_configs(root: Path) -> str:
     parts = []
     for name in CONFIG_FILES:
         fp = root / name
-        if fp.exists() and fp.is_file():
+        # Bootstrap content may be sent to a configured cloud backend. A
+        # project-local symlink must never make an arbitrary outside file part
+        # of that prompt.
+        if not fp.is_symlink() and fp.exists() and fp.is_file():
             try:
                 content = fp.read_text(encoding="utf-8", errors="ignore")
                 if len(content) > 3000:
@@ -149,7 +152,8 @@ def collect_structure(root: Path) -> tuple[str, dict]:
     total_size = 0
 
     try:
-        entries = sorted(root.iterdir(), key=lambda x: (not x.is_dir(), x.name.lower()))
+        entries = sorted((entry for entry in root.iterdir() if not entry.is_symlink()),
+                         key=lambda x: (not x.is_dir(), x.name.lower()))
     except Exception:
         return "(unreadable root)", {}
 
@@ -170,10 +174,13 @@ def collect_structure(root: Path) -> tuple[str, dict]:
     # walk for code-file sample
     code_samples = []
     for r, dns, fns in os.walk(root):
-        dns[:] = [d for d in dns if d not in SKIP_DIRS and not d.startswith('.')]
         rp = Path(r)
+        dns[:] = [d for d in dns if d not in SKIP_DIRS and not d.startswith('.')
+                  and not (rp / d).is_symlink()]
         for fn in fns:
             fp = rp / fn
+            if fp.is_symlink():
+                continue
             ext = fp.suffix
             try:
                 size = fp.stat().st_size
@@ -317,6 +324,9 @@ def process(project_path: Path):
     print(f"\n=== {project_path.name} → {name} ===")
     if not project_path.exists():
         print(f"  [skip] not found")
+        return
+    if not project_path.is_dir():
+        print("  [skip] not a directory")
         return
     # NEVER clobber an accumulated Context card: bootstrap is a one-time SEED, but the hook
     # then rolls real session history into Context/<project>.md (the per-project source of
