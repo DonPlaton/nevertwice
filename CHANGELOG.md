@@ -6,6 +6,17 @@ versions are [semantic](https://semver.org). Dates are UTC.
 ## [Unreleased]
 
 ### Added
+- **Every published number now resolves to its evidence.**
+  `research/evidence_manifest.json` registers all 123 figures printed in the README and
+  `docs/BENCHMARKS.md` with the dataset, sample size, model, hardware, exact command, raw
+  result file and pointer, confidence interval where one applies, and the caveat that
+  belongs with the number. `tests/_test_evidence_manifest.py` fails if a printed number
+  has no entry, if an entry disagrees with the raw file it points at, or if a claim
+  without a committed artifact does not say so. Two things the register makes visible
+  instead of hiding: 45 claims have no committed raw artifact (`eval_harness.py` saves
+  into the user's vault, `latency_bench.py` saves nothing), and five published figures -
+  the distillation table, the live two-arm arm, and the forgetting baseline - disagree
+  with the stored results and are recorded as drift until the tables are regenerated.
 - **The version contract is enforced, not documented.** `tools/check_version.py` checks
   that `pyproject.toml`, the runtime `__version__`, the MCP server's reported version, the
   git tag and the built distribution's metadata all carry the same version - and that the

@@ -8,6 +8,22 @@ The one thing that makes Nevertwice different from most "memory for agents" repo
 **we measured the clever ideas on real data and cut the ones that lost.** A memory you
 can't trust is worse than no memory. The receipts are here.
 
+## Where a number comes from
+
+[`evidence_manifest.json`](evidence_manifest.json) is the register behind every figure
+printed in the README and [`docs/BENCHMARKS.md`](../docs/BENCHMARKS.md): dataset, sample
+size, model, hardware, the exact command, the raw result file and the pointer inside it,
+the confidence interval where one applies, and the caveat that belongs with the number.
+`tests/_test_evidence_manifest.py` fails if a printed number has no entry, if an entry
+disagrees with the raw result it points at, or if a claim without a committed artifact
+does not say so.
+
+Two things it makes visible rather than hides: **45 of 123 claims have no committed raw
+artifact** (each says why - `eval_harness.py` saves into the user's vault,
+`latency_bench.py` saves nothing, some studies are published only as prose), and the
+manifest carries a **drift register** of figures the documents currently print that the
+stored results contradict. Regenerating those tables from the manifest is the next task.
+
 ## Start here
 
 | Study | File | Verdict |
