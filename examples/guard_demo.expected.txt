@@ -1,0 +1,6 @@
+nevertwice: prevented repeat (no model, no key, no network)
+1 session A  mistake recorded      mistake-sql-built-by-fstring
+2 session A  guard distilled       execute\s*\(\s*f[\"']
+3 session B  repeat flagged        past mistake: Never build SQL by f-string - pass values as query parameters.
+4 session B  correction clean      no guard fires
+OK 4/4 beats
