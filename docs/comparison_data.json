@@ -1,0 +1,275 @@
+{
+  "schema_version": 1,
+  "surveyed": "2026-06",
+  "surveyed_note": "Capability rows below are read from each system's own documentation, papers and repository at the survey date. They are what the vendor says, not what this project measured; the measured rows live in the verified table and come from research/head_to_head.json.",
+  "head_to_head_recorded": "2026-07-05",
+  "head_to_head_note": "The date is when research/head_to_head.json was committed. The run itself recorded no timestamp, so this is the latest date the result can be attributed to, not the exact run date.",
+  "axis_rule": "Retrieval recall@k and end-to-end answer accuracy are different axes and never share a table. Answer accuracy depends on the reader model as much as on the memory; ranking the two together would compare a retrieval pipeline against a retrieval pipeline plus an LLM.",
+  "systems": [
+    {
+      "id": "nevertwice",
+      "name": "Nevertwice",
+      "repo": "DonPlaton/nevertwice",
+      "vendor": {
+        "substrate": "markdown + JSON under git; no DB/server",
+        "retrieval": "hybrid semantic (bge-m3 local) + lexical, calibrated score fusion (RRF fallback), recurrence-boost",
+        "temporal": "supersession (→`Superseded/`) + RESOLVES edges + bi-temporal `as_of`",
+        "agnostic": "yes: hooks · MCP · ingest",
+        "local": "fully local, $0; cloud only for opt-in extraction; secret redaction",
+        "deploy": "files only"
+      },
+      "sources": []
+    },
+    {
+      "id": "mem0",
+      "name": "Mem0",
+      "repo": "mem0ai/mem0",
+      "vendor": {
+        "substrate": "vector DB (graph on Pro)",
+        "retrieval": "hybrid dense+BM25+entity, rank-fused",
+        "temporal": "ADD-only (\"nothing deleted\"); read-time decay",
+        "agnostic": "yes (SDK/MCP)",
+        "local": "self-host or cloud; defaults to an OpenAI key",
+        "deploy": "low (pip); local needs Ollama+Qdrant"
+      },
+      "sources": [
+        "https://docs.mem0.ai/changelog",
+        "https://arxiv.org/abs/2504.19413"
+      ]
+    },
+    {
+      "id": "zep",
+      "name": "Zep / Graphiti",
+      "repo": "getzep/graphiti",
+      "vendor": {
+        "substrate": "temporal KG (Neo4j/FalkorDB)",
+        "retrieval": "hybrid + BFS graph traversal + rerankers",
+        "temporal": "true bi-temporal (valid/invalid + created/expired); LLM invalidation, never deletes",
+        "agnostic": "Graphiti Py; Zep API/MCP",
+        "local": "Graphiti self-host; Zep CE deprecated Apr 2025 → cloud",
+        "deploy": "moderate (graph DB + LLM)"
+      },
+      "sources": [
+        "https://github.com/getzep/graphiti",
+        "https://arxiv.org/abs/2501.13956",
+        "https://blog.getzep.com/beyond-static-knowledge-graphs/"
+      ]
+    },
+    {
+      "id": "letta",
+      "name": "Letta (MemGPT)",
+      "repo": "letta-ai/letta",
+      "vendor": {
+        "substrate": "git-backed markdown \"MemFS\" (Feb 2026); was Postgres+vector",
+        "retrieval": "self-editing in-context blocks + archival vector; sleep-time compute",
+        "temporal": "agent rewrites blocks; git = versioned history, auto-commit per change",
+        "agnostic": "framework/runtime (some lock-in)",
+        "local": "self-host or cloud",
+        "deploy": "high: server + Postgres + volume"
+      },
+      "sources": [
+        "https://www.letta.com/blog/context-repositories",
+        "https://www.letta.com/blog/sleep-time-compute"
+      ]
+    },
+    {
+      "id": "amem",
+      "name": "A-MEM",
+      "repo": "agiresearch/A-mem",
+      "vendor": {
+        "substrate": "ChromaDB + in-note links",
+        "retrieval": "vector + Zettelkasten autonomous linking",
+        "temporal": "in-place note \"evolution\" (LLM rewrites linked notes); no version history",
+        "agnostic": "library (MIT)",
+        "local": "fully local (Chroma+MiniLM+Ollama)",
+        "deploy": "lowest (pip)"
+      },
+      "sources": [
+        "https://arxiv.org/abs/2502.12110"
+      ]
+    },
+    {
+      "id": "cognee",
+      "name": "Cognee",
+      "repo": "topoteretes/cognee",
+      "vendor": {
+        "substrate": "vector + graph + SQL (file-based default)",
+        "retrieval": "graph-RAG, ~14 modes, LLM routing",
+        "temporal": "event-time; bi-temporal via Graphiti backend",
+        "agnostic": "yes (MCP)",
+        "local": "full local + Ollama",
+        "deploy": "minimal (pip)"
+      },
+      "sources": [
+        "https://github.com/topoteretes/cognee"
+      ]
+    },
+    {
+      "id": "memanto",
+      "name": "memanto (moorcheh)",
+      "repo": "moorcheh-ai/memanto",
+      "vendor": {
+        "substrate": "closed \"Moorcheh\" engine (opaque store; `moorcheh-sdk` + on-prem Docker image); markdown export-only",
+        "retrieval": "proprietary \"information-theoretic\" single-query (\"zero indexing\"); 13 typed memory kinds",
+        "temporal": "versioning + `--as-of`/`--changed-since` + `conflicts` + `daily-summary`",
+        "agnostic": "yes: `connect` to 8+ (Claude/Cursor/Codex/Windsurf/Cline/Goose/Copilot)",
+        "local": "on-prem Docker (no key) but the engine is closed; cloud tier needs a Moorcheh API key",
+        "deploy": "server: FastAPI `serve`/`ui` + Docker(+Ollama); pip"
+      },
+      "sources": [
+        "https://github.com/moorcheh-ai/memanto",
+        "https://arxiv.org/abs/2604.22085"
+      ]
+    },
+    {
+      "id": "hindsight",
+      "name": "Hindsight (vectorize.io)",
+      "repo": "vectorize-io/hindsight",
+      "vendor": {
+        "substrate": "server-side store behind a Docker service (API :8888 + web UI)",
+        "retrieval": "LLM-driven `retain` (fact/entity/temporal extraction + normalization) → `recall`",
+        "temporal": "temporal facts; belief revision server-side",
+        "agnostic": "clients: pip `hindsight-client` / npm; REST",
+        "local": "self-host Docker but defaults to an OpenAI key; managed Cloud tier",
+        "deploy": "server: Docker + LLM key"
+      },
+      "sources": [
+        "https://github.com/vectorize-io/hindsight",
+        "https://arxiv.org/abs/2512.12818"
+      ]
+    },
+    {
+      "id": "langmem",
+      "name": "LangMem / LangGraph",
+      "repo": "langchain-ai/langmem",
+      "vendor": {
+        "substrate": "KV+vector BaseStore (Postgres/Redis)",
+        "retrieval": "vector + namespace filter",
+        "temporal": "manager upsert/update/invalidate; procedural prompt-optimizer",
+        "agnostic": "core agnostic; persistence LangGraph-tied",
+        "local": "self-host or platform",
+        "deploy": "low SDK; DB for prod"
+      },
+      "sources": [
+        "https://langchain-ai.github.io/langmem/concepts/conceptual_guide/"
+      ]
+    },
+    {
+      "id": "chatgpt",
+      "name": "ChatGPT memory",
+      "repo": null,
+      "vendor": {
+        "substrate": "cloud account",
+        "retrieval": "always-injected + opaque profile",
+        "temporal": "edit/delete; auto-supersession (\"Dreaming V3\", Jun 2026)",
+        "agnostic": "no (account-locked)",
+        "local": "cloud",
+        "deploy": "n/a (managed)"
+      },
+      "sources": [
+        "https://openai.com/index/chatgpt-memory-dreaming/"
+      ]
+    },
+    {
+      "id": "claude",
+      "name": "Claude memory",
+      "repo": null,
+      "vendor": {
+        "substrate": "CLAUDE.md (repo) · auto-memory (`~/.claude`, local) · API memory tool · claude.ai",
+        "retrieval": "CLAUDE.md/`MEMORY.md` always-injected; topic files model-read",
+        "temporal": "agent-curated; no formal supersession engine",
+        "agnostic": "CLAUDE.md portable; rest locked",
+        "local": "CLAUDE.md + auto-memory local",
+        "deploy": "low (built-in)"
+      },
+      "sources": [
+        "https://code.claude.com/docs/en/memory"
+      ]
+    },
+    {
+      "id": "cursor",
+      "name": "Cursor / Windsurf (→Devin)",
+      "repo": null,
+      "vendor": {
+        "substrate": "repo rules + memories (Windsurf local `~/.codeium/...`)",
+        "retrieval": "semantic / model-judged",
+        "temporal": "manual edit/delete; no contradiction engine",
+        "agnostic": "no (tool-locked); AGENTS.md portable",
+        "local": "Cursor needs Privacy-Mode-off; Windsurf local",
+        "deploy": "built-in"
+      },
+      "sources": [
+        "https://agents.md/"
+      ]
+    },
+    {
+      "id": "copilot",
+      "name": "GitHub Copilot Memory",
+      "repo": null,
+      "vendor": {
+        "substrate": "GitHub cloud (not repo files)",
+        "retrieval": "auto-extracted facts, validated vs current branch",
+        "temporal": "28-day auto-expiry; stale-guard",
+        "agnostic": "no (account-locked)",
+        "local": "cloud",
+        "deploy": "built-in"
+      },
+      "sources": [
+        "https://docs.github.com/en/copilot/concepts/agents/copilot-memory"
+      ]
+    },
+    {
+      "id": "okf",
+      "name": "OKF (Google/Anthropic draft)",
+      "repo": null,
+      "vendor": {
+        "substrate": "markdown + YAML + git (format only)",
+        "retrieval": "n/a (interchange format, no engine)",
+        "temporal": "optional `log.md`/`timestamp`; no conflict resolution",
+        "agnostic": "yes (portable)",
+        "local": "both",
+        "deploy": "none (a spec)"
+      },
+      "sources": [
+        "https://github.com/GoogleCloudPlatform/knowledge-catalog"
+      ]
+    }
+  ],
+  "verified": [
+    {
+      "id": "nevertwice",
+      "outcome": "ran",
+      "note": "no ingest step: the store is the repository of notes itself"
+    },
+    {
+      "id": "mem0",
+      "outcome": "ran",
+      "note": "run as `infer=False` (retrieval-only, one memory per session) so the comparison is retrieval against retrieval"
+    },
+    {
+      "id": "langmem",
+      "outcome": "ran",
+      "note": "LangGraph InMemoryStore; no server needed for the stand"
+    },
+    {
+      "id": "amem",
+      "outcome": "ran",
+      "note": "A-MEM's own ChromaDB vector store with Ollama embeddings"
+    },
+    {
+      "id": "zep",
+      "outcome": "blocked",
+      "note": "needs Neo4j or FalkorDB in Docker; the adapter records the blocker rather than a fabricated number"
+    },
+    {
+      "id": "cognee",
+      "outcome": "blocked",
+      "note": "needs a local graph/vector store plus an ingest+search adapter; the adapter records the blocker rather than a fabricated number"
+    },
+    {
+      "id": "letta",
+      "outcome": "not-attempted",
+      "note": "no `run_letta` adapter exists in research/head_to_head.py, so it was never put on the stand - it needs a server plus Postgres and a heavy per-session build, but that is a reason, not a result"
+    }
+  ]
+}
