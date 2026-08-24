@@ -1,0 +1,3218 @@
+{
+  "schema_version": 1,
+  "purpose": "Every number printed in the documents listed under `scope` resolves here to the raw result file, the exact command, the dataset, the sample size and the caveats that belong with it. A claim with no entry is a claim with no evidence. Task B2 renders the documents from this file so the two cannot drift.",
+  "scope": {
+    "docs": [
+      "README.md",
+      "docs/BENCHMARKS.md"
+    ],
+    "excludes": [
+      "fenced code blocks - shell commands and illustrative terminal output, not measurements",
+      "link targets and image paths"
+    ]
+  },
+  "datasets": {
+    "longmemeval_oracle": {
+      "name": "LongMemEval-oracle",
+      "citation": "Wu et al., LongMemEval: Benchmarking Chat Assistants on Long-Term Interactive Memory, ICLR 2025",
+      "source": "https://github.com/xiaowu0162/LongMemEval",
+      "local_path": "research/data/longmemeval_oracle.json",
+      "committed": false,
+      "sha256": null,
+      "sha256_note": "The dataset is third-party and not committed (see research/data/README.md). No hash was recorded when the results were produced, so the exact revision used cannot be proven. Recording it is a prerequisite for task F7.",
+      "sessions": 940,
+      "questions": 500,
+      "ground_truth": "human-annotated answer_session_ids - independent of this project's embeddings"
+    },
+    "longmemeval_oracle_sample40": {
+      "name": "LongMemEval-oracle, 40-question sample",
+      "parent": "longmemeval_oracle",
+      "questions": 40,
+      "committed": false,
+      "sha256": null,
+      "sampling_note": "The sample is not seeded in the recorded run; the selection cannot be reproduced exactly."
+    },
+    "longmemeval_oracle_sample15": {
+      "name": "LongMemEval-oracle, 15-question sample",
+      "parent": "longmemeval_oracle",
+      "questions": 15,
+      "committed": false,
+      "sha256": null,
+      "sampling_note": "As above - unseeded selection."
+    },
+    "live_validation_tasks": {
+      "name": "12 hand-written coding micro-tasks",
+      "source": "research/live_validation.py",
+      "committed": true,
+      "note": "Four project-specific invented-API tasks plus eight generic pitfalls; the check is regex/AST, never execution."
+    },
+    "poisoning_corpus": {
+      "name": "hand-written poisoning taxonomy",
+      "source": "research/poisoning.py",
+      "committed": true,
+      "note": "12 attacks and 10 benign notes. A proof of taxonomy, not a benchmark - see research/POISONING.md."
+    },
+    "forgetting_synthetic": {
+      "name": "synthetic uniformly-active topic world",
+      "source": "research/forgetting.py",
+      "committed": true,
+      "seeds": 6
+    },
+    "longitudinal_sim": {
+      "name": "200-task simulated family",
+      "source": "research/longitudinal_improvement.py",
+      "committed": true,
+      "trials": 25
+    },
+    "owner_vault_snapshot": {
+      "name": "the owner's private bilingual vault",
+      "committed": false,
+      "sha256": null,
+      "note": "~320 notes across 11 projects. Private, so no third party can reproduce any number derived from it. Every such claim is marked with a raw_gap."
+    },
+    "demo_store": {
+      "name": "throwaway store built by examples/scenario_demo.py",
+      "committed": true,
+      "note": "Deterministic capture with fixed exit codes is task C1."
+    }
+  },
+  "environments": {
+    "local_bge_m3": {
+      "embedder": "bge-m3 via local Ollama",
+      "reader": null,
+      "hardware": "AMD Ryzen 7 7700, 32 GB RAM, NVIDIA RTX 5090 (32 GB)",
+      "os": "Windows 11",
+      "python": "3.14",
+      "network": "none"
+    },
+    "local_bge_m3_competitors": {
+      "embedder": "bge-m3 via local Ollama - identical for every system",
+      "note": "Mem0, LangMem and A-MEM run from their own packages on the same stand and the same embedder, so the comparison isolates the ranker, not the embedder.",
+      "hardware": "AMD Ryzen 7 7700, 32 GB RAM, NVIDIA RTX 5090 (32 GB)",
+      "os": "Windows 11",
+      "python": "3.14"
+    },
+    "deepseek_chat": {
+      "reader": "deepseek-chat (API)",
+      "embedder": null,
+      "network": "required"
+    },
+    "deepseek_reasoner": {
+      "reader": "deepseek-reasoner (API)",
+      "judge": "deepseek-reasoner",
+      "embedder": "bge-m3",
+      "network": "required"
+    },
+    "qwen25_7b": {
+      "reader": "qwen2.5:7b via local Ollama"
+    },
+    "qwen25_3b_reader": {
+      "reader": "qwen2.5:3b via local Ollama",
+      "note": "A deliberately weak reader; the accuracy dip is reported, not hidden."
+    },
+    "local_ollama_distiller": {
+      "distiller": "local Ollama",
+      "embedder": "bge-m3 via local Ollama"
+    },
+    "ryzen7700_win11_py314": {
+      "hardware": "AMD Ryzen 7 7700",
+      "os": "Windows 11",
+      "python": "3.14",
+      "note": "End-to-end subprocess timing: stdin event to process exit, no model and no network."
+    },
+    "stdlib_only": {
+      "note": "Standard library only - no model, no network, no GPU."
+    }
+  },
+  "claims": [
+    {
+      "id": "longmem.semantic.recall_at_1",
+      "statement": "semantic recall (bge-m3 bi-encoder) reaches RECALL@1 0.422 on LongMemEval-oracle",
+      "value": 0.422,
+      "printed": [
+        "0.42",
+        "0.422"
+      ],
+      "unit": "recall@1",
+      "dataset": "longmemeval_oracle",
+      "environment": "local_bge_m3",
+      "n": 500,
+      "command": "python research/longmem_eval.py",
+      "raw": "research/longmem_results.json",
+      "pointer": "methods.semantic.recall@1",
+      "ci": {
+        "method": "wilson",
+        "level": 0.95,
+        "low": 0.3795,
+        "high": 0.4657
+      },
+      "cited_in": [
+        "README.md",
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "longmem.semantic.recall_at_5",
+      "statement": "semantic recall (bge-m3 bi-encoder) reaches RECALL@5 0.652 on LongMemEval-oracle",
+      "value": 0.652,
+      "printed": [
+        "0.65",
+        "0.652"
+      ],
+      "unit": "recall@5",
+      "dataset": "longmemeval_oracle",
+      "environment": "local_bge_m3",
+      "n": 500,
+      "command": "python research/longmem_eval.py",
+      "raw": "research/longmem_results.json",
+      "pointer": "methods.semantic.recall@5",
+      "ci": {
+        "method": "wilson",
+        "level": 0.95,
+        "low": 0.6092,
+        "high": 0.6925
+      },
+      "cited_in": [
+        "README.md",
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "longmem.semantic.recall_at_10",
+      "statement": "semantic recall (bge-m3 bi-encoder) reaches RECALL@10 0.728 on LongMemEval-oracle",
+      "value": 0.728,
+      "printed": [
+        "0.728",
+        "0.73"
+      ],
+      "unit": "recall@10",
+      "dataset": "longmemeval_oracle",
+      "environment": "local_bge_m3",
+      "n": 500,
+      "command": "python research/longmem_eval.py",
+      "raw": "research/longmem_results.json",
+      "pointer": "methods.semantic.recall@10",
+      "ci": {
+        "method": "wilson",
+        "level": 0.95,
+        "low": 0.6874,
+        "high": 0.7652
+      },
+      "cited_in": [
+        "README.md",
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "longmem.semantic.mrr",
+      "statement": "semantic recall (bge-m3 bi-encoder) reaches MRR 0.528 on LongMemEval-oracle",
+      "value": 0.5281852224668283,
+      "printed": [
+        "0.528",
+        "0.53"
+      ],
+      "unit": "mrr",
+      "dataset": "longmemeval_oracle",
+      "environment": "local_bge_m3",
+      "n": 500,
+      "command": "python research/longmem_eval.py",
+      "raw": "research/longmem_results.json",
+      "pointer": "methods.semantic.mrr",
+      "ci": null,
+      "ci_note": "MRR is a mean of reciprocal ranks, not a proportion; a Wilson interval does not apply. Bootstrap CI is task F5.",
+      "cited_in": [
+        "README.md",
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "longmem.lexical.recall_at_1",
+      "statement": "lexical recall (BM25) reaches RECALL@1 0.522 on LongMemEval-oracle",
+      "value": 0.522,
+      "printed": [
+        "0.52",
+        "0.522"
+      ],
+      "unit": "recall@1",
+      "dataset": "longmemeval_oracle",
+      "environment": "local_bge_m3",
+      "n": 500,
+      "command": "python research/longmem_eval.py",
+      "raw": "research/longmem_results.json",
+      "pointer": "methods.lexical.recall@1",
+      "ci": {
+        "method": "wilson",
+        "level": 0.95,
+        "low": 0.4782,
+        "high": 0.5654
+      },
+      "cited_in": [
+        "README.md",
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "longmem.lexical.recall_at_5",
+      "statement": "lexical recall (BM25) reaches RECALL@5 0.752 on LongMemEval-oracle",
+      "value": 0.752,
+      "printed": [
+        "0.75",
+        "0.752"
+      ],
+      "unit": "recall@5",
+      "dataset": "longmemeval_oracle",
+      "environment": "local_bge_m3",
+      "n": 500,
+      "command": "python research/longmem_eval.py",
+      "raw": "research/longmem_results.json",
+      "pointer": "methods.lexical.recall@5",
+      "ci": {
+        "method": "wilson",
+        "level": 0.95,
+        "low": 0.7123,
+        "high": 0.7878
+      },
+      "cited_in": [
+        "README.md",
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "longmem.lexical.recall_at_10",
+      "statement": "lexical recall (BM25) reaches RECALL@10 0.834 on LongMemEval-oracle",
+      "value": 0.834,
+      "printed": [
+        "0.83",
+        "0.834"
+      ],
+      "unit": "recall@10",
+      "dataset": "longmemeval_oracle",
+      "environment": "local_bge_m3",
+      "n": 500,
+      "command": "python research/longmem_eval.py",
+      "raw": "research/longmem_results.json",
+      "pointer": "methods.lexical.recall@10",
+      "ci": {
+        "method": "wilson",
+        "level": 0.95,
+        "low": 0.7989,
+        "high": 0.864
+      },
+      "cited_in": [
+        "README.md",
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "longmem.lexical.mrr",
+      "statement": "lexical recall (BM25) reaches MRR 0.623 on LongMemEval-oracle",
+      "value": 0.6231697064835308,
+      "printed": [
+        "0.623",
+        "0.62"
+      ],
+      "unit": "mrr",
+      "dataset": "longmemeval_oracle",
+      "environment": "local_bge_m3",
+      "n": 500,
+      "command": "python research/longmem_eval.py",
+      "raw": "research/longmem_results.json",
+      "pointer": "methods.lexical.mrr",
+      "ci": null,
+      "ci_note": "MRR is a mean of reciprocal ranks, not a proportion; a Wilson interval does not apply. Bootstrap CI is task F5.",
+      "cited_in": [
+        "README.md",
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "longmem.hybrid.recall_at_1",
+      "statement": "calibrated score fusion (shipped default) reaches RECALL@1 0.55 on LongMemEval-oracle",
+      "value": 0.55,
+      "printed": [
+        "0.55",
+        "0.550"
+      ],
+      "unit": "recall@1",
+      "dataset": "longmemeval_oracle",
+      "environment": "local_bge_m3",
+      "n": 500,
+      "command": "python research/longmem_eval.py",
+      "raw": "research/longmem_results.json",
+      "pointer": "methods.hybrid.recall@1",
+      "ci": {
+        "method": "wilson",
+        "level": 0.95,
+        "low": 0.5062,
+        "high": 0.5931
+      },
+      "cited_in": [
+        "README.md",
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "longmem.hybrid.recall_at_5",
+      "statement": "calibrated score fusion (shipped default) reaches RECALL@5 0.802 on LongMemEval-oracle",
+      "value": 0.802,
+      "printed": [
+        "0.80",
+        "0.802"
+      ],
+      "unit": "recall@5",
+      "dataset": "longmemeval_oracle",
+      "environment": "local_bge_m3",
+      "n": 500,
+      "command": "python research/longmem_eval.py",
+      "raw": "research/longmem_results.json",
+      "pointer": "methods.hybrid.recall@5",
+      "ci": {
+        "method": "wilson",
+        "level": 0.95,
+        "low": 0.7648,
+        "high": 0.8346
+      },
+      "cited_in": [
+        "README.md",
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "longmem.hybrid.recall_at_10",
+      "statement": "calibrated score fusion (shipped default) reaches RECALL@10 0.858 on LongMemEval-oracle",
+      "value": 0.858,
+      "printed": [
+        "0.858",
+        "0.86"
+      ],
+      "unit": "recall@10",
+      "dataset": "longmemeval_oracle",
+      "environment": "local_bge_m3",
+      "n": 500,
+      "command": "python research/longmem_eval.py",
+      "raw": "research/longmem_results.json",
+      "pointer": "methods.hybrid.recall@10",
+      "ci": {
+        "method": "wilson",
+        "level": 0.95,
+        "low": 0.8247,
+        "high": 0.8859
+      },
+      "cited_in": [
+        "README.md",
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "longmem.hybrid.mrr",
+      "statement": "calibrated score fusion (shipped default) reaches MRR 0.657 on LongMemEval-oracle",
+      "value": 0.6565628988084086,
+      "printed": [
+        "0.657",
+        "0.66"
+      ],
+      "unit": "mrr",
+      "dataset": "longmemeval_oracle",
+      "environment": "local_bge_m3",
+      "n": 500,
+      "command": "python research/longmem_eval.py",
+      "raw": "research/longmem_results.json",
+      "pointer": "methods.hybrid.mrr",
+      "ci": null,
+      "ci_note": "MRR is a mean of reciprocal ranks, not a proportion; a Wilson interval does not apply. Bootstrap CI is task F5.",
+      "cited_in": [
+        "README.md",
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "longmem.hybrid_xrerank.recall_at_1",
+      "statement": "calibrated fusion + trained cross-encoder (opt-in) reaches RECALL@1 0.614 on LongMemEval-oracle",
+      "value": 0.614,
+      "printed": [
+        "0.61",
+        "0.614"
+      ],
+      "unit": "recall@1",
+      "dataset": "longmemeval_oracle",
+      "environment": "local_bge_m3",
+      "n": 500,
+      "command": "python research/longmem_eval.py --xrerank",
+      "raw": "research/longmem_results.json",
+      "pointer": "methods.hybrid+xrerank.recall@1",
+      "ci": {
+        "method": "wilson",
+        "level": 0.95,
+        "low": 0.5706,
+        "high": 0.6556
+      },
+      "cited_in": [
+        "README.md",
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "longmem.hybrid_xrerank.recall_at_5",
+      "statement": "calibrated fusion + trained cross-encoder (opt-in) reaches RECALL@5 0.826 on LongMemEval-oracle",
+      "value": 0.826,
+      "printed": [
+        "0.826",
+        "0.83"
+      ],
+      "unit": "recall@5",
+      "dataset": "longmemeval_oracle",
+      "environment": "local_bge_m3",
+      "n": 500,
+      "command": "python research/longmem_eval.py --xrerank",
+      "raw": "research/longmem_results.json",
+      "pointer": "methods.hybrid+xrerank.recall@5",
+      "ci": {
+        "method": "wilson",
+        "level": 0.95,
+        "low": 0.7903,
+        "high": 0.8567
+      },
+      "cited_in": [
+        "README.md",
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "longmem.hybrid_xrerank.recall_at_10",
+      "statement": "calibrated fusion + trained cross-encoder (opt-in) reaches RECALL@10 0.858 on LongMemEval-oracle",
+      "value": 0.858,
+      "printed": [
+        "0.858",
+        "0.86"
+      ],
+      "unit": "recall@10",
+      "dataset": "longmemeval_oracle",
+      "environment": "local_bge_m3",
+      "n": 500,
+      "command": "python research/longmem_eval.py --xrerank",
+      "raw": "research/longmem_results.json",
+      "pointer": "methods.hybrid+xrerank.recall@10",
+      "ci": {
+        "method": "wilson",
+        "level": 0.95,
+        "low": 0.8247,
+        "high": 0.8859
+      },
+      "cited_in": [
+        "README.md",
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "longmem.hybrid_xrerank.mrr",
+      "statement": "calibrated fusion + trained cross-encoder (opt-in) reaches MRR 0.712 on LongMemEval-oracle",
+      "value": 0.7117716289671387,
+      "printed": [
+        "0.712",
+        "0.71"
+      ],
+      "unit": "mrr",
+      "dataset": "longmemeval_oracle",
+      "environment": "local_bge_m3",
+      "n": 500,
+      "command": "python research/longmem_eval.py --xrerank",
+      "raw": "research/longmem_results.json",
+      "pointer": "methods.hybrid+xrerank.mrr",
+      "ci": null,
+      "ci_note": "MRR is a mean of reciprocal ranks, not a proportion; a Wilson interval does not apply. Bootstrap CI is task F5.",
+      "cited_in": [
+        "README.md",
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "longmem.dataset.sessions",
+      "statement": "the shared LongMemEval-oracle pool holds 940 agent sessions",
+      "value": 940,
+      "printed": [
+        "940"
+      ],
+      "unit": "sessions",
+      "dataset": "longmemeval_oracle",
+      "environment": "local_bge_m3",
+      "n": null,
+      "command": "python research/longmem_eval.py",
+      "raw": "research/longmem_results.json",
+      "pointer": "sessions",
+      "ci": null,
+      "cited_in": [
+        "README.md",
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "longmem.dataset.questions",
+      "statement": "LongMemEval-oracle contributes 500 human-annotated questions",
+      "value": 500,
+      "printed": [
+        "500"
+      ],
+      "unit": "questions",
+      "dataset": "longmemeval_oracle",
+      "environment": "local_bge_m3",
+      "n": null,
+      "command": "python research/longmem_eval.py",
+      "raw": "research/longmem_results.json",
+      "pointer": "questions",
+      "ci": null,
+      "cited_in": [
+        "README.md",
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "longmem.rrf_old_default.recall_at_5",
+      "statement": "reciprocal rank fusion over semantic + token-overlap - the ranker shipped before calibrated fusion - reached R@5 0.660",
+      "value": 0.66,
+      "printed": [
+        "0.660",
+        "0.66"
+      ],
+      "unit": "recall@5",
+      "dataset": "longmemeval_oracle",
+      "environment": "local_bge_m3",
+      "n": 500,
+      "command": "python research/longmem_eval.py",
+      "raw": null,
+      "pointer": null,
+      "raw_gap": "No committed result file. The number is published only in research/RETRIEVAL_FUSION.md; re-running the fusion study must write a raw artifact before this claim can be re-cited.",
+      "ci": {
+        "method": "wilson",
+        "level": 0.95,
+        "low": 0.6174,
+        "high": 0.7002
+      },
+      "cited_in": [
+        "README.md",
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "head_to_head.mem0.recall_at_1",
+      "statement": "mem0 reaches RECALL@1 0.478 on the same stand (same dataset, same local embedder)",
+      "value": 0.478,
+      "printed": [
+        "0.478",
+        "0.48",
+        "0.478"
+      ],
+      "unit": "recall@1",
+      "dataset": "longmemeval_oracle",
+      "environment": "local_bge_m3_competitors",
+      "n": 500,
+      "command": "python research/head_to_head.py",
+      "raw": "research/head_to_head.json",
+      "pointer": "mem0.recall@1",
+      "ci": {
+        "method": "wilson",
+        "level": 0.95,
+        "low": 0.4346,
+        "high": 0.5218
+      },
+      "cited_in": [
+        "README.md",
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "head_to_head.mem0.recall_at_5",
+      "statement": "mem0 reaches RECALL@5 0.758 on the same stand (same dataset, same local embedder)",
+      "value": 0.758,
+      "printed": [
+        "0.758",
+        "0.76",
+        "0.758"
+      ],
+      "unit": "recall@5",
+      "dataset": "longmemeval_oracle",
+      "environment": "local_bge_m3_competitors",
+      "n": 500,
+      "command": "python research/head_to_head.py",
+      "raw": "research/head_to_head.json",
+      "pointer": "mem0.recall@5",
+      "ci": {
+        "method": "wilson",
+        "level": 0.95,
+        "low": 0.7186,
+        "high": 0.7935
+      },
+      "cited_in": [
+        "README.md",
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "head_to_head.langmem.recall_at_1",
+      "statement": "langmem reaches RECALL@1 0.426 on the same stand (same dataset, same local embedder)",
+      "value": 0.426,
+      "printed": [
+        "0.426",
+        "0.43",
+        "0.426"
+      ],
+      "unit": "recall@1",
+      "dataset": "longmemeval_oracle",
+      "environment": "local_bge_m3_competitors",
+      "n": 500,
+      "command": "python research/head_to_head.py",
+      "raw": "research/head_to_head.json",
+      "pointer": "langmem.recall@1",
+      "ci": {
+        "method": "wilson",
+        "level": 0.95,
+        "low": 0.3834,
+        "high": 0.4697
+      },
+      "cited_in": [
+        "README.md",
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "head_to_head.langmem.recall_at_5",
+      "statement": "langmem reaches RECALL@5 0.692 on the same stand (same dataset, same local embedder)",
+      "value": 0.692,
+      "printed": [
+        "0.692",
+        "0.69",
+        "0.692"
+      ],
+      "unit": "recall@5",
+      "dataset": "longmemeval_oracle",
+      "environment": "local_bge_m3_competitors",
+      "n": 500,
+      "command": "python research/head_to_head.py",
+      "raw": "research/head_to_head.json",
+      "pointer": "langmem.recall@5",
+      "ci": {
+        "method": "wilson",
+        "level": 0.95,
+        "low": 0.6502,
+        "high": 0.7309
+      },
+      "cited_in": [
+        "README.md",
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "head_to_head.amem.recall_at_1",
+      "statement": "amem reaches RECALL@1 0.428 on the same stand (same dataset, same local embedder)",
+      "value": 0.428,
+      "printed": [
+        "0.428",
+        "0.43",
+        "0.428"
+      ],
+      "unit": "recall@1",
+      "dataset": "longmemeval_oracle",
+      "environment": "local_bge_m3_competitors",
+      "n": 500,
+      "command": "python research/head_to_head.py",
+      "raw": "research/head_to_head.json",
+      "pointer": "amem.recall@1",
+      "ci": {
+        "method": "wilson",
+        "level": 0.95,
+        "low": 0.3853,
+        "high": 0.4718
+      },
+      "cited_in": [
+        "README.md",
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "head_to_head.amem.recall_at_5",
+      "statement": "amem reaches RECALL@5 0.692 on the same stand (same dataset, same local embedder)",
+      "value": 0.692,
+      "printed": [
+        "0.692",
+        "0.69",
+        "0.692"
+      ],
+      "unit": "recall@5",
+      "dataset": "longmemeval_oracle",
+      "environment": "local_bge_m3_competitors",
+      "n": 500,
+      "command": "python research/head_to_head.py",
+      "raw": "research/head_to_head.json",
+      "pointer": "amem.recall@5",
+      "ci": {
+        "method": "wilson",
+        "level": 0.95,
+        "low": 0.6502,
+        "high": 0.7309
+      },
+      "cited_in": [
+        "README.md",
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "live_validation.rate_without_memory",
+      "statement": "without memory, DeepSeek's mean pitfall rate over 12 coding micro-tasks is 0.365",
+      "value": 0.365,
+      "printed": [
+        "0.365",
+        "0.36"
+      ],
+      "unit": "error rate",
+      "dataset": "live_validation_tasks",
+      "environment": "deepseek_chat",
+      "n": 96,
+      "command": "python research/live_validation.py --trials 8 --save",
+      "raw": "research/live_validation_results.json",
+      "pointer": "summary.mean_rate_without",
+      "ci": {
+        "method": "wilson",
+        "level": 0.95,
+        "low": 0.2756,
+        "high": 0.4648
+      },
+      "ci_note": "Trials within a task are not independent; this interval treats the 96 task-trials as exchangeable and is therefore optimistic.",
+      "cited_in": [
+        "README.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "live_validation.rate_with_memory",
+      "statement": "with the fired guard, the same mean pitfall rate is 0.052",
+      "value": 0.052,
+      "printed": [
+        "0.052",
+        "0.05"
+      ],
+      "unit": "error rate",
+      "dataset": "live_validation_tasks",
+      "environment": "deepseek_chat",
+      "n": 96,
+      "command": "python research/live_validation.py --trials 8 --save",
+      "raw": "research/live_validation_results.json",
+      "pointer": "summary.mean_rate_with",
+      "ci": {
+        "method": "wilson",
+        "level": 0.95,
+        "low": 0.0224,
+        "high": 0.1161
+      },
+      "cited_in": [
+        "README.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "live_validation.relative_reduction",
+      "statement": "a fired guard cuts DeepSeek's real repeat-error rate by 86%",
+      "value": 0.8575,
+      "printed": [
+        "86%",
+        "-86%",
+        "−86%"
+      ],
+      "unit": "relative reduction",
+      "dataset": "live_validation_tasks",
+      "environment": "deepseek_chat",
+      "n": 96,
+      "command": "python research/live_validation.py --trials 8 --save",
+      "raw": "research/live_validation_results.json",
+      "pointer": null,
+      "derivation": "1 - summary.mean_rate_with / summary.mean_rate_without = 1 - 0.052/0.365 = 0.8575",
+      "ci": null,
+      "ci_note": "A ratio of two dependent means; needs a paired bootstrap (task F5).",
+      "cited_in": [
+        "README.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "live_validation.measured_eff",
+      "statement": "relative reduction on the tasks where a pitfall actually occurred is 0.875",
+      "value": 0.875,
+      "printed": [
+        "0.875",
+        "0.88"
+      ],
+      "unit": "efficacy",
+      "dataset": "live_validation_tasks",
+      "environment": "deepseek_chat",
+      "n": 5,
+      "command": "python research/live_validation.py --trials 8 --save",
+      "raw": "research/live_validation_results.json",
+      "pointer": "summary.measured_eff",
+      "ci": null,
+      "ci_note": "n=5 tasks; an interval here would be theatre.",
+      "cited_in": [
+        "README.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "live_validation.tasks",
+      "statement": "the live validation runs 12 tasks x 8 trials",
+      "value": 12,
+      "printed": [
+        "12"
+      ],
+      "unit": "tasks",
+      "dataset": "live_validation_tasks",
+      "environment": "deepseek_chat",
+      "n": 12,
+      "command": "python research/live_validation.py --trials 8 --save",
+      "raw": "research/live_validation_results.json",
+      "pointer": null,
+      "derivation": "len(tasks) == 12",
+      "ci": null,
+      "cited_in": [
+        "README.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "live_validation.trials",
+      "statement": "each live-validation task is repeated for 8 trials",
+      "value": 8,
+      "printed": [
+        "8"
+      ],
+      "unit": "trials",
+      "dataset": "live_validation_tasks",
+      "environment": "deepseek_chat",
+      "n": null,
+      "command": "python research/live_validation.py --trials 8 --save",
+      "raw": "research/live_validation_results.json",
+      "pointer": "trials",
+      "ci": null,
+      "cited_in": [
+        "README.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "qa.oracle.answer_accuracy",
+      "statement": "answer-accuracy on LongMemEval-oracle with an open reasoner is 0.788",
+      "value": 0.788,
+      "printed": [
+        "0.788"
+      ],
+      "unit": "answer accuracy",
+      "dataset": "longmemeval_oracle",
+      "environment": "deepseek_reasoner",
+      "n": 500,
+      "command": "python research/qa_eval.py --reasoner",
+      "raw": "research/qa_results_reasoner.json",
+      "pointer": "settings.oracle.accuracy",
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "ci": {
+        "method": "wilson",
+        "level": 0.95,
+        "low": 0.75,
+        "high": 0.8216
+      },
+      "cited_in": [
+        "README.md"
+      ]
+    },
+    {
+      "id": "poisoning.block_rate",
+      "statement": "88% of memory-poisoning acceptance attacks are blocked, as the unweighted mean of four attack-family block rates",
+      "value": 0.875,
+      "printed": [
+        "88%"
+      ],
+      "unit": "block rate",
+      "dataset": "poisoning_corpus",
+      "environment": "stdlib_only",
+      "n": 12,
+      "command": "python research/poisoning.py",
+      "raw": "research/poisoning.json",
+      "pointer": null,
+      "derivation": "mean over attacks.{injection,false-fact,supersession-abuse,confidence-spoof} of (1 - after) = (1.0+0.5+1.0+1.0)/4 = 0.875",
+      "caveat": "Per-attack-instance the rate is 10/12 = 0.833 (raw `recall`). The two aggregates differ; the doc cites the per-family mean.",
+      "ci": null,
+      "ci_note": "12 hand-written attacks - a proof of taxonomy, not a benchmark.",
+      "cited_in": [
+        "README.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "poisoning.precision",
+      "statement": "quarantine precision over the labelled set is 0.909",
+      "value": 0.9090909090909091,
+      "printed": [
+        "0.91"
+      ],
+      "unit": "precision",
+      "dataset": "poisoning_corpus",
+      "environment": "stdlib_only",
+      "n": 22,
+      "command": "python research/poisoning.py",
+      "raw": "research/poisoning.json",
+      "pointer": "precision",
+      "ci": null,
+      "cited_in": [
+        "README.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "poisoning.injection_blocked",
+      "statement": "prompt-injection attacks are caught 100% of the time",
+      "value": 1.0,
+      "printed": [
+        "100%"
+      ],
+      "unit": "block rate",
+      "dataset": "poisoning_corpus",
+      "environment": "stdlib_only",
+      "n": 4,
+      "command": "python research/poisoning.py",
+      "raw": "research/poisoning.json",
+      "pointer": null,
+      "derivation": "1 - attacks.injection.after = 1 - 0.0",
+      "ci": null,
+      "ci_note": "n=4.",
+      "cited_in": [
+        "README.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "poisoning.false_fact_blocked",
+      "statement": "only about half of plausible-false facts are blocked",
+      "value": 0.5,
+      "printed": [
+        "50%"
+      ],
+      "unit": "block rate",
+      "dataset": "poisoning_corpus",
+      "environment": "stdlib_only",
+      "n": 4,
+      "command": "python research/poisoning.py",
+      "raw": "research/poisoning.json",
+      "pointer": null,
+      "derivation": "1 - attacks.false-fact.after = 1 - 0.5",
+      "ci": null,
+      "ci_note": "n=4; the honest open problem, published as such.",
+      "cited_in": [
+        "README.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "forgetting.coverage_gain_at_20pct",
+      "statement": "at a 20% retention budget the submodular coreset covers +0.14 more topics than the salience baseline",
+      "value": 0.1375,
+      "printed": [
+        "0.14",
+        "+0.14"
+      ],
+      "unit": "topic coverage (absolute)",
+      "dataset": "forgetting_synthetic",
+      "environment": "stdlib_only",
+      "n": 6,
+      "command": "python research/forgetting.py",
+      "raw": "research/forgetting.json",
+      "pointer": null,
+      "derivation": "metrics.coreset['0.2'].cov - metrics.salience['0.2'].cov = 0.8542 - 0.7167",
+      "caveat": "The gap against RECENCY-sorting is 0.0958, not 0.14. README currently names recency as the baseline; see the drift list.",
+      "ci": null,
+      "ci_note": "6 seeds on a synthetic world; report the spread, not a CI.",
+      "cited_in": [
+        "README.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "consolidation.recall_drop",
+      "statement": "replacing episodes with a consolidated principle drops full-store recall@3 from 0.824 to 0.352 - a negative result, so it is not shipped",
+      "value": 0.427,
+      "printed": [
+        "halving",
+        "half"
+      ],
+      "unit": "recall@3 ratio",
+      "dataset": "owner_vault_snapshot",
+      "environment": "qwen25_7b",
+      "n": 108,
+      "command": "python research/consolidation_eval.py",
+      "raw": "research/consolidation_eval.json",
+      "pointer": null,
+      "derivation": "recall_consolidated / recall_episodic = 0.3519 / 0.8241 = 0.4270",
+      "ci": null,
+      "ci_note": "A ratio of two recall figures measured on the same 108 leave-one-out queries, not a proportion; it needs a paired bootstrap (task F5).",
+      "cited_in": [
+        "README.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "token_ab.full_history_tokens",
+      "statement": "loading the whole accumulated history costs 3.3M tokens across 940 sessions",
+      "value": 3297557,
+      "printed": [
+        "3.3M",
+        "3.3",
+        "3,297,557"
+      ],
+      "unit": "tokens",
+      "dataset": "longmemeval_oracle",
+      "environment": "local_bge_m3",
+      "n": 500,
+      "command": "python research/token_ab.py",
+      "raw": "research/token_ab.json",
+      "pointer": "longmem_token_ab.global_history_tok",
+      "ci": null,
+      "cited_in": [
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "token_ab.raw.k3.recall_at_k",
+      "statement": "raw-session retrieval at k=3: recall_at_k = 0.722",
+      "value": 0.722,
+      "printed": [
+        "0.722"
+      ],
+      "unit": "recall@3",
+      "dataset": "longmemeval_oracle",
+      "environment": "local_bge_m3",
+      "n": 500,
+      "command": "python research/token_ab.py",
+      "raw": "research/token_ab.json",
+      "pointer": "longmem_token_ab.by_k[0].recall_at_k",
+      "ci": {
+        "method": "wilson",
+        "level": 0.95,
+        "low": 0.6812,
+        "high": 0.7595
+      },
+      "ci_note": null,
+      "cited_in": [
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "token_ab.raw.k3.mean_topk_tok",
+      "statement": "raw-session retrieval at k=3: mean_topk_tok = 10137",
+      "value": 10137,
+      "printed": [
+        "10,137",
+        "10137"
+      ],
+      "unit": "tokens",
+      "dataset": "longmemeval_oracle",
+      "environment": "local_bge_m3",
+      "n": 500,
+      "command": "python research/token_ab.py",
+      "raw": "research/token_ab.json",
+      "pointer": "longmem_token_ab.by_k[0].mean_topk_tok",
+      "ci": null,
+      "ci_note": "A token count, not a proportion.",
+      "cited_in": [
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "token_ab.raw.k3.net_vs_curated_haystack_tok",
+      "statement": "raw-session retrieval at k=3: net_vs_curated_haystack_tok = -5331",
+      "value": -5331,
+      "printed": [
+        "-5,331",
+        "-5331",
+        "5,331"
+      ],
+      "unit": "tokens",
+      "dataset": "longmemeval_oracle",
+      "environment": "local_bge_m3",
+      "n": 500,
+      "command": "python research/token_ab.py",
+      "raw": "research/token_ab.json",
+      "pointer": "longmem_token_ab.by_k[0].net_vs_curated_haystack_tok",
+      "ci": null,
+      "ci_note": "A token count, not a proportion.",
+      "cited_in": [
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "token_ab.raw.k3.net_vs_full_history_tok",
+      "statement": "raw-session retrieval at k=3: net_vs_full_history_tok = 2370699",
+      "value": 2370699,
+      "printed": [
+        "2,370,699",
+        "2370699"
+      ],
+      "unit": "tokens",
+      "dataset": "longmemeval_oracle",
+      "environment": "local_bge_m3",
+      "n": 500,
+      "command": "python research/token_ab.py",
+      "raw": "research/token_ab.json",
+      "pointer": "longmem_token_ab.by_k[0].net_vs_full_history_tok",
+      "ci": null,
+      "ci_note": "A token count, not a proportion.",
+      "cited_in": [
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "token_ab.raw.k5.recall_at_k",
+      "statement": "raw-session retrieval at k=5: recall_at_k = 0.802",
+      "value": 0.802,
+      "printed": [
+        "0.802"
+      ],
+      "unit": "recall@5",
+      "dataset": "longmemeval_oracle",
+      "environment": "local_bge_m3",
+      "n": 500,
+      "command": "python research/token_ab.py",
+      "raw": "research/token_ab.json",
+      "pointer": "longmem_token_ab.by_k[1].recall_at_k",
+      "ci": {
+        "method": "wilson",
+        "level": 0.95,
+        "low": 0.7648,
+        "high": 0.8346
+      },
+      "ci_note": null,
+      "cited_in": [
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "token_ab.raw.k5.mean_topk_tok",
+      "statement": "raw-session retrieval at k=5: mean_topk_tok = 17065",
+      "value": 17065,
+      "printed": [
+        "17,065",
+        "17065"
+      ],
+      "unit": "tokens",
+      "dataset": "longmemeval_oracle",
+      "environment": "local_bge_m3",
+      "n": 500,
+      "command": "python research/token_ab.py",
+      "raw": "research/token_ab.json",
+      "pointer": "longmem_token_ab.by_k[1].mean_topk_tok",
+      "ci": null,
+      "ci_note": "A token count, not a proportion.",
+      "cited_in": [
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "token_ab.raw.k5.net_vs_curated_haystack_tok",
+      "statement": "raw-session retrieval at k=5: net_vs_curated_haystack_tok = -11726",
+      "value": -11726,
+      "printed": [
+        "-11,726",
+        "-11726",
+        "11,726"
+      ],
+      "unit": "tokens",
+      "dataset": "longmemeval_oracle",
+      "environment": "local_bge_m3",
+      "n": 500,
+      "command": "python research/token_ab.py",
+      "raw": "research/token_ab.json",
+      "pointer": "longmem_token_ab.by_k[1].net_vs_curated_haystack_tok",
+      "ci": null,
+      "ci_note": "A token count, not a proportion.",
+      "cited_in": [
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "token_ab.raw.k5.net_vs_full_history_tok",
+      "statement": "raw-session retrieval at k=5: net_vs_full_history_tok = 2627576",
+      "value": 2627576,
+      "printed": [
+        "2,627,576",
+        "2627576"
+      ],
+      "unit": "tokens",
+      "dataset": "longmemeval_oracle",
+      "environment": "local_bge_m3",
+      "n": 500,
+      "command": "python research/token_ab.py",
+      "raw": "research/token_ab.json",
+      "pointer": "longmem_token_ab.by_k[1].net_vs_full_history_tok",
+      "ci": null,
+      "ci_note": "A token count, not a proportion.",
+      "cited_in": [
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "token_ab.raw.k10.recall_at_k",
+      "statement": "raw-session retrieval at k=10: recall_at_k = 0.858",
+      "value": 0.858,
+      "printed": [
+        "0.858"
+      ],
+      "unit": "recall@10",
+      "dataset": "longmemeval_oracle",
+      "environment": "local_bge_m3",
+      "n": 500,
+      "command": "python research/token_ab.py",
+      "raw": "research/token_ab.json",
+      "pointer": "longmem_token_ab.by_k[2].recall_at_k",
+      "ci": {
+        "method": "wilson",
+        "level": 0.95,
+        "low": 0.8247,
+        "high": 0.8859
+      },
+      "ci_note": null,
+      "cited_in": [
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "token_ab.raw.k10.mean_topk_tok",
+      "statement": "raw-session retrieval at k=10: mean_topk_tok = 34619",
+      "value": 34619,
+      "printed": [
+        "34,619",
+        "34619"
+      ],
+      "unit": "tokens",
+      "dataset": "longmemeval_oracle",
+      "environment": "local_bge_m3",
+      "n": 500,
+      "command": "python research/token_ab.py",
+      "raw": "research/token_ab.json",
+      "pointer": "longmem_token_ab.by_k[2].mean_topk_tok",
+      "ci": null,
+      "ci_note": "A token count, not a proportion.",
+      "cited_in": [
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "token_ab.raw.k10.net_vs_curated_haystack_tok",
+      "statement": "raw-session retrieval at k=10: net_vs_curated_haystack_tok = -28908",
+      "value": -28908,
+      "printed": [
+        "-28,908",
+        "-28908",
+        "28,908"
+      ],
+      "unit": "tokens",
+      "dataset": "longmemeval_oracle",
+      "environment": "local_bge_m3",
+      "n": 500,
+      "command": "python research/token_ab.py",
+      "raw": "research/token_ab.json",
+      "pointer": "longmem_token_ab.by_k[2].net_vs_curated_haystack_tok",
+      "ci": null,
+      "ci_note": "A token count, not a proportion.",
+      "cited_in": [
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "token_ab.raw.k10.net_vs_full_history_tok",
+      "statement": "raw-session retrieval at k=10: net_vs_full_history_tok = 2794684",
+      "value": 2794684,
+      "printed": [
+        "2,794,684",
+        "2794684"
+      ],
+      "unit": "tokens",
+      "dataset": "longmemeval_oracle",
+      "environment": "local_bge_m3",
+      "n": 500,
+      "command": "python research/token_ab.py",
+      "raw": "research/token_ab.json",
+      "pointer": "longmem_token_ab.by_k[2].net_vs_full_history_tok",
+      "ci": null,
+      "ci_note": "A token count, not a proportion.",
+      "cited_in": [
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "token_ab.distill.ratio",
+      "statement": "distillation compresses 1,013,847 retrieved tokens to 32,263 - 31.4x smaller",
+      "value": 31.4,
+      "printed": [
+        "31.4"
+      ],
+      "unit": "compression ratio",
+      "dataset": "longmemeval_oracle_sample40",
+      "environment": "local_ollama_distiller",
+      "n": 40,
+      "command": "python research/token_ab.py --distill",
+      "raw": "research/token_ab.json",
+      "pointer": "distillation_ab.distill_ratio",
+      "ci": null,
+      "ci_note": "40-question sample; the low-variance finding is the order of magnitude and the sign flip, not the second digit.",
+      "cited_in": [
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "token_ab.distill.raw_tok_total",
+      "statement": "distillation A/B: raw_tok_total = 1013847",
+      "value": 1013847,
+      "printed": [
+        "1,013,847",
+        "1013847"
+      ],
+      "unit": "tokens",
+      "dataset": "longmemeval_oracle_sample40",
+      "environment": "local_ollama_distiller",
+      "n": 40,
+      "command": "python research/token_ab.py --distill",
+      "raw": "research/token_ab.json",
+      "pointer": "distillation_ab.raw_tok_total",
+      "ci": null,
+      "cited_in": [
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "token_ab.distill.distilled_tok_total",
+      "statement": "distillation A/B: distilled_tok_total = 32263",
+      "value": 32263,
+      "printed": [
+        "32,263",
+        "32263"
+      ],
+      "unit": "tokens",
+      "dataset": "longmemeval_oracle_sample40",
+      "environment": "local_ollama_distiller",
+      "n": 40,
+      "command": "python research/token_ab.py --distill",
+      "raw": "research/token_ab.json",
+      "pointer": "distillation_ab.distilled_tok_total",
+      "ci": null,
+      "cited_in": [
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "token_ab.distill.questions",
+      "statement": "distillation A/B: questions = 40",
+      "value": 40,
+      "printed": [
+        "40"
+      ],
+      "unit": "count",
+      "dataset": "longmemeval_oracle_sample40",
+      "environment": "local_ollama_distiller",
+      "n": 40,
+      "command": "python research/token_ab.py --distill",
+      "raw": "research/token_ab.json",
+      "pointer": "distillation_ab.questions",
+      "ci": null,
+      "cited_in": [
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "token_ab.distill.distilled_sessions",
+      "statement": "distillation A/B: distilled_sessions = 291",
+      "value": 291,
+      "printed": [
+        "291"
+      ],
+      "unit": "count",
+      "dataset": "longmemeval_oracle_sample40",
+      "environment": "local_ollama_distiller",
+      "n": 40,
+      "command": "python research/token_ab.py --distill",
+      "raw": "research/token_ab.json",
+      "pointer": "distillation_ab.distilled_sessions",
+      "ci": null,
+      "cited_in": [
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "token_ab.distill.mean_curated_haystack_tok",
+      "statement": "distillation A/B: mean_curated_haystack_tok = 8077",
+      "value": 8077,
+      "printed": [
+        "8,077",
+        "8077"
+      ],
+      "unit": "tokens",
+      "dataset": "longmemeval_oracle_sample40",
+      "environment": "local_ollama_distiller",
+      "n": 40,
+      "command": "python research/token_ab.py --distill",
+      "raw": "research/token_ab.json",
+      "pointer": "distillation_ab.mean_curated_haystack_tok",
+      "ci": null,
+      "cited_in": [
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "token_ab.distill.k3.recall_at_k",
+      "statement": "distilled retrieval at k=3: recall_at_k = 0.975",
+      "value": 0.975,
+      "printed": [
+        "0.975"
+      ],
+      "unit": "recall@3",
+      "dataset": "longmemeval_oracle_sample40",
+      "environment": "local_ollama_distiller",
+      "n": 40,
+      "command": "python research/token_ab.py --distill",
+      "raw": "research/token_ab.json",
+      "pointer": "distillation_ab.by_k[0].recall_at_k",
+      "ci": {
+        "method": "wilson",
+        "level": 0.95,
+        "low": 0.8712,
+        "high": 0.9956
+      },
+      "ci_note": "40-question sample - the interval is wide and the point estimate should not be quoted to two decimals.",
+      "cited_in": [
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "token_ab.distill.k3.raw_topk_tok",
+      "statement": "distilled retrieval at k=3: raw_topk_tok = 10356",
+      "value": 10356,
+      "printed": [
+        "10,356",
+        "10356"
+      ],
+      "unit": "tokens",
+      "dataset": "longmemeval_oracle_sample40",
+      "environment": "local_ollama_distiller",
+      "n": 40,
+      "command": "python research/token_ab.py --distill",
+      "raw": "research/token_ab.json",
+      "pointer": "distillation_ab.by_k[0].raw_topk_tok",
+      "ci": null,
+      "ci_note": "A token count, not a proportion.",
+      "cited_in": [
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "token_ab.distill.k3.distilled_topk_tok",
+      "statement": "distilled retrieval at k=3: distilled_topk_tok = 341",
+      "value": 341,
+      "printed": [
+        "341"
+      ],
+      "unit": "tokens",
+      "dataset": "longmemeval_oracle_sample40",
+      "environment": "local_ollama_distiller",
+      "n": 40,
+      "command": "python research/token_ab.py --distill",
+      "raw": "research/token_ab.json",
+      "pointer": "distillation_ab.by_k[0].distilled_topk_tok",
+      "ci": null,
+      "ci_note": "A token count, not a proportion.",
+      "cited_in": [
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "token_ab.distill.k3.net_raw_vs_curated",
+      "statement": "distilled retrieval at k=3: net_raw_vs_curated = -2481",
+      "value": -2481,
+      "printed": [
+        "-2,481",
+        "-2481",
+        "2,481"
+      ],
+      "unit": "recall@3",
+      "dataset": "longmemeval_oracle_sample40",
+      "environment": "local_ollama_distiller",
+      "n": 40,
+      "command": "python research/token_ab.py --distill",
+      "raw": "research/token_ab.json",
+      "pointer": "distillation_ab.by_k[0].net_raw_vs_curated",
+      "ci": null,
+      "ci_note": "A token count, not a proportion.",
+      "cited_in": [
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "token_ab.distill.k3.net_distilled_vs_curated",
+      "statement": "distilled retrieval at k=3: net_distilled_vs_curated = 7534",
+      "value": 7534,
+      "printed": [
+        "7,534",
+        "7534"
+      ],
+      "unit": "recall@3",
+      "dataset": "longmemeval_oracle_sample40",
+      "environment": "local_ollama_distiller",
+      "n": 40,
+      "command": "python research/token_ab.py --distill",
+      "raw": "research/token_ab.json",
+      "pointer": "distillation_ab.by_k[0].net_distilled_vs_curated",
+      "ci": null,
+      "ci_note": "A token count, not a proportion.",
+      "cited_in": [
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "token_ab.distill.k5.recall_at_k",
+      "statement": "distilled retrieval at k=5: recall_at_k = 1.0",
+      "value": 1.0,
+      "printed": [
+        "1.0"
+      ],
+      "unit": "recall@5",
+      "dataset": "longmemeval_oracle_sample40",
+      "environment": "local_ollama_distiller",
+      "n": 40,
+      "command": "python research/token_ab.py --distill",
+      "raw": "research/token_ab.json",
+      "pointer": "distillation_ab.by_k[1].recall_at_k",
+      "ci": {
+        "method": "wilson",
+        "level": 0.95,
+        "low": 0.9124,
+        "high": 1.0
+      },
+      "ci_note": "40-question sample - the interval is wide and the point estimate should not be quoted to two decimals.",
+      "cited_in": [
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "token_ab.distill.k5.raw_topk_tok",
+      "statement": "distilled retrieval at k=5: raw_topk_tok = 17456",
+      "value": 17456,
+      "printed": [
+        "17,456",
+        "17456"
+      ],
+      "unit": "tokens",
+      "dataset": "longmemeval_oracle_sample40",
+      "environment": "local_ollama_distiller",
+      "n": 40,
+      "command": "python research/token_ab.py --distill",
+      "raw": "research/token_ab.json",
+      "pointer": "distillation_ab.by_k[1].raw_topk_tok",
+      "ci": null,
+      "ci_note": "A token count, not a proportion.",
+      "cited_in": [
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "token_ab.distill.k5.distilled_topk_tok",
+      "statement": "distilled retrieval at k=5: distilled_topk_tok = 566",
+      "value": 566,
+      "printed": [
+        "566"
+      ],
+      "unit": "tokens",
+      "dataset": "longmemeval_oracle_sample40",
+      "environment": "local_ollama_distiller",
+      "n": 40,
+      "command": "python research/token_ab.py --distill",
+      "raw": "research/token_ab.json",
+      "pointer": "distillation_ab.by_k[1].distilled_topk_tok",
+      "ci": null,
+      "ci_note": "A token count, not a proportion.",
+      "cited_in": [
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "token_ab.distill.k5.net_raw_vs_curated",
+      "statement": "distilled retrieval at k=5: net_raw_vs_curated = -9380",
+      "value": -9380,
+      "printed": [
+        "-9,380",
+        "-9380",
+        "9,380"
+      ],
+      "unit": "recall@5",
+      "dataset": "longmemeval_oracle_sample40",
+      "environment": "local_ollama_distiller",
+      "n": 40,
+      "command": "python research/token_ab.py --distill",
+      "raw": "research/token_ab.json",
+      "pointer": "distillation_ab.by_k[1].net_raw_vs_curated",
+      "ci": null,
+      "ci_note": "A token count, not a proportion.",
+      "cited_in": [
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "token_ab.distill.k5.net_distilled_vs_curated",
+      "statement": "distilled retrieval at k=5: net_distilled_vs_curated = 7511",
+      "value": 7511,
+      "printed": [
+        "7,511",
+        "7511"
+      ],
+      "unit": "recall@5",
+      "dataset": "longmemeval_oracle_sample40",
+      "environment": "local_ollama_distiller",
+      "n": 40,
+      "command": "python research/token_ab.py --distill",
+      "raw": "research/token_ab.json",
+      "pointer": "distillation_ab.by_k[1].net_distilled_vs_curated",
+      "ci": null,
+      "ci_note": "A token count, not a proportion.",
+      "cited_in": [
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "token_ab.distill.k10.recall_at_k",
+      "statement": "distilled retrieval at k=10: recall_at_k = 1.0",
+      "value": 1.0,
+      "printed": [
+        "1.0"
+      ],
+      "unit": "recall@10",
+      "dataset": "longmemeval_oracle_sample40",
+      "environment": "local_ollama_distiller",
+      "n": 40,
+      "command": "python research/token_ab.py --distill",
+      "raw": "research/token_ab.json",
+      "pointer": "distillation_ab.by_k[2].recall_at_k",
+      "ci": {
+        "method": "wilson",
+        "level": 0.95,
+        "low": 0.9124,
+        "high": 1.0
+      },
+      "ci_note": "40-question sample - the interval is wide and the point estimate should not be quoted to two decimals.",
+      "cited_in": [
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "token_ab.distill.k10.raw_topk_tok",
+      "statement": "distilled retrieval at k=10: raw_topk_tok = 34742",
+      "value": 34742,
+      "printed": [
+        "34,742",
+        "34742"
+      ],
+      "unit": "tokens",
+      "dataset": "longmemeval_oracle_sample40",
+      "environment": "local_ollama_distiller",
+      "n": 40,
+      "command": "python research/token_ab.py --distill",
+      "raw": "research/token_ab.json",
+      "pointer": "distillation_ab.by_k[2].raw_topk_tok",
+      "ci": null,
+      "ci_note": "A token count, not a proportion.",
+      "cited_in": [
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "token_ab.distill.k10.distilled_topk_tok",
+      "statement": "distilled retrieval at k=10: distilled_topk_tok = 1109",
+      "value": 1109,
+      "printed": [
+        "1,109",
+        "1109"
+      ],
+      "unit": "tokens",
+      "dataset": "longmemeval_oracle_sample40",
+      "environment": "local_ollama_distiller",
+      "n": 40,
+      "command": "python research/token_ab.py --distill",
+      "raw": "research/token_ab.json",
+      "pointer": "distillation_ab.by_k[2].distilled_topk_tok",
+      "ci": null,
+      "ci_note": "A token count, not a proportion.",
+      "cited_in": [
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "token_ab.distill.k10.net_raw_vs_curated",
+      "statement": "distilled retrieval at k=10: net_raw_vs_curated = -26665",
+      "value": -26665,
+      "printed": [
+        "-26,665",
+        "-26665",
+        "26,665"
+      ],
+      "unit": "recall@10",
+      "dataset": "longmemeval_oracle_sample40",
+      "environment": "local_ollama_distiller",
+      "n": 40,
+      "command": "python research/token_ab.py --distill",
+      "raw": "research/token_ab.json",
+      "pointer": "distillation_ab.by_k[2].net_raw_vs_curated",
+      "ci": null,
+      "ci_note": "A token count, not a proportion.",
+      "cited_in": [
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "token_ab.distill.k10.net_distilled_vs_curated",
+      "statement": "distilled retrieval at k=10: net_distilled_vs_curated = 6967",
+      "value": 6967,
+      "printed": [
+        "6,967",
+        "6967"
+      ],
+      "unit": "recall@10",
+      "dataset": "longmemeval_oracle_sample40",
+      "environment": "local_ollama_distiller",
+      "n": 40,
+      "command": "python research/token_ab.py --distill",
+      "raw": "research/token_ab.json",
+      "pointer": "distillation_ab.by_k[2].net_distilled_vs_curated",
+      "ci": null,
+      "ci_note": "A token count, not a proportion.",
+      "cited_in": [
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "token_ab.live_two_arm.mean_prompt_tok_no_memory",
+      "statement": "live two-arm run on qwen2.5:3b: mean_prompt_tok_no_memory = 5132",
+      "value": 5132,
+      "printed": [
+        "5,132",
+        "5132"
+      ],
+      "unit": "tokens",
+      "dataset": "longmemeval_oracle_sample15",
+      "environment": "qwen25_3b_reader",
+      "n": 15,
+      "command": "python research/token_ab.py --distill --live",
+      "raw": "research/token_ab.json",
+      "pointer": "live_two_arm.mean_prompt_tok_no_memory",
+      "ci": null,
+      "ci_note": "15 questions with a 3B reader; directional only.",
+      "cited_in": [
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "token_ab.live_two_arm.mean_prompt_tok_with_memory",
+      "statement": "live two-arm run on qwen2.5:3b: mean_prompt_tok_with_memory = 348",
+      "value": 348,
+      "printed": [
+        "348"
+      ],
+      "unit": "tokens",
+      "dataset": "longmemeval_oracle_sample15",
+      "environment": "qwen25_3b_reader",
+      "n": 15,
+      "command": "python research/token_ab.py --distill --live",
+      "raw": "research/token_ab.json",
+      "pointer": "live_two_arm.mean_prompt_tok_with_memory",
+      "ci": null,
+      "ci_note": "15 questions with a 3B reader; directional only.",
+      "cited_in": [
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "token_ab.live_two_arm.input_token_reduction",
+      "statement": "live two-arm run on qwen2.5:3b: input_token_reduction = 0.932",
+      "value": 0.932,
+      "printed": [
+        "0.93",
+        "0.932",
+        "93%"
+      ],
+      "unit": "fraction",
+      "dataset": "longmemeval_oracle_sample15",
+      "environment": "qwen25_3b_reader",
+      "n": 15,
+      "command": "python research/token_ab.py --distill --live",
+      "raw": "research/token_ab.json",
+      "pointer": "live_two_arm.input_token_reduction",
+      "ci": null,
+      "ci_note": "15 questions with a 3B reader; directional only.",
+      "cited_in": [
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "token_ab.live_two_arm.answer_match_no_memory",
+      "statement": "live two-arm run on qwen2.5:3b: answer_match_no_memory = 0.467",
+      "value": 0.467,
+      "printed": [
+        "0.467",
+        "0.47",
+        "47%"
+      ],
+      "unit": "answer match",
+      "dataset": "longmemeval_oracle_sample15",
+      "environment": "qwen25_3b_reader",
+      "n": 15,
+      "command": "python research/token_ab.py --distill --live",
+      "raw": "research/token_ab.json",
+      "pointer": "live_two_arm.answer_match_no_memory",
+      "ci": null,
+      "ci_note": "15 questions with a 3B reader; directional only.",
+      "cited_in": [
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "token_ab.live_two_arm.answer_match_with_memory",
+      "statement": "live two-arm run on qwen2.5:3b: answer_match_with_memory = 0.267",
+      "value": 0.267,
+      "printed": [
+        "0.267",
+        "0.27",
+        "27%"
+      ],
+      "unit": "answer match",
+      "dataset": "longmemeval_oracle_sample15",
+      "environment": "qwen25_3b_reader",
+      "n": 15,
+      "command": "python research/token_ab.py --distill --live",
+      "raw": "research/token_ab.json",
+      "pointer": "live_two_arm.answer_match_with_memory",
+      "ci": null,
+      "ci_note": "15 questions with a 3B reader; directional only.",
+      "cited_in": [
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "token_ab.live_two_arm.questions",
+      "statement": "live two-arm run on qwen2.5:3b: questions = 15",
+      "value": 15,
+      "printed": [
+        "15"
+      ],
+      "unit": "count",
+      "dataset": "longmemeval_oracle_sample15",
+      "environment": "qwen25_3b_reader",
+      "n": 15,
+      "command": "python research/token_ab.py --distill --live",
+      "raw": "research/token_ab.json",
+      "pointer": "live_two_arm.questions",
+      "ci": null,
+      "ci_note": "15 questions with a 3B reader; directional only.",
+      "cited_in": [
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "longitudinal.active_vs_inject_token_ratio",
+      "statement": "active guards deliver the same prevention for 31x fewer memory tokens than always-injecting the recalled text",
+      "value": 31.0,
+      "printed": [
+        "31×",
+        "31x"
+      ],
+      "unit": "ratio",
+      "dataset": "longitudinal_sim",
+      "environment": "stdlib_only",
+      "n": 200,
+      "seeds": 25,
+      "command": "python research/longitudinal_improvement.py",
+      "raw": "research/longitudinal_results.json",
+      "pointer": null,
+      "derivation": "arms.v1.mem_tokens / arms.v2.mem_tokens = 80000 / 2581 = 30.99",
+      "caveat": "A simulation over a 200-task family, not a live agent run.",
+      "ci": null,
+      "cited_in": [
+        "README.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "counterfactual.token_ratio",
+      "statement": "answering a counterfactual from the causal graph costs ~300 tokens against ~2,250 to dump the 15 notes that mention the entity - 7x cheaper",
+      "value": 7.0,
+      "printed": [
+        "7×",
+        "7x"
+      ],
+      "unit": "ratio",
+      "dataset": "owner_vault_snapshot",
+      "environment": "stdlib_only",
+      "n": 1,
+      "command": "python -m nevertwice.causal",
+      "raw": null,
+      "pointer": null,
+      "raw_gap": "Published only in research/ACTIVE_MEMORY.md; a single entity on one vault snapshot, with no committed raw artifact.",
+      "ci": null,
+      "cited_in": [
+        "README.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "latency.pretooluse_end_to_end",
+      "statement": "the PreToolUse hook costs 85 ms end to end, interpreter start included",
+      "value": 85,
+      "printed": [
+        "85 ms",
+        "85"
+      ],
+      "unit": "milliseconds",
+      "dataset": null,
+      "environment": "ryzen7700_win11_py314",
+      "n": null,
+      "command": "python research/latency_bench.py",
+      "raw": null,
+      "pointer": null,
+      "raw_gap": "latency_bench.py prints JSON to stdout and saves nothing. This number is on the social banner and in a badge, and cannot be traced to a committed artifact. Add --save before re-citing.",
+      "ci": null,
+      "cited_in": [
+        "README.md",
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "latency.userpromptsubmit",
+      "statement": "UserPromptSubmit end-to-end: 68 ms",
+      "value": 68,
+      "printed": [
+        "68 ms",
+        "68"
+      ],
+      "unit": "milliseconds",
+      "dataset": null,
+      "environment": "ryzen7700_win11_py314",
+      "n": null,
+      "command": "python research/latency_bench.py",
+      "raw": null,
+      "pointer": null,
+      "raw_gap": "latency_bench.py saves no artifact.",
+      "ci": null,
+      "cited_in": [
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "latency.sessionstart",
+      "statement": "SessionStart end-to-end, idle: 73 ms",
+      "value": 73,
+      "printed": [
+        "73 ms",
+        "73"
+      ],
+      "unit": "milliseconds",
+      "dataset": null,
+      "environment": "ryzen7700_win11_py314",
+      "n": null,
+      "command": "python research/latency_bench.py",
+      "raw": null,
+      "pointer": null,
+      "raw_gap": "latency_bench.py saves no artifact.",
+      "ci": null,
+      "cited_in": [
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "latency.cold",
+      "statement": "cold import of the engine: 25 ms",
+      "value": 25,
+      "printed": [
+        "25 ms",
+        "25"
+      ],
+      "unit": "milliseconds",
+      "dataset": null,
+      "environment": "ryzen7700_win11_py314",
+      "n": null,
+      "command": "python research/latency_bench.py",
+      "raw": null,
+      "pointer": null,
+      "raw_gap": "latency_bench.py saves no artifact.",
+      "ci": null,
+      "cited_in": [
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "latency.perf_audit_range",
+      "statement": "two hot paths were 10-30x worse before the 2026-07 perf audit",
+      "value": 30,
+      "printed": [
+        "10-30x",
+        "30"
+      ],
+      "unit": "ratio",
+      "dataset": null,
+      "environment": "ryzen7700_win11_py314",
+      "n": null,
+      "command": "python research/latency_bench.py",
+      "raw": null,
+      "pointer": null,
+      "derivation": "2188/73 = 30.0 and 59/25 = 2.4; the '10-30x' range describes the SessionStart path and the import path together.",
+      "raw_gap": "latency_bench.py saves no artifact.",
+      "ci": null,
+      "cited_in": [
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "latency.guards_check",
+      "statement": "guards.check() over 61 guards on 2 KB of text costs 0.18 ms",
+      "value": 0.18,
+      "printed": [
+        "0.18 ms",
+        "0.18",
+        "61"
+      ],
+      "unit": "milliseconds",
+      "dataset": null,
+      "environment": "ryzen7700_win11_py314",
+      "n": null,
+      "command": "python research/latency_bench.py",
+      "raw": null,
+      "pointer": null,
+      "raw_gap": "latency_bench.py saves no artifact.",
+      "ci": null,
+      "cited_in": [
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "latency.lexical_recall_floor",
+      "statement": "lexical recall with no embedder costs 0.2 ms",
+      "value": 0.2,
+      "printed": [
+        "0.2 ms",
+        "0.2"
+      ],
+      "unit": "milliseconds",
+      "dataset": null,
+      "environment": "ryzen7700_win11_py314",
+      "n": null,
+      "command": "python research/latency_bench.py",
+      "raw": null,
+      "pointer": null,
+      "raw_gap": "latency_bench.py saves no artifact.",
+      "ci": null,
+      "cited_in": [
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "latency.sessionstart_before_perf_audit",
+      "statement": "before the 2026-07 perf audit this cost 2188 ms",
+      "value": 2188,
+      "printed": [
+        "2188 ms",
+        "2188",
+        "2,188"
+      ],
+      "unit": "milliseconds",
+      "dataset": null,
+      "environment": "ryzen7700_win11_py314",
+      "n": null,
+      "command": "python research/latency_bench.py",
+      "raw": null,
+      "pointer": null,
+      "raw_gap": "Historical measurement; no committed artifact and no way to re-measure without checking out the pre-audit tree.",
+      "ci": null,
+      "cited_in": [
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "latency.cold_import_before_perf_audit",
+      "statement": "before the 2026-07 perf audit this cost 59 ms",
+      "value": 59,
+      "printed": [
+        "59 ms",
+        "59",
+        "59"
+      ],
+      "unit": "milliseconds",
+      "dataset": null,
+      "environment": "ryzen7700_win11_py314",
+      "n": null,
+      "command": "python research/latency_bench.py",
+      "raw": null,
+      "pointer": null,
+      "raw_gap": "Historical measurement; no committed artifact and no way to re-measure without checking out the pre-audit tree.",
+      "ci": null,
+      "cited_in": [
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "task_a.semantic.recall_at_1",
+      "statement": "Task A (leave-one-out self-consistency, n=327): semantic recall@1 = 0.661",
+      "value": 0.661,
+      "printed": [
+        "0.661",
+        "0.66"
+      ],
+      "unit": "recall@1",
+      "dataset": "owner_vault_snapshot",
+      "environment": "local_bge_m3",
+      "n": 327,
+      "command": "python research/eval_harness.py --save",
+      "raw": null,
+      "pointer": null,
+      "raw_gap": "eval_harness.py --save writes eval_results.json into the user's VAULT, outside the repository, so Task A/B/C numbers have no committed artifact.",
+      "caveat": "Ground truth is each note's own [[wikilink]] neighbours, which the system writes. Relative ranker comparison only - not an external quality benchmark.",
+      "ci": {
+        "method": "wilson",
+        "level": 0.95,
+        "low": 0.6081,
+        "high": 0.7102
+      },
+      "cited_in": [
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "task_a.semantic.recall_at_3",
+      "statement": "Task A (leave-one-out self-consistency, n=327): semantic recall@3 = 0.817",
+      "value": 0.817,
+      "printed": [
+        "0.817",
+        "0.82"
+      ],
+      "unit": "recall@3",
+      "dataset": "owner_vault_snapshot",
+      "environment": "local_bge_m3",
+      "n": 327,
+      "command": "python research/eval_harness.py --save",
+      "raw": null,
+      "pointer": null,
+      "raw_gap": "eval_harness.py --save writes eval_results.json into the user's VAULT, outside the repository, so Task A/B/C numbers have no committed artifact.",
+      "caveat": "Ground truth is each note's own [[wikilink]] neighbours, which the system writes. Relative ranker comparison only - not an external quality benchmark.",
+      "ci": {
+        "method": "wilson",
+        "level": 0.95,
+        "low": 0.7715,
+        "high": 0.8551
+      },
+      "cited_in": [
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "task_a.semantic.recall_at_5",
+      "statement": "Task A (leave-one-out self-consistency, n=327): semantic recall@5 = 0.881",
+      "value": 0.881,
+      "printed": [
+        "0.881",
+        "0.88"
+      ],
+      "unit": "recall@5",
+      "dataset": "owner_vault_snapshot",
+      "environment": "local_bge_m3",
+      "n": 327,
+      "command": "python research/eval_harness.py --save",
+      "raw": null,
+      "pointer": null,
+      "raw_gap": "eval_harness.py --save writes eval_results.json into the user's VAULT, outside the repository, so Task A/B/C numbers have no committed artifact.",
+      "caveat": "Ground truth is each note's own [[wikilink]] neighbours, which the system writes. Relative ranker comparison only - not an external quality benchmark.",
+      "ci": {
+        "method": "wilson",
+        "level": 0.95,
+        "low": 0.8414,
+        "high": 0.9117
+      },
+      "cited_in": [
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "task_a.semantic.mrr",
+      "statement": "Task A (leave-one-out self-consistency, n=327): semantic mrr = 0.755",
+      "value": 0.755,
+      "printed": [
+        "0.755",
+        "0.76"
+      ],
+      "unit": "mrr",
+      "dataset": "owner_vault_snapshot",
+      "environment": "local_bge_m3",
+      "n": 327,
+      "command": "python research/eval_harness.py --save",
+      "raw": null,
+      "pointer": null,
+      "raw_gap": "eval_harness.py --save writes eval_results.json into the user's VAULT, outside the repository, so Task A/B/C numbers have no committed artifact.",
+      "caveat": "Ground truth is each note's own [[wikilink]] neighbours, which the system writes. Relative ranker comparison only - not an external quality benchmark.",
+      "ci": null,
+      "cited_in": [
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "task_a.lexical.recall_at_1",
+      "statement": "Task A (leave-one-out self-consistency, n=327): lexical recall@1 = 0.581",
+      "value": 0.581,
+      "printed": [
+        "0.581",
+        "0.58"
+      ],
+      "unit": "recall@1",
+      "dataset": "owner_vault_snapshot",
+      "environment": "local_bge_m3",
+      "n": 327,
+      "command": "python research/eval_harness.py --save",
+      "raw": null,
+      "pointer": null,
+      "raw_gap": "eval_harness.py --save writes eval_results.json into the user's VAULT, outside the repository, so Task A/B/C numbers have no committed artifact.",
+      "caveat": "Ground truth is each note's own [[wikilink]] neighbours, which the system writes. Relative ranker comparison only - not an external quality benchmark.",
+      "ci": {
+        "method": "wilson",
+        "level": 0.95,
+        "low": 0.5269,
+        "high": 0.6332
+      },
+      "cited_in": [
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "task_a.lexical.recall_at_3",
+      "statement": "Task A (leave-one-out self-consistency, n=327): lexical recall@3 = 0.761",
+      "value": 0.761,
+      "printed": [
+        "0.761",
+        "0.76"
+      ],
+      "unit": "recall@3",
+      "dataset": "owner_vault_snapshot",
+      "environment": "local_bge_m3",
+      "n": 327,
+      "command": "python research/eval_harness.py --save",
+      "raw": null,
+      "pointer": null,
+      "raw_gap": "eval_harness.py --save writes eval_results.json into the user's VAULT, outside the repository, so Task A/B/C numbers have no committed artifact.",
+      "caveat": "Ground truth is each note's own [[wikilink]] neighbours, which the system writes. Relative ranker comparison only - not an external quality benchmark.",
+      "ci": {
+        "method": "wilson",
+        "level": 0.95,
+        "low": 0.7119,
+        "high": 0.804
+      },
+      "cited_in": [
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "task_a.lexical.recall_at_5",
+      "statement": "Task A (leave-one-out self-consistency, n=327): lexical recall@5 = 0.829",
+      "value": 0.829,
+      "printed": [
+        "0.829",
+        "0.83"
+      ],
+      "unit": "recall@5",
+      "dataset": "owner_vault_snapshot",
+      "environment": "local_bge_m3",
+      "n": 327,
+      "command": "python research/eval_harness.py --save",
+      "raw": null,
+      "pointer": null,
+      "raw_gap": "eval_harness.py --save writes eval_results.json into the user's VAULT, outside the repository, so Task A/B/C numbers have no committed artifact.",
+      "caveat": "Ground truth is each note's own [[wikilink]] neighbours, which the system writes. Relative ranker comparison only - not an external quality benchmark.",
+      "ci": {
+        "method": "wilson",
+        "level": 0.95,
+        "low": 0.7844,
+        "high": 0.8659
+      },
+      "cited_in": [
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "task_a.lexical.mrr",
+      "statement": "Task A (leave-one-out self-consistency, n=327): lexical mrr = 0.689",
+      "value": 0.689,
+      "printed": [
+        "0.689",
+        "0.69"
+      ],
+      "unit": "mrr",
+      "dataset": "owner_vault_snapshot",
+      "environment": "local_bge_m3",
+      "n": 327,
+      "command": "python research/eval_harness.py --save",
+      "raw": null,
+      "pointer": null,
+      "raw_gap": "eval_harness.py --save writes eval_results.json into the user's VAULT, outside the repository, so Task A/B/C numbers have no committed artifact.",
+      "caveat": "Ground truth is each note's own [[wikilink]] neighbours, which the system writes. Relative ranker comparison only - not an external quality benchmark.",
+      "ci": null,
+      "cited_in": [
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "task_a.hybrid_rrf.recall_at_1",
+      "statement": "Task A (leave-one-out self-consistency, n=327): hybrid_rrf recall@1 = 0.645",
+      "value": 0.645,
+      "printed": [
+        "0.645",
+        "0.65"
+      ],
+      "unit": "recall@1",
+      "dataset": "owner_vault_snapshot",
+      "environment": "local_bge_m3",
+      "n": 327,
+      "command": "python research/eval_harness.py --save",
+      "raw": null,
+      "pointer": null,
+      "raw_gap": "eval_harness.py --save writes eval_results.json into the user's VAULT, outside the repository, so Task A/B/C numbers have no committed artifact.",
+      "caveat": "Ground truth is each note's own [[wikilink]] neighbours, which the system writes. Relative ranker comparison only - not an external quality benchmark.",
+      "ci": {
+        "method": "wilson",
+        "level": 0.95,
+        "low": 0.5917,
+        "high": 0.6949
+      },
+      "cited_in": [
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "task_a.hybrid_rrf.recall_at_3",
+      "statement": "Task A (leave-one-out self-consistency, n=327): hybrid_rrf recall@3 = 0.813",
+      "value": 0.813,
+      "printed": [
+        "0.813",
+        "0.81"
+      ],
+      "unit": "recall@3",
+      "dataset": "owner_vault_snapshot",
+      "environment": "local_bge_m3",
+      "n": 327,
+      "command": "python research/eval_harness.py --save",
+      "raw": null,
+      "pointer": null,
+      "raw_gap": "eval_harness.py --save writes eval_results.json into the user's VAULT, outside the repository, so Task A/B/C numbers have no committed artifact.",
+      "caveat": "Ground truth is each note's own [[wikilink]] neighbours, which the system writes. Relative ranker comparison only - not an external quality benchmark.",
+      "ci": {
+        "method": "wilson",
+        "level": 0.95,
+        "low": 0.7672,
+        "high": 0.8515
+      },
+      "cited_in": [
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "task_a.hybrid_rrf.recall_at_5",
+      "statement": "Task A (leave-one-out self-consistency, n=327): hybrid_rrf recall@5 = 0.875",
+      "value": 0.875,
+      "printed": [
+        "0.875",
+        "0.88"
+      ],
+      "unit": "recall@5",
+      "dataset": "owner_vault_snapshot",
+      "environment": "local_bge_m3",
+      "n": 327,
+      "command": "python research/eval_harness.py --save",
+      "raw": null,
+      "pointer": null,
+      "raw_gap": "eval_harness.py --save writes eval_results.json into the user's VAULT, outside the repository, so Task A/B/C numbers have no committed artifact.",
+      "caveat": "Ground truth is each note's own [[wikilink]] neighbours, which the system writes. Relative ranker comparison only - not an external quality benchmark.",
+      "ci": {
+        "method": "wilson",
+        "level": 0.95,
+        "low": 0.8347,
+        "high": 0.9065
+      },
+      "cited_in": [
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "task_a.hybrid_rrf.mrr",
+      "statement": "Task A (leave-one-out self-consistency, n=327): hybrid_rrf mrr = 0.747",
+      "value": 0.747,
+      "printed": [
+        "0.747",
+        "0.75"
+      ],
+      "unit": "mrr",
+      "dataset": "owner_vault_snapshot",
+      "environment": "local_bge_m3",
+      "n": 327,
+      "command": "python research/eval_harness.py --save",
+      "raw": null,
+      "pointer": null,
+      "raw_gap": "eval_harness.py --save writes eval_results.json into the user's VAULT, outside the repository, so Task A/B/C numbers have no committed artifact.",
+      "caveat": "Ground truth is each note's own [[wikilink]] neighbours, which the system writes. Relative ranker comparison only - not an external quality benchmark.",
+      "ci": null,
+      "cited_in": [
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "task_a.n",
+      "statement": "Task A evaluates 327 leave-one-out queries",
+      "value": 327,
+      "printed": [
+        "327",
+        "n=327"
+      ],
+      "unit": "queries",
+      "dataset": "owner_vault_snapshot",
+      "environment": "local_bge_m3",
+      "n": 327,
+      "command": "python research/eval_harness.py --save",
+      "raw": null,
+      "pointer": null,
+      "raw_gap": "eval_harness.py saves into VAULT, not the repository.",
+      "ci": null,
+      "cited_in": [
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "task_b.bitemporal_accuracy",
+      "statement": "bi-temporal point-in-time QA answers correctly on every query",
+      "value": 1.0,
+      "printed": [
+        "1.000"
+      ],
+      "unit": "accuracy",
+      "dataset": "owner_vault_snapshot",
+      "environment": "stdlib_only",
+      "n": null,
+      "command": "python research/eval_harness.py --save",
+      "raw": null,
+      "pointer": null,
+      "raw_gap": "eval_harness.py saves into VAULT, not the repository.",
+      "ci": null,
+      "cited_in": [
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "task_b.flat_newest_accuracy",
+      "statement": "a flat 'use newest' store answers 0.455 of point-in-time questions",
+      "value": 0.455,
+      "printed": [
+        "0.455"
+      ],
+      "unit": "accuracy",
+      "dataset": "owner_vault_snapshot",
+      "environment": "stdlib_only",
+      "n": null,
+      "command": "python research/eval_harness.py --save",
+      "raw": null,
+      "pointer": null,
+      "raw_gap": "eval_harness.py saves into VAULT, not the repository.",
+      "ci": null,
+      "cited_in": [
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "task_b.contradictions_per_query",
+      "statement": "a flat 'return all versions' store surfaces 2.27 contradictory versions per query",
+      "value": 2.27,
+      "printed": [
+        "2.27"
+      ],
+      "unit": "versions/query",
+      "dataset": "owner_vault_snapshot",
+      "environment": "stdlib_only",
+      "n": null,
+      "command": "python research/eval_harness.py --save",
+      "raw": null,
+      "pointer": null,
+      "raw_gap": "eval_harness.py saves into VAULT, not the repository.",
+      "ci": null,
+      "cited_in": [
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "task_c.project_alpha.card",
+      "statement": "Task C token economy, project_alpha: card = 111",
+      "value": 111,
+      "printed": [
+        "111"
+      ],
+      "unit": "tokens",
+      "dataset": "owner_vault_snapshot",
+      "environment": "stdlib_only",
+      "n": null,
+      "command": "python research/eval_harness.py --save",
+      "raw": null,
+      "pointer": null,
+      "raw_gap": "eval_harness.py saves into VAULT, not the repository.",
+      "ci": null,
+      "cited_in": [
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "task_c.project_alpha.full_context",
+      "statement": "Task C token economy, project_alpha: full_context = 3836",
+      "value": 3836,
+      "printed": [
+        "3836",
+        "3,836"
+      ],
+      "unit": "tokens",
+      "dataset": "owner_vault_snapshot",
+      "environment": "stdlib_only",
+      "n": null,
+      "command": "python research/eval_harness.py --save",
+      "raw": null,
+      "pointer": null,
+      "raw_gap": "eval_harness.py saves into VAULT, not the repository.",
+      "ci": null,
+      "cited_in": [
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "task_c.project_alpha.ratio",
+      "statement": "Task C token economy, project_alpha: ratio = 34.6",
+      "value": 34.6,
+      "printed": [
+        "35×",
+        "35x"
+      ],
+      "unit": "ratio",
+      "dataset": "owner_vault_snapshot",
+      "environment": "stdlib_only",
+      "n": null,
+      "command": "python research/eval_harness.py --save",
+      "raw": null,
+      "pointer": null,
+      "raw_gap": "eval_harness.py saves into VAULT, not the repository.",
+      "ci": null,
+      "cited_in": [
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "task_c.project_beta.card",
+      "statement": "Task C token economy, project_beta: card = 63",
+      "value": 63,
+      "printed": [
+        "63"
+      ],
+      "unit": "tokens",
+      "dataset": "owner_vault_snapshot",
+      "environment": "stdlib_only",
+      "n": null,
+      "command": "python research/eval_harness.py --save",
+      "raw": null,
+      "pointer": null,
+      "raw_gap": "eval_harness.py saves into VAULT, not the repository.",
+      "ci": null,
+      "cited_in": [
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "task_c.project_beta.full_context",
+      "statement": "Task C token economy, project_beta: full_context = 2936",
+      "value": 2936,
+      "printed": [
+        "2936",
+        "2,936"
+      ],
+      "unit": "tokens",
+      "dataset": "owner_vault_snapshot",
+      "environment": "stdlib_only",
+      "n": null,
+      "command": "python research/eval_harness.py --save",
+      "raw": null,
+      "pointer": null,
+      "raw_gap": "eval_harness.py saves into VAULT, not the repository.",
+      "ci": null,
+      "cited_in": [
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "task_c.project_beta.ratio",
+      "statement": "Task C token economy, project_beta: ratio = 46.6",
+      "value": 46.6,
+      "printed": [
+        "47×",
+        "47x"
+      ],
+      "unit": "ratio",
+      "dataset": "owner_vault_snapshot",
+      "environment": "stdlib_only",
+      "n": null,
+      "command": "python research/eval_harness.py --save",
+      "raw": null,
+      "pointer": null,
+      "raw_gap": "eval_harness.py saves into VAULT, not the repository.",
+      "ci": null,
+      "cited_in": [
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "task_c.project_delta.card",
+      "statement": "Task C token economy, project_delta: card = 20",
+      "value": 20,
+      "printed": [
+        "20"
+      ],
+      "unit": "tokens",
+      "dataset": "owner_vault_snapshot",
+      "environment": "stdlib_only",
+      "n": null,
+      "command": "python research/eval_harness.py --save",
+      "raw": null,
+      "pointer": null,
+      "raw_gap": "eval_harness.py saves into VAULT, not the repository.",
+      "ci": null,
+      "cited_in": [
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "task_c.project_delta.full_context",
+      "statement": "Task C token economy, project_delta: full_context = 2300",
+      "value": 2300,
+      "printed": [
+        "2300",
+        "2,300"
+      ],
+      "unit": "tokens",
+      "dataset": "owner_vault_snapshot",
+      "environment": "stdlib_only",
+      "n": null,
+      "command": "python research/eval_harness.py --save",
+      "raw": null,
+      "pointer": null,
+      "raw_gap": "eval_harness.py saves into VAULT, not the repository.",
+      "ci": null,
+      "cited_in": [
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "task_c.project_delta.ratio",
+      "statement": "Task C token economy, project_delta: ratio = 115.0",
+      "value": 115.0,
+      "printed": [
+        "115×",
+        "115x"
+      ],
+      "unit": "ratio",
+      "dataset": "owner_vault_snapshot",
+      "environment": "stdlib_only",
+      "n": null,
+      "command": "python research/eval_harness.py --save",
+      "raw": null,
+      "pointer": null,
+      "raw_gap": "eval_harness.py saves into VAULT, not the repository.",
+      "ci": null,
+      "cited_in": [
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "task_c.overall_ratio",
+      "statement": "the current-snapshot surface is 2.5x cheaper than the full Context journal",
+      "value": 2.5,
+      "printed": [
+        "2.5×",
+        "2.5x"
+      ],
+      "unit": "ratio",
+      "dataset": "owner_vault_snapshot",
+      "environment": "stdlib_only",
+      "n": null,
+      "command": "python research/eval_harness.py --save",
+      "raw": null,
+      "pointer": null,
+      "raw_gap": "eval_harness.py saves into VAULT, not the repository.",
+      "ci": null,
+      "cited_in": [
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "real_task.sessionstart_tokens",
+      "statement": "the SessionStart injection costs about 644 tokens",
+      "value": 644,
+      "printed": [
+        "644",
+        "0.6"
+      ],
+      "unit": "tokens",
+      "dataset": "owner_vault_snapshot",
+      "environment": "stdlib_only",
+      "n": 1,
+      "command": "python -m nevertwice.stats",
+      "raw": null,
+      "pointer": null,
+      "raw_gap": "A single live-project observation with no committed artifact.",
+      "ci": null,
+      "cited_in": [
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "real_task.recall_tokens",
+      "statement": "task-aware recall costs about 266 tokens per substantial prompt",
+      "value": 266,
+      "printed": [
+        "266",
+        "0.27"
+      ],
+      "unit": "tokens",
+      "dataset": "owner_vault_snapshot",
+      "environment": "stdlib_only",
+      "n": 1,
+      "command": "python -m nevertwice.stats",
+      "raw": null,
+      "pointer": null,
+      "raw_gap": "A single live-project observation with no committed artifact.",
+      "ci": null,
+      "cited_in": [
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "store.notes",
+      "statement": "the internal tasks run on a real bilingual store of ~320 notes across 11 projects",
+      "value": 320,
+      "printed": [
+        "320",
+        "~320",
+        "11",
+        "26"
+      ],
+      "unit": "notes",
+      "dataset": "owner_vault_snapshot",
+      "environment": "stdlib_only",
+      "n": null,
+      "command": "python -m nevertwice.stats",
+      "raw": null,
+      "pointer": null,
+      "raw_gap": "Owner's private vault; the count is not reproducible by a third party.",
+      "ci": null,
+      "cited_in": [
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "demo.recall_ratio_small_project",
+      "statement": "recall is 5.9x leaner than dumping the store on this stand",
+      "value": 5.9,
+      "printed": [
+        "5.9x",
+        "5.9"
+      ],
+      "unit": "ratio",
+      "dataset": "demo_store",
+      "environment": "stdlib_only",
+      "n": null,
+      "command": "python examples/scenario_demo.py",
+      "raw": null,
+      "pointer": null,
+      "raw_gap": "Measured live inside the demo; the recorded GIF is the only artifact. Deterministic capture is task C1.",
+      "ci": null,
+      "cited_in": [
+        "README.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "demo.recall_ratio_default",
+      "statement": "recall is 9.1x leaner than dumping the store on this stand",
+      "value": 9.1,
+      "printed": [
+        "9.1x",
+        "9.1"
+      ],
+      "unit": "ratio",
+      "dataset": "demo_store",
+      "environment": "stdlib_only",
+      "n": null,
+      "command": "python examples/scenario_demo.py",
+      "raw": null,
+      "pointer": null,
+      "raw_gap": "Measured live inside the demo; the recorded GIF is the only artifact. Deterministic capture is task C1.",
+      "ci": null,
+      "cited_in": [
+        "README.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "demo.recall_ratio_220_notes",
+      "statement": "recall is 44x leaner than dumping the store on this stand",
+      "value": 44,
+      "printed": [
+        "44x",
+        "44",
+        "220"
+      ],
+      "unit": "ratio",
+      "dataset": "demo_store",
+      "environment": "stdlib_only",
+      "n": null,
+      "command": "python examples/scenario_demo.py",
+      "raw": null,
+      "pointer": null,
+      "raw_gap": "Measured live inside the demo; the recorded GIF is the only artifact. Deterministic capture is task C1.",
+      "ci": null,
+      "cited_in": [
+        "README.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "embed_specialize.recall_drop",
+      "statement": "a domain-specialised embedder dropped real recall@3 from 0.82 to 0.35",
+      "value": 0.35,
+      "printed": [
+        "0.82",
+        "0.35"
+      ],
+      "unit": "recall@3",
+      "dataset": "owner_vault_snapshot",
+      "environment": "local_bge_m3",
+      "n": null,
+      "command": "python research/embed_universal/train.py",
+      "raw": null,
+      "pointer": null,
+      "raw_gap": "Published in research/EMBED_SPECIALIZE.md with no committed raw file.",
+      "ci": null,
+      "cited_in": [
+        "README.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    },
+    {
+      "id": "guards.universal_pack_size",
+      "statement": "the universal guard pack carries 11 high-precision pitfalls",
+      "value": 11,
+      "printed": [
+        "11"
+      ],
+      "unit": "guards",
+      "dataset": null,
+      "environment": "stdlib_only",
+      "n": null,
+      "command": "python -m nevertwice.guards --list",
+      "raw": null,
+      "pointer": null,
+      "raw_gap": "A property of the shipped pack; a test should assert it (task D1).",
+      "ci": null,
+      "cited_in": [
+        "README.md"
+      ],
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+    }
+  ],
+  "external_citations": [
+    {
+      "id": "mem0.locomo_headline",
+      "printed": [
+        "91.6",
+        "49"
+      ],
+      "statement": "Mem0 reports 91.6 on LoCoMo, which its own analysis says drops to about 49% effective at 50k sessions",
+      "source": "https://mem0.ai/blog/ai-memory-benchmarks-in-2026",
+      "owner": "Mem0 (third party)",
+      "note": "Quoted, not measured here. It is cited to argue that R@k has stopped discriminating, never as evidence about Nevertwice.",
+      "cited_in": [
+        "README.md"
+      ]
+    },
+    {
+      "id": "locomo.session_scale",
+      "printed": [
+        "50k",
+        "50"
+      ],
+      "statement": "the effective-accuracy drop is reported at 50k sessions",
+      "source": "https://mem0.ai/blog/ai-memory-benchmarks-in-2026",
+      "owner": "Mem0 (third party)",
+      "cited_in": [
+        "README.md"
+      ]
+    }
+  ],
+  "non_metrics": [
+    {
+      "pattern": "^\\d$",
+      "reason": "single digit - table headers (R@1, R@3, R@5), k values, list markers and the literal zeros in '0 dependencies' and '0 tokens until they fire'. Too ambiguous to bind to a claim; task B2 generates these positions instead of matching them."
+    },
+    {
+      "pattern": "^(19|20)\\d{2}$",
+      "reason": "a year - dates such as 2026-07, not a measurement"
+    },
+    {
+      "pattern": "^3\\.(9|1[0-9])$",
+      "reason": "a Python version in the support matrix"
+    },
+    {
+      "pattern": "^\\d{3,4}$",
+      "context": "width=|height=",
+      "reason": "an HTML image dimension"
+    },
+    {
+      "literal": "880",
+      "reason": "image width attribute"
+    },
+    {
+      "literal": "740",
+      "reason": "image width attribute"
+    },
+    {
+      "literal": "7700",
+      "reason": "the CPU model number in 'Ryzen 7 7700'"
+    },
+    {
+      "literal": "200.76",
+      "reason": "percent-encoded fragment of the LongMemEval badge label ('%20›%200.76')"
+    },
+    {
+      "pattern": "^0\\d$",
+      "reason": "the month fragment of an ISO date such as 2026-07"
+    },
+    {
+      "pattern": "^10$",
+      "reason": "the k in the 'R@10' and 'k=10' table positions"
+    },
+    {
+      "pattern": "^(0|2|200|405|043|9286|80)$",
+      "context": "img.shields.io",
+      "reason": "percent-encoding fragments inside a badge URL; the badge's human-readable claim is covered by its own claim entry"
+    }
+  ],
+  "drift": [
+    {
+      "doc": "docs/BENCHMARKS.md",
+      "printed": [
+        "30.7",
+        "968,715",
+        "31,517"
+      ],
+      "claims": [
+        "token_ab.distill.ratio",
+        "token_ab.distill.raw_tok_total",
+        "token_ab.distill.distilled_tok_total"
+      ],
+      "correct": {
+        "distill_ratio": 31.4,
+        "raw_tok_total": 1013847,
+        "distilled_tok_total": 32263
+      },
+      "note": "The published distillation figures come from an earlier run than research/token_ab.json. The stored raw result is the authority; task B2 regenerates the table."
+    },
+    {
+      "doc": "docs/BENCHMARKS.md",
+      "printed": [
+        "0.83",
+        "0.93",
+        "0.98",
+        "344",
+        "560",
+        "1,136",
+        "10,629",
+        "17,703",
+        "35,224",
+        "3,965",
+        "10,232",
+        "27,349",
+        "6,320",
+        "6,911",
+        "6,738",
+        "6.3",
+        "6.9"
+      ],
+      "claims": [
+        "token_ab.distill.k3.*",
+        "token_ab.distill.k5.*",
+        "token_ab.distill.k10.*"
+      ],
+      "correct": {
+        "k3": {
+          "recall_at_k": 0.975,
+          "distilled_topk_tok": 341,
+          "net_distilled_vs_curated": 7534
+        },
+        "k5": {
+          "recall_at_k": 1.0,
+          "distilled_topk_tok": 566,
+          "net_distilled_vs_curated": 7511
+        },
+        "k10": {
+          "recall_at_k": 1.0,
+          "distilled_topk_tok": 1109,
+          "net_distilled_vs_curated": 6967
+        }
+      },
+      "note": "Same stale run. The published net range '+6.3-6.9k' is actually +7.0-7.5k in the stored result."
+    },
+    {
+      "doc": "docs/BENCHMARKS.md",
+      "printed": [
+        "345",
+        "0.33"
+      ],
+      "claims": [
+        "token_ab.live_two_arm.mean_prompt_tok_with_memory",
+        "token_ab.live_two_arm.answer_match_with_memory"
+      ],
+      "correct": {
+        "mean_prompt_tok_with_memory": 348,
+        "answer_match_with_memory": 0.267
+      },
+      "note": "The live two-arm arm figures are stale. The accuracy dip is LARGER than published (0.267, not 0.33) - the doc currently understates its own honest caveat."
+    },
+    {
+      "doc": "README.md",
+      "printed": [
+        "0.14"
+      ],
+      "claims": [
+        "forgetting.coverage_gain_at_20pct"
+      ],
+      "correct": {
+        "baseline": "salience, not recency-sorting"
+      },
+      "note": "The +0.14 topic-coverage gain is measured against the SALIENCE baseline (0.854 vs 0.717). Against recency-sorting the gap is 0.096. README names recency; research/FORGETTING.md's table is correct."
+    },
+    {
+      "doc": "docs/BENCHMARKS.md",
+      "printed": [
+        "0.657"
+      ],
+      "claims": [
+        "longmem.hybrid.mrr"
+      ],
+      "correct": {
+        "mrr": 0.6566
+      },
+      "note": "Rounds correctly from longmem_results.json (0.6566). research/head_to_head.json records 0.6511 for the same ranker from a separate run; the two runs are not identical and the docs should say which one they quote."
+    }
+  ]
+}
