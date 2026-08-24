@@ -16,19 +16,18 @@ versions are [semantic](https://semver.org). Dates are UTC.
 - **Every tracked Markdown file has a governance mode.** The manifest's document register
   marks each one governed (every number must resolve to a claim), exempt with a stated
   reason, or backlog with a numeric budget that may only be lowered. A new document
-  cannot quietly start publishing unevidenced numbers, and the 2,208 numbers still
+  cannot quietly start publishing unevidenced numbers, and the 1,398 numbers still
   unregistered across 23 study write-ups can only shrink.
 - **Every published number now resolves to its evidence.**
-  `research/evidence_manifest.json` registers all 123 figures printed in the README and
+  `research/evidence_manifest.json` registers all 125 figures printed in the README and
   `docs/BENCHMARKS.md` with the dataset, sample size, model, hardware, exact command, raw
   result file and pointer, confidence interval where one applies, and the caveat that
   belongs with the number. `tests/_test_evidence_manifest.py` fails if a printed number
   has no entry, if an entry disagrees with the raw file it points at, or if a claim
   without a committed artifact does not say so. Two things the register makes visible
   instead of hiding: 45 claims have no committed raw artifact (`eval_harness.py` saves
-  into the user's vault, `latency_bench.py` saves nothing), and five published figures -
-  the distillation table, the live two-arm arm, and the forgetting baseline - disagree
-  with the stored results and are recorded as drift until the tables are regenerated.
+  into the user's vault, `latency_bench.py` saves nothing), and five published figures that
+  disagreed with the stored results - all corrected below.
 - **The version contract is enforced, not documented.** `tools/check_version.py` checks
   that `pyproject.toml`, the runtime `__version__`, the MCP server's reported version, the
   git tag and the built distribution's metadata all carry the same version - and that the
@@ -38,6 +37,18 @@ versions are [semantic](https://semver.org). Dates are UTC.
   the README and CONTRIBUTING tell a contributor to follow.
 
 ### Changed
+- **Comparative claims are dated and scoped instead of absolute.** Sixteen statements
+  across the README, `docs/BENCHMARKS.md`, `docs/COMPARISON.md` and two research
+  write-ups asserted something about *all* rival systems, or about the state of the
+  whole research area, without naming a scope or a date: that rivals are categorically
+  a weaker kind of thing, that none of them documents a given capability, that this
+  project wins on all measured axes, that the surrounding area measures nothing here.
+  Each now names which systems, measured or surveyed how, and when - the head-to-head
+  run of 2026-07-05, or the mid-2026 landscape survey in `docs/COMPARISON.md`. Such a
+  claim is not falsifiable, and it rots: the sentence keeps asserting something about a
+  landscape that has moved on. `tests/_test_claims_language.py` scans every tracked
+  document and fails if one returns; the single allowance left must both still match a
+  flagged line and still state why it is not a comparative claim.
 - Brain ontologies and relation hints now follow declaration order for every
   `PYTHONHASHSEED`, making multi-profile extraction prompts reproducible.
 - The CLI now says that newly written notes are immediately available to lexical
