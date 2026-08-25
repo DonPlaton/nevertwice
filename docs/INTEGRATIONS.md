@@ -58,6 +58,17 @@ error-prevention for **31× fewer memory tokens**
 stood here was withdrawn in 2026-08 with the rest of the paid-API corpus - `python
 tools/check_freshness.py --list-stale` says why.
 
+`nevertwice/protocols.py` is the plugin surface, and it **imports nothing from the engine** -
+only `typing` and the dependency-free `schemas`. Five seams: `MemoryStore` (where notes live),
+`Retriever` (query to ranked notes), `Extractor` (transcript to lessons), `EpisodeSource` (where
+sessions come from - the shape `hosts.HostAdapter` satisfies), and `InterventionSink` (where a
+fired guard goes). Write a class, call `protocols.conforms(obj, "MemoryStore")` to get the list
+of what does not fit yet, and `protocols.register(...)` to plug it in. `conforms()` exists
+because `isinstance()` against a `runtime_checkable` Protocol passes a method with the wrong
+signature *and* a non-callable attribute of the right name - both fail at the first call
+instead. The suite proves the promise the hard way: a third-party store and host are built in a
+subprocess and `memory_hook` never reaches `sys.modules`.
+
 `nevertwice-migrate` brings the memory you already have, **with its provenance and with a way
 back out**. Five sources - Claude auto-memory, a claude-mem SQLite export, a Mem0 JSON export, a
 Letta MemFS archive, and generic Markdown/JSONL. Each imported note carries `imported_from`,

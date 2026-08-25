@@ -6,6 +6,39 @@ versions are [semantic](https://semver.org). Dates are UTC.
 ## [Unreleased]
 
 ### Added
+- **Five extension protocols, and the promise that filling one costs nothing but one file.**
+
+  Every extension point in this system meant importing `memory_hook`: 6,000 lines that resolve
+  a vault path at import time, read config, and pull in half the engine. So "swap the store for
+  Postgres" or "add my agent as an episode source" was not an afternoon's work, it was a
+  decision to depend on the whole project.
+
+  `nevertwice/protocols.py` declares `MemoryStore`, `Retriever`, `Extractor`, `EpisodeSource`
+  and `InterventionSink`, and **imports nothing from the engine** - only `typing` and the
+  dependency-free `schemas`. A registry plugs implementations in, and refuses to shadow an
+  existing provider unless you say `replace=True`, because two plugins both believing they are
+  the store is a thing the loser finds out about in production.
+
+  `conforms(obj, "MemoryStore")` returns the list of what does not fit, not a bare False,
+  because "your class does not fit" is not an error message anyone can act on. It exists
+  because `isinstance()` against a `runtime_checkable` Protocol is weaker than it looks -
+  verified, not assumed: a method with the wrong signature passes it, and so does a non-callable
+  attribute of the right name. Both fail at the first call instead.
+
+  **The exit criterion is proven in a subprocess**, because in-process it would prove nothing -
+  the suite imports the engine, so `memory_hook` is already loaded and every assertion would
+  pass for free. A third-party dict store and a Slack episode source are written to a temp file
+  that imports `protocols` alone, registered, driven end to end, and the child then asserts that
+  none of `memory_hook`, `api`, `config`, `guards` or `hosts` ever reached `sys.modules`.
+
+  The shipped engine is held to its own surface: all four host adapters are checked against
+  `EpisodeSource`, and the shipped search against `Retriever`. A plugin surface that no shipped
+  component fits is a description of an intention.
+
+  `tests/_test_protocols.py` → 47 checks and seven mutations, each red - including one that
+  survived the first draft: dropping a member from the contract let every half-implementation
+  start "conforming" to a weaker protocol, silently. `REQUIRED` is now tied to the methods each
+  Protocol actually declares.
 - **Migrations in: five sources, provenance kept, and a way back out.**
 
   `import_memory.py` already parsed four sources. The two things it did not do matter more than
