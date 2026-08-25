@@ -127,6 +127,38 @@ versions are [semantic](https://semver.org). Dates are UTC.
   otherwise; backend log lines gained a try count and a scrubbed URL.
 
 ### Fixed
+- **One store sandbox for the whole repository, and it verifies itself.** Three times a
+  script here has written into a live memory store (2026-08-13, 2026-08-18, 2026-08-25).
+  Each fix was correct and each was applied to the one directory where it happened, so the
+  next entry point re-learned the lesson. The shared cause is that a guard which *pins and
+  then trusts* is a hope: `config` resolves `env("VAULT") or NEVERTWICE_HOME`, and
+  `NEVERTWICE_VAULT` is the documented, supported way a real user points at a real store,
+  so pinning `NEVERTWICE_HOME` alone loses to it.
+
+  `sandbox_guard.py` is now the single home for the scrub list and the pin, and it ends
+  with an **assertion**: after `config` is imported it checks that both variables, the
+  resolved `VAULT`, and every `Path` held by an already-imported project module land inside
+  the throwaway directory, raising `SandboxEscape` instead of writing. `tests/_env_guard.py`
+  and `examples/_sandbox.py` are two-line shims over it and hold no policy of their own,
+  which is what had let them drift apart. Scripts that genuinely need a populated store say
+  so with `sandbox_guard.allow_live(reason)`, which names the store on stderr first and
+  cannot un-isolate a caller that already sandboxed the process.
+
+  Twenty-two `research/` entry points reached the store with no guard at all.
+  `research/latency_bench.py` was the sharpest: it seeds 150 fabricated notes and 50
+  fabricated guards, and built the child environment from `os.environ` with
+  `NEVERTWICE_HOME` pinned and `NEVERTWICE_VAULT` inherited. Eleven now isolate, nine
+  declare `allow_live`, and `research/forgetting.py` imported `consolidate_memory` one line
+  before the sibling that armed it.
+
+  `tools/check_sandbox.py` runs in CI and fails when a tracked script under `examples/`,
+  `research/` or `tools/` imports a project module without arming first, when the arming
+  call comes after that import, or when any file names `NEVERTWICE_HOME` without
+  `NEVERTWICE_VAULT`. `tests/_test_sandbox_guard.py` runs **every** example with a hostile
+  `NEVERTWICE_VAULT` exported at a stand-in store and asserts the stand-in is byte-identical
+  afterwards - and then proves the check is load-bearing by rebuilding the 2026-08-25 guard
+  from source: with the assertion it stops before writing, without it the note lands in the
+  stand-in.
 - **The comparison implied Letta had been benchmarked and blocked.** There is no
   `run_letta` adapter in `research/head_to_head.py`, so it was never put on the stand at
   all. The verified table now distinguishes *ran here*, *could not be run* (an adapter
