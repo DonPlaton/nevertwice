@@ -131,6 +131,7 @@ class WhyFired(TypedDict, total=False):
     fired: int
     last_fired: str
     policy: dict
+    outcomes: dict
     signals: dict
     cost: dict
     feedback: str
@@ -162,7 +163,7 @@ REQUIRED: dict = {
     "RetrievalHit": ("ntype", "title", "stem"),
     "Intervention": ("id", "message"),
     "WhyFired": ("schema_version", "kind", "id", "status", "message",
-                 "match", "source", "policy", "signals", "cost"),
+                 "match", "source", "policy", "outcomes", "signals", "cost"),
     "JsonState": (),
     "McpRequest": ("jsonrpc", "method"),
 }

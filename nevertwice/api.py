@@ -29,6 +29,7 @@ import memory_search as _search
 import digest as _digest
 import dashboard as _dashboard
 import guards as _guards
+import outcomes as _outcomes
 import why_fired as _why
 import anticipate as _anticipate
 import causal as _causal
@@ -291,12 +292,39 @@ def why_fired(guard_id: str, action_text: str = "", *, project: str | None = Non
 
 def guard_feedback(guard_id: str, outcome: str, *, session_id: str | None = None,
                    reason: str | None = None) -> dict | None:
-    """The Popperian loop: record what happened after a guard fired. `outcome` ∈
-    {'helped', 'false_positive', 'corroborated'}. K distinct-session 'helped' promote an
-    advisory guard to blocking; M 'false_positive' demote/retire it; a `reason` on an
-    override is stored as a learned exception that narrows the guard. Returns the updated
-    guard. This is how reality falsifies a wrong guard - memory proposes, reality disposes."""
+    """The Popperian loop: record what happened after a guard fired.
+
+    `outcome` ∈ {'prevented_failure', 'accepted', 'overridden', 'false_positive', 'unknown'}.
+    The first two are evidence **for**; 'overridden' and 'false_positive' are evidence
+    **against** and answer different questions - burden versus correctness - so they are
+    counted separately and reported separately. 'unknown' is recorded and counts for nothing.
+    The pre-2.4 names 'helped' and 'corroborated' still work and map onto 'accepted'.
+
+    K distinct sessions in one direction promote, M demote a rung. **Both** directions count
+    distinct sessions, and an outcome with no `session_id` moves neither threshold - otherwise
+    one caller repeating itself could promote or retire a guard on its own. A `reason` is
+    stored as a learned exception that narrows the guard.
+
+    Returns the updated guard, or None if the id is unknown. This is how reality falsifies a
+    wrong guard - memory proposes, reality disposes."""
     return _guards.feedback(guard_id, outcome, session_id=session_id, reason=reason)
+
+
+def guard_outcomes(guard_id: str) -> dict | None:
+    """What a guard has actually earned: per-outcome counts, precision and override rate with
+    Wilson intervals, distinct supporting and opposing sessions, and the lifecycle verdict
+    those imply.
+
+    `fired` is deliberately not an input. Displaying a warning is not evidence that it helped,
+    and a loop that treated it as evidence would confirm every guard it ever created.
+    """
+    guard = next((g for g in _guards.load_guards() if g.get("id") == guard_id), None)
+    if guard is None:
+        return None
+    summary = _outcomes.summary(guard)
+    summary["verdict"] = _outcomes.verdict(guard, promote_at=_guards.K_PROMOTE,
+                                           retire_at=_guards.M_RETIRE)
+    return summary
 
 
 def anticipate(trajectory: str, project: str | None = None, *, k: int = 1,

@@ -65,15 +65,23 @@ def test_lifecycle_promote_then_retire():
         # same session again must NOT over-count
         G.feedback(gid, "helped", session_id="s1")
         assert G.load_guards()[0]["corroborations"] == 3
-        # 3 false positives → demote blocking→advisory (first breach), counter resets
-        for _ in range(3):
+        # Unattributed negative feedback moves the published rates but NO threshold. Until
+        # D4 three of these retired a guard, which made falsification strictly easier to fake
+        # than confirmation - one caller repeating itself could kill a guard it could not have
+        # promoted. It stays blocking.
+        for _ in range(6):
             G.feedback(gid, "false_positive", reason="intended here")
         cur = G.load_guards()[0]
-        assert cur["status"] == "advisory", cur["status"]
+        assert cur["status"] == "blocking", cur["status"]
         assert "intended here" in cur["overrides"]
-        # 3 more → advisory→retired, and a retired guard never fires again
-        for _ in range(3):
-            G.feedback(gid, "false_positive")
+        # 3 distinct sessions → demote blocking→advisory (first breach)
+        for s in ("f1", "f2", "f3"):
+            G.feedback(gid, "false_positive", session_id=s, reason="intended here")
+        cur = G.load_guards()[0]
+        assert cur["status"] == "advisory", cur["status"]
+        # 3 more distinct sessions → advisory→retired, and a retired guard never fires again
+        for s in ("f4", "f5", "f6"):
+            G.feedback(gid, "false_positive", session_id=s)
         assert G.load_guards()[0]["status"] == "retired"
         assert G.check("eval(x)", project="p") == []
     print("ok test_lifecycle_promote_then_retire")

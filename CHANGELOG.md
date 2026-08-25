@@ -6,6 +6,42 @@ versions are [semantic](https://semver.org). Dates are UTC.
 ## [Unreleased]
 
 ### Added
+- **The feedback loop that can actually falsify a guard.**
+
+  A memory that warns you is easy to build and impossible to trust; everything rests on the
+  loop deciding which warnings keep the right to interrupt you. `nevertwice/outcomes.py` owns
+  that vocabulary and its arithmetic, under one rule that makes it non-circular: **firing is
+  not evidence of success.** A guard that fires a thousand times has proved only that its regex
+  matches, so `fired` never reaches precision, the intervals or the lifecycle.
+
+  Five outcomes, because three were hiding a distinction that matters. `prevented_failure` and
+  `accepted` are evidence for; `overridden` and `false_positive` are evidence against and answer
+  **different questions** - burden versus correctness - so they are counted and reported apart;
+  `unknown` is recorded and counts for nothing, which is the point of naming it. The old
+  vocabulary collapsed override into false positive (its docstring said so outright), and under
+  that reading a guard that was *right but annoying* retired for being right.
+
+  **Falsification is no longer easier than confirmation.** Promotion deduped by session while
+  demotion counted every call, so one frustrated session could retire a guard it could not have
+  promoted - and a caller passing no session id could promote one by repeating itself K times.
+  Both directions count distinct sessions now, and an unattributed outcome moves the rates but
+  no threshold.
+
+  Precision and override rate are published with **Wilson** intervals - `_confidence` claimed to
+  be "Wilson-ish" and was Laplace - because these samples are tiny and at the boundary, where
+  the normal approximation reports 3-of-3 as exactly [1.0, 1.0]. They reach every surface
+  through `why_fired`: `api.guard_outcomes()`, `nevertwice-guards list`, the MCP feedback tool's
+  reply, and the dashboard, whose guard column is now what the guard *earned* rather than how
+  often it fired.
+
+  `tests/_test_outcomes.py` drives the real ledger: 65 checks and eight mutations, each red.
+
+  **The bug its exit criterion caught.** A demotion cleared the *opposing* sessions but left the
+  corroborations that had earned the lost rung standing, so the next override immediately
+  re-promoted the guard: it oscillated advisory-blocking forever and could never retire. A
+  demotion consumes the evidence on both sides now - the guard proved it did not deserve that
+  rung, so it re-earns promotion from zero - and `demotions` is counted so the history stays
+  legible.
 - **The demo's headline ratio depended on whether Ollama happened to be running, and the
   manifest called both answers `stdlib_only`.**
 

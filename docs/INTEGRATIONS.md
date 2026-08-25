@@ -58,6 +58,16 @@ error-prevention for **31× fewer memory tokens**
 stood here was withdrawn in 2026-08 with the rest of the paid-API corpus - `python
 tools/check_freshness.py --list-stale` says why.
 
+Closing the loop is what makes any of it falsifiable. `guard_feedback(id, outcome,
+session_id=...)` takes five outcomes: `prevented_failure` and `accepted` are evidence **for**;
+`overridden` (you proceeded anyway - a statement about burden) and `false_positive` (it was
+wrong here - about correctness) are evidence **against**; `unknown` is recorded and counts for
+nothing. Both promotion and demotion count **distinct sessions**, so an outcome with no
+`session_id` moves the published rates but no threshold, and one caller repeating itself can
+neither promote a guard nor retire one. `guard_outcomes(id)` returns precision and override rate
+with Wilson intervals. Firing is never an input: displaying a warning is not evidence that it
+helped.
+
 Every one of those surfaces can also answer **why** it fired. `guards_check(..., explain=True)`
 and `api.why_fired(id, text)` in Python, `--why` on the CLI, `"explain": true` on the MCP tool,
 and the dashboard's guard table all render one object: the matched span, the recorded mistake it

@@ -140,6 +140,25 @@ def _sources(guard: dict) -> dict:
     return out
 
 
+def _outcomes_block(guard: dict) -> dict:
+    """Precision, override rate and their Wilson intervals - or a stated absence.
+
+    Carried here so all four surfaces get the same numbers from the same place. What the
+    guard has *earned* is the only defensible input to whether it may keep interrupting you,
+    and `fired` is deliberately not part of it.
+    """
+    module = _sibling("outcomes")
+    if module is None:
+        return {"available": False,
+                "note": "outcomes.py is not present in this install, so no outcome has been "
+                        "recorded and precision cannot be reported"}
+    summary = module.summary(guard)
+    summary["available"] = True
+    summary["verdict"] = module.verdict(guard, promote_at=_guards.K_PROMOTE,
+                                        retire_at=_guards.M_RETIRE)
+    return summary
+
+
 def _policy(guard: dict) -> dict:
     """What turned this into a warning rather than a block, and what would change it."""
     status = guard.get("status", "advisory")
@@ -251,7 +270,9 @@ def explain(guard_id: str, action_text: str = "", *, project: str | None = None,
         "checked": {"project": project, "path": path, "tool": tool},
         "match": _match(guard.get("pattern", ""), action_text),
         "source": sources,
-        "recurrence": sources.get("recurrence"),
+        # Absent, not None, when no source note resolves - same reason as `last_fired` below:
+        # an omitted key means "no such thing", a None-valued one means "an int that is null".
+        **({"recurrence": sources["recurrence"]} if sources.get("recurrence") else {}),
         "confidence": guard.get("confidence", _guards._confidence(guard)),
         "confidence_basis": ("Laplace-smoothed helped/(helped+false positives); a display and "
                              "ranking estimate that never gates the lifecycle"),
@@ -262,6 +283,7 @@ def explain(guard_id: str, action_text: str = "", *, project: str | None = None,
         # and the second is the kind of half-truth the schema file exists to stop.
         **({"last_fired": guard["last_fired"]} if guard.get("last_fired") else {}),
         "policy": _policy(guard),
+        "outcomes": _outcomes_block(guard),
         "signals": _signals(guard, deep),
         "cost": _cost(guard, sources),
         "feedback": ("call guard_feedback(id, 'helped'|'false_positive'|'corroborated'); an "
@@ -314,6 +336,23 @@ def render(why: dict, *, verbose: bool = True) -> str:
     lines.append(f"      trust:   confidence {why.get('confidence')}"
                  + (f" · {age}d old" if age is not None else "")
                  + f" · fired {why.get('fired')}x")
+
+    outcomes = why.get("outcomes") or {}
+    if outcomes.get("available") and outcomes.get("resolved"):
+        precision = outcomes["precision"]
+        override = outcomes["override_rate"]
+        line = "      earned:  "
+        if precision.get("point") is not None:
+            line += (f"precision {precision['point']} "
+                     f"[{precision['low']}-{precision['high']}, n={precision['n']}]")
+        else:
+            line += "precision undefined (no correctness outcome yet)"
+        if override.get("point") is not None:
+            line += f" · overridden {override['point']} of {override['n']}"
+        unresolved = outcomes.get("unknown") or 0
+        if unresolved:
+            line += f" · {unresolved} unresolved"
+        lines.append(line)
 
     policy = why.get("policy") or {}
     lines.append(f"      policy:  {policy.get('decision')} - {policy.get('promotion')}")

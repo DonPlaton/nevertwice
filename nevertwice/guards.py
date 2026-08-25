@@ -254,56 +254,136 @@ def _find(guards, guard_id):
 
 def feedback(guard_id: str, outcome: str, *, session_id=None, reason=None,
              guards: list[dict] | None = None, persist: bool = True) -> dict | None:
-    """Record what happened after a guard fired and run the lifecycle. `outcome`:
-      * 'helped'         - the agent heeded it / it prevented the mistake. Counts as a
-                           distinct-session corroboration; K of them promote advisory→blocking.
-      * 'false_positive' - overridden, or fired on a case that was actually fine. M of them
-                           demote (blocking→advisory→retired). `reason` is stored as a learned
-                           exception that narrows the guard.
-      * 'corroborated'   - confirmed relevant without a heed/override decision (a soft +).
-    Returns the updated guard (or None if unknown). Reality disposes: a guard that keeps
-    misfiring retires itself; one that keeps helping hardens."""
+    """Record what happened after a guard fired and run the lifecycle.
+
+    `outcome` is one of the five in `outcomes.OUTCOMES`:
+      * 'prevented_failure' - it fired and a real repeat was demonstrably avoided.
+      * 'accepted'          - the agent heeded it and changed course.
+      * 'overridden'        - the agent proceeded anyway. A statement about **burden**.
+      * 'false_positive'    - it fired on a case that was fine. About **correctness**.
+      * 'unknown'           - recorded, counts for nothing, and stays visible as unresolved.
+    The pre-D4 names `helped` and `corroborated` still work and map onto `accepted`.
+    A `reason` given with an override or a false positive is stored as a learned exception.
+
+    Both directions are calibrated on **distinct sessions**. Until D4 only promotion was: one
+    frustrated session could retire a guard it could not have promoted, and a caller passing
+    no session id could promote by repeating itself. Falsification must be at least as hard to
+    fake as confirmation, so an outcome with no session id counts toward the rates and toward
+    neither threshold.
+
+    Returns the updated guard, or None if the id is unknown. An unrecognised outcome returns
+    the guard unchanged rather than being silently filed as `unknown` - feedback that went
+    nowhere should be visible to the caller.
+    """
     owns = guards is None
     guards = load_guards() if owns else guards
     g = _find(guards, guard_id)
     if not g:
         return None
-    sid = session_id or ""
-    if outcome in ("helped", "corroborated"):
-        g["helped"] += 1 if outcome == "helped" else 0
-        if sid and sid not in g["seen_sessions"]:
-            g["seen_sessions"].append(sid)
-            g["corroborations"] += 1
-        elif not sid:
-            g["corroborations"] += 1
-        if (g["status"] == "advisory" and g["corroborations"] >= K_PROMOTE
-                and not g.get("pack")):              # pack guards stay advisory - never block on a heuristic
-            g["status"] = "blocking"                 # earned the right to block
-    elif outcome == "false_positive":
-        g["false_positives"] += 1
-        if reason:
-            g["overrides"].append(reason.strip()[:200])
-        if g["false_positives"] >= M_RETIRE:
-            # demote one rung per breach: blocking→advisory→retired
-            g["status"] = {"blocking": "advisory", "advisory": "retired"}.get(g["status"], "retired")
-            g["false_positives"] = 0                 # reset the counter at each demotion
-    else:
-        return g
+
+    _outcomes = _sibling("outcomes")
+    if _outcomes is None:              # a flat install without outcomes.py keeps working
+        return _legacy_feedback(g, outcome, session_id, reason, guards, persist and owns)
+
+    name = _outcomes.record(g, outcome, session_id=session_id)
+    if name is None:
+        return g                       # unrecognised: nothing recorded, nothing decided
+    if reason and name in ("overridden", "false_positive"):
+        g["overrides"].append(reason.strip()[:200])
+
+    _mirror_legacy_counters(g, _outcomes)
+    decision = _outcomes.verdict(g, promote_at=K_PROMOTE, retire_at=M_RETIRE)
+    if decision["action"] == "promote":
+        g["status"] = decision["to"]
+    elif decision["action"] == "demote":
+        g["status"] = decision["to"]
+        # A demotion consumes the evidence on BOTH sides, not just the opposing half.
+        #
+        # Clearing only the overrides looked right and produced a guard that could never
+        # retire: the supporting sessions that earned `blocking` were still standing, so the
+        # very next override re-promoted it, and the guard oscillated advisory<->blocking
+        # forever. Demotion has to mean the corroborations were falsified - the guard proved
+        # it did not deserve that rung, and it re-earns promotion from zero. Keeping the raw
+        # counts is what preserves the history.
+        sessions = _outcomes.block(g)["sessions"]
+        sessions["against"] = []
+        sessions["support"] = []
+        g["demotions"] = int(g.get("demotions") or 0) + 1
+    g["last_decision"] = decision
+
     g["confidence"] = _confidence(g)
     if persist and owns:
         save_guards(guards)
     return g
 
 
+def _mirror_legacy_counters(g: dict, _outcomes) -> None:
+    """Keep the pre-D4 fields agreeing with the outcome block.
+
+    `helped`, `false_positives`, `corroborations` and `seen_sessions` are read by the CLI
+    listing, the dashboard, `why_fired` and any third-party script written against the old
+    shape. Deriving them here rather than maintaining two tallies is what stops the two from
+    disagreeing - which is the failure this whole task exists to prevent one level up.
+    """
+    acc = _outcomes.block(g)
+    counts = acc["counts"]
+    g["helped"] = sum(counts[k] for k in _outcomes.SUPPORT)
+    g["false_positives"] = counts["false_positive"] + counts["overridden"]
+    g["corroborations"] = len(acc["sessions"]["support"])
+    g["seen_sessions"] = list(acc["sessions"]["support"])
+
+
+def _legacy_feedback(g, outcome, session_id, reason, guards, persist):
+    """The pre-D4 lifecycle, kept for an install that ships guards.py without outcomes.py."""
+    sid = session_id or ""
+    if outcome in ("helped", "corroborated", "accepted", "prevented_failure"):
+        g["helped"] += 1 if outcome != "corroborated" else 0
+        if sid and sid not in g["seen_sessions"]:
+            g["seen_sessions"].append(sid)
+            g["corroborations"] += 1
+        elif not sid:
+            g["corroborations"] += 1
+        if (g["status"] == "advisory" and g["corroborations"] >= K_PROMOTE
+                and not g.get("pack")):
+            g["status"] = "blocking"
+    elif outcome in ("false_positive", "overridden"):
+        g["false_positives"] += 1
+        if reason:
+            g["overrides"].append(reason.strip()[:200])
+        if g["false_positives"] >= M_RETIRE:
+            g["status"] = {"blocking": "advisory",
+                           "advisory": "retired"}.get(g["status"], "retired")
+            g["false_positives"] = 0
+    else:
+        return g
+    g["confidence"] = _confidence(g)
+    if persist:
+        save_guards(guards)
+    return g
+
+
 def _confidence(g: dict) -> float:
-    """A Wilson-ish point estimate of 'fires correctly', from helped vs false positives.
-    Cheap and monotone; only used for display/ranking, never to gate the lifecycle (the
-    counts do that)."""
-    pos, neg = g["helped"], g["false_positives"]
-    n = pos + neg
-    if n == 0:
-        return 0.5
-    return round((pos + 1) / (n + 2), 3)             # Laplace-smoothed
+    """The point estimate of 'fires correctly', for display and ranking only - never to gate
+    the lifecycle, which the distinct-session counts do.
+
+    It said "Wilson-ish" and was Laplace. It is Wilson now, over the *correctness* outcomes
+    only: an override means the guard went unheeded, not that it was wrong, and folding the
+    two together is how a guard that is right but annoying ends up looking inaccurate. The
+    full interval and the override rate are in `outcomes.summary`; this stays a single float
+    because the CLI listing, the dashboard and `why_fired` all read it as one.
+
+    0.5 with no evidence is a deliberate prior, not a measurement - `summary()` reports that
+    case as an undefined precision rather than as a number.
+    """
+    _outcomes = _sibling("outcomes")
+    if _outcomes is None:                            # flat install: the old Laplace estimate
+        pos, neg = g["helped"], g["false_positives"]
+        n = pos + neg
+        return 0.5 if n == 0 else round((pos + 1) / (n + 2), 3)
+    counts = _outcomes.block(g)["counts"]
+    pos = sum(counts[k] for k in _outcomes.SUPPORT)
+    interval = _outcomes.wilson(pos, pos + counts["false_positive"])
+    return 0.5 if interval["point"] is None else round(interval["point"], 3)
 
 
 def record_fired(guard_ids, guards=None, persist=True) -> None:
@@ -556,9 +636,21 @@ def main():
         guards = load_guards()
         live = [g for g in guards if g["status"] != "retired"]
         print(f"{len(live)} live guard(s) ({len(guards)} total incl. retired):")
+        _outcomes = _sibling("outcomes")
         for g in sorted(guards, key=lambda x: (x["status"], -x["fired"])):
-            print(f"  ({g['id']}) [{g['status']:8}] fired={g['fired']} helped={g['helped']} "
-                  f"fp={g['false_positives']} conf={g.get('confidence',0.5)}  {g['message'][:70]}")
+            earned = ""
+            if _outcomes is not None:
+                s = _outcomes.summary(g)
+                p, o = s["precision"], s["override_rate"]
+                # `fired` stays on the line but never enters `earned`: how often a pattern
+                # matched is not evidence that the warning was worth reading.
+                earned = (f" prec={p['point']}[{p['low']}-{p['high']}]"
+                          if p["point"] is not None else " prec=-")
+                earned += f" override={o['point']}" if o["point"] is not None else " override=-"
+                earned += (f" sessions={s['distinct_sessions']['support']}+"
+                           f"/{s['distinct_sessions']['against']}-")
+            print(f"  ({g['id']}) [{g['status']:8}] fired={g['fired']}{earned}"
+                  f"  {g['message'][:60]}")
     elif cmd == "feedback":
         gid = argv[1] if len(argv) > 1 else ""
         outcome = argv[2] if len(argv) > 2 else ""

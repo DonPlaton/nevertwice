@@ -262,20 +262,31 @@ TOOLS = [
     {
         "name": "memory_guard_feedback",
         "description": ("Close the Popperian loop on a guard that fired: report what actually "
-                        "happened. outcome='helped' (it caught a real repeat - corroborates; 3 "
-                        "distinct sessions promote advisory→blocking), 'false_positive' (it was "
-                        "wrong here - 3 demote/retire it), or 'corroborated'. ALWAYS send this "
-                        "after acting on a memory_guard_check hit; it is how guards learn."),
+                        "happened. 'prevented_failure' (it fired and a real repeat was avoided) "
+                        "and 'accepted' (you heeded it) are evidence FOR; 'overridden' (you "
+                        "proceeded anyway - about burden) and 'false_positive' (it was wrong "
+                        "here - about correctness) are evidence AGAINST; 'unknown' is recorded "
+                        "and counts for nothing. 3 distinct sessions in one direction promote or "
+                        "demote. Send a session_id: an outcome without one moves no threshold. "
+                        "ALWAYS send this after acting on a memory_guard_check hit; it is the "
+                        "only thing that can falsify a guard."),
         "inputSchema": {
             "type": "object",
             "properties": {
                 "guard_id": {"type": "string", "description": "The id from the guard hit."},
                 "outcome": {"type": "string",
-                            "enum": ["helped", "false_positive", "corroborated"]},
+                            "enum": ["prevented_failure", "accepted", "overridden",
+                                     "false_positive", "unknown", "helped", "corroborated"],
+                            "description": ("The five current outcomes; 'helped' and "
+                                            "'corroborated' are the old names, kept working.")},
                 "reason": {"type": "string",
-                           "description": "Why (required in spirit for false_positive)."},
+                           "description": ("Why. Stored as a learned exception that narrows the "
+                                           "guard - required in spirit for overridden and "
+                                           "false_positive.")},
                 "session_id": {"type": "string",
-                               "description": "Distinct-session key for corroboration counting."},
+                               "description": ("Distinct-session key. Both promotion and "
+                                               "demotion count distinct sessions, so an outcome "
+                                               "without one changes the rates but no threshold.")},
             },
             "required": ["guard_id", "outcome"],
         },
@@ -558,8 +569,10 @@ def _tool_memory_why(args: dict) -> tuple[str, bool]:
 def _tool_memory_guard_feedback(args: dict) -> tuple[str, bool]:
     gid = (args.get("guard_id") or "").strip()
     outcome = (args.get("outcome") or "").strip()
-    if not gid or outcome not in ("helped", "false_positive", "corroborated"):
-        return "error: 'guard_id' and outcome in {helped,false_positive,corroborated} required", True
+    import outcomes as _outcomes
+    if not gid or _outcomes.normalise(outcome) is None:
+        return (f"error: 'guard_id' and outcome in "
+                f"{{{','.join(_outcomes.OUTCOMES)}}} required"), True
     try:
         g = _guards.feedback(gid, outcome, session_id=(args.get("session_id") or None),
                              reason=(args.get("reason") or None))
@@ -567,8 +580,15 @@ def _tool_memory_guard_feedback(args: dict) -> tuple[str, bool]:
         return f"error: {type(exc).__name__}", True
     if not g:
         return f"no such guard: {gid}", True
-    return (f"updated {gid}: status={g['status']} corroborations={g['corroborations']} "
-            f"fp={g['false_positives']}"), False
+    summary = _outcomes.summary(g)
+    precision = summary["precision"]
+    earned = (f"precision {precision['point']} [{precision['low']}-{precision['high']}, "
+              f"n={precision['n']}]" if precision["point"] is not None
+              else "precision undefined (no correctness outcome yet)")
+    return (f"updated {gid}: status={g['status']} · "
+            f"{summary['distinct_sessions']['support']} supporting / "
+            f"{summary['distinct_sessions']['against']} opposing distinct session(s) · "
+            f"{earned} · {(g.get('last_decision') or {}).get('because', '')}"), False
 
 
 def _tool_memory_anticipate_feedback(args: dict) -> tuple[str, bool]:

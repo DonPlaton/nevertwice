@@ -180,6 +180,22 @@ def _e(s) -> str:
     return html.escape(str(s if s is not None else ""))
 
 
+def _earned(why: dict) -> str:
+    """What the guard has earned, from its recorded outcomes - never from how often it fired.
+
+    A guard with no resolved outcome shows an em dash rather than a confidence number, because
+    0.5 there is a prior, not a measurement, and a dashboard is exactly where a prior gets read
+    as a result.
+    """
+    o = why.get("outcomes") or {}
+    if not o.get("available") or not o.get("resolved"):
+        return '<span class="dim">no outcome yet</span>'
+    p = o["precision"]
+    if p.get("point") is None:
+        return '<span class="dim">unheeded only</span>'
+    return (f'{p["point"]}<br><span class="dim">[{p["low"]}-{p["high"]}] n={p["n"]}</span>')
+
+
 def _type_class(nt: str) -> str:
     return {"mistake": "t-mistake", "pattern": "t-pattern", "decision": "t-decision"}.get(nt, "")
 
@@ -318,7 +334,7 @@ def build_html(project=None, days=30, conflicts_limit=40) -> str:
                  f'<span class="c">{len(guards_rows)} live · 0 tokens until one fires</span></h2>')
     if guards_rows:
         parts.append(f'<div class="panel"{rv()}><table><thead><tr><th>status</th><th>guard</th>'
-                     '<th>from</th><th>trust</th><th>policy</th></tr></thead><tbody>')
+                     '<th>from</th><th>earned</th><th>policy</th></tr></thead><tbody>')
         for w in guards_rows:
             pol = w.get("policy") or {}
             src = w.get("source") or {}
@@ -335,7 +351,7 @@ def build_html(project=None, days=30, conflicts_limit=40) -> str:
                          f'<td>{_e(w["message"][:90])}<br><span class="dim">{_e(w["id"])} · '
                          f'fired {w.get("fired", 0)}x</span></td>'
                          f'<td>{origin}</td>'
-                         f'<td class="count">{w.get("confidence")}'
+                         f'<td class="count">{_earned(w)}'
                          + (f'<br><span class="dim">{age}d old</span>' if age is not None else "")
                          + f'</td><td class="dim">{_e(pol.get("promotion") or "")}</td></tr>')
         parts.append("</tbody></table></div>")
