@@ -32,6 +32,7 @@ ROOT = HERE.parent
 sys.path.insert(0, str(HERE))
 
 import _env_guard  # noqa: F401, E402 - must run before any project import
+import _docs_scope  # noqa: E402 - one definition of "document"
 
 MAP = ROOT / "docs" / "README.md"
 MAX_DEPTH = 2
@@ -61,8 +62,8 @@ def tracked_markdown() -> list:
                          capture_output=True, text=True, timeout=60)
     if out.returncode != 0:
         return []
-    return sorted(p for p in out.stdout.split()
-                  if not p.startswith(EXCLUDED_PREFIXES))
+    return _docs_scope.documents(p for p in out.stdout.split()
+                                 if not p.startswith(EXCLUDED_PREFIXES))
 
 
 def outbound(rel: str) -> set:

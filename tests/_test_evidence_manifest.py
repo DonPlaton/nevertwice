@@ -32,6 +32,7 @@ ROOT = HERE.parent
 sys.path.insert(0, str(HERE))
 
 import _env_guard  # noqa: F401, E402 - must run before any project import
+import _docs_scope  # noqa: E402 - one definition of "document"
 
 MANIFEST_PATH = ROOT / "research" / "evidence_manifest.json"
 
@@ -288,7 +289,7 @@ def _tracked_markdown() -> list[str] | None:
                              capture_output=True, text=True, timeout=60)
     except (OSError, subprocess.SubprocessError):
         return None
-    return sorted(out.stdout.split()) if out.returncode == 0 else None
+    return _docs_scope.documents(out.stdout.split()) if out.returncode == 0 else None
 
 
 def _numeric_tokens(doc: str) -> int:

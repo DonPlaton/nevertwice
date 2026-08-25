@@ -1,0 +1,19 @@
+{
+ "results": [
+  {
+   "id": "m-1",
+   "memory": "The team deploys on Thursdays, never Fridays.",
+   "user_id": "platon",
+   "created_at": "2026-05-11T08:15:00Z",
+   "metadata": {
+    "category": "decision"
+   }
+  },
+  {
+   "id": "m-2",
+   "memory": "Timezone bugs come from naive datetimes in the ingest path.",
+   "user_id": "platon",
+   "created_at": "2026-05-12T09:00:00Z"
+  }
+ ]
+}

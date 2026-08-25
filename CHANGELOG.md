@@ -6,6 +6,39 @@ versions are [semantic](https://semver.org). Dates are UTC.
 ## [Unreleased]
 
 ### Added
+- **Migrations in: five sources, provenance kept, and a way back out.**
+
+  `import_memory.py` already parsed four sources. The two things it did not do matter more than
+  the parsing. It forgot where each note came from - so an imported claim arrived looking like
+  something this store had worked out for itself - and once written there was no undo, which
+  makes a migration a decision you must be certain about in advance rather than one you can try.
+
+  `nevertwice/migrate.py` and `nevertwice-migrate` bring in **Claude auto-memory**, a
+  **claude-mem SQLite export**, a **Mem0 JSON export**, a **Letta MemFS archive**, and **generic
+  Markdown/JSONL**. Every note keeps `imported_from`, `source_author`, `source_created`,
+  `source_ref` and `import_batch` in its own frontmatter - in the note, so the answer survives a
+  clone, `git log`, and this module being deleted.
+
+  An unknown timestamp stays **empty**. Defaulting it to today would quietly claim the memory
+  was made during the import, which is the one thing provenance exists to prevent. `--dry-run`
+  reports the counts, the type breakdown and the *provenance gaps* - how many records arrived
+  with no author or no date - because an import that loses most of its provenance is something
+  to know about before it lands.
+
+  Every import records a batch. `--revert` undoes exactly that batch, is a dry run unless you
+  pass `--apply`, and re-checks each note's **own** `import_batch` stamp before removing it: the
+  ledger records what was written, the note records what it is now, and deleting from someone's
+  memory on the strength of a stale index entry is the failure worth engineering against. A note
+  edited into another batch, superseded, or already gone is skipped with the reason.
+
+  Re-importing the same export **converges rather than duplicating** - the shared write path
+  derives a stem from title and date, so the second run rewrites the same notes and re-stamps
+  them. That makes a re-run after a partial import safe, and it is exactly the case where a
+  ledger-trusting revert would delete notes a later batch had claimed.
+
+  `tests/_test_migrate.py` round-trips all five sources from recorded fixtures - import, verify
+  the origin in the file, revert, compare the store to its baseline - with no account, no
+  network and nobody's real memory: 148 checks and ten mutations, each red.
 - **One host-adapter contract, four adapters, and fixtures instead of accounts.**
 
   Supporting an agent used to mean editing three modules that did not know about each other:

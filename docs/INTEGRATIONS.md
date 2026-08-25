@@ -58,6 +58,17 @@ error-prevention for **31× fewer memory tokens**
 stood here was withdrawn in 2026-08 with the rest of the paid-API corpus - `python
 tools/check_freshness.py --list-stale` says why.
 
+`nevertwice-migrate` brings the memory you already have, **with its provenance and with a way
+back out**. Five sources - Claude auto-memory, a claude-mem SQLite export, a Mem0 JSON export, a
+Letta MemFS archive, and generic Markdown/JSONL. Each imported note carries `imported_from`,
+`source_author`, `source_created`, `source_ref` and `import_batch` in its own frontmatter, so an
+imported claim never passes for one this store worked out itself, and an unknown timestamp stays
+empty rather than quietly becoming today. `--dry-run` prints the counts and the provenance gaps
+and writes nothing; every real import records a batch that `--revert` can undo. Revert is a dry
+run by default and re-checks each note's own stamp before deleting, so it will not remove a note
+that has since been edited, superseded, or claimed by a later import. Round-tripped per source
+from recorded fixtures in [`tests/fixtures/migrate/`](../tests/fixtures/migrate/README.md).
+
 `nevertwice-hosts` answers the wiring question for every agent at once: where this host's
 sessions live on **this** machine, whether Nevertwice is attached, and how to undo it. Four
 adapters ship - Claude Code, Codex, Cursor and a generic JSONL fallback - behind one contract

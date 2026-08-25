@@ -1,0 +1,20 @@
+{
+ "blocks": [
+  {
+   "label": "human",
+   "value": "Prefers terse answers and running code."
+  },
+  {
+   "label": "persona",
+   "value": "A careful engineer who checks before claiming."
+  }
+ ],
+ "archival": [
+  {
+   "id": "a-1",
+   "text": "The migration script must be idempotent.",
+   "created_at": "2026-06-01",
+   "agent_id": "agent-7"
+  }
+ ]
+}

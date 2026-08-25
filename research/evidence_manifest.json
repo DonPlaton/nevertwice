@@ -447,6 +447,13 @@
       "target": "D6",
       "note": "Describes the recorded host fixtures for a contributor writing a new adapter. Prose about test data rather than published measurement - but registered as backlog rather than exempt, because an exemption is a hole that never closes and the ratchet costs nothing here.",
       "budget_metric": "evidence-bearing numeric tokens: numbers outside fenced blocks, excluding years and bare single digits"
+    },
+    "tests/fixtures/migrate/README.md": {
+      "governance": "backlog",
+      "budget": 0,
+      "target": "D7",
+      "note": "Describes the recorded migration fixtures for a contributor adding a source. A fixture README is prose people read, so it stays governed even though the fixture data beside it does not - see tests/_docs_scope.py.",
+      "budget_metric": "evidence-bearing numeric tokens: numbers outside fenced blocks, excluding years and bare single digits"
     }
   },
   "claims": [
