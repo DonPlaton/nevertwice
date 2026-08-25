@@ -112,34 +112,46 @@ def test_no_figure_escapes_the_shared_style() -> None:
     # Exercised, not grepped: a first pass asserted the words "raise ValueError" were present,
     # and a mutant that disabled the branch while leaving the words in place walked straight
     # through it. Call save() and see what happens instead.
+    #
+    # The refusal happens before `fig` is touched, so it needs no Matplotlib - which matters,
+    # because the core matrix runs on a bare interpreter and matplotlib is a research extra.
+    # The write path does need it, and says so out loud when it is missing rather than
+    # quietly reducing the suite.
     sys.path.insert(0, str(RESEARCH))
-    import matplotlib                                   # noqa: PLC0415 - after the guard
-    matplotlib.use("Agg")
-    import matplotlib.pyplot as plt                     # noqa: PLC0415
-    import _figstyle                                    # noqa: PLC0415
+    import _figstyle                                    # noqa: PLC0415 - after the guard
+
+    class _NoFigure:
+        """Enough of a figure to prove save() never got as far as needing one."""
+
+        def __getattr__(self, name):
+            raise AssertionError(f"save() touched the figure ({name}) before refusing")
 
     with tempfile.TemporaryDirectory(prefix="nevertwice_fig_") as tmp:
         target = Path(tmp) / "probe.png"
         for label, kwargs in (("neither claim nor evidence", {}),
                               ("both claim and evidence",
                                {"claim": "qa.oracle.answer_accuracy", "evidence": "x" * 40})):
-            fig = plt.figure()
             try:
-                _figstyle.save(fig, target, **kwargs)
+                _figstyle.save(_NoFigure(), target, **kwargs)
                 check(f"save() refuses {label}", False, "it wrote the figure anyway")
             except ValueError:
                 check(f"save() refuses {label}", True)
-            finally:
-                plt.close(fig)
         check("nothing was written by a refused save", not list(Path(tmp).iterdir()),
-              ", ".join(p.name for p in Path(tmp).iterdir()))
+              ", ".join(x.name for x in Path(tmp).iterdir()))
 
+        try:
+            import matplotlib                           # noqa: PLC0415
+            matplotlib.use("Agg")
+            import matplotlib.pyplot as plt             # noqa: PLC0415
+        except ImportError:
+            print("  skip  the write path needs matplotlib, a research extra - not installed")
+            return
         fig = plt.figure()
         written = _figstyle.save(fig, target, evidence="n=1 · a written provenance line")
         plt.close(fig)
         check("save() writes an SVG and a PNG when it has provenance",
-              sorted(p.suffix for p in written) == [".png", ".svg"],
-              str([p.name for p in written]))
+              sorted(x.suffix for x in written) == [".png", ".svg"],
+              str([x.name for x in written]))
 
 
 def test_every_published_figure_has_a_vector_twin_and_a_footer() -> None:
