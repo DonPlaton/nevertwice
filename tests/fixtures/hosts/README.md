@@ -11,8 +11,8 @@ file that gets read by strangers.
 * `claude-code.jsonl`  - `{type, cwd, message:{role, content}}` per line, content either a
   string or a block list.
 * `codex.jsonl`        - `{timestamp, type, payload}` rollout lines. The first is a
-  `session_meta` carrying ~10KB of instructions: the scaffolding that, treated as flat text,
-  consumed the whole truncation budget and mined zero content on a real 57MB corpus. An
+  `session_meta` carrying a large block of instructions: the scaffolding that, treated as flat
+  text, consumed the whole truncation budget and mined zero real content on a large corpus. An
   adapter that stops skipping it fails the suite.
 * `cursor-export.json` - the exported chat JSON. Cursor's live chat is a `state.vscdb`
   SQLite blob that a file sweep cannot read, so the export is the only shape worth pinning.

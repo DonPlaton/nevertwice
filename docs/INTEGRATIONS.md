@@ -67,7 +67,7 @@ entries this package wrote. A hand-rolled copy of the engine under `~/.claude/sc
 supported deployment: it is reported as such, and never repointed or removed. Cursor keeps its
 chat in a `state.vscdb` SQLite blob a sweep cannot read, so its adapter says so and names the two
 ways out rather than returning an empty list. Every adapter is proved from a recorded fixture in
-`tests/fixtures/hosts/` - adding one needs no account with the agent it is for.
+[`tests/fixtures/hosts/`](../tests/fixtures/hosts/README.md) - adding one needs no account with the agent it is for.
 
 `nevertwice-inbox` is where you see all of it at once and change it: guards by status with
 what each has earned, unresolved contradictions, and stale facts - a guard whose source note has

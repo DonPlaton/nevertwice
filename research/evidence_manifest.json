@@ -440,6 +440,13 @@
       "governance": "governed",
       "generator": "tools/render_claims.py",
       "note": "the baseline policy, registry, verdict matrix and summary are generated from this manifest; the prose around them names the three gaps"
+    },
+    "tests/fixtures/hosts/README.md": {
+      "governance": "backlog",
+      "budget": 0,
+      "target": "D6",
+      "note": "Describes the recorded host fixtures for a contributor writing a new adapter. Prose about test data rather than published measurement - but registered as backlog rather than exempt, because an exemption is a hole that never closes and the ratchet costs nothing here.",
+      "budget_metric": "evidence-bearing numeric tokens: numbers outside fenced blocks, excluding years and bare single digits"
     }
   },
   "claims": [
