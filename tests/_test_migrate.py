@@ -228,6 +228,40 @@ def test_importing_twice_converges_instead_of_duplicating() -> None:
 
     check("the two imports have different batch ids", first["batch"] != second["batch"],
           f"{first['batch']} vs {second['batch']}")
+
+    # The regression, forced rather than waited for. The first version stamped the id to the
+    # second, so two imports finishing inside one second collided - which never happened
+    # locally, because each import spent over a second failing to reach an absent embedder,
+    # and happened on the very first CI run, where it does not. Uniqueness is now established
+    # against the ledger, so this holds with the clock standing still.
+    # The clock is held still, because that is the only way to reach the collision branch:
+    # with microseconds running, two calls differ anyway and the check never fires. A
+    # regression test that passes for the wrong reason is how this bug got to CI in the first
+    # place - a mutation dropping the collision check survived until the clock was frozen.
+    same = migrate.PARSERS["mem0"](PATH_FOR["mem0"])
+
+    class _FrozenClock:
+        """`datetime.now()` stuck at one instant - CI's fast machine, made reproducible."""
+        _at = migrate.datetime(2026, 8, 25, 17, 53, 41, 123456)
+
+        @classmethod
+        def now(cls):
+            return cls._at
+
+    real = migrate.datetime
+    migrate.datetime = _FrozenClock
+    try:
+        ids = []
+        for _ in range(3):
+            ids.append(migrate._batch_id("mem0", same,
+                                         existing=[{"id": i} for i in ids]))
+    finally:
+        migrate.datetime = real
+
+    check("three imports in the same instant get three distinct ids",
+          len(set(ids)) == 3, str(ids))
+    check("and they all still name the source and its content",
+          all(i.startswith("mem0-") and ids[0][:len(ids[0])] for i in ids), str(ids))
     check("the second import created no new notes", live_stems() - before == created,
           str(live_stems() - before - created))
     check("it re-stamped the same notes to the newer batch",

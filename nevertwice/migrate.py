@@ -356,15 +356,29 @@ def _ledger_save(batches: list[dict]) -> None:
     m.write_atomic(_ledger_path(), json.dumps(batches, indent=1, ensure_ascii=False))
 
 
-def _batch_id(source: str, records: list[dict]) -> str:
-    """Deterministic in its content, unique per apply.
+def _batch_id(source: str, records: list[dict], existing=None) -> str:
+    """Deterministic in its content, and unique against the ledger it is joining.
 
-    The content hash makes the id meaningful; the timestamp makes importing the same export
-    twice produce two revertible batches rather than one id that reverts both.
+    The content hash makes the id meaningful and the timestamp orders it, but neither makes it
+    unique: the first version stamped to the second, and two imports of one export that both
+    finished inside the same second got the *same* id - so the second `apply` appended a
+    duplicate entry and `revert` matched whichever came first. It passed locally only because
+    each import spent over a second failing to reach an absent embedder, and failed on CI,
+    where that wait does not happen. A faster machine is not a stress test; it is Tuesday.
+
+    So uniqueness is established against the ledger rather than assumed from the clock:
+    microseconds narrow the window, and the collision check closes it.
     """
     payload = "|".join(f"{r['source']}:{r['title']}:{r['ref']}" for r in records)
     digest = hashlib.sha1(payload.encode("utf-8", "replace")).hexdigest()[:8]
-    return f"{source}-{datetime.now():%Y%m%d%H%M%S}-{digest}"
+    taken = {b["id"] for b in (existing if existing is not None else _ledger_load())}
+    stamp = f"{datetime.now():%Y%m%d%H%M%S%f}"
+    candidate = f"{source}-{stamp}-{digest}"
+    suffix = 1
+    while candidate in taken:
+        candidate = f"{source}-{stamp}-{digest}-{suffix}"
+        suffix += 1
+    return candidate
 
 
 def batches() -> list[dict]:
@@ -416,7 +430,8 @@ def apply(source: str, path, project: str) -> dict:
     if not records:
         return {**preview, "dry_run": False, "detail": "nothing to import"}
 
-    batch = _batch_id(source, records)
+    ledger = _ledger_load()
+    batch = _batch_id(source, records, existing=ledger)
     stems = api.remember_lessons(
         [{"type": r["type"], "title": r["title"], "description": r["description"],
           "prevention": r["prevention"]} for r in records], project=project)
@@ -430,6 +445,8 @@ def apply(source: str, path, project: str) -> dict:
              "when": datetime.now().strftime("%Y-%m-%d %H:%M"),
              "stems": stamped, "found": len(records), "written": len(stems),
              "schema_version": SCHEMA_VERSION}
+    # Re-read rather than reusing `ledger`: the writes above take time, and a ledger that was
+    # appended to meanwhile must not be clobbered by a stale snapshot.
     _ledger_save(_ledger_load() + [entry])
     return {**preview, "dry_run": False, "written": len(stems), "batch": batch,
             "stamped": len(stamped), "stems": stamped,
