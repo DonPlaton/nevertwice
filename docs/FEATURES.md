@@ -24,6 +24,21 @@ python -m nevertwice.digest --conflicts   # the supersession ledger: every fact 
 are also `nevertwice.api.digest()` / `nevertwice.api.conflicts()` and MCP tools (`memory_digest`,
 `memory_conflicts`), so an agent can ask too.
 
+When something feels wrong, one command says what and how to fix it:
+
+```bash
+nevertwice-doctor            # a readable report
+nevertwice-doctor --json     # the same thing, schema-stable, for a script or an agent
+nevertwice-doctor --probe    # additionally reach the extractor and the embedder
+```
+
+It checks the store is writable and stamped, whether the hooks are wired, whether capture has
+gone quiet, which extraction backend would run, whether the embedding cache was built by the
+model you are querying with, whether the index and the background sweep are current, whether
+the graph generator still imports, and whether the package running is the one you think. Every
+warning carries a repair you could run - printed, never executed, because a diagnostic that
+edits your store is not one. Only the `--probe` mode touches the network.
+
 Prefer a visual? One command writes a **single self-contained HTML file** - no server, no account,
 no external asset - that you open in a browser:
 

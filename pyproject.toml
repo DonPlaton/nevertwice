@@ -55,6 +55,7 @@ nevertwice-guards = "nevertwice.guards:main"
 nevertwice-anticipate = "nevertwice.anticipate:main"
 nevertwice-causal = "nevertwice.causal:main"
 nevertwice-integrity = "nevertwice.integrity:main"
+nevertwice-doctor = "nevertwice.doctor:main"
 nevertwice-lens = "nevertwice.lenses:main"
 # one release of rename back-compat: the old anamnesis-* commands keep working
 anamnesis-search = "nevertwice.memory_search:main"

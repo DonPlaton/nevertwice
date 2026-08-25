@@ -6,6 +6,25 @@ versions are [semantic](https://semver.org). Dates are UTC.
 ## [Unreleased]
 
 ### Added
+- **`nevertwice-doctor`: what is wrong with this install, and the safe way to fix it.**
+  Every production failure this project has had was silent. The graph generator died on
+  *import* with a `NameError` for over a month while the fire-and-forget wrapper around it
+  logged "graph.json refreshed" on every crashed run; extraction stalled behind an unreachable
+  backend with nothing to show for it but a store that stopped growing; and an embedding cache
+  built by one model, queried by another, made retrieval abstain - correct behaviour, and
+  indistinguishable from an empty store.
+
+  `nevertwice/doctor.py` asks the eleven questions that would have made those three visible:
+  store writability and schema stamp, hook registration, capture freshness, the selected
+  extractor, the embedding space against the cache, index age, the background sweep's
+  heartbeat, whether the graph generator imports, orphaned temporary files, and which copy of
+  the package is actually running. Each answer carries a repair, **printed rather than
+  executed**. `--json` is schema-stable - fixed keys, a fixed check order, a declared
+  `schema_version` - and only `--probe` touches the network.
+
+  `tests/_test_doctor.py` builds all three historical failures as fixtures and requires the
+  doctor to catch each one; six mutations were walked through, including one that quietly
+  drops a check from the report and one that turns a repair destructive.
 - **One visual system, and no figure without its provenance.** Eleven benches each called
   `fig.savefig(path, dpi=130)` with default Matplotlib styling: a palette that is not
   colourblind-safe, several charts encoding pass/fail in green against red alone, raster only
