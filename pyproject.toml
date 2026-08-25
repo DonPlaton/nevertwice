@@ -30,7 +30,10 @@ dependencies = []   # standard library only; Ollama/cloud are reached over HTTP
 reranker = ["torch", "transformers"]   # trained cross-encoder precision boost (NEVERTWICE_XRERANK=1)
 langchain = ["langchain-core"]         # NevertwiceRetriever / NevertwiceMemory adapters
 llamaindex = ["llama-index-core"]      # NevertwiceRetriever for LlamaIndex
-dev = ["pytest>=8", "pyflakes>=3", "build>=1"]  # local checks and wheel validation
+dev = ["pytest>=8", "pyflakes>=3", "build>=1", "hypothesis>=6"]  # local checks, wheel
+# hypothesis is used by tests/_test_properties.py when present and never required: the
+# core CI matrix installs nothing, so every property there also has a deterministic
+# corpus. A suite that only runs for people who installed an extra stops running.
 
 [project.urls]
 Homepage = "https://github.com/DonPlaton/nevertwice"

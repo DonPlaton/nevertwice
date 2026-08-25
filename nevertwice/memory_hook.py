@@ -23,6 +23,7 @@ import math
 import os
 import re
 import sys
+import threading
 import time
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -679,18 +680,51 @@ def write_atomic(path: Path, text: str, encoding: str = "utf-8") -> None:
     F1/F3/F30 - the corruption that triggered mass re-processing)."""
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
-    # pid in the temp name avoids collisions between concurrent hook processes;
-    # cleanup on failure leaves no orphaned .tmp in the synced vault (audit D3)
-    tmp = path.with_name(f"{path.name}.{os.getpid()}.tmp")
+    # pid AND thread id in the temp name. The pid alone separated concurrent hook processes
+    # and not concurrent threads inside one - they share a pid, so eight threads writing the
+    # same state file all raced on a single `.tmp`: on Windows the second `os.replace` fails
+    # with WinError 32, and on POSIX it silently publishes whichever thread wrote last, which
+    # is the worse outcome because nothing reports it (GOAL E1, concurrent writers).
+    # Cleanup on failure leaves no orphaned .tmp in the synced vault (audit D3).
+    tmp = path.with_name(f"{path.name}.{os.getpid()}.{threading.get_ident()}.tmp")
     try:
         tmp.write_text(text, encoding=encoding)
-        os.replace(tmp, path)
+        _replace_with_retry(tmp, path)
     except BaseException:
         try:
             tmp.unlink(missing_ok=True)
         except OSError:
             pass
         raise
+
+
+#: How long `os.replace` may keep losing to a concurrent writer before we give up. Windows
+#: fails a rename with a sharing violation while another handle to the target is briefly open -
+#: which two threads replacing the same state file do to each other constantly - and the
+#: failure is transient by nature. POSIX renames do not need this and pay nothing for it.
+_REPLACE_RETRY_S = 2.0
+
+
+def _replace_with_retry(tmp: Path, path: Path) -> None:
+    """`os.replace`, retried through a transient sharing violation.
+
+    On Windows a rename onto a path another thread or process has open fails with
+    PermissionError (WinError 5 / 32) even though nothing is wrong - the other writer is
+    mid-replace and will be done in microseconds. Eight threads writing one state file raised
+    it reliably (GOAL E1). Retrying briefly turns a spurious crash into a wait; giving up after
+    a bounded window keeps a genuinely locked file from hanging the hook forever.
+    """
+    deadline = time.time() + _REPLACE_RETRY_S
+    delay = 0.001
+    while True:
+        try:
+            os.replace(tmp, path)
+            return
+        except PermissionError:
+            if time.time() >= deadline:
+                raise
+            time.sleep(delay)
+            delay = min(delay * 2, 0.05)
 
 
 def cosine(a, b, na: float | None = None) -> float:

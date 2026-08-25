@@ -6,6 +6,35 @@ versions are [semantic](https://semver.org). Dates are UTC.
 ## [Unreleased]
 
 ### Added
+- **Every failure this project has actually had now has a test that reproduces it - and
+  writing them found a live concurrency bug.**
+
+  `nevertwice-doctor` proves the diagnostic *detects* three historical failures from fixtures.
+  `tests/_test_properties.py` is the other half: it **recreates the condition** for each of the
+  four incident classes - the graph generator that died on import while its wrapper logged
+  success for a month, extraction stalling behind an unreachable backend, an embedding cache
+  built by one model and queried by another, and test code writing to the owner's real vault -
+  and requires the system to surface it. Plus the properties E1 lists: arbitrary Unicode and
+  YAML in a note header, truncated state and two-generation recovery, concurrent writers,
+  symlinks *and Windows junctions*, JSON-RPC fuzzing, clock jumps, and duplicate or reordered
+  events replaying idempotently.
+
+### Fixed
+- **Concurrent writers inside one process raced on the same temporary file.**
+  `write_atomic` put the **pid** in the temp name, which separates concurrent hook *processes*
+  and does nothing for threads - they share a pid. Eight threads writing one state file all
+  raced on a single `.tmp`: on Windows the second `os.replace` failed with `WinError 32`, and
+  on POSIX it would silently publish whichever thread wrote last, which is the worse outcome
+  because nothing reports it. The temp name now carries the thread id as well.
+
+  `os.replace` also needed a bounded retry. Windows fails a rename with a sharing violation
+  while another handle to the target is briefly open - exactly what two threads replacing one
+  state file do to each other - and the failure is transient by nature. It now retries for up
+  to two seconds with backoff, so a spurious crash becomes a wait, while a genuinely locked
+  file still fails rather than hanging the hook forever. Both halves have their own mutation.
+
+  Found by GOAL E1's "concurrent writers" item, which is the entire argument for writing the
+  property suite rather than assuming the atomic-write path was safe because it said "atomic".
 - **Store versioning, a migration planner, and a reproducible rebuild.**
 
   A store that does not say which layout it is in cannot be migrated safely - every future
