@@ -127,6 +127,20 @@ def test_schema_is_complete() -> None:
     check("a withdrawn claim is cited nowhere", not cited_while_stale,
           ", ".join(cited_while_stale[:5]))
 
+    # `cited_in` was asserted and never verified, so the B8 README rewrite left five claims
+    # pointing at a citation that no longer existed. The coverage check runs the other way -
+    # every number in a document resolves to a claim - and cannot see a claim that thinks it
+    # is printed somewhere it is not. Both directions or neither.
+    absent = []
+    for claim in claims:
+        if claim.get("stale"):
+            continue
+        for doc in claim["cited_in"]:
+            text = FENCE.sub("", (ROOT / doc).read_text(encoding="utf-8"))
+            if not any(p in text for p in claim["printed"]):
+                absent.append(f"{claim['id']} -> {doc}")
+    check("every claimed citation is really there", not absent, "; ".join(absent[:5]))
+
     published_without_commit = [c["id"] for c in claims
                                 if not c.get("stale") and not c["commit"]]
     check("a published claim names the commit that produced it",

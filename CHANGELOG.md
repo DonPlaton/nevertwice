@@ -6,6 +6,25 @@ versions are [semantic](https://semver.org). Dates are UTC.
 ## [Unreleased]
 
 ### Added
+- **The demo's headline ratio depended on whether Ollama happened to be running, and the
+  manifest called both answers `stdlib_only`.**
+
+  `examples/scenario_demo.py` uses a local bge-m3 through Ollama when one is up and falls back
+  to lexical search when it is not - the source says so on line 146 - so the same command
+  publishes **5.9x** on one machine and **9.1x** on another. The manifest recorded both under
+  one environment that claimed neither model nor network, which is how a number stops being
+  falsifiable: a reader who cannot reproduce it has no way to tell whether the claim is wrong
+  or their stand is different.
+
+  Two environments are now declared. The no-embedder ratio - what a fresh clone and CI get - is
+  published; the semantic-path ratio is withdrawn as gated on a running local model. That also
+  **corrects a B8 withdrawal**: 9.1x was withdrawn as "no invocation reproduces this value at
+  HEAD", and it reproduces exactly, on the path CI takes.
+
+- **`cited_in` is now checked, not asserted.** The manifest's coverage check runs one way -
+  every number in a document resolves to a claim - so it could not see a claim that believed it
+  was printed somewhere it was not. The B8 README rewrite left five such claims behind. Both
+  directions are checked now, and the stale citations are corrected.
 - **`why_fired`: one object, four surfaces, and a test that makes them agree.**
 
   A guard that fires interrupts the agent, so the interruption has to carry its own

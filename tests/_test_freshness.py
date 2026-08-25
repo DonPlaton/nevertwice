@@ -152,7 +152,11 @@ def test_withdrawal_costs_something() -> None:
           ", ".join(vague[:5]))
 
     # The reason must name the gate, so the owner can act on it rather than re-derive it.
-    GATES = ("dataset", "vault", "API", "GPU", "historical", "reproduce", "seed", "store")
+    # `model` and `embedder` joined the list when D3 found a claim gated on a *running local
+    # model* rather than on a dataset or a bill - the demo publishes a different ratio
+    # depending on whether Ollama happens to be up, which no earlier gate described.
+    GATES = ("dataset", "vault", "API", "GPU", "historical", "reproduce", "seed", "store",
+             "model", "embedder")
     unnamed = [c["id"] for c in stale
                if not any(g.lower() in str(c["stale"]).lower() for g in GATES)]
     check("every withdrawal names the gate that blocks re-measurement", not unnamed,

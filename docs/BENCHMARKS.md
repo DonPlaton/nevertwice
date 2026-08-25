@@ -25,9 +25,9 @@ Python 3.14; reproduce anywhere with `python research/latency_bench.py`:
 <!-- claims:latency -->
 | hot path | cost | when it is paid |
 |---|---|---|
-| PreToolUse end-to-end | **98 ms** | every tool call (interpreter start included) |
-| UserPromptSubmit end-to-end | 84 ms | per prompt (task-aware recall) |
-| SessionStart end-to-end, idle | 84 ms | per session start with no backlog |
+| PreToolUse end-to-end | **104 ms** | every tool call (interpreter start included) |
+| UserPromptSubmit end-to-end | 86 ms | per prompt (task-aware recall) |
+| SessionStart end-to-end, idle | 82 ms | per session start with no backlog |
 | cold import of the engine | 26 ms | once per hook process (inside the numbers above) |
 
 <sub>**Withdrawn** - `guards.check()` over a seeded ledger, lexical recall, no embedder: the bench's seed lands in the subprocess store while the in-process half reads the store pinned at import, so this row now measures an empty store (0 guards, 0 notes) instead of the seeded one the published number describes - the measurement, not just the value, is broken</sub>
