@@ -4,6 +4,10 @@ Nevertwice works with **any** agent; Claude Code is only the zero-config case. T
 in-process Python API (`nevertwice.api`); the framework adapters and the generic capture helpers
 are thin shims over it. Nothing here is required by the core; install only what you use.
 
+> **Just want the config block to paste?** [AGENT_CONFIGS.md](AGENT_CONFIGS.md) has one per host - Claude Code, Cursor, Codex CLI,
+> Claude Desktop, Zed - plus how to tell whether it took. This page is the longer form:
+> the Python API, the capture paths, and the framework adapters.
+
 ## The Python API
 
 ```python

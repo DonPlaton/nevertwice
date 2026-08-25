@@ -1,27 +1,27 @@
 # Security Policy
 
-Nevertwice is a local-first tool. Your memory store is plain Markdown and Git on your own
-machine, the core runs on the Python standard library with no third-party packages, and
-nothing leaves your computer unless you opt into a cloud backend with your own API key.
-That design removes most of the usual attack surface, but the project still takes security
-seriously and welcomes reports.
+Your memory store is plain Markdown and Git on your own machine, the core runs on the Python
+standard library with no third-party packages, and nothing leaves your computer unless you opt
+into a cloud backend with your own key. That removes most of the usual attack surface. What is
+left is listed below, and reports are welcome.
 
 ## Supported versions
 
-The latest release on the default branch is supported. Nevertwice is pre-1.0 in spirit even
-at v1.0.0: fixes land on the default branch first.
+The default branch is what is supported: fixes land there first, and there is no long-term
+support branch. Nevertwice is maintained by one person, so treat "supported" as best effort
+rather than a service level. Check which version you have with `nevertwice-mcp --version` or
+`python -c "import nevertwice; print(nevertwice.__version__)"`.
 
 ## Reporting a vulnerability
 
-Please report suspected vulnerabilities privately, not in a public issue.
+Privately, not in a public issue.
 
 - Preferred: open a [GitHub private security advisory](https://github.com/DonPlaton/nevertwice/security/advisories/new).
-- Alternative: open a regular issue that says only "security report, please open a private
-  channel" with no details, and a maintainer will follow up.
+- Alternative: open a regular issue saying only "security report, please open a private
+  channel", with no details, and a maintainer will follow up.
 
-Please include the version or commit, your OS and Python version, a minimal reproduction,
-and the impact you observed. A fix or a triage response is the goal within a reasonable
-window for a solo-maintained project.
+Include the version or commit, your OS and Python version, a minimal reproduction, and the
+impact you observed.
 
 ## What counts as a vulnerability here
 
@@ -37,11 +37,11 @@ specific surfaces:
 
 ## What is out of scope
 
-- Anything requiring an attacker who already controls your shell or environment variables.
-  If they can set your `PATH` or your env, they already run code as you.
-- The optional cloud backends themselves (report those to the provider).
-- Denial of service from a deliberately enormous local file you point the tool at, beyond
-  the existing size caps.
+- Anything requiring an attacker who already controls your shell or environment. If they can
+  set your `PATH`, they already run code as you.
+- The optional cloud backends themselves - report those to the provider.
+- Denial of service from a deliberately enormous local file you point the tool at, beyond the
+  existing size caps.
 
 ## Hardening notes
 

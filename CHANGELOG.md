@@ -6,6 +6,23 @@ versions are [semantic](https://semver.org). Dates are UTC.
 ## [Unreleased]
 
 ### Added
+- **A stranger can wire their agent up without asking.** `docs/AGENT_CONFIGS.md` carries the
+  block to paste for Claude Code, Cursor, Codex CLI, Claude Desktop and Zed, plus how to tell
+  whether it took - the failure mode being a host that shows no error, just no tools.
+  `tests/_test_discoverability.py` parses every JSON and TOML block and checks that every
+  command they name is a console script this package actually installs, so a renamed entry
+  point breaks the build instead of someone's setup.
+- **Three starter issues, described in full before they are filed.**
+  `docs/starter-issues/` holds a small mechanical one (make `latency_bench.py` save its
+  results, which is why those figures still carry a `raw_gap` in the manifest), one that needs
+  a model and judgement (run the `AGENTS.md` baseline the repeat-error headline has never been
+  compared against), and one a stranger notices first (the structural labels inside every note
+  are Russian whatever language you write in). Each names the files to start from, and the
+  suite fails if one of those files stops existing. Filing them is a maintainer action.
+- **`CITATION.cff` joined the version contract.** It declared no version at all, so a
+  bibliography entry or a Zenodo record could quote whatever was true when it was written.
+  `tools/check_version.py` now checks it alongside `pyproject.toml`, the runtime
+  `__version__` and the MCP server, and CI runs it on every push.
 - **Release automation.** `.github/workflows/release.yml` is tag-triggered and builds the
   sdist and wheel exactly once; every later job downloads that artifact instead of
   rebuilding, so the bytes that are verified are the bytes that get published. Verification
@@ -79,6 +96,11 @@ versions are [semantic](https://semver.org). Dates are UTC.
   the README and CONTRIBUTING tell a contributor to follow.
 
 ### Changed
+- **`SECURITY.md` no longer quotes a version.** It said Nevertwice was "pre-1.0 in spirit even
+  at v1.0.0" while the project shipped 2.3.0 - a support statement that had been wrong for two
+  releases. It now says what is actually true (the default branch, best effort, one
+  maintainer) and tells you how to find the version you are running; a test fails if a release
+  number reappears in it.
 - **The docs map is a task map, and nothing is more than two clicks away.** `docs/README.md`
   was an alphabetical file listing; it now answers *what do you want to do* in six lanes -
   install, integrate, operate, understand, reproduce, contribute. Six documents were reachable

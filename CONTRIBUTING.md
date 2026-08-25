@@ -3,6 +3,14 @@
 Thanks for your interest! Nevertwice aims to stay **local-first, dependency-light, and
 simple to deploy**. Please keep changes in that spirit.
 
+**Looking for something to work on?** Three pieces of work are described in full, with the
+files to look at and the condition that closes them, before anyone has filed them as issues:
+[a results file the speed numbers need](docs/starter-issues/01-latency-results-file.md)
+(small, mechanical), [a baseline the headline claim has never been run against](docs/starter-issues/02-agents-md-baseline.md)
+(needs a model and some judgement), and
+[note labels that are Russian whatever language you write in](docs/starter-issues/03-note-labels-i18n.md)
+(small, and the one a stranger notices first).
+
 ## Principles
 
 - **No required runtime dependencies.** The core is standard-library Python; Ollama and

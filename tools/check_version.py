@@ -120,6 +120,29 @@ def check_version_syntax(version: str) -> list[str]:
     return []
 
 
+def read_citation_version(text: str) -> str | None:
+    """The `version:` field of CITATION.cff, or None when the file does not declare one.
+
+    A citation file is the one place a stale version is quoted back at the project by other
+    people - Zenodo, a bibliography, a paper's reference list - so it belongs in the contract
+    rather than in a reviewer's memory. Parsed with a line scan rather than a YAML library:
+    the core of this project takes no third-party dependency, and neither does its tooling.
+    """
+    for line in text.splitlines():
+        stripped = line.strip()
+        if stripped.startswith("version:"):
+            return stripped.split(":", 1)[1].strip().strip('"').strip("'")
+    return None
+
+
+def check_citation(version: str, citation: str | None) -> list[str]:
+    if citation is None:
+        return ["CITATION.cff declares no version: field"]
+    if citation != version:
+        return [f"CITATION.cff version is {citation!r}, pyproject declares {version!r}"]
+    return []
+
+
 def check_runtime(version: str, runtime: str, server: str) -> list[str]:
     errors = []
     if runtime != version:
@@ -236,6 +259,11 @@ def main(argv: list[str] | None = None) -> int:
     runtime, server = runtime_versions()
     errors += check_runtime(version, runtime, server)
 
+    citation_path = ROOT / "CITATION.cff"
+    citation = (read_citation_version(citation_path.read_text(encoding="utf-8"))
+                if citation_path.is_file() else None)
+    errors += check_citation(version, citation)
+
     at_head, all_tags = git_tags()
     tag_errors, notes = check_tags(version, at_head, all_tags, require_tag=args.release)
     errors += tag_errors
@@ -249,6 +277,7 @@ def main(argv: list[str] | None = None) -> int:
     print(f"declared version: {version}")
     print(f"  runtime __version__ : {runtime}")
     print(f"  mcp SERVER_VERSION  : {server}")
+    print(f"  CITATION.cff        : {citation or '(none)'}")
     print(f"  tags at HEAD        : {', '.join(at_head) or '(none)'}")
     if args.dist is not None:
         print(f"  artifacts           : "

@@ -16,6 +16,7 @@ click from here, and `tests/_test_docs_map.py` fails the build if that stops bei
 
 | Doc | What it answers |
 |---|---|
+| [AGENT_CONFIGS.md](AGENT_CONFIGS.md) | The config block to paste, per host: Claude Code, Cursor, Codex CLI, Claude Desktop, Zed - and how to tell whether it took |
 | [INTEGRATIONS.md](INTEGRATIONS.md) | Copy-paste setup for Claude Code, Cursor, Codex, MCP, LangChain, LlamaIndex, the watch daemon, and importing the memory another tool already built |
 | [SELF_EXTRACTION.md](SELF_EXTRACTION.md) | How an agent writes its own lessons with no extraction model at all |
 | [`skills/nevertwice-remember/SKILL.md`](../skills/nevertwice-remember/SKILL.md) | The agent skill definition, for hosts that load skills |
@@ -55,5 +56,6 @@ click from here, and `tests/_test_docs_map.py` fails the build if that stops bei
 | Doc | What it answers |
 |---|---|
 | [CONTRIBUTING.md](../CONTRIBUTING.md) | The test command, the support matrix, and what a good change looks like |
+| [starter-issues/](starter-issues/01-latency-results-file.md) | Three pieces of work described in full before they were filed: a [results file](starter-issues/01-latency-results-file.md), a [missing baseline](starter-issues/02-agents-md-baseline.md), and [note labels stuck in one language](starter-issues/03-note-labels-i18n.md) |
 | [CODE_OF_CONDUCT.md](../CODE_OF_CONDUCT.md) | How we behave with each other |
 | [`examples/sample-store/README.md`](../examples/sample-store/README.md) | The fixture vault the demos and tests read - and the four notes in it, so you can see the on-disk format without installing anything: [mistake](../examples/sample-store/Mistakes/2026-01-10-demo_api-mistake-n-plus-one-queries.md) · [pattern](../examples/sample-store/Patterns/2026-01-11-demo_api-pattern-assert-query-count.md) · [decision](../examples/sample-store/Decisions/2026-01-12-demo_api-decision-adopt-cursor-pagination.md) · [project card](../examples/sample-store/Context/demo_api.md) |

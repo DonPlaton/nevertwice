@@ -190,6 +190,22 @@
       "governance": "exempt",
       "reason": "capability list; every measured claim links to the study that produced it rather than restating a number here"
     },
+    "docs/AGENT_CONFIGS.md": {
+      "governance": "exempt",
+      "reason": "copy-paste configuration blocks for each agent host"
+    },
+    "docs/starter-issues/01-latency-results-file.md": {
+      "governance": "exempt",
+      "reason": "draft text for a starter issue; filing it is a maintainer action (G3)"
+    },
+    "docs/starter-issues/02-agents-md-baseline.md": {
+      "governance": "exempt",
+      "reason": "draft text for a starter issue; filing it is a maintainer action (G3)"
+    },
+    "docs/starter-issues/03-note-labels-i18n.md": {
+      "governance": "exempt",
+      "reason": "draft text for a starter issue; filing it is a maintainer action (G3)"
+    },
     "examples/README.md": {
       "governance": "exempt",
       "reason": "how to run the demos"
