@@ -29,6 +29,7 @@ import memory_search as _search
 import digest as _digest
 import dashboard as _dashboard
 import guards as _guards
+import budget as _budget
 import outcomes as _outcomes
 import why_fired as _why
 import inbox as _inbox
@@ -248,7 +249,9 @@ def why(entity: str, project: str | None = None, *, depth: int = 2) -> dict:
 
 def guards_check(action_text: str, *, project: str | None = None,
                  path: str | None = None, tool: str | None = None,
-                 explain: bool = False, deep: bool = False) -> list[dict]:
+                 explain: bool = False, deep: bool = False,
+                 budget: "_budget.Ledger | None" = None,
+                 policy: "_budget.Policy | None" = None) -> list[dict]:
     """Active memory, axis A - the 0-token hot path. Return the guards that fire for a
     proposed action (a diff, command, or code the agent is about to write), or `[]` - and
     NOTHING reaches context unless one matches. Each hit is `{id, status, message, scope}`;
@@ -274,7 +277,50 @@ def guards_check(action_text: str, *, project: str | None = None,
                     hits, action_text, project=project, path=path, tool=tool,
                     guards=ledger, deep=deep)):
                 hit["why"] = why
+        if budget is not None:
+            hits = _apply_budget(hits, ledger, budget, policy or _budget.Policy())
     return hits
+
+
+def _apply_budget(hits, ledger, spend_ledger, policy):
+    """Decide, per hit, whether it is worth the context it would cost.
+
+    A blocking guard is not subject to the value threshold - refusing to mention a hard stop
+    to save tokens would be the budget overruling safety, which is not a trade this project
+    is willing to make. It still consumes budget, so the accounting stays honest, and the
+    decision is recorded like any other.
+    """
+    kept = []
+    for hit in hits:
+        guard = next((g for g in ledger if g.get("id") == hit["id"]), {})
+        tokens = max(1, len(hit.get("message", "")) // 4)
+        value = float(guard.get("confidence", 0.5))
+        if hit.get("status") == "blocking":
+            spend_ledger.record(_budget.Decision(
+                item=hit["id"], tokens=tokens, value=value, spend=True, reason="spent",
+                threshold=policy.min_value,
+                detail="a blocking guard is exempt from the value threshold: a hard stop is "
+                       "not withheld to save context"))
+            kept.append(hit)
+            continue
+        decision = policy.decide(spend_ledger, item=hit["id"], tokens=tokens, value=value)
+        hit["budget"] = decision.as_dict()
+        if decision.spend:
+            kept.append(hit)
+    return kept
+
+
+def budget_policy(**overrides) -> "_budget.Policy":
+    """The spending policy: per-turn and per-session token and latency caps, plus the
+    expected-value threshold below which memory stays quiet even when it could afford to
+    speak. Every field is env-overridable; `overrides` wins over the environment."""
+    return _budget.Policy(**overrides) if overrides else _budget.Policy()
+
+
+def budget_ledger() -> "_budget.Ledger":
+    """A fresh session ledger. Pass it to `guards_check(budget=...)` and read `.report()`
+    afterwards for consumed, avoided and net tokens with every abstention and its reason."""
+    return _budget.Ledger()
 
 
 def why_fired(guard_id: str, action_text: str = "", *, project: str | None = None,

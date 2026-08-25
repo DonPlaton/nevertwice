@@ -6,6 +6,40 @@ versions are [semantic](https://semver.org). Dates are UTC.
 ## [Unreleased]
 
 ### Added
+- **A budget policy, and abstention that is a decision rather than a side effect.**
+
+  The payload has always had a cap: sections are added by priority until the character budget
+  runs out, and the rest is dropped. That is truncation, and it has two properties worth naming.
+  It **cannot refuse something that fits** - a worthless lesson gets injected whenever there
+  happens to be room - and it **cannot say why** anything was dropped, because nothing decided
+  to; the string simply ended.
+
+  `nevertwice/budget.py` replaces "does it fit?" with "is it worth it?". A `Policy` carries
+  per-turn and per-session token *and* latency caps plus `min_value`, an expected-value
+  threshold. Every call returns a `Decision` with a `reason` from a closed set - on spends as
+  well as refusals - so "why did memory go quiet in this session" is a question you can count
+  the answers to rather than guess at.
+
+  **Value is checked before affordability, deliberately.** Checking budgets first would make a
+  low-value item look acceptable right up until the budget filled - the same item taken or
+  refused depending on what preceded it rather than on what it is worth. That is truncation
+  wearing a policy's clothes.
+
+  Two behaviours no length-based mechanism can produce, and both are asserted: an item is
+  refused **while the budget is nearly untouched**, and two items of **identical token cost**
+  get opposite decisions when their values differ, in either offering order.
+
+  Wired into `guards_check(..., budget=..., policy=...)`, opt-in, with the default path
+  byte-identical to before. A **blocking guard is exempt from the value threshold** - refusing
+  to mention a hard stop to save tokens would be the budget overruling safety - and still
+  consumes budget, with the exemption stated on the decision rather than applied silently.
+
+  **`avoided` is never invented.** It is caller-supplied, requires an attribution that is stored
+  with it, and `net` is labelled an estimate everywhere it appears. A zero means nothing was
+  claimed, not that nothing was saved. `receipt.py` learned this the hard way once already; task
+  B8 withdrew 120 claims over the same principle.
+
+  `tests/_test_budget.py` → 52 checks and eight mutations, each red.
 - **Five extension protocols, and the promise that filling one costs nothing but one file.**
 
   Every extension point in this system meant importing `memory_hook`: 6,000 lines that resolve

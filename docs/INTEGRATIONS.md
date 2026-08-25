@@ -58,6 +58,17 @@ error-prevention for **31× fewer memory tokens**
 stood here was withdrawn in 2026-08 with the rest of the paid-API corpus - `python
 tools/check_freshness.py --list-stale` says why.
 
+Memory spends your context window, so it has a **budget** and it can decline. `api.budget_policy()`
+sets per-turn and per-session token *and* latency caps plus `min_value`, the expected-value
+threshold below which memory stays quiet **even when it could afford to speak** - which is the
+difference between a policy and a character cap. Pass a ledger to
+`guards_check(..., budget=..., policy=...)` and read `.report()` for consumed, avoided and net
+tokens with every abstention and its reason, drawn from a closed set so the answers can be
+counted. A blocking guard is exempt from the value threshold - a hard stop is not withheld to
+save context - and still consumes budget so the accounting stays honest. `avoided` is
+caller-supplied and requires an attribution: this project does not report a saving it did not
+measure.
+
 `nevertwice/protocols.py` is the plugin surface, and it **imports nothing from the engine** -
 only `typing` and the dependency-free `schemas`. Five seams: `MemoryStore` (where notes live),
 `Retriever` (query to ranked notes), `Extractor` (transcript to lessons), `EpisodeSource` (where
