@@ -41,6 +41,10 @@ except ImportError:
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parent / "nevertwice"))
+
+sys.path.insert(0, str(HERE.parent))
+import sandbox_guard  # noqa: E402 - one store sandbox for the whole repo
+sandbox_guard.isolate()  # throwaway store, verified, before any project import
 import consolidate_memory as cons
 import longitudinal_bench as lb
 

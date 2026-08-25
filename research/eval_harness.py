@@ -29,6 +29,10 @@ from datetime import datetime
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "nevertwice"))
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+import sandbox_guard  # noqa: E402 - one store sandbox for the whole repo
+sandbox_guard.allow_live("reads the real Context/ pages and writes eval_results.json beside them")
 import memory_hook as m
 import temporal_graph as tg
 

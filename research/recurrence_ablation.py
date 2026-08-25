@@ -53,6 +53,10 @@ except ImportError:
     sys.exit(2)
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "nevertwice"))
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+import sandbox_guard  # noqa: E402 - one store sandbox for the whole repo
+sandbox_guard.isolate()  # throwaway store, verified, before any project import
 import memory_hook as m
 
 try:

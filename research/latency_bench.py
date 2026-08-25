@@ -23,6 +23,15 @@ from pathlib import Path
 
 PKG = Path(__file__).resolve().parent.parent / "nevertwice"
 
+sys.path.insert(0, str(PKG.parent))
+import sandbox_guard  # noqa: E402 - one store sandbox for the whole repo
+# This bench seeds 150 fabricated notes and 50 fabricated guards. It built the child
+# environment from `os.environ` and pinned NEVERTWICE_HOME only, so on a machine where
+# NEVERTWICE_VAULT is exported - the supported way to point at a real store - the whole
+# seed landed in the live vault. Isolating here scrubs the inherited value out of
+# `os.environ` before `main()` copies it, and `main()` now pins both names on the child.
+sandbox_guard.isolate(prefix="nevertwice-latency-")
+
 try:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 except Exception:
@@ -55,7 +64,9 @@ def main() -> None:
     env = {k: v for k, v in os.environ.items()
            if not any(s in k for s in ("CEREBRAS", "GROQ", "DEEPSEEK", "GEMINI",
                                        "OPENAI", "VOYAGE", "COHERE", "ANTHROPIC"))}
-    env.update({"NEVERTWICE_HOME": tmp, "NEVERTWICE_GUARD_PACK": "1",
+    # BOTH names, always: config resolves `env("VAULT") or NEVERTWICE_HOME`, so pinning HOME
+    # alone leaves an inherited NEVERTWICE_VAULT in charge of where the seed below lands.
+    env.update({"NEVERTWICE_HOME": tmp, "NEVERTWICE_VAULT": tmp, "NEVERTWICE_GUARD_PACK": "1",
                 "NEVERTWICE_CLOUD": "none", "NEVERTWICE_PROJECTS_ROOT": empty_root})
 
     # seed: universal pack + 50 project guards + 150 notes (no embedder)

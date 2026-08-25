@@ -28,6 +28,10 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parent / "nevertwice"))
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+import sandbox_guard  # noqa: E402 - one store sandbox for the whole repo
+sandbox_guard.allow_live("measures recall against a real store's embedding cache, by design")
 import memory_hook as m
 
 try:

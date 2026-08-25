@@ -45,6 +45,10 @@ except ImportError:
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parent / "nevertwice"))
 
+sys.path.insert(0, str(HERE.parent))
+import sandbox_guard  # noqa: E402 - one store sandbox for the whole repo
+sandbox_guard.allow_live("--real sizes real clusters from a populated store's embedding cache")
+
 try:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 except Exception:

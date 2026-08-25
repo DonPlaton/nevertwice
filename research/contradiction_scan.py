@@ -25,6 +25,10 @@ import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "nevertwice"))
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+import sandbox_guard  # noqa: E402 - one store sandbox for the whole repo
+sandbox_guard.allow_live("scans a real store and writes its candidate list back beside it")
 import memory_hook as m
 import temporal_graph as tg
 

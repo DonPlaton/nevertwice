@@ -28,6 +28,10 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parent / "nevertwice"))
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+import sandbox_guard  # noqa: E402 - one store sandbox for the whole repo
+sandbox_guard.allow_live("measures retention against a real, populated store's notes")
 import memory_hook as m
 from consolidate_memory import select_coreset
 from real_trace_bench import _clusters, _date
