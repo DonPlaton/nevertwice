@@ -6,6 +6,21 @@ versions are [semantic](https://semver.org). Dates are UTC.
 ## [Unreleased]
 
 ### Added
+- **The seven boundaries are written down, and checked against what the code passes.**
+  Every value crossing a seam here is a plain `dict`, and every reader is defensive about it -
+  `n.get("desc", "")`, `(params or {}).get(...)`. That is not paranoia, it is the absence of a
+  contract: each new reader re-derives the shape, guesses one key wrong, and adds another
+  `.get` with a default that hides the mistake. `nevertwice/schemas.py` declares the episode
+  event, the frontmatter, the note meta, the retrieval hit, the intervention, the JSON state
+  file and the MCP request, with a small structural `conforms()` and no third-party
+  dependency.
+
+  It changes no behaviour: readers convert one module at a time. What lands now is the
+  answer, so the next reader can look it up. `tests/_test_schemas.py` drives the real engine
+  on a throwaway store and requires every value that comes back to conform, which is what
+  keeps the file describing production instead of intent - and it pins the one undocumented
+  rename that has caused bugs, `NoteMeta.desc` becoming `RetrievalHit.description` at the
+  public boundary.
 - **`nevertwice-doctor`: what is wrong with this install, and the safe way to fix it.**
   Every production failure this project has had was silent. The graph generator died on
   *import* with a `NameError` for over a month while the fire-and-forget wrapper around it
