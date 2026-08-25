@@ -1,50 +1,50 @@
 {
  "platform": "win32",
  "python": "3.14.4",
- "commit": "69ca75c2cd4febc2e7e58753cdf017d96f8595e1",
+ "commit": "865045d261df4619dba48a131019cdf4ac640d05",
  "repeats": 5,
  "measurements": {
   "cold_import": {
    "label": "cold import (guards + engine)",
    "note": "paid once per hook process",
    "ms": 27,
-   "median_ms": 29,
-   "max_ms": 40,
+   "median_ms": 31,
+   "max_ms": 34,
    "repeats": 5
   },
   "pretooluse": {
    "label": "PreToolUse end-to-end",
    "note": "fires on every tool call; includes interpreter start",
-   "ms": 117,
-   "median_ms": 125,
-   "max_ms": 136,
+   "ms": 113,
+   "median_ms": 115,
+   "max_ms": 119,
    "repeats": 5
   },
   "userpromptsubmit": {
    "label": "UserPromptSubmit end-to-end",
    "note": "recall per prompt",
-   "ms": 92,
-   "median_ms": 102,
-   "max_ms": 108,
+   "ms": 86,
+   "median_ms": 89,
+   "max_ms": 97,
    "repeats": 5
   },
   "sessionstart": {
    "label": "SessionStart end-to-end (idle)",
    "note": "no backlog: the LLM probe is gated off",
-   "ms": 97,
-   "median_ms": 99,
-   "max_ms": 109,
+   "ms": 95,
+   "median_ms": 97,
+   "max_ms": 108,
    "repeats": 5
   },
   "guards_check": {
    "label": "guards.check(), 0 guards, 2 KB text",
    "note": "in-process, pure regex",
-   "ms": 0.0
+   "ms": 0.01
   },
   "lexical_recall_floor": {
    "label": "lexical recall, 0 notes (no embedder)",
    "note": "the weak-PC floor",
-   "ms": 0.3
+   "ms": 0.6
   }
  },
  "load_note": "Each hot path was measured 5 times, and each of those is itself the best of 3 invocations; `ms` is the minimum, with `median_ms` and `max_ms` beside it. The minimum is the least-contended observation, so a busy host can only push these numbers up - which is the direction an honest latency claim should err in. Nothing here pins CPU affinity or waits for an idle stand."

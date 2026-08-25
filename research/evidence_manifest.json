@@ -2036,7 +2036,7 @@
       "cited_in": [
         "README.md"
       ],
-      "commit": "69ca75c2cd4febc2e7e58753cdf017d96f8595e1",
+      "commit": "865045d261df4619dba48a131019cdf4ac640d05",
       "produced_by": [
         "research/poisoning.py",
         "nevertwice/causal.py",
@@ -2070,7 +2070,7 @@
       "pointer": "precision",
       "ci": null,
       "cited_in": [],
-      "commit": "69ca75c2cd4febc2e7e58753cdf017d96f8595e1",
+      "commit": "865045d261df4619dba48a131019cdf4ac640d05",
       "produced_by": [
         "research/poisoning.py",
         "nevertwice/causal.py",
@@ -2108,7 +2108,7 @@
       "cited_in": [
         "README.md"
       ],
-      "commit": "69ca75c2cd4febc2e7e58753cdf017d96f8595e1",
+      "commit": "865045d261df4619dba48a131019cdf4ac640d05",
       "produced_by": [
         "research/poisoning.py",
         "nevertwice/causal.py",
@@ -2146,7 +2146,7 @@
       "cited_in": [
         "README.md"
       ],
-      "commit": "69ca75c2cd4febc2e7e58753cdf017d96f8595e1",
+      "commit": "865045d261df4619dba48a131019cdf4ac640d05",
       "produced_by": [
         "research/poisoning.py",
         "nevertwice/causal.py",
@@ -2185,7 +2185,7 @@
       "ci": null,
       "ci_note": "6 seeds on a synthetic world; report the spread, not a CI.",
       "cited_in": [],
-      "commit": "69ca75c2cd4febc2e7e58753cdf017d96f8595e1",
+      "commit": "865045d261df4619dba48a131019cdf4ac640d05",
       "produced_by": [
         "research/forgetting.py",
         "nevertwice/build_user_model.py",
@@ -3996,7 +3996,7 @@
       "cited_in": [
         "README.md"
       ],
-      "commit": "69ca75c2cd4febc2e7e58753cdf017d96f8595e1",
+      "commit": "865045d261df4619dba48a131019cdf4ac640d05",
       "headline": true,
       "baseline_verdicts": {
         "no_memory": {
@@ -4072,11 +4072,11 @@
     },
     {
       "id": "latency.pretooluse_end_to_end",
-      "statement": "the PreToolUse hook costs 117 ms end to end, interpreter start included",
-      "value": 117,
+      "statement": "the PreToolUse hook costs 113 ms end to end, interpreter start included",
+      "value": 113,
       "printed": [
-        "117 ms",
-        "117"
+        "113 ms",
+        "113"
       ],
       "unit": "milliseconds",
       "dataset": null,
@@ -4090,7 +4090,7 @@
         "README.md",
         "docs/BENCHMARKS.md"
       ],
-      "commit": "69ca75c2cd4febc2e7e58753cdf017d96f8595e1",
+      "commit": "865045d261df4619dba48a131019cdf4ac640d05",
       "produced_by": [
         "research/latency_bench.py",
         "nevertwice/causal.py",
@@ -4112,11 +4112,11 @@
     },
     {
       "id": "latency.userpromptsubmit",
-      "statement": "UserPromptSubmit end-to-end: 92 ms",
-      "value": 92,
+      "statement": "UserPromptSubmit end-to-end: 86 ms",
+      "value": 86,
       "printed": [
-        "92 ms",
-        "92"
+        "86 ms",
+        "86"
       ],
       "unit": "milliseconds",
       "dataset": null,
@@ -4129,7 +4129,7 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "69ca75c2cd4febc2e7e58753cdf017d96f8595e1",
+      "commit": "865045d261df4619dba48a131019cdf4ac640d05",
       "produced_by": [
         "research/latency_bench.py",
         "nevertwice/causal.py",
@@ -4151,11 +4151,11 @@
     },
     {
       "id": "latency.sessionstart",
-      "statement": "SessionStart end-to-end, idle: 97 ms",
-      "value": 97,
+      "statement": "SessionStart end-to-end, idle: 95 ms",
+      "value": 95,
       "printed": [
-        "97 ms",
-        "97"
+        "95 ms",
+        "95"
       ],
       "unit": "milliseconds",
       "dataset": null,
@@ -4168,7 +4168,7 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "69ca75c2cd4febc2e7e58753cdf017d96f8595e1",
+      "commit": "865045d261df4619dba48a131019cdf4ac640d05",
       "produced_by": [
         "research/latency_bench.py",
         "nevertwice/causal.py",
@@ -4207,7 +4207,7 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "69ca75c2cd4febc2e7e58753cdf017d96f8595e1",
+      "commit": "865045d261df4619dba48a131019cdf4ac640d05",
       "produced_by": [
         "research/latency_bench.py",
         "nevertwice/causal.py",
@@ -5672,7 +5672,7 @@
       "raw_gap": "Measured live inside the demo, which prints it; no committed artifact. Deterministic capture is task C1.",
       "ci": null,
       "cited_in": [],
-      "commit": "e9be9b9fcee9513bcc6c9897338f3f3d2143d852",
+      "commit": "865045d261df4619dba48a131019cdf4ac640d05",
       "produced_by": [
         "examples/scenario_demo.py",
         "examples/_sandbox.py",
@@ -5721,7 +5721,7 @@
       "raw_gap": "Measured live inside the demo; the recorded GIF is the only artifact. Deterministic capture is task C1.",
       "ci": null,
       "cited_in": [],
-      "commit": "e9be9b9fcee9513bcc6c9897338f3f3d2143d852",
+      "commit": "865045d261df4619dba48a131019cdf4ac640d05",
       "produced_by": [
         "examples/scenario_demo.py",
         "examples/_sandbox.py",
@@ -5793,7 +5793,7 @@
       "raw_gap": "A property of the shipped pack; a test should assert it (task D1).",
       "ci": null,
       "cited_in": [],
-      "commit": "69ca75c2cd4febc2e7e58753cdf017d96f8595e1",
+      "commit": "865045d261df4619dba48a131019cdf4ac640d05",
       "produced_by": [
         "nevertwice/guards.py",
         "nevertwice/causal.py",
