@@ -59,6 +59,12 @@ jobs:
           python-version: "3.12"
       - name: Install the documented dev environment
         run: python -m pip install -e ".[dev]"
+      - name: No script reaches the store without declaring which store
+        # Static, and first, because it is the cheapest way to catch the failure class that
+        # has hit this repository three times (2026-08-13, 08-18, 08-25): a script under
+        # examples/, research/ or tools/ that imports a project module - and therefore
+        # resolves config.VAULT - without sandbox_guard.isolate() or .allow_live(reason).
+        run: python tools/check_sandbox.py --list
       - name: Run the documented test command
         run: python -m pytest -q
       - name: Version contract - pyproject, runtime, MCP, git tag
