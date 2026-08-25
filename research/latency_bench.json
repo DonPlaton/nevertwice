@@ -1,39 +1,39 @@
 {
  "platform": "win32",
  "python": "3.14.4",
- "commit": "7eff3f08a5a8e14cd2e8ad3db3bf240d4f017c80",
+ "commit": "69ca75c2cd4febc2e7e58753cdf017d96f8595e1",
  "repeats": 5,
  "measurements": {
   "cold_import": {
    "label": "cold import (guards + engine)",
    "note": "paid once per hook process",
-   "ms": 26,
-   "median_ms": 37,
-   "max_ms": 62,
+   "ms": 27,
+   "median_ms": 29,
+   "max_ms": 40,
    "repeats": 5
   },
   "pretooluse": {
    "label": "PreToolUse end-to-end",
    "note": "fires on every tool call; includes interpreter start",
-   "ms": 104,
-   "median_ms": 106,
-   "max_ms": 124,
+   "ms": 117,
+   "median_ms": 125,
+   "max_ms": 136,
    "repeats": 5
   },
   "userpromptsubmit": {
    "label": "UserPromptSubmit end-to-end",
    "note": "recall per prompt",
-   "ms": 86,
-   "median_ms": 90,
-   "max_ms": 93,
+   "ms": 92,
+   "median_ms": 102,
+   "max_ms": 108,
    "repeats": 5
   },
   "sessionstart": {
    "label": "SessionStart end-to-end (idle)",
    "note": "no backlog: the LLM probe is gated off",
-   "ms": 82,
-   "median_ms": 88,
-   "max_ms": 95,
+   "ms": 97,
+   "median_ms": 99,
+   "max_ms": 109,
    "repeats": 5
   },
   "guards_check": {
