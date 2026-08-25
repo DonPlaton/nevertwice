@@ -61,7 +61,19 @@ rare-event salience ([`RARE_EVENT.md`](RARE_EVENT.md)),
 calibrated-posterior salience ([`POSTERIOR_MODEL.md`](POSTERIOR_MODEL.md)),
 real-trace replay ([`REAL_TRACE.md`](REAL_TRACE.md)),
 divergent retrieval ([`DIVERGENT.md`](DIVERGENT.md)),
-biological-memory analogues ([`BIO_MEMORY.md`](BIO_MEMORY.md)).
+biological-memory analogues ([`BIO_MEMORY.md`](BIO_MEMORY.md)),
+the causal-edge vocabulary behind the counterfactual ([`CAUSAL_VOCAB.md`](CAUSAL_VOCAB.md)),
+embedding quantization and what it costs recall ([`QUANTIZATION.md`](QUANTIZATION.md)),
+the twin gate that abstains when cached vectors come from another embedding space
+([`TWIN_GATE.md`](TWIN_GATE.md)),
+and a domain-specialized embedder, trained and then **not** shipped
+([`EMBED_SPECIALIZE.md`](EMBED_SPECIALIZE.md) - the training log is
+[`embed_universal/README.md`](embed_universal/README.md) and the model card it would have
+published is [`embed_universal/hf_card/README.md`](embed_universal/hf_card/README.md)).
+
+Every study above is also indexed by governance mode in the document register inside
+[`evidence_manifest.json`](evidence_manifest.json), and the baselines a headline has to clear
+before it may be published are in [`BASELINES.md`](BASELINES.md).
 
 ## Reproduce
 

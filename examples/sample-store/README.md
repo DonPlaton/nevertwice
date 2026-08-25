@@ -14,7 +14,14 @@ graph.json  - navigable link graph (generated)
 
 Each note is plain markdown with YAML frontmatter and `[[wikilinks]]` between
 related notes (Obsidian renders these as a graph, but nothing requires Obsidian).
-Filenames are `YYYY-MM-DD-<project>-<type>-<slug>.md`.
+Filenames are `YYYY-MM-DD-<project>-<type>-<slug>.md`. The four notes in this store,
+so you can read one before installing anything:
+
+- [a mistake](Mistakes/2026-01-10-demo_api-mistake-n-plus-one-queries.md) - the N+1 query
+  that started it
+- [the pattern that fixed it](Patterns/2026-01-11-demo_api-pattern-assert-query-count.md)
+- [the decision it led to](Decisions/2026-01-12-demo_api-decision-adopt-cursor-pagination.md)
+- [the project card](Context/demo_api.md) that rolls all three up
 
 > Note: structural labels in the body (e.g. *«Как избежать»* = "how to avoid") are
 > currently Russian. Author-language i18n is on the roadmap. The content itself

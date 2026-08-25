@@ -79,6 +79,20 @@ versions are [semantic](https://semver.org). Dates are UTC.
   the README and CONTRIBUTING tell a contributor to follow.
 
 ### Changed
+- **The docs map is a task map, and nothing is more than two clicks away.** `docs/README.md`
+  was an alphabetical file listing; it now answers *what do you want to do* in six lanes -
+  install, integrate, operate, understand, reproduce, contribute. Six documents were reachable
+  from nowhere at all (`CODE_OF_CONDUCT.md`, `examples/README.md`, and the `CAUSAL_VOCAB`,
+  `EMBED_SPECIALIZE`, `QUANTIZATION` and `TWIN_GATE` studies) and `CHANGELOG.md` sat at three
+  clicks. The four orphaned studies are now listed in `research/README.md`, the rest in the map,
+  and the sample store links the four fixture notes so a reader can see the on-disk format
+  without installing anything.
+
+  `tests/_test_docs_map.py` walks the relative-link graph from the README and fails when any
+  tracked document is unreachable or deeper than two clicks, when a lane disappears or empties,
+  or when a link points at a file that does not exist. The only exclusions are
+  `research/embed_universal/data/`, which vendors cloned third-party repositories, and
+  `.github/` templates, which GitHub surfaces itself.
 - **The README is a funnel, not an encyclopedia.** It was 468 lines, and the acquisition story -
   what this is, proof that it works, how to install it - was interleaved with per-agent setup, the
   full benchmark commentary, the import recipes and the feature inventory, all of which already had
