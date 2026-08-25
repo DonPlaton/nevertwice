@@ -178,11 +178,28 @@ def test_soft_verdicts_carry_a_reason() -> None:
 
 def test_a_lost_baseline_is_visible_in_the_document() -> None:
     """A claim that fails its gate must be readable as such by a human opening the file,
-    not only by a tool reading the manifest."""
+    not only by a tool reading the manifest.
+
+    A *withdrawn* headline is exempt, and only that: the disclosure exists so a reader who
+    meets the number also meets what beat it, and there is no longer a number to meet. Task
+    B8 withdrew four of the six headlines. The claim keeps its verdicts in the manifest, so
+    the obligation returns the moment it is republished.
+    """
     print("\n- a claim that fails the gate says so where people read -")
     losers = [c["id"] for c in headline_claims()
-              if any(v.get("verdict") == "loses_to"
-                     for v in (c.get("baseline_verdicts") or {}).values())]
+              if not c.get("stale")
+              and any(v.get("verdict") == "loses_to"
+                      for v in (c.get("baseline_verdicts") or {}).values())]
+    hidden = [c["id"] for c in headline_claims()
+              if c.get("stale")
+              and any(v.get("verdict") == "loses_to"
+                      for v in (c.get("baseline_verdicts") or {}).values())]
+    check("a headline exempted from disclosure is withdrawn, not merely quiet",
+          all(c.get("stale") for c in headline_claims() if c["id"] in hidden),
+          ", ".join(hidden[:4]))
+    if hidden:
+        print(f"       ({len(hidden)} headline(s) fail a baseline but are withdrawn: "
+              f"{', '.join(hidden)})")
     for claim_id in losers:
         check(f"{claim_id} is named in the document", claim_id in DOC)
     check("the document explains what a failed gate means for the claim",

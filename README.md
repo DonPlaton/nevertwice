@@ -8,8 +8,8 @@
 
 *Other memory tools recall text and pad every prompt with it. Nevertwice stays silent until it has
 something worth saying, then fires a one-line warning at the moment your agent is about to repeat a
-mistake it already made - measured live, that cut a real model's repeat-error rate by **86%**.
-The store is plain Markdown in a git repo you own.*
+mistake it already made - and costs nothing until it does. The store is plain Markdown in a git
+repo you own.*
 
 **No database. No server. No account. No telemetry. Zero pip dependencies.**
 
@@ -19,8 +19,8 @@ The store is plain Markdown in a git repo you own.*
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue)](#install)
 [![Core deps](https://img.shields.io/badge/core%20deps-0%20(stdlib)-orange)](#privacy)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
-[![LongMemEval](https://img.shields.io/badge/LongMemEval%20R%405-0.80%20%E2%80%BA%20Mem0%200.76-blueviolet)](#the-evidence)
-[![Active Memory](https://img.shields.io/badge/active%20memory-%E2%88%9286%25%20errors%20%C2%B7%200--token%20guards-2ea043)](#memory-that-acts)
+[![Evidence](https://img.shields.io/badge/evidence-every%20number%20traced%20to%20its%20commit-blueviolet)](#the-evidence)
+[![Active Memory](https://img.shields.io/badge/active%20memory-0--token%20guards-2ea043)](#memory-that-acts)
 
 ```bash
 pip install nevertwice          # the library, the CLI, and the MCP server
@@ -59,8 +59,8 @@ So the interventions are the product, and each one is token-budgeted:
   overridable: memory proposes, reality disposes.
 - **Anticipation** - predicts the failure the current plan is heading toward by resemblance to past
   ones, and surfaces *one* precise warning. Spend is proportional to risk, not paid per turn.
-- **Counterfactual** - *"what breaks if I change X?"*, answered from an induced causal graph at
-  about **7×** fewer tokens than recalling every related note.
+- **Counterfactual** - *"what breaks if I change X?"*, answered from an induced causal graph
+  instead of by recalling every note that mentions the entity.
 
 Every intervention cites the note it was born from, is overridable in one line, and is off by
 default where it could be noisy. All three are on the Python API **and** the MCP server, so they
@@ -71,29 +71,42 @@ work on every agent ([INTEGRATIONS.md](docs/INTEGRATIONS.md)).
 Small samples, run by one person - the point is that the harness is in the repo, the raw results
 are committed, and [every number here resolves to one](research/evidence_manifest.json).
 
+**Most of that corpus was withdrawn in 2026-08, and saying so is the point.** Every claim had been
+stamped with the commit that last touched its *artifact file* - a directory move - rather than the
+commit whose code produced the number. Once each claim was made to name the source files its
+command imports, most of them turned out to describe the engine as it stood at the first release, several review rounds after
+the ranker beneath them had been rewritten. Re-measuring them needs a third-party dataset this repo
+does not ship, the owner's private store, or a paid API, so they are withdrawn rather than
+reprinted. `python tools/check_freshness.py --list-stale` names every one and the gate that blocks
+it, and CI now fails when a published number outlives the code that made it.
+
+What survived re-measurement at HEAD, and what it cost:
+
 | claim | result | evidence |
 |---|---|---|
-| a fired guard changes a real model's output | repeat-error rate **0.36 → 0.05 (−86%)** on DeepSeek (12 tasks × 8 trials) | [LIVE_VALIDATION.md](research/LIVE_VALIDATION.md) |
-| acting vs *always-injecting* the same lesson | same error prevention for **~31×** fewer tokens | [ACTIVE_MEMORY.md](research/ACTIVE_MEMORY.md) |
-| retrieval against the funded leaders | R@5 **0.80** › Mem0 0.76, one shared local embedder | [COMPARISON.md](docs/COMPARISON.md) |
+| acting vs *always-injecting* the same lesson | same error prevention for **31×** fewer memory tokens | [ACTIVE_MEMORY.md](research/ACTIVE_MEMORY.md) |
+| memory-poisoning acceptance attacks | **81%** blocked overall - **100%** of prompt injection, **25%** of plausible-false facts | [POISONING.md](research/POISONING.md) |
+| what being there costs | PreToolUse **98 ms** end to end, and zero context tokens until a guard fires | [BENCHMARKS.md](docs/BENCHMARKS.md) |
 
-On **LongMemEval-oracle** (940 sessions in one store, 500 human-annotated questions, local
-`bge-m3`), with the competitors' own packages installed to run them on the same stand, 2026-07-05:
+The poisoning row is the one to read twice: against the withdrawn first-release artifact, the current
+engine blocks *fewer* false facts, not more. That regression is published here because a project
+whose argument is reproducibility does not get to report only the deltas that flatter it.
+
+The retrieval comparison against the funded leaders stood on the uncommitted dataset, so it is
+withdrawn too:
 
 <!-- claims:head-to-head -->
-| system | R@1 | R@5 |
-|---|---|---|
-| **Nevertwice (calibrated fusion)** | **0.550** | **0.802** |
-| Mem0 | 0.478 | 0.758 |
-| LangMem | 0.426 | 0.692 |
-| A-MEM | 0.428 | 0.692 |
+> **Withdrawn 2026-08.** the LongMemEval-oracle dataset is third-party and not committed (research/data/longmemeval_oracle.json is absent here), and no content hash was recorded when the number was produced, so the run cannot be reproduced or even pinned to a revision
+>
+> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/head_to_head.py` is what re-measures this one.
 <!-- /claims:head-to-head -->
 
-Two caveats we measured rather than hid: the payoff scales with the agent's own capability (memory
-removes the *knowledge* bottleneck, not the reasoning one), and retrieval R@k has stopped
-discriminating between serious systems - which is why the work that matters is after retrieval,
-resolving contradictions at write time, resisting poisoning, forgetting the right things. Those, the
-baseline gates a headline has to clear, and the negative results we deleted rather than shipped:
+Two caveats we measured rather than hid, and which the withdrawal does not touch: the payoff scales
+with the agent's own capability (memory removes the *knowledge* bottleneck, not the reasoning one),
+and retrieval R@k had stopped discriminating between serious systems well before these numbers were
+pulled - which is why the work that matters is after retrieval, resolving contradictions at write
+time, resisting poisoning, forgetting the right things. Those, the baseline gates a headline has to
+clear, and the negative results we deleted rather than shipped:
 [BENCHMARKS.md](docs/BENCHMARKS.md) · [BASELINES.md](research/BASELINES.md) ·
 [WEAKNESSES.md](docs/WEAKNESSES.md) · [the research lab](research/).
 
@@ -142,7 +155,7 @@ With no backend at all, extraction pauses loudly (sessions are kept and retried,
 recall runs on lexical search until an embedder shows up. The five-minute walkthrough is in
 [QUICKSTART.md](QUICKSTART.md); every environment variable is in [CONFIG.md](docs/CONFIG.md).
 
-Contributing: `pip install -e ".[dev]"`, then `python -m pytest -q`. Fifty-eight hermetic suites -
+Contributing: `pip install -e ".[dev]"`, then `python -m pytest -q`. Sixty-five hermetic suites -
 LLMs, embedders, the optional reranker, network and GPU execution are disabled or mocked, and a lint
 fails the build if a script reaches a memory store without declaring which store it means. CI runs
 them on Linux, Windows and macOS across four Python versions.

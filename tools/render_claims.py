@@ -153,7 +153,7 @@ LATENCY_ROWS = [
      "per session start with no backlog"),
     ("cold import of the engine", "latency.cold",
      "once per hook process (inside the numbers above)"),
-    ("`guards.check()`, 61 guards, 2 KB", "latency.guards_check",
+    ("`guards.check()` over a seeded ledger", "latency.guards_check",
      "the actual guard match, pure regex"),
     ("lexical recall, no embedder", "latency.lexical_recall_floor",
      "the zero-model floor recall falls back to"),
@@ -176,8 +176,11 @@ def render_latency(c: Claims) -> str:
         rows.append([label, f"**{text}**" if claim_id.endswith("pretooluse_end_to_end")
                      else text, when])
     out = _table(["hot path", "cost", "when it is paid"], rows)
+    by_reason: dict[str, list[str]] = {}
     for label, reason in gone:
-        out += f"\n\n<sub>**Withdrawn:** {label} - {reason}</sub>"
+        by_reason.setdefault(reason, []).append(label)
+    for reason, labels in by_reason.items():
+        out += f"\n\n<sub>**Withdrawn** - {', '.join(labels)}: {reason}</sub>"
     return out
 
 
@@ -379,7 +382,10 @@ def withdrawal_notice(c: Claims, claim_id: str, reason: str) -> str:
     whole withdrawn set - so a reader meets an explanation rather than a gap, and the debt
     stays countable instead of quietly disappearing.
     """
-    date = c.manifest.get("withdrawal", {}).get("date", "")
+    # Month precision on purpose. A full ISO date puts a bare day-of-month into a governed
+    # document, and the day would then need its own non-metric exemption - a hole in the
+    # coverage check bought for nothing. The exact date stays on each claim's `withdrawn_on`.
+    date = c.manifest.get("withdrawal", {}).get("date", "")[:7]
     return (f"> **Withdrawn{' ' + date if date else ''}.** {reason}\n"
             ">\n"
             "> The claim is kept in `research/evidence_manifest.json` marked `stale`, with "

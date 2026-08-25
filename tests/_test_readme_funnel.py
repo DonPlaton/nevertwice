@@ -49,7 +49,12 @@ ACQUISITION = {
     "the guard firing (the product)": "the repeat is flagged",
     "the corrected action staying clean": "runs clean and no guard fires",
     "the zero-token claim": "zero context tokens until it does",
-    "the measured headline": "86%",
+    # The headline was `86%` - a repeat-error reduction measured through a paid API, withdrawn
+    # by task B8 along with the rest of the corpus it belonged to. The funnel still has to
+    # carry *a* measured result above the fold, so the needle is the one that survived
+    # re-measurement at HEAD, not the one that read best.
+    "the measured headline": "31×",
+    "the withdrawal, stated where the evidence was": "Withdrawn 2026-08",
     "the head-to-head table": "<!-- claims:head-to-head -->",
     "the architecture visual": "docs/architecture.svg",
 }

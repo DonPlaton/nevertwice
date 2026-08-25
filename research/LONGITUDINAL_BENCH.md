@@ -23,20 +23,20 @@ coreset) are measured on, and it emits the implicit-feedback log the bandit lear
 |---|---|---|---|---|---|
 | lexical | 0.641 | 0.934 | 0.991 | 0.788 | 0.842 |
 | semantic | 0.673 | 0.900 | 0.980 | 0.794 | 0.845 |
-| **hybrid (RRF)** | **0.766** | 0.953 | 0.981 | 0.858 | 0.890 |
-| hybrid + recurrence (fixed) | **0.790** | 0.962 | 0.994 | 0.876 | 0.907 |
-| hybrid + recurrence (adaptive) | 0.783 | 0.960 | 0.994 | 0.872 | 0.904 |
-| shipped (+salience) | 0.656 | 0.875 | 0.968 | 0.780 | 0.834 |
+| **hybrid (RRF)** | **0.760** | 0.949 | 0.979 | 0.854 | 0.887 |
+| hybrid + recurrence (fixed) | **0.789** | 0.960 | 0.993 | 0.875 | 0.907 |
+| hybrid + recurrence (adaptive) | 0.777 | 0.958 | 0.993 | 0.869 | 0.902 |
+| shipped (+salience) | 0.648 | 0.859 | 0.964 | 0.770 | 0.827 |
 
-- **Hybrid RRF beats both single signals** (0.766 vs 0.673/0.641) - validates the production
+- **Hybrid RRF beats both single signals** (0.760 vs 0.673/0.641) - validates the production
   fusion on external (not internal-linkage) ground truth.
-- **Recurrence adds +0.023 over recurrence-blind hybrid**, and it is *concentrated where the
+- **Recurrence adds +0.029 over recurrence-blind hybrid**, and it is *concentrated where the
   theory says it should be* - recurrence-aware minus blind, stratified by the target's recurrence:
-  `1: −0.036 · 2-3: −0.019 · 4-7: +0.009 · 8+: +0.044` (monotone). The frequency prior pays off
+  `1: -0.040 · 2-3: -0.017 · 4-7: +0.009 · 8+: +0.046` (monotone). The frequency prior pays off
   for genuinely high-recurrence targets and gently hurts one-offs competing against recurring
   distractors - exactly `P(target) ∝ recurrence`.
-- **Recurrence's value grows with ambiguity** (Δ recall@1 vs σ: `0.3→+0.006, 0.85→+0.031,
-  1.4→+0.032`) - the validation LongMemEval could not give, now with recurrence present.
+- **Recurrence's value grows with ambiguity** (Δ recall@1 vs σ: `0.3→+0.017, 0.85→+0.036,
+  1.4→+0.037`) - the validation LongMemEval could not give, now with recurrence present.
 
 ## Findings (the critic pass) and what was fixed
 

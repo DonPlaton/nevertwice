@@ -1,0 +1,51 @@
+{
+ "platform": "win32",
+ "python": "3.14.4",
+ "commit": "807b817ce2710cb877e1cf6818a9350f8174ac5d",
+ "repeats": 5,
+ "measurements": {
+  "cold_import": {
+   "label": "cold import (guards + engine)",
+   "note": "paid once per hook process",
+   "ms": 26,
+   "median_ms": 27,
+   "max_ms": 38,
+   "repeats": 5
+  },
+  "pretooluse": {
+   "label": "PreToolUse end-to-end",
+   "note": "fires on every tool call; includes interpreter start",
+   "ms": 98,
+   "median_ms": 101,
+   "max_ms": 107,
+   "repeats": 5
+  },
+  "userpromptsubmit": {
+   "label": "UserPromptSubmit end-to-end",
+   "note": "recall per prompt",
+   "ms": 84,
+   "median_ms": 89,
+   "max_ms": 96,
+   "repeats": 5
+  },
+  "sessionstart": {
+   "label": "SessionStart end-to-end (idle)",
+   "note": "no backlog: the LLM probe is gated off",
+   "ms": 84,
+   "median_ms": 88,
+   "max_ms": 92,
+   "repeats": 5
+  },
+  "guards_check": {
+   "label": "guards.check(), 0 guards, 2 KB text",
+   "note": "in-process, pure regex",
+   "ms": 0.0
+  },
+  "lexical_recall_floor": {
+   "label": "lexical recall, 0 notes (no embedder)",
+   "note": "the weak-PC floor",
+   "ms": 0.2
+  }
+ },
+ "load_note": "Each hot path was measured 5 times, and each of those is itself the best of 3 invocations; `ms` is the minimum, with `median_ms` and `max_ms` beside it. The minimum is the least-contended observation, so a busy host can only push these numbers up - which is the direction an honest latency claim should err in. Nothing here pins CPU affinity or waits for an idle stand."
+}

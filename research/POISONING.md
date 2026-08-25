@@ -18,15 +18,25 @@ persistent false "lesson" the hook distils and re-injects into future sessions.*
 
 ## Results - attack-success (poison accepted into active recall) before → after
 
-| attack | before | after (2026-06-17, danger guard + quarantine shipped) |
+Re-measured at HEAD in 2026-08 (`python research/poisoning.py --save`). The table that stood
+here was produced by the first-release engine and had never been re-run against the current one.
+
+| attack | before | after (danger guard + quarantine shipped) |
 |---|---|---|
-| injection | 1.00 | **0.00** (was 0.25 - `_looks_dangerous` now catches the no-injection-shape ".env exfiltration") |
-| false-fact | 1.00 | **0.50** (the dangerous-advice subset - disable TLS, chmod 777 - now caught; truly-plausible facts remain undefendable by form) |
+| injection | 1.00 | **0.00** (`_looks_dangerous` catches the no-injection-shape ".env exfiltration") |
+| false-fact | 1.00 | **0.75** (only the dangerous-advice subset - disable TLS, chmod 777 - is caught) |
 | supersession-abuse | 1.00 | **0.00** (opt-in quarantine) |
 | confidence-spoof | 1.00 | **0.00** (opt-in quarantine) |
 | recurrence-gaming | ×4 recurrence | **×1** |
 
-Overall acceptance attacks blocked: **88%** (precision 0.91, recall 0.83 over the labelled set, up from 0.88/0.58).
+Overall acceptance attacks blocked: **81%** (precision 0.90, recall 0.75 over the labelled set).
+
+**Every number that moved, moved the wrong way.** The false-fact row was published as 0.50 and is
+0.75 now; the overall block rate, the precision and the recall all fell with it, and nothing
+improved. The regression sits entirely in the false-fact family - the one the section below already
+calls this work's honest open problem - and finding it at all is the point of stamping a claim with
+the commit whose code produced it rather than the commit that last touched its file. The previous
+figures are kept in `research/evidence_manifest.json` and in the CHANGELOG.
 
 - **Recurrence-gaming is defeated (×4 → ×1).** The shipped change makes recurrence count
   **distinct contributing sessions** (`sources` set), and write-idempotency already caps one
@@ -44,7 +54,8 @@ Overall acceptance attacks blocked: **88%** (precision 0.91, recall 0.83 over th
   "disable TLS verification") - the 25% the phrase guard let through. It is **negation-gated** so a
   cautionary lesson ("never disable TLS", "don't chmod 777") is not flagged, and verified **0/328
   false-positive** on the live vault, so it ships **on by default** as a hard write-time reject.
-- **Plausible-false-fact is now half-defended (50%, was 0%).** The danger guard catches the
+- **Plausible-false-fact is only a quarter defended (25% at HEAD, 50% when this was first
+  published, 0% before the guard existed).** The danger guard catches the
   *dangerous-advice* subset of false facts (disable TLS, chmod 777). The residual - a
   wrong-but-plausible lesson with ordinary confidence, no injection shape, no dangerous action, and
   no supersession ("store API keys in the committed config", "pip install --break-system-packages

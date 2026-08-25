@@ -129,13 +129,19 @@ def test_allowances_are_still_needed() -> None:
 
 
 def test_comparative_sections_carry_a_date() -> None:
-    """A comparison is only checkable if the reader knows what it was true of and
-    when. Both comparison surfaces must name the run or the survey date."""
+    """A comparison is only checkable if the reader knows what it was true of and when.
+
+    Every comparison surface must name a date. For a live comparison that is the run or
+    survey date; for one that has been pulled it is the withdrawal date, which is the same
+    obligation pointing the other way - an undated withdrawal is as unfalsifiable as an
+    undated claim. Task B8 withdrew the head-to-head retrieval numbers from README and
+    BENCHMARKS, so those two now carry the withdrawal date instead.
+    """
     print("\n- the comparative surfaces are dated -")
     for doc, needles in (
         ("docs/COMPARISON.md", ("2026-07-05", "mid-2026")),
-        ("docs/BENCHMARKS.md", ("2026-07-05",)),
-        ("README.md", ("2026-07-05",)),
+        ("docs/BENCHMARKS.md", ("Withdrawn 2026-08",)),
+        ("README.md", ("Withdrawn 2026-08",)),
     ):
         text = (ROOT / doc).read_text(encoding="utf-8", errors="replace")
         missing = [n for n in needles if n not in text]

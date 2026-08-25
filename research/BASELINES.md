@@ -48,24 +48,19 @@ for the number has not been ruled out, and a reader is entitled to assume it mig
 <!-- claims:baselines-matrix -->
 | headline claim | `no_memory` | `full_history` | `lexical_recall` | `curated_agents_md` | `llm_session_summary` | `linter_or_test` | `curated_haystack` |
 |---|---|---|---|---|---|---|---|
-| `longmem.hybrid.recall_at_5` | n/a | n/a | **beats** | n/a | not compared | n/a | n/a |
-| `live_validation.relative_reduction` | **beats** | not compared | n/a | not compared | not compared | not compared | n/a |
-| `qa.oracle.answer_accuracy` | not compared | not compared | not compared | n/a | not compared | n/a | not compared |
-| `token_ab.distill.ratio` | n/a | **beats** | n/a | not compared | not compared | n/a | **beats** |
-| `token_ab.live_two_arm.input_token_reduction` | n/a | not compared | not compared | not compared | not compared | n/a | **LOSES** |
 | `longitudinal.active_vs_inject_token_ratio` | **beats** | **beats** | n/a | not compared | not compared | not compared | n/a |
 <!-- /claims:baselines-matrix -->
 
 <!-- claims:baselines-summary -->
-6 headline claims x 7 baselines = 42 pairs.
+1 headline claims x 7 baselines = 7 pairs.
 
 | verdict | count | what it means |
 |---|---|---|
-| `beats` | 6 | measured, under matched conditions, and the claim wins |
+| `beats` | 2 | measured, under matched conditions, and the claim wins |
 | `ties` | 0 | measured and within the interval of the baseline |
-| `loses_to` | 1 | measured and the baseline wins - the claim must be narrowed or dropped |
-| `not_compared` | 19 | not measured yet; the claim is provisional against this baseline |
-| `not_applicable` | 16 | the baseline cannot be constructed for this metric; a reason is required |
+| `loses_to` | 0 | measured and the baseline wins - the claim must be narrowed or dropped |
+| `not_compared` | 3 | not measured yet; the claim is provisional against this baseline |
+| `not_applicable` | 2 | the baseline cannot be constructed for this metric; a reason is required |
 <!-- /claims:baselines-summary -->
 
 ## Reading the current state honestly

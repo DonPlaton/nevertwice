@@ -6,6 +6,64 @@ versions are [semantic](https://semver.org). Dates are UTC.
 ## [Unreleased]
 
 ### Added
+- **Every published number now names the commit whose code produced it - and most of them
+  turned out to be describing an engine that no longer exists.**
+
+  All 133 claims in `research/evidence_manifest.json` carried the same commit, `05cfdc96`. That
+  was the commit that last touched the artifact *file*, and it was a directory move. It recorded
+  when a JSON file was relocated, not what the code did when the number was measured. Tasks B1
+  and B2 had closed drift between the documents and the artifacts; this half - drift between the
+  artifacts and the code - was wide open, and the whole published corpus was sitting in it.
+
+  `tools/produced_by.py` resolves each claim's `command` to the repository files it imports,
+  transitively, including the deferred `_sibling("name")` loader that is the *only* path to
+  `nevertwice/rankers.py` - the ranker the retrieval numbers measure appears in no import
+  statement at all. `tools/check_freshness.py` then fails when the last commit to touch any of
+  those files is not an ancestor of the claim's commit, and runs in CI. On first run it failed
+  on **all 133 claims**.
+
+  **Regenerated at HEAD, and the deltas, including every place the current engine scores worse:**
+
+  | claim | published | at HEAD |
+  |---|---|---|
+  | poisoning, acceptance attacks blocked | 88% | **81%** |
+  | poisoning, plausible-false facts blocked | 50% | **25%** |
+  | poisoning, quarantine precision | 0.91 | **0.90** |
+  | poisoning, quarantine recall | 0.83 | **0.75** |
+  | PreToolUse end-to-end | 85 ms | **98 ms** |
+  | UserPromptSubmit end-to-end | 68 ms | **84 ms** |
+  | SessionStart end-to-end, idle | 73 ms | **84 ms** |
+  | cold import of the engine | 25 ms | **26 ms** |
+  | longitudinal bench, hybrid RRF R@1 | 0.766 | **0.760** |
+  | longitudinal bench, shipped ranker R@1 | 0.656 | **0.648** |
+  | active guards vs always-injecting | 31× | 31× - unchanged |
+  | forgetting, coverage gain at a 20% budget | 0.14 | 0.14 - unchanged |
+
+  Not one number improved. The poisoning defence is materially weaker than the artifact claimed:
+  the false-fact family, already this project's stated open problem, is now a quarter defended
+  rather than half. `research/POISONING.md` says so where the old table stood.
+
+  **Withdrawn: 120 of 133 claims.** They cannot be re-measured here - LongMemEval-oracle is
+  third-party and uncommitted with no recorded content hash, the internal tasks were measured on
+  the owner's private vault, and the live-validation and QA numbers need a paid frontier API.
+  Rather than reprint a figure the current code does not produce, each is marked `stale` with its
+  reason and removed from every governed document, where a rendered notice names the gate and the
+  command that would restore it. `python tools/check_freshness.py --list-stale` lists them all.
+  The README's headline retrieval comparison and its −86% repeat-error figure are among them.
+
+  **Two defects surfaced by the re-measurement**, both recorded rather than worked around:
+  `research/latency_bench.py` seeded its store in a subprocess while measuring in-process against
+  the store pinned at import, so its `guards.check()` and lexical-recall rows had been measuring
+  an *empty* store - the label now prints the real count, and both claims are withdrawn. And a
+  single invocation of that bench was never a cost: three consecutive runs on one commit gave 142,
+  185 and 112 ms for the same hot path, so it now repeats the whole measurement and reports the
+  minimum with the median and maximum beside it in `research/latency_bench.json` - the first
+  committed artifact those badge numbers have ever had.
+
+  Withdrawal is enforced, not declared: a withdrawn claim contributes no accounted number, so any
+  document still printing one fails `tests/_test_evidence_manifest.py`, and `tests/_test_freshness.py`
+  turns red if a claim is stamped before the newest code in its own closure, if a closure loses the
+  deferred-import pass, or if a claim is marked stale while still being cited.
 - **The seven boundaries are written down, and checked against what the code passes.**
   Every value crossing a seam here is a plain `dict`, and every reader is defensive about it -
   `n.get("desc", "")`, `(params or {}).get(...)`. That is not paranoia, it is the absence of a
