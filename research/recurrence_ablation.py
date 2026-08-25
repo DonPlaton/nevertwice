@@ -202,6 +202,8 @@ def make_figure(rows, sweep_mid, sigma_mid, path):
         import matplotlib
         matplotlib.use("Agg")
         import matplotlib.pyplot as plt
+        import _figstyle
+        _figstyle.apply()
     except Exception as e:
         print(f"  [figure skipped: matplotlib unavailable - {e}]")
         return None
@@ -213,7 +215,7 @@ def make_figure(rows, sweep_mid, sigma_mid, path):
                  yerr=[r["best_fusion_ci"] for r in rows], marker="s", label="relevance × recurrence (best w)")
     ax1.errorbar(sig, [r["shipped_recur_R@1"] for r in rows],
                  yerr=[r["shipped_recur_ci"] for r in rows], marker="^", label="shipped (_recur_boost)")
-    ax1.plot(sig, [r["recurrence_only_R@1"] for r in rows], "--", color="grey", label="recurrence prior only")
+    ax1.plot(sig, [r["recurrence_only_R@1"] for r in rows], "--", color=_figstyle.NEUTRAL, label="recurrence prior only")
     ax1.set_xlabel("query ambiguity σ (relevance noise)")
     ax1.set_ylabel("recall@1")
     ax1.set_title("Recurrence helps exactly when relevance is ambiguous")
@@ -222,14 +224,14 @@ def make_figure(rows, sweep_mid, sigma_mid, path):
     ws = [w for w, _, _ in sweep_mid]
     ax2.errorbar(ws, [v for _, v, _ in sweep_mid], yerr=[c for _, _, c in sweep_mid], marker="o")
     wbest = max(sweep_mid, key=lambda t: t[1])[0]
-    ax2.axvline(wbest, color="green", ls=":", label=f"w* = {wbest}")
+    ax2.axvline(wbest, color=_figstyle.POSITIVE, ls=":", label=f"w* = {wbest}")
     ax2.set_xlabel("fusion weight  w   (0 = relevance, 1 = recurrence)")
     ax2.set_ylabel("recall@1")
     ax2.set_title(f"Optimal relevance↔recurrence blend (σ = {sigma_mid})")
     ax2.legend(fontsize=8)
     ax2.grid(alpha=0.3)
     fig.tight_layout()
-    fig.savefig(path, dpi=130)
+    _figstyle.save(fig, path, evidence="ranking quality with the recurrence prior ablated, swept over sigma · synthetic store · reproduce: python research/recurrence_ablation.py --save · write-up: research/ABLATION_RESULTS.md")
     plt.close(fig)
     return path
 

@@ -500,6 +500,8 @@ def _figure(lead, strat, curve, sweep, path):
         import matplotlib
         matplotlib.use("Agg")
         import matplotlib.pyplot as plt
+        import _figstyle
+        _figstyle.apply()
     except Exception as e:
         print(f"  [figure skipped: matplotlib unavailable - {e}]")
         return
@@ -528,7 +530,7 @@ def _figure(lead, strat, curve, sweep, path):
     axes[2].legend(fontsize=8)
     axes[2].grid(alpha=0.3)
     fig.tight_layout()
-    fig.savefig(path, dpi=130)
+    _figstyle.save(fig, path, evidence="recall over a growing store, with and without memory · synthetic longitudinal world · reproduce: python research/longitudinal_bench.py --save · write-up: research/LONGITUDINAL_BENCH.md")
     plt.close(fig)
     print(f"  figure → {path}")
 

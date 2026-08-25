@@ -54,7 +54,7 @@ the **ranker**, not an embedder):
 
 ## Results
 
-![ablation](recurrence_ablation.png)
+![Recall at 1 as the recurrence prior is ablated, swept over sigma: the hybrid ranker against relevance-only and against the recurrence prior alone, with the best weight marked. The prior adds little on a young single-user store, which is why it sits off the hot path.](recurrence_ablation.png)
 
 recall@1 (3000×8 seeds; ± half-widths are tight, see `recurrence_ablation.json`).
 The `shipped` column is the live ranker (`m.cosine + m._recur_boost`) **after** the
@@ -187,7 +187,7 @@ value. This companion quantifies the gap on a controlled stream of revised facts
 (365-day project, a fact revised `R` times into `[valid_from, valid_to)` windows;
 1500 facts × 20 point-in-time queries × 6 seeds).
 
-![bitemporal](bitemporal_ablation.png)
+![Point-in-time answer correctness with and without bi-temporal filtering, against the number of times a fact was revised, with the one-over-revisions theoretical curve for comparison. Without the filter, correctness falls as a fact is revised more often.](bitemporal_ablation.png)
 
 | revisions / fact | bi-temporal | use-newest | advantage | use-all (versions returned) |
 |---:|---:|---:|---:|---:|

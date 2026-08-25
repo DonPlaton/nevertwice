@@ -34,6 +34,8 @@ def main():
         import matplotlib
         matplotlib.use("Agg")
         import matplotlib.pyplot as plt
+        import _figstyle
+        _figstyle.apply()
     except Exception as e:
         print(f"[eff_curve skipped: matplotlib unavailable - {e}]")
         return
@@ -49,7 +51,9 @@ def main():
         effp.append(s["eff_project"])
         base.append(s["mean_rate_without"])
     x = list(range(len(labels)))
-    green, blue, grey = "#2ea043", "#1f6feb", "#8b949e"
+    # Okabe-Ito, from the shared style: the memory arm and the no-memory baseline must
+    # stay separable for a colourblind reader, which #2ea043 vs #1f6feb was not.
+    green, blue, grey = (_figstyle.POSITIVE, _figstyle.PALETTE[1], _figstyle.NEUTRAL)
 
     fig, ax = plt.subplots(figsize=(8.6, 5.0))
     ax.plot(x, eff, "-o", color=green, lw=2.4, ms=9, label="eff - overall (memory applied)")
@@ -73,7 +77,7 @@ def main():
     ax.grid(alpha=0.25)
     fig.tight_layout()
     out = HERE / "eff_curve.png"
-    fig.savefig(out, dpi=130)
+    _figstyle.save(fig, out, claim="live_validation.relative_reduction")
     print(f"[eff_curve] wrote {out}")
 
 

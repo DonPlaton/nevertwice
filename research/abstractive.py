@@ -237,9 +237,19 @@ def main():
     if SAVE:
         out = {"D": D, "R": R, "seeds": SEEDS, "noise": NOISE, "op_beta": OP_BETA,
                "by_beta": {f"{b}": r for b, r in by_beta.items()},
-               "by_k": {f"{k}": r for k, r in by_k.items()},
-               "real_candidates": real}
+               "by_k": {f"{k}": r for k, r in by_k.items()}}
         p = HERE / "abstractive.json"
+        # The real-trace count is measured only under --real, against a populated store. A
+        # plain `--save` used to write `null` over it, so re-running the synthetic half - which
+        # is what CI and every contributor does - silently destroyed a measurement nobody could
+        # reproduce without the author's vault. Carry the previous value forward instead.
+        previous = {}
+        if p.is_file():
+            try:
+                previous = json.loads(p.read_text(encoding="utf-8"))
+            except (OSError, ValueError):
+                previous = {}
+        out["real_candidates"] = real if real else previous.get("real_candidates")
         p.write_text(json.dumps(out, ensure_ascii=False, indent=1), encoding="utf-8")
         print(f"\n  saved → {p}")
         try:
@@ -254,6 +264,8 @@ def _figure(by_beta, by_k, path):
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
+    import _figstyle
+    _figstyle.apply()
     fig, (a1, a2) = plt.subplots(1, 2, figsize=(11, 4))
     betas = sorted(by_beta)
     a1.plot(betas, [by_beta[b]["cos_epi"][0] for b in betas], "o-", label="mean episode")
@@ -261,10 +273,12 @@ def _figure(by_beta, by_k, path):
     a1.set_xlabel("context strength β"); a1.set_ylabel("cosine to true rule")
     a1.set_title("Rule recovery (denoising)"); a1.legend(); a1.grid(alpha=0.3)
     ks = sorted(by_k)
-    a2.plot(ks, [by_k[k]["cos_prin"][0] - by_k[k]["cos_epi"][0] for k in ks], "d-", color="green")
+    a2.plot(ks, [by_k[k]["cos_prin"][0] - by_k[k]["cos_epi"][0] for k in ks], "d-", color=_figstyle.POSITIVE)
     a2.set_xlabel("cluster size K"); a2.set_ylabel("recovery gain (principle − episode)")
     a2.set_title("Gain grows with K (variance reduction ~1/√K)"); a2.grid(alpha=0.3)
-    fig.tight_layout(); fig.savefig(path, dpi=130); plt.close(fig)
+    fig.tight_layout()
+    _figstyle.save(fig, path, evidence="abstractive consolidation vs the specific note · recall@3 · synthetic study · reproduce: python research/abstractive.py --save · write-up: research/ABSTRACTIVE.md")
+    plt.close(fig)
 
 
 if __name__ == "__main__":

@@ -30,12 +30,7 @@ python install.py               # native Claude Code wiring; everything else via
 
 **The whole product, in four beats** - `python examples/guard_demo.py`, no model, no key, no network:
 
-```text
-1 session A  mistake recorded      mistake-sql-built-by-fstring
-2 session A  guard distilled       execute\s*\(\s*f["']
-3 session B  repeat flagged        past mistake: Never build SQL by f-string - pass values as query parameters.
-4 session B  correction clean      no guard fires
-```
+<img src="docs/never-twice.svg" alt="Four frames. In session A the mistake is recorded as one Markdown note under git, named mistake-sql-built-by-fstring. Still in session A, a guard is distilled from it into a ledger rather than into your context. In a later session B the repeat is flagged - the guard fires with a one-line warning, and nothing was spent on context until that line. Then the corrected action, using a query parameter, runs clean and no guard fires, so this is a warning and not a blanket block." width="880">
 
 <sub>Beat 3 is the product: the lesson lives in a JSON ledger, **not** in your context, so it costs
 zero tokens until the moment it fires. `--check` prints that transcript byte-identically on three
@@ -104,24 +99,10 @@ baseline gates a headline has to clear, and the negative results we deleted rath
 
 ## How it works
 
-```text
-  your session (any agent)
-        │  Claude Code hook  ·  MCP call  ·  ingest.py  ·  watch daemon
-        ▼
-  extract → mistakes · patterns · decisions     (local Ollama, or one cloud key; secrets redacted)
-        │  + a per-project "card" (status · stack · open gotchas · decisions)
-        │  + local embeddings (bge-m3, multilingual)   + git auto-commit
-        ▼
-  Markdown + Git store   (open in Obsidian if you like)
-        │  SessionStart     → inject the project card and the relevant lessons
-        │  UserPromptSubmit → task-aware recall by the prompt text
-        │  PreToolUse       → a guard fires before the edit lands   ← 0 tokens until here
-        ▼
-              the agent recollects, and does not repeat itself
-```
+<p align="center"><img src="docs/architecture.svg" alt="Two lanes. Write time, left to right: your session in any agent; capture through a hook, an MCP call, the watch daemon or ingest; distil into mistakes, patterns and decisions; store as Markdown under git that you own. Read time: the same store; retrieve by semantic and lexical search behind a calibrated abstention gate; decide against a token budget, which may abstain; act. Act is the intervention point, where a guard fires, anticipation warns, or a counterfactual is answered. Capture, decide and act cost no context tokens until something fires, and every stage except act stays on your machine by default." width="880"></p>
 
-Your agent's memory is a folder of Markdown notes in a git repo, and you own every byte: open it in
-Obsidian, grep it, diff it, `git pull` it to another machine, delete a note you disagree with.
+Your agent's memory is a folder of Markdown notes in a git repo, and you own every byte: open it
+in Obsidian, grep it, diff it, `git pull` it to another machine, delete a note you disagree with.
 Recall is hybrid - semantic over local embeddings, fused with lexical, behind a calibrated
 abstention gate, so a nonsense query returns *"no confident match"* rather than a confident wrong
 answer. A newer lesson that contradicts an older one retires it at write time.

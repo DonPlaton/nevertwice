@@ -191,6 +191,8 @@ def _figure(M, path):
         import matplotlib
         matplotlib.use("Agg")
         import matplotlib.pyplot as plt
+        import _figstyle
+        _figstyle.apply()
     except Exception as e:
         print(f"  [figure skipped: matplotlib unavailable - {e}]")
         return
@@ -207,7 +209,7 @@ def _figure(M, path):
     ax.legend(fontsize=8)
     ax.grid(alpha=0.3, axis="y")
     fig.tight_layout()
-    fig.savefig(path, dpi=130)
+    _figstyle.save(fig, path, evidence="salience of a rare-but-costly event against frequency-only ranking · synthetic store · reproduce: python research/rare_event.py --save · write-up: research/RARE_EVENT.md")
     plt.close(fig)
     print(f"  figure → {path}")
 

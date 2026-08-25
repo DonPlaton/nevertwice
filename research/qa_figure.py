@@ -36,6 +36,8 @@ def main():
         import matplotlib
         matplotlib.use("Agg")
         import matplotlib.pyplot as plt
+        import _figstyle
+        _figstyle.apply()
     except Exception as e:
         print(f"[qa_figure skipped: matplotlib unavailable - {e}]")
         return
@@ -56,7 +58,9 @@ def main():
     orc_v = [orc.get(t, {}).get("acc", 0) for t in QTYPES]
     ret_v = [ret.get(t, {}).get("acc", 0) for t in QTYPES]
 
-    green, grey = "#2ea043", "#8b949e"
+    # Okabe-Ito, from the shared style. The two bar series here are the whole comparison, so
+    # they have to stay separable for a colourblind reader; #2ea043 against a mid grey was not.
+    green, grey = _figstyle.POSITIVE, _figstyle.NEUTRAL
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 4.6))
 
     # left - monotone climb, memanto headline as a reference line
@@ -91,7 +95,7 @@ def main():
                  fontsize=12, fontweight="bold")
     fig.tight_layout(rect=(0, 0, 1, 0.96))
     out = HERE / "qa_accuracy.png"
-    fig.savefig(out, dpi=130)
+    _figstyle.save(fig, out, claim="qa.oracle.answer_accuracy")
     print(f"[qa_figure] wrote {out}")
 
 

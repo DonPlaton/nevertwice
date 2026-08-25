@@ -6,6 +6,24 @@ versions are [semantic](https://semver.org). Dates are UTC.
 ## [Unreleased]
 
 ### Added
+- **One visual system, and no figure without its provenance.** Eleven benches each called
+  `fig.savefig(path, dpi=130)` with default Matplotlib styling: a palette that is not
+  colourblind-safe, several charts encoding pass/fail in green against red alone, raster only
+  at 130 dpi, and no sample size, dataset, model or command anywhere on the image - so a chart
+  that travelled past its page arrived with no way back to what produced it.
+
+  `research/_figstyle.py` is now the only place a figure is written. It applies the Okabe-Ito
+  palette, writes **SVG beside a 2x PNG**, and **refuses to save a figure that carries no
+  evidence line** - either a manifest claim id, which renders the same footer
+  `tools/render_claims.py --footer` produces, or a written line naming the dataset and the
+  command. All eleven figures were re-rendered through it.
+- **Two generated diagrams.** `tools/make_diagrams.py` emits `docs/architecture.svg` - write
+  time and read time as separate lanes, with the stages that cost nothing in context and the
+  stages that never leave the machine marked on the stage rather than left to the prose, and
+  the intervention point called out once - and `docs/never-twice.svg`, the four beats
+  `examples/guard_demo.py --check` prints. Both carry a `<title>` and a `<desc>` that describe
+  the whole diagram in words, and CI fails if either drifts from the description that produced
+  it.
 - **A stranger can wire their agent up without asking.** `docs/AGENT_CONFIGS.md` carries the
   block to paste for Claude Code, Cursor, Codex CLI, Claude Desktop and Zed, plus how to tell
   whether it took - the failure mode being a host that shows no error, just no tools.

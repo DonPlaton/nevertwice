@@ -47,7 +47,7 @@ mid-tier open *reasoning* reader. The single-session categories are at 0.96-1.00
 remains below 1.0 is reasoning difficulty (temporal date arithmetic 0.57, cross-session
 synthesis 0.81), where the *reader model* is the limiter, not the memory.
 
-![QA accuracy: reader sweep + per-type](qa_accuracy.png)
+![Left: end-to-end answer accuracy on LongMemEval-oracle as only the reader changes, with the memory held fixed, rising across four models toward a closed-engine reference line. Right: accuracy by question type, oracle context against retrieval from the global pool, showing where the remaining work is.](qa_accuracy.png)
 
 *Left: oracle answer-accuracy climbs monotonically as the reader is upgraded with the memory
 held fixed (the proof the store is not the bottleneck), against memanto's 0.898 reference.

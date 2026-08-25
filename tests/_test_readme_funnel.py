@@ -46,12 +46,12 @@ HEADING = re.compile(r"^#+\s+(.*)$", re.M)
 ACQUISITION = {
     "the install command": "pip install nevertwice",
     "the demo entry point": "examples/guard_demo.py",
-    "the guard firing (the product)": "repeat flagged",
-    "the corrected action staying clean": "correction clean",
+    "the guard firing (the product)": "the repeat is flagged",
+    "the corrected action staying clean": "runs clean and no guard fires",
     "the zero-token claim": "zero context tokens until it does",
     "the measured headline": "86%",
     "the head-to-head table": "<!-- claims:head-to-head -->",
-    "the architecture visual": "the agent recollects, and does not repeat itself",
+    "the architecture visual": "docs/architecture.svg",
 }
 
 # Topic that left the README -> (the document it moved to, a phrase proving it arrived).

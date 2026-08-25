@@ -74,7 +74,7 @@ We swept **four** models of increasing capability - a full eff-vs-capability cur
 | `qwen2.5:7b` | 0.396 | 0.85 | **0.78** |
 | `deepseek-chat` | 0.365 | **0.88** | **0.79** |
 
-![eff vs capability](eff_curve.png)
+![Memory's measured effect against agent capability, from a 3B local model to a frontier API. The overall effect and the project-specific-knowledge effect both rise with the reader, while the no-memory base error rate stays roughly flat - memory removes the knowledge bottleneck, not the reasoning one.](eff_curve.png)
 
 *Regenerate: `python research/eff_curve_figure.py`.*
 

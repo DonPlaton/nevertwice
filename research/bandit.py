@@ -249,6 +249,8 @@ def _figure(bc, hc, rc, oc, bandit_c, path):
         import matplotlib
         matplotlib.use("Agg")
         import matplotlib.pyplot as plt
+        import _figstyle
+        _figstyle.apply()
     except Exception as e:
         print(f"  [figure skipped: matplotlib unavailable - {e}]")
         return
@@ -257,7 +259,7 @@ def _figure(bc, hc, rc, oc, bandit_c, path):
     ax1.plot(x, bc, marker="o", label="bandit (online)")
     ax1.plot(x, hc, marker="s", label="heuristic (static)")
     ax1.plot(x, rc, marker="^", label="relevance-only (static)")
-    ax1.plot(x, oc, "--", color="grey", label="oracle θ*")
+    ax1.plot(x, oc, "--", color=_figstyle.NEUTRAL, label="oracle θ*")
     ax1.set_xlabel("timeline bin")
     ax1.set_ylabel(f"recall-utility@{K_METRIC}")
     ax1.set_title("Memory that learns: bandit climbs toward the optimum")
@@ -270,7 +272,7 @@ def _figure(bc, hc, rc, oc, bandit_c, path):
     ax2.set_title("Learned weights converge to the offline optimum")
     ax2.grid(alpha=0.3)
     fig.tight_layout()
-    fig.savefig(path, dpi=130)
+    _figstyle.save(fig, path, evidence="online-ranker regret against a fixed policy · synthetic arms · reproduce: python research/bandit.py --save · write-up: research/BANDIT.md")
     plt.close(fig)
     print(f"  figure → {path}")
 

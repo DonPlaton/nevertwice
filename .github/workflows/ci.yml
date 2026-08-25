@@ -78,6 +78,10 @@ jobs:
         # it as its own step means a stale table is named in the CI summary rather than
         # buried in one suite's output.
         run: python tools/render_claims.py
+      - name: The published diagrams match their description
+        # Both SVGs are generated from tools/make_diagrams.py, so a diagram cannot drift from
+        # what the system does without the file that describes it drifting first.
+        run: python tools/make_diagrams.py
       - name: Comparison document matches its committed snapshot
         # Offline: --fetch is the only mode that touches the network, and the snapshot
         # it writes is committed precisely so CI never depends on the GitHub API.

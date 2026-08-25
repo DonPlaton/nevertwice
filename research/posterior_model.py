@@ -285,6 +285,8 @@ def _figure(w, loo, pred, emp, cnt, path):
         import matplotlib
         matplotlib.use("Agg")
         import matplotlib.pyplot as plt
+        import _figstyle
+        _figstyle.apply()
     except Exception as e:
         print(f"  [figure skipped: matplotlib unavailable - {e}]")
         return
@@ -302,7 +304,7 @@ def _figure(w, loo, pred, emp, cnt, path):
     axes[1].set_ylabel("recall@1 lost when removed")
     axes[1].set_title("Per-prior contribution (leave-one-out)")
     axes[1].grid(alpha=0.3, axis="y")
-    axes[2].plot([0, 1], [0, 1], "--", color="grey", label="ideal")
+    axes[2].plot([0, 1], [0, 1], "--", color=_figstyle.NEUTRAL, label="ideal")
     sel = [i for i, c in enumerate(cnt) if c > 0]
     axes[2].plot([pred[i] for i in sel], [emp[i] for i in sel], marker="o", label="model")
     axes[2].set_xlabel("predicted P(target)")
@@ -311,7 +313,7 @@ def _figure(w, loo, pred, emp, cnt, path):
     axes[2].legend(fontsize=8)
     axes[2].grid(alpha=0.3)
     fig.tight_layout()
-    fig.savefig(path, dpi=130)
+    _figstyle.save(fig, path, evidence="calibrated-posterior salience vs the raw recurrence count · synthetic store · reproduce: python research/posterior_model.py --save · write-up: research/POSTERIOR_MODEL.md")
     plt.close(fig)
     print(f"  figure → {path}")
 

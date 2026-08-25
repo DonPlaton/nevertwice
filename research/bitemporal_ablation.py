@@ -120,6 +120,8 @@ def make_figure(by_rev, by_age, path):
         import matplotlib
         matplotlib.use("Agg")
         import matplotlib.pyplot as plt
+        import _figstyle
+        _figstyle.apply()
     except Exception as e:
         print(f"  [figure skipped: {e}]")
         return None
@@ -127,7 +129,7 @@ def make_figure(by_rev, by_age, path):
     rev = [r["revisions"] for r in by_rev]
     ax1.plot(rev, [r["bitemporal_acc"] for r in by_rev], "o-", label="bi-temporal")
     ax1.plot(rev, [r["newest_acc"] for r in by_rev], "s-", label="use-newest")
-    ax1.plot(rev, [1.0 / r for r in rev], ":", color="grey", label="1 / revisions (theory)")
+    ax1.plot(rev, [1.0 / r for r in rev], ":", color=_figstyle.NEUTRAL, label="1 / revisions (theory)")
     ax1.set_xlabel("revisions per fact")
     ax1.set_ylabel("point-in-time accuracy")
     ax1.set_title("use-newest decays as ~1/revisions; bi-temporal stays exact")
@@ -143,7 +145,7 @@ def make_figure(by_rev, by_age, path):
     ax2.grid(alpha=0.3)
     ax2.tick_params(axis="x", labelsize=7)
     fig.tight_layout()
-    fig.savefig(path, dpi=130)
+    _figstyle.save(fig, path, evidence="point-in-time answer correctness with and without bi-temporal filtering · synthetic timeline · reproduce: python research/bitemporal_ablation.py --save")
     plt.close(fig)
     return path
 

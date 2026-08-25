@@ -222,6 +222,8 @@ def _figure(agg, full, path):
         import matplotlib
         matplotlib.use("Agg")
         import matplotlib.pyplot as plt
+        import _figstyle
+        _figstyle.apply()
     except Exception as e:
         print(f"  [figure skipped: matplotlib unavailable - {e}]")
         return
@@ -229,14 +231,14 @@ def _figure(agg, full, path):
     for meth, mark in (("coreset", "o"), ("salience", "s"), ("recency", "^"), ("random", "x")):
         ax.errorbar(BUDGETS, [_ci(agg[meth][b]["uniform"])[0] for b in BUDGETS],
                     yerr=[_ci(agg[meth][b]["uniform"])[1] for b in BUDGETS], marker=mark, label=meth)
-    ax.axhline(full["uniform"], ls="--", color="grey", label="keep-all")
+    ax.axhline(full["uniform"], ls="--", color=_figstyle.NEUTRAL, label="keep-all")
     ax.set_xlabel("budget (fraction of store kept)")
     ax.set_ylabel(f"UNIFORM-over-topics recall@{KQ}")
     ax.set_title("Submodular coreset preserves long-tail recall under a budget")
     ax.legend(fontsize=8)
     ax.grid(alpha=0.3)
     fig.tight_layout()
-    fig.savefig(path, dpi=130)
+    _figstyle.save(fig, path, evidence="topic coverage retained per token at a 20% budget, submodular coreset vs salience and recency · synthetic store · reproduce: python research/forgetting.py --save · write-up: research/FORGETTING.md")
     plt.close(fig)
     print(f"  figure → {path}")
 
