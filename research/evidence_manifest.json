@@ -456,7 +456,22 @@
         "README.md",
         "docs/BENCHMARKS.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/longmem_eval.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/_rerank.py",
+        "research/_xreranker.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "longmem.semantic.recall_at_5",
@@ -483,7 +498,22 @@
         "README.md",
         "docs/BENCHMARKS.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/longmem_eval.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/_rerank.py",
+        "research/_xreranker.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "longmem.semantic.recall_at_10",
@@ -510,7 +540,22 @@
         "README.md",
         "docs/BENCHMARKS.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/longmem_eval.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/_rerank.py",
+        "research/_xreranker.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "longmem.semantic.mrr",
@@ -533,7 +578,22 @@
         "README.md",
         "docs/BENCHMARKS.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/longmem_eval.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/_rerank.py",
+        "research/_xreranker.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "longmem.lexical.recall_at_1",
@@ -560,7 +620,22 @@
         "README.md",
         "docs/BENCHMARKS.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/longmem_eval.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/_rerank.py",
+        "research/_xreranker.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "longmem.lexical.recall_at_5",
@@ -587,7 +662,22 @@
         "README.md",
         "docs/BENCHMARKS.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/longmem_eval.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/_rerank.py",
+        "research/_xreranker.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "longmem.lexical.recall_at_10",
@@ -614,7 +704,22 @@
         "README.md",
         "docs/BENCHMARKS.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/longmem_eval.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/_rerank.py",
+        "research/_xreranker.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "longmem.lexical.mrr",
@@ -637,7 +742,22 @@
         "README.md",
         "docs/BENCHMARKS.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/longmem_eval.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/_rerank.py",
+        "research/_xreranker.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "longmem.hybrid.recall_at_1",
@@ -664,7 +784,22 @@
         "README.md",
         "docs/BENCHMARKS.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/longmem_eval.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/_rerank.py",
+        "research/_xreranker.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "longmem.hybrid.recall_at_5",
@@ -723,7 +858,22 @@
           "verdict": "not_applicable",
           "note": "no static check retrieves past sessions, so there is no linter arm to construct for a retrieval metric"
         }
-      }
+      },
+      "produced_by": [
+        "research/longmem_eval.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/_rerank.py",
+        "research/_xreranker.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "longmem.hybrid.recall_at_10",
@@ -750,7 +900,22 @@
         "README.md",
         "docs/BENCHMARKS.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/longmem_eval.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/_rerank.py",
+        "research/_xreranker.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "longmem.hybrid.mrr",
@@ -773,7 +938,22 @@
         "README.md",
         "docs/BENCHMARKS.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/longmem_eval.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/_rerank.py",
+        "research/_xreranker.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "longmem.hybrid_xrerank.recall_at_1",
@@ -800,7 +980,22 @@
         "README.md",
         "docs/BENCHMARKS.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/longmem_eval.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/_rerank.py",
+        "research/_xreranker.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "longmem.hybrid_xrerank.recall_at_5",
@@ -827,7 +1022,22 @@
         "README.md",
         "docs/BENCHMARKS.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/longmem_eval.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/_rerank.py",
+        "research/_xreranker.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "longmem.hybrid_xrerank.recall_at_10",
@@ -854,7 +1064,22 @@
         "README.md",
         "docs/BENCHMARKS.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/longmem_eval.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/_rerank.py",
+        "research/_xreranker.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "longmem.hybrid_xrerank.mrr",
@@ -877,7 +1102,22 @@
         "README.md",
         "docs/BENCHMARKS.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/longmem_eval.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/_rerank.py",
+        "research/_xreranker.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "longmem.dataset.sessions",
@@ -898,7 +1138,22 @@
         "README.md",
         "docs/BENCHMARKS.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/longmem_eval.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/_rerank.py",
+        "research/_xreranker.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "longmem.dataset.questions",
@@ -919,7 +1174,22 @@
         "README.md",
         "docs/BENCHMARKS.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/longmem_eval.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/_rerank.py",
+        "research/_xreranker.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "longmem.rrf_old_default.recall_at_5",
@@ -947,7 +1217,22 @@
         "README.md",
         "docs/BENCHMARKS.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/longmem_eval.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/_rerank.py",
+        "research/_xreranker.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "head_to_head.nevertwice.recall_at_1",
@@ -975,7 +1260,23 @@
         "README.md",
         "docs/BENCHMARKS.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/head_to_head.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/_rerank.py",
+        "research/_xreranker.py",
+        "research/longmem_eval.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "head_to_head.nevertwice.recall_at_5",
@@ -1003,7 +1304,23 @@
         "README.md",
         "docs/BENCHMARKS.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/head_to_head.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/_rerank.py",
+        "research/_xreranker.py",
+        "research/longmem_eval.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "head_to_head.mem0.recall_at_1",
@@ -1031,7 +1348,23 @@
         "README.md",
         "docs/BENCHMARKS.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/head_to_head.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/_rerank.py",
+        "research/_xreranker.py",
+        "research/longmem_eval.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "head_to_head.mem0.recall_at_5",
@@ -1059,7 +1392,23 @@
         "README.md",
         "docs/BENCHMARKS.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/head_to_head.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/_rerank.py",
+        "research/_xreranker.py",
+        "research/longmem_eval.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "head_to_head.langmem.recall_at_1",
@@ -1087,7 +1436,23 @@
         "README.md",
         "docs/BENCHMARKS.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/head_to_head.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/_rerank.py",
+        "research/_xreranker.py",
+        "research/longmem_eval.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "head_to_head.langmem.recall_at_5",
@@ -1115,7 +1480,23 @@
         "README.md",
         "docs/BENCHMARKS.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/head_to_head.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/_rerank.py",
+        "research/_xreranker.py",
+        "research/longmem_eval.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "head_to_head.amem.recall_at_1",
@@ -1143,7 +1524,23 @@
         "README.md",
         "docs/BENCHMARKS.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/head_to_head.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/_rerank.py",
+        "research/_xreranker.py",
+        "research/longmem_eval.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "head_to_head.amem.recall_at_5",
@@ -1171,7 +1568,23 @@
         "README.md",
         "docs/BENCHMARKS.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/head_to_head.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/_rerank.py",
+        "research/_xreranker.py",
+        "research/longmem_eval.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "live_validation.rate_without_memory",
@@ -1198,7 +1611,21 @@
       "cited_in": [
         "README.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/live_validation.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/longitudinal_improvement.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "live_validation.rate_with_memory",
@@ -1224,7 +1651,21 @@
       "cited_in": [
         "README.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/live_validation.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/longitudinal_improvement.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "live_validation.relative_reduction",
@@ -1280,7 +1721,21 @@
           "verdict": "not_applicable",
           "note": "a pitfall rate on coding micro-tasks has no haystack to curate; the task prompt is the whole context"
         }
-      }
+      },
+      "produced_by": [
+        "research/live_validation.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/longitudinal_improvement.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "live_validation.measured_eff",
@@ -1302,7 +1757,21 @@
       "cited_in": [
         "README.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/live_validation.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/longitudinal_improvement.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "live_validation.tasks",
@@ -1323,7 +1792,21 @@
       "cited_in": [
         "README.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/live_validation.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/longitudinal_improvement.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "live_validation.trials",
@@ -1343,7 +1826,21 @@
       "cited_in": [
         "README.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/live_validation.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/longitudinal_improvement.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "qa.oracle.answer_accuracy",
@@ -1399,7 +1896,23 @@
           "verdict": "not_applicable",
           "note": "no static check answers open questions about a conversation history"
         }
-      }
+      },
+      "produced_by": [
+        "research/qa_eval.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/_rerank.py",
+        "research/_xreranker.py",
+        "research/longmem_eval.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "poisoning.block_rate",
@@ -1422,7 +1935,20 @@
       "cited_in": [
         "README.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/poisoning.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "poisoning.precision",
@@ -1442,7 +1968,20 @@
       "cited_in": [
         "README.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/poisoning.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "poisoning.injection_blocked",
@@ -1464,7 +2003,20 @@
       "cited_in": [
         "README.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/poisoning.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "poisoning.false_fact_blocked",
@@ -1486,7 +2038,20 @@
       "cited_in": [
         "README.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/poisoning.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "forgetting.coverage_gain_at_20pct",
@@ -1510,7 +2075,26 @@
       "cited_in": [
         "README.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/forgetting.py",
+        "nevertwice/build_user_model.py",
+        "nevertwice/config.py",
+        "nevertwice/consolidate_memory.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/_common.py",
+        "research/_figstyle.py",
+        "research/longitudinal_bench.py",
+        "sandbox_guard.py",
+        "tools/render_claims.py"
+      ]
     },
     {
       "id": "consolidation.recall_drop",
@@ -1533,7 +2117,20 @@
       "cited_in": [
         "README.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/consolidation_eval.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "token_ab.full_history_tokens",
@@ -1555,7 +2152,23 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/token_ab.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/_rerank.py",
+        "research/_xreranker.py",
+        "research/longmem_eval.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "token_ab.raw.k3.recall_at_k",
@@ -1581,7 +2194,23 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/token_ab.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/_rerank.py",
+        "research/_xreranker.py",
+        "research/longmem_eval.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "token_ab.raw.k3.mean_topk_tok",
@@ -1603,7 +2232,23 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/token_ab.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/_rerank.py",
+        "research/_xreranker.py",
+        "research/longmem_eval.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "token_ab.raw.k3.net_vs_curated_haystack_tok",
@@ -1626,7 +2271,23 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/token_ab.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/_rerank.py",
+        "research/_xreranker.py",
+        "research/longmem_eval.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "token_ab.raw.k3.net_vs_full_history_tok",
@@ -1648,7 +2309,23 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/token_ab.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/_rerank.py",
+        "research/_xreranker.py",
+        "research/longmem_eval.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "token_ab.raw.k5.recall_at_k",
@@ -1674,7 +2351,23 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/token_ab.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/_rerank.py",
+        "research/_xreranker.py",
+        "research/longmem_eval.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "token_ab.raw.k5.mean_topk_tok",
@@ -1696,7 +2389,23 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/token_ab.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/_rerank.py",
+        "research/_xreranker.py",
+        "research/longmem_eval.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "token_ab.raw.k5.net_vs_curated_haystack_tok",
@@ -1719,7 +2428,23 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/token_ab.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/_rerank.py",
+        "research/_xreranker.py",
+        "research/longmem_eval.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "token_ab.raw.k5.net_vs_full_history_tok",
@@ -1741,7 +2466,23 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/token_ab.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/_rerank.py",
+        "research/_xreranker.py",
+        "research/longmem_eval.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "token_ab.raw.k10.recall_at_k",
@@ -1767,7 +2508,23 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/token_ab.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/_rerank.py",
+        "research/_xreranker.py",
+        "research/longmem_eval.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "token_ab.raw.k10.mean_topk_tok",
@@ -1789,7 +2546,23 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/token_ab.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/_rerank.py",
+        "research/_xreranker.py",
+        "research/longmem_eval.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "token_ab.raw.k10.net_vs_curated_haystack_tok",
@@ -1812,7 +2585,23 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/token_ab.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/_rerank.py",
+        "research/_xreranker.py",
+        "research/longmem_eval.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "token_ab.raw.k10.net_vs_full_history_tok",
@@ -1834,7 +2623,23 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/token_ab.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/_rerank.py",
+        "research/_xreranker.py",
+        "research/longmem_eval.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "token_ab.distill.ratio",
@@ -1888,7 +2693,23 @@
           "verdict": "not_applicable",
           "note": "no static check compresses a session transcript"
         }
-      }
+      },
+      "produced_by": [
+        "research/token_ab.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/_rerank.py",
+        "research/_xreranker.py",
+        "research/longmem_eval.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "token_ab.distill.raw_tok_total",
@@ -1909,7 +2730,23 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/token_ab.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/_rerank.py",
+        "research/_xreranker.py",
+        "research/longmem_eval.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "token_ab.distill.distilled_tok_total",
@@ -1930,7 +2767,23 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/token_ab.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/_rerank.py",
+        "research/_xreranker.py",
+        "research/longmem_eval.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "token_ab.distill.questions",
@@ -1950,7 +2803,23 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/token_ab.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/_rerank.py",
+        "research/_xreranker.py",
+        "research/longmem_eval.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "token_ab.distill.distilled_sessions",
@@ -1970,7 +2839,23 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/token_ab.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/_rerank.py",
+        "research/_xreranker.py",
+        "research/longmem_eval.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "token_ab.distill.mean_curated_haystack_tok",
@@ -1991,7 +2876,23 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/token_ab.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/_rerank.py",
+        "research/_xreranker.py",
+        "research/longmem_eval.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "token_ab.distill.k3.recall_at_k",
@@ -2017,7 +2918,23 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/token_ab.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/_rerank.py",
+        "research/_xreranker.py",
+        "research/longmem_eval.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "token_ab.distill.k3.raw_topk_tok",
@@ -2039,7 +2956,23 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/token_ab.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/_rerank.py",
+        "research/_xreranker.py",
+        "research/longmem_eval.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "token_ab.distill.k3.distilled_topk_tok",
@@ -2060,7 +2993,23 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/token_ab.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/_rerank.py",
+        "research/_xreranker.py",
+        "research/longmem_eval.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "token_ab.distill.k3.net_raw_vs_curated",
@@ -2083,7 +3032,23 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/token_ab.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/_rerank.py",
+        "research/_xreranker.py",
+        "research/longmem_eval.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "token_ab.distill.k3.net_distilled_vs_curated",
@@ -2105,7 +3070,23 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/token_ab.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/_rerank.py",
+        "research/_xreranker.py",
+        "research/longmem_eval.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "token_ab.distill.k5.recall_at_k",
@@ -2131,7 +3112,23 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/token_ab.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/_rerank.py",
+        "research/_xreranker.py",
+        "research/longmem_eval.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "token_ab.distill.k5.raw_topk_tok",
@@ -2153,7 +3150,23 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/token_ab.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/_rerank.py",
+        "research/_xreranker.py",
+        "research/longmem_eval.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "token_ab.distill.k5.distilled_topk_tok",
@@ -2174,7 +3187,23 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/token_ab.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/_rerank.py",
+        "research/_xreranker.py",
+        "research/longmem_eval.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "token_ab.distill.k5.net_raw_vs_curated",
@@ -2197,7 +3226,23 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/token_ab.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/_rerank.py",
+        "research/_xreranker.py",
+        "research/longmem_eval.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "token_ab.distill.k5.net_distilled_vs_curated",
@@ -2219,7 +3264,23 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/token_ab.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/_rerank.py",
+        "research/_xreranker.py",
+        "research/longmem_eval.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "token_ab.distill.k10.recall_at_k",
@@ -2245,7 +3306,23 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/token_ab.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/_rerank.py",
+        "research/_xreranker.py",
+        "research/longmem_eval.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "token_ab.distill.k10.raw_topk_tok",
@@ -2267,7 +3344,23 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/token_ab.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/_rerank.py",
+        "research/_xreranker.py",
+        "research/longmem_eval.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "token_ab.distill.k10.distilled_topk_tok",
@@ -2289,7 +3382,23 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/token_ab.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/_rerank.py",
+        "research/_xreranker.py",
+        "research/longmem_eval.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "token_ab.distill.k10.net_raw_vs_curated",
@@ -2312,7 +3421,23 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/token_ab.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/_rerank.py",
+        "research/_xreranker.py",
+        "research/longmem_eval.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "token_ab.distill.k10.net_distilled_vs_curated",
@@ -2334,7 +3459,23 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/token_ab.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/_rerank.py",
+        "research/_xreranker.py",
+        "research/longmem_eval.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "token_ab.live_two_arm.mean_prompt_tok_no_memory",
@@ -2356,7 +3497,23 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/token_ab.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/_rerank.py",
+        "research/_xreranker.py",
+        "research/longmem_eval.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "token_ab.live_two_arm.mean_prompt_tok_with_memory",
@@ -2377,7 +3534,23 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/token_ab.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/_rerank.py",
+        "research/_xreranker.py",
+        "research/longmem_eval.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "token_ab.live_two_arm.input_token_reduction",
@@ -2432,7 +3605,23 @@
           "verdict": "not_applicable",
           "note": "no static check answers open questions about a conversation history"
         }
-      }
+      },
+      "produced_by": [
+        "research/token_ab.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/_rerank.py",
+        "research/_xreranker.py",
+        "research/longmem_eval.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "token_ab.live_two_arm.answer_match_no_memory",
@@ -2455,7 +3644,23 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/token_ab.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/_rerank.py",
+        "research/_xreranker.py",
+        "research/longmem_eval.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "token_ab.live_two_arm.answer_match_with_memory",
@@ -2478,7 +3683,23 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/token_ab.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/_rerank.py",
+        "research/_xreranker.py",
+        "research/longmem_eval.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "token_ab.live_two_arm.questions",
@@ -2499,7 +3720,23 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/token_ab.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/_rerank.py",
+        "research/_xreranker.py",
+        "research/longmem_eval.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "longitudinal.active_vs_inject_token_ratio",
@@ -2556,7 +3793,10 @@
           "verdict": "not_compared",
           "note": "the simulation assumes every pitfall needs memory to prevent; a linter arm would model the share that a static check would have caught for free, and it has not been added"
         }
-      }
+      },
+      "produced_by": [
+        "research/longitudinal_improvement.py"
+      ]
     },
     {
       "id": "counterfactual.token_ratio",
@@ -2578,7 +3818,19 @@
       "cited_in": [
         "README.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "nevertwice/causal.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py"
+      ]
     },
     {
       "id": "latency.pretooluse_end_to_end",
@@ -2601,7 +3853,21 @@
         "README.md",
         "docs/BENCHMARKS.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/latency_bench.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/memory_search.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "latency.userpromptsubmit",
@@ -2623,7 +3889,21 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/latency_bench.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/memory_search.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "latency.sessionstart",
@@ -2645,7 +3925,21 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/latency_bench.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/memory_search.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "latency.cold",
@@ -2667,7 +3961,21 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/latency_bench.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/memory_search.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "latency.perf_audit_range",
@@ -2690,7 +3998,21 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/latency_bench.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/memory_search.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "latency.guards_check",
@@ -2713,7 +4035,21 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/latency_bench.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/memory_search.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "latency.lexical_recall_floor",
@@ -2735,7 +4071,21 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/latency_bench.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/memory_search.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "latency.sessionstart_before_perf_audit",
@@ -2758,7 +4108,21 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/latency_bench.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/memory_search.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "latency.cold_import_before_perf_audit",
@@ -2781,7 +4145,21 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/latency_bench.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/memory_search.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "task_a.semantic.recall_at_1",
@@ -2809,7 +4187,21 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/eval_harness.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/temporal_graph.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "task_a.semantic.recall_at_3",
@@ -2837,7 +4229,21 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/eval_harness.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/temporal_graph.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "task_a.semantic.recall_at_5",
@@ -2865,7 +4271,21 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/eval_harness.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/temporal_graph.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "task_a.semantic.mrr",
@@ -2888,7 +4308,21 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/eval_harness.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/temporal_graph.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "task_a.lexical.recall_at_1",
@@ -2916,7 +4350,21 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/eval_harness.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/temporal_graph.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "task_a.lexical.recall_at_3",
@@ -2944,7 +4392,21 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/eval_harness.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/temporal_graph.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "task_a.lexical.recall_at_5",
@@ -2972,7 +4434,21 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/eval_harness.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/temporal_graph.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "task_a.lexical.mrr",
@@ -2995,7 +4471,21 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/eval_harness.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/temporal_graph.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "task_a.hybrid_rrf.recall_at_1",
@@ -3023,7 +4513,21 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/eval_harness.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/temporal_graph.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "task_a.hybrid_rrf.recall_at_3",
@@ -3051,7 +4555,21 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/eval_harness.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/temporal_graph.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "task_a.hybrid_rrf.recall_at_5",
@@ -3079,7 +4597,21 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/eval_harness.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/temporal_graph.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "task_a.hybrid_rrf.mrr",
@@ -3102,7 +4634,21 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/eval_harness.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/temporal_graph.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "task_a.n",
@@ -3124,7 +4670,21 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/eval_harness.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/temporal_graph.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "task_b.bitemporal_accuracy",
@@ -3145,7 +4705,21 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/eval_harness.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/temporal_graph.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "task_b.flat_newest_accuracy",
@@ -3166,7 +4740,21 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/eval_harness.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/temporal_graph.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "task_b.contradictions_per_query",
@@ -3187,7 +4775,21 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/eval_harness.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/temporal_graph.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "task_c.project_alpha.card",
@@ -3208,7 +4810,21 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/eval_harness.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/temporal_graph.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "task_c.project_alpha.full_context",
@@ -3230,7 +4846,21 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/eval_harness.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/temporal_graph.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "task_c.project_alpha.ratio",
@@ -3253,7 +4883,21 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/eval_harness.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/temporal_graph.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "task_c.project_beta.card",
@@ -3274,7 +4918,21 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/eval_harness.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/temporal_graph.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "task_c.project_beta.full_context",
@@ -3296,7 +4954,21 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/eval_harness.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/temporal_graph.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "task_c.project_beta.ratio",
@@ -3319,7 +4991,21 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/eval_harness.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/temporal_graph.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "task_c.project_delta.card",
@@ -3340,7 +5026,21 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/eval_harness.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/temporal_graph.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "task_c.project_delta.full_context",
@@ -3362,7 +5062,21 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/eval_harness.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/temporal_graph.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "task_c.project_delta.ratio",
@@ -3385,7 +5099,21 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/eval_harness.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/temporal_graph.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "task_c.overall_ratio",
@@ -3407,7 +5135,21 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/eval_harness.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/temporal_graph.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "real_task.sessionstart_tokens",
@@ -3429,7 +5171,18 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "nevertwice/stats.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py"
+      ]
     },
     {
       "id": "real_task.recall_tokens",
@@ -3451,7 +5204,18 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "nevertwice/stats.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py"
+      ]
     },
     {
       "id": "store.notes",
@@ -3475,7 +5239,18 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "nevertwice/stats.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py"
+      ]
     },
     {
       "id": "demo.recall_ratio_small_project",
@@ -3497,7 +5272,31 @@
       "cited_in": [
         "README.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "examples/scenario_demo.py",
+        "examples/_sandbox.py",
+        "nevertwice/anticipate.py",
+        "nevertwice/api.py",
+        "nevertwice/causal.py",
+        "nevertwice/config.py",
+        "nevertwice/dashboard.py",
+        "nevertwice/digest.py",
+        "nevertwice/emit.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/integrity.py",
+        "nevertwice/interop.py",
+        "nevertwice/lenses.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/memory_search.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "demo.recall_ratio_default",
@@ -3519,7 +5318,31 @@
       "cited_in": [
         "README.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "examples/scenario_demo.py",
+        "examples/_sandbox.py",
+        "nevertwice/anticipate.py",
+        "nevertwice/api.py",
+        "nevertwice/causal.py",
+        "nevertwice/config.py",
+        "nevertwice/dashboard.py",
+        "nevertwice/digest.py",
+        "nevertwice/emit.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/integrity.py",
+        "nevertwice/interop.py",
+        "nevertwice/lenses.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/memory_search.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "demo.recall_ratio_220_notes",
@@ -3542,7 +5365,31 @@
       "cited_in": [
         "README.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "examples/scenario_demo.py",
+        "examples/_sandbox.py",
+        "nevertwice/anticipate.py",
+        "nevertwice/api.py",
+        "nevertwice/causal.py",
+        "nevertwice/config.py",
+        "nevertwice/dashboard.py",
+        "nevertwice/digest.py",
+        "nevertwice/emit.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/integrity.py",
+        "nevertwice/interop.py",
+        "nevertwice/lenses.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/memory_search.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "sandbox_guard.py"
+      ]
     },
     {
       "id": "embed_specialize.recall_drop",
@@ -3564,7 +5411,10 @@
       "cited_in": [
         "README.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "research/embed_universal/train.py"
+      ]
     },
     {
       "id": "guards.universal_pack_size",
@@ -3585,7 +5435,18 @@
       "cited_in": [
         "README.md"
       ],
-      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66"
+      "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+      "produced_by": [
+        "nevertwice/guards.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py"
+      ]
     },
     {
       "id": "head_to_head.nevertwice.recall_at_10",
@@ -3613,6 +5474,22 @@
       "cited_in": [
         "README.md",
         "docs/BENCHMARKS.md"
+      ],
+      "produced_by": [
+        "research/head_to_head.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/_rerank.py",
+        "research/_xreranker.py",
+        "research/longmem_eval.py",
+        "sandbox_guard.py"
       ]
     },
     {
@@ -3636,6 +5513,22 @@
       "cited_in": [
         "README.md",
         "docs/BENCHMARKS.md"
+      ],
+      "produced_by": [
+        "research/head_to_head.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/_rerank.py",
+        "research/_xreranker.py",
+        "research/longmem_eval.py",
+        "sandbox_guard.py"
       ]
     },
     {
@@ -3664,6 +5557,22 @@
       "cited_in": [
         "README.md",
         "docs/BENCHMARKS.md"
+      ],
+      "produced_by": [
+        "research/head_to_head.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/_rerank.py",
+        "research/_xreranker.py",
+        "research/longmem_eval.py",
+        "sandbox_guard.py"
       ]
     },
     {
@@ -3687,6 +5596,22 @@
       "cited_in": [
         "README.md",
         "docs/BENCHMARKS.md"
+      ],
+      "produced_by": [
+        "research/head_to_head.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/_rerank.py",
+        "research/_xreranker.py",
+        "research/longmem_eval.py",
+        "sandbox_guard.py"
       ]
     },
     {
@@ -3715,6 +5640,22 @@
       "cited_in": [
         "README.md",
         "docs/BENCHMARKS.md"
+      ],
+      "produced_by": [
+        "research/head_to_head.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/_rerank.py",
+        "research/_xreranker.py",
+        "research/longmem_eval.py",
+        "sandbox_guard.py"
       ]
     },
     {
@@ -3738,6 +5679,22 @@
       "cited_in": [
         "README.md",
         "docs/BENCHMARKS.md"
+      ],
+      "produced_by": [
+        "research/head_to_head.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/_rerank.py",
+        "research/_xreranker.py",
+        "research/longmem_eval.py",
+        "sandbox_guard.py"
       ]
     },
     {
@@ -3766,6 +5723,22 @@
       "cited_in": [
         "README.md",
         "docs/BENCHMARKS.md"
+      ],
+      "produced_by": [
+        "research/head_to_head.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/_rerank.py",
+        "research/_xreranker.py",
+        "research/longmem_eval.py",
+        "sandbox_guard.py"
       ]
     },
     {
@@ -3789,6 +5762,22 @@
       "cited_in": [
         "README.md",
         "docs/BENCHMARKS.md"
+      ],
+      "produced_by": [
+        "research/head_to_head.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "research/_rerank.py",
+        "research/_xreranker.py",
+        "research/longmem_eval.py",
+        "sandbox_guard.py"
       ]
     }
   ],

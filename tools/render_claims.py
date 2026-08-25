@@ -45,6 +45,21 @@ def load_manifest() -> dict:
     return json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
 
 
+class Withdrawn(Exception):
+    """A renderer asked for a number that is no longer published.
+
+    Raised rather than returned so that withdrawal cannot be forgotten: any renderer that
+    touches a stale claim aborts, and the region it was building is replaced by the notice
+    below. Task B8 withdrew 118 of 133 claims at once; a design where publishing a withdrawn
+    number requires only *forgetting* a check would not have survived that.
+    """
+
+    def __init__(self, claim_id: str, reason: str):
+        super().__init__(f"{claim_id} is withdrawn: {reason}")
+        self.claim_id = claim_id
+        self.reason = reason
+
+
 class Claims:
     """Lookup over the manifest, so a renderer names a claim id, never a number."""
 
@@ -53,13 +68,19 @@ class Claims:
         self._by_id = {c["id"]: c for c in manifest["claims"]}
 
     def value(self, claim_id: str):
-        try:
-            return self._by_id[claim_id]["value"]
-        except KeyError:
-            raise KeyError(f"no claim {claim_id!r} in the manifest") from None
+        claim = self.get(claim_id)
+        if claim.get("stale"):
+            raise Withdrawn(claim_id, claim["stale"])
+        return claim["value"]
+
+    def is_withdrawn(self, claim_id: str) -> bool:
+        return bool(self.get(claim_id).get("stale"))
 
     def get(self, claim_id: str) -> dict:
-        return self._by_id[claim_id]
+        try:
+            return self._by_id[claim_id]
+        except KeyError:
+            raise KeyError(f"no claim {claim_id!r} in the manifest") from None
 
 
 def _table(header: list[str], rows: list[list[str]]) -> str:
@@ -140,13 +161,24 @@ LATENCY_ROWS = [
 
 
 def render_latency(c: Claims) -> str:
-    rows = []
+    """The one mixed region: four timings survived re-measurement at HEAD, two did not.
+
+    A partly-withdrawn table is rendered as the rows that still hold plus a line naming the
+    rows that left, because a table that silently loses two rows reads as a table that never
+    had them.
+    """
+    rows, gone = [], []
     for label, claim_id, when in LATENCY_ROWS:
-        v = c.value(claim_id)
-        text = f"{v:g} ms"
+        if c.is_withdrawn(claim_id):
+            gone.append((label, c.get(claim_id)["stale"]))
+            continue
+        text = f"{c.value(claim_id):g} ms"
         rows.append([label, f"**{text}**" if claim_id.endswith("pretooluse_end_to_end")
                      else text, when])
-    return _table(["hot path", "cost", "when it is paid"], rows)
+    out = _table(["hot path", "cost", "when it is paid"], rows)
+    for label, reason in gone:
+        out += f"\n\n<sub>**Withdrawn:** {label} - {reason}</sub>"
+    return out
 
 
 TASK_A_ROWS = [("semantic (bge-m3)", "semantic"), ("lexical", "lexical"),
@@ -248,7 +280,12 @@ def render_baselines_registry(c: Claims) -> str:
 
 
 def _headline_claims(c: Claims) -> list[dict]:
-    return [x for x in c.manifest["claims"] if x.get("headline")]
+    """Headline claims that are still published.
+
+    A withdrawn headline has no baseline verdicts worth tabulating - the result it was
+    compared against no longer stands - so it leaves the matrix with the number it carried.
+    """
+    return [x for x in c.manifest["claims"] if x.get("headline") and not x.get("stale")]
 
 
 def render_baselines_matrix(c: Claims) -> str:
@@ -315,8 +352,11 @@ def footer(c: Claims, claim_id: str) -> str:
             bits.append(f"{key}: {env[key]}")
     if claim["ci"]:
         bits.append(f"95% CI {claim['ci']['low']:.3f}-{claim['ci']['high']:.3f}")
-    bits.append(f"commit {claim['commit'][:7]}")
+    bits.append(f"commit {claim['commit'][:7]}" if claim["commit"]
+                else "commit unrecorded")
     bits.append(f"`{claim['command']}`")
+    if claim.get("stale"):
+        bits.append(f"**withdrawn** - {claim['stale']}")
     return " · ".join(bits)
 
 
@@ -332,6 +372,22 @@ def region_span(text: str, region_id: str) -> tuple[int, int] | None:
     return start, end
 
 
+def withdrawal_notice(c: Claims, claim_id: str, reason: str) -> str:
+    """What stands where a table used to be.
+
+    It names why the number cannot be re-measured here and the one command that lists the
+    whole withdrawn set - so a reader meets an explanation rather than a gap, and the debt
+    stays countable instead of quietly disappearing.
+    """
+    date = c.manifest.get("withdrawal", {}).get("date", "")
+    return (f"> **Withdrawn{' ' + date if date else ''}.** {reason}\n"
+            ">\n"
+            "> The claim is kept in `research/evidence_manifest.json` marked `stale`, with "
+            "the command that would restore it. `python tools/check_freshness.py "
+            "--list-stale` prints every withdrawn number and why; "
+            f"`{c.get(claim_id)['command']}` is what re-measures this one.")
+
+
 def apply_regions(text: str, c: Claims) -> tuple[str, list[str]]:
     """Return (rendered text, ids of regions whose content changed)."""
     changed = []
@@ -343,7 +399,11 @@ def apply_regions(text: str, c: Claims) -> tuple[str, list[str]]:
         open_tag = REGION.format(id=region_id)
         body_start = start + len(open_tag)
         current = text[body_start:end]
-        fresh = "\n" + renderer(c) + "\n"
+        try:
+            body = renderer(c)
+        except Withdrawn as w:
+            body = withdrawal_notice(c, w.claim_id, w.reason)
+        fresh = "\n" + body + "\n"
         if current != fresh:
             changed.append(region_id)
             text = text[:body_start] + fresh + text[end:]

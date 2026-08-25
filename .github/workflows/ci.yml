@@ -73,6 +73,13 @@ jobs:
         run: python -m build
       - name: Version contract - built distribution metadata
         run: python tools/check_version.py --dist dist
+      - name: No published number was produced by code that has since moved
+        # The other half of the manifest contract. render_claims.py proves a document matches
+        # the manifest; this proves the manifest matches the engine - for every claim, the last
+        # commit to touch any file its command imports must be an ancestor of the commit the
+        # claim was measured at. Needs the full history, which is why it lives in this job
+        # (fetch-depth: 0) rather than the shallow matrix.
+        run: python tools/check_freshness.py
       - name: Published tables match the evidence manifest
         # The suites already run this through tests/_test_evidence_manifest.py; running
         # it as its own step means a stale table is named in the CI summary rather than

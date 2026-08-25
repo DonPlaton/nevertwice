@@ -111,6 +111,30 @@ def test_schema_is_complete() -> None:
     check("claims are only cited in documents the manifest covers", not unscoped,
           ", ".join(unscoped))
 
+    missing_produced_by = [c["id"] for c in claims if not c.get("produced_by")]
+    check("every claim names the source files that produced it", not missing_produced_by,
+          ", ".join(missing_produced_by[:5]))
+
+    # `stale` is the only exemption from the freshness ratchet, so it is not free: a withdrawn
+    # claim must say why and must not still be cited, and a claim with no recorded producing
+    # commit must be withdrawn rather than published on an unknown engine.
+    silent_stale = [c["id"] for c in claims
+                    if "stale" in c and not (isinstance(c["stale"], str) and c["stale"].strip())]
+    check("a withdrawn claim states its reason", not silent_stale,
+          ", ".join(silent_stale[:5]))
+
+    cited_while_stale = [c["id"] for c in claims if c.get("stale") and c["cited_in"]]
+    check("a withdrawn claim is cited nowhere", not cited_while_stale,
+          ", ".join(cited_while_stale[:5]))
+
+    published_without_commit = [c["id"] for c in claims
+                                if not c.get("stale") and not c["commit"]]
+    check("a published claim names the commit that produced it",
+          not published_without_commit, ", ".join(published_without_commit[:5]))
+
+    print(f"       ({sum(1 for c in claims if c.get('stale'))} of {len(claims)} claims are "
+          f"withdrawn; {sum(1 for c in claims if not c.get('stale'))} are published)")
+
 
 def test_untraceable_claims_say_so() -> None:
     print("\n- a claim with no raw file must admit it -")
@@ -188,7 +212,12 @@ def test_confidence_intervals_are_sane() -> None:
 
 def _accounted_forms() -> tuple[set[str], list[tuple]]:
     forms: set[str] = set()
-    for entry in MANIFEST["claims"] + MANIFEST["external_citations"]:
+    # A withdrawn claim accounts for nothing. That is what makes withdrawal real rather than
+    # declared: the moment a claim is marked `stale`, any document still printing its number
+    # has an orphan, and this suite says so. Without it, task B8's 118 withdrawals would have
+    # been a manifest edit that left every number sitting in the README.
+    published = [c for c in MANIFEST["claims"] if not c.get("stale")]
+    for entry in published + MANIFEST["external_citations"]:
         for p in entry["printed"]:
             p = p.strip()
             forms |= {p, p.lstrip("+−-"), p.replace(",", ""),
