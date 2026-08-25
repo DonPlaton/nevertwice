@@ -79,6 +79,25 @@ versions are [semantic](https://semver.org). Dates are UTC.
   the README and CONTRIBUTING tell a contributor to follow.
 
 ### Changed
+- **The README is a funnel, not an encyclopedia.** It was 468 lines, and the acquisition story -
+  what this is, proof that it works, how to install it - was interleaved with per-agent setup, the
+  full benchmark commentary, the import recipes and the feature inventory, all of which already had
+  homes under `docs/`. It is now 180 lines, with the whole acquisition story in the first 120:
+  banner, one sentence, the install command, the four-beat guard transcript from
+  `examples/guard_demo.py`, the differentiator, three evidence rows, the head-to-head table and one
+  architecture diagram.
+
+  Depth moved rather than disappeared. `docs/FEATURES.md` is new and holds what shipped and had
+  nowhere else to live - reading the store with `digest` and the offline dashboard, bi-temporal
+  queries, supersession, the `AGENTS.md`/OKF export, the bootstrapper, the opt-in Brain layer, and
+  the mechanisms measured and cut. The vendor table was already in `docs/COMPARISON.md` and the
+  fusion commentary already in `docs/BENCHMARKS.md`, so both were duplicates and are gone from the
+  README; the `longmem-readme` generated region duplicated `longmem-benchmarks` at two decimal
+  places instead of three, so that renderer is retired.
+
+  `tests/_test_readme_funnel.py` enforces the budget, and - the part that makes a line limit safe -
+  asserts for every relocated topic that it exists in the document the README now points at, so a
+  future shortening cannot pass by deleting what the page documented.
 - **The roadmap says what already exists.** Three entries had gone stale. The
   tagged-release workflow they promised now ships, so the entry is reduced to the part
   that is genuinely blocked - a `pypi` environment and a Trusted Publishing registration

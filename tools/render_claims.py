@@ -105,10 +105,6 @@ def _retrieval_table(c: Claims, places: int) -> str:
     return _apply_bold(rows, ["method", "R@1", "R@5", "R@10", "MRR"], places)
 
 
-def render_longmem_readme(c: Claims) -> str:
-    return _retrieval_table(c, 2)
-
-
 def render_longmem_benchmarks(c: Claims) -> str:
     return _retrieval_table(c, 3)
 
@@ -281,7 +277,6 @@ def render_baselines_summary(c: Claims) -> str:
 
 
 RENDERERS = {
-    "longmem-readme": render_longmem_readme,
     "longmem-benchmarks": render_longmem_benchmarks,
     "head-to-head": render_head_to_head,
     "latency": render_latency,

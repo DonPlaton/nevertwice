@@ -1,5 +1,7 @@
 # Benchmarks & real-task evaluation
 
+<p align="center"><img src="benchmarks.png" alt="Same-stand LongMemEval-oracle R@5 bars: Nevertwice with the opt-in cross-encoder and with the shipped zero-dependency fusion, ahead of Mem0, LangMem and A-MEM. Beside them the four figures that matter: repeat-error rate with a guard on, recall leaner than dumping the store, zero tokens until a guard fires, and the full hook cost per tool call" width="880"></p>
+
 Two kinds of number here, and the difference matters:
 - **External retrieval (LongMemEval-oracle):** the headline, independent ground truth.
 - **Internal / real-store tasks:** self-consistency, temporal correctness, token economy

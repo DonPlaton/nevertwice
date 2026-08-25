@@ -6,273 +6,84 @@
 
 ### Proactive, local-first memory for AI coding agents - it acts before your agent repeats a mistake.
 
-*Your coding agent forgets everything when a session ends. Nevertwice remembers: the bug you hit
-last week, the pattern that worked, the reason you picked Postgres over Mongo. Then it does what
-other memory tools don't. Instead of padding every prompt with recalled text, it stays quiet until
-it has something useful, then acts by catching the mistake before your agent repeats it - measured live,
-a fired guard cut a real model's repeat-error rate by **86%**
-([the harness is in the repo](research/LIVE_VALIDATION.md)). Memory that earns its tokens.*
+*Other memory tools recall text and pad every prompt with it. Nevertwice stays silent until it has
+something worth saying, then fires a one-line warning at the moment your agent is about to repeat a
+mistake it already made - measured live, that cut a real model's repeat-error rate by **86%**.
+The store is plain Markdown in a git repo you own.*
 
 **No database. No server. No account. No telemetry. Zero pip dependencies.**
 
-<sub>The core is stdlib-only and recall works fully offline (lexical fallback, no model). Lesson
-*extraction* wants a local [Ollama](https://ollama.com) **or** one optional cloud key. Claude Code
-is wired natively by `install.py`; Cursor, Codex, Zed and the rest connect via MCP or the watch
-daemon ([details](docs/INTEGRATIONS.md)).</sub>
-
-<sub>Formerly **Anamnesis** - renamed 2026-07 (same project, same store, old env vars still work).</sub>
-
 [![tests](https://github.com/DonPlaton/nevertwice/actions/workflows/ci.yml/badge.svg)](https://github.com/DonPlaton/nevertwice/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/DonPlaton/nevertwice/actions/workflows/codeql.yml/badge.svg)](https://github.com/DonPlaton/nevertwice/actions/workflows/codeql.yml)
-[![OpenSSF Scorecard](https://github.com/DonPlaton/nevertwice/actions/workflows/scorecard.yml/badge.svg)](https://github.com/DonPlaton/nevertwice/actions/workflows/scorecard.yml)
 [![PyPI](https://img.shields.io/pypi/v/nevertwice)](https://pypi.org/project/nevertwice/)
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue)](#install)
-[![Core deps](https://img.shields.io/badge/core%20deps-0%20(stdlib)-orange)](#why-nevertwice)
+[![Core deps](https://img.shields.io/badge/core%20deps-0%20(stdlib)-orange)](#privacy)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
-[![LongMemEval](https://img.shields.io/badge/LongMemEval%20R%405-0.80%20%E2%80%BA%20Mem0%200.76-blueviolet)](#benchmarks)
+[![LongMemEval](https://img.shields.io/badge/LongMemEval%20R%405-0.80%20%E2%80%BA%20Mem0%200.76-blueviolet)](#the-evidence)
 [![Active Memory](https://img.shields.io/badge/active%20memory-%E2%88%9286%25%20errors%20%C2%B7%200--token%20guards-2ea043)](#memory-that-acts)
 
-```text
-$ pip install nevertwice
-
-$ # days ago, a different session, your agent hit a CUDA OOM and Nevertwice recorded the lesson.
-$ # now, a fresh agent, a new prompt:
-$ nevertwice-search "training crashes out of gpu memory" myproject
-
-⚠ 1 relevant lesson recalled (confidence 0.68):
-  • [mistake] CUDA OOM at batch=64 on this GPU
-    → lower batch size or enable gradient checkpointing; it recurred twice.
+```bash
+pip install nevertwice          # the library, the CLI, and the MCP server
+git clone https://github.com/DonPlaton/nevertwice && cd nevertwice
+python install.py               # native Claude Code wiring; everything else via MCP
 ```
 
-<sub>▶ See a guard fire: **`python examples/guard_demo.py`** · the whole machine on one project: **`python examples/scenario_demo.py`** · the 25-second recall demo: **`python examples/demo.py`** (any OS). All use a throwaway store; your real vault is untouched. Recording the GIF: [docs/DEMO.md](docs/DEMO.md)</sub>
+**The whole product, in four beats** - `python examples/guard_demo.py`, no model, no key, no network:
+
+```text
+1 session A  mistake recorded      mistake-sql-built-by-fstring
+2 session A  guard distilled       execute\s*\(\s*f["']
+3 session B  repeat flagged        past mistake: Never build SQL by f-string - pass values as query parameters.
+4 session B  correction clean      no guard fires
+```
+
+<sub>Beat 3 is the product: the lesson lives in a JSON ledger, **not** in your context, so it costs
+zero tokens until the moment it fires. `--check` prints that transcript byte-identically on three
+platforms and CI fails if a beat stops holding. More demos - the whole machine on one project
+(**`scenario_demo.py`**), the 25-second recall demo (**`demo.py`**, any OS) - all on a throwaway
+store, with a test that runs each one against an exported real vault path to prove yours is
+untouched.</sub>
 
 </div>
 
 ---
 
-## Overview
-
-Every morning your agent starts from zero. It re-reads the same files, rediscovers the same
-gotchas, and now and then repeats the exact mistake it made on Tuesday. You are paying tokens to
-re-teach it your own project on a loop.
-
-Nevertwice gives it a memory. It watches each session, distils the durable lessons into short
-Markdown notes, commits them to git, and feeds the relevant ones back at the start of the next
-session and again as you type each prompt. The agent stops re-learning and starts recollecting.
-
-The part most memory tools get wrong is the store itself. Here it is just files: your agent's
-memory is a folder of Markdown notes in a git repo (a *vault*), and you own every byte of it. You
-can open it in Obsidian, grep it, diff it, `git pull` it to another machine, or delete a note you
-disagree with. There is no vector database to run and no service to trust. That is the part no
-cloud competitor can copy without giving up their business model. Embeddings run locally on Ollama
-by default, or on a single cloud key if you would rather not run a local model.
-
-And it is not a toy. On the public LongMemEval benchmark, with the same local embedder for every
-system, Nevertwice scored above Mem0, LangMem and A-MEM on every recall metric in the run
-recorded on 2026-07-05, and you can reproduce that in one command. The numbers, and an honest account of what we tried and
-cut to get there, are [below](#benchmarks).
-
-Want more than coding memory? Flip on the opt-in **Brain layer** and the same captured sessions
-self-wire into a knowledge graph of papers, methods, and datasets, tracking how your thinking on
-each one evolved. It is *pull-only*, read on demand, so your token budget never notices it is there.
-
-```bash
-git clone https://github.com/DonPlaton/nevertwice && cd nevertwice
-python install.py
-```
-
-`install.py` detects your backend, prints what it chose, and wires Claude Code (Anthropic's
-terminal coding agent). Using something else? Cursor, Cline, Codex, and Zed connect through the
-MCP server or the watch daemon instead ([INTEGRATIONS.md](docs/INTEGRATIONS.md)). Your next session
-starts with its memory already loaded. The five-minute walkthrough is in [QUICKSTART.md](QUICKSTART.md).
-
-> **Why not Mem0, Zep, or Letta?** Those are a hosted service plus a vector database you ship your
-> data to. Nevertwice is plain files on your disk that you can read, grep, and diff, and nothing
-> leaves the machine by default. The honest, benchmarked comparison is [further down](#benchmarks).
-
 ## Memory that acts
 
-The memory systems surveyed in [COMPARISON.md](docs/COMPARISON.md) are all better **libraries**:
-they retrieve text and inject it into the prompt, taxing every single turn. We measured that axis to its end and found it is
-[reader-bound and commoditizing](research/QA_ACCURACY.md): the LLM, not the memory, is
-the variable. So Nevertwice does something none of those systems did as of that survey. It treats memory as a set of
-**token-budgeted interventions** that stay silent until they have something worth saying.
+Your agent starts every session from zero: same files re-read, same gotchas rediscovered, and now
+and then Tuesday's mistake repeated. Nevertwice watches each session, distils the durable lessons
+into short Markdown notes, commits them to git, and feeds the relevant ones back. That much is a
+better **library**, and the systems in [COMPARISON.md](docs/COMPARISON.md) all stop there -
+retrieve, inject, tax every turn. We measured that axis to its end and found it
+[reader-bound and commoditizing](research/QA_ACCURACY.md): the LLM, not the memory, is the variable.
+So the interventions are the product, and each one is token-budgeted:
 
-- **Guards.** A *guard* is a tiny pattern distilled from a past mistake, stored as one line in
-  a JSON ledger (not your prompt). Before your agent writes code, the pattern is checked against
-  the edit; on a match, a one-line warning fires, at **zero context tokens until it does**. Concrete:
-  the mistake `cursor.execute(f"SELECT ... '{name}'")` becomes the guard `execute\(\s*f["']`, and
-  the next time the agent reaches for an f-string SQL query it sees *"past mistake: build SQL with
-  query parameters, never an f-string."* The design is Popperian: a guard is advisory until
-  corroborated across sessions, retires itself after false positives, and is always overridable.
-  Memory proposes, reality disposes, and the agent is never boxed in.
-- **Anticipation.** Predicts the failure your current plan is heading toward by resemblance
-  to past ones, and surfaces *one* precise warning. Spend is proportional to risk, not paid per turn.
-- **Counterfactual.** *"What breaks if I change X?"* answered from an induced causal graph in
-  a few lines rather than an episode dump, at about **7× fewer tokens** than recalling every
-  related note.
+- **Guards** - a pattern distilled from a past mistake, checked against the edit before your agent
+  writes it. One line fires on a match, at **zero context tokens until it does**. A guard is
+  advisory until corroborated across sessions, retires itself after false positives, and is always
+  overridable: memory proposes, reality disposes.
+- **Anticipation** - predicts the failure the current plan is heading toward by resemblance to past
+  ones, and surfaces *one* precise warning. Spend is proportional to risk, not paid per turn.
+- **Counterfactual** - *"what breaks if I change X?"*, answered from an induced causal graph at
+  about **7×** fewer tokens than recalling every related note.
 
-Every intervention is explainable (it cites the note it was born from), overridable in one line,
-and off by default where it could be noisy. A memory that acts must earn the right to.
+Every intervention cites the note it was born from, is overridable in one line, and is off by
+default where it could be noisy. All three are on the Python API **and** the MCP server, so they
+work on every agent ([INTEGRATIONS.md](docs/INTEGRATIONS.md)).
 
-These are **measured on real tasks**, with the harness to reproduce each one. The samples are small
-and run by one person; the point is that the harness is in the repo and the numbers are checkable,
-not that they are the last word.
+## The evidence
+
+Small samples, run by one person - the point is that the harness is in the repo, the raw results
+are committed, and [every number here resolves to one](research/evidence_manifest.json).
 
 | claim | result | evidence |
 |---|---|---|
-| a fired guard changes a real model's output | real error rate **0.36 → 0.05 (−86%)** on DeepSeek (12 tasks × 8 trials) | [LIVE_VALIDATION.md](research/LIVE_VALIDATION.md) |
-| memory that acts vs *always-injecting* recalled text | same error-prevention for **~31× fewer tokens** | [ACTIVE_MEMORY.md](research/ACTIVE_MEMORY.md) |
-| answer-accuracy on the standard benchmark | **0.788** LongMemEval-oracle (open reasoner) | [QA_ACCURACY.md](research/QA_ACCURACY.md) |
-| retrieval vs the funded leaders | R@5 **0.80** › Mem0 0.76, one shared embedder | [COMPARISON.md](docs/COMPARISON.md) |
+| a fired guard changes a real model's output | repeat-error rate **0.36 → 0.05 (−86%)** on DeepSeek (12 tasks × 8 trials) | [LIVE_VALIDATION.md](research/LIVE_VALIDATION.md) |
+| acting vs *always-injecting* the same lesson | same error prevention for **~31×** fewer tokens | [ACTIVE_MEMORY.md](research/ACTIVE_MEMORY.md) |
+| retrieval against the funded leaders | R@5 **0.80** › Mem0 0.76, one shared local embedder | [COMPARISON.md](docs/COMPARISON.md) |
 
-One honest caveat we measured rather than hid: the payoff scales with the agent's own capability. A
-strong model applies a delivered lesson and captures most of the benefit; a small 3B model captures
-about half. Memory removes the *knowledge* bottleneck, not the reasoning one
-([LIVE_VALIDATION.md](research/LIVE_VALIDATION.md)).
-
-All three interventions are on the Python API **and** the MCP server (Model Context Protocol, the open
-standard agents use to call tools), so this works on **every agent**: Claude Code, Cursor, Cline,
-Codex, Zed, and anything else that speaks MCP or writes session logs to disk
-([INTEGRATIONS.md](docs/INTEGRATIONS.md)).[^cursor] The moat isn't a better database. It's plain
-files you own, plus a memory that *acts* and costs almost nothing until it does.
-
-[^cursor]: Cursor and Windsurf keep their chat in a local SQLite blob rather than plain log files,
-so they need a one-time export step before the watch daemon can read them; the MCP path works
-for them with no export. Details in [INTEGRATIONS.md](docs/INTEGRATIONS.md).
-
-## Why Nevertwice
-
-|  | Nevertwice | Mem0 / Zep / Letta / Cognee / memanto / Hindsight |
-|---|---|---|
-| **Acts before the mistake** | ✅ guards + anticipation + counterfactual, **0 tokens until they fire** | ✗ retrieve-and-inject only (taxes every turn) |
-| **Runs** | your machine, local files | a service, vector DB, or cloud (memanto: closed engine) |
-| **Store format** | human-readable Markdown + Git | opaque DB rows and embeddings |
-| **Dependencies** | **0** Python packages (stdlib core), local Ollama for embeddings (or an optional cloud embedder) | many, usually a server plus a DB |
-| **Your data leaves the machine?** | **never** by default (local embeddings; cloud embedder is opt-in) | usually, via cloud APIs |
-| **Auto-capture** | ✅ native for Claude Code, always-on daemon for the rest | manual API calls |
-| **Knowledge graph** | ✅ entity + typed-relation graph over the Markdown, traversable, no DB | a separate graph database (Neo4j / FalkorDB) |
-| **Open in Obsidian** | ✅ it is your vault | ✗ |
-| **Honest about what works** | ✅ we publish the negative results | rarely |
-
-You own every byte of your agent's memory, and you can read it.
-
-## See it work
-
-<p align="center"><img src="docs/tour.gif" alt="Nevertwice full tour: a guard fires before a recorded SQL-injection mistake repeats, then recall returns far fewer tokens than dumping the store (5.9x on this small demo project, and it grows with the store - 9.1x and up on a larger one), anticipation on a new endpoint, a counterfactual answered from the causal graph, and a contradiction resolved by supersession" width="740"></p>
-
-<p align="center"><sub>Recorded from the real system (<code>examples/guard_demo.py</code> + <code>examples/scenario_demo.py</code>, throwaway vault) - every number on screen is measured live, nothing is mocked. The 5.9x recall saving shown is for this small demo project; it grows with the store (9.1x on the default, 44x at ~220 notes).</sub></p>
-
-```
-$ # session 1: you hit a CUDA OOM, Nevertwice quietly records the lesson
-$ # ...days later, session 2, a fresh agent, new prompt:
-$ python nevertwice/memory_search.py "training crashes out of gpu memory" myproject
-
-⚠ 1 relevant lesson recalled (confidence 0.68):
-  • [mistake] CUDA OOM at batch=64 on this GPU
-    → lower batch size or enable gradient checkpointing; it recurred twice.
-```
-
-In Claude Code this happens automatically at session start and on each prompt. The agent simply
-already knows.
-
-### Review what it knows
-
-Two read-only commands surface the store for a human or an agent, with no embedder, no LLM, and no network:
-
-```
-$ python -m nevertwice.digest --days 7      # what was added / revised this week, per project & type
-$ python -m nevertwice.digest --conflicts   # the supersession ledger: every fact the memory revised
-```
-
-`digest` is the daily/weekly "what's new"; `conflicts` is the audit trail behind *"contradictions
-don't pile up"*, pairing each retired note with the one that superseded it. Both are also
-`nevertwice.api.digest()` / `nevertwice.api.conflicts()` and MCP tools (`memory_digest`,
-`memory_conflicts`), so an agent can ask too.
-
-Prefer a visual? One command writes a **single self-contained HTML file** (no server, no account,
-no external asset) that you open in a browser:
-
-```
-$ python -m nevertwice.dashboard --days 30      # → memory_dashboard.html, then opens it
-```
-
-It is a snapshot of the whole store (stats, per-project, recent, the contradiction ledger,
-top entities) that you can mail, commit, or read offline. The file *is* the UI, the same way
-the notes *are* the database, with no `serve` process to run. (For live editing, the vault opens
-in Obsidian as-is.)
-
-## How it works
-
-```
-  your session (any agent)
-        │  Claude Code hook  ·  MCP call  ·  ingest.py  ·  watch daemon
-        ▼
-  extract → mistakes · patterns · decisions     (local Ollama, or one cloud key; secrets redacted)
-        │  + a per-project "card" (status · stack · open gotchas · decisions)
-        │  + local embeddings (bge-m3, multilingual)   + git auto-commit
-        ▼
-  Markdown + Git store   (open in Obsidian if you like)
-        │  SessionStart     → inject the project card and the relevant lessons
-        │  UserPromptSubmit → task-aware recall by the prompt text
-        │  anytime          → memory_search "<query>"  ·  MCP  ·  CLI
-        ▼
-              the agent recollects
-```
-
-Retrieval is hybrid: semantic search over local embeddings, fused with lexical search, behind a
-calibrated abstention gate. A nonsense query gets back *"no confident match"* instead of a
-confident wrong answer, which matters more for a memory than chasing one extra point of recall.
-When a newer lesson contradicts an older one, *supersession* retires the old note (it moves to a
-`Superseded/` folder, kept for history but out of the recall pool) so the agent only ever sees the
-current truth, and a fix links back to the bug it resolved.
-
-## Memory for any agent
-
-Claude Code is the zero-config case. `install.py` wires five hooks (four for capture and recall,
-plus a PreToolUse guard that fires before a repeat mistake) and capture is automatic from then on,
-with nothing to configure.
-
-Agents that write their sessions to disk (Codex, Cline, Roo, Aider, Gemini CLI) are
-covered by `nevertwice-watch`, a small stdlib polling daemon that finds the known log folders on
-your machine and mines finished sessions as they land. Start it once at login and forget it. The
-same engine also runs as a one-shot sweep if you prefer cron over a resident process.
-
-If you call models from Python, wrap the client in one line with `auto_capture(client)` or decorate
-a chat function with `@capture_chat`. Any MCP client such as Cursor, Claude Desktop, or Zed can
-talk to `nevertwice/mcp_server.py` for search, remember, and ingest. LangChain and LlamaIndex get
-drop-in retriever and memory adapters. The agent can even write its own lessons through
-`remember_lessons` with no separate extraction model at all. Copy-paste recipes for each live in
-[INTEGRATIONS.md](docs/INTEGRATIONS.md). One honest caveat: Cursor and Windsurf keep their chat in a
-SQLite blob rather than plain files, so they need an export step before the watcher can read them.
-
-## Benchmarks
-
-<p align="center"><img src="docs/benchmarks.png" alt="Same-stand LongMemEval-oracle R@5 bars: Nevertwice 0.826 with the opt-in cross-encoder and 0.802 with the shipped zero-dep fusion, ahead of Mem0 0.758 and LangMem and A-MEM at 0.692. Beside them the four numbers that matter: repeat-error rate -86% with a guard on, recall 9.1x leaner than dumping the store, 0 tokens until a guard fires, 85 ms full hook cost per tool call" width="880"></p>
-
-External and reproducible, on **LongMemEval-oracle** (940 sessions in one shared store, 500
-human-annotated questions, local `bge-m3`). Nevertwice's own numbers reproduce with the zero-dep
-core; the head-to-head against Mem0 / LangMem / A-MEM installs those competitors' own packages to
-run them on the same stand (their deps, not ours), and the dataset is fetched separately
-([research/data/README.md](research/data/README.md)):
-
-<!-- claims:longmem-readme -->
-| method | R@1 | R@5 | R@10 | MRR |
-|---|---|---|---|---|
-| semantic (bge-m3) | 0.42 | 0.65 | 0.73 | 0.53 |
-| lexical (BM25) | 0.52 | 0.75 | 0.83 | 0.62 |
-| **calibrated fusion (shipped default, 0 deps)** | 0.55 | 0.80 | **0.86** | 0.66 |
-| **+ trained cross-encoder (opt-in)** | **0.61** | **0.83** | **0.86** | **0.71** |
-<!-- /claims:longmem-readme -->
-
-The shipped ranker fuses the semantic and lexical signals with calibrated score fusion, which lifts
-R@5 from 0.66 under reciprocal rank fusion - the ranker Nevertwice itself shipped until 2026-07 - to 0.80. The optional cross-encoder
-(bge-reranker-v2-m3) then takes top-1 to 0.61: `pip install nevertwice[reranker]`, run once with
-`NEVERTWICE_XRERANK=1` (that first run downloads the model), and it stays on by itself from then
-on. Reproduce with `python research/longmem_eval.py [--xrerank]` (the dataset is fetched separately).
-
-**The head-to-head, run locally and reported straight.** On the same stand with the same local
-embedder for everyone, we ran Mem0, LangMem, and A-MEM end to end on Ollama, no paid key:
+On **LongMemEval-oracle** (940 sessions in one store, 500 human-annotated questions, local
+`bge-m3`), with the competitors' own packages installed to run them on the same stand, 2026-07-05:
 
 <!-- claims:head-to-head -->
 | system | R@1 | R@5 |
@@ -283,186 +94,87 @@ embedder for everyone, we ran Mem0, LangMem, and A-MEM end to end on Ollama, no 
 | A-MEM | 0.428 | 0.692 |
 <!-- /claims:head-to-head -->
 
-The win is the fusion, not the embedder, which is identical
-for all four. We are careful about what is a moat: calibrated score fusion is classic retrieval, so
-the durable edge is the substrate (plain files, $0, local, no server), and we publish the full table
-plus what we tried and cut in [COMPARISON.md](docs/COMPARISON.md) and
-[research/RETRIEVAL_FUSION.md](research/RETRIEVAL_FUSION.md).
+Two caveats we measured rather than hid: the payoff scales with the agent's own capability (memory
+removes the *knowledge* bottleneck, not the reasoning one), and retrieval R@k has stopped
+discriminating between serious systems - which is why the work that matters is after retrieval,
+resolving contradictions at write time, resisting poisoning, forgetting the right things. Those, the
+baseline gates a headline has to clear, and the negative results we deleted rather than shipped:
+[BENCHMARKS.md](docs/BENCHMARKS.md) · [BASELINES.md](research/BASELINES.md) ·
+[WEAKNESSES.md](docs/WEAKNESSES.md) · [the research lab](research/).
 
-**Compare methodology, not headlines.** Vendor posts quote LongMemEval scores from other protocols:
-answer accuracy with an LLM judge, oracle context handed to a reader, closed embedders, different
-question subsets. The tables above are retrieval R@k on one open stand with every variable pinned
-except the memory pipeline itself, and one command reruns the whole thing on the competitors' own
-packages (which records the exact versions it compared against). When a bigger number appears
-somewhere, first ask what it measures.
+## How it works
 
-### After retrieval: the axis that actually separates memory
-
-<p align="center"><img src="docs/post_retrieval.png" alt="Post-retrieval correctness: contradictions resolved at write time via supersession (competitors are ADD-only or manual); poisoning attacks blocked 88 percent with prompt-injection caught 100 percent and an honest 50 percent on plausible-false facts; a submodular forgetting coreset keeps 0.14 more topic coverage per token at a 20 percent budget; and we publish negative results such as consolidation-by-replacement halving recall, so we do not ship it" width="880"></p>
-
-Here is the uncomfortable truth about memory benchmarks in 2026: **retrieval R@k has stopped
-discriminating.** [Independent analysis](https://mem0.ai/blog/ai-memory-benchmarks-in-2026) finds
-that across LongMemEval, LoCoMo and peers, retrieval-miss dominates the error budget while
-retrieval-hit-but-wrong-answer is rare, so the headline scores mostly measure *"did the right note
-come back"* - and every serious system now scores high there. The gap that shows up in production
-([Mem0's own 91.6 on LoCoMo drops to ~49% effective at 50k sessions](https://mem0.ai/blog/ai-memory-benchmarks-in-2026)
-once stale data and contradictions enter) lives **after** retrieval: does the memory resolve
-contradictions, resist poisoning, and forget the right things?
-
-That is the axis Nevertwice is built for, and every number is measured with a harness in `research/`:
-
-- **Contradictions resolve at write time.** A newer fact retires the older one to `Superseded/`, so
-  recall only ever returns the current truth and the `conflicts` ledger keeps the audit trail.
-  Most competitors are add-only or leave deletion to you ([COMPARISON.md](docs/COMPARISON.md)).
-- **Poisoning defence, measured.** 88% of memory-poisoning acceptance attacks blocked (precision
-  0.91), prompt-injection caught 100%, and - stated plainly because honesty is the point - only
-  ~50% of *plausible-false* facts ([research/POISONING.md](research/POISONING.md)).
-- **Forgetting is a policy, not neglect.** A submodular coreset keeps **+0.14 more topic coverage**
-  than the salience baseline at a tight 20% retention budget, with less redundancy
-  ([research/FORGETTING.md](research/FORGETTING.md)).
-- **We publish the negative results.** Consolidating episodes by replacement halved downstream
-  recall in our own test, so it is not shipped ([research/CONSOLIDATION_EVAL.md](research/CONSOLIDATION_EVAL.md)).
-
-Retrieval is table stakes; this is the moat, and it is the part a competitor cannot copy by
-swapping in a better embedder.
-
-### What we measured, and what we cut
-
-Most memory projects pile on clever ranking and assume it helps. We built the clever parts,
-measured them on real data, and deleted the ones that lost, because a memory you cannot trust is
-worse than none.
-
-A promptable LLM reranker actually lowered top-1 precision against the plain bi-encoder, so it is
-gone. We A/B tested four "stronger" local embedders and none beat bge-m3 at top-1, so the default
-is unchanged. Abstractive consolidation, the trick of summarising many notes into one principle,
-dropped real recall@3 from 0.82 to 0.35, because a general principle embeds away from the specific
-question that needs it, so it never shipped. The recurrence prior is a sound mechanism that stays
-dormant on a young single-user store, so it sits off the hot path. The one idea that earned its
-place was the trained cross-encoder, and we only learned which was which by measuring. The
-write-ups live in [the research directory](research/).
-
-## What is in the box
-
-Everything here ships today, not on a roadmap:
-
-- Ask *"what did we believe on March 3?"* and bi-temporal queries answer from that day's truth.
-- A new fact that contradicts an old one retires it at write time; recall never serves both.
-- Recall walks `[[wikilinks]]` for multi-hop answers, abstains instead of guessing, and carries
-  lessons across projects.
-- Secrets are redacted before anything is written. A poisoning guard caught every injection,
-  exfiltration, and destruction attempt in the study; across the full acceptance-attack set it
-  blocks 88% at precision 0.91 (details in [research/POISONING.md](research/POISONING.md)).
-- A SQLite index keeps per-query cost flat into tens of thousands of notes; a submodular
-  forgetting cap stops unbounded growth.
-- Sync between machines is `git pull`. Concurrent edits to the same note auto-merge
-  field-by-field (recurrence takes the max, a retirement wins, tags union).
-- The project card travels: it exports to AGENTS.md and the Open Knowledge Format (OKF, the
-  draft Google/Anthropic interchange spec), so other tools can read what yours knows.
-
-### Bring the memory you already have
-
-Your other tools have been learning about you for months - and each one keeps that to itself.
-One command moves it in:
-
-```bash
-nevertwice-import --from claude                        # Claude Code auto-memory
-nevertwice-import --from chatgpt --path memories.txt   # a pasted ChatGPT memory export
-nevertwice-import --from cursor                        # .cursor/rules + .cursorrules
-nevertwice-import --from agents                        # bullets from any AGENTS.md
+```text
+  your session (any agent)
+        │  Claude Code hook  ·  MCP call  ·  ingest.py  ·  watch daemon
+        ▼
+  extract → mistakes · patterns · decisions     (local Ollama, or one cloud key; secrets redacted)
+        │  + a per-project "card" (status · stack · open gotchas · decisions)
+        │  + local embeddings (bge-m3, multilingual)   + git auto-commit
+        ▼
+  Markdown + Git store   (open in Obsidian if you like)
+        │  SessionStart     → inject the project card and the relevant lessons
+        │  UserPromptSubmit → task-aware recall by the prompt text
+        │  PreToolUse       → a guard fires before the edit lands   ← 0 tokens until here
+        ▼
+              the agent recollects, and does not repeat itself
 ```
 
-Imports go through the same write path as everything else (secret redaction, injection
-rejection, recallable at once even with no model) and re-running is safe: a content ledger
-skips what is already in. After that the store is the one copy every agent reads: point
-Claude Code, Codex, a new account, or a second machine at it and each starts from the
-same history.
-
-An opt-in **Brain layer** turns the same captured sessions into a self-wiring knowledge graph for
-research or personal knowledge: typed entities (paper, method, dataset, benchmark, …), per-entity
-cards that roll up everything known about each across projects, a timeline of how your take on it
-evolved, and a graph-centrality salience signal. It is **pull-only**, read on demand and never
-injected, so the lean, token-bounded hot path is byte-for-byte unchanged when it is off (the
-default). Turn it on with `NEVERTWICE_PROFILE=research` (or `general`); see
-[docs/BRAIN_LAYER_DESIGN.md](docs/BRAIN_LAYER_DESIGN.md).
+Your agent's memory is a folder of Markdown notes in a git repo, and you own every byte: open it in
+Obsidian, grep it, diff it, `git pull` it to another machine, delete a note you disagree with.
+Recall is hybrid - semantic over local embeddings, fused with lexical, behind a calibrated
+abstention gate, so a nonsense query returns *"no confident match"* rather than a confident wrong
+answer. A newer lesson that contradicts an older one retires it at write time.
+Details: [ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ## Privacy
 
-Embeddings run locally on Ollama by default, so nothing leaves the machine. If you would rather not
-run a local model, point `NEVERTWICE_EMBED_PROVIDER` at openai, voyage, cohere, or gemini with one
-key and recall goes through that instead. With no embedder at all, recall falls back to lexical
-full-text search rather than going dark. Extraction is local-first, and an optional cloud key
-(Cerebras, Groq, DeepSeek, or Gemini, all zero-retention) only ever speeds it up. Secrets are
-redacted before anything is written or sent. The store is yours, on your disk, under your git.
+Embeddings run locally on Ollama by default, so nothing leaves the machine;
+`NEVERTWICE_EMBED_PROVIDER` points at a cloud embedder if you would rather not run a local model,
+and with none at all recall falls back to lexical search rather than going dark. Extraction is
+local-first and an optional cloud key only speeds it up. Secrets are redacted before anything is
+written or sent. There is **no telemetry** - no account, no usage pings, no phone-home; the only
+network calls are the ones you configured, and `NEVERTWICE_LOCAL_ONLY` pins projects local for good.
 
-And there is **no telemetry**: no account, no usage pings, no phone-home. The only network calls
-are the ones you configured yourself (your Ollama endpoint, or your own cloud key), and
-`NEVERTWICE_LOCAL_ONLY` pins named projects to local-only for good.
+## Any agent
+
+Claude Code is the zero-config case: `install.py` wires the capture, recall and guard hooks, and
+capture is automatic from then on. Agents that write sessions to disk (Codex, Cline, Roo, Aider,
+Gemini CLI) are covered by the `nevertwice-watch` daemon; any MCP client - Cursor, Claude Desktop,
+Zed - talks to `nevertwice-mcp`. From Python, wrap your client with `auto_capture(client)` or let
+the agent write its own lessons through `remember_lessons`, with no extraction model at all.
+LangChain and LlamaIndex get drop-in adapters, and `nevertwice-import` moves in the memory Claude
+Code, ChatGPT or Cursor already built for you. Recipes: [INTEGRATIONS.md](docs/INTEGRATIONS.md).
 
 ## Install
 
-**pip** gets you the package, the `nevertwice-*` commands, and the MCP server:
-
 ```bash
-pip install nevertwice
-```
-
-That covers using it as a library, from the CLI, or over MCP (Cursor, Cline, Zed, and Claude
-Desktop connect through `nevertwice-mcp`).
-
-For **Claude Code's** native wiring (the five hooks that capture, recall, and run the PreToolUse
-guard), clone the repo and run the installer:
-
-```bash
+pip install nevertwice                 # library + nevertwice-* commands + MCP server
 git clone https://github.com/DonPlaton/nevertwice && cd nevertwice
-python install.py            # idempotent; backs up ~/.claude/settings.json before wiring hooks
-python install.py --ollama   # also pull the local models (bge-m3 embedder + an extraction model)
+python install.py                      # idempotent; backs up ~/.claude/settings.json first
+python install.py --ollama             # also pull the local models (bge-m3 + an extractor)
 python install.py --profile research   # turn on the opt-in Brain layer (research/general)
-python install.py --print    # dry run, shows what it would do and writes nothing
+python install.py --print              # dry run: shows what it would do, writes nothing
 ```
 
-The installer ends by printing your options: which profile is active and how to switch the Brain
-layer on (`coding` is the default; `research`/`general` add the knowledge graph), so a first run is
-self-explanatory.
+With no backend at all, extraction pauses loudly (sessions are kept and retried, never dropped) and
+recall runs on lexical search until an embedder shows up. The five-minute walkthrough is in
+[QUICKSTART.md](QUICKSTART.md); every environment variable is in [CONFIG.md](docs/CONFIG.md).
 
-For cloud extraction, copy `.env.example` to `.env` and add one key. With no key it uses local
-Ollama. To skip a local model for recall too, set `NEVERTWICE_EMBED_PROVIDER` with the matching key
-and run `python -m nevertwice.embed_index --rebuild` once. With no backend at all, extraction pauses loudly (sessions
-are kept and retried, never dropped) and recall runs on lexical full-text search until an embedder
-shows up.
+Contributing: `pip install -e ".[dev]"`, then `python -m pytest -q`. Fifty-eight hermetic suites -
+LLMs, embedders, the optional reranker, network and GPU execution are disabled or mocked, and a lint
+fails the build if a script reaches a memory store without declaring which store it means. CI runs
+them on Linux, Windows and macOS across four Python versions.
 
-**Projects you already have.** Once the hooks are wired, every new session is captured automatically,
-and past Claude Code sessions backfill on the catch-up sweep with no action needed. To seed a rich
-context card for a large existing project right away instead of waiting for sessions to accumulate,
-point the bootstrapper at it: `python -m nevertwice.bootstrap_contexts /path/to/project`.
+## Docs, and who wrote this
 
-## Tests
+[Start here](docs/README.md) · [Quickstart](QUICKSTART.md) · [What ships today](docs/FEATURES.md) ·
+[Architecture](docs/ARCHITECTURE.md) · [Integrations](docs/INTEGRATIONS.md) ·
+[Configuration](docs/CONFIG.md) · [Brain layer (opt-in)](docs/BRAIN_LAYER_DESIGN.md) ·
+[Benchmarks](docs/BENCHMARKS.md) · [Baseline gates](research/BASELINES.md) ·
+[Comparison](docs/COMPARISON.md) · [Known weaknesses](docs/WEAKNESSES.md) ·
+[Research lab](research/) · [Security](SECURITY.md) · [Contributing](CONTRIBUTING.md)
 
-Fifty hermetic suites; LLMs, embedders, the optional reranker, network and GPU
-execution are disabled or mocked by default. After `pip install -e ".[dev]"`:
-
-```bash
-python -m pytest -q
-```
-
-The underlying standard-library self-checks remain directly runnable. CI runs the core
-suite on Linux, Windows, and macOS across Python 3.10, 3.12, 3.13, and 3.14, the research
-suite on Python 3.13, and one job that follows the contributor path above end to end.
-
-## Docs
-
-[Quickstart](QUICKSTART.md) · [Architecture](docs/ARCHITECTURE.md) ·
-[Brain layer (opt-in)](docs/BRAIN_LAYER_DESIGN.md) ·
-[Integrations](docs/INTEGRATIONS.md) · [Configuration](docs/CONFIG.md) ·
-[Benchmarks](docs/BENCHMARKS.md) ·
-[Comparison vs Mem0/Zep/Letta/A-MEM](docs/COMPARISON.md) ·
-[Research, the honest eval lab](research/) ·
-[Security policy](SECURITY.md)
-
-## Author and citation
-
-Built by **Platon Chernov**. If Nevertwice helps your work or your research, a ⭐ is genuinely
-appreciated, and a citation is welcome; a `CITATION.cff` ships with the repo.
-
-## License
-
-MIT, see [LICENSE](LICENSE). Use it, fork it, build on it.
+Built by **Platon Chernov**; formerly *Anamnesis*, renamed 2026-07 (same project, same store, the
+old environment variables still work). A ⭐ is genuinely appreciated and a citation is welcome - a
+`CITATION.cff` ships with the repo. MIT, see [LICENSE](LICENSE). Use it, fork it, build on it.

@@ -186,6 +186,10 @@
       "governance": "exempt",
       "reason": "design note for an opt-in layer"
     },
+    "docs/FEATURES.md": {
+      "governance": "exempt",
+      "reason": "capability list; every measured claim links to the study that produced it rather than restating a number here"
+    },
     "examples/README.md": {
       "governance": "exempt",
       "reason": "how to run the demos"

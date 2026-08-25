@@ -4,6 +4,7 @@ Start with the repo [README](../README.md) and [QUICKSTART](../QUICKSTART.md). T
 
 | Doc | What it answers |
 |---|---|
+| [FEATURES.md](FEATURES.md) | Everything that ships today: inspecting the store, recall guarantees, imports, the Brain layer |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | How the pieces fit: hooks, store, retrieval, active memory |
 | [CONFIG.md](CONFIG.md) | Every environment variable, with defaults and when to touch them |
 | [INTEGRATIONS.md](INTEGRATIONS.md) | Copy-paste setup for Claude Code, Cursor, Codex, MCP, LangChain, and the rest |
