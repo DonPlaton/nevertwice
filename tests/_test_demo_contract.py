@@ -90,14 +90,25 @@ def test_every_demo_arms_the_sandbox_first() -> None:
 
 
 def test_the_sandbox_pins_the_vault_not_only_the_home() -> None:
-    """Pinning HOME alone is the bug. The vault name is what config actually prefers."""
-    print("\n- the sandbox pins both HOME and VAULT -")
-    text = (EXAMPLES / "_sandbox.py").read_text(encoding="utf-8")
+    """Pinning HOME alone is the bug. The vault name is what config actually prefers.
+
+    The policy is asserted against `sandbox_guard`, the one module that holds it, and the
+    demos' `_sandbox.py` is asserted to hold *none* of it - a second copy is how the test
+    guard and the examples guard drifted apart in the first place.
+    """
+    print("\n- the sandbox pins both HOME and VAULT, in exactly one place -")
+    text = (ROOT / "sandbox_guard.py").read_text(encoding="utf-8")
     check("NEVERTWICE_VAULT is pinned", 'os.environ["NEVERTWICE_VAULT"]' in text)
     check("NEVERTWICE_HOME is pinned", 'os.environ["NEVERTWICE_HOME"]' in text)
     check("the env-file pointer is scrubbed", '"NEVERTWICE_ENV_FILE"' in text)
     check("the legacy aliases are scrubbed",
           '"ANAMNESIS_VAULT"' in text and '"CLAUDE_MEMORY_VAULT"' in text)
+
+    shim = (EXAMPLES / "_sandbox.py").read_text(encoding="utf-8")
+    check("the demos' shim delegates instead of copying",
+          "sandbox_guard.isolate(" in shim)
+    check("the demos' shim sets no environment of its own",
+          "os.environ[" not in shim and "mkdtemp" not in shim)
 
     # demo.sh and demo.py do not import the module, so they carry their own pin.
     shell = (EXAMPLES / "demo.sh").read_text(encoding="utf-8")
