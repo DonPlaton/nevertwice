@@ -58,6 +58,15 @@ error-prevention for **31× fewer memory tokens**
 stood here was withdrawn in 2026-08 with the rest of the paid-API corpus - `python
 tools/check_freshness.py --list-stale` says why.
 
+`nevertwice-store` answers what layout a store is in and moves it forward. `--migrate` plans by
+default and writes nothing; `--apply` takes a backup *before the first write*, runs the steps,
+validates the result and prints how to roll back. **The Markdown is never modified** - migration
+touches derived artifacts and state files only, which is what makes a rollback cheap.
+`--rebuild` reconstructs every derived artifact from the notes; two rebuilds of the same store
+produce a **byte-identical** index, because the index is removed before it is rebuilt. The
+embedding cache is deliberately *not* rebuilt without `--include-embeddings`: recreating it
+needs a model, and deleting it on a machine without one destroys work that cannot be recovered.
+
 Memory spends your context window, so it has a **budget** and it can decline. `api.budget_policy()`
 sets per-turn and per-session token *and* latency caps plus `min_value`, the expected-value
 threshold below which memory stays quiet **even when it could afford to speak** - which is the

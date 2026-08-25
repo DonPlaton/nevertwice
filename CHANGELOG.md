@@ -6,6 +6,40 @@ versions are [semantic](https://semver.org). Dates are UTC.
 ## [Unreleased]
 
 ### Added
+- **Store versioning, a migration planner, and a reproducible rebuild.**
+
+  A store that does not say which layout it is in cannot be migrated safely - every future
+  change has to guess from the shape of what it finds, and guessing wrong on someone's memory
+  is not a recoverable mistake. `nevertwice-doctor` has been asking for
+  `.nevertwice_schema.json` since task D1 and telling people to come back when the planner
+  landed. `nevertwice/store_version.py` is the planner.
+
+  `--migrate` plans by default and writes nothing. `--apply` takes a **backup before the first
+  write**, runs the steps, validates the result, stamps the version, and prints the rollback.
+  **The Markdown is never modified** - migration touches derived artifacts and state files only,
+  which is exactly what makes rollback cheap: the expensive half was never at risk. A 2.2-era
+  store migrates forward with its pre-D4 guard counters carried across rather than reset.
+
+  `--rebuild` reconstructs every derived artifact from the notes, and two rebuilds of the same
+  store produce a **byte-identical index**. The reason is measured, not assumed: the index is
+  *removed* before it is rebuilt, and a build into a fresh file is deterministic.
+
+  Two claims in the first draft of that paragraph were wrong in opposite directions, and both
+  were caught by something trying to break them. It first credited `VACUUM` with the
+  determinism - a mutation removing `VACUUM` left the suite green. It then claimed `VACUUM`
+  restored byte-equality for an in-place build - masking SQLite's write counters still left 627
+  differing bytes, the schema cookie and the FTS index's internal segment layout. So `VACUUM` is
+  documented as compaction, `content_digest()` answers "is this the same index" across that
+  path, and byte-equality is claimed only for the fresh-build path, where it holds.
+
+  The embedding cache is the deliberate exception: it is **not** rebuilt without
+  `--include-embeddings`, because recreating it needs a model and deleting it on a machine
+  without one destroys work that cannot be recovered.
+
+  `tests/_test_store_version.py` → 52 checks. The byte-identity assertion runs the clone's
+  rebuild in a subprocess, because `m.VAULT` resolves at import time - the first attempt
+  reloaded the module mid-test, reported success, and had written the index back into the
+  original store.
 - **A budget policy, and abstention that is a decision rather than a side effect.**
 
   The payload has always had a cap: sections are added by priority until the character budget
