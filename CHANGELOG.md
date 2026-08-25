@@ -6,6 +6,36 @@ versions are [semantic](https://semver.org). Dates are UTC.
 ## [Unreleased]
 
 ### Added
+- **`nevertwice-inbox`: one screen for everything the memory is asserting on your behalf.**
+
+  Guards promote and retire themselves, contradictions resolve at write time, and until now the
+  person whose repository it is had no seat at the table until something fired at a bad moment.
+  The inbox is that seat: guards by status - blocking, advisory, retired - each with what it has
+  actually *earned* (precision and override rate with intervals, never how often it fired);
+  unresolved contradictions; and two kinds of stale fact, both actionable - a guard whose source
+  note has left the live store, so its evidence can no longer be read, and a live note nobody has
+  re-confirmed in months that never recurred.
+
+  Five actions - approve, edit, override, retire, confirm - plus trace-to-source, on the CLI and
+  through `api.inbox()` / `api.inbox_action()`.
+
+  **Every action round-trips into the store and shows up in `git diff`.** Guard actions rewrite
+  `guards.json`; `confirm` splices a `reviewed:` line into the note's own Markdown frontmatter
+  rather than into a side-car. Each action returns the paths it wrote and the CLI prints them, so
+  the round-trip is something you can check instead of something you are told. The suite asserts
+  it per action against a real git repository.
+
+  **An operator's opinion is recorded as an operator's opinion.** `approve` records one honest
+  `accepted` outcome from one session and deliberately does *not* promote - promotion needs K
+  distinct sessions, and one person approving is one person. `--promote` and `retire` do force
+  the status, stamped `promoted_by` / `retired_by: operator` with a reason. Corrupting the
+  evidence channel to express an opinion is how a feedback loop stops meaning anything, so the
+  two channels stay separate: forcing a status never manufactures a distinct session. Even the
+  operator cannot promote a cold-start pack guard, which stays advisory by design.
+
+  `tests/_test_inbox.py` → 61 checks and eight mutations, each red - including `confirm` writing
+  to a side-car instead of the note, an action that stops reporting what it wrote, and approve
+  quietly minting a fresh session id per call so repeated clicks would promote.
 - **The feedback loop that can actually falsify a guard.**
 
   A memory that warns you is easy to build and impossible to trust; everything rests on the

@@ -31,6 +31,7 @@ import dashboard as _dashboard
 import guards as _guards
 import outcomes as _outcomes
 import why_fired as _why
+import inbox as _inbox
 import anticipate as _anticipate
 import causal as _causal
 import integrity as _integrity
@@ -325,6 +326,44 @@ def guard_outcomes(guard_id: str) -> dict | None:
     summary["verdict"] = _outcomes.verdict(guard, promote_at=_guards.K_PROMOTE,
                                            retire_at=_guards.M_RETIRE)
     return summary
+
+
+def inbox(project: str | None = None) -> dict:
+    """The intervention inbox as data: guards by status with what each has earned,
+    unresolved contradictions, and stale facts (guards whose source note is gone, notes
+    nobody has re-confirmed). The screen `nevertwice-inbox` renders - one place to see
+    everything the memory is currently asserting on your behalf."""
+    return _inbox.build(project)
+
+
+def inbox_action(action: str, target: str, *, reason: str | None = None,
+                 message: str | None = None, promote: bool = False,
+                 session_id: str | None = None) -> dict:
+    """Apply one inbox action: approve · edit · override · retire · confirm.
+
+    Returns `{ok, detail, changed}` where `changed` lists the files written, so the
+    round-trip into the store is checkable rather than asserted - every action lands in
+    `guards.json` or in the note's own Markdown frontmatter and shows up in `git diff`.
+
+    An operator's opinion is recorded as an operator's opinion: `approve` records one honest
+    `accepted` outcome from one session and does **not** promote, because promotion needs K
+    distinct sessions. `promote=True` and `retire` force the status and stamp it
+    `promoted_by`/`retired_by: operator` with the reason, rather than manufacturing evidence
+    the guard never earned.
+    """
+    if action == "approve":
+        return _inbox.approve(target, session_id=session_id, promote=promote, reason=reason)
+    if action == "override":
+        return _inbox.override(target, reason or "", session_id=session_id)
+    if action == "retire":
+        return _inbox.retire(target, reason=reason)
+    if action == "edit":
+        return _inbox.edit(target, message or "")
+    if action == "confirm":
+        return _inbox.confirm(target)
+    return {"ok": False, "detail": f"unknown action {action!r}; "
+                                   f"expected one of {', '.join(_inbox.ACTIONS)}",
+            "changed": []}
 
 
 def anticipate(trajectory: str, project: str | None = None, *, k: int = 1,

@@ -58,6 +58,15 @@ error-prevention for **31× fewer memory tokens**
 stood here was withdrawn in 2026-08 with the rest of the paid-API corpus - `python
 tools/check_freshness.py --list-stale` says why.
 
+`nevertwice-inbox` is where you see all of it at once and change it: guards by status with
+what each has earned, unresolved contradictions, and stale facts - a guard whose source note has
+left the store, a note nobody has re-confirmed in months. Five actions - approve, edit, override,
+retire, confirm - and trace-to-source. **Every action lands in the store and shows up in
+`git diff`**: guard actions rewrite `guards.json`, `confirm` writes a `reviewed:` line into the
+note's own frontmatter, and each action reports the files it wrote. An operator's decision is
+stamped as one (`promoted_by` / `retired_by: operator`, with the reason) rather than smuggled in
+as evidence the guard never earned.
+
 Closing the loop is what makes any of it falsifiable. `guard_feedback(id, outcome,
 session_id=...)` takes five outcomes: `prevented_failure` and `accepted` are evidence **for**;
 `overridden` (you proceeded anyway - a statement about burden) and `false_positive` (it was
