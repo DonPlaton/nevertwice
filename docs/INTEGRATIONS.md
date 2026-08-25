@@ -58,6 +58,17 @@ error-prevention for **31× fewer memory tokens**
 stood here was withdrawn in 2026-08 with the rest of the paid-API corpus - `python
 tools/check_freshness.py --list-stale` says why.
 
+`nevertwice-hosts` answers the wiring question for every agent at once: where this host's
+sessions live on **this** machine, whether Nevertwice is attached, and how to undo it. Four
+adapters ship - Claude Code, Codex, Cursor and a generic JSONL fallback - behind one contract
+(`nevertwice/hosts.py`): discovery, incremental cursoring, event normalisation into the
+`EpisodeEvent` shape, install status, and a reversible uninstall that removes **only** the hook
+entries this package wrote. A hand-rolled copy of the engine under `~/.claude/scripts` is a
+supported deployment: it is reported as such, and never repointed or removed. Cursor keeps its
+chat in a `state.vscdb` SQLite blob a sweep cannot read, so its adapter says so and names the two
+ways out rather than returning an empty list. Every adapter is proved from a recorded fixture in
+`tests/fixtures/hosts/` - adding one needs no account with the agent it is for.
+
 `nevertwice-inbox` is where you see all of it at once and change it: guards by status with
 what each has earned, unresolved contradictions, and stale facts - a guard whose source note has
 left the store, a note nobody has re-confirmed in months. Five actions - approve, edit, override,

@@ -1,0 +1,3 @@
+{"type": "user", "cwd": "/srv/billing", "message": {"role": "user", "content": "why does the invoice endpoint time out on large accounts"}}
+{"type": "assistant", "cwd": "/srv/billing", "message": {"role": "assistant", "content": [{"type": "tool_use", "name": "Read", "input": {"file_path": "billing/invoices.py"}}]}}
+{"type": "assistant", "cwd": "/srv/billing", "message": {"role": "assistant", "content": [{"type": "text", "text": "It is an N+1 query: each invoice re-fetches its line items."}]}}

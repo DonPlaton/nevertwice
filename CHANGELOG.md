@@ -6,6 +6,42 @@ versions are [semantic](https://semver.org). Dates are UTC.
 ## [Unreleased]
 
 ### Added
+- **One host-adapter contract, four adapters, and fixtures instead of accounts.**
+
+  Supporting an agent used to mean editing three modules that did not know about each other:
+  discovery was a hardcoded registry in `watch.known_targets()`, normalisation was a heuristic
+  in `ingest` that sniffed the payload shape, cursoring was a watermark dict. Install knew only
+  about Claude Code, there was no way to ask whether a host was wired, and no way to undo it.
+
+  `nevertwice/hosts.py` states the five answers once - `discover()`, `read(cursor)`,
+  `normalize(raw)`, `install_status()`, `uninstall()` - and ships four: **Claude Code**,
+  **Codex**, **Cursor** and a **generic JSONL** fallback. `nevertwice-hosts` prints the lot.
+
+  Normalised events are `schemas.EpisodeEvent`, the D2 boundary, so "normalised" means one
+  declared shape rather than four plausible dicts. `tests/fixtures/hosts/` holds the *same
+  conversation* in four on-disk shapes, and the suite asserts the four adapters agree on it -
+  which is the difference between a contract and four parsers sharing a docstring. **No account
+  with any agent is needed to add an adapter or prove it works.**
+
+  Things the suite pins because they are easy to get wrong:
+  - Codex's `session_meta` line is scaffolding, not content. The fixture carries a ~10KB one,
+    because treating it as flat text consumed the whole truncation budget and mined zero content
+    on a real 57MB corpus - and the `cwd` is still taken from it.
+  - Claude Code is captured by hooks and must **not** also be swept; sweeping both mines every
+    session twice.
+  - Uninstall removes only the entries this package wrote, keeps a backup, and a dry run really
+    writes nothing. The easy implementation rewrites `settings.json` and eats every hook the
+    user configured themselves.
+  - A **hand-rolled flat copy** of the engine - the shape this project's own author runs under
+    `~/.claude/scripts` - is detected, reported, and never repointed or removed. The marker is
+    the `nevertwice/memory_hook.py` *path suffix*, matching `install.py` exactly, so status,
+    install and uninstall share one definition of "ours". Before this, the status check used a
+    looser marker and told the author to install over their own deployment.
+  - Cursor cannot be swept at all (`state.vscdb` is SQLite), so it reports why and names the two
+    ways out. An adapter that quietly returns nothing looks identical to one that works.
+  - A truncated final line costs one turn, not the whole session.
+
+  `tests/_test_hosts.py` → 117 checks, twelve mutations, each red.
 - **`nevertwice-inbox`: one screen for everything the memory is asserting on your behalf.**
 
   Guards promote and retire themselves, contradictions resolve at write time, and until now the

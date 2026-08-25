@@ -58,6 +58,7 @@ nevertwice-integrity = "nevertwice.integrity:main"
 nevertwice-doctor = "nevertwice.doctor:main"
 nevertwice-lens = "nevertwice.lenses:main"
 nevertwice-inbox = "nevertwice.inbox:main"
+nevertwice-hosts = "nevertwice.hosts:main"
 # one release of rename back-compat: the old anamnesis-* commands keep working
 anamnesis-search = "nevertwice.memory_search:main"
 anamnesis-remember = "nevertwice.remember:main"

@@ -1,0 +1,2 @@
+{"speaker": "user", "cwd": "/srv/billing", "text": "why does the invoice endpoint time out on large accounts"}
+{"speaker": "assistant", "cwd": "/srv/billing", "text": "It is an N+1 query: each invoice re-fetches its line items."}
