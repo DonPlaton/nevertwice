@@ -57,8 +57,13 @@ advisory-only, zero tokens until one fires:
 
 ```bash
 python -m nevertwice.guards pack
-python -m nevertwice.guards check "subprocess.run(cmd, shell=True)"   # watch it fire
+python -m nevertwice.guards check "subprocess.run(cmd, shell=True)"          # watch it fire
+python -m nevertwice.guards check "subprocess.run(cmd, shell=True)" --why    # and why it fired
 ```
+
+`--why` prints what matched, which recorded mistake the guard came from, how confident it is,
+what would promote or retire it, and what the warning cost against reading the source notes.
+`--json` gives the same object to a script.
 
 ## 4. Watch it remember
 

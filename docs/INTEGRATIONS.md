@@ -52,10 +52,18 @@ print(what_breaks("prism-orchestrator", project="myproj"))     # downstream impa
 ```
 
 From any MCP client the same three are `memory_guard_check`, `memory_anticipate`, and
-`memory_what_breaks`. Measured on real tasks (DeepSeek), a fired guard cuts the real error rate
-**0.36 → 0.05**; on a task series, active interventions match always-inject's error-prevention for
-**~31× fewer tokens** ([`research/LIVE_VALIDATION.md`](../research/LIVE_VALIDATION.md),
-[`research/ACTIVE_MEMORY.md`](../research/ACTIVE_MEMORY.md)). Guards are **Popperian** -
+`memory_what_breaks`. On a task series, active interventions match always-inject's
+error-prevention for **31× fewer memory tokens**
+([`research/ACTIVE_MEMORY.md`](../research/ACTIVE_MEMORY.md)); the live repeat-error figure that
+stood here was withdrawn in 2026-08 with the rest of the paid-API corpus - `python
+tools/check_freshness.py --list-stale` says why.
+
+Every one of those surfaces can also answer **why** it fired. `guards_check(..., explain=True)`
+and `api.why_fired(id, text)` in Python, `--why` on the CLI, `"explain": true` on the MCP tool,
+and the dashboard's guard table all render one object: the matched span, the recorded mistake it
+came from and how often that recurred, confidence, age, the policy that made it a warning rather
+than a block, and what it cost against reading the source notes. It is opt-in because the default
+path runs before every tool call and stays a regex match. Guards are **Popperian** -
 advisory until corroborated, self-retiring on false positives, always overridable - so memory
 proposes and reality disposes; the agent is never boxed in.
 

@@ -29,6 +29,7 @@ import memory_search as _search
 import digest as _digest
 import dashboard as _dashboard
 import guards as _guards
+import why_fired as _why
 import anticipate as _anticipate
 import causal as _causal
 import integrity as _integrity
@@ -244,12 +245,21 @@ def why(entity: str, project: str | None = None, *, depth: int = 2) -> dict:
 
 
 def guards_check(action_text: str, *, project: str | None = None,
-                 path: str | None = None, tool: str | None = None) -> list[dict]:
+                 path: str | None = None, tool: str | None = None,
+                 explain: bool = False, deep: bool = False) -> list[dict]:
     """Active memory, axis A - the 0-token hot path. Return the guards that fire for a
     proposed action (a diff, command, or code the agent is about to write), or `[]` - and
     NOTHING reaches context unless one matches. Each hit is `{id, status, message, scope}`;
     a `blocking` status means stop and comply or override-with-reason. Pure regex+scope
-    match: no embedder, no LLM, no network. See `research/ACTIVE_MEMORY.md`."""
+    match: no embedder, no LLM, no network. See `research/ACTIVE_MEMORY.md`.
+
+    `explain=True` attaches `hit["why"]` - the full `WhyFired` object: the matched span, the
+    recorded failure it came from and how often that recurred, confidence, age, the policy
+    that made it a warning rather than a block, and what it cost. It is **opt-in** because
+    the default path runs before every tool call and must stay a regex match; the explanation
+    reads notes. `deep=True` additionally walks the causal graph. Same object as the CLI, the
+    MCP tool and the dashboard render - see `nevertwice/why_fired.py`.
+    """
     ledger = _guards.load_guards()                          # one read shared by check + telemetry
     hits = _guards.check(action_text, project=project, path=path, tool=tool, guards=ledger)
     if hits:
@@ -257,7 +267,26 @@ def guards_check(action_text: str, *, project: str | None = None,
             _guards.record_fired([h["id"] for h in hits], guards=ledger)   # guards list fired=
         except Exception:
             pass
+        if explain:
+            for hit, why in zip(hits, _why.explain_hits(
+                    hits, action_text, project=project, path=path, tool=tool,
+                    guards=ledger, deep=deep)):
+                hit["why"] = why
     return hits
+
+
+def why_fired(guard_id: str, action_text: str = "", *, project: str | None = None,
+              path: str | None = None, tool: str | None = None,
+              deep: bool = False) -> dict | None:
+    """The whole reason one guard fired, or None if the id is unknown.
+
+    One object, four surfaces: this, `nevertwice-guards check --why`, the MCP
+    `memory_guard_check` tool with `explain`, and the dashboard's guard section all render
+    exactly this. A test asserts they agree, because four hand-written formatters is how four
+    surfaces start giving four different answers to the same question.
+    """
+    return _why.explain(guard_id, action_text, project=project, path=path, tool=tool,
+                        deep=deep)
 
 
 def guard_feedback(guard_id: str, outcome: str, *, session_id: str | None = None,

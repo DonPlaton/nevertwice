@@ -132,9 +132,11 @@ def test_the_rename_at_the_public_boundary_is_pinned() -> None:
 
 
 def test_every_declared_shape_is_reachable() -> None:
-    print("\n- the file declares seven boundaries, and no orphans -")
+    print("\n- the file declares eight boundaries, and no orphans -")
     declared = set(schemas.REQUIRED)
-    check("seven shapes are declared", len(declared) == 7, str(sorted(declared)))
+    # The count is asserted, not derived, so adding a shape is a deliberate edit here rather
+    # than something that slips in. It went from seven to eight when GOAL D3 added `WhyFired`.
+    check("eight shapes are declared", len(declared) == 8, str(sorted(declared)))
     exported = {n for n in schemas.__all__ if n[0].isupper() and n != "REQUIRED"}
     check("every exported shape has a required-key entry", declared == exported,
           str(sorted(declared ^ exported)))

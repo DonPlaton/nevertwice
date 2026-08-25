@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""The seven boundaries, written down - and checked against what the code actually passes.
+"""The eight boundaries, written down - and checked against what the code actually passes.
 
 Every value that crosses a seam in this system is a plain `dict`, and every reader of one is
 defensive about it: `n.get("desc", "")`, `(params or {}).get(...)`, `isinstance(x, dict)`.
@@ -7,7 +7,7 @@ That defensiveness is not paranoia, it is the absence of a contract. Nobody can 
 a note meta has without reading the writer, so every new reader re-derives the shape, guesses
 one key wrong, and adds another `.get` with a default that silently hides the mistake.
 
-This module states the seven shapes once. It is deliberately **not** a validation framework
+This module states the eight shapes once. It is deliberately **not** a validation framework
 and adds no dependency: `TypedDict` for the shape, a small structural `conforms()` for the
 check, and `characterize()` to learn a shape from real values so a test can prove the
 declaration matches production rather than the author's memory of it.
@@ -16,13 +16,14 @@ Nothing here changes behaviour. It is imported by tests today and by readers as 
 converted, one module at a time (GOAL D2). The point of landing it first is that the next
 person to write a reader can look up the answer instead of inferring it.
 
-The seven:
+The eight:
 
 * `EpisodeEvent`   - what a host hands the hook: Claude Code, an MCP call, ingest, the daemon.
 * `Frontmatter`    - the YAML block as written to a note file.
 * `NoteMeta`       - a parsed note, the internal currency of retrieval.
 * `RetrievalHit`   - what `api.recall` returns to a caller. The public shape.
 * `Intervention`   - what a guard returns when it fires. The 0-token hot path.
+* `WhyFired`       - the whole reason it fired, rendered by all four surfaces (GOAL D3).
 * `JsonState`      - the two-generation JSON files the engine keeps beside the notes.
 * `McpRequest`     - one JSON-RPC 2.0 message.
 """
@@ -31,7 +32,7 @@ from __future__ import annotations
 from typing import Any, TypedDict, get_type_hints
 
 __all__ = ["EpisodeEvent", "Frontmatter", "NoteMeta", "RetrievalHit", "Intervention",
-           "JsonState", "McpRequest", "REQUIRED", "conforms", "characterize"]
+           "WhyFired", "JsonState", "McpRequest", "REQUIRED", "conforms", "characterize"]
 
 
 class EpisodeEvent(TypedDict, total=False):
@@ -102,6 +103,39 @@ class Intervention(TypedDict, total=False):
     scope: dict
 
 
+class WhyFired(TypedDict, total=False):
+    """Why an intervention fired - the object every surface renders (GOAL D3).
+
+    `Intervention` is what crosses the hot path: small, and rare enough that the zero-token
+    argument survives. This is the expensive half, built only after something has already
+    fired. Keeping them as two shapes is the point - the cheap one cannot grow a field that
+    would cost something to compute on every tool call.
+
+    `signals` may carry `None` with a stated reason: a guard fires on a regex, so it has no
+    lexical or semantic contribution, and reporting `0.0` there would be a lie shaped like a
+    measurement.
+    """
+    schema_version: int
+    kind: str
+    id: str
+    status: str
+    message: str
+    scope: dict
+    checked: dict
+    match: dict
+    source: dict
+    recurrence: int
+    confidence: float
+    confidence_basis: str
+    age_days: int
+    fired: int
+    last_fired: str
+    policy: dict
+    signals: dict
+    cost: dict
+    feedback: str
+
+
 class JsonState(TypedDict, total=False):
     """A state file kept beside the notes, written through the two-generation path."""
     version: int
@@ -127,12 +161,14 @@ REQUIRED: dict = {
     "NoteMeta": ("ntype", "title", "stem"),
     "RetrievalHit": ("ntype", "title", "stem"),
     "Intervention": ("id", "message"),
+    "WhyFired": ("schema_version", "kind", "id", "status", "message",
+                 "match", "source", "policy", "signals", "cost"),
     "JsonState": (),
     "McpRequest": ("jsonrpc", "method"),
 }
 
 _SHAPES = {"EpisodeEvent": EpisodeEvent, "Frontmatter": Frontmatter, "NoteMeta": NoteMeta,
-           "RetrievalHit": RetrievalHit, "Intervention": Intervention,
+           "RetrievalHit": RetrievalHit, "Intervention": Intervention, "WhyFired": WhyFired,
            "JsonState": JsonState, "McpRequest": McpRequest}
 
 # `from __future__ import annotations` makes every annotation a *string*, so reading

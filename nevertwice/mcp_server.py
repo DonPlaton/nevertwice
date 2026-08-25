@@ -201,6 +201,13 @@ TOOLS = [
                                 "description": "The code/command/diff about to be applied."},
                 "project": {"type": "string", "description": "Limit to one project (optional)."},
                 "path": {"type": "string", "description": "File path being touched (optional)."},
+                "explain": {"type": "boolean",
+                            "description": ("Also return WHY each guard fired: the matched span, "
+                                            "the past mistake it came from and how often that "
+                                            "recurred, confidence, age, the policy that made it a "
+                                            "warning rather than a block, and what it cost. Off by "
+                                            "default - the plain answer is one line, and that is "
+                                            "the point of the hot path.")},
             },
             "required": ["action_text"],
         },
@@ -478,15 +485,26 @@ def _tool_memory_guard_check(args: dict) -> tuple[str, bool]:
         return "error: 'action_text' is required", True
     project = (args.get("project") or "").strip() or None
     path = (args.get("path") or "").strip() or None
+    explain = bool(args.get("explain"))
     try:
         # api.guards_check is the ONE check path (load + check + fired-telemetry) -
         # the hand-rolled copy here had already drifted from it (review 2026-08).
-        hits = _api.guards_check(text, project=project, path=path)
+        hits = _api.guards_check(text, project=project, path=path, explain=explain)
     except Exception as exc:
         return f"error: {type(exc).__name__}", True
     if not hits:
         return "clear - no guard fires for this action.", False
     lines = []
+    if explain:
+        # why_fired.render is the SAME formatter the CLI uses. Two formatters over one object
+        # is how two surfaces start answering one question differently (GOAL D3).
+        import why_fired as _why
+        for h in hits:
+            lines.append(_why.render(h["why"]) if h.get("why")
+                         else f"[{h['status']}] {h['message']}  (id {h['id']})")
+        lines.append("(after acting on this, call memory_guard_feedback with "
+                     "helped/false_positive)")
+        return "\n".join(lines), False
     for h in hits:
         tag = "BLOCK" if h["status"] == "blocking" else "warn"
         lines.append(f"[{tag}] {h['message']}  (id {h['id']})")

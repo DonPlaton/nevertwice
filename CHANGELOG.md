@@ -6,6 +6,44 @@ versions are [semantic](https://semver.org). Dates are UTC.
 ## [Unreleased]
 
 ### Added
+- **`why_fired`: one object, four surfaces, and a test that makes them agree.**
+
+  A guard that fires interrupts the agent, so the interruption has to carry its own
+  justification. Four surfaces answered that differently: the Python API returned
+  `{id, status, message, scope}`, the CLI printed one line, the MCP tool printed a slightly
+  different line, and the dashboard did not mention guards at all. Nothing forced them to agree,
+  so "why did this fire?" had four answers depending on where you asked.
+
+  `nevertwice/why_fired.py` builds the answer once - the matched span, the recorded mistake the
+  guard was distilled from and how often that failure recurred, confidence and what it is an
+  estimate of, the guard's age, the policy that made it a warning rather than a block and exactly
+  what would change that, and the token arithmetic behind the zero-token claim: nothing until it
+  matched, one message now, against what reading the source notes would have cost.
+
+  All four surfaces render *that*: `api.guards_check(..., explain=True)` and `api.why_fired()`,
+  `nevertwice-guards check --why` (and `--json`), `"explain": true` on the MCP
+  `memory_guard_check` tool, and a new guard table in the dashboard. The CLI and MCP share one
+  formatter, because two formatters over one object is how two surfaces start disagreeing.
+
+  **Where a signal does not apply, it says so.** A guard fires on a regex, so it has no lexical
+  or semantic contribution and no ranked candidate set; those fields carry `None` and a reason
+  rather than `0.0`, which would be a lie shaped like a measurement. The causal-graph walk is
+  behind `deep=True` because it reads the whole store.
+
+  **The hot path is untouched.** `guards.check()` is still a regex-and-scope match returning
+  exactly `{id, status, message, scope}`, and explaining is opt-in - the zero-token argument
+  rests on that, and a test asserts the default result is unchanged.
+
+  `nevertwice/schemas.py` gains `WhyFired`, its eighth declared boundary.
+  `tests/_test_why_fired.py` drives the real engine on a throwaway store: 47 checks, and seven
+  mutations - MCP formatting its own line, the dashboard dropping the section, a signal reporting
+  0.0, the explanation leaking onto the default path, a faked span, a sourceless guard going
+  quiet about it, a pack guard claiming it can be promoted - each turns it red.
+
+  Two defects it caught while being written: the object emitted `last_fired: None`, which is a
+  string that is null rather than an absent key, and the dashboard filtered guards on the
+  digest's *display* string (`"(all)"`) instead of the project argument, which silently emptied
+  the table on a whole-store dashboard.
 - **Every published number now names the commit whose code produced it - and most of them
   turned out to be describing an engine that no longer exists.**
 

@@ -52,6 +52,20 @@ MAX_CHECK_CHARS = 20000      # cap the text we scan, so a huge diff can't stall 
 STATUSES = ("advisory", "blocking", "retired")
 
 
+def _sibling(name: str):
+    """Import an optional sibling module, or None.
+
+    Deferred on purpose: `why_fired` imports this module, so importing it at the top would be
+    a cycle, and the hot path must not pay for an explanation it is not going to print. The
+    live deployment is also a flat selective copy of scripts, where a module may simply be
+    absent - `--why` degrades to the plain line rather than failing the check.
+    """
+    try:
+        return __import__(name)
+    except Exception:               # noqa: BLE001 - any import failure is the same answer here
+        return None
+
+
 def _ledger_path() -> Path:
     return m.VAULT / "guards.json"
 
@@ -486,13 +500,31 @@ def generate_from_vault(project=None, *, min_recurrence=1, limit=None, use_llm=T
 
 # ── CLI ───────────────────────────────────────────────────────────────
 
-def _print_hits(hits):
+def _print_hits(hits, *, why=False, text="", project=None, deep=False, as_json=False):
+    """Render the hits. `why=True` renders the full WhyFired object through
+    `why_fired.render`, which the MCP surface also calls - one formatter, so the two cannot
+    drift into giving different answers to the same question (GOAL D3)."""
+    if as_json:
+        import json
+        wf = _sibling("why_fired")
+        print(json.dumps(wf.explain_hits(hits, text, project=project, deep=deep)
+                         if (wf and hits) else hits, indent=2, ensure_ascii=False))
+        return
     if not hits:
         print("ok - no guard fires for this action.")
         return
-    for h in hits:
-        tag = "BLOCK" if h["status"] == "blocking" else "warn "
-        print(f"  [{tag}] ({h['id']}) {h['message']}")
+    wf = _sibling("why_fired") if why else None
+    explained = (wf.explain_hits(hits, text, project=project, deep=deep)
+                 if wf is not None else [])
+    if explained:
+        for entry in explained:
+            print(wf.render(entry))
+    else:
+        for h in hits:
+            tag = "BLOCK" if h["status"] == "blocking" else "warn "
+            print(f"  [{tag}] ({h['id']}) {h['message']}")
+        if why and wf is None:
+            print("  (--why is unavailable: why_fired.py is not present in this install)")
     if any(h["status"] == "blocking" for h in hits):
         print("  → a blocking guard fired. Comply, or override: "
               "guards feedback <id> false_positive --reason \"...\"")
@@ -501,8 +533,9 @@ def _print_hits(hits):
 def main():
     argv = sys.argv[1:]
     if not argv:
-        print("usage: guards check <text> | list | feedback <id> <helped|false_positive> "
-              "[--reason ..] | generate [--project P] [--limit N] | pack")
+        print("usage: guards check <text> [--why] [--json] [--deep] | list | "
+              "feedback <id> <helped|false_positive> [--reason ..] | "
+              "generate [--project P] [--limit N] | pack")
         return
     cmd = argv[0]
     if cmd == "pack":
@@ -515,8 +548,10 @@ def main():
         return
     if cmd == "check":
         text = argv[1] if len(argv) > 1 and not argv[1].startswith("--") else ""
-        hits = check(text, project=m.argval(argv, "project"), path=m.argval(argv, "path"))
-        _print_hits(hits)
+        project = m.argval(argv, "project")
+        hits = check(text, project=project, path=m.argval(argv, "path"))
+        _print_hits(hits, why="--why" in argv, text=text, project=project,
+                    deep="--deep" in argv, as_json="--json" in argv)
     elif cmd == "list":
         guards = load_guards()
         live = [g for g in guards if g["status"] != "retired"]
