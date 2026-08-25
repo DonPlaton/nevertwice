@@ -3200,15 +3200,26 @@ def mark_resolved(mistake_fp: Path, by_stem: str) -> bool:
     return True
 
 
+#: Ceiling on a recurrence count read from frontmatter. Recurrence counts DISTINCT
+#: contributing sessions and its provenance set is capped at RECUR_SOURCES_CAP, so a count
+#: orders of magnitude above that is not evidence - it is an assertion nothing can back. Left
+#: unbounded, one hand-edited or imported note claiming `recurrence: 999999999` outranks the
+#: entire store forever, which is memory poisoning through arithmetic rather than through
+#: content (GOAL E2). The ceiling is far above any real note and far below anything that can
+#: dominate the ranking.
+RECUR_COUNT_CAP = 1000
+
+
 def _coerce_recurrence(v) -> int:
-    """Recurrence as a positive int - THE one parse rule (review 2026-08 R2: this
+    """Recurrence as a positive, bounded int - THE one parse rule (review 2026-08 R2: this
     logic had drifted between embed_index and the live readers, so a note's count
     depended on which path last touched it: round(float) tolerates "2.7" where
     int() raised and reset the count to 1; the floor keeps a stray negative from
-    down-weighting recall; isfinite guards round(inf) -> OverflowError)."""
+    down-weighting recall; isfinite guards round(inf) -> OverflowError). The ceiling is
+    E2's: an unbounded count read from a file is a ranking-poisoning vector."""
     try:
         f = float(v if v not in (None, "") else 1)
-        return max(1, round(f)) if math.isfinite(f) else 1
+        return min(RECUR_COUNT_CAP, max(1, round(f))) if math.isfinite(f) else 1
     except (TypeError, ValueError):
         return 1
 

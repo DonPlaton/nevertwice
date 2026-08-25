@@ -5,6 +5,9 @@ standard library with no third-party packages, and nothing leaves your computer 
 into a cloud backend with your own key. That removes most of the usual attack surface. What is
 left is listed below, and reports are welcome.
 
+[`docs/THREAT_MODEL.md`](docs/THREAT_MODEL.md) names every trust boundary, its owner, the test
+behind each claim, and the gaps this does **not** close; CI fails on a claim with no test.
+
 ## Supported versions
 
 The default branch is what is supported: fixes land there first, and there is no long-term

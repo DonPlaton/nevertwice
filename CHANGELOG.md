@@ -6,6 +6,36 @@ versions are [semantic](https://semver.org). Dates are UTC.
 ## [Unreleased]
 
 ### Added
+- **An executable security policy: `docs/THREAT_MODEL.md`, machine-checked.**
+
+  `SECURITY.md` says what to do about a vulnerability. It never said what the system claims to
+  *defend*, and a claim nobody runs is a claim nobody keeps. The threat model names **eight
+  trust boundaries** - session capture, extraction, note file to reader, imported memory, guard
+  lifecycle, the store on disk, the MCP surface, outbound network - and for each one: who owns
+  it, what is trusted, what is not, and **17 claims each naming a check that runs in CI**.
+
+  `tests/_test_threat_model.py` parses the document and fails when a boundary has no owner,
+  when an owner names a file that does not exist, when a boundary states only one side, or when
+  a claim names a check that is not in the suite it points at. It caught a real error on its
+  first run: a claim pointing at `_test_budget.py` for a check that lives in `_test_outcomes.py`.
+  Seven mutations *of the document* turn it red. It runs as its own CI step.
+
+  `tests/_test_security_policy.py` is the fixture half - eight secret formats, indirect prompt
+  injection, path traversal, malicious frontmatter, an untrusted export carrying a payload, and
+  poisoned recurrence - 24 checks against the real primitives.
+
+  **The known gaps are in the document**, because a threat model listing only what it defends is
+  marketing. The HTML-comment injection gap is *pinned by a test that fails the day it closes*,
+  so the document gets corrected rather than silently becoming wrong.
+
+### Fixed
+- **An unbounded recurrence count read from a note file was a ranking-poisoning vector.**
+  Recurrence counts distinct contributing sessions and its provenance set was already capped at
+  25, but the count itself - the ranking signal - was read from frontmatter unbounded. One
+  hand-edited, synced or imported note claiming `recurrence: 999999999` would outrank the entire
+  store forever: memory poisoning through arithmetic rather than through content, needing no
+  injection at all. Now capped, far above any real note and far below anything that can dominate
+  the ranking.
 - **Every failure this project has actually had now has a test that reproduces it - and
   writing them found a live concurrency bug.**
 

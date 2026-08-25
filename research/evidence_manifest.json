@@ -454,6 +454,13 @@
       "target": "D7",
       "note": "Describes the recorded migration fixtures for a contributor adding a source. A fixture README is prose people read, so it stays governed even though the fixture data beside it does not - see tests/_docs_scope.py.",
       "budget_metric": "evidence-bearing numeric tokens: numbers outside fenced blocks, excluding years and bare single digits"
+    },
+    "docs/THREAT_MODEL.md": {
+      "governance": "backlog",
+      "budget": 6,
+      "target": "E2",
+      "note": "Trust boundaries and their tests. Its numbers are incident dates, thresholds and constants rather than published measurements, so it is registered as backlog with a ratchet instead of exempted - an exemption is a hole that never closes. Its *claims* are governed more strictly than any metric: tests/_test_threat_model.py fails when one names a check that does not exist.",
+      "budget_metric": "evidence-bearing numeric tokens: numbers outside fenced blocks, excluding years and bare single digits"
     }
   },
   "claims": [

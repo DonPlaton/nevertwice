@@ -155,7 +155,7 @@ With no backend at all, extraction pauses loudly (sessions are kept and retried,
 recall runs on lexical search until an embedder shows up. The five-minute walkthrough is in
 [QUICKSTART.md](QUICKSTART.md); every environment variable is in [CONFIG.md](docs/CONFIG.md).
 
-Contributing: `pip install -e ".[dev]"`, then `python -m pytest -q`. Seventy-four hermetic suites -
+Contributing: `pip install -e ".[dev]"`, then `python -m pytest -q`. Seventy-six hermetic suites -
 LLMs, embedders, the optional reranker, network and GPU execution are disabled or mocked, and a lint
 fails the build if a script reaches a memory store without declaring which store it means. CI runs
 them on Linux, Windows and macOS across four Python versions.
@@ -167,7 +167,7 @@ them on Linux, Windows and macOS across four Python versions.
 [Configuration](docs/CONFIG.md) · [Brain layer (opt-in)](docs/BRAIN_LAYER_DESIGN.md) ·
 [Benchmarks](docs/BENCHMARKS.md) · [Baseline gates](research/BASELINES.md) ·
 [Comparison](docs/COMPARISON.md) · [Known weaknesses](docs/WEAKNESSES.md) ·
-[Research lab](research/) · [Security](SECURITY.md) · [Contributing](CONTRIBUTING.md)
+[Research lab](research/) · [Security](SECURITY.md) · [Threat model](docs/THREAT_MODEL.md) · [Contributing](CONTRIBUTING.md)
 
 Built by **Platon Chernov**; formerly *Anamnesis*, renamed 2026-07 (same project, same store, the
 old environment variables still work). A ⭐ is genuinely appreciated and a citation is welcome - a

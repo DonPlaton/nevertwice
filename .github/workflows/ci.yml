@@ -73,6 +73,11 @@ jobs:
         run: python -m build
       - name: Version contract - built distribution metadata
         run: python tools/check_version.py --dist dist
+      - name: The threat model names an owner and a test for every claim
+        # E2's exit criterion, enforced rather than reviewed: a security document is exactly
+        # the kind of file that is written once and then quietly outlives the code. This fails
+        # when a claim names a check that does not exist.
+        run: python tests/_test_threat_model.py
       - name: No published number was produced by code that has since moved
         # The other half of the manifest contract. render_claims.py proves a document matches
         # the manifest; this proves the manifest matches the engine - for every claim, the last
