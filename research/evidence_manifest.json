@@ -461,6 +461,10 @@
       "target": "E2",
       "note": "Trust boundaries and their tests. Its numbers are incident dates, thresholds and constants rather than published measurements, so it is registered as backlog with a ratchet instead of exempted - an exemption is a hole that never closes. Its *claims* are governed more strictly than any metric: tests/_test_threat_model.py fails when one names a check that does not exist.",
       "budget_metric": "evidence-bearing numeric tokens: numbers outside fenced blocks, excluding years and bare single digits"
+    },
+    "research/PREREGISTRATION.md": {
+      "governance": "exempt",
+      "reason": "a preregistration states hypotheses, endpoints and decision rules BEFORE the confirmatory run. Its numbers are prospective thresholds and power targets, not measurements to reproduce, and every retrospective figure it refers to is cited by artifact rather than reprinted."
     }
   },
   "claims": [

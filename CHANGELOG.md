@@ -6,6 +6,46 @@ versions are [semantic](https://semver.org). Dates are UTC.
 ## [Unreleased]
 
 ### Added
+- **The preregistration: what the confirmatory run will test, fixed before it runs (GOAL F8).**
+
+  Everything in `research/` so far is exploratory. F1-F6 built the harnesses, measured what one
+  corpus could measure, and repeatedly found less than the project had been claiming. That work
+  *generated* these hypotheses and therefore cannot confirm them - the corpus that suggested a
+  hypothesis is not evidence for it. `research/PREREGISTRATION.md` fixes the hypotheses,
+  endpoints, decision rules and corpus requirements in advance; `research/preregistration.py`
+  computes the one thing that cannot be written by hand.
+
+  **H1 is registered as a hypothesis we expect to fail.** Against raw lexical recall the system
+  has not been shown to help, and on the exploratory corpus its successes were a strict subset
+  of that baseline's. Registering it anyway is the whole point: a claim that quietly disappears
+  between exploration and write-up is the failure preregistration exists to prevent, and this
+  project has already withdrawn one published headline.
+
+  **H2 - complementarity with an existing linter - would reframe the contribution.** If it
+  holds, the finding is not that this system beats the alternatives but that it reaches failure
+  classes static analysis cannot. That is a smaller and far more defensible claim than the one
+  the project started with, and it is the only hypothesis the exploratory corpus is adequately
+  powered for.
+
+  **The sample size is computed, exactly.** Power is marginalised over the discordant-pair
+  distribution with an exact binomial throughout - never the chi-squared approximation, which at
+  these counts reports power the design does not have. Three of the four hypotheses are
+  underpowered at the exploratory corpus size, and publishing that *before* the run is what
+  stops "we ran what we had and it was not significant" from being reported as evidence of no
+  effect.
+
+  The corpus requirements are preregistered too, because each is a way a result could be
+  weakened afterwards. The binding one: **it must be written by somebody other than the author
+  of the notes.** No amount of statistical care repairs a corpus where one person wrote both the
+  failures and the situations heading toward them.
+
+  Submission is gate **G7** and remains the owner's action. `tests/_test_preregistration.py`,
+  103 checks: every hypothesis must have an endpoint, a test, and a falsification rule that is
+  not its support rule; the losing hypothesis must be registered; and the document may not
+  describe its own prior work as settled. Ten mutations, all killed - including dropping the
+  losing hypothesis, swapping the exact test for the approximation, and deleting the
+  different-author requirement.
+
 - **The reproduction package - and the two irreproducibilities it found (GOAL F7).**
 
   `research/reproduce.py` regenerates every research artifact behind a claim the project still

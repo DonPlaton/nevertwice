@@ -1,0 +1,117 @@
+{
+ "schema_version": 1,
+ "generated_by": "python research/preregistration.py --save",
+ "design": {
+  "test": "exact McNemar on discordant pairs, two-sided",
+  "alpha": 0.05,
+  "target_power": 0.8,
+  "correction": "Holm-Bonferroni across all preregistered hypotheses",
+  "approximation": "none - exact binomial throughout, because the normal approximation is unreliable at the discordant-pair counts this design produces"
+ },
+ "hypotheses": [
+  {
+   "id": "H1",
+   "statement": "Proactive interventions from the memory system prevent more repeated failures than raw lexical recall at a matched false-alarm rate.",
+   "endpoint": "prevention rate at each arm's zero-false-alarm operating point",
+   "comparison": "nevertwice vs lexical_recall, paired over episodes",
+   "test": "exact McNemar on discordant pairs, two-sided, Holm-corrected across hypotheses",
+   "supported_if": "the Holm-corrected p is below alpha AND the difference favours the memory arm",
+   "falsified_if": "the corrected p is not below alpha, or the difference favours the baseline",
+   "exploratory_finding": "F5 found the memory arm's successes to be a strict SUBSET of lexical recall's on the exploratory corpus - it won zero episodes the baseline missed. H1 is therefore expected to fail, and is preregistered so that failing is a result rather than an omission.",
+   "prior_discordance": 0.07,
+   "prior_favouring": 0.5
+  },
+  {
+   "id": "H2",
+   "statement": "The memory system and an existing linter are COMPLEMENTARY: their union prevents more repeated failures than either alone.",
+   "endpoint": "prevention rate of the union arm vs each arm alone",
+   "comparison": "union(nevertwice, linter_or_test) vs each, paired over episodes",
+   "test": "exact McNemar on discordant pairs, two-sided, Holm-corrected",
+   "supported_if": "the union beats BOTH arms at corrected alpha",
+   "falsified_if": "the union fails to beat either arm",
+   "exploratory_finding": "F5 found ten episodes each arm got that the other missed, and a union far above either alone. This is the strongest exploratory signal in the whole phase and the one most worth confirming.",
+   "prior_discordance": 0.33,
+   "prior_favouring": 1.0
+  },
+  {
+   "id": "H3",
+   "statement": "Coverage normalisation is load-bearing: removing it costs prevention at a matched false-alarm rate.",
+   "endpoint": "prevention rate with and without coverage normalisation",
+   "comparison": "full scorer vs the no-coverage ablation, paired over episodes",
+   "test": "exact McNemar on discordant pairs, two-sided, Holm-corrected",
+   "supported_if": "removing coverage normalisation lowers the prevention rate at corrected alpha, OR removes the zero-false-alarm operating point entirely",
+   "falsified_if": "the ablated scorer still reaches a zero-false-alarm operating point AND its prevention rate is not lower at corrected alpha",
+   "exploratory_finding": "F4 found that removing coverage normalisation does not merely lower recall - it loses the zero-false-alarm operating point entirely. It was the only mechanism F4 could name.",
+   "prior_discordance": 0.3,
+   "prior_favouring": 0.95
+  },
+  {
+   "id": "H4",
+   "statement": "The reader bounds actionability: prevention from an identical surfaced memory differs by reader model.",
+   "endpoint": "prevention-adoption lift, memory held fixed, across a model ladder",
+   "comparison": "smallest vs largest reader, paired over episodes",
+   "test": "exact McNemar on discordant pairs, two-sided, Holm-corrected",
+   "supported_if": "the lift differs across the ladder at corrected alpha",
+   "falsified_if": "it does not differ beyond the interval",
+   "exploratory_finding": "F3 found a spread exceeding the sampling interval but a NON-MONOTONIC ladder, which at that sample size reads as noise. Confirming this needs both a larger corpus and the frontier cells that gate G8 currently blocks.",
+   "prior_discordance": 0.33,
+   "prior_favouring": 0.75
+  }
+ ],
+ "power": [
+  {
+   "id": "H1",
+   "discordance_assumed": 0.07,
+   "favouring_assumed": 0.5,
+   "episodes_for_80_percent_power": null,
+   "power_cap_searched": 600,
+   "power_at_30_episodes": 0.0004,
+   "power_at_100_episodes": 0.0158,
+   "note": "no effect to detect in the stated direction - this hypothesis is preregistered as one the exploratory phase expects to FAIL"
+  },
+  {
+   "id": "H2",
+   "discordance_assumed": 0.33,
+   "favouring_assumed": 1.0,
+   "episodes_for_80_percent_power": 23,
+   "power_cap_searched": 600,
+   "power_at_30_episodes": 0.9615,
+   "power_at_100_episodes": 1.0,
+   "note": "a corpus of 23 labelled episodes is the minimum this design needs"
+  },
+  {
+   "id": "H3",
+   "discordance_assumed": 0.3,
+   "favouring_assumed": 0.95,
+   "episodes_for_80_percent_power": 32,
+   "power_cap_searched": 600,
+   "power_at_30_episodes": 0.7762,
+   "power_at_100_episodes": 0.9999,
+   "note": "a corpus of 32 labelled episodes is the minimum this design needs"
+  },
+  {
+   "id": "H4",
+   "discordance_assumed": 0.33,
+   "favouring_assumed": 0.75,
+   "episodes_for_80_percent_power": 102,
+   "power_cap_searched": 600,
+   "power_at_30_episodes": 0.2383,
+   "power_at_100_episodes": 0.7936,
+   "note": "a corpus of 102 labelled episodes is the minimum this design needs"
+  }
+ ],
+ "corpus_requirements": [
+  "Written by someone other than the author of the notes. Every exploratory result rests on a corpus where the same person wrote the failures and the situations heading toward them, which biases recall upward and cannot be corrected for after the fact.",
+  "At least the size the power table below requires for the hypothesis being tested. A run smaller than that cannot report a null as evidence of no effect.",
+  "Episodes drawn from real sessions rather than paraphrased from notes, so no episode can share the wording of the note it is labelled against.",
+  "Labelled before any arm is run on it, by someone who has not seen the arms' outputs.",
+  "Published in full with the results, per-episode and per-family, as F5 established."
+ ],
+ "status": [
+  "NOTHING HERE HAS BEEN CONFIRMED. F1 through F6 were exploratory: they generated these hypotheses from one corpus, and using that corpus to confirm them would be circular. This document exists so the confirmatory run is committed to in advance.",
+  "The exploratory corpus of 30 positive episodes is underpowered for 3 of 4 hypotheses (H1, H3, H4); it is adequately powered only for H2. A confirmatory run needs up to 102 labelled episodes, and a null from anything smaller is not evidence of no effect.",
+  "H1 is preregistered as a hypothesis the exploratory phase expects to FAIL. Registering it anyway is the point: a claim that quietly disappears between exploration and publication is the failure mode preregistration exists to prevent.",
+  "H2 - complementarity with an existing linter - is the strongest exploratory signal and the one worth the most. It is also the one that reframes the contribution: if it holds, the finding is not that this system beats the alternatives but that it covers failure classes static analysis cannot reach.",
+  "The confirmatory corpus requirements are preregistered too, because each is a way a result could be quietly weakened afterwards. The binding one is that somebody other than the author of the notes must write it."
+ ]
+}
