@@ -37,6 +37,7 @@ sys.path.insert(0, str(ROOT / "nevertwice"))
 sys.path.insert(0, str(ROOT / "research"))
 import capability_grid as CG      # noqa: E402
 import matched_conditions as MC   # noqa: E402
+import _frontier as F             # noqa: E402 - the gate this suite must not open
 
 PASSED = 0
 FAILED = 0
@@ -228,19 +229,47 @@ def test_the_gated_cells_refuse_rather_than_pretending() -> None:
     survived while the owner silently lost the one thing they needed: what to do about it.
     """
     import io
+    import os
     from contextlib import redirect_stderr
     print("\n- asking for a frontier cell does not quietly give a local one -")
-    for name in CG.GATED_MODELS:
+
+    # This suite drives the very entry point that can spend money, so it runs with the
+    # environment it is asserting about: no key, no approval. Without this, running the suite
+    # on the owner's own machine - where a key IS exported - would have billed them for
+    # checking that the refusal works.
+    saved = {v: os.environ.pop(v, None)
+             for v in (*F.KEY_VARS, F.OPT_IN_VAR)}
+    try:
+        for name in CG.GATED_MODELS:
+            buf = io.StringIO()
+            with redirect_stderr(buf):
+                rc = CG.main(["--model", name])
+            message = buf.getvalue()
+            check(f"--model {name} exits non-zero", rc != 0, str(rc))
+            check(f"--model {name} says it is GATED", "GATED" in message, message[:100])
+            check(f"--model {name} names the variable the owner must set",
+                  F.KEY_VARS[0] in message, message[:160])
+            check(f"--model {name} names the approval switch too",
+                  F.OPT_IN_VAR in message, message[:160])
+            check(f"--model {name} states that nothing was measured",
+                  "Nothing was measured" in message, message[:100])
+
+        # The half that matters most: a key alone must not be read as permission.
+        os.environ[F.KEY_VARS[0]] = "sk-not-a-real-key-this-must-never-be-sent"
+        check("a key without approval is still not allowed to spend",
+              not F.billable_allowed(), "billable_allowed() said yes on a key alone")
         buf = io.StringIO()
         with redirect_stderr(buf):
-            rc = CG.main(["--model", name])
-        message = buf.getvalue()
-        check(f"--model {name} exits non-zero", rc != 0, str(rc))
-        check(f"--model {name} says it is GATED", "GATED" in message, message[:100])
-        check(f"--model {name} says what the owner must do",
-              "provider key" in message, message[:100])
-        check(f"--model {name} states that nothing was measured",
-              "Nothing was measured" in message, message[:100])
+            rc = CG.main(["--model", "frontier-a"])
+        check("a key without approval still refuses", rc == 2, str(rc))
+        check("and the refusal says which half is shut",
+              F.OPT_IN_VAR in buf.getvalue() and "not approved" in buf.getvalue(),
+              buf.getvalue()[:200])
+    finally:
+        os.environ.pop(F.KEY_VARS[0], None)
+        for var, value in saved.items():
+            if value is not None:
+                os.environ[var] = value
 
 
 # ═══════════════════════ THE EXIT CRITERION ════════════════════════════

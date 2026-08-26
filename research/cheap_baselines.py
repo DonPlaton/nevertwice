@@ -16,15 +16,19 @@ The three added here are the ones that hurt:
   that duplicates a linter is not memory, it is a worse linter. Scored generously **in the
   baseline's favour**: where it was arguable whether ruff, bandit, a secret scanner or CodeQL
   would fire, the answer recorded is yes.
-* **`llm_session_summary`** - built, run gated. No local model server is reachable here and a
-  frontier call is G8, so what runs is a deterministic extractive summariser, labelled as such
-  and never reported as an LLM result. The arm, its scoring and its token accounting are in
-  place; only the generator changes.
+* **`llm_session_summary`** - built, run gated. By default what runs is a deterministic
+  extractive summariser reported as `session_summary_extractive`, never as an LLM result. The
+  model-backed generator exists and is reached by `--summariser=model`, which is BILLABLE and
+  therefore refuses unless a key is configured *and* the spend is explicitly approved. When it
+  does run, the arm is renamed `session_summary_llm` and the model is held to the same word
+  budget as the stub - a summariser given more room would be a different experiment.
 
-    python research/cheap_baselines.py           # the six-arm table
-    python research/cheap_baselines.py --save    # + research/cheap_baselines.json
+    python research/cheap_baselines.py                     # the six-arm table
+    python research/cheap_baselines.py --save              # + research/cheap_baselines.json
+    python research/cheap_baselines.py --summariser=model  # BILLABLE (gate G8)
 
-Standard library only. No network, no GPU.
+Standard library only by default. No network, no GPU. The billable arm imports `anthropic`
+inside the one function that needs it.
 """
 from __future__ import annotations
 
@@ -134,19 +138,78 @@ def _extractive_summary(sig: dict, budget: int) -> set:
 _SUMMARY_BUDGET = 12
 _SUMMARIES: dict = {}
 
+#: Which summariser is in play, and what the resulting arm is called. The name is part of the
+#: result: an extractive stub reported under an LLM's name would be the single most misleading
+#: thing this file could publish, so the arm is renamed rather than annotated.
+SUMMARY_ARMS = {"extractive": "session_summary_extractive", "model": "session_summary_llm"}
+_SUMMARISER = "extractive"
+_LLM_SPEND: dict = {}
+
+
+def _model_summary(sig: dict, budget: int) -> set:
+    """The billable summariser: ask a model to compress one past failure. BILLABLE (gate G8).
+
+    Held to the *same* token budget as the stub, because the arm's whole point is what a
+    summary of a fixed size buys. A model allowed more words than the extractive arm would be
+    a different experiment wearing the same name.
+    """
+    import _frontier as F                               # noqa: PLC0415 - billable path only
+
+    model = F.resolve("frontier-a")
+    prompt = ("Summarise this past engineering failure so a future agent about to repeat it "
+              f"would recognise the situation. At most {budget} words, no preamble, no "
+              "formatting - just the words.\n\n"
+              f"{sig.get('title', '')}\n{sig.get('text', '')}")
+    text, usage = F.generate(model, prompt)
+    _LLM_SPEND["model"] = model
+    _LLM_SPEND["calls"] = _LLM_SPEND.get("calls", 0) + 1
+    for k in ("input_tokens", "output_tokens"):
+        _LLM_SPEND[k] = _LLM_SPEND.get(k, 0) + usage[k]
+    # First `budget` content tokens in order of appearance: deterministic given the text, and
+    # the same cap the stub gets. A set from a longer answer would silently buy more coverage.
+    toks, seen = [], set()
+    for t in A._content_tokens(text):
+        if t not in seen:
+            seen.add(t)
+            toks.append(t)
+        if len(toks) >= budget:
+            break
+    return set(toks)
+
+
+def _summarise(sig: dict, budget: int) -> set:
+    return (_model_summary if _SUMMARISER == "model" else _extractive_summary)(sig, budget)
+
+
+def set_summariser(kind: str) -> str:
+    """Choose the summariser and rename the arm to match. Returns the arm name."""
+    global _SUMMARISER
+    if kind not in SUMMARY_ARMS:
+        raise ValueError(f"unknown summariser {kind!r}; known: {sorted(SUMMARY_ARMS)}")
+    for old in SUMMARY_ARMS.values():
+        ARMS.pop(old, None)
+        STANDING_TOKENS.pop(old, None)
+    _SUMMARISER = kind
+    _SUMMARIES.clear()
+    name = SUMMARY_ARMS[kind]
+    ARMS[name] = arm_session_summary
+    STANDING_TOKENS[name] = _SUMMARY_BUDGET * 3
+    return name
+
 
 def arm_session_summary(episode: str, sigs: list) -> tuple:
     """Summarise each past session, inject the summaries, match against them.
 
-    Reported as `session_summary_extractive`. It is never labelled an LLM result, because it
-    is not one.
+    Reported as `session_summary_extractive` or `session_summary_llm` depending on which
+    summariser produced the text. The stub is never labelled an LLM result, because it is not
+    one.
     """
     toks = set(A._content_tokens(episode[:A.MAX_CHECK_CHARS]))
     best, best_score = None, 0.0
     for sig in sigs:
         key = sig["stem"]
         if key not in _SUMMARIES:
-            _SUMMARIES[key] = _extractive_summary(sig, _SUMMARY_BUDGET)
+            _SUMMARIES[key] = _summarise(sig, _SUMMARY_BUDGET)
         summary = _SUMMARIES[key]
         if not summary:
             continue
@@ -210,9 +273,12 @@ def build(save: bool = False) -> dict:
                    "positives": positives, "limitations": data["limitations"]},
         "matched_false_positive_rate": target,
         "arms": table,
-        "arms_not_run": {
-            "llm_session_summary": _RULES["llm_session_summary"]["status"],
-        },
+        "summariser": _SUMMARISER,
+        # When the model arm actually ran, the "not run" note would be a false statement, so it
+        # is replaced by what was run and what it cost rather than kept beside it.
+        "arms_not_run": ({} if _SUMMARISER == "model" else
+                         {"llm_session_summary": _RULES["llm_session_summary"]["status"]}),
+        "arms_run_billable": (dict(_LLM_SPEND) if _SUMMARISER == "model" else {}),
         "linter_coverage": _RULES["linter_or_test"]["coverage"],
         "verdict": verdict,
     }
@@ -305,9 +371,15 @@ def _standing_caveats() -> list:
         "it catches every instance of that class and never cries wolf, because a linter fires "
         "on code rather than on intentions. For those classes a guard is a worse linter, and "
         "the memory system's claim has to be about the classes no linter covers.",
-        "The LLM session-summary arm has NOT been run against a model. Until it is, no claim "
-        "may say the system beats an LLM summary - only that it beats a deterministic "
-        "extractive summariser at the same token budget.",
+        ("The session-summary arm was run against "
+         f"{_LLM_SPEND.get('model', 'a model')} at the same {_SUMMARY_BUDGET}-word budget as "
+         "the stub, so a claim about beating an LLM summary is about THAT model at THAT "
+         "budget - not about LLM summarisation in general, and not about a summariser given "
+         "room to write more."
+         if _SUMMARISER == "model" else
+         "The LLM session-summary arm has NOT been run against a model. Until it is, no claim "
+         "may say the system beats an LLM summary - only that it beats a deterministic "
+         "extractive summariser at the same token budget."),
     ]
 
 
@@ -350,7 +422,14 @@ def render(p: dict) -> str:
     L.append(f"  linter/test already covers {len(caught)} of {len(p['linter_coverage'])} "
              f"failure classes: {', '.join(caught)}")
     L.append("")
-    L.append(f"  not run: {p['arms_not_run']['llm_session_summary'].split('.')[0]}.")
+    gap = p.get("arms_not_run", {}).get("llm_session_summary")
+    if gap:
+        L.append(f"  not run: {gap.split('.')[0]}.")
+    else:
+        spend = p.get("arms_run_billable", {})
+        L.append(f"  billable arm run: {spend.get('calls')} calls to "
+                 f"{spend.get('model')} ({spend.get('input_tokens')} in / "
+                 f"{spend.get('output_tokens')} out)")
     L.append("")
     return "\n".join(L)
 
@@ -365,10 +444,15 @@ def main(argv: list | None = None) -> int:
     args = ap.parse_args(argv)
 
     if args.summariser == "model":
-        print("GATED (G8 / no local model server): the LLM session-summary arm is built and "
-              "scored, but running it needs a model. Start a local server or approve a "
-              "billable call, then re-run. Nothing was measured.", file=sys.stderr)
-        return 2
+        import _frontier as F                           # noqa: PLC0415 - billable path only
+        if not F.billable_allowed():
+            print("GATED (G8): the LLM session-summary arm is built and scored, but running it "
+                  f"needs a model and your approval - {F.why_blocked()}. "
+                  "Nothing was measured and nothing was billed.", file=sys.stderr)
+            return 2
+        name = set_summariser("model")
+        print(f"  billable: 15 summaries via {F.resolve('frontier-a')}, arm `{name}`",
+              file=sys.stderr)
 
     payload = build(save=args.save)
     if args.json:

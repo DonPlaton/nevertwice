@@ -9,7 +9,8 @@ answer it is to hold the memory fixed and vary the model.
 This grid does exactly that. Every cell sees the **same** episode and the **same** surfaced
 prevention - F2's curated rules, which are already mapped to failure classes - and differs only
 in who is reading. Four cells run locally on the RTX 5090 (Qwen2.5 at 0.5B, 1.5B, 3B and 7B);
-the two frontier cells are **G8** and are reported as not-run rather than dropped.
+the two frontier cells are **G8** - the generator exists, and it refuses until the owner both
+configures a key and approves the spend, so a stray key in the environment can never bill them.
 
 Two design decisions that decide whether the numbers mean anything:
 
@@ -25,12 +26,16 @@ Two design decisions that decide whether the numbers mean anything:
     python research/capability_grid.py --model qwen2.5-0.5b   # one cell
     python research/capability_grid.py --all                  # every local cell, in size order
     python research/capability_grid.py --report               # the grid from saved cells
+    python research/capability_grid.py --estimate             # what the gated cells would cost
+    python research/capability_grid.py --model frontier-a     # BILLABLE (gate G8)
 
 Results accumulate per cell in `research/capability_grid.json`, so a cell that fails or is
 interrupted costs only that cell.
 
-Requires torch + transformers for the RUN. The report and the grading are stdlib-only, which is
-what lets `tests/_test_capability_grid.py` check them without a GPU.
+Requires torch + transformers for a LOCAL run and `anthropic` for a frontier one; both are
+imported inside the function that needs them. The report, the estimate and the grading are
+stdlib-only, which is what lets `tests/_test_capability_grid.py` check them without a GPU, a
+key, or a network.
 """
 from __future__ import annotations
 
@@ -51,6 +56,7 @@ sys.path.insert(0, str(ROOT / "research"))
 import anticipate as A                                  # noqa: E402
 import memory_hook as m                                 # noqa: E402
 import matched_conditions as MC                         # noqa: E402
+import _frontier as F                                   # noqa: E402 - the billable generator
 
 OUT = ROOT / "research" / "capability_grid.json"
 RULES = json.loads((ROOT / "research" / "cheap_baselines_rules.json").read_text(encoding="utf-8"))
@@ -63,14 +69,15 @@ LOCAL_MODELS = {
     "qwen2.5-7b": {"path": r"D:/Local_AI_Models/Qwen2.5-7B-Instruct", "params_b": 7.0},
 }
 
-#: The cells that need somebody's money. Built, scored, not run - the same treatment F2 gave the
-#: LLM session-summary arm, for the same reason.
+#: The cells that need somebody's money. The generator behind them lives in `_frontier`; the
+#: gate is that running it bills the owner, so the key must be present *and* the cell asked for
+#: by name. Neither `--all` nor a missing key reaches a paid call.
 GATED_MODELS = {
     "frontier-a": {"why": "a frontier API call spends the owner's money (gate G8)",
-                   "what_the_owner_must_do": "set the provider key and run "
+                   "what_the_owner_must_do": "set ANTHROPIC_API_KEY and NEVERTWICE_ALLOW_BILLABLE=1, then run "
                                              "`python research/capability_grid.py --model frontier-a`"},
     "frontier-b": {"why": "a second frontier API, same gate",
-                   "what_the_owner_must_do": "set the provider key and run "
+                   "what_the_owner_must_do": "set ANTHROPIC_API_KEY and NEVERTWICE_ALLOW_BILLABLE=1, then run "
                                              "`python research/capability_grid.py --model frontier-b`"},
 }
 
@@ -253,6 +260,62 @@ def run_local(name: str, limit: int | None = None) -> dict:
     }
 
 
+def estimate_cell(slot: str) -> dict:
+    """What one frontier cell would cost, computed from the actual prompts. Sends nothing.
+
+    Input is exact - the prompts are right here. Output is bounded by `_frontier.MAX_TOKENS`
+    per call, which is a worst case and says so: a one-sentence answer plus adaptive thinking
+    will usually land far below it. Reporting the ceiling is the safe direction to be wrong in
+    when the number's purpose is to let somebody decide whether to spend it.
+    """
+    model = F.resolve(slot)
+    eps = episodes()
+    calls = 2 * len(eps)
+    chars = sum(len(a) + len(b) for a, b in (prompts(e) for e in eps))
+    # 4 characters per token is the standard rough English ratio; this is an estimate and is
+    # labelled one. The measured usage lands in the cell after a real run.
+    in_tok = round(chars / 4)
+    worst = F.MAX_TOKENS * calls
+    return {"slot": slot, "episodes": len(eps), "calls": calls,
+            "prompt_chars": chars,
+            "worst_case": F.estimate(model, in_tok, worst),
+            "typical_case": F.estimate(model, in_tok, round(worst * 0.15)),
+            "typical_note": "assumes ~15% of the per-call ceiling is actually generated",
+            "credentials_present": F.credentials_present(),
+            "billable_allowed": F.billable_allowed()}
+
+
+def run_api(slot: str, limit: int | None = None) -> dict:
+    """Generate both conditions for every episode with one frontier model. BILLABLE."""
+    model = F.resolve(slot)
+    eps = episodes()[:limit] if limit else episodes()
+    print(f"  {slot} -> {model}: {2 * len(eps)} calls, this bills your account", flush=True)
+    started = time.perf_counter()
+    records, spent_in, spent_out = [], 0, 0
+    for i, ep in enumerate(eps, 1):
+        a, b = prompts(ep)
+        no_mem, u1 = F.generate(model, a)
+        with_mem, u2 = F.generate(model, b)
+        spent_in += u1["input_tokens"] + u2["input_tokens"]
+        spent_out += u1["output_tokens"] + u2["output_tokens"]
+        records.append({"id": ep["id"], "label": ep["label"], "markers": ep["markers"],
+                        "no_memory": no_mem, "with_memory": with_mem})
+        if i % 10 == 0:
+            print(f"    {i}/{len(eps)} episodes", flush=True)
+    gen_s = time.perf_counter() - started
+
+    return {
+        "model": slot, "params_b": None, "kind": "api",
+        "max_new_tokens": F.MAX_TOKENS,
+        "load_seconds": 0.0,
+        "seconds_per_generation": round(gen_s / max(1, 2 * len(eps)), 3),
+        "spend": F.estimate(model, spent_in, spent_out),
+        "records": records,
+        "scores": score_cell(records),
+        **F.decoding_note(model),
+    }
+
+
 def _free_vram() -> None:
     """Release the last cell's weights before the next one loads.
 
@@ -294,7 +357,9 @@ def save_blocked(name: str, why: str, absent: list) -> None:
 def save_cell(cell: dict) -> None:
     data = load_results()
     data["cells"][cell["model"]] = cell
-    data["gated"] = {k: v for k, v in GATED_MODELS.items()}
+    # A gated cell that has now been run stops being gated. Rebuilding this dict from the
+    # constant every time is what made the artifact keep advertising a cell it already had.
+    data["gated"] = {k: v for k, v in GATED_MODELS.items() if k not in data["cells"]}
     data["generated_by"] = "python research/capability_grid.py --all"
     m.write_atomic(OUT, json.dumps(data, ensure_ascii=False, indent=1))
 
@@ -305,9 +370,17 @@ def grid(data: dict | None = None, strictness: int = DEFAULT_STRICTNESS) -> dict
     data = data or load_results()
     cells = data.get("cells", {})
     rows = []
-    for name, cell in sorted(cells.items(), key=lambda kv: kv[1]["params_b"]):
+    # An API cell has no parameter count anybody publishes, so it sorts after the whole local
+    # ladder rather than being given a made-up size. `None` is the honest value and it must not
+    # crash the sort that the ladder depends on.
+    for name, cell in sorted(cells.items(),
+                             key=lambda kv: (kv[1]["params_b"] is None,
+                                             kv[1]["params_b"] or 0.0, kv[0])):
         s = cell["scores"][str(strictness)]
         rows.append({"model": name, "params_b": cell["params_b"], **s,
+                     "kind": cell.get("kind", "local"),
+                     "resolved_model": cell.get("resolved_model"),
+                     "spend": cell.get("spend"),
                      "seconds_per_generation": cell.get("seconds_per_generation")})
     return {
         "strictness": strictness,
@@ -319,6 +392,36 @@ def grid(data: dict | None = None, strictness: int = DEFAULT_STRICTNESS) -> dict
     }
 
 
+def _api_finding(api_rows: list, ladder: list) -> list:
+    """What the frontier cells add - or, when none ran, the limit that leaves standing."""
+    top = max((r["params_b"] for r in ladder), default=None)
+    if not api_rows:
+        return ["The two frontier cells are NOT run (gate G8). Until they are, no claim may "
+                "describe how this scales to a frontier reader - this ladder ends at "
+                f"{top}B." if top else
+                "The two frontier cells are NOT run (gate G8), and no local cell ran either."]
+    out = []
+    for r in api_rows:
+        named = r.get("resolved_model") or "an unnamed model"
+        spend = (r.get("spend") or {}).get("usd")
+        cost = f", ${spend:.2f} spent" if isinstance(spend, (int, float)) else ""
+        out.append(
+            f"Frontier cell {r['model']} ({named}{cost}): lift {r['lift']} "
+            f"({r['rate_without']} -> {r['rate_with']}) on the same n={r['n']} episodes.")
+    out.append(
+        "A frontier cell is NOT a rung of the ladder. It decodes differently - adaptive "
+        "thinking, no settable temperature, a far larger token ceiling - so a difference "
+        "between it and the local cells confounds capability with decoding procedure. It "
+        "answers 'does a strong deployed reader act on the sentence', which is the question "
+        "a user has, and not 'does capability cause adoption', which is the question the "
+        "ladder answers.")
+    if top is not None:
+        out.append(
+            f"The ladder still ends at {top}B for the purpose of any size claim; the frontier "
+            "rows extend the deployment statement, not the size statement.")
+    return out
+
+
 def _finding(rows: list, blocked: dict | None = None) -> list:
     """What the grid says, derived from the rows.
 
@@ -328,10 +431,18 @@ def _finding(rows: list, blocked: dict | None = None) -> list:
     sample supports? A capability effect smaller than the noise is not a capability effect.
     """
     blocked = blocked or {}
-    if len(rows) < 2:
-        return ["Too few cells to say anything about how the reader bounds actionability. "
-                "Run more of the ladder."]
+    # The ladder is the LOCAL cells: they share a decoding procedure and a published parameter
+    # count, which is what makes "varied by size" a sentence about size. A frontier cell shares
+    # neither, so it is reported alongside the ladder and never inside its spread.
+    ladder = [r for r in rows if r.get("params_b") is not None]
+    api_rows = [r for r in rows if r.get("params_b") is None]
+    if len(ladder) < 2:
+        out = ["Too few cells to say anything about how the reader bounds actionability. "
+               "Run more of the ladder."]
+        out.extend(_api_finding(api_rows, ladder))
+        return out
 
+    rows = ladder
     lifts = [r["lift"] for r in rows if r["lift"] is not None]
     spread = round(max(lifts) - min(lifts), 4) if lifts else 0.0
     n = rows[0]["n"]
@@ -380,9 +491,7 @@ def _finding(rows: list, blocked: dict | None = None) -> list:
             ". These are not gated on money or permission - the weights are incomplete on this "
             "machine. The ladder therefore stops at " + f"{top}B, short of where it was meant "
             "to reach, and every conclusion above is bounded by that.")
-    out.append(
-        "The two frontier cells are NOT run (gate G8). Until they are, no claim may describe "
-        f"how this scales to a frontier reader - this ladder ends at {top}B.")
+    out.extend(_api_finding(api_rows, rows))
     out.append(
         "The grader is deterministic word-overlap against the prevention, identical in every "
         "cell. It over-credits parroting and under-credits paraphrase, equally everywhere, so "
@@ -397,8 +506,13 @@ def render(g: dict) -> str:
     L.append("")
     L.append(f"  {'model':16} {'params':>7} {'no mem':>8} {'w/ mem':>8} {'lift':>8} {'s/gen':>7}")
     for r in g["rows"]:
-        L.append(f"  {r['model']:16} {str(r['params_b']) + 'B':>7} {r['rate_without']!s:>8} "
+        size = f"{r['params_b']}B" if r.get("params_b") is not None else "api"
+        L.append(f"  {r['model']:16} {size:>7} {r['rate_without']!s:>8} "
                  f"{r['rate_with']!s:>8} {r['lift']!s:>8} {r['seconds_per_generation']!s:>7}")
+        if r.get("resolved_model"):
+            spend = (r.get("spend") or {}).get("usd")
+            paid = f", ${spend:.2f}" if isinstance(spend, (int, float)) else ""
+            L.append(f"  {'':16} {'':>7} -> {r['resolved_model']}{paid}")
     if not g["rows"]:
         L.append("  (no cells run yet)")
     L.append("")
@@ -423,13 +537,40 @@ def main(argv: list | None = None) -> int:
     ap.add_argument("--report", action="store_true", help="print the grid from saved cells")
     ap.add_argument("--limit", type=int, help="episodes per cell (for a smoke run)")
     ap.add_argument("--strictness", type=int, default=DEFAULT_STRICTNESS)
+    ap.add_argument("--estimate", action="store_true",
+                    help="what the gated cells would cost; sends nothing")
     args = ap.parse_args(argv)
 
+    if args.estimate:
+        for slot in GATED_MODELS:
+            est = estimate_cell(slot)
+            w, t = est["worst_case"], est["typical_case"]
+            print(f"  {slot} -> {w['model']}: {est['calls']} calls, "
+                  f"{w['input_tokens']} input tokens (exact)")
+            print(f"    worst case  ${w['usd']}  ({w['output_tokens']} output tokens at the "
+                  f"{F.MAX_TOKENS}-token ceiling)")
+            print(f"    typical     ${t['usd']}  ({est['typical_note']})")
+            print(f"    prices as of {w.get('prices_as_of')} - {F.why_blocked()}"
+                  if not F.billable_allowed() else
+                  f"    prices as of {w.get('prices_as_of')} - APPROVED TO SPEND")
+        return 0
+
     if args.model in GATED_MODELS:
-        spec = GATED_MODELS[args.model]
-        print(f"GATED: {spec['why']}. {spec['what_the_owner_must_do']}. Nothing was measured.",
-              file=sys.stderr)
-        return 2
+        # G8: billable. Three things must line up - the cell named here, a key in the
+        # environment, and an explicit spend approval. `--all` never reaches this branch.
+        if not F.billable_allowed():
+            spec = GATED_MODELS[args.model]
+            print(f"GATED: {spec['why']}. {spec['what_the_owner_must_do']}. "
+                  f"{F.why_blocked()}. Nothing was measured.", file=sys.stderr)
+            return 2
+        cell = run_api(args.model, limit=args.limit)
+        save_cell(cell)
+        s = cell["scores"][str(args.strictness)]
+        spend = (cell.get("spend") or {}).get("usd")
+        print(f"  {args.model}: lift {s['lift']} ({s['rate_without']} -> {s['rate_with']})"
+              + (f", ${spend} spent" if spend is not None else ""), flush=True)
+        print(render(grid(strictness=args.strictness)))
+        return 0
 
     targets = list(LOCAL_MODELS) if args.all else ([args.model] if args.model else [])
     for name in targets:

@@ -84,7 +84,7 @@
    "kind": "deterministic",
    "note": "the precision/recall curve over the firing threshold",
    "command": "python research/matched_conditions.py --save",
-   "committed_sha256": "de44356f22b46eef0c6f11ed4740503e39d17ed3b5cb58e46354acee1523a8a0",
+   "committed_sha256": "ac6b40ad0ba452348acc9cf53674f41224c2eadce1acb52534efdf2c7f1a8be4",
    "committed_canonical_sha256": "503411fbb513dc7e7318d5e1b7fe6aa77fc4cc543628f44199af78dd57d6e1cd",
    "volatile_fields": [
     "latency_ms_per_episode"
@@ -94,7 +94,7 @@
    "requires": [],
    "missing_modules": [],
    "seconds": 0.1,
-   "regenerated_sha256": "254da4fd603a8b44799c2fcffb84247645d7c5d4972c89dd8806784732e0cada",
+   "regenerated_sha256": "2fcd62cf1854ca7286aec48d77abb271221cf6b39a8d528e894e399440aed730",
    "regenerated_canonical_sha256": "503411fbb513dc7e7318d5e1b7fe6aa77fc4cc543628f44199af78dd57d6e1cd",
    "status": "reproduced",
    "explain": "byte-different only in the declared volatile fields (latency_ms_per_episode): everything that should reproduce did"
@@ -105,8 +105,8 @@
    "kind": "deterministic",
    "note": "the six B5 baselines at a matched false-alarm rate",
    "command": "python research/cheap_baselines.py --save",
-   "committed_sha256": "6f4f397b1925d1b6acb40dbc3d9b01d97395523bcca9b64532306076bd30ac44",
-   "committed_canonical_sha256": "e557d8ec285fb62b84462649fb61dcf31581236cea404e3601131b8b3159c7af",
+   "committed_sha256": "fe2fce0e9a84169d610b743070bcf15d57dd78e1fb5a88528653328616cc7257",
+   "committed_canonical_sha256": "2452a3e01fe1089a348b45cc5ef72bdb7df08e1915ad6abe14c5ae56b45ccd98",
    "volatile_fields": [
     "latency_ms_per_episode"
    ],
@@ -114,9 +114,9 @@
    "missing_inputs": [],
    "requires": [],
    "missing_modules": [],
-   "seconds": 0.1,
-   "regenerated_sha256": "179820b4301f471b2597926529b287df13c7fcfd7e1e07cb2d8cad9911ee5d33",
-   "regenerated_canonical_sha256": "e557d8ec285fb62b84462649fb61dcf31581236cea404e3601131b8b3159c7af",
+   "seconds": 0.2,
+   "regenerated_sha256": "6d612012378a5c506df5abeec8e15142ed59e04c3203a7c9123778d2d297abb3",
+   "regenerated_canonical_sha256": "2452a3e01fe1089a348b45cc5ef72bdb7df08e1915ad6abe14c5ae56b45ccd98",
    "status": "reproduced",
    "explain": "byte-different only in the declared volatile fields (latency_ms_per_episode): everything that should reproduce did"
   },
@@ -133,7 +133,7 @@
    "missing_inputs": [],
    "requires": [],
    "missing_modules": [],
-   "seconds": 0.1,
+   "seconds": 0.2,
    "regenerated_sha256": "8931f566878edd0a427d8b1df666bb0285362fea2883f02870d66f94fd7537f2",
    "regenerated_canonical_sha256": "20007c2d18b1da0962941f1b050a0557e158c4dc5bdcfcc3f85c9529723317eb",
    "status": "reproduced"
@@ -151,7 +151,7 @@
    "missing_inputs": [],
    "requires": [],
    "missing_modules": [],
-   "seconds": 2.0,
+   "seconds": 2.2,
    "regenerated_sha256": "3bb56bd497c005dc81ae90d739cc0b0fdcb2a7c3f3bda0e82cf6f5c8aae38fb2",
    "regenerated_canonical_sha256": "c843b786275444b902fc1115539f631b2da69bdf0fd5ba36cc42a824e6a87102",
    "status": "reproduced"
@@ -169,7 +169,7 @@
    "missing_inputs": [],
    "requires": [],
    "missing_modules": [],
-   "seconds": 19.2,
+   "seconds": 18.6,
    "regenerated_sha256": "58105186c462de5fc61c35f6d57dc4226c74655adfbfdf9256b7795d8b612715",
    "regenerated_canonical_sha256": "c3829d019f19a7c0761fe8a47264c95d17c56658ac5c284d36f62497da12b807",
    "status": "reproduced"
@@ -187,7 +187,7 @@
    "missing_inputs": [],
    "requires": [],
    "missing_modules": [],
-   "seconds": 0.1,
+   "seconds": 0.2,
    "regenerated_sha256": "bdad83329f308e44d6a3db660cd1e2ca1abdee0c9e2651d1f8afecfa28f07fc7",
    "regenerated_canonical_sha256": "636d91421c99164520b880b28c6b1c1fb6d8d269dbc107c52ffb1bb12302edf0",
    "status": "reproduced"
@@ -207,7 +207,7 @@
     "numpy"
    ],
    "missing_modules": [],
-   "seconds": 4.0,
+   "seconds": 3.9,
    "regenerated_sha256": "3675985c91b12f2e71f82f547ecff84162395cfb5595f6a6490c3b679d8d2e83",
    "regenerated_canonical_sha256": "d8c2054105c0af40a517bd0f58a24d3e63d45ffeb6178293786cc0017b11b7f3",
    "status": "reproduced"
@@ -236,8 +236,8 @@
    "kind": "machine-dependent",
    "note": "measures THIS machine. The same minimum-of-five statistic moved by about a third between sessions on one box, so byte-identity is not the test - the order of magnitude is.",
    "command": "python research/latency_bench.py --save",
-   "committed_sha256": "9be2106d1f07d3187a42a06158976c89b85d6e415a2671a70b478d4ce367aa40",
-   "committed_canonical_sha256": "f30462a3ac762acf3fa4a0807eaa6bba359c9afed6bfb6bfff6b5449317722ae",
+   "committed_sha256": "6fb12803542026700ef59fa84e0374e50557150a7b3a5051b31af6a00fd92526",
+   "committed_canonical_sha256": "c9288ceaa03fa9538d91cc15398854589833c67cb03b9bfcae2b7a865825cdff",
    "volatile_fields": [],
    "committed_present": true,
    "missing_inputs": [],
