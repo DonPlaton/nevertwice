@@ -25,6 +25,45 @@ def _isolate(tmp):
     G.M_RETIRE = 3
 
 
+def test_a_safe_pattern_survives_a_slow_machine():
+    """The probe's budget must bound the MATCH, not the interpreter's startup.
+
+    `_redos_safe` used to give the whole subprocess a flat 0.6 seconds, silently including
+    Python's own startup. That held on a quiet machine and failed on a loaded Windows CI
+    runner: a perfectly safe pattern timed out, `make_guard` returned None, and guard creation
+    failed with no message at all. The same would happen on a user's busy laptop, which is the
+    failure this function exists to prevent rather than cause.
+    """
+    import subprocess as _sp
+    safe = r"device\s*=\s*['\"]cpu['\"]"
+    assert G.safe_pattern(safe)                       # the ordinary case still passes
+
+    # Simulate a machine where starting Python takes two seconds. The budget must grow with it.
+    real_cost, real_run = G._STARTUP_COST, _sp.run
+    seen = {}
+
+    def recording_run(*args, **kwargs):
+        seen["timeout"] = kwargs.get("timeout")
+        return real_run(*args, **kwargs)
+
+    try:
+        G._STARTUP_COST = 2.0
+        _sp.run = recording_run
+        assert G.safe_pattern(safe), "a safe pattern must not be rejected on a slow machine"
+        assert seen["timeout"] >= 2.0 + G.REDOS_MATCH_BUDGET_S - 1e-9, (
+            f"budget {seen['timeout']} does not account for a 2s startup cost")
+        # And the match budget still bites: a real backtracker is still rejected.
+        assert not G.safe_pattern(r"(a+)+$"), "a catastrophic pattern must still be rejected"
+    finally:
+        _sp.run = real_run
+        G._STARTUP_COST = real_cost
+
+    assert G.REDOS_MATCH_BUDGET_S > 0
+    cost = G._startup_cost()
+    assert 0 <= cost <= 5.0, f"measured startup cost {cost} is not capped"
+    print("ok test_a_safe_pattern_survives_a_slow_machine")
+
+
 def test_safe_pattern_rejects_redos_and_junk():
     assert G.safe_pattern(r"device\s*=\s*['\"]cpu['\"]")
     assert not G.safe_pattern(r"(a+)+")              # nested quantifier → ReDoS
@@ -284,6 +323,7 @@ def test_guard_pack_opt_in_via_env():
 
 if __name__ == "__main__":
     test_safe_pattern_rejects_redos_and_junk()
+    test_a_safe_pattern_survives_a_slow_machine()
     test_check_is_silent_until_a_match()
     test_lifecycle_promote_then_retire()
     test_blocking_sorts_before_advisory()

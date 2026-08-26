@@ -1131,6 +1131,24 @@ versions are [semantic](https://semver.org). Dates are UTC.
   artifacts reproduced exactly, which is what makes the latency spread attributable to the
   clock rather than to the code.
 
+### Fixed
+- **Guard creation failed silently on a slow machine.** The ReDoS probe runs a candidate pattern
+  in a subprocess under a hard timeout, which is the right design - a thread cannot be timed out
+  because CPython's `re` holds the GIL through a catastrophic match, and a subprocess can be
+  killed by the OS. But the timeout was a flat 0.6 seconds covering the **whole subprocess**,
+  including Python's own startup.
+
+  On a quiet machine startup is ~30 ms and the budget was never in danger. On a loaded Windows
+  CI runner it exceeded 0.6 s by itself, so a perfectly safe pattern timed out, `make_guard`
+  returned `None`, and guard creation failed **with no message at all** - which is precisely the
+  failure the probe exists to prevent rather than cause. A user on a busy laptop would have hit
+  the same thing and seen nothing.
+
+  The budget now bounds the **match**, which is what it was always about: this machine's
+  interpreter startup is measured once and the match budget added on top, capped so a real
+  backtracker still cannot run forever. A rejection is logged. Found by CI going red on a run
+  where nothing relevant had changed.
+
 ## [2.3.0] - 2026-08-18
 
 ### Added

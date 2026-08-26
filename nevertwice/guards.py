@@ -31,7 +31,9 @@ import fnmatch
 import hashlib
 import json
 import re
+import subprocess
 import sys
+import time
 from datetime import datetime
 from pathlib import Path
 
@@ -117,6 +119,44 @@ _REDOS_PROBE = (
 )
 
 
+#: What the MATCH is allowed to take, once the child interpreter is actually running. This is
+#: the number the probe was always about; it is not a budget for starting Python.
+REDOS_MATCH_BUDGET_S = 0.6
+
+#: This machine's bare-interpreter startup cost, measured once. `None` until first needed.
+_STARTUP_COST: float | None = None
+
+
+def _startup_cost() -> float:
+    """How long a bare `python -c pass` takes HERE, measured rather than assumed.
+
+    The probe below used to give the whole subprocess 0.6 seconds, which silently included
+    interpreter startup. On this machine startup is ~30 ms and the budget was never in danger;
+    on a loaded Windows CI runner it exceeded 0.6 s on its own, so a perfectly safe pattern
+    timed out, `make_guard` returned None, and guard creation failed with no message. The same
+    thing would happen on a user's busy laptop.
+
+    So the startup cost is measured and the match budget is added on top. Cached: the
+    measurement costs one spawn per process, and guard creation is a sleep-time path.
+    """
+    global _STARTUP_COST
+    if _STARTUP_COST is None:
+        best = None
+        for _ in range(2):                       # best of two: one may hit a scheduling hiccup
+            started = time.perf_counter()
+            try:
+                subprocess.run([sys.executable, "-c", "pass"], capture_output=True, timeout=30)
+            except Exception:                    # noqa: BLE001 - cannot measure, so be generous
+                _STARTUP_COST = 2.0
+                return _STARTUP_COST
+            elapsed = time.perf_counter() - started
+            best = elapsed if best is None else min(best, elapsed)
+        # Capped: a machine that cannot start Python in five seconds has a bigger problem than
+        # this probe, and an unbounded budget would let a real backtracker run forever.
+        _STARTUP_COST = min(best or 0.5, 5.0)
+    return _STARTUP_COST
+
+
 def _redos_safe(pat: str) -> bool:
     """Empirically confirm `pat` runs fast on adversarial input. Static ReDoS denylists are a
     losing game - one has now missed a fresh catastrophic shape FOUR review rounds running
@@ -125,15 +165,23 @@ def _redos_safe(pat: str) -> bool:
     compiled pattern under a HARD timeout. A thread can't be timed out - CPython's `re` holds the
     GIL through a catastrophic match - but a subprocess can: the OS kills it. This is called only
     at guard CREATION (sleep-time consolidation); the PreToolUse hot path never calls safe_pattern,
-    so the ~80 ms spawn is irrelevant."""
-    import subprocess
+    so the spawn is irrelevant.
+
+    The timeout is `startup + REDOS_MATCH_BUDGET_S`, not a flat budget: see `_startup_cost`.
+    A rejection is LOGGED, because "your guard was silently not created" is the failure this
+    whole function is supposed to prevent, not cause.
+    """
+    budget = _startup_cost() + REDOS_MATCH_BUDGET_S
     try:
         r = subprocess.run([sys.executable, "-c", _REDOS_PROBE], input=pat.encode("utf-8"),
-                           capture_output=True, timeout=0.6)
+                           capture_output=True, timeout=budget)
         return r.returncode == 0                 # finished within the budget → safe
     except subprocess.TimeoutExpired:
-        return False                             # still backtracking after 0.6s → reject
-    except Exception:
+        m.log(f"guard pattern rejected: still backtracking after {budget:.2f}s "
+              f"(match budget {REDOS_MATCH_BUDGET_S}s + measured startup "
+              f"{_startup_cost():.2f}s): {pat[:60]!r}")
+        return False                             # still backtracking → reject
+    except Exception:                            # noqa: BLE001
         return True                              # a spawn hiccup must not block guard creation
 
 
