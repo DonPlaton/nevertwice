@@ -1,0 +1,1036 @@
+{
+ "schema_version": 1,
+ "generated_by": "python research/uncertainty.py --save",
+ "method": {
+  "pairing": "every arm sees the same episodes, so comparisons are PAIRED. The Wilson intervals published in F1-F4 are unpaired and therefore conservative; these supersede them for any arm-vs-arm statement.",
+  "test": "McNemar, exact binomial on the discordant pairs (not the chi-squared approximation, which is untrustworthy at these counts)",
+  "interval": "percentile bootstrap over episodes, 10000 resamples, seed 20260826",
+  "effect_size": "Cohen's h",
+  "correction": "Holm-Bonferroni over 4 comparisons at alpha=0.05",
+  "operating_point": "each arm read at its own zero-false-alarm threshold"
+ },
+ "seed": 20260826,
+ "thresholds": {
+  "nevertwice": 0.3,
+  "lexical_recall": 0.13,
+  "full_history": null,
+  "no_memory": 0.0,
+  "curated_agents_md": 0.38,
+  "linter_or_test": 0.0,
+  "session_summary_extractive": 0.26
+ },
+ "per_episode": {
+  "nevertwice": {
+   "p01": false,
+   "p02": true,
+   "p03": false,
+   "p04": true,
+   "p05": false,
+   "p06": false,
+   "p07": true,
+   "p08": false,
+   "p09": false,
+   "p10": true,
+   "p11": true,
+   "p12": true,
+   "p13": false,
+   "p14": false,
+   "p15": false,
+   "p16": false,
+   "p17": true,
+   "p18": false,
+   "p19": false,
+   "p20": true,
+   "p21": true,
+   "p22": true,
+   "p23": true,
+   "p24": false,
+   "p25": false,
+   "p26": true,
+   "p27": true,
+   "p28": false,
+   "p29": true,
+   "p30": false
+  },
+  "lexical_recall": {
+   "p01": false,
+   "p02": true,
+   "p03": false,
+   "p04": true,
+   "p05": false,
+   "p06": false,
+   "p07": true,
+   "p08": false,
+   "p09": false,
+   "p10": true,
+   "p11": true,
+   "p12": true,
+   "p13": true,
+   "p14": false,
+   "p15": false,
+   "p16": false,
+   "p17": true,
+   "p18": false,
+   "p19": false,
+   "p20": true,
+   "p21": true,
+   "p22": true,
+   "p23": true,
+   "p24": true,
+   "p25": false,
+   "p26": true,
+   "p27": true,
+   "p28": false,
+   "p29": true,
+   "p30": false
+  },
+  "full_history": {
+   "p01": false,
+   "p02": false,
+   "p03": false,
+   "p04": false,
+   "p05": false,
+   "p06": false,
+   "p07": false,
+   "p08": false,
+   "p09": false,
+   "p10": false,
+   "p11": false,
+   "p12": false,
+   "p13": false,
+   "p14": false,
+   "p15": false,
+   "p16": false,
+   "p17": false,
+   "p18": false,
+   "p19": false,
+   "p20": false,
+   "p21": false,
+   "p22": false,
+   "p23": false,
+   "p24": false,
+   "p25": false,
+   "p26": false,
+   "p27": false,
+   "p28": false,
+   "p29": false,
+   "p30": false
+  },
+  "no_memory": {
+   "p01": false,
+   "p02": false,
+   "p03": false,
+   "p04": false,
+   "p05": false,
+   "p06": false,
+   "p07": false,
+   "p08": false,
+   "p09": false,
+   "p10": false,
+   "p11": false,
+   "p12": false,
+   "p13": false,
+   "p14": false,
+   "p15": false,
+   "p16": false,
+   "p17": false,
+   "p18": false,
+   "p19": false,
+   "p20": false,
+   "p21": false,
+   "p22": false,
+   "p23": false,
+   "p24": false,
+   "p25": false,
+   "p26": false,
+   "p27": false,
+   "p28": false,
+   "p29": false,
+   "p30": false
+  },
+  "curated_agents_md": {
+   "p01": false,
+   "p02": false,
+   "p03": false,
+   "p04": false,
+   "p05": false,
+   "p06": false,
+   "p07": false,
+   "p08": false,
+   "p09": false,
+   "p10": false,
+   "p11": false,
+   "p12": false,
+   "p13": false,
+   "p14": false,
+   "p15": false,
+   "p16": false,
+   "p17": false,
+   "p18": false,
+   "p19": false,
+   "p20": false,
+   "p21": true,
+   "p22": false,
+   "p23": false,
+   "p24": false,
+   "p25": false,
+   "p26": false,
+   "p27": false,
+   "p28": false,
+   "p29": false,
+   "p30": false
+  },
+  "linter_or_test": {
+   "p01": true,
+   "p02": true,
+   "p03": true,
+   "p04": false,
+   "p05": false,
+   "p06": false,
+   "p07": false,
+   "p08": true,
+   "p09": true,
+   "p10": false,
+   "p11": false,
+   "p12": false,
+   "p13": true,
+   "p14": true,
+   "p15": true,
+   "p16": true,
+   "p17": false,
+   "p18": false,
+   "p19": false,
+   "p20": true,
+   "p21": true,
+   "p22": false,
+   "p23": false,
+   "p24": true,
+   "p25": false,
+   "p26": false,
+   "p27": true,
+   "p28": true,
+   "p29": false,
+   "p30": false
+  },
+  "session_summary_extractive": {
+   "p01": false,
+   "p02": false,
+   "p03": false,
+   "p04": false,
+   "p05": false,
+   "p06": false,
+   "p07": false,
+   "p08": false,
+   "p09": false,
+   "p10": false,
+   "p11": false,
+   "p12": false,
+   "p13": false,
+   "p14": false,
+   "p15": false,
+   "p16": false,
+   "p17": false,
+   "p18": false,
+   "p19": false,
+   "p20": false,
+   "p21": true,
+   "p22": false,
+   "p23": false,
+   "p24": false,
+   "p25": false,
+   "p26": false,
+   "p27": false,
+   "p28": false,
+   "p29": false,
+   "p30": false
+  }
+ },
+ "per_family": {
+  "m-concurrent-runs": {
+   "n": 1,
+   "episodes": [
+    "p17"
+   ],
+   "by_arm": {
+    "nevertwice": 1,
+    "lexical_recall": 1,
+    "full_history": 0,
+    "no_memory": 0,
+    "curated_agents_md": 0,
+    "linter_or_test": 0,
+    "session_summary_extractive": 0
+   }
+  },
+  "m-cpu-device": {
+   "n": 3,
+   "episodes": [
+    "p04",
+    "p05",
+    "p25"
+   ],
+   "by_arm": {
+    "nevertwice": 1,
+    "lexical_recall": 1,
+    "full_history": 0,
+    "no_memory": 0,
+    "curated_agents_md": 0,
+    "linter_or_test": 0,
+    "session_summary_extractive": 0
+   }
+  },
+  "m-embed-mismatch": {
+   "n": 3,
+   "episodes": [
+    "p06",
+    "p07",
+    "p29"
+   ],
+   "by_arm": {
+    "nevertwice": 2,
+    "lexical_recall": 2,
+    "full_history": 0,
+    "no_memory": 0,
+    "curated_agents_md": 0,
+    "linter_or_test": 0,
+    "session_summary_extractive": 0
+   }
+  },
+  "m-heredoc-escape": {
+   "n": 1,
+   "episodes": [
+    "p20"
+   ],
+   "by_arm": {
+    "nevertwice": 1,
+    "lexical_recall": 1,
+    "full_history": 0,
+    "no_memory": 0,
+    "curated_agents_md": 0,
+    "linter_or_test": 1,
+    "session_summary_extractive": 0
+   }
+  },
+  "m-live-store": {
+   "n": 4,
+   "episodes": [
+    "p01",
+    "p02",
+    "p03",
+    "p24"
+   ],
+   "by_arm": {
+    "nevertwice": 1,
+    "lexical_recall": 2,
+    "full_history": 0,
+    "no_memory": 0,
+    "curated_agents_md": 0,
+    "linter_or_test": 4,
+    "session_summary_extractive": 0
+   }
+  },
+  "m-mutation-target": {
+   "n": 1,
+   "episodes": [
+    "p18"
+   ],
+   "by_arm": {
+    "nevertwice": 0,
+    "lexical_recall": 0,
+    "full_history": 0,
+    "no_memory": 0,
+    "curated_agents_md": 0,
+    "linter_or_test": 0,
+    "session_summary_extractive": 0
+   }
+  },
+  "m-nonatomic-write": {
+   "n": 2,
+   "episodes": [
+    "p22",
+    "p26"
+   ],
+   "by_arm": {
+    "nevertwice": 2,
+    "lexical_recall": 2,
+    "full_history": 0,
+    "no_memory": 0,
+    "curated_agents_md": 0,
+    "linter_or_test": 0,
+    "session_summary_extractive": 0
+   }
+  },
+  "m-oscillating-guard": {
+   "n": 1,
+   "episodes": [
+    "p23"
+   ],
+   "by_arm": {
+    "nevertwice": 1,
+    "lexical_recall": 1,
+    "full_history": 0,
+    "no_memory": 0,
+    "curated_agents_md": 0,
+    "linter_or_test": 0,
+    "session_summary_extractive": 0
+   }
+  },
+  "m-recurrence-poison": {
+   "n": 1,
+   "episodes": [
+    "p12"
+   ],
+   "by_arm": {
+    "nevertwice": 1,
+    "lexical_recall": 1,
+    "full_history": 0,
+    "no_memory": 0,
+    "curated_agents_md": 0,
+    "linter_or_test": 0,
+    "session_summary_extractive": 0
+   }
+  },
+  "m-replace-race": {
+   "n": 3,
+   "episodes": [
+    "p10",
+    "p11",
+    "p30"
+   ],
+   "by_arm": {
+    "nevertwice": 2,
+    "lexical_recall": 2,
+    "full_history": 0,
+    "no_memory": 0,
+    "curated_agents_md": 0,
+    "linter_or_test": 0,
+    "session_summary_extractive": 0
+   }
+  },
+  "m-secret-in-note": {
+   "n": 1,
+   "episodes": [
+    "p21"
+   ],
+   "by_arm": {
+    "nevertwice": 1,
+    "lexical_recall": 1,
+    "full_history": 0,
+    "no_memory": 0,
+    "curated_agents_md": 1,
+    "linter_or_test": 1,
+    "session_summary_extractive": 1
+   }
+  },
+  "m-silent-import": {
+   "n": 3,
+   "episodes": [
+    "p08",
+    "p09",
+    "p28"
+   ],
+   "by_arm": {
+    "nevertwice": 0,
+    "lexical_recall": 0,
+    "full_history": 0,
+    "no_memory": 0,
+    "curated_agents_md": 0,
+    "linter_or_test": 3,
+    "session_summary_extractive": 0
+   }
+  },
+  "m-single-shot-bench": {
+   "n": 1,
+   "episodes": [
+    "p19"
+   ],
+   "by_arm": {
+    "nevertwice": 0,
+    "lexical_recall": 0,
+    "full_history": 0,
+    "no_memory": 0,
+    "curated_agents_md": 0,
+    "linter_or_test": 0,
+    "session_summary_extractive": 0
+   }
+  },
+  "m-stale-claim": {
+   "n": 3,
+   "episodes": [
+    "p13",
+    "p14",
+    "p27"
+   ],
+   "by_arm": {
+    "nevertwice": 1,
+    "lexical_recall": 2,
+    "full_history": 0,
+    "no_memory": 0,
+    "curated_agents_md": 0,
+    "linter_or_test": 3,
+    "session_summary_extractive": 0
+   }
+  },
+  "m-unstaged-verify": {
+   "n": 2,
+   "episodes": [
+    "p15",
+    "p16"
+   ],
+   "by_arm": {
+    "nevertwice": 0,
+    "lexical_recall": 0,
+    "full_history": 0,
+    "no_memory": 0,
+    "curated_agents_md": 0,
+    "linter_or_test": 2,
+    "session_summary_extractive": 0
+   }
+  }
+ },
+ "comparisons": {
+  "lexical_recall": {
+   "n": 30,
+   "ours_correct": 14,
+   "theirs_correct": 16,
+   "discordant_ours_only": 0,
+   "discordant_theirs_only": 2,
+   "concordant": 28,
+   "difference": -0.0667,
+   "bootstrap_ci95": [
+    -0.1667,
+    0.0
+   ],
+   "cohens_h": -0.1334,
+   "mcnemar_p": 0.5,
+   "holm": {
+    "p": 0.5,
+    "holm_threshold": 0.025,
+    "significant": false
+   }
+  },
+  "linter_or_test": {
+   "n": 30,
+   "ours_correct": 14,
+   "theirs_correct": 14,
+   "discordant_ours_only": 10,
+   "discordant_theirs_only": 10,
+   "concordant": 10,
+   "difference": 0.0,
+   "bootstrap_ci95": [
+    -0.3,
+    0.3
+   ],
+   "cohens_h": 0.0,
+   "mcnemar_p": 1.0,
+   "holm": {
+    "p": 1.0,
+    "holm_threshold": 0.05,
+    "significant": false
+   }
+  },
+  "curated_agents_md": {
+   "n": 30,
+   "ours_correct": 14,
+   "theirs_correct": 1,
+   "discordant_ours_only": 13,
+   "discordant_theirs_only": 0,
+   "concordant": 17,
+   "difference": 0.4333,
+   "bootstrap_ci95": [
+    0.2667,
+    0.6
+   ],
+   "cohens_h": 1.1369,
+   "mcnemar_p": 0.000244,
+   "holm": {
+    "p": 0.000244,
+    "holm_threshold": 0.0125,
+    "significant": true
+   }
+  },
+  "session_summary_extractive": {
+   "n": 30,
+   "ours_correct": 14,
+   "theirs_correct": 1,
+   "discordant_ours_only": 13,
+   "discordant_theirs_only": 0,
+   "concordant": 17,
+   "difference": 0.4333,
+   "bootstrap_ci95": [
+    0.2667,
+    0.6
+   ],
+   "cohens_h": 1.1369,
+   "mcnemar_p": 0.000244,
+   "holm": {
+    "p": 0.000244,
+    "holm_threshold": 0.016667,
+    "significant": true
+   }
+  }
+ },
+ "leave_one_family_out": {
+  "full": {
+   "n": 30,
+   "ours_correct": 14,
+   "theirs_correct": 16,
+   "discordant_ours_only": 0,
+   "discordant_theirs_only": 2,
+   "concordant": 28,
+   "difference": -0.0667,
+   "bootstrap_ci95": [
+    -0.1667,
+    0.0
+   ],
+   "cohens_h": -0.1334,
+   "mcnemar_p": 0.5
+  },
+  "without": {
+   "m-concurrent-runs": {
+    "n": 29,
+    "ours_correct": 13,
+    "theirs_correct": 15,
+    "discordant_ours_only": 0,
+    "discordant_theirs_only": 2,
+    "concordant": 27,
+    "difference": -0.069,
+    "bootstrap_ci95": [
+     -0.1724,
+     0.0
+    ],
+    "cohens_h": -0.1381,
+    "mcnemar_p": 0.5
+   },
+   "m-cpu-device": {
+    "n": 27,
+    "ours_correct": 13,
+    "theirs_correct": 15,
+    "discordant_ours_only": 0,
+    "discordant_theirs_only": 2,
+    "concordant": 25,
+    "difference": -0.0741,
+    "bootstrap_ci95": [
+     -0.1852,
+     0.0
+    ],
+    "cohens_h": -0.1484,
+    "mcnemar_p": 0.5
+   },
+   "m-embed-mismatch": {
+    "n": 27,
+    "ours_correct": 12,
+    "theirs_correct": 14,
+    "discordant_ours_only": 0,
+    "discordant_theirs_only": 2,
+    "concordant": 25,
+    "difference": -0.0741,
+    "bootstrap_ci95": [
+     -0.1852,
+     0.0
+    ],
+    "cohens_h": -0.1484,
+    "mcnemar_p": 0.5
+   },
+   "m-heredoc-escape": {
+    "n": 29,
+    "ours_correct": 13,
+    "theirs_correct": 15,
+    "discordant_ours_only": 0,
+    "discordant_theirs_only": 2,
+    "concordant": 27,
+    "difference": -0.069,
+    "bootstrap_ci95": [
+     -0.1724,
+     0.0
+    ],
+    "cohens_h": -0.1381,
+    "mcnemar_p": 0.5
+   },
+   "m-live-store": {
+    "n": 26,
+    "ours_correct": 13,
+    "theirs_correct": 14,
+    "discordant_ours_only": 0,
+    "discordant_theirs_only": 1,
+    "concordant": 25,
+    "difference": -0.0385,
+    "bootstrap_ci95": [
+     -0.1154,
+     0.0
+    ],
+    "cohens_h": -0.077,
+    "mcnemar_p": 1.0
+   },
+   "m-mutation-target": {
+    "n": 29,
+    "ours_correct": 14,
+    "theirs_correct": 16,
+    "discordant_ours_only": 0,
+    "discordant_theirs_only": 2,
+    "concordant": 27,
+    "difference": -0.069,
+    "bootstrap_ci95": [
+     -0.1724,
+     0.0
+    ],
+    "cohens_h": -0.1381,
+    "mcnemar_p": 0.5
+   },
+   "m-nonatomic-write": {
+    "n": 28,
+    "ours_correct": 12,
+    "theirs_correct": 14,
+    "discordant_ours_only": 0,
+    "discordant_theirs_only": 2,
+    "concordant": 26,
+    "difference": -0.0714,
+    "bootstrap_ci95": [
+     -0.1786,
+     0.0
+    ],
+    "cohens_h": -0.1433,
+    "mcnemar_p": 0.5
+   },
+   "m-oscillating-guard": {
+    "n": 29,
+    "ours_correct": 13,
+    "theirs_correct": 15,
+    "discordant_ours_only": 0,
+    "discordant_theirs_only": 2,
+    "concordant": 27,
+    "difference": -0.069,
+    "bootstrap_ci95": [
+     -0.1724,
+     0.0
+    ],
+    "cohens_h": -0.1381,
+    "mcnemar_p": 0.5
+   },
+   "m-recurrence-poison": {
+    "n": 29,
+    "ours_correct": 13,
+    "theirs_correct": 15,
+    "discordant_ours_only": 0,
+    "discordant_theirs_only": 2,
+    "concordant": 27,
+    "difference": -0.069,
+    "bootstrap_ci95": [
+     -0.1724,
+     0.0
+    ],
+    "cohens_h": -0.1381,
+    "mcnemar_p": 0.5
+   },
+   "m-replace-race": {
+    "n": 27,
+    "ours_correct": 12,
+    "theirs_correct": 14,
+    "discordant_ours_only": 0,
+    "discordant_theirs_only": 2,
+    "concordant": 25,
+    "difference": -0.0741,
+    "bootstrap_ci95": [
+     -0.1852,
+     0.0
+    ],
+    "cohens_h": -0.1484,
+    "mcnemar_p": 0.5
+   },
+   "m-secret-in-note": {
+    "n": 29,
+    "ours_correct": 13,
+    "theirs_correct": 15,
+    "discordant_ours_only": 0,
+    "discordant_theirs_only": 2,
+    "concordant": 27,
+    "difference": -0.069,
+    "bootstrap_ci95": [
+     -0.1724,
+     0.0
+    ],
+    "cohens_h": -0.1381,
+    "mcnemar_p": 0.5
+   },
+   "m-silent-import": {
+    "n": 27,
+    "ours_correct": 14,
+    "theirs_correct": 16,
+    "discordant_ours_only": 0,
+    "discordant_theirs_only": 2,
+    "concordant": 25,
+    "difference": -0.0741,
+    "bootstrap_ci95": [
+     -0.1852,
+     0.0
+    ],
+    "cohens_h": -0.1492,
+    "mcnemar_p": 0.5
+   },
+   "m-single-shot-bench": {
+    "n": 29,
+    "ours_correct": 14,
+    "theirs_correct": 16,
+    "discordant_ours_only": 0,
+    "discordant_theirs_only": 2,
+    "concordant": 27,
+    "difference": -0.069,
+    "bootstrap_ci95": [
+     -0.1724,
+     0.0
+    ],
+    "cohens_h": -0.1381,
+    "mcnemar_p": 0.5
+   },
+   "m-stale-claim": {
+    "n": 27,
+    "ours_correct": 13,
+    "theirs_correct": 14,
+    "discordant_ours_only": 0,
+    "discordant_theirs_only": 1,
+    "concordant": 26,
+    "difference": -0.037,
+    "bootstrap_ci95": [
+     -0.1111,
+     0.0
+    ],
+    "cohens_h": -0.0741,
+    "mcnemar_p": 1.0
+   },
+   "m-unstaged-verify": {
+    "n": 28,
+    "ours_correct": 14,
+    "theirs_correct": 16,
+    "discordant_ours_only": 0,
+    "discordant_theirs_only": 2,
+    "concordant": 26,
+    "difference": -0.0714,
+    "bootstrap_ci95": [
+     -0.1786,
+     0.0
+    ],
+    "cohens_h": -0.1433,
+    "mcnemar_p": 0.5
+   }
+  },
+  "largest_swing": {
+   "family": "m-stale-claim",
+   "difference_without_it": -0.037,
+   "difference_with_everything": -0.0667,
+   "swing": 0.0297
+  }
+ },
+ "complementarity": {
+  "linter_or_test": {
+   "arm": "linter_or_test",
+   "n": 30,
+   "ours_only": 10,
+   "theirs_only": 10,
+   "both": 4,
+   "neither": 6,
+   "ours_rate": 0.4667,
+   "theirs_rate": 0.4667,
+   "union_rate": 0.8,
+   "union_vs_ours": {
+    "n": 30,
+    "ours_correct": 24,
+    "theirs_correct": 14,
+    "discordant_ours_only": 10,
+    "discordant_theirs_only": 0,
+    "concordant": 20,
+    "difference": 0.3333,
+    "bootstrap_ci95": [
+     0.1667,
+     0.5
+    ],
+    "cohens_h": 0.7102,
+    "mcnemar_p": 0.001953
+   },
+   "union_vs_theirs": {
+    "n": 30,
+    "ours_correct": 24,
+    "theirs_correct": 14,
+    "discordant_ours_only": 10,
+    "discordant_theirs_only": 0,
+    "concordant": 20,
+    "difference": 0.3333,
+    "bootstrap_ci95": [
+     0.1667,
+     0.5
+    ],
+    "cohens_h": 0.7102,
+    "mcnemar_p": 0.001953
+   }
+  },
+  "lexical_recall": {
+   "arm": "lexical_recall",
+   "n": 30,
+   "ours_only": 0,
+   "theirs_only": 2,
+   "both": 14,
+   "neither": 14,
+   "ours_rate": 0.4667,
+   "theirs_rate": 0.5333,
+   "union_rate": 0.5333,
+   "union_vs_ours": {
+    "n": 30,
+    "ours_correct": 16,
+    "theirs_correct": 14,
+    "discordant_ours_only": 2,
+    "discordant_theirs_only": 0,
+    "concordant": 28,
+    "difference": 0.0667,
+    "bootstrap_ci95": [
+     0.0,
+     0.1667
+    ],
+    "cohens_h": 0.1334,
+    "mcnemar_p": 0.5
+   },
+   "union_vs_theirs": {
+    "n": 30,
+    "ours_correct": 16,
+    "theirs_correct": 16,
+    "discordant_ours_only": 0,
+    "discordant_theirs_only": 0,
+    "concordant": 30,
+    "difference": 0.0,
+    "bootstrap_ci95": [
+     0.0,
+     0.0
+    ],
+    "cohens_h": 0.0,
+    "mcnemar_p": 1.0
+   }
+  }
+ },
+ "family_winners": {
+  "m-concurrent-runs": {
+   "n": 1,
+   "best_rate": 1.0,
+   "won_by": [
+    "lexical_recall",
+    "nevertwice"
+   ]
+  },
+  "m-cpu-device": {
+   "n": 3,
+   "best_rate": 0.3333,
+   "won_by": [
+    "lexical_recall",
+    "nevertwice"
+   ]
+  },
+  "m-embed-mismatch": {
+   "n": 3,
+   "best_rate": 0.6667,
+   "won_by": [
+    "lexical_recall",
+    "nevertwice"
+   ]
+  },
+  "m-heredoc-escape": {
+   "n": 1,
+   "best_rate": 1.0,
+   "won_by": [
+    "lexical_recall",
+    "linter_or_test",
+    "nevertwice"
+   ]
+  },
+  "m-live-store": {
+   "n": 4,
+   "best_rate": 1.0,
+   "won_by": [
+    "linter_or_test"
+   ]
+  },
+  "m-mutation-target": {
+   "n": 1,
+   "best_rate": 0.0,
+   "won_by": [
+    "nobody"
+   ]
+  },
+  "m-nonatomic-write": {
+   "n": 2,
+   "best_rate": 1.0,
+   "won_by": [
+    "lexical_recall",
+    "nevertwice"
+   ]
+  },
+  "m-oscillating-guard": {
+   "n": 1,
+   "best_rate": 1.0,
+   "won_by": [
+    "lexical_recall",
+    "nevertwice"
+   ]
+  },
+  "m-recurrence-poison": {
+   "n": 1,
+   "best_rate": 1.0,
+   "won_by": [
+    "lexical_recall",
+    "nevertwice"
+   ]
+  },
+  "m-replace-race": {
+   "n": 3,
+   "best_rate": 0.6667,
+   "won_by": [
+    "lexical_recall",
+    "nevertwice"
+   ]
+  },
+  "m-secret-in-note": {
+   "n": 1,
+   "best_rate": 1.0,
+   "won_by": [
+    "curated_agents_md",
+    "lexical_recall",
+    "linter_or_test",
+    "nevertwice",
+    "session_summary_extractive"
+   ]
+  },
+  "m-silent-import": {
+   "n": 3,
+   "best_rate": 1.0,
+   "won_by": [
+    "linter_or_test"
+   ]
+  },
+  "m-single-shot-bench": {
+   "n": 1,
+   "best_rate": 0.0,
+   "won_by": [
+    "nobody"
+   ]
+  },
+  "m-stale-claim": {
+   "n": 3,
+   "best_rate": 1.0,
+   "won_by": [
+    "linter_or_test"
+   ]
+  },
+  "m-unstaged-verify": {
+   "n": 2,
+   "best_rate": 1.0,
+   "won_by": [
+    "linter_or_test"
+   ]
+  }
+ },
+ "verdict": [
+  "Survives Holm-Bonferroni correction against: curated_agents_md, session_summary_extractive. Those are the only arm-vs-arm differences this corpus supports.",
+  "SUBSET: against `lexical_recall` the memory arm wins ZERO episodes the baseline misses, while the baseline wins 2. That is stronger than 'not distinguished' - on this corpus its successes are a strict subset of the cheaper arm's, so there is no episode here that justifies the extra machinery.",
+  "Families the memory arm never gets right: m-mutation-target, m-silent-import, m-single-shot-bench, m-unstaged-verify (4 of 15). An aggregate over families this uneven is describing a mixture, not a capability.",
+  "Leave-one-family-out: removing `m-stale-claim` moves the headline difference from -0.0667 to -0.037 (swing 0.0297). THE EXIT CRITERION asks whether an aggregate hides a single easy family, and this is the number that answers it.",
+  "No single family moves the headline much, so the aggregate is not carried by one easy case - which is the one reassuring thing in this report.",
+  "COMPLEMENTARY with `linter_or_test`: it gets 10 episodes the memory arm misses, the memory arm gets 10 it misses, and the union reaches 0.8 against 0.4667 and 0.4667 alone. Two arms with similar aggregates are not the same system twice. The engineering conclusion is not that one wins - it is that a deployment should run both, and that comparing them head-to-head was the wrong question.",
+  "The intervals here supersede the Wilson intervals in F1-F4 for arm-vs-arm claims: those treat paired data as unpaired, which is conservative but wrong. The Wilson figures remain correct for a single arm's own rate.",
+  "All of this rests on one author-written corpus of 30 positive episodes. No correction repairs that; it is the dominant term in every uncertainty on this page."
+ ]
+}

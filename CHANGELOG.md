@@ -6,6 +6,41 @@ versions are [semantic](https://semver.org). Dates are UTC.
 ## [Unreleased]
 
 ### Added
+- **Uncertainty, done properly - and it changes what the earlier results mean (GOAL F5).**
+
+  F1 through F4 each published a Wilson interval. Those are **unpaired**, and the data is not:
+  every arm sees the same episodes. `research/uncertainty.py` redoes the comparisons paired -
+  exact McNemar on the discordant pairs, a percentile bootstrap over episodes with a fixed
+  recorded seed, Cohen's h, and Holm-Bonferroni across the whole family of comparisons.
+
+  Three findings the earlier, cruder analysis could not have produced:
+
+  - **A strict subset, not a tie.** Against raw lexical recall the memory arm wins *zero*
+    episodes the baseline misses, while the baseline wins two. That is stronger than "not
+    distinguished": on this corpus its successes are a subset of the cheaper arm's, and no
+    episode here justifies the extra machinery.
+  - **Complementarity with the linter, which head-to-head comparison was hiding.** The two arms
+    have the *same* aggregate and fail on different episodes - ten each that the other gets. The
+    union reaches far higher than either alone. Two arms with equal scores can be one system
+    twice or two different systems, and the discordant cells are what tell them apart. The
+    engineering conclusion is not that one wins; it is that a deployment should run both.
+  - **The aggregate is a mixture.** Four of fifteen families are never got right at all. The
+    per-family table and the per-episode results are both published, and the headline is
+    recomputed with each family removed in turn - which is F5's exit criterion executed rather
+    than asserted. No single family carries it, which is the one reassuring thing in the report.
+
+  Only the curated-`AGENTS.md` and extractive-summary comparisons survive correction. The
+  paired intervals supersede F1-F4's for any arm-vs-arm statement; the Wilson figures remain
+  correct for a single arm's own rate.
+
+  `tests/_test_uncertainty.py` (107 checks) tests the statistics against cases with known
+  answers, because a hand-rolled McNemar or Holm is exactly the code that looks right and is off
+  by one. Ten mutations, all killed. Two found real gaps: the step-down rule was never
+  discriminated by the test case chosen for it, and reproducibility could not be checked by
+  comparing two runs at all - at ten thousand resamples the percentiles are stable to four
+  decimals whatever the seed, so the seed is now enforced **structurally**, by walking the
+  module's AST for any unseeded generator.
+
 - **Full-loop ablations, and the one mechanism they can name (GOAL F4).**
 
   A system with seven moving parts and one aggregate number cannot say which part earns its
