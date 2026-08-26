@@ -6,6 +6,41 @@ versions are [semantic](https://semver.org). Dates are UTC.
 ## [Unreleased]
 
 ### Added
+- **The model-capability grid: how much of the help is the reader's (GOAL F3).**
+
+  A memory system prevents nothing by itself. It surfaces a sentence, and a *reader* either
+  turns that sentence into a different action or does not. `research/capability_grid.py` holds
+  the memory fixed - the same episodes and the very prevention F2's curated-file arm was scored
+  on - and varies only who is reading, across a local Qwen2.5 ladder on the RTX 5090.
+
+  **The reader does bound actionability on this evidence**, and the grid says so with the
+  interval attached: the spread across the ladder exceeds the half-width the sample supports.
+  It also says the ladder is **not monotonic** - the lift dips in the middle - which at this
+  sample size reads as noise and is the strongest single reason not to quote any one cell as
+  "the" number. A prevention rate published without naming the reader is not a property of the
+  memory system, and that is now a written constraint.
+
+  Two decisions decide whether the numbers mean anything, and both are checked:
+
+  - **The grader is deterministic word-overlap, identical in every cell** - crude, and crude in
+    exactly the same way for every model, which is what a capability comparison needs. An LLM
+    judge was the obvious alternative and the wrong one: it puts a second, uncontrolled
+    capability in the middle of a capability measurement. The suite greps the grader for any
+    model call.
+  - **Adoption is swept over grader strictness**, not pinned to one cutoff, for the same reason
+    F1 publishes a threshold sweep.
+
+  **Cells that could not run are recorded, never missing.** The 7B cell is `BLOCKED`: its
+  weights are a half-finished download, three shards short, and the grid now names the missing
+  files instead of surfacing a `FileNotFoundError` forty frames deep. The two frontier cells are
+  `NOT RUN` under G8, and asking for one exits non-zero with the gate and the remedy rather than
+  quietly running something else.
+
+  `tests/_test_capability_grid.py` (62 checks) runs on the recorded generations with no GPU, so
+  it stays hermetic. Ten mutations, all killed - including handing the control arm the
+  prevention, calling a spread inside the noise a capability effect, and dropping a blocked cell
+  from the grid.
+
 - **The cheap-baseline suite, and the claim it narrowed (GOAL F2).**
 
   `research/BASELINES.md` was a policy with three unbuilt arms in it. `research/cheap_baselines.py`

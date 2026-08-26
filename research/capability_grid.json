@@ -1,0 +1,1851 @@
+{
+ "schema_version": 1,
+ "cells": {
+  "qwen2.5-0.5b": {
+   "model": "qwen2.5-0.5b",
+   "params_b": 0.5,
+   "kind": "local",
+   "device": "NVIDIA GeForce RTX 5090",
+   "max_new_tokens": 70,
+   "decoding": "greedy (do_sample=False)",
+   "load_seconds": 1.26,
+   "seconds_per_generation": 1.709,
+   "records": [
+    {
+     "id": "p01",
+     "label": "m-live-store",
+     "markers": [
+      "before",
+      "code",
+      "declare",
+      "example",
+      "import",
+      "never",
+      "project",
+      "real",
+      "research",
+      "resolve",
+      "sandbox",
+      "test",
+      "vault"
+     ],
+     "no_memory": "Next, I will add code to import the necessary module for processing notes and call the `remember_lessons` function to analyze the content of the notes. This will allow me to quickly assess the structure, themes, and key points within the provided text.",
+     "with_memory": "Understandably, it's important to ensure that all projects are imported into the correct vault before attempting to access any notes or lessons. This will prevent potential issues such as forgetting to declare a sandbox, which could lead to unauthorized access to sensitive information."
+    },
+    {
+     "id": "p02",
+     "label": "m-live-store",
+     "markers": [
+      "before",
+      "code",
+      "declare",
+      "example",
+      "import",
+      "never",
+      "project",
+      "real",
+      "research",
+      "resolve",
+      "sandbox",
+      "test",
+      "vault"
+     ],
+     "no_memory": "The fixture will automatically store all notes in the default vault resolution, ensuring they remain accessible and organized for future reference.",
+     "with_memory": "The next concrete step would be to declare a sandbox before any project imports to ensure that only test, example, or research code can access the vaults without causing issues with security policies."
+    },
+    {
+     "id": "p03",
+     "label": "m-live-store",
+     "markers": [
+      "before",
+      "code",
+      "declare",
+      "example",
+      "import",
+      "never",
+      "project",
+      "real",
+      "research",
+      "resolve",
+      "sandbox",
+      "test",
+      "vault"
+     ],
+     "no_memory": "To start with, I will write an example that demonstrates how to populate a few common mistakes and patterns within a dataset, followed by printing out the resulting digest for easy reference. This approach allows me to visually verify the identified issues and ensure consistency across the data.",
+     "with_memory": "Incorporate the identified mistake into a new, corrected version of the code snippet, ensuring all necessary changes adhere to best practices for managing sensitive data within a secure environment."
+    },
+    {
+     "id": "p04",
+     "label": "m-cpu-device",
+     "markers": [
+      "always",
+      "assert",
+      "cuda",
+      "default",
+      "device",
+      "explicitly",
+      "never",
+      "rely"
+     ],
+     "no_memory": "Next, optimize the model's architecture or hyperparameters to improve throughput while maintaining performance.",
+     "with_memory": "The current setup of using a CPU for training without setting up CUDA can lead to performance issues and slower training times compared to using a GPU. To address this, ensure you always explicitly set the CUDA device during training to improve efficiency and reduce overhead."
+    },
+    {
+     "id": "p05",
+     "label": "m-cpu-device",
+     "markers": [
+      "always",
+      "assert",
+      "cuda",
+      "default",
+      "device",
+      "explicitly",
+      "never",
+      "rely"
+     ],
+     "no_memory": "To address the issue of long running times for each epoch during training, I will first optimize my code for better performance, ensuring that the forward pass runs efficiently without significantly impacting the overall processing time. This approach involves analyzing the current implementation and identifying bottlenecks or inefficiencies within the neural network architecture, data loading processes, or any other part of the",
+     "with_memory": "To address the issue of long running times during training on CPU due to incorrect device setting, I will ensure explicit device setup using CUDA before starting the forward pass. This approach guarantees consistent performance across different devices."
+    },
+    {
+     "id": "p06",
+     "label": "m-embed-mismatch",
+     "markers": [
+      "cache",
+      "embedding",
+      "from",
+      "mismatch",
+      "model",
+      "models",
+      "never",
+      "refuse",
+      "stamp",
+      "vectors"
+     ],
+     "no_memory": "To switch the sentence encoder to a newer checkpoint while utilizing previously cached vectors for efficiency.",
+     "with_memory": "Switching the sentence encoder to a newer checkpoint while maintaining compatibility with existing vectors ensures seamless integration without the risk of vector mismatches or conflicts."
+    },
+    {
+     "id": "p07",
+     "label": "m-embed-mismatch",
+     "markers": [
+      "cache",
+      "embedding",
+      "from",
+      "mismatch",
+      "model",
+      "models",
+      "never",
+      "refuse",
+      "stamp",
+      "vectors"
+     ],
+     "no_memory": "To proceed with semantic search and find neighbors that don't make logical sense, I will first analyze the context of the query to understand what information is being sought.",
+     "with_memory": "To address the issue of mixing vectors from different embedding models within a single cache, we should ensure consistency between the models' vectors before storing them together. This will prevent any potential conflicts or mismatches during subsequent processing."
+    },
+    {
+     "id": "p08",
+     "label": "m-silent-import",
+     "markers": [
+      "caller",
+      "exception",
+      "fail",
+      "failure",
+      "must",
+      "never",
+      "reach",
+      "report",
+      "step",
+      "success",
+      "swallow"
+     ],
+     "no_memory": "In case of any issues during the artifact building process, I will immediately log the error details for further troubleshooting or maintenance.",
+     "with_memory": "To wrap the artifact builder in a try-except block with a failure logging mechanism, ensuring that any failure does not cause the caller to lose progress or crash, I will implement a robust error handling system within the artifact builder's code. This approach ensures that any issues encountered during the execution of the artifact builder are caught and logged, allowing for timely identification"
+    },
+    {
+     "id": "p09",
+     "label": "m-silent-import",
+     "markers": [
+      "caller",
+      "exception",
+      "fail",
+      "failure",
+      "must",
+      "never",
+      "reach",
+      "report",
+      "step",
+      "success",
+      "swallow"
+     ],
+     "no_memory": "To ensure that the generated file remains consistent with its source while reading from it, I will first review the logs for any potential issues or inconsistencies. If no errors are found, I will proceed with generating the file as intended.",
+     "with_memory": "To ensure consistent behavior across all tests, I will implement a retry mechanism for failed steps, logging each attempt's status and duration before attempting again. This approach helps maintain reliability and prevents unexpected failures from affecting subsequent tests."
+    },
+    {
+     "id": "p10",
+     "label": "m-replace-race",
+     "markers": [
+      "file",
+      "files",
+      "name",
+      "plus",
+      "rename",
+      "temp",
+      "thread",
+      "through",
+      "with",
+      "write"
+     ],
+     "no_memory": "The next step would be to synchronize the updates across all worker threads so that they can write their changes to the same JSON state file without conflicts.",
+     "with_memory": "To address the issue of concurrent writers racing on a single temporary file, I will implement a mechanism to ensure proper synchronization between the writers and the temporary file. This involves using a lock or semaphore to prevent multiple writers from writing simultaneously while maintaining the integrity of the temporary file's contents."
+    },
+    {
+     "id": "p11",
+     "label": "m-replace-race",
+     "markers": [
+      "file",
+      "files",
+      "name",
+      "plus",
+      "rename",
+      "temp",
+      "thread",
+      "through",
+      "with",
+      "write"
+     ],
+     "no_memory": "To address the issue of intermittent permissions errors during file renaming on Windows or Linux, I recommend implementing robust access control mechanisms such as ACLs (Access Control Lists) for Windows systems and using Unix-like file systems with proper permissions handling for Linux environments.",
+     "with_memory": "To address the issue of concurrent writers racing on a single temporary file, I will first identify the root cause: the use of a temporary file for writing multiple files simultaneously. Next, I'll implement a solution that ensures each write operation is processed independently while maintaining the integrity of the data across all writes. This approach involves using a separate process or thread for"
+    },
+    {
+     "id": "p12",
+     "label": "m-recurrence-poison",
+     "markers": [
+      "before",
+      "bound",
+      "count",
+      "every",
+      "file",
+      "from",
+      "loop",
+      "number",
+      "ranking",
+      "reaches",
+      "read"
+     ],
+     "no_memory": "The ranking multiplies by the number of lessons that have been recorded for each score, which is directly reflected in the note header.",
+     "with_memory": "To address the issue of unbounded recurrence counts in ranking calculations, I will first analyze the notes to identify patterns and potential causes. This analysis will help pinpoint where the recurrence rate exceeds the limit set by the ranking system. Based on this information, I will then implement a solution that ensures the recurrence count does not exceed the predefined limit. This approach will"
+    },
+    {
+     "id": "p13",
+     "label": "m-stale-claim",
+     "markers": [
+      "code",
+      "command",
+      "cost",
+      "every",
+      "measurement",
+      "moves",
+      "needs",
+      "number",
+      "published",
+      "reproduces",
+      "that",
+      "timing",
+      "when"
+     ],
+     "no_memory": "I will now retrieve and display the latest figure from the given quote, which is likely related to recent changes or updates.",
+     "with_memory": "To address the issue of outdated numbers being reproduced without proper documentation or re-measurement, I will ensure that all previously published numbers have corresponding commands that accurately measure them and update their records accordingly. This approach ensures that future generations can confidently use these numbers for accurate calculations and comparisons."
+    },
+    {
+     "id": "p14",
+     "label": "m-stale-claim",
+     "markers": [
+      "code",
+      "command",
+      "cost",
+      "every",
+      "measurement",
+      "moves",
+      "needs",
+      "number",
+      "published",
+      "reproduces",
+      "that",
+      "timing",
+      "when"
+     ],
+     "no_memory": "The next concrete step is to refine the ranking algorithm based on the feedback received during the refactoring process.",
+     "with_memory": "The next step would be to implement a robust system for reproducibility and re-measurement of published numbers, ensuring they remain accurate and comparable across different runs or iterations."
+    },
+    {
+     "id": "p15",
+     "label": "m-unstaged-verify",
+     "markers": [
+      "before",
+      "check",
+      "files",
+      "reads",
+      "running",
+      "stage",
+      "that"
+     ],
+     "no_memory": "The next step is to review and analyze the newly added modules and their respective suites for any potential issues or improvements that could enhance the functionality and reliability of the system.",
+     "with_memory": "The next step is to ensure that all necessary checks for the new modules and their suites have been run before attempting to stage or verify them."
+    },
+    {
+     "id": "p16",
+     "label": "m-unstaged-verify",
+     "markers": [
+      "before",
+      "check",
+      "files",
+      "reads",
+      "running",
+      "stage",
+      "that"
+     ],
+     "no_memory": "I will now proceed with executing the necessary commands on my local machine to check for any issues related to Git and ensure everything is working as expected.",
+     "with_memory": "The first step is to ensure that all necessary files have been staged and checked out for further processing before attempting to run any Git-based checks."
+    },
+    {
+     "id": "p17",
+     "label": "m-concurrent-runs",
+     "markers": [
+      "never",
+      "over",
+      "passes",
+      "same",
+      "time",
+      "tree",
+      "verification",
+      "working"
+     ],
+     "no_memory": "I'm ready for the mutation sweep to begin as soon as the full suite is complete.",
+     "with_memory": "The mutation sweep is now kicking off in the background, ensuring thorough analysis of all changes across the entire project without interference from previous verification runs."
+    },
+    {
+     "id": "p18",
+     "label": "m-mutation-target",
+     "markers": [
+      "artifact",
+      "being",
+      "mutate",
+      "never",
+      "validated",
+      "validator"
+     ],
+     "no_memory": "To strengthen the parser and ensure accurate document checks, I will first identify any potential issues with the text before proceeding with the validation process. This ensures that the system is robust against errors and inconsistencies in the input data.",
+     "with_memory": "The current state of the parser has been weakened, allowing for weaker validation checks on artifacts rather than validators."
+    },
+    {
+     "id": "p19",
+     "label": "m-single-shot-bench",
+     "markers": [
+      "code",
+      "command",
+      "cost",
+      "every",
+      "measurement",
+      "moves",
+      "needs",
+      "number",
+      "published",
+      "reproduces",
+      "that",
+      "timing",
+      "when"
+     ],
+     "no_memory": "Please provide the specific number you'd like me to include in the README for future calls.",
+     "with_memory": "Incorporate the new requirement into the README for clarity and consistency."
+    },
+    {
+     "id": "p20",
+     "label": "m-heredoc-escape",
+     "markers": [
+      "editing",
+      "escape",
+      "file",
+      "heavy",
+      "heredoc",
+      "pass",
+      "regex",
+      "shell",
+      "text",
+      "through",
+      "tool"
+     ],
+     "no_memory": "The first line of the Heroku buildpacks file should be modified to include word boundaries around package names and other identifiers for better regex matching and improved searchability.",
+     "with_memory": "To patch the regex through a shell heredoc without escaping any characters, you should first ensure all regex patterns and escape sequences are correctly formatted before applying them directly within the heredoc."
+    },
+    {
+     "id": "p21",
+     "label": "m-secret-in-note",
+     "markers": [
+      "display",
+      "path",
+      "redact",
+      "secrets",
+      "write"
+     ],
+     "no_memory": "The extraction path will now filter out any text or data that resembles a credential, ensuring only relevant information is displayed on the screen.",
+     "with_memory": "The extraction process should now ensure that any credentials reaching the store are first redacted on the write path, leaving only the necessary information visible for further processing."
+    },
+    {
+     "id": "p22",
+     "label": "m-nonatomic-write",
+     "markers": [
+      "caller",
+      "exception",
+      "fail",
+      "failure",
+      "must",
+      "never",
+      "reach",
+      "report",
+      "step",
+      "success",
+      "swallow"
+     ],
+     "no_memory": "The next concrete step would be to open the results file for writing and then dump the new contents over whatever was there.",
+     "with_memory": "To ensure the integrity of the data, I will first check if any exceptions occurred during the previous operation. If an exception is detected, I will attempt to recover from it without swallowing the exception, but only after logging the failure so that it can be traced back to the original source. This approach ensures that all operations are handled correctly and efficiently, maintaining"
+    },
+    {
+     "id": "p23",
+     "label": "m-oscillating-guard",
+     "markers": [
+      "both",
+      "consume",
+      "demoting",
+      "evidence",
+      "opposing",
+      "retiring",
+      "supporting",
+      "when"
+     ],
+     "no_memory": "I will immediately clear all session data associated with the guard's account and system, ensuring that no further evidence of their activities is stored or accessible for analysis.",
+     "with_memory": "To reset the evidence for the guard's promotion and demotion cycle, I will first ensure all supporting evidence is cleared from their session, then proceed with the demotion process."
+    },
+    {
+     "id": "p24",
+     "label": "m-live-store",
+     "markers": [
+      "before",
+      "code",
+      "declare",
+      "example",
+      "import",
+      "never",
+      "project",
+      "real",
+      "research",
+      "resolve",
+      "sandbox",
+      "test",
+      "vault"
+     ],
+     "no_memory": "The integration test should be conducted with the default configuration to ensure all functionalities and settings function as expected under normal usage conditions.",
+     "with_memory": "Incorporate a sandbox environment to ensure that all test code operates within a controlled and isolated environment, preventing it from directly accessing or modifying the real vault."
+    },
+    {
+     "id": "p25",
+     "label": "m-cpu-device",
+     "markers": [
+      "always",
+      "assert",
+      "cuda",
+      "default",
+      "device",
+      "explicitly",
+      "never",
+      "rely"
+     ],
+     "no_memory": "To resolve the issue of NVIDIA-SMI showing no GPU information when running inference scripts on my card, I will first ensure that the necessary drivers and libraries for CUDA are up-to-date. This should allow me to access the GPU's capabilities and performance more effectively.",
+     "with_memory": "To resolve the issue of NVIDIA-SMI showing no results when attempting to use a CUDA-enabled GPU, I recommend setting up the device explicitly with `nvidia-smi` command followed by `nvcc --version`. This ensures that you're utilizing the correct CUDA-capable driver version for your system."
+    },
+    {
+     "id": "p26",
+     "label": "m-nonatomic-write",
+     "markers": [
+      "caller",
+      "exception",
+      "fail",
+      "failure",
+      "must",
+      "never",
+      "reach",
+      "report",
+      "step",
+      "success",
+      "swallow"
+     ],
+     "no_memory": "The next step would be to review the code for any potential memory leaks or resource management issues that could have caused the file to become empty after serialization.",
+     "with_memory": "The next concrete step would be to review the logs for any errors or warnings related to the file corruption issue, ensuring that all necessary steps have been taken to prevent further data loss."
+    },
+    {
+     "id": "p27",
+     "label": "m-stale-claim",
+     "markers": [
+      "code",
+      "command",
+      "cost",
+      "every",
+      "measurement",
+      "moves",
+      "needs",
+      "number",
+      "published",
+      "reproduces",
+      "that",
+      "timing",
+      "when"
+     ],
+     "no_memory": "The first rewrite of the original script resulted in a more detailed explanation of the process for generating the figure, which I will now use as my next concrete step in creating a visualization based on the provided information.",
+     "with_memory": "The publication of a previously unreproducible number should be accompanied by a detailed instruction manual detailing how to reproduce it using the same code and recalibrate for accuracy."
+    },
+    {
+     "id": "p28",
+     "label": "m-silent-import",
+     "markers": [
+      "caller",
+      "exception",
+      "fail",
+      "failure",
+      "must",
+      "never",
+      "reach",
+      "report",
+      "step",
+      "success",
+      "swallow"
+     ],
+     "no_memory": "The exception handler will swallow all exceptions, ensuring that no errors are silently ignored or returned as a default value, thus preventing any potential issues from being exposed to the caller.",
+     "with_memory": "The next concrete step is to ensure that any exceptions raised within the generator's execution are caught and handled gracefully, logging them appropriately for future reference and debugging purposes."
+    },
+    {
+     "id": "p29",
+     "label": "m-embed-mismatch",
+     "markers": [
+      "cache",
+      "embedding",
+      "from",
+      "mismatch",
+      "model",
+      "models",
+      "never",
+      "refuse",
+      "stamp",
+      "vectors"
+     ],
+     "no_memory": "To address the issue of inconsistent embeddings across different backend systems, I will implement a mechanism that ensures all vectors are synchronized and consistent throughout the system's lifecycle. This approach involves periodically comparing and synchronizing the embeddings from both backend systems using a robust synchronization protocol, such as a distributed lock or a consensus algorithm like Raft or Paxos, ensuring data integrity",
+     "with_memory": "To prevent such conflicts, we must ensure that no vectors from different embedding models are stored together in the same vector store. This will help maintain consistency and reliability across our system."
+    },
+    {
+     "id": "p30",
+     "label": "m-replace-race",
+     "markers": [
+      "file",
+      "files",
+      "name",
+      "plus",
+      "rename",
+      "temp",
+      "thread",
+      "through",
+      "with",
+      "write"
+     ],
+     "no_memory": "To ensure that each separate hook process operates independently and maintains its own state, I will create a unique temporary filename for each process using the current process ID as the key. This approach allows for efficient management of multiple hooks while maintaining distinct functionality within each instance.",
+     "with_memory": "To prevent such race conditions, we should ensure that each writer writes its data independently into a unique, non-overlapping temporary file using the current process's ID and thread ID as part of the filename."
+    }
+   ],
+   "scores": {
+    "1": {
+     "n": 30,
+     "adopted_without_memory": 19,
+     "adopted_with_memory": 27,
+     "rate_without": 0.6333,
+     "rate_with": 0.9,
+     "lift": 0.2667,
+     "lift_ci95": [
+      0.7438,
+      0.9654
+     ]
+    },
+    "2": {
+     "n": 30,
+     "adopted_without_memory": 7,
+     "adopted_with_memory": 21,
+     "rate_without": 0.2333,
+     "rate_with": 0.7,
+     "lift": 0.4667,
+     "lift_ci95": [
+      0.5212,
+      0.8334
+     ]
+    },
+    "3": {
+     "n": 30,
+     "adopted_without_memory": 1,
+     "adopted_with_memory": 12,
+     "rate_without": 0.0333,
+     "rate_with": 0.4,
+     "lift": 0.3667,
+     "lift_ci95": [
+      0.2459,
+      0.5768
+     ]
+    },
+    "4": {
+     "n": 30,
+     "adopted_without_memory": 0,
+     "adopted_with_memory": 8,
+     "rate_without": 0.0,
+     "rate_with": 0.2667,
+     "lift": 0.2667,
+     "lift_ci95": [
+      0.1418,
+      0.4445
+     ]
+    }
+   }
+  },
+  "qwen2.5-1.5b": {
+   "model": "qwen2.5-1.5b",
+   "params_b": 1.5,
+   "kind": "local",
+   "device": "NVIDIA GeForce RTX 5090",
+   "max_new_tokens": 70,
+   "decoding": "greedy (do_sample=False)",
+   "load_seconds": 4.42,
+   "seconds_per_generation": 1.672,
+   "records": [
+    {
+     "id": "p01",
+     "label": "m-live-store",
+     "markers": [
+      "before",
+      "code",
+      "declare",
+      "example",
+      "import",
+      "never",
+      "project",
+      "real",
+      "research",
+      "resolve",
+      "sandbox",
+      "test",
+      "vault"
+     ],
+     "no_memory": "To add a quick script for importing the necessary package and calling `remember_lessons`, you should first define the required package import statement at the beginning of your script or module. Then, call the function `remember_lessons` as needed within the scope where it is defined.",
+     "with_memory": "I will create a temporary environment for testing purposes using a sandbox to avoid affecting the actual memory store."
+    },
+    {
+     "id": "p02",
+     "label": "m-live-store",
+     "markers": [
+      "before",
+      "code",
+      "declare",
+      "example",
+      "import",
+      "never",
+      "project",
+      "real",
+      "research",
+      "resolve",
+      "sandbox",
+      "test",
+      "vault"
+     ],
+     "no_memory": "I will implement the solution that allows the fixture to use the default vault resolution for storing notes and then clean them up afterward.",
+     "with_memory": "The next concrete step will be to create a new sandbox environment specifically for testing purposes, ensuring that no sensitive data from the production vault is accessed during these tests."
+    },
+    {
+     "id": "p03",
+     "label": "m-live-store",
+     "markers": [
+      "before",
+      "code",
+      "declare",
+      "example",
+      "import",
+      "never",
+      "project",
+      "real",
+      "research",
+      "resolve",
+      "sandbox",
+      "test",
+      "vault"
+     ],
+     "no_memory": "To write an example that populates a few mistakes and patterns, I will first define what those mistakes and patterns should be based on common issues or best practices in programming. Then, I will create code snippets for each mistake/pattern, including any necessary imports or setup steps. Finally, I will run these examples directly from the repository root to demonstrate their",
+     "with_memory": "I will create a simple script that demonstrates common mistakes and patterns in writing tests, examples, or research code, and then run it directly from the repository root without resolving any external dependencies."
+    },
+    {
+     "id": "p04",
+     "label": "m-cpu-device",
+     "markers": [
+      "always",
+      "assert",
+      "cuda",
+      "default",
+      "device",
+      "explicitly",
+      "never",
+      "rely"
+     ],
+     "no_memory": "To address the lower-than-expected throughput issue, we should first verify if there are any memory leaks or inefficiencies in our model's implementation that could be causing bottlenecks on the GPU. Additionally, checking the utilization of other resources like CPU cores and network bandwidth might provide insights into potential performance issues.",
+     "with_memory": "I will ensure that the device is explicitly set to CUDA before starting the training loop to resolve the issue with lower throughput."
+    },
+    {
+     "id": "p05",
+     "label": "m-cpu-device",
+     "markers": [
+      "always",
+      "assert",
+      "cuda",
+      "default",
+      "device",
+      "explicitly",
+      "never",
+      "rely"
+     ],
+     "no_memory": "To address the slow performance of the model during training, I will investigate potential bottlenecks such as memory usage, GPU utilization, or data loading speed, and optimize accordingly.",
+     "with_memory": "I will ensure that the device is explicitly set to CUDA before running the model's forward pass to improve performance."
+    },
+    {
+     "id": "p06",
+     "label": "m-embed-mismatch",
+     "markers": [
+      "cache",
+      "embedding",
+      "from",
+      "mismatch",
+      "model",
+      "models",
+      "never",
+      "refuse",
+      "stamp",
+      "vectors"
+     ],
+     "no_memory": "Load the updated checkpoint for the sentence encoder and retrieve the existing vector data from the cache to avoid rebuilding them.",
+     "with_memory": "I will ensure that the vectors generated by the new checkpoint are properly stamped with their respective model information before they are stored in the cache, thus avoiding any potential conflicts or mismatches."
+    },
+    {
+     "id": "p07",
+     "label": "m-embed-mismatch",
+     "markers": [
+      "cache",
+      "embedding",
+      "from",
+      "mismatch",
+      "model",
+      "models",
+      "never",
+      "refuse",
+      "stamp",
+      "vectors"
+     ],
+     "no_memory": "To address the issue of semantic search neighbors not making sense after changing the model producing the vectors, I will retrain the models with updated training data and compare their results to ensure consistency across different models.",
+     "with_memory": "I will ensure that the embeddings produced by different models are not mixed together in the same cache to avoid semantic errors."
+    },
+    {
+     "id": "p08",
+     "label": "m-silent-import",
+     "markers": [
+      "caller",
+      "exception",
+      "fail",
+      "failure",
+      "must",
+      "never",
+      "reach",
+      "report",
+      "step",
+      "success",
+      "swallow"
+     ],
+     "no_memory": "I will implement the error handling logic within the `ArtifactBuilder` class to catch any exceptions that may occur during its execution and log the completion of the process.",
+     "with_memory": "I will modify the code to wrap the `artifact_builder` in a `try-except` block to handle any potential failures gracefully, ensuring they don't cause the entire process to fail, and then add logging to indicate that the operation has completed successfully."
+    },
+    {
+     "id": "p09",
+     "label": "m-silent-import",
+     "markers": [
+      "caller",
+      "exception",
+      "fail",
+      "failure",
+      "must",
+      "never",
+      "reach",
+      "report",
+      "step",
+      "success",
+      "swallow"
+     ],
+     "no_memory": "Review the codebase for any potential issues that might be causing the unexpected behavior of the application despite changes in the source files.",
+     "with_memory": "I will investigate why the code is not updating as expected despite changes in the source data. I'll check for any exceptions being swallowed and ensure proper logging of failures so they can be addressed."
+    },
+    {
+     "id": "p10",
+     "label": "m-replace-race",
+     "markers": [
+      "file",
+      "files",
+      "name",
+      "plus",
+      "rename",
+      "temp",
+      "thread",
+      "through",
+      "with",
+      "write"
+     ],
+     "no_memory": "The next concrete step is for me to understand the specific requirements or details of how these worker threads should interact with the JSON state file, including any synchronization mechanisms needed to ensure thread safety when updating the file.",
+     "with_memory": "I will ensure proper synchronization between the writer threads to prevent race conditions when writing to the JSON state file."
+    },
+    {
+     "id": "p11",
+     "label": "m-replace-race",
+     "markers": [
+      "file",
+      "files",
+      "name",
+      "plus",
+      "rename",
+      "temp",
+      "thread",
+      "through",
+      "with",
+      "write"
+     ],
+     "no_memory": "To diagnose and resolve the intermittent permission errors during file renaming and ensure consistent content across different operating systems, I will first identify the specific files causing issues using tools like `ls -l` or `du -sh`, then check for any recent changes or updates that might affect permissions or ownership. Next, I'll test the same operations with elevated privileges (",
+     "with_memory": "I will investigate the concurrency issue involving multiple processes writing to a temporary file simultaneously and then renaming it, which could lead to inconsistent data or errors during the rename operation."
+    },
+    {
+     "id": "p12",
+     "label": "m-recurrence-poison",
+     "markers": [
+      "before",
+      "bound",
+      "count",
+      "every",
+      "file",
+      "from",
+      "loop",
+      "number",
+      "ranking",
+      "reaches",
+      "read"
+     ],
+     "no_memory": "I will process the notes to calculate the ranking based on the recurrence count specified in each lesson's header.",
+     "with_memory": "I will ensure that the recurrence count is properly bounded within the code logic to avoid any potential issues with unbounded recursion counts."
+    },
+    {
+     "id": "p13",
+     "label": "m-stale-claim",
+     "markers": [
+      "code",
+      "command",
+      "cost",
+      "every",
+      "measurement",
+      "moves",
+      "needs",
+      "number",
+      "published",
+      "reproduces",
+      "that",
+      "timing",
+      "when"
+     ],
+     "no_memory": "I will update the README with current and accurate recall figures based on the latest commit history.",
+     "with_memory": "I will ensure that all retrieved data includes commands for reproducing the results and re-measurements whenever the underlying code changes."
+    },
+    {
+     "id": "p14",
+     "label": "m-stale-claim",
+     "markers": [
+      "code",
+      "command",
+      "cost",
+      "every",
+      "measurement",
+      "moves",
+      "needs",
+      "number",
+      "published",
+      "reproduces",
+      "that",
+      "timing",
+      "when"
+     ],
+     "no_memory": "To proceed with my task, I will first review the updated code of the ranker and then create or update the benchmark table based on the new version.",
+     "with_memory": "To address the issue of maintaining reproducibility and accuracy, I will create a new benchmark table using automated measurements and ensure that any future changes to the ranker require corresponding updates to both the manual documentation and the automated benchmarks."
+    },
+    {
+     "id": "p15",
+     "label": "m-unstaged-verify",
+     "markers": [
+      "before",
+      "check",
+      "files",
+      "reads",
+      "running",
+      "stage",
+      "that"
+     ],
+     "no_memory": "Run the tests for the new module and its suite to ensure they pass before committing the changes.",
+     "with_memory": "Stage the new module and its suite with Git before running the tests to ensure they run correctly."
+    },
+    {
+     "id": "p16",
+     "label": "m-unstaged-verify",
+     "markers": [
+      "before",
+      "check",
+      "files",
+      "reads",
+      "running",
+      "stage",
+      "that"
+     ],
+     "no_memory": "I will review the specific commands and configurations used for checking Git status or changes, ensuring they are correctly set up and compatible with my environment.",
+     "with_memory": "I will ensure all changes are staged and committed before running any Git-based checks or verifications."
+    },
+    {
+     "id": "p17",
+     "label": "m-concurrent-runs",
+     "markers": [
+      "never",
+      "over",
+      "passes",
+      "same",
+      "time",
+      "tree",
+      "verification",
+      "working"
+     ],
+     "no_memory": "I will ensure that the mutation sweep process runs concurrently with the completion of the full suite, optimizing performance and reducing overall execution time.",
+     "with_memory": "To avoid the issue of running two verification passes over the same working tree simultaneously, I will ensure that the mutation sweep is initiated after both the full suite has finished processing."
+    },
+    {
+     "id": "p18",
+     "label": "m-mutation-target",
+     "markers": [
+      "artifact",
+      "being",
+      "mutate",
+      "never",
+      "validated",
+      "validator"
+     ],
+     "no_memory": "I will modify the parser settings slightly to observe if there is any change in how documents are checked or noticed.",
+     "with_memory": "To address the issue of proving the document check functionality, I will modify the validation logic directly within the parser without affecting the underlying artifacts. This approach ensures that any changes made to the parser do not inadvertently alter the integrity or content of the documents being checked."
+    },
+    {
+     "id": "p19",
+     "label": "m-single-shot-bench",
+     "markers": [
+      "code",
+      "command",
+      "cost",
+      "every",
+      "measurement",
+      "moves",
+      "needs",
+      "number",
+      "published",
+      "reproduces",
+      "that",
+      "timing",
+      "when"
+     ],
+     "no_memory": "Next, I will repeat the timing process multiple times to gather more data and calculate an average cost per call for better accuracy.",
+     "with_memory": "I will ensure that each time I measure the performance of a function or operation, I provide a clear, reproducible command for its execution along with a subsequent measurement if the code changes. This approach ensures that any reported costs accurately reflect actual usage patterns."
+    },
+    {
+     "id": "p20",
+     "label": "m-heredoc-escape",
+     "markers": [
+      "editing",
+      "escape",
+      "file",
+      "heavy",
+      "heredoc",
+      "pass",
+      "regex",
+      "shell",
+      "text",
+      "through",
+      "tool"
+     ],
+     "no_memory": "I will replace the word boundary escape characters with their corresponding regular expression syntax using a shell heredoc.",
+     "with_memory": "I will ensure the input is properly formatted and escaped before passing it through a shell heredoc for patching."
+    },
+    {
+     "id": "p21",
+     "label": "m-secret-in-note",
+     "markers": [
+      "display",
+      "path",
+      "redact",
+      "secrets",
+      "write"
+     ],
+     "no_memory": "The next concrete step is to implement the logic for extracting paths from the input text and processing them according to the specified rules.",
+     "with_memory": "The next concrete step is to ensure that credentials are properly redacted on the write path rather than being exposed through the display layer. This involves modifying the extraction process to remove any sensitive information before storing it in the database or other storage location."
+    },
+    {
+     "id": "p22",
+     "label": "m-nonatomic-write",
+     "markers": [
+      "caller",
+      "exception",
+      "fail",
+      "failure",
+      "must",
+      "never",
+      "reach",
+      "report",
+      "step",
+      "success",
+      "swallow"
+     ],
+     "no_memory": "Open the results file for writing and start appending the new contents into it.",
+     "with_memory": "I will open the results file for writing, check if it exists, and attempt to dump the new contents while handling any potential exceptions appropriately."
+    },
+    {
+     "id": "p23",
+     "label": "m-oscillating-guard",
+     "markers": [
+      "both",
+      "consume",
+      "demoting",
+      "evidence",
+      "opposing",
+      "retiring",
+      "supporting",
+      "when"
+     ],
+     "no_memory": "To reset the session and clear the evidence after receiving a demotion, I will initiate a process of logging out from all associated systems or services.",
+     "with_memory": "To address the scenario of a guard being promoted and then demoted, resetting the evidence, I will ensure that all previous supporting and opposing evidence is cleared when the guard's status changes from promoted to demoted. This action will reset the evidence for future evaluations based on current circumstances."
+    },
+    {
+     "id": "p24",
+     "label": "m-live-store",
+     "markers": [
+      "before",
+      "code",
+      "declare",
+      "example",
+      "import",
+      "never",
+      "project",
+      "real",
+      "research",
+      "resolve",
+      "sandbox",
+      "test",
+      "vault"
+     ],
+     "no_memory": "I will ensure that my integration tests cover all possible configurations and edge cases to validate the application's behavior under various conditions.",
+     "with_memory": "I will ensure that all integration tests use a mock or stubbed environment rather than accessing the actual database or storage system of the application being tested. This approach adheres to best practices for separation of concerns and avoids potential conflicts with production data."
+    },
+    {
+     "id": "p25",
+     "label": "m-cpu-device",
+     "markers": [
+      "always",
+      "assert",
+      "cuda",
+      "default",
+      "device",
+      "explicitly",
+      "never",
+      "rely"
+     ],
+     "no_memory": "To troubleshoot why `nvidia-smi` does not show anything when running inference on the GPU, I will first ensure that the NVIDIA driver and CUDA toolkit are correctly installed and up-to-date on the system. Then, I will verify if the GPU is properly recognized and configured for use with the inference software. Finally, I will check if there",
+     "with_memory": "I will ensure that the NVIDIA GPU is properly configured as the target device before running the inference script to resolve the issue where `nvidia-smi` does not show any information despite the GPU being active during inference."
+    },
+    {
+     "id": "p26",
+     "label": "m-nonatomic-write",
+     "markers": [
+      "caller",
+      "exception",
+      "fail",
+      "failure",
+      "must",
+      "never",
+      "reach",
+      "report",
+      "step",
+      "success",
+      "swallow"
+     ],
+     "no_memory": "The next concrete step would be for the writer to restart the serialization process from where it left off or start over if necessary, ensuring that all data is properly written to the disk before proceeding further.",
+     "with_memory": "I will ensure that any potential errors during serialization are properly handled and reported so that the issue can be addressed before proceeding further."
+    },
+    {
+     "id": "p27",
+     "label": "m-stale-claim",
+     "markers": [
+      "code",
+      "command",
+      "cost",
+      "every",
+      "measurement",
+      "moves",
+      "needs",
+      "number",
+      "published",
+      "reproduces",
+      "that",
+      "timing",
+      "when"
+     ],
+     "no_memory": "I will analyze the changes made to the script over time to understand how they affect the resulting figure.",
+     "with_memory": "To address the documentation issue where a figure was cited but its corresponding script had been rewritten multiple times, I will ensure that each version of the script includes clear instructions for reproducing the results and any necessary re-measurements whenever the code changes. This approach guarantees consistency and transparency in scientific reporting."
+    },
+    {
+     "id": "p28",
+     "label": "m-silent-import",
+     "markers": [
+      "caller",
+      "exception",
+      "fail",
+      "failure",
+      "must",
+      "never",
+      "reach",
+      "report",
+      "step",
+      "success",
+      "swallow"
+     ],
+     "no_memory": "I will review the code where the exception handler is located and ensure that it properly logs or handles specific exceptions as needed, without swallowing them entirely.",
+     "with_memory": "I will ensure the exception handler logs the error for debugging purposes and does not return a default value, allowing callers to handle potential failures appropriately."
+    },
+    {
+     "id": "p29",
+     "label": "m-embed-mismatch",
+     "markers": [
+      "cache",
+      "embedding",
+      "from",
+      "mismatch",
+      "model",
+      "models",
+      "never",
+      "refuse",
+      "stamp",
+      "vectors"
+     ],
+     "no_memory": "The next concrete step would be to identify and merge or reconcile the embeddings from both backend systems to ensure consistency across the vector store.",
+     "with_memory": "I will ensure that any embeddings generated using different models are properly tagged with their respective models before they are stored in the vector store, preventing potential conflicts or mismatches between them."
+    },
+    {
+     "id": "p30",
+     "label": "m-replace-race",
+     "markers": [
+      "file",
+      "files",
+      "name",
+      "plus",
+      "rename",
+      "temp",
+      "thread",
+      "through",
+      "with",
+      "write"
+     ],
+     "no_memory": "I will ensure that each hook process has a unique temporary filename based on its process ID to prevent them from interfering with each other.",
+     "with_memory": "I will analyze the potential risks associated with using the process ID as part of the temporary filename and propose a solution to mitigate these risks."
+    }
+   ],
+   "scores": {
+    "1": {
+     "n": 30,
+     "adopted_without_memory": 19,
+     "adopted_with_memory": 26,
+     "rate_without": 0.6333,
+     "rate_with": 0.8667,
+     "lift": 0.2333,
+     "lift_ci95": [
+      0.7032,
+      0.9469
+     ]
+    },
+    "2": {
+     "n": 30,
+     "adopted_without_memory": 8,
+     "adopted_with_memory": 16,
+     "rate_without": 0.2667,
+     "rate_with": 0.5333,
+     "lift": 0.2667,
+     "lift_ci95": [
+      0.3614,
+      0.6977
+     ]
+    },
+    "3": {
+     "n": 30,
+     "adopted_without_memory": 4,
+     "adopted_with_memory": 9,
+     "rate_without": 0.1333,
+     "rate_with": 0.3,
+     "lift": 0.1667,
+     "lift_ci95": [
+      0.1666,
+      0.4788
+     ]
+    },
+    "4": {
+     "n": 30,
+     "adopted_without_memory": 0,
+     "adopted_with_memory": 3,
+     "rate_without": 0.0,
+     "rate_with": 0.1,
+     "lift": 0.1,
+     "lift_ci95": [
+      0.0346,
+      0.2562
+     ]
+    }
+   }
+  },
+  "qwen2.5-3b": {
+   "model": "qwen2.5-3b",
+   "params_b": 3.0,
+   "kind": "local",
+   "device": "NVIDIA GeForce RTX 5090",
+   "max_new_tokens": 70,
+   "decoding": "greedy (do_sample=False)",
+   "load_seconds": 8.2,
+   "seconds_per_generation": 1.747,
+   "records": [
+    {
+     "id": "p01",
+     "label": "m-live-store",
+     "markers": [
+      "before",
+      "code",
+      "declare",
+      "example",
+      "import",
+      "never",
+      "project",
+      "real",
+      "research",
+      "resolve",
+      "sandbox",
+      "test",
+      "vault"
+     ],
+     "no_memory": "I will create a simple Python script that imports the necessary package and calls the `remember_lessons` function to generate a sample note for inspection.",
+     "with_memory": "I will create a sandbox environment to ensure that the test code does not interact with the real vault and then add the necessary import statement and call to `remember_lessons` function."
+    },
+    {
+     "id": "p02",
+     "label": "m-live-store",
+     "markers": [
+      "before",
+      "code",
+      "declare",
+      "example",
+      "import",
+      "never",
+      "project",
+      "real",
+      "research",
+      "resolve",
+      "sandbox",
+      "test",
+      "vault"
+     ],
+     "no_memory": "The next step will be to define a fixture that uses the default vault for storing its notes and ensures it is cleaned up after use.",
+     "with_memory": "The next step is to create a sandbox for the fixture to use its notes, ensuring it does not interfere with the main application's real vault."
+    },
+    {
+     "id": "p03",
+     "label": "m-live-store",
+     "markers": [
+      "before",
+      "code",
+      "declare",
+      "example",
+      "import",
+      "never",
+      "project",
+      "real",
+      "research",
+      "resolve",
+      "sandbox",
+      "test",
+      "vault"
+     ],
+     "no_memory": "The next step is to create a simple Python script in the repository root to demonstrate common mistakes and patterns, populate it with these elements, and then compute and print the SHA-256 hash of the script's content.",
+     "with_memory": "The next step is to create a sandbox environment within the repository root to isolate the project from the real cloud storage and ensure secure execution of the code."
+    },
+    {
+     "id": "p04",
+     "label": "m-cpu-device",
+     "markers": [
+      "always",
+      "assert",
+      "cuda",
+      "default",
+      "device",
+      "explicitly",
+      "never",
+      "rely"
+     ],
+     "no_memory": "I will investigate the model's architecture and hyperparameters to identify potential bottlenecks affecting the training throughput.",
+     "with_memory": "I will explicitly set the device to CUDA and assert it to ensure it is correctly configured for training on the GPU."
+    },
+    {
+     "id": "p05",
+     "label": "m-cpu-device",
+     "markers": [
+      "always",
+      "assert",
+      "cuda",
+      "default",
+      "device",
+      "explicitly",
+      "never",
+      "rely"
+     ],
+     "no_memory": "To address the slow epoch times, I will first analyze the current code for potential bottlenecks and then consider optimizing the model architecture or adjusting hyperparameters accordingly.",
+     "with_memory": "I will explicitly set the device to CUDA and assert it to ensure the model runs efficiently on the available GPU hardware."
+    },
+    {
+     "id": "p06",
+     "label": "m-embed-mismatch",
+     "markers": [
+      "cache",
+      "embedding",
+      "from",
+      "mismatch",
+      "model",
+      "models",
+      "never",
+      "refuse",
+      "stamp",
+      "vectors"
+     ],
+     "no_memory": "The next step is to load the new sentence encoder checkpoint while reusing the cached embeddings for efficiency.",
+     "with_memory": "The next step is to ensure that the vectors from the new checkpoint are stored separately from those of the previous model to avoid mixing and to validate the model stamps for integrity checks."
+    },
+    {
+     "id": "p07",
+     "label": "m-embed-mismatch",
+     "markers": [
+      "cache",
+      "embedding",
+      "from",
+      "mismatch",
+      "model",
+      "models",
+      "never",
+      "refuse",
+      "stamp",
+      "vectors"
+     ],
+     "no_memory": "To address this issue, I will first retrain the semantic search model with the new vector generation model's embeddings to ensure compatibility and relevance of results.",
+     "with_memory": "I will ensure that all future embeddings are generated using the same model and clearly stamp each model's embeddings to prevent mixing."
+    },
+    {
+     "id": "p08",
+     "label": "m-silent-import",
+     "markers": [
+      "caller",
+      "exception",
+      "fail",
+      "failure",
+      "must",
+      "never",
+      "reach",
+      "report",
+      "step",
+      "success",
+      "swallow"
+     ],
+     "no_memory": "I will wrap the artifact builder function call in a try-except block and log its completion status.",
+     "with_memory": "The next step is to wrap the artifact builder in a try-except block to catch any exceptions and ensure they are logged, preventing the failure from taking down the caller."
+    },
+    {
+     "id": "p09",
+     "label": "m-silent-import",
+     "markers": [
+      "caller",
+      "exception",
+      "fail",
+      "failure",
+      "must",
+      "never",
+      "reach",
+      "report",
+      "step",
+      "success",
+      "swallow"
+     ],
+     "no_memory": "I will inspect the code that handles reading from the external source to identify any potential issues or changes that might be causing the stale data to persist.",
+     "with_memory": "I will investigate why the generator is failing silently during the import process and ensure that any exceptions are properly logged or propagated to the caller."
+    },
+    {
+     "id": "p10",
+     "label": "m-replace-race",
+     "markers": [
+      "file",
+      "files",
+      "name",
+      "plus",
+      "rename",
+      "temp",
+      "thread",
+      "through",
+      "with",
+      "write"
+     ],
+     "no_memory": "The next step is to implement a mechanism to safely serialize and deserialize the JSON state file to ensure thread safety during updates.",
+     "with_memory": "The next step is to implement a unique naming scheme for the temporary files based on the current timestamp or a combination of process ID and thread ID to prevent race conditions during renaming."
+    },
+    {
+     "id": "p11",
+     "label": "m-replace-race",
+     "markers": [
+      "file",
+      "files",
+      "name",
+      "plus",
+      "rename",
+      "temp",
+      "thread",
+      "through",
+      "with",
+      "write"
+     ],
+     "no_memory": "To address the intermittent permission errors during rename operations on Windows and the issue with incorrect file contents on Linux, I will first gather more detailed logs from both systems to identify patterns and potential causes.",
+     "with_memory": "To address the intermittent permission errors during rename and the issue with incorrect file contents on Linux, I will first investigate the race condition in the concurrent writing process by ensuring proper synchronization mechanisms are in place, such as using locks or semaphores, and then consider implementing a more robust file handling strategy to avoid race conditions altogether."
+    },
+    {
+     "id": "p12",
+     "label": "m-recurrence-poison",
+     "markers": [
+      "before",
+      "bound",
+      "count",
+      "every",
+      "file",
+      "from",
+      "loop",
+      "number",
+      "ranking",
+      "reaches",
+      "read"
+     ],
+     "no_memory": "I will analyze the notes to extract the recurrence count from the headers and then incorporate this into the formula for calculating the ranking multiplier.",
+     "with_memory": "I will first verify the format and content of the note headers to ensure they contain valid recurrence counts before incorporating them into the ranking calculation."
+    },
+    {
+     "id": "p13",
+     "label": "m-stale-claim",
+     "markers": [
+      "code",
+      "command",
+      "cost",
+      "every",
+      "measurement",
+      "moves",
+      "needs",
+      "number",
+      "published",
+      "reproduces",
+      "that",
+      "timing",
+      "when"
+     ],
+     "no_memory": "I will review the commit history to identify the most recent measurements and update the README accordingly.",
+     "with_memory": "My next step will be to update the README with a reproducibility command and a note indicating the most recent measurement for the figures cited."
+    },
+    {
+     "id": "p14",
+     "label": "m-stale-claim",
+     "markers": [
+      "code",
+      "command",
+      "cost",
+      "every",
+      "measurement",
+      "moves",
+      "needs",
+      "number",
+      "published",
+      "reproduces",
+      "that",
+      "timing",
+      "when"
+     ],
+     "no_memory": "My next step will be to re-run the benchmark with the updated ranker model to generate a new, more accurate benchmark table.",
+     "with_memory": "My next step will be to document and reproduce the benchmark results using the current ranker implementation to ensure they can be consistently verified and updated as needed."
+    },
+    {
+     "id": "p15",
+     "label": "m-unstaged-verify",
+     "markers": [
+      "before",
+      "check",
+      "files",
+      "reads",
+      "running",
+      "stage",
+      "that"
+     ],
+     "no_memory": "I will run the tests for the newly written module and suite to ensure they pass before proceeding with the commit.",
+     "with_memory": "Stage the new files before running the tests to avoid the previous failure."
+    },
+    {
+     "id": "p16",
+     "label": "m-unstaged-verify",
+     "markers": [
+      "before",
+      "check",
+      "files",
+      "reads",
+      "running",
+      "stage",
+      "that"
+     ],
+     "no_memory": "I will investigate the output of the Git command being executed to identify any potential issues or missing information.",
+     "with_memory": "Stage the new files before running the check that interacts with Git to ensure they are included in the commit being checked."
+    },
+    {
+     "id": "p17",
+     "label": "m-concurrent-runs",
+     "markers": [
+      "never",
+      "over",
+      "passes",
+      "same",
+      "time",
+      "tree",
+      "verification",
+      "working"
+     ],
+     "no_memory": "I will initiate the background mutation sweep task to run concurrently with the completion of the full suite.",
+     "with_memory": "Given the past failure of running two verification passes over one working tree simultaneously, my next step will be to ensure that the mutation sweep and the full suite are executed in separate working trees or branches to avoid this issue."
+    },
+    {
+     "id": "p18",
+     "label": "m-mutation-target",
+     "markers": [
+      "artifact",
+      "being",
+      "mutate",
+      "never",
+      "validated",
+      "validator"
+     ],
+     "no_memory": "I will test the parser with intentionally flawed input data to observe if the suite detects and flags these issues.",
+     "with_memory": "I will mutate the input artifact being parsed rather than the parsing mechanism itself to demonstrate the document check functionality."
+    },
+    {
+     "id": "p19",
+     "label": "m-single-shot-bench",
+     "markers": [
+      "code",
+      "command",
+      "cost",
+      "every",
+      "measurement",
+      "moves",
+      "needs",
+      "number",
+      "published",
+      "reproduces",
+      "that",
+      "timing",
+      "when"
+     ],
+     "no_memory": "I will now measure the time taken for the most recent function call and record the timing along with the cost metric in the README file.",
+     "with_memory": "I will verify if there are any existing commands or scripts that reproduce the timing measurement and ensure they are updated to reflect the actual cost accurately before publishing the number in the README."
+    },
+    {
+     "id": "p20",
+     "label": "m-heredoc-escape",
+     "markers": [
+      "editing",
+      "escape",
+      "file",
+      "heavy",
+      "heredoc",
+      "pass",
+      "regex",
+      "shell",
+      "text",
+      "through",
+      "tool"
+     ],
+     "no_memory": "I will prepare the shell heredoc with the updated regex pattern, including the necessary word boundary escapes, and apply it using a command like `sed` or `perl`.",
+     "with_memory": "I will create a temporary file for the regex and process it there instead of using a shell heredoc."
+    },
+    {
+     "id": "p21",
+     "label": "m-secret-in-note",
+     "markers": [
+      "display",
+      "path",
+      "redact",
+      "secrets",
+      "write"
+     ],
+     "no_memory": "The next step is to define how the extraction path will structure the note body, including identifying and categorizing credentials for later stripping during the display process.",
+     "with_memory": "Review and refine the current credential redaction logic to ensure it is applied during the write (extraction) path, rather than the display path, to prevent credentials from reaching the store unredacted."
+    },
+    {
+     "id": "p22",
+     "label": "m-nonatomic-write",
+     "markers": [
+      "caller",
+      "exception",
+      "fail",
+      "failure",
+      "must",
+      "never",
+      "reach",
+      "report",
+      "step",
+      "success",
+      "swallow"
+     ],
+     "no_memory": "I will open the results file in write mode and begin dumping the new contents.",
+     "with_memory": "I will open the results file in write mode, ensuring to handle any exceptions and log them, then proceed with writing the new contents."
+    },
+    {
+     "id": "p23",
+     "label": "m-oscillating-guard",
+     "markers": [
+      "both",
+      "consume",
+      "demoting",
+      "evidence",
+      "opposing",
+      "retiring",
+      "supporting",
+      "when"
+     ],
+     "no_memory": "I will first identify and retrieve the sessions that were previously supported by the guard mechanism.",
+     "with_memory": "I will review the logic for handling the demotion of guards to ensure it correctly clears both the supporting and opposing evidence, preventing any accumulation or permanent promotion of guards."
+    },
+    {
+     "id": "p24",
+     "label": "m-live-store",
+     "markers": [
+      "before",
+      "code",
+      "declare",
+      "example",
+      "import",
+      "never",
+      "project",
+      "real",
+      "research",
+      "resolve",
+      "sandbox",
+      "test",
+      "vault"
+     ],
+     "no_memory": "The next step is to configure and run the integration tests using the default settings as they would be found on a real user's system.",
+     "with_memory": "The next step is to ensure that the integration test uses a sandboxed configuration instead of the default production settings, to avoid accessing the real memory store."
+    },
+    {
+     "id": "p25",
+     "label": "m-cpu-device",
+     "markers": [
+      "always",
+      "assert",
+      "cuda",
+      "default",
+      "device",
+      "explicitly",
+      "never",
+      "rely"
+     ],
+     "no_memory": "I will check the GPU utilization and ensure that the NVIDIA driver is properly installed and up-to-date.",
+     "with_memory": "Explicitly set the device to CUDA and assert its availability before running any code that interacts with the GPU to ensure it is being used as intended."
+    },
+    {
+     "id": "p26",
+     "label": "m-nonatomic-write",
+     "markers": [
+      "caller",
+      "exception",
+      "fail",
+      "failure",
+      "must",
+      "never",
+      "reach",
+      "report",
+      "step",
+      "success",
+      "swallow"
+     ],
+     "no_memory": "The next step is to review the code that was supposed to serialize the data to ensure there are no errors or missing parts that could have caused the file to remain empty.",
+     "with_memory": "The next step is to ensure that any exceptions during the serialization process are caught and logged, preventing the file from being left in an empty state."
+    },
+    {
+     "id": "p27",
+     "label": "m-stale-claim",
+     "markers": [
+      "code",
+      "command",
+      "cost",
+      "every",
+      "measurement",
+      "moves",
+      "needs",
+      "number",
+      "published",
+      "reproduces",
+      "that",
+      "timing",
+      "when"
+     ],
+     "no_memory": "I will review the most recent version of the script to understand how the figure was generated and update the documentation accordingly.",
+     "with_memory": "My next step will be to ensure that every published number or figure has a corresponding command that can reproduce it, and to re-measure or update the data whenever the underlying code changes."
+    },
+    {
+     "id": "p28",
+     "label": "m-silent-import",
+     "markers": [
+      "caller",
+      "exception",
+      "fail",
+      "failure",
+      "must",
+      "never",
+      "reach",
+      "report",
+      "step",
+      "success",
+      "swallow"
+     ],
+     "no_memory": "I will modify the exception handler to provide more informative error messages or details while still returning a default value as needed for robust caller handling.",
+     "with_memory": "I will investigate the current exception handling mechanism to ensure it does not swallow exceptions but instead logs them appropriately for further analysis."
+    },
+    {
+     "id": "p29",
+     "label": "m-embed-mismatch",
+     "markers": [
+      "cache",
+      "embedding",
+      "from",
+      "mismatch",
+      "model",
+      "models",
+      "never",
+      "refuse",
+      "stamp",
+      "vectors"
+     ],
+     "no_memory": "I will investigate how these two different embedding backends are integrated and managed within the vector store to identify any conflicts or inefficiencies.",
+     "with_memory": "I will implement a mechanism to stamp each embedding with the model it was generated by and enforce checks to ensure vectors are only queried against embeddings from the same model."
+    },
+    {
+     "id": "p30",
+     "label": "m-replace-race",
+     "markers": [
+      "file",
+      "files",
+      "name",
+      "plus",
+      "rename",
+      "temp",
+      "thread",
+      "through",
+      "with",
+      "write"
+     ],
+     "no_memory": "I will generate a temporary file name using the current process ID to ensure unique filenames for each hook process instance.",
+     "with_memory": "The next step will be to ensure that each hook process writes to a unique temporary file name by incorporating both the process ID and a unique identifier (such as the thread ID) into the filename."
+    }
+   ],
+   "scores": {
+    "1": {
+     "n": 30,
+     "adopted_without_memory": 14,
+     "adopted_with_memory": 28,
+     "rate_without": 0.4667,
+     "rate_with": 0.9333,
+     "lift": 0.4667,
+     "lift_ci95": [
+      0.7868,
+      0.9815
+     ]
+    },
+    "2": {
+     "n": 30,
+     "adopted_without_memory": 8,
+     "adopted_with_memory": 26,
+     "rate_without": 0.2667,
+     "rate_with": 0.8667,
+     "lift": 0.6,
+     "lift_ci95": [
+      0.7032,
+      0.9469
+     ]
+    },
+    "3": {
+     "n": 30,
+     "adopted_without_memory": 3,
+     "adopted_with_memory": 20,
+     "rate_without": 0.1,
+     "rate_with": 0.6667,
+     "lift": 0.5667,
+     "lift_ci95": [
+      0.4878,
+      0.8077
+     ]
+    },
+    "4": {
+     "n": 30,
+     "adopted_without_memory": 0,
+     "adopted_with_memory": 13,
+     "rate_without": 0.0,
+     "rate_with": 0.4333,
+     "lift": 0.4333,
+     "lift_ci95": [
+      0.2738,
+      0.608
+     ]
+    }
+   }
+  }
+ },
+ "gated": {
+  "frontier-a": {
+   "why": "a frontier API call spends the owner's money (gate G8)",
+   "what_the_owner_must_do": "set the provider key and run `python research/capability_grid.py --model frontier-a`"
+  },
+  "frontier-b": {
+   "why": "a second frontier API, same gate",
+   "what_the_owner_must_do": "set the provider key and run `python research/capability_grid.py --model frontier-b`"
+  }
+ },
+ "generated_by": "python research/capability_grid.py --all",
+ "blocked": {
+  "qwen2.5-7b": {
+   "why": "qwen2.5-7b: 3 weight file(s) missing from D:/Local_AI_Models/Qwen2.5-7B-Instruct: model-00001-of-00004.safetensors, model-00002-of-00004.safetensors, model-00004-of-00004.safetensors",
+   "missing_files": [
+    "model-00001-of-00004.safetensors",
+    "model-00002-of-00004.safetensors",
+    "model-00004-of-00004.safetensors"
+   ],
+   "what_the_owner_must_do": "complete the download of D:/Local_AI_Models/Qwen2.5-7B-Instruct (3 file(s)), then re-run `python research/capability_grid.py --model qwen2.5-7b`"
+  }
+ }
+}
