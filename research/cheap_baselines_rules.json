@@ -1,0 +1,82 @@
+{
+  "schema_version": 1,
+  "purpose": "The inputs for the three B5 baselines that F1 did not build: a curated AGENTS.md, an LLM session summary, and the relevant linter or test. Kept as data rather than code so the comparison can be audited without reading a script.",
+
+  "curated_agents_md": {
+    "description": "One hand-written instructions file of the kind a careful person maintains. This is the honest competitor for most of what agent memory claims: if a human writing a dozen lines gets the same prevention, the machinery is not earning its place.",
+    "token_budget_note": "Matched to the memory arm by construction: the memory arm spends tokens only when it fires, this arm spends its whole file on EVERY episode. The harness reports both, so the arm that looks cheaper per firing but is always present cannot hide.",
+    "authored": "Written by hand from the same incident history the signatures come from, WITHOUT looking at the episode texts - which is the only version of this arm that is a fair competitor rather than an answer key.",
+    "rules": [
+      {"id": "r-sandbox", "covers": ["m-live-store"],
+       "text": "Never let test, example or research code resolve the real vault. Declare a sandbox before any project import."},
+      {"id": "r-device", "covers": ["m-cpu-device"],
+       "text": "Always set the device explicitly to cuda and assert it; never rely on a default."},
+      {"id": "r-embed-space", "covers": ["m-embed-mismatch"],
+       "text": "Never mix vectors from two embedding models in one cache; stamp the model and refuse on mismatch."},
+      {"id": "r-no-silent-catch", "covers": ["m-silent-import", "m-nonatomic-write"],
+       "text": "Never swallow an exception and report success. If a step can fail, its failure must reach a log or a caller."},
+      {"id": "r-atomic-write", "covers": ["m-nonatomic-write", "m-replace-race"],
+       "text": "Write files through a temp file plus rename, with the pid and thread id in the temp name."},
+      {"id": "r-bound-inputs", "covers": ["m-recurrence-poison"],
+       "text": "Bound every number read from a file before it reaches a ranking or a loop count."},
+      {"id": "r-evidence", "covers": ["m-stale-claim", "m-single-shot-bench"],
+       "text": "Every published number needs a command that reproduces it and a re-measurement when the code moves. One timing is not a cost."},
+      {"id": "r-stage-first", "covers": ["m-unstaged-verify"],
+       "text": "Stage files before running any check that reads git."},
+      {"id": "r-serial-verify", "covers": ["m-concurrent-runs"],
+       "text": "Never run two verification passes over one working tree at the same time."},
+      {"id": "r-mutate-artifact", "covers": ["m-mutation-target"],
+       "text": "Mutate the artifact being validated, never the validator."},
+      {"id": "r-escapes", "covers": ["m-heredoc-escape"],
+       "text": "Do not pass regex or escape-heavy text through a shell heredoc; use a file-editing tool."},
+      {"id": "r-redact-on-write", "covers": ["m-secret-in-note"],
+       "text": "Redact secrets on the write path, not the display path."},
+      {"id": "r-both-sides", "covers": ["m-oscillating-guard"],
+       "text": "When retiring or demoting on evidence, consume both the supporting and the opposing evidence."}
+    ]
+  },
+
+  "linter_or_test": {
+    "description": "For each past failure, the existing static check that already catches the same class. A guard that duplicates a linter is not memory, it is a worse linter - so this arm is scored generously: if any ordinary tool would plausibly catch the class, it counts as caught.",
+    "generosity_note": "Deliberately generous to the BASELINE, not to this project. Where it was arguable whether ruff, bandit, a secret scanner or CodeQL would fire, the answer recorded is yes. An arm scored in one's own favour proves nothing.",
+    "coverage": [
+      {"stem": "m-live-store", "caught": true,
+       "by": "tools/check_sandbox.py - a project-local static lint that fails the build when a script reaches the store without declaring a sandbox"},
+      {"stem": "m-cpu-device", "caught": false,
+       "by": "no standard linter models 'this tensor is on the wrong device'; it is a runtime property"},
+      {"stem": "m-embed-mismatch", "caught": false,
+       "by": "no linter; the project's own embed_cache_usable() gate catches it at runtime, which is memory-shaped rather than lint-shaped"},
+      {"stem": "m-silent-import", "caught": true,
+       "by": "ruff BLE001 / flake8-blind-except flags `except Exception: pass` and bare except"},
+      {"stem": "m-replace-race", "caught": false,
+       "by": "no mainstream linter reasons about temp-file naming under threads"},
+      {"stem": "m-recurrence-poison", "caught": false,
+       "by": "no linter knows which numbers are ranking inputs"},
+      {"stem": "m-stale-claim", "caught": true,
+       "by": "tools/check_freshness.py - the project's own ratchet, and the closest thing to a linter for documentation"},
+      {"stem": "m-unstaged-verify", "caught": true,
+       "by": "continuous integration catches it on the next push, which is what a test is for"},
+      {"stem": "m-concurrent-runs", "caught": false,
+       "by": "no tool observes two processes sharing a tree"},
+      {"stem": "m-mutation-target", "caught": false,
+       "by": "no tool checks that a mutation targeted the artifact rather than the validator"},
+      {"stem": "m-single-shot-bench", "caught": false,
+       "by": "no linter distinguishes a stable measurement from a single sample"},
+      {"stem": "m-heredoc-escape", "caught": true,
+       "by": "pyflakes fails on the invalid source the mangled escape produces, when it produces invalid source"},
+      {"stem": "m-secret-in-note", "caught": true,
+       "by": "gitleaks, detect-secrets and CodeQL all flag credential patterns"},
+      {"stem": "m-nonatomic-write", "caught": false,
+       "by": "no linter distinguishes a truncating open from a safe one"},
+      {"stem": "m-oscillating-guard", "caught": false,
+       "by": "no tool reasons about the symmetry of a promotion rule"}
+    ]
+  },
+
+  "llm_session_summary": {
+    "description": "Ask a model to summarise the session and inject that summary next time - the cheapest possible 'memory', available in one prompt with no system at all.",
+    "status": "BUILT, RUN GATED. The arm and its scoring are implemented and exercised end to end by a deterministic extractive stub, so the plumbing is tested rather than assumed. The model-backed run is not performed here: no local model server is reachable on this machine, and a frontier API call is gate G8 (it spends the owner's money). What runs is labelled `session_summary_extractive` and is never reported as an LLM result.",
+    "stub_method": "Extractive: the summariser keeps the highest-signal sentences of each past failure by content-token density, at the same token budget the memory arm is allowed. This is a real cheap baseline in its own right and a lower bound on what a model would produce.",
+    "what_the_owner_must_do": "Start a local model server (or approve a billable frontier call under G8) and run `python research/cheap_baselines.py --summariser=model`. The arm, its scoring and its token accounting are already in place; only the generator changes."
+  }
+}

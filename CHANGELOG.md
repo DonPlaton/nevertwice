@@ -6,6 +6,42 @@ versions are [semantic](https://semver.org). Dates are UTC.
 ## [Unreleased]
 
 ### Added
+- **The cheap-baseline suite, and the claim it narrowed (GOAL F2).**
+
+  `research/BASELINES.md` was a policy with three unbuilt arms in it. `research/cheap_baselines.py`
+  builds them and runs all six B5 baselines through F1's matched-condition machinery, so the
+  policy stops being a promise. Two of the three are the ones that hurt, and both were built to
+  be **strong**:
+
+  - **a curated `AGENTS.md`** - hand-written from the same incident history, charged its full
+    length on *every* episode rather than only when it helps, because that is what
+    always-injected means. It loses decisively: an order of magnitude more context per episode
+    for far less prevention. That settles what this project had called its single most
+    important missing comparison.
+  - **the relevant linter or test**, built as an explicit *oracle upper bound* - it never cries
+    wolf, because a linter reads code rather than intentions, and it catches every instance of a
+    class it covers. It **ties** the memory arm at zero false alarms, at a fraction of the
+    latency. For the classes an existing tool already covers, a guard is a worse linter; what
+    the memory system can claim has to be about the classes no linter covers, and that is now a
+    written constraint.
+
+  **The verdict is that the claim does not survive, and it is narrowed in writing.** Raw lexical
+  recall is not distinguished from the memory arm on this corpus. The narrowing is *derived*
+  from the numbers rather than written beside them, names every arm the claim does not beat, and
+  refuses to call a difference smaller than the sampling interval a win.
+
+  The **LLM session-summary arm is built and its run is gated**: no local model server is
+  reachable here and a frontier call is G8. What runs is a deterministic extractive summariser,
+  reported under its own name, `session_summary_extractive`, and never as an LLM result. Asking
+  for the model arm exits non-zero rather than quietly returning the stub.
+
+  `tests/_test_cheap_baselines.py` (43 checks) plus nine mutations, all killed - including
+  reporting a tie as a decisive win, billing the always-injected file only when it fires,
+  weakening the linter arm into a strawman that cries wolf, and dropping the unrun arm from the
+  table. Two of those mutations found real defects: a narrowing branch that never fires on the
+  current data shipped untested, and the *survives* branch returned early and so skipped the
+  warning that the LLM arm never ran - the one case where that omission would do damage.
+
 - **The matched-condition harness, and the negative result it found (GOAL F1).**
 
   `research/matched_conditions.py` answers the one-line attack every proactive-memory result

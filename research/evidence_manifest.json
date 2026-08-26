@@ -6425,19 +6425,19 @@
       "name": "a curated AGENTS.md",
       "definition": "one hand-written instructions file that a person maintains",
       "why": "the honest competitor for most of what agent memory claims. If a human writing five lines gets the same prevention, the machinery is not earning its place.",
-      "how": "not yet built - would need a matched arm that injects a hand-written file of the same token size"
+      "how": "python research/cheap_baselines.py (the `curated_agents_md` row) - **built, F2**"
     },
     "llm_session_summary": {
       "name": "an LLM session summary",
       "definition": "ask the model to summarise the session and inject that summary next time",
       "why": "the cheapest possible 'memory', available in one prompt with no system at all",
-      "how": "not yet built - would need a summarise-then-inject arm at an equal token budget"
+      "how": "python research/cheap_baselines.py - **arm built, run GATED**: it runs against a deterministic extractive summariser, never against a model, and is reported as `session_summary_extractive`"
     },
     "linter_or_test": {
       "name": "the relevant linter or test",
       "definition": "the existing static check that already catches the same class of mistake",
       "why": "several guard-shaped pitfalls (f-string SQL, bare except, missing close) are caught by ruff, bandit or a unit test. A guard that duplicates a linter is not memory, it is a worse linter.",
-      "how": "not yet built - would need each live-validation task run through the linter that covers it"
+      "how": "python research/cheap_baselines.py (the `linter_or_test` row) - **built, F2**, as an oracle upper bound on static analysis"
     },
     "curated_haystack": {
       "name": "an already-curated small haystack",

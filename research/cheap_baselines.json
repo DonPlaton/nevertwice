@@ -1,0 +1,345 @@
+{
+ "schema_version": 1,
+ "generated_by": "python research/cheap_baselines.py --save",
+ "policy": "research/BASELINES.md",
+ "corpus": {
+  "signatures": 15,
+  "episodes": 60,
+  "positives": 30,
+  "limitations": [
+   "n is small and single-author. It supports a precision/recall CURVE and a matched-FPR comparison; it does not support a population estimate.",
+   "The paraphrases are written by the same author as the notes. That biases toward recall - a real user's phrasing would share fewer content words. The negatives are the guard against reading too much into that: they are drawn from ordinary work in the same repository and vocabulary.",
+   "Ground truth is single-label top-1. An episode heading toward two past failures at once is not represented."
+  ]
+ },
+ "matched_false_positive_rate": 0.2,
+ "arms": {
+  "nevertwice": {
+   "reachable_at_matched_fpr": true,
+   "matched": {
+    "tp": 17,
+    "fp": 5,
+    "fn": 13,
+    "tn": 28,
+    "precision": 0.7727,
+    "recall": 0.5667,
+    "false_positive_rate": 0.1515,
+    "f1": 0.6539,
+    "threshold": 0.25,
+    "tokens_spent": 836
+   },
+   "zero_false_alarms": {
+    "tp": 14,
+    "fp": 0,
+    "fn": 16,
+    "tn": 30,
+    "precision": 1.0,
+    "recall": 0.4667,
+    "false_positive_rate": 0.0,
+    "f1": 0.6364,
+    "threshold": 0.3,
+    "tokens_spent": 532
+   },
+   "partial_auc": 0.6333,
+   "tokens_per_episode": 13.93,
+   "standing_tokens_per_episode": 0,
+   "latency_ms_per_episode": 0.0176,
+   "recall_ci95": [
+    0.3023,
+    0.6386
+   ]
+  },
+  "lexical_recall": {
+   "reachable_at_matched_fpr": true,
+   "matched": {
+    "tp": 16,
+    "fp": 0,
+    "fn": 14,
+    "tn": 30,
+    "precision": 1.0,
+    "recall": 0.5333,
+    "false_positive_rate": 0.0,
+    "f1": 0.6956,
+    "threshold": 0.13,
+    "tokens_spent": 608
+   },
+   "zero_false_alarms": {
+    "tp": 16,
+    "fp": 0,
+    "fn": 14,
+    "tn": 30,
+    "precision": 1.0,
+    "recall": 0.5333,
+    "false_positive_rate": 0.0,
+    "f1": 0.6956,
+    "threshold": 0.13,
+    "tokens_spent": 608
+   },
+   "partial_auc": 0.6031,
+   "tokens_per_episode": 10.13,
+   "standing_tokens_per_episode": 0,
+   "latency_ms_per_episode": 0.0111,
+   "recall_ci95": [
+    0.3614,
+    0.6977
+   ]
+  },
+  "full_history": {
+   "reachable_at_matched_fpr": false,
+   "matched": null,
+   "zero_false_alarms": null,
+   "partial_auc": 0.0048,
+   "tokens_per_episode": 0.0,
+   "standing_tokens_per_episode": 0,
+   "latency_ms_per_episode": 0.0009,
+   "recall_ci95": [
+    null,
+    null
+   ]
+  },
+  "no_memory": {
+   "reachable_at_matched_fpr": true,
+   "matched": {
+    "tp": 0,
+    "fp": 0,
+    "fn": 30,
+    "tn": 30,
+    "precision": null,
+    "recall": 0.0,
+    "false_positive_rate": 0.0,
+    "f1": 0.0,
+    "threshold": 0.0,
+    "tokens_spent": 0
+   },
+   "zero_false_alarms": {
+    "tp": 0,
+    "fp": 0,
+    "fn": 30,
+    "tn": 30,
+    "precision": null,
+    "recall": 0.0,
+    "false_positive_rate": 0.0,
+    "f1": 0.0,
+    "threshold": 0.0,
+    "tokens_spent": 0
+   },
+   "partial_auc": 0.0,
+   "tokens_per_episode": 0.0,
+   "standing_tokens_per_episode": 0,
+   "latency_ms_per_episode": 0.0001,
+   "recall_ci95": [
+    0.0,
+    0.1135
+   ]
+  },
+  "curated_agents_md": {
+   "reachable_at_matched_fpr": true,
+   "matched": {
+    "tp": 6,
+    "fp": 6,
+    "fn": 24,
+    "tn": 29,
+    "precision": 0.5,
+    "recall": 0.2,
+    "false_positive_rate": 0.1714,
+    "f1": 0.2857,
+    "threshold": 0.19,
+    "tokens_spent": 456
+   },
+   "zero_false_alarms": {
+    "tp": 1,
+    "fp": 0,
+    "fn": 29,
+    "tn": 30,
+    "precision": 1.0,
+    "recall": 0.0333,
+    "false_positive_rate": 0.0,
+    "f1": 0.0645,
+    "threshold": 0.38,
+    "tokens_spent": 38
+   },
+   "partial_auc": 0.2682,
+   "tokens_per_episode": 203.6,
+   "standing_tokens_per_episode": 196,
+   "latency_ms_per_episode": 0.0084,
+   "recall_ci95": [
+    0.0059,
+    0.1667
+   ]
+  },
+  "linter_or_test": {
+   "reachable_at_matched_fpr": true,
+   "matched": {
+    "tp": 14,
+    "fp": 0,
+    "fn": 16,
+    "tn": 30,
+    "precision": 1.0,
+    "recall": 0.4667,
+    "false_positive_rate": 0.0,
+    "f1": 0.6364,
+    "threshold": 0.0,
+    "tokens_spent": 532
+   },
+   "zero_false_alarms": {
+    "tp": 14,
+    "fp": 0,
+    "fn": 16,
+    "tn": 30,
+    "precision": 1.0,
+    "recall": 0.4667,
+    "false_positive_rate": 0.0,
+    "f1": 0.6364,
+    "threshold": 0.0,
+    "tokens_spent": 532
+   },
+   "partial_auc": 0.4667,
+   "tokens_per_episode": 8.87,
+   "standing_tokens_per_episode": 0,
+   "latency_ms_per_episode": 0.0003,
+   "recall_ci95": [
+    0.3023,
+    0.6386
+   ]
+  },
+  "session_summary_extractive": {
+   "reachable_at_matched_fpr": true,
+   "matched": {
+    "tp": 16,
+    "fp": 5,
+    "fn": 14,
+    "tn": 28,
+    "precision": 0.7619,
+    "recall": 0.5333,
+    "false_positive_rate": 0.1515,
+    "f1": 0.6274,
+    "threshold": 0.1,
+    "tokens_spent": 798
+   },
+   "zero_false_alarms": {
+    "tp": 8,
+    "fp": 0,
+    "fn": 22,
+    "tn": 30,
+    "precision": 1.0,
+    "recall": 0.2667,
+    "false_positive_rate": 0.0,
+    "f1": 0.4211,
+    "threshold": 0.17,
+    "tokens_spent": 304
+   },
+   "partial_auc": 0.546,
+   "tokens_per_episode": 49.3,
+   "standing_tokens_per_episode": 36,
+   "latency_ms_per_episode": 0.0099,
+   "recall_ci95": [
+    0.1418,
+    0.4445
+   ]
+  }
+ },
+ "arms_not_run": {
+  "llm_session_summary": "BUILT, RUN GATED. The arm and its scoring are implemented and exercised end to end by a deterministic extractive stub, so the plumbing is tested rather than assumed. The model-backed run is not performed here: no local model server is reachable on this machine, and a frontier API call is gate G8 (it spends the owner's money). What runs is labelled `session_summary_extractive` and is never reported as an LLM result."
+ },
+ "linter_coverage": [
+  {
+   "stem": "m-live-store",
+   "caught": true,
+   "by": "tools/check_sandbox.py - a project-local static lint that fails the build when a script reaches the store without declaring a sandbox"
+  },
+  {
+   "stem": "m-cpu-device",
+   "caught": false,
+   "by": "no standard linter models 'this tensor is on the wrong device'; it is a runtime property"
+  },
+  {
+   "stem": "m-embed-mismatch",
+   "caught": false,
+   "by": "no linter; the project's own embed_cache_usable() gate catches it at runtime, which is memory-shaped rather than lint-shaped"
+  },
+  {
+   "stem": "m-silent-import",
+   "caught": true,
+   "by": "ruff BLE001 / flake8-blind-except flags `except Exception: pass` and bare except"
+  },
+  {
+   "stem": "m-replace-race",
+   "caught": false,
+   "by": "no mainstream linter reasons about temp-file naming under threads"
+  },
+  {
+   "stem": "m-recurrence-poison",
+   "caught": false,
+   "by": "no linter knows which numbers are ranking inputs"
+  },
+  {
+   "stem": "m-stale-claim",
+   "caught": true,
+   "by": "tools/check_freshness.py - the project's own ratchet, and the closest thing to a linter for documentation"
+  },
+  {
+   "stem": "m-unstaged-verify",
+   "caught": true,
+   "by": "continuous integration catches it on the next push, which is what a test is for"
+  },
+  {
+   "stem": "m-concurrent-runs",
+   "caught": false,
+   "by": "no tool observes two processes sharing a tree"
+  },
+  {
+   "stem": "m-mutation-target",
+   "caught": false,
+   "by": "no tool checks that a mutation targeted the artifact rather than the validator"
+  },
+  {
+   "stem": "m-single-shot-bench",
+   "caught": false,
+   "by": "no linter distinguishes a stable measurement from a single sample"
+  },
+  {
+   "stem": "m-heredoc-escape",
+   "caught": true,
+   "by": "pyflakes fails on the invalid source the mangled escape produces, when it produces invalid source"
+  },
+  {
+   "stem": "m-secret-in-note",
+   "caught": true,
+   "by": "gitleaks, detect-secrets and CodeQL all flag credential patterns"
+  },
+  {
+   "stem": "m-nonatomic-write",
+   "caught": false,
+   "by": "no linter distinguishes a truncating open from a safe one"
+  },
+  {
+   "stem": "m-oscillating-guard",
+   "caught": false,
+   "by": "no tool reasons about the symmetry of a promotion rule"
+  }
+ ],
+ "verdict": {
+  "criterion": "the central claim survives beyond every cheap alternative, or is narrowed in writing",
+  "survives_every_cheap_alternative": false,
+  "beaten_decisively": [
+   "curated_agents_md",
+   "no_memory",
+   "session_summary_extractive"
+  ],
+  "cannot_operate_at_zero_false_alarms": [
+   "full_history"
+  ],
+  "beats_the_memory_arm": [],
+  "indistinguishable_at_this_sample_size": [
+   "lexical_recall",
+   "linter_or_test"
+  ],
+  "recall_half_width_95": 0.1681,
+  "narrowing": [
+   "NARROWED: the difference from lexical_recall, linter_or_test is smaller than the 0.1681 half-width this sample supports. The honest wording is 'not distinguished from', not 'comparable to' and not 'better than'.",
+   "What DOES survive: the memory arm beats curated_agents_md, no_memory, session_summary_extractive by more than the sampling interval, so those alternatives are ruled out on this corpus.",
+   "The `linter_or_test` arm is the one to read hardest. Where it covers a failure class it catches every instance of that class and never cries wolf, because a linter fires on code rather than on intentions. For those classes a guard is a worse linter, and the memory system's claim has to be about the classes no linter covers.",
+   "The LLM session-summary arm has NOT been run against a model. Until it is, no claim may say the system beats an LLM summary - only that it beats a deterministic extractive summariser at the same token budget."
+  ]
+ }
+}

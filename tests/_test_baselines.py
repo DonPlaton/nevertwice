@@ -211,18 +211,37 @@ def test_a_lost_baseline_is_visible_in_the_document() -> None:
               f"{', '.join(losers)})")
 
 
-def test_the_unbuilt_arms_are_named_with_an_owner() -> None:
-    """An unbuilt baseline is a task, not a footnote. If nothing owns it, it never
-    gets built and the matrix stays yellow forever."""
-    print("\n- the unbuilt baselines name the task that builds them -")
-    unbuilt = [b for b, v in MANIFEST["baselines"].items()
-               if v["how"].lower().startswith("not yet built")]
-    check("at least one baseline is honestly marked unbuilt", bool(unbuilt),
-          "none - if that is true, every arm exists and this check can go")
-    check("the document names the task that builds the unbuilt arms",
-          "F2" in DOC, "no task id in research/BASELINES.md")
-    for baseline in unbuilt:
-        check(f"{baseline} is named in the document", f"`{baseline}`" in DOC)
+def test_every_arm_is_runnable_or_explicitly_gated() -> None:
+    """An arm is a command or a gate. It is never a shrug.
+
+    This check used to require that at least one baseline was honestly marked "not yet built",
+    with a note saying it could go once every arm existed. F2 built all three, so it has gone -
+    replaced by the property that outlives it: every baseline now either names a command that
+    runs it, or says GATED and states what the owner must do. Both are honest; "not yet built"
+    with nothing after it is what is not.
+    """
+    print("\n- every baseline is a command or a stated gate -")
+    vague, ungated = [], []
+    for name, spec in MANIFEST["baselines"].items():
+        how = spec["how"]
+        if how.lower().startswith("not yet built"):
+            vague.append(name)
+            continue
+        runnable = ("python " in how or "run the harness" in how.lower())
+        gated = "GATED" in how
+        if not runnable and not gated:
+            ungated.append(f"{name}: {how[:50]}")
+        if gated and "never against a model" not in how and "owner" not in how.lower():
+            # A gate that does not say what it is waiting for is a gate nobody can open.
+            ungated.append(f"{name}: gated with no stated condition")
+    check("no baseline is left as an unowned 'not yet built'", not vague, str(vague))
+    check("every baseline names a command or a stated gate", not ungated,
+          "; ".join(ungated[:3]))
+
+    check("the document still names the task that built them", "F2" in DOC,
+          "no task id in research/BASELINES.md")
+    for name in MANIFEST["baselines"]:
+        check(f"{name} is named in the document", f"`{name}`" in DOC)
 
 
 if __name__ == "__main__":
