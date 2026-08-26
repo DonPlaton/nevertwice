@@ -6,6 +6,40 @@ versions are [semantic](https://semver.org). Dates are UTC.
 ## [Unreleased]
 
 ### Added
+- **Local operational telemetry, and a proof that it is local: `nevertwice-telemetry`.**
+
+  `stats.py` is the token ledger - what recall cost, what it plausibly avoided. This is the
+  other half, and the questions are different: is capture keeping up, is extraction failing, is
+  search getting slower, are interventions being accepted or overridden, how big has the store
+  got. **Every failure this project has had in production was silent**, and four of the five
+  counters are the ones whose movement would have made a silent failure visible.
+
+  **Local-only here is structural, not a promise.** The module contains no networking code at
+  all - no socket, no urllib, no http, no requests - so there is no code path that could
+  transmit anything, whatever a config file said. `--export` writes a *file*; sending it is an
+  action a person takes. That is deliberately less flexible than an opt-in flag, and stronger:
+  a flag can be flipped by a config file, an environment variable, or a future patch that means
+  well, and the absence of a transport cannot.
+
+  `tests/_test_telemetry.py` proves both halves rather than asserting them - 43 checks. It
+  walks the module's own AST for any networking import, dynamic import or call, and it runs the
+  whole lifecycle - record, refresh, snapshot, export - **in a child process where
+  `socket.socket` raises on construction**, requiring it to complete. A module that merely
+  happens not to phone home on an offline machine would pass the second check and fail the
+  first. Six mutations *of the module* turn the suite red, including adding an import of
+  `socket`.
+
+  Writing the suite found three real defects in the new module: `refresh_capture_lag` raised
+  `TypeError` on a store with no `Patterns/` directory yet - in a function whose whole contract
+  is that it never raises; `record_search` raised on a non-numeric measurement, from the hook
+  path; and `record_outcome` invented outcome names outside `outcomes.OUTCOMES`, which would
+  have produced a dashboard that disagrees with the guard lifecycle about what happened. All
+  three are fixed and pinned.
+
+  The export carries a versioned schema documenting every field, states its own transmission
+  policy in the file, and ships **no note content, titles or queries** - and not the raw latency
+  samples either, the one field that could grow without bound.
+
 - **An executable security policy: `docs/THREAT_MODEL.md`, machine-checked.**
 
   `SECURITY.md` says what to do about a vulnerability. It never said what the system claims to
@@ -750,6 +784,13 @@ versions are [semantic](https://semver.org). Dates are UTC.
   cosine - true twins are re-phrasings, high word overlap signals template-similar but
   distinct notes. `NEVERTWICE_WRITE_DEDUP_MODE=cosine` is the kill-switch. See
   `research/TWIN_GATE.md`.
+
+### Fixed
+- **The README's suite count was a number kept by hand.** It said seventy-six; there were
+  seventy-seven. Nothing checked it, so it went stale every time a suite was added - the exact
+  shape of unverified claim this project refuses everywhere else.
+  `tests/_test_readme_funnel.py` now counts the tracked `_test_*.py` files and fails when the
+  README disagrees.
 
 ## [2.3.0] - 2026-08-18
 

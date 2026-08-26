@@ -147,6 +147,29 @@ def test_every_in_page_anchor_resolves() -> None:
           f"{missing} not in {sorted(slugs)}")
 
 
+def test_the_suite_count_is_counted_rather_than_remembered() -> None:
+    """A number kept by hand is a number that is wrong by the second contributor.
+
+    The README says how many hermetic suites there are. Nothing checked it, so it drifted
+    silently every time a suite was added - the exact shape of claim this project refuses
+    everywhere else. Counting it here costs one subprocess and fails loudly instead.
+    """
+    import subprocess
+    print("\n- the suite count in the README is the real one -")
+    WORDS = {60: "Sixty", 70: "Seventy", 80: "Eighty", 90: "Ninety"}
+    UNITS = ["", "-one", "-two", "-three", "-four", "-five",
+             "-six", "-seven", "-eight", "-nine"]
+    listed = subprocess.run(["git", "ls-files"], cwd=ROOT, capture_output=True, text=True,
+                            encoding="utf-8", errors="replace").stdout.splitlines()
+    actual = sum(1 for f in listed
+                 if re.search(r"(^|/)_test_[^/]*\.py$", f.strip()))
+    written = WORDS.get(actual // 10 * 10, "?") + UNITS[actual % 10]
+    check(f"the README says {written.lower()} hermetic suites, and there are {actual}",
+          re.search(rf"{written} hermetic suites", TEXT) is not None,
+          f"README does not say '{written} hermetic suites' - "
+          f"update it, or this number goes stale like every hand-kept count")
+
+
 def test_the_new_page_is_not_an_orphan() -> None:
     print("\n- the relocated depth is reachable from the map -")
     map_text = (ROOT / "docs" / "README.md").read_text(encoding="utf-8")

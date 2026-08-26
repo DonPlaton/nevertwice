@@ -62,6 +62,7 @@ nevertwice-doctor = "nevertwice.doctor:main"
 nevertwice-lens = "nevertwice.lenses:main"
 nevertwice-inbox = "nevertwice.inbox:main"
 nevertwice-hosts = "nevertwice.hosts:main"
+nevertwice-telemetry = "nevertwice.telemetry:main"
 nevertwice-migrate = "nevertwice.migrate:main"
 nevertwice-store = "nevertwice.store_version:main"
 # one release of rename back-compat: the old anamnesis-* commands keep working
