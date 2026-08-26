@@ -6,6 +6,43 @@ versions are [semantic](https://semver.org). Dates are UTC.
 ## [Unreleased]
 
 ### Added
+- **The reproduction package - and the two irreproducibilities it found (GOAL F7).**
+
+  `research/reproduce.py` regenerates every research artifact behind a claim the project still
+  publishes, hashes the result, and reports which came back identical. The Dockerfile pins a
+  base image **by digest** and installs nothing, because the core and every research script run
+  on the standard library alone - a frozen environment here is a pinned interpreter and a copy
+  of the repository, with no lockfile to drift and no index to go missing.
+
+  **Running it immediately found two real defects, which is the point of building it:**
+
+  - **A baseline was hash-seed dependent.** The extractive-summary arm sorted tokens by length
+    and let ties fall in whatever order they came out of a *set*, so a different `PYTHONHASHSEED`
+    produced a different summary and different counts for that arm. Under three seeds the F2
+    artifact hashed three ways. The tie-break is now explicit, and the image pins the seed as
+    well - both are cheaper than a result nobody can reproduce.
+  - **Two artifacts were stale.** F1's and F2's outputs predated later fixes to their own code
+    and had never been restamped. Nothing caught it, because these numbers are deliberately not
+    registered as manifest claims and so the freshness ratchet never looked at them.
+
+  Two design decisions keep the report honest. Artifacts that legitimately embed a **timing** are
+  hashed in a canonical form with only the *declared* volatile fields stripped - a byte-hash over
+  a file containing a latency could never match on another machine, and a package that reported
+  permanent failure would teach its reader to ignore it. And the **scope rule is derived from
+  the evidence manifest**, not hand-kept: every artifact behind a live claim must be listed, and
+  if a withdrawn claim is ever revived its artifact stops being out of scope and the check fails
+  until somebody lists it.
+
+  Three artifacts are deliberately **not** reproduced, each named in every run with the reason:
+  latency (machine-dependent), the capability grid (needs a GPU and local weights), and
+  LongMemEval (a third-party dataset that is not committed - and every claim resting on it was
+  already withdrawn). A package that quietly re-ran only the easy artifacts and printed "all
+  reproduced" would be worth less than no package.
+
+  `tests/_test_reproduction.py`, 96 checks. Its own first version demanded that *every* `.json`
+  under `research/` be in the manifest and found thirty that were not - the right alarm and the
+  wrong rule, since those back only withdrawn claims.
+
 - **The safety evaluation: what it costs when the system is wrong (GOAL F6).**
 
   Everything in F1-F5 asks whether the system helps. `research/harms.py` asks what it costs when

@@ -91,7 +91,9 @@ def arm_for(score_fn):
     cache: dict = {}
 
     def arm(episode: str, sigs: list) -> tuple:
-        key = id(sigs)
+        # Keyed by CONTENT, not by id(): a freed list's id can be reused, so an
+        # id-keyed cache can hand back the IDF table of a different signature set.
+        key = tuple(s["stem"] for s in sigs)
         if key not in cache:
             cache[key] = A.build_idf(sigs)
         idf_table = cache[key]

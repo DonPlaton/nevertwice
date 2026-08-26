@@ -123,13 +123,12 @@ def _extractive_summary(sig: dict, budget: int) -> set:
     the same text would retain. It exists so the arm's scoring and token accounting are
     exercised rather than assumed - the model-backed run is the owner's to start.
     """
-    tokens = sig["tokens"]
-    seen, ordered = set(), []
-    for tok in tokens:
-        if tok not in seen:
-            seen.add(tok)
-            ordered.append(tok)
-    return set(sorted(ordered, key=len, reverse=True)[:budget])
+    # Sorted by (-length, token). The token is the TIE-BREAK and it is load-bearing:
+    # `sig["tokens"]` is a set, so iterating it and letting equal-length tokens fall in
+    # whatever order they came out produced a different summary under a different
+    # PYTHONHASHSEED - and therefore different tp/fp/fn for this arm between runs. The F7
+    # reproduction runner caught it by regenerating the artifact and finding it did not match.
+    return set(sorted(sig["tokens"], key=lambda tok: (-len(tok), tok))[:budget])
 
 
 _SUMMARY_BUDGET = 12

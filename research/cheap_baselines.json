@@ -43,7 +43,7 @@
    "partial_auc": 0.6333,
    "tokens_per_episode": 13.93,
    "standing_tokens_per_episode": 0,
-   "latency_ms_per_episode": 0.0176,
+   "latency_ms_per_episode": 0.0185,
    "recall_ci95": [
     0.3023,
     0.6386
@@ -78,7 +78,7 @@
    "partial_auc": 0.6031,
    "tokens_per_episode": 10.13,
    "standing_tokens_per_episode": 0,
-   "latency_ms_per_episode": 0.0111,
+   "latency_ms_per_episode": 0.0109,
    "recall_ci95": [
     0.3614,
     0.6977
@@ -91,7 +91,7 @@
    "partial_auc": 0.0048,
    "tokens_per_episode": 0.0,
    "standing_tokens_per_episode": 0,
-   "latency_ms_per_episode": 0.0009,
+   "latency_ms_per_episode": 0.001,
    "recall_ci95": [
     null,
     null
@@ -161,7 +161,7 @@
    "partial_auc": 0.2682,
    "tokens_per_episode": 203.6,
    "standing_tokens_per_episode": 196,
-   "latency_ms_per_episode": 0.0084,
+   "latency_ms_per_episode": 0.0075,
    "recall_ci95": [
     0.0059,
     0.1667
@@ -196,7 +196,7 @@
    "partial_auc": 0.4667,
    "tokens_per_episode": 8.87,
    "standing_tokens_per_episode": 0,
-   "latency_ms_per_episode": 0.0003,
+   "latency_ms_per_episode": 0.0002,
    "recall_ci95": [
     0.3023,
     0.6386
@@ -217,24 +217,24 @@
     "tokens_spent": 798
    },
    "zero_false_alarms": {
-    "tp": 8,
+    "tp": 7,
     "fp": 0,
-    "fn": 22,
+    "fn": 23,
     "tn": 30,
     "precision": 1.0,
-    "recall": 0.2667,
+    "recall": 0.2333,
     "false_positive_rate": 0.0,
-    "f1": 0.4211,
+    "f1": 0.3783,
     "threshold": 0.17,
-    "tokens_spent": 304
+    "tokens_spent": 266
    },
-   "partial_auc": 0.546,
+   "partial_auc": 0.5397,
    "tokens_per_episode": 49.3,
    "standing_tokens_per_episode": 36,
-   "latency_ms_per_episode": 0.0099,
+   "latency_ms_per_episode": 0.009,
    "recall_ci95": [
-    0.1418,
-    0.4445
+    0.1179,
+    0.4093
    ]
   }
  },

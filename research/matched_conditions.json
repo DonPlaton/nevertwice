@@ -1247,7 +1247,7 @@
      "tokens_spent": 0
     }
    ],
-   "latency_ms_per_episode": 0.0175
+   "latency_ms_per_episode": 0.0183
   },
   "lexical_recall": {
    "curve": [
@@ -2464,7 +2464,7 @@
      "tokens_spent": 0
     }
    ],
-   "latency_ms_per_episode": 0.0108
+   "latency_ms_per_episode": 0.014
   },
   "full_history": {
    "curve": [
@@ -4917,7 +4917,7 @@
     "tokens_spent": 836
    },
    "tokens_per_episode": 13.93,
-   "latency_ms_per_episode": 0.0175,
+   "latency_ms_per_episode": 0.0183,
    "recall_ci95": [
     0.392,
     0.7262
@@ -4938,7 +4938,7 @@
     "tokens_spent": 608
    },
    "tokens_per_episode": 10.13,
-   "latency_ms_per_episode": 0.0108,
+   "latency_ms_per_episode": 0.014,
    "recall_ci95": [
     0.3614,
     0.6977
@@ -5029,7 +5029,7 @@
  },
  "findings": [
   "At the matched false-alarm rate (0.2) the shipped scorer reaches recall 0.5667 against token overlap's 0.5333. At ZERO false alarms - the point an interrupting system actually has to live at - it reaches 0.4667 and token overlap reaches 0.5333.",
-  "NEGATIVE RESULT: at zero false alarms the CHEAP BASELINE WINS. Raw token overlap recovers more past failures than the shipped scorer does without ever crying wolf. Recurrence weighting and the coincidence damper buy a better area under the curve (0.6333 against 0.6031) and do not buy the operating point that matters most. That is a finding about the mechanism, not about the harness.",
+  "NEGATIVE RESULT: at zero false alarms the CHEAP BASELINE WINS. Raw token overlap recovers more past failures than the shipped scorer does without ever crying wolf. Recurrence weighting and the coincidence damper buy a better area under the curve (0.6333 against 0.6031) and do not buy the operating point that matters most. That is a finding about the mechanism, not about the harness, and F2 has to settle it on a corpus this author did not write: either that separates them, or the cheaper scorer is the honest default and the extra machinery should go.",
   "Neither difference is resolvable at this sample size. With 30 positive episodes the 95% Wilson interval on a recall near 0.4667 is about plus or minus 0.168, which is wider than every gap above. The correct reading is 'not yet distinguished', not 'equivalent' and not 'better'.",
   "The shipped threshold (0.22) is not the best point on its own curve for this corpus: a higher bar reaches recall 0.4667 with NO false alarms, where the shipped bar pays a 0.2 false-alarm rate. For a system that interrupts, that trade looks wrong - but retuning a shipped default on a corpus written by the author of the notes would be fitting the threshold to the test set, so it stays a finding.",
   "`full_history` cannot reach any matched false-alarm rate: firing every time means a 100% false-alarm rate by construction. That is the arm's honest result, and the quantitative form of the argument this whole harness exists to make."

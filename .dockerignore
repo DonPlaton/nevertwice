@@ -1,0 +1,8 @@
+# Keep the reproduction image to what a fresh clone carries.
+.git
+.loop
+__pycache__
+*.pyc
+.pytest_cache
+sample-store
+research/data

@@ -17,7 +17,7 @@
   "no_memory": 0.0,
   "curated_agents_md": 0.38,
   "linter_or_test": 0.0,
-  "session_summary_extractive": 0.26
+  "session_summary_extractive": 0.17
  },
  "per_episode": {
   "nevertwice": {
@@ -216,13 +216,13 @@
    "p01": false,
    "p02": false,
    "p03": false,
-   "p04": false,
+   "p04": true,
    "p05": false,
    "p06": false,
    "p07": false,
    "p08": false,
    "p09": false,
-   "p10": false,
+   "p10": true,
    "p11": false,
    "p12": false,
    "p13": false,
@@ -235,13 +235,13 @@
    "p20": false,
    "p21": true,
    "p22": false,
-   "p23": false,
+   "p23": true,
    "p24": false,
    "p25": false,
-   "p26": false,
-   "p27": false,
+   "p26": true,
+   "p27": true,
    "p28": false,
-   "p29": false,
+   "p29": true,
    "p30": false
   }
  },
@@ -275,7 +275,7 @@
     "no_memory": 0,
     "curated_agents_md": 0,
     "linter_or_test": 0,
-    "session_summary_extractive": 0
+    "session_summary_extractive": 1
    }
   },
   "m-embed-mismatch": {
@@ -292,7 +292,7 @@
     "no_memory": 0,
     "curated_agents_md": 0,
     "linter_or_test": 0,
-    "session_summary_extractive": 0
+    "session_summary_extractive": 1
    }
   },
   "m-heredoc-escape": {
@@ -356,7 +356,7 @@
     "no_memory": 0,
     "curated_agents_md": 0,
     "linter_or_test": 0,
-    "session_summary_extractive": 0
+    "session_summary_extractive": 1
    }
   },
   "m-oscillating-guard": {
@@ -371,7 +371,7 @@
     "no_memory": 0,
     "curated_agents_md": 0,
     "linter_or_test": 0,
-    "session_summary_extractive": 0
+    "session_summary_extractive": 1
    }
   },
   "m-recurrence-poison": {
@@ -403,7 +403,7 @@
     "no_memory": 0,
     "curated_agents_md": 0,
     "linter_or_test": 0,
-    "session_summary_extractive": 0
+    "session_summary_extractive": 1
    }
   },
   "m-secret-in-note": {
@@ -467,7 +467,7 @@
     "no_memory": 0,
     "curated_agents_md": 0,
     "linter_or_test": 3,
-    "session_summary_extractive": 0
+    "session_summary_extractive": 1
    }
   },
   "m-unstaged-verify": {
@@ -551,19 +551,19 @@
   "session_summary_extractive": {
    "n": 30,
    "ours_correct": 14,
-   "theirs_correct": 1,
-   "discordant_ours_only": 13,
+   "theirs_correct": 7,
+   "discordant_ours_only": 7,
    "discordant_theirs_only": 0,
-   "concordant": 17,
-   "difference": 0.4333,
+   "concordant": 23,
+   "difference": 0.2333,
    "bootstrap_ci95": [
-    0.2667,
-    0.6
+    0.1,
+    0.4
    ],
-   "cohens_h": 1.1369,
-   "mcnemar_p": 0.000244,
+   "cohens_h": 0.4958,
+   "mcnemar_p": 0.015625,
    "holm": {
-    "p": 0.000244,
+    "p": 0.015625,
     "holm_threshold": 0.016667,
     "significant": true
    }
@@ -917,7 +917,8 @@
    "best_rate": 0.3333,
    "won_by": [
     "lexical_recall",
-    "nevertwice"
+    "nevertwice",
+    "session_summary_extractive"
    ]
   },
   "m-embed-mismatch": {
@@ -964,7 +965,8 @@
    "best_rate": 1.0,
    "won_by": [
     "lexical_recall",
-    "nevertwice"
+    "nevertwice",
+    "session_summary_extractive"
    ]
   },
   "m-recurrence-poison": {
