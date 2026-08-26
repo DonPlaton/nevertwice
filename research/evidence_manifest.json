@@ -2077,7 +2077,7 @@
       "cited_in": [
         "README.md"
       ],
-      "commit": "948c8d95fb84ce072822a6ba3c8b0d902745d97a",
+      "commit": "4e1f5fb67829de386f65624d943c7a9a806a4c98",
       "produced_by": [
         "research/poisoning.py",
         "nevertwice/causal.py",
@@ -2112,7 +2112,7 @@
       "pointer": "precision",
       "ci": null,
       "cited_in": [],
-      "commit": "948c8d95fb84ce072822a6ba3c8b0d902745d97a",
+      "commit": "4e1f5fb67829de386f65624d943c7a9a806a4c98",
       "produced_by": [
         "research/poisoning.py",
         "nevertwice/causal.py",
@@ -2151,7 +2151,7 @@
       "cited_in": [
         "README.md"
       ],
-      "commit": "948c8d95fb84ce072822a6ba3c8b0d902745d97a",
+      "commit": "4e1f5fb67829de386f65624d943c7a9a806a4c98",
       "produced_by": [
         "research/poisoning.py",
         "nevertwice/causal.py",
@@ -2190,7 +2190,7 @@
       "cited_in": [
         "README.md"
       ],
-      "commit": "948c8d95fb84ce072822a6ba3c8b0d902745d97a",
+      "commit": "4e1f5fb67829de386f65624d943c7a9a806a4c98",
       "produced_by": [
         "research/poisoning.py",
         "nevertwice/causal.py",
@@ -2230,7 +2230,7 @@
       "ci": null,
       "ci_note": "6 seeds on a synthetic world; report the spread, not a CI.",
       "cited_in": [],
-      "commit": "948c8d95fb84ce072822a6ba3c8b0d902745d97a",
+      "commit": "4e1f5fb67829de386f65624d943c7a9a806a4c98",
       "produced_by": [
         "research/forgetting.py",
         "nevertwice/build_user_model.py",
@@ -4083,7 +4083,7 @@
       "cited_in": [
         "README.md"
       ],
-      "commit": "948c8d95fb84ce072822a6ba3c8b0d902745d97a",
+      "commit": "4e1f5fb67829de386f65624d943c7a9a806a4c98",
       "headline": true,
       "baseline_verdicts": {
         "no_memory": {
@@ -4161,10 +4161,10 @@
     {
       "id": "latency.pretooluse_end_to_end",
       "statement": "the PreToolUse hook costs 142 ms end to end, interpreter start included",
-      "value": 142,
+      "value": 114,
       "printed": [
-        "142 ms",
-        "142"
+        "114 ms",
+        "114"
       ],
       "unit": "milliseconds",
       "dataset": null,
@@ -4178,7 +4178,7 @@
         "README.md",
         "docs/BENCHMARKS.md"
       ],
-      "commit": "948c8d95fb84ce072822a6ba3c8b0d902745d97a",
+      "commit": "4e1f5fb67829de386f65624d943c7a9a806a4c98",
       "produced_by": [
         "research/latency_bench.py",
         "nevertwice/causal.py",
@@ -4197,15 +4197,15 @@
         "nevertwice/why_fired.py",
         "sandbox_guard.py"
       ],
-      "caveat": "The minimum of 5 repeats, each itself the best of 3 invocations, on a stand that was simultaneously running an unrelated GPU training job; research/latency_bench.json records the median and the maximum beside it. A single invocation is not a cost: three consecutive runs of the old single-shot bench gave 142, 185 and 112 ms for the same hot path. The minimum errs upward on a busy host, which is the direction an honest latency claim should err in."
+      "caveat": "Cross-SESSION variance on this machine is large: the same minimum-of-5 statistic gave 142 ms (2026-08-25), 114 ms and 98 ms for PreToolUse within a day, on an otherwise unchanged tree. `--repeat` stabilises the number WITHIN a session and does not across them, so read this as ~0.1 s of end-to-end cost including interpreter start, not as a figure precise to the millisecond. The drop from the previously published 142 ms is machine state, not an optimisation."
     },
     {
       "id": "latency.userpromptsubmit",
       "statement": "UserPromptSubmit end-to-end: 114 ms",
-      "value": 114,
+      "value": 84,
       "printed": [
-        "114 ms",
-        "114"
+        "84 ms",
+        "84"
       ],
       "unit": "milliseconds",
       "dataset": null,
@@ -4218,7 +4218,7 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "948c8d95fb84ce072822a6ba3c8b0d902745d97a",
+      "commit": "4e1f5fb67829de386f65624d943c7a9a806a4c98",
       "produced_by": [
         "research/latency_bench.py",
         "nevertwice/causal.py",
@@ -4237,15 +4237,15 @@
         "nevertwice/why_fired.py",
         "sandbox_guard.py"
       ],
-      "caveat": "The minimum of 5 repeats, each itself the best of 3 invocations, on a stand that was simultaneously running an unrelated GPU training job; research/latency_bench.json records the median and the maximum beside it. A single invocation is not a cost: three consecutive runs of the old single-shot bench gave 142, 185 and 112 ms for the same hot path. The minimum errs upward on a busy host, which is the direction an honest latency claim should err in."
+      "caveat": "Cross-SESSION variance on this machine is large: the same minimum-of-5 statistic gave 142 ms (2026-08-25), 114 ms and 98 ms for PreToolUse within a day, on an otherwise unchanged tree. `--repeat` stabilises the number WITHIN a session and does not across them, so read this as ~0.1 s of end-to-end cost including interpreter start, not as a figure precise to the millisecond. The drop from the previously published 142 ms is machine state, not an optimisation."
     },
     {
       "id": "latency.sessionstart",
       "statement": "SessionStart end-to-end, idle: 100 ms",
-      "value": 100,
+      "value": 84,
       "printed": [
-        "100 ms",
-        "100"
+        "84 ms",
+        "84"
       ],
       "unit": "milliseconds",
       "dataset": null,
@@ -4258,7 +4258,7 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "948c8d95fb84ce072822a6ba3c8b0d902745d97a",
+      "commit": "4e1f5fb67829de386f65624d943c7a9a806a4c98",
       "produced_by": [
         "research/latency_bench.py",
         "nevertwice/causal.py",
@@ -4277,15 +4277,15 @@
         "nevertwice/why_fired.py",
         "sandbox_guard.py"
       ],
-      "caveat": "The minimum of 5 repeats, each itself the best of 3 invocations, on a stand that was simultaneously running an unrelated GPU training job; research/latency_bench.json records the median and the maximum beside it. A single invocation is not a cost: three consecutive runs of the old single-shot bench gave 142, 185 and 112 ms for the same hot path. The minimum errs upward on a busy host, which is the direction an honest latency claim should err in."
+      "caveat": "Cross-SESSION variance on this machine is large: the same minimum-of-5 statistic gave 142 ms (2026-08-25), 114 ms and 98 ms for PreToolUse within a day, on an otherwise unchanged tree. `--repeat` stabilises the number WITHIN a session and does not across them, so read this as ~0.1 s of end-to-end cost including interpreter start, not as a figure precise to the millisecond. The drop from the previously published 142 ms is machine state, not an optimisation."
     },
     {
       "id": "latency.cold",
       "statement": "cold import of the engine: 39 ms",
-      "value": 39,
+      "value": 29,
       "printed": [
-        "39 ms",
-        "39"
+        "29 ms",
+        "29"
       ],
       "unit": "milliseconds",
       "dataset": null,
@@ -4298,7 +4298,7 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "948c8d95fb84ce072822a6ba3c8b0d902745d97a",
+      "commit": "4e1f5fb67829de386f65624d943c7a9a806a4c98",
       "produced_by": [
         "research/latency_bench.py",
         "nevertwice/causal.py",
@@ -4317,7 +4317,7 @@
         "nevertwice/why_fired.py",
         "sandbox_guard.py"
       ],
-      "caveat": "The minimum of 5 repeats, each itself the best of 3 invocations, on a stand that was simultaneously running an unrelated GPU training job; research/latency_bench.json records the median and the maximum beside it. A single invocation is not a cost: three consecutive runs of the old single-shot bench gave 142, 185 and 112 ms for the same hot path. The minimum errs upward on a busy host, which is the direction an honest latency claim should err in."
+      "caveat": "Cross-SESSION variance on this machine is large: the same minimum-of-5 statistic gave 142 ms (2026-08-25), 114 ms and 98 ms for PreToolUse within a day, on an otherwise unchanged tree. `--repeat` stabilises the number WITHIN a session and does not across them, so read this as ~0.1 s of end-to-end cost including interpreter start, not as a figure precise to the millisecond. The drop from the previously published 142 ms is machine state, not an optimisation."
     },
     {
       "id": "latency.perf_audit_range",
@@ -5799,7 +5799,7 @@
       "raw_gap": "Measured live inside the demo, which prints it; no committed artifact. Deterministic capture is task C1.",
       "ci": null,
       "cited_in": [],
-      "commit": "948c8d95fb84ce072822a6ba3c8b0d902745d97a",
+      "commit": "4e1f5fb67829de386f65624d943c7a9a806a4c98",
       "produced_by": [
         "examples/scenario_demo.py",
         "examples/_sandbox.py",
@@ -5849,7 +5849,7 @@
       "raw_gap": "Measured live inside the demo; the recorded GIF is the only artifact. Deterministic capture is task C1.",
       "ci": null,
       "cited_in": [],
-      "commit": "948c8d95fb84ce072822a6ba3c8b0d902745d97a",
+      "commit": "4e1f5fb67829de386f65624d943c7a9a806a4c98",
       "produced_by": [
         "examples/scenario_demo.py",
         "examples/_sandbox.py",
@@ -5922,7 +5922,7 @@
       "raw_gap": "A property of the shipped pack; a test should assert it (task D1).",
       "ci": null,
       "cited_in": [],
-      "commit": "948c8d95fb84ce072822a6ba3c8b0d902745d97a",
+      "commit": "4e1f5fb67829de386f65624d943c7a9a806a4c98",
       "produced_by": [
         "nevertwice/guards.py",
         "nevertwice/causal.py",

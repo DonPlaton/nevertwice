@@ -816,6 +816,21 @@ versions are [semantic](https://semver.org). Dates are UTC.
   `tests/_test_readme_funnel.py` now counts the tracked `_test_*.py` files and fails when the
   README disagrees.
 
+### Fixed
+- **The published latency figures were precise to a millisecond and should never have been.**
+  The freshness ratchet forced a re-measurement after the `store_state` extraction, and the
+  same minimum-of-five statistic on the same unchanged tree produced three materially
+  different PreToolUse numbers within one day. `--repeat` stabilises the figure *within* a
+  session and does not across them. The table now says to read it as a tenth of a second, and
+  states plainly that the drop from the previously published number is machine state rather
+  than an optimisation - crediting a file-layout refactor with a speedup would have been the
+  easy and wrong reading. The individual measurements are recorded in the `caveat` field of
+  each latency claim, which is where evidence *about* a measurement belongs.
+
+  Every other live claim re-ran byte-identical at HEAD: poisoning, forgetting and longitudinal
+  artifacts reproduced exactly, which is what makes the latency spread attributable to the
+  clock rather than to the code.
+
 ## [2.3.0] - 2026-08-18
 
 ### Added
