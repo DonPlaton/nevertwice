@@ -6,6 +6,43 @@ versions are [semantic](https://semver.org). Dates are UTC.
 ## [Unreleased]
 
 ### Added
+- **The matched-condition harness, and the negative result it found (GOAL F1).**
+
+  `research/matched_conditions.py` answers the one-line attack every proactive-memory result
+  invites - *you fired more often, so of course you caught more* - by making the firing
+  threshold the x-axis. It sweeps the whole range, publishes the complete precision/recall
+  curve to `research/matched_conditions.json`, and reads every arm at a **matched false-alarm
+  rate**. An arm that cannot reach that rate is reported as unreachable rather than dropped,
+  which is `full_history`'s honest result: firing every time means a hundred-percent
+  false-alarm rate by construction.
+
+  **The finding is negative, and it is about the shipped mechanism.** At the operating point
+  that matters most for a system that interrupts - zero false alarms - raw token overlap
+  recovers *more* past failures than the shipped risk scorer does. Recurrence weighting and the
+  coincidence damper buy a better area under the curve and do not buy that point. Neither gap
+  is resolvable at this sample size; the correct reading is "not yet distinguished", not
+  "equivalent" and not "better". F2 has to settle it on a corpus this author did not write.
+
+  The numbers are deliberately **not** registered as manifest claims yet. Registering a result
+  that says "not yet distinguished" would invite exactly the over-reading this harness exists
+  to prevent. They live in the artifact until a non-author corpus makes them worth citing.
+
+  Two things the harness caught about itself, both worth more than the numbers:
+
+  - It was scoring `risk_score` **without the IDF table** `anticipate()` builds, so it measured
+    a function the product does not ship. The suite runs every episode through `anticipate()`
+    itself and fails on any disagreement, which is what surfaced it.
+  - Its findings list was prose with the figures typed in. When the harness was corrected every
+    number moved and the prose silently became false. The findings are now *derived* from the
+    results, so a list that cannot disagree with its own data is the only kind published.
+
+  `tests/_test_matched_conditions.py` (48 checks) turns the exit criterion into an executable
+  statement, including that no positive episode may share a majority of its content tokens with
+  the note it is labelled against - an episode that quotes its own note measures string
+  matching and reports it as anticipation. Eight mutations of the harness and the corpus, all
+  killed, including truncating the curve to its flattering half and crediting "fire every time"
+  with no false alarms.
+
 - **The first seam out of `memory_hook.py`: `store_state.py` (GOAL E4).**
 
   6,411 lines to 6,333, with the public import surface unchanged. `write_atomic`,
