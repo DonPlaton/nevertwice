@@ -1,0 +1,149 @@
+{
+ "schema_version": 1,
+ "generated_by": "python research/ablations.py --save",
+ "surface": "F1's anticipation corpus, through F1's matched-condition sweep",
+ "corpus": {
+  "signatures": 15,
+  "episodes": 60,
+  "positives": 30,
+  "limitations": [
+   "n is small and single-author. It supports a precision/recall CURVE and a matched-FPR comparison; it does not support a population estimate.",
+   "The paraphrases are written by the same author as the notes. That biases toward recall - a real user's phrasing would share fewer content words. The negatives are the guard against reading too much into that: they are drawn from ordinary work in the same repository and vocabulary.",
+   "Ground truth is single-label top-1. An episode heading toward two past failures at once is not represented."
+  ]
+ },
+ "recall_half_width_95": 0.1685,
+ "variants": {
+  "full": {
+   "mechanism": "-",
+   "removes": "nothing - the shipped scorer, and the reference row",
+   "zero_false_alarms": {
+    "tp": 14,
+    "fp": 0,
+    "fn": 16,
+    "tn": 30,
+    "precision": 1.0,
+    "recall": 0.4667,
+    "false_positive_rate": 0.0,
+    "f1": 0.6364,
+    "threshold": 0.3,
+    "tokens_spent": 532
+   },
+   "partial_auc": 0.6333,
+   "recall_at_zero_fa": 0.4667,
+   "verdict": "reference",
+   "delta_recall": 0.0,
+   "delta_auc": 0.0
+  },
+  "no_idf": {
+   "mechanism": "IDF weighting",
+   "removes": "IDF weighting: every shared token counts the same, so a term that tags half the vault carries as much evidence as a rare one",
+   "zero_false_alarms": {
+    "tp": 16,
+    "fp": 0,
+    "fn": 14,
+    "tn": 30,
+    "precision": 1.0,
+    "recall": 0.5333,
+    "false_positive_rate": 0.0,
+    "f1": 0.6956,
+    "threshold": 0.28,
+    "tokens_spent": 608
+   },
+   "partial_auc": 0.6174,
+   "recall_at_zero_fa": 0.5333,
+   "delta_auc": 0.0159,
+   "delta_recall": -0.0666,
+   "verdict": "not shown to matter"
+  },
+  "no_coverage": {
+   "mechanism": "coverage normalisation",
+   "removes": "coverage normalisation: raw overlap mass instead of the share of the signature's mass, so a long note is easier to match",
+   "zero_false_alarms": null,
+   "partial_auc": 0.5349,
+   "recall_at_zero_fa": null,
+   "delta_auc": 0.0984,
+   "delta_recall": null,
+   "verdict": "load-bearing (removal loses the zero-false-alarm point entirely)"
+  },
+  "no_damper": {
+   "mechanism": "the coincidence damper",
+   "removes": "the coincidence damper: a single shared token scores as confidently as five",
+   "zero_false_alarms": {
+    "tp": 14,
+    "fp": 0,
+    "fn": 16,
+    "tn": 30,
+    "precision": 1.0,
+    "recall": 0.4667,
+    "false_positive_rate": 0.0,
+    "f1": 0.6364,
+    "threshold": 0.45,
+    "tokens_spent": 532
+   },
+   "partial_auc": 0.6286,
+   "recall_at_zero_fa": 0.4667,
+   "delta_auc": 0.0047,
+   "delta_recall": 0.0,
+   "verdict": "not shown to matter"
+  },
+  "no_recurrence": {
+   "mechanism": "recurrence weighting",
+   "removes": "recurrence weighting: a failure that happened five times ranks exactly like one that happened once",
+   "zero_false_alarms": {
+    "tp": 14,
+    "fp": 0,
+    "fn": 16,
+    "tn": 30,
+    "precision": 1.0,
+    "recall": 0.4667,
+    "false_positive_rate": 0.0,
+    "f1": 0.6364,
+    "threshold": 0.28,
+    "tokens_spent": 532
+   },
+   "partial_auc": 0.627,
+   "recall_at_zero_fa": 0.4667,
+   "delta_auc": 0.0063,
+   "delta_recall": 0.0,
+   "verdict": "not shown to matter"
+  }
+ },
+ "outcome_feedback": {
+  "measured": true,
+  "probe_risk": 0.347,
+  "false_alarms_to_silence": 3,
+  "silenced": true,
+  "bar_after": 0.4,
+  "other_mode_bar": 0.22,
+  "other_mode_unaffected": true,
+  "strong_signal_still_breaks_through": true
+ },
+ "not_exercised": {
+  "code_validation": {
+   "why": "validation runs when a lesson is EXTRACTED and written, not when one is matched against a trajectory. Nothing in the anticipation path consults it.",
+   "surface_that_would": "an extraction corpus with labelled valid/invalid lessons, measuring what fraction of bad lessons reach the store"
+  },
+  "temporal_decay": {
+   "why": "decay weights a note by age at RECALL time. F1's corpus has no time axis - every signature is equally old - so the mechanism is inert here by construction.",
+   "surface_that_would": "a recall corpus with dated notes and dated queries, where the right answer changes with when you ask"
+  },
+  "graph_hops": {
+   "why": "hops expand a hit to its linked neighbours during retrieval. Anticipation scores each signature independently and never traverses a link.",
+   "surface_that_would": "a retrieval corpus whose ground truth includes notes reachable only through a link"
+  },
+  "self_retirement": {
+   "why": "retirement removes a guard after sustained negative outcomes, over sessions. One pass over a fixed corpus contains no lifecycle at all.",
+   "surface_that_would": "a longitudinal run with outcome reports across many sessions"
+  },
+  "consolidation": {
+   "why": "consolidation merges near-duplicate notes in the store. The F1 corpus is a hand-written signature set with no duplicates to merge.",
+   "surface_that_would": "a store grown from real transcripts, measured before and after a consolidation pass"
+  }
+ },
+ "answer": [
+  "The paper MAY name these as load-bearing on this surface: coverage normalisation. Removing each costs more recall at zero false alarms than the sampling interval allows for chance.",
+  "Not shown to matter (delta inside the interval, which is NOT the same as shown not to matter): IDF weighting, recurrence weighting, the coincidence damper. The interval here is plus or minus 0.1685 on recall.",
+  "Five of GOAL's seven named ablations are NOT EXERCISED by this surface at all - code validation, temporal decay, graph hops, self-retirement and consolidation act on the store and the recall path, which this corpus does not measure. They are listed with the surface that would reach each one. 'We did not measure it' and 'we measured it and it did nothing' are different sentences, and only the first is true of them."
+ ]
+}

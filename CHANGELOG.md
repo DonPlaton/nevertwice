@@ -6,6 +6,39 @@ versions are [semantic](https://semver.org). Dates are UTC.
 ## [Unreleased]
 
 ### Added
+- **Full-loop ablations, and the one mechanism they can name (GOAL F4).**
+
+  A system with seven moving parts and one aggregate number cannot say which part earns its
+  place. `research/ablations.py` removes each one alone, on F1's corpus through F1's
+  matched-condition sweep, and reports what the removal costs against the interval the sample
+  supports.
+
+  **The paper may name exactly one mechanism: coverage normalisation.** Removing it does not
+  merely lower recall - it loses the zero-false-alarm operating point *entirely*, so the system
+  can no longer be run without crying wolf. That is the strongest result the table can hold, and
+  it gets its own verdict rather than a subtraction against a missing value.
+
+  **It may name no other.** IDF weighting, the coincidence damper and recurrence weighting all
+  move the number by less than the sampling interval, and are reported as *not shown to matter* -
+  which is not the same sentence as "does nothing", and the suite fails if any verdict says
+  otherwise. Read beside F1 and F2, where the shipped scorer ties raw token overlap, this is
+  coherent: coverage is what keeps it quiet, and the rest is not yet earning its place.
+
+  **Outcome feedback is measured separately, because it is a mechanism over time**, and it
+  works: three false alarms silence a crying-wolf failure mode, an unrelated mode's bar is
+  untouched, and a strong signal still breaks through a raised bar.
+
+  **Five of GOAL's seven named ablations are NOT EXERCISED by this surface** - code validation,
+  temporal decay, graph hops, self-retirement and consolidation act on the store and the recall
+  path, which this corpus does not measure. Each is listed with the surface that would reach it,
+  because "we did not measure it" and "we measured it and it did nothing" are different
+  sentences and only the first is true of them. A mutation deleting that distinction turns the
+  suite red.
+
+  The reference row is checked against the shipped `risk_score` on all 900 episode-signature
+  pairs. Without that, every delta would be measured against a system nobody runs - the failure
+  F1 had once already. `tests/_test_ablations.py`, 57 checks, 8 mutations all killed.
+
 - **The model-capability grid: how much of the help is the reader's (GOAL F3).**
 
   A memory system prevents nothing by itself. It surfaces a sentence, and a *reader* either
