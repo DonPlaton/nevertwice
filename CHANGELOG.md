@@ -6,6 +6,30 @@ versions are [semantic](https://semver.org). Dates are UTC.
 ## [Unreleased]
 
 ### Added
+- **The first seam out of `memory_hook.py`: `store_state.py` (GOAL E4).**
+
+  6,411 lines to 6,333, with the public import surface unchanged. `write_atomic`,
+  `_replace_with_retry`, `_load_json_generations` and `_save_json_generations` now live in
+  `nevertwice/store_state.py` and are re-exported from `memory_hook`, so every existing
+  `from memory_hook import write_atomic` keeps working - verified in **both install shapes**,
+  package and flat scripts dir.
+
+  The risk in a move like this is not that the new module is wrong, it is that nobody can
+  tell. So `tests/_test_characterize_store_state.py` was written **against the code before it
+  moved**, run green there, and then run **unchanged** afterwards - 49 checks pinning the
+  behaviours each incident paid for: all-or-nothing publish (audit F1/F3/F30), no orphaned
+  `.tmp` (audit D3), eight threads not racing on one temp name (GOAL E1), strict decoding so a
+  bit flip reaches the `.bak` instead of decoding into plausible data (review 2026-08-24), loud
+  recovery, and an absent primary not being reported as corruption.
+
+  A mutation sweep of the moved module and the facade killed 8 of 8 - including deleting a
+  re-export, dropping the thread id from the temp name, and copying the `.bak` from the on-disk
+  primary. **Three of those eight survived the first sweep**, which is the point of running
+  one: the orphan-`.tmp` check injected its failure before the temp file existed, the
+  `.bak` check compared two files that were identical under both implementations, and the
+  retry-bound check asserted a constant rather than that the retry ever stops. All three were
+  gaps in the tests, not the code, and all three are now closed.
+
 - **Local operational telemetry, and a proof that it is local: `nevertwice-telemetry`.**
 
   `stats.py` is the token ledger - what recall cost, what it plausibly avoided. This is the

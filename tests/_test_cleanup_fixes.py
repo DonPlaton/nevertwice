@@ -85,11 +85,15 @@ check("existing dict file accepted under expect=dict",
 
 # Write ORDER is a documented contract: primary first, so a crash between the two
 # writes leaves the NEWER snapshot in the file the loader reads first.
-_order, _real_atomic = [], m.write_atomic
-m.write_atomic = lambda path, text, **kw: (_order.append(Path(path).name),
-                                           _real_atomic(path, text, **kw))[1]
+# Patched on the SEAM, not on the facade. Since GOAL E4 moved this pair into
+# `store_state.py`, `m.write_atomic` is a re-exported *reference*: rebinding it leaves the
+# seam's own internal call untouched, so patching there silently observes nothing.
+_seam = m._store_state
+_order, _real_atomic = [], _seam.write_atomic
+_seam.write_atomic = lambda path, text, **kw: (_order.append(Path(path).name),
+                                               _real_atomic(path, text, **kw))[1]
 m._save_json_generations(d / "order.json", "{}")
-m.write_atomic = _real_atomic
+_seam.write_atomic = _real_atomic
 check("save order is primary then .bak", _order == ["order.json", "order.json.bak"])
 
 # STRICT decoding: a high-bit flip inside a JSON string used to parse as U+FFFD with
