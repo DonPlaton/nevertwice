@@ -5,9 +5,9 @@ simple to deploy**. Please keep changes in that spirit.
 
 **Looking for something to work on?** Three pieces of work are described in full, with the
 files to look at and the condition that closes them, before anyone has filed them as issues:
-[a results file the speed numbers need](docs/starter-issues/01-latency-results-file.md)
-(small, mechanical), [a baseline the headline claim has never been run against](docs/starter-issues/02-agents-md-baseline.md)
-(needs a model and some judgement), and
+[a published latency that is the minimum of a noisy distribution](docs/starter-issues/01-latency-interval-not-point.md)
+(small, and the artifact already has the numbers), [an assumption the one live comparative claim rests on](docs/starter-issues/02-linter-arm-in-the-simulation.md)
+(stdlib only, and it may narrow a README claim), and
 [note labels that are Russian whatever language you write in](docs/starter-issues/03-note-labels-i18n.md)
 (small, and the one a stranger notices first).
 

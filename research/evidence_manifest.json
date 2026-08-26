@@ -206,11 +206,11 @@
       "governance": "exempt",
       "reason": "copy-paste configuration blocks for each agent host"
     },
-    "docs/starter-issues/01-latency-results-file.md": {
+    "docs/starter-issues/01-latency-interval-not-point.md": {
       "governance": "exempt",
       "reason": "draft text for a starter issue; filing it is a maintainer action (G3)"
     },
-    "docs/starter-issues/02-agents-md-baseline.md": {
+    "docs/starter-issues/02-linter-arm-in-the-simulation.md": {
       "governance": "exempt",
       "reason": "draft text for a starter issue; filing it is a maintainer action (G3)"
     },
