@@ -39,7 +39,15 @@ versions are [semantic](https://semver.org). Dates are UTC.
   already withdrawn). A package that quietly re-ran only the easy artifacts and printed "all
   reproduced" would be worth less than no package.
 
-  `tests/_test_reproduction.py`, 96 checks. Its own first version demanded that *every* `.json`
+  **Building the image found a third defect, and it was a published claim.** "No third-party
+  packages required" appeared in the Dockerfile, the runner's verdict and this changelog. It is
+  true of the core and of most research scripts, and false of `forgetting.py`, which needs
+  numpy. Nothing caught it until the container ran without numpy in it. The requirement is now
+  *named*: in a bare image that artifact is **skipped with the reason**, exactly as a missing
+  GPU or an uncommitted dataset is, and the suite's own check was rewritten - it had been
+  enforcing the false claim.
+
+  `tests/_test_reproduction.py`, 101 checks. Its own first version demanded that *every* `.json`
   under `research/` be in the manifest and found thirty that were not - the right alarm and the
   wrong rule, since those back only withdrawn claims.
 

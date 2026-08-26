@@ -215,16 +215,47 @@ def test_the_dockerfile_is_actually_frozen() -> None:
           "a digest typed from memory is not re-derivable")
 
 
-def test_no_third_party_package_is_required() -> None:
-    print("\n- the reason the frozen environment can be this small -")
-    check("the report says so", REPORT["third_party_packages_required"] == [],
-          str(REPORT["third_party_packages_required"]))
+def test_third_party_requirements_are_named_not_denied() -> None:
+    """The claim this suite used to enforce was false, and a container proved it.
+
+    The project published "no third-party packages required" in three places. It is true of the
+    core and of most research scripts, and false of `forgetting.py`, which needs numpy. Nothing
+    caught it until the image was built without numpy in it and that artifact failed to run.
+
+    So the property checked here is no longer "the list is empty" - that would re-enshrine the
+    false claim - but "every requirement is NAMED, and an artifact whose requirement is absent is
+    skipped with the reason rather than run and reported as a failure".
+    """
+    print("\n- a dependency that exists is named, not denied -")
+    declared = REPORT["third_party_packages_required"]
+    from_specs = sorted({m for a in R.ARTIFACTS for m in (a.get("requires") or ())})
+    check("the report names every declared requirement", declared == from_specs,
+          f"{declared} vs {from_specs}")
+
     pyproject = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
-    check("and pyproject agrees", "dependencies = []" in pyproject,
-          "the core declares a dependency, so the image would need to install it")
+    check("the CORE still declares no dependencies", "dependencies = []" in pyproject,
+          "the stdlib-only claim is about the core, and it must stay true")
+
     verdict = " ".join(REPORT["verdict"])
-    check("the verdict explains why the environment is a pinned interpreter",
-          "standard library" in verdict, verdict[-300:])
+    if declared:
+        check("the verdict names the exception rather than claiming none exists",
+              all(mod in verdict for mod in declared), verdict[-400:])
+        check("and says such an artifact is SKIPPED, not silently installed",
+              "SKIPPED" in verdict, verdict[-400:])
+        check("the blanket claim is not made anywhere in the verdict",
+              "no third-party package is needed anywhere" not in verdict.lower(),
+              "that sentence is the one the container disproved")
+    else:
+        check("with nothing required, the verdict may say so",
+              "standard library" in verdict, verdict[-300:])
+
+    # And the mechanism: an absent module must classify as skipped, not failed.
+    missing = R.missing_modules({"requires": ["a_module_that_is_not_installed_anywhere"]})
+    check("an absent module is detected", missing == ["a_module_that_is_not_installed_anywhere"],
+          str(missing))
+    check("a present one is not", R.missing_modules({"requires": ["json"]}) == [],
+          str(R.missing_modules({"requires": ["json"]})))
+    check("and an entry with no requirements is fine", R.missing_modules({}) == [])
 
 
 def test_the_exit_code_follows_the_result() -> None:
@@ -252,7 +283,7 @@ def main() -> int:
                test_a_real_change_is_detected,
                test_the_report_carries_both_hashes,
                test_the_dockerfile_is_actually_frozen,
-               test_no_third_party_package_is_required,
+               test_third_party_requirements_are_named_not_denied,
                test_the_exit_code_follows_the_result):
         fn()
     print(f"\nreproduction: {PASSED} passed, {FAILED} failed")

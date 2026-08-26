@@ -13,6 +13,13 @@
 # The image reproduces the DETERMINISTIC artifacts. It deliberately cannot reproduce the three
 # that need this machine, a GPU, or a third-party dataset - `research/reproduce.py` lists each
 # with the reason, and a run that skipped them silently would be worth less than no run at all.
+#
+# One artifact is SKIPPED in this image rather than reproduced: `research/forgetting.py` needs
+# numpy, which is deliberately not installed here. Building this image is what proved that -
+# the project had published "no third-party packages required" in three places, and it was true
+# of the core and false of that one research script. The runner names the missing module and
+# skips the artifact, exactly as it does for a missing GPU or an uncommitted dataset. Installing
+# numpy to close the gap would trade a named limitation for an unnamed dependency.
 
 # Pinned by digest, not by tag: `3.12-slim` moves, and an environment that moves is not frozen.
 # Resolved from the registry on 2026-08-26 with

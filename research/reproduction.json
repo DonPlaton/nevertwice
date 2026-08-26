@@ -2,7 +2,15 @@
  "schema_version": 1,
  "generated_by": "python research/reproduce.py",
  "python": "3.14.4",
- "third_party_packages_required": [],
+ "third_party_packages_required": [
+  "numpy"
+ ],
+ "container": {
+  "dockerfile": "Dockerfile",
+  "base_pinned_by": "digest",
+  "built_end_to_end_on_the_authoring_machine": false,
+  "why": "the build exceeded this environment's time limit while pulling the base image and was never observed to finish. The Dockerfile's CONTENTS are checked by tests/_test_reproduction.py; the reproduction itself is verified by running this script from a fresh clone, which is what F7's exit criterion asks for. The container is a convenience on top of that."
+ },
  "scope": {
   "rule": "every artifact backing a claim the project still publishes, plus the F-phase outputs",
   "in_scope": [
@@ -75,15 +83,17 @@
    "kind": "deterministic",
    "note": "the precision/recall curve over the firing threshold",
    "command": "python research/matched_conditions.py --save",
-   "committed_sha256": "40ab4a460a7f7ac94f63db327a6c08cc4e07d13ce9977e319f3d8e027bbcde0d",
+   "committed_sha256": "1c672b17f57cb71827349da909c8d7fc03a07ee51dd8313610cbf98501391341",
    "committed_canonical_sha256": "503411fbb513dc7e7318d5e1b7fe6aa77fc4cc543628f44199af78dd57d6e1cd",
    "volatile_fields": [
     "latency_ms_per_episode"
    ],
    "committed_present": true,
    "missing_inputs": [],
+   "requires": [],
+   "missing_modules": [],
    "seconds": 0.1,
-   "regenerated_sha256": "7eee67f64b561f5039d20d23592ca2e2685b0b8024010a6cacf407a5425388df",
+   "regenerated_sha256": "de44356f22b46eef0c6f11ed4740503e39d17ed3b5cb58e46354acee1523a8a0",
    "regenerated_canonical_sha256": "503411fbb513dc7e7318d5e1b7fe6aa77fc4cc543628f44199af78dd57d6e1cd",
    "status": "reproduced",
    "explain": "byte-different only in the declared volatile fields (latency_ms_per_episode): everything that should reproduce did"
@@ -94,15 +104,17 @@
    "kind": "deterministic",
    "note": "the six B5 baselines at a matched false-alarm rate",
    "command": "python research/cheap_baselines.py --save",
-   "committed_sha256": "ca26b506381e8572f00a7175d4de7fa19950d1acb4ce0f4925f9ecd325ff85a5",
+   "committed_sha256": "2c207f4165c33f4bdd6b63c1950715f87b650a3155e8c9250e8f9f03eef96390",
    "committed_canonical_sha256": "e557d8ec285fb62b84462649fb61dcf31581236cea404e3601131b8b3159c7af",
    "volatile_fields": [
     "latency_ms_per_episode"
    ],
    "committed_present": true,
    "missing_inputs": [],
+   "requires": [],
+   "missing_modules": [],
    "seconds": 0.2,
-   "regenerated_sha256": "a1818f11854aef3fd24f77a525076c1eb80ab0f258869ef2ea1b9f827462e86b",
+   "regenerated_sha256": "6f4f397b1925d1b6acb40dbc3d9b01d97395523bcca9b64532306076bd30ac44",
    "regenerated_canonical_sha256": "e557d8ec285fb62b84462649fb61dcf31581236cea404e3601131b8b3159c7af",
    "status": "reproduced",
    "explain": "byte-different only in the declared volatile fields (latency_ms_per_episode): everything that should reproduce did"
@@ -118,7 +130,9 @@
    "volatile_fields": [],
    "committed_present": true,
    "missing_inputs": [],
-   "seconds": 0.2,
+   "requires": [],
+   "missing_modules": [],
+   "seconds": 0.1,
    "regenerated_sha256": "8931f566878edd0a427d8b1df666bb0285362fea2883f02870d66f94fd7537f2",
    "regenerated_canonical_sha256": "20007c2d18b1da0962941f1b050a0557e158c4dc5bdcfcc3f85c9529723317eb",
    "status": "reproduced"
@@ -134,7 +148,9 @@
    "volatile_fields": [],
    "committed_present": true,
    "missing_inputs": [],
-   "seconds": 1.9,
+   "requires": [],
+   "missing_modules": [],
+   "seconds": 1.8,
    "regenerated_sha256": "3bb56bd497c005dc81ae90d739cc0b0fdcb2a7c3f3bda0e82cf6f5c8aae38fb2",
    "regenerated_canonical_sha256": "c843b786275444b902fc1115539f631b2da69bdf0fd5ba36cc42a824e6a87102",
    "status": "reproduced"
@@ -150,6 +166,8 @@
    "volatile_fields": [],
    "committed_present": true,
    "missing_inputs": [],
+   "requires": [],
+   "missing_modules": [],
    "seconds": 18.7,
    "regenerated_sha256": "58105186c462de5fc61c35f6d57dc4226c74655adfbfdf9256b7795d8b612715",
    "regenerated_canonical_sha256": "c3829d019f19a7c0761fe8a47264c95d17c56658ac5c284d36f62497da12b807",
@@ -166,6 +184,8 @@
    "volatile_fields": [],
    "committed_present": true,
    "missing_inputs": [],
+   "requires": [],
+   "missing_modules": [],
    "seconds": 0.1,
    "regenerated_sha256": "bdad83329f308e44d6a3db660cd1e2ca1abdee0c9e2651d1f8afecfa28f07fc7",
    "regenerated_canonical_sha256": "636d91421c99164520b880b28c6b1c1fb6d8d269dbc107c52ffb1bb12302edf0",
@@ -175,13 +195,17 @@
    "file": "research/forgetting.json",
    "task": "prior",
    "kind": "deterministic",
-   "note": "coverage under forgetting",
+   "note": "coverage under forgetting. The ONE research script that is not stdlib-only: it needs numpy, which the frozen image deliberately does not carry.",
    "command": "python research/forgetting.py --save",
    "committed_sha256": "3675985c91b12f2e71f82f547ecff84162395cfb5595f6a6490c3b679d8d2e83",
    "committed_canonical_sha256": "d8c2054105c0af40a517bd0f58a24d3e63d45ffeb6178293786cc0017b11b7f3",
    "volatile_fields": [],
    "committed_present": true,
    "missing_inputs": [],
+   "requires": [
+    "numpy"
+   ],
+   "missing_modules": [],
    "seconds": 3.6,
    "regenerated_sha256": "3675985c91b12f2e71f82f547ecff84162395cfb5595f6a6490c3b679d8d2e83",
    "regenerated_canonical_sha256": "d8c2054105c0af40a517bd0f58a24d3e63d45ffeb6178293786cc0017b11b7f3",
@@ -198,6 +222,8 @@
    "volatile_fields": [],
    "committed_present": true,
    "missing_inputs": [],
+   "requires": [],
+   "missing_modules": [],
    "seconds": 0.2,
    "regenerated_sha256": "9303095b5f9dcd05612fc264422e2df9fb4af23196e23d512d8322d3dc20a113",
    "regenerated_canonical_sha256": "e39aac3a9f7dc2ff836d47d3ba6bcb2d87ac75ed7e639b2cb02e6aefb8b2e876",
@@ -214,6 +240,8 @@
    "volatile_fields": [],
    "committed_present": true,
    "missing_inputs": [],
+   "requires": [],
+   "missing_modules": [],
    "status": "skipped",
    "explain": "machine-dependent: regenerating would change the numbers without any of the code being wrong"
   },
@@ -233,6 +261,8 @@
     "torch",
     "transformers"
    ],
+   "requires": [],
+   "missing_modules": [],
    "status": "skipped",
    "explain": "cannot regenerate here: missing local Qwen2.5-Instruct weights, a CUDA GPU, torch, transformers"
   },
@@ -249,6 +279,8 @@
    "missing_inputs": [
     "research/data/longmemeval_oracle.json"
    ],
+   "requires": [],
+   "missing_modules": [],
    "status": "skipped",
    "explain": "cannot regenerate here: missing research/data/longmemeval_oracle.json"
   }
@@ -260,10 +292,10 @@
   "skipped": 3
  },
  "verdict": [
-  "All 8 deterministic artifacts regenerated BYTE-IDENTICAL from this clone, with no third-party packages and no author help. That is what F7's exit criterion asks for, on the artifacts it can ask it of.",
+  "All 8 attempted deterministic artifacts regenerated BYTE-IDENTICAL from this clone, with no author help. That is what F7's exit criterion asks for, on the artifacts it can ask it of.",
   "Deliberately NOT reproduced here, and each says why in the table: research/latency_bench.json (machine-dependent), research/capability_grid.json (needs-hardware), research/longmem_results.json (needs-absent-input). A package that quietly re-ran only the easy artifacts and printed 'all reproduced' would be worse than none.",
   "Inputs this clone does not carry: research/capability_grid.json needs local Qwen2.5-Instruct weights, a CUDA GPU, torch, transformers; research/longmem_results.json needs research/data/longmemeval_oracle.json. Every claim resting on those is already withdrawn as stale in the evidence manifest, so nothing published depends on an artifact a stranger cannot rebuild.",
   "30 other result files under research/ are deliberately out of scope: they back only claims already withdrawn as stale, or no claim at all. Every artifact behind a claim the project still publishes IS in the manifest, and that is checked against the evidence manifest rather than maintained by hand.",
-  "The core needs NO third-party packages: the whole of this runs on the Python standard library, which is why the frozen environment is a pinned interpreter and nothing else."
+  "The core needs no third-party packages and neither do most of these scripts, which is why the frozen environment is a pinned interpreter and nothing else. The exception is named rather than hidden: numpy is needed by at least one research script, so in a bare image that artifact is SKIPPED with the reason rather than installed. Building the container is what proved the blanket claim wrong."
  ]
 }

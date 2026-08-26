@@ -1,8 +1,23 @@
-# Keep the reproduction image to what a fresh clone carries.
+# The image must contain what a FRESH CLONE carries and nothing else.
+#
+# Without this the build context was 5.4 GB and `docker build` never got past loading it: the
+# working tree also holds ~5.3 GB of third-party repositories cloned for an embedding
+# experiment, none of it tracked and none of it needed to reproduce anything.
 .git
+.gitignore
 .loop
 __pycache__
+**/__pycache__
 *.pyc
 .pytest_cache
-sample-store
+.venv
+venv
+dist
+build
+*.egg-info
+
+# Vendored / generated data a clone does not carry.
+research/embed_universal/data
 research/data
+sample-store
+**/*.pack
