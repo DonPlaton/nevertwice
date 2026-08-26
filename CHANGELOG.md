@@ -6,6 +6,45 @@ versions are [semantic](https://semver.org). Dates are UTC.
 ## [Unreleased]
 
 ### Added
+- **The safety evaluation: what it costs when the system is wrong (GOAL F6).**
+
+  Everything in F1-F5 asks whether the system helps. `research/harms.py` asks what it costs when
+  it is wrong, which is the question a controller that interrupts an agent has to answer before
+  anyone runs it. Six harms, each measured at the **shipped** threshold rather than at the
+  flattering operating point the baseline comparisons used:
+
+  - **Blocked-correct actions**, in two tiers, because they are different harms. An advisory
+    guard costs attention; a *blocking* one costs the action, and only a guard corroborated by
+    three distinct sessions can block. One merged number would overstate the mild harm and hide
+    the severe one.
+  - **Override burden** - and the page says out loud that the measured rate is high: at roughly
+    one wrong interruption every ten turns, users learn to dismiss warnings unread, at which
+    point the recall the system does have stops mattering.
+  - **Stale-guard damage** - a guard for an already-fixed problem, declared a **lower** bound,
+    since it assumes every session reports the failure clearly and a real one is overridden
+    intermittently and survives longer.
+  - **Privacy leakage** - none of the eight secret formats reached disk, and the page refuses to
+    generalise from that: redaction is pattern-based, and the mitigation that does not depend on
+    patterns is that the store never leaves the machine.
+  - **Poisoned-memory acceptance** - derived from the committed artifact and cross-checked
+    against the governed manifest claim, so this page cannot quietly disagree with what
+    `research/POISONING.md` publishes.
+  - **Recovery time**, with the tension stated rather than the good half: recovery from a wrong
+    memory takes distinct sessions, and fifty overrides from *one* session leave a guard
+    standing. Fast recovery and resistance to a single hostile session pull against each other,
+    and this design chose resistance.
+
+  The page ends by refusing to read as a clearance: it establishes that a safety evaluation
+  exists and what it currently says, not that the system is safe to deploy unattended.
+
+  `tests/_test_harms.py` (59 checks) and ten mutations, all killed. Three found real defects.
+  The poisoning dimension looked for a key that does not exist and reported `None` while
+  claiming it was measured - a null presented as a measurement. And twice, checking the report
+  against *itself* proved nothing: a detector mutated to never fire left every internal relation
+  consistent, and a hardcoded stand-in for the whole resistance probe passed every field check.
+  Both are now **independently recomputed** by the suite against the live system, and the report
+  is required to match what the system actually does.
+
 - **Uncertainty, done properly - and it changes what the earlier results mean (GOAL F5).**
 
   F1 through F4 each published a Wilson interval. Those are **unpaired**, and the data is not:
