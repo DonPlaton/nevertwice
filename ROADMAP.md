@@ -9,15 +9,15 @@ shipped feature reappears as an open promise.
 
 ## Blocked on the maintainer
 
-- **PyPI release of 2.3.x.** PyPI still serves 2.2.1 while this repository declares 2.3.0,
-  so `pip install nevertwice` does not get what the README documents.
-  **Today:** the whole release path is built and rehearsed - `release.yml` builds once,
-  installs the artifact into a clean environment on three operating systems, checks every
-  console entry point, emits an SBOM and checksums, and attests provenance. What remains is
-  not code: a `pypi` environment on this repository and a Trusted Publishing registration
-  for the `nevertwice` project, which only the maintainer's PyPI account can create. The
-  version also needs bumping - `tools/check_version.py` prints that reminder on every run
-  while `v2.3.0` is tagged behind `master`.
+- **PyPI release of 2.4.0.** PyPI still serves 2.2.1, so `pip install nevertwice` does not
+  get what the README documents. It will skip 2.3.0 entirely: that version was tagged here on
+  2026-08-18, never published, and its code has been superseded a hundred commits over.
+  **Today:** the version is bumped and the whole release path is built and rehearsed -
+  `release.yml` builds once, installs the artifact into a clean environment on three operating
+  systems, checks every console entry point, emits an SBOM and checksums, and attests
+  provenance. What remains is not code: a `pypi` environment on this repository and a
+  Trusted Publishing registration for the `nevertwice` project, which only the maintainer's
+  PyPI account can create.
 
 ## Near term
 

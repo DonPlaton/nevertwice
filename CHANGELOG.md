@@ -5,7 +5,57 @@ versions are [semantic](https://semver.org). Dates are UTC.
 
 ## [Unreleased]
 
+## [2.4.0] - 2026-08-26
+
+The release that followed the 2026-08-24 external audit. Two thirds of it is machinery
+for making this project's own claims checkable; the last third is research that
+**narrowed** the central claim rather than confirming it. PyPI skips 2.3.0, which was
+tagged on GitHub and never published.
+
 ### Added
+- **The billable generator behind gate G8, and the two locks it sits behind.**
+
+  F3's two frontier cells and F2's LLM session-summary arm were described as "built and scored -
+  only the generator changes". The scoring half was true. The generator half was not: both entry
+  points printed `GATED` and exited 2, and no API client existed anywhere in the repository.
+  Nobody could have opened that gate by setting a key, which is a worse failure than an honest
+  refusal because it reads like one command stands between you and the result.
+
+  `research/_frontier.py` is the generator. It turns a prompt into a completion, reports what
+  that cost, and is the one module here that can spend money - so the interesting part is
+  everything it does *before* the call.
+
+  **A key in the environment is not approval to spend.** This machine exports `ANTHROPIC_API_KEY`
+  for ordinary work, and `tests/_test_capability_grid.py` drives the very entry point that can
+  bill - so a single-lock gate would have charged the owner for checking that the refusal works.
+  Spending needs the key **and** `NEVERTWICE_ALLOW_BILLABLE=1`, and the refusal names which half
+  is shut rather than saying only "gated". The switch reads its *value*: `=0`, `=false` and `=no`
+  are refusals, because a bare truthiness test on the string would have read all three as yes.
+
+  **A frontier cell is not a rung of the ladder, and says so in its own artifact.** The local
+  cells decode greedily at 70 tokens; a frontier cell has adaptive thinking, no settable
+  temperature and a far larger ceiling. A gap between them confounds capability with decoding
+  procedure. Every API cell carries that caveat, `params_b` is `None` rather than an invented
+  size, and the rendered grid reports those rows beside the ladder instead of inside its spread.
+  `frontier-a` and `frontier-b` are **slots**, repointable by environment variable, and the cell
+  records the model that actually ran - a row labelled only `frontier-a` would be unreadable in
+  six months.
+
+  **The cost is computed, not guessed.** `python research/capability_grid.py --estimate` sends
+  nothing and prints the exact input-token count from the real prompts, a worst case at the
+  per-call ceiling and a typical case, against a price table that carries the date it was
+  checked. An unpriced model reports `usd: null` with a reason, never `0.00` - reading "free" is
+  the most expensive way to be wrong about a price.
+
+  The F2 arm is renamed `session_summary_llm` when a model produces the summaries, and the model
+  is held to the same twelve-word budget as the stub: a summariser given more room would be a
+  different experiment wearing the same name. Whichever ran, the standing caveat says which -
+  the stub reported under an LLM's name is the single most misleading thing that file could
+  publish.
+
+  `tests/_test_frontier.py`, 37 checks, no key and no network. Two mutations killed: dropping
+  the approval switch from the gate, and softening the not-matched-decoding declaration.
+
 - **The preregistration: what the confirmatory run will test, fixed before it runs (GOAL F8).**
 
   Everything in `research/` so far is exploratory. F1-F6 built the harnesses, measured what one
@@ -1438,6 +1488,7 @@ supersession so contradictions do not pile up, capture for Claude Code (hooks) a
 local embedder, calibrated fusion reached R@5 0.80 against Mem0 0.76, with the harness and the
 negative results published.
 
+[2.4.0]: https://github.com/DonPlaton/nevertwice/releases/tag/v2.4.0
 [2.0.0]: https://github.com/DonPlaton/nevertwice/releases/tag/v2.0.0
 [1.1.0]: https://github.com/DonPlaton/nevertwice/releases/tag/v1.1.0
 [1.0.0]: https://github.com/DonPlaton/nevertwice/releases/tag/v1.0.0

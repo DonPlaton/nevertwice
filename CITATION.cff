@@ -10,7 +10,7 @@ type: software
 authors:
   - family-names: Chernov
     given-names: Platon
-version: "2.3.0"
+version: "2.4.0"
 date-released: "2026-08-25"
 url: "https://github.com/DonPlaton/nevertwice"
 repository-code: "https://github.com/DonPlaton/nevertwice"
