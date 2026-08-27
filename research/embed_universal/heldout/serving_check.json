@@ -1,0 +1,237 @@
+{
+ "V1_pass": true,
+ "V2_pass": true,
+ "benchmark_sha256": "272cca36b1ab2a28676ae177adf96cf814f563ac9988f69f8f36a224aabb29b0",
+ "comparison_served_vs_local": {
+  "retrieval_situation": {
+   "delta_recall@1": {
+    "high": 0.0,
+    "low": 0.0,
+    "resamples": 2000,
+    "value": 0.0
+   },
+   "delta_recall@5": {
+    "high": 0.0,
+    "low": 0.0,
+    "resamples": 2000,
+    "value": 0.0
+   },
+   "n": 216
+  },
+  "retrieval_title": {
+   "delta_recall@1": {
+    "high": 0.0,
+    "low": 0.0,
+    "resamples": 2000,
+    "value": 0.0
+   },
+   "delta_recall@5": {
+    "high": 0.0,
+    "low": 0.0,
+    "resamples": 2000,
+    "value": 0.0
+   },
+   "n": 408
+  }
+ },
+ "courtesy": "read-only against the owner's running Ollama - the same requests their own memory hook makes. Nothing started, stopped or pulled.",
+ "generated_by": "research/embed_universal/serving_check.py",
+ "local": {
+  "by_language": {
+   "retrieval_situation": {
+    "en": {
+     "n": 168,
+     "recall@5": 0.8155
+    },
+    "ru": {
+     "n": 48,
+     "recall@5": 0.8958
+    }
+   },
+   "retrieval_title": {
+    "en": {
+     "n": 284,
+     "recall@5": 0.9965
+    },
+    "ru": {
+     "n": 124,
+     "recall@5": 1.0
+    }
+   }
+  },
+  "retrieval_situation": {
+   "mrr@10": {
+    "high": 0.7353,
+    "low": 0.628,
+    "resamples": 2000,
+    "value": 0.6826
+   },
+   "n": 216,
+   "recall@1": {
+    "high": 0.6435,
+    "low": 0.5093,
+    "resamples": 2000,
+    "value": 0.5787
+   },
+   "recall@5": {
+    "high": 0.8796,
+    "low": 0.7824,
+    "resamples": 2000,
+    "value": 0.8333
+   }
+  },
+  "retrieval_title": {
+   "mrr@10": {
+    "high": 0.9895,
+    "low": 0.9692,
+    "resamples": 2000,
+    "value": 0.9801
+   },
+   "n": 408,
+   "recall@1": {
+    "high": 0.9804,
+    "low": 0.9436,
+    "resamples": 2000,
+    "value": 0.9632
+   },
+   "recall@5": {
+    "high": 1.0,
+    "low": 0.9926,
+    "resamples": 2000,
+    "value": 0.9975
+   }
+  },
+  "twin": {
+   "auc": {
+    "high": 1.0,
+    "low": 1.0,
+    "resamples": 2000,
+    "value": 1.0
+   },
+   "n": 690,
+   "recall@0fp": {
+    "high": 1.0,
+    "low": 1.0,
+    "resamples": 2000,
+    "value": 1.0
+   },
+   "recall@1%fpr": {
+    "high": 1.0,
+    "low": 1.0,
+    "resamples": 2000,
+    "value": 1.0
+   }
+  }
+ },
+ "local_checkpoint": "models/universal_v1_merged",
+ "seconds": {
+  "local": 14.46,
+  "served": 88.1,
+  "texts": 2412
+ },
+ "served": {
+  "by_language": {
+   "retrieval_situation": {
+    "en": {
+     "n": 168,
+     "recall@5": 0.8155
+    },
+    "ru": {
+     "n": 48,
+     "recall@5": 0.8958
+    }
+   },
+   "retrieval_title": {
+    "en": {
+     "n": 284,
+     "recall@5": 0.9965
+    },
+    "ru": {
+     "n": 124,
+     "recall@5": 1.0
+    }
+   }
+  },
+  "retrieval_situation": {
+   "mrr@10": {
+    "high": 0.7353,
+    "low": 0.628,
+    "resamples": 2000,
+    "value": 0.6826
+   },
+   "n": 216,
+   "recall@1": {
+    "high": 0.6435,
+    "low": 0.5093,
+    "resamples": 2000,
+    "value": 0.5787
+   },
+   "recall@5": {
+    "high": 0.8796,
+    "low": 0.7824,
+    "resamples": 2000,
+    "value": 0.8333
+   }
+  },
+  "retrieval_title": {
+   "mrr@10": {
+    "high": 0.9895,
+    "low": 0.9692,
+    "resamples": 2000,
+    "value": 0.9801
+   },
+   "n": 408,
+   "recall@1": {
+    "high": 0.9804,
+    "low": 0.9436,
+    "resamples": 2000,
+    "value": 0.9632
+   },
+   "recall@5": {
+    "high": 1.0,
+    "low": 0.9926,
+    "resamples": 2000,
+    "value": 0.9975
+   }
+  },
+  "twin": {
+   "auc": {
+    "high": 1.0,
+    "low": 1.0,
+    "resamples": 2000,
+    "value": 1.0
+   },
+   "n": 690,
+   "recall@0fp": {
+    "high": 1.0,
+    "low": 1.0,
+    "resamples": 2000,
+    "value": 1.0
+   },
+   "recall@1%fpr": {
+    "high": 1.0,
+    "low": 1.0,
+    "resamples": 2000,
+    "value": 1.0
+   }
+  }
+ },
+ "served_model": "nevertwice-embed:latest",
+ "stock_serving_gap": {
+  "median_cosine": 1.0001,
+  "min_cosine": 0.9992,
+  "model": "bge-m3:latest"
+ },
+ "thresholds": "research/EMBED_M6_THRESHOLD.md",
+ "v1_tolerance": 0.02,
+ "v2_median_cosine": 0.99,
+ "vector_agreement": {
+  "below_0.95": 0,
+  "below_0.99": 0,
+  "mean": 1.0,
+  "median": 1.0,
+  "min": 0.9997,
+  "n": 2412,
+  "p05": 0.9998
+ }
+}

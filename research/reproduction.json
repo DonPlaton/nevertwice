@@ -24,6 +24,7 @@
    "research/embed_universal/heldout/distil_v1.json",
    "research/embed_universal/heldout/hard_v1.json",
    "research/embed_universal/heldout/matryoshka_v1.json",
+   "research/embed_universal/heldout/serving_check.json",
    "research/forgetting.json",
    "research/harms.json",
    "research/latency_bench.json",
@@ -41,6 +42,7 @@
    "research/embed_universal/heldout/distil_v1.json",
    "research/embed_universal/heldout/hard_v1.json",
    "research/embed_universal/heldout/matryoshka_v1.json",
+   "research/embed_universal/heldout/serving_check.json",
    "research/forgetting.json",
    "research/latency_bench.json",
    "research/longitudinal_results.json",
@@ -99,7 +101,7 @@
    "kind": "deterministic",
    "note": "the precision/recall curve over the firing threshold",
    "command": "python research/matched_conditions.py --save",
-   "committed_sha256": "3c44b493074f4a2057251a37d22e048e745de1125111590467084a4f19e9d60e",
+   "committed_sha256": "5c4e4f3698f7e684c9c3af007095ef198d9eb281be8ac0f97ca630bb33df48a3",
    "committed_canonical_sha256": "503411fbb513dc7e7318d5e1b7fe6aa77fc4cc543628f44199af78dd57d6e1cd",
    "volatile_fields": [
     "latency_ms_per_episode"
@@ -108,8 +110,8 @@
    "missing_inputs": [],
    "requires": [],
    "missing_modules": [],
-   "seconds": 0.2,
-   "regenerated_sha256": "5c4e4f3698f7e684c9c3af007095ef198d9eb281be8ac0f97ca630bb33df48a3",
+   "seconds": 0.1,
+   "regenerated_sha256": "7152df5f235003419ef25e00a2595561a4ba40710efe0dc54abc4d818583f40a",
    "regenerated_canonical_sha256": "503411fbb513dc7e7318d5e1b7fe6aa77fc4cc543628f44199af78dd57d6e1cd",
    "status": "reproduced",
    "explain": "byte-different only in the declared volatile fields (latency_ms_per_episode): everything that should reproduce did"
@@ -120,7 +122,7 @@
    "kind": "deterministic",
    "note": "the six B5 baselines at a matched false-alarm rate",
    "command": "python research/cheap_baselines.py --save",
-   "committed_sha256": "e235f4681461f5287c676f81e5dc53ab78b97909f54e0292c869d8f520e1ac62",
+   "committed_sha256": "51d9cd426e6e2efc8acd3a7d1a945b9bca22c5227225940e2081811637fe20b7",
    "committed_canonical_sha256": "2452a3e01fe1089a348b45cc5ef72bdb7df08e1915ad6abe14c5ae56b45ccd98",
    "volatile_fields": [
     "latency_ms_per_episode"
@@ -130,7 +132,7 @@
    "requires": [],
    "missing_modules": [],
    "seconds": 0.1,
-   "regenerated_sha256": "51d9cd426e6e2efc8acd3a7d1a945b9bca22c5227225940e2081811637fe20b7",
+   "regenerated_sha256": "80d66125077f9a4be9b57697de6af4fe5b4e39f5a8a9cc6520a8d41bb4b380bb",
    "regenerated_canonical_sha256": "2452a3e01fe1089a348b45cc5ef72bdb7df08e1915ad6abe14c5ae56b45ccd98",
    "status": "reproduced",
    "explain": "byte-different only in the declared volatile fields (latency_ms_per_episode): everything that should reproduce did"
@@ -184,7 +186,7 @@
    "missing_inputs": [],
    "requires": [],
    "missing_modules": [],
-   "seconds": 8.5,
+   "seconds": 4.0,
    "regenerated_sha256": "58105186c462de5fc61c35f6d57dc4226c74655adfbfdf9256b7795d8b612715",
    "regenerated_canonical_sha256": "c3829d019f19a7c0761fe8a47264c95d17c56658ac5c284d36f62497da12b807",
    "status": "reproduced"
@@ -222,7 +224,7 @@
     "numpy"
    ],
    "missing_modules": [],
-   "seconds": 4.7,
+   "seconds": 4.4,
    "regenerated_sha256": "3675985c91b12f2e71f82f547ecff84162395cfb5595f6a6490c3b679d8d2e83",
    "regenerated_canonical_sha256": "d8c2054105c0af40a517bd0f58a24d3e63d45ffeb6178293786cc0017b11b7f3",
    "status": "reproduced"
@@ -258,7 +260,7 @@
    "missing_inputs": [],
    "requires": [],
    "missing_modules": [],
-   "seconds": 99.9,
+   "seconds": 91.5,
    "regenerated_sha256": "ae20140e14fa1380824cd7be122dc19f5d0a1a5b67015b0f03620319e0aa4c5e",
    "regenerated_canonical_sha256": "461da8e20e0c0671509a533e4d6942941de83cba854982916faaaa11058a29e6",
    "status": "reproduced"
@@ -269,7 +271,7 @@
    "kind": "deterministic",
    "note": "replays the blast-radius checker over this repository's history. Deterministic given the same 150 commits - the per-commit timings are the only thing that measures the machine, and they are declared volatile. Needs FULL history: a shallow clone cannot reach the 150th ancestor and the run will come up short.",
    "command": "python research/blast_radius_calibration.py --commits 150",
-   "committed_sha256": "2fd9b5e5e2c4786f3809a888cd2fdfe9876dce4a5b05c1ad9c096fccbc4e9d53",
+   "committed_sha256": "5a7d268a2eda241a850e2d59bf9d7e61bb98d8c8de94caaf6f6fc5a06149e52a",
    "committed_canonical_sha256": "b5269ec5533847b68aa27ddab88c16f4e12f6f5178ba658effafd16261441393",
    "volatile_fields": [
     "seconds"
@@ -278,8 +280,8 @@
    "missing_inputs": [],
    "requires": [],
    "missing_modules": [],
-   "seconds": 118.7,
-   "regenerated_sha256": "5a7d268a2eda241a850e2d59bf9d7e61bb98d8c8de94caaf6f6fc5a06149e52a",
+   "seconds": 131.4,
+   "regenerated_sha256": "a13840bf226dc44d621fd471eb65655b9d70643f62ae94abd37a62c0b289faa9",
    "regenerated_canonical_sha256": "b5269ec5533847b68aa27ddab88c16f4e12f6f5178ba658effafd16261441393",
    "status": "reproduced",
    "explain": "byte-different only in the declared volatile fields (seconds): everything that should reproduce did"
@@ -299,6 +301,28 @@
    "missing_modules": [],
    "status": "skipped",
    "explain": "machine-dependent: regenerating would change the numbers without any of the code being wrong"
+  },
+  {
+   "file": "research/embed_universal/heldout/serving_check.json",
+   "task": "M6",
+   "kind": "needs-hardware",
+   "note": "whether the served f16 GGUF matches the safetensors checkpoint the numbers were measured on. Needs a running Ollama with the model already loaded - the script refuses to pull it rather than filling somebody else's working set.",
+   "command": "python research/embed_universal/serving_check.py",
+   "committed_sha256": "5a9fc631e7994a0425184c00b5d2e39976f7fadf177aa642e2fdfaa74c62fab2",
+   "committed_canonical_sha256": "67fd743cf3fe0bfae0a696ae6a921aed274f73a34061bc57d850a60dfef62d6f",
+   "volatile_fields": [],
+   "committed_present": true,
+   "missing_inputs": [
+    "a CUDA GPU",
+    "torch",
+    "sentence_transformers",
+    "BAAI/bge-m3",
+    "a running Ollama serving nevertwice-embed"
+   ],
+   "requires": [],
+   "missing_modules": [],
+   "status": "skipped",
+   "explain": "cannot regenerate here: missing a CUDA GPU, torch, sentence_transformers, BAAI/bge-m3, a running Ollama serving nevertwice-embed"
   },
   {
    "file": "research/embed_universal/heldout/capacity_sweep.json",
@@ -455,12 +479,12 @@
   "deterministic": 10,
   "reproduced": 10,
   "not_reproduced": 0,
-  "skipped": 8
+  "skipped": 9
  },
  "verdict": [
   "All 10 attempted deterministic artifacts regenerated BYTE-IDENTICAL from this clone, with no author help. That is what F7's exit criterion asks for, on the artifacts it can ask it of.",
-  "Deliberately NOT reproduced here, and each says why in the table: research/latency_bench.json (machine-dependent), research/embed_universal/heldout/capacity_sweep.json (needs-hardware), research/embed_universal/heldout/matryoshka_v1.json (needs-hardware), research/embed_universal/heldout/distil_v1.json (needs-hardware), research/embed_universal/heldout/hard_v1.json (needs-hardware), research/embed_universal/heldout/baseline_v1.json (needs-hardware), research/capability_grid.json (needs-hardware), research/longmem_results.json (needs-absent-input). A package that quietly re-ran only the easy artifacts and printed 'all reproduced' would be worse than none.",
-  "Inputs this clone does not carry: research/embed_universal/heldout/capacity_sweep.json needs a CUDA GPU, torch, sentence_transformers, BAAI/bge-m3; research/embed_universal/heldout/matryoshka_v1.json needs a CUDA GPU, torch, sentence_transformers, BAAI/bge-m3, research/embed_universal/models/matryoshka_v1_merged; research/embed_universal/heldout/distil_v1.json needs a CUDA GPU, torch, sentence_transformers, BAAI/bge-m3, BAAI/bge-reranker-v2-m3, research/embed_universal/models/distil_v1_merged; research/embed_universal/heldout/hard_v1.json needs a CUDA GPU, torch, sentence_transformers, BAAI/bge-m3, BAAI/bge-reranker-v2-m3, research/embed_universal/models/hard_v1_merged; research/embed_universal/heldout/baseline_v1.json needs a CUDA GPU, torch, sentence_transformers, BAAI/bge-m3, BAAI/bge-reranker-v2-m3; research/capability_grid.json needs local Qwen2.5-Instruct weights, a CUDA GPU, torch, transformers; research/longmem_results.json needs research/data/longmemeval_oracle.json. Every claim resting on those is already withdrawn as stale in the evidence manifest, so nothing published depends on an artifact a stranger cannot rebuild.",
+  "Deliberately NOT reproduced here, and each says why in the table: research/latency_bench.json (machine-dependent), research/embed_universal/heldout/serving_check.json (needs-hardware), research/embed_universal/heldout/capacity_sweep.json (needs-hardware), research/embed_universal/heldout/matryoshka_v1.json (needs-hardware), research/embed_universal/heldout/distil_v1.json (needs-hardware), research/embed_universal/heldout/hard_v1.json (needs-hardware), research/embed_universal/heldout/baseline_v1.json (needs-hardware), research/capability_grid.json (needs-hardware), research/longmem_results.json (needs-absent-input). A package that quietly re-ran only the easy artifacts and printed 'all reproduced' would be worse than none.",
+  "Inputs this clone does not carry: research/embed_universal/heldout/serving_check.json needs a CUDA GPU, torch, sentence_transformers, BAAI/bge-m3, a running Ollama serving nevertwice-embed; research/embed_universal/heldout/capacity_sweep.json needs a CUDA GPU, torch, sentence_transformers, BAAI/bge-m3; research/embed_universal/heldout/matryoshka_v1.json needs a CUDA GPU, torch, sentence_transformers, BAAI/bge-m3, research/embed_universal/models/matryoshka_v1_merged; research/embed_universal/heldout/distil_v1.json needs a CUDA GPU, torch, sentence_transformers, BAAI/bge-m3, BAAI/bge-reranker-v2-m3, research/embed_universal/models/distil_v1_merged; research/embed_universal/heldout/hard_v1.json needs a CUDA GPU, torch, sentence_transformers, BAAI/bge-m3, BAAI/bge-reranker-v2-m3, research/embed_universal/models/hard_v1_merged; research/embed_universal/heldout/baseline_v1.json needs a CUDA GPU, torch, sentence_transformers, BAAI/bge-m3, BAAI/bge-reranker-v2-m3; research/capability_grid.json needs local Qwen2.5-Instruct weights, a CUDA GPU, torch, transformers; research/longmem_results.json needs research/data/longmemeval_oracle.json. Every claim resting on those is already withdrawn as stale in the evidence manifest, so nothing published depends on an artifact a stranger cannot rebuild.",
   "32 other result files under research/ are deliberately out of scope: they back only claims already withdrawn as stale, or no claim at all. Every artifact behind a claim the project still publishes IS in the manifest, and that is checked against the evidence manifest rather than maintained by hand.",
   "The core needs no third-party packages and neither do most of these scripts, which is why the frozen environment is a pinned interpreter and nothing else. The exception is named rather than hidden: numpy is needed by at least one research script, so in a bare image that artifact is SKIPPED with the reason rather than installed. Building the container is what proved the blanket claim wrong."
  ]

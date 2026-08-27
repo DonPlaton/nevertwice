@@ -115,6 +115,16 @@ ARTIFACTS = [
      "note": "measures THIS machine. The same minimum-of-five statistic moved by about a "
              "third between sessions on one box, so byte-identity is not the test - the "
              "order of magnitude is."},
+    {"file": "research/embed_universal/heldout/serving_check.json",
+     "command": ["python", "research/embed_universal/serving_check.py"],
+     "kind": HARDWARE, "task": "M6",
+     "inputs": ["research/embed_universal/heldout/external_heldout_v1.json",
+                "a CUDA GPU", "torch", "sentence_transformers", "BAAI/bge-m3",
+                "research/embed_universal/models/universal_v1_merged",
+                "a running Ollama serving nevertwice-embed"],
+     "note": "whether the served f16 GGUF matches the safetensors checkpoint the numbers were "
+             "measured on. Needs a running Ollama with the model already loaded - the script "
+             "refuses to pull it rather than filling somebody else's working set."},
     {"file": "research/embed_universal/heldout/capacity_sweep.json",
      "command": ["python", "research/embed_universal/capacity_sweep.py"],
      "kind": HARDWARE, "task": "M5",

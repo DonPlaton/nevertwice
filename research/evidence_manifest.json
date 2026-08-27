@@ -537,6 +537,15 @@
       "governance": "backlog",
       "budget": 86,
       "note": "the LoRA capacity curve, the replacement for a belief measured on a saturated axis, and the discovery that v1 is not reproducible from its own recipe. The two load-bearing results are registered as claims and checked against research/embed_universal/heldout/capacity_sweep.json by tests/_test_capacity.py; the curve and the per-language table are the backlog. All four checkpoints were deleted as they failed the promotion rule."
+    },
+    "research/EMBED_M6_THRESHOLD.md": {
+      "governance": "exempt",
+      "reason": "what the served model had to prove before its numbers could be quoted as the shipped model's, declared before a single embedding was fetched. Prospective agreement tolerances, not measurements, plus the promise that failing V1 would force republishing every M1-M5 number with a caveat - written in advance so it could not be quietly avoided."
+    },
+    "research/EMBED_SERVING.md": {
+      "governance": "backlog",
+      "budget": 28,
+      "note": "the check that lets M1-M5 be quoted as describing the shipped model: the f16 GGUF Ollama serves is numerically indistinguishable from the safetensors checkpoint every number was measured on. Two claims registered and checked by tests/_test_serving.py."
     }
   },
   "claims": [
@@ -6897,6 +6906,58 @@
       "commit": "5aa22068bebe07db5565d9769d7d67ce1bcfdf09",
       "produced_by": [
         "research/embed_universal/capacity_sweep.py",
+        "research/embed_universal/heldout_eval.py"
+      ]
+    },
+    {
+      "id": "embed.serving.vector_agreement_median_cosine",
+      "statement": "the f16 GGUF Ollama serves agrees with the safetensors checkpoint every published number was measured on to a median cosine of 1.0, with no vector below 0.99 out of 2412",
+      "value": 1.0,
+      "printed": [
+        "1.0",
+        "0.99",
+        "2412"
+      ],
+      "unit": "cosine similarity",
+      "dataset": "external_heldout_v1",
+      "environment": "rtx5090_bge_fp16",
+      "n": 2412,
+      "command": "python research/embed_universal/serving_check.py",
+      "raw": "research/embed_universal/heldout/serving_check.json",
+      "pointer": "vector_agreement.median",
+      "ci": null,
+      "ci_note": "a full comparison over every text in the frozen set, not a sample - the distribution is published instead of an interval.",
+      "caveat": "Stock bge-m3 served the same way shows the same agreement (median 1.0001), so this is a property of the conversion pipeline rather than of this checkpoint. Every retrieval query also ranks identically through both paths.",
+      "cited_in": [],
+      "commit": "PENDING",
+      "produced_by": [
+        "research/embed_universal/serving_check.py",
+        "research/embed_universal/heldout_eval.py"
+      ]
+    },
+    {
+      "id": "embed.serving.latency_ratio",
+      "statement": "the served path costs 37 ms per text against 6 ms locally - about six times slower, and it is the path the product takes",
+      "value": 88.1,
+      "printed": [
+        "88.1",
+        "37",
+        "6"
+      ],
+      "unit": "ms per text",
+      "dataset": "external_heldout_v1",
+      "environment": "rtx5090_bge_fp16",
+      "n": 2412,
+      "command": "python research/embed_universal/serving_check.py",
+      "raw": "research/embed_universal/heldout/serving_check.json",
+      "pointer": "seconds.served",
+      "ci": null,
+      "ci_note": "a single timed pass over 2412 texts; it measures this machine and this batch size.",
+      "caveat": "Part of the gap is HTTP and batching rather than the model, and this run does not separate them - it measures what a caller experiences. Local was batch 64 through sentence-transformers, served was batch 32 through Ollama's API.",
+      "cited_in": [],
+      "commit": "PENDING",
+      "produced_by": [
+        "research/embed_universal/serving_check.py",
         "research/embed_universal/heldout_eval.py"
       ]
     }

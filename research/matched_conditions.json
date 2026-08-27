@@ -1247,7 +1247,7 @@
      "tokens_spent": 0
     }
    ],
-   "latency_ms_per_episode": 0.0189
+   "latency_ms_per_episode": 0.0176
   },
   "lexical_recall": {
    "curve": [
@@ -2464,7 +2464,7 @@
      "tokens_spent": 0
     }
    ],
-   "latency_ms_per_episode": 0.0112
+   "latency_ms_per_episode": 0.0107
   },
   "full_history": {
    "curve": [
@@ -4917,7 +4917,7 @@
     "tokens_spent": 836
    },
    "tokens_per_episode": 13.93,
-   "latency_ms_per_episode": 0.0189,
+   "latency_ms_per_episode": 0.0176,
    "recall_ci95": [
     0.392,
     0.7262
@@ -4938,7 +4938,7 @@
     "tokens_spent": 608
    },
    "tokens_per_episode": 10.13,
-   "latency_ms_per_episode": 0.0112,
+   "latency_ms_per_episode": 0.0107,
    "recall_ci95": [
     0.3614,
     0.6977
