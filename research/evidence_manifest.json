@@ -6344,7 +6344,7 @@
         "high": 0.7615
       },
       "cited_in": [],
-      "commit": "9726b8148c2d58966319db9ef6fcc1d2e99fa747",
+      "commit": "d79bbc102bde02dbc972650c305eb2334f0ba860",
       "caveat": "The baseline, restored from three module constants rather than a forked copy. 94 of those 104 flags are budget or plan complaints carrying no dependency information at all.",
       "produced_by": [
         "research/blast_radius_calibration.py"
@@ -6367,7 +6367,7 @@
       "pointer": "arms.shipped.summary.commits_flagged_only_by_budget_or_plan",
       "ci": null,
       "cited_in": [],
-      "commit": "9726b8148c2d58966319db9ef6fcc1d2e99fa747",
+      "commit": "d79bbc102bde02dbc972650c305eb2334f0ba860",
       "ci_note": "a count over a fixed, fully enumerated set - every commit is in the artifact",
       "produced_by": [
         "research/blast_radius_calibration.py"
@@ -6395,7 +6395,7 @@
         "high": 0.1184
       },
       "cited_in": [],
-      "commit": "9726b8148c2d58966319db9ef6fcc1d2e99fa747",
+      "commit": "d79bbc102bde02dbc972650c305eb2334f0ba860",
       "caveat": "T1. Measured on the undeclared arm, which is what a repository that declares no scope actually sees.",
       "produced_by": [
         "research/blast_radius_calibration.py"
@@ -6417,7 +6417,7 @@
       "pointer": "arms.undeclared.summary.commits_flagged_only_by_budget_or_plan",
       "ci": null,
       "cited_in": [],
-      "commit": "9726b8148c2d58966319db9ef6fcc1d2e99fa747",
+      "commit": "d79bbc102bde02dbc972650c305eb2334f0ba860",
       "ci_note": "T2. A count over a fully enumerated set, and the gate the mechanism had to pass.",
       "produced_by": [
         "research/blast_radius_calibration.py"
@@ -6440,7 +6440,7 @@
       "pointer": "arms.undeclared.summary.commits_with_a_dependency_finding",
       "ci": null,
       "cited_in": [],
-      "commit": "9726b8148c2d58966319db9ef6fcc1d2e99fa747",
+      "commit": "d79bbc102bde02dbc972650c305eb2334f0ba860",
       "caveat": "I2 removed the largest false positive - a compatibility facade whose 42 references no caller had to touch. Whether the survivors are CORRECT is still not settled here; that is I4.",
       "ci_note": "a count over a fully enumerated set. The proportion 10/150 has a Wilson 95% interval of 0.037-0.118, but the published value is the count, and an interval on a different statistic is not this claim's interval.",
       "produced_by": [
@@ -6463,7 +6463,7 @@
       "pointer": "arms.declared.summary.commits_flagged_only_by_budget_or_plan",
       "ci": null,
       "cited_in": [],
-      "commit": "9726b8148c2d58966319db9ef6fcc1d2e99fa747",
+      "commit": "d79bbc102bde02dbc972650c305eb2334f0ba860",
       "ci_note": "a count over a fully enumerated set",
       "caveat": "All six are L0. The L1 and L2 budgets never fired, so the mechanism is calibrated on one class of three. L1's 95th percentile is its maximum (n=9).",
       "produced_by": [
@@ -6490,7 +6490,7 @@
       "ci_note": "a census, not a sample - every finding the checker made on the 150 commits is labelled, so there is no sampling error to interval. 0/24 has a Wilson 95% upper bound of 0.138 if one insists on treating it as a sample.",
       "caveat": "The labeller is shown capable of a positive verdict by five positive controls in tests/_test_blast_radius_labeller.py; without that a precision of zero would be unfalsifiable. It was corrected five times during the run, four of those in the direction that lowers precision - each correction is named in the write-up and has a regression test.",
       "cited_in": [],
-      "commit": "PENDING",
+      "commit": "d79bbc102bde02dbc972650c305eb2334f0ba860",
       "produced_by": [
         "research/blast_radius_precision.py",
         "research/blast_radius_calibration.py"
@@ -6516,7 +6516,7 @@
       "ci_note": "a swept threshold over a fully enumerated set",
       "caveat": "P2 is decided without labelling the baseline: precision 0.000 is the minimum possible and nothing is strictly greater than it. The baseline's own labels are partial and reported as context.",
       "cited_in": [],
-      "commit": "PENDING",
+      "commit": "d79bbc102bde02dbc972650c305eb2334f0ba860",
       "produced_by": [
         "research/blast_radius_precision.py",
         "research/blast_radius_calibration.py"
