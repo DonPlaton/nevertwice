@@ -53,7 +53,7 @@ ARTIFACT = HERE / "heldout" / "baseline_v1.json"
 MODELS = [
     ("stock bge-m3", "bi", "BAAI/bge-m3"),
     ("nevertwice-embed", "bi", str(HERE / "models" / "universal_v1_merged")),
-    ("nevertwice-embed-hard", "bi", str(HERE / "models" / "hard_v1_merged")),
+    ("nevertwice-embed-distil", "bi", str(HERE / "models" / "distil_v1_merged")),
     ("bge-reranker-v2-m3", "cross", "BAAI/bge-reranker-v2-m3"),
 ]
 

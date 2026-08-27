@@ -1,0 +1,69 @@
+{
+ "generated_by": "research/embed_universal/distil.py",
+ "student_init": "nevertwice-embed v1 (the shipped model)",
+ "loss": "MarginMSELoss",
+ "seed": 11,
+ "epochs": 3,
+ "batch": 24,
+ "lr": 0.0001,
+ "lora": {
+  "r": 16,
+  "lora_alpha": 32,
+  "lora_dropout": 0.05,
+  "target_modules": [
+   "query",
+   "key",
+   "value",
+   "dense"
+  ]
+ },
+ "seconds": 273.9,
+ "peak_allocated_gb": 9.66,
+ "vram_before": {
+  "free_gb": 30.2,
+  "total_gb": 31.84
+ },
+ "vram_margin_required_gb": 20.0,
+ "changed_from_m2": "the supervision, not the negatives: the teacher's MARGIN between a query's own note and a retrieved neighbour, over situation-shaped queries. M2 changed which negatives were shown and kept a hard label.",
+ "training_lessons": 2440,
+ "situation_queries": 1429,
+ "triples": 2858,
+ "depth": 8,
+ "negatives_per_query": 2,
+ "teacher": "BAAI/bge-reranker-v2-m3",
+ "teacher_activation": "identity (raw logits)",
+ "teacher_activation_note": "The default sigmoid saturates on this data - true positives sit at 0.9997 - so margins between probabilities would be ~1.0 for nearly every triple and the target would be almost constant. The same pair reads 0.46 against -11.04 as logits.",
+ "scale_rule": "iqr",
+ "margin_divisor": 5.5088,
+ "margin_scale_note": "The teacher's raw logit margins span about 28 units; a cosine margin over normalised embeddings cannot leave [-2, 2]. Targets are divided by the raw margins' own interquartile range so the bulk lands inside what the student can express, keeping the order and relative sizes the teacher assigned. The first run omitted this and produced a model 17 points worse on both retrieval axes.",
+ "raw_margin_quantiles": {
+  "min": -13.177,
+  "p25": -0.127,
+  "median": 2.558,
+  "p75": 5.381,
+  "max": 15.334
+ },
+ "margin_quantiles": {
+  "min": -2.392,
+  "p25": -0.023,
+  "median": 0.464,
+  "p75": 0.977,
+  "max": 2.784
+ },
+ "margin_spread": 5.176,
+ "teacher_positive_logits": {
+  "min": -11.034,
+  "p25": -3.714,
+  "median": -1.389,
+  "p75": 0.745,
+  "max": 7.9
+ },
+ "teacher_negative_logits": {
+  "min": -11.033,
+  "p25": -6.198,
+  "median": -4.317,
+  "p75": -2.312,
+  "max": 8.505
+ },
+ "negative_margins": 743
+}

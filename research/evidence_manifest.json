@@ -514,6 +514,11 @@
     "research/EMBED_M3_THRESHOLD.md": {
       "governance": "exempt",
       "reason": "the success threshold and deletion decision for cross-encoder distillation, declared before any teacher score was collected and before anything was retrained, per hard rule 2.6. Its numbers are prospective decision rules and the effect size the benchmark can resolve, not measurements. The retrospective figures it cites are claims already registered from M1."
+    },
+    "research/EMBED_DISTILLATION.md": {
+      "governance": "backlog",
+      "budget": 46,
+      "note": "the negative result that closed M3. Both gates it failed are registered as claims and checked against research/embed_universal/heldout/distil_v1.json by tests/_test_distillation.py; the two-attempt table and the reasoning are the backlog. The distilled checkpoint was deleted per the decision written before the run; every measurement it produced is kept, including the first attempt's, whose failure was a specification error rather than a finding."
     }
   },
   "claims": [
@@ -6693,6 +6698,66 @@
       "caveat": "It repairs a regression v1 carried against stock on an axis where every model already exceeds 0.95, so it cannot matter to the product. The negatives were mined from other lessons' rewrites, which are near-duplicate NOTES - the title-axis skill - and no negative had the shape of a situation query.",
       "cited_in": [],
       "commit": "c7d4369436f793de2dace321e06e5df58243515d",
+      "produced_by": [
+        "research/embed_universal/heldout_eval.py"
+      ]
+    },
+    {
+      "id": "embed.distillation.situation.delta_recall_at_5",
+      "statement": "distilling the cross-encoder costs 0.056 of situation recall@5 against the shipped model, 95% interval [-0.102, -0.009] - a measured regression, not an unresolved improvement",
+      "value": -0.0556,
+      "printed": [
+        "0.056",
+        "0.102",
+        "0.009"
+      ],
+      "unit": "delta recall@5",
+      "dataset": "external_heldout_v1",
+      "environment": "rtx5090_bge_fp16",
+      "n": 216,
+      "command": "python research/embed_universal/heldout_eval.py",
+      "raw": "research/embed_universal/heldout/distil_v1.json",
+      "pointer": "paired_vs_shipped.nevertwice-embed-distil.retrieval_situation.delta_recall@5.value",
+      "ci": {
+        "method": "bootstrap-percentile",
+        "level": 0.95,
+        "low": -0.1019,
+        "high": -0.0093
+      },
+      "ci_note": "percentile bootstrap, 2000 resamples, seed 20260827, on the per-query difference so the pairing is kept. The interval excludes zero on the wrong side.",
+      "caveat": "The teacher is WORSE than the student at recall@1 and better at recall@5; distilling its full ranking transfers both. This is a result about this teacher distilled this way, not about distillation. The checkpoint was deleted per the deletion decision; v1 remains shipped.",
+      "cited_in": [],
+      "commit": "PENDING",
+      "produced_by": [
+        "research/embed_universal/heldout_eval.py"
+      ]
+    },
+    {
+      "id": "embed.distillation.title.delta_recall_at_1",
+      "statement": "distilling the cross-encoder costs 0.101 of title recall@1 against the shipped model, 95% interval [-0.132, -0.066], five times the regression the guard allowed",
+      "value": -0.1005,
+      "printed": [
+        "0.101",
+        "0.132",
+        "0.066"
+      ],
+      "unit": "delta recall@1",
+      "dataset": "external_heldout_v1",
+      "environment": "rtx5090_bge_fp16",
+      "n": 408,
+      "command": "python research/embed_universal/heldout_eval.py",
+      "raw": "research/embed_universal/heldout/distil_v1.json",
+      "pointer": "paired_vs_shipped.nevertwice-embed-distil.retrieval_title.delta_recall@1.value",
+      "ci": {
+        "method": "bootstrap-percentile",
+        "level": 0.95,
+        "low": -0.1324,
+        "high": -0.0662
+      },
+      "ci_note": "percentile bootstrap, 2000 resamples, seed 20260827, paired. McNemar 5 won / 46 lost.",
+      "caveat": "The guard this breaches was written before the run BECAUSE the teacher's own recall@1 is worse than the student's - the mechanism was predicted and then observed. An earlier attempt was worse still (title recall@1 0.797) because the target was on a scale a cosine margin cannot express; that run is reported as a specification error, not as evidence.",
+      "cited_in": [],
+      "commit": "PENDING",
       "produced_by": [
         "research/embed_universal/heldout_eval.py"
       ]

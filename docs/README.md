@@ -57,6 +57,7 @@ click from here, and `tests/_test_docs_map.py` fails the build if that stops bei
 | [`research/EMBED_M2_THRESHOLD.md`](../research/EMBED_M2_THRESHOLD.md) | What hard-negative mining has to achieve to survive, which axis the threshold may live on, and the decision to delete it if it does not |
 | [`research/EMBED_HARD_NEGATIVES.md`](../research/EMBED_HARD_NEGATIVES.md) | The answer: mining repaired the axis that was already at ceiling and moved the one that matters the wrong way, with the reason why |
 | [`research/EMBED_M3_THRESHOLD.md`](../research/EMBED_M3_THRESHOLD.md) | What distillation from the cross-encoder has to achieve, why its target is recall@5, and the decision to delete it if it does not |
+| [`research/EMBED_DISTILLATION.md`](../research/EMBED_DISTILLATION.md) | The answer: a teacher that beats you on one metric and loses on another is not one you can distil wholesale, and the guard that predicted it |
 | [`research/evidence_manifest.json`](../research/evidence_manifest.json) | Every published number, with its dataset, sample size, model, command, raw file and caveat |
 | [`research/data/README.md`](../research/data/README.md) | Fetching the LongMemEval dataset the benchmarks need |
 
