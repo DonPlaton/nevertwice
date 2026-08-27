@@ -115,6 +115,17 @@ ARTIFACTS = [
      "note": "measures THIS machine. The same minimum-of-five statistic moved by about a "
              "third between sessions on one box, so byte-identity is not the test - the "
              "order of magnitude is."},
+    {"file": "research/embed_universal/heldout/matryoshka_v1.json",
+     "command": ["python", "research/embed_universal/truncation_eval.py"],
+     "kind": HARDWARE, "task": "M4",
+     "inputs": ["research/embed_universal/heldout/external_heldout_v1.json",
+                "a CUDA GPU", "torch", "sentence_transformers", "BAAI/bge-m3",
+                "research/embed_universal/models/universal_v1_merged",
+                "research/embed_universal/models/matryoshka_v1_merged"],
+     "note": "what truncation costs at 1024, 512 and 256 dimensions. The Matryoshka checkpoint "
+             "was DELETED per the decision; the HALF of this table that matters - the shipped "
+             "model truncated naively - needs only universal_v1_merged and is the part the "
+             "model card quotes."},
     {"file": "research/embed_universal/heldout/distil_v1.json",
      "command": ["python", "research/embed_universal/heldout_eval.py",
                  "--out", "research/embed_universal/heldout/distil_v1.json"],

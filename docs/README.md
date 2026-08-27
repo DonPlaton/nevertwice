@@ -59,6 +59,7 @@ click from here, and `tests/_test_docs_map.py` fails the build if that stops bei
 | [`research/EMBED_M3_THRESHOLD.md`](../research/EMBED_M3_THRESHOLD.md) | What distillation from the cross-encoder has to achieve, why its target is recall@5, and the decision to delete it if it does not |
 | [`research/EMBED_DISTILLATION.md`](../research/EMBED_DISTILLATION.md) | The answer: a teacher that beats you on one metric and loses on another is not one you can distil wholesale, and the guard that predicted it |
 | [`research/EMBED_M4_THRESHOLD.md`](../research/EMBED_M4_THRESHOLD.md) | What a truncatable vector has to achieve, why the gate protects the FULL vector, and the decision to delete it either way if it does not |
+| [`research/EMBED_MATRYOSHKA.md`](../research/EMBED_MATRYOSHKA.md) | The training bought nothing - and the baseline it was measured against showed the shipped model already truncates to a quarter of the index |
 | [`research/evidence_manifest.json`](../research/evidence_manifest.json) | Every published number, with its dataset, sample size, model, command, raw file and caveat |
 | [`research/data/README.md`](../research/data/README.md) | Fetching the LongMemEval dataset the benchmarks need |
 

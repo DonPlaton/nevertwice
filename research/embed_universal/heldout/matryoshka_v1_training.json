@@ -1,0 +1,40 @@
+{
+ "generated_by": "research/embed_universal/train_matryoshka.py",
+ "base": "BAAI/bge-m3",
+ "seed": 11,
+ "epochs": 3,
+ "batch": 24,
+ "lr": 0.0001,
+ "lora": {
+  "r": 16,
+  "lora_alpha": 32,
+  "lora_dropout": 0.05,
+  "target_modules": [
+   "query",
+   "key",
+   "value",
+   "dense"
+  ]
+ },
+ "loss": "MatryoshkaLoss(MultipleNegativesRankingLoss)",
+ "widths": [
+  1024,
+  512,
+  256
+ ],
+ "weights": [
+  1.0,
+  1.0,
+  1.0
+ ],
+ "pairs": 1463,
+ "changed_from_v1": "the Matryoshka wrapper only. Same pairs, recipe, seed, rank, epochs and learning rate as v1, and NOT M2's mined triplets, which failed their own gate.",
+ "seconds": 58.8,
+ "peak_allocated_gb": 10.5,
+ "vram_before": {
+  "free_gb": 30.2,
+  "total_gb": 31.84
+ },
+ "vram_margin_required_gb": 20.0,
+ "ollama": "left running deliberately, as in M2 and M3: the owner was working in other projects whose memory hooks use it. The measured margin is what makes that safe."
+}

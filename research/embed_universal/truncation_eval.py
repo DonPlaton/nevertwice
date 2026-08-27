@@ -1,0 +1,185 @@
+#!/usr/bin/env python3
+"""M4 - what truncation costs, measured at every width that matters.
+
+The Matryoshka question is not "is it better" but "what does the shorter vector lose, and did the
+full one survive". So every model is evaluated at 1024, 512 and 256 dimensions, and three
+comparisons come out of it:
+
+* **K1** the Matryoshka model's FULL vector against shipped v1's - the guard;
+* **K2** each truncated width against the same model's own full vector - what truncatable means;
+* **K3** v1 truncated the same way, which is the baseline any Matryoshka claim must beat. A
+  transformer's dimensions are not ordered by importance, so naive truncation is expected to
+  hurt - but "expected" is not "measured", and this project has been caught by an unbaselined
+  mechanism before.
+
+Truncation is prefix-then-renormalise, which is what an index would do: keep the first N
+dimensions and divide by the new norm, because cosine over an unnormalised prefix is not cosine.
+
+    python research/embed_universal/truncation_eval.py
+    python research/embed_universal/truncation_eval.py --print
+
+Needs a CUDA GPU. Writes heldout/matryoshka_v1.json (committed).
+"""
+from __future__ import annotations
+
+import argparse
+import json
+import sys
+import time
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE))
+from heldout_eval import (  # noqa: E402  the metric and interval code is shared on purpose
+    BOOTSTRAP, SEED, _fmt, _retrieval_block, _twin_block, bootstrap, encode,
+)
+
+FROZEN = HERE / "heldout" / "external_heldout_v1.json"
+ARTIFACT = HERE / "heldout" / "matryoshka_v1.json"
+
+MODELS = [
+    ("nevertwice-embed", str(HERE / "models" / "universal_v1_merged")),
+    ("nevertwice-embed-matryoshka", str(HERE / "models" / "matryoshka_v1_merged")),
+]
+WIDTHS = [1024, 512, 256]
+#: float32 is what a naive index stores. The saving is proportional either way, but the bytes
+#: quoted have to name a dtype or they are not bytes.
+BYTES_PER_DIM = 4
+
+
+def _truncate(vectors, width: int):
+    import torch
+    cut = vectors[:, :width]
+    return cut / torch.clamp(cut.norm(dim=1, keepdim=True), min=1e-12)
+
+
+def evaluate(label: str, path: str, data: dict) -> dict:
+    import torch
+
+    corpus = [d["text"] for d in data["corpus"]]
+    twin = data["axes"]["twin"]
+    texts = corpus + [r["a"] for r in twin] + [r["b"] for r in twin]
+    for axis in ("retrieval_title", "retrieval_situation"):
+        texts += [q["query"] for q in data["axes"][axis]]
+
+    started = time.perf_counter()
+    full = encode(path, texts)
+    encode_seconds = round(time.perf_counter() - started, 2)
+
+    out: dict = {"label": label, "encode_seconds": encode_seconds, "widths": {}}
+    for width in WIDTHS:
+        vectors = _truncate(full, width)
+        at = 0
+        corpus_v = vectors[at:at + len(corpus)]; at += len(corpus)
+        a_v = vectors[at:at + len(twin)]; at += len(twin)
+        b_v = vectors[at:at + len(twin)]; at += len(twin)
+        pair_units = [{"label": r["label"], "score": float(torch.dot(a_v[i], b_v[i]))}
+                      for i, r in enumerate(twin)]
+        block: dict = {"twin": _twin_block(pair_units),
+                       "index_bytes": len(corpus) * width * BYTES_PER_DIM,
+                       "bytes_per_vector": width * BYTES_PER_DIM}
+        ranks_by_axis = {}
+        for axis in ("retrieval_title", "retrieval_situation"):
+            queries = data["axes"][axis]
+            q_v = vectors[at:at + len(queries)]; at += len(queries)
+            order = (q_v @ corpus_v.T).argsort(dim=1, descending=True)
+            ranks = []
+            for i, q in enumerate(queries):
+                row = order[i].tolist()
+                ranks.append(row.index(q["gold"]) + 1 if q["gold"] in row[:200] else 0)
+            block[axis] = _retrieval_block(ranks)
+            ranks_by_axis[axis] = ranks
+        block["ranks"] = ranks_by_axis
+        out["widths"][str(width)] = block
+    return out
+
+
+def _paired(reference_ranks: list[int], challenger_ranks: list[int]) -> dict:
+    hits1 = [(1 if r == 1 else 0, 1 if c == 1 else 0)
+             for r, c in zip(reference_ranks, challenger_ranks)]
+    hits5 = [(1 if 1 <= r <= 5 else 0, 1 if 1 <= c <= 5 else 0)
+             for r, c in zip(reference_ranks, challenger_ranks)]
+    return {
+        "n": len(hits1),
+        "delta_recall@1": bootstrap(hits1, lambda s: sum(c for _, c in s) / len(s)
+                                    - sum(r for r, _ in s) / len(s)),
+        "delta_recall@5": bootstrap(hits5, lambda s: sum(c for _, c in s) / len(s)
+                                    - sum(r for r, _ in s) / len(s)),
+    }
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument("--print", dest="show", action="store_true")
+    parser.add_argument("--out", default=str(ARTIFACT))
+    args = parser.parse_args(argv)
+
+    if args.show:
+        report(json.loads(Path(args.out).read_text(encoding="utf-8")))
+        return 0
+
+    data = json.loads(FROZEN.read_text(encoding="utf-8"))
+    results = {}
+    for label, path in MODELS:
+        print(f"-- {label}", flush=True)
+        results[label] = evaluate(label, path, data)
+
+    mat, v1 = results["nevertwice-embed-matryoshka"], results["nevertwice-embed"]
+    comparisons = {"K1_full_vs_shipped": {}, "K2_truncated_vs_own_full": {},
+                   "K3_shipped_truncated_vs_own_full": {}}
+    for axis in ("retrieval_title", "retrieval_situation"):
+        comparisons["K1_full_vs_shipped"][axis] = _paired(
+            v1["widths"]["1024"]["ranks"][axis], mat["widths"]["1024"]["ranks"][axis])
+        for width in ("512", "256"):
+            comparisons["K2_truncated_vs_own_full"].setdefault(width, {})[axis] = _paired(
+                mat["widths"]["1024"]["ranks"][axis], mat["widths"][width]["ranks"][axis])
+            comparisons["K3_shipped_truncated_vs_own_full"].setdefault(width, {})[axis] = _paired(
+                v1["widths"]["1024"]["ranks"][axis], v1["widths"][width]["ranks"][axis])
+
+    payload = {
+        "generated_by": "research/embed_universal/truncation_eval.py",
+        "thresholds": "research/EMBED_M4_THRESHOLD.md",
+        "benchmark": "research/embed_universal/heldout/external_heldout_v1.json",
+        "benchmark_sha256": json.loads(
+            (HERE / "heldout" / "MANIFEST.json").read_text(encoding="utf-8"))["sha256"],
+        "bootstrap": {"resamples": BOOTSTRAP, "seed": SEED, "method": "percentile"},
+        "widths": WIDTHS, "bytes_per_dim": BYTES_PER_DIM,
+        "truncation": "prefix then renormalise - what an index would do",
+        "models": {label: {"label": r["label"], "encode_seconds": r["encode_seconds"],
+                           "widths": {w: {k: v for k, v in b.items() if k != "ranks"}
+                                      for w, b in r["widths"].items()}}
+                   for label, r in results.items()},
+        "comparisons": comparisons,
+        "ranks": {label: {w: b["ranks"] for w, b in r["widths"].items()}
+                  for label, r in results.items()},
+    }
+    Path(args.out).write_bytes(
+        (json.dumps(payload, indent=1, ensure_ascii=False, sort_keys=True) + "\n").encode("utf-8"))
+    report(payload)
+    return 0
+
+
+def report(payload: dict) -> None:
+    print(f"\nbenchmark {payload['benchmark_sha256'][:12]}...  truncation: {payload['truncation']}")
+    for label, block in payload["models"].items():
+        print(f"\n-- {label}  (encode {block['encode_seconds']}s)")
+        for width in ("1024", "512", "256"):
+            b = block["widths"][width]
+            print(f"   {width:>4}d  index {b['index_bytes'] // 1024:5d} KiB   "
+                  f"situation r@5 {_fmt(b['retrieval_situation']['recall@5'])}   "
+                  f"title r@1 {_fmt(b['retrieval_title']['recall@1'])}   "
+                  f"twin auc {_fmt(b['twin']['auc'])}")
+    print("\n-- K1: the Matryoshka full vector against shipped v1 (the guard)")
+    for axis, b in payload["comparisons"]["K1_full_vs_shipped"].items():
+        print(f"   {axis:20s} d(r@1) {_fmt(b['delta_recall@1'])}   d(r@5) {_fmt(b['delta_recall@5'])}")
+    for key, title in (("K2_truncated_vs_own_full", "K2: truncated against its own full vector"),
+                       ("K3_shipped_truncated_vs_own_full", "K3: v1 truncated naively (baseline)")):
+        print(f"\n-- {title}")
+        for width, axes in payload["comparisons"][key].items():
+            for axis, b in axes.items():
+                print(f"   {width:>4}d {axis:20s} d(r@1) {_fmt(b['delta_recall@1'])}   "
+                      f"d(r@5) {_fmt(b['delta_recall@5'])}")
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
