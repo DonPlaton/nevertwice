@@ -161,6 +161,127 @@ class ContractDiff(unittest.TestCase):
         self.assertEqual(added, {"f"})
 
 
+class LargeFiles(unittest.TestCase):
+    """D7. A pre-commit checker that stalls for minutes is not a pre-commit checker.
+
+    `changed_lines` runs `difflib.SequenceMatcher` over the whole file. That is
+    quadratic in practice: a 200,000-line changed file takes **over two minutes**,
+    and the spec's own budget is a 2.00 s hard ceiling. It stayed invisible until a
+    6 MB research artifact landed in the working tree and the live check stopped
+    returning.
+
+    Above the cap the diff is not computed at all -- every line is reported as
+    changed, which is conservative for the size statistic and costs nothing for
+    contract analysis, because a file that large is never a Python module whose
+    signature anyone reads.
+    """
+
+    def test_a_huge_file_does_not_take_forever(self):
+        import time
+        old = (chr(10)).join(f"line {i}" for i in range(120_000))
+        new = old.replace("line 5", "line five", 1)
+        t0 = time.time()
+        lines = br.changed_lines(old, new)
+        elapsed = time.time() - t0
+        self.assertLess(elapsed, 2.0, f"took {elapsed:.1f}s")
+        self.assertTrue(lines)
+
+    def test_a_huge_file_reports_every_line_as_changed(self):
+        old = (chr(10)).join(str(i) for i in range(br.MAX_DIFF_LINES + 10))
+        new = old + chr(10) + "extra"
+        self.assertEqual(len(br.changed_lines(old, new)), len(new.splitlines()))
+
+    def test_a_repetitive_file_is_not_diffed_precisely(self):
+        """The real trigger is repetition, not length: a pretty-printed JSON is
+        thousands of copies of the literal line `  },`."""
+        import time
+        old = (chr(10)).join("  }," if i % 3 else '  "k": 1,' for i in range(8_000))
+        new = old.replace('  "k": 1,', '  "k": 2,', 1)
+        t0 = time.time()
+        lines = br.changed_lines(old, new)
+        self.assertLess(time.time() - t0, 1.0)
+        self.assertEqual(len(lines), len(new.splitlines()))
+
+    def test_a_long_but_distinct_file_is_still_diffed_precisely(self):
+        """Source code is long and varied; it must not be approximated."""
+        old = (chr(10)).join(f"x{i} = {i}" for i in range(8_000))
+        new = old.replace("x4000 = 4000", "x4000 = 9999", 1)
+        self.assertEqual(br.changed_lines(old, new), {4001})
+
+    def test_a_normal_file_is_still_diffed_precisely(self):
+        old = "a" + chr(10) + "b" + chr(10) + "c" + chr(10)
+        new = "a" + chr(10) + "B" + chr(10) + "c" + chr(10)
+        self.assertEqual(br.changed_lines(old, new), {2})
+
+    def test_the_cap_is_high_enough_for_real_source(self):
+        """No Python file in this repository comes close to the cap."""
+        biggest = max(
+            len(p.read_text(encoding="utf-8", errors="replace").splitlines())
+            for p in (ROOT / "nevertwice").rglob("*.py")
+        )
+        self.assertLess(biggest * 4, br.MAX_DIFF_LINES)
+        source = (ROOT / "nevertwice" / "memory_hook.py").read_text(
+            encoding="utf-8", errors="replace").splitlines()
+        self.assertFalse(br._too_costly(source, source),
+                         "the longest module in this repository must still be diffed")
+
+
+class UnreadableFiles(unittest.TestCase):
+    """D6. A file the checker cannot parse is a file it has nothing to say about.
+
+    `extract_symbols` returns an empty map on a `SyntaxError`, so when the *after*
+    side fails to parse, every symbol the *before* side defined looks removed. One
+    flask commit that reintroduced a Python-2 `print` statement produced **30
+    findings** this way, all of them for symbols still defined three lines below.
+
+    Found by the silence pool: the checker fired on 29% of commits where a contract
+    changed and nothing in the repository called it, and this was a large share of
+    the reason. 5.43% of the corpus cannot be parsed by Python 3.14, so on a corpus
+    that reaches back to 2005 this is not an edge case.
+    """
+
+    PY2 = "def f(a): pass" + chr(10) + "print 'oops'" + chr(10)
+
+    def _changes(self, before: str, after: str):
+        changes, _, _ = br.contract_changes(before, after, "lib.py")
+        return sorted((c.qualname, c.reason) for c in changes)
+
+    def test_an_unparseable_after_reports_nothing(self):
+        self.assertEqual(self._changes("def f(a): pass" + chr(10), self.PY2), [])
+
+    def test_an_unparseable_before_reports_nothing(self):
+        self.assertEqual(self._changes(self.PY2, "def f(a): pass" + chr(10)), [])
+
+    def test_both_sides_unparseable_reports_nothing(self):
+        self.assertEqual(self._changes(self.PY2, self.PY2), [])
+
+    def test_an_unparseable_after_does_not_chase_references(self):
+        before = {"lib.py": "def f(a): pass" + chr(10) + "def g(a): pass" + chr(10)}
+        after = {"lib.py": self.PY2}
+        scan = dict(after)
+        scan["app.py"] = "from lib import f, g" + chr(10) + "f(1)" + chr(10) + "g(1)" + chr(10)
+        v = br.check_sources(before, after, scan=scan)
+        self.assertEqual(v.contract_changes, [])
+        self.assertEqual(v.unhandled, {})
+
+    def test_the_checker_says_it_could_not_read_the_file(self):
+        """Silence that nobody can see is indistinguishable from a clean bill."""
+        before = {"lib.py": "def f(a): pass" + chr(10)}
+        after = {"lib.py": self.PY2}
+        v = br.check_sources(before, after, scan=after)
+        self.assertTrue(any("could not be parsed" in n for n in v.notes), v.notes)
+
+    def test_a_parseable_pair_is_unaffected(self):
+        self.assertEqual(
+            self._changes("def f(a): pass" + chr(10), "def f(a, b): pass" + chr(10)),
+            [("f", "signature")])
+
+    def test_a_real_removal_between_parseable_files_still_fires(self):
+        self.assertEqual(
+            self._changes("def f(a): pass" + chr(10), "def other(a): pass" + chr(10)),
+            [("f", "removed")])
+
+
 class ForeignReceivers(unittest.TestCase):
     """D4b. A defect the old census never saw, because 150 commits of one repository
     had no name collisions worth the name.

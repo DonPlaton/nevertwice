@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import random
 import sys
 import time
 from pathlib import Path
@@ -45,6 +46,8 @@ ARTIFACT = Path(__file__).with_name("corpus_census.json")
 WINDOW = 10 ** 9        # the entire history; see POWER.md on why enlargement is not tuning
 MAX_PY_FILES = 40      # a commit touching more is a bulk rewrite, not a contract change
 MIN_PY_FILES = 2       # a same-commit caller update needs at least two files
+SILENCE_KEEP = 250     # per repository; 2000 total clears the 308 gate D5-P4 needs
+SILENCE_SEED = 20260827
 
 
 def _skip(path: str) -> bool:
@@ -72,6 +75,8 @@ def census_repo(repo: Path, window: int = WINDOW) -> dict:
     n_sig = 0
     n_eligible = 0
     eligible: list[dict] = []
+    silent: list[dict] = []          # contract changed, no in-repo caller updated
+    rng = random.Random(SILENCE_SEED)
     sigscan.PARSE_FAILURES.clear()
     sigscan.PARSE_ATTEMPTS[0] = 0
 
@@ -122,6 +127,28 @@ def census_repo(repo: Path, window: int = WINDOW) -> dict:
                 }
                 hits.append({"path": p, "symbols": sorted(touched)})
 
+            if not hits:
+                # The silence pool, gate D5-P4: a contract changed and nothing in
+                # the repository called it. Reservoir-sampled so the pool is a fair
+                # draw from the whole history rather than its most recent slice.
+                record = {
+                    "sha": c.sha, "parent": c.parent, "date": c.author_date,
+                    "subject": c.subject, "n_py": len(paths),
+                    "deltas": [
+                        {"qualname": d.qualname, "path": d.path, "kind": d.kind,
+                         "before": d.before, "after": d.after}
+                        for d in deltas
+                    ],
+                    "caller_updates": [],
+                }
+                if len(silent) < SILENCE_KEEP:
+                    silent.append(record)
+                else:
+                    j = rng.randrange(n_sig)
+                    if j < SILENCE_KEEP:
+                        silent[j] = record
+                continue
+
             if hits:
                 n_eligible += 1
                 eligible.append(
@@ -160,6 +187,8 @@ def census_repo(repo: Path, window: int = WINDOW) -> dict:
         "parse_attempts": sigscan.PARSE_ATTEMPTS[0],
         "seconds": round(time.time() - started, 1),
         "eligible": eligible,
+        "silent_kept": len(silent),
+        "silent": silent,
     }
 
 
@@ -207,6 +236,7 @@ def main(argv: list[str] | None = None) -> int:
         "max_py_files": MAX_PY_FILES,
         "repos": out,
         "totals": {
+            "silent_kept": sum(r["silent_kept"] for r in out),
             "candidates": sum(r["candidates"] for r in out),
             "signature_change_commits": sum(r["signature_change_commits"] for r in out),
             "eligible_commits": sum(r["eligible_commits"] for r in out),

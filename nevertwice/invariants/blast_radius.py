@@ -526,6 +526,23 @@ class _Collector(ast.NodeVisitor):
         self.symbols[q] = Symbol(q, "constant", node.lineno, "", _body_hash([node]))
 
 
+def parses(source: str) -> bool:
+    """Can this project's own parser read the file at all?
+
+    `extract_symbols` returns an empty map on a `SyntaxError`, which is safe on its
+    own and catastrophic in a diff: an empty *after* makes every symbol the *before*
+    defined look removed. One flask commit that reintroduced a Python-2 `print`
+    statement produced 30 findings that way, for symbols still defined three lines
+    below. 5.43% of the corpus cannot be parsed by this interpreter, so on a history
+    that reaches back to 2005 this is not an edge case.
+    """
+    try:
+        ast.parse(source)
+        return True
+    except (SyntaxError, ValueError, RecursionError):
+        return False
+
+
 def extract_symbols(source: str) -> dict[str, Symbol]:
     """Parse *source* into a qualname -> Symbol map. Never raises."""
     try:
@@ -557,10 +574,45 @@ class ContractChange:
     after: str
 
 
+#: A hard ceiling on the file length the precise diff is attempted for. Chosen well
+#: above any source file anyone reads a signature from -- the longest module in this
+#: repository is 6,333 lines -- so real code is never approximated.
+MAX_DIFF_LINES = 50_000
+
+#: `difflib.SequenceMatcher(autojunk=False)` is quadratic in the multiplicity of
+#: repeated lines, not in file length. Distinct source diffs 40,000 lines in 0.04 s;
+#: a pretty-printed JSON with the same length takes minutes, because thousands of
+#: lines are the literal string `  },`. Length alone is therefore the wrong guard.
+MAX_LINE_REPETITION = 2.0
+REPETITION_FLOOR = 2_000
+
+
+def _too_costly(a: list[str], b: list[str]) -> bool:
+    """Would the precise diff cost more than the answer is worth?
+
+    Two conditions, because two different files are expensive for two different
+    reasons: sheer length, and repetition. A checker that runs before every commit
+    against a 2.00 s promise cannot spend minutes on a data file, and the diff of a
+    data file is not what anyone asked it for.
+    """
+    if max(len(a), len(b)) > MAX_DIFF_LINES:
+        return True
+    total = len(a) + len(b)
+    if total < 2 * REPETITION_FLOOR:
+        return False
+    distinct = max(len(set(a)) + len(set(b)), 1)
+    return total / distinct > MAX_LINE_REPETITION
+
+
 def changed_lines(old: str, new: str) -> set[int]:
     """1-based line numbers in *new* that differ from *old*."""
     a = old.splitlines()
     b = new.splitlines()
+    if _too_costly(a, b):
+        # Conservative: the whole file counts as changed. That can only make the size
+        # statistic larger and never invents a contract change, because a contract
+        # change needs two parses, not a diff.
+        return set(range(1, len(b) + 1))
     out: set[int] = set()
     matcher = difflib.SequenceMatcher(None, a, b, autojunk=False)
     for tag, _i1, _i2, j1, j2 in matcher.get_opcodes():
@@ -586,6 +638,12 @@ def contract_changes(
     old_src: str, new_src: str, path: str
 ) -> tuple[list[ContractChange], set[str], set[str]]:
     """Return (contract changes, added qualnames, body-only-changed qualnames)."""
+    # A file the checker cannot read is a file it has nothing to say about. Deciding
+    # that a symbol was removed on the strength of an empty parse is not a finding,
+    # it is the absence of evidence wearing a finding's clothes.
+    if not parses(old_src) or not parses(new_src):
+        return [], set(), set()
+
     old = extract_symbols(old_src)
     new = extract_symbols(new_src)
 
@@ -1334,6 +1392,13 @@ def check_sources(
         changed_ranges[path] = lines
         total_lines += len(old_src.splitlines()) if path in deleted else len(lines)
         if not path.endswith(".py"):
+            continue
+        if not parses(old_src) or not parses(new_src):
+            # Say so. Silence nobody can see is indistinguishable from a clean bill.
+            verdict.notes.append(
+                f"note: {path} could not be parsed by this interpreter, so its "
+                f"contract was not compared"
+            )
             continue
         changes, _added, _body = contract_changes(old_src, new_src, path)
         all_changes.extend(c for c in changes if not _ignored(c.qualname, ignore))

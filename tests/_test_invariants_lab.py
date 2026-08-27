@@ -161,6 +161,26 @@ def test_a_symbol_that_comes_back_as_an_import_is_not_removed() -> None:
               "from x import m\nclass C: pass\n", "m.py")] == ["C.m"])
 
 
+def test_the_key_says_nothing_about_a_file_it_cannot_parse() -> None:
+    """D6, in the answer key. `scan_defs` returns {} on a SyntaxError, so an
+    unparseable NEW side would make every old symbol look removed -- an answer key
+    assembled out of the absence of evidence. 5.43% of the corpus is Python 2."""
+    print(chr(10) + "- an unreadable file yields no deltas, in either direction -")
+    py2 = "def f(a): pass" + chr(10) + "print 'oops'" + chr(10)
+    ok = "def f(a): pass" + chr(10)
+    check("an unparseable new side yields nothing",
+          S.signature_deltas(ok, py2, "m.py") == [])
+    check("an unparseable old side yields nothing",
+          S.signature_deltas(py2, ok, "m.py") == [])
+    check("both unparseable yields nothing",
+          S.signature_deltas(py2, py2, "m.py") == [])
+    check("and a parseable pair is unaffected",
+          [d.qualname for d in S.signature_deltas(ok, "def other(a): pass" + chr(10),
+                                                  "m.py")] == ["f"])
+    check("parses() agrees with the interpreter",
+          S.parses(ok) and not S.parses(py2))
+
+
 def test_nested_functions_are_not_public_symbols() -> None:
     print("\n- scope: a nested def is invisible to any caller -")
     defs = S.scan_defs("def outer():\n    def inner(a): pass\n    return inner\n")
@@ -224,6 +244,7 @@ def main() -> int:
                test_the_key_abstains_where_it_cannot_know,
                test_the_extractor_sees_tuple_unpacking,
                test_a_symbol_that_comes_back_as_an_import_is_not_removed,
+               test_the_key_says_nothing_about_a_file_it_cannot_parse,
                test_nested_functions_are_not_public_symbols,
                test_module_suffix_matching_is_not_a_substring_test,
                test_the_arity_rule_strips_self_only_for_methods,

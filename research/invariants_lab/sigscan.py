@@ -287,12 +287,29 @@ def import_bindings(source: str) -> set[str]:
     return out
 
 
+def parses(source: str) -> bool:
+    try:
+        ast.parse(source)
+        return True
+    except (SyntaxError, ValueError, RecursionError):
+        return False
+
+
 def signature_deltas(old_src: str, new_src: str, path: str) -> list[SigDelta]:
     """Parameter-list changes and disappearances, ignoring annotations and bodies.
 
     Annotations are excluded *by construction* rather than filtered afterwards:
     the key must not depend on a rule the checker is also being asked to learn.
+
+    A side this interpreter cannot parse yields **nothing**. `scan_defs` returns an
+    empty map on a `SyntaxError`, and an empty *new* side would make every symbol the
+    *old* side defined look removed -- an answer key built out of the absence of
+    evidence. 5.43% of this corpus is Python 2, so the case is common, and the
+    checker had the identical hole (D6).
     """
+    if not parses(old_src) or not parses(new_src):
+        return []
+
     old = scan_defs(old_src)
     new = scan_defs(new_src)
     reimported = import_bindings(new_src)
