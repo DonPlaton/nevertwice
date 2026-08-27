@@ -501,6 +501,10 @@
       "governance": "backlog",
       "budget": 125,
       "note": "the first evaluation of the shipped embedding on material outside the owner's vault. Its three load-bearing results are registered as claims and checked against research/embed_universal/heldout/baseline_v1.json by tests/_test_heldout_baseline.py; the full table is the backlog. Every per-query rank and per-pair score is in the artifact, so any cell can be recomputed rather than trusted."
+    },
+    "research/EMBED_M2_THRESHOLD.md": {
+      "governance": "exempt",
+      "reason": "the success threshold and deletion decision for hard-negative mining, declared before any negative was mined and before anything was retrained, per hard rule 2.6. Its numbers are prospective decision rules - a paired interval that must exclude zero, a bound on collateral regression, and the effect size this benchmark can resolve - not measurements to reproduce. The retrospective figures it cites as motivation are claims already registered from M1."
     }
   },
   "claims": [
