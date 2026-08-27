@@ -161,6 +161,117 @@ class ContractDiff(unittest.TestCase):
         self.assertEqual(added, {"f"})
 
 
+class WidenedSignatures(unittest.TestCase):
+    """D1. A signature that still accepts every call the old one accepted cannot
+    break a caller, and that is decidable.
+
+    33% of the findings in `research/BLAST_RADIUS_PRECISION.md` were this class --
+    the single largest -- and the write-up called it "the easiest to remove". It was
+    quantified and left in the code, which is the defect this class exists to close.
+    """
+
+    def _changes(self, before: str, after: str):
+        changes, _, _ = br.contract_changes(before, after, "lib.py")
+        return [(c.qualname, c.reason) for c in changes]
+
+    def test_a_defaulted_parameter_appearing_is_not_a_contract_change(self):
+        self.assertEqual(
+            self._changes("def f(a): pass\n", "def f(a, b=2): pass\n"), [])
+
+    def test_several_defaulted_parameters_appearing_is_not_a_contract_change(self):
+        self.assertEqual(
+            self._changes("def f(a): pass\n",
+                          "def f(a, b=2, c=3, d=None): pass\n"), [])
+
+    def test_a_keyword_only_parameter_with_a_default_is_not_a_contract_change(self):
+        self.assertEqual(
+            self._changes("def f(a): pass\n", "def f(a, *, mode='x'): pass\n"), [])
+
+    def test_gaining_star_args_is_not_a_contract_change(self):
+        self.assertEqual(
+            self._changes("def f(a): pass\n", "def f(a, *rest): pass\n"), [])
+
+    def test_gaining_star_kwargs_is_not_a_contract_change(self):
+        self.assertEqual(
+            self._changes("def f(a): pass\n", "def f(a, **kw): pass\n"), [])
+
+    def test_a_default_appearing_on_an_existing_parameter_is_not_a_change(self):
+        self.assertEqual(
+            self._changes("def f(a, b): pass\n", "def f(a, b=2): pass\n"), [])
+
+    # --- and the narrowings, which must still be reported -----------------
+
+    def test_a_new_required_parameter_is_still_a_contract_change(self):
+        self.assertEqual(
+            self._changes("def f(a): pass\n", "def f(a, b): pass\n"),
+            [("f", "signature")])
+
+    def test_a_parameter_disappearing_is_still_a_contract_change(self):
+        self.assertEqual(
+            self._changes("def f(a, b): pass\n", "def f(a): pass\n"),
+            [("f", "signature")])
+
+    def test_a_required_keyword_only_parameter_is_still_a_contract_change(self):
+        self.assertEqual(
+            self._changes("def f(a): pass\n", "def f(a, *, mode): pass\n"),
+            [("f", "signature")])
+
+    def test_losing_a_default_is_still_a_contract_change(self):
+        self.assertEqual(
+            self._changes("def f(a, b=2): pass\n", "def f(a, b): pass\n"),
+            [("f", "signature")])
+
+    def test_renaming_a_parameter_is_still_a_contract_change(self):
+        """A caller passing it by keyword breaks, so this is not a widening."""
+        self.assertEqual(
+            self._changes("def f(a, b=2): pass\n", "def f(a, c=2): pass\n"),
+            [("f", "signature")])
+
+    def test_reordering_parameters_is_still_a_contract_change(self):
+        self.assertEqual(
+            self._changes("def f(a, b): pass\n", "def f(b, a): pass\n"),
+            [("f", "signature")])
+
+    def test_a_positional_becoming_keyword_only_is_still_a_contract_change(self):
+        self.assertEqual(
+            self._changes("def f(a, b=2): pass\n", "def f(a, *, b=2): pass\n"),
+            [("f", "signature")])
+
+    def test_a_parameter_becoming_positional_only_is_still_a_contract_change(self):
+        self.assertEqual(
+            self._changes("def f(a, b): pass\n", "def f(a, b, /): pass\n"),
+            [("f", "signature")])
+
+    def test_a_decorator_appearing_is_still_a_contract_change(self):
+        """A decorator can change what the call returns, so it is not a widening."""
+        self.assertEqual(
+            self._changes("def f(a): pass\n",
+                          "@lru_cache\ndef f(a): pass\n"),
+            [("f", "signature")])
+
+    def test_a_widened_method_is_not_a_contract_change(self):
+        self.assertEqual(
+            self._changes("class C:\n    def m(self, a): pass\n",
+                          "class C:\n    def m(self, a, b=2): pass\n"), [])
+
+    def test_a_widening_with_a_new_body_is_an_implementation_change(self):
+        """It is still a change -- just not one a caller can observe."""
+        changes, _, body = br.contract_changes(
+            "def f(a):\n    return 1\n", "def f(a, b=2):\n    return 2\n", "lib.py")
+        self.assertEqual(changes, [])
+        self.assertIn("f", body)
+
+    def test_a_widening_does_not_chase_references(self):
+        """The end-to-end consequence: no contract change, so no stale callers."""
+        before = {"lib.py": "def f(a): pass\n",
+                  "app.py": "from lib import f\nf(1)\nf(2)\nf(3)\n"}
+        after = {"lib.py": "def f(a, b=2): pass\n",
+                 "app.py": "from lib import f\nf(1)\nf(2)\nf(3)\n"}
+        v = br.check_sources(before, after, scan=after)
+        self.assertEqual(v.contract_changes, [])
+        self.assertEqual(v.unhandled, {})
+
+
 class UnderReach(unittest.TestCase):
     """The half everyone hits: the contract moved, the callers did not."""
 

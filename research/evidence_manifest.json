@@ -275,7 +275,12 @@
       "governance": "exempt",
       "reason": "fixture note in the sample store"
     },
-    "research/invariants_lab/CORPUS.md": {
+    "research/invariants_lab/DEFECTS.md": {
+   "governance": "backlog",
+   "budget": 14,
+   "note": "Phase D of the invariants lab: the five false-positive classes the previous census quantified and left in the code, with the state of each. Its shares are quoted from research/blast_radius_precision.json, the artifact of the run being replaced; its regressions live in tests/_test_blast_radius.py and run in CI. D5 is blocked while any row is open, so this page is a gate rather than a claim."
+  },
+  "research/invariants_lab/CORPUS.md": {
    "governance": "backlog",
    "budget": 129,
    "note": "Task C1 of the invariants lab: the corpus of eight public repositories, its selection rationale committed before any clone, and the census that shows a non-zero base rate. Its numbers are counts of a corpus that lives outside git at D:/Coding/_nevertwice_polygon/corpus and are reproducible from research/invariants_lab/corpus_census.py against the SHAs in corpus_manifest.json; nothing here is a claim about the product. Registering them as claims waits for Phase T, when the lab results are either promoted or published as negatives."

@@ -228,9 +228,11 @@ is written down.
 
 **T3 runs on a local Ollama model** — the stand already has an `--ollama=` backend and published
 `4b` and `7b` results — so it costs nothing and needs no gate. A frontier-model confirmation is
-**G8** and stays the owner's to run. T3 is also the axis on which every competitor scores zero by
-construction, Nevertwice as it ships today included, so the *comparison* is against
-**Nevertwice-with-an-empty-store**, not against a vendor.
+**G8** and stays the owner's to run. T3 is the axis on which a retrieve-and-inject system
+scores zero by construction on a repository with no history -- Nevertwice as it ships today
+included -- so the *comparison* is against **Nevertwice-with-an-empty-store**, which is the one
+arm this project can actually run. Any claim about a named vendor would need that vendor run on
+the same stand, and none has been.
 
 ---
 

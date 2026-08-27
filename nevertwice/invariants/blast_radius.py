@@ -230,6 +230,32 @@ def _disabled() -> bool:
 
 
 @dataclass(frozen=True)
+class Shape:
+    """A callable's parameter list, without annotations or defaults' values.
+
+    The rendered ``signature`` is what a human reads; this is what a caller can
+    actually observe. Two signatures whose *text* differs can accept exactly the
+    same calls -- a widening -- and comparing the text cannot tell the difference.
+    That confusion was 33% of the findings in the precision census.
+    """
+
+    params: tuple[tuple[str, str, bool], ...]  # (name, kind, has_default)
+    decorators: tuple[str, ...]
+
+    def positional(self) -> list[tuple[str, str, bool]]:
+        return [p for p in self.params if p[1] in ("posonly", "pos")]
+
+    def kwonly(self) -> dict[str, bool]:
+        return {p[0]: p[2] for p in self.params if p[1] == "kwonly"}
+
+    def has(self, kind: str) -> bool:
+        return any(p[1] == kind for p in self.params)
+
+    def keyword_names(self) -> set[str]:
+        return {p[0] for p in self.params if p[1] in ("pos", "kwonly")}
+
+
+@dataclass(frozen=True)
 class Symbol:
     """One named, externally-visible thing in a module."""
 
@@ -238,10 +264,69 @@ class Symbol:
     lineno: int
     signature: str  # the contract: what callers are allowed to rely on
     body_hash: str  # normalised implementation, for "body changed" only
+    shape: Shape | None = None  # callables only; None for classes and constants
 
     @property
     def short(self) -> str:
         return self.qualname.rsplit(".", 1)[-1]
+
+
+def accepts_everything(old: Shape, new: Shape) -> bool:
+    """Does *new* accept every call *old* accepted?
+
+    A widening. The conditions are each one way a caller can be written, and each
+    is a way this can be false:
+
+    * a positional argument the old signature took must still be takeable at that
+      index, under the same name unless the old one was positional-only -- so a
+      rename, a reorder, or a promotion to keyword-only all break callers;
+    * a parameter the old signature defaulted must still default, or a caller that
+      omitted it now fails;
+    * an added parameter must default, or a caller that never knew about it fails;
+    * every keyword the old accepted must still be accepted, by name or by
+      ``**kwargs``;
+    * ``*args`` and ``**kwargs`` cannot disappear;
+    * and the decorator list must be identical, because a decorator can change what
+      the call returns without touching a single parameter.
+    """
+    if old.decorators != new.decorators:
+        return False
+
+    o, n = old.positional(), new.positional()
+    for i, (name, kind, defaulted) in enumerate(o):
+        if i >= len(n):
+            if not new.has("vararg"):
+                return False
+            if kind != "posonly" and not new.has("kwarg"):
+                return False   # a keyword caller of this name has nowhere to go
+            continue
+        nname, nkind, ndefault = n[i]
+        if kind != "posonly":
+            if nname != name or nkind == "posonly":
+                return False   # renamed, reordered, or keyword access withdrawn
+        if defaulted and not ndefault:
+            return False       # a caller that omitted it now fails
+    for name, kind, defaulted in n[len(o):]:
+        if not defaulted:
+            return False       # a new required positional
+    if old.has("vararg") and not new.has("vararg"):
+        return False
+    if old.has("kwarg") and not new.has("kwarg"):
+        return False
+
+    okw, nkw = old.kwonly(), new.kwonly()
+    for name, defaulted in okw.items():
+        if name in nkw:
+            if defaulted and not nkw[name]:
+                return False
+        elif name in new.keyword_names():
+            pass               # became an ordinary parameter: still keyword-callable
+        elif not new.has("kwarg"):
+            return False
+    for name, defaulted in nkw.items():
+        if not defaulted and name not in okw:
+            return False       # a new required keyword-only parameter
+    return True
 
 
 def _unparse(node: ast.AST | None, limit: int = 80) -> str:
@@ -262,6 +347,24 @@ def _arg_repr(arg: ast.arg, default: object = _MISSING) -> str:
     if default is not _MISSING:
         out += "=" + _unparse(default, 30)  # type: ignore[arg-type]
     return out
+
+
+def _func_shape(node: ast.FunctionDef | ast.AsyncFunctionDef) -> Shape:
+    a = node.args
+    params: list[tuple[str, str, bool]] = []
+    positional = list(a.posonlyargs) + list(a.args)
+    pad = len(positional) - len(a.defaults)
+    for i, arg in enumerate(positional):
+        params.append(
+            (arg.arg, "posonly" if i < len(a.posonlyargs) else "pos", i >= pad)
+        )
+    if a.vararg is not None:
+        params.append((a.vararg.arg, "vararg", True))
+    for arg, default in zip(a.kwonlyargs, a.kw_defaults):
+        params.append((arg.arg, "kwonly", default is not None))
+    if a.kwarg is not None:
+        params.append((a.kwarg.arg, "kwarg", True))
+    return Shape(tuple(params), tuple(_unparse(d, 40) for d in node.decorator_list))
 
 
 def _func_signature(node: ast.FunctionDef | ast.AsyncFunctionDef) -> str:
@@ -323,9 +426,10 @@ class _Collector(ast.NodeVisitor):
     def _q(self, name: str) -> str:
         return ".".join(self.stack + [name])
 
-    def _record(self, node, name: str, kind: str, signature: str, body: list) -> None:
+    def _record(self, node, name: str, kind: str, signature: str, body: list,
+                shape: "Shape | None" = None) -> None:
         q = self._q(name)
-        self.symbols[q] = Symbol(q, kind, node.lineno, signature, _body_hash(body))
+        self.symbols[q] = Symbol(q, kind, node.lineno, signature, _body_hash(body), shape)
 
     def visit_ClassDef(self, node: ast.ClassDef) -> None:
         self._record(node, node.name, "class", _class_signature(node), node.body)
@@ -335,7 +439,8 @@ class _Collector(ast.NodeVisitor):
         self.stack.pop()
 
     def _function(self, node, kind: str) -> None:
-        self._record(node, node.name, kind, _func_signature(node), node.body)
+        self._record(node, node.name, kind, _func_signature(node), node.body,
+                     _func_shape(node))
         self.stack.append(node.name)
         for child in node.body:
             self.visit(child)
@@ -430,6 +535,16 @@ def contract_changes(
                 ContractChange(qualname, path, sym.lineno, "kind", prev.kind, sym.kind)
             )
         elif prev.signature != sym.signature:
+            # The text differs; that is not the same as a caller being able to tell.
+            if (
+                prev.shape is not None
+                and sym.shape is not None
+                and accepts_everything(prev.shape, sym.shape)
+            ):
+                # Callers cannot observe it, so it is an implementation change.
+                if prev.body_hash != sym.body_hash:
+                    body_only.add(qualname)
+                continue
             changes.append(
                 ContractChange(
                     qualname, path, sym.lineno, "signature", prev.signature, sym.signature
