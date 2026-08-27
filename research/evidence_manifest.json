@@ -465,6 +465,10 @@
     "research/PREREGISTRATION.md": {
       "governance": "exempt",
       "reason": "a preregistration states hypotheses, endpoints and decision rules BEFORE the confirmatory run. Its numbers are prospective thresholds and power targets, not measurements to reproduce, and every retrospective figure it refers to is cited by artifact rather than reprinted."
+    },
+    "research/BLAST_RADIUS_THRESHOLDS.md": {
+      "governance": "exempt",
+      "reason": "thresholds for the blast-radius calibration, declared before the run per hard rule 2.6. Its numbers are prospective decision rules - a flag-rate ceiling, a percentile rule for the budgets, a cost ceiling quoted from the integration spec - not measurements to reproduce. The retrospective figures it cites as motivation are the twelve-commit spot check recorded in .loop/STATE.md, which is untracked working record rather than published evidence; every number this run produces is published in research/BLAST_RADIUS_CALIBRATION.md, which is governed."
     }
   },
   "claims": [
