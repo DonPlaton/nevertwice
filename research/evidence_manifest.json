@@ -290,6 +290,10 @@
    "budget": 195,
    "note": "Task C3 of the invariants lab: what effect sizes the corpus can resolve, computed before any mechanism is measured. Exact binomial for one proportion and simulated exact McNemar for the paired detector-vs-baseline comparison; reproducible from research/invariants_lab/power.py against mutants.json and corpus_census.json. Every number is a minimum detectable effect at a fixed n, never observed power. Nothing here is a claim about the product."
   },
+  "research/invariants_lab/PREREGISTRATION.md": {
+   "governance": "exempt",
+   "reason": "Task C4 of the invariants lab: the thresholds, baselines and deletion decisions for all six mechanisms, declared before any of them is measured. Its numbers are PROSPECTIVE -- floors, ceilings, required sample sizes and the n each gate will be evaluated at -- not measurements to reproduce, which is the same governance the earlier BLAST_RADIUS_DECISION.md carries for the same reason. The measurements land in the per-mechanism documents of Phase D onward."
+  },
   "research/README.md": {
       "governance": "exempt",
       "reason": "index of the studies; the numbers it quotes are verdict summaries of the study pages it links"
