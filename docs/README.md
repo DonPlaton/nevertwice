@@ -53,6 +53,7 @@ click from here, and `tests/_test_docs_map.py` fails the build if that stops bei
 | [`research/BLAST_RADIUS_CALIBRATION.md`](../research/BLAST_RADIUS_CALIBRATION.md) | What 150 commits of real history said about it: the flag rate fell from 69.3% to 6.7% without losing a single dependency finding |
 | [`research/BLAST_RADIUS_DECISION.md`](../research/BLAST_RADIUS_DECISION.md) | Whether the checker is worth keeping at all: the precision floor, the `git grep` baseline it has to beat, and the decision to delete it if it does not |
 | [`research/BLAST_RADIUS_PRECISION.md`](../research/BLAST_RADIUS_PRECISION.md) | The answer, and it is no: 0 of 24 findings are real, with a taxonomy of what each false positive actually was |
+| [`research/EMBED_HELDOUT_BASELINE.md`](../research/EMBED_HELDOUT_BASELINE.md) | The shipped embedding measured on material outside the owner's vault, where its advantage over stock bge-m3 does not survive a paired test |
 | [`research/evidence_manifest.json`](../research/evidence_manifest.json) | Every published number, with its dataset, sample size, model, command, raw file and caveat |
 | [`research/data/README.md`](../research/data/README.md) | Fetching the LongMemEval dataset the benchmarks need |
 

@@ -115,6 +115,18 @@ ARTIFACTS = [
      "note": "measures THIS machine. The same minimum-of-five statistic moved by about a "
              "third between sessions on one box, so byte-identity is not the test - the "
              "order of magnitude is."},
+    {"file": "research/embed_universal/heldout/baseline_v1.json",
+     "command": ["python", "research/embed_universal/heldout_eval.py"],
+     "kind": HARDWARE, "task": "M1",
+     "inputs": ["research/embed_universal/heldout/external_heldout_v1.json",
+                "a CUDA GPU", "torch", "sentence_transformers",
+                "BAAI/bge-m3", "BAAI/bge-reranker-v2-m3",
+                "research/embed_universal/models/universal_v1_merged"],
+     "note": "the embedding baseline on the frozen external set. Deterministic in principle - "
+             "the numbers are model outputs, not machine measurements - but it needs ~5 GB of "
+             "weights and a GPU, so a bare clone cannot run it. The BENCHMARK it ran against is "
+             "committed and hash-checked, which is the half a stranger can verify without the "
+             "hardware: research/embed_universal/heldout_set.py --verify."},
     {"file": "research/capability_grid.json",
      "command": ["python", "research/capability_grid.py", "--all"],
      "kind": HARDWARE, "task": "F3",

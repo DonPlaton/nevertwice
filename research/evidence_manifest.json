@@ -145,6 +145,9 @@
       "reader": null,
       "network": "localhost only",
       "note": "An Ollama server running locally with bge-m3 pulled. The demo takes the semantic path here and reports a different ratio than the same command does without one."
+    },
+    "rtx5090_bge_fp16": {
+      "note": "RTX 5090 (32 GB), torch 2.11+cu128, sentence-transformers, fp16. Three models: BAAI/bge-m3, the merged nevertwice-embed LoRA, BAAI/bge-reranker-v2-m3. The numbers are model outputs rather than machine measurements, so they are reproducible anywhere the same weights and the frozen benchmark are - the GPU is why it takes 90 seconds instead of an hour, not why the answer is what it is."
     }
   },
   "documents": {
@@ -493,6 +496,11 @@
       "governance": "backlog",
       "budget": 30,
       "note": "the negative result that closed the blast-radius track. Its headline - 0 of 24 findings true, precision 0.000 - is registered as a claim and checked against research/blast_radius_precision.json; the taxonomy of why each finding is false is the backlog. The labeller that produced the labels has its own controls in tests/_test_blast_radius_labeller.py, because a null result whose instrument was never shown capable of a positive is unfalsifiable."
+    },
+    "research/EMBED_HELDOUT_BASELINE.md": {
+      "governance": "backlog",
+      "budget": 125,
+      "note": "the first evaluation of the shipped embedding on material outside the owner's vault. Its three load-bearing results are registered as claims and checked against research/embed_universal/heldout/baseline_v1.json by tests/_test_heldout_baseline.py; the full table is the backlog. Every per-query rank and per-pair score is in the artifact, so any cell can be recomputed rather than trusted."
     }
   },
   "claims": [
@@ -6525,6 +6533,95 @@
       "produced_by": [
         "research/blast_radius_precision.py",
         "research/blast_radius_calibration.py"
+      ]
+    },
+    {
+      "id": "embed.heldout.situation.recall_at_1",
+      "statement": "on external held-out situation queries the shipped nevertwice-embed reaches recall@1 0.579, against stock bge-m3's 0.551",
+      "value": 0.5787,
+      "printed": [
+        "0.579",
+        "0.551"
+      ],
+      "unit": "recall@1",
+      "dataset": "external_heldout_v1",
+      "environment": "rtx5090_bge_fp16",
+      "n": 216,
+      "command": "python research/embed_universal/heldout_eval.py",
+      "raw": "research/embed_universal/heldout/baseline_v1.json",
+      "pointer": "models.nevertwice-embed.retrieval_situation.recall@1.value",
+      "ci": {
+        "method": "bootstrap-percentile",
+        "level": 0.95,
+        "low": 0.5093,
+        "high": 0.6435
+      },
+      "cited_in": [],
+      "commit": "PENDING",
+      "ci_note": "percentile bootstrap, 2000 resamples, seed 20260827, over queries",
+      "caveat": "The marginal intervals overlap; the paired difference is the claim that matters and it contains zero. See embed.heldout.situation.delta_recall_at_1.",
+      "produced_by": [
+        "research/embed_universal/heldout_eval.py"
+      ]
+    },
+    {
+      "id": "embed.heldout.situation.delta_recall_at_1",
+      "statement": "paired on the same queries, nevertwice-embed gains recall@1 0.028 over stock bge-m3 with a 95% interval of [-0.005, 0.065] - the improvement cannot be resolved from noise",
+      "value": 0.0278,
+      "printed": [
+        "0.028",
+        "0.005",
+        "0.065"
+      ],
+      "unit": "delta recall@1",
+      "dataset": "external_heldout_v1",
+      "environment": "rtx5090_bge_fp16",
+      "n": 216,
+      "command": "python research/embed_universal/heldout_eval.py",
+      "raw": "research/embed_universal/heldout/baseline_v1.json",
+      "pointer": "paired_vs_stock.nevertwice-embed.retrieval_situation.delta_recall@1.value",
+      "ci": {
+        "method": "bootstrap-percentile",
+        "level": 0.95,
+        "low": -0.0046,
+        "high": 0.0648
+      },
+      "cited_in": [],
+      "commit": "PENDING",
+      "ci_note": "percentile bootstrap, 2000 resamples, seed 20260827, over queries, on the per-query difference so the pairing is kept",
+      "caveat": "McNemar's discordant counts are 10 won / 4 lost, exact two-sided p = .18. This does NOT say the fine-tune is worthless - it says the evidence for it was never external, and the external evidence is silent. The shipped 0.220 -> 0.475 headline was measured on the owner's private vault and remains unreproducible by anyone else.",
+      "produced_by": [
+        "research/embed_universal/heldout_eval.py"
+      ]
+    },
+    {
+      "id": "embed.heldout.situation.reranker_delta_recall_at_5",
+      "statement": "the bge-reranker-v2-m3 cross-encoder gains recall@5 0.106 over stock on situation queries, 95% interval [0.056, 0.162] - the only interval in the study excluding zero",
+      "value": 0.1065,
+      "printed": [
+        "0.106",
+        "0.056",
+        "0.162"
+      ],
+      "unit": "delta recall@5",
+      "dataset": "external_heldout_v1",
+      "environment": "rtx5090_bge_fp16",
+      "n": 216,
+      "command": "python research/embed_universal/heldout_eval.py",
+      "raw": "research/embed_universal/heldout/baseline_v1.json",
+      "pointer": "paired_vs_stock.bge-reranker-v2-m3.retrieval_situation.delta_recall@5.value",
+      "ci": {
+        "method": "bootstrap-percentile",
+        "level": 0.95,
+        "low": 0.0556,
+        "high": 0.162
+      },
+      "cited_in": [],
+      "commit": "PENDING",
+      "ci_note": "percentile bootstrap, 2000 resamples, seed 20260827, over queries, on the per-query difference",
+      "caveat": "It reranks the stock retriever's top 50, so it is capped by that retriever's recall@50 of 0.968. At recall@1 it gains nothing (-0.014 [-0.074, 0.042]) and it is worse on the title axis: it knows which five documents matter, not which one.",
+      "produced_by": [
+        "research/embed_universal/heldout_eval.py"
       ]
     }
   ],
