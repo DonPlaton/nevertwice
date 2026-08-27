@@ -640,6 +640,33 @@ class Reexport:
     target: str          # the name to look for inside that module
 
 
+def _module_level(tree: ast.Module) -> list[ast.stmt]:
+    """Statements that run at import time, including inside `if` and `try`.
+
+    Reading only `tree.body` misses the optional-dependency idiom that is
+    everywhere in real code:
+
+        try:
+            from fast import helper
+        except ImportError:
+            from slow import helper
+
+    The census already found this exact defect once, in `_module_aliases`, where
+    `import numpy as np` inside a `try` was missed and four `np.where(...)` calls
+    looked like calls into this project. It was fixed there and left here.
+    """
+    out: list[ast.stmt] = []
+    stack: list[ast.stmt] = list(tree.body)
+    while stack:
+        node = stack.pop(0)
+        out.append(node)
+        if isinstance(node, (ast.If, ast.Try)):
+            stack = list(node.body) + list(getattr(node, "orelse", [])) +                 list(getattr(node, "finalbody", [])) + [
+                    s for h in getattr(node, "handlers", []) for s in h.body
+                ] + stack
+    return out
+
+
 def _module_aliases(tree: ast.Module) -> dict[str, str]:
     """Module-level names that stand for a module, and the dotted module they stand for.
 
@@ -654,7 +681,7 @@ def _module_aliases(tree: ast.Module) -> dict[str, str]:
     file to *look in*, and a lookup that finds nothing degrades to a note rather than a verdict.
     """
     aliases: dict[str, str] = {}
-    for node in tree.body:
+    for node in _module_level(tree):
         if isinstance(node, ast.Import):
             for alias in node.names:
                 aliases[alias.asname or alias.name.split(".")[0]] = alias.name
@@ -682,7 +709,7 @@ def find_reexports(source: str) -> dict[str, Reexport]:
         return {}
     aliases = _module_aliases(tree)
     out: dict[str, Reexport] = {}
-    for node in tree.body:
+    for node in _module_level(tree):
         if isinstance(node, ast.ImportFrom):
             hint = (node.module or "").lstrip(".")
             for alias in node.names:
@@ -727,10 +754,26 @@ def _module_source(hint: str, corpus: dict[str, str], root: Path | None) -> str 
     return None
 
 
-def _signature_of(source: str, name: str) -> tuple[str, str] | None:
-    """(kind, signature) of the top-level *name* in *source*, or None when it is not there."""
-    symbol = extract_symbols(source).get(name)
-    return (symbol.kind, symbol.signature) if symbol else None
+def _symbol_of(source: str, name: str) -> Symbol | None:
+    """The top-level *name* defined in *source*, or None when it is not there."""
+    return extract_symbols(source).get(name)
+
+
+def _same_contract_across_a_move(previous: Symbol, target: Symbol) -> bool:
+    """Is the definition at the far end of a facade the same contract as before?
+
+    Comparing rendered signatures fails the moment the facade renames -- and
+    renaming is the normal case:
+
+        from sphinx.addnodes import math_reference as eqref  # to keep compatibility
+
+    `math_reference(node)` is not the string `eqref(node)`, so a text comparison
+    calls a pure move a signature change. Comparing the *shape* asks the question
+    callers actually care about: does every call that worked before still bind?
+    """
+    if previous.shape is not None and target.shape is not None:
+        return _compatible(previous.shape, target.shape)
+    return bool(previous.signature) and previous.signature == target.signature
 
 
 def resolve_facades(
@@ -775,7 +818,7 @@ def resolve_facades(
         if facade.module_hint:
             module_source = _module_source(facade.module_hint, corpus, root)
             if module_source is not None:
-                target = _signature_of(module_source, facade.target)
+                target = _symbol_of(module_source, facade.target)
 
         # The old signature comes from the before-source, not from the change: a `kind` change
         # carries kinds ("function" -> "constant"), and comparing a signature against the word
@@ -785,21 +828,21 @@ def resolve_facades(
         previous = was[change.path].get(change.qualname)
         old_signature = previous.signature if previous else ""
 
-        if target is None or not target[1] or not old_signature:
+        if target is None or not target.signature or not old_signature:
             notes.append(
                 f"note: {change.qualname} is re-exported from {facade.via}; callers still "
                 f"resolve it, but the definition it points at cannot be checked from here"
             )
             continue
-        if target[1] == old_signature:
+        if previous is not None and _same_contract_across_a_move(previous, target):
             notes.append(
-                f"note: {change.qualname} moved to {facade.via} with an unchanged signature - "
+                f"note: {change.qualname} moved to {facade.via} with an unchanged contract - "
                 f"a compatibility facade, callers unaffected"
             )
             continue
         kept.append(
             ContractChange(change.qualname, change.path, change.lineno, "signature",
-                           old_signature, target[1])
+                           old_signature, target.signature)
         )
     return kept, notes
 
@@ -829,13 +872,46 @@ RELEVANT_KINDS = {
 }
 
 
+def _bound_here(tree: ast.Module) -> set[str]:
+    """Module-level names this file binds to a class or a module.
+
+    Used only to answer "is this receiver something else?". A name the file does
+    not bind -- a parameter, a local, an attribute chain -- is deliberately absent,
+    because an unknown receiver has to stay a candidate or the rule trades a false
+    positive for a recall hole.
+    """
+    out: set[str] = set()
+    stack: list[ast.stmt] = list(tree.body)
+    while stack:
+        node = stack.pop(0)
+        if isinstance(node, ast.ClassDef):
+            out.add(node.name)
+        elif isinstance(node, ast.Import):
+            for alias in node.names:
+                out.add(alias.asname or alias.name.split(".")[0])
+        elif isinstance(node, ast.ImportFrom):
+            for alias in node.names:
+                if alias.name != "*":
+                    out.add(alias.asname or alias.name)
+        elif isinstance(node, (ast.If, ast.Try)):
+            stack = list(node.body) + list(getattr(node, "orelse", [])) +                 list(getattr(node, "finalbody", [])) + [
+                    s for h in getattr(node, "handlers", []) for s in h.body
+                ] + stack
+    return out
+
+
 class _RefFinder(ast.NodeVisitor):
-    def __init__(self, names: set[str], path: str, skip_lines: set[int]) -> None:
+    def __init__(self, names: set[str], path: str, skip_lines: set[int],
+                 owners: dict[str, set[str]] | None = None,
+                 bound: set[str] | None = None) -> None:
         self.names = names
         self.path = path
         self.skip_lines = skip_lines
         self.call_funcs: set[int] = set()
         self.refs: list[Ref] = []
+        # short member name -> the classes that own it among the changed contracts
+        self.owners = owners or {}
+        self.bound = bound or set()
 
     def _hit(self, name: str, node: ast.AST, kind: str | None = None) -> None:
         if name not in self.names:
@@ -855,8 +931,32 @@ class _RefFinder(ast.NodeVisitor):
         self._hit(node.id, node)
 
     def visit_Attribute(self, node: ast.Attribute) -> None:
-        self._hit(node.attr, node)
+        if not self._foreign_receiver(node):
+            self._hit(node.attr, node)
         self.generic_visit(node)
+
+    def _foreign_receiver(self, node: ast.Attribute) -> bool:
+        """Is `X.member` a member of something other than the class that changed?
+
+        `EmailBackend.send_now` changing does not make `MIMEText.send_now(...)` a
+        stale caller -- it is a different symbol that happens to share a short name.
+        Over 1,118 corpus commits this one shape was **1,092 of 1,299** false
+        high-confidence findings, and 150 commits of a single repository contained
+        no collisions big enough to notice it.
+
+        Only a receiver the file *binds* to a class or a module counts as foreign.
+        `backend.send_now(1)` on a parameter stays a candidate: it is not knowable
+        statically, and discarding it would buy precision with recall.
+        """
+        owners = self.owners.get(node.attr)
+        if not owners:
+            return False
+        base = node.value
+        if not isinstance(base, ast.Name):
+            return False
+        if base.id in ("self", "cls"):
+            return False
+        return base.id in self.bound and base.id not in owners
 
     def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
         for alias in node.names:
@@ -877,13 +977,15 @@ def _definition_lines(tree: ast.AST, names: set[str]) -> set[int]:
     return out
 
 
-def _refs_in_python(source: str, names: set[str], path: str) -> list[Ref]:
+def _refs_in_python(source: str, names: set[str], path: str,
+                    owners: dict[str, set[str]] | None = None) -> list[Ref]:
     try:
         tree = ast.parse(source)
     except (SyntaxError, ValueError, RecursionError):
         # Unparseable (wrong language, partial edit) -- fall back, low confidence.
         return _refs_in_text(source, names, path)
-    finder = _RefFinder(names, path, _definition_lines(tree, names))
+    finder = _RefFinder(names, path, _definition_lines(tree, names),
+                        owners, _bound_here(tree) if owners else None)
     try:
         finder.visit(tree)
     except RecursionError:  # pragma: no cover
@@ -999,8 +1101,13 @@ def find_references(
     names: set[str],
     extra_extensions: set[str] | None = None,
     sources: dict[str, str] | None = None,
+    owners: dict[str, set[str]] | None = None,
 ) -> list[Ref]:
-    """All references to *names* under *root* (or in *sources*, for tests)."""
+    """All references to *names* under *root* (or in *sources*, for tests).
+
+    *owners* maps a short member name to the classes that own it among the changed
+    contracts, so an attribute call on a demonstrably different class can be dropped.
+    """
     if not names:
         return []
     extra = extra_extensions or set()
@@ -1012,7 +1119,7 @@ def find_references(
             if not gate(text):
                 continue
             if rel.endswith(".py"):
-                refs.extend(_refs_in_python(text, names, rel))
+                refs.extend(_refs_in_python(text, names, rel, owners))
             elif Path(rel).suffix in extra:
                 refs.extend(_refs_in_text(text, names, rel))
         return refs
@@ -1023,7 +1130,7 @@ def find_references(
             continue  # cheap regex gate: parsing is ~100x the cost of this
         rel = path.relative_to(root).as_posix()
         if path.suffix == ".py":
-            refs.extend(_refs_in_python(text, names, rel))
+            refs.extend(_refs_in_python(text, names, rel, owners))
         else:
             refs.extend(_refs_in_text(text, names, rel))
         if len(refs) >= MAX_TOTAL_REFS:
@@ -1257,18 +1364,27 @@ def check_sources(
     # --- references to every changed contract ---------------------------
     short_by_qual = {c.qualname: c.qualname.rsplit(".", 1)[-1] for c in all_changes}
     names = set(short_by_qual.values())
+    # Only members of a class have an owner; a module-level function has none, and
+    # an empty owner set means the receiver rule does not apply to that name.
+    owners: dict[str, set[str]] = {}
+    for c in all_changes:
+        if "." in c.qualname:
+            head, _, member = c.qualname.rpartition(".")
+            owners.setdefault(member, set()).add(head.rsplit(".", 1)[-1])
     refs: list[Ref] = []
     if names:
         if scan is not None:
             corpus = dict(scan)
             corpus.update(after)  # the post-edit state always wins
-            refs = find_references(Path("."), names, extra_extensions, sources=corpus)
+            refs = find_references(Path("."), names, extra_extensions, sources=corpus,
+                                   owners=owners)
         elif root is not None:
             # On disk, a changed file already holds its "after" content, so
             # line numbers line up with the ranges computed above.
-            refs = find_references(root, names, extra_extensions)
+            refs = find_references(root, names, extra_extensions, owners=owners)
         else:
-            refs = find_references(Path("."), names, extra_extensions, sources=dict(after))
+            refs = find_references(Path("."), names, extra_extensions,
+                                   sources=dict(after), owners=owners)
 
     per_name: dict[str, list[Ref]] = {}
     for ref in refs:

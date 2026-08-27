@@ -161,6 +161,169 @@ class ContractDiff(unittest.TestCase):
         self.assertEqual(added, {"f"})
 
 
+class ForeignReceivers(unittest.TestCase):
+    """D4b. A defect the old census never saw, because 150 commits of one repository
+    had no name collisions worth the name.
+
+    `research/invariants_lab/facade_shapes.py` ran the checker over 1,118 corpus
+    commits and found that **1,092 of 1,299** false high-confidence findings were
+    one shape: a method contract change matched against an attribute call on a
+    *different* class. `EmailBackend.__init__` changed, and every
+    `MIMEText.__init__(...)` in the file was reported as a stale caller.
+
+    The rule: an attribute call whose receiver is a name this file binds to some
+    other class or module is a reference to that other thing. A receiver the file
+    does not bind -- a parameter, a local, an attribute chain -- stays a candidate,
+    because dropping those would trade this false positive for a recall hole.
+    """
+
+    def _unhandled(self, before: dict, after: dict, scan: dict | None = None):
+        v = br.check_sources(before, after, scan=scan if scan is not None else after)
+        return {q: [(r.path, r.lineno) for r in refs]
+                for q, refs in v.unhandled.items()}
+
+    OWNER_BEFORE = "class EmailBackend:\n    def send_now(self, a): pass\n"
+    OWNER_AFTER = "class EmailBackend:\n    def send_now(self, a, b): pass\n"
+
+    def test_an_attribute_call_on_a_different_imported_class_is_not_a_reference(self):
+        scan = {"app.py": "from email import MIMEText\nMIMEText.send_now(1)\n"}
+        after = {"lib.py": self.OWNER_AFTER}
+        scan.update(after)
+        self.assertEqual(self._unhandled({"lib.py": self.OWNER_BEFORE}, after, scan), {})
+
+    def test_an_attribute_call_on_a_different_local_class_is_not_a_reference(self):
+        scan = {"app.py": "class Other:\n    pass\nOther.send_now(1)\n"}
+        after = {"lib.py": self.OWNER_AFTER}
+        scan.update(after)
+        self.assertEqual(self._unhandled({"lib.py": self.OWNER_BEFORE}, after, scan), {})
+
+    def test_an_attribute_call_on_a_different_imported_module_is_not_a_reference(self):
+        scan = {"app.py": "import other_mod\nother_mod.send_now(1)\n"}
+        after = {"lib.py": self.OWNER_AFTER}
+        scan.update(after)
+        self.assertEqual(self._unhandled({"lib.py": self.OWNER_BEFORE}, after, scan), {})
+
+    # --- and the references that must survive ------------------------------
+
+    def test_an_attribute_call_on_the_owner_itself_is_still_a_reference(self):
+        scan = {"app.py": "from lib import EmailBackend\nEmailBackend.send_now(1)\n"}
+        after = {"lib.py": self.OWNER_AFTER}
+        scan.update(after)
+        self.assertEqual(list(self._unhandled({"lib.py": self.OWNER_BEFORE}, after, scan)),
+                         ["EmailBackend.send_now"])
+
+    def test_an_attribute_call_on_an_unbound_receiver_is_still_a_reference(self):
+        """`backend.send_now(1)` -- a local or a parameter. Not statically knowable,
+        and dropping it would trade a false positive for a recall hole."""
+        scan = {"app.py": "def run(backend):\n    backend.send_now(1)\n"}
+        after = {"lib.py": self.OWNER_AFTER}
+        scan.update(after)
+        self.assertEqual(list(self._unhandled({"lib.py": self.OWNER_BEFORE}, after, scan)),
+                         ["EmailBackend.send_now"])
+
+    def test_a_self_call_is_still_a_reference(self):
+        scan = {"app.py": "class Sub(EmailBackend):\n    def go(self):\n        self.send_now(1)\n"}
+        after = {"lib.py": self.OWNER_AFTER}
+        scan.update(after)
+        self.assertEqual(list(self._unhandled({"lib.py": self.OWNER_BEFORE}, after, scan)),
+                         ["EmailBackend.send_now"])
+
+    def test_a_module_level_function_is_not_filtered_by_receiver(self):
+        """The rule applies to methods only; a module function has no owner class."""
+        scan = {"app.py": "import other_mod\nother_mod.helper(1)\n"}
+        after = {"lib.py": "def helper(a, b): pass\n"}
+        scan.update(after)
+        self.assertEqual(list(self._unhandled({"lib.py": "def helper(a): pass\n"},
+                                              after, scan)),
+                         ["helper"])
+
+
+class RemainingFacadeShapes(unittest.TestCase):
+    """D4. The 25% the census could not explain, and the shapes I2 did not solve.
+
+    `research/BLAST_RADIUS_PRECISION.md` names two by hand and says there is "no
+    reason to believe the list ends", so `research/invariants_lab/facade_shapes.py`
+    reads the shapes off the corpus instead of off this repository's habits. The
+    named two are pinned here, plus the corpus idioms the enumeration surfaced.
+    """
+
+    def _problems(self, before: dict, after: dict, scan: dict | None = None):
+        v = br.check_sources(before, after, scan=scan if scan is not None else after)
+        return sorted(v.unhandled), [c.qualname for c in v.contract_changes]
+
+    def test_a_symbol_reached_as_a_module_attribute_is_not_stale(self):
+        """The first named shape: `_st.est_tokens(...)` where `_st` imports it back."""
+        before = {"facade.py": "def est_tokens(text): pass\n"}
+        after = {"facade.py": "from real import est_tokens\n"}
+        scan = dict(after)
+        scan["real.py"] = "def est_tokens(text): pass\n"
+        scan["app.py"] = "import facade as _st\n_st.est_tokens('x')\n"
+        unhandled, changes = self._problems(before, after, scan)
+        self.assertEqual(changes, [])
+        self.assertEqual(unhandled, [])
+
+    def test_an_import_reaching_past_the_module_the_symbol_left_is_not_stale(self):
+        """The second: the caller imports from the facade, the symbol lives elsewhere."""
+        before = {"facade.py": "def helper(a): pass\n"}
+        after = {"facade.py": "from real import helper\n"}
+        scan = dict(after)
+        scan["real.py"] = "def helper(a): pass\n"
+        scan["app.py"] = "from facade import helper\nhelper(1)\n"
+        unhandled, changes = self._problems(before, after, scan)
+        self.assertEqual(changes, [])
+        self.assertEqual(unhandled, [])
+
+    def test_a_relative_import_facade_is_not_a_removal(self):
+        """The corpus idiom: `from ._real import helper` inside a package."""
+        before = {"pkg/facade.py": "def helper(a): pass\n"}
+        after = {"pkg/facade.py": "from ._real import helper\n"}
+        scan = dict(after)
+        scan["pkg/_real.py"] = "def helper(a): pass\n"
+        unhandled, changes = self._problems(before, after, scan)
+        self.assertEqual(changes, [])
+        self.assertEqual(unhandled, [])
+
+    def test_an_aliased_import_facade_is_not_a_removal(self):
+        """`from x import math_reference as eqref  # to keep compatibility` -- real
+        sphinx code, and the shape that fooled this project's own answer key."""
+        before = {"m.py": "def eqref(node): pass\n"}
+        after = {"m.py": "from nodes import math_reference as eqref\n"}
+        scan = dict(after)
+        scan["nodes.py"] = "def math_reference(node): pass\n"
+        unhandled, changes = self._problems(before, after, scan)
+        self.assertEqual(changes, [])
+        self.assertEqual(unhandled, [])
+
+    def test_a_facade_guarded_by_try_except_is_not_a_removal(self):
+        """Optional-dependency idiom, everywhere in the corpus."""
+        before = {"m.py": "def helper(a): pass\n"}
+        after = {"m.py": "try:\n    from fast import helper\nexcept ImportError:\n    from slow import helper\n"}
+        scan = dict(after)
+        scan["fast.py"] = "def helper(a): pass\n"
+        scan["slow.py"] = "def helper(a): pass\n"
+        unhandled, changes = self._problems(before, after, scan)
+        self.assertEqual(changes, [])
+        self.assertEqual(unhandled, [])
+
+    def test_a_symbol_that_really_left_with_no_facade_is_still_a_removal(self):
+        before = {"m.py": "def helper(a): pass\n"}
+        after = {"m.py": "def other(a): pass\n"}
+        scan = dict(after)
+        scan["app.py"] = "from m import helper\nhelper(1)\n"
+        unhandled, changes = self._problems(before, after, scan)
+        self.assertEqual(changes, ["helper"])
+        self.assertEqual(unhandled, ["helper"])
+
+    def test_a_facade_whose_target_changed_signature_is_still_a_change(self):
+        """Following the pointer is the point: the move is safe, the rewrite is not."""
+        before = {"m.py": "def helper(a): pass\n"}
+        after = {"m.py": "from real import helper\n"}
+        scan = dict(after)
+        scan["real.py"] = "def helper(a, b): pass\n"
+        _unhandled, changes = self._problems(before, after, scan)
+        self.assertEqual(changes, ["helper"])
+
+
 class AnnotationsAndClassMembers(unittest.TestCase):
     """D3. Two shapes of one mistake: the text of the contract changed and its
     runtime meaning did not.

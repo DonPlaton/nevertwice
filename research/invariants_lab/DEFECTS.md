@@ -7,6 +7,9 @@ number those defects produced as a verdict on the idea.
 
 This page is that list, with its state. **D5 is blocked while any row is open.**
 
+**The list is empty.** Six rows, five inherited from the census and one the corpus produced that
+150 commits of a single repository could never have shown. D5 is unblocked.
+
 ```bash
 python tests/_test_blast_radius.py     # every row below has its regression here
 ```
@@ -24,7 +27,8 @@ before its fix existed.
 | 2 | **rebound by tuple unpacking** — `A, B, C = load()` deletes three symbols as far as the extractor knows | 5 of 24 (21%) | D2 | **closed** |
 | 3 | **annotation-only** — types added, runtime identical | 4 of 24 (17%) | D3 | **closed** |
 | 4 | **class gained a member** — a member list growing is what a compatible change looks like | 1 of 24 (4%) | D3 | **closed** |
-| 5 | **moved and still resolves** — the facade shapes I2 did not solve | 6 of 24 (25%) | D4 | open |
+| 5 | **moved and still resolves** — the facade shapes I2 did not solve | 6 of 24 (25%) | D4 | **closed** |
+| 6 | **foreign receiver** — a method contract change matched against an attribute call on a *different* class | not in the old census | D4b | **closed** |
 
 Shares are from `research/blast_radius_precision.json`, the artifact of the run being replaced.
 
@@ -106,17 +110,61 @@ base list is not free the way adding a method is. Four of the fourteen regressio
 that — a changed base, a gained base, a gained decorator, and a lost public method must all still
 fire.
 
-## 4 · The remaining facade shapes — open, D4
+## 4 · The remaining facade shapes — closed by D4
 
-I2 solved one shape, `write_atomic = _store_state.write_atomic`, which is this repository's own
-idiom. The census names two it does not solve: a module attribute (`_st.est_tokens(...)`) where
-the module imports the name back, and an import that reaches past the module the symbol left.
+The census names two shapes I2 does not solve and adds that there is *"no reason to believe the
+list ends"*. Guessing the third from this repository's habits is how the list stayed short the
+first time, so `facade_shapes.py` reads the shapes off **1,118 corpus commits** instead.
 
-The census write-up says there is *"no reason to believe the list ends"*, so D4 enumerates the
-shapes **from the corpus** rather than from this repository's habits — eight repositories with
-between 270 and 3,638 contributors are a better source of idioms than one author.
+**Both named shapes already passed** the moment their regressions were written — I2's
+`from X import name` branch covers them. Two others did not, and both are corpus idioms:
 
-There is already a warning from Phase C worth carrying: the **answer key had this same blind
-spot** and CPython's binder found it — a definition that left a module and returned as
-`from x import y as name`. If the shape can hide in a 200-line instrument written to avoid it, it
-can hide in the checker.
+| shape | why it failed |
+|---|---|
+| `from nodes import math_reference as eqref` | the facade **renames**. `resolve_facades` compared the target's *rendered signature text* against the old one, and `math_reference(node)` is not the string `eqref(node)`, so a pure move read as a signature change. It now compares **shapes** — does every call that worked before still bind — which is the question callers actually ask. This is D1's mistake in a second place |
+| `try: from fast import helper / except ImportError: from slow import helper` | `find_reexports` walked `tree.body` only, so the optional-dependency idiom was invisible. `_module_level` now descends into `if` and `try`. **The census already found this exact defect once**, in `_module_aliases`, fixed it there, and left it here |
+
+**7 regressions**, in `RemainingFacadeShapes`. Two were watched failing; five hold the line —
+including that a symbol which really left with no facade is still a removal, and that a facade
+whose target *changed signature* is still a change, because following the pointer is the point.
+
+**The enumeration then found nothing left.** Over 1,118 commits the checker reported
+**5,565 removals** and **0 of them are false** — no symbol reported
+removed still resolves in its own module.
+
+## 4b · Foreign receivers — a class the old census could not have seen
+
+The removal side was clean; the **reference** side was not. The same enumeration asks a second
+question: of the references the checker reports as unhandled, how many are calls that bind
+perfectly well? At the time it was first run, **1,092 of 1,299** decidable false findings were one
+shape:
+
+```
+EmailBackend.__init__ changed  ->  MIMEText.__init__(self, _text, ...)   reported as stale
+```
+
+A method contract change matched against an attribute call on a **different class**, purely on the
+shared short name. 150 commits of one disciplined repository contained no collision large enough
+to notice; eight repositories with between 270 and 3,638 contributors contain thousands.
+
+**The fix** is narrow on purpose. An attribute call `X.member(...)` is dropped only when `X` is a
+name **this file binds** to a class or a module and is not the owner of the changed member. A
+receiver the file does not bind — a parameter, a local, an attribute chain, `self`, `cls` — stays
+a candidate, because discarding those would buy precision with recall. **7 regressions**, three
+watched failing, four holding the other direction.
+
+## 5 · What is left is the design, not a defect — and it is declared before D5 runs
+
+After all six rows, **67%** of the checker's decidable high-confidence findings are still calls that
+bind: `self.get_connection(fail_silently)` where `get_connection` grew a parameter that this
+caller does not pass.
+
+That is not a bug. The mechanism is specified as *"who depends on the changed contract"* — a
+**dependency** reporter. `PREREGISTRATION.md` defines a TRUE finding as *"a call that cannot bind
+or an import that cannot resolve"* — a **breakage**. The gap between those two questions is the
+mechanism's honest precision, and closing it by teaching the checker to decide bindability would
+give it the answer key's own rule, making the precision gate measure agreement with itself.
+
+So the primary measurement runs the mechanism **as specified**, and the compatibility filter is
+declared as a labelled **exploratory secondary arm** in `PREREGISTRATION.md` §9 — before D5 runs,
+with the circularity stated, rather than discovered as a convenient improvement afterwards.

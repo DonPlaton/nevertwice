@@ -1,0 +1,86 @@
+{
+ "generated": "2026-08-28T01:12:46",
+ "commits_checked": 1118,
+ "removals_reported": 5565,
+ "false_removals": 0,
+ "shapes": {},
+ "examples": {},
+ "references_reported": 16852,
+ "references_high_confidence": 13108,
+ "references_decidable": 1568,
+ "references_false": 1052,
+ "reference_shapes": {
+  "call/attribute": 868,
+  "call/name": 184
+ },
+ "reference_examples": {
+  "call/name": [
+   {
+    "repo": "django_django",
+    "sha": "fc793fc30",
+    "path": "django/core/mail/__init__.py",
+    "lineno": 98,
+    "symbol": "get_connection",
+    "line": "connection = connection or get_connection("
+   },
+   {
+    "repo": "django_django",
+    "sha": "fc793fc30",
+    "path": "django/core/mail/__init__.py",
+    "lineno": 141,
+    "symbol": "get_connection",
+    "line": "connection = connection or get_connection("
+   },
+   {
+    "repo": "django_django",
+    "sha": "fc793fc30",
+    "path": "django/core/mail/message.py",
+    "lineno": 276,
+    "symbol": "get_connection",
+    "line": "self.connection = get_connection(fail_silently=fail_silently)"
+   },
+   {
+    "repo": "django_django",
+    "sha": "90ba716bf",
+    "path": "tests/runtests.py",
+    "lineno": 659,
+    "symbol": "django_tests",
+    "line": "failures = django_tests("
+   }
+  ],
+  "call/attribute": [
+   {
+    "repo": "django_django",
+    "sha": "fc793fc30",
+    "path": "django/core/mail/message.py",
+    "lineno": 320,
+    "symbol": "get_connection",
+    "line": "return self.get_connection(fail_silently).send_messages([self])"
+   },
+   {
+    "repo": "django_django",
+    "sha": "fc793fc30",
+    "path": "django/core/mail/message.py",
+    "lineno": 502,
+    "symbol": "EmailMessage.__init__",
+    "line": "super().__init__("
+   },
+   {
+    "repo": "django_django",
+    "sha": "fc793fc30",
+    "path": "django/core/mail/message.py",
+    "lineno": 502,
+    "symbol": "EmailMultiAlternatives.__init__",
+    "line": "super().__init__("
+   },
+   {
+    "repo": "django_django",
+    "sha": "808155750",
+    "path": "tests/modeladmin/tests.py",
+    "lineno": 126,
+    "symbol": "BaseModelAdmin.lookup_allowed",
+    "line": "ma.lookup_allowed(\"name__nonexistent\", \"test_value\", request),"
+   }
+  ]
+ }
+}

@@ -242,6 +242,6 @@ None yet. Every later entry carries the date, what changed, why, who decided, an
 effect on the result. A deviation is a thing that is written down, not a thing that is avoided by
 not noticing it.
 
-| date | section | change | reason |
-|---|---|---|---|
-| — | — | — | — |
+| date | section | change | reason | decided by | expected effect |
+|---|---|---|---|---|---|
+| 2026-08-28 | §3 | **Added one exploratory, non-gating secondary arm to D5**: the same checker with a per-call-site compatibility filter, reported beside the primary result and never used for a gate | D4's corpus enumeration showed that after every defect is closed, ~67% of the checker's decidable high-confidence findings are calls that still bind. The mechanism is specified as a *dependency* reporter and the gate asks about *breakage*, so the gap is the mechanism's honest precision — but a reader is entitled to know what closing it would buy | the loop, before D5 ran | raises the reported precision of the secondary arm only. **The filter shares its rule with the answer key**, so its precision is agreement with itself, not evidence, and it is labelled that way wherever it appears. The gates are unchanged |
