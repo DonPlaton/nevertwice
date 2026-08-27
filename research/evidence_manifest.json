@@ -510,6 +510,10 @@
       "governance": "backlog",
       "budget": 49,
       "note": "the negative result that closed M2. The gate it failed and the one improvement it did produce are registered as claims and checked against research/embed_universal/heldout/hard_v1.json by tests/_test_hard_negatives.py; the mining statistics and the taxonomy of why are the backlog. The mined checkpoint was deleted per the decision written before the run; every measurement it produced is kept."
+    },
+    "research/EMBED_M3_THRESHOLD.md": {
+      "governance": "exempt",
+      "reason": "the success threshold and deletion decision for cross-encoder distillation, declared before any teacher score was collected and before anything was retrained, per hard rule 2.6. Its numbers are prospective decision rules and the effect size the benchmark can resolve, not measurements. The retrospective figures it cites are claims already registered from M1."
     }
   },
   "claims": [
