@@ -446,6 +446,185 @@ def contract_changes(
 
 
 # --------------------------------------------------------------------------
+# compatibility facades
+# --------------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class Reexport:
+    """A module-level name that forwards to a definition living somewhere else."""
+
+    name: str            # the name callers still import from this module
+    via: str             # how it is written, for the note: "_store_state.write_atomic"
+    module_hint: str | None   # dotted hint at the module it came from, if one is visible
+    target: str          # the name to look for inside that module
+
+
+def _module_aliases(tree: ast.Module) -> dict[str, str]:
+    """Module-level names that stand for a module, and the dotted module they stand for.
+
+    Three shapes, because a facade is only as findable as the alias in front of it:
+
+      import pkg.mod as m              -> m   -> pkg.mod
+      m = importlib.import_module("x") -> m   -> x
+      m = _sibling("store_state")      -> m   -> store_state
+
+    The third is a guess and is deliberately shallow: any call with exactly one string argument
+    is treated as naming a module. It costs nothing when wrong - the hint only ever picks which
+    file to *look in*, and a lookup that finds nothing degrades to a note rather than a verdict.
+    """
+    aliases: dict[str, str] = {}
+    for node in tree.body:
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                aliases[alias.asname or alias.name.split(".")[0]] = alias.name
+        elif isinstance(node, ast.Assign) and isinstance(node.value, ast.Call):
+            args = node.value.args
+            if len(args) == 1 and isinstance(args[0], ast.Constant) and isinstance(args[0].value, str):
+                for target in node.targets:
+                    if isinstance(target, ast.Name):
+                        aliases[target.id] = args[0].value
+    return aliases
+
+
+def find_reexports(source: str) -> dict[str, Reexport]:
+    """Module-level names bound to a definition that lives elsewhere.
+
+    Only the forms where the *exported name is preserved* count, because that is what makes a
+    caller safe: ``write_atomic = _store_state.write_atomic`` keeps every
+    ``from memory_hook import write_atomic`` working. A rebinding to a differently-named thing
+    (``write_atomic = _legacy_writer``) is not treated as a facade - the name resolves, but
+    nothing structural says the two are the same function.
+    """
+    try:
+        tree = ast.parse(source)
+    except (SyntaxError, ValueError, RecursionError):
+        return {}
+    aliases = _module_aliases(tree)
+    out: dict[str, Reexport] = {}
+    for node in tree.body:
+        if isinstance(node, ast.ImportFrom):
+            hint = (node.module or "").lstrip(".")
+            for alias in node.names:
+                if alias.name == "*":
+                    continue
+                bound = alias.asname or alias.name
+                out[bound] = Reexport(bound, f"{hint}.{alias.name}" if hint else alias.name,
+                                      hint or None, alias.name)
+        elif isinstance(node, ast.Assign) and isinstance(node.value, ast.Attribute):
+            base = node.value.value
+            for target in node.targets:
+                if not isinstance(target, ast.Name) or node.value.attr != target.id:
+                    continue
+                base_name = base.id if isinstance(base, ast.Name) else None
+                via = f"{base_name}.{node.value.attr}" if base_name else node.value.attr
+                out[target.id] = Reexport(target.id, via,
+                                          aliases.get(base_name or ""), node.value.attr)
+    return out
+
+
+def _module_source(hint: str, corpus: dict[str, str], root: Path | None) -> str | None:
+    """The source of the module *hint* names, from the scanned corpus or from disk.
+
+    Matched by dotted suffix: a hint of ``store_state`` finds ``nevertwice/store_state.py``, and
+    ``nevertwice.store_state`` finds it too. Suffix matching rather than exact resolution because
+    the checker never imports anything - it has no sys.path and no package context, only files.
+    """
+    parts = [p for p in hint.split(".") if p]
+    if not parts:
+        return None
+    tail = "/".join(parts) + ".py"
+    candidates = [rel for rel in corpus if rel == tail or rel.endswith("/" + tail)]
+    if candidates:
+        return corpus[min(candidates, key=len)]
+    if root is None:
+        return None
+    listed = _tracked_files(root, {".py"}) or []
+    for path in listed:
+        rel = path.relative_to(root).as_posix() if path.is_absolute() else path.as_posix()
+        if rel == tail or rel.endswith("/" + tail):
+            return _read(path)
+    return None
+
+
+def _signature_of(source: str, name: str) -> tuple[str, str] | None:
+    """(kind, signature) of the top-level *name* in *source*, or None when it is not there."""
+    symbol = extract_symbols(source).get(name)
+    return (symbol.kind, symbol.signature) if symbol else None
+
+
+def resolve_facades(
+    changes: list[ContractChange],
+    before: dict[str, str],
+    after: dict[str, str],
+    corpus: dict[str, str],
+    root: Path | None,
+) -> tuple[list[ContractChange], list[str]]:
+    """Drop the changes explained by a compatibility facade; return the notes that replace them.
+
+    Three outcomes per facade, and the middle one is the reason this follows the pointer instead
+    of just recognising it:
+
+      * the target is found and its signature is unchanged -> not a contract change at all;
+      * the target is found and its signature DIFFERS      -> still a contract change, now with
+        the real before/after across the move;
+      * the target cannot be found                         -> a note. The name still resolves for
+        every caller, and nothing visible here says more than that.
+    """
+    kept: list[ContractChange] = []
+    notes: list[str] = []
+    reexports: dict[str, dict[str, Reexport]] = {}
+    was: dict[str, dict[str, Symbol]] = {}
+
+    for change in changes:
+        if change.reason not in ("removed", "kind") or "." in change.qualname:
+            kept.append(change)
+            continue
+        source = after.get(change.path)
+        if source is None:
+            kept.append(change)
+            continue
+        if change.path not in reexports:
+            reexports[change.path] = find_reexports(source)
+        facade = reexports[change.path].get(change.qualname)
+        if facade is None:
+            kept.append(change)
+            continue
+
+        target = None
+        if facade.module_hint:
+            module_source = _module_source(facade.module_hint, corpus, root)
+            if module_source is not None:
+                target = _signature_of(module_source, facade.target)
+
+        # The old signature comes from the before-source, not from the change: a `kind` change
+        # carries kinds ("function" -> "constant"), and comparing a signature against the word
+        # "function" can never match, which silently turned every facade back into a finding.
+        if change.path not in was:
+            was[change.path] = extract_symbols(before.get(change.path, ""))
+        previous = was[change.path].get(change.qualname)
+        old_signature = previous.signature if previous else ""
+
+        if target is None or not target[1] or not old_signature:
+            notes.append(
+                f"note: {change.qualname} is re-exported from {facade.via}; callers still "
+                f"resolve it, but the definition it points at cannot be checked from here"
+            )
+            continue
+        if target[1] == old_signature:
+            notes.append(
+                f"note: {change.qualname} moved to {facade.via} with an unchanged signature - "
+                f"a compatibility facade, callers unaffected"
+            )
+            continue
+        kept.append(
+            ContractChange(change.qualname, change.path, change.lineno, "signature",
+                           old_signature, target[1])
+        )
+    return kept, notes
+
+
+# --------------------------------------------------------------------------
 # references
 # --------------------------------------------------------------------------
 
@@ -858,6 +1037,7 @@ def check_sources(
 
     all_changes: list[ContractChange] = []
     changed_ranges: dict[str, set[int]] = {}
+    facade_inputs: dict[str, str] = {}
     total_lines = 0
 
     for path in touched:
@@ -870,6 +1050,17 @@ def check_sources(
             continue
         changes, _added, _body = contract_changes(old_src, new_src, path)
         all_changes.extend(c for c in changes if not _ignored(c.qualname, ignore))
+        facade_inputs[path] = new_src
+
+    # A symbol that left this module but is re-exported from it did not break anybody. This
+    # runs BEFORE the scope is inferred, because a facade that is not a contract change must
+    # not push the diff into L1 either - the classification and the problem come from the same
+    # evidence, and E4's seam extraction is exactly the case that showed it.
+    lookup = dict(scan) if scan is not None else {}
+    lookup.update(after)
+    all_changes, facade_notes = resolve_facades(
+        all_changes, {p: before.get(p, "") for p in facade_inputs}, facade_inputs, lookup, root)
+    verdict.notes.extend(facade_notes)
 
     dirs = {str(Path(p).parent) for p in touched}
     verdict.stats = {

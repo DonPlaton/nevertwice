@@ -22,10 +22,10 @@ made to fire on the thing it was built for.
 
 | | declared before the run | measured | |
 |---|---|---|---|
-| **T1** flag rate | at most 20% of commits | **6.7%** (10 of 150) | pass |
-| **T2** composition | zero budget or plan complaints | **0** of 10 | pass |
+| **T1** flag rate | at most 20% of commits | **6.0%** (9 of 150) | pass |
+| **T2** composition | zero budget or plan complaints | **0** of 9 | pass |
 | **T3** budgets | 95th percentile of the class, declaration-only | L0 `(10, 3, 300)`, L1 `(19, 3, 350)` | applied |
-| **T4** cost | median at most 2.00 s | **0.0148 s** median, 0.8763 s max | pass |
+| **T4** cost | median at most 2.00 s | **0.0143 s** median, 1.1991 s max | pass |
 
 ## What changed, and what it bought
 
@@ -34,15 +34,16 @@ module constants, so the baseline stays reproducible rather than quotable from a
 
 | arm | flagged | rate | commits with a dependency finding | flagged only by budget or plan |
 |---|---|---|---|---|
-| shipped | 104 | 69.3% | 10 | **94** |
-| **undeclared** (the real mode) | 10 | **6.7%** | 10 | **0** |
-| declared | 16 | 10.7% | 10 | 6 |
+| shipped | 104 | 69.3% | 9 | **95** |
+| **undeclared** (the real mode) | 9 | **6.0%** | 9 | **0** |
+| declared | 15 | 10.0% | 9 | 6 |
 
-The middle row is the product. The first row is what it replaced: of 104 flags, **94 said
-nothing about dependencies at all** — 74 over-reach complaints and 54 demands for a
-`.nevertwice/plan.md` this repository has never had. The number of commits carrying a real
-dependency finding is **the same 10 in every arm**. Nothing was traded away. The checker did not
-get quieter about code; it stopped talking about paperwork.
+The middle row is the product. The first row is what it replaced: of 104 flags,
+**95 said nothing about dependencies at all** — 74
+over-reach complaints and 54 demands for a `.nevertwice/plan.md` this repository has never had.
+The number of commits carrying a real dependency finding is **the same
+9 in every arm**. Nothing was traded away. The checker did
+not get quieter about code; it stopped talking about paperwork.
 
 ### The bug was structural, not numeric
 
@@ -91,16 +92,17 @@ work, which is why it fired on nearly everything.
 
 ### Cost
 
-Median **0.0148 s** per commit, p95 0.5194 s, max 0.8763 s, against a
-2.00 s ceiling the integration spec claims for itself. These are one run on one machine and
-they move between runs — the artifact declares `seconds` volatile for exactly that reason, so
-regenerating it changes the timings and nothing else. The verdict does not depend on them: the
-flag counts came back identical across regenerations.
+Median **0.0143 s** per commit, p95 0.5803 s, max
+1.1991 s, against a 2.00 s ceiling the integration spec claims for itself. These
+are one run on one machine and they move between runs — the artifact declares `seconds` volatile
+for exactly that reason, so regenerating it changes the timings and nothing else. The verdict
+does not depend on them: the flag counts came back identical across regenerations.
 
-The declared arm is roughly twice the work (it runs each commit through the checker a second
-time to obtain the inferred class first) and its slowest commit lands at 1.9288 s — inside
-the ceiling, but not comfortably. The worst case is a diff touching tens of thousands of lines,
-and the ceiling is per-invocation, so a hook firing on such a commit would be noticed.
+The declared arm is not a second measurement of the tool: the harness runs each commit through
+the checker **twice** there, once to learn the inferred class and once to declare it, so its
+2.1686 s worst case is the harness doing double work. The tool's own worst
+invocation is the undeclared arm's 1.1991 s, on a diff of 69,911 lines. Inside the
+ceiling, but not by much, and the ceiling is per invocation.
 
 The 10.3 s measured in the twelve-commit spot check was not the checker being slow. It was the reference scan walking `research/embed_universal/data/` — about 5.3 GB of
 vendored third-party clones that a fresh clone does not carry, because `SKIP_DIRS` is a
@@ -112,12 +114,39 @@ correctness fix wearing a performance fix's clothes: **a reference inside somebo
 vendored checkout was never a caller of this project**, and counting it made the answer wrong,
 not just slow. The checker's own suite went from 14.2 s to 0.6 s on the same evidence.
 
+### Compatibility facades (I2)
+
+The single largest finding in the first calibration was `write_atomic` with 42 unhandled
+references on the E4 seam extraction — a refactor whose entire design was a facade that preserved
+every caller. `_infer_scope` was right that a contract moved; the checker was wrong about who it
+hurt.
+
+A symbol that leaves module A and is re-exported from A is not a removal. This repository writes
+that as `write_atomic = _store_state.write_atomic`, behind an alias bound by a dynamic
+`_sibling("store_state")` call, so recognising it means reading three shapes of module alias, not
+one. **Recognising the facade is only half of it.** A checker that went quiet on every re-export
+would trade a false positive for a false negative — someone re-exports a *renamed* function with a
+different signature and nothing says so. So the pointer is followed: when the target module is in
+the scanned corpus, the moved signature is compared against the original.
+
+Three outcomes, and the middle one is why the pointer is followed at all:
+
+| what is found | verdict |
+|---|---|
+| target located, signature unchanged | not a contract change at all — a note saying it moved |
+| target located, signature **differs** | still a contract change, now with the real before/after |
+| target not in the corpus | a note: the name resolves, and nothing visible here says more |
+
+On this history: **4 commits carry 9 facade notes**, the E4 commit is
+clean, and the flag rate falls from 6.7% to 6.0% with three fewer dependency
+problems — exactly the three the task named. A resolved facade does not count as a contract change
+either, so it cannot push a diff into L1 on its way out: the classification and the problem come
+from the same evidence.
+
 ## What this run did not settle
 
-- **Whether the 10 findings are right.** The largest is `write_atomic` with 42 unhandled
-  references on the E4 seam extraction — a refactor whose whole design was a compatibility
-  facade that preserved every caller. It is almost certainly a false positive, and teaching the
-  checker about facades is I2.
+- **Whether the 9 findings are right.** The largest
+  false positive is gone — see below — but nothing here says the survivors are true. I4 asks that.
 - **Whether the checker is worth having.** I4 asks that, against `git grep` for the changed
   symbol, with a hand-labelled sample and a threshold declared before that run.
 - **Whether any of this generalises.** One repository, one author, one style. A budget derived

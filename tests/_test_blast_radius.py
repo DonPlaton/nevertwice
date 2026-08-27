@@ -344,6 +344,154 @@ class Calibrated(unittest.TestCase):
         self.assertTrue(any(p.name == "blast_radius.py" for p in found))
 
 
+class CompatibilityFacades(unittest.TestCase):
+    """I2: a symbol that leaves a module and is re-exported from it broke nobody.
+
+    This codebase's own refactoring idiom - ``write_atomic = _store_state.write_atomic`` after
+    the E4 seam extraction - made the checker report 42 untouched references to a function no
+    caller had to touch. Recognising the facade is half the fix; the other half is following it,
+    so a facade that quietly changed the contract is still reported. Silencing without verifying
+    would trade a false positive for a false negative, which is the worse trade for a guard.
+    """
+
+    LIB_MOVED = """\
+_store = _sibling("store")
+write_atomic = _store.write_atomic
+"""
+    STORE_SAME = """\
+def write_atomic(path, text, encoding="utf-8"):
+    return None
+"""
+    STORE_CHANGED = """\
+def write_atomic(path, text, encoding, mode):
+    return None
+"""
+    LIB_ORIGINAL = """\
+def write_atomic(path, text, encoding="utf-8"):
+    return None
+"""
+    CALLER = """\
+from lib import write_atomic
+
+
+def go(p):
+    write_atomic(p, "x")
+"""
+
+    def _run(self, store_source, **kw):
+        scan = {"caller.py": self.CALLER}
+        if store_source is not None:
+            scan["store.py"] = store_source
+        return br.check_sources(
+            before={"lib.py": self.LIB_ORIGINAL},
+            after={"lib.py": self.LIB_MOVED},
+            scan=scan, **kw,
+        )
+
+    def test_a_verified_facade_is_not_a_problem(self):
+        verdict = self._run(self.STORE_SAME)
+        self.assertEqual(verdict.problems, [])
+        self._assert_verified(verdict)
+
+    def test_a_verified_facade_does_not_even_count_as_a_contract_change(self):
+        """It must not push the diff into L1 either - one piece of evidence, one conclusion."""
+        verdict = self._run(self.STORE_SAME)
+        self.assertEqual(verdict.contract_changes, [])
+        self.assertEqual(verdict.stats["contract_changes"], 0)
+        self.assertEqual(verdict.inferred, "L0")
+
+    def test_a_facade_that_changed_the_signature_is_still_reported(self):
+        verdict = self._run(self.STORE_CHANGED)
+        self.assertFalse(verdict.ok, verdict.render())
+        reasons = {c.reason for c in verdict.contract_changes}
+        self.assertIn("signature", reasons)
+        change = next(c for c in verdict.contract_changes if c.qualname == "write_atomic")
+        self.assertIn("encoding='utf-8'", change.before)
+        self.assertIn("mode", change.after)
+
+    def test_an_unreachable_target_degrades_to_a_note(self):
+        verdict = self._run(None)
+        self.assertTrue(verdict.ok, verdict.render())
+        self.assertTrue(any("cannot be checked from here" in n for n in verdict.notes),
+                        verdict.notes)
+
+    def test_a_rebinding_to_a_different_name_is_not_a_facade(self):
+        """The name resolves, but nothing structural says the two are the same function."""
+        verdict = br.check_sources(
+            before={"lib.py": self.LIB_ORIGINAL},
+            after={"lib.py": "write_atomic = _legacy_writer\n"},
+            scan={"caller.py": self.CALLER},
+        )
+        self.assertFalse(verdict.ok, verdict.render())
+
+    def test_an_attribute_under_a_different_name_is_not_a_facade(self):
+        """`x = mod.y` moves the name as well as the definition; a rename, not a facade."""
+        moved = '_store = _sibling("store")\nwrite_atomic = _store.other_name\n'
+        verdict = br.check_sources(
+            before={"lib.py": self.LIB_ORIGINAL},
+            after={"lib.py": moved},
+            scan={"caller.py": self.CALLER, "store.py": self.STORE_SAME},
+        )
+        self.assertFalse(verdict.ok, verdict.render())
+
+
+    def test_a_plain_deletion_is_still_a_removal(self):
+        verdict = br.check_sources(
+            before={"lib.py": self.LIB_ORIGINAL},
+            after={"lib.py": "\n"},
+            scan={"caller.py": self.CALLER},
+        )
+        self.assertFalse(verdict.ok, verdict.render())
+        self.assertIn("removed", {c.reason for c in verdict.contract_changes})
+
+    def test_the_import_form_of_a_facade_is_recognised(self):
+        verdict = br.check_sources(
+            before={"lib.py": self.LIB_ORIGINAL},
+            after={"lib.py": "from store import write_atomic\n"},
+            scan={"caller.py": self.CALLER, "store.py": self.STORE_SAME},
+        )
+        self.assertTrue(verdict.ok, verdict.render())
+        self.assertTrue(any("compatibility facade" in n for n in verdict.notes), verdict.notes)
+
+    def _assert_verified(self, verdict):
+        """Clean is not enough: an unreachable target is also clean, and proves nothing.
+
+        Only a facade whose target was located AND whose signature matched produces the
+        "compatibility facade" note. Asserting ok alone let a mutation that broke module
+        resolution pass, because giving up looks exactly like succeeding from the outside.
+        """
+        self.assertTrue(verdict.ok, verdict.render())
+        self.assertTrue(any("compatibility facade" in n for n in verdict.notes),
+                        f"target was never resolved: {verdict.notes}")
+
+    def test_a_relative_import_facade_resolves_too(self):
+        self._assert_verified(br.check_sources(
+            before={"pkg/lib.py": self.LIB_ORIGINAL},
+            after={"pkg/lib.py": "from .store import write_atomic\n"},
+            scan={"pkg/store.py": self.STORE_SAME},
+        ))
+
+    def test_an_import_alias_names_the_module(self):
+        self._assert_verified(br.check_sources(
+            before={"lib.py": self.LIB_ORIGINAL},
+            after={"lib.py": "import pkg.store as _s\nwrite_atomic = _s.write_atomic\n"},
+            scan={"pkg/store.py": self.STORE_SAME, "caller.py": self.CALLER},
+        ))
+
+    def test_the_dynamic_sibling_idiom_names_the_module(self):
+        """`_sibling("store_state")` is a call, not an import - the string is the only clue."""
+        aliases = br._module_aliases(__import__("ast").parse(self.LIB_MOVED))
+        self.assertEqual(aliases.get("_store"), "store")
+
+    def test_a_facade_inside_a_class_is_not_treated_as_a_module_re_export(self):
+        before = "class C:\n    def f(self, a):\n        return a\n"
+        after = "class C:\n    f = other.f\n"
+        verdict = br.check_sources({"lib.py": before}, {"lib.py": after},
+                                   scan={"c.py": "C().f(1)\n"})
+        self.assertTrue(any(c.qualname == "C.f" for c in verdict.contract_changes),
+                        [c.qualname for c in verdict.contract_changes])
+
+
 class NoiseControl(unittest.TestCase):
     """False positives kill guards. These cases must stay quiet."""
 

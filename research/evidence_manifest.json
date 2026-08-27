@@ -477,7 +477,7 @@
     },
     "research/BLAST_RADIUS_CALIBRATION.md": {
       "governance": "backlog",
-      "budget": 68,
+      "budget": 72,
       "note": "A research write-up, registered the way every other one here is. Its six load-bearing numbers - the ones the T1/T2 decision rests on - are registered as claims and checked against the artifact by tests/_test_blast_radius_calibration.py, which also re-checks the thresholds themselves. The distribution tables are the backlog. The cost figure is deliberately NOT a claim: it points at a field the artifact declares volatile, so every regeneration would move it and break the claim. T4 is enforced against the artifact directly instead."
     }
   },
@@ -6343,10 +6343,10 @@
     },
     {
       "id": "blast_radius.shipped.budget_or_plan_only",
-      "statement": "94 of the 104 commits the shipped checker flags are flagged only by a budget or plan-protocol complaint, with no dependency finding",
-      "value": 94,
+      "statement": "95 of the 104 commits the shipped checker flags are flagged only by a budget or plan-protocol complaint, with no dependency finding",
+      "value": 95,
       "printed": [
-        "94",
+        "95",
         "104"
       ],
       "unit": "commits",
@@ -6366,11 +6366,11 @@
     },
     {
       "id": "blast_radius.calibrated.flag_rate",
-      "statement": "after calibration the checker flags 6.7% of commits (10 of 150), against a 20% ceiling declared before the run",
-      "value": 0.0667,
+      "statement": "after calibration the checker flags 6.0% of commits (9 of 150), against a 20% ceiling declared before the run",
+      "value": 0.06,
       "printed": [
-        "6.7%",
-        "10"
+        "6.0%",
+        "9"
       ],
       "unit": "flag rate",
       "dataset": "nevertwice_history_150",
@@ -6416,10 +6416,10 @@
     },
     {
       "id": "blast_radius.dependency_finding_commits",
-      "statement": "10 of 150 commits carry a dependency finding, and the same 10 do so in every arm",
-      "value": 10,
+      "statement": "9 of 150 commits carry a dependency finding, and the same 9 do so in every arm",
+      "value": 9,
       "printed": [
-        "10",
+        "9",
         "150"
       ],
       "unit": "commits",
@@ -6432,7 +6432,7 @@
       "ci": null,
       "cited_in": [],
       "commit": "f79458c0f6bf784a06dfa906d58d4aa624dee544",
-      "caveat": "Whether these 10 findings are CORRECT is not settled here - the largest is a compatibility facade that almost certainly is not a real break. That is I2, and whether the tool is worth having at all is I4.",
+      "caveat": "I2 removed the largest false positive - a compatibility facade whose 42 references no caller had to touch. Whether the survivors are CORRECT is still not settled here; that is I4.",
       "ci_note": "a count over a fully enumerated set. The proportion 10/150 has a Wilson 95% interval of 0.037-0.118, but the published value is the count, and an interval on a different statistic is not this claim's interval.",
       "produced_by": [
         "research/blast_radius_calibration.py"

@@ -192,6 +192,42 @@ def test_the_claims_resolve_into_the_artifact() -> None:
           all(c["dataset"] in manifest["datasets"] for c in claims))
 
 
+#: The E4 seam extraction: four names moved to store_state.py behind a compatibility facade
+#: that preserved every caller. It is the commit that motivated I2, and the first calibration
+#: reported 42 untouched references to a function nobody had to touch.
+E4_SEAM = "4e1f5fb67829de386f65624d943c7a9a806a4c98"
+FACADE_SYMBOLS = ("write_atomic", "_load_json_generations", "_save_json_generations")
+
+
+def test_the_seam_extraction_is_clean() -> None:
+    """I2's exit criterion, on the real commit rather than a fixture."""
+    print("\n- I2: the compatibility facade is understood -")
+    rows = {r["sha"]: r for r in ART["arms"]["undeclared"]["rows"]}
+    row = rows.get(E4_SEAM)
+    check("the seam extraction is in the calibration set", row is not None, E4_SEAM[:9])
+    if row is None:
+        return
+    check("it produces no problems at all", row["ok"] and not row["problems"],
+          "; ".join(row["problems"]))
+    for symbol in FACADE_SYMBOLS:
+        named = [p for p in row["problems"] if p.startswith(symbol + ":")]
+        check(f"no problem names {symbol}", not named, "; ".join(named))
+    check("the facade is explained rather than silently dropped", row["notes"] >= len(FACADE_SYMBOLS),
+          f"{row['notes']} notes")
+
+
+def test_facades_did_not_silence_everything() -> None:
+    """A facade layer that made every finding disappear would pass the test above and be useless."""
+    print("\n- the facade layer is not a mute button -")
+    summary = ART["arms"]["undeclared"]["summary"]
+    check("dependency findings still survive on real commits",
+          summary["commits_with_a_dependency_finding"] > 0,
+          str(summary["commits_with_a_dependency_finding"]))
+    check("the shipped arm still reports the same findings the calibrated arm does",
+          ART["arms"]["shipped"]["summary"]["commits_with_a_dependency_finding"]
+          == summary["commits_with_a_dependency_finding"])
+
+
 def main() -> int:
     for fn in (test_the_set_is_what_was_declared,
                test_t1_the_flag_rate_is_under_the_declared_ceiling,
@@ -200,7 +236,9 @@ def main() -> int:
                test_t4_cost,
                test_the_policy_the_calibration_bought_is_still_in_force,
                test_the_writeup_agrees_with_the_artifact,
-               test_the_claims_resolve_into_the_artifact):
+               test_the_claims_resolve_into_the_artifact,
+               test_the_seam_extraction_is_clean,
+               test_facades_did_not_silence_everything):
         fn()
     print(f"\nblast-radius calibration: {PASSED} passed, {FAILED} failed")
     return 1 if FAILED else 0

@@ -86,7 +86,7 @@
    "kind": "deterministic",
    "note": "the precision/recall curve over the firing threshold",
    "command": "python research/matched_conditions.py --save",
-   "committed_sha256": "1e61453cc193808887c9cf2ffa7b38f81c9d04c8e3520a89d112cb063c0c40f9",
+   "committed_sha256": "79713cb81eb092b399aa996d5c1a3578976f92e6962426b6730fa61aa8504497",
    "committed_canonical_sha256": "503411fbb513dc7e7318d5e1b7fe6aa77fc4cc543628f44199af78dd57d6e1cd",
    "volatile_fields": [
     "latency_ms_per_episode"
@@ -95,8 +95,8 @@
    "missing_inputs": [],
    "requires": [],
    "missing_modules": [],
-   "seconds": 0.1,
-   "regenerated_sha256": "79713cb81eb092b399aa996d5c1a3578976f92e6962426b6730fa61aa8504497",
+   "seconds": 0.2,
+   "regenerated_sha256": "10fd8a24788b895fe5df075feb9fdbdb9e49b84bb0d31f3d1effde88dcbbd58d",
    "regenerated_canonical_sha256": "503411fbb513dc7e7318d5e1b7fe6aa77fc4cc543628f44199af78dd57d6e1cd",
    "status": "reproduced",
    "explain": "byte-different only in the declared volatile fields (latency_ms_per_episode): everything that should reproduce did"
@@ -107,7 +107,7 @@
    "kind": "deterministic",
    "note": "the six B5 baselines at a matched false-alarm rate",
    "command": "python research/cheap_baselines.py --save",
-   "committed_sha256": "8f0b6fb446652dd79b9081deaebd6386be98d837da111f7a1ccb2c5c5a01fed6",
+   "committed_sha256": "1731feb1b12c08a5b81d942eacaacc5404e8d8d2f8cbf839a0ddc85c421a5ba4",
    "committed_canonical_sha256": "2452a3e01fe1089a348b45cc5ef72bdb7df08e1915ad6abe14c5ae56b45ccd98",
    "volatile_fields": [
     "latency_ms_per_episode"
@@ -117,7 +117,7 @@
    "requires": [],
    "missing_modules": [],
    "seconds": 0.1,
-   "regenerated_sha256": "1731feb1b12c08a5b81d942eacaacc5404e8d8d2f8cbf839a0ddc85c421a5ba4",
+   "regenerated_sha256": "f97b742e378bddbe7f05a7eb4cf64d880dbaa59f74ad8a049860e447a1f0b0be",
    "regenerated_canonical_sha256": "2452a3e01fe1089a348b45cc5ef72bdb7df08e1915ad6abe14c5ae56b45ccd98",
    "status": "reproduced",
    "explain": "byte-different only in the declared volatile fields (latency_ms_per_episode): everything that should reproduce did"
@@ -135,7 +135,7 @@
    "missing_inputs": [],
    "requires": [],
    "missing_modules": [],
-   "seconds": 0.1,
+   "seconds": 0.2,
    "regenerated_sha256": "8931f566878edd0a427d8b1df666bb0285362fea2883f02870d66f94fd7537f2",
    "regenerated_canonical_sha256": "20007c2d18b1da0962941f1b050a0557e158c4dc5bdcfcc3f85c9529723317eb",
    "status": "reproduced"
@@ -171,7 +171,7 @@
    "missing_inputs": [],
    "requires": [],
    "missing_modules": [],
-   "seconds": 3.4,
+   "seconds": 8.3,
    "regenerated_sha256": "58105186c462de5fc61c35f6d57dc4226c74655adfbfdf9256b7795d8b612715",
    "regenerated_canonical_sha256": "c3829d019f19a7c0761fe8a47264c95d17c56658ac5c284d36f62497da12b807",
    "status": "reproduced"
@@ -189,7 +189,7 @@
    "missing_inputs": [],
    "requires": [],
    "missing_modules": [],
-   "seconds": 0.1,
+   "seconds": 0.2,
    "regenerated_sha256": "bdad83329f308e44d6a3db660cd1e2ca1abdee0c9e2651d1f8afecfa28f07fc7",
    "regenerated_canonical_sha256": "636d91421c99164520b880b28c6b1c1fb6d8d269dbc107c52ffb1bb12302edf0",
    "status": "reproduced"
@@ -209,7 +209,7 @@
     "numpy"
    ],
    "missing_modules": [],
-   "seconds": 3.6,
+   "seconds": 4.2,
    "regenerated_sha256": "3675985c91b12f2e71f82f547ecff84162395cfb5595f6a6490c3b679d8d2e83",
    "regenerated_canonical_sha256": "d8c2054105c0af40a517bd0f58a24d3e63d45ffeb6178293786cc0017b11b7f3",
    "status": "reproduced"
@@ -238,8 +238,8 @@
    "kind": "deterministic",
    "note": "replays the blast-radius checker over this repository's history. Deterministic given the same 150 commits - the per-commit timings are the only thing that measures the machine, and they are declared volatile. Needs FULL history: a shallow clone cannot reach the 150th ancestor and the run will come up short.",
    "command": "python research/blast_radius_calibration.py --commits 150",
-   "committed_sha256": "c886662337a547854f83fa4f06f853ac214cf236b14402dd57696cf902333f4c",
-   "committed_canonical_sha256": "dd30b0e27df2c86fe2d058c0c4d07e96a1d5054ce678e74160f34d05afca2faa",
+   "committed_sha256": "a928d05511dc078947e40f89a2592e3aea394aec7f71894e12ae778b9c182a46",
+   "committed_canonical_sha256": "b5269ec5533847b68aa27ddab88c16f4e12f6f5178ba658effafd16261441393",
    "volatile_fields": [
     "seconds"
    ],
@@ -247,9 +247,9 @@
    "missing_inputs": [],
    "requires": [],
    "missing_modules": [],
-   "seconds": 109.6,
-   "regenerated_sha256": "2bee06444d29cccd1d274b965d82a112226ff356cd7b6951551e16dfc243e961",
-   "regenerated_canonical_sha256": "dd30b0e27df2c86fe2d058c0c4d07e96a1d5054ce678e74160f34d05afca2faa",
+   "seconds": 117.6,
+   "regenerated_sha256": "93b17eb08c9dacc86718f575497d97aa2f7d772503d1a9bd786759049f3e07f6",
+   "regenerated_canonical_sha256": "b5269ec5533847b68aa27ddab88c16f4e12f6f5178ba658effafd16261441393",
    "status": "reproduced",
    "explain": "byte-different only in the declared volatile fields (seconds): everything that should reproduce did"
   },
