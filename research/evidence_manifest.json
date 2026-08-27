@@ -6335,7 +6335,7 @@
         "high": 0.7615
       },
       "cited_in": [],
-      "commit": "6ef827dcddfaa656d1ce617f8e3540bc3cec0262",
+      "commit": "f79458c0f6bf784a06dfa906d58d4aa624dee544",
       "caveat": "The baseline, restored from three module constants rather than a forked copy. 94 of those 104 flags are budget or plan complaints carrying no dependency information at all.",
       "produced_by": [
         "research/blast_radius_calibration.py"
@@ -6358,7 +6358,7 @@
       "pointer": "arms.shipped.summary.commits_flagged_only_by_budget_or_plan",
       "ci": null,
       "cited_in": [],
-      "commit": "6ef827dcddfaa656d1ce617f8e3540bc3cec0262",
+      "commit": "f79458c0f6bf784a06dfa906d58d4aa624dee544",
       "ci_note": "a count over a fixed, fully enumerated set - every commit is in the artifact",
       "produced_by": [
         "research/blast_radius_calibration.py"
@@ -6386,7 +6386,7 @@
         "high": 0.1184
       },
       "cited_in": [],
-      "commit": "6ef827dcddfaa656d1ce617f8e3540bc3cec0262",
+      "commit": "f79458c0f6bf784a06dfa906d58d4aa624dee544",
       "caveat": "T1. Measured on the undeclared arm, which is what a repository that declares no scope actually sees.",
       "produced_by": [
         "research/blast_radius_calibration.py"
@@ -6408,7 +6408,7 @@
       "pointer": "arms.undeclared.summary.commits_flagged_only_by_budget_or_plan",
       "ci": null,
       "cited_in": [],
-      "commit": "6ef827dcddfaa656d1ce617f8e3540bc3cec0262",
+      "commit": "f79458c0f6bf784a06dfa906d58d4aa624dee544",
       "ci_note": "T2. A count over a fully enumerated set, and the gate the mechanism had to pass.",
       "produced_by": [
         "research/blast_radius_calibration.py"
@@ -6431,7 +6431,7 @@
       "pointer": "arms.undeclared.summary.commits_with_a_dependency_finding",
       "ci": null,
       "cited_in": [],
-      "commit": "6ef827dcddfaa656d1ce617f8e3540bc3cec0262",
+      "commit": "f79458c0f6bf784a06dfa906d58d4aa624dee544",
       "caveat": "Whether these 10 findings are CORRECT is not settled here - the largest is a compatibility facade that almost certainly is not a real break. That is I2, and whether the tool is worth having at all is I4.",
       "ci_note": "a count over a fully enumerated set. The proportion 10/150 has a Wilson 95% interval of 0.037-0.118, but the published value is the count, and an interval on a different statistic is not this claim's interval.",
       "produced_by": [
@@ -6454,7 +6454,7 @@
       "pointer": "arms.declared.summary.commits_flagged_only_by_budget_or_plan",
       "ci": null,
       "cited_in": [],
-      "commit": "6ef827dcddfaa656d1ce617f8e3540bc3cec0262",
+      "commit": "f79458c0f6bf784a06dfa906d58d4aa624dee544",
       "ci_note": "a count over a fully enumerated set",
       "caveat": "All six are L0. The L1 and L2 budgets never fired, so the mechanism is calibrated on one class of three. L1's 95th percentile is its maximum (n=9).",
       "produced_by": [
