@@ -6575,7 +6575,7 @@
         "high": 0.6435
       },
       "cited_in": [],
-      "commit": "c7d4369436f793de2dace321e06e5df58243515d",
+      "commit": "da1132ea84bf06d5d17185b27fa2a76b274e9804",
       "ci_note": "percentile bootstrap, 2000 resamples, seed 20260827, over queries",
       "caveat": "The marginal intervals overlap; the paired difference is the claim that matters and it contains zero. See embed.heldout.situation.delta_recall_at_1.",
       "produced_by": [
@@ -6605,7 +6605,7 @@
         "high": 0.0648
       },
       "cited_in": [],
-      "commit": "c7d4369436f793de2dace321e06e5df58243515d",
+      "commit": "da1132ea84bf06d5d17185b27fa2a76b274e9804",
       "ci_note": "percentile bootstrap, 2000 resamples, seed 20260827, over queries, on the per-query difference so the pairing is kept",
       "caveat": "McNemar's discordant counts are 10 won / 4 lost, exact two-sided p = .18. This does NOT say the fine-tune is worthless - it says the evidence for it was never external, and the external evidence is silent. The shipped 0.220 -> 0.475 headline was measured on the owner's private vault and remains unreproducible by anyone else.",
       "produced_by": [
@@ -6635,7 +6635,7 @@
         "high": 0.162
       },
       "cited_in": [],
-      "commit": "c7d4369436f793de2dace321e06e5df58243515d",
+      "commit": "da1132ea84bf06d5d17185b27fa2a76b274e9804",
       "ci_note": "percentile bootstrap, 2000 resamples, seed 20260827, over queries, on the per-query difference",
       "caveat": "It reranks the stock retriever's top 50, so it is capped by that retriever's recall@50 of 0.968. At recall@1 it gains nothing (-0.014 [-0.074, 0.042]) and it is worse on the title axis: it knows which five documents matter, not which one.",
       "produced_by": [
@@ -6667,7 +6667,7 @@
       "ci_note": "percentile bootstrap, 2000 resamples, seed 20260827, on the per-query difference so the pairing is kept. McNemar 3 won / 6 lost, exact p = .51.",
       "caveat": "216 queries resolve about five points of recall@5 and no smaller, stated before the run. So this is 'no improvement of five points or more was demonstrated', not 'mining hurts'. The mined checkpoint was deleted per the deletion decision; v1 remains the shipped model.",
       "cited_in": [],
-      "commit": "c7d4369436f793de2dace321e06e5df58243515d",
+      "commit": "da1132ea84bf06d5d17185b27fa2a76b274e9804",
       "produced_by": [
         "research/embed_universal/heldout_eval.py"
       ]
@@ -6697,7 +6697,7 @@
       "ci_note": "percentile bootstrap, 2000 resamples, seed 20260827, paired. McNemar 5 won / 0 lost, exact p = .06 - five queries fixed, none broken.",
       "caveat": "It repairs a regression v1 carried against stock on an axis where every model already exceeds 0.95, so it cannot matter to the product. The negatives were mined from other lessons' rewrites, which are near-duplicate NOTES - the title-axis skill - and no negative had the shape of a situation query.",
       "cited_in": [],
-      "commit": "c7d4369436f793de2dace321e06e5df58243515d",
+      "commit": "da1132ea84bf06d5d17185b27fa2a76b274e9804",
       "produced_by": [
         "research/embed_universal/heldout_eval.py"
       ]
@@ -6727,7 +6727,7 @@
       "ci_note": "percentile bootstrap, 2000 resamples, seed 20260827, on the per-query difference so the pairing is kept. The interval excludes zero on the wrong side.",
       "caveat": "The teacher is WORSE than the student at recall@1 and better at recall@5; distilling its full ranking transfers both. This is a result about this teacher distilled this way, not about distillation. The checkpoint was deleted per the deletion decision; v1 remains shipped.",
       "cited_in": [],
-      "commit": "PENDING",
+      "commit": "da1132ea84bf06d5d17185b27fa2a76b274e9804",
       "produced_by": [
         "research/embed_universal/heldout_eval.py"
       ]
@@ -6757,7 +6757,7 @@
       "ci_note": "percentile bootstrap, 2000 resamples, seed 20260827, paired. McNemar 5 won / 46 lost.",
       "caveat": "The guard this breaches was written before the run BECAUSE the teacher's own recall@1 is worse than the student's - the mechanism was predicted and then observed. An earlier attempt was worse still (title recall@1 0.797) because the target was on a scale a cosine margin cannot express; that run is reported as a specification error, not as evidence.",
       "cited_in": [],
-      "commit": "PENDING",
+      "commit": "da1132ea84bf06d5d17185b27fa2a76b274e9804",
       "produced_by": [
         "research/embed_universal/heldout_eval.py"
       ]
