@@ -53,6 +53,7 @@ ARTIFACT = HERE / "heldout" / "baseline_v1.json"
 MODELS = [
     ("stock bge-m3", "bi", "BAAI/bge-m3"),
     ("nevertwice-embed", "bi", str(HERE / "models" / "universal_v1_merged")),
+    ("nevertwice-embed-hard", "bi", str(HERE / "models" / "hard_v1_merged")),
     ("bge-reranker-v2-m3", "cross", "BAAI/bge-reranker-v2-m3"),
 ]
 
@@ -351,6 +352,10 @@ def main(argv: list[str] | None = None) -> int:
         "models": {label: {k: v for k, v in r.items() if k != "per_query"}
                    for label, r in results.items()},
         "paired_vs_stock": paired(results),
+        # M2's threshold is declared against the SHIPPED model, not against stock: M1 already
+        # showed v1's advantage over stock does not resolve, so beating stock again proves
+        # nothing. Both references are published; the gate reads this one.
+        "paired_vs_shipped": paired(results, reference="nevertwice-embed"),
         "per_query": {label: r["per_query"] for label, r in results.items()},
     }
     Path(args.out).write_bytes(

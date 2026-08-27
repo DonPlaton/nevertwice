@@ -505,6 +505,11 @@
     "research/EMBED_M2_THRESHOLD.md": {
       "governance": "exempt",
       "reason": "the success threshold and deletion decision for hard-negative mining, declared before any negative was mined and before anything was retrained, per hard rule 2.6. Its numbers are prospective decision rules - a paired interval that must exclude zero, a bound on collateral regression, and the effect size this benchmark can resolve - not measurements to reproduce. The retrospective figures it cites as motivation are claims already registered from M1."
+    },
+    "research/EMBED_HARD_NEGATIVES.md": {
+      "governance": "backlog",
+      "budget": 49,
+      "note": "the negative result that closed M2. The gate it failed and the one improvement it did produce are registered as claims and checked against research/embed_universal/heldout/hard_v1.json by tests/_test_hard_negatives.py; the mining statistics and the taxonomy of why are the backlog. The mined checkpoint was deleted per the decision written before the run; every measurement it produced is kept."
     }
   },
   "claims": [
@@ -6624,6 +6629,66 @@
       "commit": "78ff57b5bf6fef9a2865dca66e54b39693500576",
       "ci_note": "percentile bootstrap, 2000 resamples, seed 20260827, over queries, on the per-query difference",
       "caveat": "It reranks the stock retriever's top 50, so it is capped by that retriever's recall@50 of 0.968. At recall@1 it gains nothing (-0.014 [-0.074, 0.042]) and it is worse on the title axis: it knows which five documents matter, not which one.",
+      "produced_by": [
+        "research/embed_universal/heldout_eval.py"
+      ]
+    },
+    {
+      "id": "embed.hard_negatives.situation.delta_recall_at_5",
+      "statement": "hard-negative mining changes situation recall@5 by -0.023 against the shipped model, 95% interval [-0.051, 0.005] - it fails the threshold declared before the run, and the sign points the wrong way",
+      "value": -0.0231,
+      "printed": [
+        "0.023",
+        "0.051",
+        "0.005"
+      ],
+      "unit": "delta recall@5",
+      "dataset": "external_heldout_v1",
+      "environment": "rtx5090_bge_fp16",
+      "n": 216,
+      "command": "python research/embed_universal/heldout_eval.py",
+      "raw": "research/embed_universal/heldout/hard_v1.json",
+      "pointer": "paired_vs_shipped.nevertwice-embed-hard.retrieval_situation.delta_recall@5.value",
+      "ci": {
+        "method": "bootstrap-percentile",
+        "level": 0.95,
+        "low": -0.0509,
+        "high": 0.0046
+      },
+      "ci_note": "percentile bootstrap, 2000 resamples, seed 20260827, on the per-query difference so the pairing is kept. McNemar 3 won / 6 lost, exact p = .51.",
+      "caveat": "216 queries resolve about five points of recall@5 and no smaller, stated before the run. So this is 'no improvement of five points or more was demonstrated', not 'mining hurts'. The mined checkpoint was deleted per the deletion decision; v1 remains the shipped model.",
+      "cited_in": [],
+      "commit": "PENDING",
+      "produced_by": [
+        "research/embed_universal/heldout_eval.py"
+      ]
+    },
+    {
+      "id": "embed.hard_negatives.title.delta_recall_at_1",
+      "statement": "hard-negative mining gains title recall@1 0.012 against the shipped model, 95% interval [0.003, 0.025] - the only paired improvement in the run, and it is on the axis already at ceiling",
+      "value": 0.0123,
+      "printed": [
+        "0.012",
+        "0.003",
+        "0.025"
+      ],
+      "unit": "delta recall@1",
+      "dataset": "external_heldout_v1",
+      "environment": "rtx5090_bge_fp16",
+      "n": 408,
+      "command": "python research/embed_universal/heldout_eval.py",
+      "raw": "research/embed_universal/heldout/hard_v1.json",
+      "pointer": "paired_vs_shipped.nevertwice-embed-hard.retrieval_title.delta_recall@1.value",
+      "ci": {
+        "method": "bootstrap-percentile",
+        "level": 0.95,
+        "low": 0.0025,
+        "high": 0.0245
+      },
+      "ci_note": "percentile bootstrap, 2000 resamples, seed 20260827, paired. McNemar 5 won / 0 lost, exact p = .06 - five queries fixed, none broken.",
+      "caveat": "It repairs a regression v1 carried against stock on an axis where every model already exceeds 0.95, so it cannot matter to the product. The negatives were mined from other lessons' rewrites, which are near-duplicate NOTES - the title-axis skill - and no negative had the shape of a situation query.",
+      "cited_in": [],
+      "commit": "PENDING",
       "produced_by": [
         "research/embed_universal/heldout_eval.py"
       ]

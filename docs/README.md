@@ -55,6 +55,7 @@ click from here, and `tests/_test_docs_map.py` fails the build if that stops bei
 | [`research/BLAST_RADIUS_PRECISION.md`](../research/BLAST_RADIUS_PRECISION.md) | The answer, and it is no: 0 of 24 findings are real, with a taxonomy of what each false positive actually was |
 | [`research/EMBED_HELDOUT_BASELINE.md`](../research/EMBED_HELDOUT_BASELINE.md) | The shipped embedding measured on material outside the owner's vault, where its advantage over stock bge-m3 does not survive a paired test |
 | [`research/EMBED_M2_THRESHOLD.md`](../research/EMBED_M2_THRESHOLD.md) | What hard-negative mining has to achieve to survive, which axis the threshold may live on, and the decision to delete it if it does not |
+| [`research/EMBED_HARD_NEGATIVES.md`](../research/EMBED_HARD_NEGATIVES.md) | The answer: mining repaired the axis that was already at ceiling and moved the one that matters the wrong way, with the reason why |
 | [`research/evidence_manifest.json`](../research/evidence_manifest.json) | Every published number, with its dataset, sample size, model, command, raw file and caveat |
 | [`research/data/README.md`](../research/data/README.md) | Fetching the LongMemEval dataset the benchmarks need |
 

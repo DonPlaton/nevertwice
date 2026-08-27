@@ -1,0 +1,31 @@
+{
+ "generated_by": "research/embed_universal/train_hard.py",
+ "base": "BAAI/bge-m3",
+ "seed": 11,
+ "epochs": 3,
+ "batch": 24,
+ "lr": 0.0001,
+ "lora": {
+  "r": 16,
+  "lora_alpha": 32,
+  "lora_dropout": 0.05,
+  "target_modules": [
+   "query",
+   "key",
+   "value",
+   "dense"
+  ]
+ },
+ "loss": "MultipleNegativesRankingLoss",
+ "examples": 2910,
+ "changed_from_v1": "the training example only: (anchor, positive, hard_negative) instead of (anchor, positive). Recipe, seed, rank, epochs, learning rate and loss are v1's, so the comparison attributes to mining.",
+ "seconds": 127.7,
+ "peak_allocated_gb": 15.48,
+ "vram_before": {
+  "free_gb": 30.2,
+  "total_gb": 31.84,
+  "used_gb": 1.64
+ },
+ "vram_margin_required_gb": 20.0,
+ "ollama": "left running deliberately: the owner was working in two other projects whose memory hooks use it. The margin above is what makes that safe, and it was measured rather than assumed."
+}

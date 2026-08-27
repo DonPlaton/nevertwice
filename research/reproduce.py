@@ -115,6 +115,19 @@ ARTIFACTS = [
      "note": "measures THIS machine. The same minimum-of-five statistic moved by about a "
              "third between sessions on one box, so byte-identity is not the test - the "
              "order of magnitude is."},
+    {"file": "research/embed_universal/heldout/hard_v1.json",
+     "command": ["python", "research/embed_universal/heldout_eval.py",
+                 "--out", "research/embed_universal/heldout/hard_v1.json"],
+     "kind": HARDWARE, "task": "M2",
+     "inputs": ["research/embed_universal/heldout/external_heldout_v1.json",
+                "a CUDA GPU", "torch", "sentence_transformers",
+                "BAAI/bge-m3", "BAAI/bge-reranker-v2-m3",
+                "research/embed_universal/models/universal_v1_merged",
+                "research/embed_universal/models/hard_v1_merged"],
+     "note": "the table that closed M2. The mined checkpoint it measures was DELETED per the "
+             "deletion decision written before the run, so this cannot be re-run without first "
+             "regenerating it - mine_negatives.py then train_hard.py, about four minutes on a "
+             "5090, both committed. The measurement is kept; the model is not."},
     {"file": "research/embed_universal/heldout/baseline_v1.json",
      "command": ["python", "research/embed_universal/heldout_eval.py"],
      "kind": HARDWARE, "task": "M1",
