@@ -528,6 +528,10 @@
       "governance": "backlog",
       "budget": 55,
       "note": "what Matryoshka training bought (nothing measurable) and what the baseline it was measured against revealed (the shipped model already truncates). Both are registered as claims and checked against research/embed_universal/heldout/matryoshka_v1.json by tests/_test_matryoshka.py. The trained checkpoint was deleted; the truncation table is the deliverable and belongs in the model card as an operating mode of the model already shipped."
+    },
+    "research/EMBED_M5_THRESHOLD.md": {
+      "governance": "exempt",
+      "reason": "the promotion rule and deletion decision for the LoRA capacity sweep, declared before any rank was trained, per hard rule 2.6. It also records, before the run, that half the task cannot execute from committed data - gen_pairs.py produces same-language twins only, so there is no cross-lingual arm to re-test - and what would be needed instead. Prospective rules, not measurements."
     }
   },
   "claims": [
