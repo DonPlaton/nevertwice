@@ -53,9 +53,12 @@ __all__ = [
     "Symbol",
     "ContractChange",
     "Ref",
+    "Reexport",
     "Verdict",
     "check_sources",
     "check_working_tree",
+    "find_reexports",
+    "resolve_facades",
     "main",
 ]
 

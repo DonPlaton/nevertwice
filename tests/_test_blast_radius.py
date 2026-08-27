@@ -780,6 +780,166 @@ class WireFormat(unittest.TestCase):
         json.dumps(_violation().to_dict(), indent=2).encode("cp1251")
 
 
+class PhaseZero(unittest.TestCase):
+    """I3: the integration contract, as tests rather than as a checklist someone once ran.
+
+    Section 4.3 of the integration spec lists four verifications and the killswitch. Each was
+    run by hand once; a hand-run check is a claim about the past. These are the same properties
+    as assertions, so a later change that quietly makes the package expensive to import, or
+    wires it into a hot path, fails here instead of in somebody's PreToolUse hook.
+    """
+
+    def _child(self, source: str, env_extra: dict | None = None):
+        env = dict(os.environ)
+        env["PYTHONPATH"] = str(ROOT)
+        env.update(env_extra or {})
+        return subprocess.run(
+            [sys.executable, "-c", source], cwd=str(ROOT), capture_output=True, text=True,
+            encoding="utf-8", errors="replace", env=env, timeout=120, check=False,
+        )
+
+    def test_importing_the_package_does_not_load_the_checker(self):
+        """Lazy by attribute access. The package costs nothing until something asks."""
+        proc = self._child(
+            "import sys, nevertwice.invariants as inv\n"
+            "print('early', 'nevertwice.invariants.blast_radius' in sys.modules)\n"
+            "inv.check_working_tree\n"
+            "print('after', 'nevertwice.invariants.blast_radius' in sys.modules)\n"
+        )
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        self.assertIn("early False", proc.stdout)
+        self.assertIn("after True", proc.stdout)
+
+    def test_importing_the_package_is_cheap(self):
+        """A generous absolute bound: this catches "it imports the world", not jitter."""
+        proc = self._child(
+            "import time\n"
+            "t = time.perf_counter()\n"
+            "import nevertwice.invariants  # noqa: F401\n"
+            "print('cost', time.perf_counter() - t)\n"
+        )
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        cost = float(proc.stdout.split("cost")[1].strip().splitlines()[0])
+        self.assertLess(cost, 0.5, f"importing the package took {cost:.3f}s")
+
+    def test_an_unknown_attribute_still_raises_attribute_error(self):
+        with self.assertRaises(AttributeError):
+            import nevertwice.invariants as inv
+            inv.no_such_thing
+
+    def test_the_registry_names_a_module_that_exists(self):
+        import nevertwice.invariants as inv
+        for checker_id, module_name in inv.INVARIANTS.items():
+            rel = Path(*module_name.split(".")).with_suffix(".py")
+            self.assertTrue((ROOT / rel).is_file(), f"{checker_id} -> {module_name}")
+
+    def test_everything_all_promises_actually_exists(self):
+        """__all__ is a contract with importers; a name that is not there is a broken import."""
+        missing = [name for name in br.__all__ if not hasattr(br, name)]
+        self.assertEqual(missing, [])
+
+    def test_the_package_re_exports_what_it_says_it_does(self):
+        import nevertwice.invariants as inv
+        for name in inv.__all__:
+            self.assertTrue(hasattr(inv, name), name)
+
+    def test_no_production_module_imports_the_invariants_package(self):
+        """The deletability property, and the only one that can silently stop being true.
+
+        4.7 promises that removing nevertwice/invariants/ leaves the system working exactly as
+        before. That was verified by actually deleting it in a detached worktree and running the
+        full suite - 87 green, which is 89 minus the two suites that went with it. What a
+        one-off experiment cannot do is stay true, so the invariant behind it is asserted here:
+        nothing outside the package imports it.
+        """
+        import ast as _ast
+
+        offenders = []
+        for path in sorted((ROOT / "nevertwice").rglob("*.py")):
+            if "invariants" in path.parts:
+                continue
+            try:
+                tree = _ast.parse(path.read_text(encoding="utf-8", errors="replace"))
+            except SyntaxError:  # pragma: no cover - a file the interpreter would reject anyway
+                continue
+            for node in _ast.walk(tree):
+                names = []
+                if isinstance(node, _ast.Import):
+                    names = [a.name for a in node.names]
+                elif isinstance(node, _ast.ImportFrom):
+                    module = ("." * node.level) + (node.module or "")
+                    names = [module] + [f"{module}.{a.name}" for a in node.names]
+                for name in names:
+                    if name.split(".")[-1] == "invariants" or ".invariants." in name + ".":
+                        offenders.append(f"{path.relative_to(ROOT).as_posix()}: {name}")
+        self.assertEqual(offenders, [], "; ".join(offenders))
+
+    def test_the_killswitch_makes_the_cli_a_no_op(self):
+        proc = self._child(
+            "import json, sys\n"
+            "from nevertwice.invariants import check_working_tree\n"
+            "print(json.dumps(check_working_tree().to_dict()['verdict']))\n",
+            {br._ENV_DISABLE: "0"},
+        )
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        self.assertIn("disabled", proc.stdout)
+
+    def test_every_falsy_spelling_of_the_killswitch_works(self):
+        for value in ("0", "false", "off", "no", "OFF", " No "):
+            previous = os.environ.get(br._ENV_DISABLE)
+            os.environ[br._ENV_DISABLE] = value
+            try:
+                self.assertTrue(br._disabled(), f"{value!r} should disable the guard")
+            finally:
+                if previous is None:
+                    os.environ.pop(br._ENV_DISABLE, None)
+                else:
+                    os.environ[br._ENV_DISABLE] = previous
+
+    def test_an_unset_killswitch_leaves_the_guard_armed(self):
+        previous = os.environ.pop(br._ENV_DISABLE, None)
+        try:
+            self.assertFalse(br._disabled())
+        finally:
+            if previous is not None:
+                os.environ[br._ENV_DISABLE] = previous
+
+    def test_enforce_is_what_turns_a_violation_into_a_nonzero_exit(self):
+        """Advisory by default is the promise that lets it be wired into a hook safely."""
+        dirty = _violation()
+        self.assertFalse(dirty.ok)
+        real = br.check_working_tree
+        br.check_working_tree = lambda *a, **k: dirty
+        try:
+            self.assertEqual(br.main(["--quiet"]), 0, "default must stay advisory")
+            self.assertEqual(br.main(["--quiet", "--enforce"]), 1)
+        finally:
+            br.check_working_tree = real
+
+    def test_a_clean_tree_exits_zero_even_under_enforce(self):
+        clean = br.check_sources({}, {}, scan={})
+        real = br.check_working_tree
+        br.check_working_tree = lambda *a, **k: clean
+        try:
+            self.assertEqual(br.main(["--quiet", "--enforce"]), 0)
+        finally:
+            br.check_working_tree = real
+
+    def test_an_internal_failure_degrades_to_clean_rather_than_a_traceback(self):
+        """Crash-proof is a design rule, not an aspiration: a guard may never break a caller."""
+        def boom(*a, **k):
+            raise RuntimeError("something broke inside the checker")
+
+        real = br.check_working_tree
+        br.check_working_tree = boom
+        try:
+            self.assertEqual(br.main(["--quiet"]), 0)
+            self.assertEqual(br.main(["--enforce"]), 0)
+            self.assertEqual(br.main(["--json"]), 0)
+        finally:
+            br.check_working_tree = real
+
+
 class Layout(unittest.TestCase):
     """The spec's paths predate ``05cfdc9``; these pin the reconciled ones."""
 
