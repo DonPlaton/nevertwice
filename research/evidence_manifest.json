@@ -275,7 +275,12 @@
       "governance": "exempt",
       "reason": "fixture note in the sample store"
     },
-    "research/README.md": {
+    "research/invariants_lab/CORPUS.md": {
+   "governance": "backlog",
+   "budget": 106,
+   "note": "Task C1 of the invariants lab: the corpus of eight public repositories, its selection rationale committed before any clone, and the census that shows a non-zero base rate. Its numbers are counts of a corpus that lives outside git at D:/Coding/_nevertwice_polygon/corpus and are reproducible from research/invariants_lab/corpus_census.py against the SHAs in corpus_manifest.json; nothing here is a claim about the product. Registering them as claims waits for Phase T, when the lab results are either promoted or published as negatives."
+  },
+  "research/README.md": {
       "governance": "exempt",
       "reason": "index of the studies; the numbers it quotes are verdict summaries of the study pages it links"
     },
