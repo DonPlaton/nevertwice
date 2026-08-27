@@ -103,27 +103,29 @@ estimate is well under 2 GB in total, and the manifest reports the true figure.
 ## 4. Manifest, appended after cloning
 
 Written by `research/invariants_lab/corpus_census.py` from the clones; the machine-readable form
-is `research/invariants_lab/corpus_manifest.json`, and the per-commit evidence behind the last
-two columns is `research/invariants_lab/corpus_census.json`. The corpus itself is **not in git**
-— it lives at `D:\Coding\_nevertwice_polygon\corpus` and is regenerable from the URLs and SHAs below.
+is `research/invariants_lab/corpus_manifest.json`, and the per-commit evidence behind the last two
+columns is `research/invariants_lab/corpus_census.json`. The corpus itself is **not in git** — it
+lives at `D:\Coding\_nevertwice_polygon\corpus` and is regenerable from the URLs and SHAs below.
 
-**Census window, declared before the run and uniform across blocks:** the newest
-4,000 commits per repository that touch a `.py` file, non-merge, excluding
-vendored and generated trees, keeping commits that touch between 2 and 40 Python
-files. Fewer than two files cannot contain a same-commit caller update; more than
-40 is a bulk rewrite whose contract changes are not the thing being measured.
+**Census window: the entire history of every repository.** Non-merge commits touching a `.py`
+file, excluding vendored and generated trees, keeping commits that touch between 2 and
+40 Python files. Fewer than two files cannot contain a same-commit caller update;
+more than 40 is a bulk rewrite whose contract changes are not the thing being
+measured. The window was originally 4,000 commits per repository; C3 found three underpowered
+cells and enlarged it, and [`POWER.md`](POWER.md) records both states so the enlargement is
+auditable rather than taken on trust.
 
 | repository | HEAD | commits | contributors | census candidates | changed a signature | **eligible** | rate | disk |
 |---|---|---:|---:|---:|---:|---:|---:|---:|
-| `django/django` | `fdfbb711e` | 34,889 | 3,638 | 2,512 | 626 | **85** | 0.034 | 356 MB |
-| `encode/httpx` | `b5addb64f` | 1,523 | 270 | 612 | 287 | **47** | 0.077 | 12 MB |
-| `fastapi/fastapi` | `490334715` | 7,695 | 941 | 555 | 170 | **12** | 0.022 | 94 MB |
-| `pallets/flask` | `d318b6834` | 5,556 | 898 | 806 | 239 | **25** | 0.031 | 15 MB |
-| `psf/requests` | `5460f467b` | 6,493 | 841 | 664 | 174 | **11** | 0.017 | 19 MB |
-| `pytest-dev/pytest` | `fdba12e17` | 17,700 | 1,254 | 1,976 | 669 | **95** | 0.048 | 54 MB |
-| `scrapy/scrapy` | `dcaa6ced5` | 11,417 | 850 | 1,829 | 654 | **86** | 0.047 | 41 MB |
-| `sphinx-doc/sphinx` | `e44a40eb2` | 22,413 | 940 | 1,817 | 519 | **74** | 0.041 | 140 MB |
-| **total** | | **107,686** | | **10,771** | **3,338** | **435** | | **732 MB** |
+| `django/django` | `fdfbb711e` | 34,889 | 3,638 | 12,775 | 3,275 | **490** | 0.038 | 356 MB |
+| `encode/httpx` | `b5addb64f` | 1,523 | 270 | 612 | 286 | **47** | 0.077 | 12 MB |
+| `fastapi/fastapi` | `490334715` | 7,695 | 941 | 555 | 166 | **13** | 0.023 | 94 MB |
+| `pallets/flask` | `d318b6834` | 5,556 | 898 | 806 | 236 | **24** | 0.030 | 15 MB |
+| `psf/requests` | `5460f467b` | 6,493 | 841 | 664 | 168 | **10** | 0.015 | 19 MB |
+| `pytest-dev/pytest` | `fdba12e17` | 17,700 | 1,254 | 4,432 | 1,518 | **209** | 0.047 | 54 MB |
+| `scrapy/scrapy` | `dcaa6ced5` | 11,417 | 850 | 2,946 | 1,155 | **154** | 0.052 | 41 MB |
+| `sphinx-doc/sphinx` | `e44a40eb2` | 22,413 | 940 | 4,578 | 1,219 | **171** | 0.037 | 140 MB |
+| **total** | | **107,686** | | **27,368** | **8,023** | **1,118** | | **732 MB** |
 
 **Disk: 0.73 GB of a 40 GB budget.** Reported again at every phase boundary.
 
@@ -137,40 +139,62 @@ repository's own maintainers.
 §3 predicted, before any clone, that blocks 1 and 6 would be negative-heavy and blocks 3 and 4
 positive-heavy. Ranked by eligible rate the census gives:
 
-| | repository | eligible rate | predicted |
-|---|---|---|---|
-| most breakage-rich | `encode/httpx` | 0.077 | positive-heavy was predicted for pytest/scrapy; httpx exceeding both is the one miss |
-| | `pytest-dev/pytest` | 0.048 | **positive-heavy — held** |
-| | `scrapy/scrapy` | 0.047 | **positive-heavy — held** |
-| | `sphinx-doc/sphinx` | 0.041 | — |
-| | `django/django` | 0.034 | — |
-| | `pallets/flask` | 0.031 | **negative-heavy — held** |
-| | `fastapi/fastapi` | 0.022 | **negative-heavy — held** |
-| least | `psf/requests` | 0.017 | — |
+| repository | eligible rate | predicted |
+|---|---:|---|
+| `encode/httpx` | 0.077 | selected for annotation density, not breakage rate — the one miss |
+| `scrapy/scrapy` | 0.052 | **positive-heavy — held** |
+| `pytest-dev/pytest` | 0.047 | **positive-heavy — held** |
+| `django/django` | 0.038 | — |
+| `sphinx-doc/sphinx` | 0.037 | — |
+| `pallets/flask` | 0.030 | **negative-heavy — held** |
+| `fastapi/fastapi` | 0.023 | **negative-heavy — held** |
+| `psf/requests` | 0.015 | — |
 
-Four of four directional predictions held; `httpx` was expected to contribute annotation density,
-not the highest breakage rate, and its 0.077 is recorded as a miss rather than smoothed over.
-The spread — a factor of **4.5** between the most and least breakage-rich block — is what the
-per-repository reporting rule exists for: a pooled number that quietly averages `httpx` with
-`requests` would describe no real codebase.
+Four of four directional predictions held. `httpx` was expected to contribute annotation density,
+not the highest breakage rate, and its 0.077 is recorded as a miss rather
+than smoothed over. The **5.1×** spread
+between the extreme blocks is what the per-repository reporting rule exists for: a pooled number
+averaging `httpx` with `requests` would describe no real codebase.
+
+### What the census could not read
+
+| repository | parse failures | sources read | rate |
+|---|---:|---:|---:|
+| `pytest-dev/pytest` | 2,654 | 32,616 | 8.14% |
+| `django/django` | 5,534 | 90,942 | 6.09% |
+| `sphinx-doc/sphinx` | 1,510 | 35,788 | 4.22% |
+| `pallets/flask` | 207 | 4,994 | 4.14% |
+| `scrapy/scrapy` | 982 | 23,878 | 4.11% |
+| `psf/requests` | 67 | 4,030 | 1.66% |
+| `encode/httpx` | 1 | 5,496 | 0.02% |
+| `fastapi/fastapi` | 0 | 4,004 | 0.00% |
+| **total** | **10,955** | **201,748** | **5.43%** |
+
+Reaching the whole history means reaching Python 2, which `ast.parse` under Python 3.14 refuses.
+Counted rather than swallowed, because a census that silently returns "no definitions" for an
+unreadable file makes an unreadable history look like a clean one. **The corpus is the
+Python-3-parsable part of these histories**, and any claim about "the whole history" is a claim
+about the part a modern parser can read.
 
 ### What every criterion actually measured
 
-- **Multi-author**: the smallest block has **270** contributors, the largest **3,638**. The
-  requirement was 50. The single-author confound is gone by three to seventy times over.
-- **Non-zero base rate**: **435** eligible source commits, against the previous
-  corpus's **zero**. Whether 435 is *enough* is not a question this task may
-  answer by inspection — it is C3's, and C3 runs before any mechanism is measured.
-- **Internal fan-in**: 3,338 commits changed a signature; 435
-  of them (13.0%) also updated an in-repo
-  caller. The other 87.0% changed a
-  contract nothing else in the repository calls — which is itself the population the *negative*
-  class is drawn from, and it is large.
+- **Multi-author**: the smallest block has **270**
+  contributors, the largest **3,638**. The requirement was
+  50. The single-author confound is gone by between five and seventy times over.
+- **Non-zero base rate**: **1,118** eligible source commits against the previous
+  corpus's **zero**. Whether that is *enough* is not a question this task answers by inspection —
+  it is C3's, and C3 ran before any mechanism was measured.
+- **Internal fan-in**: 8,023 commits changed a signature;
+  1,118 of them
+  (13.9%) also updated an in-repo caller.
+  The other 86.1% changed a contract
+  nothing else in the repository calls — which is the population the *negative* class is drawn
+  from, and it is large.
 
 ### The answer key does not come from the instrument
 
-`research/invariants_lab/sigscan.py` re-implements signature extraction and reference finding
-from scratch, and is used for the census and for C2. It does **not** import
+`research/invariants_lab/sigscan.py` re-implements signature extraction and reference finding from
+scratch, and is used for the census and for C2. It does **not** import
 `nevertwice/invariants/blast_radius.py`. If the key and the checker shared an extractor, D2's
 tuple-unpacking defect would be a hole in both at once, and the measurement would confirm the
 checker's blind spot rather than expose it. `sigscan` records tuple-unpacking targets from its

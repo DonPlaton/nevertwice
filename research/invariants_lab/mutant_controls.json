@@ -1,17 +1,17 @@
 {
- "generated": "2026-08-27T23:51:45",
- "checked": 503,
- "confirmed": 495,
+ "generated": "2026-08-28T00:38:02",
+ "checked": 868,
+ "confirmed": 859,
  "not_broken": 0,
- "not_intact": 8,
+ "not_intact": 9,
  "by_breakage": {
   "arity": {
-   "checked": 413,
-   "confirmed": 405
+   "checked": 724,
+   "confirmed": 715
   },
   "vanished": {
-   "checked": 90,
-   "confirmed": 90
+   "checked": 144,
+   "confirmed": 144
   }
  },
  "disagreements": [
@@ -20,7 +20,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": false,
-   "signature": "(include_html=<object object at 0x000002CA66EF07A0>, email_backend=<object object at 0x000002CA66EF07A0>, reporter_class=<object object at 0x000002CA66EF07A0>, using=<object object at 0x000002CA66EF07A0>)",
+   "signature": "(include_html=<object object at 0x000001E6D29207A0>, email_backend=<object object at 0x000001E6D29207A0>, reporter_class=<object object at 0x000001E6D29207A0>, using=<object object at 0x000001E6D29207A0>)",
    "agrees": false
   },
   {
@@ -28,7 +28,15 @@
    "breakage": "arity",
    "broken": true,
    "intact": false,
-   "signature": "(verbosity, interactive, *, time_keeper=<object object at 0x000002CA66EF07A0>, keepdb=<object object at 0x000002CA66EF07A0>, debug_sql=<object object at 0x000002CA66EF07A0>, parallel=<object object at 0x000002CA66EF07A0>, aliases=<object object at 0x000002CA66EF07A0>, serialized_aliases=<object object at 0x000002CA66EF07A0>, **kwargs)",
+   "signature": "(verbosity, interactive, *, time_keeper=<object object at 0x000001E6D29207A0>, keepdb=<object object at 0x000001E6D29207A0>, debug_sql=<object object at 0x000001E6D29207A0>, parallel=<object object at 0x000001E6D29207A0>, aliases=<object object at 0x000001E6D29207A0>, serialized_aliases=<object object at 0x000001E6D29207A0>, **kwargs)",
+   "agrees": false
+  },
+  {
+   "mid": "django_django:742ed9878:django/db/models/base.py:django/core/apps/cache.py:AppCache.get_model",
+   "breakage": "arity",
+   "broken": true,
+   "intact": false,
+   "signature": "(app_label, model_name, only_installed=<object object at 0x000001E6D29207A0>)",
    "agrees": false
   },
   {
@@ -68,7 +76,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": false,
-   "signature": "(method, url, redirect=<object object at 0x000002CA66EF07A0>, **kw)",
+   "signature": "(method, url, redirect=<object object at 0x000001E6D29207A0>, **kw)",
    "agrees": false
   },
   {
@@ -86,7 +94,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": false,
-   "signature": "(include_html=<object object at 0x000002CA66EF07A0>, email_backend=<object object at 0x000002CA66EF07A0>, reporter_class=<object object at 0x000002CA66EF07A0>, using=<object object at 0x000002CA66EF07A0>)",
+   "signature": "(include_html=<object object at 0x000001E6D29207A0>, email_backend=<object object at 0x000001E6D29207A0>, reporter_class=<object object at 0x000001E6D29207A0>, using=<object object at 0x000001E6D29207A0>)",
    "agrees": false
   },
   {
@@ -110,7 +118,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(user_id, queryset, action_flag, change_message=<object object at 0x000002CA66EF07A0>)",
+   "signature": "(user_id, queryset, action_flag, change_message=<object object at 0x000001E6D29207A0>)",
    "agrees": true
   },
   {
@@ -118,7 +126,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(user_id, queryset, action_flag, change_message=<object object at 0x000002CA66EF07A0>)",
+   "signature": "(user_id, queryset, action_flag, change_message=<object object at 0x000001E6D29207A0>)",
    "agrees": true
   },
   {
@@ -126,7 +134,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(user_id, queryset, action_flag, change_message=<object object at 0x000002CA66EF07A0>)",
+   "signature": "(user_id, queryset, action_flag, change_message=<object object at 0x000001E6D29207A0>)",
    "agrees": true
   },
   {
@@ -134,7 +142,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(user_id, queryset, action_flag, change_message=<object object at 0x000002CA66EF07A0>)",
+   "signature": "(user_id, queryset, action_flag, change_message=<object object at 0x000001E6D29207A0>)",
    "agrees": true
   },
   {
@@ -142,7 +150,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(user_id, queryset, action_flag, change_message=<object object at 0x000002CA66EF07A0>)",
+   "signature": "(user_id, queryset, action_flag, change_message=<object object at 0x000001E6D29207A0>)",
    "agrees": true
   },
   {
@@ -190,7 +198,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(annotation, alias, select=<object object at 0x000002CA66EF07A0>)",
+   "signature": "(annotation, alias, select=<object object at 0x000001E6D29207A0>)",
    "agrees": true
   },
   {
@@ -326,7 +334,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(wrapper=<object object at 0x000002CA66EF07A0>)",
+   "signature": "(wrapper=<object object at 0x000001E6D29207A0>)",
    "agrees": true
   },
   {
@@ -342,7 +350,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(limit=<object object at 0x000002CA66EF07A0>)",
+   "signature": "(limit=<object object at 0x000001E6D29207A0>)",
    "agrees": true
   },
   {
@@ -614,7 +622,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(lookup_type, sql, params, tzname=<object object at 0x000002CA66EF07A0>)",
+   "signature": "(lookup_type, sql, params, tzname=<object object at 0x000001E6D29207A0>)",
    "agrees": true
   },
   {
@@ -622,7 +630,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(lookup_type, sql, params, tzname=<object object at 0x000002CA66EF07A0>)",
+   "signature": "(lookup_type, sql, params, tzname=<object object at 0x000001E6D29207A0>)",
    "agrees": true
   },
   {
@@ -630,7 +638,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(lookup_type, sql, params, tzname=<object object at 0x000002CA66EF07A0>)",
+   "signature": "(lookup_type, sql, params, tzname=<object object at 0x000001E6D29207A0>)",
    "agrees": true
   },
   {
@@ -638,7 +646,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(lookup_type, sql, params, tzname=<object object at 0x000002CA66EF07A0>)",
+   "signature": "(lookup_type, sql, params, tzname=<object object at 0x000001E6D29207A0>)",
    "agrees": true
   },
   {
@@ -646,7 +654,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(lookup_type, sql, params, tzname=<object object at 0x000002CA66EF07A0>)",
+   "signature": "(lookup_type, sql, params, tzname=<object object at 0x000001E6D29207A0>)",
    "agrees": true
   },
   {
@@ -838,7 +846,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(lookup_type, sql, params, tzname=<object object at 0x000002CA66EF07A0>)",
+   "signature": "(lookup_type, sql, params, tzname=<object object at 0x000001E6D29207A0>)",
    "agrees": true
   },
   {
@@ -846,7 +854,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(lookup_type, sql, params, tzname=<object object at 0x000002CA66EF07A0>)",
+   "signature": "(lookup_type, sql, params, tzname=<object object at 0x000001E6D29207A0>)",
    "agrees": true
   },
   {
@@ -854,7 +862,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(lookup_type, sql, params, tzname=<object object at 0x000002CA66EF07A0>)",
+   "signature": "(lookup_type, sql, params, tzname=<object object at 0x000001E6D29207A0>)",
    "agrees": true
   },
   {
@@ -862,7 +870,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(lookup_type, sql, params, tzname=<object object at 0x000002CA66EF07A0>)",
+   "signature": "(lookup_type, sql, params, tzname=<object object at 0x000001E6D29207A0>)",
    "agrees": true
   },
   {
@@ -870,7 +878,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(lookup_type, sql, params, tzname=<object object at 0x000002CA66EF07A0>)",
+   "signature": "(lookup_type, sql, params, tzname=<object object at 0x000001E6D29207A0>)",
    "agrees": true
   },
   {
@@ -886,7 +894,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(on_conflict=<object object at 0x000002CA66EF07A0>)",
+   "signature": "(on_conflict=<object object at 0x000001E6D29207A0>)",
    "agrees": true
   },
   {
@@ -894,7 +902,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(on_conflict=<object object at 0x000002CA66EF07A0>)",
+   "signature": "(on_conflict=<object object at 0x000001E6D29207A0>)",
    "agrees": true
   },
   {
@@ -902,7 +910,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(on_conflict=<object object at 0x000002CA66EF07A0>)",
+   "signature": "(on_conflict=<object object at 0x000001E6D29207A0>)",
    "agrees": true
   },
   {
@@ -910,7 +918,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(message, *args, response=<object object at 0x000002CA66EF07A0>, request=<object object at 0x000002CA66EF07A0>, logger=<object object at 0x000002CA66EF07A0>, level=<object object at 0x000002CA66EF07A0>, exception=<object object at 0x000002CA66EF07A0>)",
+   "signature": "(message, *args, response=<object object at 0x000001E6D29207A0>, request=<object object at 0x000001E6D29207A0>, logger=<object object at 0x000001E6D29207A0>, level=<object object at 0x000001E6D29207A0>, exception=<object object at 0x000001E6D29207A0>)",
    "agrees": true
   },
   {
@@ -982,7 +990,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(force=<object object at 0x000002CA66EF07A0>, clear_default=<object object at 0x000002CA66EF07A0>)",
+   "signature": "(force=<object object at 0x000001E6D29207A0>, clear_default=<object object at 0x000001E6D29207A0>)",
    "agrees": true
   },
   {
@@ -1014,7 +1022,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": false,
-   "signature": "(verbosity, interactive, *, time_keeper=<object object at 0x000002CA66EF07A0>, keepdb=<object object at 0x000002CA66EF07A0>, debug_sql=<object object at 0x000002CA66EF07A0>, parallel=<object object at 0x000002CA66EF07A0>, aliases=<object object at 0x000002CA66EF07A0>, serialized_aliases=<object object at 0x000002CA66EF07A0>, **kwargs)",
+   "signature": "(verbosity, interactive, *, time_keeper=<object object at 0x000001E6D29207A0>, keepdb=<object object at 0x000001E6D29207A0>, debug_sql=<object object at 0x000001E6D29207A0>, parallel=<object object at 0x000001E6D29207A0>, aliases=<object object at 0x000001E6D29207A0>, serialized_aliases=<object object at 0x000001E6D29207A0>, **kwargs)",
    "agrees": false
   },
   {
@@ -1022,7 +1030,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(model, *, fields=<object object at 0x000002CA66EF07A0>, **kwargs)",
+   "signature": "(model, *, fields=<object object at 0x000001E6D29207A0>, **kwargs)",
    "agrees": true
   },
   {
@@ -1030,7 +1038,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(model, *, fields=<object object at 0x000002CA66EF07A0>, name=<object object at 0x000002CA66EF07A0>, suffix=<object object at 0x000002CA66EF07A0>, using=<object object at 0x000002CA66EF07A0>, db_tablespace=<object object at 0x000002CA66EF07A0>, col_suffixes=<object object at 0x000002CA66EF07A0>, sql=<object object at 0x000002CA66EF07A0>, opclasses=<object object at 0x000002CA66EF07A0>, condition=<object object at 0x000002CA66EF07A0>, include=<object object at 0x000002CA66EF07A0>)",
+   "signature": "(model, *, fields=<object object at 0x000001E6D29207A0>, name=<object object at 0x000001E6D29207A0>, suffix=<object object at 0x000001E6D29207A0>, using=<object object at 0x000001E6D29207A0>, db_tablespace=<object object at 0x000001E6D29207A0>, col_suffixes=<object object at 0x000001E6D29207A0>, sql=<object object at 0x000001E6D29207A0>, opclasses=<object object at 0x000001E6D29207A0>, condition=<object object at 0x000001E6D29207A0>, include=<object object at 0x000001E6D29207A0>)",
    "agrees": true
   },
   {
@@ -1038,7 +1046,1559 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(model, *, fields=<object object at 0x000002CA66EF07A0>, name=<object object at 0x000002CA66EF07A0>, suffix=<object object at 0x000002CA66EF07A0>, using=<object object at 0x000002CA66EF07A0>, db_tablespace=<object object at 0x000002CA66EF07A0>, col_suffixes=<object object at 0x000002CA66EF07A0>, sql=<object object at 0x000002CA66EF07A0>, opclasses=<object object at 0x000002CA66EF07A0>, condition=<object object at 0x000002CA66EF07A0>, concurrently=<object object at 0x000002CA66EF07A0>, include=<object object at 0x000002CA66EF07A0>)",
+   "signature": "(model, *, fields=<object object at 0x000001E6D29207A0>, name=<object object at 0x000001E6D29207A0>, suffix=<object object at 0x000001E6D29207A0>, using=<object object at 0x000001E6D29207A0>, db_tablespace=<object object at 0x000001E6D29207A0>, col_suffixes=<object object at 0x000001E6D29207A0>, sql=<object object at 0x000001E6D29207A0>, opclasses=<object object at 0x000001E6D29207A0>, condition=<object object at 0x000001E6D29207A0>, concurrently=<object object at 0x000001E6D29207A0>, include=<object object at 0x000001E6D29207A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:464a4c0c5:django/db/models/sql/compiler.py:django/db/models/sql/query.py:Query.add_select_col",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(col, name)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:06c5d3faf:tests/expressions/tests.py:django/db/models/expressions.py:Random",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 45,
+   "agrees": true
+  },
+  {
+   "mid": "django_django:f997b5e6a:django/core/management/commands/flush.py:django/core/management/sql.py:sql_flush",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(style, connection, reset_sequences=<object object at 0x000001E6D29207A0>, allow_cascade=<object object at 0x000001E6D29207A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:f997b5e6a:django/core/management/commands/sqlflush.py:django/core/management/sql.py:sql_flush",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(style, connection, reset_sequences=<object object at 0x000001E6D29207A0>, allow_cascade=<object object at 0x000001E6D29207A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:5673d4b10:django/core/management/commands/flush.py:django/db/backends/base/operations.py:BaseDatabaseOperations.execute_sql_flush",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(sql_list)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:5673d4b10:tests/backends/base/test_operations.py:django/db/backends/base/operations.py:BaseDatabaseOperations.execute_sql_flush",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(sql_list)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:5673d4b10:tests/backends/tests.py:django/db/backends/base/operations.py:BaseDatabaseOperations.execute_sql_flush",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(sql_list)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:75410228d:django/core/management/sql.py:django/db/backends/base/operations.py:BaseDatabaseOperations.sql_flush",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(style, tables, *, reset_sequences=<object object at 0x000001E6D29207A0>, allow_cascade=<object object at 0x000001E6D29207A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:75410228d:django/core/management/sql.py:django/db/backends/mysql/operations.py:DatabaseOperations.sql_flush",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(style, tables, *, reset_sequences=<object object at 0x000001E6D29207A0>, allow_cascade=<object object at 0x000001E6D29207A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:75410228d:django/core/management/sql.py:django/db/backends/oracle/operations.py:DatabaseOperations.sql_flush",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(style, tables, *, reset_sequences=<object object at 0x000001E6D29207A0>, allow_cascade=<object object at 0x000001E6D29207A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:75410228d:django/core/management/sql.py:django/db/backends/postgresql/operations.py:DatabaseOperations.sql_flush",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(style, tables, *, reset_sequences=<object object at 0x000001E6D29207A0>, allow_cascade=<object object at 0x000001E6D29207A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:75410228d:django/core/management/sql.py:django/db/backends/sqlite3/operations.py:DatabaseOperations.sql_flush",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(style, tables, *, reset_sequences=<object object at 0x000001E6D29207A0>, allow_cascade=<object object at 0x000001E6D29207A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:75410228d:tests/backends/base/test_operations.py:django/db/backends/base/operations.py:BaseDatabaseOperations.sql_flush",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(style, tables, *, reset_sequences=<object object at 0x000001E6D29207A0>, allow_cascade=<object object at 0x000001E6D29207A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:75410228d:tests/backends/base/test_operations.py:django/db/backends/mysql/operations.py:DatabaseOperations.sql_flush",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(style, tables, *, reset_sequences=<object object at 0x000001E6D29207A0>, allow_cascade=<object object at 0x000001E6D29207A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:75410228d:tests/backends/base/test_operations.py:django/db/backends/oracle/operations.py:DatabaseOperations.sql_flush",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(style, tables, *, reset_sequences=<object object at 0x000001E6D29207A0>, allow_cascade=<object object at 0x000001E6D29207A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:75410228d:tests/backends/base/test_operations.py:django/db/backends/postgresql/operations.py:DatabaseOperations.sql_flush",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(style, tables, *, reset_sequences=<object object at 0x000001E6D29207A0>, allow_cascade=<object object at 0x000001E6D29207A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:75410228d:tests/backends/base/test_operations.py:django/db/backends/sqlite3/operations.py:DatabaseOperations.sql_flush",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(style, tables, *, reset_sequences=<object object at 0x000001E6D29207A0>, allow_cascade=<object object at 0x000001E6D29207A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:75410228d:tests/backends/mysql/test_operations.py:django/db/backends/base/operations.py:BaseDatabaseOperations.sql_flush",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(style, tables, *, reset_sequences=<object object at 0x000001E6D29207A0>, allow_cascade=<object object at 0x000001E6D29207A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:75410228d:tests/backends/mysql/test_operations.py:django/db/backends/mysql/operations.py:DatabaseOperations.sql_flush",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(style, tables, *, reset_sequences=<object object at 0x000001E6D29207A0>, allow_cascade=<object object at 0x000001E6D29207A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:75410228d:tests/backends/mysql/test_operations.py:django/db/backends/oracle/operations.py:DatabaseOperations.sql_flush",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(style, tables, *, reset_sequences=<object object at 0x000001E6D29207A0>, allow_cascade=<object object at 0x000001E6D29207A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:75410228d:tests/backends/mysql/test_operations.py:django/db/backends/postgresql/operations.py:DatabaseOperations.sql_flush",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(style, tables, *, reset_sequences=<object object at 0x000001E6D29207A0>, allow_cascade=<object object at 0x000001E6D29207A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:75410228d:tests/backends/mysql/test_operations.py:django/db/backends/sqlite3/operations.py:DatabaseOperations.sql_flush",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(style, tables, *, reset_sequences=<object object at 0x000001E6D29207A0>, allow_cascade=<object object at 0x000001E6D29207A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:75410228d:tests/backends/oracle/test_operations.py:django/db/backends/base/operations.py:BaseDatabaseOperations.sql_flush",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(style, tables, *, reset_sequences=<object object at 0x000001E6D29207A0>, allow_cascade=<object object at 0x000001E6D29207A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:75410228d:tests/backends/oracle/test_operations.py:django/db/backends/mysql/operations.py:DatabaseOperations.sql_flush",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(style, tables, *, reset_sequences=<object object at 0x000001E6D29207A0>, allow_cascade=<object object at 0x000001E6D29207A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:75410228d:tests/backends/oracle/test_operations.py:django/db/backends/oracle/operations.py:DatabaseOperations.sql_flush",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(style, tables, *, reset_sequences=<object object at 0x000001E6D29207A0>, allow_cascade=<object object at 0x000001E6D29207A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:75410228d:tests/backends/oracle/test_operations.py:django/db/backends/postgresql/operations.py:DatabaseOperations.sql_flush",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(style, tables, *, reset_sequences=<object object at 0x000001E6D29207A0>, allow_cascade=<object object at 0x000001E6D29207A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:75410228d:tests/backends/oracle/test_operations.py:django/db/backends/sqlite3/operations.py:DatabaseOperations.sql_flush",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(style, tables, *, reset_sequences=<object object at 0x000001E6D29207A0>, allow_cascade=<object object at 0x000001E6D29207A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:75410228d:tests/backends/postgresql/test_operations.py:django/db/backends/base/operations.py:BaseDatabaseOperations.sql_flush",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(style, tables, *, reset_sequences=<object object at 0x000001E6D29207A0>, allow_cascade=<object object at 0x000001E6D29207A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:75410228d:tests/backends/postgresql/test_operations.py:django/db/backends/mysql/operations.py:DatabaseOperations.sql_flush",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(style, tables, *, reset_sequences=<object object at 0x000001E6D29207A0>, allow_cascade=<object object at 0x000001E6D29207A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:75410228d:tests/backends/postgresql/test_operations.py:django/db/backends/oracle/operations.py:DatabaseOperations.sql_flush",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(style, tables, *, reset_sequences=<object object at 0x000001E6D29207A0>, allow_cascade=<object object at 0x000001E6D29207A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:75410228d:tests/backends/postgresql/test_operations.py:django/db/backends/postgresql/operations.py:DatabaseOperations.sql_flush",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(style, tables, *, reset_sequences=<object object at 0x000001E6D29207A0>, allow_cascade=<object object at 0x000001E6D29207A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:75410228d:tests/backends/postgresql/test_operations.py:django/db/backends/sqlite3/operations.py:DatabaseOperations.sql_flush",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(style, tables, *, reset_sequences=<object object at 0x000001E6D29207A0>, allow_cascade=<object object at 0x000001E6D29207A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:75410228d:tests/backends/sqlite/test_operations.py:django/db/backends/base/operations.py:BaseDatabaseOperations.sql_flush",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(style, tables, *, reset_sequences=<object object at 0x000001E6D29207A0>, allow_cascade=<object object at 0x000001E6D29207A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:75410228d:tests/backends/sqlite/test_operations.py:django/db/backends/mysql/operations.py:DatabaseOperations.sql_flush",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(style, tables, *, reset_sequences=<object object at 0x000001E6D29207A0>, allow_cascade=<object object at 0x000001E6D29207A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:75410228d:tests/backends/sqlite/test_operations.py:django/db/backends/oracle/operations.py:DatabaseOperations.sql_flush",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(style, tables, *, reset_sequences=<object object at 0x000001E6D29207A0>, allow_cascade=<object object at 0x000001E6D29207A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:75410228d:tests/backends/sqlite/test_operations.py:django/db/backends/postgresql/operations.py:DatabaseOperations.sql_flush",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(style, tables, *, reset_sequences=<object object at 0x000001E6D29207A0>, allow_cascade=<object object at 0x000001E6D29207A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:75410228d:tests/backends/sqlite/test_operations.py:django/db/backends/sqlite3/operations.py:DatabaseOperations.sql_flush",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(style, tables, *, reset_sequences=<object object at 0x000001E6D29207A0>, allow_cascade=<object object at 0x000001E6D29207A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:75410228d:tests/backends/tests.py:django/db/backends/base/operations.py:BaseDatabaseOperations.sql_flush",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(style, tables, *, reset_sequences=<object object at 0x000001E6D29207A0>, allow_cascade=<object object at 0x000001E6D29207A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:75410228d:tests/backends/tests.py:django/db/backends/mysql/operations.py:DatabaseOperations.sql_flush",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(style, tables, *, reset_sequences=<object object at 0x000001E6D29207A0>, allow_cascade=<object object at 0x000001E6D29207A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:75410228d:tests/backends/tests.py:django/db/backends/oracle/operations.py:DatabaseOperations.sql_flush",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(style, tables, *, reset_sequences=<object object at 0x000001E6D29207A0>, allow_cascade=<object object at 0x000001E6D29207A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:75410228d:tests/backends/tests.py:django/db/backends/postgresql/operations.py:DatabaseOperations.sql_flush",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(style, tables, *, reset_sequences=<object object at 0x000001E6D29207A0>, allow_cascade=<object object at 0x000001E6D29207A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:75410228d:tests/backends/tests.py:django/db/backends/sqlite3/operations.py:DatabaseOperations.sql_flush",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(style, tables, *, reset_sequences=<object object at 0x000001E6D29207A0>, allow_cascade=<object object at 0x000001E6D29207A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:5b884d45a:django/core/management/commands/dbshell.py:django/db/backends/base/client.py:BaseDatabaseClient.runshell",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(parameters)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:5b884d45a:django/core/management/commands/dbshell.py:django/db/backends/mysql/client.py:DatabaseClient.runshell",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(parameters)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:5b884d45a:django/core/management/commands/dbshell.py:django/db/backends/oracle/client.py:DatabaseClient.runshell",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(parameters)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:5b884d45a:django/core/management/commands/dbshell.py:django/db/backends/postgresql/client.py:DatabaseClient.runshell",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(parameters)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:5b884d45a:django/core/management/commands/dbshell.py:django/db/backends/sqlite3/client.py:DatabaseClient.runshell",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(parameters)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:5b884d45a:django/db/backends/mysql/creation.py:django/db/backends/mysql/client.py:DatabaseClient.settings_to_cmd_args",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(settings_dict, parameters)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:306b68752:django/contrib/postgres/constraints.py:django/db/models/expressions.py:F.resolve_expression",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(query=<object object at 0x000001E6D29207A0>, allow_joins=<object object at 0x000001E6D29207A0>, reuse=<object object at 0x000001E6D29207A0>, summarize=<object object at 0x000001E6D29207A0>, for_save=<object object at 0x000001E6D29207A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:3ca77e2b8:django/db/models/sql/compiler.py:django/db/models/query_utils.py:QueryWrapper",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 16,
+   "agrees": true
+  },
+  {
+   "mid": "django_django:b31e63879:django/db/models/sql/compiler.py:django/db/backends/base/operations.py:BaseDatabaseOperations.fetch_returned_insert_columns",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(cursor, returning_params)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:b31e63879:django/db/models/sql/compiler.py:django/db/backends/oracle/operations.py:DatabaseOperations.fetch_returned_insert_columns",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(cursor, returning_params)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:e3fc9af4a:tests/backends/mysql/test_introspection.py:django/db/backends/mysql/introspection.py:DatabaseIntrospection._parse_constraint_columns",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(check_clause, columns)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:bc91f27a8:django/db/models/sql/compiler.py:django/db/backends/base/operations.py:BaseDatabaseOperations.return_insert_id",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(field)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:bc91f27a8:django/db/models/sql/compiler.py:django/db/backends/oracle/operations.py:DatabaseOperations.return_insert_id",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(field)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:bc91f27a8:django/db/models/sql/compiler.py:django/db/backends/postgresql/operations.py:DatabaseOperations.return_insert_id",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(field)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:312eb5cb1:django/core/serializers/python.py:django/core/serializers/base.py:deserialize_fk_value",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(field, field_value, using, handle_forward_references)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:312eb5cb1:django/core/serializers/python.py:django/core/serializers/base.py:deserialize_m2m_values",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(field, field_value, using, handle_forward_references)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:39283c8ed:django/urls/base.py:django/urls/resolvers.py:get_ns_resolver",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(ns_pattern, resolver, converters)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:9822d88ca:django/contrib/admin/actions.py:django/contrib/admin/utils.py:get_deleted_objects",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(objs, user, admin_site)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:9822d88ca:django/contrib/admin/options.py:django/contrib/admin/utils.py:get_deleted_objects",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(objs, user, admin_site)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:16436f375:django/contrib/admin/actions.py:django/contrib/admin/utils.py:get_deleted_objects",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(objs, user, admin_site, using)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:16436f375:django/contrib/admin/options.py:django/contrib/admin/utils.py:get_deleted_objects",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(objs, user, admin_site, using)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:2162f0983:django/db/models/sql/compiler.py:django/db/backends/base/operations.py:BaseDatabaseOperations.distinct_sql",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(fields, params)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:2162f0983:django/db/models/sql/compiler.py:django/db/backends/postgresql/operations.py:DatabaseOperations.distinct_sql",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(fields, params)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:2162f0983:tests/backends/base/test_operations.py:django/db/backends/base/operations.py:BaseDatabaseOperations.distinct_sql",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(fields, params)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:2162f0983:tests/backends/base/test_operations.py:django/db/backends/postgresql/operations.py:DatabaseOperations.distinct_sql",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(fields, params)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:1e81a4b89:tests/utils_tests/test_http.py:django/utils/http.py:is_safe_url",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(url, allowed_hosts, require_https=<object object at 0x000001E6D29207A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:c86e9b584:django/contrib/gis/db/models/proxy.py:django/db/models/query_utils.py:DeferredAttribute.__init__",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(field_name)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:96107e284:tests/utils_tests/test_http.py:django/utils/http.py:is_safe_url",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(url, allowed_hosts=<object object at 0x000001E6D29207A0>, require_https=<object object at 0x000001E6D29207A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:99e65d648:django/test/utils.py:django/db/backends/base/creation.py:BaseDatabaseCreation.clone_test_db",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(suffix, verbosity=<object object at 0x000001E6D29207A0>, autoclobber=<object object at 0x000001E6D29207A0>, keepdb=<object object at 0x000001E6D29207A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:99e65d648:django/test/utils.py:django/db/backends/base/creation.py:BaseDatabaseCreation.destroy_test_db",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(old_database_name=<object object at 0x000001E6D29207A0>, verbosity=<object object at 0x000001E6D29207A0>, keepdb=<object object at 0x000001E6D29207A0>, suffix=<object object at 0x000001E6D29207A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:ea91ad4c1:tests/indexes/tests.py:django/db/backends/base/schema.py:BaseDatabaseSchemaEditor._create_index_name",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(table_name, column_names, suffix=<object object at 0x000001E6D29207A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:ea91ad4c1:tests/schema/tests.py:django/db/backends/base/schema.py:BaseDatabaseSchemaEditor._create_index_name",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(table_name, column_names, suffix=<object object at 0x000001E6D29207A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:08972528c:django/contrib/gis/db/models/aggregates.py:django/contrib/gis/db/backends/oracle/operations.py:OracleOperations.convert_extent",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(clob)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:08972528c:django/contrib/gis/db/models/aggregates.py:django/contrib/gis/db/backends/postgis/operations.py:PostGISOperations.convert_extent",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(box)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:08972528c:django/contrib/gis/db/models/aggregates.py:django/contrib/gis/db/backends/spatialite/operations.py:SpatiaLiteOperations.convert_extent",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(box)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:08972528c:django/contrib/gis/db/models/aggregates.py:django/contrib/gis/db/backends/postgis/operations.py:PostGISOperations.convert_extent3d",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(box3d)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:0166dd2f8:django/contrib/gis/db/models/lookups.py:django/contrib/gis/db/backends/oracle/operations.py:OracleOperations.get_distance",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(f, value, lookup_type)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:0166dd2f8:django/contrib/gis/db/models/lookups.py:django/contrib/gis/db/backends/postgis/operations.py:PostGISOperations.get_distance",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(f, dist_val, lookup_type)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:0166dd2f8:django/contrib/gis/db/models/lookups.py:django/contrib/gis/db/backends/spatialite/operations.py:SpatiaLiteOperations.get_distance",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(f, value, lookup_type)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:2757209c9:django/core/management/commands/makemessages.py:django/utils/translation/template.py:templatize",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(src, origin=<object object at 0x000001E6D29207A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:0de0699d9:tests/schema/tests.py:django/db/backends/base/features.py:BaseDatabaseFeatures.introspected_boolean_field_type",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(field=<object object at 0x000001E6D29207A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:ad393beeb:tests/urlpatterns_reverse/namespace_urls.py:django/conf/urls/__init__.py:include",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(arg, namespace=<object object at 0x000001E6D29207A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:5d8da093a:django/template/engine.py:django/template/loaders/base.py:Loader.get_template",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(template_name, skip=<object object at 0x000001E6D29207A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:5d8da093a:django/template/engine.py:django/template/loaders/cached.py:Loader.get_template",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(template_name, skip=<object object at 0x000001E6D29207A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:fd748c42a:django/apps/registry.py:django/apps/config.py:AppConfig.import_models",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "()",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:1bc249c2a:django/db/models/sql/subqueries.py:django/db/backends/oracle/compiler.py:SQLCompiler.as_sql",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(with_limits=<object object at 0x000001E6D29207A0>, with_col_aliases=<object object at 0x000001E6D29207A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:1bc249c2a:django/db/models/sql/subqueries.py:django/db/models/sql/compiler.py:SQLCompiler.as_sql",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(with_limits=<object object at 0x000001E6D29207A0>, with_col_aliases=<object object at 0x000001E6D29207A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:fa2f55cfd:django/core/management/commands/makemessages.py:django/utils/translation/__init__.py:templatize",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(src, **kwargs)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:4b9330ccc:django/contrib/auth/middleware.py:django/contrib/auth/backends.py:RemoteUserBackend.authenticate",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(request, remote_user)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:3d0a3c5ff:django/test/testcases.py:django/db/backends/sqlite3/base.py:DatabaseWrapper.is_in_memory_db",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "()",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:767849b76:django/contrib/gis/db/backends/spatialite/schema.py:django/db/backends/sqlite3/schema.py:DatabaseSchemaEditor._remake_table",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(model, create_field=<object object at 0x000001E6D29207A0>, delete_field=<object object at 0x000001E6D29207A0>, alter_field=<object object at 0x000001E6D29207A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:52442898e:tests/schema/tests.py:django/db/backends/base/schema.py:BaseDatabaseSchemaEditor.add_index",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(model, index)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:52442898e:tests/schema/tests.py:django/db/backends/base/schema.py:BaseDatabaseSchemaEditor.remove_index",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(model, index)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:53a5fb3cc:tests/prefetch_related/tests.py:django/db/models/query.py:get_prefetcher",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(instance, through_attr, to_attr)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:2a4af0ea4:django/db/models/query.py:django/db/models/expressions.py:Date",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 27,
+   "agrees": true
+  },
+  {
+   "mid": "django_django:2a4af0ea4:django/db/models/query.py:django/db/models/expressions.py:DateTime",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 27,
+   "agrees": true
+  },
+  {
+   "mid": "django_django:86573861a:tests/forms_tests/tests/test_widgets.py:django/forms/widgets.py:RendererMixin.get_renderer",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(name, value, attrs=<object object at 0x000001E6D29207A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:86573861a:tests/forms_tests/tests/test_widgets.py:django/forms/widgets.py:RendererMixin.subwidgets",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(name, value, attrs=<object object at 0x000001E6D29207A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:46ecfb9b3:django/db/models/fields/__init__.py:django/db/models/expressions.py:BaseExpression._prepare",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(field)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:46ecfb9b3:django/db/models/fields/__init__.py:django/db/models/query.py:QuerySet._prepare",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(field)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:46ecfb9b3:django/db/models/fields/__init__.py:django/db/models/sql/query.py:Query._prepare",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(field)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:dbb0df2a0:tests/admin_ordering/tests.py:django/contrib/admin/options.py:BaseModelAdmin.formfield_for_foreignkey",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(db_field, request, **kwargs)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:dbb0df2a0:tests/admin_ordering/tests.py:django/contrib/admin/options.py:BaseModelAdmin.formfield_for_manytomany",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(db_field, request, **kwargs)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:902369661:tests/test_client_regress/views.py:django/shortcuts.py:render_to_response",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(template_name, context=<object object at 0x000001E6D29207A0>, content_type=<object object at 0x000001E6D29207A0>, status=<object object at 0x000001E6D29207A0>, using=<object object at 0x000001E6D29207A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:e542e81b3:django/db/models/fields/related.py:django/db/models/fields/related_descriptors.py:ManyRelatedObjectsDescriptor",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 15,
+   "agrees": true
+  },
+  {
+   "mid": "django_django:e542e81b3:django/db/models/fields/related.py:django/db/models/fields/related_descriptors.py:ReverseSingleRelatedObjectDescriptor",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 15,
+   "agrees": true
+  },
+  {
+   "mid": "django_django:1d8eb0cae:django/contrib/admin/sites.py:django/contrib/admin/options.py:BaseModelAdmin.check",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(**kwargs)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:1d8eb0cae:django/contrib/admin/sites.py:tests/admin_checks/tests.py:MyAdmin.check",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(**kwargs)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:1d8eb0cae:tests/admin_views/tests.py:django/contrib/admin/options.py:BaseModelAdmin.check",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(**kwargs)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:1d8eb0cae:tests/admin_views/tests.py:tests/admin_checks/tests.py:MyAdmin.check",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(**kwargs)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:0207bdd2d:django/contrib/admin/helpers.py:django/contrib/admin/utils.py:display_for_field",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(value, field, empty_value_display)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:0207bdd2d:django/contrib/admin/templatetags/admin_list.py:django/contrib/admin/utils.py:display_for_field",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(value, field, empty_value_display)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:0207bdd2d:tests/admin_utils/tests.py:django/contrib/admin/utils.py:display_for_field",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(value, field, empty_value_display)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:0339844b7:tests/urlpatterns_reverse/tests.py:django/core/urlresolvers.py:reverse",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(viewname, urlconf=<object object at 0x000001E6D29207A0>, args=<object object at 0x000001E6D29207A0>, kwargs=<object object at 0x000001E6D29207A0>, current_app=<object object at 0x000001E6D29207A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:c5a77721e:tests/schema/fields.py:django/db/models/fields/related.py:ReverseManyRelatedObjectsDescriptor",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 53,
+   "agrees": true
+  },
+  {
+   "mid": "django_django:7145c8a62:django/db/models/sql/query.py:django/db/models/sql/where.py:EverythingNode",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 10,
+   "agrees": true
+  },
+  {
+   "mid": "django_django:7145c8a62:tests/queries/tests.py:django/db/models/sql/where.py:EverythingNode",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 10,
+   "agrees": true
+  },
+  {
+   "mid": "django_django:5008a4db4:django/db/models/sql/query.py:django/db/models/sql/where.py:Constraint",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 12,
+   "agrees": true
+  },
+  {
+   "mid": "django_django:4aa089a9a:django/core/management/commands/migrate.py:django/core/management/sql.py:custom_sql_for_model",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 17,
+   "agrees": true
+  },
+  {
+   "mid": "django_django:f4f24d30e:django/core/management/commands/flush.py:django/core/management/sql.py:emit_post_migrate_signal",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(verbosity, interactive, db)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:f4f24d30e:django/core/management/commands/migrate.py:django/core/management/sql.py:emit_post_migrate_signal",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(verbosity, interactive, db)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:f4f24d30e:django/core/management/commands/migrate.py:django/core/management/sql.py:emit_pre_migrate_signal",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(verbosity, interactive, db)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:37b7776a0:tests/forms_tests/tests/test_forms.py:django/utils/datastructures.py:MergeDict",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 11,
+   "agrees": true
+  },
+  {
+   "mid": "django_django:21b858cb6:django/db/models/sql/compiler.py:django/db/models/expressions.py:ColIndexRef",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 26,
+   "agrees": true
+  },
+  {
+   "mid": "django_django:0c7633178:django/db/models/sql/subqueries.py:django/db/models/sql/constants.py:SelectInfo",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 11,
+   "agrees": true
+  },
+  {
+   "mid": "django_django:46068d850:django/contrib/admin/actions.py:django/contrib/admin/sites.py:AdminSite.each_context",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(request)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:46068d850:django/contrib/admin/options.py:django/contrib/admin/sites.py:AdminSite.each_context",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(request)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:46068d850:django/contrib/auth/admin.py:django/contrib/admin/sites.py:AdminSite.each_context",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(request)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:c7fd9b242:django/db/models/query.py:django/db/models/sql/query.py:Query.get_aggregation",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(using, added_aggregate_names)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:544a716da:django/template/engine.py:django/template/loaders/utils.py:_get_template_loaders",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 6,
+   "agrees": true
+  },
+  {
+   "mid": "django_django:544a716da:django/template/loaders/cached.py:django/template/loaders/utils.py:_get_template_loaders",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 6,
+   "agrees": true
+  },
+  {
+   "mid": "django_django:6a05f0dfe:django/core/management/commands/makemessages.py:django/core/management/utils.py:handle_extensions",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(extensions)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:6a05f0dfe:django/core/management/templates.py:django/core/management/utils.py:handle_extensions",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(extensions)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:f59fd15c4:django/contrib/gis/db/models/lookups.py:django/contrib/gis/db/backends/base.py:BaseSpatialOperations.get_geom_placeholder",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(f, value, qn)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:f59fd15c4:django/contrib/gis/db/models/lookups.py:django/contrib/gis/db/backends/mysql/operations.py:MySQLOperations.get_geom_placeholder",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(f, value, qn)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:f59fd15c4:django/contrib/gis/db/models/lookups.py:django/contrib/gis/db/backends/oracle/operations.py:OracleOperations.get_geom_placeholder",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(f, value, qn)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:f59fd15c4:django/contrib/gis/db/models/lookups.py:django/contrib/gis/db/backends/postgis/operations.py:PostGISOperations.get_geom_placeholder",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(f, value, qn)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:f59fd15c4:django/contrib/gis/db/models/lookups.py:django/contrib/gis/db/backends/spatialite/operations.py:SpatiaLiteOperations.get_geom_placeholder",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(f, value, qn)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:f59fd15c4:django/contrib/gis/db/models/query.py:django/contrib/gis/db/models/fields.py:GeometryField.get_placeholder",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(value, qn, connection)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:f59fd15c4:django/db/models/sql/compiler.py:django/contrib/gis/db/models/fields.py:GeometryField.get_placeholder",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(value, qn, connection)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:1ea44a3ab:django/templatetags/future.py:django/template/defaulttags.py:cycle",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(parser, token)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:1ea44a3ab:django/templatetags/future.py:django/template/defaulttags.py:firstof",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(parser, token)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:2bab9d6d9:django/middleware/locale.py:django/utils/translation/__init__.py:get_language_from_path",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(path)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:2bab9d6d9:django/middleware/locale.py:django/utils/translation/trans_null.py:get_language_from_path",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(request)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:2bab9d6d9:django/middleware/locale.py:django/utils/translation/trans_real.py:get_language_from_path",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(path, strict=<object object at 0x000001E6D29207A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:bfcc686d2:django/contrib/contenttypes/management.py:django/apps/registry.py:Apps.get_app_configs",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "()",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:bfcc686d2:django/core/management/commands/dumpdata.py:django/apps/registry.py:Apps.get_app_configs",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "()",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:bfcc686d2:django/core/management/commands/flush.py:django/apps/registry.py:Apps.get_app_configs",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "()",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:bfcc686d2:django/core/management/commands/migrate.py:django/apps/registry.py:Apps.get_app_configs",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "()",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:bfcc686d2:django/core/management/sql.py:django/apps/registry.py:Apps.get_app_configs",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "()",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:bfcc686d2:django/db/backends/__init__.py:django/apps/registry.py:Apps.get_app_configs",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "()",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:9f13c3328:django/db/models/options.py:django/apps/registry.py:Apps.get_models",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(app_mod=<object object at 0x000001E6D29207A0>, include_auto_created=<object object at 0x000001E6D29207A0>, include_deferred=<object object at 0x000001E6D29207A0>, include_swapped=<object object at 0x000001E6D29207A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:742ed9878:django/db/models/base.py:django/core/apps/cache.py:AppCache.get_model",
+   "breakage": "arity",
+   "broken": true,
+   "intact": false,
+   "signature": "(app_label, model_name, only_installed=<object object at 0x000001E6D29207A0>)",
+   "agrees": false
+  },
+  {
+   "mid": "django_django:742ed9878:tests/app_loading/tests.py:django/core/apps/cache.py:AppCache.get_model",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(app_label, model_name, only_installed=<object object at 0x000001E6D29207A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:0242c56fd:tests/app_cache/tests.py:django/core/apps/cache.py:BaseAppCache",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 16,
+   "agrees": true
+  },
+  {
+   "mid": "django_django:dcdc579d1:tests/queries/tests.py:django/db/models/sql/query.py:Query.bump_prefix",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(outer_query)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:7970d97a7:django/db/backends/mysql/introspection.py:django/utils/datastructures.py:SortedSet",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 11,
+   "agrees": true
+  },
+  {
+   "mid": "django_django:2456ffa42:django/db/models/fields/__init__.py:django/utils/itercompat.py:is_iterator",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 1,
+   "agrees": true
+  },
+  {
+   "mid": "django_django:4ad1eb1c1:django/contrib/admin/sites.py:django/contrib/admin/validation.py:validate",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 18,
+   "agrees": true
+  },
+  {
+   "mid": "django_django:4ad1eb1c1:tests/admin_validation/tests.py:django/contrib/admin/validation.py:validate",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 18,
+   "agrees": true
+  },
+  {
+   "mid": "django_django:4ad1eb1c1:tests/admin_validation/tests.py:django/contrib/admin/validation.py:validate_inline",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 18,
+   "agrees": true
+  },
+  {
+   "mid": "django_django:4ad1eb1c1:tests/modeladmin/tests.py:django/contrib/admin/validation.py:validate",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 18,
+   "agrees": true
+  },
+  {
+   "mid": "django_django:e654180ce:django/db/backends/creation.py:django/db/backends/__init__.py:BaseDatabaseWrapper.set_autocommit",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(autocommit)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:e654180ce:django/db/backends/creation.py:django/db/transaction.py:set_autocommit",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(autocommit, using=<object object at 0x000001E6D29207A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:edf93127b:django/db/models/sql/compiler.py:django/db/models/sql/query.py:Query.join",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(connection, reuse=<object object at 0x000001E6D29207A0>, outer_if_first=<object object at 0x000001E6D29207A0>, nullable=<object object at 0x000001E6D29207A0>, join_field=<object object at 0x000001E6D29207A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:5cc0f5f8c:django/db/models/query.py:django/db/models/sql/query.py:Query.clear_ordering",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(force_empty)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:4511aeb6b:django/db/models/sql/query.py:django/db/models/sql/constants.py:PathInfo",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 10,
+   "agrees": true
+  },
+  {
+   "mid": "django_django:69597e5bc:django/db/models/sql/expressions.py:django/db/models/sql/query.py:Query.trim_joins",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(target, joins, path)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:a2f2a3995:django/contrib/comments/views/comments.py:django/contrib/comments/views/utils.py:next_redirect",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(request, fallback, **get_kwargs)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:a2f2a3995:django/contrib/comments/views/moderation.py:django/contrib/comments/views/utils.py:next_redirect",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(request, fallback, **get_kwargs)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:cafb26695:tests/regressiontests/aggregation_regress/tests.py:django/db/models/sql/compiler.py:SQLCompiler.get_grouping",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(ordering_group_by)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:cd17a2408:django/contrib/sessions/backends/cached_db.py:django/contrib/sessions/backends/base.py:SessionBase.get_expiry_age",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(**kwargs)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:ffdd6595e:django/contrib/gis/geos/geometry.py:django/contrib/gis/geos/prototypes/io.py:ThreadLocalIO.ewkb_w3d",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 63,
+   "agrees": true
+  },
+  {
+   "mid": "django_django:ffdd6595e:django/contrib/gis/geos/geometry.py:django/contrib/gis/geos/prototypes/io.py:ewkb_w3d",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 63,
+   "agrees": true
+  },
+  {
+   "mid": "django_django:b6c356b7b:django/db/models/sql/compiler.py:django/db/models/query_utils.py:select_related_descend",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(field, restricted, requested, load_fields, reverse=<object object at 0x000001E6D29207A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:30b3d5159:django/db/backends/postgresql_psycopg2/operations.py:django/db/backends/__init__.py:BaseDatabaseOperations.__init__",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(connection)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:c24bdf044:django/contrib/admin/views/main.py:django/contrib/admin/options.py:BaseModelAdmin.lookup_allowed",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(lookup, value)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:616b30227:django/contrib/admin/actions.py:django/contrib/admin/util.py:get_deleted_objects",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(objs, opts, user, admin_site, using)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:616b30227:django/contrib/admin/options.py:django/contrib/admin/util.py:get_deleted_objects",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(objs, opts, user, admin_site, using)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:21d6fb606:django/contrib/admin/actions.py:django/contrib/admin/util.py:get_deleted_objects",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(objs, opts, user, admin_site)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:e12b3199d:django/contrib/admin/actions.py:django/contrib/admin/util.py:get_deleted_objects",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(objs, opts, user, admin_site, levels_to_root=<object object at 0x000001E6D29207A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:e12b3199d:django/contrib/admin/options.py:django/contrib/admin/util.py:get_deleted_objects",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(objs, opts, user, admin_site, levels_to_root=<object object at 0x000001E6D29207A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:32e0117ab:django/contrib/gis/geos/geometry.py:django/contrib/gis/geos/io.py:ewkb_w",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 7,
+   "agrees": true
+  },
+  {
+   "mid": "django_django:32e0117ab:django/contrib/gis/geos/geometry.py:django/contrib/gis/geos/io.py:ewkb_w3d",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 7,
+   "agrees": true
+  },
+  {
+   "mid": "django_django:32e0117ab:django/contrib/gis/geos/geometry.py:django/contrib/gis/geos/io.py:wkb_r",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 7,
+   "agrees": true
+  },
+  {
+   "mid": "django_django:32e0117ab:django/contrib/gis/geos/geometry.py:django/contrib/gis/geos/io.py:wkb_w",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 7,
+   "agrees": true
+  },
+  {
+   "mid": "django_django:32e0117ab:django/contrib/gis/geos/geometry.py:django/contrib/gis/geos/io.py:wkt_r",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 7,
+   "agrees": true
+  },
+  {
+   "mid": "django_django:32e0117ab:django/contrib/gis/geos/geometry.py:django/contrib/gis/geos/io.py:wkt_w",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 7,
+   "agrees": true
+  },
+  {
+   "mid": "django_django:2f9853b2d:django/forms/models.py:django/core/exceptions.py:UnresolvableValidationError",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 10,
+   "agrees": true
+  },
+  {
+   "mid": "django_django:315145f7c:django/db/backends/oracle/client.py:django/db/backends/oracle/base.py:DatabaseWrapper._connect_string",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "()",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:cc4e4d9ae:django/db/models/sql/query.py:django/db/models/sql/datastructures.py:Count",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 6,
+   "agrees": true
+  },
+  {
+   "mid": "django_django:a4907be38:django/newforms/models.py:django/newforms/forms.py:SortedDictFromList",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 20,
    "agrees": true
   },
   {
@@ -1118,7 +2678,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(request, *, stream=<object object at 0x000002CA66EF07A0>, auth=<object object at 0x000002CA66EF07A0>, follow_redirects=<object object at 0x000002CA66EF07A0>, timeout=<object object at 0x000002CA66EF07A0>)",
+   "signature": "(request, *, stream=<object object at 0x000001E6D29207A0>, auth=<object object at 0x000001E6D29207A0>, follow_redirects=<object object at 0x000001E6D29207A0>, timeout=<object object at 0x000001E6D29207A0>)",
    "agrees": true
   },
   {
@@ -1126,7 +2686,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(request, *, stream=<object object at 0x000002CA66EF07A0>, auth=<object object at 0x000002CA66EF07A0>, follow_redirects=<object object at 0x000002CA66EF07A0>, timeout=<object object at 0x000002CA66EF07A0>)",
+   "signature": "(request, *, stream=<object object at 0x000001E6D29207A0>, auth=<object object at 0x000001E6D29207A0>, follow_redirects=<object object at 0x000001E6D29207A0>, timeout=<object object at 0x000001E6D29207A0>)",
    "agrees": true
   },
   {
@@ -1134,7 +2694,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(method, url, *, params=<object object at 0x000002CA66EF07A0>, content=<object object at 0x000002CA66EF07A0>, data=<object object at 0x000002CA66EF07A0>, files=<object object at 0x000002CA66EF07A0>, json=<object object at 0x000002CA66EF07A0>, headers=<object object at 0x000002CA66EF07A0>, cookies=<object object at 0x000002CA66EF07A0>, auth=<object object at 0x000002CA66EF07A0>, proxies=<object object at 0x000002CA66EF07A0>, timeout=<object object at 0x000002CA66EF07A0>, follow_redirects=<object object at 0x000002CA66EF07A0>, verify=<object object at 0x000002CA66EF07A0>, cert=<object object at 0x000002CA66EF07A0>, trust_env=<object object at 0x000002CA66EF07A0>)",
+   "signature": "(method, url, *, params=<object object at 0x000001E6D29207A0>, content=<object object at 0x000001E6D29207A0>, data=<object object at 0x000001E6D29207A0>, files=<object object at 0x000001E6D29207A0>, json=<object object at 0x000001E6D29207A0>, headers=<object object at 0x000001E6D29207A0>, cookies=<object object at 0x000001E6D29207A0>, auth=<object object at 0x000001E6D29207A0>, proxies=<object object at 0x000001E6D29207A0>, timeout=<object object at 0x000001E6D29207A0>, follow_redirects=<object object at 0x000001E6D29207A0>, verify=<object object at 0x000001E6D29207A0>, cert=<object object at 0x000001E6D29207A0>, trust_env=<object object at 0x000001E6D29207A0>)",
    "agrees": true
   },
   {
@@ -1142,7 +2702,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(method, url, *, content=<object object at 0x000002CA66EF07A0>, data=<object object at 0x000002CA66EF07A0>, files=<object object at 0x000002CA66EF07A0>, json=<object object at 0x000002CA66EF07A0>, params=<object object at 0x000002CA66EF07A0>, headers=<object object at 0x000002CA66EF07A0>, cookies=<object object at 0x000002CA66EF07A0>, auth=<object object at 0x000002CA66EF07A0>, follow_redirects=<object object at 0x000002CA66EF07A0>, timeout=<object object at 0x000002CA66EF07A0>)",
+   "signature": "(method, url, *, content=<object object at 0x000001E6D29207A0>, data=<object object at 0x000001E6D29207A0>, files=<object object at 0x000001E6D29207A0>, json=<object object at 0x000001E6D29207A0>, params=<object object at 0x000001E6D29207A0>, headers=<object object at 0x000001E6D29207A0>, cookies=<object object at 0x000001E6D29207A0>, auth=<object object at 0x000001E6D29207A0>, follow_redirects=<object object at 0x000001E6D29207A0>, timeout=<object object at 0x000001E6D29207A0>)",
    "agrees": true
   },
   {
@@ -1150,7 +2710,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(method, url, *, content=<object object at 0x000002CA66EF07A0>, data=<object object at 0x000002CA66EF07A0>, files=<object object at 0x000002CA66EF07A0>, json=<object object at 0x000002CA66EF07A0>, params=<object object at 0x000002CA66EF07A0>, headers=<object object at 0x000002CA66EF07A0>, cookies=<object object at 0x000002CA66EF07A0>, auth=<object object at 0x000002CA66EF07A0>, follow_redirects=<object object at 0x000002CA66EF07A0>, timeout=<object object at 0x000002CA66EF07A0>)",
+   "signature": "(method, url, *, content=<object object at 0x000001E6D29207A0>, data=<object object at 0x000001E6D29207A0>, files=<object object at 0x000001E6D29207A0>, json=<object object at 0x000001E6D29207A0>, params=<object object at 0x000001E6D29207A0>, headers=<object object at 0x000001E6D29207A0>, cookies=<object object at 0x000001E6D29207A0>, auth=<object object at 0x000001E6D29207A0>, follow_redirects=<object object at 0x000001E6D29207A0>, timeout=<object object at 0x000001E6D29207A0>)",
    "agrees": true
   },
   {
@@ -1318,7 +2878,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(n, timeout, flag=<object object at 0x000002CA66EF07A0>)",
+   "signature": "(n, timeout, flag=<object object at 0x000001E6D29207A0>)",
    "agrees": true
   },
   {
@@ -1326,7 +2886,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(n, timeout, flag=<object object at 0x000002CA66EF07A0>)",
+   "signature": "(n, timeout, flag=<object object at 0x000001E6D29207A0>)",
    "agrees": true
   },
   {
@@ -1334,7 +2894,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(data, timeout, flag=<object object at 0x000002CA66EF07A0>)",
+   "signature": "(data, timeout, flag=<object object at 0x000001E6D29207A0>)",
    "agrees": true
   },
   {
@@ -1342,7 +2902,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(data, timeout, flag=<object object at 0x000002CA66EF07A0>)",
+   "signature": "(data, timeout, flag=<object object at 0x000001E6D29207A0>)",
    "agrees": true
   },
   {
@@ -1422,7 +2982,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(method, url, *, data=<object object at 0x000002CA66EF07A0>, params=<object object at 0x000002CA66EF07A0>, headers=<object object at 0x000002CA66EF07A0>, verify=<object object at 0x000002CA66EF07A0>, cert=<object object at 0x000002CA66EF07A0>, timeout=<object object at 0x000002CA66EF07A0>)",
+   "signature": "(method, url, *, data=<object object at 0x000001E6D29207A0>, params=<object object at 0x000001E6D29207A0>, headers=<object object at 0x000001E6D29207A0>, verify=<object object at 0x000001E6D29207A0>, cert=<object object at 0x000001E6D29207A0>, timeout=<object object at 0x000001E6D29207A0>)",
    "agrees": true
   },
   {
@@ -1430,7 +2990,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(method, url, *, data=<object object at 0x000002CA66EF07A0>, query_params=<object object at 0x000002CA66EF07A0>, headers=<object object at 0x000002CA66EF07A0>, stream=<object object at 0x000002CA66EF07A0>, allow_redirects=<object object at 0x000002CA66EF07A0>, ssl=<object object at 0x000002CA66EF07A0>, timeout=<object object at 0x000002CA66EF07A0>)",
+   "signature": "(method, url, *, data=<object object at 0x000001E6D29207A0>, query_params=<object object at 0x000001E6D29207A0>, headers=<object object at 0x000001E6D29207A0>, stream=<object object at 0x000001E6D29207A0>, allow_redirects=<object object at 0x000001E6D29207A0>, ssl=<object object at 0x000001E6D29207A0>, timeout=<object object at 0x000001E6D29207A0>)",
    "agrees": true
   },
   {
@@ -1438,7 +2998,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(method, url, *, data=<object object at 0x000002CA66EF07A0>, query_params=<object object at 0x000002CA66EF07A0>, headers=<object object at 0x000002CA66EF07A0>, stream=<object object at 0x000002CA66EF07A0>, allow_redirects=<object object at 0x000002CA66EF07A0>, ssl=<object object at 0x000002CA66EF07A0>, timeout=<object object at 0x000002CA66EF07A0>)",
+   "signature": "(method, url, *, data=<object object at 0x000001E6D29207A0>, query_params=<object object at 0x000001E6D29207A0>, headers=<object object at 0x000001E6D29207A0>, stream=<object object at 0x000001E6D29207A0>, allow_redirects=<object object at 0x000001E6D29207A0>, ssl=<object object at 0x000001E6D29207A0>, timeout=<object object at 0x000001E6D29207A0>)",
    "agrees": true
   },
   {
@@ -1446,7 +3006,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(method, url, *, data=<object object at 0x000002CA66EF07A0>, query_params=<object object at 0x000002CA66EF07A0>, headers=<object object at 0x000002CA66EF07A0>, stream=<object object at 0x000002CA66EF07A0>, allow_redirects=<object object at 0x000002CA66EF07A0>, ssl=<object object at 0x000002CA66EF07A0>, timeout=<object object at 0x000002CA66EF07A0>)",
+   "signature": "(method, url, *, data=<object object at 0x000001E6D29207A0>, query_params=<object object at 0x000001E6D29207A0>, headers=<object object at 0x000001E6D29207A0>, stream=<object object at 0x000001E6D29207A0>, allow_redirects=<object object at 0x000001E6D29207A0>, ssl=<object object at 0x000001E6D29207A0>, timeout=<object object at 0x000001E6D29207A0>)",
    "agrees": true
   },
   {
@@ -1454,7 +3014,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(method, url, *, data=<object object at 0x000002CA66EF07A0>, query_params=<object object at 0x000002CA66EF07A0>, headers=<object object at 0x000002CA66EF07A0>, stream=<object object at 0x000002CA66EF07A0>, allow_redirects=<object object at 0x000002CA66EF07A0>, ssl=<object object at 0x000002CA66EF07A0>, timeout=<object object at 0x000002CA66EF07A0>)",
+   "signature": "(method, url, *, data=<object object at 0x000001E6D29207A0>, query_params=<object object at 0x000001E6D29207A0>, headers=<object object at 0x000001E6D29207A0>, stream=<object object at 0x000001E6D29207A0>, allow_redirects=<object object at 0x000001E6D29207A0>, ssl=<object object at 0x000001E6D29207A0>, timeout=<object object at 0x000001E6D29207A0>)",
    "agrees": true
   },
   {
@@ -1462,7 +3022,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(url, *, data=<object object at 0x000002CA66EF07A0>, query_params=<object object at 0x000002CA66EF07A0>, headers=<object object at 0x000002CA66EF07A0>, stream=<object object at 0x000002CA66EF07A0>, allow_redirects=<object object at 0x000002CA66EF07A0>, ssl=<object object at 0x000002CA66EF07A0>, timeout=<object object at 0x000002CA66EF07A0>)",
+   "signature": "(url, *, data=<object object at 0x000001E6D29207A0>, query_params=<object object at 0x000001E6D29207A0>, headers=<object object at 0x000001E6D29207A0>, stream=<object object at 0x000001E6D29207A0>, allow_redirects=<object object at 0x000001E6D29207A0>, ssl=<object object at 0x000001E6D29207A0>, timeout=<object object at 0x000001E6D29207A0>)",
    "agrees": true
   },
   {
@@ -1470,7 +3030,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(url, *, data=<object object at 0x000002CA66EF07A0>, query_params=<object object at 0x000002CA66EF07A0>, headers=<object object at 0x000002CA66EF07A0>, stream=<object object at 0x000002CA66EF07A0>, allow_redirects=<object object at 0x000002CA66EF07A0>, ssl=<object object at 0x000002CA66EF07A0>, timeout=<object object at 0x000002CA66EF07A0>)",
+   "signature": "(url, *, data=<object object at 0x000001E6D29207A0>, query_params=<object object at 0x000001E6D29207A0>, headers=<object object at 0x000001E6D29207A0>, stream=<object object at 0x000001E6D29207A0>, allow_redirects=<object object at 0x000001E6D29207A0>, ssl=<object object at 0x000001E6D29207A0>, timeout=<object object at 0x000001E6D29207A0>)",
    "agrees": true
   },
   {
@@ -1478,7 +3038,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(method, url, *, data=<object object at 0x000002CA66EF07A0>, query_params=<object object at 0x000002CA66EF07A0>, headers=<object object at 0x000002CA66EF07A0>, stream=<object object at 0x000002CA66EF07A0>, allow_redirects=<object object at 0x000002CA66EF07A0>, ssl=<object object at 0x000002CA66EF07A0>, timeout=<object object at 0x000002CA66EF07A0>)",
+   "signature": "(method, url, *, data=<object object at 0x000001E6D29207A0>, query_params=<object object at 0x000001E6D29207A0>, headers=<object object at 0x000001E6D29207A0>, stream=<object object at 0x000001E6D29207A0>, allow_redirects=<object object at 0x000001E6D29207A0>, ssl=<object object at 0x000001E6D29207A0>, timeout=<object object at 0x000001E6D29207A0>)",
    "agrees": true
   },
   {
@@ -1486,7 +3046,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(method, url, *, data=<object object at 0x000002CA66EF07A0>, query_params=<object object at 0x000002CA66EF07A0>, headers=<object object at 0x000002CA66EF07A0>, stream=<object object at 0x000002CA66EF07A0>, allow_redirects=<object object at 0x000002CA66EF07A0>, ssl=<object object at 0x000002CA66EF07A0>, timeout=<object object at 0x000002CA66EF07A0>)",
+   "signature": "(method, url, *, data=<object object at 0x000001E6D29207A0>, query_params=<object object at 0x000001E6D29207A0>, headers=<object object at 0x000001E6D29207A0>, stream=<object object at 0x000001E6D29207A0>, allow_redirects=<object object at 0x000001E6D29207A0>, ssl=<object object at 0x000001E6D29207A0>, timeout=<object object at 0x000001E6D29207A0>)",
    "agrees": true
   },
   {
@@ -1494,7 +3054,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(url, *, data=<object object at 0x000002CA66EF07A0>, query_params=<object object at 0x000002CA66EF07A0>, headers=<object object at 0x000002CA66EF07A0>, stream=<object object at 0x000002CA66EF07A0>, allow_redirects=<object object at 0x000002CA66EF07A0>, ssl=<object object at 0x000002CA66EF07A0>, timeout=<object object at 0x000002CA66EF07A0>)",
+   "signature": "(url, *, data=<object object at 0x000001E6D29207A0>, query_params=<object object at 0x000001E6D29207A0>, headers=<object object at 0x000001E6D29207A0>, stream=<object object at 0x000001E6D29207A0>, allow_redirects=<object object at 0x000001E6D29207A0>, ssl=<object object at 0x000001E6D29207A0>, timeout=<object object at 0x000001E6D29207A0>)",
    "agrees": true
   },
   {
@@ -1502,7 +3062,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(url, *, data=<object object at 0x000002CA66EF07A0>, query_params=<object object at 0x000002CA66EF07A0>, headers=<object object at 0x000002CA66EF07A0>, stream=<object object at 0x000002CA66EF07A0>, allow_redirects=<object object at 0x000002CA66EF07A0>, ssl=<object object at 0x000002CA66EF07A0>, timeout=<object object at 0x000002CA66EF07A0>)",
+   "signature": "(url, *, data=<object object at 0x000001E6D29207A0>, query_params=<object object at 0x000001E6D29207A0>, headers=<object object at 0x000001E6D29207A0>, stream=<object object at 0x000001E6D29207A0>, allow_redirects=<object object at 0x000001E6D29207A0>, ssl=<object object at 0x000001E6D29207A0>, timeout=<object object at 0x000001E6D29207A0>)",
    "agrees": true
   },
   {
@@ -1510,7 +3070,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(method, url, *, content=<object object at 0x000002CA66EF07A0>, headers=<object object at 0x000002CA66EF07A0>, stream=<object object at 0x000002CA66EF07A0>, allow_redirects=<object object at 0x000002CA66EF07A0>, ssl=<object object at 0x000002CA66EF07A0>, timeout=<object object at 0x000002CA66EF07A0>)",
+   "signature": "(method, url, *, content=<object object at 0x000001E6D29207A0>, headers=<object object at 0x000001E6D29207A0>, stream=<object object at 0x000001E6D29207A0>, allow_redirects=<object object at 0x000001E6D29207A0>, ssl=<object object at 0x000001E6D29207A0>, timeout=<object object at 0x000001E6D29207A0>)",
    "agrees": true
   },
   {
@@ -1518,7 +3078,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(method, url, *, content=<object object at 0x000002CA66EF07A0>, headers=<object object at 0x000002CA66EF07A0>, stream=<object object at 0x000002CA66EF07A0>, allow_redirects=<object object at 0x000002CA66EF07A0>, ssl=<object object at 0x000002CA66EF07A0>, timeout=<object object at 0x000002CA66EF07A0>)",
+   "signature": "(method, url, *, content=<object object at 0x000001E6D29207A0>, headers=<object object at 0x000001E6D29207A0>, stream=<object object at 0x000001E6D29207A0>, allow_redirects=<object object at 0x000001E6D29207A0>, ssl=<object object at 0x000001E6D29207A0>, timeout=<object object at 0x000001E6D29207A0>)",
    "agrees": true
   },
   {
@@ -1526,7 +3086,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(url, *, content=<object object at 0x000002CA66EF07A0>, headers=<object object at 0x000002CA66EF07A0>, stream=<object object at 0x000002CA66EF07A0>, allow_redirects=<object object at 0x000002CA66EF07A0>, ssl=<object object at 0x000002CA66EF07A0>, timeout=<object object at 0x000002CA66EF07A0>)",
+   "signature": "(url, *, content=<object object at 0x000001E6D29207A0>, headers=<object object at 0x000001E6D29207A0>, stream=<object object at 0x000001E6D29207A0>, allow_redirects=<object object at 0x000001E6D29207A0>, ssl=<object object at 0x000001E6D29207A0>, timeout=<object object at 0x000001E6D29207A0>)",
    "agrees": true
   },
   {
@@ -1534,7 +3094,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(method, url, *, content=<object object at 0x000002CA66EF07A0>, headers=<object object at 0x000002CA66EF07A0>, stream=<object object at 0x000002CA66EF07A0>, allow_redirects=<object object at 0x000002CA66EF07A0>, ssl=<object object at 0x000002CA66EF07A0>, timeout=<object object at 0x000002CA66EF07A0>)",
+   "signature": "(method, url, *, content=<object object at 0x000001E6D29207A0>, headers=<object object at 0x000001E6D29207A0>, stream=<object object at 0x000001E6D29207A0>, allow_redirects=<object object at 0x000001E6D29207A0>, ssl=<object object at 0x000001E6D29207A0>, timeout=<object object at 0x000001E6D29207A0>)",
    "agrees": true
   },
   {
@@ -1550,7 +3110,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(name, type_, default=<object object at 0x000002CA66EF07A0>, field_info=<object object at 0x000002CA66EF07A0>, alias=<object object at 0x000002CA66EF07A0>, mode=<object object at 0x000002CA66EF07A0>)",
+   "signature": "(name, type_, default=<object object at 0x000001E6D29207A0>, field_info=<object object at 0x000001E6D29207A0>, alias=<object object at 0x000001E6D29207A0>, mode=<object object at 0x000001E6D29207A0>)",
    "agrees": true
   },
   {
@@ -1558,7 +3118,15 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(*, request, dependant, body=<object object at 0x000002CA66EF07A0>, background_tasks=<object object at 0x000002CA66EF07A0>, response=<object object at 0x000002CA66EF07A0>, dependency_overrides_provider=<object object at 0x000002CA66EF07A0>, dependency_cache=<object object at 0x000002CA66EF07A0>, async_exit_stack)",
+   "signature": "(*, request, dependant, body=<object object at 0x000001E6D29207A0>, background_tasks=<object object at 0x000001E6D29207A0>, response=<object object at 0x000001E6D29207A0>, dependency_overrides_provider=<object object at 0x000001E6D29207A0>, dependency_cache=<object object at 0x000001E6D29207A0>, async_exit_stack)",
+   "agrees": true
+  },
+  {
+   "mid": "fastapi_fastapi:e1758d107:fastapi/dependencies/utils.py:fastapi/utils.py:get_field_info",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 28,
    "agrees": true
   },
   {
@@ -1574,7 +3142,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(obj, include=<object object at 0x000002CA66EF07A0>, exclude=<object object at 0x000002CA66EF07A0>, by_alias=<object object at 0x000002CA66EF07A0>, skip_defaults=<object object at 0x000002CA66EF07A0>, exclude_unset=<object object at 0x000002CA66EF07A0>, exclude_defaults=<object object at 0x000002CA66EF07A0>, exclude_none=<object object at 0x000002CA66EF07A0>, custom_encoder=<object object at 0x000002CA66EF07A0>, sqlalchemy_safe=<object object at 0x000002CA66EF07A0>)",
+   "signature": "(obj, include=<object object at 0x000001E6D29207A0>, exclude=<object object at 0x000001E6D29207A0>, by_alias=<object object at 0x000001E6D29207A0>, skip_defaults=<object object at 0x000001E6D29207A0>, exclude_unset=<object object at 0x000001E6D29207A0>, exclude_defaults=<object object at 0x000001E6D29207A0>, exclude_none=<object object at 0x000001E6D29207A0>, custom_encoder=<object object at 0x000001E6D29207A0>, sqlalchemy_safe=<object object at 0x000001E6D29207A0>)",
    "agrees": true
   },
   {
@@ -1582,7 +3150,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(path, *, response_model=<object object at 0x000002CA66EF07A0>, status_code=<object object at 0x000002CA66EF07A0>, tags=<object object at 0x000002CA66EF07A0>, summary=<object object at 0x000002CA66EF07A0>, description=<object object at 0x000002CA66EF07A0>, response_description=<object object at 0x000002CA66EF07A0>, responses=<object object at 0x000002CA66EF07A0>, deprecated=<object object at 0x000002CA66EF07A0>, operation_id=<object object at 0x000002CA66EF07A0>, include_in_schema=<object object at 0x000002CA66EF07A0>, response_class=<object object at 0x000002CA66EF07A0>, name=<object object at 0x000002CA66EF07A0>)",
+   "signature": "(path, *, response_model=<object object at 0x000001E6D29207A0>, status_code=<object object at 0x000001E6D29207A0>, tags=<object object at 0x000001E6D29207A0>, summary=<object object at 0x000001E6D29207A0>, description=<object object at 0x000001E6D29207A0>, response_description=<object object at 0x000001E6D29207A0>, responses=<object object at 0x000001E6D29207A0>, deprecated=<object object at 0x000001E6D29207A0>, operation_id=<object object at 0x000001E6D29207A0>, include_in_schema=<object object at 0x000001E6D29207A0>, response_class=<object object at 0x000001E6D29207A0>, name=<object object at 0x000001E6D29207A0>)",
    "agrees": true
   },
   {
@@ -1590,7 +3158,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(path, *, response_model=<object object at 0x000002CA66EF07A0>, status_code=<object object at 0x000002CA66EF07A0>, tags=<object object at 0x000002CA66EF07A0>, summary=<object object at 0x000002CA66EF07A0>, description=<object object at 0x000002CA66EF07A0>, response_description=<object object at 0x000002CA66EF07A0>, responses=<object object at 0x000002CA66EF07A0>, deprecated=<object object at 0x000002CA66EF07A0>, operation_id=<object object at 0x000002CA66EF07A0>, include_in_schema=<object object at 0x000002CA66EF07A0>, response_class=<object object at 0x000002CA66EF07A0>, name=<object object at 0x000002CA66EF07A0>)",
+   "signature": "(path, *, response_model=<object object at 0x000001E6D29207A0>, status_code=<object object at 0x000001E6D29207A0>, tags=<object object at 0x000001E6D29207A0>, summary=<object object at 0x000001E6D29207A0>, description=<object object at 0x000001E6D29207A0>, response_description=<object object at 0x000001E6D29207A0>, responses=<object object at 0x000001E6D29207A0>, deprecated=<object object at 0x000001E6D29207A0>, operation_id=<object object at 0x000001E6D29207A0>, include_in_schema=<object object at 0x000001E6D29207A0>, response_class=<object object at 0x000001E6D29207A0>, name=<object object at 0x000001E6D29207A0>)",
    "agrees": true
   },
   {
@@ -1598,7 +3166,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(path, *, response_model=<object object at 0x000002CA66EF07A0>, status_code=<object object at 0x000002CA66EF07A0>, tags=<object object at 0x000002CA66EF07A0>, summary=<object object at 0x000002CA66EF07A0>, description=<object object at 0x000002CA66EF07A0>, response_description=<object object at 0x000002CA66EF07A0>, responses=<object object at 0x000002CA66EF07A0>, deprecated=<object object at 0x000002CA66EF07A0>, operation_id=<object object at 0x000002CA66EF07A0>, include_in_schema=<object object at 0x000002CA66EF07A0>, response_class=<object object at 0x000002CA66EF07A0>, name=<object object at 0x000002CA66EF07A0>)",
+   "signature": "(path, *, response_model=<object object at 0x000001E6D29207A0>, status_code=<object object at 0x000001E6D29207A0>, tags=<object object at 0x000001E6D29207A0>, summary=<object object at 0x000001E6D29207A0>, description=<object object at 0x000001E6D29207A0>, response_description=<object object at 0x000001E6D29207A0>, responses=<object object at 0x000001E6D29207A0>, deprecated=<object object at 0x000001E6D29207A0>, operation_id=<object object at 0x000001E6D29207A0>, include_in_schema=<object object at 0x000001E6D29207A0>, response_class=<object object at 0x000001E6D29207A0>, name=<object object at 0x000001E6D29207A0>)",
    "agrees": true
   },
   {
@@ -1606,7 +3174,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(path, *, response_model=<object object at 0x000002CA66EF07A0>, status_code=<object object at 0x000002CA66EF07A0>, tags=<object object at 0x000002CA66EF07A0>, summary=<object object at 0x000002CA66EF07A0>, description=<object object at 0x000002CA66EF07A0>, response_description=<object object at 0x000002CA66EF07A0>, responses=<object object at 0x000002CA66EF07A0>, deprecated=<object object at 0x000002CA66EF07A0>, operation_id=<object object at 0x000002CA66EF07A0>, include_in_schema=<object object at 0x000002CA66EF07A0>, response_class=<object object at 0x000002CA66EF07A0>, name=<object object at 0x000002CA66EF07A0>)",
+   "signature": "(path, *, response_model=<object object at 0x000001E6D29207A0>, status_code=<object object at 0x000001E6D29207A0>, tags=<object object at 0x000001E6D29207A0>, summary=<object object at 0x000001E6D29207A0>, description=<object object at 0x000001E6D29207A0>, response_description=<object object at 0x000001E6D29207A0>, responses=<object object at 0x000001E6D29207A0>, deprecated=<object object at 0x000001E6D29207A0>, operation_id=<object object at 0x000001E6D29207A0>, include_in_schema=<object object at 0x000001E6D29207A0>, response_class=<object object at 0x000001E6D29207A0>, name=<object object at 0x000001E6D29207A0>)",
    "agrees": true
   },
   {
@@ -1614,7 +3182,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(path, *, response_model=<object object at 0x000002CA66EF07A0>, status_code=<object object at 0x000002CA66EF07A0>, tags=<object object at 0x000002CA66EF07A0>, summary=<object object at 0x000002CA66EF07A0>, description=<object object at 0x000002CA66EF07A0>, response_description=<object object at 0x000002CA66EF07A0>, responses=<object object at 0x000002CA66EF07A0>, deprecated=<object object at 0x000002CA66EF07A0>, operation_id=<object object at 0x000002CA66EF07A0>, include_in_schema=<object object at 0x000002CA66EF07A0>, response_class=<object object at 0x000002CA66EF07A0>, name=<object object at 0x000002CA66EF07A0>)",
+   "signature": "(path, *, response_model=<object object at 0x000001E6D29207A0>, status_code=<object object at 0x000001E6D29207A0>, tags=<object object at 0x000001E6D29207A0>, summary=<object object at 0x000001E6D29207A0>, description=<object object at 0x000001E6D29207A0>, response_description=<object object at 0x000001E6D29207A0>, responses=<object object at 0x000001E6D29207A0>, deprecated=<object object at 0x000001E6D29207A0>, operation_id=<object object at 0x000001E6D29207A0>, include_in_schema=<object object at 0x000001E6D29207A0>, response_class=<object object at 0x000001E6D29207A0>, name=<object object at 0x000001E6D29207A0>)",
    "agrees": true
   },
   {
@@ -1622,7 +3190,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(path, *, response_model=<object object at 0x000002CA66EF07A0>, status_code=<object object at 0x000002CA66EF07A0>, tags=<object object at 0x000002CA66EF07A0>, summary=<object object at 0x000002CA66EF07A0>, description=<object object at 0x000002CA66EF07A0>, response_description=<object object at 0x000002CA66EF07A0>, responses=<object object at 0x000002CA66EF07A0>, deprecated=<object object at 0x000002CA66EF07A0>, operation_id=<object object at 0x000002CA66EF07A0>, include_in_schema=<object object at 0x000002CA66EF07A0>, response_class=<object object at 0x000002CA66EF07A0>, name=<object object at 0x000002CA66EF07A0>)",
+   "signature": "(path, *, response_model=<object object at 0x000001E6D29207A0>, status_code=<object object at 0x000001E6D29207A0>, tags=<object object at 0x000001E6D29207A0>, summary=<object object at 0x000001E6D29207A0>, description=<object object at 0x000001E6D29207A0>, response_description=<object object at 0x000001E6D29207A0>, responses=<object object at 0x000001E6D29207A0>, deprecated=<object object at 0x000001E6D29207A0>, operation_id=<object object at 0x000001E6D29207A0>, include_in_schema=<object object at 0x000001E6D29207A0>, response_class=<object object at 0x000001E6D29207A0>, name=<object object at 0x000001E6D29207A0>)",
    "agrees": true
   },
   {
@@ -1722,14 +3290,6 @@
    "agrees": true
   },
   {
-   "mid": "pallets_flask:c3d38a21c:flask/wrappers.py:flask/helpers.py:_assert_have_json",
-   "breakage": "vanished",
-   "broken": true,
-   "intact": true,
-   "names_after": 40,
-   "agrees": true
-  },
-  {
    "mid": "pallets_flask:e71a5ff8d:flask/app.py:flask/ctx.py:_RequestContext",
    "breakage": "vanished",
    "broken": true,
@@ -1798,7 +3358,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": false,
-   "signature": "(method, url, redirect=<object object at 0x000002CA66EF07A0>, **kw)",
+   "signature": "(method, url, redirect=<object object at 0x000001E6D29207A0>, **kw)",
    "agrees": false
   },
   {
@@ -1814,7 +3374,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(op, left, right, *, verbose, highlighter, assertion_text_diff_style, truncation_budget=<object object at 0x000002CA66EF07A0>)",
+   "signature": "(op, left, right, *, verbose, highlighter, assertion_text_diff_style, truncation_budget=<object object at 0x000001E6D29207A0>)",
    "agrees": true
   },
   {
@@ -1886,7 +3446,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(invocation_path, arg, arg_index, *, as_pypath=<object object at 0x000002CA66EF07A0>, consider_namespace_packages=<object object at 0x000002CA66EF07A0>)",
+   "signature": "(invocation_path, arg, arg_index, *, as_pypath=<object object at 0x000001E6D29207A0>, consider_namespace_packages=<object object at 0x000001E6D29207A0>)",
    "agrees": true
   },
   {
@@ -1902,7 +3462,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(path, *, mode=<object object at 0x000002CA66EF07A0>, root, consider_namespace_packages)",
+   "signature": "(path, *, mode=<object object at 0x000001E6D29207A0>, root, consider_namespace_packages)",
    "agrees": true
   },
   {
@@ -1918,7 +3478,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(path, *, mode=<object object at 0x000002CA66EF07A0>, root, consider_namespace_packages)",
+   "signature": "(path, *, mode=<object object at 0x000001E6D29207A0>, root, consider_namespace_packages)",
    "agrees": true
   },
   {
@@ -1926,7 +3486,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(path, *, mode=<object object at 0x000002CA66EF07A0>, root, consider_namespace_packages)",
+   "signature": "(path, *, mode=<object object at 0x000001E6D29207A0>, root, consider_namespace_packages)",
    "agrees": true
   },
   {
@@ -1958,7 +3518,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(path, *, mode=<object object at 0x000002CA66EF07A0>, root, consider_namespace_packages)",
+   "signature": "(path, *, mode=<object object at 0x000001E6D29207A0>, root, consider_namespace_packages)",
    "agrees": true
   },
   {
@@ -1966,7 +3526,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(path, *, consider_namespace_packages=<object object at 0x000002CA66EF07A0>)",
+   "signature": "(path, *, consider_namespace_packages=<object object at 0x000001E6D29207A0>)",
    "agrees": true
   },
   {
@@ -1982,7 +3542,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(path, *, mode=<object object at 0x000002CA66EF07A0>, root, consider_namespace_packages)",
+   "signature": "(path, *, mode=<object object at 0x000001E6D29207A0>, root, consider_namespace_packages)",
    "agrees": true
   },
   {
@@ -2054,7 +3614,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(name, parent=<object object at 0x000002CA66EF07A0>, config=<object object at 0x000002CA66EF07A0>, session=<object object at 0x000002CA66EF07A0>, path=<object object at 0x000002CA66EF07A0>, nodeid=<object object at 0x000002CA66EF07A0>)",
+   "signature": "(name, parent=<object object at 0x000001E6D29207A0>, config=<object object at 0x000001E6D29207A0>, session=<object object at 0x000001E6D29207A0>, path=<object object at 0x000001E6D29207A0>, nodeid=<object object at 0x000001E6D29207A0>)",
    "agrees": true
   },
   {
@@ -2062,7 +3622,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(path_or_parent=<object object at 0x000002CA66EF07A0>, path=<object object at 0x000002CA66EF07A0>, name=<object object at 0x000002CA66EF07A0>, parent=<object object at 0x000002CA66EF07A0>, config=<object object at 0x000002CA66EF07A0>, session=<object object at 0x000002CA66EF07A0>, nodeid=<object object at 0x000002CA66EF07A0>)",
+   "signature": "(path_or_parent=<object object at 0x000001E6D29207A0>, path=<object object at 0x000001E6D29207A0>, name=<object object at 0x000001E6D29207A0>, parent=<object object at 0x000001E6D29207A0>, config=<object object at 0x000001E6D29207A0>, session=<object object at 0x000001E6D29207A0>, nodeid=<object object at 0x000001E6D29207A0>)",
    "agrees": true
   },
   {
@@ -2158,7 +3718,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(inifile, args, rootdir_cmd_arg=<object object at 0x000002CA66EF07A0>, invocation_dir=<object object at 0x000002CA66EF07A0>)",
+   "signature": "(inifile, args, rootdir_cmd_arg=<object object at 0x000001E6D29207A0>, invocation_dir=<object object at 0x000001E6D29207A0>)",
    "agrees": true
   },
   {
@@ -2270,7 +3830,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(p, *, mode=<object object at 0x000002CA66EF07A0>, root)",
+   "signature": "(p, *, mode=<object object at 0x000001E6D29207A0>, root)",
    "agrees": true
   },
   {
@@ -2294,7 +3854,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(p, *, mode=<object object at 0x000002CA66EF07A0>, root)",
+   "signature": "(p, *, mode=<object object at 0x000001E6D29207A0>, root)",
    "agrees": true
   },
   {
@@ -2302,7 +3862,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(p, *, mode=<object object at 0x000002CA66EF07A0>, root)",
+   "signature": "(p, *, mode=<object object at 0x000001E6D29207A0>, root)",
    "agrees": true
   },
   {
@@ -2310,7 +3870,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(p, *, mode=<object object at 0x000002CA66EF07A0>, root)",
+   "signature": "(p, *, mode=<object object at 0x000001E6D29207A0>, root)",
    "agrees": true
   },
   {
@@ -2374,7 +3934,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(p, *, mode=<object object at 0x000002CA66EF07A0>, root)",
+   "signature": "(p, *, mode=<object object at 0x000001E6D29207A0>, root)",
    "agrees": true
   },
   {
@@ -2526,7 +4086,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(passed=<object object at 0x000002CA66EF07A0>, skipped=<object object at 0x000002CA66EF07A0>, failed=<object object at 0x000002CA66EF07A0>, errors=<object object at 0x000002CA66EF07A0>, xpassed=<object object at 0x000002CA66EF07A0>, xfailed=<object object at 0x000002CA66EF07A0>)",
+   "signature": "(passed=<object object at 0x000001E6D29207A0>, skipped=<object object at 0x000001E6D29207A0>, failed=<object object at 0x000001E6D29207A0>, errors=<object object at 0x000001E6D29207A0>, xpassed=<object object at 0x000001E6D29207A0>, xfailed=<object object at 0x000001E6D29207A0>)",
    "agrees": true
   },
   {
@@ -2534,7 +4094,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(passed=<object object at 0x000002CA66EF07A0>, skipped=<object object at 0x000002CA66EF07A0>, failed=<object object at 0x000002CA66EF07A0>, errors=<object object at 0x000002CA66EF07A0>, xpassed=<object object at 0x000002CA66EF07A0>, xfailed=<object object at 0x000002CA66EF07A0>)",
+   "signature": "(passed=<object object at 0x000001E6D29207A0>, skipped=<object object at 0x000001E6D29207A0>, failed=<object object at 0x000001E6D29207A0>, errors=<object object at 0x000001E6D29207A0>, xpassed=<object object at 0x000001E6D29207A0>, xfailed=<object object at 0x000001E6D29207A0>)",
    "agrees": true
   },
   {
@@ -2710,7 +4270,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(val, argname, idx, idfn, item, config=<object object at 0x000002CA66EF07A0>)",
+   "signature": "(val, argname, idx, idfn, item, config=<object object at 0x000001E6D29207A0>)",
    "agrees": true
   },
   {
@@ -2718,7 +4278,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(parameterset, belonging_definition, legacy_force_tuple=<object object at 0x000002CA66EF07A0>)",
+   "signature": "(parameterset, belonging_definition, legacy_force_tuple=<object object at 0x000001E6D29207A0>)",
    "agrees": true
   },
   {
@@ -2726,7 +4286,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(inifile, args, rootdir_cmd_arg=<object object at 0x000002CA66EF07A0>)",
+   "signature": "(inifile, args, rootdir_cmd_arg=<object object at 0x000001E6D29207A0>)",
    "agrees": true
   },
   {
@@ -2735,6 +4295,334 @@
    "broken": true,
    "intact": true,
    "signature": "(argnames, argvalues, func, config, function_definition)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:94050a8aa:_pytest/terminal.py:_pytest/hookspec.py:pytest_terminal_summary",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(terminalreporter, exitstatus)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:4e405dd9f:_pytest/terminal.py:_pytest/hookspec.py:pytest_terminal_summary",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(config, terminalreporter, exitstatus)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:bf2c10c81:_pytest/python.py:_pytest/mark.py:ParameterSet._for_parameterize",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(argnames, argvalues, function, config)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:3da28067f:_pytest/fixtures.py:_pytest/compat.py:getfuncargnames",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(function, is_method=<object object at 0x000001E6D29207A0>, cls=<object object at 0x000001E6D29207A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:5b95ee3c1:_pytest/terminal.py:_pytest/hookspec.py:pytest_terminal_summary",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(terminalreporter, exitstatus)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:d1852a48b:_pytest/config.py:_pytest/assertion/__init__.py:install_importhook",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(config)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:b3166a538:_pytest/pdb.py:_pytest/hookspec.py:pytest_enter_pdb",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(config)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:0f52856f9:testing/test_tmpdir.py:_pytest/tmpdir.py:tmpdir",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(request, tmpdir_factory)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:7049ebe4e:_pytest/main.py:_pytest/core.py:PluginManager.register",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(plugin, name=<object object at 0x000001E6D29207A0>, conftest=<object object at 0x000001E6D29207A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:c58770bfe:testing/test_core.py:_pytest/core.py:PluginManager.unregister",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(plugin)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:0a8b27ff4:_pytest/python.py:_pytest/main.py:getfslineno",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 35,
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:94ee37cdb:_pytest/core.py:_pytest/hookspec.py:pytest_internalerror",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(excrepr, excinfo)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:f5d796b09:testing/test_nose.py:_pytest/python.py:fixture",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(scope=<object object at 0x000001E6D29207A0>, params=<object object at 0x000001E6D29207A0>, autouse=<object object at 0x000001E6D29207A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:cb2eb9ba3:_pytest/python.py:_pytest/main.py:getfuncargnames",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 34,
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:ccc04b9fc:_pytest/terminal.py:_pytest/hookspec.py:pytest_report_header",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(config, startdir)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:c4fe622b8:_pytest/main.py:_pytest/hookspec.py:pytest_runtest_protocol",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(item, nextitem)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:c4fe622b8:_pytest/main.py:_pytest/runner.py:pytest_runtest_protocol",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(item, nextitem)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:c4fe622b8:testing/test_python.py:_pytest/runner.py:SetupState.teardown_exact",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(item, nextitem)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:c4fe622b8:testing/test_runner.py:_pytest/runner.py:SetupState.teardown_exact",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(item, nextitem)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:250160b4b:_pytest/assertion/newinterpret.py:_pytest/assertion/__init__.py:_format_explanation",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 17,
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:a6f10a6d8:pytest/plugin/pytester.py:pytest/plugin/session.py:Collection.genitems",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(node)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:3a5d28f3f:testing/plugin/test_pytester.py:pytest/_core.py:Registry",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 16,
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:f779d3f86:testing/plugin/test_pytest_terminal.py:py/_plugin/hookspec.py:pytest_runtest_logstart",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(nodeid, location, fspath)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:f779d3f86:testing/plugin/test_pytest_terminal.py:py/_plugin/pytest_terminal.py:TerminalReporter.pytest_runtest_logstart",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(nodeid, location, fspath)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:99301a0da:py/impl/test/cmdline.py:py/impl/test/dist/dsession.py:DSession.main",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(colitems)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:99301a0da:py/impl/test/cmdline.py:py/impl/test/session.py:Session.main",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(colitems)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:99301a0da:py/plugin/pytest_pytester.py:py/impl/test/dist/dsession.py:DSession.main",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(colitems)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:99301a0da:py/plugin/pytest_pytester.py:py/impl/test/session.py:Session.main",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(colitems)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:a42d9eb9f:bin-for-dist/test_generate_standalone.py:bin-for-dist/generate_standalone_pytest.py:main",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(pybasedir, outfile, infile)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:425e4849f:testing/pytest/dist/test_gwmanage.py:py/plugin/pytest__pytest.py:PytestArg.gethookrecorder",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(hook)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:a01e4769c:py/test/plugin/pytest_capture.py:py/_com.py:MultiCall.execute",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "()",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:a01e4769c:py/test/plugin/pytest_execnetcleanup.py:py/_com.py:MultiCall.execute",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "()",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:a01e4769c:py/test/plugin/pytest_xfail.py:py/_com.py:MultiCall.execute",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "()",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:8c8617c35:py/test/plugin/pytest_runner.py:py/test/dist/dsession.py:LoopState.pytest_runtest_logreport",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(report)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:8c8617c35:py/test/plugin/pytest_runner.py:py/test/plugin/hookspec.py:pytest_runtest_logreport",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(report)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:8c8617c35:py/test/plugin/pytest_runner.py:py/test/plugin/pytest_resultlog.py:ResultLog.pytest_runtest_logreport",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(report)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:8c8617c35:py/test/plugin/pytest_runner.py:py/test/plugin/pytest_terminal.py:TerminalReporter.pytest_runtest_logreport",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(report)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:8c8617c35:py/test/plugin/pytest_runner.py:py/test/session.py:Session.pytest_runtest_logreport",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(report)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:8be0ea942:py/test/dist/dsession.py:py/test/session.py:Session.sessionfinishes",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(exitstatus)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:771438fde:py/test/pycollect.py:py/test/plugin/hookspec.py:pytest_pyfunc_call",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(pyfuncitem)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:771438fde:py/test/pycollect.py:py/test/plugin/pytest_iocapture.py:pytest_pyfunc_call",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(pyfuncitem)",
    "agrees": true
   },
   {
@@ -3278,7 +5166,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(*, close_if_idle=<object object at 0x000002CA66EF07A0>)",
+   "signature": "(*, close_if_idle=<object object at 0x000001E6D29207A0>)",
    "agrees": true
   },
   {
@@ -3286,7 +5174,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(*, close_if_idle=<object object at 0x000002CA66EF07A0>)",
+   "signature": "(*, close_if_idle=<object object at 0x000001E6D29207A0>)",
    "agrees": true
   },
   {
@@ -3302,7 +5190,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(*, close_if_idle=<object object at 0x000002CA66EF07A0>)",
+   "signature": "(*, close_if_idle=<object object at 0x000001E6D29207A0>)",
    "agrees": true
   },
   {
@@ -3318,7 +5206,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(settings, output, *, overwrite_output=<object object at 0x000002CA66EF07A0>)",
+   "signature": "(settings, output, *, overwrite_output=<object object at 0x000001E6D29207A0>)",
    "agrees": true
   },
   {
@@ -3326,7 +5214,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(spidercls=<object object at 0x000002CA66EF07A0>, settings_dict=<object object at 0x000002CA66EF07A0>, prevent_warnings=<object object at 0x000002CA66EF07A0>)",
+   "signature": "(spidercls=<object object at 0x000001E6D29207A0>, settings_dict=<object object at 0x000001E6D29207A0>, prevent_warnings=<object object at 0x000001E6D29207A0>)",
    "agrees": true
   },
   {
@@ -3366,7 +5254,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(*, path, file, host, port, username, password, use_active_mode=<object object at 0x000002CA66EF07A0>)",
+   "signature": "(*, path, file, host, port, username, password, use_active_mode=<object object at 0x000001E6D29207A0>)",
    "agrees": true
   },
   {
@@ -3414,7 +5302,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(url, callback=<object object at 0x000002CA66EF07A0>, method=<object object at 0x000002CA66EF07A0>, headers=<object object at 0x000002CA66EF07A0>, body=<object object at 0x000002CA66EF07A0>, cookies=<object object at 0x000002CA66EF07A0>, meta=<object object at 0x000002CA66EF07A0>, encoding=<object object at 0x000002CA66EF07A0>, priority=<object object at 0x000002CA66EF07A0>, dont_filter=<object object at 0x000002CA66EF07A0>, errback=<object object at 0x000002CA66EF07A0>, cb_kwargs=<object object at 0x000002CA66EF07A0>)",
+   "signature": "(url, callback=<object object at 0x000001E6D29207A0>, method=<object object at 0x000001E6D29207A0>, headers=<object object at 0x000001E6D29207A0>, body=<object object at 0x000001E6D29207A0>, cookies=<object object at 0x000001E6D29207A0>, meta=<object object at 0x000001E6D29207A0>, encoding=<object object at 0x000001E6D29207A0>, priority=<object object at 0x000001E6D29207A0>, dont_filter=<object object at 0x000001E6D29207A0>, errback=<object object at 0x000001E6D29207A0>, cb_kwargs=<object object at 0x000001E6D29207A0>)",
    "agrees": true
   },
   {
@@ -3422,7 +5310,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(url, callback=<object object at 0x000002CA66EF07A0>, method=<object object at 0x000002CA66EF07A0>, headers=<object object at 0x000002CA66EF07A0>, body=<object object at 0x000002CA66EF07A0>, cookies=<object object at 0x000002CA66EF07A0>, meta=<object object at 0x000002CA66EF07A0>, encoding=<object object at 0x000002CA66EF07A0>, priority=<object object at 0x000002CA66EF07A0>, dont_filter=<object object at 0x000002CA66EF07A0>, errback=<object object at 0x000002CA66EF07A0>, cb_kwargs=<object object at 0x000002CA66EF07A0>)",
+   "signature": "(url, callback=<object object at 0x000001E6D29207A0>, method=<object object at 0x000001E6D29207A0>, headers=<object object at 0x000001E6D29207A0>, body=<object object at 0x000001E6D29207A0>, cookies=<object object at 0x000001E6D29207A0>, meta=<object object at 0x000001E6D29207A0>, encoding=<object object at 0x000001E6D29207A0>, priority=<object object at 0x000001E6D29207A0>, dont_filter=<object object at 0x000001E6D29207A0>, errback=<object object at 0x000001E6D29207A0>, cb_kwargs=<object object at 0x000001E6D29207A0>)",
    "agrees": true
   },
   {
@@ -3430,7 +5318,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(url=<object object at 0x000002CA66EF07A0>, request=<object object at 0x000002CA66EF07A0>, response=<object object at 0x000002CA66EF07A0>, spider=<object object at 0x000002CA66EF07A0>, redirect=<object object at 0x000002CA66EF07A0>)",
+   "signature": "(url=<object object at 0x000001E6D29207A0>, request=<object object at 0x000001E6D29207A0>, response=<object object at 0x000001E6D29207A0>, spider=<object object at 0x000001E6D29207A0>, redirect=<object object at 0x000001E6D29207A0>)",
    "agrees": true
   },
   {
@@ -3438,7 +5326,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(addon_name, addon_default_config=<object object at 0x000002CA66EF07A0>, addon_version=<object object at 0x000002CA66EF07A0>)",
+   "signature": "(addon_name, addon_default_config=<object object at 0x000001E6D29207A0>, addon_version=<object object at 0x000001E6D29207A0>)",
    "agrees": true
   },
   {
@@ -3446,7 +5334,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(compdict, convert=<object object at 0x000002CA66EF07A0>)",
+   "signature": "(compdict, convert=<object object at 0x000001E6D29207A0>)",
    "agrees": true
   },
   {
@@ -3506,11 +5394,395 @@
    "agrees": true
   },
   {
+   "mid": "scrapy_scrapy:c7f821990:scrapy/tests/test_log.py:scrapy/log.py:_get_log_level",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(level_name_or_id)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:36f47a4ae:scrapy/spider.py:scrapy/settings/__init__.py:SpiderSettings",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 3,
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:1bc2339bb:scrapy/tests/test_logformatter.py:scrapy/logformatter.py:LogFormatter.dropped",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(item, exception, response, spider)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:fa644f7a5:scrapyd/webservice.py:scrapyd/eggutils.py:get_spider_list_from_eggfile",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 3,
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:130276605:scrapy/telnet.py:scrapy/utils/reactor.py:listen_tcp",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(portrange, host, factory)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:130276605:scrapy/webservice.py:scrapy/utils/reactor.py:listen_tcp",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(portrange, host, factory)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:f3769651a:scrapyd/poller.py:scrapyd/utils.py:get_spider_queues",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(config)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:f3769651a:scrapyd/scheduler.py:scrapyd/utils.py:get_spider_queues",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(config)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:f3769651a:scrapyd/tests/test_poller.py:scrapyd/utils.py:get_spider_queues",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(config)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:f3769651a:scrapyd/tests/test_scheduler.py:scrapyd/utils.py:get_spider_queues",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(config)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:833baa604:scrapyd/launcher.py:scrapyd/environ.py:Environment.get_environment",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(message, slot, eggpath)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:833baa604:scrapyd/launcher.py:scrapyd/interfaces.py:IEnvironment.get_environment",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(message, slot, eggpath)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:766f2d910:scrapy/core/downloader/manager.py:scrapy/core/downloader/handlers/__init__.py:RequestHandlers",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 6,
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:cae22930c:scrapy/command/commands/start.py:scrapy/core/manager.py:ExecutionManager.start",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "()",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:aeab5370c:scrapy/contrib/downloadermiddleware/stats.py:scrapy/stats/collector/__init__.py:StatsCollector.inc_value",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(key, count=<object object at 0x000001E6D29207A0>, start=<object object at 0x000001E6D29207A0>, spider=<object object at 0x000001E6D29207A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:aeab5370c:scrapy/contrib/downloadermiddleware/stats.py:scrapy/stats/collector/__init__.py:DummyStatsCollector.inc_value",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(key, count=<object object at 0x000001E6D29207A0>, start=<object object at 0x000001E6D29207A0>, spider=<object object at 0x000001E6D29207A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:aeab5370c:scrapy/contrib/itemsampler.py:scrapy/stats/collector/__init__.py:StatsCollector.get_value",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(key, default=<object object at 0x000001E6D29207A0>, spider=<object object at 0x000001E6D29207A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:aeab5370c:scrapy/contrib/itemsampler.py:scrapy/stats/collector/__init__.py:DummyStatsCollector.get_value",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(key, default=<object object at 0x000001E6D29207A0>, spider=<object object at 0x000001E6D29207A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:aeab5370c:scrapy/contrib/itemsampler.py:scrapy/stats/collector/__init__.py:StatsCollector.set_value",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(key, value, spider=<object object at 0x000001E6D29207A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:aeab5370c:scrapy/contrib/itemsampler.py:scrapy/stats/collector/__init__.py:DummyStatsCollector.set_value",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(key, value, spider=<object object at 0x000001E6D29207A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:aeab5370c:scrapy/contrib/spidermiddleware/depth.py:scrapy/stats/collector/__init__.py:StatsCollector.get_value",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(key, default=<object object at 0x000001E6D29207A0>, spider=<object object at 0x000001E6D29207A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:aeab5370c:scrapy/contrib/spidermiddleware/depth.py:scrapy/stats/collector/__init__.py:DummyStatsCollector.get_value",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(key, default=<object object at 0x000001E6D29207A0>, spider=<object object at 0x000001E6D29207A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:aeab5370c:scrapy/contrib/spidermiddleware/depth.py:scrapy/stats/collector/__init__.py:StatsCollector.inc_value",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(key, count=<object object at 0x000001E6D29207A0>, start=<object object at 0x000001E6D29207A0>, spider=<object object at 0x000001E6D29207A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:aeab5370c:scrapy/contrib/spidermiddleware/depth.py:scrapy/stats/collector/__init__.py:DummyStatsCollector.inc_value",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(key, count=<object object at 0x000001E6D29207A0>, start=<object object at 0x000001E6D29207A0>, spider=<object object at 0x000001E6D29207A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:aeab5370c:scrapy/contrib/spidermiddleware/depth.py:scrapy/stats/collector/__init__.py:StatsCollector.set_value",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(key, value, spider=<object object at 0x000001E6D29207A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:aeab5370c:scrapy/contrib/spidermiddleware/depth.py:scrapy/stats/collector/__init__.py:DummyStatsCollector.set_value",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(key, value, spider=<object object at 0x000001E6D29207A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:aeab5370c:scrapy/contrib_exp/spiderprofiler.py:scrapy/stats/collector/__init__.py:StatsCollector.get_value",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(key, default=<object object at 0x000001E6D29207A0>, spider=<object object at 0x000001E6D29207A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:aeab5370c:scrapy/contrib_exp/spiderprofiler.py:scrapy/stats/collector/__init__.py:DummyStatsCollector.get_value",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(key, default=<object object at 0x000001E6D29207A0>, spider=<object object at 0x000001E6D29207A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:aeab5370c:scrapy/contrib_exp/spiderprofiler.py:scrapy/stats/collector/__init__.py:StatsCollector.inc_value",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(key, count=<object object at 0x000001E6D29207A0>, start=<object object at 0x000001E6D29207A0>, spider=<object object at 0x000001E6D29207A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:aeab5370c:scrapy/contrib_exp/spiderprofiler.py:scrapy/stats/collector/__init__.py:DummyStatsCollector.inc_value",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(key, count=<object object at 0x000001E6D29207A0>, start=<object object at 0x000001E6D29207A0>, spider=<object object at 0x000001E6D29207A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:aeab5370c:scrapy/contrib_exp/spiderprofiler.py:scrapy/stats/collector/__init__.py:StatsCollector.set_value",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(key, value, spider=<object object at 0x000001E6D29207A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:aeab5370c:scrapy/contrib_exp/spiderprofiler.py:scrapy/stats/collector/__init__.py:DummyStatsCollector.set_value",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(key, value, spider=<object object at 0x000001E6D29207A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:aeab5370c:scrapy/core/scraper.py:scrapy/stats/collector/__init__.py:StatsCollector.inc_value",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(key, count=<object object at 0x000001E6D29207A0>, start=<object object at 0x000001E6D29207A0>, spider=<object object at 0x000001E6D29207A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:aeab5370c:scrapy/core/scraper.py:scrapy/stats/collector/__init__.py:DummyStatsCollector.inc_value",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(key, count=<object object at 0x000001E6D29207A0>, start=<object object at 0x000001E6D29207A0>, spider=<object object at 0x000001E6D29207A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:aeab5370c:scrapy/tests/test_downloadermiddleware_stats.py:scrapy/stats/collector/__init__.py:StatsCollector.get_value",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(key, default=<object object at 0x000001E6D29207A0>, spider=<object object at 0x000001E6D29207A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:aeab5370c:scrapy/tests/test_downloadermiddleware_stats.py:scrapy/stats/collector/__init__.py:DummyStatsCollector.get_value",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(key, default=<object object at 0x000001E6D29207A0>, spider=<object object at 0x000001E6D29207A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:aeab5370c:scrapy/tests/test_spidermiddleware_depth.py:scrapy/stats/collector/__init__.py:StatsCollector.get_value",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(key, default=<object object at 0x000001E6D29207A0>, spider=<object object at 0x000001E6D29207A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:aeab5370c:scrapy/tests/test_spidermiddleware_depth.py:scrapy/stats/collector/__init__.py:DummyStatsCollector.get_value",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(key, default=<object object at 0x000001E6D29207A0>, spider=<object object at 0x000001E6D29207A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:aeab5370c:scrapy/tests/test_stats.py:scrapy/stats/collector/__init__.py:StatsCollector.set_value",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(key, value, spider=<object object at 0x000001E6D29207A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:aeab5370c:scrapy/tests/test_stats.py:scrapy/stats/collector/__init__.py:DummyStatsCollector.set_value",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(key, value, spider=<object object at 0x000001E6D29207A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:5944f6590:scrapy/core/downloader/manager.py:scrapy/core/downloader/middleware.py:DownloaderMiddlewareManager.download",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(download_func, request, spider)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:4a1a01354:scrapy/tests/test_schedulermiddleware_duplicatesfilter.py:scrapy/contrib/schedulermiddleware/duplicatesfilter.py:DuplicatesFilterMiddleware.enqueue_request",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(domain, request)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:4a1a01354:scrapy/tests/test_schedulermiddleware_duplicatesfilter.py:scrapy/contrib_exp/history/scheduler.py:RulesScheduler.enqueue_request",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(domain, request)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:4a1a01354:scrapy/tests/test_schedulermiddleware_duplicatesfilter.py:scrapy/core/scheduler/middleware.py:SchedulerMiddlewareManager.enqueue_request",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(domain, request)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:4a1a01354:scrapy/tests/test_schedulermiddleware_duplicatesfilter.py:scrapy/core/scheduler/schedulers.py:Scheduler.enqueue_request",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(domain, request)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:635ac1ca6:scrapy/core/manager.py:scrapy/spider/models.py:BaseSpider.start_requests",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "()",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:839821240:scrapy/trunk/examples/contrib_exp/googledir/googledir/spiders/google_directory.py:scrapy/trunk/examples/contrib_exp/googledir/googledir/items.py:GoogledirItemExtractor",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 7,
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:29c3715c5:scrapy/trunk/scrapy/tests/test_utils_url.py:scrapy/trunk/scrapy/utils/url.py:canonicalize_url",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(url, keep_blank_values=<object object at 0x000001E6D29207A0>, keep_fragments=<object object at 0x000001E6D29207A0>)",
+   "agrees": true
+  },
+  {
    "mid": "sphinx-doc_sphinx:9eb3d7940:sphinx/ext/autodoc/_member_finder.py:sphinx/ext/autodoc/_loader.py:_load_object_by_name",
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(*, name, objtype, current_document, config, events, get_attr, options, parent_modname=<object object at 0x000002CA66EF07A0>, ref_context, reread_always)",
+   "signature": "(*, name, objtype, current_document, config, events, get_attr, options, parent_modname=<object object at 0x000001E6D29207A0>, ref_context, reread_always)",
    "agrees": true
   },
   {
@@ -3526,7 +5798,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(*, name, objtype, current_document, config, events, get_attr, options, parent_modname=<object object at 0x000002CA66EF07A0>, ref_context, reread_always)",
+   "signature": "(*, name, objtype, current_document, config, events, get_attr, options, parent_modname=<object object at 0x000001E6D29207A0>, ref_context, reread_always)",
    "agrees": true
   },
   {
@@ -3534,7 +5806,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(*, name, objtype, current_document, config, events, get_attr, options, parent_modname=<object object at 0x000002CA66EF07A0>, ref_context, reread_always)",
+   "signature": "(*, name, objtype, current_document, config, events, get_attr, options, parent_modname=<object object at 0x000001E6D29207A0>, ref_context, reread_always)",
    "agrees": true
   },
   {
@@ -3542,7 +5814,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(*, name, objtype, current_document, config, events, get_attr, options, parent_modname=<object object at 0x000002CA66EF07A0>, ref_context, reread_always)",
+   "signature": "(*, name, objtype, current_document, config, events, get_attr, options, parent_modname=<object object at 0x000001E6D29207A0>, ref_context, reread_always)",
    "agrees": true
   },
   {
@@ -3550,7 +5822,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(*, autodoc_annotations, config, docstrings, events, get_attr, parent, options, props, args=<object object at 0x000002CA66EF07A0>, retann=<object object at 0x000002CA66EF07A0>, **kwargs)",
+   "signature": "(*, autodoc_annotations, config, docstrings, events, get_attr, parent, options, props, args=<object object at 0x000001E6D29207A0>, retann=<object object at 0x000001E6D29207A0>, **kwargs)",
    "agrees": true
   },
   {
@@ -3558,7 +5830,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(more_content=<object object at 0x000002CA66EF07A0>, parent_modname=<object object at 0x000002CA66EF07A0>, check_module=<object object at 0x000002CA66EF07A0>, all_members=<object object at 0x000002CA66EF07A0>, *, config, current_document, events, get_attr, indent, options, props, record_dependencies, ref_context, reread_always, result)",
+   "signature": "(more_content=<object object at 0x000001E6D29207A0>, parent_modname=<object object at 0x000001E6D29207A0>, check_module=<object object at 0x000001E6D29207A0>, all_members=<object object at 0x000001E6D29207A0>, *, config, current_document, events, get_attr, indent, options, props, record_dependencies, ref_context, reread_always, result)",
    "agrees": true
   },
   {
@@ -3566,7 +5838,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(*, name, objtype, mock_imports, type_aliases, current_document, config, events, get_attr, options, parent_modname=<object object at 0x000002CA66EF07A0>, ref_context, reread_always)",
+   "signature": "(*, name, objtype, mock_imports, type_aliases, current_document, config, events, get_attr, options, parent_modname=<object object at 0x000001E6D29207A0>, ref_context, reread_always)",
    "agrees": true
   },
   {
@@ -3574,7 +5846,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(*, name, objtype, mock_imports, type_aliases, current_document, config, events, get_attr, options, parent_modname=<object object at 0x000002CA66EF07A0>, ref_context, reread_always)",
+   "signature": "(*, name, objtype, mock_imports, type_aliases, current_document, config, events, get_attr, options, parent_modname=<object object at 0x000001E6D29207A0>, ref_context, reread_always)",
    "agrees": true
   },
   {
@@ -3582,7 +5854,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(more_content=<object object at 0x000002CA66EF07A0>, parent_modname=<object object at 0x000002CA66EF07A0>, check_module=<object object at 0x000002CA66EF07A0>, all_members=<object object at 0x000002CA66EF07A0>, *, config, current_document, events, get_attr, indent, options, props, record_dependencies, ref_context, reread_always, result)",
+   "signature": "(more_content=<object object at 0x000001E6D29207A0>, parent_modname=<object object at 0x000001E6D29207A0>, check_module=<object object at 0x000001E6D29207A0>, all_members=<object object at 0x000001E6D29207A0>, *, config, current_document, events, get_attr, indent, options, props, record_dependencies, ref_context, reread_always, result)",
    "agrees": true
   },
   {
@@ -3590,7 +5862,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(*, name, objtype, mock_imports, type_aliases, current_document, config, events, get_attr, options, parent_modname=<object object at 0x000002CA66EF07A0>, ref_context, reread_always)",
+   "signature": "(*, name, objtype, mock_imports, type_aliases, current_document, config, events, get_attr, options, parent_modname=<object object at 0x000001E6D29207A0>, ref_context, reread_always)",
    "agrees": true
   },
   {
@@ -3606,7 +5878,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(*, config, docstrings, events, get_attr, parent, options, props, args=<object object at 0x000002CA66EF07A0>, retann=<object object at 0x000002CA66EF07A0>, **kwargs)",
+   "signature": "(*, config, docstrings, events, get_attr, parent, options, props, args=<object object at 0x000001E6D29207A0>, retann=<object object at 0x000001E6D29207A0>, **kwargs)",
    "agrees": true
   },
   {
@@ -3630,7 +5902,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(name, obj, parent, template, template_name, imported_members, recursive, context, modname=<object object at 0x000002CA66EF07A0>, qualname=<object object at 0x000002CA66EF07A0>, *, config, events)",
+   "signature": "(name, obj, parent, template, template_name, imported_members, recursive, context, modname=<object object at 0x000001E6D29207A0>, qualname=<object object at 0x000001E6D29207A0>, *, config, events)",
    "agrees": true
   },
   {
@@ -3734,7 +6006,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(docname, builder, *, tags, doctree=<object object at 0x000002CA66EF07A0>, prune_toctrees=<object object at 0x000002CA66EF07A0>, includehidden=<object object at 0x000002CA66EF07A0>)",
+   "signature": "(docname, builder, *, tags, doctree=<object object at 0x000001E6D29207A0>, prune_toctrees=<object object at 0x000001E6D29207A0>, includehidden=<object object at 0x000001E6D29207A0>)",
    "agrees": true
   },
   {
@@ -3742,7 +6014,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(docname, builder, *, tags, doctree=<object object at 0x000002CA66EF07A0>, prune_toctrees=<object object at 0x000002CA66EF07A0>, includehidden=<object object at 0x000002CA66EF07A0>)",
+   "signature": "(docname, builder, *, tags, doctree=<object object at 0x000001E6D29207A0>, prune_toctrees=<object object at 0x000001E6D29207A0>, includehidden=<object object at 0x000001E6D29207A0>)",
    "agrees": true
   },
   {
@@ -3750,7 +6022,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(docname, builder, *, tags, doctree=<object object at 0x000002CA66EF07A0>, prune_toctrees=<object object at 0x000002CA66EF07A0>, includehidden=<object object at 0x000002CA66EF07A0>)",
+   "signature": "(docname, builder, *, tags, doctree=<object object at 0x000001E6D29207A0>, prune_toctrees=<object object at 0x000001E6D29207A0>, includehidden=<object object at 0x000001E6D29207A0>)",
    "agrees": true
   },
   {
@@ -3758,7 +6030,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(docname, builder, *, tags, doctree=<object object at 0x000002CA66EF07A0>, prune_toctrees=<object object at 0x000002CA66EF07A0>, includehidden=<object object at 0x000002CA66EF07A0>)",
+   "signature": "(docname, builder, *, tags, doctree=<object object at 0x000001E6D29207A0>, prune_toctrees=<object object at 0x000001E6D29207A0>, includehidden=<object object at 0x000001E6D29207A0>)",
    "agrees": true
   },
   {
@@ -3766,7 +6038,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(signode, arglist, *, multi_line_parameter_list=<object object at 0x000002CA66EF07A0>, trailing_comma=<object object at 0x000002CA66EF07A0>, env)",
+   "signature": "(signode, arglist, *, multi_line_parameter_list=<object object at 0x000001E6D29207A0>, trailing_comma=<object object at 0x000001E6D29207A0>, env)",
    "agrees": true
   },
   {
@@ -3774,7 +6046,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(signode, arglist, *, multi_line_parameter_list=<object object at 0x000002CA66EF07A0>, trailing_comma=<object object at 0x000002CA66EF07A0>, env)",
+   "signature": "(signode, arglist, *, multi_line_parameter_list=<object object at 0x000001E6D29207A0>, trailing_comma=<object object at 0x000001E6D29207A0>, env)",
    "agrees": true
   },
   {
@@ -3782,7 +6054,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(name, obj, parent, template, template_name, imported_members, recursive, context, modname=<object object at 0x000002CA66EF07A0>, qualname=<object object at 0x000002CA66EF07A0>, *, config, events, registry)",
+   "signature": "(name, obj, parent, template, template_name, imported_members, recursive, context, modname=<object object at 0x000001E6D29207A0>, qualname=<object object at 0x000001E6D29207A0>, *, config, events, registry)",
    "agrees": true
   },
   {
@@ -3834,19 +6106,11 @@
    "agrees": true
   },
   {
-   "mid": "sphinx-doc_sphinx:57a63ea60:sphinx/jinja2glue.py:sphinx/util/osutil.py:mtimes_of_files",
-   "breakage": "vanished",
-   "broken": true,
-   "intact": true,
-   "names_after": 35,
-   "agrees": true
-  },
-  {
    "mid": "sphinx-doc_sphinx:217f26782:sphinx/builders/html/__init__.py:sphinx/util/osutil.py:copyfile",
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(source, dest, *, force=<object object at 0x000002CA66EF07A0>)",
+   "signature": "(source, dest, *, force=<object object at 0x000001E6D29207A0>)",
    "agrees": true
   },
   {
@@ -3854,7 +6118,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(obj, *, _seen=<object object at 0x000002CA66EF07A0>)",
+   "signature": "(obj, *, _seen=<object object at 0x000001E6D29207A0>)",
    "agrees": true
   },
   {
@@ -3862,7 +6126,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(env, docname, builder, toctree, *, prune=<object object at 0x000002CA66EF07A0>, maxdepth=<object object at 0x000002CA66EF07A0>, titles_only=<object object at 0x000002CA66EF07A0>, collapse=<object object at 0x000002CA66EF07A0>, includehidden=<object object at 0x000002CA66EF07A0>)",
+   "signature": "(env, docname, builder, toctree, *, prune=<object object at 0x000001E6D29207A0>, maxdepth=<object object at 0x000001E6D29207A0>, titles_only=<object object at 0x000001E6D29207A0>, collapse=<object object at 0x000001E6D29207A0>, includehidden=<object object at 0x000001E6D29207A0>)",
    "agrees": true
   },
   {
@@ -3966,7 +6230,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(format, *, date=<object object at 0x000002CA66EF07A0>, language)",
+   "signature": "(format, *, date=<object object at 0x000001E6D29207A0>, language)",
    "agrees": true
   },
   {
@@ -4022,7 +6286,7 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(annotation, mode=<object object at 0x000002CA66EF07A0>)",
+   "signature": "(annotation, mode=<object object at 0x000001E6D29207A0>)",
    "agrees": true
   },
   {
@@ -4102,7 +6366,671 @@
    "breakage": "arity",
    "broken": true,
    "intact": true,
-   "signature": "(sources, output_dir=<object object at 0x000002CA66EF07A0>, suffix=<object object at 0x000002CA66EF07A0>, warn=<object object at 0x000002CA66EF07A0>, info=<object object at 0x000002CA66EF07A0>, base_path=<object object at 0x000002CA66EF07A0>, builder=<object object at 0x000002CA66EF07A0>, template_dir=<object object at 0x000002CA66EF07A0>, imported_members=<object object at 0x000002CA66EF07A0>, app=<object object at 0x000002CA66EF07A0>, overwrite=<object object at 0x000002CA66EF07A0>)",
+   "signature": "(sources, output_dir=<object object at 0x000001E6D29207A0>, suffix=<object object at 0x000001E6D29207A0>, warn=<object object at 0x000001E6D29207A0>, info=<object object at 0x000001E6D29207A0>, base_path=<object object at 0x000001E6D29207A0>, builder=<object object at 0x000001E6D29207A0>, template_dir=<object object at 0x000001E6D29207A0>, imported_members=<object object at 0x000001E6D29207A0>, app=<object object at 0x000001E6D29207A0>, overwrite=<object object at 0x000001E6D29207A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:f3469bcc8:sphinx/ext/todo.py:sphinx/util/texescape.py:get_escape_func",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 15,
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:f3469bcc8:sphinx/highlighting.py:sphinx/util/texescape.py:get_hlescape_func",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 15,
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:f3469bcc8:sphinx/writers/latex.py:sphinx/util/texescape.py:get_escape_func",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 15,
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:ec8656bd2:sphinx/ext/autosummary/__init__.py:sphinx/ext/autosummary/generate.py:generate_autosummary_docs",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(sources, output_dir=<object object at 0x000001E6D29207A0>, suffix=<object object at 0x000001E6D29207A0>, warn=<object object at 0x000001E6D29207A0>, info=<object object at 0x000001E6D29207A0>, base_path=<object object at 0x000001E6D29207A0>, builder=<object object at 0x000001E6D29207A0>, template_dir=<object object at 0x000001E6D29207A0>, imported_members=<object object at 0x000001E6D29207A0>, recursive=<object object at 0x000001E6D29207A0>, app=<object object at 0x000001E6D29207A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:6e0b0517c:sphinx/ext/autosummary/__init__.py:sphinx/ext/autosummary/generate.py:generate_autosummary_docs",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(sources, output_dir=<object object at 0x000001E6D29207A0>, suffix=<object object at 0x000001E6D29207A0>, warn=<object object at 0x000001E6D29207A0>, info=<object object at 0x000001E6D29207A0>, base_path=<object object at 0x000001E6D29207A0>, builder=<object object at 0x000001E6D29207A0>, template_dir=<object object at 0x000001E6D29207A0>, imported_members=<object object at 0x000001E6D29207A0>, app=<object object at 0x000001E6D29207A0>, depth_limit=<object object at 0x000001E6D29207A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:9e6fe21c6:tests/test_domain_cpp.py:sphinx/domains/cpp.py:DefinitionParser.parse_declaration",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(objectType, directiveType)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:181fb1093:sphinx/application.py:sphinx/config.py:Config.read",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(filename, overrides=<object object at 0x000001E6D29207A0>, tags=<object object at 0x000001E6D29207A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:181fb1093:tests/test_config.py:sphinx/config.py:Config.read",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(filename, overrides=<object object at 0x000001E6D29207A0>, tags=<object object at 0x000001E6D29207A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:d40db5efa:tests/test_ext_autosummary.py:sphinx/ext/autosummary/__init__.py:extract_summary",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(doc, document)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:2275c6796:sphinx/io.py:sphinx/registry.py:SphinxComponentRegistry.add_source_input",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(input_class)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:e1d8615ce:tests/test_ext_autosummary.py:sphinx/ext/autosummary/generate.py:setup_documenters",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(app)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:e1d8615ce:tests/test_templating.py:sphinx/ext/autosummary/generate.py:setup_documenters",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(app)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:ffb84cb07:sphinx/environment/__init__.py:sphinx/util/nodes.py:WarningStream",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 43,
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:8fda21099:tests/test_quickstart.py:tests/util.py:SkipTest",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 30,
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:c7bec75bc:sphinx/application.py:sphinx/environment/__init__.py:BuildEnvironment.frompickle",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(filename, app)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:c7bec75bc:sphinx/builders/__init__.py:sphinx/environment/__init__.py:BuildEnvironment.update",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(config, srcdir, doctreedir)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:c7bec75bc:tests/test_environment.py:sphinx/environment/__init__.py:BuildEnvironment.update",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(config, srcdir, doctreedir)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:c7bec75bc:tests/test_intl.py:sphinx/environment/__init__.py:BuildEnvironment.update",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(config, srcdir, doctreedir)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:00e32eeef:tests/test_ext_intersphinx.py:sphinx/ext/intersphinx.py:read_inventory",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(f, uri, join)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:0b0637deb:sphinx/builders/__init__.py:sphinx/environment/__init__.py:BuildEnvironment.check_dependents",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(app, already)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:e3cb2bbcf:tests/test_domain_cpp.py:sphinx/domains/cpp.py:ASTDeclaration.describe_signature",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(signode, mode, env, options)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:2254da378:sphinx/application.py:sphinx/util/i18n.py:CatalogInfo.write_mo",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(locale, warnfunc)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:2254da378:sphinx/builders/__init__.py:sphinx/util/i18n.py:CatalogInfo.write_mo",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(locale, warnfunc)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:85dcd7baa:sphinx/application.py:sphinx/config.py:Config.check_types",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "()",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:85dcd7baa:sphinx/application.py:sphinx/config.py:Config.check_unicode",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "()",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:85dcd7baa:sphinx/application.py:sphinx/config.py:Config.init_values",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "()",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:85dcd7baa:sphinx/application.py:sphinx/config.py:Config.pre_init_values",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "()",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:85dcd7baa:sphinx/builders/changes.py:sphinx/theming.py:Theme.init_themes",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(confdir, theme_path)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:85dcd7baa:sphinx/builders/html.py:sphinx/util/i18n.py:format_date",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(format, date=<object object at 0x000001E6D29207A0>, language=<object object at 0x000001E6D29207A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:85dcd7baa:sphinx/builders/html.py:sphinx/theming.py:Theme.init_themes",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(confdir, theme_path)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:85dcd7baa:sphinx/transforms/__init__.py:sphinx/util/i18n.py:format_date",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(format, date=<object object at 0x000001E6D29207A0>, language=<object object at 0x000001E6D29207A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:d27386cc9:tests/test_searchadapters.py:sphinx/websupport/search/__init__.py:BaseSearch.add_document",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(pagename, filename, title, text)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:d27386cc9:tests/test_searchadapters.py:sphinx/websupport/search/whooshsearch.py:WhooshSearch.add_document",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(pagename, filename, title, text)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:b5ae1b084:sphinx/builders/html.py:sphinx/search/__init__.py:IndexBuilder.feed",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(docname, filename, title, doctree)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:26fecafb4:sphinx/application.py:sphinx/locale/__init__.py:init",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(locale_dirs, language, catalog=<object object at 0x000001E6D29207A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:39bef55fd:sphinx/application.py:sphinx/environment.py:BuildEnvironment.frompickle",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(srcdir, config, filename)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:3ce737335:sphinx/application.py:sphinx/environment.py:BuildEnvironment.frompickle",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(srcdir, config, filename)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:540400635:sphinx/ext/imgmath.py:sphinx/ext/mathbase.py:wrap_displaymath",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(math, label, numbering)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:540400635:sphinx/ext/pngmath.py:sphinx/ext/mathbase.py:wrap_displaymath",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(math, label, numbering)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:c823ffbcf:tests/test_domain_cpp.py:sphinx/domains/cpp.py:Symbol.add_declaration",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(declaration, docname)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:49b812b85:sphinx/builders/html.py:sphinx/util/nodes.py:inline_all_toctrees",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(builder, docnameset, docname, tree, colorfunc, traversed)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:49b812b85:sphinx/builders/latex.py:sphinx/util/nodes.py:inline_all_toctrees",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(builder, docnameset, docname, tree, colorfunc, traversed)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:49b812b85:sphinx/builders/manpage.py:sphinx/util/nodes.py:inline_all_toctrees",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(builder, docnameset, docname, tree, colorfunc, traversed)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:49b812b85:sphinx/builders/texinfo.py:sphinx/util/nodes.py:inline_all_toctrees",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(builder, docnameset, docname, tree, colorfunc, traversed)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:3cf67aa5c:tests/test_domain_cpp.py:sphinx/domains/cpp.py:ASTTemplateArgConstant.describe_signature",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(signode, mode, env, parentScope)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:3cf67aa5c:tests/test_domain_cpp.py:sphinx/domains/cpp.py:ASTNestedName.describe_signature",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(signode, mode, env, parentScope)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:3cf67aa5c:tests/test_domain_cpp.py:sphinx/domains/cpp.py:ASTTrailingTypeSpecFundamental.describe_signature",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(signode, mode, env, parentScope)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:3cf67aa5c:tests/test_domain_cpp.py:sphinx/domains/cpp.py:ASTTrailingTypeSpecName.describe_signature",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(signode, mode, env, parentScope)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:3cf67aa5c:tests/test_domain_cpp.py:sphinx/domains/cpp.py:ASTFunctinoParameter.describe_signature",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(signode, mode, env, parentScope)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:3cf67aa5c:tests/test_domain_cpp.py:sphinx/domains/cpp.py:ASTParametersQualifiers.describe_signature",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(signode, mode, env, parentScope)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:3cf67aa5c:tests/test_domain_cpp.py:sphinx/domains/cpp.py:ASTDeclSpecs.describe_signature",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(signode, mode, env, parentScope)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:3cf67aa5c:tests/test_domain_cpp.py:sphinx/domains/cpp.py:ASTDeclaratorPtr.describe_signature",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(signode, mode, env, parentScope)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:3cf67aa5c:tests/test_domain_cpp.py:sphinx/domains/cpp.py:ASTDeclaratorRef.describe_signature",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(signode, mode, env, parentScope)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:3cf67aa5c:tests/test_domain_cpp.py:sphinx/domains/cpp.py:ASTDeclaratorParamPack.describe_signature",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(signode, mode, env, parentScope)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:3cf67aa5c:tests/test_domain_cpp.py:sphinx/domains/cpp.py:ASTDeclaratorParen.describe_signature",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(signode, mode, env, parentScope)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:3cf67aa5c:tests/test_domain_cpp.py:sphinx/domains/cpp.py:ASTDecleratorNameParamQual.describe_signature",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(signode, mode, env, parentScope)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:3cf67aa5c:tests/test_domain_cpp.py:sphinx/domains/cpp.py:ASTType.describe_signature",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(signode, mode, env, parentScope)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:3cf67aa5c:tests/test_domain_cpp.py:sphinx/domains/cpp.py:ASTTypeWithInit.describe_signature",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(signode, mode, env, parentScope)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:3cf67aa5c:tests/test_domain_cpp.py:sphinx/domains/cpp.py:ASTBaseClass.describe_signature",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(signode, mode, env, parentScope)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:3cf67aa5c:tests/test_domain_cpp.py:sphinx/domains/cpp.py:ASTClass.describe_signature",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(signode, mode, env, parentScope)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:3cf67aa5c:tests/test_domain_cpp.py:sphinx/domains/cpp.py:ASTEnum.describe_signature",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(signode, mode, env, parentScope)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:3cf67aa5c:tests/test_domain_cpp.py:sphinx/domains/cpp.py:ASTEnumerator.describe_signature",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(signode, mode, env, parentScope)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:ee98decec:sphinx/builders/__init__.py:sphinx/environment.py:BuildEnvironment.set_versioning_method",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(method, compare)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:4197144f9:sphinx/environment.py:sphinx/util/parallel.py:ParallelChunked",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 10,
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:0c833c020:sphinx/builders/__init__.py:sphinx/util/parallel.py:ParallelProcess",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 10,
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:0c833c020:sphinx/environment.py:sphinx/util/parallel.py:ParallelProcess",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 10,
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:1356aff6d:sphinx/application.py:sphinx/config.py:Config.init_values",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(warn)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:936c78cd3:sphinx/builders/html.py:sphinx/environment.py:BuildEnvironment.get_toc_for",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(docname, builder)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:9481a557c:sphinx/websupport/storage/sqlalchemystorage.py:sphinx/websupport/storage/differ.py:CombinedHtmlDiff.make_html",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "()",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:c62a19bca:sphinx/builders/changes.py:sphinx/theming.py:Theme.init_themes",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(confdir, theme_path, warn=<object object at 0x000001E6D29207A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:c62a19bca:sphinx/builders/html.py:sphinx/theming.py:Theme.init_themes",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(confdir, theme_path, warn=<object object at 0x000001E6D29207A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:a52fd809b:sphinx/writers/websupport.py:sphinx/websupport/storage/__init__.py:StorageBackend.add_node",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(id, document, source)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:a52fd809b:sphinx/writers/websupport.py:sphinx/websupport/storage/sqlalchemystorage.py:SQLAlchemyStorage.add_node",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(id, document, source)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:1d4c7d4fe:sphinx/writers/websupport.py:sphinx/websupport/storage/__init__.py:StorageBackend.add_node",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(id, document, line, source)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:1d4c7d4fe:sphinx/writers/websupport.py:sphinx/websupport/storage/sqlalchemystorage.py:SQLAlchemyStorage.add_node",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(id, document, line, source)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:ac066fb54:sphinx/writers/websupport.py:sphinx/websupport/storage/__init__.py:StorageBackend.add_node",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(document, line, source)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:ac066fb54:sphinx/writers/websupport.py:sphinx/websupport/storage/sqlalchemystorage.py:SQLAlchemyStorage.add_node",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(document, line, source)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:62fe57c64:tests/test_websupport.py:sphinx/websupport/__init__.py:WebSupport.add_comment",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(text, node_id=<object object at 0x000001E6D29207A0>, parent_id=<object object at 0x000001E6D29207A0>, displayed=<object object at 0x000001E6D29207A0>, username=<object object at 0x000001E6D29207A0>, rating=<object object at 0x000001E6D29207A0>, time=<object object at 0x000001E6D29207A0>, proposal=<object object at 0x000001E6D29207A0>, moderator=<object object at 0x000001E6D29207A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:90eb73e7b:sphinx/websupport/comments/sqlalchemystorage.py:sphinx/websupport/comments/db.py:Vote",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 16,
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:dc2f45208:sphinx/websupport/__init__.py:sphinx/websupport/comments/__init__.py:SQLAlchemyComments",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 1,
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:5cb64a722:sphinx/builders/html.py:sphinx/util/__init__.py:copy_static_entry",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(source, targetdir, builder, context=<object object at 0x000001E6D29207A0>, exclude_matchers=<object object at 0x000001E6D29207A0>, level=<object object at 0x000001E6D29207A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:c02b7149a:sphinx/application.py:sphinx/roles.py:make_xref_role",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 17,
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:beb987bd5:sphinx/builders/__init__.py:sphinx/jinja2glue.py:BuiltinTemplates",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 6,
    "agrees": true
   }
  ]

@@ -140,10 +140,21 @@ class _DefScanner(ast.NodeVisitor):
             self._bind(node.target, node.lineno)
 
 
+#: Sources this module could not parse, by reason. A census that reaches back to
+#: 2005 meets Python 2 syntax, and silently returning "no definitions" for a file
+#: Python 3.14 cannot read would make an unreadable history look like a clean one.
+PARSE_FAILURES: dict[str, int] = {}
+
+#: Sources handed to `scan_defs`, so a failure count has a denominator.
+PARSE_ATTEMPTS = [0]
+
+
 def scan_defs(source: str) -> dict[str, Def]:
+    PARSE_ATTEMPTS[0] += 1
     try:
         tree = ast.parse(source)
-    except (SyntaxError, ValueError, RecursionError):
+    except (SyntaxError, ValueError, RecursionError) as exc:
+        PARSE_FAILURES[type(exc).__name__] = PARSE_FAILURES.get(type(exc).__name__, 0) + 1
         return {}
     scanner = _DefScanner()
     for node in tree.body:
@@ -247,6 +258,35 @@ def _render(d: Def) -> str:
     return f"{d.short}({', '.join(bits)})"
 
 
+def import_bindings(source: str) -> set[str]:
+    """Top-level names this module binds by importing them.
+
+    A symbol can leave a module as a definition and arrive back as an import -- 
+    ``from sphinx.addnodes import math_reference as eqref  # to keep compatibility``
+    is real code from the corpus. Callers importing that name are unaffected, so it
+    is not a removal. This is the compatibility-facade shape D4 exists to teach the
+    checker; the answer key had the same blind spot, and C2's independent control
+    found it before any measurement depended on it.
+    """
+    try:
+        tree = ast.parse(source)
+    except (SyntaxError, ValueError, RecursionError):
+        return set()
+    out: set[str] = set()
+    stack: list[ast.AST] = list(tree.body)
+    for node in stack:
+        if isinstance(node, (ast.Import, ast.ImportFrom)):
+            for alias in node.names:
+                out.add(alias.asname or alias.name.split(".")[0])
+        elif isinstance(node, (ast.If, ast.Try)):
+            stack.extend(node.body)
+            stack.extend(getattr(node, "orelse", []))
+            stack.extend(getattr(node, "finalbody", []))
+            for handler in getattr(node, "handlers", []):
+                stack.extend(handler.body)
+    return out
+
+
 def signature_deltas(old_src: str, new_src: str, path: str) -> list[SigDelta]:
     """Parameter-list changes and disappearances, ignoring annotations and bodies.
 
@@ -255,10 +295,13 @@ def signature_deltas(old_src: str, new_src: str, path: str) -> list[SigDelta]:
     """
     old = scan_defs(old_src)
     new = scan_defs(new_src)
+    reimported = import_bindings(new_src)
     out: list[SigDelta] = []
     for q, d in old.items():
         n = new.get(q)
         if n is None:
+            if "." not in q and q in reimported:
+                continue  # left as a definition, came back as an import: a facade
             out.append(SigDelta(q, path, "removed", _render(d), ""))
         elif d.kind == "func" and n.kind == "func" and d.params != n.params:
             out.append(SigDelta(q, path, "params", _render(d), _render(n)))

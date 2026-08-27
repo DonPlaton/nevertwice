@@ -28,6 +28,7 @@ import _env_guard  # noqa: F401,E402  hermetic: scrub store env before any proje
 
 sys.path.insert(0, str(ROOT / "research" / "invariants_lab"))
 import mutate as M  # noqa: E402
+import power as PW  # noqa: E402
 import sigscan as S  # noqa: E402
 
 PASSED = 0
@@ -131,6 +132,35 @@ def test_the_extractor_sees_tuple_unpacking() -> None:
           == ["B"])
 
 
+def test_a_symbol_that_comes_back_as_an_import_is_not_removed() -> None:
+    """The defect C2's independent control found in the answer key itself.
+
+    `from sphinx.addnodes import math_reference as eqref  # to keep compatibility`
+    is real corpus code: the definition left, the name stayed. Callers importing it
+    are fine, so it is not a removal -- and the key believed it was until CPython's
+    binder disagreed. Same shape as D4, in the instrument rather than the checker.
+    """
+    print("\n- a definition replaced by a compatibility import is not a removal -")
+    check("left as a def, back as an aliased import",
+          S.signature_deltas("def eqref(): pass\n",
+                             "from x import math_reference as eqref\n", "m.py") == [])
+    check("left as a def, back as a plain from-import",
+          S.signature_deltas("def helper(): pass\n",
+                             "from x import helper\n", "m.py") == [])
+    check("an import inside a try/except still counts",
+          S.signature_deltas(
+              "def helper(): pass\n",
+              "try:\n    from x import helper\nexcept ImportError:\n    pass\n",
+              "m.py") == [])
+    check("but a symbol that simply vanishes IS removed",
+          [d.qualname for d in S.signature_deltas("def gone(): pass\n", "pass\n", "m.py")]
+          == ["gone"])
+    check("and a method is not rescued by a module-level import of its name",
+          [d.qualname for d in S.signature_deltas(
+              "class C:\n    def m(self): pass\n",
+              "from x import m\nclass C: pass\n", "m.py")] == ["C.m"])
+
+
 def test_nested_functions_are_not_public_symbols() -> None:
     print("\n- scope: a nested def is invisible to any caller -")
     defs = S.scan_defs("def outer():\n    def inner(a): pass\n    return inner\n")
@@ -161,14 +191,43 @@ def test_the_arity_rule_strips_self_only_for_methods() -> None:
           plain.arity()[0] == 2, str(plain.arity()))
 
 
+def test_the_power_calculation_is_exact_not_approximate() -> None:
+    """The one number that decides whether the corpus may be believed.
+
+    C3's whole point is that "is this corpus big enough" has an answer. If the power
+    function were wrong the answer would be wrong, so it is pinned against a value
+    computed by hand: for n=20, H0 p=0.5, the two-sided exact rejection region is
+    k<=5 or k>=15 (size 0.0414), and under p=0.8 that region carries 0.8042.
+    """
+    print("\n- the power function, against a hand-computed value -")
+    from scipy import stats
+    hand = stats.binom.cdf(5, 20, 0.8) + (1 - stats.binom.cdf(14, 20, 0.8))
+    got = PW.exact_power_one_prop(20, 0.5, 0.8)
+    check("n=20 gives exactly the hand-computed power", abs(got - hand) < 1e-12,
+          f"{got} vs {hand}")
+    check("and it clears 80%, so 20 positives tell 0.8 from 0.5", got >= 0.80,
+          f"{got:.4f}")
+    check("19 does not, so the boundary is real, not rounded",
+          PW.exact_power_one_prop(19, 0.5, 0.8) < 0.80)
+    check("the exact test needs one more subject than the normal approximation",
+          PW.n_for_one_prop(0.5, 0.8) == 20, str(PW.n_for_one_prop(0.5, 0.8)))
+    check("the size of the rejection region never exceeds alpha",
+          PW.exact_power_one_prop(20, 0.5, 0.5) <= 0.05,
+          str(PW.exact_power_one_prop(20, 0.5, 0.5)))
+    check("a floor of 0.9 needs far more than a floor of 0.5",
+          PW.n_for_one_prop(0.9, 0.95) > 10 * PW.n_for_one_prop(0.5, 0.8))
+
+
 def main() -> int:
     for fn in (test_the_key_reports_a_real_type_error,
                test_the_key_accepts_what_still_fits,
                test_the_key_abstains_where_it_cannot_know,
                test_the_extractor_sees_tuple_unpacking,
+               test_a_symbol_that_comes_back_as_an_import_is_not_removed,
                test_nested_functions_are_not_public_symbols,
                test_module_suffix_matching_is_not_a_substring_test,
-               test_the_arity_rule_strips_self_only_for_methods):
+               test_the_arity_rule_strips_self_only_for_methods,
+               test_the_power_calculation_is_exact_not_approximate):
         fn()
     print(f"\ninvariants lab answer key: {PASSED} passed, {FAILED} failed")
     return 1 if FAILED else 0

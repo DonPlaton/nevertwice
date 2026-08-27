@@ -1,0 +1,254 @@
+{
+ "generated": "2026-08-27T23:57:19",
+ "alpha": 0.05,
+ "target_power": 0.8,
+ "seed": 20260827,
+ "corpus": {
+  "mutants": 495,
+  "clusters": 177,
+  "max_cluster": 66,
+  "median_cluster": 1,
+  "weighted_mean_cluster": 15.55,
+  "deff": {
+   "0.2": 3.91,
+   "0.5": 8.27,
+   "0.8": 12.64,
+   "1.0": 15.55
+  },
+  "n_eff_if_pooled": {
+   "0.2": 126.6,
+   "0.5": 59.8,
+   "0.8": 39.2,
+   "1.0": 31.8
+  },
+  "negatives_paired": 177,
+  "negatives_silent_pool": 2903
+ },
+ "questions": [
+  {
+   "question": "recall 0.8 vs a floor of 0.5",
+   "n_available": 177,
+   "n_required": 20,
+   "verdict": "POWERED"
+  },
+  {
+   "question": "recall 0.7 vs a floor of 0.5",
+   "n_available": 177,
+   "n_required": 43,
+   "verdict": "POWERED"
+  },
+  {
+   "question": "recall 0.6 vs a floor of 0.5",
+   "n_available": 177,
+   "n_required": 189,
+   "verdict": "UNDERPOWERED"
+  },
+  {
+   "question": "recall 0.9 vs a floor of 0.8",
+   "n_available": 177,
+   "n_required": 100,
+   "verdict": "POWERED"
+  },
+  {
+   "question": "recall 0.95 vs a floor of 0.9 (the quadratic case, X4)",
+   "n_available": 177,
+   "n_required": 229,
+   "verdict": "UNDERPOWERED"
+  },
+  {
+   "question": "precision 0.8 vs a floor of 0.5, on 24 findings",
+   "n_available": 24,
+   "n_required": 20,
+   "verdict": "POWERED"
+  },
+  {
+   "question": "precision 0.8 vs a floor of 0.5, on 50 findings",
+   "n_available": 50,
+   "n_required": 20,
+   "verdict": "POWERED"
+  },
+  {
+   "question": "precision 0.8 vs a floor of 0.5, on 100 findings",
+   "n_available": 100,
+   "n_required": 20,
+   "verdict": "POWERED"
+  },
+  {
+   "question": "precision 0.8 vs a floor of 0.5, on 177 findings",
+   "n_available": 177,
+   "n_required": 20,
+   "verdict": "POWERED"
+  },
+  {
+   "question": "flag rate 0.02 vs a ceiling of 0.05, on silent commits",
+   "n_available": 2903,
+   "n_required": 308,
+   "verdict": "POWERED"
+  },
+  {
+   "question": "flag rate 0.03 vs a ceiling of 0.05, on silent commits",
+   "n_available": 2903,
+   "n_required": 778,
+   "verdict": "POWERED"
+  }
+ ],
+ "mcnemar": [
+  {
+   "detector": 0.8,
+   "baseline": 0.5,
+   "correlation": 0.5,
+   "n_required": 34,
+   "power_at_n": 1.0,
+   "verdict": "POWERED"
+  },
+  {
+   "detector": 0.8,
+   "baseline": 0.6,
+   "correlation": 0.5,
+   "n_required": 66,
+   "power_at_n": 0.999,
+   "verdict": "POWERED"
+  },
+  {
+   "detector": 0.8,
+   "baseline": 0.7,
+   "correlation": 0.5,
+   "n_required": 226,
+   "power_at_n": 0.691,
+   "verdict": "UNDERPOWERED"
+  },
+  {
+   "detector": 0.8,
+   "baseline": 0.5,
+   "correlation": 0.8,
+   "n_required": 27,
+   "power_at_n": 1.0,
+   "verdict": "POWERED"
+  },
+  {
+   "detector": 0.8,
+   "baseline": 0.6,
+   "correlation": 0.8,
+   "n_required": 48,
+   "power_at_n": 1.0,
+   "verdict": "POWERED"
+  },
+  {
+   "detector": 0.8,
+   "baseline": 0.7,
+   "correlation": 0.8,
+   "n_required": 148,
+   "power_at_n": 0.87,
+   "verdict": "POWERED"
+  }
+ ],
+ "mde": [
+  {
+   "label": "recall, against a floor of 0.50",
+   "floor": 0.5,
+   "mde": 0.605
+  },
+  {
+   "label": "recall, against a floor of 0.80",
+   "floor": 0.8,
+   "mde": 0.885
+  },
+  {
+   "label": "recall, against a floor of 0.90",
+   "floor": 0.9,
+   "mde": 0.96
+  },
+  {
+   "label": "precision on 24 findings (the old run's n)",
+   "floor": 0.5,
+   "mde": 0.76
+  },
+  {
+   "label": "precision on 50 findings",
+   "floor": 0.5,
+   "mde": 0.685
+  },
+  {
+   "label": "precision on 100 findings",
+   "floor": 0.5,
+   "mde": 0.64
+  },
+  {
+   "label": "flag rate, against a ceiling of 0.05",
+   "floor": 0.05,
+   "mde": 0.035
+  }
+ ],
+ "ci_widths": {
+  "24": {
+   "0.2": [
+    0.092,
+    0.405
+   ],
+   "0.5": [
+    0.314,
+    0.686
+   ],
+   "0.8": [
+    0.595,
+    0.908
+   ]
+  },
+  "50": {
+   "0.2": [
+    0.112,
+    0.33
+   ],
+   "0.5": [
+    0.366,
+    0.634
+   ],
+   "0.8": [
+    0.67,
+    0.888
+   ]
+  },
+  "100": {
+   "0.2": [
+    0.133,
+    0.289
+   ],
+   "0.5": [
+    0.404,
+    0.596
+   ],
+   "0.8": [
+    0.711,
+    0.867
+   ]
+  },
+  "177": {
+   "0.2": [
+    0.146,
+    0.263
+   ],
+   "0.5": [
+    0.424,
+    0.57
+   ],
+   "0.8": [
+    0.737,
+    0.854
+   ]
+  },
+  "495": {
+   "0.2": [
+    0.167,
+    0.237
+   ],
+   "0.5": [
+    0.457,
+    0.545
+   ],
+   "0.8": [
+    0.763,
+    0.833
+   ]
+  }
+ }
+}

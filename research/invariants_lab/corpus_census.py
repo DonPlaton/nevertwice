@@ -35,13 +35,14 @@ from corpusio import (  # noqa: E402
     progress,
     total_commits,
 )
+import sigscan  # noqa: E402
 from sigscan import scan_refs, signature_deltas  # noqa: E402
 
 ARTIFACT = Path(__file__).with_name("corpus_census.json")
 
 # Declared before the run, uniform across blocks, so no repository's window is
 # chosen for what it contains.
-WINDOW = 4000          # newest commits touching .py, per repository
+WINDOW = 10 ** 9        # the entire history; see POWER.md on why enlargement is not tuning
 MAX_PY_FILES = 40      # a commit touching more is a bulk rewrite, not a contract change
 MIN_PY_FILES = 2       # a same-commit caller update needs at least two files
 
@@ -71,7 +72,8 @@ def census_repo(repo: Path, window: int = WINDOW) -> dict:
     n_sig = 0
     n_eligible = 0
     eligible: list[dict] = []
-    parse_failures = 0
+    sigscan.PARSE_FAILURES.clear()
+    sigscan.PARSE_ATTEMPTS[0] = 0
 
     with BlobReader(repo) as blobs:
         for i, c in enumerate(candidates):
@@ -154,7 +156,8 @@ def census_repo(repo: Path, window: int = WINDOW) -> dict:
         "signature_change_commits": n_sig,
         "eligible_commits": n_eligible,
         "eligible_rate": round(n_eligible / len(candidates), 5) if candidates else 0.0,
-        "parse_failures": parse_failures,
+        "parse_failures": dict(sigscan.PARSE_FAILURES),
+        "parse_attempts": sigscan.PARSE_ATTEMPTS[0],
         "seconds": round(time.time() - started, 1),
         "eligible": eligible,
     }

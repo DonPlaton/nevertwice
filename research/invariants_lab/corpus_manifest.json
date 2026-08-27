@@ -5,7 +5,7 @@
  "in_git": false,
  "disk_total_gb": 0.732,
  "disk_budget_gb": 40,
- "census_window": 4000,
+ "census_window": "full history",
  "max_py_files": 40,
  "repos": [
   {
@@ -18,12 +18,14 @@
    "total_commits": 34889,
    "py_commits": 23125,
    "contributors": 3638,
-   "census_window": 4000,
-   "candidates": 2512,
-   "signature_change_commits": 626,
-   "eligible_commits": 85,
-   "eligible_rate": 0.03384,
-   "disk_mb": 356.4
+   "census_window": 23125,
+   "candidates": 12775,
+   "signature_change_commits": 3275,
+   "eligible_commits": 490,
+   "eligible_rate": 0.03836,
+   "disk_mb": 356.4,
+   "parse_attempts": 90942,
+   "parse_failures": 5534
   },
   {
    "dir": "encode_httpx",
@@ -37,10 +39,12 @@
    "contributors": 270,
    "census_window": 971,
    "candidates": 612,
-   "signature_change_commits": 287,
+   "signature_change_commits": 286,
    "eligible_commits": 47,
    "eligible_rate": 0.0768,
-   "disk_mb": 12.5
+   "disk_mb": 12.5,
+   "parse_attempts": 5496,
+   "parse_failures": 1
   },
   {
    "dir": "fastapi_fastapi",
@@ -54,10 +58,12 @@
    "contributors": 941,
    "census_window": 1289,
    "candidates": 555,
-   "signature_change_commits": 170,
-   "eligible_commits": 12,
-   "eligible_rate": 0.02162,
-   "disk_mb": 93.7
+   "signature_change_commits": 166,
+   "eligible_commits": 13,
+   "eligible_rate": 0.02342,
+   "disk_mb": 93.7,
+   "parse_attempts": 4004,
+   "parse_failures": 0
   },
   {
    "dir": "pallets_flask",
@@ -71,10 +77,12 @@
    "contributors": 898,
    "census_window": 1985,
    "candidates": 806,
-   "signature_change_commits": 239,
-   "eligible_commits": 25,
-   "eligible_rate": 0.03102,
-   "disk_mb": 15.4
+   "signature_change_commits": 236,
+   "eligible_commits": 24,
+   "eligible_rate": 0.02978,
+   "disk_mb": 15.4,
+   "parse_attempts": 4994,
+   "parse_failures": 207
   },
   {
    "dir": "psf_requests",
@@ -88,10 +96,12 @@
    "contributors": 841,
    "census_window": 2664,
    "candidates": 664,
-   "signature_change_commits": 174,
-   "eligible_commits": 11,
-   "eligible_rate": 0.01657,
-   "disk_mb": 19.2
+   "signature_change_commits": 168,
+   "eligible_commits": 10,
+   "eligible_rate": 0.01506,
+   "disk_mb": 19.2,
+   "parse_attempts": 4030,
+   "parse_failures": 67
   },
   {
    "dir": "pytest-dev_pytest",
@@ -103,12 +113,14 @@
    "total_commits": 17700,
    "py_commits": 8494,
    "contributors": 1254,
-   "census_window": 4000,
-   "candidates": 1976,
-   "signature_change_commits": 669,
-   "eligible_commits": 95,
-   "eligible_rate": 0.04808,
-   "disk_mb": 54.2
+   "census_window": 8494,
+   "candidates": 4432,
+   "signature_change_commits": 1518,
+   "eligible_commits": 209,
+   "eligible_rate": 0.04716,
+   "disk_mb": 54.2,
+   "parse_attempts": 32616,
+   "parse_failures": 2654
   },
   {
    "dir": "scrapy_scrapy",
@@ -120,12 +132,14 @@
    "total_commits": 11417,
    "py_commits": 6498,
    "contributors": 850,
-   "census_window": 4000,
-   "candidates": 1829,
-   "signature_change_commits": 654,
-   "eligible_commits": 86,
-   "eligible_rate": 0.04702,
-   "disk_mb": 41.3
+   "census_window": 6498,
+   "candidates": 2946,
+   "signature_change_commits": 1155,
+   "eligible_commits": 154,
+   "eligible_rate": 0.05227,
+   "disk_mb": 41.3,
+   "parse_attempts": 23878,
+   "parse_failures": 982
   },
   {
    "dir": "sphinx-doc_sphinx",
@@ -137,19 +151,23 @@
    "total_commits": 22413,
    "py_commits": 11189,
    "contributors": 940,
-   "census_window": 4000,
-   "candidates": 1817,
-   "signature_change_commits": 519,
-   "eligible_commits": 74,
-   "eligible_rate": 0.04073,
-   "disk_mb": 139.6
+   "census_window": 11189,
+   "candidates": 4578,
+   "signature_change_commits": 1219,
+   "eligible_commits": 171,
+   "eligible_rate": 0.03735,
+   "disk_mb": 139.6,
+   "parse_attempts": 35788,
+   "parse_failures": 1510
   }
  ],
  "totals": {
   "total_commits": 107686,
   "py_commits": 56215,
-  "candidates": 10771,
-  "signature_change_commits": 3338,
-  "eligible_commits": 435
+  "candidates": 27368,
+  "signature_change_commits": 8023,
+  "eligible_commits": 1118,
+  "parse_attempts": 201748,
+  "parse_failures": 10955
  }
 }
