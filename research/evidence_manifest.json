@@ -519,6 +519,10 @@
       "governance": "backlog",
       "budget": 46,
       "note": "the negative result that closed M3. Both gates it failed are registered as claims and checked against research/embed_universal/heldout/distil_v1.json by tests/_test_distillation.py; the two-attempt table and the reasoning are the backlog. The distilled checkpoint was deleted per the decision written before the run; every measurement it produced is kept, including the first attempt's, whose failure was a specification error rather than a finding."
+    },
+    "research/EMBED_M4_THRESHOLD.md": {
+      "governance": "exempt",
+      "reason": "the success threshold and deletion decision for Matryoshka representations, declared before anything was trained or truncated, per hard rule 2.6. Its numbers are prospective decision rules - a bound on what the full vector may lose, tolerances for graceful truncation, and the resolution the benchmark offers - not measurements. It inverts the question M2 and M3 asked, and says so before the run: here 'no accuracy gain, three quarters of the memory' is a pass."
     }
   },
   "claims": [
