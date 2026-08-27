@@ -1,0 +1,36 @@
+{
+ "schema": 1,
+ "file": "research/embed_universal/heldout/external_heldout_v1.json",
+ "sha256": "272cca36b1ab2a28676ae177adf96cf814f563ac9988f69f8f36a224aabb29b0",
+ "bytes": 566990,
+ "heldout_domains": [
+  "arxiv:quant-ph",
+  "book:132",
+  "rust-book"
+ ],
+ "generator_sha256": {
+  "gen_corpus.py": "f4b9ad2dff7317ff454e9c6e94ea367e93f1d2e4bd1ed31ab124833c1579cb45",
+  "gen_pairs.py": "adba1bc55524d7f1d1754a0380764e0ccb14a7c2bf051468f3de677fbf997f13",
+  "sources.py": "92d4c1eb0d0fd4865a3da8b9ed1c2cf37c08ac3aff8ca615c63c31c76753fd9d"
+ },
+ "built_by": "research/embed_universal/heldout_set.py --build",
+ "verify_with": "python research/embed_universal/heldout_set.py --verify",
+ "regeneration": "The frozen file is deterministic given data/lessons.jsonl and data/test_synth.jsonl. Those two are NOT reproducible from a fresh clone: they need ~2 GB of fetched public source material (sources.py) and a local qwen2.5:7b writing the notes (gen_corpus.py), and an LLM's output is not byte-stable across setups. So the SET is frozen and committed, its hash is checked in CI, and the pipeline that produced it is committed beside it. That is the honest reading of 'reproducible from a fresh clone' for an LLM-written corpus: anyone can CHECK it, and anyone can rebuild an equivalent one.",
+ "counts": {
+  "corpus": 408,
+  "twin_pairs": 690,
+  "twin_positive": 90,
+  "twin_negative": 600,
+  "retrieval_title": 408,
+  "retrieval_situation": 216
+ },
+ "corpus_languages": {
+  "ru": 124,
+  "en": 284
+ },
+ "corpus_domains": {
+  "arxiv:quant-ph": 84,
+  "book:132": 64,
+  "rust-book": 260
+ }
+}

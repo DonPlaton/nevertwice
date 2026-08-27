@@ -1,3 +1,8 @@
 # Normalise line endings: LF in the repo, native on checkout.
 * text=auto eol=lf
 *.bat text eol=crlf
+
+# The frozen evaluation set is identified by a content hash, so its bytes must survive a
+# checkout unchanged - no eol normalisation, on any platform.
+research/embed_universal/heldout/external_heldout_v1.json -text
+research/embed_universal/heldout/MANIFEST.json -text
