@@ -479,6 +479,10 @@
       "governance": "backlog",
       "budget": 72,
       "note": "A research write-up, registered the way every other one here is. Its six load-bearing numbers - the ones the T1/T2 decision rests on - are registered as claims and checked against the artifact by tests/_test_blast_radius_calibration.py, which also re-checks the thresholds themselves. The distribution tables are the backlog. The cost figure is deliberately NOT a claim: it points at a field the artifact declares volatile, so every regeneration would move it and break the claim. T4 is enforced against the artifact directly instead."
+    },
+    "research/BLAST_RADIUS_DECISION.md": {
+      "governance": "exempt",
+      "reason": "the decision rules for whether the blast-radius checker is worth keeping, declared before any finding was labelled and before the baseline was built, per hard rule 2.6. Its numbers are prospective thresholds - a precision floor and a matched-flag-rate comparison - and the size of the census it commits to labelling, not measurements to reproduce. The measurements land in research/BLAST_RADIUS_PRECISION.md."
     }
   },
   "claims": [
