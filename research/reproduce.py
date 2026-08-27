@@ -115,6 +115,17 @@ ARTIFACTS = [
      "note": "measures THIS machine. The same minimum-of-five statistic moved by about a "
              "third between sessions on one box, so byte-identity is not the test - the "
              "order of magnitude is."},
+    {"file": "research/embed_universal/heldout/capacity_sweep.json",
+     "command": ["python", "research/embed_universal/capacity_sweep.py"],
+     "kind": HARDWARE, "task": "M5",
+     "inputs": ["research/embed_universal/heldout/external_heldout_v1.json",
+                "a CUDA GPU", "torch", "sentence_transformers", "BAAI/bge-m3",
+                "research/embed_universal/models/universal_v1_merged"],
+     "note": "four LoRA ranks trained, evaluated and deleted. It needs no swept checkpoint as an "
+             "input because it makes them: about five minutes on a 5090. It will NOT come back "
+             "byte-identical - the run itself measured that this recipe does not reproduce its "
+             "own weights - which is why it is classified by hardware rather than as "
+             "deterministic."},
     {"file": "research/embed_universal/heldout/matryoshka_v1.json",
      "command": ["python", "research/embed_universal/truncation_eval.py"],
      "kind": HARDWARE, "task": "M4",

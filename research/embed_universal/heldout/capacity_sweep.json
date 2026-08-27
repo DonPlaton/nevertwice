@@ -1,0 +1,660 @@
+{
+ "arms": {
+  "r1": {
+   "by_language": {
+    "retrieval_situation": {
+     "en": {
+      "n": 168,
+      "recall@1": 0.5595,
+      "recall@5": 0.8036
+     },
+     "ru": {
+      "n": 48,
+      "recall@1": 0.625,
+      "recall@5": 0.875
+     }
+    },
+    "retrieval_title": {
+     "en": {
+      "n": 284,
+      "recall@1": 0.9648,
+      "recall@5": 0.9965
+     },
+     "ru": {
+      "n": 124,
+      "recall@1": 0.9677,
+      "recall@5": 1.0
+     }
+    }
+   },
+   "checkpoint": "deleted",
+   "clears_S1": false,
+   "paired_vs_shipped": {
+    "retrieval_situation": {
+     "delta_recall@1": {
+      "high": 0.0231,
+      "low": -0.0324,
+      "resamples": 2000,
+      "value": -0.0046
+     },
+     "delta_recall@5": {
+      "high": 0.0185,
+      "low": -0.0463,
+      "resamples": 2000,
+      "value": -0.0139
+     },
+     "n": 216
+    },
+    "retrieval_title": {
+     "delta_recall@1": {
+      "high": 0.0074,
+      "low": 0.0,
+      "resamples": 2000,
+      "value": 0.0025
+     },
+     "delta_recall@5": {
+      "high": 0.0,
+      "low": 0.0,
+      "resamples": 2000,
+      "value": 0.0
+     },
+     "n": 408
+    }
+   },
+   "rank": 1,
+   "retrieval_situation": {
+    "mrr@10": {
+     "high": 0.7322,
+     "low": 0.6249,
+     "resamples": 2000,
+     "value": 0.6794
+    },
+    "n": 216,
+    "recall@1": {
+     "high": 0.6389,
+     "low": 0.5046,
+     "resamples": 2000,
+     "value": 0.5741
+    },
+    "recall@5": {
+     "high": 0.8704,
+     "low": 0.7639,
+     "resamples": 2000,
+     "value": 0.8194
+    }
+   },
+   "retrieval_title": {
+    "mrr@10": {
+     "high": 0.9901,
+     "low": 0.9701,
+     "resamples": 2000,
+     "value": 0.9809
+    },
+    "n": 408,
+    "recall@1": {
+     "high": 0.9828,
+     "low": 0.9461,
+     "resamples": 2000,
+     "value": 0.9657
+    },
+    "recall@5": {
+     "high": 1.0,
+     "low": 0.9926,
+     "resamples": 2000,
+     "value": 0.9975
+    }
+   },
+   "seconds": 57.4,
+   "trainable_parameters": 444416,
+   "twin": {
+    "auc": {
+     "high": 1.0,
+     "low": 1.0,
+     "resamples": 2000,
+     "value": 1.0
+    },
+    "n": 690,
+    "recall@0fp": {
+     "high": 1.0,
+     "low": 1.0,
+     "resamples": 2000,
+     "value": 1.0
+    },
+    "recall@1%fpr": {
+     "high": 1.0,
+     "low": 1.0,
+     "resamples": 2000,
+     "value": 1.0
+    }
+   }
+  },
+  "r16": {
+   "by_language": {
+    "retrieval_situation": {
+     "en": {
+      "n": 168,
+      "recall@1": 0.5298,
+      "recall@5": 0.7976
+     },
+     "ru": {
+      "n": 48,
+      "recall@1": 0.6458,
+      "recall@5": 0.875
+     }
+    },
+    "retrieval_title": {
+     "en": {
+      "n": 284,
+      "recall@1": 0.9613,
+      "recall@5": 0.9965
+     },
+     "ru": {
+      "n": 124,
+      "recall@1": 0.9597,
+      "recall@5": 1.0
+     }
+    }
+   },
+   "checkpoint": "deleted",
+   "clears_S1": false,
+   "paired_vs_shipped": {
+    "retrieval_situation": {
+     "delta_recall@1": {
+      "high": 0.0,
+      "low": -0.0509,
+      "resamples": 2000,
+      "value": -0.0231
+     },
+     "delta_recall@5": {
+      "high": 0.0,
+      "low": -0.0417,
+      "resamples": 2000,
+      "value": -0.0185
+     },
+     "n": 216
+    },
+    "retrieval_title": {
+     "delta_recall@1": {
+      "high": 0.0049,
+      "low": -0.0123,
+      "resamples": 2000,
+      "value": -0.0025
+     },
+     "delta_recall@5": {
+      "high": 0.0,
+      "low": 0.0,
+      "resamples": 2000,
+      "value": 0.0
+     },
+     "n": 408
+    }
+   },
+   "rank": 16,
+   "retrieval_situation": {
+    "mrr@10": {
+     "high": 0.7168,
+     "low": 0.6097,
+     "resamples": 2000,
+     "value": 0.6648
+    },
+    "n": 216,
+    "recall@1": {
+     "high": 0.6204,
+     "low": 0.4907,
+     "resamples": 2000,
+     "value": 0.5556
+    },
+    "recall@5": {
+     "high": 0.8657,
+     "low": 0.7593,
+     "resamples": 2000,
+     "value": 0.8148
+    }
+   },
+   "retrieval_title": {
+    "mrr@10": {
+     "high": 0.9882,
+     "low": 0.9672,
+     "resamples": 2000,
+     "value": 0.9784
+    },
+    "n": 408,
+    "recall@1": {
+     "high": 0.9779,
+     "low": 0.9412,
+     "resamples": 2000,
+     "value": 0.9608
+    },
+    "recall@5": {
+     "high": 1.0,
+     "low": 0.9926,
+     "resamples": 2000,
+     "value": 0.9975
+    }
+   },
+   "seconds": 60.9,
+   "trainable_parameters": 7110656,
+   "twin": {
+    "auc": {
+     "high": 1.0,
+     "low": 1.0,
+     "resamples": 2000,
+     "value": 1.0
+    },
+    "n": 690,
+    "recall@0fp": {
+     "high": 1.0,
+     "low": 1.0,
+     "resamples": 2000,
+     "value": 1.0
+    },
+    "recall@1%fpr": {
+     "high": 1.0,
+     "low": 1.0,
+     "resamples": 2000,
+     "value": 1.0
+    }
+   }
+  },
+  "r4": {
+   "by_language": {
+    "retrieval_situation": {
+     "en": {
+      "n": 168,
+      "recall@1": 0.5655,
+      "recall@5": 0.8214
+     },
+     "ru": {
+      "n": 48,
+      "recall@1": 0.6667,
+      "recall@5": 0.8958
+     }
+    },
+    "retrieval_title": {
+     "en": {
+      "n": 284,
+      "recall@1": 0.9648,
+      "recall@5": 0.9965
+     },
+     "ru": {
+      "n": 124,
+      "recall@1": 0.9677,
+      "recall@5": 1.0
+     }
+    }
+   },
+   "checkpoint": "deleted",
+   "clears_S1": false,
+   "paired_vs_shipped": {
+    "retrieval_situation": {
+     "delta_recall@1": {
+      "high": 0.0278,
+      "low": -0.0093,
+      "resamples": 2000,
+      "value": 0.0093
+     },
+     "delta_recall@5": {
+      "high": 0.0278,
+      "low": -0.0185,
+      "resamples": 2000,
+      "value": 0.0046
+     },
+     "n": 216
+    },
+    "retrieval_title": {
+     "delta_recall@1": {
+      "high": 0.0074,
+      "low": 0.0,
+      "resamples": 2000,
+      "value": 0.0025
+     },
+     "delta_recall@5": {
+      "high": 0.0,
+      "low": 0.0,
+      "resamples": 2000,
+      "value": 0.0
+     },
+     "n": 408
+    }
+   },
+   "rank": 4,
+   "retrieval_situation": {
+    "mrr@10": {
+     "high": 0.7429,
+     "low": 0.6358,
+     "resamples": 2000,
+     "value": 0.6897
+    },
+    "n": 216,
+    "recall@1": {
+     "high": 0.6528,
+     "low": 0.5231,
+     "resamples": 2000,
+     "value": 0.588
+    },
+    "recall@5": {
+     "high": 0.8843,
+     "low": 0.7824,
+     "resamples": 2000,
+     "value": 0.838
+    }
+   },
+   "retrieval_title": {
+    "mrr@10": {
+     "high": 0.9901,
+     "low": 0.97,
+     "resamples": 2000,
+     "value": 0.9808
+    },
+    "n": 408,
+    "recall@1": {
+     "high": 0.9828,
+     "low": 0.9461,
+     "resamples": 2000,
+     "value": 0.9657
+    },
+    "recall@5": {
+     "high": 1.0,
+     "low": 0.9926,
+     "resamples": 2000,
+     "value": 0.9975
+    }
+   },
+   "seconds": 62.0,
+   "trainable_parameters": 1777664,
+   "twin": {
+    "auc": {
+     "high": 1.0,
+     "low": 1.0,
+     "resamples": 2000,
+     "value": 1.0
+    },
+    "n": 690,
+    "recall@0fp": {
+     "high": 1.0,
+     "low": 1.0,
+     "resamples": 2000,
+     "value": 1.0
+    },
+    "recall@1%fpr": {
+     "high": 1.0,
+     "low": 1.0,
+     "resamples": 2000,
+     "value": 1.0
+    }
+   }
+  },
+  "r64": {
+   "by_language": {
+    "retrieval_situation": {
+     "en": {
+      "n": 168,
+      "recall@1": 0.5476,
+      "recall@5": 0.7798
+     },
+     "ru": {
+      "n": 48,
+      "recall@1": 0.6458,
+      "recall@5": 0.8958
+     }
+    },
+    "retrieval_title": {
+     "en": {
+      "n": 284,
+      "recall@1": 0.9507,
+      "recall@5": 0.993
+     },
+     "ru": {
+      "n": 124,
+      "recall@1": 0.9516,
+      "recall@5": 1.0
+     }
+    }
+   },
+   "checkpoint": "deleted",
+   "clears_S1": false,
+   "paired_vs_shipped": {
+    "retrieval_situation": {
+     "delta_recall@1": {
+      "high": 0.0278,
+      "low": -0.0463,
+      "resamples": 2000,
+      "value": -0.0093
+     },
+     "delta_recall@5": {
+      "high": 0.0,
+      "low": -0.0602,
+      "resamples": 2000,
+      "value": -0.0278
+     },
+     "n": 216
+    },
+    "retrieval_title": {
+     "delta_recall@1": {
+      "high": 0.0025,
+      "low": -0.027,
+      "resamples": 2000,
+      "value": -0.0123
+     },
+     "delta_recall@5": {
+      "high": 0.0,
+      "low": -0.0074,
+      "resamples": 2000,
+      "value": -0.0025
+     },
+     "n": 408
+    }
+   },
+   "rank": 64,
+   "retrieval_situation": {
+    "mrr@10": {
+     "high": 0.7318,
+     "low": 0.6243,
+     "resamples": 2000,
+     "value": 0.6788
+    },
+    "n": 216,
+    "recall@1": {
+     "high": 0.6343,
+     "low": 0.5046,
+     "resamples": 2000,
+     "value": 0.5694
+    },
+    "recall@5": {
+     "high": 0.8565,
+     "low": 0.75,
+     "resamples": 2000,
+     "value": 0.8056
+    }
+   },
+   "retrieval_title": {
+    "mrr@10": {
+     "high": 0.9841,
+     "low": 0.9601,
+     "resamples": 2000,
+     "value": 0.9727
+    },
+    "n": 408,
+    "recall@1": {
+     "high": 0.9706,
+     "low": 0.9289,
+     "resamples": 2000,
+     "value": 0.951
+    },
+    "recall@5": {
+     "high": 1.0,
+     "low": 0.9877,
+     "resamples": 2000,
+     "value": 0.9951
+    }
+   },
+   "seconds": 60.7,
+   "trainable_parameters": 28442624,
+   "twin": {
+    "auc": {
+     "high": 1.0,
+     "low": 1.0,
+     "resamples": 2000,
+     "value": 1.0
+    },
+    "n": 690,
+    "recall@0fp": {
+     "high": 1.0,
+     "low": 1.0,
+     "resamples": 2000,
+     "value": 1.0
+    },
+    "recall@1%fpr": {
+     "high": 1.0,
+     "low": 1.0,
+     "resamples": 2000,
+     "value": 1.0
+    }
+   }
+  }
+ },
+ "benchmark_sha256": "272cca36b1ab2a28676ae177adf96cf814f563ac9988f69f8f36a224aabb29b0",
+ "bootstrap": {
+  "method": "percentile",
+  "resamples": 2000,
+  "seed": 20260827
+ },
+ "cross_lingual_note": "The other half of M5 - re-testing whether cross-lingual pairs hurt - could not run: gen_pairs.py produces same-language twins only, so no cross-lingual arm exists in train_pairs.jsonl. Per-language results are reported instead and are NOT a substitute for that test.",
+ "generated_by": "research/embed_universal/capacity_sweep.py",
+ "held_constant": "everything but the rank: same pairs, MultipleNegativesRankingLoss, 3 epochs, batch 24, lr 1e-4, seed 11, targets qkv+dense. lora_alpha tracks the rank at 2x, which is the convention the recipe already used.",
+ "promoted": [],
+ "ranks": [
+  1,
+  4,
+  16,
+  64
+ ],
+ "s2_r1_vs_r16": {
+  "retrieval_situation": {
+   "delta_recall@1": {
+    "high": 0.0509,
+    "low": -0.0139,
+    "resamples": 2000,
+    "value": 0.0185
+   },
+   "delta_recall@5": {
+    "high": 0.037,
+    "low": -0.0231,
+    "resamples": 2000,
+    "value": 0.0046
+   },
+   "n": 216
+  },
+  "retrieval_title": {
+   "delta_recall@1": {
+    "high": 0.0123,
+    "low": 0.0,
+    "resamples": 2000,
+    "value": 0.0049
+   },
+   "delta_recall@5": {
+    "high": 0.0,
+    "low": 0.0,
+    "resamples": 2000,
+    "value": 0.0
+   },
+   "n": 408
+  }
+ },
+ "shipped_baseline": {
+  "by_language": {
+   "retrieval_situation": {
+    "en": {
+     "n": 168,
+     "recall@1": 0.5595,
+     "recall@5": 0.8155
+    },
+    "ru": {
+     "n": 48,
+     "recall@1": 0.6458,
+     "recall@5": 0.8958
+    }
+   },
+   "retrieval_title": {
+    "en": {
+     "n": 284,
+     "recall@1": 0.9613,
+     "recall@5": 0.9965
+    },
+    "ru": {
+     "n": 124,
+     "recall@1": 0.9677,
+     "recall@5": 1.0
+    }
+   }
+  },
+  "retrieval_situation": {
+   "mrr@10": {
+    "high": 0.7353,
+    "low": 0.628,
+    "resamples": 2000,
+    "value": 0.6826
+   },
+   "n": 216,
+   "recall@1": {
+    "high": 0.6435,
+    "low": 0.5093,
+    "resamples": 2000,
+    "value": 0.5787
+   },
+   "recall@5": {
+    "high": 0.8796,
+    "low": 0.7824,
+    "resamples": 2000,
+    "value": 0.8333
+   }
+  },
+  "retrieval_title": {
+   "mrr@10": {
+    "high": 0.9895,
+    "low": 0.9692,
+    "resamples": 2000,
+    "value": 0.9801
+   },
+   "n": 408,
+   "recall@1": {
+    "high": 0.9804,
+    "low": 0.9436,
+    "resamples": 2000,
+    "value": 0.9632
+   },
+   "recall@5": {
+    "high": 1.0,
+    "low": 0.9926,
+    "resamples": 2000,
+    "value": 0.9975
+   }
+  },
+  "twin": {
+   "auc": {
+    "high": 1.0,
+    "low": 1.0,
+    "resamples": 2000,
+    "value": 1.0
+   },
+   "n": 690,
+   "recall@0fp": {
+    "high": 1.0,
+    "low": 1.0,
+    "resamples": 2000,
+    "value": 1.0
+   },
+   "recall@1%fpr": {
+    "high": 1.0,
+    "low": 1.0,
+    "resamples": 2000,
+    "value": 1.0
+   }
+  }
+ },
+ "thresholds": "research/EMBED_M5_THRESHOLD.md",
+ "vram_before": {
+  "free_gb": 30.2,
+  "total_gb": 31.84
+ }
+}

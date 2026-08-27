@@ -532,6 +532,11 @@
     "research/EMBED_M5_THRESHOLD.md": {
       "governance": "exempt",
       "reason": "the promotion rule and deletion decision for the LoRA capacity sweep, declared before any rank was trained, per hard rule 2.6. It also records, before the run, that half the task cannot execute from committed data - gen_pairs.py produces same-language twins only, so there is no cross-lingual arm to re-test - and what would be needed instead. Prospective rules, not measurements."
+    },
+    "research/EMBED_CAPACITY.md": {
+      "governance": "backlog",
+      "budget": 86,
+      "note": "the LoRA capacity curve, the replacement for a belief measured on a saturated axis, and the discovery that v1 is not reproducible from its own recipe. The two load-bearing results are registered as claims and checked against research/embed_universal/heldout/capacity_sweep.json by tests/_test_capacity.py; the curve and the per-language table are the backlog. All four checkpoints were deleted as they failed the promotion rule."
     }
   },
   "claims": [
@@ -6831,6 +6836,67 @@
       "commit": "1f844e6decccba09570fe0e0db8a11602fc1e27e",
       "produced_by": [
         "research/embed_universal/truncation_eval.py",
+        "research/embed_universal/heldout_eval.py"
+      ]
+    },
+    {
+      "id": "embed.capacity.r64_vs_shipped",
+      "statement": "at 64x the LoRA rank the model is 0.028 WORSE on situation recall@5 than the shipped r16, 95% interval [-0.060, 0.000] - more capacity buys less on 1463 training pairs",
+      "value": -0.0278,
+      "printed": [
+        "0.028",
+        "0.060",
+        "64"
+      ],
+      "unit": "delta recall@5",
+      "dataset": "external_heldout_v1",
+      "environment": "rtx5090_bge_fp16",
+      "n": 216,
+      "command": "python research/embed_universal/capacity_sweep.py",
+      "raw": "research/embed_universal/heldout/capacity_sweep.json",
+      "pointer": "arms.r64.paired_vs_shipped.retrieval_situation.delta_recall@5.value",
+      "ci": {
+        "method": "bootstrap-percentile",
+        "level": 0.95,
+        "low": -0.0602,
+        "high": 0.0
+      },
+      "ci_note": "percentile bootstrap, 2000 resamples, seed 20260827, paired.",
+      "caveat": "The curve falls monotonically past r4 (0.838, 0.815, 0.806 for r4/r16/r64), which is what overfitting looks like on this corpus size. No arm cleared the promotion rule, so all four checkpoints were deleted; r4 is where the evidence points if a future run wants a rank.",
+      "cited_in": [],
+      "commit": "PENDING",
+      "produced_by": [
+        "research/embed_universal/capacity_sweep.py",
+        "research/embed_universal/heldout_eval.py"
+      ]
+    },
+    {
+      "id": "embed.capacity.v1_recipe_does_not_reproduce_v1",
+      "statement": "re-running v1's own recipe - same pairs, loss, epochs, batch, lr, seed, rank - lands 0.018 below the shipped checkpoint on situation recall@5, 95% interval [-0.042, 0.000]",
+      "value": -0.0185,
+      "printed": [
+        "0.018",
+        "0.042"
+      ],
+      "unit": "delta recall@5",
+      "dataset": "external_heldout_v1",
+      "environment": "rtx5090_bge_fp16",
+      "n": 216,
+      "command": "python research/embed_universal/capacity_sweep.py",
+      "raw": "research/embed_universal/heldout/capacity_sweep.json",
+      "pointer": "arms.r16.paired_vs_shipped.retrieval_situation.delta_recall@5.value",
+      "ci": {
+        "method": "bootstrap-percentile",
+        "level": 0.95,
+        "low": -0.0417,
+        "high": 0.0
+      },
+      "ci_note": "percentile bootstrap, 2000 resamples, seed 20260827, paired.",
+      "caveat": "Inside the noise, and beside the point: it means nevertwice-embed v1 is a particular CHECKPOINT rather than a reproducible artifact. Library versions have moved since it was trained and GPU non-determinism does the rest. The model card must say the recipe reproduces the method, not the weights.",
+      "cited_in": [],
+      "commit": "PENDING",
+      "produced_by": [
+        "research/embed_universal/capacity_sweep.py",
         "research/embed_universal/heldout_eval.py"
       ]
     }

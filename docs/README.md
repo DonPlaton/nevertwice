@@ -61,6 +61,7 @@ click from here, and `tests/_test_docs_map.py` fails the build if that stops bei
 | [`research/EMBED_M4_THRESHOLD.md`](../research/EMBED_M4_THRESHOLD.md) | What a truncatable vector has to achieve, why the gate protects the FULL vector, and the decision to delete it either way if it does not |
 | [`research/EMBED_MATRYOSHKA.md`](../research/EMBED_MATRYOSHKA.md) | The training bought nothing - and the baseline it was measured against showed the shipped model already truncates to a quarter of the index |
 | [`research/EMBED_M5_THRESHOLD.md`](../research/EMBED_M5_THRESHOLD.md) | When a swept LoRA rank may replace the shipped model, and why half the task cannot run from committed data |
+| [`research/EMBED_CAPACITY.md`](../research/EMBED_CAPACITY.md) | Sixty-four times the parameters buys less than one times - and v1 turns out not to be reproducible from its own recipe |
 | [`research/evidence_manifest.json`](../research/evidence_manifest.json) | Every published number, with its dataset, sample size, model, command, raw file and caveat |
 | [`research/data/README.md`](../research/data/README.md) | Fetching the LongMemEval dataset the benchmarks need |
 
