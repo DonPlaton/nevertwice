@@ -1,0 +1,4109 @@
+{
+ "generated": "2026-08-27T23:51:45",
+ "checked": 503,
+ "confirmed": 495,
+ "not_broken": 0,
+ "not_intact": 8,
+ "by_breakage": {
+  "arity": {
+   "checked": 413,
+   "confirmed": 405
+  },
+  "vanished": {
+   "checked": 90,
+   "confirmed": 90
+  }
+ },
+ "disagreements": [
+  {
+   "mid": "django_django:0f581cd29:django/core/mail/backends/smtp.py:django/utils/log.py:AdminEmailHandler.__init__",
+   "breakage": "arity",
+   "broken": true,
+   "intact": false,
+   "signature": "(include_html=<object object at 0x000002CA66EF07A0>, email_backend=<object object at 0x000002CA66EF07A0>, reporter_class=<object object at 0x000002CA66EF07A0>, using=<object object at 0x000002CA66EF07A0>)",
+   "agrees": false
+  },
+  {
+   "mid": "django_django:3089018e9:django/test/runner.py:django/test/utils.py:setup_databases",
+   "breakage": "arity",
+   "broken": true,
+   "intact": false,
+   "signature": "(verbosity, interactive, *, time_keeper=<object object at 0x000002CA66EF07A0>, keepdb=<object object at 0x000002CA66EF07A0>, debug_sql=<object object at 0x000002CA66EF07A0>, parallel=<object object at 0x000002CA66EF07A0>, aliases=<object object at 0x000002CA66EF07A0>, serialized_aliases=<object object at 0x000002CA66EF07A0>, **kwargs)",
+   "agrees": false
+  },
+  {
+   "mid": "encode_httpx:80eafe89c:httpx/dispatch/http11.py:httpx/concurrency/asyncio.py:AsyncioBackend.background_manager",
+   "breakage": "arity",
+   "broken": true,
+   "intact": false,
+   "signature": "(coroutine, *args)",
+   "agrees": false
+  },
+  {
+   "mid": "encode_httpx:80eafe89c:httpx/dispatch/http11.py:httpx/concurrency/base.py:ConcurrencyBackend.background_manager",
+   "breakage": "arity",
+   "broken": true,
+   "intact": false,
+   "signature": "(coroutine, *args)",
+   "agrees": false
+  },
+  {
+   "mid": "encode_httpx:80eafe89c:httpx/dispatch/http2.py:httpx/concurrency/asyncio.py:AsyncioBackend.background_manager",
+   "breakage": "arity",
+   "broken": true,
+   "intact": false,
+   "signature": "(coroutine, *args)",
+   "agrees": false
+  },
+  {
+   "mid": "encode_httpx:80eafe89c:httpx/dispatch/http2.py:httpx/concurrency/base.py:ConcurrencyBackend.background_manager",
+   "breakage": "arity",
+   "broken": true,
+   "intact": false,
+   "signature": "(coroutine, *args)",
+   "agrees": false
+  },
+  {
+   "mid": "psf_requests:e02fb2eb6:requests/packages/urllib3/connectionpool.py:requests/packages/urllib3/poolmanager.py:PoolManager.urlopen",
+   "breakage": "arity",
+   "broken": true,
+   "intact": false,
+   "signature": "(method, url, redirect=<object object at 0x000002CA66EF07A0>, **kw)",
+   "agrees": false
+  },
+  {
+   "mid": "pytest-dev_pytest:1a5e0eb71:src/_pytest/unittest.py:src/_pytest/fixtures.py:FixtureManager.parsefactories",
+   "breakage": "arity",
+   "broken": true,
+   "intact": false,
+   "signature": "(node_or_obj)",
+   "agrees": false
+  }
+ ],
+ "results": [
+  {
+   "mid": "django_django:0f581cd29:django/core/mail/backends/smtp.py:django/utils/log.py:AdminEmailHandler.__init__",
+   "breakage": "arity",
+   "broken": true,
+   "intact": false,
+   "signature": "(include_html=<object object at 0x000002CA66EF07A0>, email_backend=<object object at 0x000002CA66EF07A0>, reporter_class=<object object at 0x000002CA66EF07A0>, using=<object object at 0x000002CA66EF07A0>)",
+   "agrees": false
+  },
+  {
+   "mid": "django_django:57c50d8c1:tests/delete/tests.py:tests/delete/models.py:RelatedDbOption",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 47,
+   "agrees": true
+  },
+  {
+   "mid": "django_django:57c50d8c1:tests/delete/tests.py:tests/delete/models.py:create_related_db_option",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 47,
+   "agrees": true
+  },
+  {
+   "mid": "django_django:c09bceef6:django/contrib/admin/options.py:django/contrib/admin/models.py:LogEntryManager.log_actions",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(user_id, queryset, action_flag, change_message=<object object at 0x000002CA66EF07A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:c09bceef6:tests/admin_changelist/tests.py:django/contrib/admin/models.py:LogEntryManager.log_actions",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(user_id, queryset, action_flag, change_message=<object object at 0x000002CA66EF07A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:c09bceef6:tests/admin_utils/test_logentry.py:django/contrib/admin/models.py:LogEntryManager.log_actions",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(user_id, queryset, action_flag, change_message=<object object at 0x000002CA66EF07A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:c09bceef6:tests/admin_views/test_history_view.py:django/contrib/admin/models.py:LogEntryManager.log_actions",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(user_id, queryset, action_flag, change_message=<object object at 0x000002CA66EF07A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:c09bceef6:tests/admin_views/tests.py:django/contrib/admin/models.py:LogEntryManager.log_actions",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(user_id, queryset, action_flag, change_message=<object object at 0x000002CA66EF07A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:d386405e0:django/db/models/fields/related_lookups.py:django/db/models/sql/where.py:SubqueryConstraint",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 16,
+   "agrees": true
+  },
+  {
+   "mid": "django_django:44ccd2037:tests/shell/tests.py:django/core/management/commands/shell.py:Command.get_and_report_namespace",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(**options)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:1eac690d2:django/db/models/sql/query.py:django/db/models/fields/related_lookups.py:MultiColSource",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 20,
+   "agrees": true
+  },
+  {
+   "mid": "django_django:195d885ca:django/db/models/sql/compiler.py:django/db/models/query_utils.py:select_related_descend",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(field, restricted, requested, select_mask)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:3bbe22daf:django/test/runner.py:django/utils/crypto.py:new_hash",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 11,
+   "agrees": true
+  },
+  {
+   "mid": "django_django:1297c0d0d:django/db/models/query.py:django/db/models/sql/query.py:Query.add_annotation",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(annotation, alias, select=<object object at 0x000002CA66EF07A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:c6350d594:tests/expressions/tests.py:django/db/models/aggregates.py:Aggregate.get_group_by_cols",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "()",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:c6350d594:tests/expressions/tests.py:django/db/models/expressions.py:BaseExpression.get_group_by_cols",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "()",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:c6350d594:tests/expressions/tests.py:django/db/models/expressions.py:ResolvedOuterRef.get_group_by_cols",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "()",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:c6350d594:tests/expressions/tests.py:django/db/models/expressions.py:Value.get_group_by_cols",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "()",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:c6350d594:tests/expressions/tests.py:django/db/models/expressions.py:RawSQL.get_group_by_cols",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "()",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:c6350d594:tests/expressions/tests.py:django/db/models/expressions.py:Col.get_group_by_cols",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "()",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:c6350d594:tests/expressions/tests.py:django/db/models/expressions.py:Ref.get_group_by_cols",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "()",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:c6350d594:tests/expressions/tests.py:django/db/models/expressions.py:ExpressionWrapper.get_group_by_cols",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "()",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:c6350d594:tests/expressions/tests.py:django/db/models/expressions.py:When.get_group_by_cols",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "()",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:c6350d594:tests/expressions/tests.py:django/db/models/expressions.py:Case.get_group_by_cols",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "()",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:c6350d594:tests/expressions/tests.py:django/db/models/expressions.py:Subquery.get_group_by_cols",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "()",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:c6350d594:tests/expressions/tests.py:django/db/models/expressions.py:OrderBy.get_group_by_cols",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "()",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:c6350d594:tests/expressions/tests.py:django/db/models/expressions.py:Window.get_group_by_cols",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "()",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:c6350d594:tests/expressions/tests.py:django/db/models/expressions.py:WindowFrame.get_group_by_cols",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "()",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:c6350d594:tests/expressions/tests.py:django/db/models/functions/math.py:Random.get_group_by_cols",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "()",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:c6350d594:tests/expressions/tests.py:django/db/models/lookups.py:Lookup.get_group_by_cols",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "()",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:c6350d594:tests/expressions/tests.py:django/db/models/sql/query.py:Query.get_group_by_cols",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(wrapper=<object object at 0x000002CA66EF07A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:c6350d594:tests/expressions/tests.py:django/db/models/sql/where.py:WhereNode.get_group_by_cols",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "()",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:3d734c09f:tests/aggregation/tests.py:django/db/models/sql/query.py:Query.exists",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(limit=<object object at 0x000002CA66EF07A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:877c800f2:django/db/models/functions/datetime.py:django/db/backends/base/operations.py:BaseDatabaseOperations.date_extract_sql",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(lookup_type, sql, params)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:877c800f2:django/db/models/functions/datetime.py:django/db/backends/mysql/operations.py:DatabaseOperations.date_extract_sql",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(lookup_type, sql, params)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:877c800f2:django/db/models/functions/datetime.py:django/db/backends/oracle/operations.py:DatabaseOperations.date_extract_sql",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(lookup_type, sql, params)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:877c800f2:django/db/models/functions/datetime.py:django/db/backends/postgresql/operations.py:DatabaseOperations.date_extract_sql",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(lookup_type, sql, params)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:877c800f2:django/db/models/functions/datetime.py:django/db/backends/sqlite3/operations.py:DatabaseOperations.date_extract_sql",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(lookup_type, sql, params)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:877c800f2:django/db/models/functions/datetime.py:django/db/backends/base/operations.py:BaseDatabaseOperations.datetime_cast_date_sql",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(sql, params, tzname)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:877c800f2:django/db/models/functions/datetime.py:django/db/backends/mysql/operations.py:DatabaseOperations.datetime_cast_date_sql",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(sql, params, tzname)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:877c800f2:django/db/models/functions/datetime.py:django/db/backends/oracle/operations.py:DatabaseOperations.datetime_cast_date_sql",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(sql, params, tzname)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:877c800f2:django/db/models/functions/datetime.py:django/db/backends/postgresql/operations.py:DatabaseOperations.datetime_cast_date_sql",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(sql, params, tzname)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:877c800f2:django/db/models/functions/datetime.py:django/db/backends/sqlite3/operations.py:DatabaseOperations.datetime_cast_date_sql",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(sql, params, tzname)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:877c800f2:django/db/models/functions/datetime.py:django/db/backends/base/operations.py:BaseDatabaseOperations.datetime_cast_time_sql",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(sql, params, tzname)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:877c800f2:django/db/models/functions/datetime.py:django/db/backends/mysql/operations.py:DatabaseOperations.datetime_cast_time_sql",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(sql, params, tzname)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:877c800f2:django/db/models/functions/datetime.py:django/db/backends/oracle/operations.py:DatabaseOperations.datetime_cast_time_sql",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(sql, params, tzname)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:877c800f2:django/db/models/functions/datetime.py:django/db/backends/postgresql/operations.py:DatabaseOperations.datetime_cast_time_sql",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(sql, params, tzname)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:877c800f2:django/db/models/functions/datetime.py:django/db/backends/sqlite3/operations.py:DatabaseOperations.datetime_cast_time_sql",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(sql, params, tzname)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:877c800f2:django/db/models/functions/datetime.py:django/db/backends/base/operations.py:BaseDatabaseOperations.datetime_extract_sql",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(lookup_type, sql, params, tzname)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:877c800f2:django/db/models/functions/datetime.py:django/db/backends/mysql/operations.py:DatabaseOperations.datetime_extract_sql",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(lookup_type, sql, params, tzname)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:877c800f2:django/db/models/functions/datetime.py:django/db/backends/oracle/operations.py:DatabaseOperations.datetime_extract_sql",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(lookup_type, sql, params, tzname)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:877c800f2:django/db/models/functions/datetime.py:django/db/backends/postgresql/operations.py:DatabaseOperations.datetime_extract_sql",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(lookup_type, sql, params, tzname)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:877c800f2:django/db/models/functions/datetime.py:django/db/backends/sqlite3/operations.py:DatabaseOperations.datetime_extract_sql",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(lookup_type, sql, params, tzname)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:877c800f2:django/db/models/functions/datetime.py:django/db/backends/base/operations.py:BaseDatabaseOperations.datetime_trunc_sql",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(lookup_type, sql, params, tzname)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:877c800f2:django/db/models/functions/datetime.py:django/db/backends/mysql/operations.py:DatabaseOperations.datetime_trunc_sql",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(lookup_type, sql, params, tzname)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:877c800f2:django/db/models/functions/datetime.py:django/db/backends/oracle/operations.py:DatabaseOperations.datetime_trunc_sql",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(lookup_type, sql, params, tzname)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:877c800f2:django/db/models/functions/datetime.py:django/db/backends/postgresql/operations.py:DatabaseOperations.datetime_trunc_sql",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(lookup_type, sql, params, tzname)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:877c800f2:django/db/models/functions/datetime.py:django/db/backends/sqlite3/operations.py:DatabaseOperations.datetime_trunc_sql",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(lookup_type, sql, params, tzname)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:877c800f2:django/db/models/functions/datetime.py:django/db/backends/base/operations.py:BaseDatabaseOperations.time_extract_sql",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(lookup_type, sql, params)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:877c800f2:django/db/models/functions/datetime.py:django/db/backends/postgresql/operations.py:DatabaseOperations.time_extract_sql",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(lookup_type, sql, params)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:877c800f2:django/db/models/functions/datetime.py:django/db/backends/sqlite3/operations.py:DatabaseOperations.time_extract_sql",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(lookup_type, sql, params)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:877c800f2:tests/backends/base/test_operations.py:django/db/backends/base/operations.py:BaseDatabaseOperations.date_extract_sql",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(lookup_type, sql, params)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:877c800f2:tests/backends/base/test_operations.py:django/db/backends/mysql/operations.py:DatabaseOperations.date_extract_sql",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(lookup_type, sql, params)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:877c800f2:tests/backends/base/test_operations.py:django/db/backends/oracle/operations.py:DatabaseOperations.date_extract_sql",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(lookup_type, sql, params)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:877c800f2:tests/backends/base/test_operations.py:django/db/backends/postgresql/operations.py:DatabaseOperations.date_extract_sql",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(lookup_type, sql, params)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:877c800f2:tests/backends/base/test_operations.py:django/db/backends/sqlite3/operations.py:DatabaseOperations.date_extract_sql",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(lookup_type, sql, params)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:877c800f2:tests/backends/base/test_operations.py:django/db/backends/base/operations.py:BaseDatabaseOperations.date_trunc_sql",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(lookup_type, sql, params, tzname=<object object at 0x000002CA66EF07A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:877c800f2:tests/backends/base/test_operations.py:django/db/backends/mysql/operations.py:DatabaseOperations.date_trunc_sql",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(lookup_type, sql, params, tzname=<object object at 0x000002CA66EF07A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:877c800f2:tests/backends/base/test_operations.py:django/db/backends/oracle/operations.py:DatabaseOperations.date_trunc_sql",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(lookup_type, sql, params, tzname=<object object at 0x000002CA66EF07A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:877c800f2:tests/backends/base/test_operations.py:django/db/backends/postgresql/operations.py:DatabaseOperations.date_trunc_sql",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(lookup_type, sql, params, tzname=<object object at 0x000002CA66EF07A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:877c800f2:tests/backends/base/test_operations.py:django/db/backends/sqlite3/operations.py:DatabaseOperations.date_trunc_sql",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(lookup_type, sql, params, tzname=<object object at 0x000002CA66EF07A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:877c800f2:tests/backends/base/test_operations.py:django/db/backends/base/operations.py:BaseDatabaseOperations.datetime_cast_date_sql",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(sql, params, tzname)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:877c800f2:tests/backends/base/test_operations.py:django/db/backends/mysql/operations.py:DatabaseOperations.datetime_cast_date_sql",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(sql, params, tzname)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:877c800f2:tests/backends/base/test_operations.py:django/db/backends/oracle/operations.py:DatabaseOperations.datetime_cast_date_sql",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(sql, params, tzname)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:877c800f2:tests/backends/base/test_operations.py:django/db/backends/postgresql/operations.py:DatabaseOperations.datetime_cast_date_sql",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(sql, params, tzname)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:877c800f2:tests/backends/base/test_operations.py:django/db/backends/sqlite3/operations.py:DatabaseOperations.datetime_cast_date_sql",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(sql, params, tzname)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:877c800f2:tests/backends/base/test_operations.py:django/db/backends/base/operations.py:BaseDatabaseOperations.datetime_cast_time_sql",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(sql, params, tzname)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:877c800f2:tests/backends/base/test_operations.py:django/db/backends/mysql/operations.py:DatabaseOperations.datetime_cast_time_sql",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(sql, params, tzname)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:877c800f2:tests/backends/base/test_operations.py:django/db/backends/oracle/operations.py:DatabaseOperations.datetime_cast_time_sql",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(sql, params, tzname)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:877c800f2:tests/backends/base/test_operations.py:django/db/backends/postgresql/operations.py:DatabaseOperations.datetime_cast_time_sql",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(sql, params, tzname)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:877c800f2:tests/backends/base/test_operations.py:django/db/backends/sqlite3/operations.py:DatabaseOperations.datetime_cast_time_sql",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(sql, params, tzname)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:877c800f2:tests/backends/base/test_operations.py:django/db/backends/base/operations.py:BaseDatabaseOperations.datetime_extract_sql",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(lookup_type, sql, params, tzname)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:877c800f2:tests/backends/base/test_operations.py:django/db/backends/mysql/operations.py:DatabaseOperations.datetime_extract_sql",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(lookup_type, sql, params, tzname)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:877c800f2:tests/backends/base/test_operations.py:django/db/backends/oracle/operations.py:DatabaseOperations.datetime_extract_sql",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(lookup_type, sql, params, tzname)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:877c800f2:tests/backends/base/test_operations.py:django/db/backends/postgresql/operations.py:DatabaseOperations.datetime_extract_sql",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(lookup_type, sql, params, tzname)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:877c800f2:tests/backends/base/test_operations.py:django/db/backends/sqlite3/operations.py:DatabaseOperations.datetime_extract_sql",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(lookup_type, sql, params, tzname)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:877c800f2:tests/backends/base/test_operations.py:django/db/backends/base/operations.py:BaseDatabaseOperations.datetime_trunc_sql",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(lookup_type, sql, params, tzname)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:877c800f2:tests/backends/base/test_operations.py:django/db/backends/mysql/operations.py:DatabaseOperations.datetime_trunc_sql",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(lookup_type, sql, params, tzname)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:877c800f2:tests/backends/base/test_operations.py:django/db/backends/oracle/operations.py:DatabaseOperations.datetime_trunc_sql",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(lookup_type, sql, params, tzname)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:877c800f2:tests/backends/base/test_operations.py:django/db/backends/postgresql/operations.py:DatabaseOperations.datetime_trunc_sql",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(lookup_type, sql, params, tzname)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:877c800f2:tests/backends/base/test_operations.py:django/db/backends/sqlite3/operations.py:DatabaseOperations.datetime_trunc_sql",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(lookup_type, sql, params, tzname)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:877c800f2:tests/backends/base/test_operations.py:django/db/backends/base/operations.py:BaseDatabaseOperations.time_extract_sql",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(lookup_type, sql, params)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:877c800f2:tests/backends/base/test_operations.py:django/db/backends/postgresql/operations.py:DatabaseOperations.time_extract_sql",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(lookup_type, sql, params)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:877c800f2:tests/backends/base/test_operations.py:django/db/backends/sqlite3/operations.py:DatabaseOperations.time_extract_sql",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(lookup_type, sql, params)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:877c800f2:tests/backends/base/test_operations.py:django/db/backends/base/operations.py:BaseDatabaseOperations.time_trunc_sql",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(lookup_type, sql, params, tzname=<object object at 0x000002CA66EF07A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:877c800f2:tests/backends/base/test_operations.py:django/db/backends/mysql/operations.py:DatabaseOperations.time_trunc_sql",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(lookup_type, sql, params, tzname=<object object at 0x000002CA66EF07A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:877c800f2:tests/backends/base/test_operations.py:django/db/backends/oracle/operations.py:DatabaseOperations.time_trunc_sql",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(lookup_type, sql, params, tzname=<object object at 0x000002CA66EF07A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:877c800f2:tests/backends/base/test_operations.py:django/db/backends/postgresql/operations.py:DatabaseOperations.time_trunc_sql",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(lookup_type, sql, params, tzname=<object object at 0x000002CA66EF07A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:877c800f2:tests/backends/base/test_operations.py:django/db/backends/sqlite3/operations.py:DatabaseOperations.time_trunc_sql",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(lookup_type, sql, params, tzname=<object object at 0x000002CA66EF07A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:d7eb50033:django/db/models/sql/compiler.py:django/db/models/sql/query.py:Query.deferred_to_data",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(target)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:0f6946495:django/db/models/sql/compiler.py:django/db/backends/base/operations.py:BaseDatabaseOperations.insert_statement",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(on_conflict=<object object at 0x000002CA66EF07A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:0f6946495:django/db/models/sql/compiler.py:django/db/backends/mysql/operations.py:DatabaseOperations.insert_statement",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(on_conflict=<object object at 0x000002CA66EF07A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:0f6946495:django/db/models/sql/compiler.py:django/db/backends/sqlite3/operations.py:DatabaseOperations.insert_statement",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(on_conflict=<object object at 0x000002CA66EF07A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:90cf96326:django/core/handlers/exception.py:django/utils/log.py:log_response",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(message, *args, response=<object object at 0x000002CA66EF07A0>, request=<object object at 0x000002CA66EF07A0>, logger=<object object at 0x000002CA66EF07A0>, level=<object object at 0x000002CA66EF07A0>, exception=<object object at 0x000002CA66EF07A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:5b8ef8aa5:django/db/models/sql/compiler.py:django/db/models/sql/query.py:Query.add_filter",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(filter_lhs, filter_rhs)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:5b8ef8aa5:django/db/models/sql/subqueries.py:django/db/models/sql/query.py:Query.add_filter",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(filter_lhs, filter_rhs)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:c35b81b86:django/db/models/sql/datastructures.py:django/contrib/contenttypes/fields.py:GenericRelation.get_extra_restriction",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(alias, remote_alias)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:c35b81b86:django/db/models/sql/datastructures.py:django/db/models/fields/related.py:ForeignObject.get_extra_restriction",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(alias, related_alias)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:c35b81b86:django/db/models/sql/datastructures.py:django/db/models/fields/reverse_related.py:ForeignObjectRel.get_extra_restriction",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(alias, related_alias)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:c35b81b86:django/db/models/sql/datastructures.py:tests/foreign_object/models/article.py:ActiveTranslationField.get_extra_restriction",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(alias, related_alias)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:c35b81b86:django/db/models/sql/datastructures.py:tests/foreign_object/models/empty_join.py:StartsWithRelation.get_extra_restriction",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(alias, related_alias)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:c35b81b86:django/db/models/sql/datastructures.py:tests/foreign_object/models/empty_join.py:BrokenContainsRelation.get_extra_restriction",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(alias, related_alias)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:053141d31:django/db/models/query.py:django/db/models/sql/query.py:Query.clear_ordering",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(force=<object object at 0x000002CA66EF07A0>, clear_default=<object object at 0x000002CA66EF07A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:a6c79f498:django/db/models/sql/query.py:django/db/models/sql/datastructures.py:Join.equals",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(other)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:a6c79f498:django/db/models/sql/query.py:django/db/models/sql/datastructures.py:BaseTable.equals",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(other)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:77e0a35a1:django/test/runner.py:django/test/utils.py:iter_test_cases",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(suite)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:3089018e9:django/test/runner.py:django/test/utils.py:setup_databases",
+   "breakage": "arity",
+   "broken": true,
+   "intact": false,
+   "signature": "(verbosity, interactive, *, time_keeper=<object object at 0x000002CA66EF07A0>, keepdb=<object object at 0x000002CA66EF07A0>, debug_sql=<object object at 0x000002CA66EF07A0>, parallel=<object object at 0x000002CA66EF07A0>, aliases=<object object at 0x000002CA66EF07A0>, serialized_aliases=<object object at 0x000002CA66EF07A0>, **kwargs)",
+   "agrees": false
+  },
+  {
+   "mid": "django_django:d23cb83c9:django/db/backends/mysql/schema.py:django/contrib/gis/db/backends/postgis/schema.py:PostGISSchemaEditor._create_index_sql",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(model, *, fields=<object object at 0x000002CA66EF07A0>, **kwargs)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:d23cb83c9:django/db/backends/mysql/schema.py:django/db/backends/base/schema.py:BaseDatabaseSchemaEditor._create_index_sql",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(model, *, fields=<object object at 0x000002CA66EF07A0>, name=<object object at 0x000002CA66EF07A0>, suffix=<object object at 0x000002CA66EF07A0>, using=<object object at 0x000002CA66EF07A0>, db_tablespace=<object object at 0x000002CA66EF07A0>, col_suffixes=<object object at 0x000002CA66EF07A0>, sql=<object object at 0x000002CA66EF07A0>, opclasses=<object object at 0x000002CA66EF07A0>, condition=<object object at 0x000002CA66EF07A0>, include=<object object at 0x000002CA66EF07A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "django_django:d23cb83c9:django/db/backends/mysql/schema.py:django/db/backends/postgresql/schema.py:DatabaseSchemaEditor._create_index_sql",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(model, *, fields=<object object at 0x000002CA66EF07A0>, name=<object object at 0x000002CA66EF07A0>, suffix=<object object at 0x000002CA66EF07A0>, using=<object object at 0x000002CA66EF07A0>, db_tablespace=<object object at 0x000002CA66EF07A0>, col_suffixes=<object object at 0x000002CA66EF07A0>, sql=<object object at 0x000002CA66EF07A0>, opclasses=<object object at 0x000002CA66EF07A0>, condition=<object object at 0x000002CA66EF07A0>, concurrently=<object object at 0x000002CA66EF07A0>, include=<object object at 0x000002CA66EF07A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "encode_httpx:1805ee0d2:httpx/_main.py:httpx/_config.py:SSLContext",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 17,
+   "agrees": true
+  },
+  {
+   "mid": "encode_httpx:41597adff:httpx/_models.py:httpx/_utils.py:is_known_encoding",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 21,
+   "agrees": true
+  },
+  {
+   "mid": "encode_httpx:41597adff:httpx/_models.py:httpx/_utils.py:obfuscate_sensitive_headers",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 21,
+   "agrees": true
+  },
+  {
+   "mid": "encode_httpx:41597adff:httpx/_models.py:httpx/_utils.py:parse_content_type_charset",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 21,
+   "agrees": true
+  },
+  {
+   "mid": "encode_httpx:41597adff:httpx/_models.py:httpx/_utils.py:parse_header_links",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 21,
+   "agrees": true
+  },
+  {
+   "mid": "encode_httpx:6212e8fa3:httpx/_multipart.py:httpx/_utils.py:format_form_param",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 28,
+   "agrees": true
+  },
+  {
+   "mid": "encode_httpx:6212e8fa3:httpx/_multipart.py:httpx/_utils.py:guess_content_type",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 28,
+   "agrees": true
+  },
+  {
+   "mid": "encode_httpx:ba2e51215:httpx/_urls.py:httpx/_urlparse.py:urlencode",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 30,
+   "agrees": true
+  },
+  {
+   "mid": "encode_httpx:59914c769:httpx/_client.py:httpx/_utils.py:NetRCInfo",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 46,
+   "agrees": true
+  },
+  {
+   "mid": "encode_httpx:47266d763:tests/client/test_redirects.py:httpx/_client.py:Client.send",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(request, *, stream=<object object at 0x000002CA66EF07A0>, auth=<object object at 0x000002CA66EF07A0>, follow_redirects=<object object at 0x000002CA66EF07A0>, timeout=<object object at 0x000002CA66EF07A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "encode_httpx:47266d763:tests/client/test_redirects.py:httpx/_client.py:AsyncClient.send",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(request, *, stream=<object object at 0x000002CA66EF07A0>, auth=<object object at 0x000002CA66EF07A0>, follow_redirects=<object object at 0x000002CA66EF07A0>, timeout=<object object at 0x000002CA66EF07A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "encode_httpx:47266d763:tests/client/test_redirects.py:httpx/_api.py:stream",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(method, url, *, params=<object object at 0x000002CA66EF07A0>, content=<object object at 0x000002CA66EF07A0>, data=<object object at 0x000002CA66EF07A0>, files=<object object at 0x000002CA66EF07A0>, json=<object object at 0x000002CA66EF07A0>, headers=<object object at 0x000002CA66EF07A0>, cookies=<object object at 0x000002CA66EF07A0>, auth=<object object at 0x000002CA66EF07A0>, proxies=<object object at 0x000002CA66EF07A0>, timeout=<object object at 0x000002CA66EF07A0>, follow_redirects=<object object at 0x000002CA66EF07A0>, verify=<object object at 0x000002CA66EF07A0>, cert=<object object at 0x000002CA66EF07A0>, trust_env=<object object at 0x000002CA66EF07A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "encode_httpx:47266d763:tests/client/test_redirects.py:httpx/_client.py:Client.stream",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(method, url, *, content=<object object at 0x000002CA66EF07A0>, data=<object object at 0x000002CA66EF07A0>, files=<object object at 0x000002CA66EF07A0>, json=<object object at 0x000002CA66EF07A0>, params=<object object at 0x000002CA66EF07A0>, headers=<object object at 0x000002CA66EF07A0>, cookies=<object object at 0x000002CA66EF07A0>, auth=<object object at 0x000002CA66EF07A0>, follow_redirects=<object object at 0x000002CA66EF07A0>, timeout=<object object at 0x000002CA66EF07A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "encode_httpx:47266d763:tests/client/test_redirects.py:httpx/_client.py:AsyncClient.stream",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(method, url, *, content=<object object at 0x000002CA66EF07A0>, data=<object object at 0x000002CA66EF07A0>, files=<object object at 0x000002CA66EF07A0>, json=<object object at 0x000002CA66EF07A0>, params=<object object at 0x000002CA66EF07A0>, headers=<object object at 0x000002CA66EF07A0>, cookies=<object object at 0x000002CA66EF07A0>, auth=<object object at 0x000002CA66EF07A0>, follow_redirects=<object object at 0x000002CA66EF07A0>, timeout=<object object at 0x000002CA66EF07A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "encode_httpx:9b8f5af75:httpx/_models.py:httpx/_exceptions.py:ResponseClosed",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 33,
+   "agrees": true
+  },
+  {
+   "mid": "encode_httpx:8fd5b7101:httpx/_api.py:httpx/_client.py:StreamContextManager",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 69,
+   "agrees": true
+  },
+  {
+   "mid": "encode_httpx:110ce8565:httpx/_models.py:httpx/_types.py:ByteStream",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 39,
+   "agrees": true
+  },
+  {
+   "mid": "encode_httpx:110ce8565:httpx/_models.py:httpx/_content.py:PlainByteStream",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 31,
+   "agrees": true
+  },
+  {
+   "mid": "encode_httpx:1a6e254f7:httpx/_client.py:httpx/_exceptions.py:map_exceptions",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 33,
+   "agrees": true
+  },
+  {
+   "mid": "encode_httpx:f932af917:tests/client/test_auth.py:tests/utils.py:AsyncMockTransport",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 12,
+   "agrees": true
+  },
+  {
+   "mid": "encode_httpx:f932af917:tests/client/test_event_hooks.py:tests/utils.py:AsyncMockTransport",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 12,
+   "agrees": true
+  },
+  {
+   "mid": "encode_httpx:f932af917:tests/client/test_redirects.py:tests/utils.py:AsyncMockTransport",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 12,
+   "agrees": true
+  },
+  {
+   "mid": "encode_httpx:fbb21fb1a:httpx/_client.py:httpx/_exceptions.py:RequestBodyUnavailable",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 36,
+   "agrees": true
+  },
+  {
+   "mid": "encode_httpx:09f94edd9:httpx/_models.py:httpx/_content_streams.py:encode",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 27,
+   "agrees": true
+  },
+  {
+   "mid": "encode_httpx:09f94edd9:tests/test_multipart.py:httpx/_content_streams.py:encode",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 27,
+   "agrees": true
+  },
+  {
+   "mid": "encode_httpx:1da46f3de:httpx/_client.py:httpx/_models.py:URL.join",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(url)",
+   "agrees": true
+  },
+  {
+   "mid": "encode_httpx:71d523430:httpx/_client.py:httpx/_utils.py:URLMatcher",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 54,
+   "agrees": true
+  },
+  {
+   "mid": "encode_httpx:247ee0dc4:httpx/_client.py:httpx/_models.py:Origin",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 56,
+   "agrees": true
+  },
+  {
+   "mid": "encode_httpx:3f96e7496:httpx/_transports/urllib3.py:httpx/_utils.py:as_network_error",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 48,
+   "agrees": true
+  },
+  {
+   "mid": "encode_httpx:6ac49dacd:tests/test_concurrency.py:tests/concurrency.py:get_cipher",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(stream)",
+   "agrees": true
+  },
+  {
+   "mid": "encode_httpx:83fc0921c:httpx/dispatch/http11.py:httpx/concurrency/base.py:TimeoutFlag",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 9,
+   "agrees": true
+  },
+  {
+   "mid": "encode_httpx:83fc0921c:httpx/dispatch/http11.py:httpx/concurrency/asyncio.py:SocketStream.read",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(n, timeout)",
+   "agrees": true
+  },
+  {
+   "mid": "encode_httpx:83fc0921c:httpx/dispatch/http11.py:httpx/concurrency/base.py:BaseSocketStream.read",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(n, timeout)",
+   "agrees": true
+  },
+  {
+   "mid": "encode_httpx:83fc0921c:httpx/dispatch/http11.py:httpx/concurrency/trio.py:SocketStream.read",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(n, timeout)",
+   "agrees": true
+  },
+  {
+   "mid": "encode_httpx:bc54dd039:tests/test_concurrency.py:httpx/concurrency/asyncio.py:SocketStream.read",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(n, timeout, flag=<object object at 0x000002CA66EF07A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "encode_httpx:bc54dd039:tests/test_concurrency.py:httpx/concurrency/trio.py:SocketStream.read",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(n, timeout, flag=<object object at 0x000002CA66EF07A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "encode_httpx:bc54dd039:tests/test_concurrency.py:httpx/concurrency/asyncio.py:SocketStream.write",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(data, timeout, flag=<object object at 0x000002CA66EF07A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "encode_httpx:bc54dd039:tests/test_concurrency.py:httpx/concurrency/trio.py:SocketStream.write",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(data, timeout, flag=<object object at 0x000002CA66EF07A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "encode_httpx:206c5372a:httpx/dispatch/asgi.py:httpx/models.py:AsyncResponse",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 56,
+   "agrees": true
+  },
+  {
+   "mid": "encode_httpx:206c5372a:httpx/dispatch/http11.py:httpx/models.py:AsyncResponse",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 56,
+   "agrees": true
+  },
+  {
+   "mid": "encode_httpx:206c5372a:httpx/dispatch/http2.py:httpx/models.py:AsyncResponse",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 56,
+   "agrees": true
+  },
+  {
+   "mid": "encode_httpx:206c5372a:httpx/dispatch/proxy_http.py:httpx/models.py:AsyncRequest",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 56,
+   "agrees": true
+  },
+  {
+   "mid": "encode_httpx:206c5372a:httpx/middleware/redirect.py:httpx/models.py:AsyncRequest",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 56,
+   "agrees": true
+  },
+  {
+   "mid": "encode_httpx:80eafe89c:httpx/dispatch/http11.py:httpx/concurrency/asyncio.py:AsyncioBackend.background_manager",
+   "breakage": "arity",
+   "broken": true,
+   "intact": false,
+   "signature": "(coroutine, *args)",
+   "agrees": false
+  },
+  {
+   "mid": "encode_httpx:80eafe89c:httpx/dispatch/http11.py:httpx/concurrency/base.py:ConcurrencyBackend.background_manager",
+   "breakage": "arity",
+   "broken": true,
+   "intact": false,
+   "signature": "(coroutine, *args)",
+   "agrees": false
+  },
+  {
+   "mid": "encode_httpx:80eafe89c:httpx/dispatch/http2.py:httpx/concurrency/asyncio.py:AsyncioBackend.background_manager",
+   "breakage": "arity",
+   "broken": true,
+   "intact": false,
+   "signature": "(coroutine, *args)",
+   "agrees": false
+  },
+  {
+   "mid": "encode_httpx:80eafe89c:httpx/dispatch/http2.py:httpx/concurrency/base.py:ConcurrencyBackend.background_manager",
+   "breakage": "arity",
+   "broken": true,
+   "intact": false,
+   "signature": "(coroutine, *args)",
+   "agrees": false
+  },
+  {
+   "mid": "encode_httpx:0cbf3c758:tests/dispatch/test_connection_pools.py:httpcore/interfaces.py:Dispatcher.request",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(method, url, *, data=<object object at 0x000002CA66EF07A0>, params=<object object at 0x000002CA66EF07A0>, headers=<object object at 0x000002CA66EF07A0>, verify=<object object at 0x000002CA66EF07A0>, cert=<object object at 0x000002CA66EF07A0>, timeout=<object object at 0x000002CA66EF07A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "encode_httpx:19542f2c3:tests/adapters/test_redirects.py:httpcore/backends/sync.py:SyncClient.request",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(method, url, *, data=<object object at 0x000002CA66EF07A0>, query_params=<object object at 0x000002CA66EF07A0>, headers=<object object at 0x000002CA66EF07A0>, stream=<object object at 0x000002CA66EF07A0>, allow_redirects=<object object at 0x000002CA66EF07A0>, ssl=<object object at 0x000002CA66EF07A0>, timeout=<object object at 0x000002CA66EF07A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "encode_httpx:19542f2c3:tests/adapters/test_redirects.py:httpcore/client.py:Client.request",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(method, url, *, data=<object object at 0x000002CA66EF07A0>, query_params=<object object at 0x000002CA66EF07A0>, headers=<object object at 0x000002CA66EF07A0>, stream=<object object at 0x000002CA66EF07A0>, allow_redirects=<object object at 0x000002CA66EF07A0>, ssl=<object object at 0x000002CA66EF07A0>, timeout=<object object at 0x000002CA66EF07A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "encode_httpx:19542f2c3:tests/dispatch/test_http2.py:httpcore/backends/sync.py:SyncClient.request",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(method, url, *, data=<object object at 0x000002CA66EF07A0>, query_params=<object object at 0x000002CA66EF07A0>, headers=<object object at 0x000002CA66EF07A0>, stream=<object object at 0x000002CA66EF07A0>, allow_redirects=<object object at 0x000002CA66EF07A0>, ssl=<object object at 0x000002CA66EF07A0>, timeout=<object object at 0x000002CA66EF07A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "encode_httpx:19542f2c3:tests/dispatch/test_http2.py:httpcore/client.py:Client.request",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(method, url, *, data=<object object at 0x000002CA66EF07A0>, query_params=<object object at 0x000002CA66EF07A0>, headers=<object object at 0x000002CA66EF07A0>, stream=<object object at 0x000002CA66EF07A0>, allow_redirects=<object object at 0x000002CA66EF07A0>, ssl=<object object at 0x000002CA66EF07A0>, timeout=<object object at 0x000002CA66EF07A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "encode_httpx:19542f2c3:tests/test_client.py:httpcore/backends/sync.py:SyncClient.post",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(url, *, data=<object object at 0x000002CA66EF07A0>, query_params=<object object at 0x000002CA66EF07A0>, headers=<object object at 0x000002CA66EF07A0>, stream=<object object at 0x000002CA66EF07A0>, allow_redirects=<object object at 0x000002CA66EF07A0>, ssl=<object object at 0x000002CA66EF07A0>, timeout=<object object at 0x000002CA66EF07A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "encode_httpx:19542f2c3:tests/test_client.py:httpcore/client.py:Client.post",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(url, *, data=<object object at 0x000002CA66EF07A0>, query_params=<object object at 0x000002CA66EF07A0>, headers=<object object at 0x000002CA66EF07A0>, stream=<object object at 0x000002CA66EF07A0>, allow_redirects=<object object at 0x000002CA66EF07A0>, ssl=<object object at 0x000002CA66EF07A0>, timeout=<object object at 0x000002CA66EF07A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "encode_httpx:19542f2c3:tests/test_client.py:httpcore/backends/sync.py:SyncClient.request",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(method, url, *, data=<object object at 0x000002CA66EF07A0>, query_params=<object object at 0x000002CA66EF07A0>, headers=<object object at 0x000002CA66EF07A0>, stream=<object object at 0x000002CA66EF07A0>, allow_redirects=<object object at 0x000002CA66EF07A0>, ssl=<object object at 0x000002CA66EF07A0>, timeout=<object object at 0x000002CA66EF07A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "encode_httpx:19542f2c3:tests/test_client.py:httpcore/client.py:Client.request",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(method, url, *, data=<object object at 0x000002CA66EF07A0>, query_params=<object object at 0x000002CA66EF07A0>, headers=<object object at 0x000002CA66EF07A0>, stream=<object object at 0x000002CA66EF07A0>, allow_redirects=<object object at 0x000002CA66EF07A0>, ssl=<object object at 0x000002CA66EF07A0>, timeout=<object object at 0x000002CA66EF07A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "encode_httpx:19542f2c3:tests/test_sync.py:httpcore/backends/sync.py:SyncClient.post",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(url, *, data=<object object at 0x000002CA66EF07A0>, query_params=<object object at 0x000002CA66EF07A0>, headers=<object object at 0x000002CA66EF07A0>, stream=<object object at 0x000002CA66EF07A0>, allow_redirects=<object object at 0x000002CA66EF07A0>, ssl=<object object at 0x000002CA66EF07A0>, timeout=<object object at 0x000002CA66EF07A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "encode_httpx:19542f2c3:tests/test_sync.py:httpcore/client.py:Client.post",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(url, *, data=<object object at 0x000002CA66EF07A0>, query_params=<object object at 0x000002CA66EF07A0>, headers=<object object at 0x000002CA66EF07A0>, stream=<object object at 0x000002CA66EF07A0>, allow_redirects=<object object at 0x000002CA66EF07A0>, ssl=<object object at 0x000002CA66EF07A0>, timeout=<object object at 0x000002CA66EF07A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "encode_httpx:4255d4184:tests/adapters/test_redirects.py:httpcore/client.py:Client.request",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(method, url, *, content=<object object at 0x000002CA66EF07A0>, headers=<object object at 0x000002CA66EF07A0>, stream=<object object at 0x000002CA66EF07A0>, allow_redirects=<object object at 0x000002CA66EF07A0>, ssl=<object object at 0x000002CA66EF07A0>, timeout=<object object at 0x000002CA66EF07A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "encode_httpx:4255d4184:tests/dispatch/test_http2.py:httpcore/client.py:Client.request",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(method, url, *, content=<object object at 0x000002CA66EF07A0>, headers=<object object at 0x000002CA66EF07A0>, stream=<object object at 0x000002CA66EF07A0>, allow_redirects=<object object at 0x000002CA66EF07A0>, ssl=<object object at 0x000002CA66EF07A0>, timeout=<object object at 0x000002CA66EF07A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "encode_httpx:4255d4184:tests/test_client.py:httpcore/client.py:Client.post",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(url, *, content=<object object at 0x000002CA66EF07A0>, headers=<object object at 0x000002CA66EF07A0>, stream=<object object at 0x000002CA66EF07A0>, allow_redirects=<object object at 0x000002CA66EF07A0>, ssl=<object object at 0x000002CA66EF07A0>, timeout=<object object at 0x000002CA66EF07A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "encode_httpx:4255d4184:tests/test_client.py:httpcore/client.py:Client.request",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(method, url, *, content=<object object at 0x000002CA66EF07A0>, headers=<object object at 0x000002CA66EF07A0>, stream=<object object at 0x000002CA66EF07A0>, allow_redirects=<object object at 0x000002CA66EF07A0>, ssl=<object object at 0x000002CA66EF07A0>, timeout=<object object at 0x000002CA66EF07A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "encode_httpx:63d73ad55:httpcore/pool.py:httpcore/connections.py:Connection.send",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(request)",
+   "agrees": true
+  },
+  {
+   "mid": "fastapi_fastapi:d59fbc349:fastapi/dependencies/utils.py:fastapi/utils.py:create_model_field",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(name, type_, default=<object object at 0x000002CA66EF07A0>, field_info=<object object at 0x000002CA66EF07A0>, alias=<object object at 0x000002CA66EF07A0>, mode=<object object at 0x000002CA66EF07A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "fastapi_fastapi:a4aa79e0b:fastapi/routing.py:fastapi/dependencies/utils.py:solve_dependencies",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(*, request, dependant, body=<object object at 0x000002CA66EF07A0>, background_tasks=<object object at 0x000002CA66EF07A0>, response=<object object at 0x000002CA66EF07A0>, dependency_overrides_provider=<object object at 0x000002CA66EF07A0>, dependency_cache=<object object at 0x000002CA66EF07A0>, async_exit_stack)",
+   "agrees": true
+  },
+  {
+   "mid": "fastapi_fastapi:e1758d107:fastapi/openapi/utils.py:fastapi/utils.py:get_field_info",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 28,
+   "agrees": true
+  },
+  {
+   "mid": "fastapi_fastapi:3397d4d69:fastapi/openapi/utils.py:fastapi/encoders.py:jsonable_encoder",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(obj, include=<object object at 0x000002CA66EF07A0>, exclude=<object object at 0x000002CA66EF07A0>, by_alias=<object object at 0x000002CA66EF07A0>, skip_defaults=<object object at 0x000002CA66EF07A0>, exclude_unset=<object object at 0x000002CA66EF07A0>, exclude_defaults=<object object at 0x000002CA66EF07A0>, exclude_none=<object object at 0x000002CA66EF07A0>, custom_encoder=<object object at 0x000002CA66EF07A0>, sqlalchemy_safe=<object object at 0x000002CA66EF07A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "fastapi_fastapi:192ebba2a:docs/src/custom_response/tutorial001.py:fastapi/applications.py:FastAPI.get",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(path, *, response_model=<object object at 0x000002CA66EF07A0>, status_code=<object object at 0x000002CA66EF07A0>, tags=<object object at 0x000002CA66EF07A0>, summary=<object object at 0x000002CA66EF07A0>, description=<object object at 0x000002CA66EF07A0>, response_description=<object object at 0x000002CA66EF07A0>, responses=<object object at 0x000002CA66EF07A0>, deprecated=<object object at 0x000002CA66EF07A0>, operation_id=<object object at 0x000002CA66EF07A0>, include_in_schema=<object object at 0x000002CA66EF07A0>, response_class=<object object at 0x000002CA66EF07A0>, name=<object object at 0x000002CA66EF07A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "fastapi_fastapi:192ebba2a:docs/src/custom_response/tutorial001.py:fastapi/routing.py:APIRouter.get",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(path, *, response_model=<object object at 0x000002CA66EF07A0>, status_code=<object object at 0x000002CA66EF07A0>, tags=<object object at 0x000002CA66EF07A0>, summary=<object object at 0x000002CA66EF07A0>, description=<object object at 0x000002CA66EF07A0>, response_description=<object object at 0x000002CA66EF07A0>, responses=<object object at 0x000002CA66EF07A0>, deprecated=<object object at 0x000002CA66EF07A0>, operation_id=<object object at 0x000002CA66EF07A0>, include_in_schema=<object object at 0x000002CA66EF07A0>, response_class=<object object at 0x000002CA66EF07A0>, name=<object object at 0x000002CA66EF07A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "fastapi_fastapi:192ebba2a:docs/src/custom_response/tutorial002.py:fastapi/applications.py:FastAPI.get",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(path, *, response_model=<object object at 0x000002CA66EF07A0>, status_code=<object object at 0x000002CA66EF07A0>, tags=<object object at 0x000002CA66EF07A0>, summary=<object object at 0x000002CA66EF07A0>, description=<object object at 0x000002CA66EF07A0>, response_description=<object object at 0x000002CA66EF07A0>, responses=<object object at 0x000002CA66EF07A0>, deprecated=<object object at 0x000002CA66EF07A0>, operation_id=<object object at 0x000002CA66EF07A0>, include_in_schema=<object object at 0x000002CA66EF07A0>, response_class=<object object at 0x000002CA66EF07A0>, name=<object object at 0x000002CA66EF07A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "fastapi_fastapi:192ebba2a:docs/src/custom_response/tutorial002.py:fastapi/routing.py:APIRouter.get",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(path, *, response_model=<object object at 0x000002CA66EF07A0>, status_code=<object object at 0x000002CA66EF07A0>, tags=<object object at 0x000002CA66EF07A0>, summary=<object object at 0x000002CA66EF07A0>, description=<object object at 0x000002CA66EF07A0>, response_description=<object object at 0x000002CA66EF07A0>, responses=<object object at 0x000002CA66EF07A0>, deprecated=<object object at 0x000002CA66EF07A0>, operation_id=<object object at 0x000002CA66EF07A0>, include_in_schema=<object object at 0x000002CA66EF07A0>, response_class=<object object at 0x000002CA66EF07A0>, name=<object object at 0x000002CA66EF07A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "fastapi_fastapi:192ebba2a:docs/src/custom_response/tutorial004.py:fastapi/applications.py:FastAPI.get",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(path, *, response_model=<object object at 0x000002CA66EF07A0>, status_code=<object object at 0x000002CA66EF07A0>, tags=<object object at 0x000002CA66EF07A0>, summary=<object object at 0x000002CA66EF07A0>, description=<object object at 0x000002CA66EF07A0>, response_description=<object object at 0x000002CA66EF07A0>, responses=<object object at 0x000002CA66EF07A0>, deprecated=<object object at 0x000002CA66EF07A0>, operation_id=<object object at 0x000002CA66EF07A0>, include_in_schema=<object object at 0x000002CA66EF07A0>, response_class=<object object at 0x000002CA66EF07A0>, name=<object object at 0x000002CA66EF07A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "fastapi_fastapi:192ebba2a:docs/src/custom_response/tutorial004.py:fastapi/routing.py:APIRouter.get",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(path, *, response_model=<object object at 0x000002CA66EF07A0>, status_code=<object object at 0x000002CA66EF07A0>, tags=<object object at 0x000002CA66EF07A0>, summary=<object object at 0x000002CA66EF07A0>, description=<object object at 0x000002CA66EF07A0>, response_description=<object object at 0x000002CA66EF07A0>, responses=<object object at 0x000002CA66EF07A0>, deprecated=<object object at 0x000002CA66EF07A0>, operation_id=<object object at 0x000002CA66EF07A0>, include_in_schema=<object object at 0x000002CA66EF07A0>, response_class=<object object at 0x000002CA66EF07A0>, name=<object object at 0x000002CA66EF07A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "pallets_flask:6a6496900:tests/test_reqctx.py:src/flask/app.py:Flask.full_dispatch_request",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(ctx)",
+   "agrees": true
+  },
+  {
+   "mid": "pallets_flask:c2705ffd9:src/flask/app.py:src/flask/ctx.py:RequestContext",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 25,
+   "agrees": true
+  },
+  {
+   "mid": "pallets_flask:ef95998d7:src/flask/app.py:src/flask/cli.py:show_server_banner",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(debug, app_import_path)",
+   "agrees": true
+  },
+  {
+   "mid": "pallets_flask:5d8e35653:src/flask/app.py:src/flask/cli.py:show_server_banner",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(env, debug, app_import_path)",
+   "agrees": true
+  },
+  {
+   "mid": "pallets_flask:e21e003f6:tests/test_cli.py:src/flask/cli.py:find_best_app",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(module)",
+   "agrees": true
+  },
+  {
+   "mid": "pallets_flask:7f87f3dd9:src/flask/app.py:src/flask/helpers.py:run_async",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 39,
+   "agrees": true
+  },
+  {
+   "mid": "pallets_flask:f92e820b4:src/flask/app.py:src/flask/blueprints.py:Blueprint.register",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(app, options)",
+   "agrees": true
+  },
+  {
+   "mid": "pallets_flask:055cdc262:src/flask/__main__.py:src/flask/cli.py:main",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "()",
+   "agrees": true
+  },
+  {
+   "mid": "pallets_flask:80a9e0edf:flask/app.py:flask/cli.py:show_server_banner",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(env, debug, app_import_path, eager_loading)",
+   "agrees": true
+  },
+  {
+   "mid": "pallets_flask:2433522d2:tests/test_helpers.py:flask/helpers.py:get_debug_flag",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "()",
+   "agrees": true
+  },
+  {
+   "mid": "pallets_flask:ae41df9a7:tests/test_cli.py:flask/cli.py:find_best_app",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(script_info, module)",
+   "agrees": true
+  },
+  {
+   "mid": "pallets_flask:ae41df9a7:tests/test_cli.py:flask/cli.py:locate_app",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(script_info, app_id)",
+   "agrees": true
+  },
+  {
+   "mid": "pallets_flask:c3d38a21c:flask/wrappers.py:flask/helpers.py:_assert_have_json",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 40,
+   "agrees": true
+  },
+  {
+   "mid": "pallets_flask:e71a5ff8d:flask/app.py:flask/ctx.py:_RequestContext",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 6,
+   "agrees": true
+  },
+  {
+   "mid": "pallets_flask:a06cd0a64:flask/app.py:flask/templating.py:_DispatchingJinjaLoader",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 12,
+   "agrees": true
+  },
+  {
+   "mid": "psf_requests:85400d8d6:requests/sessions.py:requests/utils.py:get_environ_proxies",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(url, no_proxy)",
+   "agrees": true
+  },
+  {
+   "mid": "psf_requests:85400d8d6:requests/sessions.py:requests/utils.py:should_bypass_proxies",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(url, no_proxy)",
+   "agrees": true
+  },
+  {
+   "mid": "psf_requests:85400d8d6:tests/test_utils.py:requests/utils.py:get_environ_proxies",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(url, no_proxy)",
+   "agrees": true
+  },
+  {
+   "mid": "psf_requests:85400d8d6:tests/test_utils.py:requests/utils.py:should_bypass_proxies",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(url, no_proxy)",
+   "agrees": true
+  },
+  {
+   "mid": "psf_requests:012f0334c:requests/sessions.py:requests/cookies.py:merge_session_cookies",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 16,
+   "agrees": true
+  },
+  {
+   "mid": "psf_requests:8da100f65:requests/models.py:requests/utils.py:get_environ_proxies",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(url)",
+   "agrees": true
+  },
+  {
+   "mid": "psf_requests:e02fb2eb6:requests/packages/urllib3/connectionpool.py:requests/packages/urllib3/poolmanager.py:PoolManager.urlopen",
+   "breakage": "arity",
+   "broken": true,
+   "intact": false,
+   "signature": "(method, url, redirect=<object object at 0x000002CA66EF07A0>, **kw)",
+   "agrees": false
+  },
+  {
+   "mid": "pytest-dev_pytest:0be71aeb9:testing/test_assertrewrite.py:src/_pytest/assertion/rewrite.py:_write_pyc",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(state, co, source_stat, source_hash, pyc)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:fbdae4e7e:src/_pytest/assertion/__init__.py:src/_pytest/assertion/util.py:assertrepr_compare",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(op, left, right, *, verbose, highlighter, assertion_text_diff_style, truncation_budget=<object object at 0x000002CA66EF07A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:ed7672b93:testing/test_assertion.py:src/_pytest/assertion/truncate.py:_truncate_explanation",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(input_lines, budget)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:d6dbe52bd:src/_pytest/assertion/__init__.py:src/_pytest/assertion/util.py:assertrepr_compare",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(op, left, right, *, verbose, highlighter, assertion_text_diff_style)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:0263914bf:src/_pytest/tmpdir.py:src/_pytest/pathlib.py:make_numbered_dir_with_cleanup",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(*, root, prefix, mode, keep, lock_timeout, register)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:05c837dc3:src/_pytest/assertion/__init__.py:src/_pytest/assertion/util.py:assertrepr_compare",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(op, left, right, *, verbose, highlighter)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:166a857f3:testing/test_pathlib.py:src/_pytest/pathlib.py:_import_module_using_spec",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(module_name, module_path, *, insert_modules)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:a6f3ec732:src/_pytest/config/__init__.py:src/_pytest/config/compat.py:PathAwareHookProxy",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 4,
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:a6f3ec732:src/_pytest/main.py:src/_pytest/config/compat.py:PathAwareHookProxy",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 4,
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:15c2e193f:testing/test_config.py:src/_pytest/config/findpaths.py:determine_setup",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(*, inifile, override_ini, args, rootdir_cmd_arg, invocation_dir)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:6764439f3:testing/test_main.py:src/_pytest/main.py:resolve_collection_argument",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(invocation_path, arg, arg_index, *, as_pypath=<object object at 0x000002CA66EF07A0>, consider_namespace_packages=<object object at 0x000002CA66EF07A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:1a5e0eb71:src/_pytest/unittest.py:src/_pytest/fixtures.py:FixtureManager.parsefactories",
+   "breakage": "arity",
+   "broken": true,
+   "intact": false,
+   "signature": "(node_or_obj)",
+   "agrees": false
+  },
+  {
+   "mid": "pytest-dev_pytest:111c0d910:src/_pytest/python.py:src/_pytest/pathlib.py:import_path",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(path, *, mode=<object object at 0x000002CA66EF07A0>, root, consider_namespace_packages)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:111c0d910:src/_pytest/runner.py:src/_pytest/config/__init__.py:PytestPluginManager._loadconftestmodules",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(path, importmode, rootpath, *, consider_namespace_packages)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:111c0d910:testing/code/test_excinfo.py:src/_pytest/pathlib.py:import_path",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(path, *, mode=<object object at 0x000002CA66EF07A0>, root, consider_namespace_packages)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:111c0d910:testing/code/test_source.py:src/_pytest/pathlib.py:import_path",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(path, *, mode=<object object at 0x000002CA66EF07A0>, root, consider_namespace_packages)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:111c0d910:testing/test_conftest.py:src/_pytest/config/__init__.py:PytestPluginManager._importconftest",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(conftestpath, importmode, rootpath, *, consider_namespace_packages)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:111c0d910:testing/test_conftest.py:src/_pytest/config/__init__.py:PytestPluginManager._loadconftestmodules",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(path, importmode, rootpath, *, consider_namespace_packages)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:111c0d910:testing/test_conftest.py:src/_pytest/config/__init__.py:PytestPluginManager._set_initial_conftests",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(args, pyargs, noconftest, rootpath, confcutdir, invocation_dir, importmode, *, consider_namespace_packages)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:111c0d910:testing/test_pathlib.py:src/_pytest/pathlib.py:import_path",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(path, *, mode=<object object at 0x000002CA66EF07A0>, root, consider_namespace_packages)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:111c0d910:testing/test_pathlib.py:src/_pytest/pathlib.py:resolve_pkg_root_and_module_name",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(path, *, consider_namespace_packages=<object object at 0x000002CA66EF07A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:111c0d910:testing/test_pluginmanager.py:src/_pytest/config/__init__.py:PytestPluginManager._importconftest",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(conftestpath, importmode, rootpath, *, consider_namespace_packages)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:111c0d910:testing/test_pluginmanager.py:src/_pytest/pathlib.py:import_path",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(path, *, mode=<object object at 0x000002CA66EF07A0>, root, consider_namespace_packages)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:676f38d04:src/_pytest/config/__init__.py:src/_pytest/config/findpaths.py:determine_setup",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(*, inifile, args, rootdir_cmd_arg, invocation_dir)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:676f38d04:testing/test_config.py:src/_pytest/config/findpaths.py:determine_setup",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(*, inifile, args, rootdir_cmd_arg, invocation_dir)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:676f38d04:testing/test_config.py:src/_pytest/config/findpaths.py:get_common_ancestor",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(invocation_dir, paths)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:676f38d04:testing/test_config.py:src/_pytest/config/findpaths.py:locate_config",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(invocation_dir, args)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:676f38d04:testing/test_findpaths.py:src/_pytest/config/findpaths.py:get_common_ancestor",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(invocation_dir, paths)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:34fafe4c6:testing/test_conftest.py:src/_pytest/config/__init__.py:PytestPluginManager._set_initial_conftests",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(args, pyargs, noconftest, rootpath, confcutdir, invocation_dir, importmode)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:a7c254932:testing/test_pluginmanager.py:src/_pytest/config/__init__.py:PytestPluginManager.consider_conftest",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(conftestmodule, registration_name)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:6c89f9261:src/_pytest/legacypath.py:src/_pytest/compat.py:LEGACY_PATH",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 39,
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:6c89f9261:src/_pytest/main.py:src/_pytest/nodes.py:Node.__init__",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(name, parent=<object object at 0x000002CA66EF07A0>, config=<object object at 0x000002CA66EF07A0>, session=<object object at 0x000002CA66EF07A0>, path=<object object at 0x000002CA66EF07A0>, nodeid=<object object at 0x000002CA66EF07A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:6c89f9261:src/_pytest/main.py:src/_pytest/nodes.py:FSCollector.__init__",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(path_or_parent=<object object at 0x000002CA66EF07A0>, path=<object object at 0x000002CA66EF07A0>, name=<object object at 0x000002CA66EF07A0>, parent=<object object at 0x000002CA66EF07A0>, config=<object object at 0x000002CA66EF07A0>, session=<object object at 0x000002CA66EF07A0>, nodeid=<object object at 0x000002CA66EF07A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:6c89f9261:testing/test_nodes.py:src/_pytest/compat.py:legacy_path",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 39,
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:a98f02d42:src/_pytest/config/__init__.py:src/_pytest/config/compat.py:PathAwareHookProxy",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 4,
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:a98f02d42:src/_pytest/main.py:src/_pytest/config/compat.py:PathAwareHookProxy",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 4,
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:b3a981d38:src/_pytest/doctest.py:src/_pytest/fixtures.py:FixtureManager.getfixtureinfo",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(node, func, cls)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:b3a981d38:src/_pytest/python.py:src/_pytest/fixtures.py:FixtureManager.getfixtureinfo",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(node, func, cls)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:01ac13a77:src/_pytest/main.py:src/_pytest/config/__init__.py:Config._getconftest_pathlist",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(name, path)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:01ac13a77:src/_pytest/main.py:src/_pytest/config/__init__.py:PytestPluginManager._getconftestmodules",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(path)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:01ac13a77:testing/python/fixtures.py:src/_pytest/config/__init__.py:PytestPluginManager._getconftestmodules",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(path)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:01ac13a77:testing/test_config.py:src/_pytest/config/__init__.py:Config._getconftest_pathlist",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(name, path)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:01ac13a77:testing/test_conftest.py:src/_pytest/config/__init__.py:PytestPluginManager._getconftestmodules",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(path)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:01ac13a77:testing/test_conftest.py:src/_pytest/config/__init__.py:PytestPluginManager._rget_with_confmod",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(name, path)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:13e2b0025:src/_pytest/config/__init__.py:src/_pytest/config/findpaths.py:determine_setup",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(inifile, args, rootdir_cmd_arg=<object object at 0x000002CA66EF07A0>, invocation_dir=<object object at 0x000002CA66EF07A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:f1c9570a0:src/_pytest/pytester.py:src/_pytest/pathlib.py:copytree",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 80,
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:14890329d:testing/test_conftest.py:src/_pytest/config/__init__.py:PytestPluginManager._set_initial_conftests",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(args, pyargs, noconftest, rootpath, confcutdir, importmode)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:faeb16146:testing/test_conftest.py:src/_pytest/config/__init__.py:PytestPluginManager._set_initial_conftests",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(namespace, rootpath, testpaths_ini)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:cc23ec91d:src/_pytest/nodes.py:src/_pytest/_code/code.py:Traceback.filter",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(_excinfo_or_fn)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:cc23ec91d:src/_pytest/python.py:src/_pytest/_code/code.py:Traceback.filter",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(_excinfo_or_fn)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:cc23ec91d:testing/code/test_excinfo.py:src/_pytest/_code/code.py:Traceback.filter",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(_excinfo_or_fn)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:cc23ec91d:testing/code/test_excinfo.py:src/_pytest/_code/code.py:Traceback.getcrashentry",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(excinfo)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:cc23ec91d:testing/python/collect.py:src/_pytest/_code/code.py:TracebackEntry.ishidden",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(excinfo)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:3bf2bc55b:testing/test_nose.py:src/_pytest/nose.py:call_optional",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(obj, name, nodeid)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:69fb79e74:testing/test_terminal.py:src/_pytest/terminal.py:_get_line_with_reprcrash_message",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(config, rep, tw, word_markup)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:b21b00811:testing/python/metafunc.py:src/_pytest/python.py:_idval",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 116,
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:b21b00811:testing/python/metafunc.py:src/_pytest/python.py:idmaker",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 116,
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:b706a2c04:src/_pytest/doctest.py:src/_pytest/config/__init__.py:PytestPluginManager._importconftest",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(conftestpath, importmode, rootpath)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:b706a2c04:src/_pytest/doctest.py:src/_pytest/pathlib.py:import_path",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(p, *, mode=<object object at 0x000002CA66EF07A0>, root)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:b706a2c04:src/_pytest/main.py:src/_pytest/config/__init__.py:Config._getconftest_pathlist",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(name, path, rootpath)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:b706a2c04:src/_pytest/main.py:src/_pytest/config/__init__.py:PytestPluginManager._getconftestmodules",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(path, importmode, rootpath)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:b706a2c04:src/_pytest/python.py:src/_pytest/pathlib.py:import_path",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(p, *, mode=<object object at 0x000002CA66EF07A0>, root)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:b706a2c04:testing/code/test_excinfo.py:src/_pytest/pathlib.py:import_path",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(p, *, mode=<object object at 0x000002CA66EF07A0>, root)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:b706a2c04:testing/code/test_source.py:src/_pytest/pathlib.py:import_path",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(p, *, mode=<object object at 0x000002CA66EF07A0>, root)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:b706a2c04:testing/python/fixtures.py:src/_pytest/config/__init__.py:PytestPluginManager._getconftestmodules",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(path, importmode, rootpath)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:b706a2c04:testing/test_config.py:src/_pytest/config/__init__.py:Config._getconftest_pathlist",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(name, path, rootpath)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:b706a2c04:testing/test_conftest.py:src/_pytest/config/__init__.py:PytestPluginManager._getconftestmodules",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(path, importmode, rootpath)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:b706a2c04:testing/test_conftest.py:src/_pytest/config/__init__.py:PytestPluginManager._importconftest",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(conftestpath, importmode, rootpath)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:b706a2c04:testing/test_conftest.py:src/_pytest/config/__init__.py:PytestPluginManager._rget_with_confmod",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(name, path, importmode, rootpath)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:b706a2c04:testing/test_conftest.py:src/_pytest/config/__init__.py:PytestPluginManager._set_initial_conftests",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(namespace, rootpath)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:b706a2c04:testing/test_pluginmanager.py:src/_pytest/config/__init__.py:PytestPluginManager._importconftest",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(conftestpath, importmode, rootpath)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:b706a2c04:testing/test_pluginmanager.py:src/_pytest/pathlib.py:import_path",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(p, *, mode=<object object at 0x000002CA66EF07A0>, root)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:1278f8b97:src/_pytest/tmpdir.py:src/_pytest/pathlib.py:make_numbered_dir_with_cleanup",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(root, prefix, keep, lock_timeout, mode)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:a550db4b6:src/_pytest/main.py:src/_pytest/python.py:pytest_collect_file",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(fspath, parent)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:c30feeef8:testing/test_runner.py:src/_pytest/runner.py:SetupState.addfinalizer",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(finalizer, node)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:2b14edb10:testing/python/fixtures.py:src/_pytest/runner.py:SetupState.teardown_exact",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(nextitem)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:2b14edb10:testing/test_runner.py:src/_pytest/runner.py:SetupState.teardown_exact",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(nextitem)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:592b32bd6:src/_pytest/main.py:src/_pytest/hookspec.py:pytest_collect_file",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(fspath, path, parent)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:592b32bd6:src/_pytest/main.py:src/_pytest/python.py:pytest_collect_file",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(fspath, path, parent)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:592b32bd6:src/_pytest/main.py:src/_pytest/hookspec.py:pytest_ignore_collect",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(fspath, path, config)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:592b32bd6:src/_pytest/terminal.py:src/_pytest/hookspec.py:pytest_report_collectionfinish",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(config, startpath, startdir, items)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:592b32bd6:src/_pytest/terminal.py:src/_pytest/hookspec.py:pytest_report_header",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(config, startpath, startdir)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:e492b1d56:testing/python/metafunc.py:src/_pytest/python.py:_idval",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(val, argname, idx, idfn, nodeid, config)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:ab6dacf1d:src/_pytest/doctest.py:src/_pytest/config/__init__.py:PytestPluginManager._importconftest",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(conftestpath, importmode)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:ab6dacf1d:src/_pytest/nodes.py:src/_pytest/config/__init__.py:PytestPluginManager._getconftestmodules",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(path, importmode)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:ab6dacf1d:testing/python/fixtures.py:src/_pytest/config/__init__.py:PytestPluginManager._getconftestmodules",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(path, importmode)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:ab6dacf1d:testing/test_conftest.py:src/_pytest/config/__init__.py:PytestPluginManager._getconftestmodules",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(path, importmode)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:ab6dacf1d:testing/test_conftest.py:src/_pytest/config/__init__.py:PytestPluginManager._importconftest",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(conftestpath, importmode)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:ab6dacf1d:testing/test_conftest.py:src/_pytest/config/__init__.py:PytestPluginManager._rget_with_confmod",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(name, path, importmode)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:ab6dacf1d:testing/test_pluginmanager.py:src/_pytest/config/__init__.py:PytestPluginManager._importconftest",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(conftestpath, importmode)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:315121978:testing/python/fixtures.py:src/_pytest/pytester.py:RunResult.assert_outcomes",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(passed=<object object at 0x000002CA66EF07A0>, skipped=<object object at 0x000002CA66EF07A0>, failed=<object object at 0x000002CA66EF07A0>, errors=<object object at 0x000002CA66EF07A0>, xpassed=<object object at 0x000002CA66EF07A0>, xfailed=<object object at 0x000002CA66EF07A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:315121978:testing/test_pytester.py:src/_pytest/pytester.py:RunResult.assert_outcomes",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(passed=<object object at 0x000002CA66EF07A0>, skipped=<object object at 0x000002CA66EF07A0>, failed=<object object at 0x000002CA66EF07A0>, errors=<object object at 0x000002CA66EF07A0>, xpassed=<object object at 0x000002CA66EF07A0>, xfailed=<object object at 0x000002CA66EF07A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:c17d50829:src/_pytest/config/__init__.py:src/_pytest/config/findpaths.py:exists",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 20,
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:622c4ce02:src/_pytest/mark/legacy.py:src/_pytest/mark/expression.py:evaluate",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 23,
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:622c4ce02:testing/test_mark_expression.py:src/_pytest/mark/expression.py:evaluate",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 23,
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:7647d1c83:src/_pytest/capture.py:src/_pytest/compat.py:CaptureAndPassthroughIO",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 52,
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:7789b51ac:testing/test_terminal.py:src/_pytest/terminal.py:_folded_skips",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(startdir, skipped)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:355eb5adf:src/_pytest/fixtures.py:src/_pytest/compat.py:exc_clear",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 41,
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:355eb5adf:src/_pytest/logging.py:src/_pytest/compat.py:dummy_context_manager",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 41,
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:6c3b86369:src/_pytest/terminal.py:src/_pytest/hookspec.py:pytest_terminal_summary",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(terminalreporter, exitstatus, config)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:5b09eb1d7:src/_pytest/resultlog.py:src/_pytest/hookspec.py:pytest_report_teststatus",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(report, config)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:5b09eb1d7:src/_pytest/terminal.py:src/_pytest/hookspec.py:pytest_report_teststatus",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(report, config)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:9f9f6ee48:src/_pytest/python.py:src/_pytest/mark/structures.py:transfer_markers",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 25,
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:fd48cd57f:src/_pytest/cacheprovider.py:src/_pytest/warnings.py:_issue_config_warning",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 18,
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:aa765cf8c:src/_pytest/assertion/rewrite.py:src/_pytest/warnings.py:_issue_config_warning",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(warning, config, stacklevel)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:aa765cf8c:src/_pytest/cacheprovider.py:src/_pytest/warnings.py:_issue_config_warning",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(warning, config, stacklevel)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:aa765cf8c:src/_pytest/config/__init__.py:src/_pytest/warnings.py:_issue_config_warning",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(warning, config, stacklevel)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:aa765cf8c:src/_pytest/config/findpaths.py:src/_pytest/warnings.py:_issue_config_warning",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(warning, config, stacklevel)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:aa765cf8c:src/_pytest/resultlog.py:src/_pytest/warnings.py:_issue_config_warning",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(warning, config, stacklevel)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:ede3a4e85:src/_pytest/debugging.py:src/_pytest/hookspec.py:pytest_enter_pdb",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(config, pdb)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:ede3a4e85:src/_pytest/debugging.py:src/_pytest/hookspec.py:pytest_leave_pdb",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(config, pdb)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:b42518acd:src/_pytest/junitxml.py:src/_pytest/nodes.py:Node.std_warn",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(warning)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:b42518acd:src/_pytest/pytester.py:src/_pytest/nodes.py:Node.std_warn",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(warning)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:b42518acd:testing/python/metafunc.py:src/_pytest/python.py:_idval",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(val, argname, idx, idfn, item, config=<object object at 0x000002CA66EF07A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:b42518acd:testing/test_mark.py:src/_pytest/mark/structures.py:ParameterSet.extract_from",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(parameterset, belonging_definition, legacy_force_tuple=<object object at 0x000002CA66EF07A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:78ac7d99f:src/_pytest/config/__init__.py:src/_pytest/config/findpaths.py:determine_setup",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(inifile, args, rootdir_cmd_arg=<object object at 0x000002CA66EF07A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "pytest-dev_pytest:8e4501ee2:src/_pytest/python.py:src/_pytest/mark/structures.py:ParameterSet._for_parametrize",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(argnames, argvalues, func, config, function_definition)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:c49ae2115:scrapy/pipelines/media.py:scrapy/utils/defer.py:_defer_sleep",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 52,
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:dd0b071bc:scrapy/commands/parse.py:scrapy/pipelines/__init__.py:ItemPipelineManager.process_item",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(item, spider)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:dd0b071bc:scrapy/core/scraper.py:scrapy/middleware.py:MiddlewareManager.close_spider",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(spider)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:dd0b071bc:scrapy/core/scraper.py:scrapy/pipelines/__init__.py:ItemPipelineManager.close_spider",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(spider)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:dd0b071bc:scrapy/core/scraper.py:scrapy/middleware.py:MiddlewareManager.open_spider",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(spider)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:dd0b071bc:scrapy/core/scraper.py:scrapy/pipelines/__init__.py:ItemPipelineManager.open_spider",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(spider)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:dd0b071bc:scrapy/core/scraper.py:scrapy/pipelines/__init__.py:ItemPipelineManager.process_item",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(item, spider)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:dd0b071bc:tests/test_pipelines.py:scrapy/middleware.py:MiddlewareManager.close_spider",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(spider)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:dd0b071bc:tests/test_pipelines.py:scrapy/pipelines/__init__.py:ItemPipelineManager.close_spider",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(spider)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:dd0b071bc:tests/test_pipelines.py:scrapy/middleware.py:MiddlewareManager.open_spider",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(spider)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:dd0b071bc:tests/test_pipelines.py:scrapy/pipelines/__init__.py:ItemPipelineManager.open_spider",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(spider)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:2ad81a0ef:tests/test_downloadermiddleware_cookies.py:tests/test_request_attribute_binding.py:RaiseExceptionRequestMiddleware.process_request",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(request)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:2ad81a0ef:tests/test_downloadermiddleware_cookies.py:tests/test_request_cb_kwargs.py:InjectArgumentsDownloaderMiddleware.process_request",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(request)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:2ad81a0ef:tests/test_downloadermiddleware_cookies.py:tests/test_request_attribute_binding.py:ProcessResponseMiddleware.process_response",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(request, response)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:2ad81a0ef:tests/test_downloadermiddleware_cookies.py:tests/test_request_attribute_binding.py:AlternativeCallbacksMiddleware.process_response",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(request, response)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:2ad81a0ef:tests/test_downloadermiddleware_cookies.py:tests/test_request_cb_kwargs.py:InjectArgumentsDownloaderMiddleware.process_response",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(request, response)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:2ad81a0ef:tests/test_downloadermiddleware_downloadtimeout.py:tests/test_request_attribute_binding.py:RaiseExceptionRequestMiddleware.process_request",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(request)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:2ad81a0ef:tests/test_downloadermiddleware_downloadtimeout.py:tests/test_request_cb_kwargs.py:InjectArgumentsDownloaderMiddleware.process_request",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(request)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:2ad81a0ef:tests/test_downloadermiddleware_httpauth.py:tests/test_request_attribute_binding.py:RaiseExceptionRequestMiddleware.process_request",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(request)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:2ad81a0ef:tests/test_downloadermiddleware_httpauth.py:tests/test_request_cb_kwargs.py:InjectArgumentsDownloaderMiddleware.process_request",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(request)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:2ad81a0ef:tests/test_downloadermiddleware_httpcompression.py:tests/test_request_attribute_binding.py:RaiseExceptionRequestMiddleware.process_request",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(request)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:2ad81a0ef:tests/test_downloadermiddleware_httpcompression.py:tests/test_request_cb_kwargs.py:InjectArgumentsDownloaderMiddleware.process_request",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(request)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:2ad81a0ef:tests/test_downloadermiddleware_httpcompression.py:tests/test_request_attribute_binding.py:ProcessResponseMiddleware.process_response",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(request, response)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:2ad81a0ef:tests/test_downloadermiddleware_httpcompression.py:tests/test_request_attribute_binding.py:AlternativeCallbacksMiddleware.process_response",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(request, response)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:2ad81a0ef:tests/test_downloadermiddleware_httpcompression.py:tests/test_request_cb_kwargs.py:InjectArgumentsDownloaderMiddleware.process_response",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(request, response)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:2ad81a0ef:tests/test_downloadermiddleware_offsite.py:tests/test_request_attribute_binding.py:RaiseExceptionRequestMiddleware.process_request",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(request)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:2ad81a0ef:tests/test_downloadermiddleware_offsite.py:tests/test_request_cb_kwargs.py:InjectArgumentsDownloaderMiddleware.process_request",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(request)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:2ad81a0ef:tests/test_downloadermiddleware_redirect.py:tests/test_request_attribute_binding.py:RaiseExceptionRequestMiddleware.process_request",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(request)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:2ad81a0ef:tests/test_downloadermiddleware_redirect.py:tests/test_request_cb_kwargs.py:InjectArgumentsDownloaderMiddleware.process_request",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(request)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:2ad81a0ef:tests/test_downloadermiddleware_redirect.py:tests/test_request_attribute_binding.py:ProcessResponseMiddleware.process_response",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(request, response)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:2ad81a0ef:tests/test_downloadermiddleware_redirect.py:tests/test_request_attribute_binding.py:AlternativeCallbacksMiddleware.process_response",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(request, response)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:2ad81a0ef:tests/test_downloadermiddleware_redirect.py:tests/test_request_cb_kwargs.py:InjectArgumentsDownloaderMiddleware.process_response",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(request, response)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:2ad81a0ef:tests/test_downloadermiddleware_stats.py:tests/test_request_attribute_binding.py:CatchExceptionOverrideRequestMiddleware.process_exception",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(request, exception)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:2ad81a0ef:tests/test_downloadermiddleware_stats.py:tests/test_request_attribute_binding.py:CatchExceptionDoNotOverrideRequestMiddleware.process_exception",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(request, exception)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:2ad81a0ef:tests/test_downloadermiddleware_stats.py:tests/test_request_attribute_binding.py:RaiseExceptionRequestMiddleware.process_request",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(request)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:2ad81a0ef:tests/test_downloadermiddleware_stats.py:tests/test_request_cb_kwargs.py:InjectArgumentsDownloaderMiddleware.process_request",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(request)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:2ad81a0ef:tests/test_downloadermiddleware_stats.py:tests/test_request_attribute_binding.py:ProcessResponseMiddleware.process_response",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(request, response)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:2ad81a0ef:tests/test_downloadermiddleware_stats.py:tests/test_request_attribute_binding.py:AlternativeCallbacksMiddleware.process_response",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(request, response)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:2ad81a0ef:tests/test_downloadermiddleware_stats.py:tests/test_request_cb_kwargs.py:InjectArgumentsDownloaderMiddleware.process_response",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(request, response)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:2ad81a0ef:tests/test_downloadermiddleware_useragent.py:tests/test_request_attribute_binding.py:RaiseExceptionRequestMiddleware.process_request",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(request)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:2ad81a0ef:tests/test_downloadermiddleware_useragent.py:tests/test_request_cb_kwargs.py:InjectArgumentsDownloaderMiddleware.process_request",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(request)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:ed63fa94d:tests/test_pipeline_files.py:tests/pipelines.py:ZeroDivisionErrorPipeline.open_spider",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "()",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:ed63fa94d:tests/test_pipeline_media.py:tests/pipelines.py:ZeroDivisionErrorPipeline.open_spider",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "()",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:ed63fa94d:tests/test_pipeline_media.py:tests/AsyncCrawlerProcess/asyncio_deferred_signal.py:UppercasePipeline.process_item",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(item)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:ed63fa94d:tests/test_pipeline_media.py:tests/CrawlerProcess/asyncio_deferred_signal.py:UppercasePipeline.process_item",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(item)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:ed63fa94d:tests/test_pipeline_media.py:tests/pipelines.py:ZeroDivisionErrorPipeline.process_item",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(item)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:ed63fa94d:tests/test_pipeline_media.py:tests/pipelines.py:ProcessWithZeroDivisionErrorPipeline.process_item",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(item)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:ed63fa94d:tests/test_pipeline_media.py:tests/test_cmdline_crawl_with_pipeline/test_spider/pipelines.py:TestSpiderPipeline.process_item",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(item)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:ed63fa94d:tests/test_pipeline_media.py:tests/test_cmdline_crawl_with_pipeline/test_spider/pipelines.py:TestSpiderExceptionPipeline.process_item",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(item)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:ed63fa94d:tests/test_pipeline_media.py:tests/test_logformatter.py:DropSomeItemsPipeline.process_item",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(item)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:ed63fa94d:tests/test_pipeline_media.py:tests/test_pipelines.py:SimplePipeline.process_item",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(item)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:ed63fa94d:tests/test_pipeline_media.py:tests/test_pipelines.py:DeferredPipeline.process_item",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(item)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:ed63fa94d:tests/test_pipeline_media.py:tests/test_pipelines.py:AsyncDefPipeline.process_item",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(item)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:ed63fa94d:tests/test_pipeline_media.py:tests/test_pipelines.py:AsyncDefAsyncioPipeline.process_item",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(item)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:ed63fa94d:tests/test_pipeline_media.py:tests/test_pipelines.py:AsyncDefNotAsyncioPipeline.process_item",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(item)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:ed63fa94d:tests/test_settings/__init__.py:tests/AsyncCrawlerProcess/asyncio_deferred_signal.py:UppercasePipeline.process_item",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(item)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:ed63fa94d:tests/test_settings/__init__.py:tests/CrawlerProcess/asyncio_deferred_signal.py:UppercasePipeline.process_item",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(item)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:ed63fa94d:tests/test_settings/__init__.py:tests/pipelines.py:ZeroDivisionErrorPipeline.process_item",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(item)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:ed63fa94d:tests/test_settings/__init__.py:tests/pipelines.py:ProcessWithZeroDivisionErrorPipeline.process_item",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(item)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:ed63fa94d:tests/test_settings/__init__.py:tests/test_cmdline_crawl_with_pipeline/test_spider/pipelines.py:TestSpiderPipeline.process_item",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(item)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:ed63fa94d:tests/test_settings/__init__.py:tests/test_cmdline_crawl_with_pipeline/test_spider/pipelines.py:TestSpiderExceptionPipeline.process_item",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(item)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:ed63fa94d:tests/test_settings/__init__.py:tests/test_logformatter.py:DropSomeItemsPipeline.process_item",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(item)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:ed63fa94d:tests/test_settings/__init__.py:tests/test_pipelines.py:SimplePipeline.process_item",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(item)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:ed63fa94d:tests/test_settings/__init__.py:tests/test_pipelines.py:DeferredPipeline.process_item",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(item)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:ed63fa94d:tests/test_settings/__init__.py:tests/test_pipelines.py:AsyncDefPipeline.process_item",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(item)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:ed63fa94d:tests/test_settings/__init__.py:tests/test_pipelines.py:AsyncDefAsyncioPipeline.process_item",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(item)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:ed63fa94d:tests/test_settings/__init__.py:tests/test_pipelines.py:AsyncDefNotAsyncioPipeline.process_item",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(item)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:baa579df6:scrapy/crawler.py:scrapy/core/engine.py:ExecutionEngine.open_spider_async",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(*, close_if_idle=<object object at 0x000002CA66EF07A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:baa579df6:scrapy/shell.py:scrapy/core/engine.py:ExecutionEngine.open_spider_async",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(*, close_if_idle=<object object at 0x000002CA66EF07A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:baa579df6:tests/test_downloaderslotssettings.py:scrapy/core/downloader/__init__.py:Downloader._get_slot",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(request)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:baa579df6:tests/test_engine.py:scrapy/core/engine.py:ExecutionEngine.open_spider_async",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(*, close_if_idle=<object object at 0x000002CA66EF07A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:eced5ca2d:tests/test_engine.py:scrapy/core/engine.py:ExecutionEngine._schedule_request",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(request)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:d85c39f5b:scrapy/commands/__init__.py:scrapy/utils/conf.py:feed_process_params_from_cli",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(settings, output, *, overwrite_output=<object object at 0x000002CA66EF07A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:bb15c93a2:tests/test_extension_telnet.py:scrapy/utils/test.py:get_crawler",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(spidercls=<object object at 0x000002CA66EF07A0>, settings_dict=<object object at 0x000002CA66EF07A0>, prevent_warnings=<object object at 0x000002CA66EF07A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:031bfc9c3:scrapy/core/downloader/handlers/http2.py:scrapy/core/http2/agent.py:H2Agent.request",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(request, spider)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:316620b51:tests/test_http2_client_protocol.py:scrapy/core/http2/protocol.py:H2ClientProtocol.request",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(request, spider)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:c74ef660c:scrapy/core/http2/protocol.py:scrapy/core/http2/stream.py:Stream.close",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(reason)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:c74ef660c:scrapy/core/http2/protocol.py:scrapy/core/http2/stream.py:Stream.receive_window_update",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "()",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:06ab668ec:scrapy/extensions/feedexport.py:scrapy/utils/ftp.py:ftp_store_file",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(*, path, file, host, port, username, password, use_active_mode=<object object at 0x000002CA66EF07A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:1040f581e:scrapy/crawler.py:scrapy/resolver.py:CachingThreadedResolver.install_on_reactor",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "()",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:1040f581e:scrapy/crawler.py:scrapy/resolver.py:CachingHostnameResolver.install_on_reactor",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "()",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:3cfa73b8b:scrapy/crawler.py:scrapy/resolver.py:CachingThreadedResolver.install_on_reactor",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(reactor)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:3cfa73b8b:scrapy/crawler.py:scrapy/resolver.py:CachingHostnameResolver.install_on_reactor",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(reactor)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:735c0ceb7:scrapy/crawler.py:scrapy/resolver.py:CachingThreadedResolver",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 7,
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:6760bca74:tests/spiders.py:scrapy/http/response/__init__.py:Response.follow",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(url, callback=<object object at 0x000002CA66EF07A0>, method=<object object at 0x000002CA66EF07A0>, headers=<object object at 0x000002CA66EF07A0>, body=<object object at 0x000002CA66EF07A0>, cookies=<object object at 0x000002CA66EF07A0>, meta=<object object at 0x000002CA66EF07A0>, encoding=<object object at 0x000002CA66EF07A0>, priority=<object object at 0x000002CA66EF07A0>, dont_filter=<object object at 0x000002CA66EF07A0>, errback=<object object at 0x000002CA66EF07A0>, cb_kwargs=<object object at 0x000002CA66EF07A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:6760bca74:tests/spiders.py:scrapy/http/response/text.py:TextResponse.follow",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(url, callback=<object object at 0x000002CA66EF07A0>, method=<object object at 0x000002CA66EF07A0>, headers=<object object at 0x000002CA66EF07A0>, body=<object object at 0x000002CA66EF07A0>, cookies=<object object at 0x000002CA66EF07A0>, meta=<object object at 0x000002CA66EF07A0>, encoding=<object object at 0x000002CA66EF07A0>, priority=<object object at 0x000002CA66EF07A0>, dont_filter=<object object at 0x000002CA66EF07A0>, errback=<object object at 0x000002CA66EF07A0>, cb_kwargs=<object object at 0x000002CA66EF07A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:778bed07b:scrapy/commands/shell.py:scrapy/shell.py:Shell.start",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(url=<object object at 0x000002CA66EF07A0>, request=<object object at 0x000002CA66EF07A0>, response=<object object at 0x000002CA66EF07A0>, spider=<object object at 0x000002CA66EF07A0>, redirect=<object object at 0x000002CA66EF07A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:e924d3823:tests/test_addons/test_builtins.py:scrapy/addons/builtins.py:make_builtin_addon",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(addon_name, addon_default_config=<object object at 0x000002CA66EF07A0>, addon_version=<object object at 0x000002CA66EF07A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:26586ef5a:tests/test_utils_conf.py:scrapy/utils/conf.py:build_component_list",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(compdict, convert=<object object at 0x000002CA66EF07A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:c2d716807:tests/test_spidermiddleware_httperror.py:scrapy/utils/test.py:get_testlog",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 8,
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:870438e5f:tests/test_closespider.py:scrapy/utils/test.py:docrawl",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 9,
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:870438e5f:tests/test_crawl.py:scrapy/utils/test.py:docrawl",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 9,
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:870438e5f:tests/test_proxy_connect.py:scrapy/utils/test.py:docrawl",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 9,
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:870438e5f:tests/test_spidermiddleware_httperror.py:scrapy/utils/test.py:docrawl",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 9,
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:b38ac27ee:scrapy/selector/libxml2sel.py:scrapy/selector/list.py:XPathSelectorList",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 3,
+   "agrees": true
+  },
+  {
+   "mid": "scrapy_scrapy:b38ac27ee:scrapy/selector/lxmlsel.py:scrapy/selector/list.py:XPathSelectorList",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 3,
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:9eb3d7940:sphinx/ext/autodoc/_member_finder.py:sphinx/ext/autodoc/_loader.py:_load_object_by_name",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(*, name, objtype, current_document, config, events, get_attr, options, parent_modname=<object object at 0x000002CA66EF07A0>, ref_context, reread_always)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:9eb3d7940:sphinx/ext/autodoc/_signatures.py:sphinx/ext/autodoc/typehints.py:_record_typehints",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(*, autodoc_annotations, name, obj, short_literals, type_aliases, unqualified_typehints)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:9eb3d7940:sphinx/ext/autosummary/__init__.py:sphinx/ext/autodoc/_loader.py:_load_object_by_name",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(*, name, objtype, current_document, config, events, get_attr, options, parent_modname=<object object at 0x000002CA66EF07A0>, ref_context, reread_always)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:9eb3d7940:tests/test_ext_autodoc/autodoc_util.py:sphinx/ext/autodoc/_loader.py:_load_object_by_name",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(*, name, objtype, current_document, config, events, get_attr, options, parent_modname=<object object at 0x000002CA66EF07A0>, ref_context, reread_always)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:9eb3d7940:tests/test_ext_autodoc/test_ext_autodoc.py:sphinx/ext/autodoc/_loader.py:_load_object_by_name",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(*, name, objtype, current_document, config, events, get_attr, options, parent_modname=<object object at 0x000002CA66EF07A0>, ref_context, reread_always)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:6127d76bb:tests/test_ext_autodoc/test_ext_autodoc.py:sphinx/ext/autodoc/importer.py:_format_signatures",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(*, autodoc_annotations, config, docstrings, events, get_attr, parent, options, props, args=<object object at 0x000002CA66EF07A0>, retann=<object object at 0x000002CA66EF07A0>, **kwargs)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:8c86bad0e:sphinx/ext/autodoc/directive.py:sphinx/ext/autodoc/_generate.py:_generate_directives",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(more_content=<object object at 0x000002CA66EF07A0>, parent_modname=<object object at 0x000002CA66EF07A0>, check_module=<object object at 0x000002CA66EF07A0>, all_members=<object object at 0x000002CA66EF07A0>, *, config, current_document, events, get_attr, indent, options, props, record_dependencies, ref_context, reread_always, result)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:8c86bad0e:sphinx/ext/autodoc/directive.py:sphinx/ext/autodoc/importer.py:_load_object_by_name",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(*, name, objtype, mock_imports, type_aliases, current_document, config, events, get_attr, options, parent_modname=<object object at 0x000002CA66EF07A0>, ref_context, reread_always)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:8c86bad0e:sphinx/ext/autosummary/__init__.py:sphinx/ext/autodoc/importer.py:_load_object_by_name",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(*, name, objtype, mock_imports, type_aliases, current_document, config, events, get_attr, options, parent_modname=<object object at 0x000002CA66EF07A0>, ref_context, reread_always)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:8c86bad0e:tests/test_ext_autodoc/autodoc_util.py:sphinx/ext/autodoc/_generate.py:_generate_directives",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(more_content=<object object at 0x000002CA66EF07A0>, parent_modname=<object object at 0x000002CA66EF07A0>, check_module=<object object at 0x000002CA66EF07A0>, all_members=<object object at 0x000002CA66EF07A0>, *, config, current_document, events, get_attr, indent, options, props, record_dependencies, ref_context, reread_always, result)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:8c86bad0e:tests/test_ext_autodoc/autodoc_util.py:sphinx/ext/autodoc/importer.py:_load_object_by_name",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(*, name, objtype, mock_imports, type_aliases, current_document, config, events, get_attr, options, parent_modname=<object object at 0x000002CA66EF07A0>, ref_context, reread_always)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:54e80f70a:sphinx/ext/autodoc/_generate.py:sphinx/ext/autodoc/_member_finder.py:_gather_members",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(*, want_all, indent, analyzer_order, attr_docs, config, current_document, env, events, get_attr, options, real_modname, props)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:54e80f70a:tests/test_ext_autodoc/test_ext_autodoc.py:sphinx/ext/autodoc/importer.py:_format_signatures",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(*, config, docstrings, events, get_attr, parent, options, props, args=<object object at 0x000002CA66EF07A0>, retann=<object object at 0x000002CA66EF07A0>, **kwargs)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:de745a9ea:sphinx/ext/autodoc/directive.py:sphinx/ext/autodoc/_directive_options.py:_process_documenter_options",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(*, obj_type, default_options, options)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:de745a9ea:tests/test_ext_autodoc/autodoc_util.py:sphinx/ext/autodoc/_directive_options.py:_process_documenter_options",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(*, obj_type, default_options, options)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:ff3e1d23e:tests/test_ext_autosummary/test_ext_autosummary.py:sphinx/ext/autosummary/generate.py:generate_autosummary_content",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(name, obj, parent, template, template_name, imported_members, recursive, context, modname=<object object at 0x000002CA66EF07A0>, qualname=<object object at 0x000002CA66EF07A0>, *, config, events)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:3dec8620a:sphinx/ext/autosummary/generate.py:sphinx/ext/autosummary/__init__.py:_get_documenter",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(obj, parent)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:c58caeffd:sphinx/ext/autosummary/__init__.py:doc/development/tutorials/examples/autodoc_intenum.py:IntEnumDocumenter.add_content",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(more_content, *, indent)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:c58caeffd:sphinx/ext/autosummary/__init__.py:sphinx/ext/autodoc/_documenters.py:Documenter.add_content",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(more_content, *, indent)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:ead64dfda:sphinx/ext/autodoc/directive.py:sphinx/ext/autodoc/_directive_options.py:_process_documenter_options",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(*, option_spec, default_options, options)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:ead64dfda:tests/test_extensions/autodoc_util.py:sphinx/ext/autodoc/_directive_options.py:_process_documenter_options",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(*, option_spec, default_options, options)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:b9641ae82:tests/test_extensions/test_ext_intersphinx.py:sphinx/ext/intersphinx/_load.py:_fetch_inventory",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 39,
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:b9641ae82:tests/test_extensions/test_ext_intersphinx.py:sphinx/ext/intersphinx/_load.py:_fetch_inventory_group",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(*, project, cache, now, config, srcdir, cache_dir)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:97f946a59:sphinx/testing/restructuredtext.py:sphinx/io.py:SphinxStandaloneReader._setup_transforms",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(transforms, /)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:8eaa0ab60:sphinx/io.py:sphinx/registry.py:SphinxComponentRegistry.create_source_parser",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(filename, *, config, env)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:8eaa0ab60:sphinx/transforms/i18n.py:sphinx/registry.py:SphinxComponentRegistry.create_source_parser",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(filename, *, config, env)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:5392f0f2e:sphinx/application.py:sphinx/config.py:Config.read",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(confdir, *, overrides, tags)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:5392f0f2e:tests/test_config/test_config.py:sphinx/config.py:Config.read",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(confdir, *, overrides, tags)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:acdf4a869:sphinx/builders/_epub_base.py:sphinx/environment/__init__.py:BuildEnvironment.get_and_resolve_doctree",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(docname, builder, *, tags, doctree=<object object at 0x000002CA66EF07A0>, prune_toctrees=<object object at 0x000002CA66EF07A0>, includehidden=<object object at 0x000002CA66EF07A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:acdf4a869:sphinx/builders/epub3.py:sphinx/environment/__init__.py:BuildEnvironment.get_and_resolve_doctree",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(docname, builder, *, tags, doctree=<object object at 0x000002CA66EF07A0>, prune_toctrees=<object object at 0x000002CA66EF07A0>, includehidden=<object object at 0x000002CA66EF07A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:acdf4a869:tests/test_extensions/test_ext_inheritance_diagram.py:sphinx/environment/__init__.py:BuildEnvironment.get_and_resolve_doctree",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(docname, builder, *, tags, doctree=<object object at 0x000002CA66EF07A0>, prune_toctrees=<object object at 0x000002CA66EF07A0>, includehidden=<object object at 0x000002CA66EF07A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:acdf4a869:tests/test_extensions/test_ext_math.py:sphinx/environment/__init__.py:BuildEnvironment.get_and_resolve_doctree",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(docname, builder, *, tags, doctree=<object object at 0x000002CA66EF07A0>, prune_toctrees=<object object at 0x000002CA66EF07A0>, includehidden=<object object at 0x000002CA66EF07A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:7838043f2:sphinx/domains/javascript.py:sphinx/domains/python/_annotations.py:_pseudo_parse_arglist",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(signode, arglist, *, multi_line_parameter_list=<object object at 0x000002CA66EF07A0>, trailing_comma=<object object at 0x000002CA66EF07A0>, env)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:7838043f2:sphinx/domains/python/_object.py:sphinx/domains/python/_annotations.py:_pseudo_parse_arglist",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(signode, arglist, *, multi_line_parameter_list=<object object at 0x000002CA66EF07A0>, trailing_comma=<object object at 0x000002CA66EF07A0>, env)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:f3e0de1da:tests/test_extensions/test_ext_autosummary.py:sphinx/ext/autosummary/generate.py:generate_autosummary_content",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(name, obj, parent, template, template_name, imported_members, recursive, context, modname=<object object at 0x000002CA66EF07A0>, qualname=<object object at 0x000002CA66EF07A0>, *, config, events, registry)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:8e6883f8a:sphinx/ext/apidoc/_cli.py:sphinx/ext/apidoc/_generate.py:CliOptions",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 32,
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:8d75ae2d6:tests/test_extensions/test_ext_napoleon_docstring.py:sphinx/ext/napoleon/docstring.py:_convert_numpy_type_spec",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 38,
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:c6b4114cd:sphinx/environment/__init__.py:sphinx/domains/_domains_container.py:_DomainsContainer._from_environment",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(env, /, *, registry)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:fadb6b10c:sphinx/ext/autodoc/__init__.py:sphinx/ext/autodoc/importer.py:import_module",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(modname)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:d39ba3260:sphinx/builders/__init__.py:sphinx/util/__init__.py:import_object",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 47,
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:d39ba3260:sphinx/search/ja.py:sphinx/util/__init__.py:import_object",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 47,
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:57a63ea60:sphinx/jinja2glue.py:sphinx/util/osutil.py:mtimes_of_files",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 35,
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:217f26782:sphinx/builders/html/__init__.py:sphinx/util/osutil.py:copyfile",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(source, dest, *, force=<object object at 0x000002CA66EF07A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:141f3ecdf:tests/test_config/test_config.py:sphinx/config.py:is_serializable",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(obj, *, _seen=<object object at 0x000002CA66EF07A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:aecebcea9:sphinx/environment/__init__.py:sphinx/environment/adapters/toctree.py:_resolve_toctree",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(env, docname, builder, toctree, *, prune=<object object at 0x000002CA66EF07A0>, maxdepth=<object object at 0x000002CA66EF07A0>, titles_only=<object object at 0x000002CA66EF07A0>, collapse=<object object at 0x000002CA66EF07A0>, includehidden=<object object at 0x000002CA66EF07A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:2b9ee41f2:sphinx/__main__.py:sphinx/cmd/build.py:main",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(argv, /)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:2b9ee41f2:sphinx/__main__.py:sphinx/cmd/quickstart.py:main",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(argv, /)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:2b9ee41f2:sphinx/__main__.py:sphinx/ext/apidoc.py:main",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(argv, /)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:2b9ee41f2:sphinx/__main__.py:sphinx/ext/autosummary/generate.py:main",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(argv, /)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:c9f0e67cc:sphinx/writers/latex.py:sphinx/util/__init__.py:split_into",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 56,
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:5cf3dce36:sphinx/builders/html/__init__.py:sphinx/util/__init__.py:md5",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 59,
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:5cf3dce36:sphinx/ext/graphviz.py:sphinx/util/__init__.py:sha1",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 59,
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:5cf3dce36:sphinx/ext/imgmath.py:sphinx/util/__init__.py:sha1",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 59,
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:5cf3dce36:sphinx/ext/inheritance_diagram.py:sphinx/util/__init__.py:md5",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 59,
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:5cf3dce36:sphinx/transforms/post_transforms/images.py:sphinx/util/__init__.py:sha1",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 59,
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:5cf3dce36:tests/test_build_html.py:sphinx/util/__init__.py:md5",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 59,
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:e45fb5e61:tests/test_build_linkcheck.py:sphinx/builders/linkcheck.py:HyperlinkAvailabilityCheckWorker.limit_rate",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(response_url, retry_after)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:3c4e78e23:tests/test_util_i18n.py:sphinx/util/i18n.py:format_date",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(format, *, date=<object object at 0x000002CA66EF07A0>, language)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:67291f414:sphinx/addnodes.py:sphinx/deprecation.py:deprecated_alias",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 6,
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:67291f414:sphinx/builders/html/__init__.py:sphinx/deprecation.py:deprecated_alias",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 6,
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:67291f414:sphinx/util/docutils.py:sphinx/deprecation.py:deprecated_alias",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 6,
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:5eb79c126:sphinx/cmd/build.py:sphinx/util/__init__.py:save_traceback",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 63,
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:bb62d2a2e:sphinx/transforms/i18n.py:sphinx/util/nodes.py:is_pending_meta",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 62,
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:919eb1db9:sphinx/builders/__init__.py:sphinx/io.py:read_doc",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 37,
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:2ea911818:tests/test_util_typing.py:sphinx/util/typing.py:stringify",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(annotation, mode=<object object at 0x000002CA66EF07A0>)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:c0678a4a5:sphinx/ext/autodoc/__init__.py:sphinx/ext/autodoc/importer.py:get_class_members",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(subject, objpath, attrgetter)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:37f1454ec:tests/test_domain_c.py:sphinx/domains/c.py:Symbol.add_declaration",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(declaration, docname, line)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:37f1454ec:tests/test_domain_c.py:sphinx/domains/cpp.py:Symbol.add_declaration",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(declaration, docname, line)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:37f1454ec:tests/test_domain_cpp.py:sphinx/domains/c.py:Symbol.add_declaration",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(declaration, docname, line)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:37f1454ec:tests/test_domain_cpp.py:sphinx/domains/cpp.py:Symbol.add_declaration",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(declaration, docname, line)",
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:000023977:sphinx/ext/apidoc.py:sphinx/deprecation.py:deprecated_attribute",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 12,
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:000023977:sphinx/ext/imgmath.py:sphinx/deprecation.py:deprecated_attribute",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 12,
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:000023977:sphinx/util/pycompat.py:sphinx/deprecation.py:deprecated_attribute",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 12,
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:000023977:sphinx/util/texescape.py:sphinx/deprecation.py:deprecated_attribute",
+   "breakage": "vanished",
+   "broken": true,
+   "intact": true,
+   "names_after": 12,
+   "agrees": true
+  },
+  {
+   "mid": "sphinx-doc_sphinx:7671bcc23:sphinx/ext/autosummary/__init__.py:sphinx/ext/autosummary/generate.py:generate_autosummary_docs",
+   "breakage": "arity",
+   "broken": true,
+   "intact": true,
+   "signature": "(sources, output_dir=<object object at 0x000002CA66EF07A0>, suffix=<object object at 0x000002CA66EF07A0>, warn=<object object at 0x000002CA66EF07A0>, info=<object object at 0x000002CA66EF07A0>, base_path=<object object at 0x000002CA66EF07A0>, builder=<object object at 0x000002CA66EF07A0>, template_dir=<object object at 0x000002CA66EF07A0>, imported_members=<object object at 0x000002CA66EF07A0>, app=<object object at 0x000002CA66EF07A0>, overwrite=<object object at 0x000002CA66EF07A0>)",
+   "agrees": true
+  }
+ ]
+}

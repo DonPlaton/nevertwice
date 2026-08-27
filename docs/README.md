@@ -65,6 +65,7 @@ click from here, and `tests/_test_docs_map.py` fails the build if that stops bei
 | [`research/EMBED_M6_THRESHOLD.md`](../research/EMBED_M6_THRESHOLD.md) | What the served model had to prove before its numbers could be quoted as the shipped model's |
 | [`research/EMBED_SERVING.md`](../research/EMBED_SERVING.md) | It proved it: the f16 GGUF users run is numerically indistinguishable from the checkpoint everything was measured on |
 | [`research/invariants_lab/CORPUS.md`](../research/invariants_lab/CORPUS.md) | The corpus the next round of detectors is measured on: eight public repositories chosen before they were cloned, 435 commits that really did break a caller, and why the previous corpus could not have produced a precision at all |
+| [`research/invariants_lab/MUTANTS.md`](../research/invariants_lab/MUTANTS.md) | The positive class that did not exist last time: 495 breakages made by reverting the caller half of a real commit, each one re-confirmed by CPython's own argument binder |
 | [`research/evidence_manifest.json`](../research/evidence_manifest.json) | Every published number, with its dataset, sample size, model, command, raw file and caveat |
 | [`research/data/README.md`](../research/data/README.md) | Fetching the LongMemEval dataset the benchmarks need |
 
