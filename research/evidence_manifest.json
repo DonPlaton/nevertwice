@@ -483,6 +483,11 @@
     "research/BLAST_RADIUS_DECISION.md": {
       "governance": "exempt",
       "reason": "the decision rules for whether the blast-radius checker is worth keeping, declared before any finding was labelled and before the baseline was built, per hard rule 2.6. Its numbers are prospective thresholds - a precision floor and a matched-flag-rate comparison - and the size of the census it commits to labelling, not measurements to reproduce. The measurements land in research/BLAST_RADIUS_PRECISION.md."
+    },
+    "research/BLAST_RADIUS_PRECISION.md": {
+      "governance": "backlog",
+      "budget": 30,
+      "note": "the negative result that closed the blast-radius track. Its headline - 0 of 24 findings true, precision 0.000 - is registered as a claim and checked against research/blast_radius_precision.json; the taxonomy of why each finding is false is the backlog. The labeller that produced the labels has its own controls in tests/_test_blast_radius_labeller.py, because a null result whose instrument was never shown capable of a positive is unfalsifiable."
     }
   },
   "claims": [
@@ -6462,6 +6467,58 @@
       "ci_note": "a count over a fully enumerated set",
       "caveat": "All six are L0. The L1 and L2 budgets never fired, so the mechanism is calibrated on one class of three. L1's 95th percentile is its maximum (n=9).",
       "produced_by": [
+        "research/blast_radius_calibration.py"
+      ]
+    },
+    {
+      "id": "blast_radius.precision",
+      "statement": "0 of 24 blast-radius dependency findings over 150 commits are true breakages - precision 0.000 against a 50% floor declared before the run",
+      "value": 0.0,
+      "printed": [
+        "0.000",
+        "0",
+        "24"
+      ],
+      "unit": "precision",
+      "dataset": "nevertwice_history_150",
+      "environment": "stdlib_only",
+      "n": 24,
+      "command": "python research/blast_radius_precision.py",
+      "raw": "research/blast_radius_precision.json",
+      "pointer": "summary.precision",
+      "ci": null,
+      "ci_note": "a census, not a sample - every finding the checker made on the 150 commits is labelled, so there is no sampling error to interval. 0/24 has a Wilson 95% upper bound of 0.138 if one insists on treating it as a sample.",
+      "caveat": "The labeller is shown capable of a positive verdict by five positive controls in tests/_test_blast_radius_labeller.py; without that a precision of zero would be unfalsifiable. It was corrected five times during the run, four of those in the direction that lowers precision - each correction is named in the write-up and has a regression test.",
+      "cited_in": [],
+      "commit": "PENDING",
+      "produced_by": [
+        "research/blast_radius_precision.py",
+        "research/blast_radius_calibration.py"
+      ]
+    },
+    {
+      "id": "blast_radius.grep_matched_threshold",
+      "statement": "git grep needs a threshold of 11 unhandled mentions to flag no more commits than the checker, at which point it flags 8 and shares 7",
+      "value": 11,
+      "printed": [
+        "11",
+        "8",
+        "7"
+      ],
+      "unit": "mentions",
+      "dataset": "nevertwice_history_150",
+      "environment": "stdlib_only",
+      "n": 150,
+      "command": "python research/blast_radius_precision.py",
+      "raw": "research/blast_radius_precision.json",
+      "pointer": "summary.grep_matched.threshold",
+      "ci": null,
+      "ci_note": "a swept threshold over a fully enumerated set",
+      "caveat": "P2 is decided without labelling the baseline: precision 0.000 is the minimum possible and nothing is strictly greater than it. The baseline's own labels are partial and reported as context.",
+      "cited_in": [],
+      "commit": "PENDING",
+      "produced_by": [
+        "research/blast_radius_precision.py",
         "research/blast_radius_calibration.py"
       ]
     }

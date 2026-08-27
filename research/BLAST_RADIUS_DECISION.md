@@ -97,12 +97,21 @@ project, and it is worth knowing here even when the headline fails.
 
 Written now, before the labels exist.
 
-- **P1 fails, or P2 fails** → the track is deleted. `git branch -D invariants/blast-radius`,
-  `master` untouched, and `research/BLAST_RADIUS_PRECISION.md` is published as a negative result
-  on `master` in a separate, minimal commit: what was built, what it cost, what it scored, and why
-  a deterministic blast-radius checker does not earn its place in this codebase. This project has
-  published negative results before and is held to that standard. **A published negative result is
-  a complete outcome, not a failure to deliver.**
+- **P1 fails, or P2 fails** → the mechanism is not merged, and
+  `research/BLAST_RADIUS_PRECISION.md` is written: what was built, what it cost, what it scored,
+  and why a deterministic blast-radius checker does not earn its place in this codebase. This
+  project has published negative results before and is held to that standard. **A published
+  negative result is a complete outcome, not a failure to deliver.**
+
+  > **Corrected 2026-08-27, after the run and before the result was written.** This clause first
+  > said the negative result would be committed to `master` and the branch then deleted with
+  > `git branch -D invariants/blast-radius`. That was written here in the same session, and it
+  > contradicts the standing instruction this loop runs under - never commit to `master`. Deleting
+  > the branch is also the one action that would destroy the negative result before anyone read
+  > it, which is the opposite of publishing it. So the result is written on the branch, and both
+  > moves that touch `master` - landing the write-up, or discarding the branch - are the owner's,
+  > recorded in `.loop/REPORT.md` with the exact commands. The threshold, the gates and the
+  > deletion of the *mechanism* are unchanged; only the question of who runs `git` on `master` is.
 - **P1 and P2 both pass** → the track continues to I5 (advisory surfaces only). Phase 2 hooks stay
   out of scope for this loop; the spec asks for a week of observation first, and nothing here
   substitutes for that.

@@ -1,0 +1,110 @@
+{
+  "purpose": "Hand labels for the blast-radius precision census (I4). Only the sites the mechanical rules - resolution, arity, resolvability - could not decide are here; everything else is labelled by those rules and recorded in research/blast_radius_precision.json with the rule that decided it. Each reason names the commit it was read at so the judgement is checkable rather than asserted.",
+  "label_definition": "true: at the state of the repository AFTER the commit, the reference is incompatible with the symbol's new contract - it would raise, or would silently use a changed meaning. false: otherwise, including a signature that only grew a defaulted parameter or an annotation, and including a lexical collision with a different symbol.",
+  "labels": {
+    "807b817ce|Claims|research/_figstyle.py:101": {
+      "label": "false",
+      "reason": "the contract change is a class GAINING a member (get, value -> get, is_withdrawn, value). Every site is either a `c: Claims` annotation or a construction, and neither is affected by a class acquiring a method. Read at 807b817c."
+    },
+    "807b817ce|Claims|tools/render_claims.py:119": {
+      "label": "false",
+      "reason": "the contract change is a class GAINING a member (get, value -> get, is_withdrawn, value). Every site is either a `c: Claims` annotation or a construction, and neither is affected by a class acquiring a method. Read at 807b817c."
+    },
+    "807b817ce|Claims|tools/render_claims.py:129": {
+      "label": "false",
+      "reason": "the contract change is a class GAINING a member (get, value -> get, is_withdrawn, value). Every site is either a `c: Claims` annotation or a construction, and neither is affected by a class acquiring a method. Read at 807b817c."
+    },
+    "807b817ce|Claims|tools/render_claims.py:137": {
+      "label": "false",
+      "reason": "the contract change is a class GAINING a member (get, value -> get, is_withdrawn, value). Every site is either a `c: Claims` annotation or a construction, and neither is affected by a class acquiring a method. Read at 807b817c."
+    },
+    "807b817ce|Claims|tools/render_claims.py:188": {
+      "label": "false",
+      "reason": "the contract change is a class GAINING a member (get, value -> get, is_withdrawn, value). Every site is either a `c: Claims` annotation or a construction, and neither is affected by a class acquiring a method. Read at 807b817c."
+    },
+    "807b817ce|Claims|tools/render_claims.py:198": {
+      "label": "false",
+      "reason": "the contract change is a class GAINING a member (get, value -> get, is_withdrawn, value). Every site is either a `c: Claims` annotation or a construction, and neither is affected by a class acquiring a method. Read at 807b817c."
+    },
+    "807b817ce|Claims|tools/render_claims.py:205": {
+      "label": "false",
+      "reason": "the contract change is a class GAINING a member (get, value -> get, is_withdrawn, value). Every site is either a `c: Claims` annotation or a construction, and neither is affected by a class acquiring a method. Read at 807b817c."
+    },
+    "807b817ce|Claims|tools/render_claims.py:219": {
+      "label": "false",
+      "reason": "the contract change is a class GAINING a member (get, value -> get, is_withdrawn, value). Every site is either a `c: Claims` annotation or a construction, and neither is affected by a class acquiring a method. Read at 807b817c."
+    },
+    "807b817ce|Claims|tools/render_claims.py:233": {
+      "label": "false",
+      "reason": "the contract change is a class GAINING a member (get, value -> get, is_withdrawn, value). Every site is either a `c: Claims` annotation or a construction, and neither is affected by a class acquiring a method. Read at 807b817c."
+    },
+    "807b817ce|Claims|tools/render_claims.py:248": {
+      "label": "false",
+      "reason": "the contract change is a class GAINING a member (get, value -> get, is_withdrawn, value). Every site is either a `c: Claims` annotation or a construction, and neither is affected by a class acquiring a method. Read at 807b817c."
+    },
+    "807b817ce|Claims|tools/render_claims.py:263": {
+      "label": "false",
+      "reason": "the contract change is a class GAINING a member (get, value -> get, is_withdrawn, value). Every site is either a `c: Claims` annotation or a construction, and neither is affected by a class acquiring a method. Read at 807b817c."
+    },
+    "807b817ce|Claims|tools/render_claims.py:272": {
+      "label": "false",
+      "reason": "the contract change is a class GAINING a member (get, value -> get, is_withdrawn, value). Every site is either a `c: Claims` annotation or a construction, and neither is affected by a class acquiring a method. Read at 807b817c."
+    },
+    "807b817ce|Claims|tools/render_claims.py:291": {
+      "label": "false",
+      "reason": "the contract change is a class GAINING a member (get, value -> get, is_withdrawn, value). Every site is either a `c: Claims` annotation or a construction, and neither is affected by a class acquiring a method. Read at 807b817c."
+    },
+    "807b817ce|Claims|tools/render_claims.py:302": {
+      "label": "false",
+      "reason": "the contract change is a class GAINING a member (get, value -> get, is_withdrawn, value). Every site is either a `c: Claims` annotation or a construction, and neither is affected by a class acquiring a method. Read at 807b817c."
+    },
+    "807b817ce|Claims|tools/render_claims.py:335": {
+      "label": "false",
+      "reason": "the contract change is a class GAINING a member (get, value -> get, is_withdrawn, value). Every site is either a `c: Claims` annotation or a construction, and neither is affected by a class acquiring a method. Read at 807b817c."
+    },
+    "807b817ce|Claims|tools/render_claims.py:427": {
+      "label": "false",
+      "reason": "the contract change is a class GAINING a member (get, value -> get, is_withdrawn, value). Every site is either a `c: Claims` annotation or a construction, and neither is affected by a class acquiring a method. Read at 807b817c."
+    },
+    "280582b52|where|nevertwice/integrity.py:463": {
+      "label": "false",
+      "reason": "the change is annotation-only: `where(pred)` -> `where(pred: Callable[[dict], bool]) -> Callable[[View], View]`. Annotations do not change runtime behaviour, so no call site can break. Both sites are additionally a LOCAL variable named `where` in integrity.py's rendering loop, unrelated to lenses.where. Read at 280582b5."
+    },
+    "280582b52|where|nevertwice/integrity.py:464": {
+      "label": "false",
+      "reason": "the change is annotation-only: `where(pred)` -> `where(pred: Callable[[dict], bool]) -> Callable[[View], View]`. Annotations do not change runtime behaviour, so no call site can break. Both sites are additionally a LOCAL variable named `where` in integrity.py's rendering loop, unrelated to lenses.where. Read at 280582b5."
+    },
+    "280582b52|_TWIN_W|nevertwice/memory_hook.py:1300": {
+      "label": "false",
+      "reason": "not removed at all: the five constants are rebound by a TUPLE-UNPACKING assignment, `_TWIN_SPACE, _TWIN_W, _TWIN_B, _TWIN_MU, _TWIN_SD = _load_twin_calibration()`. The checker's symbol extractor records only ast.Name assignment targets, so a tuple target is invisible and the names look deleted. Every site still resolves. Read at 280582b5."
+    },
+    "280582b52|_TWIN_B|nevertwice/memory_hook.py:1299": {
+      "label": "false",
+      "reason": "not removed at all: the five constants are rebound by a TUPLE-UNPACKING assignment, `_TWIN_SPACE, _TWIN_W, _TWIN_B, _TWIN_MU, _TWIN_SD = _load_twin_calibration()`. The checker's symbol extractor records only ast.Name assignment targets, so a tuple target is invisible and the names look deleted. Every site still resolves. Read at 280582b5."
+    },
+    "280582b52|_TWIN_MU|nevertwice/memory_hook.py:1300": {
+      "label": "false",
+      "reason": "not removed at all: the five constants are rebound by a TUPLE-UNPACKING assignment, `_TWIN_SPACE, _TWIN_W, _TWIN_B, _TWIN_MU, _TWIN_SD = _load_twin_calibration()`. The checker's symbol extractor records only ast.Name assignment targets, so a tuple target is invisible and the names look deleted. Every site still resolves. Read at 280582b5."
+    },
+    "280582b52|_TWIN_SD|nevertwice/memory_hook.py:1300": {
+      "label": "false",
+      "reason": "not removed at all: the five constants are rebound by a TUPLE-UNPACKING assignment, `_TWIN_SPACE, _TWIN_W, _TWIN_B, _TWIN_MU, _TWIN_SD = _load_twin_calibration()`. The checker's symbol extractor records only ast.Name assignment targets, so a tuple target is invisible and the names look deleted. Every site still resolves. Read at 280582b5."
+    },
+    "280582b52|_TWIN_SPACE|nevertwice/memory_hook.py:1271": {
+      "label": "false",
+      "reason": "not removed at all: the five constants are rebound by a TUPLE-UNPACKING assignment, `_TWIN_SPACE, _TWIN_W, _TWIN_B, _TWIN_MU, _TWIN_SD = _load_twin_calibration()`. The checker's symbol extractor records only ast.Name assignment targets, so a tuple target is invisible and the names look deleted. Every site still resolves. Read at 280582b5."
+    },
+    "280582b52|_TWIN_SPACE|nevertwice/memory_hook.py:1275": {
+      "label": "false",
+      "reason": "not removed at all: the five constants are rebound by a TUPLE-UNPACKING assignment, `_TWIN_SPACE, _TWIN_W, _TWIN_B, _TWIN_MU, _TWIN_SD = _load_twin_calibration()`. The checker's symbol extractor records only ast.Name assignment targets, so a tuple target is invisible and the names look deleted. Every site still resolves. Read at 280582b5."
+    },
+    "950b4d23b|est_tokens|nevertwice/memory_hook.py:5761": {
+      "label": "false",
+      "reason": "est_tokens moved from stats.py to receipt.py, and stats.py imports it back (`from .receipt import est_tokens`). Both sites reach it as `_st.est_tokens(...)`, a module attribute that still resolves. Read at 950b4d23."
+    },
+    "950b4d23b|est_tokens|nevertwice/memory_hook.py:6020": {
+      "label": "false",
+      "reason": "est_tokens moved from stats.py to receipt.py, and stats.py imports it back (`from .receipt import est_tokens`). Both sites reach it as `_st.est_tokens(...)`, a module attribute that still resolves. Read at 950b4d23."
+    }
+  }
+}

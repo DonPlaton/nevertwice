@@ -92,6 +92,14 @@ ARTIFACTS = [
      "command": ["python", "research/longitudinal_improvement.py", "--sweep", "--save"],
      "kind": DETERMINISTIC, "task": "prior",
      "inputs": [], "note": "the active-vs-inject token ratio"},
+    {"file": "research/blast_radius_precision.json",
+     "command": ["python", "research/blast_radius_precision.py"],
+     "kind": DETERMINISTIC, "task": "I4",
+     "inputs": [".git", "research/blast_radius_calibration.json",
+                "research/blast_radius_labels.json"],
+     "note": "the precision census that closed the blast-radius track: every finding labelled, "
+             "and the git grep baseline swept to a matched flag rate. Carries no timings, so it "
+             "is byte-identical or it is wrong. Needs FULL history."},
     {"file": "research/blast_radius_calibration.json",
      "command": ["python", "research/blast_radius_calibration.py", "--commits", "150"],
      "kind": DETERMINISTIC, "task": "I1",
