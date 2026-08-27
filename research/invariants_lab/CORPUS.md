@@ -102,4 +102,76 @@ estimate is well under 2 GB in total, and the manifest reports the true figure.
 
 ## 4. Manifest, appended after cloning
 
-*(filled in by the second C1 commit — see `research/invariants_lab/corpus_manifest.json`)*
+Written by `research/invariants_lab/corpus_census.py` from the clones; the machine-readable form
+is `research/invariants_lab/corpus_manifest.json`, and the per-commit evidence behind the last
+two columns is `research/invariants_lab/corpus_census.json`. The corpus itself is **not in git**
+— it lives at `D:\Coding\_nevertwice_polygon\corpus` and is regenerable from the URLs and SHAs below.
+
+**Census window, declared before the run and uniform across blocks:** the newest
+4,000 commits per repository that touch a `.py` file, non-merge, excluding
+vendored and generated trees, keeping commits that touch between 2 and 40 Python
+files. Fewer than two files cannot contain a same-commit caller update; more than
+40 is a bulk rewrite whose contract changes are not the thing being measured.
+
+| repository | HEAD | commits | contributors | census candidates | changed a signature | **eligible** | rate | disk |
+|---|---|---:|---:|---:|---:|---:|---:|---:|
+| `django/django` | `fdfbb711e` | 34,889 | 3,638 | 2,512 | 626 | **85** | 0.034 | 356 MB |
+| `encode/httpx` | `b5addb64f` | 1,523 | 270 | 612 | 287 | **47** | 0.077 | 12 MB |
+| `fastapi/fastapi` | `490334715` | 7,695 | 941 | 555 | 170 | **12** | 0.022 | 94 MB |
+| `pallets/flask` | `d318b6834` | 5,556 | 898 | 806 | 239 | **25** | 0.031 | 15 MB |
+| `psf/requests` | `5460f467b` | 6,493 | 841 | 664 | 174 | **11** | 0.017 | 19 MB |
+| `pytest-dev/pytest` | `fdba12e17` | 17,700 | 1,254 | 1,976 | 669 | **95** | 0.048 | 54 MB |
+| `scrapy/scrapy` | `dcaa6ced5` | 11,417 | 850 | 1,829 | 654 | **86** | 0.047 | 41 MB |
+| `sphinx-doc/sphinx` | `e44a40eb2` | 22,413 | 940 | 1,817 | 519 | **74** | 0.041 | 140 MB |
+| **total** | | **107,686** | | **10,771** | **3,338** | **435** | | **732 MB** |
+
+**Disk: 0.73 GB of a 40 GB budget.** Reported again at every phase boundary.
+
+*Eligible* means the commit changed a callable's parameter list, or removed a symbol, **and**
+updated a caller of that symbol in a **different file in the same commit**. That is the class C2
+mutates: reverting the caller half produces a breakage whose answer key was written by the
+repository's own maintainers.
+
+### The selection's prediction held, which is the first thing worth checking
+
+§3 predicted, before any clone, that blocks 1 and 6 would be negative-heavy and blocks 3 and 4
+positive-heavy. Ranked by eligible rate the census gives:
+
+| | repository | eligible rate | predicted |
+|---|---|---|---|
+| most breakage-rich | `encode/httpx` | 0.077 | positive-heavy was predicted for pytest/scrapy; httpx exceeding both is the one miss |
+| | `pytest-dev/pytest` | 0.048 | **positive-heavy — held** |
+| | `scrapy/scrapy` | 0.047 | **positive-heavy — held** |
+| | `sphinx-doc/sphinx` | 0.041 | — |
+| | `django/django` | 0.034 | — |
+| | `pallets/flask` | 0.031 | **negative-heavy — held** |
+| | `fastapi/fastapi` | 0.022 | **negative-heavy — held** |
+| least | `psf/requests` | 0.017 | — |
+
+Four of four directional predictions held; `httpx` was expected to contribute annotation density,
+not the highest breakage rate, and its 0.077 is recorded as a miss rather than smoothed over.
+The spread — a factor of **4.5** between the most and least breakage-rich block — is what the
+per-repository reporting rule exists for: a pooled number that quietly averages `httpx` with
+`requests` would describe no real codebase.
+
+### What every criterion actually measured
+
+- **Multi-author**: the smallest block has **270** contributors, the largest **3,638**. The
+  requirement was 50. The single-author confound is gone by three to seventy times over.
+- **Non-zero base rate**: **435** eligible source commits, against the previous
+  corpus's **zero**. Whether 435 is *enough* is not a question this task may
+  answer by inspection — it is C3's, and C3 runs before any mechanism is measured.
+- **Internal fan-in**: 3,338 commits changed a signature; 435
+  of them (13.0%) also updated an in-repo
+  caller. The other 87.0% changed a
+  contract nothing else in the repository calls — which is itself the population the *negative*
+  class is drawn from, and it is large.
+
+### The answer key does not come from the instrument
+
+`research/invariants_lab/sigscan.py` re-implements signature extraction and reference finding
+from scratch, and is used for the census and for C2. It does **not** import
+`nevertwice/invariants/blast_radius.py`. If the key and the checker shared an extractor, D2's
+tuple-unpacking defect would be a hole in both at once, and the measurement would confirm the
+checker's blind spot rather than expose it. `sigscan` records tuple-unpacking targets from its
+first line of code, precisely because the checker does not.
