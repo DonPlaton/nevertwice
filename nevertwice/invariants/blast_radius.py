@@ -256,6 +256,21 @@ class Shape:
 
 
 @dataclass(frozen=True)
+class ClassShape:
+    """A class as callers can observe it: what it inherits and what it offers.
+
+    The rendered signature includes the sorted public member list, so a class that
+    *grows* a method reads as a change -- which is precisely what a compatible
+    change looks like. Bases stay part of the shape because `isinstance` and the
+    MRO are observable, so widening them is not free the way adding a method is.
+    """
+
+    bases: tuple[str, ...]
+    decorators: tuple[str, ...]
+    members: frozenset[str]
+
+
+@dataclass(frozen=True)
 class Symbol:
     """One named, externally-visible thing in a module."""
 
@@ -264,7 +279,7 @@ class Symbol:
     lineno: int
     signature: str  # the contract: what callers are allowed to rely on
     body_hash: str  # normalised implementation, for "body changed" only
-    shape: Shape | None = None  # callables only; None for classes and constants
+    shape: Shape | ClassShape | None = None  # None for constants
 
     @property
     def short(self) -> str:
@@ -395,6 +410,32 @@ def _func_signature(node: ast.FunctionDef | ast.AsyncFunctionDef) -> str:
     return sig
 
 
+def _class_shape(node: ast.ClassDef) -> ClassShape:
+    bases = tuple(_unparse(b, 40) for b in node.bases)
+    bases += tuple(f"{k.arg}={_unparse(k.value, 30)}" for k in node.keywords)
+    members = frozenset(
+        n.name
+        for n in node.body
+        if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))
+        and not n.name.startswith("_")
+    )
+    return ClassShape(bases, tuple(_unparse(d, 40) for d in node.decorator_list), members)
+
+
+def still_offers(old: ClassShape, new: ClassShape) -> bool:
+    """Does *new* still offer everything *old* did, on the same terms?
+
+    A grown member set is compatible; a shrunk one is not, and that removal is
+    already reported separately as the member's own disappearance. Bases and
+    decorators must match exactly.
+    """
+    return (
+        old.bases == new.bases
+        and old.decorators == new.decorators
+        and old.members <= new.members
+    )
+
+
 def _class_signature(node: ast.ClassDef) -> str:
     bases = [_unparse(b, 40) for b in node.bases]
     bases += [f"{k.arg}={_unparse(k.value, 30)}" for k in node.keywords]
@@ -432,7 +473,8 @@ class _Collector(ast.NodeVisitor):
         self.symbols[q] = Symbol(q, kind, node.lineno, signature, _body_hash(body), shape)
 
     def visit_ClassDef(self, node: ast.ClassDef) -> None:
-        self._record(node, node.name, "class", _class_signature(node), node.body)
+        self._record(node, node.name, "class", _class_signature(node), node.body,
+                     _class_shape(node))
         self.stack.append(node.name)
         for child in node.body:
             self.visit(child)
@@ -452,15 +494,30 @@ class _Collector(ast.NodeVisitor):
     def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> None:
         self._function(node, "async method" if self.stack else "async function")
 
+    def _bind(self, target: ast.AST, node: ast.stmt) -> None:
+        """Record every name a binding introduces, tuples and lists included.
+
+        `A, B, C = load()` binds three module-level names. Recording only
+        `ast.Name` targets meant they were bound by nothing, so the next commit
+        that kept them reported three removals -- 21% of the precision census's
+        false positives, and a plain defect rather than a judgement call.
+        """
+        if isinstance(target, ast.Name):
+            q = self._q(target.id)
+            self.symbols[q] = Symbol(q, "constant", node.lineno, "", _body_hash([node]))
+        elif isinstance(target, (ast.Tuple, ast.List)):
+            for elt in target.elts:
+                self._bind(elt, node)
+        elif isinstance(target, ast.Starred):
+            self._bind(target.value, node)
+        # An Attribute or Subscript target (`obj.x = 1`, `d[k] = 1`) binds nothing
+        # importable, so there is nothing for a caller to depend on.
+
     def visit_Assign(self, node: ast.Assign) -> None:
         if self.stack:
             return  # module-level constants only
         for target in node.targets:
-            if isinstance(target, ast.Name):
-                q = self._q(target.id)
-                self.symbols[q] = Symbol(
-                    q, "constant", node.lineno, "", _body_hash([node])
-                )
+            self._bind(target, node)
 
     def visit_AnnAssign(self, node: ast.AnnAssign) -> None:
         if self.stack or not isinstance(node.target, ast.Name):
@@ -516,6 +573,15 @@ def changed_lines(old: str, new: str) -> set[int]:
     return out
 
 
+def _compatible(prev: "Shape | ClassShape | None", new: "Shape | ClassShape | None") -> bool:
+    """Can no caller observe the difference between these two shapes?"""
+    if isinstance(prev, Shape) and isinstance(new, Shape):
+        return accepts_everything(prev, new)
+    if isinstance(prev, ClassShape) and isinstance(new, ClassShape):
+        return still_offers(prev, new)
+    return False
+
+
 def contract_changes(
     old_src: str, new_src: str, path: str
 ) -> tuple[list[ContractChange], set[str], set[str]]:
@@ -536,11 +602,7 @@ def contract_changes(
             )
         elif prev.signature != sym.signature:
             # The text differs; that is not the same as a caller being able to tell.
-            if (
-                prev.shape is not None
-                and sym.shape is not None
-                and accepts_everything(prev.shape, sym.shape)
-            ):
+            if _compatible(prev.shape, sym.shape):
                 # Callers cannot observe it, so it is an implementation change.
                 if prev.body_hash != sym.body_hash:
                     body_only.add(qualname)

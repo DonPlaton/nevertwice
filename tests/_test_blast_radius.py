@@ -161,6 +161,162 @@ class ContractDiff(unittest.TestCase):
         self.assertEqual(added, {"f"})
 
 
+class AnnotationsAndClassMembers(unittest.TestCase):
+    """D3. Two shapes of one mistake: the text of the contract changed and its
+    runtime meaning did not.
+
+    Annotation-only was 17% of the census's findings and a class gaining a member 4%.
+    `_class_signature` renders bases plus the sorted public member list, so a class
+    growing a method reads as a signature change -- which is exactly what a
+    *compatible* change looks like.
+    """
+
+    def _changes(self, before: str, after: str):
+        changes, _, _ = br.contract_changes(before, after, "lib.py")
+        return sorted((c.qualname, c.reason) for c in changes)
+
+    # --- annotations ------------------------------------------------------
+
+    def test_a_parameter_annotation_appearing_is_not_a_contract_change(self):
+        self.assertEqual(
+            self._changes("def f(a): pass\n", "def f(a: int): pass\n"), [])
+
+    def test_a_return_annotation_appearing_is_not_a_contract_change(self):
+        self.assertEqual(
+            self._changes("def f(a): pass\n", "def f(a) -> str: pass\n"), [])
+
+    def test_an_annotation_changing_is_not_a_contract_change(self):
+        self.assertEqual(
+            self._changes("def f(a: int) -> str: pass\n",
+                          "def f(a: float) -> bytes: pass\n"), [])
+
+    def test_annotating_a_defaulted_parameter_is_not_a_contract_change(self):
+        self.assertEqual(
+            self._changes("def f(a, b=2): pass\n",
+                          "def f(a: int, b: int = 2): pass\n"), [])
+
+    def test_a_default_VALUE_changing_is_not_a_contract_change(self):
+        """A caller that omitted it still binds; what it receives is behaviour."""
+        self.assertEqual(
+            self._changes("def f(a, b=2): pass\n", "def f(a, b=3): pass\n"), [])
+
+    def test_an_annotated_module_constant_keeps_its_binding(self):
+        self.assertEqual(
+            self._changes("TIMEOUT = 5\n", "TIMEOUT: int = 5\n"), [])
+
+    def test_an_annotation_added_to_a_method_is_not_a_contract_change(self):
+        self.assertEqual(
+            self._changes("class C:\n    def m(self, a): pass\n",
+                          "class C:\n    def m(self, a: int) -> None: pass\n"), [])
+
+    # --- class members ----------------------------------------------------
+
+    def test_a_class_gaining_a_public_method_is_not_a_contract_change(self):
+        self.assertEqual(
+            self._changes("class C:\n    def a(self): pass\n",
+                          "class C:\n    def a(self): pass\n    def b(self): pass\n"),
+            [])
+
+    def test_a_class_gaining_a_private_method_is_not_a_contract_change(self):
+        self.assertEqual(
+            self._changes("class C:\n    def a(self): pass\n",
+                          "class C:\n    def a(self): pass\n    def _b(self): pass\n"),
+            [])
+
+    def test_a_class_LOSING_a_public_method_is_still_a_contract_change(self):
+        self.assertEqual(
+            self._changes("class C:\n    def a(self): pass\n    def b(self): pass\n",
+                          "class C:\n    def a(self): pass\n"),
+            [("C", "signature"), ("C.b", "removed")])
+
+    def test_a_class_changing_its_bases_is_still_a_contract_change(self):
+        self.assertEqual(
+            self._changes("class C(A):\n    def a(self): pass\n",
+                          "class C(B):\n    def a(self): pass\n"),
+            [("C", "signature")])
+
+    def test_a_class_gaining_a_base_is_still_a_contract_change(self):
+        """isinstance and MRO are observable, so widening bases is not free."""
+        self.assertEqual(
+            self._changes("class C(A):\n    def a(self): pass\n",
+                          "class C(A, B):\n    def a(self): pass\n"),
+            [("C", "signature")])
+
+    def test_a_class_gaining_a_decorator_is_still_a_contract_change(self):
+        self.assertEqual(
+            self._changes("class C:\n    def a(self): pass\n",
+                          "@final\nclass C:\n    def a(self): pass\n"),
+            [("C", "signature")])
+
+    def test_a_class_gaining_a_member_does_not_chase_references(self):
+        before = {"lib.py": "class C:\n    def a(self): pass\n",
+                  "app.py": "from lib import C\nC()\nC()\n"}
+        after = {"lib.py": "class C:\n    def a(self): pass\n    def b(self): pass\n",
+                 "app.py": "from lib import C\nC()\nC()\n"}
+        v = br.check_sources(before, after, scan=after)
+        self.assertEqual(v.contract_changes, [])
+        self.assertEqual(v.unhandled, {})
+
+
+class TupleUnpackingRebinds(unittest.TestCase):
+    """D2. `visit_Assign` recorded only `ast.Name` targets, so `A, B, C = load()`
+    bound nothing and the three names looked *removed* at the next commit that kept
+    them.
+
+    21% of the census's findings, and the write-up calls it "a plain defect". The
+    answer key in `research/invariants_lab/sigscan.py` has walked tuple targets from
+    its first line of code precisely so this hole is in one instrument, not both.
+    """
+
+    def _names(self, src: str):
+        return sorted(br.extract_symbols(src))
+
+    def _changes(self, before: str, after: str):
+        changes, _, _ = br.contract_changes(before, after, "lib.py")
+        return sorted((c.qualname, c.reason) for c in changes)
+
+    def test_a_tuple_target_binds_every_name(self):
+        self.assertEqual(self._names("A, B, C = load()\n"), ["A", "B", "C"])
+
+    def test_a_list_target_binds_every_name(self):
+        self.assertEqual(self._names("[X, Y] = load()\n"), ["X", "Y"])
+
+    def test_a_starred_target_binds(self):
+        self.assertEqual(self._names("first, *rest = load()\n"), ["first", "rest"])
+
+    def test_a_nested_tuple_target_binds(self):
+        self.assertEqual(self._names("(A, (B, C)) = load()\n"), ["A", "B", "C"])
+
+    def test_chained_assignment_binds_both(self):
+        self.assertEqual(self._names("A = B = load()\n"), ["A", "B"])
+
+    def test_a_surviving_tuple_binding_is_not_a_removal(self):
+        """The defect itself: unchanged code reported three removals."""
+        src = "A, B, C = load()\n"
+        self.assertEqual(self._changes(src, src), [])
+
+    def test_a_tuple_binding_that_gains_a_name_is_not_a_removal(self):
+        self.assertEqual(self._changes("A, B = load()\n", "A, B, C = load()\n"), [])
+
+    def test_losing_one_name_from_a_tuple_is_still_a_removal(self):
+        self.assertEqual(
+            self._changes("A, B, C = load()\n", "A, B = load()\n"),
+            [("C", "removed")])
+
+    def test_a_local_tuple_inside_a_function_is_not_a_module_symbol(self):
+        self.assertEqual(
+            self._names("def f():\n    a, b = load()\n    return a\n"), ["f"])
+
+    def test_a_tuple_rebind_does_not_chase_references(self):
+        """End to end: unchanged tuple bindings, an unrelated edit, no findings."""
+        before = {"lib.py": "A, B, C = load()\ndef f(x): pass\n",
+                  "app.py": "from lib import A, B, C\nprint(A, B, C)\n"}
+        after = {"lib.py": "A, B, C = load()\ndef f(x, y): pass\n",
+                 "app.py": "from lib import A, B, C\nprint(A, B, C)\n"}
+        v = br.check_sources(before, after, scan=after)
+        self.assertEqual([c.qualname for c in v.contract_changes], ["f"])
+
+
 class WidenedSignatures(unittest.TestCase):
     """D1. A signature that still accepts every call the old one accepted cannot
     break a caller, and that is decidable.

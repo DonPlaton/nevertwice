@@ -21,9 +21,9 @@ before its fix existed.
 | # | class | share of the old census | task | state |
 |---|---|---:|---|---|
 | 1 | **widened signature** — a defaulted or keyword-only parameter appeared | 8 of 24 (33%) | D1 | **closed** |
-| 2 | **rebound by tuple unpacking** — `A, B, C = load()` deletes three symbols as far as the extractor knows | 5 of 24 (21%) | D2 | open |
-| 3 | **annotation-only** — types added, runtime identical | 4 of 24 (17%) | D3 | open |
-| 4 | **class gained a member** — a member list growing is what a compatible change looks like | 1 of 24 (4%) | D3 | open |
+| 2 | **rebound by tuple unpacking** — `A, B, C = load()` deletes three symbols as far as the extractor knows | 5 of 24 (21%) | D2 | **closed** |
+| 3 | **annotation-only** — types added, runtime identical | 4 of 24 (17%) | D3 | **closed** |
+| 4 | **class gained a member** — a member list growing is what a compatible change looks like | 1 of 24 (4%) | D3 | **closed** |
 | 5 | **moved and still resolves** — the facade shapes I2 did not solve | 6 of 24 (25%) | D4 | open |
 
 Shares are from `research/blast_radius_precision.json`, the artifact of the run being replaced.
@@ -68,23 +68,43 @@ exist to make that failure mode visible if it is ever reintroduced.
 
 ---
 
-## 2 · Tuple-unpacking rebinds — open, D2
+## 2 · Tuple-unpacking rebinds — closed by D2
 
-`visit_Assign` records only `ast.Name` targets, so `A, B, C = load()` binds nothing as far as the
-extractor is concerned, and the three names look **removed** at the next commit that keeps them.
+**The defect.** `visit_Assign` recorded only `ast.Name` targets, so `A, B, C = load()` bound
+nothing as far as the extractor was concerned, and the three names looked **removed** at the next
+commit that kept them.
 
-The answer key already handles this — `sigscan._bind` walks tuples, lists and starred targets from
-its first line of code, deliberately, so that D2's defect in the checker is not also a hole in the
-ground truth.
+**The fix.** `_Collector._bind` walks the target recursively — tuples, lists and starred targets —
+and stops at `Attribute` and `Subscript` targets, because `obj.x = 1` and `d[k] = 1` bind nothing
+a caller can import.
 
-## 3 · Annotation-only changes, and a class gaining a member — open, D3
+**10 regressions**, in `TupleUnpackingRebinds`. **Five were watched failing**: a tuple target, a
+list target, a starred target, a nested tuple, and losing one name from a tuple. The rest hold the
+line in the other direction — a chained assignment binds both names, a tuple *inside a function*
+is still not a module symbol, and unchanged tuple bindings chase no references end to end.
 
-Two shapes of the same mistake: the text of the contract changed and its runtime meaning did not.
+The answer key never had this hole: `sigscan._bind` walked tuples from its first line of code,
+deliberately, so D2's defect lived in one instrument rather than both.
 
-D1's `Shape` ignores annotations by construction, so the **function** half may already be closed
-as a side effect. That is not the same as being tested, and D3 owns the regressions that decide
-it. The **class** half is untouched: `_class_signature` renders bases plus the sorted public
-member list, and a member list growing is exactly what a compatible change looks like.
+## 3 · Annotation-only changes, and a class gaining a member — closed by D3
+
+Two shapes of one mistake: the text of the contract changed and its runtime meaning did not.
+
+**The prediction, made in writing before the regressions ran, was half right.** D1's `Shape`
+ignores annotations by construction, so five of the seven annotation cases passed the moment they
+were written, as did a class gaining a *private* method — `_class_signature` already filtered
+underscore-prefixed names. Only two of fourteen were **watched failing**, both the class-gained-a-
+*public*-member case.
+
+**The fix.** A `ClassShape` — bases, decorators, and the public member set — beside the rendered
+text, and `still_offers(old, new)` returns true when the bases and decorators match and the member
+set only grew. A member *disappearing* is still reported, and separately as that member's own
+removal, so nothing is lost by the class-level rule.
+
+Bases stay part of the shape on purpose: `isinstance` and the MRO are observable, so widening a
+base list is not free the way adding a method is. Four of the fourteen regressions pin exactly
+that — a changed base, a gained base, a gained decorator, and a lost public method must all still
+fire.
 
 ## 4 · The remaining facade shapes — open, D4
 
