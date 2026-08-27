@@ -69,11 +69,32 @@ LINE_FUZZ = 2
 
 #: Budgets per scope class: (max files, max directories, max changed lines).
 #: Over-reach is a violation just as much as under-reach.
+#:
+#: Calibrated on 2026-08-27 against 150 commits of this repository - see
+#: research/BLAST_RADIUS_THRESHOLDS.md for the rule that chose them (95th percentile of the
+#: class's own observed distribution) and research/BLAST_RADIUS_CALIBRATION.md for the
+#: distribution itself. The shipped guesses were (3, 1, 150) and (12, 4, 500).
 BUDGETS = {
-    "L0": (3, 1, 150),
-    "L1": (12, 4, 500),
+    "L0": (10, 3, 300),
+    "L1": (19, 3, 350),
     "L2": (None, None, None),
 }
+
+#: When a budget applies. ``"declared"`` charges a diff only against a class the caller
+#: actually declared; ``"always"`` also charges it against the class inferred from the diff.
+#:
+#: "always" was the shipped behaviour and it is incoherent. ``_infer_scope`` calls a diff L0
+#: *because* it changed no contract, and the budget then flags it for touching four files -
+#: two rules reading the same evidence and reaching opposite conclusions. Replayed over 150
+#: commits it flagged 83% of them and produced no dependency finding at all. A declaration is
+#: a promise the caller made and may be held to; an inference is this module's own guess and
+#: is not evidence of anything. The constant stays so the old behaviour remains measurable.
+BUDGET_SCOPE = "declared"
+
+#: Force the L2 plan requirement on every repository, rather than only those that opted in.
+#: Opting in means having a ``.nevertwice/`` directory: a convention a codebase does not use
+#: must not manufacture a problem in it. Kept as a constant for the same reason as above.
+PLAN_ALWAYS_REQUIRED = False
 
 #: Directories never scanned for references.
 SKIP_DIRS = frozenset(
@@ -522,7 +543,43 @@ def _refs_in_text(source: str, names: set[str], path: str) -> list[Ref]:
     return out
 
 
+def _tracked_files(root: Path, extensions: set[str]) -> list[Path] | None:
+    """The repository's own files, as git sees them, or None when git cannot say.
+
+    Preferred over walking the tree. ``--exclude-standard`` applies .gitignore, which is the
+    only reliable statement of what belongs to a project: SKIP_DIRS is a hand-kept list and
+    cannot know that ``research/embed_universal/data/`` holds 5.3 GB of vendored clones. A
+    reference inside somebody else's checked-out repository is not a caller of this one, so
+    excluding it makes the answer more correct as well as faster.
+    """
+    listing = _git(["ls-files", "-z", "--cached", "--others", "--exclude-standard"], root)
+    if listing is None:
+        return None
+    found: list[Path] = []
+    for rel in listing.split("\0"):
+        if not rel:
+            continue
+        if Path(rel).suffix not in extensions:
+            continue
+        parts = Path(rel).parts[:-1]
+        if any(part in SKIP_DIRS for part in parts):
+            continue
+        path = root / rel
+        try:
+            if path.stat().st_size > MAX_FILE_BYTES:
+                continue
+        except OSError:
+            continue  # listed but gone: a stale index entry, or a broken link
+        found.append(path)
+        if len(found) >= MAX_SCAN_FILES:
+            break
+    return found
+
+
 def _iter_files(root: Path, extensions: set[str]) -> list[Path]:
+    tracked = _tracked_files(root, extensions)
+    if tracked is not None:
+        return tracked
     found: list[Path] = []
     for dirpath, dirnames, filenames in os.walk(root):
         dirnames[:] = [d for d in dirnames if d not in SKIP_DIRS and not d.startswith(".")]
@@ -784,6 +841,7 @@ def check_sources(
     root: Path | None = None,
     extra_extensions: set[str] | None = None,
     ignore: list[str] | None = None,
+    plan_required: bool = False,
     plan_present: bool = False,
 ) -> Verdict:
     """Pure core. *before*/*after* map relative path -> file text.
@@ -884,8 +942,13 @@ def check_sources(
             f"({len(all_changes)} contract change(s), {len(deleted)} deletion(s))"
         )
 
-    budget_key = declared if declared in BUDGETS else verdict.inferred
-    max_files, max_dirs, max_lines = BUDGETS[budget_key]
+    if declared in BUDGETS:
+        budget_key = declared
+    elif BUDGET_SCOPE == "always":
+        budget_key = verdict.inferred
+    else:
+        budget_key = None
+    max_files, max_dirs, max_lines = BUDGETS.get(budget_key, (None, None, None))
     if max_files is not None and len(touched) > max_files:
         verdict.problems.append(
             f"over-reach: {budget_key} allows {max_files} file(s), diff touches {len(touched)}"
@@ -898,7 +961,7 @@ def check_sources(
         verdict.problems.append(
             f"over-reach: {budget_key} allows {max_lines} line(s), diff changes {total_lines}"
         )
-    if verdict.inferred == "L2" and not plan_present:
+    if verdict.inferred == "L2" and not plan_present and (plan_required or PLAN_ALWAYS_REQUIRED):
         verdict.problems.append(
             f"L2 (architectural) requires a written plan at {_PLAN_FILE.as_posix()}"
         )
@@ -990,6 +1053,10 @@ def check_working_tree(
         declared=declared,
         root=repo,
         extra_extensions=extra_extensions,
+        # Opt-in: a repository signals that it works to the plan convention by having a
+        # .nevertwice/ directory at all. Without one, an L2 diff is still reported as L2 -
+        # the class is evidence - but it is not charged for a file it never agreed to write.
+        plan_required=(repo / _PLAN_FILE.parent).is_dir(),
         plan_present=(repo / _PLAN_FILE).exists(),
     )
 

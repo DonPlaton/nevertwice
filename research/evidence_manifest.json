@@ -75,6 +75,11 @@
       "name": "throwaway store built by examples/scenario_demo.py",
       "committed": true,
       "note": "Deterministic capture with fixed exit codes is task C1."
+    },
+    "nevertwice_history_150": {
+      "name": "the 150 most recent commits reachable from master at 7ef8ad2, each against its parent",
+      "committed": true,
+      "note": "The repository's own history, so it is committed by definition and cannot go missing. Every SHA is listed in research/blast_radius_calibration.json, so the set cannot be reshaped after the fact. No merges exist in this repository, so no merge policy was needed. One repository by one author: a budget derived from it describes it."
     }
   },
   "environments": {
@@ -469,6 +474,11 @@
     "research/BLAST_RADIUS_THRESHOLDS.md": {
       "governance": "exempt",
       "reason": "thresholds for the blast-radius calibration, declared before the run per hard rule 2.6. Its numbers are prospective decision rules - a flag-rate ceiling, a percentile rule for the budgets, a cost ceiling quoted from the integration spec - not measurements to reproduce. The retrospective figures it cites as motivation are the twelve-commit spot check recorded in .loop/STATE.md, which is untracked working record rather than published evidence; every number this run produces is published in research/BLAST_RADIUS_CALIBRATION.md, which is governed."
+    },
+    "research/BLAST_RADIUS_CALIBRATION.md": {
+      "governance": "backlog",
+      "budget": 68,
+      "note": "A research write-up, registered the way every other one here is. Its six load-bearing numbers - the ones the T1/T2 decision rests on - are registered as claims and checked against the artifact by tests/_test_blast_radius_calibration.py, which also re-checks the thresholds themselves. The distribution tables are the backlog. The cost figure is deliberately NOT a claim: it points at a field the artifact declares volatile, so every regeneration would move it and break the claim. T4 is enforced against the artifact directly instead."
     }
   },
   "claims": [
@@ -6302,6 +6312,154 @@
       ],
       "stale": "the LongMemEval-oracle dataset is third-party and not committed (research/data/longmemeval_oracle.json is absent here), and no content hash was recorded when the number was produced, so the run cannot be reproduced or even pinned to a revision",
       "withdrawn_on": "2026-08-25"
+    },
+    {
+      "id": "blast_radius.shipped.flag_rate",
+      "statement": "with the budgets it shipped with, the blast-radius checker flags 69.3% of this repository's commits (104 of 150)",
+      "value": 0.6933,
+      "printed": [
+        "69.3%",
+        "104"
+      ],
+      "unit": "flag rate",
+      "dataset": "nevertwice_history_150",
+      "environment": "stdlib_only",
+      "n": 150,
+      "command": "python research/blast_radius_calibration.py --commits 150",
+      "raw": "research/blast_radius_calibration.json",
+      "pointer": "arms.shipped.summary.flag_rate",
+      "ci": {
+        "method": "wilson",
+        "level": 0.95,
+        "low": 0.6155,
+        "high": 0.7615
+      },
+      "cited_in": [],
+      "commit": "6ef827dcddfaa656d1ce617f8e3540bc3cec0262",
+      "caveat": "The baseline, restored from three module constants rather than a forked copy. 94 of those 104 flags are budget or plan complaints carrying no dependency information at all.",
+      "produced_by": [
+        "research/blast_radius_calibration.py"
+      ]
+    },
+    {
+      "id": "blast_radius.shipped.budget_or_plan_only",
+      "statement": "94 of the 104 commits the shipped checker flags are flagged only by a budget or plan-protocol complaint, with no dependency finding",
+      "value": 94,
+      "printed": [
+        "94",
+        "104"
+      ],
+      "unit": "commits",
+      "dataset": "nevertwice_history_150",
+      "environment": "stdlib_only",
+      "n": 150,
+      "command": "python research/blast_radius_calibration.py --commits 150",
+      "raw": "research/blast_radius_calibration.json",
+      "pointer": "arms.shipped.summary.commits_flagged_only_by_budget_or_plan",
+      "ci": null,
+      "cited_in": [],
+      "commit": "6ef827dcddfaa656d1ce617f8e3540bc3cec0262",
+      "ci_note": "a count over a fixed, fully enumerated set - every commit is in the artifact",
+      "produced_by": [
+        "research/blast_radius_calibration.py"
+      ]
+    },
+    {
+      "id": "blast_radius.calibrated.flag_rate",
+      "statement": "after calibration the checker flags 6.7% of commits (10 of 150), against a 20% ceiling declared before the run",
+      "value": 0.0667,
+      "printed": [
+        "6.7%",
+        "10"
+      ],
+      "unit": "flag rate",
+      "dataset": "nevertwice_history_150",
+      "environment": "stdlib_only",
+      "n": 150,
+      "command": "python research/blast_radius_calibration.py --commits 150",
+      "raw": "research/blast_radius_calibration.json",
+      "pointer": "arms.undeclared.summary.flag_rate",
+      "ci": {
+        "method": "wilson",
+        "level": 0.95,
+        "low": 0.0366,
+        "high": 0.1184
+      },
+      "cited_in": [],
+      "commit": "6ef827dcddfaa656d1ce617f8e3540bc3cec0262",
+      "caveat": "T1. Measured on the undeclared arm, which is what a repository that declares no scope actually sees.",
+      "produced_by": [
+        "research/blast_radius_calibration.py"
+      ]
+    },
+    {
+      "id": "blast_radius.calibrated.budget_or_plan_only",
+      "statement": "zero of the surviving flags are budget or plan-protocol complaints",
+      "value": 0,
+      "printed": [
+        "0"
+      ],
+      "unit": "commits",
+      "dataset": "nevertwice_history_150",
+      "environment": "stdlib_only",
+      "n": 150,
+      "command": "python research/blast_radius_calibration.py --commits 150",
+      "raw": "research/blast_radius_calibration.json",
+      "pointer": "arms.undeclared.summary.commits_flagged_only_by_budget_or_plan",
+      "ci": null,
+      "cited_in": [],
+      "commit": "6ef827dcddfaa656d1ce617f8e3540bc3cec0262",
+      "ci_note": "T2. A count over a fully enumerated set, and the gate the mechanism had to pass.",
+      "produced_by": [
+        "research/blast_radius_calibration.py"
+      ]
+    },
+    {
+      "id": "blast_radius.dependency_finding_commits",
+      "statement": "10 of 150 commits carry a dependency finding, and the same 10 do so in every arm",
+      "value": 10,
+      "printed": [
+        "10",
+        "150"
+      ],
+      "unit": "commits",
+      "dataset": "nevertwice_history_150",
+      "environment": "stdlib_only",
+      "n": 150,
+      "command": "python research/blast_radius_calibration.py --commits 150",
+      "raw": "research/blast_radius_calibration.json",
+      "pointer": "arms.undeclared.summary.commits_with_a_dependency_finding",
+      "ci": null,
+      "cited_in": [],
+      "commit": "6ef827dcddfaa656d1ce617f8e3540bc3cec0262",
+      "caveat": "Whether these 10 findings are CORRECT is not settled here - the largest is a compatibility facade that almost certainly is not a real break. That is I2, and whether the tool is worth having at all is I4.",
+      "ci_note": "a count over a fully enumerated set. The proportion 10/150 has a Wilson 95% interval of 0.037-0.118, but the published value is the count, and an interval on a different statistic is not this claim's interval.",
+      "produced_by": [
+        "research/blast_radius_calibration.py"
+      ]
+    },
+    {
+      "id": "blast_radius.declared.over_reach_commits",
+      "statement": "against the calibrated budgets, 6 of 150 commits over-reach a declared scope",
+      "value": 6,
+      "printed": [
+        "6"
+      ],
+      "unit": "commits",
+      "dataset": "nevertwice_history_150",
+      "environment": "stdlib_only",
+      "n": 150,
+      "command": "python research/blast_radius_calibration.py --commits 150",
+      "raw": "research/blast_radius_calibration.json",
+      "pointer": "arms.declared.summary.commits_flagged_only_by_budget_or_plan",
+      "ci": null,
+      "cited_in": [],
+      "commit": "6ef827dcddfaa656d1ce617f8e3540bc3cec0262",
+      "ci_note": "a count over a fully enumerated set",
+      "caveat": "All six are L0. The L1 and L2 budgets never fired, so the mechanism is calibrated on one class of three. L1's 95th percentile is its maximum (n=9).",
+      "produced_by": [
+        "research/blast_radius_calibration.py"
+      ]
     }
   ],
   "external_citations": [

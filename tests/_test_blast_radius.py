@@ -225,8 +225,11 @@ class OverReach(unittest.TestCase):
         self.assertTrue(any("declared L0" in p for p in verdict.problems))
 
     def test_declared_l0_but_too_many_files(self):
-        before = {f"m{i}.py": "x = 1\n" for i in range(6)}
-        after = {f"m{i}.py": "x = 2\n" for i in range(6)}
+        # Derived from the budget rather than typed: a hand-written 6 was a second copy of
+        # BUDGETS that silently stopped exceeding it when I1 recalibrated L0 from 3 to 10.
+        n = br.BUDGETS["L0"][0] + 1
+        before = {f"m{i}.py": "x = 1\n" for i in range(n)}
+        after = {f"m{i}.py": "x = 2\n" for i in range(n)}
         verdict = br.check_sources(before, after, scan={}, declared="L0")
         self.assertFalse(verdict.ok)
         self.assertTrue(any("over-reach" in p for p in verdict.problems))
@@ -241,18 +244,104 @@ class OverReach(unittest.TestCase):
         self.assertTrue(verdict.ok, verdict.render())
         self.assertEqual(verdict.inferred, "L0")
 
-    def test_l2_requires_a_written_plan(self):
+    def test_l2_requires_a_written_plan_once_the_repo_opts_in(self):
         before = {f"pkg{i}/m.py": "def f(): pass\n" for i in range(5)}
         after = {f"pkg{i}/m.py": "def g(): pass\n" for i in range(5)}
-        verdict = br.check_sources(before, after, scan={}, plan_present=False)
+        verdict = br.check_sources(before, after, scan={},
+                                   plan_required=True, plan_present=False)
         self.assertEqual(verdict.inferred, "L2")
         self.assertTrue(any("plan" in p for p in verdict.problems))
 
     def test_l2_with_a_plan_clears_the_plan_problem(self):
         before = {f"pkg{i}/m.py": "def f(): pass\n" for i in range(5)}
         after = {f"pkg{i}/m.py": "def f(): pass\n# note\n" for i in range(5)}
-        verdict = br.check_sources(before, after, scan={}, plan_present=True)
+        verdict = br.check_sources(before, after, scan={},
+                                   plan_required=True, plan_present=True)
         self.assertFalse(any("plan" in p for p in verdict.problems))
+
+
+class Calibrated(unittest.TestCase):
+    """I1: what the checker stopped saying, and why.
+
+    Replayed over 150 commits with the shipped settings the checker flagged 83% of them and
+    produced no dependency finding at all. Both causes are policy, not arithmetic, so both are
+    pinned here rather than left to a constant somebody will retune.
+    """
+
+    def test_an_undeclared_diff_is_never_charged_a_budget(self):
+        """The inference is this module's own guess, not evidence against the caller.
+
+        _infer_scope calls a diff L0 *because* it changed no contract; charging that same diff
+        for touching six files is two rules reading one piece of evidence and disagreeing.
+        """
+        n = br.BUDGETS["L0"][0] + 1
+        before = {f"m{i}.py": "x = 1\n" for i in range(n)}
+        after = {f"m{i}.py": "x = 2\n" for i in range(n)}
+        verdict = br.check_sources(before, after, scan={})
+        self.assertEqual(verdict.inferred, "L0")
+        self.assertTrue(verdict.ok, verdict.render())
+        self.assertFalse(any("over-reach" in p for p in verdict.problems))
+
+    def test_a_declared_scope_is_still_held_to_its_budget(self):
+        """Silencing the inference must not silence the promise."""
+        n = br.BUDGETS["L0"][0] + 1
+        before = {f"m{i}.py": "x = 1\n" for i in range(n)}
+        after = {f"m{i}.py": "x = 2\n" for i in range(n)}
+        verdict = br.check_sources(before, after, scan={}, declared="L0")
+        self.assertFalse(verdict.ok)
+        self.assertTrue(any("over-reach" in p for p in verdict.problems))
+
+    def test_the_shipped_behaviour_is_still_reachable_for_measurement(self):
+        """BUDGET_SCOPE exists so the negative result stays reproducible."""
+        n = br.BUDGETS["L0"][0] + 1
+        before = {f"m{i}.py": "x = 1\n" for i in range(n)}
+        after = {f"m{i}.py": "x = 2\n" for i in range(n)}
+        previous = br.BUDGET_SCOPE
+        br.BUDGET_SCOPE = "always"
+        try:
+            verdict = br.check_sources(before, after, scan={})
+        finally:
+            br.BUDGET_SCOPE = previous
+        self.assertFalse(verdict.ok)
+        self.assertTrue(any("over-reach" in p for p in verdict.problems))
+
+    def test_a_repo_that_never_opted_in_is_not_asked_for_a_plan(self):
+        before = {f"pkg{i}/m.py": "def f(): pass\n" for i in range(5)}
+        after = {f"pkg{i}/m.py": "def g(): pass\n" for i in range(5)}
+        verdict = br.check_sources(before, after, scan={})
+        self.assertEqual(verdict.inferred, "L2", "the class is still reported")
+        self.assertFalse(any("plan" in p for p in verdict.problems))
+
+    def test_the_l2_class_survives_the_silence(self):
+        """Opting out of the demand must not opt out of the diagnosis."""
+        before = {f"pkg{i}/m.py": "def f(): pass\n" for i in range(5)}
+        after = {f"pkg{i}/m.py": "def g(): pass\n" for i in range(5)}
+        self.assertEqual(br.check_sources(before, after, scan={}).to_dict()["inferred"], "L2")
+
+    def test_the_working_tree_opts_in_by_having_a_dot_nevertwice_directory(self):
+        """This repository has none, so the live check must stay silent about plans."""
+        self.assertFalse((ROOT / ".nevertwice").exists())
+        verdict = br.check_working_tree(ROOT)
+        self.assertFalse(any("plan" in p for p in verdict.problems), verdict.render())
+
+    def test_the_scan_asks_git_rather_than_walking_everything(self):
+        """5.3 GB of vendored clones live under research/embed_universal/data/ here.
+
+        SKIP_DIRS cannot know that - it is a hand-kept list that does not name `data` - so the
+        walk used to descend into other people's repositories, which is both slow and wrong:
+        a reference inside a vendored checkout is not a caller of this project.
+        """
+        listed = br._tracked_files(ROOT, {".py"})
+        self.assertIsNotNone(listed, "git should be able to list this repository")
+        offenders = [p for p in listed if "embed_universal" in p.as_posix()
+                     and "/data/" in p.as_posix()]
+        self.assertEqual(offenders, [])
+        self.assertTrue(any(p.name == "blast_radius.py" for p in listed),
+                        "the scan still has to see the repository's own code")
+
+    def test_the_walk_is_still_there_when_git_is_not(self):
+        found = br._iter_files(ROOT / "nevertwice" / "invariants", {".py"})
+        self.assertTrue(any(p.name == "blast_radius.py" for p in found))
 
 
 class NoiseControl(unittest.TestCase):

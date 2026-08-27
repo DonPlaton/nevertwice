@@ -50,6 +50,7 @@ click from here, and `tests/_test_docs_map.py` fails the build if that stops bei
 | [`research/BASELINES.md`](../research/BASELINES.md) | The baselines a headline has to clear before it may be published, and which ones have not been run |
 | [`research/PREREGISTRATION.md`](../research/PREREGISTRATION.md) | What the confirmatory run will test, fixed before it runs: hypotheses, endpoints, decision rules, and how large a corpus each needs |
 | [`research/BLAST_RADIUS_THRESHOLDS.md`](../research/BLAST_RADIUS_THRESHOLDS.md) | What the blast-radius checker has to achieve to survive calibration, and the decision to delete it if it does not - written before the first commit was replayed |
+| [`research/BLAST_RADIUS_CALIBRATION.md`](../research/BLAST_RADIUS_CALIBRATION.md) | What 150 commits of real history said about it: the flag rate fell from 69.3% to 6.7% without losing a single dependency finding |
 | [`research/evidence_manifest.json`](../research/evidence_manifest.json) | Every published number, with its dataset, sample size, model, command, raw file and caveat |
 | [`research/data/README.md`](../research/data/README.md) | Fetching the LongMemEval dataset the benchmarks need |
 

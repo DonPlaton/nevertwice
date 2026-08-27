@@ -15,6 +15,7 @@
   "rule": "every artifact backing a claim the project still publishes, plus the F-phase outputs",
   "in_scope": [
    "research/ablations.json",
+   "research/blast_radius_calibration.json",
    "research/capability_grid.json",
    "research/cheap_baselines.json",
    "research/forgetting.json",
@@ -27,6 +28,7 @@
    "research/uncertainty.json"
   ],
   "live_claims_backed_by": [
+   "research/blast_radius_calibration.json",
    "research/forgetting.json",
    "research/latency_bench.json",
    "research/longitudinal_results.json",
@@ -84,7 +86,7 @@
    "kind": "deterministic",
    "note": "the precision/recall curve over the firing threshold",
    "command": "python research/matched_conditions.py --save",
-   "committed_sha256": "2fcd62cf1854ca7286aec48d77abb271221cf6b39a8d528e894e399440aed730",
+   "committed_sha256": "1e61453cc193808887c9cf2ffa7b38f81c9d04c8e3520a89d112cb063c0c40f9",
    "committed_canonical_sha256": "503411fbb513dc7e7318d5e1b7fe6aa77fc4cc543628f44199af78dd57d6e1cd",
    "volatile_fields": [
     "latency_ms_per_episode"
@@ -94,7 +96,7 @@
    "requires": [],
    "missing_modules": [],
    "seconds": 0.1,
-   "regenerated_sha256": "427c3ddd7050bc37a6210b4945f0a6a9bef0b9dc04eb01f78c501896553b35bb",
+   "regenerated_sha256": "79713cb81eb092b399aa996d5c1a3578976f92e6962426b6730fa61aa8504497",
    "regenerated_canonical_sha256": "503411fbb513dc7e7318d5e1b7fe6aa77fc4cc543628f44199af78dd57d6e1cd",
    "status": "reproduced",
    "explain": "byte-different only in the declared volatile fields (latency_ms_per_episode): everything that should reproduce did"
@@ -105,7 +107,7 @@
    "kind": "deterministic",
    "note": "the six B5 baselines at a matched false-alarm rate",
    "command": "python research/cheap_baselines.py --save",
-   "committed_sha256": "6d612012378a5c506df5abeec8e15142ed59e04c3203a7c9123778d2d297abb3",
+   "committed_sha256": "8f0b6fb446652dd79b9081deaebd6386be98d837da111f7a1ccb2c5c5a01fed6",
    "committed_canonical_sha256": "2452a3e01fe1089a348b45cc5ef72bdb7df08e1915ad6abe14c5ae56b45ccd98",
    "volatile_fields": [
     "latency_ms_per_episode"
@@ -114,8 +116,8 @@
    "missing_inputs": [],
    "requires": [],
    "missing_modules": [],
-   "seconds": 0.2,
-   "regenerated_sha256": "bad868a4355386f13603b22123f0b86d8fe44facdbdfd718f4caa3c64c3b414c",
+   "seconds": 0.1,
+   "regenerated_sha256": "1731feb1b12c08a5b81d942eacaacc5404e8d8d2f8cbf839a0ddc85c421a5ba4",
    "regenerated_canonical_sha256": "2452a3e01fe1089a348b45cc5ef72bdb7df08e1915ad6abe14c5ae56b45ccd98",
    "status": "reproduced",
    "explain": "byte-different only in the declared volatile fields (latency_ms_per_episode): everything that should reproduce did"
@@ -133,7 +135,7 @@
    "missing_inputs": [],
    "requires": [],
    "missing_modules": [],
-   "seconds": 0.2,
+   "seconds": 0.1,
    "regenerated_sha256": "8931f566878edd0a427d8b1df666bb0285362fea2883f02870d66f94fd7537f2",
    "regenerated_canonical_sha256": "20007c2d18b1da0962941f1b050a0557e158c4dc5bdcfcc3f85c9529723317eb",
    "status": "reproduced"
@@ -151,7 +153,7 @@
    "missing_inputs": [],
    "requires": [],
    "missing_modules": [],
-   "seconds": 2.0,
+   "seconds": 2.1,
    "regenerated_sha256": "3bb56bd497c005dc81ae90d739cc0b0fdcb2a7c3f3bda0e82cf6f5c8aae38fb2",
    "regenerated_canonical_sha256": "c843b786275444b902fc1115539f631b2da69bdf0fd5ba36cc42a824e6a87102",
    "status": "reproduced"
@@ -169,7 +171,7 @@
    "missing_inputs": [],
    "requires": [],
    "missing_modules": [],
-   "seconds": 19.0,
+   "seconds": 3.4,
    "regenerated_sha256": "58105186c462de5fc61c35f6d57dc4226c74655adfbfdf9256b7795d8b612715",
    "regenerated_canonical_sha256": "c3829d019f19a7c0761fe8a47264c95d17c56658ac5c284d36f62497da12b807",
    "status": "reproduced"
@@ -207,7 +209,7 @@
     "numpy"
    ],
    "missing_modules": [],
-   "seconds": 3.8,
+   "seconds": 3.6,
    "regenerated_sha256": "3675985c91b12f2e71f82f547ecff84162395cfb5595f6a6490c3b679d8d2e83",
    "regenerated_canonical_sha256": "d8c2054105c0af40a517bd0f58a24d3e63d45ffeb6178293786cc0017b11b7f3",
    "status": "reproduced"
@@ -231,13 +233,34 @@
    "status": "reproduced"
   },
   {
+   "file": "research/blast_radius_calibration.json",
+   "task": "I1",
+   "kind": "deterministic",
+   "note": "replays the blast-radius checker over this repository's history. Deterministic given the same 150 commits - the per-commit timings are the only thing that measures the machine, and they are declared volatile. Needs FULL history: a shallow clone cannot reach the 150th ancestor and the run will come up short.",
+   "command": "python research/blast_radius_calibration.py --commits 150",
+   "committed_sha256": "c886662337a547854f83fa4f06f853ac214cf236b14402dd57696cf902333f4c",
+   "committed_canonical_sha256": "dd30b0e27df2c86fe2d058c0c4d07e96a1d5054ce678e74160f34d05afca2faa",
+   "volatile_fields": [
+    "seconds"
+   ],
+   "committed_present": true,
+   "missing_inputs": [],
+   "requires": [],
+   "missing_modules": [],
+   "seconds": 109.6,
+   "regenerated_sha256": "2bee06444d29cccd1d274b965d82a112226ff356cd7b6951551e16dfc243e961",
+   "regenerated_canonical_sha256": "dd30b0e27df2c86fe2d058c0c4d07e96a1d5054ce678e74160f34d05afca2faa",
+   "status": "reproduced",
+   "explain": "byte-different only in the declared volatile fields (seconds): everything that should reproduce did"
+  },
+  {
    "file": "research/latency_bench.json",
    "task": "prior",
    "kind": "machine-dependent",
    "note": "measures THIS machine. The same minimum-of-five statistic moved by about a third between sessions on one box, so byte-identity is not the test - the order of magnitude is.",
    "command": "python research/latency_bench.py --save",
-   "committed_sha256": "6fb12803542026700ef59fa84e0374e50557150a7b3a5051b31af6a00fd92526",
-   "committed_canonical_sha256": "c9288ceaa03fa9538d91cc15398854589833c67cb03b9bfcae2b7a865825cdff",
+   "committed_sha256": "85724f1049e8fd13cdb0e5f996a745cacf08d04f45a280a0637acb398843df8d",
+   "committed_canonical_sha256": "d8331cb1003ab515ae6c4ddbd5fc27e032cf57006ed1effcd189d0d42e3a431d",
    "volatile_fields": [],
    "committed_present": true,
    "missing_inputs": [],
@@ -287,13 +310,13 @@
   }
  ],
  "summary": {
-  "deterministic": 8,
-  "reproduced": 8,
+  "deterministic": 9,
+  "reproduced": 9,
   "not_reproduced": 0,
   "skipped": 3
  },
  "verdict": [
-  "All 8 attempted deterministic artifacts regenerated BYTE-IDENTICAL from this clone, with no author help. That is what F7's exit criterion asks for, on the artifacts it can ask it of.",
+  "All 9 attempted deterministic artifacts regenerated BYTE-IDENTICAL from this clone, with no author help. That is what F7's exit criterion asks for, on the artifacts it can ask it of.",
   "Deliberately NOT reproduced here, and each says why in the table: research/latency_bench.json (machine-dependent), research/capability_grid.json (needs-hardware), research/longmem_results.json (needs-absent-input). A package that quietly re-ran only the easy artifacts and printed 'all reproduced' would be worse than none.",
   "Inputs this clone does not carry: research/capability_grid.json needs local Qwen2.5-Instruct weights, a CUDA GPU, torch, transformers; research/longmem_results.json needs research/data/longmemeval_oracle.json. Every claim resting on those is already withdrawn as stale in the evidence manifest, so nothing published depends on an artifact a stranger cannot rebuild.",
   "31 other result files under research/ are deliberately out of scope: they back only claims already withdrawn as stale, or no claim at all. Every artifact behind a claim the project still publishes IS in the manifest, and that is checked against the evidence manifest rather than maintained by hand.",

@@ -92,6 +92,15 @@ ARTIFACTS = [
      "command": ["python", "research/longitudinal_improvement.py", "--sweep", "--save"],
      "kind": DETERMINISTIC, "task": "prior",
      "inputs": [], "note": "the active-vs-inject token ratio"},
+    {"file": "research/blast_radius_calibration.json",
+     "command": ["python", "research/blast_radius_calibration.py", "--commits", "150"],
+     "kind": DETERMINISTIC, "task": "I1",
+     "inputs": [".git"],
+     "volatile": ["seconds"],
+     "note": "replays the blast-radius checker over this repository's history. Deterministic "
+             "given the same 150 commits - the per-commit timings are the only thing that "
+             "measures the machine, and they are declared volatile. Needs FULL history: a "
+             "shallow clone cannot reach the 150th ancestor and the run will come up short."},
     {"file": "research/latency_bench.json",
      "command": ["python", "research/latency_bench.py", "--save"],
      "kind": MACHINE, "task": "prior", "inputs": [],
