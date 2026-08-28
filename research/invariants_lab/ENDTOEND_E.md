@@ -174,3 +174,102 @@ first time it has been observed on a stand rather than on a corpus.
 whole pool** — 53 benefit trials and 53 harm trials, one pass, no interim looks and no early
 stop. Running more than the requirement adds power; it does not change the threshold, which stays
 where §6 put it.
+
+---
+
+## 10. E3 and E4 — the result, and it splits
+
+53 benefit trials and 53 harm trials, `qwen3-coder:30b`, temperature 0.2, one pass, no interim
+looks. **`corpus_dev` — in sample.**
+
+### The four-way table
+
+| | count |
+|---|---|
+| **fixed** — off fails, on passes | **2** |
+| **broken** — off passes, on fails | **1** |
+| **ignored** — the mechanism fired and the outcome did not change | 17 |
+| discordant pairs | **3** |
+| exact McNemar | **p = 1** |
+
+| | |
+|---|---|
+| trials | 53 |
+| **usable** | **46** — 7 excluded, reasons below |
+| base rate, the off arm leaves a non-binding call | **0.174** [0.09, 0.31] — 8 of 46 |
+| on-arm failures | 7 of 46 |
+| the mechanism fired on | 24 of 53 |
+
+### Harm — the half nobody had measured
+
+| | |
+|---|---|
+| harm trials, on trees where every call already binds | **53**, all usable |
+| **the mechanism fired on correct code** | **0** |
+| **false-flag repair** | **0** |
+| of which broke it | 0 |
+| **harm rate** (`broken` + false-flag repair) / 99 | **0.010**, ceiling 0.05 |
+
+**Harm passes, and the reason is the cleanest number in the run: `decidable-only` produced zero
+findings on 53 files where nothing was wrong.** F1 measured that property on a silence pool of
+commits; this is the first time it has been observed on files an agent was about to edit. A
+mechanism that never speaks about correct code cannot cause a repair to correct code, and the
+40-line arm that exists to catch that is empty.
+
+### Net benefit — not demonstrated, and the reason was written down before the run
+
+**3 discordant pairs.** An exact sign test needs **6 one way** to reject at α = 0.05, so **no
+arrangement of 3 pairs could have produced a significant result.** The run is underpowered, and
+by exactly the margin `§2` predicted before it ran:
+
+| | |
+|---|---|
+| the pool caps trials at | 53 |
+| usable after exclusions | 46 |
+| base rate needed for the pool to resolve the effect (§2) | **0.189** |
+| base rate measured | **0.174** |
+| trials the measured base rate requires | **58** |
+
+**§2 was written before the probe and said that a base rate below 0.189 could not be resolved even
+using every task in the pool. The measured base rate is 0.174.** The stand fell short of its own
+requirement by four trials' worth of base rate, and it said in advance that it might.
+
+That is the honest statement of the outcome:
+
+> **G-C's harm half passes. Its benefit half is inconclusive, not negative.** 2 fixed against
+> 1 broken is the direction the mechanism claims and nowhere near enough to assert it.
+
+## 11. E5 — the audit, and it found something
+
+**The judge, against an instrument it did not write.** Every call in all 53 stale trees and all 53
+maintainer trees was replayed through **`inspect.Signature.bind`**, a real `Signature` rebuilt from
+the AST. The judge agreed on **52 of 53** in both directions and abstained on none.
+
+**The one disagreement is a defect in the judge, and it is named.** On
+`tests/urlpatterns_reverse/namespace_urls.py` the judge returns *unusable — no definitions left*.
+That file is a Django URLconf: it legitimately contains no `def` or `class`, only `urlpatterns`
+with `include(...)` calls. The guard exists so that "delete the call site" cannot score as a fix,
+and the `was - now` check already enforces that properly; the extra *"the file must contain at
+least one definition"* clause is redundant and wrongly excludes any file that has none.
+
+**Its cost, bounded exactly:** 4 tasks were excluded for that reason, and reading the pool shows
+**1** of them is the defect — the other 3 are answers that genuinely contained no definitions,
+which is what the guard is for. So the defect cost **1 task of 53**, excluded from *both* arms, and
+it cannot move the result in either direction.
+
+**It was found before the numbers were quoted and it was not fixed mid-run**, because a stand
+re-run after seeing its own result is a stand tuned once. The fix and its regression belong to the
+next run, which gains one task and still does not reach 58.
+
+### The rest of the audit
+
+| | |
+|---|---|
+| usable | 46 of 53 |
+| unusable: no definitions in the answer | 6 events / 4 tasks — 1 the judge defect above, 3 genuine |
+| unusable: the answer did not parse | 1 |
+| unusable: the answer lost definitions | 2 |
+| collapsed? | **no** — both arms produced failures (8 off, 7 on) and the mechanism spoke on 24 |
+
+Nothing here was scored as a pass because it could not be graded. Both arms' failure counts are
+reported so an arm that collapsed would be visible rather than flattering, and neither did.

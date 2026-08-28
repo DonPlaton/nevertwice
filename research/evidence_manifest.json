@@ -312,7 +312,7 @@
   },
   "research/invariants_lab/README.md": {
    "governance": "backlog",
-   "budget": 55,
+   "budget": 58,
    "note": "Task T5 of the invariants lab: the write-up that ties the six mechanisms together. Every number on it is quoted from one of the per-mechanism documents registered beside it and regenerates from the harness that produced it. Two mechanisms passed their gates, four did not, and the cross-cutting finding -- that scope rather than accuracy is what buys silence -- is stated as an observation across five measured flag rates rather than as a law."
   },
   "research/invariants_lab/TOGETHER_T1.md": {
@@ -658,8 +658,18 @@
   },
   "research/invariants_lab/ENDTOEND_E.md": {
    "governance": "backlog",
-   "budget": 38,
+   "budget": 76,
    "note": "Phase E of the invariants lab, and E4 is G-C: whether an agent fixes a stale caller better with the mechanism than without, with harm counted separately. Every number is in sample -- the held-out corpus does not exist, see HELDOUT_H3_BLOCKED.md."
+  },
+  "research/invariants_lab/VERDICT_G1.md": {
+   "governance": "backlog",
+   "budget": 57,
+   "note": "Task G1: the GO/NO-GO. NO-GO, with each gate's declared threshold beside its measured value -- G-A passes, G-B is unevaluable because no held-out corpus exists, and G-C's harm half passes while its benefit half is inconclusive at 3 discordant pairs. All numbers in sample."
+  },
+  "research/invariants_lab/SHIP_G4.md": {
+   "governance": "backlog",
+   "budget": 88,
+   "note": "Task G4: the invariants/v3 write-up for a reader outside this project -- what finishing four half-built mechanisms showed, why abstention is the only lever that moved a flag rate by an order of magnitude, and why it is not general."
   }
  },
  "claims": [

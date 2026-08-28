@@ -26,11 +26,21 @@ This page is the result of `invariants/v2`, and every number on it was measured 
 eight repositories the defect classes were found on — in sample, and not evidence about a ninth
 repository. `GOAL-SHIP.md` picks that up. Its documents, as they land:
 
+**It finished, and the verdict is NO-GO** — [`VERDICT_G1.md`](VERDICT_G1.md). The write-up for a
+reader outside this project is [`SHIP_G4.md`](SHIP_G4.md).
+
 | task | what it settles | page |
 |---|---|---|
 | F0 | the eight become a frozen development set; the held-out corpus is sealed until Phase V | [`CORPORA.md`](CORPORA.md) |
-| F1 | abstention — what emitting only decidable findings costs in recall and buys in silence | [`ABSTENTION_F1.md`](ABSTENTION_F1.md) |
+| F1 | abstention — flag rate 0.278 to 0.010, and the margin over `git grep` doubles | [`ABSTENTION_F1.md`](ABSTENTION_F1.md) |
+| F2 | the declared surface F2 wanted is not present in found history | [`SURFACE_F2.md`](SURFACE_F2.md) |
 | F3 | the ratchet's three unaudited axes, against instruments nobody here wrote | [`AXES_F3.md`](AXES_F3.md) |
+| F4 | `scale`'s static half on quadratic fixes real maintainers made: 0 of 7 | [`QUADRATIC_F4.md`](QUADRATIC_F4.md) |
+| F5 | the cold-start experiment X1 named, refused on its own arithmetic | [`COLDSTART_F5.md`](COLDSTART_F5.md) |
+| H1 | the code freeze and every Phase V and E threshold, before the first clone | [`PREREGISTRATION-SHIP.md`](PREREGISTRATION-SHIP.md) |
+| H2 | thirty held-out repositories and a prediction per block | [`HELDOUT_H2.md`](HELDOUT_H2.md) |
+| H3 | blocked: DNS resolves nothing, so G-B is unevaluable rather than failed | [`HELDOUT_H3_BLOCKED.md`](HELDOUT_H3_BLOCKED.md) |
+| E | the end-to-end gate: harm passes at 0.010, benefit inconclusive at 3 discordant pairs | [`ENDTOEND_E.md`](ENDTOEND_E.md) |
 
 ---
 

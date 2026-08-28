@@ -87,6 +87,8 @@ click from here, and `tests/_test_docs_map.py` fails the build if that stops bei
 | [`research/invariants_lab/HELDOUT_H2.md`](../research/invariants_lab/HELDOUT_H2.md) | Thirty repositories across six domains, why each domain, and what every block is predicted to show - committed before the first clone |
 | [`research/invariants_lab/HELDOUT_H3_BLOCKED.md`](../research/invariants_lab/HELDOUT_H3_BLOCKED.md) | Why the held-out corpus does not exist: DNS resolves nothing on this machine, and what that makes unevaluable rather than failed |
 | [`research/invariants_lab/ENDTOEND_E.md`](../research/invariants_lab/ENDTOEND_E.md) | The gate that decides shipping: does an agent fix a stale caller better with the mechanism than without, and what does a false flag cost when it fires on correct code |
+| [`research/invariants_lab/VERDICT_G1.md`](../research/invariants_lab/VERDICT_G1.md) | NO-GO, and every reason for it: one gate unevaluable, one inconclusive, and what would change each |
+| [`research/invariants_lab/SHIP_G4.md`](../research/invariants_lab/SHIP_G4.md) | Finishing four half-built mechanisms: abstention takes a flag rate from 28% to 1% and doubles the margin over a regex, and it is available only to a checker that cannot decide |
 | [`research/evidence_manifest.json`](../research/evidence_manifest.json) | Every published number, with its dataset, sample size, model, command, raw file and caveat |
 | [`research/data/README.md`](../research/data/README.md) | Fetching the LongMemEval dataset the benchmarks need |
 

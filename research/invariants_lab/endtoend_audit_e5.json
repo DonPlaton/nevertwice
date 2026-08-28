@@ -1,0 +1,61 @@
+{
+ "generated": "2026-08-28T17:56:10",
+ "task": "E5",
+ "judge_check": {
+  "instrument": "inspect.Signature.bind, rebuilt from the AST by verify_mutants",
+  "tasks": 53,
+  "stale_trees": {
+   "agree": 52,
+   "disagree": 1,
+   "abstained": 0
+  },
+  "fixed_trees": {
+   "agree": 52,
+   "disagree": 1,
+   "abstained": 0
+  },
+  "disagreements": [
+   {
+    "mid": "django_django:ad393beeb:tests/urlpatterns_reverse/namespace_urls.py:django/conf/urls/__init__.py:include",
+    "tree": "stale",
+    "symbol": "include",
+    "call_fails_says": null,
+    "signature_bind_says": false,
+    "why": "no definitions left"
+   },
+   {
+    "mid": "django_django:ad393beeb:tests/urlpatterns_reverse/namespace_urls.py:django/conf/urls/__init__.py:include",
+    "tree": "fixed",
+    "symbol": "include",
+    "call_fails_says": null,
+    "signature_bind_says": true,
+    "why": "no definitions left"
+   }
+  ],
+  "ground_truth": {
+   "stale_trees_the_judge_fails": 52,
+   "of": 53,
+   "fixed_trees_the_judge_passes": 52
+  },
+  "verdict": "DISAGREEMENT -- one of the two instruments is wrong and which is not obvious in advance"
+ },
+ "stand_bookkeeping": {
+  "stage": "stand (53 trials)",
+  "model": "qwen3-coder:30b",
+  "trials": 53,
+  "usable": 46,
+  "unusable": 7,
+  "unusable_reasons": {
+   "no definitions left": 6,
+   "does not parse: SyntaxError": 1,
+   "lost 2 definition(s)": 1,
+   "lost 4 definition(s)": 1
+  },
+  "off_failures": 8,
+  "on_failures": 7,
+  "fired_on": 24,
+  "harm_usable": 53,
+  "harm_fired_on_correct_code": 0,
+  "collapsed": false
+ }
+}
