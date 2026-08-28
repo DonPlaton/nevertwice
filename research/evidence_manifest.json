@@ -275,7 +275,12 @@
       "governance": "exempt",
       "reason": "fixture note in the sample store"
     },
-    "research/invariants_lab/DEFECTS.md": {
+    "research/invariants_lab/DB_AUTHORITY.md": {
+   "governance": "backlog",
+   "budget": 9,
+   "note": "Tasks B1-B3 of the invariants lab: migration reversibility and a destructive-operation authority boundary, measured by attack rather than by precision per PREREGISTRATION.md section 6. Fifteen bypass attempts across six classes are published in full with their verdicts; two of them broke earlier builds of the mechanism and are described. Every number regenerates from tests/_test_db_authority.py, which is hermetic."
+  },
+  "research/invariants_lab/DEFECTS.md": {
    "governance": "backlog",
    "budget": 31,
    "note": "Phase D of the invariants lab: the five false-positive classes the previous census quantified and left in the code, with the state of each. Its shares are quoted from research/blast_radius_precision.json, the artifact of the run being replaced; its regressions live in tests/_test_blast_radius.py and run in CI. D5 is blocked while any row is open, so this page is a gate rather than a claim."
