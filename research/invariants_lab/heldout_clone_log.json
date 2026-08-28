@@ -1,0 +1,346 @@
+{
+ "generated": "2026-08-28T19:25:56",
+ "task": "H3",
+ "corpus": "heldout",
+ "root": "D:\\Coding\\_nevertwice_polygon\\corpus_heldout",
+ "criteria": {
+  "min_contributors": 100,
+  "min_py_commits": 1000,
+  "budget_gb": 100.0
+ },
+ "kept": [
+  {
+   "slug": "numpy/numpy",
+   "domain": "scientific",
+   "dir": "numpy_numpy",
+   "head": "4747e0f4640adaf8cd1b24a3a8b1e919393192b3",
+   "total_commits": 41862,
+   "py_commits": 22380,
+   "contributors": 2149,
+   "last_commit": "2026-08-27T17:56:50-06:00",
+   "disk_mb": 224.3
+  },
+  {
+   "slug": "scipy/scipy",
+   "domain": "scientific",
+   "dir": "scipy_scipy",
+   "head": "0f7f9b2a3121102394c36e8d97bcd3ea7d5da1a1",
+   "total_commits": 38179,
+   "py_commits": 28608,
+   "contributors": 2005,
+   "last_commit": "2026-08-28T15:59:25+02:00",
+   "disk_mb": 290.8
+  },
+  {
+   "slug": "sympy/sympy",
+   "domain": "scientific",
+   "dir": "sympy_sympy",
+   "head": "d69b97b4c185aa80404d998026404e70c0f46f69",
+   "total_commits": 62760,
+   "py_commits": 54054,
+   "contributors": 1511,
+   "last_commit": "2026-08-27T23:33:33+01:00",
+   "disk_mb": 237.6
+  },
+  {
+   "slug": "astropy/astropy",
+   "domain": "scientific",
+   "dir": "astropy_astropy",
+   "head": "dba191a70f7616f105a0676515575cdde1e50f82",
+   "total_commits": 41640,
+   "py_commits": 27857,
+   "contributors": 645,
+   "last_commit": "2026-08-28T15:08:44+05:30",
+   "disk_mb": 220.2
+  },
+  {
+   "slug": "networkx/networkx",
+   "domain": "scientific",
+   "dir": "networkx_networkx",
+   "head": "d66d81f54f9d3b609bdbb29e4367acecadd6326c",
+   "total_commits": 8388,
+   "py_commits": 6691,
+   "contributors": 887,
+   "last_commit": "2026-08-27T15:32:15-04:00",
+   "disk_mb": 108.5
+  },
+  {
+   "slug": "pandas-dev/pandas",
+   "domain": "data",
+   "dir": "pandas-dev_pandas",
+   "head": "91ce25acec78e62dd314a338e6f88b4b8bf3c920",
+   "total_commits": 38744,
+   "py_commits": 30722,
+   "contributors": 4394,
+   "last_commit": "2026-08-28T20:09:01+05:30",
+   "disk_mb": 473.1
+  },
+  {
+   "slug": "sqlalchemy/sqlalchemy",
+   "domain": "data",
+   "dir": "sqlalchemy_sqlalchemy",
+   "head": "5462cec4c5b97ae9c1cefc0a0e022d49273b32e0",
+   "total_commits": 18248,
+   "py_commits": 15142,
+   "contributors": 909,
+   "last_commit": "2026-08-25T14:36:13-04:00",
+   "disk_mb": 134.1
+  },
+  {
+   "slug": "apache/airflow",
+   "domain": "data",
+   "dir": "apache_airflow",
+   "head": "9d54ac94826d8f46c0d6d1032ee7d9988e562d70",
+   "total_commits": 40722,
+   "py_commits": 27890,
+   "contributors": 4657,
+   "last_commit": "2026-08-28T16:51:24+02:00",
+   "disk_mb": 892.9
+  },
+  {
+   "slug": "dask/dask",
+   "domain": "data",
+   "dir": "dask_dask",
+   "head": "9dc535daa30d7d36d63d4a003b54342fbc7032db",
+   "total_commits": 9842,
+   "py_commits": 7799,
+   "contributors": 706,
+   "last_commit": "2026-08-24T13:45:44-05:00",
+   "disk_mb": 160.8
+  },
+  {
+   "slug": "pola-rs/polars",
+   "domain": "data",
+   "dir": "pola-rs_polars",
+   "head": "5d8ebabf11caea54a5c29178a64a058762f49766",
+   "total_commits": 15384,
+   "py_commits": 8699,
+   "contributors": 804,
+   "last_commit": "2026-08-27T15:57:41+02:00",
+   "disk_mb": 247.8
+  },
+  {
+   "slug": "ansible/ansible",
+   "domain": "infrastructure",
+   "dir": "ansible_ansible",
+   "head": "deecfd6e8c030c7fe23c4fd9bc6b94cd0422132c",
+   "total_commits": 55529,
+   "py_commits": 35922,
+   "contributors": 7062,
+   "last_commit": "2026-08-26T17:11:28-04:00",
+   "disk_mb": 286.7
+  },
+  {
+   "slug": "pallets/click",
+   "domain": "infrastructure",
+   "dir": "pallets_click",
+   "head": "36baa15ff831b939a22bc527cd76ce653ef6f66d",
+   "total_commits": 3333,
+   "py_commits": 1552,
+   "contributors": 486,
+   "last_commit": "2026-08-26T21:19:34-07:00",
+   "disk_mb": 7.2
+  },
+  {
+   "slug": "psf/black",
+   "domain": "infrastructure",
+   "dir": "psf_black",
+   "head": "8947c48ef2077c3a301b03c1e814dc2e3f78436e",
+   "total_commits": 2314,
+   "py_commits": 1240,
+   "contributors": 581,
+   "last_commit": "2026-08-20T08:01:14-05:00",
+   "disk_mb": 14.3
+  },
+  {
+   "slug": "saltstack/salt",
+   "domain": "infrastructure",
+   "dir": "saltstack_salt",
+   "head": "085f22cd0bfee8757cdc1a993e0dee8b634aa630",
+   "total_commits": 125636,
+   "py_commits": 99296,
+   "contributors": 4214,
+   "last_commit": "2026-08-27T15:22:32-07:00",
+   "disk_mb": 697.3
+  },
+  {
+   "slug": "aio-libs/aiohttp",
+   "domain": "async",
+   "dir": "aio-libs_aiohttp",
+   "head": "2677660835e7bfeeb89b8f8c81f1669f6f90f4ed",
+   "total_commits": 14086,
+   "py_commits": 6356,
+   "contributors": 914,
+   "last_commit": "2026-08-28T16:32:19+01:00",
+   "disk_mb": 50.2
+  },
+  {
+   "slug": "python-trio/trio",
+   "domain": "async",
+   "dir": "python-trio_trio",
+   "head": "d5eb53488ce2c64bc2e0d6891aa9485bb36d5013",
+   "total_commits": 6641,
+   "py_commits": 2950,
+   "contributors": 219,
+   "last_commit": "2026-08-26T23:44:54-04:00",
+   "disk_mb": 13.3
+  },
+  {
+   "slug": "encode/starlette",
+   "domain": "async",
+   "dir": "encode_starlette",
+   "head": "d9ed5b0f98fdf081fb138473129b72eb035153a3",
+   "total_commits": 1704,
+   "py_commits": 1028,
+   "contributors": 362,
+   "last_commit": "2026-08-26T05:29:03-03:00",
+   "disk_mb": 12.3
+  },
+  {
+   "slug": "paramiko/paramiko",
+   "domain": "async",
+   "dir": "paramiko_paramiko",
+   "head": "d60d5c17d78f344b51ed651e796d2931133a9b22",
+   "total_commits": 4068,
+   "py_commits": 2694,
+   "contributors": 200,
+   "last_commit": "2026-05-09T14:42:14-04:00",
+   "disk_mb": 8.2
+  },
+  {
+   "slug": "celery/celery",
+   "domain": "async",
+   "dir": "celery_celery",
+   "head": "cd07bcfd24e39bcaf46f0a1e41b22877ba9842ad",
+   "total_commits": 13193,
+   "py_commits": 8424,
+   "contributors": 1587,
+   "last_commit": "2026-08-28T00:29:18+06:00",
+   "disk_mb": 46.1
+  },
+  {
+   "slug": "scikit-learn/scikit-learn",
+   "domain": "ml",
+   "dir": "scikit-learn_scikit-learn",
+   "head": "f2e0b2330932e0c08d2d0de66b5427e3e0f7167c",
+   "total_commits": 33962,
+   "py_commits": 25420,
+   "contributors": 3639,
+   "last_commit": "2026-08-28T14:28:02+02:00",
+   "disk_mb": 214.0
+  },
+  {
+   "slug": "huggingface/transformers",
+   "domain": "ml",
+   "dir": "huggingface_transformers",
+   "head": "805a9e939fa8c1bff8d8ffdf041c051b71a914aa",
+   "total_commits": 23814,
+   "py_commits": 18802,
+   "contributors": 4176,
+   "last_commit": "2026-08-28T17:52:52+02:00",
+   "disk_mb": 604.2
+  },
+  {
+   "slug": "keras-team/keras",
+   "domain": "ml",
+   "dir": "keras-team_keras",
+   "head": "6777603803e020d7a01e228022d076505870cff8",
+   "total_commits": 12645,
+   "py_commits": 10871,
+   "contributors": 1634,
+   "last_commit": "2026-08-28T09:00:28-07:00",
+   "disk_mb": 70.7
+  },
+  {
+   "slug": "optuna/optuna",
+   "domain": "ml",
+   "dir": "optuna_optuna",
+   "head": "f6898dab5bba804dd2bdb6ce7cc06b41b51506e4",
+   "total_commits": 21666,
+   "py_commits": 17872,
+   "contributors": 542,
+   "last_commit": "2026-08-27T18:41:39+09:00",
+   "disk_mb": 30.7
+  },
+  {
+   "slug": "pypa/pip",
+   "domain": "packaging",
+   "dir": "pypa_pip",
+   "head": "6154f1191dcc7c4bc32f69e4ad10602a1de4d098",
+   "total_commits": 16239,
+   "py_commits": 10892,
+   "contributors": 971,
+   "last_commit": "2026-08-23T14:57:51-04:00",
+   "disk_mb": 93.2
+  },
+  {
+   "slug": "pypa/setuptools",
+   "domain": "packaging",
+   "dir": "pypa_setuptools",
+   "head": "7d531288b7c8708d4cc186213da93eaf5d11833d",
+   "total_commits": 16871,
+   "py_commits": 10418,
+   "contributors": 736,
+   "last_commit": "2026-08-09T09:06:57-04:00",
+   "disk_mb": 55.3
+  },
+  {
+   "slug": "python/mypy",
+   "domain": "packaging",
+   "dir": "python_mypy",
+   "head": "b974556f84bd4ff5280b66bce1413fa942d1261e",
+   "total_commits": 13758,
+   "py_commits": 10318,
+   "contributors": 929,
+   "last_commit": "2026-08-27T18:13:53-07:00",
+   "disk_mb": 107.5
+  },
+  {
+   "slug": "PyCQA/pylint",
+   "domain": "packaging",
+   "dir": "PyCQA_pylint",
+   "head": "5ba4f69e7a953c45852f4e0333a2fdb4900dcf43",
+   "total_commits": 10243,
+   "py_commits": 7381,
+   "contributors": 753,
+   "last_commit": "2026-08-27T13:10:26+03:00",
+   "disk_mb": 50.2
+  }
+ ],
+ "rejected": [
+  {
+   "slug": "pypa/virtualenv",
+   "domain": "infrastructure",
+   "dir": "pypa_virtualenv",
+   "head": "2a645aece0241e6dc02bf3d67acd88aa0770b601",
+   "total_commits": 1241,
+   "py_commits": 546,
+   "contributors": 178,
+   "last_commit": "2026-08-25T05:37:53Z",
+   "disk_mb": 186.4,
+   "why": "only 546 commits touch .py, needs 1000"
+  },
+  {
+   "slug": "pytorch/vision",
+   "domain": "ml",
+   "why": "clone failed (network or repository gone)"
+  },
+  {
+   "slug": "pytest-dev/tox",
+   "domain": "packaging",
+   "why": "clone failed (network or repository gone)"
+  }
+ ],
+ "n_kept": 27,
+ "n_rejected": 3,
+ "domains_kept": [
+  "async",
+  "data",
+  "infrastructure",
+  "ml",
+  "packaging",
+  "scientific"
+ ],
+ "disk_gb": 5.41,
+ "meets_h2_targets": true
+}
