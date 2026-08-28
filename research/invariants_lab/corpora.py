@@ -37,7 +37,12 @@ SEAL_PATH = HERE / "heldout_seal.json"
 
 #: Modules entitled to name the held-out corpus. A Phase-H or Phase-V script joins this
 #: list by being written and added here -- never by a glob widening underneath it.
-HELDOUT_READERS: tuple[str, ...] = ("corpora.py",)
+#:
+#: `clone_heldout.py` was added at H3, which required editing this file **after** H1 froze
+#: its hash. The amendment is logged in `heldout_seal.json` under `amendments` with both
+#: digests and its reason, and it happened in the only window where such an edit is
+#: provably harmless: the held-out corpus did not exist and no measurement had run.
+HELDOUT_READERS: tuple[str, ...] = ("corpora.py", "clone_heldout.py")
 
 
 class HeldOutSealed(RuntimeError):

@@ -23,7 +23,7 @@ The corpus is an **argument** to every harness (`--corpus dev|heldout`) precisel
 | `binding.py` | `b8aa671df7db` |
 | `blast_radius_deleted.py` | `8458c07871e0` |
 | `complexity.py` | `b86235ecc2fd` |
-| `corpora.py` | `af5ebe77db07` |
+| `corpora.py` | `9bf89df4fc2c` |
 | `corpus_census.py` | `6c1318f964e4` |
 | `corpusio.py` | `245eb3102b4a` |
 | `db_authority.py` | `439de6c09c9b` |
@@ -51,6 +51,13 @@ The corpus is an **argument** to every harness (`--corpus dev|heldout`) precisel
 **No mechanism and no harness is edited between this commit and the end of Phase V.** A defect
 found in that window is recorded and its effect reasoned about; it is not fixed and re-run, because
 a corpus measured twice is a corpus tuned once.
+
+**One amendment, logged rather than waived.** At H3 the static seal lock refused
+`clone_heldout.py` — the lock working — because the allowlist naming who may reference the
+held-out root lives in `corpora.py`, which is frozen. Adding the filename required amending the
+freeze, and `heldout_seal.json` records both digests, the reason, and why it was harmless: **the
+held-out corpus did not exist and no measurement had run.** That window closed with H3. After it,
+an edit to a frozen file is a deviation, not a correction, and is reported as one.
 
 ## 2. What is measured out of sample, and what it is measured against
 

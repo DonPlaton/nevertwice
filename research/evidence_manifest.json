@@ -650,6 +650,11 @@
    "governance": "backlog",
    "budget": 30,
    "note": "Task H2: thirty candidate held-out repositories across six domains, the selection criteria, and a per-block prediction of what each should show -- all written before any clone ran, so a wrong prediction is visible."
+  },
+  "research/invariants_lab/HELDOUT_H3_BLOCKED.md": {
+   "governance": "backlog",
+   "budget": 21,
+   "note": "Task H3, blocked: DNS resolves nothing on this machine and the local proxy's tunnel carries no TLS, so no public repository host is reachable by any route tried. G-B is unevaluable rather than failed, and every artefact H3 needs is committed so it runs unchanged when a name resolves."
   }
  },
  "claims": [

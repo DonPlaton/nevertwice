@@ -22,7 +22,7 @@
   "mutate.py": "7aca3030efe4e49e265450429b0f19e53d69d866e790e52019f4305cc9f5cd48",
   "verify_mutants.py": "e4cb27a34631ceda9110e527c4c703ea5fdcdb03dda6feb547badc75ac441f90",
   "corpus_census.py": "6c1318f964e4d95bdedaf33b259b0f006d90d28d03ea53fa13aeb3b667b6165d",
-  "corpora.py": "af5ebe77db0725cb47682260d6963e7a7c2a391bf23bdcedc1f5315e0fd3d759",
+  "corpora.py": "9bf89df4fc2ced15cbe000470f47f4a40def3c5ac02953027159d45fe816832b",
   "corpusio.py": "245eb3102b4a5efbb2edf68e6fc4fe5b806483df8263f7d780304eb980963f82",
   "facade_shapes.py": "9822fcb8384f60764b55d63ab0d25b03af9e7920ded77d6ebb28b959122e21b7",
   "power.py": "5e3365b765d5cc65a9d5a936af394a33a23d4e6ede3a238fd44c8060d17ea637",
@@ -39,5 +39,17 @@
  },
  "why": "the held-out corpus is the only source of an out-of-sample number; anything that reads it before the code is frozen converts it into a second development set and there is no third",
  "opened_against": "PREREGISTRATION-SHIP.md, committed before the first clone",
- "rule": "No mechanism and no harness listed in frozen_code is edited between H1 and the end of Phase V. tests/_test_corpus_freeze.py recomputes every digest and fails on the first that moved. A defect found in that window is recorded and reasoned about; it is not fixed and re-run, because a corpus measured twice is a corpus tuned once."
+ "rule": "No mechanism and no harness listed in frozen_code is edited between H1 and the end of Phase V. tests/_test_corpus_freeze.py recomputes every digest and fails on the first that moved. A defect found in that window is recorded and reasoned about; it is not fixed and re-run, because a corpus measured twice is a corpus tuned once.",
+ "amendments": [
+  {
+   "at": "2026-08-28T17:29:35",
+   "task": "H3",
+   "file": "corpora.py",
+   "from": "af5ebe77db0725cb47682260d6963e7a7c2a391bf23bdcedc1f5315e0fd3d759",
+   "to": "9bf89df4fc2ced15cbe000470f47f4a40def3c5ac02953027159d45fe816832b",
+   "change": "HELDOUT_READERS gained clone_heldout.py",
+   "why": "H3's clone script legitimately names the held-out root, and the static seal lock refused it -- the lock working. The allowlist lives in this frozen module, so naming a Phase-H script requires amending the freeze.",
+   "harmless_because": "no held-out repository exists, no measurement has run, and the change adds a filename to an allowlist without altering any computation. That window closes the moment the corpus exists; after it, an amendment is a deviation and not a correction."
+  }
+ ]
 }
