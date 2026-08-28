@@ -2,7 +2,7 @@
 """The calibration contract: the thresholds keep being true, or this goes red.
 
 `research/BLAST_RADIUS_CALIBRATION.md` publishes a verdict - T1 and T2 passed - and
-`nevertwice/invariants/blast_radius.py` carries budgets derived from that same run. Both are the
+`research/invariants_lab/blast_radius_deleted.py` (moved there by T4 when it failed its gates) carries budgets derived from that same run. Both are the
 kind of thing that quietly stops being true: someone retunes a constant, someone widens a
 default, and the document still says the flag rate is 6.7%.
 
@@ -53,7 +53,7 @@ def check(name: str, condition: bool, detail: str = "") -> None:
 
 
 def _checker():
-    path = ROOT / "nevertwice" / "invariants" / "blast_radius.py"
+    path = ROOT / "research" / "invariants_lab" / "blast_radius_deleted.py"
     spec = importlib.util.spec_from_file_location("_nt_br_cal_test", path)
     module = importlib.util.module_from_spec(spec)
     sys.modules[spec.name] = module

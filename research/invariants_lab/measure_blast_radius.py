@@ -66,7 +66,7 @@ SILENCE_SAMPLE = 1000    # PREREGISTRATION.md section 3, gate D5-P4
 ALPHA = 0.05
 
 _spec = importlib.util.spec_from_file_location(
-    "_nt_blast_radius_d5", ROOT / "nevertwice" / "invariants" / "blast_radius.py"
+    "_nt_blast_radius_d5", ROOT / "research" / "invariants_lab" / "blast_radius_deleted.py"
 )
 br = importlib.util.module_from_spec(_spec)
 sys.modules[_spec.name] = br

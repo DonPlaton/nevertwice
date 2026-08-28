@@ -49,7 +49,7 @@ DEPENDENCY = re.compile(r"^(?P<symbol>[\w.]+): contract changed, (?P<n>\d+) refe
 
 
 def _load_checker():
-    path = ROOT / "nevertwice" / "invariants" / "blast_radius.py"
+    path = ROOT / "research" / "invariants_lab" / "blast_radius_deleted.py"
     spec = importlib.util.spec_from_file_location("_nt_br_precision", path)
     module = importlib.util.module_from_spec(spec)
     sys.modules[spec.name] = module

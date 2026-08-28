@@ -60,7 +60,7 @@ SCAN_SUFFIX = ".py"
 
 def _load_checker():
     """Import the checker by path, exactly as its own suite does."""
-    path = ROOT / "nevertwice" / "invariants" / "blast_radius.py"
+    path = ROOT / "research" / "invariants_lab" / "blast_radius_deleted.py"
     spec = importlib.util.spec_from_file_location("_nt_blast_radius_cal", path)
     if spec is None or spec.loader is None:  # pragma: no cover - defensive
         raise RuntimeError(f"cannot load {path}")

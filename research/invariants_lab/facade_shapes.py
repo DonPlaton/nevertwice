@@ -43,7 +43,7 @@ CENSUS = Path(__file__).with_name("corpus_census.json")
 ARTIFACT = Path(__file__).with_name("facade_shapes.json")
 
 _spec = importlib.util.spec_from_file_location(
-    "_nt_blast_radius_d4", ROOT / "nevertwice" / "invariants" / "blast_radius.py"
+    "_nt_blast_radius_d4", ROOT / "research" / "invariants_lab" / "blast_radius_deleted.py"
 )
 br = importlib.util.module_from_spec(_spec)
 sys.modules[_spec.name] = br

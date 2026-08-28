@@ -35,7 +35,7 @@ import _env_guard  # noqa: F401,E402  hermetic: scrub store env before anything 
 # side effects, import order, or the repo being installed. The sys.modules
 # registration before exec_module is required: dataclasses resolves field
 # types through it, and without it @dataclass raises on load.
-_MODULE_PATH = HERE.parent / "nevertwice" / "invariants" / "blast_radius.py"
+_MODULE_PATH = HERE.parent / "research" / "invariants_lab" / "blast_radius_deleted.py"
 _spec = importlib.util.spec_from_file_location("_nt_blast_radius", _MODULE_PATH)
 assert _spec and _spec.loader
 br = importlib.util.module_from_spec(_spec)
@@ -887,12 +887,12 @@ class Calibrated(unittest.TestCase):
         offenders = [p for p in listed if "embed_universal" in p.as_posix()
                      and "/data/" in p.as_posix()]
         self.assertEqual(offenders, [])
-        self.assertTrue(any(p.name == "blast_radius.py" for p in listed),
+        self.assertTrue(any(p.name == "blast_radius_deleted.py" for p in listed),
                         "the scan still has to see the repository's own code")
 
     def test_the_walk_is_still_there_when_git_is_not(self):
-        found = br._iter_files(ROOT / "nevertwice" / "invariants", {".py"})
-        self.assertTrue(any(p.name == "blast_radius.py" for p in found))
+        found = br._iter_files(ROOT / "research" / "invariants_lab", {".py"})
+        self.assertTrue(any(p.name == "blast_radius_deleted.py" for p in found))
 
 
 class CompatibilityFacades(unittest.TestCase):
@@ -1349,17 +1349,30 @@ class PhaseZero(unittest.TestCase):
             encoding="utf-8", errors="replace", env=env, timeout=120, check=False,
         )
 
-    def test_importing_the_package_does_not_load_the_checker(self):
-        """Lazy by attribute access. The package costs nothing until something asks."""
+    def test_the_package_is_empty_because_the_checker_failed_its_gates(self):
+        """T4. A decision nobody executed is a decision nobody made.
+
+        `blast_radius` was installed here by the previous run's I3 and failed two of
+        its four declared gates in D5 -- precision 0.396 against a floor of 0.50, and
+        a flag rate of 0.278 against a ceiling of 0.05. The declared consequence of
+        failing a gate is deletion, so the registry is empty and the module is not in
+        the package. This test exists so that putting it back is a visible act.
+        """
         proc = self._child(
-            "import sys, nevertwice.invariants as inv\n"
-            "print('early', 'nevertwice.invariants.blast_radius' in sys.modules)\n"
-            "inv.check_working_tree\n"
-            "print('after', 'nevertwice.invariants.blast_radius' in sys.modules)\n"
+            "import nevertwice.invariants as inv\n"
+            "print('registry', inv.INVARIANTS)\n"
+            "print('exports', inv.__all__)\n"
         )
         self.assertEqual(proc.returncode, 0, proc.stderr)
-        self.assertIn("early False", proc.stdout)
-        self.assertIn("after True", proc.stdout)
+        self.assertIn("registry {}", proc.stdout)
+        self.assertIn("exports []", proc.stdout)
+        self.assertFalse((ROOT / "nevertwice" / "invariants" / "blast_radius.py").exists())
+
+    def test_the_deleted_checker_is_still_readable_in_the_lab(self):
+        """A negative result is only worth something if its subject can still be read."""
+        kept = ROOT / "research" / "invariants_lab" / "blast_radius_deleted.py"
+        self.assertTrue(kept.exists())
+        self.assertGreater(len(kept.read_text(encoding="utf-8").splitlines()), 500)
 
     def test_importing_the_package_is_cheap(self):
         """A generous absolute bound: this catches "it imports the world", not jitter."""
@@ -1425,11 +1438,16 @@ class PhaseZero(unittest.TestCase):
                         offenders.append(f"{path.relative_to(ROOT).as_posix()}: {name}")
         self.assertEqual(offenders, [], "; ".join(offenders))
 
-    def test_the_killswitch_makes_the_cli_a_no_op(self):
+    def test_the_killswitch_makes_the_checker_a_no_op(self):
+        """Loaded by path, because the package no longer carries it (T4). The
+        killswitch is a property of the checker, and it survived the deletion."""
         proc = self._child(
-            "import json, sys\n"
-            "from nevertwice.invariants import check_working_tree\n"
-            "print(json.dumps(check_working_tree().to_dict()['verdict']))\n",
+            "import importlib.util, json, sys\n"
+            "spec = importlib.util.spec_from_file_location("
+            "'_br', r'research/invariants_lab/blast_radius_deleted.py')\n"
+            "m = importlib.util.module_from_spec(spec); sys.modules['_br'] = m\n"
+            "spec.loader.exec_module(m)\n"
+            "print(json.dumps(m.check_working_tree().to_dict()['verdict']))\n",
             {br._ENV_DISABLE: "0"},
         )
         self.assertEqual(proc.returncode, 0, proc.stderr)
@@ -1497,7 +1515,7 @@ class Layout(unittest.TestCase):
     def test_the_checker_is_where_the_package_expects_it(self):
         self.assertEqual(
             Path(br.__file__).resolve(),
-            (ROOT / "nevertwice" / "invariants" / "blast_radius.py").resolve(),
+            (ROOT / "research" / "invariants_lab" / "blast_radius_deleted.py").resolve(),
         )
 
     def test_this_suite_sits_under_the_glob_ci_actually_runs(self):

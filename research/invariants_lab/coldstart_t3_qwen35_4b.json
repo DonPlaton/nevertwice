@@ -1,0 +1,923 @@
+{
+ "generated": "2026-08-28T04:09:42",
+ "model": "qwen3.5:4b",
+ "trials": 8,
+ "usable": 96,
+ "attempted": 96,
+ "unparseable": 0,
+ "errors": 0,
+ "pitfall_rate": {
+  "off": {
+   "k": 0,
+   "n": 96,
+   "point": 0.0,
+   "ci": [
+    0.0,
+    0.0384755878576757
+   ]
+  },
+  "on": {
+   "k": 0,
+   "n": 96,
+   "point": 0.0,
+   "ci": [
+    0.0,
+    0.0384755878576757
+   ]
+  }
+ },
+ "mcnemar": {
+  "fixed_by_the_invariant": 0,
+  "broken_by_it": 0,
+  "discordant": 0,
+  "p": 1.0,
+  "passes": false
+ },
+ "fired_rate": 0.0,
+ "by_pitfall": {
+  "assert_in_shipped_code": {
+   "n": 32,
+   "off": 0,
+   "on": 0,
+   "fired": 0
+  },
+  "bare_except": {
+   "n": 32,
+   "off": 0,
+   "on": 0,
+   "fired": 0
+  },
+  "mutable_default": {
+   "n": 32,
+   "off": 0,
+   "on": 0,
+   "fired": 0
+  }
+ },
+ "rows": [
+  {
+   "task": "collect_tags",
+   "pitfall": "mutable_default",
+   "trial": 0,
+   "off": false,
+   "on": false,
+   "fired": false,
+   "turns": 1
+  },
+  {
+   "task": "collect_tags",
+   "pitfall": "mutable_default",
+   "trial": 1,
+   "off": false,
+   "on": false,
+   "fired": false,
+   "turns": 1
+  },
+  {
+   "task": "collect_tags",
+   "pitfall": "mutable_default",
+   "trial": 2,
+   "off": false,
+   "on": false,
+   "fired": false,
+   "turns": 1
+  },
+  {
+   "task": "collect_tags",
+   "pitfall": "mutable_default",
+   "trial": 3,
+   "off": false,
+   "on": false,
+   "fired": false,
+   "turns": 1
+  },
+  {
+   "task": "collect_tags",
+   "pitfall": "mutable_default",
+   "trial": 4,
+   "off": false,
+   "on": false,
+   "fired": false,
+   "turns": 1
+  },
+  {
+   "task": "collect_tags",
+   "pitfall": "mutable_default",
+   "trial": 5,
+   "off": false,
+   "on": false,
+   "fired": false,
+   "turns": 1
+  },
+  {
+   "task": "collect_tags",
+   "pitfall": "mutable_default",
+   "trial": 6,
+   "off": false,
+   "on": false,
+   "fired": false,
+   "turns": 1
+  },
+  {
+   "task": "collect_tags",
+   "pitfall": "mutable_default",
+   "trial": 7,
+   "off": false,
+   "on": false,
+   "fired": false,
+   "turns": 1
+  },
+  {
+   "task": "accumulate",
+   "pitfall": "mutable_default",
+   "trial": 0,
+   "off": false,
+   "on": false,
+   "fired": false,
+   "turns": 1
+  },
+  {
+   "task": "accumulate",
+   "pitfall": "mutable_default",
+   "trial": 1,
+   "off": false,
+   "on": false,
+   "fired": false,
+   "turns": 1
+  },
+  {
+   "task": "accumulate",
+   "pitfall": "mutable_default",
+   "trial": 2,
+   "off": false,
+   "on": false,
+   "fired": false,
+   "turns": 1
+  },
+  {
+   "task": "accumulate",
+   "pitfall": "mutable_default",
+   "trial": 3,
+   "off": false,
+   "on": false,
+   "fired": false,
+   "turns": 1
+  },
+  {
+   "task": "accumulate",
+   "pitfall": "mutable_default",
+   "trial": 4,
+   "off": false,
+   "on": false,
+   "fired": false,
+   "turns": 1
+  },
+  {
+   "task": "accumulate",
+   "pitfall": "mutable_default",
+   "trial": 5,
+   "off": false,
+   "on": false,
+   "fired": false,
+   "turns": 1
+  },
+  {
+   "task": "accumulate",
+   "pitfall": "mutable_default",
+   "trial": 6,
+   "off": false,
+   "on": false,
+   "fired": false,
+   "turns": 1
+  },
+  {
+   "task": "accumulate",
+   "pitfall": "mutable_default",
+   "trial": 7,
+   "off": false,
+   "on": false,
+   "fired": false,
+   "turns": 1
+  },
+  {
+   "task": "append_row",
+   "pitfall": "mutable_default",
+   "trial": 0,
+   "off": false,
+   "on": false,
+   "fired": false,
+   "turns": 1
+  },
+  {
+   "task": "append_row",
+   "pitfall": "mutable_default",
+   "trial": 1,
+   "off": false,
+   "on": false,
+   "fired": false,
+   "turns": 1
+  },
+  {
+   "task": "append_row",
+   "pitfall": "mutable_default",
+   "trial": 2,
+   "off": false,
+   "on": false,
+   "fired": false,
+   "turns": 1
+  },
+  {
+   "task": "append_row",
+   "pitfall": "mutable_default",
+   "trial": 3,
+   "off": false,
+   "on": false,
+   "fired": false,
+   "turns": 1
+  },
+  {
+   "task": "append_row",
+   "pitfall": "mutable_default",
+   "trial": 4,
+   "off": false,
+   "on": false,
+   "fired": false,
+   "turns": 1
+  },
+  {
+   "task": "append_row",
+   "pitfall": "mutable_default",
+   "trial": 5,
+   "off": false,
+   "on": false,
+   "fired": false,
+   "turns": 1
+  },
+  {
+   "task": "append_row",
+   "pitfall": "mutable_default",
+   "trial": 6,
+   "off": false,
+   "on": false,
+   "fired": false,
+   "turns": 1
+  },
+  {
+   "task": "append_row",
+   "pitfall": "mutable_default",
+   "trial": 7,
+   "off": false,
+   "on": false,
+   "fired": false,
+   "turns": 1
+  },
+  {
+   "task": "register",
+   "pitfall": "mutable_default",
+   "trial": 0,
+   "off": false,
+   "on": false,
+   "fired": false,
+   "turns": 1
+  },
+  {
+   "task": "register",
+   "pitfall": "mutable_default",
+   "trial": 1,
+   "off": false,
+   "on": false,
+   "fired": false,
+   "turns": 1
+  },
+  {
+   "task": "register",
+   "pitfall": "mutable_default",
+   "trial": 2,
+   "off": false,
+   "on": false,
+   "fired": false,
+   "turns": 1
+  },
+  {
+   "task": "register",
+   "pitfall": "mutable_default",
+   "trial": 3,
+   "off": false,
+   "on": false,
+   "fired": false,
+   "turns": 1
+  },
+  {
+   "task": "register",
+   "pitfall": "mutable_default",
+   "trial": 4,
+   "off": false,
+   "on": false,
+   "fired": false,
+   "turns": 1
+  },
+  {
+   "task": "register",
+   "pitfall": "mutable_default",
+   "trial": 5,
+   "off": false,
+   "on": false,
+   "fired": false,
+   "turns": 1
+  },
+  {
+   "task": "register",
+   "pitfall": "mutable_default",
+   "trial": 6,
+   "off": false,
+   "on": false,
+   "fired": false,
+   "turns": 1
+  },
+  {
+   "task": "register",
+   "pitfall": "mutable_default",
+   "trial": 7,
+   "off": false,
+   "on": false,
+   "fired": false,
+   "turns": 1
+  },
+  {
+   "task": "parse_int",
+   "pitfall": "bare_except",
+   "trial": 0,
+   "off": false,
+   "on": false,
+   "fired": false,
+   "turns": 1
+  },
+  {
+   "task": "parse_int",
+   "pitfall": "bare_except",
+   "trial": 1,
+   "off": false,
+   "on": false,
+   "fired": false,
+   "turns": 1
+  },
+  {
+   "task": "parse_int",
+   "pitfall": "bare_except",
+   "trial": 2,
+   "off": false,
+   "on": false,
+   "fired": false,
+   "turns": 1
+  },
+  {
+   "task": "parse_int",
+   "pitfall": "bare_except",
+   "trial": 3,
+   "off": false,
+   "on": false,
+   "fired": false,
+   "turns": 1
+  },
+  {
+   "task": "parse_int",
+   "pitfall": "bare_except",
+   "trial": 4,
+   "off": false,
+   "on": false,
+   "fired": false,
+   "turns": 1
+  },
+  {
+   "task": "parse_int",
+   "pitfall": "bare_except",
+   "trial": 5,
+   "off": false,
+   "on": false,
+   "fired": false,
+   "turns": 1
+  },
+  {
+   "task": "parse_int",
+   "pitfall": "bare_except",
+   "trial": 6,
+   "off": false,
+   "on": false,
+   "fired": false,
+   "turns": 1
+  },
+  {
+   "task": "parse_int",
+   "pitfall": "bare_except",
+   "trial": 7,
+   "off": false,
+   "on": false,
+   "fired": false,
+   "turns": 1
+  },
+  {
+   "task": "load_config",
+   "pitfall": "bare_except",
+   "trial": 0,
+   "off": false,
+   "on": false,
+   "fired": false,
+   "turns": 1
+  },
+  {
+   "task": "load_config",
+   "pitfall": "bare_except",
+   "trial": 1,
+   "off": false,
+   "on": false,
+   "fired": false,
+   "turns": 1
+  },
+  {
+   "task": "load_config",
+   "pitfall": "bare_except",
+   "trial": 2,
+   "off": false,
+   "on": false,
+   "fired": false,
+   "turns": 1
+  },
+  {
+   "task": "load_config",
+   "pitfall": "bare_except",
+   "trial": 3,
+   "off": false,
+   "on": false,
+   "fired": false,
+   "turns": 1
+  },
+  {
+   "task": "load_config",
+   "pitfall": "bare_except",
+   "trial": 4,
+   "off": false,
+   "on": false,
+   "fired": false,
+   "turns": 1
+  },
+  {
+   "task": "load_config",
+   "pitfall": "bare_except",
+   "trial": 5,
+   "off": false,
+   "on": false,
+   "fired": false,
+   "turns": 1
+  },
+  {
+   "task": "load_config",
+   "pitfall": "bare_except",
+   "trial": 6,
+   "off": false,
+   "on": false,
+   "fired": false,
+   "turns": 1
+  },
+  {
+   "task": "load_config",
+   "pitfall": "bare_except",
+   "trial": 7,
+   "off": false,
+   "on": false,
+   "fired": false,
+   "turns": 1
+  },
+  {
+   "task": "safe_divide",
+   "pitfall": "bare_except",
+   "trial": 0,
+   "off": false,
+   "on": false,
+   "fired": false,
+   "turns": 1
+  },
+  {
+   "task": "safe_divide",
+   "pitfall": "bare_except",
+   "trial": 1,
+   "off": false,
+   "on": false,
+   "fired": false,
+   "turns": 1
+  },
+  {
+   "task": "safe_divide",
+   "pitfall": "bare_except",
+   "trial": 2,
+   "off": false,
+   "on": false,
+   "fired": false,
+   "turns": 1
+  },
+  {
+   "task": "safe_divide",
+   "pitfall": "bare_except",
+   "trial": 3,
+   "off": false,
+   "on": false,
+   "fired": false,
+   "turns": 1
+  },
+  {
+   "task": "safe_divide",
+   "pitfall": "bare_except",
+   "trial": 4,
+   "off": false,
+   "on": false,
+   "fired": false,
+   "turns": 1
+  },
+  {
+   "task": "safe_divide",
+   "pitfall": "bare_except",
+   "trial": 5,
+   "off": false,
+   "on": false,
+   "fired": false,
+   "turns": 1
+  },
+  {
+   "task": "safe_divide",
+   "pitfall": "bare_except",
+   "trial": 6,
+   "off": false,
+   "on": false,
+   "fired": false,
+   "turns": 1
+  },
+  {
+   "task": "safe_divide",
+   "pitfall": "bare_except",
+   "trial": 7,
+   "off": false,
+   "on": false,
+   "fired": false,
+   "turns": 1
+  },
+  {
+   "task": "fetch_field",
+   "pitfall": "bare_except",
+   "trial": 0,
+   "off": false,
+   "on": false,
+   "fired": false,
+   "turns": 1
+  },
+  {
+   "task": "fetch_field",
+   "pitfall": "bare_except",
+   "trial": 1,
+   "off": false,
+   "on": false,
+   "fired": false,
+   "turns": 1
+  },
+  {
+   "task": "fetch_field",
+   "pitfall": "bare_except",
+   "trial": 2,
+   "off": false,
+   "on": false,
+   "fired": false,
+   "turns": 1
+  },
+  {
+   "task": "fetch_field",
+   "pitfall": "bare_except",
+   "trial": 3,
+   "off": false,
+   "on": false,
+   "fired": false,
+   "turns": 1
+  },
+  {
+   "task": "fetch_field",
+   "pitfall": "bare_except",
+   "trial": 4,
+   "off": false,
+   "on": false,
+   "fired": false,
+   "turns": 1
+  },
+  {
+   "task": "fetch_field",
+   "pitfall": "bare_except",
+   "trial": 5,
+   "off": false,
+   "on": false,
+   "fired": false,
+   "turns": 1
+  },
+  {
+   "task": "fetch_field",
+   "pitfall": "bare_except",
+   "trial": 6,
+   "off": false,
+   "on": false,
+   "fired": false,
+   "turns": 1
+  },
+  {
+   "task": "fetch_field",
+   "pitfall": "bare_except",
+   "trial": 7,
+   "off": false,
+   "on": false,
+   "fired": false,
+   "turns": 1
+  },
+  {
+   "task": "set_rate",
+   "pitfall": "assert_in_shipped_code",
+   "trial": 0,
+   "off": false,
+   "on": false,
+   "fired": false,
+   "turns": 1
+  },
+  {
+   "task": "set_rate",
+   "pitfall": "assert_in_shipped_code",
+   "trial": 1,
+   "off": false,
+   "on": false,
+   "fired": false,
+   "turns": 1
+  },
+  {
+   "task": "set_rate",
+   "pitfall": "assert_in_shipped_code",
+   "trial": 2,
+   "off": false,
+   "on": false,
+   "fired": false,
+   "turns": 1
+  },
+  {
+   "task": "set_rate",
+   "pitfall": "assert_in_shipped_code",
+   "trial": 3,
+   "off": false,
+   "on": false,
+   "fired": false,
+   "turns": 1
+  },
+  {
+   "task": "set_rate",
+   "pitfall": "assert_in_shipped_code",
+   "trial": 4,
+   "off": false,
+   "on": false,
+   "fired": false,
+   "turns": 1
+  },
+  {
+   "task": "set_rate",
+   "pitfall": "assert_in_shipped_code",
+   "trial": 5,
+   "off": false,
+   "on": false,
+   "fired": false,
+   "turns": 1
+  },
+  {
+   "task": "set_rate",
+   "pitfall": "assert_in_shipped_code",
+   "trial": 6,
+   "off": false,
+   "on": false,
+   "fired": false,
+   "turns": 1
+  },
+  {
+   "task": "set_rate",
+   "pitfall": "assert_in_shipped_code",
+   "trial": 7,
+   "off": false,
+   "on": false,
+   "fired": false,
+   "turns": 1
+  },
+  {
+   "task": "connect",
+   "pitfall": "assert_in_shipped_code",
+   "trial": 0,
+   "off": false,
+   "on": false,
+   "fired": false,
+   "turns": 1
+  },
+  {
+   "task": "connect",
+   "pitfall": "assert_in_shipped_code",
+   "trial": 1,
+   "off": false,
+   "on": false,
+   "fired": false,
+   "turns": 1
+  },
+  {
+   "task": "connect",
+   "pitfall": "assert_in_shipped_code",
+   "trial": 2,
+   "off": false,
+   "on": false,
+   "fired": false,
+   "turns": 1
+  },
+  {
+   "task": "connect",
+   "pitfall": "assert_in_shipped_code",
+   "trial": 3,
+   "off": false,
+   "on": false,
+   "fired": false,
+   "turns": 1
+  },
+  {
+   "task": "connect",
+   "pitfall": "assert_in_shipped_code",
+   "trial": 4,
+   "off": false,
+   "on": false,
+   "fired": false,
+   "turns": 1
+  },
+  {
+   "task": "connect",
+   "pitfall": "assert_in_shipped_code",
+   "trial": 5,
+   "off": false,
+   "on": false,
+   "fired": false,
+   "turns": 1
+  },
+  {
+   "task": "connect",
+   "pitfall": "assert_in_shipped_code",
+   "trial": 6,
+   "off": false,
+   "on": false,
+   "fired": false,
+   "turns": 1
+  },
+  {
+   "task": "connect",
+   "pitfall": "assert_in_shipped_code",
+   "trial": 7,
+   "off": false,
+   "on": false,
+   "fired": false,
+   "turns": 1
+  },
+  {
+   "task": "set_limit",
+   "pitfall": "assert_in_shipped_code",
+   "trial": 0,
+   "off": false,
+   "on": false,
+   "fired": false,
+   "turns": 1
+  },
+  {
+   "task": "set_limit",
+   "pitfall": "assert_in_shipped_code",
+   "trial": 1,
+   "off": false,
+   "on": false,
+   "fired": false,
+   "turns": 1
+  },
+  {
+   "task": "set_limit",
+   "pitfall": "assert_in_shipped_code",
+   "trial": 2,
+   "off": false,
+   "on": false,
+   "fired": false,
+   "turns": 1
+  },
+  {
+   "task": "set_limit",
+   "pitfall": "assert_in_shipped_code",
+   "trial": 3,
+   "off": false,
+   "on": false,
+   "fired": false,
+   "turns": 1
+  },
+  {
+   "task": "set_limit",
+   "pitfall": "assert_in_shipped_code",
+   "trial": 4,
+   "off": false,
+   "on": false,
+   "fired": false,
+   "turns": 1
+  },
+  {
+   "task": "set_limit",
+   "pitfall": "assert_in_shipped_code",
+   "trial": 5,
+   "off": false,
+   "on": false,
+   "fired": false,
+   "turns": 1
+  },
+  {
+   "task": "set_limit",
+   "pitfall": "assert_in_shipped_code",
+   "trial": 6,
+   "off": false,
+   "on": false,
+   "fired": false,
+   "turns": 1
+  },
+  {
+   "task": "set_limit",
+   "pitfall": "assert_in_shipped_code",
+   "trial": 7,
+   "off": false,
+   "on": false,
+   "fired": false,
+   "turns": 1
+  },
+  {
+   "task": "scale_value",
+   "pitfall": "assert_in_shipped_code",
+   "trial": 0,
+   "off": false,
+   "on": false,
+   "fired": false,
+   "turns": 1
+  },
+  {
+   "task": "scale_value",
+   "pitfall": "assert_in_shipped_code",
+   "trial": 1,
+   "off": false,
+   "on": false,
+   "fired": false,
+   "turns": 1
+  },
+  {
+   "task": "scale_value",
+   "pitfall": "assert_in_shipped_code",
+   "trial": 2,
+   "off": false,
+   "on": false,
+   "fired": false,
+   "turns": 1
+  },
+  {
+   "task": "scale_value",
+   "pitfall": "assert_in_shipped_code",
+   "trial": 3,
+   "off": false,
+   "on": false,
+   "fired": false,
+   "turns": 1
+  },
+  {
+   "task": "scale_value",
+   "pitfall": "assert_in_shipped_code",
+   "trial": 4,
+   "off": false,
+   "on": false,
+   "fired": false,
+   "turns": 1
+  },
+  {
+   "task": "scale_value",
+   "pitfall": "assert_in_shipped_code",
+   "trial": 5,
+   "off": false,
+   "on": false,
+   "fired": false,
+   "turns": 1
+  },
+  {
+   "task": "scale_value",
+   "pitfall": "assert_in_shipped_code",
+   "trial": 6,
+   "off": false,
+   "on": false,
+   "fired": false,
+   "turns": 1
+  },
+  {
+   "task": "scale_value",
+   "pitfall": "assert_in_shipped_code",
+   "trial": 7,
+   "off": false,
+   "on": false,
+   "fired": false,
+   "turns": 1
+  }
+ ]
+}

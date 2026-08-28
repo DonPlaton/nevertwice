@@ -12,33 +12,35 @@ its own blind spot, and the whole reason invariants exist is to cover it.
 Nothing here is imported eagerly: attribute access pulls the module in on
 first use, so ``import nevertwice.invariants`` stays free.
 
-    >>> from nevertwice.invariants import check_working_tree
-    >>> verdict = check_working_tree()
-    >>> verdict.ok
-    True
+The registry is currently **empty**. `blast_radius` was here and failed its gates
+in `research/invariants_lab/BLAST_RADIUS_D5.md`; the declared consequence of failing
+a gate is deletion, and this is what that looks like from inside the package.
+
+    >>> from nevertwice.invariants import INVARIANTS
+    >>> INVARIANTS
+    {}
 """
 
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-__all__ = [
-    "ContractChange",
-    "Ref",
-    "Symbol",
-    "Verdict",
-    "check_sources",
-    "check_working_tree",
-]
+__all__: list[str] = []
 
 #: Registry of available invariants. Future checkers append here; each entry
 #: maps a stable id to the module that implements it. Keeping it declarative
 #: means an external package can register a checker without editing core.
-INVARIANTS: dict[str, str] = {
-    "blast_radius": "nevertwice.invariants.blast_radius",
-}
+#:
+#: **Empty, and that is a measurement rather than an omission.** `blast_radius` lived
+#: here and was removed by T4: it failed two of its four declared gates in D5 --
+#: precision 0.396 against a floor of 0.50, and a flag rate of 0.278 against a ceiling
+#: of 0.05 -- and the declared consequence of failing a gate is deletion. The checker,
+#: its 159 regressions and the measurement that closed it are kept in
+#: `research/invariants_lab/`, because a negative result is only worth something if the
+#: thing it is about can still be read.
+INVARIANTS: dict[str, str] = {}
 
-_EXPORTS = {name: "blast_radius" for name in __all__}
+_EXPORTS: dict[str, str] = {name: INVARIANTS[name] for name in __all__}
 
 
 def __getattr__(name: str) -> Any:
@@ -47,7 +49,7 @@ def __getattr__(name: str) -> Any:
         raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
     from importlib import import_module
 
-    module = import_module(f".{module_name}", __name__)
+    module = import_module(module_name)
     value = getattr(module, name)
     globals()[name] = value  # cache, so this happens once
     return value
@@ -57,12 +59,4 @@ def __dir__() -> list[str]:
     return sorted(set(globals()) | set(__all__))
 
 
-if TYPE_CHECKING:  # pragma: no cover - for type checkers only
-    from .blast_radius import (  # noqa: F401
-        ContractChange,
-        Ref,
-        Symbol,
-        Verdict,
-        check_sources,
-        check_working_tree,
-    )
+# No TYPE_CHECKING imports: there is nothing in the package to import yet.
