@@ -167,6 +167,14 @@ def test_the_suite_count_is_counted_rather_than_remembered() -> None:
     ONES = ["", "One", "Two", "Three", "Four", "Five",
             "Six", "Seven", "Eight", "Nine"]
 
+    # Ten to nineteen have their own names and no rule generates them. The first version
+    # of this helper had no such branch, so `spell(110)` recursed into `spell(10)` and
+    # died on `ONES[10]` with an IndexError -- the moment the suite count crossed 110,
+    # nine months after the helper was written. A speller that cannot count is a poor
+    # instrument for a test whose whole point is that a number is counted, not remembered.
+    TEENS = ["Ten", "Eleven", "Twelve", "Thirteen", "Fourteen",
+             "Fifteen", "Sixteen", "Seventeen", "Eighteen", "Nineteen"]
+
     def spell(n: int) -> str:
         if n >= 100:
             head = f"{ONES[n // 100]} hundred" if n // 100 < 10 else f"{n // 100} hundred"
@@ -174,7 +182,14 @@ def test_the_suite_count_is_counted_rather_than_remembered() -> None:
             return head if rest == 0 else f"{head} {spell(rest).lower()}"
         if n >= 20:
             return TENS[n // 10] + UNITS[n % 10]
+        if n >= 10:
+            return TEENS[n - 10]
         return ONES[n] or "Zero"
+    for n, want in ((9, "Nine"), (10, "Ten"), (13, "Thirteen"), (19, "Nineteen"),
+                    (20, "Twenty"), (42, "Forty-two"), (100, "One hundred"),
+                    (109, "One hundred nine"), (110, "One hundred ten"),
+                    (117, "One hundred seventeen"), (120, "One hundred twenty")):
+        check(f"the speller renders {n} as {want!r}", spell(n) == want, spell(n))
     listed = subprocess.run(["git", "ls-files"], cwd=ROOT, capture_output=True, text=True,
                             encoding="utf-8", errors="replace").stdout.splitlines()
     actual = sum(1 for f in listed

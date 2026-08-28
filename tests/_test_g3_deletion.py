@@ -82,10 +82,24 @@ def test_the_seal_records_what_was_frozen_and_every_amendment() -> None:
     seal = json.loads((LAB / "heldout_seal.json").read_text(encoding="utf-8"))
     check("the freeze names at least 25 files", len(seal.get("frozen_code") or {}) >= 25,
           str(len(seal.get("frozen_code") or {})))
+    # Two kinds of amendment, and each has to justify itself in its own terms. Before the
+    # held-out corpus existed an edit could be *harmless* -- nothing had been measured, so
+    # nothing could move. After it exists that claim is no longer available, and
+    # `PREREGISTRATION-SHIP.md` §1 calls such an edit a **deviation**. A deviation must
+    # say so and must argue, specifically, why it moves no verdict.
     for entry in seal.get("amendments", []):
-        check("amendment to " + entry.get("file", "?") + " records both digests",
+        name = entry.get("file", "?")
+        check("amendment to " + name + " records both digests",
               bool(entry.get("from")) and bool(entry.get("to")))
-        check("and says why it was harmless", bool(entry.get("harmless_because")))
+        check("and says what changed and why", bool(entry.get("change"))
+              and bool(entry.get("why")))
+        if entry.get("deviation_not_correction"):
+            check(name + " is declared a deviation and argues it moves no verdict",
+                  bool(entry.get("why_it_moves_no_verdict"))
+                  and bool(entry.get("declared_status")))
+        else:
+            check(name + " claims harmlessness and says why",
+                  bool(entry.get("harmless_because")))
     check("the seal was opened against a preregistration",
           "PREREGISTRATION" in str(seal.get("opened_against", "")))
 

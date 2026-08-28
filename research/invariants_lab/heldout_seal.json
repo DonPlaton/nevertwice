@@ -20,7 +20,7 @@
   "db_authority.py": "439de6c09c9bb2fece892def86d472a7975ac1d0459dda84e9108403ad204ae7",
   "seam_journal.py": "05f42a6437080ca5e909c2c5a2ec1a744e93b69d3e3b0f9bed93967b3b1fb9ef",
   "mutate.py": "7aca3030efe4e49e265450429b0f19e53d69d866e790e52019f4305cc9f5cd48",
-  "verify_mutants.py": "e4cb27a34631ceda9110e527c4c703ea5fdcdb03dda6feb547badc75ac441f90",
+  "verify_mutants.py": "f035ca75627b3dd1d0d5189ee76bc6c107e52299fb33e2c405f07944ec7ce1d2",
   "corpus_census.py": "6c1318f964e4d95bdedaf33b259b0f006d90d28d03ea53fa13aeb3b667b6165d",
   "corpora.py": "9bf89df4fc2ced15cbe000470f47f4a40def3c5ac02953027159d45fe816832b",
   "corpusio.py": "245eb3102b4a5efbb2edf68e6fc4fe5b806483df8263f7d780304eb980963f82",
@@ -50,6 +50,18 @@
    "change": "HELDOUT_READERS gained clone_heldout.py",
    "why": "H3's clone script legitimately names the held-out root, and the static seal lock refused it -- the lock working. The allowlist lives in this frozen module, so naming a Phase-H script requires amending the freeze.",
    "harmless_because": "no held-out repository exists, no measurement has run, and the change adds a filename to an allowlist without altering any computation. That window closes the moment the corpus exists; after it, an amendment is a deviation and not a correction."
+  },
+  {
+   "at": "2026-08-29T00:14:09",
+   "task": "V",
+   "file": "verify_mutants.py",
+   "from": "e4cb27a34631ceda9110e527c4c703ea5fdcdb03dda6feb547badc75ac441f90",
+   "to": "f035ca75627b3dd1d0d5189ee76bc6c107e52299fb33e2c405f07944ec7ce1d2",
+   "change": "the `signature not rebuildable` branch now sets agrees=False before it continues past the assignment at the end of the loop",
+   "why": "the control crashed with KeyError: 'agrees' on the held-out corpus before producing a single number. corpus_dev rebuilt 868 signatures of 868, so the branch never fired there; the held-out corpus fired it. Without the control no mutant is marked confirmed and every downstream harness measures zero positives -- Phase V cannot run at all.",
+   "deviation_not_correction": true,
+   "why_it_moves_no_verdict": "the value written is exactly what the skipped line would have computed: agrees = broken and intact, and this branch has already set both to False. No mutant's confirmed status can differ from what an uncrashed original would have produced.",
+   "declared_status": "PREREGISTRATION-SHIP.md section 1 says the harmless-amendment window closed with H3. This edit is AFTER the corpus exists and is therefore a deviation, reported as one, not a correction."
   }
  ]
 }

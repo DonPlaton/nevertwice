@@ -235,7 +235,15 @@ def verify(mutants: list[dict]) -> dict:
                 tree = cache[key]
                 sig = _signature_of(tree, m["qualname"]) if tree is not None else None
                 if sig is None:
-                    row.update(broken=False, intact=False, note="signature not rebuildable")
+                    # `agrees` is set here as well as below, because this branch
+                    # `continue`s past the assignment at the end of the loop. Without it
+                    # the row reaches `[r for r in results if r["agrees"]]` without the
+                    # key and the control dies with `KeyError` before producing a number.
+                    # `corpus_dev` rebuilt 868 signatures of 868 so this never fired; the
+                    # held-out corpus fired it. The value is exactly what the skipped line
+                    # would compute -- `False and False` -- so it moves no verdict.
+                    row.update(broken=False, intact=False, agrees=False,
+                               note="signature not rebuildable")
                     results.append(row)
                     continue
                 old = [c for c in _calls_to(old_caller or "", m["symbol"]) if not c[3]]
