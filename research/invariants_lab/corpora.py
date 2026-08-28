@@ -113,6 +113,69 @@ def heldout_repos(root: Path | None = None) -> list[Path]:
 
 
 # ---------------------------------------------------------------------------
+# H1: the corpus is an argument, and the artifacts of one cannot overwrite the other
+# ---------------------------------------------------------------------------
+
+CORPORA: tuple[str, ...] = ("dev", "heldout")
+
+
+def repos_for(corpus: str) -> list[Path]:
+    """The clones of a named corpus.
+
+    Phase V measures the **same frozen code** on a different corpus. A harness with
+    `dev_repos()` written into it would have to be edited to do that -- after its hash
+    was recorded, which is what freezing was for. So the corpus is an argument, and an
+    unknown name raises rather than defaulting to anything.
+    """
+    if corpus == "dev":
+        return dev_repos()
+    if corpus == "heldout":
+        return heldout_repos()
+    raise ValueError(
+        "unknown corpus " + repr(corpus) + "; the two are " + ", ".join(CORPORA)
+        + ". There is no default: a harness that silently picked one would report a "
+        "held-out row with development numbers."
+    )
+
+
+def _suffixed(name: str, corpus: str) -> Path:
+    if corpus not in CORPORA:
+        raise ValueError("unknown corpus " + repr(corpus))
+    if corpus == "dev":
+        return HERE / name
+    stem, _, ext = name.rpartition(".")
+    return HERE / (stem + "_heldout." + ext)
+
+
+def census_path(corpus: str = "dev") -> Path:
+    return _suffixed("corpus_census.json", corpus)
+
+
+def mutants_path(corpus: str = "dev") -> Path:
+    return _suffixed("mutants.json", corpus)
+
+
+def artifact_path(name: str, corpus: str = "dev") -> Path:
+    """Where a harness writes its result. The dev names are the ones already committed."""
+    return _suffixed(name, corpus)
+
+
+def add_corpus_argument(parser) -> None:
+    """One flag, spelled the same way everywhere, so no harness invents its own."""
+    parser.add_argument("--corpus", choices=list(CORPORA), default="dev",
+                        help="which corpus to measure; heldout is sealed until Phase V")
+
+
+def file_digest(path: Path) -> str | None:
+    """sha256 of a file, or None when it is absent. Used by the H1 code freeze."""
+    import hashlib
+    try:
+        return hashlib.sha256(path.read_bytes()).hexdigest()
+    except OSError:
+        return None
+
+
+# ---------------------------------------------------------------------------
 # disk accounting -- §2 asks for corpus size at every phase boundary
 # ---------------------------------------------------------------------------
 

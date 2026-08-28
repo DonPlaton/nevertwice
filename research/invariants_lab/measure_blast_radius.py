@@ -52,15 +52,30 @@ from statsmodels.stats.proportion import proportion_confint
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from corpora import dev_repos
+import corpora  # noqa: E402
+from corpora import repos_for
 from corpusio import BlobReader, progress  # noqa: E402
 import mutate  # noqa: E402
 import sigscan  # noqa: E402
 
+#: H1: the corpus is an argument, so Phase V runs the SAME frozen code on a different
+#: corpus without editing this file. `_select_corpus` rebinds the paths before any run.
+CORPUS = "dev"
+
+
+def _select_corpus(name: str) -> None:
+    global CORPUS, CENSUS, MUTANTS, ARTIFACT
+    CORPUS = name
+    CENSUS = corpora.census_path(name)
+    MUTANTS = corpora.mutants_path(name)
+    ARTIFACT = corpora.artifact_path('blast_radius_d5.json', name)
+
+
+CENSUS = corpora.census_path(CORPUS)
+MUTANTS = corpora.mutants_path(CORPUS)
+ARTIFACT = corpora.artifact_path('blast_radius_d5.json', CORPUS)
+
 ROOT = Path(__file__).resolve().parents[2]
-CENSUS = Path(__file__).with_name("corpus_census.json")
-MUTANTS = Path(__file__).with_name("mutants.json")
-ARTIFACT = Path(__file__).with_name("blast_radius_d5.json")
 
 SEED = 20260827          # PREREGISTRATION.md section 1
 SILENCE_SAMPLE = 1000    # PREREGISTRATION.md section 3, gate D5-P4
@@ -250,7 +265,7 @@ def run() -> dict:
     progress(f"primary sample: {len(primary)} clusters from {len(mutants)} mutants")
 
     rows: list[dict] = []
-    repos = {r.name: r for r in dev_repos()}
+    repos = {r.name: r for r in repos_for(CORPUS)}
     readers: dict[str, BlobReader] = {}
     try:
         for i, m in enumerate(primary):
@@ -494,7 +509,9 @@ def summarise(raw: dict) -> dict:
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--print", dest="show", action="store_true")
+    corpora.add_corpus_argument(ap)
     args = ap.parse_args(argv)
+    _select_corpus(args.corpus)
 
     if args.show:
         d = json.loads(ARTIFACT.read_text(encoding="utf-8"))

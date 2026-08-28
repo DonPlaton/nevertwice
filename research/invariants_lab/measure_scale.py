@@ -7,7 +7,7 @@ that a 0.95-versus-0.90 comparison needs.
 | gate | threshold | why it is higher than the others |
 |---|---|---|
 | **X4-S1** recall on quadratics | > 0.90 | a missed quadratic is the entire failure this exists to prevent |
-| **X4-S2** false positives on linear code | ≤ 0.05 | matched in length and shape, so it cannot win by responding to size |
+| **X4-S2** false positives on linear code | <= 0.05 | matched in length and shape, so it cannot win by responding to size |
 | **X4-S3** the canary discriminates | every matched pair | at 10x the quadratic exceeds its envelope and the linear one does not |
 | **X4-S4** no declared axis, no finding | contract | silence is the default, not an achievement |
 
@@ -37,10 +37,29 @@ from statsmodels.stats.proportion import proportion_confint
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
+import corpora  # noqa: E402
+from corpora import repos_for  # noqa: E402
+
+#: H1: the corpus is an argument, so Phase V runs the SAME frozen code on a different
+#: corpus without editing this file. `_select_corpus` rebinds the paths before any run.
+CORPUS = "dev"
+
+
+def _select_corpus(name: str) -> None:
+    global CORPUS, CENSUS, MUTANTS, ARTIFACT
+    CORPUS = name
+    CENSUS = corpora.census_path(name)
+    MUTANTS = corpora.mutants_path(name)
+    ARTIFACT = corpora.artifact_path('scale_x4.json', name)
+
+
+CENSUS = corpora.census_path(CORPUS)
+MUTANTS = corpora.mutants_path(CORPUS)
+ARTIFACT = corpora.artifact_path('scale_x4.json', CORPUS)
+
 import scale as S  # noqa: E402
 from corpusio import progress  # noqa: E402
 
-ARTIFACT = Path(__file__).with_name("scale_x4.json")
 SEED = 20260827
 N_EACH = 260          # PREREGISTRATION.md section 5 asks for >= 250
 N_CANARY = 40         # >= 30
@@ -207,18 +226,17 @@ def corpus_silence(sample: int = 1000) -> dict:
     import json as _json
     from collections import Counter
 
-    from corpora import dev_repos
     from corpusio import BlobReader
 
     census = _json.loads(
-        (Path(__file__).with_name("corpus_census.json")).read_text(encoding="utf-8"))
+        CENSUS.read_text(encoding="utf-8"))
     pool = [(r["repo"], e) for r in census["repos"]
             for e in (r.get("eligible", []) + r.get("silent", []))]
     pool.sort(key=lambda x: (x[0], x[1]["sha"]))
     rng = random.Random(SEED)
     chosen = rng.sample(pool, sample) if len(pool) > sample else pool
 
-    repos = {r.name: r for r in dev_repos()}
+    repos = {r.name: r for r in repos_for(CORPUS)}
     readers: dict[str, object] = {}
     fired = considered = no_axis = 0
     try:
@@ -370,7 +388,9 @@ def summarise(raw: dict) -> dict:
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--print", dest="show", action="store_true")
+    corpora.add_corpus_argument(ap)
     args = ap.parse_args(argv)
+    _select_corpus(args.corpus)
 
     if args.show:
         d = json.loads(ARTIFACT.read_text(encoding="utf-8"))

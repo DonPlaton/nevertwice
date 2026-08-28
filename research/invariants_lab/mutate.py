@@ -52,12 +52,28 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import binding  # noqa: E402
-from corpora import dev_repos
+import corpora  # noqa: E402
+from corpora import repos_for
 from corpusio import BlobReader, progress  # noqa: E402
 from sigscan import Def, RefSite, scan_defs, scan_refs  # noqa: E402
 
-CENSUS = Path(__file__).with_name("corpus_census.json")
-ARTIFACT = Path(__file__).with_name("mutants.json")
+#: H1: the corpus is an argument, so Phase V runs the SAME frozen code on a different
+#: corpus without editing this file. `_select_corpus` rebinds the paths before any run.
+CORPUS = "dev"
+
+
+def _select_corpus(name: str) -> None:
+    global CORPUS, CENSUS, MUTANTS, ARTIFACT
+    CORPUS = name
+    CENSUS = corpora.census_path(name)
+    MUTANTS = corpora.mutants_path(name)
+    ARTIFACT = corpora.artifact_path('mutants.json', name)
+
+
+CENSUS = corpora.census_path(CORPUS)
+MUTANTS = corpora.mutants_path(CORPUS)
+ARTIFACT = corpora.artifact_path('mutants.json', CORPUS)
+
 
 
 # --------------------------------------------------------------------------
@@ -278,7 +294,9 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--print", dest="show", action="store_true")
     ap.add_argument("--materialise", default=None, metavar="ID")
     ap.add_argument("--into", default=None, type=Path)
+    corpora.add_corpus_argument(ap)
     args = ap.parse_args(argv)
+    _select_corpus(args.corpus)
 
     if args.show:
         if not ARTIFACT.exists():
@@ -309,7 +327,7 @@ def main(argv: list[str] | None = None) -> int:
             progress(f"no mutant with id {args.materialise}")
             return 1
         m = found[0]
-        repo = next(r for r in dev_repos() if r.name == m["repo"])
+        repo = next(r for r in repos_for(CORPUS) if r.name == m["repo"])
         files = materialise(repo, m, args.into)
         progress(f"{len(files)} files; caller {m['caller_path']} held at parent")
         print(json.dumps({k: {s: (v is not None) for s, v in p.items()}
@@ -323,7 +341,7 @@ def main(argv: list[str] | None = None) -> int:
     all_mutants: list[Mutant] = []
     by_repo: list[dict] = []
     candidates = 0
-    for repo in dev_repos():
+    for repo in repos_for(CORPUS):
         entries = by_name.get(repo.name, {}).get("eligible", [])
         candidates += sum(len(h["symbols"]) for e in entries for h in e["caller_updates"])
         progress(f"== {repo.name} ({len(entries)} eligible commits)")

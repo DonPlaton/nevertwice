@@ -42,11 +42,27 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import invariant_notes as I  # noqa: E402
 import preconfigured as P  # noqa: E402
 import scale as S  # noqa: E402
-from corpora import dev_repos
+import corpora  # noqa: E402
+from corpora import repos_for
 from corpusio import BlobReader, progress  # noqa: E402
 
-CENSUS = Path(__file__).with_name("corpus_census.json")
-ARTIFACT = Path(__file__).with_name("together_t1.json")
+#: H1: the corpus is an argument, so Phase V runs the SAME frozen code on a different
+#: corpus without editing this file. `_select_corpus` rebinds the paths before any run.
+CORPUS = "dev"
+
+
+def _select_corpus(name: str) -> None:
+    global CORPUS, CENSUS, MUTANTS, ARTIFACT
+    CORPUS = name
+    CENSUS = corpora.census_path(name)
+    MUTANTS = corpora.mutants_path(name)
+    ARTIFACT = corpora.artifact_path('together_t1.json', name)
+
+
+CENSUS = corpora.census_path(CORPUS)
+MUTANTS = corpora.mutants_path(CORPUS)
+ARTIFACT = corpora.artifact_path('together_t1.json', CORPUS)
+
 SEED = 20260827
 SAMPLE = 1000
 ALPHA = 0.05
@@ -104,7 +120,7 @@ def run() -> dict:
     sample = rng.sample(pool, SAMPLE) if len(pool) > SAMPLE else pool
     progress(f"{len(sample)} commits of {len(pool)}")
 
-    repos = {r.name: r for r in dev_repos()}
+    repos = {r.name: r for r in repos_for(CORPUS)}
     readers: dict[str, BlobReader] = {}
     rows: list[dict] = []
     try:
@@ -204,7 +220,9 @@ def summarise(raw: dict) -> dict:
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--print", dest="show", action="store_true")
+    corpora.add_corpus_argument(ap)
     args = ap.parse_args(argv)
+    _select_corpus(args.corpus)
 
     if args.show:
         d = json.loads(ARTIFACT.read_text(encoding="utf-8"))

@@ -34,12 +34,28 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import complexity as C  # noqa: E402
 import ratchet as R  # noqa: E402
-from corpora import dev_repos  # noqa: E402
+import corpora  # noqa: E402
+from corpora import repos_for  # noqa: E402
 from corpusio import BlobReader, progress  # noqa: E402
 
+#: H1: the corpus is an argument, so Phase V runs the SAME frozen code on a different
+#: corpus without editing this file. `_select_corpus` rebinds the paths before any run.
+CORPUS = "dev"
+
+
+def _select_corpus(name: str) -> None:
+    global CORPUS, CENSUS, MUTANTS, ARTIFACT
+    CORPUS = name
+    CENSUS = corpora.census_path(name)
+    MUTANTS = corpora.mutants_path(name)
+    ARTIFACT = corpora.artifact_path('axes_f3.json', name)
+
+
+CENSUS = corpora.census_path(CORPUS)
+MUTANTS = corpora.mutants_path(CORPUS)
+ARTIFACT = corpora.artifact_path('axes_f3.json', CORPUS)
+
 ROOT = Path(__file__).resolve().parents[2]
-CENSUS = Path(__file__).with_name("corpus_census.json")
-ARTIFACT = Path(__file__).with_name("axes_f3.json")
 
 SEED = 20260828
 AGREE_CORPUS_FILES = 300     # AXES_F3.md section 3, F3-A
@@ -111,7 +127,7 @@ def agree_on_this_repository() -> dict:
 
 def agree_on_the_corpus(tmp: Path) -> dict:
     """A seeded, evenly-spread sample of `corpus_dev` files at their pinned HEADs."""
-    repos = dev_repos()
+    repos = repos_for(CORPUS)
     if not repos:
         return {"set": "corpus_dev", "skipped": "polygon absent"}
     per_repo = max(1, AGREE_CORPUS_FILES // max(len(repos), 1))
@@ -199,7 +215,7 @@ def corpus_pass(tmp: Path) -> dict:
     pool.sort(key=lambda x: (x[0], x[1]["sha"]))
     progress(f"corpus pass over the whole pool: {len(pool)} commits")
 
-    repos = {r.name: r for r in dev_repos()}
+    repos = {r.name: r for r in repos_for(CORPUS)}
     readers: dict[str, BlobReader] = {}
 
     length_rows: list[dict] = []     # one per function-diff with a statement reading
@@ -286,7 +302,7 @@ def discrimination_pass(tmp: Path) -> dict:
     sample = rng.sample(pool, L2_COMMITS) if len(pool) > L2_COMMITS else pool
     progress(f"F3-L2 discrimination sample: {len(sample)} commits")
 
-    repos = {r.name: r for r in dev_repos()}
+    repos = {r.name: r for r in repos_for(CORPUS)}
     readers: dict[str, BlobReader] = {}
     rose_fired = rose_quiet = flat_fired = flat_quiet = 0
     try:
@@ -469,7 +485,9 @@ def main() -> int:
                     help="run F3-L2 alone and merge it into the committed artifact, "
                          "so the 40-minute corpus pass is not repeated for a "
                          "corroborating gate")
+    corpora.add_corpus_argument(ap)
     args = ap.parse_args()
+    _select_corpus(args.corpus)
     if args.show:
         _print(json.loads(ARTIFACT.read_text(encoding="utf-8")))
         return 0

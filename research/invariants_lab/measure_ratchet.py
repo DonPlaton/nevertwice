@@ -11,7 +11,7 @@ firing**, never recall against itself:
 
 | gate | threshold | what it tests |
 |---|---|---|
-| **R3-C1** silence | flag rate ≤ 0.05 on the silence pool | can anyone leave it switched on |
+| **R3-C1** silence | flag rate <= 0.05 on the silence pool | can anyone leave it switched on |
 | **R3-C2** agreement | fires on > 0.50 of diffs where **`ruff`'s own delta** says complexity rose | does it find what another tool finds |
 | **R3-C3** discrimination | fires strictly more often on `ruff`-rose diffs than on `ruff`-flat diffs | is it responding to complexity at all |
 
@@ -41,11 +41,27 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import complexity as C  # noqa: E402
 import ratchet as R  # noqa: E402
-from corpora import dev_repos
+import corpora  # noqa: E402
+from corpora import repos_for
 from corpusio import BlobReader, progress  # noqa: E402
 
-CENSUS = Path(__file__).with_name("corpus_census.json")
-ARTIFACT = Path(__file__).with_name("ratchet_r3.json")
+#: H1: the corpus is an argument, so Phase V runs the SAME frozen code on a different
+#: corpus without editing this file. `_select_corpus` rebinds the paths before any run.
+CORPUS = "dev"
+
+
+def _select_corpus(name: str) -> None:
+    global CORPUS, CENSUS, MUTANTS, ARTIFACT
+    CORPUS = name
+    CENSUS = corpora.census_path(name)
+    MUTANTS = corpora.mutants_path(name)
+    ARTIFACT = corpora.artifact_path('ratchet_r3.json', name)
+
+
+CENSUS = corpora.census_path(CORPUS)
+MUTANTS = corpora.mutants_path(CORPUS)
+ARTIFACT = corpora.artifact_path('ratchet_r3.json', CORPUS)
+
 
 SEED = 20260827
 SAMPLE = 1000          # PREREGISTRATION.md section 4, gates R3-C1..C3
@@ -96,7 +112,7 @@ def run() -> dict:
     sample = rng.sample(pool, SAMPLE) if len(pool) > SAMPLE else pool
     progress(f"{len(sample)} commits of {len(pool)}")
 
-    repos = {r.name: r for r in dev_repos()}
+    repos = {r.name: r for r in repos_for(CORPUS)}
     readers: dict[str, BlobReader] = {}
     rows: list[dict] = []
     tmp = Path(tempfile.mkdtemp(prefix="ratchet_r3_"))
@@ -189,7 +205,9 @@ def summarise(raw: dict) -> dict:
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--print", dest="show", action="store_true")
+    corpora.add_corpus_argument(ap)
     args = ap.parse_args(argv)
+    _select_corpus(args.corpus)
 
     if args.show:
         d = json.loads(ARTIFACT.read_text(encoding="utf-8"))

@@ -174,6 +174,109 @@ def test_nothing_refers_to_an_unnamed_corpus() -> None:
           not stale, str(stale[:8]))
 
 
+def test_every_harness_takes_a_corpus_rather_than_assuming_one() -> None:
+    """H1: a harness edited *after* the freeze is a harness that broke the freeze.
+
+    Phase V measures the same code on a different corpus. If a measurement script has
+    `dev_repos()` written into it, running it on the held-out corpus means editing it --
+    after the hashes were recorded, which is exactly what freezing was for. So the corpus
+    becomes an argument **before** the freeze, and this test is what stops it drifting
+    back.
+    """
+    print("\n- the corpus is an argument, not a constant -")
+    harnesses = ["measure_blast_radius.py", "measure_abstention.py", "measure_surface.py",
+                 "measure_ratchet.py", "measure_scale.py", "measure_together.py",
+                 "audit_axes.py", "mutate.py", "verify_mutants.py", "corpus_census.py",
+                 "mine_quadratics.py", "facade_shapes.py"]
+    import subprocess
+    missing_flag, hardcoded = [], []
+    for name in harnesses:
+        path = LAB / name
+        if not path.exists():
+            missing_flag.append(name + " (absent)")
+            continue
+        text = path.read_text(encoding="utf-8", errors="replace")
+        if "repos_for(" not in text:
+            hardcoded.append(name)
+        # Asked of the parser rather than of the source, because the flag is defined once
+        # in `corpora.add_corpus_argument` and a grep for the literal would pass for a
+        # harness that merely mentions it in a docstring.
+        try:
+            proc = subprocess.run([sys.executable, str(path), "--help"],
+                                  capture_output=True, text=True, timeout=120,
+                                  cwd=str(ROOT), check=False)
+        except (OSError, subprocess.SubprocessError) as exc:  # pragma: no cover
+            missing_flag.append(name + " (" + type(exc).__name__ + ")")
+            continue
+        if "--corpus" not in (proc.stdout or ""):
+            missing_flag.append(name)
+    check("every harness resolves its corpus through corpora.repos_for()",
+          not hardcoded, str(hardcoded))
+    check("and every harness's own parser accepts --corpus",
+          not missing_flag, str(missing_flag))
+
+
+def test_no_harness_dies_printing_its_own_help() -> None:
+    """`corpusio.progress`'s lesson, applied to `--help`.
+
+    This project already lost an MCP server to a cp1251 console. `measure_ratchet` and
+    `measure_scale` carried a `U+2264` in their module docstrings, so `--help` raised
+    `UnicodeEncodeError` on the owner's default console -- a research script nobody can
+    ask what its arguments are.
+    """
+    print("\n- every harness docstring survives a cp1251 console -")
+    offenders = []
+    for path in sorted(LAB.glob("*.py")):
+        text = path.read_text(encoding="utf-8", errors="replace")
+        try:
+            doc = __import__("ast").get_docstring(__import__("ast").parse(text)) or ""
+        except SyntaxError:  # pragma: no cover - caught elsewhere
+            continue
+        try:
+            doc.encode("cp1251")
+        except UnicodeEncodeError as exc:
+            offenders.append(path.name + ":" + hex(ord(doc[exc.start])))
+    check("no module docstring contains a character cp1251 cannot encode",
+          not offenders, str(offenders))
+
+
+def test_the_artifact_of_one_corpus_cannot_overwrite_the_other() -> None:
+    """Two corpora, two artifacts. One filename for both is one measurement lost."""
+    print("\n- artifacts are named per corpus -")
+    check("census paths differ", C.census_path("dev") != C.census_path("heldout"))
+    check("mutant paths differ", C.mutants_path("dev") != C.mutants_path("heldout"))
+    check("result paths differ",
+          C.artifact_path("x.json", "dev") != C.artifact_path("x.json", "heldout"))
+    check("the dev paths are the ones already committed",
+          C.census_path("dev").name == "corpus_census.json"
+          and C.mutants_path("dev").name == "mutants.json",
+          str((C.census_path("dev").name, C.mutants_path("dev").name)))
+    raised = None
+    try:
+        C.repos_for("nonsense")
+    except ValueError as exc:
+        raised = exc
+    check("an unknown corpus name raises rather than defaulting", raised is not None)
+
+
+def test_the_frozen_code_still_hashes_to_what_h1_recorded() -> None:
+    """The freeze itself. Red the moment a frozen module changes, which is the point."""
+    print("\n- the H1 code freeze -")
+    seal = C.heldout_seal()
+    frozen = seal.get("frozen_code") or {}
+    if not frozen:
+        print("       (no freeze recorded yet -- H1 has not run)")
+        check("an unfrozen seal is a closed seal", not seal.get("open"),
+              "the seal is open with no frozen hashes")
+        return
+    check("the freeze names at least the mechanisms and the harnesses",
+          len(frozen) >= 15, str(len(frozen)))
+    drifted = [name for name, digest in sorted(frozen.items())
+               if C.file_digest(LAB / name) != digest]
+    check("every frozen file still hashes to its recorded digest",
+          not drifted, str(drifted))
+
+
 def test_the_allowlist_cannot_be_emptied_by_accident() -> None:
     """A phase-V script joins the allowlist by being written, not by the glob widening."""
     print("\n- the allowlist is a list, not a pattern -")
@@ -193,6 +296,10 @@ def main() -> int:
                test_the_dev_corpus_is_readable_whatever_the_seal_says,
                test_no_module_reaches_around_the_seal,
                test_nothing_refers_to_an_unnamed_corpus,
+               test_every_harness_takes_a_corpus_rather_than_assuming_one,
+               test_no_harness_dies_printing_its_own_help,
+               test_the_artifact_of_one_corpus_cannot_overwrite_the_other,
+               test_the_frozen_code_still_hashes_to_what_h1_recorded,
                test_the_allowlist_cannot_be_emptied_by_accident):
         fn()
     print("\ncorpus freeze and held-out seal: " + str(PASSED) + " passed, "

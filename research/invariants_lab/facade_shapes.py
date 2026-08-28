@@ -34,14 +34,30 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from corpora import dev_repos
+import corpora  # noqa: E402
+from corpora import repos_for
 from corpusio import BlobReader, progress  # noqa: E402
 import mutate  # noqa: E402
 import sigscan  # noqa: E402
 
+#: H1: the corpus is an argument, so Phase V runs the SAME frozen code on a different
+#: corpus without editing this file. `_select_corpus` rebinds the paths before any run.
+CORPUS = "dev"
+
+
+def _select_corpus(name: str) -> None:
+    global CORPUS, CENSUS, MUTANTS, ARTIFACT
+    CORPUS = name
+    CENSUS = corpora.census_path(name)
+    MUTANTS = corpora.mutants_path(name)
+    ARTIFACT = corpora.artifact_path('facade_shapes.json', name)
+
+
+CENSUS = corpora.census_path(CORPUS)
+MUTANTS = corpora.mutants_path(CORPUS)
+ARTIFACT = corpora.artifact_path('facade_shapes.json', CORPUS)
+
 ROOT = Path(__file__).resolve().parents[2]
-CENSUS = Path(__file__).with_name("corpus_census.json")
-ARTIFACT = Path(__file__).with_name("facade_shapes.json")
 
 _spec = importlib.util.spec_from_file_location(
     "_nt_blast_radius_d4", ROOT / "research" / "invariants_lab" / "blast_radius_deleted.py"
@@ -187,7 +203,7 @@ def hunt(limit_per_repo: int | None = None) -> dict:
     refs_decided = 0
     refs_false = 0
 
-    for repo in dev_repos():
+    for repo in repos_for(CORPUS):
         entries = by_name.get(repo.name, {}).get("eligible", [])
         if limit_per_repo:
             entries = entries[:limit_per_repo]
@@ -298,7 +314,9 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--print", dest="show", action="store_true")
     ap.add_argument("--limit", type=int, default=None)
+    corpora.add_corpus_argument(ap)
     args = ap.parse_args(argv)
+    _select_corpus(args.corpus)
 
     if args.show:
         d = json.loads(ARTIFACT.read_text(encoding="utf-8"))

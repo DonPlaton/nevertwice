@@ -82,6 +82,9 @@ click from here, and `tests/_test_docs_map.py` fails the build if that stops bei
 | [`research/invariants_lab/AXES_F3.md`](../research/invariants_lab/AXES_F3.md) | The ratchet's three unaudited axes against instruments nobody here wrote, and the defects that turned up the moment something else was asked |
 | [`research/invariants_lab/SURFACE_F2.md`](../research/invariants_lab/SURFACE_F2.md) | Why scoping cannot do what abstention did: the declared surface this task wanted is not present in found history, and the conventions that are cost recall in proportion to what they remove |
 | [`research/invariants_lab/QUADRATIC_F4.md`](../research/invariants_lab/QUADRATIC_F4.md) | Testing the scale detector against quadratic fixes real maintainers wrote and named, under a declaration generated blind from the parent commit |
+| [`research/invariants_lab/COLDSTART_F5.md`](../research/invariants_lab/COLDSTART_F5.md) | The cold-start experiment that was never run, run: a project-specific declared axis escapes T3's portability argument and still does not help, because the detector cannot see the shape the model writes |
+| [`research/invariants_lab/PREREGISTRATION-SHIP.md`](../research/invariants_lab/PREREGISTRATION-SHIP.md) | Every threshold for the out-of-sample measurement and the end-to-end gate, with its harm bound, fixed before a single held-out repository was cloned |
+| [`research/invariants_lab/HELDOUT_H2.md`](../research/invariants_lab/HELDOUT_H2.md) | Thirty repositories across six domains, why each domain, and what every block is predicted to show - committed before the first clone |
 | [`research/evidence_manifest.json`](../research/evidence_manifest.json) | Every published number, with its dataset, sample size, model, command, raw file and caveat |
 | [`research/data/README.md`](../research/data/README.md) | Fetching the LongMemEval dataset the benchmarks need |
 

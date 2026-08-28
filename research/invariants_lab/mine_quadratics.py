@@ -44,11 +44,28 @@ from statsmodels.stats.proportion import proportion_confint
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import scale as SC  # noqa: E402
-from corpora import dev_repos  # noqa: E402
+import corpora  # noqa: E402
+from corpora import repos_for  # noqa: E402
 from corpusio import BlobReader, progress  # noqa: E402
 import blast_radius_deleted as br  # noqa: E402
 
-ARTIFACT = Path(__file__).with_name("quadratic_f4.json")
+#: H1: the corpus is an argument, so Phase V runs the SAME frozen code on a different
+#: corpus without editing this file. `_select_corpus` rebinds the paths before any run.
+CORPUS = "dev"
+
+
+def _select_corpus(name: str) -> None:
+    global CORPUS, CENSUS, MUTANTS, ARTIFACT
+    CORPUS = name
+    CENSUS = corpora.census_path(name)
+    MUTANTS = corpora.mutants_path(name)
+    ARTIFACT = corpora.artifact_path('quadratic_f4.json', name)
+
+
+CENSUS = corpora.census_path(CORPUS)
+MUTANTS = corpora.mutants_path(CORPUS)
+ARTIFACT = corpora.artifact_path('quadratic_f4.json', CORPUS)
+
 
 MIN_CONFIRMED = 20   # QUADRATIC_F4.md section 3 -- below this the gate is not scored
 ALPHA = 0.05
@@ -277,7 +294,7 @@ def examine(blobs: BlobReader, cand: dict) -> dict:
 
 
 def run() -> dict:
-    repos = dev_repos()
+    repos = repos_for(CORPUS)
     candidates: dict[tuple[str, str], dict] = {}
     per_repo: dict[str, int] = {}
     for repo in repos:
@@ -398,7 +415,9 @@ def _print(data: dict) -> None:
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--print", action="store_true", dest="show")
+    corpora.add_corpus_argument(ap)
     args = ap.parse_args()
+    _select_corpus(args.corpus)
     if args.show:
         _print(json.loads(ARTIFACT.read_text(encoding="utf-8")))
         return 0

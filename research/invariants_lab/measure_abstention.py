@@ -39,13 +39,28 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import abstain  # noqa: E402
 from abstain import POLICIES  # noqa: E402
-from corpora import dev_repos  # noqa: E402
+import corpora  # noqa: E402
+from corpora import repos_for  # noqa: E402
 from corpusio import BlobReader, progress  # noqa: E402
 import measure_blast_radius as D5  # noqa: E402
 
-CENSUS = Path(__file__).with_name("corpus_census.json")
-MUTANTS = Path(__file__).with_name("mutants.json")
-ARTIFACT = Path(__file__).with_name("abstention_f1.json")
+#: H1: the corpus is an argument, so Phase V runs the SAME frozen code on a different
+#: corpus without editing this file. `_select_corpus` rebinds the paths before any run.
+CORPUS = "dev"
+
+
+def _select_corpus(name: str) -> None:
+    global CORPUS, CENSUS, MUTANTS, ARTIFACT
+    CORPUS = name
+    CENSUS = corpora.census_path(name)
+    MUTANTS = corpora.mutants_path(name)
+    ARTIFACT = corpora.artifact_path('abstention_f1.json', name)
+
+
+CENSUS = corpora.census_path(CORPUS)
+MUTANTS = corpora.mutants_path(CORPUS)
+ARTIFACT = corpora.artifact_path('abstention_f1.json', CORPUS)
+
 
 SEED = D5.SEED                    # the same commits D5 measured, so the rows compare
 SILENCE_SAMPLE = D5.SILENCE_SAMPLE
@@ -99,7 +114,7 @@ def run() -> dict:
                for _k, v in sorted(by_commit.items())]
     progress(f"primary sample: {len(primary)} clusters from {len(mutants)} mutants")
 
-    repos = {r.name: r for r in dev_repos()}
+    repos = {r.name: r for r in repos_for(CORPUS)}
     rows: list[dict] = []
     readers: dict[str, BlobReader] = {}
     try:
@@ -368,7 +383,9 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--print", action="store_true", dest="show",
                     help="summarise the committed artifact without re-running")
+    corpora.add_corpus_argument(ap)
     args = ap.parse_args()
+    _select_corpus(args.corpus)
     if args.show:
         _print(json.loads(ARTIFACT.read_text(encoding="utf-8")))
         return 0

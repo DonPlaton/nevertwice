@@ -27,7 +27,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from corpora import dev_repos  # noqa: E402
+import corpora  # noqa: E402
+from corpora import repos_for  # noqa: E402
 from corpusio import (  # noqa: E402
     BlobReader,
     CommitFiles,
@@ -39,7 +40,23 @@ from corpusio import (  # noqa: E402
 import sigscan  # noqa: E402
 from sigscan import scan_refs, signature_deltas  # noqa: E402
 
-ARTIFACT = Path(__file__).with_name("corpus_census.json")
+#: H1: the corpus is an argument, so Phase V runs the SAME frozen code on a different
+#: corpus without editing this file. `_select_corpus` rebinds the paths before any run.
+CORPUS = "dev"
+
+
+def _select_corpus(name: str) -> None:
+    global CORPUS, CENSUS, MUTANTS, ARTIFACT
+    CORPUS = name
+    CENSUS = corpora.census_path(name)
+    MUTANTS = corpora.mutants_path(name)
+    ARTIFACT = corpora.artifact_path('corpus_census.json', name)
+
+
+CENSUS = corpora.census_path(CORPUS)
+MUTANTS = corpora.mutants_path(CORPUS)
+ARTIFACT = corpora.artifact_path('corpus_census.json', CORPUS)
+
 
 # Declared before the run, uniform across blocks, so no repository's window is
 # chosen for what it contains.
@@ -197,7 +214,9 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--print", dest="show", action="store_true")
     ap.add_argument("--only", default=None, help="census one repository by directory name")
     ap.add_argument("--window", type=int, default=WINDOW)
+    corpora.add_corpus_argument(ap)
     args = ap.parse_args(argv)
+    _select_corpus(args.corpus)
 
     if args.show:
         if not ARTIFACT.exists():
@@ -217,7 +236,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"eligible commits, total: {data['totals']['eligible_commits']}")
         return 0
 
-    repos = dev_repos()
+    repos = repos_for(CORPUS)
     if args.only:
         repos = [r for r in repos if r.name == args.only]
     if not repos:
