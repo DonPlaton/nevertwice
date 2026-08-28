@@ -1,5 +1,5 @@
 {
- "generated": "2026-08-28T00:38:43",
+ "generated": "2026-08-28T02:42:10",
  "alpha": 0.05,
  "target_power": 0.8,
  "seed": 20260827,
@@ -22,7 +22,7 @@
    "1.0": 69.2
   },
   "negatives_paired": 345,
-  "negatives_silent_pool": 6905
+  "negatives_silent_pool": 6806
  },
  "questions": [
   {
@@ -81,13 +81,13 @@
   },
   {
    "question": "flag rate 0.02 vs a ceiling of 0.05, on silent commits",
-   "n_available": 6905,
+   "n_available": 6806,
    "n_required": 308,
    "verdict": "POWERED"
   },
   {
    "question": "flag rate 0.03 vs a ceiling of 0.05, on silent commits",
-   "n_available": 6905,
+   "n_available": 6806,
    "n_required": 778,
    "verdict": "POWERED"
   }

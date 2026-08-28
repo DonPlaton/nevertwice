@@ -122,9 +122,16 @@ def is_true_finding(qualname: str, ref_path: str, lineno: int,
 
     if change.reason == "removed":
         defining = after.get(change.path, "")
+        if "." in qualname:
+            # A method or a nested name. `scan_defs` keys are qualnames, so asking
+            # whether the SHORT name is absent says "yes" for every method that
+            # still exists -- and even with that fixed, whether an arbitrary
+            # receiver reaches THIS class's member is not decidable from a name.
+            # Undecidable, and counted as such rather than as a point for either side.
+            return None
         gone = (
-            short not in sigscan.scan_defs(defining)
-            and short not in sigscan.import_bindings(defining)
+            qualname not in sigscan.scan_defs(defining)
+            and qualname not in sigscan.import_bindings(defining)
         )
         if not gone:
             return False

@@ -277,8 +277,13 @@
     },
     "research/invariants_lab/DEFECTS.md": {
    "governance": "backlog",
-   "budget": 21,
+   "budget": 31,
    "note": "Phase D of the invariants lab: the five false-positive classes the previous census quantified and left in the code, with the state of each. Its shares are quoted from research/blast_radius_precision.json, the artifact of the run being replaced; its regressions live in tests/_test_blast_radius.py and run in CI. D5 is blocked while any row is open, so this page is a gate rather than a claim."
+  },
+  "research/invariants_lab/BLAST_RADIUS_D5.md": {
+   "governance": "backlog",
+   "budget": 168,
+   "note": "Task D5 of the invariants lab: precision AND recall for the blast-radius checker on the eight-repository corpus, against git grep at a matched flag rate, with every threshold fixed in PREREGISTRATION.md before the run. Two of four gates fail and the mechanism is deleted; the numbers regenerate from research/invariants_lab/measure_blast_radius.py against blast_radius_d5.json and the SHAs in corpus_manifest.json. Every finding is judged mechanically, never by hand, and the 70% abstention rate is reported with the precision it qualifies."
   },
   "research/invariants_lab/CORPUS.md": {
    "governance": "backlog",

@@ -69,6 +69,7 @@ click from here, and `tests/_test_docs_map.py` fails the build if that stops bei
 | [`research/invariants_lab/POWER.md`](../research/invariants_lab/POWER.md) | What the corpus can actually see: twenty positives tell a precision of 0.8 from 0.5, the previous run had twenty-four, and three cells were underpowered until the corpus was enlarged to the whole history |
 | [`research/invariants_lab/PREREGISTRATION.md`](../research/invariants_lab/PREREGISTRATION.md) | Every threshold, baseline and deletion decision for all six mechanisms, with the sample size each will be judged at and whether the corpus can resolve it - written before any of them ran |
 | [`research/invariants_lab/DEFECTS.md`](../research/invariants_lab/DEFECTS.md) | The five false-positive classes the previous run counted and left in the code, and which are now closed - the measurement does not run until none are open |
+| [`research/invariants_lab/BLAST_RADIUS_D5.md`](../research/invariants_lab/BLAST_RADIUS_D5.md) | The answer once the corpus had positives in it: recall 0.91 and it beats git grep, but it fires on 28% of commits that broke nothing - deleted, and what a next attempt must change |
 | [`research/evidence_manifest.json`](../research/evidence_manifest.json) | Every published number, with its dataset, sample size, model, command, raw file and caveat |
 | [`research/data/README.md`](../research/data/README.md) | Fetching the LongMemEval dataset the benchmarks need |
 

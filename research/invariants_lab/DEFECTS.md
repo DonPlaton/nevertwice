@@ -7,8 +7,9 @@ number those defects produced as a verdict on the idea.
 
 This page is that list, with its state. **D5 is blocked while any row is open.**
 
-**The list is empty.** Six rows, five inherited from the census and one the corpus produced that
-150 commits of a single repository could never have shown. D5 is unblocked.
+**The list is empty.** Eight rows: five inherited from the census, and **three the corpus produced
+that 150 commits of a single repository could never have shown.** D5 ran and its result is in
+[`BLAST_RADIUS_D5.md`](BLAST_RADIUS_D5.md).
 
 ```bash
 python tests/_test_blast_radius.py     # every row below has its regression here
@@ -29,6 +30,8 @@ before its fix existed.
 | 4 | **class gained a member** — a member list growing is what a compatible change looks like | 1 of 24 (4%) | D3 | **closed** |
 | 5 | **moved and still resolves** — the facade shapes I2 did not solve | 6 of 24 (25%) | D4 | **closed** |
 | 6 | **foreign receiver** — a method contract change matched against an attribute call on a *different* class | not in the old census | D4b | **closed** |
+| 7 | **an unreadable file read as a file full of deletions** — an empty parse makes every symbol look removed | not in the old census | D6 | **closed** |
+| 8 | **quadratic diff** — `difflib` on repeated lines; a 6 MB file took the suite from 2 s to over 2 min | not in the old census | D7 | **closed** |
 
 Shares are from `research/blast_radius_precision.json`, the artifact of the run being replaced.
 
@@ -168,3 +171,39 @@ give it the answer key's own rule, making the precision gate measure agreement w
 So the primary measurement runs the mechanism **as specified**, and the compatibility filter is
 declared as a labelled **exploratory secondary arm** in `PREREGISTRATION.md` §9 — before D5 runs,
 with the circularity stated, rather than discovered as a convenient improvement afterwards.
+
+
+## 6 · An unreadable file is not a file full of deletions — closed by D6
+
+**The defect.** `extract_symbols` returns an empty map on a `SyntaxError`. Safe on its own,
+catastrophic in a diff: an empty *after* makes every symbol the *before* defined look removed. One
+`flask` commit that reintroduced a Python-2 `print` statement produced **30 findings** this way,
+for symbols still defined three lines below.
+
+**5.43% of this corpus cannot be parsed by Python 3.14**, so on a history reaching back to 2005
+this is not an edge case — it is a steady source of confident nonsense.
+
+**The fix.** `contract_changes` yields nothing when either side fails to parse, and `check_sources`
+**says so in a note**. Silence nobody can see is indistinguishable from a clean bill.
+
+**The answer key had the identical hole** and is fixed the same way, with its own five regressions
+in `tests/_test_invariants_lab.py`. Two instruments, one blind spot, found because the silence pool
+disagreed with itself.
+
+## 7 · A big diff is not a hang — closed by D7
+
+**The defect.** `changed_lines` runs `difflib.SequenceMatcher(autojunk=False)`, which is quadratic
+in the **multiplicity of repeated lines**, not in file length. 40,000 lines of distinct source diff
+in 0.04 s; 8,000 lines of pretty-printed JSON take 5 s; 185,000 take minutes. The spec promises a
+**2.00 s hard ceiling**.
+
+It stayed invisible until a 6 MB research artifact landed in the working tree and the checker's own
+test suite went from 2 seconds to over two minutes.
+
+**The fix** guards on repetition as well as length, because length alone is the wrong measure: a
+hard ceiling at 50,000 lines — the longest module in this repository is 6,333 — and a repetition
+test above 2,000 lines. A regression asserts that this repository's longest module is still diffed
+**precisely**, so the guard cannot quietly grow into source code.
+
+Not a correctness defect. A usability one, and a checker nobody can run is a checker nobody
+measures.

@@ -1,10 +1,10 @@
 {
- "generated": "2026-08-28T00:37:51",
- "seconds": 22.8,
+ "generated": "2026-08-28T02:40:59",
+ "seconds": 31.2,
  "by_repo": [
   {
    "repo": "django_django",
-   "eligible_commits": 490,
+   "eligible_commits": 487,
    "mutants": 314,
    "source_commits": 109,
    "arity": 274,
@@ -36,7 +36,7 @@
   },
   {
    "repo": "psf_requests",
-   "eligible_commits": 10,
+   "eligible_commits": 9,
    "mutants": 7,
    "source_commits": 4,
    "arity": 6,
@@ -44,7 +44,7 @@
   },
   {
    "repo": "pytest-dev_pytest",
-   "eligible_commits": 209,
+   "eligible_commits": 202,
    "mutants": 158,
    "source_commits": 77,
    "arity": 137,
@@ -52,7 +52,7 @@
   },
   {
    "repo": "scrapy_scrapy",
-   "eligible_commits": 154,
+   "eligible_commits": 153,
    "mutants": 144,
    "source_commits": 37,
    "arity": 131,
@@ -68,7 +68,7 @@
   }
  ],
  "totals": {
-  "candidates": 2247,
+  "candidates": 2224,
   "mutants": 868,
   "source_commits": 350,
   "arity": 724,
@@ -20123,8 +20123,7 @@
    "call_line": 261,
    "diff_paths": [
     "sphinx/builders/__init__.py",
-    "sphinx/util/i18n.py",
-    "tests/test_util_i18n.py"
+    "sphinx/util/i18n.py"
    ],
    "confirmed": true
   },
@@ -20144,8 +20143,7 @@
    "call_line": 170,
    "diff_paths": [
     "sphinx/application.py",
-    "sphinx/util/i18n.py",
-    "tests/test_util_i18n.py"
+    "sphinx/util/i18n.py"
    ],
    "confirmed": true
   },

@@ -1,17 +1,17 @@
 {
- "generated": "2026-08-28T01:12:46",
- "commits_checked": 1118,
- "removals_reported": 5565,
+ "generated": "2026-08-28T02:44:17",
+ "commits_checked": 1106,
+ "removals_reported": 4941,
  "false_removals": 0,
  "shapes": {},
  "examples": {},
- "references_reported": 16852,
- "references_high_confidence": 13108,
- "references_decidable": 1568,
- "references_false": 1052,
+ "references_reported": 13533,
+ "references_high_confidence": 10352,
+ "references_decidable": 1512,
+ "references_false": 996,
  "reference_shapes": {
-  "call/attribute": 868,
-  "call/name": 184
+  "call/attribute": 813,
+  "call/name": 183
  },
  "reference_examples": {
   "call/name": [
