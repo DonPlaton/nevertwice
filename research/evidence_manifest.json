@@ -655,6 +655,11 @@
    "governance": "backlog",
    "budget": 21,
    "note": "Task H3, blocked: DNS resolves nothing on this machine and the local proxy's tunnel carries no TLS, so no public repository host is reachable by any route tried. G-B is unevaluable rather than failed, and every artefact H3 needs is committed so it runs unchanged when a name resolves."
+  },
+  "research/invariants_lab/ENDTOEND_E.md": {
+   "governance": "backlog",
+   "budget": 38,
+   "note": "Phase E of the invariants lab, and E4 is G-C: whether an agent fixes a stale caller better with the mechanism than without, with harm counted separately. Every number is in sample -- the held-out corpus does not exist, see HELDOUT_H3_BLOCKED.md."
   }
  },
  "claims": [
