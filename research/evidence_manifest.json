@@ -290,6 +290,11 @@
    "budget": 129,
    "note": "Task C1 of the invariants lab: the corpus of eight public repositories, its selection rationale committed before any clone, and the census that shows a non-zero base rate. Its numbers are counts of a corpus that lives outside git at D:/Coding/_nevertwice_polygon/corpus and are reproducible from research/invariants_lab/corpus_census.py against the SHAs in corpus_manifest.json; nothing here is a claim about the product. Registering them as claims waits for Phase T, when the lab results are either promoted or published as negatives."
   },
+  "research/invariants_lab/INVARIANT_NOTES.md": {
+   "governance": "backlog",
+   "budget": 5,
+   "note": "Tasks I1-I3 of the invariants lab: the invariant note type, its two-strike lifecycle, and the three-checker preconfigured pack. Mechanism 1 is infrastructure, judged by contract assertions rather than precision per PREREGISTRATION.md section 7; every claim here is checked by tests/_test_invariant_notes.py, which is hermetic and needs neither vault nor corpus. No claim is made that the pack is useful -- that is T3."
+  },
   "research/invariants_lab/MUTANTS.md": {
    "governance": "backlog",
    "budget": 52,
