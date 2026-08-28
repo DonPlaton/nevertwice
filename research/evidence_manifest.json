@@ -6446,6 +6446,8 @@
     },
     {
       "id": "blast_radius.shipped.flag_rate",
+      "stale": "historical: T4 deleted the checker these numbers describe. They were measured on a build that has since had seven defect classes fixed (D1-D7) and that no longer exists at the path research/blast_radius_calibration.py replays, so they cannot be reproduced without restoring a deleted mechanism. Superseded by research/invariants_lab/BLAST_RADIUS_D5.md, which measures the same mechanism on a corpus that has true positives in it.",
+      "withdrawn_on": "2026-08-28",
       "statement": "with the budgets it shipped with, the blast-radius checker flags 69.3% of this repository's commits (104 of 150)",
       "value": 0.6933,
       "printed": [
@@ -6474,6 +6476,8 @@
     },
     {
       "id": "blast_radius.shipped.budget_or_plan_only",
+      "stale": "historical: T4 deleted the checker these numbers describe. They were measured on a build that has since had seven defect classes fixed (D1-D7) and that no longer exists at the path research/blast_radius_calibration.py replays, so they cannot be reproduced without restoring a deleted mechanism. Superseded by research/invariants_lab/BLAST_RADIUS_D5.md, which measures the same mechanism on a corpus that has true positives in it.",
+      "withdrawn_on": "2026-08-28",
       "statement": "95 of the 104 commits the shipped checker flags are flagged only by a budget or plan-protocol complaint, with no dependency finding",
       "value": 95,
       "printed": [
@@ -6497,6 +6501,8 @@
     },
     {
       "id": "blast_radius.calibrated.flag_rate",
+      "stale": "historical: T4 deleted the checker these numbers describe. They were measured on a build that has since had seven defect classes fixed (D1-D7) and that no longer exists at the path research/blast_radius_calibration.py replays, so they cannot be reproduced without restoring a deleted mechanism. Superseded by research/invariants_lab/BLAST_RADIUS_D5.md, which measures the same mechanism on a corpus that has true positives in it.",
+      "withdrawn_on": "2026-08-28",
       "statement": "after calibration the checker flags 6.0% of commits (9 of 150), against a 20% ceiling declared before the run",
       "value": 0.06,
       "printed": [
@@ -6525,6 +6531,8 @@
     },
     {
       "id": "blast_radius.calibrated.budget_or_plan_only",
+      "stale": "historical: T4 deleted the checker these numbers describe. They were measured on a build that has since had seven defect classes fixed (D1-D7) and that no longer exists at the path research/blast_radius_calibration.py replays, so they cannot be reproduced without restoring a deleted mechanism. Superseded by research/invariants_lab/BLAST_RADIUS_D5.md, which measures the same mechanism on a corpus that has true positives in it.",
+      "withdrawn_on": "2026-08-28",
       "statement": "zero of the surviving flags are budget or plan-protocol complaints",
       "value": 0,
       "printed": [
@@ -6547,6 +6555,8 @@
     },
     {
       "id": "blast_radius.dependency_finding_commits",
+      "stale": "historical: measured on a corpus of 150 commits of this repository whose answer key contained no true positives, and on a build of the checker that has since had seven defect classes fixed (D1-D7) before being deleted by T4. Neither the code nor the corpus that produced these figures is the one anyone would replay. Superseded by research/invariants_lab/BLAST_RADIUS_D5.md, which measures the same mechanism on eight public repositories with 859 confirmed breakages in them.",
+      "withdrawn_on": "2026-08-28",
       "statement": "9 of 150 commits carry a dependency finding, and the same 9 do so in every arm",
       "value": 9,
       "printed": [
@@ -6571,6 +6581,8 @@
     },
     {
       "id": "blast_radius.declared.over_reach_commits",
+      "stale": "historical: measured on a corpus of 150 commits of this repository whose answer key contained no true positives, and on a build of the checker that has since had seven defect classes fixed (D1-D7) before being deleted by T4. Neither the code nor the corpus that produced these figures is the one anyone would replay. Superseded by research/invariants_lab/BLAST_RADIUS_D5.md, which measures the same mechanism on eight public repositories with 859 confirmed breakages in them.",
+      "withdrawn_on": "2026-08-28",
       "statement": "against the calibrated budgets, 6 of 150 commits over-reach a declared scope",
       "value": 6,
       "printed": [
@@ -6594,6 +6606,8 @@
     },
     {
       "id": "blast_radius.precision",
+      "stale": "historical: measured on a corpus of 150 commits of this repository whose answer key contained no true positives, and on a build of the checker that has since had seven defect classes fixed (D1-D7) before being deleted by T4. Neither the code nor the corpus that produced these figures is the one anyone would replay. Superseded by research/invariants_lab/BLAST_RADIUS_D5.md, which measures the same mechanism on eight public repositories with 859 confirmed breakages in them.",
+      "withdrawn_on": "2026-08-28",
       "statement": "0 of 24 blast-radius dependency findings over 150 commits are true breakages - precision 0.000 against a 50% floor declared before the run",
       "value": 0.0,
       "printed": [
@@ -6620,6 +6634,8 @@
     },
     {
       "id": "blast_radius.grep_matched_threshold",
+      "stale": "historical: measured on a corpus of 150 commits of this repository whose answer key contained no true positives, and on a build of the checker that has since had seven defect classes fixed (D1-D7) before being deleted by T4. Neither the code nor the corpus that produced these figures is the one anyone would replay. Superseded by research/invariants_lab/BLAST_RADIUS_D5.md, which measures the same mechanism on eight public repositories with 859 confirmed breakages in them.",
+      "withdrawn_on": "2026-08-28",
       "statement": "git grep needs a threshold of 11 unhandled mentions to flag no more commits than the checker, at which point it flags 8 and shares 7",
       "value": 11,
       "printed": [
