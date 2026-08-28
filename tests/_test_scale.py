@@ -158,6 +158,47 @@ def test_sorted_of_the_axis_is_still_a_walk_over_the_axis() -> None:
           str(problems(src, "rows")))
 
 
+def test_the_shapes_it_cannot_see_are_pinned_as_gaps() -> None:
+    """The capability boundary, written down so nobody claims more than it does.
+
+    F5's probe put the detector in front of a 30B coding model. The two generations the
+    dynamic canary condemned as quadratic -- time growing 15x and 17x faster than the
+    input -- had **zero** static findings, and the five findings it did produce were on
+    generations the canary cleared.
+
+    Asked directly, the detector recognises exactly one of the six ordinary ways to write
+    a pairwise scan or an accidental quadratic in Python. These assertions pin the
+    *current* behaviour: if a later version closes one of these gaps the test goes red,
+    and closing it is then a deliberate act with a line to update rather than a silent
+    change to what the mechanism claims.
+    """
+    print(NL + "- the shapes it does NOT see, pinned -")
+    seen = ("def f(records):\n    for a in records:\n        for b in records:\n"
+            "            pass\n")
+    check("the literal double walk IS seen", len(problems(seen, "records")) == 1)
+
+    gaps = {
+        "index pair scan, range(len(records))":
+            "def f(records):\n    for i in range(len(records)):\n"
+            "        for j in range(i + 1, len(records)):\n            pass\n",
+        "enumerate outer, index inner":
+            "def f(records):\n    for i, a in enumerate(records):\n"
+            "        for j in range(i + 1, len(records)):\n            pass\n",
+        "enumerate outer, slice inner":
+            "def f(records):\n    for i, a in enumerate(records):\n"
+            "        for j, b in enumerate(records[i + 1:], i + 1):\n            pass\n",
+        "membership against a list that grows":
+            "def f(records):\n    seen = []\n    for r in records:\n"
+            "        if r['id'] not in seen:\n            seen.append(r['id'])\n",
+        "string or list accumulation in a loop":
+            "def f(records):\n    out = ''\n    for r in records:\n"
+            "        out += str(r)\n    return out\n",
+    }
+    for label, src in gaps.items():
+        check("NOT seen (a known gap): " + label,
+              problems(src, "records") == [], str(problems(src, "records")))
+
+
 def test_an_unparseable_file_produces_nothing() -> None:
     print(NL + "- a file this interpreter cannot read is not a file full of faults -")
     check("no findings, no exception", problems("def f(:\n", "rows") == [])
@@ -174,6 +215,7 @@ def main() -> int:
                test_a_method_call_names_its_receiver,
                test_an_attribute_walk_still_names_the_attribute,
                test_sorted_of_the_axis_is_still_a_walk_over_the_axis,
+               test_the_shapes_it_cannot_see_are_pinned_as_gaps,
                test_an_unparseable_file_produces_nothing):
         fn()
     print(NL + "scale, static half: " + str(PASSED) + " passed, " + str(FAILED) + " failed")
