@@ -1,0 +1,108 @@
+{
+ "generated": "2026-08-28T18:38:49",
+ "task": "H4",
+ "corpus": "heldout",
+ "shape": {
+  "corpus": "heldout",
+  "census": false,
+  "mutants": false,
+  "mined_quadratics": null
+ },
+ "gates": [
+  {
+   "id": "V1-A recall",
+   "kind": "one_prop",
+   "null": 0.45,
+   "effect": 0.6,
+   "sample": "source_commits",
+   "note": "recall floor 0.45; corpus_dev gave 0.600, and the floor sits a further 0.10 below the bottom of that interval for the out-of-sample drop",
+   "n_needed_at_80pct": 84,
+   "n_available": null,
+   "resolvable": null,
+   "mde_at_available": null
+  },
+  {
+   "id": "V1-A silence",
+   "kind": "one_prop",
+   "null": 0.05,
+   "effect": 0.015,
+   "sample": "silence_pool",
+   "note": "flag rate ceiling 0.05; corpus_dev gave 0.010 under decidable-only",
+   "n_needed_at_80pct": 206,
+   "n_available": null,
+   "resolvable": null,
+   "mde_at_available": null
+  },
+  {
+   "id": "V1-B ratchet agreement",
+   "kind": "one_prop",
+   "null": 0.5,
+   "effect": 0.64,
+   "sample": "commits",
+   "note": "fires on > 0.50 of ruff-rose diffs; corpus_dev gave 0.637",
+   "n_needed_at_80pct": 93,
+   "n_available": null,
+   "resolvable": null,
+   "mde_at_available": null
+  },
+  {
+   "id": "V1-B ratchet silence",
+   "kind": "one_prop",
+   "null": 0.05,
+   "effect": 0.3,
+   "sample": "commits",
+   "note": "flag rate ceiling 0.05; corpus_dev gave 0.358 -- a gate this far from its null needs almost no sample to fail, which is worth saying out loud",
+   "n_needed_at_80pct": 14,
+   "n_available": null,
+   "resolvable": null,
+   "mde_at_available": null
+  },
+  {
+   "id": "V1-C scale silence",
+   "kind": "one_prop",
+   "null": 0.05,
+   "effect": 0.015,
+   "sample": "commits",
+   "note": "flag rate under a blind declaration",
+   "n_needed_at_80pct": 206,
+   "n_available": null,
+   "resolvable": null,
+   "mde_at_available": null
+  },
+  {
+   "id": "V1-C scale recall",
+   "kind": "one_prop",
+   "null": 0.3,
+   "effect": 0.6,
+   "sample": "mined_quadratics",
+   "note": "scored only if the corpus yields >= 20 confirmed quadratic fixes",
+   "n_needed_at_80pct": 19,
+   "n_available": null,
+   "resolvable": null,
+   "mde_at_available": null
+  },
+  {
+   "id": "V2 union flag rate",
+   "kind": "one_prop",
+   "null": 0.05,
+   "effect": 0.015,
+   "sample": "silence_pool",
+   "note": "one finding per diff, delivered counts",
+   "n_needed_at_80pct": 206,
+   "n_available": null,
+   "resolvable": null,
+   "mde_at_available": null
+  }
+ ],
+ "withdraw_before_measuring": [],
+ "sample_size_not_yet_known": [
+  "V1-A recall",
+  "V1-A silence",
+  "V1-B ratchet agreement",
+  "V1-B ratchet silence",
+  "V1-C scale silence",
+  "V1-C scale recall",
+  "V2 union flag rate"
+ ],
+ "rule": "GOAL-SHIP.md H4: a gate the corpus cannot resolve is enlarged or WITHDRAWN before the measurement, never after."
+}
