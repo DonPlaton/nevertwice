@@ -72,6 +72,7 @@ click from here, and `tests/_test_docs_map.py` fails the build if that stops bei
 | [`research/invariants_lab/BLAST_RADIUS_D5.md`](../research/invariants_lab/BLAST_RADIUS_D5.md) | The answer once the corpus had positives in it: recall 0.91 and it beats git grep, but it fires on 28% of commits that broke nothing - deleted, and what a next attempt must change |
 | [`research/invariants_lab/INVARIANT_NOTES.md`](../research/invariants_lab/INVARIANT_NOTES.md) | An invariant is a scar's machinery with different provenance and a stricter lifecycle: two false positives and it retires, one finding per diff, and three checkers that ship in the box |
 | [`research/invariants_lab/RATCHET_R3.md`](../research/invariants_lab/RATCHET_R3.md) | The second mechanism to fail the same way: it discriminates three-to-one between diffs that got more complex and diffs that did not, and still fires on 36% of everything |
+| [`research/invariants_lab/SCALE_X4.md`](../research/invariants_lab/SCALE_X4.md) | The first mechanism to pass its gates, and the reason to distrust half of it: a detector scoped to a declared axis fires on a tenth of commits instead of a third |
 | [`research/evidence_manifest.json`](../research/evidence_manifest.json) | Every published number, with its dataset, sample size, model, command, raw file and caveat |
 | [`research/data/README.md`](../research/data/README.md) | Fetching the LongMemEval dataset the benchmarks need |
 
