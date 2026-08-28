@@ -1,0 +1,624 @@
+{
+ "generated": "2026-08-28T16:16:59",
+ "task": "F1",
+ "corpus": "corpus_dev",
+ "in_sample": true,
+ "n_clusters": 345,
+ "n_mutants": 859,
+ "silence_pool": {
+  "n": 1000,
+  "available": 1747
+ },
+ "ceiling": 0.05,
+ "ladder": [
+  {
+   "policy": "emit-all",
+   "recall": {
+    "hits": 314,
+    "n": 345,
+    "point": 0.9101449275362319,
+    "ci": [
+     0.875280790779088,
+     0.935975993195844
+    ]
+   },
+   "recall_cost_vs_emit_all": 0.0,
+   "silence": {
+    "n": 1000,
+    "flagged": 278,
+    "rate": 0.278,
+    "ci": [
+     0.2511220562741525,
+     0.30657702449343394
+    ],
+    "p_vs_ceiling": 2.7214672936723643e-123,
+    "findings_kept": 4298,
+    "undecidable_kept": 3916,
+    "share_undecidable": 0.9111214518380643
+   },
+   "precision_not_evidence": {
+    "true": 1962,
+    "decidable": 4953,
+    "point": 0.3961235614778922,
+    "cluster_ci": [
+     0.3005401234567901,
+     0.49764931220616404
+    ]
+   },
+   "grep_at_this_flag_rate": {
+    "checker_flag_rate_on_mutant_arm": 0.9449275362318841,
+    "grep_threshold": 2,
+    "grep_flag_rate": 0.8956521739130435,
+    "grep_recall": {
+     "point": 0.8260869565217391,
+     "ci": [
+      0.7825590509944341,
+      0.8624330917418191
+     ]
+    },
+    "checker_only": 55,
+    "grep_only": 26,
+    "mcnemar_p": 0.001688638072721023
+   },
+   "by_repo": {
+    "django_django": {
+     "n": 107,
+     "hits": 101,
+     "silence_n": 131,
+     "silence_flagged": 34
+    },
+    "encode_httpx": {
+     "n": 25,
+     "hits": 20,
+     "silence_n": 138,
+     "silence_flagged": 44
+    },
+    "fastapi_fastapi": {
+     "n": 5,
+     "hits": 4,
+     "silence_n": 73,
+     "silence_flagged": 8
+    },
+    "pallets_flask": {
+     "n": 13,
+     "hits": 12,
+     "silence_n": 123,
+     "silence_flagged": 36
+    },
+    "psf_requests": {
+     "n": 3,
+     "hits": 3,
+     "silence_n": 87,
+     "silence_flagged": 24
+    },
+    "pytest-dev_pytest": {
+     "n": 76,
+     "hits": 71,
+     "silence_n": 150,
+     "silence_flagged": 52
+    },
+    "scrapy_scrapy": {
+     "n": 37,
+     "hits": 33,
+     "silence_n": 157,
+     "silence_flagged": 39
+    },
+    "sphinx-doc_sphinx": {
+     "n": 79,
+     "hits": 70,
+     "silence_n": 141,
+     "silence_flagged": 41
+    }
+   }
+  },
+  {
+   "policy": "no-bare-mentions",
+   "recall": {
+    "hits": 314,
+    "n": 345,
+    "point": 0.9101449275362319,
+    "ci": [
+     0.875280790779088,
+     0.935975993195844
+    ]
+   },
+   "recall_cost_vs_emit_all": 0.0,
+   "silence": {
+    "n": 1000,
+    "flagged": 239,
+    "rate": 0.239,
+    "ci": [
+     0.2135979397357572,
+     0.2663996281937026
+    ],
+    "p_vs_ceiling": 3.0250278202293676e-91,
+    "findings_kept": 3519,
+    "undecidable_kept": 3137,
+    "share_undecidable": 0.8914464336459221
+   },
+   "precision_not_evidence": {
+    "true": 1948,
+    "decidable": 4939,
+    "point": 0.39441182425592225,
+    "cluster_ci": [
+     0.2992831541218638,
+     0.49668527564549897
+    ]
+   },
+   "grep_at_this_flag_rate": {
+    "checker_flag_rate_on_mutant_arm": 0.9420289855072463,
+    "grep_threshold": 2,
+    "grep_flag_rate": 0.8956521739130435,
+    "grep_recall": {
+     "point": 0.8260869565217391,
+     "ci": [
+      0.7825590509944341,
+      0.8624330917418191
+     ]
+    },
+    "checker_only": 55,
+    "grep_only": 26,
+    "mcnemar_p": 0.001688638072721023
+   },
+   "by_repo": {
+    "django_django": {
+     "n": 107,
+     "hits": 101,
+     "silence_n": 131,
+     "silence_flagged": 27
+    },
+    "encode_httpx": {
+     "n": 25,
+     "hits": 20,
+     "silence_n": 138,
+     "silence_flagged": 38
+    },
+    "fastapi_fastapi": {
+     "n": 5,
+     "hits": 4,
+     "silence_n": 73,
+     "silence_flagged": 8
+    },
+    "pallets_flask": {
+     "n": 13,
+     "hits": 12,
+     "silence_n": 123,
+     "silence_flagged": 29
+    },
+    "psf_requests": {
+     "n": 3,
+     "hits": 3,
+     "silence_n": 87,
+     "silence_flagged": 22
+    },
+    "pytest-dev_pytest": {
+     "n": 76,
+     "hits": 71,
+     "silence_n": 150,
+     "silence_flagged": 47
+    },
+    "scrapy_scrapy": {
+     "n": 37,
+     "hits": 33,
+     "silence_n": 157,
+     "silence_flagged": 35
+    },
+    "sphinx-doc_sphinx": {
+     "n": 79,
+     "hits": 70,
+     "silence_n": 141,
+     "silence_flagged": 33
+    }
+   }
+  },
+  {
+   "policy": "no-star-calls",
+   "recall": {
+    "hits": 314,
+    "n": 345,
+    "point": 0.9101449275362319,
+    "ci": [
+     0.875280790779088,
+     0.935975993195844
+    ]
+   },
+   "recall_cost_vs_emit_all": 0.0,
+   "silence": {
+    "n": 1000,
+    "flagged": 225,
+    "rate": 0.225,
+    "ci": [
+     0.20019895514206568,
+     0.2519057620249897
+    ],
+    "p_vs_ceiling": 1.319712048497127e-80,
+    "findings_kept": 3385,
+    "undecidable_kept": 3005,
+    "share_undecidable": 0.8877400295420975
+   },
+   "precision_not_evidence": {
+    "true": 1947,
+    "decidable": 4938,
+    "point": 0.39428918590522477,
+    "cluster_ci": [
+     0.29912614833071927,
+     0.4965647543799382
+    ]
+   },
+   "grep_at_this_flag_rate": {
+    "checker_flag_rate_on_mutant_arm": 0.9420289855072463,
+    "grep_threshold": 2,
+    "grep_flag_rate": 0.8956521739130435,
+    "grep_recall": {
+     "point": 0.8260869565217391,
+     "ci": [
+      0.7825590509944341,
+      0.8624330917418191
+     ]
+    },
+    "checker_only": 55,
+    "grep_only": 26,
+    "mcnemar_p": 0.001688638072721023
+   },
+   "by_repo": {
+    "django_django": {
+     "n": 107,
+     "hits": 101,
+     "silence_n": 131,
+     "silence_flagged": 22
+    },
+    "encode_httpx": {
+     "n": 25,
+     "hits": 20,
+     "silence_n": 138,
+     "silence_flagged": 37
+    },
+    "fastapi_fastapi": {
+     "n": 5,
+     "hits": 4,
+     "silence_n": 73,
+     "silence_flagged": 6
+    },
+    "pallets_flask": {
+     "n": 13,
+     "hits": 12,
+     "silence_n": 123,
+     "silence_flagged": 27
+    },
+    "psf_requests": {
+     "n": 3,
+     "hits": 3,
+     "silence_n": 87,
+     "silence_flagged": 21
+    },
+    "pytest-dev_pytest": {
+     "n": 76,
+     "hits": 71,
+     "silence_n": 150,
+     "silence_flagged": 46
+    },
+    "scrapy_scrapy": {
+     "n": 37,
+     "hits": 33,
+     "silence_n": 157,
+     "silence_flagged": 35
+    },
+    "sphinx-doc_sphinx": {
+     "n": 79,
+     "hits": 70,
+     "silence_n": 141,
+     "silence_flagged": 31
+    }
+   }
+  },
+  {
+   "policy": "no-unknown-receiver",
+   "recall": {
+    "hits": 210,
+    "n": 345,
+    "point": 0.6086956521739131,
+    "ci": [
+     0.5562703766646852,
+     0.6587270042473993
+    ]
+   },
+   "recall_cost_vs_emit_all": 0.3014492753623188,
+   "silence": {
+    "n": 1000,
+    "flagged": 143,
+    "rate": 0.143,
+    "ci": [
+     0.12266731749770252,
+     0.16606498806098383
+    ],
+    "p_vs_ceiling": 6.356077625662344e-29,
+    "findings_kept": 1905,
+    "undecidable_kept": 1775,
+    "share_undecidable": 0.931758530183727
+   },
+   "precision_not_evidence": {
+    "true": 897,
+    "decidable": 2431,
+    "point": 0.3689839572192513,
+    "cluster_ci": [
+     0.2776866283839213,
+     0.49727272727272726
+    ]
+   },
+   "grep_at_this_flag_rate": {
+    "checker_flag_rate_on_mutant_arm": 0.6753623188405797,
+    "grep_threshold": 5,
+    "grep_flag_rate": 0.6173913043478261,
+    "grep_recall": {
+     "point": 0.3681159420289855,
+     "ci": [
+      0.3189364063030995,
+      0.4202001048569046
+     ]
+    },
+    "checker_only": 134,
+    "grep_only": 51,
+    "mcnemar_p": 8.660010309477261e-10
+   },
+   "by_repo": {
+    "django_django": {
+     "n": 107,
+     "hits": 55,
+     "silence_n": 131,
+     "silence_flagged": 13
+    },
+    "encode_httpx": {
+     "n": 25,
+     "hits": 18,
+     "silence_n": 138,
+     "silence_flagged": 29
+    },
+    "fastapi_fastapi": {
+     "n": 5,
+     "hits": 4,
+     "silence_n": 73,
+     "silence_flagged": 5
+    },
+    "pallets_flask": {
+     "n": 13,
+     "hits": 10,
+     "silence_n": 123,
+     "silence_flagged": 20
+    },
+    "psf_requests": {
+     "n": 3,
+     "hits": 3,
+     "silence_n": 87,
+     "silence_flagged": 9
+    },
+    "pytest-dev_pytest": {
+     "n": 76,
+     "hits": 53,
+     "silence_n": 150,
+     "silence_flagged": 31
+    },
+    "scrapy_scrapy": {
+     "n": 37,
+     "hits": 20,
+     "silence_n": 157,
+     "silence_flagged": 20
+    },
+    "sphinx-doc_sphinx": {
+     "n": 79,
+     "hits": 47,
+     "silence_n": 141,
+     "silence_flagged": 16
+    }
+   }
+  },
+  {
+   "policy": "no-kind-changes",
+   "recall": {
+    "hits": 210,
+    "n": 345,
+    "point": 0.6086956521739131,
+    "ci": [
+     0.5562703766646852,
+     0.6587270042473993
+    ]
+   },
+   "recall_cost_vs_emit_all": 0.3014492753623188,
+   "silence": {
+    "n": 1000,
+    "flagged": 141,
+    "rate": 0.141,
+    "ci": [
+     0.12080112670494819,
+     0.1639464858876804
+    ],
+    "p_vs_ceiling": 6.368954019060359e-28,
+    "findings_kept": 1835,
+    "undecidable_kept": 1705,
+    "share_undecidable": 0.9291553133514986
+   },
+   "precision_not_evidence": {
+    "true": 897,
+    "decidable": 2431,
+    "point": 0.3689839572192513,
+    "cluster_ci": [
+     0.2776866283839213,
+     0.49727272727272726
+    ]
+   },
+   "grep_at_this_flag_rate": {
+    "checker_flag_rate_on_mutant_arm": 0.6753623188405797,
+    "grep_threshold": 5,
+    "grep_flag_rate": 0.6173913043478261,
+    "grep_recall": {
+     "point": 0.3681159420289855,
+     "ci": [
+      0.3189364063030995,
+      0.4202001048569046
+     ]
+    },
+    "checker_only": 134,
+    "grep_only": 51,
+    "mcnemar_p": 8.660010309477261e-10
+   },
+   "by_repo": {
+    "django_django": {
+     "n": 107,
+     "hits": 55,
+     "silence_n": 131,
+     "silence_flagged": 13
+    },
+    "encode_httpx": {
+     "n": 25,
+     "hits": 18,
+     "silence_n": 138,
+     "silence_flagged": 29
+    },
+    "fastapi_fastapi": {
+     "n": 5,
+     "hits": 4,
+     "silence_n": 73,
+     "silence_flagged": 5
+    },
+    "pallets_flask": {
+     "n": 13,
+     "hits": 10,
+     "silence_n": 123,
+     "silence_flagged": 20
+    },
+    "psf_requests": {
+     "n": 3,
+     "hits": 3,
+     "silence_n": 87,
+     "silence_flagged": 8
+    },
+    "pytest-dev_pytest": {
+     "n": 76,
+     "hits": 53,
+     "silence_n": 150,
+     "silence_flagged": 31
+    },
+    "scrapy_scrapy": {
+     "n": 37,
+     "hits": 20,
+     "silence_n": 157,
+     "silence_flagged": 19
+    },
+    "sphinx-doc_sphinx": {
+     "n": 79,
+     "hits": 47,
+     "silence_n": 141,
+     "silence_flagged": 16
+    }
+   }
+  },
+  {
+   "policy": "decidable-only",
+   "recall": {
+    "hits": 207,
+    "n": 345,
+    "point": 0.6,
+    "ci": [
+     0.5474779422022544,
+     0.6503196482368632
+    ]
+   },
+   "recall_cost_vs_emit_all": 0.3101449275362319,
+   "silence": {
+    "n": 1000,
+    "flagged": 10,
+    "rate": 0.01,
+    "ci": [
+     0.005440754445529248,
+     0.018309468870314774
+    ],
+    "p_vs_ceiling": 6.476680939727625e-12,
+    "findings_kept": 20,
+    "undecidable_kept": 0,
+    "share_undecidable": 0.0
+   },
+   "precision_not_evidence": {
+    "true": 897,
+    "decidable": 897,
+    "point": 1.0,
+    "cluster_ci": [
+     1.0,
+     1.0
+    ]
+   },
+   "grep_at_this_flag_rate": {
+    "checker_flag_rate_on_mutant_arm": 0.6144927536231884,
+    "grep_threshold": 6,
+    "grep_flag_rate": 0.5362318840579711,
+    "grep_recall": {
+     "point": 0.2956521739130435,
+     "ci": [
+      0.24996255914339258,
+      0.34584236474188856
+     ]
+    },
+    "checker_only": 148,
+    "grep_only": 43,
+    "mcnemar_p": 1.0673259517250265e-14
+   },
+   "by_repo": {
+    "django_django": {
+     "n": 107,
+     "hits": 55,
+     "silence_n": 131,
+     "silence_flagged": 1
+    },
+    "encode_httpx": {
+     "n": 25,
+     "hits": 17,
+     "silence_n": 138,
+     "silence_flagged": 2
+    },
+    "fastapi_fastapi": {
+     "n": 5,
+     "hits": 3,
+     "silence_n": 73,
+     "silence_flagged": 0
+    },
+    "pallets_flask": {
+     "n": 13,
+     "hits": 10,
+     "silence_n": 123,
+     "silence_flagged": 1
+    },
+    "psf_requests": {
+     "n": 3,
+     "hits": 3,
+     "silence_n": 87,
+     "silence_flagged": 1
+    },
+    "pytest-dev_pytest": {
+     "n": 76,
+     "hits": 53,
+     "silence_n": 150,
+     "silence_flagged": 3
+    },
+    "scrapy_scrapy": {
+     "n": 37,
+     "hits": 20,
+     "silence_n": 157,
+     "silence_flagged": 1
+    },
+    "sphinx-doc_sphinx": {
+     "n": 79,
+     "hits": 46,
+     "silence_n": 141,
+     "silence_flagged": 1
+    }
+   }
+  }
+ ],
+ "outcome": {
+  "reached_ceiling": true,
+  "named_policy": "decidable-only",
+  "recall_cost": 0.3101449275362319,
+  "flag_rate": 0.01
+ },
+ "collapsed_policies": [],
+ "precision_note": "Every precision figure here is agreement between two implementations of 'undecidable' -- the answer key's oracle and the abstention rule -- and is NOT evidence about the world. See ABSTENTION_F1.md section 1.",
+ "seconds": 563.0
+}

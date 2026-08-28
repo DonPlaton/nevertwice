@@ -89,3 +89,117 @@ live in 345 commits and are not independent replicates.
 - **Recall measured at site level.** It is not: `{arm}_hit` is *"the checker names the mutated
   symbol"*, so dropping some references for a symbol costs recall only when it drops the last one.
   That is the definition D5 used and it does not change here.
+
+---
+
+## 5. One deviation, logged before the write-up
+
+**2026-08-28, after the ladder ran, before it was written up.** The ladder as declared answers
+*what does abstention cost and buy*. It cannot answer the question that decides whether a quiet
+mechanism is worth having at all: **at a 1% flag rate, does the reference analysis still beat a
+regex?** D5's headline was that it does at 27.8%; nobody had asked at 1%.
+
+So `measure_abstention.py` gained D5's matched-flag-rate `git grep` arm, run per rung. It is
+**exploratory and non-gating** — the named policy is fixed by §3's decision rule and this arm
+cannot change it. It is logged here because a comparison added after the numbers are seen is a
+comparison a reader is entitled to distrust, and hiding it would earn that distrust.
+
+## 6. The result
+
+345 clusters, silence pool 1,000 commits, the same seed and the same commits D5 measured.
+`corpus_dev` — **in sample**, and no number here may carry a public claim.
+
+| policy | recall | cost | silence-pool flag rate | findings kept | undecidable | `git grep` at the same flag rate |
+|---|---|---|---|---|---|---|
+| `emit-all` | 0.910 [0.88, 0.94] | — | 0.278 [0.25, 0.31] | 4,298 | 91% | 0.826 |
+| `no-bare-mentions` | 0.910 [0.88, 0.94] | 0.000 | 0.239 [0.21, 0.27] | 3,519 | 89% | 0.826 |
+| `no-star-calls` | 0.910 [0.88, 0.94] | 0.000 | 0.225 [0.20, 0.25] | 3,385 | 89% | 0.826 |
+| `no-unknown-receiver` | 0.609 [0.56, 0.66] | **0.301** | 0.143 [0.12, 0.17] | 1,905 | 93% | 0.368 |
+| `no-kind-changes` | 0.609 [0.56, 0.66] | 0.301 | 0.141 [0.12, 0.16] | 1,835 | 93% | 0.368 |
+| **`decidable-only`** | **0.600** [0.55, 0.65] | **0.310** | **0.010** [0.01, 0.02] | **20** | **0%** | 0.296 |
+
+**Named by the declared rule: `decidable-only`.** It is the only rung at or under the 0.05
+ceiling, so the rule names it without a tie-break. Flag rate **0.010**, recall cost **0.310**.
+
+### The trade is not where anyone predicted
+
+Two rungs cost recall and two rungs buy silence, and they are **different rungs**.
+
+| | recall cost | flag rate change |
+|---|---|---|
+| P1 + P2 — bare mentions and splat calls | **0.000** | 0.278 → 0.225 |
+| P3 — unknown receivers | **0.301** | 0.225 → 0.143 |
+| P4 — kind changes | 0.000 | 0.143 → 0.141 |
+| P5 — emit only what can be simulated | **0.009** | 0.141 → **0.010** |
+
+The entire recall bill is paid at **P3**, and almost all of the silence is bought at **P5**.
+Nearly a third of the planted breakages are reachable only through a reference on a receiver the
+file does not bind — `backend.deliver_now(1)` where `backend` is a parameter — and there is no
+static route to those. That is the real cost of abstention, and it is a fact about Python rather
+than about this checker.
+
+P5, which looks like the drastic rung, is nearly free in recall and takes the flag rate down by a
+factor of fourteen.
+
+### The comparison that changes the reading
+
+`emit-all` beats `git grep` by 8.4 points of recall at a matched flag rate. `decidable-only` beats
+it by **30.4**.
+
+| policy | checker | `git grep`, matched | checker only | grep only | exact McNemar |
+|---|---|---|---|---|---|
+| `emit-all` | 0.910 | 0.826 @ ≥2 mentions | 55 | 26 | p = 0.0017 |
+| `no-unknown-receiver` | 0.609 | 0.368 @ ≥5 | 134 | 51 | p = 8.7 × 10⁻¹⁰ |
+| **`decidable-only`** | **0.600** | **0.296** @ ≥6 | **148** | **43** | **p = 1.1 × 10⁻¹⁴** |
+
+**Abstention costs recall in absolute terms and doubles the advantage over the cheap baseline.**
+A regex cannot abstain. The only quietness available to it is a higher mention threshold, and a
+threshold discards true and false findings in the same proportion; an abstention rule discards
+only what it cannot decide. That asymmetry is the case for a reference analysis, and it is
+invisible at 27.8% because at 27.8% grep is nearly as good.
+
+### The precision column, read only for a disagreement
+
+As §1 said it would be: **1.000 on 897 decidable findings** under `decidable-only`, against 0.396
+under `emit-all`. That number is agreement between two implementations of "undecidable" — the
+answer key's oracle and the abstention rule — and is **not evidence about the world**. What it is
+good for is a disagreement, and there is none: the two implementations, written for different
+purposes, never once disagreed on a finding the strict policy kept.
+
+### Per block, because a pooled number no block resembles is not a measurement
+
+| repository | recall, `emit-all` | recall, `decidable-only` | flag rate, `decidable-only` |
+|---|---|---|---|
+| `django/django` | 0.944 | 0.514 | 0.008 |
+| `pytest-dev/pytest` | 0.934 | 0.697 | 0.020 |
+| `sphinx-doc/sphinx` | 0.886 | 0.582 | 0.007 |
+| `scrapy/scrapy` | 0.892 | 0.541 | 0.006 |
+| `encode/httpx` | 0.800 | 0.680 | 0.014 |
+| `pallets/flask` | 0.923 | 0.769 | 0.008 |
+| `fastapi/fastapi` | 0.800 | 0.600 | 0.000 |
+| `psf/requests` | 1.000 | 1.000 | 0.011 |
+
+**Every block is under the ceiling** — 0.000 to 0.020, against 0.110 to 0.347 for `emit-all`.
+Recall is where the blocks separate, from 0.514 to 1.000, and the two smallest blocks carry
+intervals that say almost nothing.
+
+### The limitation that matters more than any of the above
+
+The answer key's positive class is built from exactly two failures: **a call that cannot bind**
+and **an import that no longer resolves**. `decidable-only` emits exactly those two shapes. So
+recall 0.600 is recall *on a positive class made of the two breakages this policy is built to
+prove*, and a breakage of a third kind — a changed return type, a narrowed exception contract, a
+semantic change behind an unchanged signature — is not in the corpus and would not be found.
+
+That is **not** the precision circularity of §1: membership in the positive class is decided by
+the mutation generator and verified against CPython's binder, with no reference to the checker.
+It is a construct-validity limit, and it bounds what the number means rather than whether it is
+real. The honest statement is: *among breakages a static reader can prove, abstention keeps 60%
+of them while emitting one finding per hundred commits.* Nothing here says what fraction of all
+breakages a static reader can prove.
+
+### The collapse guard reported nothing, which is the point
+
+A policy that emits nothing scores a perfect flag rate and zero recall; so does a broken harness.
+`collapsed_policies` is empty and every row carries its findings count, so the 0.010 is a
+mechanism that kept 20 findings rather than a harness that produced none.

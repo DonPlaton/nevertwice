@@ -20,6 +20,20 @@ python research/invariants_lab/measure_coldstart.py --print
 
 ---
 
+## What came next: `invariants/v3`
+
+This page is the result of `invariants/v2`, and every number on it was measured on the same
+eight repositories the defect classes were found on — in sample, and not evidence about a ninth
+repository. `GOAL-SHIP.md` picks that up. Its documents, as they land:
+
+| task | what it settles | page |
+|---|---|---|
+| F0 | the eight become a frozen development set; the held-out corpus is sealed until Phase V | [`CORPORA.md`](CORPORA.md) |
+| F1 | abstention — what emitting only decidable findings costs in recall and buys in silence | [`ABSTENTION_F1.md`](ABSTENTION_F1.md) |
+| F3 | the ratchet's three unaudited axes, against instruments nobody here wrote | [`AXES_F3.md`](AXES_F3.md) |
+
+---
+
 ## The scoreboard
 
 | # | mechanism | kind | gates | verdict |

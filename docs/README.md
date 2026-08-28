@@ -77,6 +77,9 @@ click from here, and `tests/_test_docs_map.py` fails the build if that stops bei
 | [`research/invariants_lab/TOGETHER_T1.md`](../research/invariants_lab/TOGETHER_T1.md) | Everything at once: the seam journal executed on a real migration, and a combined flag rate whose declared remedy removes the only mechanism with non-circular evidence behind it |
 | [`research/invariants_lab/README.md`](../research/invariants_lab/README.md) | Six mechanisms measured properly: two passed, four did not, and the two that read the whole diff are the two that were deleted - scope buys silence, accuracy does not |
 | [`research/invariants_lab/COLDSTART_T3.md`](../research/invariants_lab/COLDSTART_T3.md) | The cold-start axis, and why it failed: a preconfigured invariant can only help where the model is wrong, and portable knowledge is what models already have |
+| [`research/invariants_lab/CORPORA.md`](../research/invariants_lab/CORPORA.md) | The eight repositories become a frozen development set and stop being evidence, and the held-out corpus gets two locks so it cannot quietly become a second in-sample one |
+| [`research/invariants_lab/ABSTENTION_F1.md`](../research/invariants_lab/ABSTENTION_F1.md) | The untried lever: emitting only what the checker can decide takes the flag rate from 28% to 1%, costs a third of the recall, and doubles the margin over a regex |
+| [`research/invariants_lab/AXES_F3.md`](../research/invariants_lab/AXES_F3.md) | The ratchet's three unaudited axes against instruments nobody here wrote, and the defects that turned up the moment something else was asked |
 | [`research/evidence_manifest.json`](../research/evidence_manifest.json) | Every published number, with its dataset, sample size, model, command, raw file and caveat |
 | [`research/data/README.md`](../research/data/README.md) | Fetching the LongMemEval dataset the benchmarks need |
 
