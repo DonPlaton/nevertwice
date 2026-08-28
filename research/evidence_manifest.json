@@ -658,7 +658,7 @@
   },
   "research/invariants_lab/ENDTOEND_E.md": {
    "governance": "backlog",
-   "budget": 76,
+   "budget": 79,
    "note": "Phase E of the invariants lab, and E4 is G-C: whether an agent fixes a stale caller better with the mechanism than without, with harm counted separately. Every number is in sample -- the held-out corpus does not exist, see HELDOUT_H3_BLOCKED.md."
   },
   "research/invariants_lab/VERDICT_G1.md": {

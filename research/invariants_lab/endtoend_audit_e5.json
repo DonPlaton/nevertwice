@@ -1,43 +1,26 @@
 {
- "generated": "2026-08-28T17:56:10",
+ "generated": "2026-08-28T18:22:08",
  "task": "E5",
  "judge_check": {
   "instrument": "inspect.Signature.bind, rebuilt from the AST by verify_mutants",
   "tasks": 53,
   "stale_trees": {
-   "agree": 52,
-   "disagree": 1,
+   "agree": 53,
+   "disagree": 0,
    "abstained": 0
   },
   "fixed_trees": {
-   "agree": 52,
-   "disagree": 1,
+   "agree": 53,
+   "disagree": 0,
    "abstained": 0
   },
-  "disagreements": [
-   {
-    "mid": "django_django:ad393beeb:tests/urlpatterns_reverse/namespace_urls.py:django/conf/urls/__init__.py:include",
-    "tree": "stale",
-    "symbol": "include",
-    "call_fails_says": null,
-    "signature_bind_says": false,
-    "why": "no definitions left"
-   },
-   {
-    "mid": "django_django:ad393beeb:tests/urlpatterns_reverse/namespace_urls.py:django/conf/urls/__init__.py:include",
-    "tree": "fixed",
-    "symbol": "include",
-    "call_fails_says": null,
-    "signature_bind_says": true,
-    "why": "no definitions left"
-   }
-  ],
+  "disagreements": [],
   "ground_truth": {
-   "stale_trees_the_judge_fails": 52,
+   "stale_trees_the_judge_fails": 53,
    "of": 53,
-   "fixed_trees_the_judge_passes": 52
+   "fixed_trees_the_judge_passes": 53
   },
-  "verdict": "DISAGREEMENT -- one of the two instruments is wrong and which is not obvious in advance"
+  "verdict": "pass"
  },
  "stand_bookkeeping": {
   "stage": "stand (53 trials)",

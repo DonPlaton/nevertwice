@@ -258,8 +258,20 @@ which is what the guard is for. So the defect cost **1 task of 53**, excluded fr
 it cannot move the result in either direction.
 
 **It was found before the numbers were quoted and it was not fixed mid-run**, because a stand
-re-run after seeing its own result is a stand tuned once. The fix and its regression belong to the
-next run, which gains one task and still does not reach 58.
+re-run after seeing its own result is a stand tuned once. **The E4 numbers in §10 are the pre-fix
+ones and stay that way.**
+
+**The fix, applied after the verdict was written.** Deleting the guard would have been wrong: for
+a file with no definitions the `was - now` check cannot stop *"delete the call sites"* from
+scoring as a pass, because an emptied file has no failing calls. Two rules replace it — **lose no
+definition, and do not lose every call site to the changed symbol** — and between them they cover
+both file shapes. `tests/_test_endtoend_judge.py` holds seven checks, two of which were red when
+written, including the URLconf case and the emptied-file case the guard exists for.
+
+**Re-audited after the fix: 53 of 53 agreement with `inspect.Signature.bind` in both directions,
+no disagreements, no abstentions.** A next run of the stand gains one task — and still reaches 47
+usable against the 58 the measured base rate requires, so the fix does not change the verdict and
+is not claimed to.
 
 ### The rest of the audit
 

@@ -143,16 +143,23 @@ def judge(returned: str, task: dict) -> tuple[bool | None, str]:
     **unusable** rather than a failure -- deleting the call site is not a fix.
     """
     try:
-        tree = ast.parse(returned)
+        ast.parse(returned)
     except (SyntaxError, ValueError, RecursionError) as exc:
         return None, "does not parse: " + type(exc).__name__
-    if not any(isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef))
-               for n in ast.walk(tree)):
-        return None, "no definitions left"
+
+    # "Delete the problem" must not score as a fix, and the check has to work for a file
+    # with no definitions at all. E5 found the first version requiring at least one
+    # `def` or `class`, which scored a Django URLconf -- an ordinary module that
+    # legitimately has neither -- as unusable. Two rules instead, and between them they
+    # cover both shapes: lose no definition, and do not lose every call site.
     was = set(sigscan.scan_defs(task["stale"]))
     now = set(sigscan.scan_defs(returned))
     if was - now:
         return None, "lost " + str(len(was - now)) + " definition(s)"
+    had_calls = any(s.is_call for s in sigscan.scan_refs(task["stale"], {task["symbol"]}))
+    has_calls = any(s.is_call for s in sigscan.scan_refs(returned, {task["symbol"]}))
+    if had_calls and not has_calls:
+        return None, "every call site to the changed symbol was removed"
 
     new_def = sigscan.scan_defs(task["new_def_source"]).get(task["qualname"])
     if new_def is None or new_def.kind != "func":
