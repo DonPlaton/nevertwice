@@ -98,15 +98,33 @@ class ScaleProblem:
     detail: str
 
 
-def _iterated_name(node: ast.AST) -> str | None:
-    """The identifier a `for` walks over, if it is a plain name or `x.attr`."""
-    target = node
-    if isinstance(target, ast.Call):
-        target = target.func
-    if isinstance(target, ast.Name):
-        return target.id
-    if isinstance(target, ast.Attribute):
-        return target.attr
+def _iterated_name(node: ast.AST, _depth: int = 0) -> str | None:
+    """The identifier a `for` walks over -- the collection, never the callable.
+
+    A call resolves to **what it walks over**, not to what it calls. F4 found this the
+    hard way: taking `node.func` made `for i, a in enumerate(rows)` an axis called
+    `enumerate`, so two loops over two different collections looked like one loop nested
+    inside itself, and `pytest`'s pprint module was reported as *"a loop over 'enumerate'
+    inside a loop over 'enumerate'"*. `d.iteritems()` was an axis called `iteritems`.
+    Neither is a growth axis; both are function names, and a declaration naming
+    `enumerate` is a declaration about nothing.
+
+    So: `enumerate(rows)` and `sorted(rows)` resolve through their first argument, and
+    `d.items()` resolves through its receiver. A bare name is itself, and `self.rows` is
+    still `rows` -- that behaviour is unchanged and pinned.
+    """
+    if _depth > 4:  # pathological chains; a name this deep is not a declared axis
+        return None
+    if isinstance(node, ast.Name):
+        return node.id
+    if isinstance(node, ast.Attribute):
+        return node.attr
+    if isinstance(node, ast.Call):
+        if node.args:
+            return _iterated_name(node.args[0], _depth + 1)
+        if isinstance(node.func, ast.Attribute):
+            return _iterated_name(node.func.value, _depth + 1)
+        return None
     return None
 
 

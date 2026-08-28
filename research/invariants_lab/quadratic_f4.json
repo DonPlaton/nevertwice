@@ -1,0 +1,237 @@
+{
+ "generated": "2026-08-28T16:51:44",
+ "task": "F4",
+ "corpus": "corpus_dev",
+ "in_sample": true,
+ "message_matched": 16,
+ "per_repo_matched": {
+  "django_django": 7,
+  "encode_httpx": 1,
+  "fastapi_fastapi": 0,
+  "pallets_flask": 0,
+  "psf_requests": 0,
+  "pytest-dev_pytest": 8,
+  "scrapy_scrapy": 0,
+  "sphinx-doc_sphinx": 0
+ },
+ "rejected_on_reading": 9,
+ "confirmed": 7,
+ "taxonomy_of_fixes": {
+  "accumulation in a loop": 4,
+  "something else": 3,
+  "container became a hash": 3,
+  "accumulation replaced by join": 1
+ },
+ "of_a_shape_the_detector_has_a_rule_for": 0,
+ "required_to_score": 20,
+ "scorable": false,
+ "recall_on_found_quadratics": {
+  "caught": 1,
+  "n": 7,
+  "point": 0.14285714285714285,
+  "ci": [
+   0.02567962434474355,
+   0.5131278292743189
+  ]
+ },
+ "generated_class_recall": 1.0,
+ "paired_arm": {
+  "still_fires_after_the_fix": 5,
+  "rate": 0.7142857142857143,
+  "reading": "a detector that fires on both arms is responding to the shape of the file rather than to the fault"
+ },
+ "verdict": "census only -- fewer confirmed cases than QUADRATIC_F4.md section 3 requires, and that document says a class this small is reported with an interval and no verdict",
+ "cases": [
+  {
+   "sha": "59fcd2a1990775d9e893a44a45222d8a54112570",
+   "subject": "Fixed #36869 -- Optimized MigrationGraph._generate_plan membership checks.",
+   "kinds": [
+    "accumulation in a loop"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": true,
+   "still_fires_after": true,
+   "repo": "django_django",
+   "files": [
+    {
+     "path": "django/db/migrations/graph.py",
+     "credited": 1,
+     "pre": 5,
+     "post": 6,
+     "removed_axes": [],
+     "example": "a membership test against 'nodes' inside a loop over it; a set costs the same once"
+    }
+   ]
+  },
+  {
+   "sha": "a33540b3e20b5d759aa8b2e4b9ca0e8edd285344",
+   "subject": "Fixed CVE-2026-1285 -- Mitigated potential DoS in django.utils.text.Truncator for HTML input.",
+   "kinds": [
+    "accumulation in a loop",
+    "something else"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": false,
+   "repo": "django_django",
+   "files": [
+    {
+     "path": "django/utils/text.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "tests/utils_tests/test_text.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "a38da1ae0d6cbd6411f98e6578f0a4f50c12f6b1",
+   "subject": "Avoid doing quadratic amounts of work during object deletion.",
+   "kinds": [
+    "container became a hash"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": true,
+   "repo": "django_django",
+   "files": [
+    {
+     "path": "django/db/models/deletion.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 1,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "85c5898d8e48011ab7b660fe8aac58910e45c84b",
+   "subject": "Change LineDecoder to match stdlib splitlines, resulting in significant speed up (#2423)",
+   "kinds": [
+    "accumulation replaced by join",
+    "accumulation in a loop",
+    "something else"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": true,
+   "repo": "encode_httpx",
+   "files": [
+    {
+     "path": "httpx/_decoders.py",
+     "credited": 0,
+     "pre": 1,
+     "post": 1,
+     "removed_axes": [],
+     "example": "list(children) pulls the whole axis into memory"
+    },
+    {
+     "path": "tests/models/test_responses.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "tests/test_decoders.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "4a42afdc2f3bb21f1685ac5c49b806ae34c36355",
+   "subject": "cacheprovider: speed up NFPlugin when --nf is not enabled",
+   "kinds": [
+    "container became a hash",
+    "something else"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": true,
+   "repo": "pytest-dev_pytest",
+   "files": [
+    {
+     "path": "src/_pytest/cacheprovider.py",
+     "credited": 0,
+     "pre": 1,
+     "post": 1,
+     "removed_axes": [],
+     "example": "sorted(items) pulls the whole axis into memory"
+    },
+    {
+     "path": "testing/test_cacheprovider.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "50114d4731876daee8b6f3b3349e6ee774ac8287",
+   "subject": "python: fix quadratic behavior in collection of items using xunit fixtures",
+   "kinds": [
+    "accumulation in a loop"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": false,
+   "repo": "pytest-dev_pytest",
+   "files": [
+    {
+     "path": "src/_pytest/python.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "88c35460060d7e5c5531a4b47aef3a53583d9c10",
+   "subject": "pprint: use a set instead of a dict for the context",
+   "kinds": [
+    "container became a hash"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": true,
+   "repo": "pytest-dev_pytest",
+   "files": [
+    {
+     "path": "src/_pytest/_io/pprint.py",
+     "credited": 0,
+     "pre": 3,
+     "post": 3,
+     "removed_axes": [],
+     "example": "sorted(object) pulls the whole axis into memory"
+    }
+   ]
+  }
+ ],
+ "seconds": 28.4
+}
