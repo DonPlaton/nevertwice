@@ -31,8 +31,6 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-import corpora  # noqa: E402
-
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
 ARTIFACT = HERE / "phase_v_log.json"
@@ -54,6 +52,16 @@ STEPS: tuple[tuple[str, str, str], ...] = (
     ("mine_quadratics.py", "quadratic_f4_heldout.json", "V1-C found quadratics"),
     ("measure_together.py", "together_t1_heldout.json", "V2 the union"),
 )
+
+
+def _disk_from_clone_log() -> float | None:
+    log = HERE / "heldout_clone_log.json"
+    if not log.exists():
+        return None
+    try:
+        return json.loads(log.read_text(encoding="utf-8")).get("disk_gb")
+    except (OSError, json.JSONDecodeError):
+        return None
 
 
 def _run(script: str, timeout: int = 72000) -> tuple[int, str]:
@@ -100,7 +108,12 @@ def run(plan_only: bool) -> dict:
         "steps": log,
         "completed": all(e.get("status") in ("ok", "skipped") for e in log)
                      and len(log) == len(STEPS),
-        "disk_gb": corpora.disk_gb(corpora.HELDOUT_ROOT),
+        # Read from H3's clone log rather than by naming the corpus root. The seal's
+        # static lock forbids that name outside `corpora.HELDOUT_READERS`, and adding
+        # this file to the allowlist would mean amending a frozen module **after** the
+        # corpus exists -- which `PREREGISTRATION-SHIP.md` §1 says is a deviation and
+        # not a correction. The lock was right; the driver changed.
+        "disk_gb": _disk_from_clone_log(),
     }
 
 
@@ -115,7 +128,7 @@ def _print(d: dict) -> None:
     if not d.get("plan"):
         print()
         print("completed: " + ("yes" if d["completed"] else "NO -- the chain stopped"))
-        print(f"held-out corpus on disk: {d['disk_gb']} GB")
+        print(f"held-out corpus on disk: {d['disk_gb']} GB (from H3's clone log)")
         for e in d["steps"]:
             if e.get("status") == "FAILED":
                 print("\nthe step that stopped it:\n" + e.get("tail", ""))
