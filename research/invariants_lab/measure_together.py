@@ -42,7 +42,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import invariant_notes as I  # noqa: E402
 import preconfigured as P  # noqa: E402
 import scale as S  # noqa: E402
-from corpusio import BlobReader, corpus_repos, progress  # noqa: E402
+from corpora import dev_repos
+from corpusio import BlobReader, progress  # noqa: E402
 
 CENSUS = Path(__file__).with_name("corpus_census.json")
 ARTIFACT = Path(__file__).with_name("together_t1.json")
@@ -103,7 +104,7 @@ def run() -> dict:
     sample = rng.sample(pool, SAMPLE) if len(pool) > SAMPLE else pool
     progress(f"{len(sample)} commits of {len(pool)}")
 
-    repos = {r.name: r for r in corpus_repos()}
+    repos = {r.name: r for r in dev_repos()}
     readers: dict[str, BlobReader] = {}
     rows: list[dict] = []
     try:

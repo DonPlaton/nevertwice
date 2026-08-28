@@ -52,7 +52,8 @@ from statsmodels.stats.proportion import proportion_confint
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from corpusio import BlobReader, corpus_repos, progress  # noqa: E402
+from corpora import dev_repos
+from corpusio import BlobReader, progress  # noqa: E402
 import mutate  # noqa: E402
 import sigscan  # noqa: E402
 
@@ -249,7 +250,7 @@ def run() -> dict:
     progress(f"primary sample: {len(primary)} clusters from {len(mutants)} mutants")
 
     rows: list[dict] = []
-    repos = {r.name: r for r in corpus_repos()}
+    repos = {r.name: r for r in dev_repos()}
     readers: dict[str, BlobReader] = {}
     try:
         for i, m in enumerate(primary):

@@ -51,7 +51,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from corpusio import BlobReader, corpus_repos, progress  # noqa: E402
+from corpora import dev_repos
+from corpusio import BlobReader, progress  # noqa: E402
 from sigscan import Def, RefSite, scan_defs, scan_refs  # noqa: E402
 
 CENSUS = Path(__file__).with_name("corpus_census.json")
@@ -358,7 +359,7 @@ def main(argv: list[str] | None = None) -> int:
             progress(f"no mutant with id {args.materialise}")
             return 1
         m = found[0]
-        repo = next(r for r in corpus_repos() if r.name == m["repo"])
+        repo = next(r for r in dev_repos() if r.name == m["repo"])
         files = materialise(repo, m, args.into)
         progress(f"{len(files)} files; caller {m['caller_path']} held at parent")
         print(json.dumps({k: {s: (v is not None) for s, v in p.items()}
@@ -372,7 +373,7 @@ def main(argv: list[str] | None = None) -> int:
     all_mutants: list[Mutant] = []
     by_repo: list[dict] = []
     candidates = 0
-    for repo in corpus_repos():
+    for repo in dev_repos():
         entries = by_name.get(repo.name, {}).get("eligible", [])
         candidates += sum(len(h["symbols"]) for e in entries for h in e["caller_updates"])
         progress(f"== {repo.name} ({len(entries)} eligible commits)")

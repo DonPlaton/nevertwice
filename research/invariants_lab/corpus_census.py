@@ -27,10 +27,10 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
+from corpora import dev_repos  # noqa: E402
 from corpusio import (  # noqa: E402
     BlobReader,
     CommitFiles,
-    corpus_repos,
     head_sha,
     log_commits,
     progress,
@@ -217,7 +217,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"eligible commits, total: {data['totals']['eligible_commits']}")
         return 0
 
-    repos = corpus_repos()
+    repos = dev_repos()
     if args.only:
         repos = [r for r in repos if r.name == args.only]
     if not repos:

@@ -207,7 +207,8 @@ def corpus_silence(sample: int = 1000) -> dict:
     import json as _json
     from collections import Counter
 
-    from corpusio import BlobReader, corpus_repos
+    from corpora import dev_repos
+    from corpusio import BlobReader
 
     census = _json.loads(
         (Path(__file__).with_name("corpus_census.json")).read_text(encoding="utf-8"))
@@ -217,7 +218,7 @@ def corpus_silence(sample: int = 1000) -> dict:
     rng = random.Random(SEED)
     chosen = rng.sample(pool, sample) if len(pool) > sample else pool
 
-    repos = {r.name: r for r in corpus_repos()}
+    repos = {r.name: r for r in dev_repos()}
     readers: dict[str, object] = {}
     fired = considered = no_axis = 0
     try:

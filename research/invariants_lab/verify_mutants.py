@@ -37,7 +37,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from corpusio import BlobReader, corpus_repos, progress  # noqa: E402
+from corpora import dev_repos
+from corpusio import BlobReader, progress  # noqa: E402
 
 MUTANTS = Path(__file__).with_name("mutants.json")
 ARTIFACT = Path(__file__).with_name("mutant_controls.json")
@@ -190,7 +191,7 @@ def _imports_literally(source: str, symbol: str, module_tail: str) -> bool:
 
 
 def verify(mutants: list[dict]) -> dict:
-    repos = {r.name: r for r in corpus_repos()}
+    repos = {r.name: r for r in dev_repos()}
     results: list[dict] = []
     readers: dict[str, BlobReader] = {}
     cache: dict = {}

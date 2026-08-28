@@ -41,7 +41,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import complexity as C  # noqa: E402
 import ratchet as R  # noqa: E402
-from corpusio import BlobReader, corpus_repos, progress  # noqa: E402
+from corpora import dev_repos
+from corpusio import BlobReader, progress  # noqa: E402
 
 CENSUS = Path(__file__).with_name("corpus_census.json")
 ARTIFACT = Path(__file__).with_name("ratchet_r3.json")
@@ -95,7 +96,7 @@ def run() -> dict:
     sample = rng.sample(pool, SAMPLE) if len(pool) > SAMPLE else pool
     progress(f"{len(sample)} commits of {len(pool)}")
 
-    repos = {r.name: r for r in corpus_repos()}
+    repos = {r.name: r for r in dev_repos()}
     readers: dict[str, BlobReader] = {}
     rows: list[dict] = []
     tmp = Path(tempfile.mkdtemp(prefix="ratchet_r3_"))

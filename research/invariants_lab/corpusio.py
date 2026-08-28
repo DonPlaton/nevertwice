@@ -172,15 +172,10 @@ class BlobReader:
         self.close()
 
 
-CORPUS_ROOT = Path("D:/Coding/_nevertwice_polygon/corpus")
-
-
-def corpus_repos(root: Path | None = None) -> list[Path]:
-    """Cloned repositories, in a stable order so runs are comparable."""
-    base = root or CORPUS_ROOT
-    if not base.exists():
-        return []
-    return sorted(p for p in base.iterdir() if (p / ".git").exists())
+# Where the clones live is deliberately *not* known here. `corpora.py` owns that, and it
+# owns it because there are two corpora with different rights: a development set anyone
+# may tune against, and a held-out set sealed until Phase V. A module that could hand out
+# "the corpus" without naming which one is the exact ambiguity F0 removed.
 
 
 def progress(msg: str) -> None:

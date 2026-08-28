@@ -34,7 +34,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from corpusio import BlobReader, corpus_repos, progress  # noqa: E402
+from corpora import dev_repos
+from corpusio import BlobReader, progress  # noqa: E402
 import mutate  # noqa: E402
 import sigscan  # noqa: E402
 
@@ -186,7 +187,7 @@ def hunt(limit_per_repo: int | None = None) -> dict:
     refs_decided = 0
     refs_false = 0
 
-    for repo in corpus_repos():
+    for repo in dev_repos():
         entries = by_name.get(repo.name, {}).get("eligible", [])
         if limit_per_repo:
             entries = entries[:limit_per_repo]

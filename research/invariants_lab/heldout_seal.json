@@ -1,0 +1,11 @@
+{
+ "name": "heldout_seal",
+ "task": "F0",
+ "phase": "F -- finishing the mechanisms on the development set",
+ "open": false,
+ "opened_at": null,
+ "opens_at": "H1, after the code is frozen and PREREGISTRATION-SHIP.md is committed",
+ "root": "D:\\Coding\\_nevertwice_polygon\\corpus_heldout",
+ "frozen_code": {},
+ "why": "the held-out corpus is the only source of an out-of-sample number; anything that reads it before the code is frozen converts it into a second development set and there is no third"
+}
