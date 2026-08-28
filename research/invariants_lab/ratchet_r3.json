@@ -1,0 +1,7075 @@
+{
+ "generated": "2026-08-28T03:30:01",
+ "n": 1000,
+ "pool": 2853,
+ "silence": {
+  "flagged": 364,
+  "rate": 0.364,
+  "ci": [
+   0.33475165091277503,
+   0.3942892273952959
+  ],
+  "p_vs_0.05": 3.0056047242898403e-205
+ },
+ "agreement": {
+  "decided": 1000,
+  "ruff_rose": 375,
+  "ruff_flat": 625,
+  "fires_on_rose": {
+   "k": 239,
+   "n": 375,
+   "point": 0.6373333333333333,
+   "ci": [
+    0.587508361965326,
+    0.6843731800407457
+   ],
+   "p_vs_0.50": 1.1616428957814112e-07
+  },
+  "fires_on_flat": {
+   "k": 125,
+   "n": 625,
+   "point": 0.2,
+   "ci": [
+    0.17051547561004932,
+    0.2331497968685481
+   ]
+  },
+  "fisher_p_one_sided": 4.0635531391348567e-44
+ },
+ "by_repo": {
+  "django_django": {
+   "n": 264,
+   "flagged": 111
+  },
+  "encode_httpx": {
+   "n": 103,
+   "flagged": 33
+  },
+  "fastapi_fastapi": {
+   "n": 56,
+   "flagged": 22
+  },
+  "pallets_flask": {
+   "n": 77,
+   "flagged": 26
+  },
+  "psf_requests": {
+   "n": 47,
+   "flagged": 17
+  },
+  "pytest-dev_pytest": {
+   "n": 163,
+   "flagged": 52
+  },
+  "scrapy_scrapy": {
+   "n": 145,
+   "flagged": 41
+  },
+  "sphinx-doc_sphinx": {
+   "n": 145,
+   "flagged": 62
+  }
+ },
+ "rows": [
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "51532af69a551292663fa87279eea0317b4ea3a5",
+   "fired": true,
+   "ruff_delta": -2,
+   "n_regressions": 3
+  },
+  {
+   "repo": "django_django",
+   "sha": "d7eb500338e11999962e618f0701e62af511d8e9",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "c92c9af075217c2296af364a4d9ea55463dbe7f0",
+   "fired": false,
+   "ruff_delta": 1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "442229dd97160535e388473760002c1f1c495bf8",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "encode_httpx",
+   "sha": "e107e0f84255d88365d8fb86af29b642ec6f2361",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "32ac7a7c6ecaaf21fde64e4997345a95367fd939",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "00aa562884a418c4ee20e223ab82c3455997ee7d",
+   "fired": true,
+   "ruff_delta": 6,
+   "n_regressions": 4
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "24634f1bb236f72a1a7b73900f8e3b524f7717b5",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "bf06d7ef4d808c1e743267c38b5faed08cf3f21a",
+   "fired": false,
+   "ruff_delta": -222,
+   "n_regressions": 0
+  },
+  {
+   "repo": "psf_requests",
+   "sha": "e153b94190359f9d7dbdd0753d182bf672baab9d",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 3
+  },
+  {
+   "repo": "django_django",
+   "sha": "37b7776a015102e97b9bdd64d88c732883ff9989",
+   "fired": false,
+   "ruff_delta": -8,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "320835d43f3a2b163cc86a9a5ae6db0ff2dadb5f",
+   "fired": true,
+   "ruff_delta": -23,
+   "n_regressions": 1
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "41a4a163e3716bf0c14160373844bcded0e38abd",
+   "fired": true,
+   "ruff_delta": -1,
+   "n_regressions": 1
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "619a10efa7e50e6517d63f1eba4f1f2b45c06693",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "fastapi_fastapi",
+   "sha": "3c49346238643287780d9f0d673f88b0d02df109",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "encode_httpx",
+   "sha": "0b4a83257bef85559d91b466e4ac94a216a25485",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "encode_httpx",
+   "sha": "ef9fc0f3a70b35aa98fdc3756ecc87af94f884bc",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "f92641a636a8cb75fc9851396cef4345510a4b52",
+   "fired": true,
+   "ruff_delta": 9,
+   "n_regressions": 2
+  },
+  {
+   "repo": "django_django",
+   "sha": "2f0566fa61e13277364e3aef338fa5c143f5a704",
+   "fired": false,
+   "ruff_delta": 6,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "bb2f9b67d847af6970d73e6b4036877abae8172b",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "encode_httpx",
+   "sha": "8fd5b71016c10dd266a058966f3ff3843e3ce9c6",
+   "fired": true,
+   "ruff_delta": 11,
+   "n_regressions": 1
+  },
+  {
+   "repo": "django_django",
+   "sha": "4ef10f245ada0c7d5ae8dc31eebffa63790d40fb",
+   "fired": false,
+   "ruff_delta": 2,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "d2f1e00a6afa46c26a334a24217d5bf605bab9fb",
+   "fired": true,
+   "ruff_delta": 24,
+   "n_regressions": 1
+  },
+  {
+   "repo": "django_django",
+   "sha": "3ca77e2b843a264ad74fcd7b92141de1ddf5a4cb",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "b706a2c04840a8057610f41071fbcf3da1290eb5",
+   "fired": false,
+   "ruff_delta": 13,
+   "n_regressions": 0
+  },
+  {
+   "repo": "encode_httpx",
+   "sha": "1f9d0154df4821587d6e008fe54df54d3c02c51b",
+   "fired": true,
+   "ruff_delta": -4,
+   "n_regressions": 1
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "5bd393cf0151d5278ad18b508ce06b15bc95a499",
+   "fired": true,
+   "ruff_delta": 9,
+   "n_regressions": 5
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "6cc91df9ed1846835d0a5930cf41161e4337cfa0",
+   "fired": true,
+   "ruff_delta": -2,
+   "n_regressions": 2
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "898e50c2c7a7193befa5332cfe1e20f9b53a14bd",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "825cec51ff84bcb1e6318f7c4cfeda35860f4d84",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "4ee3831ac957f0fcfb57bce3ed3f74108ea05e08",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "3939e2b4dc0719075c29c968d09a746c2e10cb8c",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pallets_flask",
+   "sha": "401423df063e82bdac25c5b94ed4edc33e05de5e",
+   "fired": false,
+   "ruff_delta": 2,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "65da8a08acaf3cabbb96b1c21f5e19f2efd032e9",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "741b571f3b6cd1bcfec6db7ba90f112cd5bbc8d1",
+   "fired": true,
+   "ruff_delta": 2,
+   "n_regressions": 2
+  },
+  {
+   "repo": "fastapi_fastapi",
+   "sha": "c7fb7851b3389f24c51701d705458989be53ccbb",
+   "fired": false,
+   "ruff_delta": 3,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "ebb504db692cac496f4f45762d1d14644c9fa6fa",
+   "fired": true,
+   "ruff_delta": -10,
+   "n_regressions": 2
+  },
+  {
+   "repo": "django_django",
+   "sha": "0f9560855e5ed203b8c911c23237826e28a62a38",
+   "fired": true,
+   "ruff_delta": -71,
+   "n_regressions": 3
+  },
+  {
+   "repo": "pallets_flask",
+   "sha": "c2705ffd9ce1dc8476cb29eaf5ff5d4c719852d9",
+   "fired": true,
+   "ruff_delta": 8,
+   "n_regressions": 12
+  },
+  {
+   "repo": "encode_httpx",
+   "sha": "07586f97e85e1cdff1280016f1ee2a1e2ae764b5",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "7b354050335caaf8316cf5cf17d45af64649dbb1",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "e5a764cd2ae32fce66cfd85950f5fd62ff6c9f4b",
+   "fired": false,
+   "ruff_delta": -9,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "da6a24b66281bb9a9ebbd0a0bded6521b2166d24",
+   "fired": true,
+   "ruff_delta": -2,
+   "n_regressions": 6
+  },
+  {
+   "repo": "django_django",
+   "sha": "b6433866682baac35a953e59298dff7f399ac49b",
+   "fired": true,
+   "ruff_delta": 5,
+   "n_regressions": 2
+  },
+  {
+   "repo": "psf_requests",
+   "sha": "005571d1180835eb5266a3fdbdbe8fdae57d90c2",
+   "fired": true,
+   "ruff_delta": 0,
+   "n_regressions": 5
+  },
+  {
+   "repo": "django_django",
+   "sha": "83677faf860f1a25acd667131275307abaa23fc4",
+   "fired": false,
+   "ruff_delta": -4,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "0b32e72635f6e117824b5cba3b8b38254a6a2644",
+   "fired": true,
+   "ruff_delta": 3,
+   "n_regressions": 3
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "b9294de041d1a26afe07c1f43129e58d3afe6f47",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 1
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "b7560a88084cb7812059a616c5ec757b46bb45b0",
+   "fired": true,
+   "ruff_delta": 2,
+   "n_regressions": 2
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "0357d3afdad59d4b208c9983468bf5d48c5f92e2",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "encode_httpx",
+   "sha": "bc6163c55a75f2e655ff59301ce0a53fa12973ec",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "101a0c32d71090989be8d37f7b4a464b433705ba",
+   "fired": false,
+   "ruff_delta": 5,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "49519328b4988bf89c11d50191cdee8e9bec3aaa",
+   "fired": false,
+   "ruff_delta": 1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "ede3a4e850e8d2d3dedbb90eca84bc80a6f6bc27",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "631dfe9f1394001cabf39640bba4210dfe2a900c",
+   "fired": false,
+   "ruff_delta": -5,
+   "n_regressions": 0
+  },
+  {
+   "repo": "encode_httpx",
+   "sha": "302fe93df9fa44218b5089379fb9f3236169dec0",
+   "fired": true,
+   "ruff_delta": -3,
+   "n_regressions": 2
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "e3b179976666b53f170b95c586322e1feb483a3c",
+   "fired": false,
+   "ruff_delta": 2,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "0c961deeaab13a91f94832e0cd124b7fce722f5c",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "a56281b272c5cea1c0464ab9f1a824ceea7fec1e",
+   "fired": false,
+   "ruff_delta": 2,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "4656bc4c97ad9c143219e331331d085bc32cb48d",
+   "fired": false,
+   "ruff_delta": -3,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "d01cb6ed17647ed8af8b5c3d083fbd3ca21039df",
+   "fired": false,
+   "ruff_delta": 7,
+   "n_regressions": 0
+  },
+  {
+   "repo": "encode_httpx",
+   "sha": "d0835da230892bfa7ef42a5aed9dba8122a4359e",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "046ffa483ed63faae7b31e7e2cf618f88a3312ba",
+   "fired": true,
+   "ruff_delta": 5,
+   "n_regressions": 1
+  },
+  {
+   "repo": "pallets_flask",
+   "sha": "fe85970665ea3a38f9c6a8ef4756ff3a913850b6",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "encode_httpx",
+   "sha": "cb620e67c76202e6f64d22e45fedc0eb7c41e69e",
+   "fired": false,
+   "ruff_delta": 3,
+   "n_regressions": 0
+  },
+  {
+   "repo": "fastapi_fastapi",
+   "sha": "3e12918325fcde4cd749ac4c7957fa95ecbc584b",
+   "fired": false,
+   "ruff_delta": 1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "e0ef8ad2d6f958de6ce04cd7756e142efeb1a6a2",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "b6ec5a575db7e907784bffb1dfb67b61042822af",
+   "fired": false,
+   "ruff_delta": 4,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "b5870e6904d4c1c3683e46f645add8c56226472d",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pallets_flask",
+   "sha": "665fa2a32b5ff2b1c1887a48ed69329110a555f7",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "c285f4cb18c310f131e2ce8912a950d533837180",
+   "fired": true,
+   "ruff_delta": 6,
+   "n_regressions": 5
+  },
+  {
+   "repo": "encode_httpx",
+   "sha": "24b69236693dc75f5df948c81cf0a9ae1132a0ae",
+   "fired": false,
+   "ruff_delta": 14,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "5fc8d3db9160cf9dcbb5ed1034aec9302dbac0dd",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 2
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "c36b20b137d37ef433b8cc765881293b50159183",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 1
+  },
+  {
+   "repo": "encode_httpx",
+   "sha": "9409900898f40ed855e9c7a7664b7e068599a07d",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "f8404be1b2299550384289fc09ee61916297351f",
+   "fired": true,
+   "ruff_delta": 2,
+   "n_regressions": 2
+  },
+  {
+   "repo": "django_django",
+   "sha": "82bb4e684f9d0e5939cb0596c249954df0888e2d",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "8ba0b7bc2ad2ead90a827ffeec5bfed1e264431c",
+   "fired": true,
+   "ruff_delta": 0,
+   "n_regressions": 3
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "4f1d388733d2cb99719efcf49f27fba8586430c5",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "b6a023ce987a064b222b1aa2de03a50991f387fe",
+   "fired": true,
+   "ruff_delta": 2,
+   "n_regressions": 1
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "78148440556d3e5962771c1025c85b253ccd73c8",
+   "fired": true,
+   "ruff_delta": -91,
+   "n_regressions": 5
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "f674217c43c21f17b3693ce8b7b0e5bd06de2197",
+   "fired": false,
+   "ruff_delta": -2,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "80925ab845b7f55be97d9bb91015ceee90efc333",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "be43c7c67baf42ef4b2beb13cd8bb26c02094241",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "6760bca74b1f51ce83ed73318d5ddcef03c9d129",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "encode_httpx",
+   "sha": "39b57c939dd6d02ccd5fc7bd176bbe33ef53abed",
+   "fired": true,
+   "ruff_delta": 8,
+   "n_regressions": 3
+  },
+  {
+   "repo": "fastapi_fastapi",
+   "sha": "3d017824bacba2d9df1ced81ff7f892ecca19d49",
+   "fired": false,
+   "ruff_delta": 3,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "a63e4945ea82ce76e3600150862bcaaed759ba8b",
+   "fired": true,
+   "ruff_delta": 2,
+   "n_regressions": 2
+  },
+  {
+   "repo": "django_django",
+   "sha": "9ab1991689000821a4d86b8617e1c1455a327482",
+   "fired": true,
+   "ruff_delta": 29,
+   "n_regressions": 8
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "8011ff5bda074ca1b6419a768ec32277203106e6",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "2327ecead085a41d1a71a70a12eb988bbf982268",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "d1852a48b7d38cb1cd36135ea92f83742d8782d6",
+   "fired": true,
+   "ruff_delta": -28,
+   "n_regressions": 1
+  },
+  {
+   "repo": "fastapi_fastapi",
+   "sha": "948a39af95a496769ab0b97b8ac0647a460d8a46",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "1c4b4cc6b046e121be33a57031a0900ca1347e16",
+   "fired": false,
+   "ruff_delta": 27,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "b03fe049990962f254d52aea4f56a148cce62fc3",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "33d8fcde8a317184a627492f008a4eab9333ed88",
+   "fired": true,
+   "ruff_delta": 0,
+   "n_regressions": 2
+  },
+  {
+   "repo": "django_django",
+   "sha": "3a185cee2af919cd0e897d884eaafe421cd3ba48",
+   "fired": true,
+   "ruff_delta": 2,
+   "n_regressions": 3
+  },
+  {
+   "repo": "django_django",
+   "sha": "31d9dc07aa6d8c424bc84821d529cf3356e04a71",
+   "fired": true,
+   "ruff_delta": 2,
+   "n_regressions": 1
+  },
+  {
+   "repo": "fastapi_fastapi",
+   "sha": "cc9a73c3f83fab4f1d9fcb19dfe5b562869d932c",
+   "fired": true,
+   "ruff_delta": 12,
+   "n_regressions": 2
+  },
+  {
+   "repo": "encode_httpx",
+   "sha": "110ce8565259a3c6927352554eccd94ca5804463",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "d3c4696596822281c0a5d4b9e3ee27732a4ce092",
+   "fired": true,
+   "ruff_delta": 5,
+   "n_regressions": 2
+  },
+  {
+   "repo": "encode_httpx",
+   "sha": "6752f7d6f6edfc244fb4718b3360b82f2d87fd76",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "psf_requests",
+   "sha": "d72d1162142d1bf8b1b5711c664fbbd674f349d1",
+   "fired": true,
+   "ruff_delta": -12,
+   "n_regressions": 2
+  },
+  {
+   "repo": "django_django",
+   "sha": "5e4c1793b714a975400b9277a66f99efafa2d92c",
+   "fired": false,
+   "ruff_delta": -6,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "d563e3be68369694a3bac1efd7779d8e03bb6a51",
+   "fired": true,
+   "ruff_delta": 3,
+   "n_regressions": 5
+  },
+  {
+   "repo": "fastapi_fastapi",
+   "sha": "7e2518350ad2ab529ba1166c304ee299b616f42f",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "1e96063ffa0d5d86f76eba47bce438c85cb29c88",
+   "fired": false,
+   "ruff_delta": -3,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "6f7f89f3c42861448a370fe7bfc343083850f600",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "encode_httpx",
+   "sha": "c12c27127605574c68f480060b4f58b69fc37e41",
+   "fired": false,
+   "ruff_delta": -2,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "afc7442e22e629038b84990200d066058f6be4c6",
+   "fired": false,
+   "ruff_delta": -3,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "c83fb1c7d123bc510f11ed2f75d424f2b5c8a446",
+   "fired": false,
+   "ruff_delta": -2,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "4675912d89ec8749abcacba5522e32122a52407b",
+   "fired": false,
+   "ruff_delta": 7,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "d4cb03eded95dbd27af8dd90495fa4c277ef0b48",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "134bd7f1fb57419f288ec22e278f85733af72a23",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pallets_flask",
+   "sha": "7c5261407dae61679c268b44c63d73909c3fe652",
+   "fired": false,
+   "ruff_delta": -13,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "944ef3bb60eae989aa7d536e509f9cc80be0adcb",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "92bec38591fccb523c2e643aef70a1f6cd7267ea",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "2162f0983de0dfe2178531638ce7ea56f54dd4e7",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pallets_flask",
+   "sha": "e82db2ca3a22c9614c1987392c9cfaa8c6ce99ad",
+   "fired": false,
+   "ruff_delta": 4,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "838a16ec2055cd9736c9d426acf9fdd092e72469",
+   "fired": true,
+   "ruff_delta": -1,
+   "n_regressions": 1
+  },
+  {
+   "repo": "django_django",
+   "sha": "3bdaaf6777804d33ee46cdb5a889b8cc544a91f1",
+   "fired": true,
+   "ruff_delta": 20,
+   "n_regressions": 6
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "89f178bf4d6ee877a406479918314f864ca1c40b",
+   "fired": false,
+   "ruff_delta": -4,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "065db7b56688ce5cbdc1508cfda9603d33b17a87",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "encode_httpx",
+   "sha": "c26425aa58574f31491f46b7c757f9f374fabf46",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "3724f9020a93a97f674d26bcdf25a62abde1c4e9",
+   "fired": false,
+   "ruff_delta": -6,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "99b681e227b5b7880d6edd0d8dd670034d431859",
+   "fired": false,
+   "ruff_delta": 2,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "ae8813c788f69a0de89444536bf6fcb60c3728b2",
+   "fired": true,
+   "ruff_delta": -1,
+   "n_regressions": 2
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "d38077106556184026137fe83d8351970f08ac89",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "617505ca892fc84c7be1c224ebca2c27f93e8f50",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "b426bb3443b0895f8a84379ff4a9949330012d38",
+   "fired": false,
+   "ruff_delta": -3,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "5eb429999e9e6a49eb9721d2dc0a47e0100345c3",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "78912ccd0e1fcdfe98ca85081c9eb8acb7aa1f6d",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 2
+  },
+  {
+   "repo": "pallets_flask",
+   "sha": "88863288225d5ee13a79c463f2a39391b6a52c61",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "psf_requests",
+   "sha": "85400d8d6751071ef78f042d1efa72bdcf76cc0e",
+   "fired": true,
+   "ruff_delta": 8,
+   "n_regressions": 1
+  },
+  {
+   "repo": "fastapi_fastapi",
+   "sha": "1b714b317732df1e08983e4a8ffe2e4e02c995e0",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "encode_httpx",
+   "sha": "9b8f5af7596ab2208375a4d26b5b585d51b82b01",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "c339a5a6f72690cd90d5a653dc108fbb60274a20",
+   "fired": true,
+   "ruff_delta": 2,
+   "n_regressions": 3
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "b98e1c12815bd99c0c92399bf899e69513307685",
+   "fired": true,
+   "ruff_delta": 9,
+   "n_regressions": 11
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "5256542ea41583e1c02783b2650b7c8a23749088",
+   "fired": true,
+   "ruff_delta": 2,
+   "n_regressions": 2
+  },
+  {
+   "repo": "encode_httpx",
+   "sha": "5fccc04da4b9490d2d1ff99600f374aa8800176b",
+   "fired": false,
+   "ruff_delta": -7,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "dcef7b03c17bd395defddab27fa66778e4051c18",
+   "fired": true,
+   "ruff_delta": 3,
+   "n_regressions": 4
+  },
+  {
+   "repo": "encode_httpx",
+   "sha": "b9487984147362b9869a500bcba3f16df732105f",
+   "fired": true,
+   "ruff_delta": 0,
+   "n_regressions": 1
+  },
+  {
+   "repo": "fastapi_fastapi",
+   "sha": "4e8080f29013dcb6850518bb9011bf82c9081828",
+   "fired": true,
+   "ruff_delta": 2,
+   "n_regressions": 1
+  },
+  {
+   "repo": "encode_httpx",
+   "sha": "8c84210555294ce10c681edae2df71627095a4e9",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pallets_flask",
+   "sha": "697f7b9365304c45216e6c8dd307d931ea1506d0",
+   "fired": false,
+   "ruff_delta": 11,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "9dda4abee1225db7a7b195b84c915fdd141a7260",
+   "fired": false,
+   "ruff_delta": -131,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "f1e6fdcddbfe8991935685ccc5049dd957ec4382",
+   "fired": false,
+   "ruff_delta": 1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "670e8b149fa3349f08619f4d44617c0df9b84f8a",
+   "fired": true,
+   "ruff_delta": 6,
+   "n_regressions": 13
+  },
+  {
+   "repo": "encode_httpx",
+   "sha": "919e8d3f9b634f61c2abdf786610df36d6cd3a82",
+   "fired": true,
+   "ruff_delta": 5,
+   "n_regressions": 2
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "6e0b0517c06a9f5c5db7d12890e8f699c10d8514",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "f3469bcc8fedac8c196a3df7e71a8a47300dcb64",
+   "fired": true,
+   "ruff_delta": -4,
+   "n_regressions": 6
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "1ea23e14df871ff97aa4082dddecfd11c4465cbe",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 2
+  },
+  {
+   "repo": "pallets_flask",
+   "sha": "84c007d34f7f0b8737310fe4d67be12c463e0130",
+   "fired": false,
+   "ruff_delta": -4,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "1b83e558098122eb0e7badb9dc8a7f7d0ada1c59",
+   "fired": true,
+   "ruff_delta": 2,
+   "n_regressions": 9
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "e8ecc00cfbc197175743d9ab2840b401b9ae2077",
+   "fired": true,
+   "ruff_delta": 14,
+   "n_regressions": 4
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "af7dcabebb72aafbcd04425eaad3b2423406dd5a",
+   "fired": false,
+   "ruff_delta": -2,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "1cb9fc3e63fdc51ab05b649da4f6c92ed52c02d1",
+   "fired": false,
+   "ruff_delta": -63,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "1ea44a3abd4e58777247a095afd03dd01efdef55",
+   "fired": false,
+   "ruff_delta": -2,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "c17d50829f3173c85a9810520458a112971d551c",
+   "fired": true,
+   "ruff_delta": 14,
+   "n_regressions": 3
+  },
+  {
+   "repo": "encode_httpx",
+   "sha": "1da46f3de0f4fda77657bf2f795b52c03c90c74e",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "3c01fe30f3dd4dc1c8bb4fec816bd277d1ae5fa6",
+   "fired": false,
+   "ruff_delta": 2,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pallets_flask",
+   "sha": "69f9845ef2da3051d74d4dade3e88ccf5b2ee3de",
+   "fired": true,
+   "ruff_delta": -16,
+   "n_regressions": 17
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "1878c02078fe9cfb34020df8fc30f920c37d997d",
+   "fired": false,
+   "ruff_delta": -2,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "11498d0037437789cab7b8ced69ba0101d97c786",
+   "fired": false,
+   "ruff_delta": -18,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "3f29ff6204501bc9ff3f1c763c5c90148bd333ca",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "4f5020c3ddfc3265483404201adcd6b6b48691c6",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "b8bb7337780fa8e719692c9de0bc773efe33091c",
+   "fired": false,
+   "ruff_delta": 1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "632dfa233839f8c76bd6b065b8420fe0ab96175a",
+   "fired": false,
+   "ruff_delta": 6,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "0de0699d94ccd078c83eadef296a0d9ccd65a62f",
+   "fired": false,
+   "ruff_delta": -2,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "44f6ada034f9d75e0089f45d3ad9f3c6fa5777f1",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "e34f4e6f8735a6ad102fda096aa99cbb5600761e",
+   "fired": true,
+   "ruff_delta": -6,
+   "n_regressions": 4
+  },
+  {
+   "repo": "django_django",
+   "sha": "16436f3751e9eec67a7b80b25c8e7d29a34be67e",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "encode_httpx",
+   "sha": "38a136833f7c7f3a17f362b1223ef7cc7e38253d",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 1
+  },
+  {
+   "repo": "django_django",
+   "sha": "68a890e79f660484d05482902663b6168f0bd71e",
+   "fired": true,
+   "ruff_delta": -16,
+   "n_regressions": 6
+  },
+  {
+   "repo": "psf_requests",
+   "sha": "23d9b077d8b2db9d13c1edd97ffb65b0582631d0",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "fd20365b277bf48dbdbd82afa1346eadb96d9574",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 4
+  },
+  {
+   "repo": "django_django",
+   "sha": "11cac1bd8ef7546ca32d9969d4348bf412dc6664",
+   "fired": true,
+   "ruff_delta": 13,
+   "n_regressions": 1
+  },
+  {
+   "repo": "django_django",
+   "sha": "2faa3acb4bb55f1830d517473c4bfb1616f92726",
+   "fired": false,
+   "ruff_delta": 1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "13a014d2e6b5b9a3eca67a8f3d9b8e2c7b214f1d",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "7ace23c3856bc03d05ee655ea276382077347fe1",
+   "fired": false,
+   "ruff_delta": 1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "2ec60d59197ffa7e33e820941fd0196e576366be",
+   "fired": false,
+   "ruff_delta": 2,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pallets_flask",
+   "sha": "e97253e4c1a0380f0b70108e8f984b0d9b87ac11",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "encode_httpx",
+   "sha": "b23420392efdcc10f3d802f335739d9cb3d72d5c",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "fda7c88ec38d2e340fd85d3e7dc087eaa731dcdf",
+   "fired": false,
+   "ruff_delta": -3,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "ae090740c5e2de0fc0ecd3164ad597c4ca0c6ccd",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "55591505787dbfac72743250dea0713ddbbe286c",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "3915d4c70d0d7673abe675525b58117a5099afd3",
+   "fired": true,
+   "ruff_delta": 16,
+   "n_regressions": 6
+  },
+  {
+   "repo": "fastapi_fastapi",
+   "sha": "e94c13ce74990eb682aead3fd976df45beee93d6",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "4b51ed4aa9170265d682d120bb900e9fd94a21bc",
+   "fired": false,
+   "ruff_delta": 2,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "e9a0e1d4f6ecfc4227acff74e1f56f288a0b30aa",
+   "fired": true,
+   "ruff_delta": 2,
+   "n_regressions": 3
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "b38ac27eee70b41a4d6d2545b5bf78139ff23f24",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pallets_flask",
+   "sha": "0b3369355dadb39ac1ce9580d95004233031a287",
+   "fired": false,
+   "ruff_delta": 3,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pallets_flask",
+   "sha": "2c3160304278d323da8485057770926d1b582579",
+   "fired": true,
+   "ruff_delta": 5,
+   "n_regressions": 11
+  },
+  {
+   "repo": "encode_httpx",
+   "sha": "06f6d50084343e894fb7535e0dcf1da3e8caa725",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "c86e9b5847bc2853fc6a3fcfbf8daa56786d3210",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "7beb520555b7908c647c5cfa35bbfc3e48b28638",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "encode_httpx",
+   "sha": "e284b84bf9365c8c10a681140a72066980e0da9d",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "psf_requests",
+   "sha": "09bd3232dd1572f1b6c435fdcca4275687fcb937",
+   "fired": true,
+   "ruff_delta": 3,
+   "n_regressions": 3
+  },
+  {
+   "repo": "encode_httpx",
+   "sha": "1c33a2854e5d18955c8766c5c01e6229716b5b7a",
+   "fired": true,
+   "ruff_delta": 3,
+   "n_regressions": 2
+  },
+  {
+   "repo": "django_django",
+   "sha": "cb17f7ca2252265ab4a844e7924cb8ebab4a1a76",
+   "fired": true,
+   "ruff_delta": 3,
+   "n_regressions": 1
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "6d989e3fb01c8a184b84d34a3c083ed40006b0ae",
+   "fired": false,
+   "ruff_delta": -6,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "db6f347db6d3f2db5aa2cf2d27630db5ab99d589",
+   "fired": false,
+   "ruff_delta": 4,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "aadf7ff143f2caeecc8567b7395d35a9705c4319",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "fd48cd57f95d2c4e2f6f4e416d20c36b4484d094",
+   "fired": false,
+   "ruff_delta": -17,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "7dd0ceba2e8413d79c2aaff62733f4631cd3c1e7",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 1
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "1ca9dacbfe529282ac286a3a61542167e5d6bc65",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "fastapi_fastapi",
+   "sha": "e049fc4ea15a7b844326efa545a7e370713f6612",
+   "fired": true,
+   "ruff_delta": 2,
+   "n_regressions": 2
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "479e48266c025c99025787a8004a82b2afda8e6c",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "98513b995a78fc5615b6071cda868f69cd2461f9",
+   "fired": true,
+   "ruff_delta": -2,
+   "n_regressions": 2
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "a01e4769ccf95d193d1b617f2e5d138658b52bd2",
+   "fired": false,
+   "ruff_delta": -6,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "6f23996a597a302e2a3cac265f70b48f4aa02b11",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "7737305a4f5dc5006d92dac3a61523ad6c2a523a",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "2f025a4b226610a170d008a24eeba4f90719fa76",
+   "fired": true,
+   "ruff_delta": 2,
+   "n_regressions": 2
+  },
+  {
+   "repo": "psf_requests",
+   "sha": "fd628095d7b9ddbf3e987d8a4bf0e6062768916f",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "96317ad8defa89a9a4e8ecf4e22e64cb0c3054d7",
+   "fired": false,
+   "ruff_delta": -2,
+   "n_regressions": 0
+  },
+  {
+   "repo": "psf_requests",
+   "sha": "36b0481f24aa45a0229791630b467971dd58c92f",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 5
+  },
+  {
+   "repo": "django_django",
+   "sha": "29c0073335c7f7cdc482866e093e5e42a42625e5",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "encode_httpx",
+   "sha": "336d22d73a31fc701d05209f7ef29c1ad5cf78fe",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 2
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "db408528928b2d15043593032913fe40d6eb6783",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "1eac690d25dd49088256954d4046813daa37dc95",
+   "fired": true,
+   "ruff_delta": -2,
+   "n_regressions": 1
+  },
+  {
+   "repo": "psf_requests",
+   "sha": "4207867aaf917ed8d223064cc5c163dfe027dc00",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "7c7d3f40102764a5ad0e46d35ff23bfd7f0340f8",
+   "fired": true,
+   "ruff_delta": 2,
+   "n_regressions": 2
+  },
+  {
+   "repo": "fastapi_fastapi",
+   "sha": "8505b716af3879c18bf47f9d57a07aae94b58bcf",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 1
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "fd5b40593a4303acbc00d36a5212846a6a375952",
+   "fired": false,
+   "ruff_delta": -2,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "fb5bd38e3b83c7f0d1011de80f922fc34faf740b",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "b3be6e210de837c54fc50cf62fc9e34a504c705e",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "ee4a19053a32d41cdd79e087b1968980804ce658",
+   "fired": false,
+   "ruff_delta": -2,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "e3cb2bbcf18d301400835d0778c81a15cfd0da99",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 2
+  },
+  {
+   "repo": "django_django",
+   "sha": "bf12273db4e53779546e2ac7b65c0ce8e3c8a640",
+   "fired": true,
+   "ruff_delta": 2,
+   "n_regressions": 1
+  },
+  {
+   "repo": "pallets_flask",
+   "sha": "0a00e1b6085f62fb776a95ef676ea661bff565f6",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "ef5d81ad5c37bc06a6365dc61377c18f1001f9de",
+   "fired": false,
+   "ruff_delta": 1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "d3e363b97a2a27fecc3c049bcd1fae9fa4ac34f5",
+   "fired": true,
+   "ruff_delta": 3,
+   "n_regressions": 2
+  },
+  {
+   "repo": "django_django",
+   "sha": "e23240474b4c7d630a4224a558f2e47a4b957cd1",
+   "fired": true,
+   "ruff_delta": -1,
+   "n_regressions": 1
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "26fecafb4920a8d9dacaa9e3614bf182ce12696a",
+   "fired": true,
+   "ruff_delta": 0,
+   "n_regressions": 1
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "9bfa58e36ccac20193c2175f3fc55636cd44f585",
+   "fired": true,
+   "ruff_delta": 0,
+   "n_regressions": 2
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "a52fd809bf0eecefc1b5aba3c05d6d56a1f66538",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "2f00666d749b4a736536bafc786e63be06113676",
+   "fired": false,
+   "ruff_delta": -4,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "82e4f956e3faa4a48fe3c90e02673c1a916d6943",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "29a5b7452e80ba528eddb6fb0eb1a00ae733457b",
+   "fired": true,
+   "ruff_delta": 4,
+   "n_regressions": 9
+  },
+  {
+   "repo": "django_django",
+   "sha": "1c30a6473df55c7efff71fd24f46c4b8d1ad5630",
+   "fired": false,
+   "ruff_delta": 1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "622c4ce02efb543027932d3d39c8db8b7fefe337",
+   "fired": false,
+   "ruff_delta": 5,
+   "n_regressions": 0
+  },
+  {
+   "repo": "psf_requests",
+   "sha": "3e7c682e66fb4b276c8343bb718d8b13037cea15",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 1
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "80f79aef919d54fec1fcf6edcda7f5de26e70873",
+   "fired": true,
+   "ruff_delta": 5,
+   "n_regressions": 8
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "cae22930c8952f91280070bd6407a745826c9854",
+   "fired": true,
+   "ruff_delta": -21,
+   "n_regressions": 2
+  },
+  {
+   "repo": "encode_httpx",
+   "sha": "01287bac9999e3bc34171744e2a87064e0bbc2a1",
+   "fired": false,
+   "ruff_delta": -2,
+   "n_regressions": 0
+  },
+  {
+   "repo": "encode_httpx",
+   "sha": "95b2b2430249c95e77c78789da598f810680a0df",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "de4a34365a2d872eb69ab2a2edfb723658e28530",
+   "fired": true,
+   "ruff_delta": 5,
+   "n_regressions": 2
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "42383cc267393c3c5fb89c9108759125939ab3e5",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 2
+  },
+  {
+   "repo": "django_django",
+   "sha": "c35b81b864ffa84751bac7d73046840f576491f9",
+   "fired": false,
+   "ruff_delta": 1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "c7f821990117dc69f5c843e6bc1f2b0859c2f015",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "9822d88ca0dd855a668f9c33447aeac45a9768ac",
+   "fired": true,
+   "ruff_delta": 2,
+   "n_regressions": 3
+  },
+  {
+   "repo": "django_django",
+   "sha": "5f7991c42cff73b6278106d499d719b726f85ead",
+   "fired": false,
+   "ruff_delta": -5,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "baa523055f77087a2add4a8725f2ac4553e72bae",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "daec0457110e188a131271f9fce86ecb1dbd14c6",
+   "fired": false,
+   "ruff_delta": -2,
+   "n_regressions": 0
+  },
+  {
+   "repo": "fastapi_fastapi",
+   "sha": "1bf55200a90b04229f665cd2ee83edde91e936e8",
+   "fired": true,
+   "ruff_delta": -2,
+   "n_regressions": 1
+  },
+  {
+   "repo": "encode_httpx",
+   "sha": "53804173bb734ce94d13d1b34c0ebaab46abd8c3",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "encode_httpx",
+   "sha": "5ee6135256ad058bad31a1f7efda022c377b88ec",
+   "fired": false,
+   "ruff_delta": 3,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "142ab6846ac09d6d401e26fc8b6b988a583ac0f5",
+   "fired": false,
+   "ruff_delta": 1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "fastapi_fastapi",
+   "sha": "ea43f227e5c7128c09e3e2d5dceea212552b19dc",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "d4565318c7061c2ccd17fa5d5eabcacef8c34826",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "915001ad0bd61600781d58ead798c8cae6e5cd25",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "90192fc7635dba51933ea56f779cf5ca77a29bc9",
+   "fired": true,
+   "ruff_delta": -2,
+   "n_regressions": 10
+  },
+  {
+   "repo": "encode_httpx",
+   "sha": "d6b3794395305e61237149c4623c5917d35dd029",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "8532e991a53732a241f0d2b4b1f254a6db597b69",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "c7fd9b242d2d63406f1de6cc3204e35aaa025233",
+   "fired": false,
+   "ruff_delta": -8,
+   "n_regressions": 0
+  },
+  {
+   "repo": "encode_httpx",
+   "sha": "92fbe5fd87143e67cc22a54d69a5d3b3e75abea3",
+   "fired": true,
+   "ruff_delta": 2,
+   "n_regressions": 1
+  },
+  {
+   "repo": "pallets_flask",
+   "sha": "35ed617fe41b184288892f733ce07d94391b76b1",
+   "fired": true,
+   "ruff_delta": 4,
+   "n_regressions": 3
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "dd1398b280334b1014d2dbed009331ceed7c4fb1",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "195f738bbaa7c090df795161390056c3c6c7f1f7",
+   "fired": false,
+   "ruff_delta": -4,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "351d5da69b994c2e390f8d33e66ce5836b0bf348",
+   "fired": true,
+   "ruff_delta": 7,
+   "n_regressions": 2
+  },
+  {
+   "repo": "pallets_flask",
+   "sha": "71b351173b1440d6ca2dc36284d080fda2a22006",
+   "fired": false,
+   "ruff_delta": -2,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "69419cb70007514e5061f3b8d359b7da9dff82dd",
+   "fired": true,
+   "ruff_delta": -31,
+   "n_regressions": 3
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "8eaa0ab60f044cd15435b8f54d1e079adddaa899",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "fastapi_fastapi",
+   "sha": "510fec9bee23a9c31157090a2081f2038f7ae5cf",
+   "fired": true,
+   "ruff_delta": -4,
+   "n_regressions": 3
+  },
+  {
+   "repo": "pallets_flask",
+   "sha": "a0e2aca770c756d9f7de53339e2cf9067a52df11",
+   "fired": false,
+   "ruff_delta": -61,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "36be97b99d4de786746a8d80bbcd41de03752df9",
+   "fired": true,
+   "ruff_delta": 7,
+   "n_regressions": 3
+  },
+  {
+   "repo": "pallets_flask",
+   "sha": "5e1ced3c055f7eb567bf7266c98de3d44ceea1b4",
+   "fired": false,
+   "ruff_delta": -17,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "11c5e0609bcc0db93809de2a08e0dc3d70b393e4",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 3
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "8e6883f8a06a766b7b49675fa7973d1011239152",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "e0ec458360527e07ccd0c0b266b188d9872de252",
+   "fired": true,
+   "ruff_delta": 4,
+   "n_regressions": 2
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "815a9c657d235ec3476dd45871adc52034d81aba",
+   "fired": true,
+   "ruff_delta": 19,
+   "n_regressions": 8
+  },
+  {
+   "repo": "psf_requests",
+   "sha": "b28673368b0a4236b3cfbb50fb15f846793a1c40",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "6a9bf2852a8314773c1c04221bb3a0446d35b5d1",
+   "fired": true,
+   "ruff_delta": 2,
+   "n_regressions": 2
+  },
+  {
+   "repo": "django_django",
+   "sha": "e2d6e14662d780383e18066a3182155fb5b7747b",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "cc4e4d9aee0b3ebfb45bee01aec79edc9e144c78",
+   "fired": true,
+   "ruff_delta": 11,
+   "n_regressions": 8
+  },
+  {
+   "repo": "encode_httpx",
+   "sha": "3f96e74961f9faf013e5aff6c73a71f3b7bc2676",
+   "fired": false,
+   "ruff_delta": -13,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "3d731ba641f58e67ca5af9419ff6293163e2186b",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 2
+  },
+  {
+   "repo": "django_django",
+   "sha": "35b03788b0607c1f8d2b64e4fa9e1669b0907ea4",
+   "fired": false,
+   "ruff_delta": 2,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pallets_flask",
+   "sha": "41ec5760a2c55a099c3a1733fdd36fbb1258a02b",
+   "fired": false,
+   "ruff_delta": -10,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "0166dd2f8c54b62a65735c395825b66eeb39788c",
+   "fired": false,
+   "ruff_delta": -2,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pallets_flask",
+   "sha": "b51ab3ff2c4af7e592e649e0e97657154b79c11f",
+   "fired": false,
+   "ruff_delta": 1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pallets_flask",
+   "sha": "465922e5f1cb76cf669a38afe25facde2176b9f0",
+   "fired": false,
+   "ruff_delta": -2,
+   "n_regressions": 0
+  },
+  {
+   "repo": "encode_httpx",
+   "sha": "6212e8fa3bf90154b891c7721f6d29737caac861",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "4ef4ef7d14ee2c2108fccb6b96b1c719734d99fd",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "2e05fd2ffe70b2cfd48bdb9e35eecac43b46637d",
+   "fired": true,
+   "ruff_delta": -3,
+   "n_regressions": 1
+  },
+  {
+   "repo": "django_django",
+   "sha": "d744c550d51955fd623897884446b7f34318e94d",
+   "fired": false,
+   "ruff_delta": 5,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "1c242a297b5b1857d76cab9b24f9f1d3b7f5240d",
+   "fired": false,
+   "ruff_delta": -5,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "43933a1dca07047e95ec990d9289d0212668009e",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "acdf4a86980efdb37146169fc09d435e54a4a47d",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 2
+  },
+  {
+   "repo": "django_django",
+   "sha": "fc0fa72ff4cdbf5861a366e31cb8bbacd44da22d",
+   "fired": true,
+   "ruff_delta": 30,
+   "n_regressions": 5
+  },
+  {
+   "repo": "psf_requests",
+   "sha": "4d6871d9176c13affe625b1885278d396a39f21d",
+   "fired": false,
+   "ruff_delta": -5,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "bb5716b54a9b7dc026593b1410510d429891ccca",
+   "fired": false,
+   "ruff_delta": -4,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "73c924643c597cd39aec61f8ad5c9ced97e06b53",
+   "fired": false,
+   "ruff_delta": -3,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "9a27c76021f934201cccf12215514a3091325ec8",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "00a889167f6699d02cee50848750d8d0e110d41c",
+   "fired": true,
+   "ruff_delta": 4,
+   "n_regressions": 2
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "116f01f2d20602e58a9e98985f4a3a04252cb912",
+   "fired": true,
+   "ruff_delta": 2,
+   "n_regressions": 3
+  },
+  {
+   "repo": "django_django",
+   "sha": "9aabe7eae3eeb3e64c5a0f3687118cd806158550",
+   "fired": false,
+   "ruff_delta": -2,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "9968f99e06e34c8e9125463a32a8756f109b9e7d",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "611249bb7f3a7bb5a92a67d90d6c97f17494768f",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "psf_requests",
+   "sha": "d0cb56932c251667420e4876f99f5fa6b5c8a9a6",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "cf4495ffe1e681db02bb932b9d04d15052667ce4",
+   "fired": false,
+   "ruff_delta": 1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "1c020c3d32ebf0cd008271462b6bbc12a77db2d9",
+   "fired": true,
+   "ruff_delta": -10,
+   "n_regressions": 10
+  },
+  {
+   "repo": "encode_httpx",
+   "sha": "19542f2c3cdb0104c23887b07c9c7a2c53964a93",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "encode_httpx",
+   "sha": "f8981f3d124f9b8db9073fd5c8afa11acb55a738",
+   "fired": true,
+   "ruff_delta": 2,
+   "n_regressions": 4
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "d21886c005e0c5f9aa8e56213a23cb03b2919c96",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 1
+  },
+  {
+   "repo": "django_django",
+   "sha": "9b7455e918a437c3db91e88dcbf6d9c93fef96f8",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "encode_httpx",
+   "sha": "be774980cea4cadb205a53a6bda3a2d40bfd9086",
+   "fired": true,
+   "ruff_delta": -5,
+   "n_regressions": 3
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "c7ee6e71abe13a122043f7e76023529b66245fc4",
+   "fired": true,
+   "ruff_delta": 11,
+   "n_regressions": 2
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "5436e4299075236023e8875c563a7c74cad9bb2a",
+   "fired": false,
+   "ruff_delta": -2,
+   "n_regressions": 0
+  },
+  {
+   "repo": "encode_httpx",
+   "sha": "3acc31621cedbdfaea1e4dc05dd4b137c28f92c6",
+   "fired": true,
+   "ruff_delta": -13,
+   "n_regressions": 3
+  },
+  {
+   "repo": "django_django",
+   "sha": "41e73de39df31c4b13d65462bfeedde6924226d8",
+   "fired": true,
+   "ruff_delta": 11,
+   "n_regressions": 2
+  },
+  {
+   "repo": "fastapi_fastapi",
+   "sha": "6ac122071d2c9e6add587e1271eb010dd6acbed0",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "2314fadabe00796ecb0d9ebd7a950f58a675db68",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "4035fa632693b6e699679bdeac39255256c1d798",
+   "fired": false,
+   "ruff_delta": 18,
+   "n_regressions": 0
+  },
+  {
+   "repo": "encode_httpx",
+   "sha": "e1f5b8ba574e1fea4a9a79042f688f143c546f9d",
+   "fired": false,
+   "ruff_delta": -3,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "e06ad76f22ac868bc9a0d38cb1bdaa7f8bb37ef9",
+   "fired": false,
+   "ruff_delta": 1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "d58aaa24e31f10e56a7f05a4451cd06a3cc6e65d",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "54a154c86f4806327081b80193cebca7934468d0",
+   "fired": false,
+   "ruff_delta": 3,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "30848dfe34bb027c40ae1902623bd2fb675f6424",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 2
+  },
+  {
+   "repo": "psf_requests",
+   "sha": "3458e6a905b543f499aea95e463bb653114ffb1c",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "3787fec460f134a91228d01a8fc0277354e4ee0c",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "fd6a299cd06fac615ccb9006df0dd98cd8461cc5",
+   "fired": false,
+   "ruff_delta": -8,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "78ac7d99f5d8fab0353078a9eccd334780a23e8d",
+   "fired": true,
+   "ruff_delta": 0,
+   "n_regressions": 4
+  },
+  {
+   "repo": "encode_httpx",
+   "sha": "59914c7690573d5f9b17bce4172405294cb08278",
+   "fired": false,
+   "ruff_delta": -12,
+   "n_regressions": 0
+  },
+  {
+   "repo": "fastapi_fastapi",
+   "sha": "70a51b3aff10afa4d6f0700da7e492273bd51b24",
+   "fired": true,
+   "ruff_delta": 6,
+   "n_regressions": 4
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "f08a77de77fc8e9198d649efb4b71827e39f8b77",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "89dfde95353651f12474621becd808e2330371da",
+   "fired": false,
+   "ruff_delta": 1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "e7e5d9b338cabaafc61b7a0c55ff395b533d8c9e",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "encode_httpx",
+   "sha": "1a32cf036a825f6eb35395af5388a3b23180a82e",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pallets_flask",
+   "sha": "976dfedaa9efdb566333ea829b12751820268f67",
+   "fired": false,
+   "ruff_delta": -3,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "aecebcea9a3f6cbd3f379bc34f99d2ffb0f87220",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "37562163393cc145171b802699c84467781c701b",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "5d3a3add83be789211ed09004d21a4ffaf2f8a9f",
+   "fired": false,
+   "ruff_delta": 1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "51b606f75d3662cf6736ade400d6423cb519968b",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "4e35c00ab005da542e91a488da58fa3638618168",
+   "fired": true,
+   "ruff_delta": 13,
+   "n_regressions": 1
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "e2934c3f8c03c83469f4c6670c207773a6e02df4",
+   "fired": false,
+   "ruff_delta": -5,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "0263914bf9cec5677783cda7557717e4a9660452",
+   "fired": true,
+   "ruff_delta": 0,
+   "n_regressions": 1
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "ef0c2bf83c76e1657f153d62681c32af71b0cae6",
+   "fired": true,
+   "ruff_delta": 2,
+   "n_regressions": 2
+  },
+  {
+   "repo": "encode_httpx",
+   "sha": "7b19cd5f4b749064c6452892a5e58a3758da1d1b",
+   "fired": false,
+   "ruff_delta": -10,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "4a489af0ff5907c85c171de4f8563119974415ac",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "315145f7ca682f8361d956e985f533a7fb421cde",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "5e56e9b4f67185bf52f851ea5d1f5829e01f804c",
+   "fired": true,
+   "ruff_delta": 0,
+   "n_regressions": 2
+  },
+  {
+   "repo": "psf_requests",
+   "sha": "7aa6c62d6d917e11f81b166d1d6c9e60340783ac",
+   "fired": true,
+   "ruff_delta": 18,
+   "n_regressions": 3
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "5a52acaa92b1c3d8dd04d1df7d9ebdcc9d9d397f",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "53d229ff632c2a3e547f2820a94239f38ba4d4ac",
+   "fired": true,
+   "ruff_delta": 4,
+   "n_regressions": 3
+  },
+  {
+   "repo": "django_django",
+   "sha": "d59d3caf3213686e9c762430a3ab21e28b6e367b",
+   "fired": false,
+   "ruff_delta": -9,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "e61e7b1e268578783a3761f7a63cc7c7fb5d332c",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "0cbb20e8e83996a4d8a3339254c2d7e9b763ce7f",
+   "fired": false,
+   "ruff_delta": 3,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "b41ad38fab85199d02a8b2754722bd1b0a40e14d",
+   "fired": true,
+   "ruff_delta": 5,
+   "n_regressions": 2
+  },
+  {
+   "repo": "fastapi_fastapi",
+   "sha": "11d0a08acda2f4bbc21ca1c5df92b34d8758c842",
+   "fired": true,
+   "ruff_delta": -5,
+   "n_regressions": 2
+  },
+  {
+   "repo": "django_django",
+   "sha": "76d31be2d04dd6e6bcb5cb39a29ea9ed3938d0f9",
+   "fired": false,
+   "ruff_delta": 1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "8a64cfdd91f261925556649c779bea3d2fcfa658",
+   "fired": true,
+   "ruff_delta": 8,
+   "n_regressions": 2
+  },
+  {
+   "repo": "fastapi_fastapi",
+   "sha": "11c755bee34ffa9cd0b28e9e04b944c3c8fd1125",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "9142bebff2657f2129a2028137f81d09db989968",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "e853d9e910151a83dcb944fa3c7ad82a19075edd",
+   "fired": false,
+   "ruff_delta": 2,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pallets_flask",
+   "sha": "77237093da25438c88b0a74c374a397d4bf823eb",
+   "fired": false,
+   "ruff_delta": -3,
+   "n_regressions": 0
+  },
+  {
+   "repo": "fastapi_fastapi",
+   "sha": "bbe5f28b77324d4172c11a5c6eea476b904c586b",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "fc36ad002fe555e0caf55597a51451185c059c5e",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "0cf139d20196cd055cae47b302370ec5442eac66",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "43e7401c918c03f8ac758a2ab6284ae0287260c2",
+   "fired": true,
+   "ruff_delta": 2,
+   "n_regressions": 1
+  },
+  {
+   "repo": "django_django",
+   "sha": "c1ae0621bab6b013025ec9024691ce7ad556409e",
+   "fired": true,
+   "ruff_delta": 0,
+   "n_regressions": 3
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "f29f79e39f698d33ec773b24a06b38c38ee0cdaa",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "203094b4c3d0db34527281bd29601ab418325d5c",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "392d992f8295f96632179e01e790465cc9c8d3ec",
+   "fired": false,
+   "ruff_delta": 8,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "3089018e951dcca568574c0e0ebf9d8aab112389",
+   "fired": true,
+   "ruff_delta": 2,
+   "n_regressions": 2
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "9766c2f339b2f5f16e1e66458d35651c8a7d6272",
+   "fired": true,
+   "ruff_delta": 0,
+   "n_regressions": 3
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "d4b2b612551918647148013893da4cfa83fa2e7a",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pallets_flask",
+   "sha": "5d8e35653fca0d7ee01519d556c7851089de82ea",
+   "fired": true,
+   "ruff_delta": -13,
+   "n_regressions": 3
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "c62a19bca5b262ab46dbc7737157352805424f96",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 1
+  },
+  {
+   "repo": "django_django",
+   "sha": "326949e444bcdde966d2421e2fb8bd8c87c65941",
+   "fired": false,
+   "ruff_delta": -12,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "94b40162a9f2da77fbc0fc509e8e8be664378e7c",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 1
+  },
+  {
+   "repo": "pallets_flask",
+   "sha": "7a444c5dab97d640282ec8fc4838bef2c128273f",
+   "fired": true,
+   "ruff_delta": 5,
+   "n_regressions": 2
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "c76190d491fca9f35b6758bdc06c34d77f5d9be9",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "0f52856f995e42ac5f337bd82dd5179cea5214a1",
+   "fired": false,
+   "ruff_delta": 1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "ceb4f3f701e330221f13a7ee66a2199b9b5e82e6",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "fastapi_fastapi",
+   "sha": "b9d912c6380661647b51c322820fcb4ba08f32d2",
+   "fired": true,
+   "ruff_delta": -63,
+   "n_regressions": 6
+  },
+  {
+   "repo": "encode_httpx",
+   "sha": "f63148aa7326de1ac2629b70f6c77e6a496df3f2",
+   "fired": false,
+   "ruff_delta": 3,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "8badb47db60d43966a56cfe5f0630e38358c309a",
+   "fired": true,
+   "ruff_delta": -2,
+   "n_regressions": 4
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "c0a39eb3f793af05e281f3e12f39c35a79be421b",
+   "fired": true,
+   "ruff_delta": -17,
+   "n_regressions": 3
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "a244d23b89f346c05286e2ec8c82feead316381d",
+   "fired": true,
+   "ruff_delta": 2,
+   "n_regressions": 1
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "dbfc72a4510b0c88951b706248d92b1fcaf52e3c",
+   "fired": false,
+   "ruff_delta": -4,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pallets_flask",
+   "sha": "f6d25bbc4f95112e9f5f85096d12a61ed43b38b8",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "encode_httpx",
+   "sha": "2b92a78c41544da0891d2c42c7e2a28174783c57",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "a413ef2155c4f3e5bf6954608d65a96631feb7e6",
+   "fired": true,
+   "ruff_delta": 2,
+   "n_regressions": 2
+  },
+  {
+   "repo": "encode_httpx",
+   "sha": "c6287ed78241927264a5a0f0eedbf53637f22ba7",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "162765d6c3182e36095d29543e21b44b908625fc",
+   "fired": false,
+   "ruff_delta": 6,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "9294121d3c4b169406f51d99a915060b175a9bfe",
+   "fired": false,
+   "ruff_delta": 5,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "868e2fcddae6720d5713924a785339d1665f1bb9",
+   "fired": true,
+   "ruff_delta": 22,
+   "n_regressions": 14
+  },
+  {
+   "repo": "pallets_flask",
+   "sha": "96c97dec095f204b8a557c5ea804afdd329e3c43",
+   "fired": true,
+   "ruff_delta": -1,
+   "n_regressions": 3
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "043aadeaf2467d7b4c263ba339fe1daea3ac8ae5",
+   "fired": false,
+   "ruff_delta": 1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pallets_flask",
+   "sha": "e1cc16f8bea15f11f63eacaa6089cd6e6b8b1965",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pallets_flask",
+   "sha": "8b5f760b7285c863d5c7a4ee10adb5eb7ac60a05",
+   "fired": true,
+   "ruff_delta": 0,
+   "n_regressions": 10
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "2e65f4e3ac81dd5e294839441262b8b112ba18bd",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "1686e0d184aaf704e5131a8651a070c4a0e58b03",
+   "fired": false,
+   "ruff_delta": 1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "c3d28cc4128d2eb387c5c89e36fb5f4261546bd6",
+   "fired": false,
+   "ruff_delta": -39,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "2ad81a0ef88309526b52a03d5281600e84ef94a5",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 4
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "f8e9669f8bd1d3a659eb03b8ef9bb9a6d2844e85",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "7d1585215df4cb629b94c3f247dff5ef213b6251",
+   "fired": true,
+   "ruff_delta": -1,
+   "n_regressions": 4
+  },
+  {
+   "repo": "pallets_flask",
+   "sha": "8a8a60815294eb9d5db0c2d451c6c9d959c7c499",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "10cdc70fc4c2ce441fb3c0a7a9ee9621c0d2eb63",
+   "fired": false,
+   "ruff_delta": 4,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "d71c781187a01aa8a1682447a3eb6f252cb4ea67",
+   "fired": true,
+   "ruff_delta": -4,
+   "n_regressions": 1
+  },
+  {
+   "repo": "fastapi_fastapi",
+   "sha": "fad3a9e1dcc077493aed8057278607994ee61ef1",
+   "fired": true,
+   "ruff_delta": 4,
+   "n_regressions": 30
+  },
+  {
+   "repo": "pallets_flask",
+   "sha": "67f4b0f31538832f06b9351d15e30c85f449ac7e",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 4
+  },
+  {
+   "repo": "django_django",
+   "sha": "0171ba65dbbff377282c03b86c83036168c84b22",
+   "fired": false,
+   "ruff_delta": -8,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "c384ab96c328c3abc91b39c9e3e527863df30af1",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "psf_requests",
+   "sha": "fc618aa78a63d372e160a42f1589dbb738ab16a2",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 1
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "2bffd6829eb38a44f9e7523d044dad7339830691",
+   "fired": false,
+   "ruff_delta": -2,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "ff8b7884e8f1019f60f270eab2c4909ff557dd4e",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "c8aa429c9beccd271b12c0b385fdf8e9352838b9",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "psf_requests",
+   "sha": "7fdb09b766a84534dadfb56e46033697292cab60",
+   "fired": false,
+   "ruff_delta": -17,
+   "n_regressions": 0
+  },
+  {
+   "repo": "psf_requests",
+   "sha": "c4f9340fb4df41d7a8be66ee41c40bfed64ec6d6",
+   "fired": false,
+   "ruff_delta": 1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "53361589905c7c07692cd77f398ce6cb5ac39779",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "c627da0ccc12861163f28177aa7538b420a9d310",
+   "fired": true,
+   "ruff_delta": 7,
+   "n_regressions": 6
+  },
+  {
+   "repo": "encode_httpx",
+   "sha": "e27d1b83330d0520f87a7d1da1818e4dcb2add02",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "a9c79b462923ce366101db1b5a3fff3d1dad870c",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pallets_flask",
+   "sha": "9bf5c3b3a3bdc3f2f2dcca2b5747378470d0d354",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 2
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "b5bf745f688a483edfb59e1c259a876e659afe9b",
+   "fired": true,
+   "ruff_delta": 3,
+   "n_regressions": 3
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "01ac13a77d6cd56a5ac20756542e59a7b14129a0",
+   "fired": false,
+   "ruff_delta": 1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pallets_flask",
+   "sha": "c7a53888a1a514619b0611fd8b7928592f4ed612",
+   "fired": true,
+   "ruff_delta": -6,
+   "n_regressions": 3
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "eb0c6a82875a986d9bf4cf0efdcee5641fe84fef",
+   "fired": true,
+   "ruff_delta": 2,
+   "n_regressions": 1
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "c8e8b1bfd4d76f13b51cd86b48cb32ccbe7559e0",
+   "fired": true,
+   "ruff_delta": 31,
+   "n_regressions": 4
+  },
+  {
+   "repo": "django_django",
+   "sha": "570402ffd7efd529eb597d86525b80a6fbfca0e7",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "b9f7dce84b7ab5e198129030eae6c1a4aec83d24",
+   "fired": true,
+   "ruff_delta": 19,
+   "n_regressions": 2
+  },
+  {
+   "repo": "psf_requests",
+   "sha": "488b90f5acfafe65b428765aea70ebebd4afe58a",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "810b878ef8eac6f39cfff35705a6a10083ace0bc",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "98530184a5d8f6b84da9cd1a72907f6ea28a65be",
+   "fired": false,
+   "ruff_delta": -3,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "8be0ea942a8a07aa5bd7a8cfd7df4c7c9dacfd66",
+   "fired": false,
+   "ruff_delta": 2,
+   "n_regressions": 0
+  },
+  {
+   "repo": "psf_requests",
+   "sha": "7f694b79e114c06fac5ec06019cada5a61e5570f",
+   "fired": true,
+   "ruff_delta": 0,
+   "n_regressions": 3
+  },
+  {
+   "repo": "pallets_flask",
+   "sha": "fde6e364a497cd44d049df17c93d1fd05ec09f90",
+   "fired": true,
+   "ruff_delta": 6,
+   "n_regressions": 6
+  },
+  {
+   "repo": "django_django",
+   "sha": "28986da4ca167ae257abcaf7caea230eca2bcd80",
+   "fired": false,
+   "ruff_delta": 6,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "2c8cd64d5f0f4bf8ea6c9f5723f6422a03b28bf7",
+   "fired": true,
+   "ruff_delta": 6,
+   "n_regressions": 18
+  },
+  {
+   "repo": "psf_requests",
+   "sha": "4c3b9df6091b65d8c72763222bd5fdefb7231149",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "3da28067f306582a10b798ba527356d62c1f4f86",
+   "fired": false,
+   "ruff_delta": -7,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "7433237664e9a942d6584b4e70fd6a5174cf8f39",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "5673d4b10240b1b00bdf060fb7ac6bef858f38a3",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "54da6c88aa5fb9812f7eb3baf7609c12b65a29f8",
+   "fired": false,
+   "ruff_delta": -5,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "d130c2e710aa2b8e11216da4ce037295d49a4f15",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "fastapi_fastapi",
+   "sha": "dc5a966548df973d0fd2d3a28bad65d0436f6fb9",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "1bc249c2a67c24fcd28436c85388eff1d826e305",
+   "fired": true,
+   "ruff_delta": -13,
+   "n_regressions": 2
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "0e58c3fa80465a009c9c4d5b4500e73dd32ca80f",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pallets_flask",
+   "sha": "bf982718cf30615f2dd17fa71fe17d565ebb1d3e",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "6d6da78eda3cc0bba1bfdf70194fdf655fac8aeb",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "f4bb9ca1120b8ff7af0fa9438a57468436cbdfe1",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "2456ffa42c33d63b54579eae0f5b9cf2a8cd3714",
+   "fired": false,
+   "ruff_delta": -15,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "2dacc2ccd9593678f19b61ecfe1bc6ee826c2a88",
+   "fired": false,
+   "ruff_delta": 7,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "b6c356b7bb97f3d6d4831b31e67868313bbbc090",
+   "fired": true,
+   "ruff_delta": 3,
+   "n_regressions": 3
+  },
+  {
+   "repo": "django_django",
+   "sha": "f3b7c059367a4e82bbfc7e4f0d42b10975e79f0c",
+   "fired": true,
+   "ruff_delta": 5,
+   "n_regressions": 3
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "d437f39bc46b2d7139a990b2db08557887e5ad2b",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 1
+  },
+  {
+   "repo": "django_django",
+   "sha": "f4ac167119e8897c398527c392ed117326496652",
+   "fired": true,
+   "ruff_delta": 5,
+   "n_regressions": 4
+  },
+  {
+   "repo": "pallets_flask",
+   "sha": "49a38ed9995c5fa8fd07fde732845cbc08e890b0",
+   "fired": false,
+   "ruff_delta": -4,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "c7bec75bcd12530a4335ee0b3b1e1b861e90b6ed",
+   "fired": true,
+   "ruff_delta": 0,
+   "n_regressions": 1
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "d161d1d47d445272cba35ed81eec068ed4be8b1a",
+   "fired": false,
+   "ruff_delta": 1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "4c7c608a1deee37055d4a2b8a71e34def04a2a1f",
+   "fired": true,
+   "ruff_delta": -10,
+   "n_regressions": 2
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "8600ffeda21c834cead0b321f3988493b8290510",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "e70975f0bb4e8378bf0e00ae7a7014247cd59441",
+   "fired": true,
+   "ruff_delta": 23,
+   "n_regressions": 7
+  },
+  {
+   "repo": "django_django",
+   "sha": "33a0b7ac815588ed92dca215e153390af8bdbdda",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "encode_httpx",
+   "sha": "8e36f2bc685dfbe43cd7503bc1c422a6ed6e05a5",
+   "fired": true,
+   "ruff_delta": -44,
+   "n_regressions": 5
+  },
+  {
+   "repo": "psf_requests",
+   "sha": "02408973c6da4bd89401d2a1994b4ea26dc260c9",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "e03eb8db9371c2af864b124701b8f970ff405ca9",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "7734337bcb7f9e322c1d4f56ad3f514e1e4c66b7",
+   "fired": true,
+   "ruff_delta": 3,
+   "n_regressions": 3
+  },
+  {
+   "repo": "django_django",
+   "sha": "32c0d823e5316aa7d616a69996919b62748368cc",
+   "fired": false,
+   "ruff_delta": -3,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "0a93df9efd20a4bcd34d2ee5e6bdf6d365d70409",
+   "fired": false,
+   "ruff_delta": -2,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "fc30c47f38e8ce742d7e35612e48dbb14db5c634",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pallets_flask",
+   "sha": "662c245795c7cbb5dbd657a2d707c62c16770c18",
+   "fired": false,
+   "ruff_delta": -3,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "b049bec7cfe9b5854584d240addb44fa1e9375a5",
+   "fired": false,
+   "ruff_delta": -6,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pallets_flask",
+   "sha": "04c21387dbc454fb59cae9c9bb21a13358cb5a34",
+   "fired": false,
+   "ruff_delta": -2,
+   "n_regressions": 0
+  },
+  {
+   "repo": "encode_httpx",
+   "sha": "2c4a1dd519bcc770ac6ccbe9a0bebd84e46f7389",
+   "fired": true,
+   "ruff_delta": -3,
+   "n_regressions": 3
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "e3b34c9da3078725a054ceac6a37f529a48012c3",
+   "fired": false,
+   "ruff_delta": 3,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "4e6967b854644d527c0eb5ace61e80a590fbd520",
+   "fired": false,
+   "ruff_delta": 10,
+   "n_regressions": 0
+  },
+  {
+   "repo": "encode_httpx",
+   "sha": "79a9748ae6df16b428c840d4bcdb5447c138df34",
+   "fired": false,
+   "ruff_delta": -2,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "b42e9303f466bd39873ebbe32b26c472bc52bde4",
+   "fired": true,
+   "ruff_delta": 5,
+   "n_regressions": 4
+  },
+  {
+   "repo": "fastapi_fastapi",
+   "sha": "5451d05bc84fc8888dfc9cd8a9f3b2c3987c751e",
+   "fired": false,
+   "ruff_delta": 4,
+   "n_regressions": 0
+  },
+  {
+   "repo": "psf_requests",
+   "sha": "857e9b7ac20c3accf4cc328f594aecb8b6a644a6",
+   "fired": false,
+   "ruff_delta": 3,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "3a47d42fa33012b2156bf04058d933df6b3082d2",
+   "fired": true,
+   "ruff_delta": -8,
+   "n_regressions": 2
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "0c4fc99a6f26aea004a569da1b792e3594c5c2c3",
+   "fired": false,
+   "ruff_delta": -3,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "a18d20ca97e6799152c1e0b6f007fde943053dcb",
+   "fired": true,
+   "ruff_delta": 3,
+   "n_regressions": 1
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "e9275d3f0c3a15d835d46cde66dd67eea8001de7",
+   "fired": false,
+   "ruff_delta": -8,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "391af6afcca232aed82eda516b035dbbd39cdcb1",
+   "fired": true,
+   "ruff_delta": 4,
+   "n_regressions": 1
+  },
+  {
+   "repo": "django_django",
+   "sha": "44b9076bbed3e629230d9b77a8765e4c906036d1",
+   "fired": true,
+   "ruff_delta": -1,
+   "n_regressions": 1
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "216ec3c0ba87b50af11a3fd6f633b69105a7708e",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "c58caeffd71a8823ab847b3555c94c2934947857",
+   "fired": true,
+   "ruff_delta": 0,
+   "n_regressions": 1
+  },
+  {
+   "repo": "django_django",
+   "sha": "0c634de4e6950ec6fb83ab420b4af9c645b28acd",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "e2dbcb27f9d44ec510dae964672499c93f78bbc1",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "3159ad4df6ec05c3eac07b930b4af32739bec7b0",
+   "fired": true,
+   "ruff_delta": 3,
+   "n_regressions": 2
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "729efd28b043da163059e14f2122c1e88a11b64b",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "encode_httpx",
+   "sha": "dea4d42c6d9bb092fac705b712039de7c27d57f7",
+   "fired": true,
+   "ruff_delta": 7,
+   "n_regressions": 7
+  },
+  {
+   "repo": "django_django",
+   "sha": "174d8db57caf56e845aee54c02b57c14b777f892",
+   "fired": false,
+   "ruff_delta": 1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "bb2182453b49157fb6fba4de6d3c53a09f73d74b",
+   "fired": true,
+   "ruff_delta": 16,
+   "n_regressions": 5
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "fdf5411c1c329c8242eef939dfc639e03f1ba42c",
+   "fired": true,
+   "ruff_delta": -3,
+   "n_regressions": 4
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "130276605b0610175f8317c6e535467de5dbfae0",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "113a860a1fd179bd8323e783a359c742ab87b7ff",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "5e4fcdd14ea3e326ac547c4b5562a4d655b08875",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "31fadc120213284da76801cc7bc56e9f32d7281b",
+   "fired": true,
+   "ruff_delta": -15,
+   "n_regressions": 3
+  },
+  {
+   "repo": "django_django",
+   "sha": "ea3168dc6ced391d848c511a14cfcecfeac9d401",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "02a600ff67f7b106cdcab22310bacea98c1a26ba",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "4553f511557052d6f18811807ae6136f81fa86a3",
+   "fired": false,
+   "ruff_delta": -128,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pallets_flask",
+   "sha": "ae41df9a77ceab4469029b043e38333b8654e1da",
+   "fired": true,
+   "ruff_delta": 5,
+   "n_regressions": 2
+  },
+  {
+   "repo": "pallets_flask",
+   "sha": "980168d08498c00a14ab0f687ffac8cc50edb326",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "eaa1a22341aef5b92f5c3cd682f01e61c4159262",
+   "fired": true,
+   "ruff_delta": 2,
+   "n_regressions": 1
+  },
+  {
+   "repo": "encode_httpx",
+   "sha": "53f3dc4a6628dabe2732fe7dfec334dacb235da9",
+   "fired": true,
+   "ruff_delta": -6,
+   "n_regressions": 2
+  },
+  {
+   "repo": "pallets_flask",
+   "sha": "d393597c507ea62df534ba2ffb8a4e77cf3f1548",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "539a22c750e2232ca6f0664976a4940e65c48ef5",
+   "fired": false,
+   "ruff_delta": 3,
+   "n_regressions": 0
+  },
+  {
+   "repo": "psf_requests",
+   "sha": "bd0e00280460b28d3bf715d64888605750d9e735",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "250160b4b061e98d77db6e03c673c8c2ddac2722",
+   "fired": false,
+   "ruff_delta": -42,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "5ebd1ec3b67e40fbfb2711e7efef23b6f4463ee6",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 2
+  },
+  {
+   "repo": "pallets_flask",
+   "sha": "eb36135cfe6a17350617e47b70b9ad383206eded",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "032ce8baf6d0c0425f3949a630ec43fb1c2bce75",
+   "fired": false,
+   "ruff_delta": -11,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "cf546e11ac76c8dec527e39ff8ce8249a195ab42",
+   "fired": true,
+   "ruff_delta": -1,
+   "n_regressions": 3
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "c147f6496e6e429610452072cb71f5a616992d8e",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pallets_flask",
+   "sha": "c4139e0e5de5ffa8f103956bdcc1ca7cf9e500fd",
+   "fired": true,
+   "ruff_delta": 3,
+   "n_regressions": 2
+  },
+  {
+   "repo": "fastapi_fastapi",
+   "sha": "cf55bade7ea6e4bf85a167e8aed1c6167e7a4196",
+   "fired": false,
+   "ruff_delta": -17,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "f94f466cd3461527fb76a3e8951039a3c2388829",
+   "fired": false,
+   "ruff_delta": 4,
+   "n_regressions": 0
+  },
+  {
+   "repo": "encode_httpx",
+   "sha": "025240c3b3e77f4295f8061431fa3b0665ad996c",
+   "fired": true,
+   "ruff_delta": 3,
+   "n_regressions": 4
+  },
+  {
+   "repo": "encode_httpx",
+   "sha": "5afa7dd5ccc223cbb9118b65e278136e8f7a4dc2",
+   "fired": false,
+   "ruff_delta": 8,
+   "n_regressions": 0
+  },
+  {
+   "repo": "encode_httpx",
+   "sha": "78cf16ace92b42de5972a490787002631d558b32",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "4ee3676464d927b0eaeead015bc95f2be5639283",
+   "fired": false,
+   "ruff_delta": -47,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "d699b1d3267e421a6661c834092a92e987b196ed",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "5f3d94c47eb0f4487ef52ac520b3c48170220fc6",
+   "fired": true,
+   "ruff_delta": 2,
+   "n_regressions": 3
+  },
+  {
+   "repo": "psf_requests",
+   "sha": "2ed84f55b22f19a1e1e8eea2e50963dce62052d3",
+   "fired": true,
+   "ruff_delta": 2,
+   "n_regressions": 2
+  },
+  {
+   "repo": "encode_httpx",
+   "sha": "d568ecda53049cd612af591220e210836f90d6c2",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "0adfba968e28cfb4e4d681e658866debbbd68089",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pallets_flask",
+   "sha": "99afbb277d25d3b052e00b9a8da216054d51d62a",
+   "fired": false,
+   "ruff_delta": -6,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "ff3e299eb0c6fe486ecdaafaae340bb55a0c226e",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "f7ed239fcb47663d881e72ffab4386244b215ce4",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "681550ca6d5ff3e591a769643e37fd0b50f29c91",
+   "fired": false,
+   "ruff_delta": -6,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "d23cb83c99bc77c23e2fb5bff378d2f2092d7b29",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pallets_flask",
+   "sha": "b7501776a12c15e64b6cdac1e3b903a00df7d285",
+   "fired": false,
+   "ruff_delta": -2,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "ac89d6532a8c1f652f6a68c0b9caad80cde0042f",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pallets_flask",
+   "sha": "49b7341a491e01cd6a08238ca63bd46ae53a009f",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "50bf7960bd8aff516d0536b8c944896857d2ba71",
+   "fired": false,
+   "ruff_delta": -16,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "b4c5f878bd8d8ba4850ab0f1811cc321e5a627ac",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "5f4053d9fc115e2742df8caf991104da3cac08a4",
+   "fired": false,
+   "ruff_delta": -8,
+   "n_regressions": 0
+  },
+  {
+   "repo": "fastapi_fastapi",
+   "sha": "659b8ae8af59a935efdf2461fa348f5d294fb69f",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "9c5495832cc89c6dd9b89719eb149ee379d6992b",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "f3c956214366d590c0a588aaad83f8f770c78b76",
+   "fired": true,
+   "ruff_delta": 10,
+   "n_regressions": 3
+  },
+  {
+   "repo": "django_django",
+   "sha": "50e1e7ef8ef63271717f8bcab76d7151ccf4bb18",
+   "fired": false,
+   "ruff_delta": 14,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "9c5e382b981608a26f2c55f1259d9e823fee5f15",
+   "fired": false,
+   "ruff_delta": 2,
+   "n_regressions": 0
+  },
+  {
+   "repo": "encode_httpx",
+   "sha": "247ee0dc4919ab02bd6942d02e96337156653059",
+   "fired": false,
+   "ruff_delta": -3,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "7647d1c836274497d60c2830cc9a3f0698af52a2",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "e2e4cdba1178ebcfd95c19eb063abd55b4afbcbb",
+   "fired": false,
+   "ruff_delta": 1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "fastapi_fastapi",
+   "sha": "b5a0c228e524573e3969678875bf51fc0188fbe1",
+   "fired": false,
+   "ruff_delta": -40,
+   "n_regressions": 0
+  },
+  {
+   "repo": "psf_requests",
+   "sha": "4a01272fb3a56d718c82305e40d967dc0318bd32",
+   "fired": false,
+   "ruff_delta": -46,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "6b95aa6fb549b3834b7feefc6fbe92f8a50da411",
+   "fired": false,
+   "ruff_delta": -8,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "a7b5dfd1703a8fbed70b7aca5e6dda092af51154",
+   "fired": false,
+   "ruff_delta": 4,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pallets_flask",
+   "sha": "7f87f3dd93baf45d5f69f02a2dcf4493dfc4a1be",
+   "fired": false,
+   "ruff_delta": -7,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "3ca882fba86750199c2f41ef24b5495a4afa7988",
+   "fired": false,
+   "ruff_delta": 12,
+   "n_regressions": 0
+  },
+  {
+   "repo": "fastapi_fastapi",
+   "sha": "b9a0179a03b8f7fd4ff396fa37bc05b7f1a39af9",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "ae24524d5f95cb7c94ffb2404322f1d0c0e4a6e1",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "799c53aa119b94b2f11af2743c87f6cc3bee47e1",
+   "fired": true,
+   "ruff_delta": 3,
+   "n_regressions": 3
+  },
+  {
+   "repo": "django_django",
+   "sha": "57202a112a966593857725071ecd652a87c157fb",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "eab4c09ca1addd0fdbcd8a10350cf8ee55a7b3f8",
+   "fired": false,
+   "ruff_delta": 4,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "1a287bb7e29fe05349d5b13acd0deed085a03612",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "bc05547cd8c1dd511c6b6a6c873a1bc63417b111",
+   "fired": true,
+   "ruff_delta": 0,
+   "n_regressions": 3
+  },
+  {
+   "repo": "fastapi_fastapi",
+   "sha": "0b5fa563cdfb887e4145d8419ae91b6a40905349",
+   "fired": true,
+   "ruff_delta": 4,
+   "n_regressions": 3
+  },
+  {
+   "repo": "django_django",
+   "sha": "8cb1b1fd8e529d1896daeb089ea726109e0ba4f7",
+   "fired": false,
+   "ruff_delta": -38,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "e2be307b3ab6ebf339b3a765fe64967c9602266f",
+   "fired": false,
+   "ruff_delta": -2,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pallets_flask",
+   "sha": "1949c4a9abc174bf29620f6dd8ceab9ed3ace2eb",
+   "fired": false,
+   "ruff_delta": 4,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "403e7c7c7059486c5a4c59f900a65378de2ba3d2",
+   "fired": false,
+   "ruff_delta": -10,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "3ec47301e3fa0c47d1d0fc7187687bd477c22322",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "2b9ee41f2771764c86341d030f755250bc9779e9",
+   "fired": true,
+   "ruff_delta": 0,
+   "n_regressions": 4
+  },
+  {
+   "repo": "fastapi_fastapi",
+   "sha": "b299792ebf4e5b35a5b73d48015e332dd0af4cfa",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "8f012072afb2d4ec25cddab29cf0b9ef605bf138",
+   "fired": false,
+   "ruff_delta": 2,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "26586ef5a605c6f6a23143b22812779857cd4e3e",
+   "fired": true,
+   "ruff_delta": 8,
+   "n_regressions": 5
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "4842bcbf1da41029a604d1bf743d4dc893960d39",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "d61fbcc8b5fee1c2407d42fb72bd72bb18d40e25",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 2
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "61b4befc60cf7fb3f421460e168a031d7e4f1fa9",
+   "fired": true,
+   "ruff_delta": -111,
+   "n_regressions": 3
+  },
+  {
+   "repo": "psf_requests",
+   "sha": "3ef41153498917bc4d01123b2f7a8fbd8e7bcf63",
+   "fired": true,
+   "ruff_delta": -18,
+   "n_regressions": 1
+  },
+  {
+   "repo": "fastapi_fastapi",
+   "sha": "eb75fd078e83aed935016bcdf0705cd58bbf0d0e",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pallets_flask",
+   "sha": "abe1378caec759cc8c6fc0afeaad248677c4420f",
+   "fired": true,
+   "ruff_delta": -1,
+   "n_regressions": 1
+  },
+  {
+   "repo": "django_django",
+   "sha": "4e0a2fe59c8b9c32c2f3111474354356474128a8",
+   "fired": false,
+   "ruff_delta": 2,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "976bd519a879b2fd7a356cb21bde32696adb545f",
+   "fired": false,
+   "ruff_delta": -4,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "6969041c5f6891a0298d7e68ece762adee1bb222",
+   "fired": true,
+   "ruff_delta": 2,
+   "n_regressions": 2
+  },
+  {
+   "repo": "django_django",
+   "sha": "71c4fb7beb8e3293243140e4bd74e53989196440",
+   "fired": false,
+   "ruff_delta": 4,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "5b884d45ac5b76234eca614d90c83b347294c332",
+   "fired": true,
+   "ruff_delta": 9,
+   "n_regressions": 6
+  },
+  {
+   "repo": "django_django",
+   "sha": "b87bc461c89f2006f0b27c7240fb488fac32bed1",
+   "fired": true,
+   "ruff_delta": -1,
+   "n_regressions": 1
+  },
+  {
+   "repo": "django_django",
+   "sha": "b0953dc91385fb2823294a76d3c99e01c7b7e4ee",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "d105e75d8714d6208d33a482053ed9020320cbdd",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "78194093afe6bbb82aa2e636b67046ce96b7c238",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "5768d27e2023cebd490a787fb6958ceaa0e23d28",
+   "fired": false,
+   "ruff_delta": -2,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "311d5cd495c7bb82c39a85dd85438871518ea165",
+   "fired": false,
+   "ruff_delta": -3,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "989329344aabe8ef7a5e55bebfde53f0e00f42e2",
+   "fired": false,
+   "ruff_delta": 6,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "6d6cfd839aa850061ddef65922eddb7567280e5f",
+   "fired": false,
+   "ruff_delta": 1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "2951e8425fcdefa73062e200eb67d4c855e83fc5",
+   "fired": false,
+   "ruff_delta": 1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "465b758a35f6cb5be066997ef970ad69fe879cf8",
+   "fired": true,
+   "ruff_delta": -45,
+   "n_regressions": 1
+  },
+  {
+   "repo": "fastapi_fastapi",
+   "sha": "85bd4067c2133a9eac1cec30b2c7d39aa67f4fc2",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "bc9a35185350663abaca90c229577975a892a272",
+   "fired": true,
+   "ruff_delta": 4,
+   "n_regressions": 9
+  },
+  {
+   "repo": "fastapi_fastapi",
+   "sha": "313bbe802fc9c2d16ff0203d82420f5279b7c45d",
+   "fired": true,
+   "ruff_delta": 10,
+   "n_regressions": 10
+  },
+  {
+   "repo": "django_django",
+   "sha": "fa4bbfcbfb4f693955f653bd06f384dd786e3c93",
+   "fired": false,
+   "ruff_delta": -4,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "da16bb30ff238aa4d59b4186d92ef5429d8d0045",
+   "fired": false,
+   "ruff_delta": -17,
+   "n_regressions": 0
+  },
+  {
+   "repo": "encode_httpx",
+   "sha": "bb6e52f3566a79978f590e5a677eb057a68ad3a9",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "51d2e1fb233b5507bf14300787939717c4d93834",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pallets_flask",
+   "sha": "aa801c431ad1f979bce3ea1afbd88e7796ebfd7e",
+   "fired": true,
+   "ruff_delta": 3,
+   "n_regressions": 1
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "57a832812b1939490501d825e4971223033eae48",
+   "fired": true,
+   "ruff_delta": -1,
+   "n_regressions": 3
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "885d35e374b56d1d17f5036fe07b74229cdbec7f",
+   "fired": true,
+   "ruff_delta": -20,
+   "n_regressions": 4
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "6cbee7de3c5c5a97a54ecd01660c7c7a3cd34253",
+   "fired": false,
+   "ruff_delta": -3,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pallets_flask",
+   "sha": "ec1ccd753084c6ff3215b9a64ba46d6af56715bd",
+   "fired": true,
+   "ruff_delta": 2,
+   "n_regressions": 3
+  },
+  {
+   "repo": "encode_httpx",
+   "sha": "35f09d13941647bb677f2749c4230bec664b8c15",
+   "fired": false,
+   "ruff_delta": 3,
+   "n_regressions": 0
+  },
+  {
+   "repo": "fastapi_fastapi",
+   "sha": "a42c69049647f4fb731afc86c6eeb959248217e4",
+   "fired": false,
+   "ruff_delta": 1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "9fd2f9c5f3c008f524874fd7cf78237e65bf567e",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 1
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "85c616c5c71d4de01746f9c190274fe3d2ac9ed0",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "7671bcc23bbcacc0c2dd0e927477f6e6d11b93eb",
+   "fired": false,
+   "ruff_delta": -2,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "139135627650ed6aaaf4c755b82c3bd43f2b8f51",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "9e62355271fa39e67b06f00f5601cdb848c7894e",
+   "fired": false,
+   "ruff_delta": 3,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "645eb2b26b01520d7e98cb3c2f671e254571a090",
+   "fired": true,
+   "ruff_delta": -5,
+   "n_regressions": 6
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "a24601aa24d5d0143a6bf352d4275e9a85e93559",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "psf_requests",
+   "sha": "8ed941fa6991355753e698f6b253096d57f6c7e4",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "fastapi_fastapi",
+   "sha": "745ab48d655937ba0315083e7c0b579da47a7915",
+   "fired": false,
+   "ruff_delta": 2,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "7d8688d54b48daba9ec0bfdbaec8c054060c90dd",
+   "fired": false,
+   "ruff_delta": 1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "195d885ca01b14e3ce9a1881c3b8f7074f953736",
+   "fired": false,
+   "ruff_delta": -2,
+   "n_regressions": 0
+  },
+  {
+   "repo": "encode_httpx",
+   "sha": "12dd157feaa26a3cd9fbf933e127fefb2ddd8404",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "9175e665b1eb398e2ea06520b50a7bc99e8156c2",
+   "fired": false,
+   "ruff_delta": -116,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "8baad552676de1ea0f3789a03279a025ed26f17e",
+   "fired": false,
+   "ruff_delta": -2,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "3828879eee09da95bf99886c1ae182a36b1d89b3",
+   "fired": true,
+   "ruff_delta": 4,
+   "n_regressions": 1
+  },
+  {
+   "repo": "pallets_flask",
+   "sha": "f92e820b4bf357e9792d08ce398802715a63eafe",
+   "fired": true,
+   "ruff_delta": 11,
+   "n_regressions": 12
+  },
+  {
+   "repo": "django_django",
+   "sha": "70ec4d776ef0e68960ccee21476b8654e9399f53",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "240cbb63bf9965c63d7a3cc9032f91410f414d46",
+   "fired": false,
+   "ruff_delta": 2,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pallets_flask",
+   "sha": "7a08331ac062ee1e2ae3c7547f77c2d342ddb3df",
+   "fired": true,
+   "ruff_delta": -28,
+   "n_regressions": 1
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "a6f3ec732798b2bd06746c55df2b147596caeed3",
+   "fired": false,
+   "ruff_delta": -25,
+   "n_regressions": 0
+  },
+  {
+   "repo": "psf_requests",
+   "sha": "b8298b071032e90dd9de3af0a96cbb9ec9cb2e13",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "a0b4d09b1b0fb03437ef213c558dddacaa0270a2",
+   "fired": false,
+   "ruff_delta": 3,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "d946299b0a3e42e447c92b6074f196077b9b7a91",
+   "fired": false,
+   "ruff_delta": -2,
+   "n_regressions": 0
+  },
+  {
+   "repo": "fastapi_fastapi",
+   "sha": "c90c4fb6c1ed5d8d8f32dd2e31a022a2bb4aca41",
+   "fired": true,
+   "ruff_delta": 2,
+   "n_regressions": 2
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "f6021cad2cf6260ec78b3923875f0389343121b0",
+   "fired": false,
+   "ruff_delta": 7,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "e87f57fdb8dcdabc452bd15abd015bf6c9b1f7a8",
+   "fired": true,
+   "ruff_delta": 4,
+   "n_regressions": 2
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "f7d755552100afe8df3da6da64fff6ac59c52de6",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "eff21d8e7a1cb297aedf1c702668b590a1b618f3",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "e924d382380a6bc7285b8a9713ac14588681af3b",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "919eb1db912ae80c98b3edfbb303dcd04e2b3e9c",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "psf_requests",
+   "sha": "bf05b7aeb5be0f7f427e758a5bd244947a8947ee",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "encode_httpx",
+   "sha": "c5037f06e4ec1b550ee009147af052d9c2199ccb",
+   "fired": false,
+   "ruff_delta": -4,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "75410228dfd16e49eb3c0ea30b59b4c0d2ea6b03",
+   "fired": true,
+   "ruff_delta": 3,
+   "n_regressions": 3
+  },
+  {
+   "repo": "django_django",
+   "sha": "123f567093eb3bd2f9cb295f4553eb62433c2962",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "3047fdbbf427ae86d4202ece005c03363834e162",
+   "fired": true,
+   "ruff_delta": -1,
+   "n_regressions": 2
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "bde9cab7feb93fe533ac351a0d7500ae181c35ce",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "psf_requests",
+   "sha": "e1615e0f1e342d89d09df8289c0b32d3b0e9fd6a",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "encode_httpx",
+   "sha": "30229f16527882305d75ff2877c5b8831f6dc638",
+   "fired": false,
+   "ruff_delta": -9,
+   "n_regressions": 0
+  },
+  {
+   "repo": "fastapi_fastapi",
+   "sha": "804ec460fcb8761a101785d25762d1b20ef9b55f",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "af73f141b23aabbef208a12fe95ae63c27105fda",
+   "fired": false,
+   "ruff_delta": 2,
+   "n_regressions": 0
+  },
+  {
+   "repo": "fastapi_fastapi",
+   "sha": "546d233dec3f686f7f1c06f1fc57c82a7c9c45fe",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "7ba54500fcedce47f7cbe29732d246cc84fd2462",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "psf_requests",
+   "sha": "e511bc72777a94c45d004e010c597925092e1efe",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "psf_requests",
+   "sha": "cd8ce63a3b6850afb5ba3c3677f5715907468f7e",
+   "fired": true,
+   "ruff_delta": 8,
+   "n_regressions": 3
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "2bd973e7191c5bc382c1a92b37ab1f20268f42d6",
+   "fired": true,
+   "ruff_delta": 9,
+   "n_regressions": 5
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "a59d602bcef5572ccb74c3bd9c85d897e05f674d",
+   "fired": false,
+   "ruff_delta": -2,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "8c30df15f17c180fbfb3e378c5469c63cde6599b",
+   "fired": true,
+   "ruff_delta": 2,
+   "n_regressions": 2
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "67291f414e1b259d6b65bc66ea2874c7131e09bf",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "encode_httpx",
+   "sha": "71d52343052359c416a9e6252daa322abdf8dd90",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "23490a2394bf03e119e4c9a7a09a9ba35edad430",
+   "fired": false,
+   "ruff_delta": -5,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "d400aa3e2d8c5e3d1a7d8a483fb1a5a6f1c66d50",
+   "fired": false,
+   "ruff_delta": 4,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "58cc91275a68bb42780cf0e663dad9ecf49039de",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 2
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "73e06373dc67055bf83d9a1f6cf3242bc90a68c3",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "d2e59b77fe18de318a8272c2a7bbc798d84d1d0d",
+   "fired": true,
+   "ruff_delta": 31,
+   "n_regressions": 8
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "45b7ebdc17479d18d6b01bcd00c6064ae5e0cc69",
+   "fired": true,
+   "ruff_delta": 3,
+   "n_regressions": 1
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "3cf67aa5cfb1f0b21fb4304aaa4805f5f5a8c6d4",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "1b3d40e63902b7c6d5c84b248073c77de97641d6",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "467e94dc62acca1f517f60f35479aefb775f9f17",
+   "fired": true,
+   "ruff_delta": 8,
+   "n_regressions": 4
+  },
+  {
+   "repo": "psf_requests",
+   "sha": "21ccf8f8c0266ca9d713c6717a25015b6c0bd748",
+   "fired": true,
+   "ruff_delta": -18,
+   "n_regressions": 1
+  },
+  {
+   "repo": "django_django",
+   "sha": "8d789449c7861b8cf8b10d244f26d9d354989aaf",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 2
+  },
+  {
+   "repo": "fastapi_fastapi",
+   "sha": "d8b8f211e813ba4d53987a2bae16587eeaff4ad2",
+   "fired": true,
+   "ruff_delta": 3,
+   "n_regressions": 5
+  },
+  {
+   "repo": "django_django",
+   "sha": "22bb548900146832459deaefa880660c17a51516",
+   "fired": true,
+   "ruff_delta": -2,
+   "n_regressions": 1
+  },
+  {
+   "repo": "django_django",
+   "sha": "306b6875209cfedce2536a6679e69adee7c9bc6a",
+   "fired": true,
+   "ruff_delta": -2,
+   "n_regressions": 3
+  },
+  {
+   "repo": "fastapi_fastapi",
+   "sha": "f00f0de9ca68d201462affeca1c0e945be243578",
+   "fired": true,
+   "ruff_delta": 0,
+   "n_regressions": 2
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "fa644f7a5ed6099e9e88b05ec6be1aef1c5bd3ab",
+   "fired": false,
+   "ruff_delta": -7,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "e3337c78c614bffef3b57eb9dc170aaf33c80612",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pallets_flask",
+   "sha": "024f0d384cf5bb65c76ac59f8ddce464b2dc2ca1",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "7330408ac36f893a4a11c668ba230b440ec09f41",
+   "fired": false,
+   "ruff_delta": -7,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "ea3bf6d95d180232d7fd26b6160ec7ec7deb8472",
+   "fired": true,
+   "ruff_delta": -3,
+   "n_regressions": 4
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "7e4321f201a795166d779f2aa0b36d38cb50106e",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 1
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "cf62badce91079b389af250a14354e5929363a22",
+   "fired": false,
+   "ruff_delta": 1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "b9838c65ec2fee36c1fd0d46494ba44da27a9b34",
+   "fired": false,
+   "ruff_delta": 1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "a438be39f1a6b9a897fcfe0fff5306ef7f518706",
+   "fired": true,
+   "ruff_delta": 6,
+   "n_regressions": 4
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "c81987f624ea486005c4a6eada60493561f75171",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "06a49338b2b1be8daed89f779439459a2cb4cbc7",
+   "fired": false,
+   "ruff_delta": -11,
+   "n_regressions": 0
+  },
+  {
+   "repo": "encode_httpx",
+   "sha": "ed2768268644b3e3b173d4883af434fa29dbb418",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "encode_httpx",
+   "sha": "507695220236626152758f2b2d5ffe25a95ef98a",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "06029d11d337d8777ac3118dd0e96eda6c98125c",
+   "fired": false,
+   "ruff_delta": 22,
+   "n_regressions": 0
+  },
+  {
+   "repo": "encode_httpx",
+   "sha": "2fcf23bbfe41c5526cb35a65d32dd98dde786988",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "78c2c48c67f594235f63c927fd1fc0760ac79ade",
+   "fired": true,
+   "ruff_delta": 2,
+   "n_regressions": 6
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "28fafbb8c56257eb6f09b8cbcb919483d5b30a11",
+   "fired": true,
+   "ruff_delta": 16,
+   "n_regressions": 4
+  },
+  {
+   "repo": "encode_httpx",
+   "sha": "994403bec920c923a6c3970215e75d6a99385e0c",
+   "fired": false,
+   "ruff_delta": -10,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "faf7a7da835a4c43294f92b67c37d4b899bbd905",
+   "fired": false,
+   "ruff_delta": -23,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pallets_flask",
+   "sha": "b1c0951ad690a83e49bfd005853a7b09cdb44cb0",
+   "fired": false,
+   "ruff_delta": -19,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "771438fde56dc2e70922b405af7925deff5e9053",
+   "fired": false,
+   "ruff_delta": 1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "d311124be59df64278f3149d68e79ce45b8a6c64",
+   "fired": true,
+   "ruff_delta": 3,
+   "n_regressions": 2
+  },
+  {
+   "repo": "encode_httpx",
+   "sha": "0e8dae4815327462345e36326f218a36dc6aa3aa",
+   "fired": false,
+   "ruff_delta": 3,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "49bab4777b42937784bcf6f8494031f08d472c09",
+   "fired": false,
+   "ruff_delta": 2,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "54e80f70ae29fa8a9c72aab0c6b708636295d82a",
+   "fired": true,
+   "ruff_delta": 0,
+   "n_regressions": 2
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "141f3ecdf3e71641b3dd02d14b32bf20c5c20e37",
+   "fired": false,
+   "ruff_delta": -2,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "24f21e96b99bac1ba991fe02c8823782833ca298",
+   "fired": true,
+   "ruff_delta": -2,
+   "n_regressions": 1
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "1945487f4a8a5c67b61a37af179231b6defcbb98",
+   "fired": false,
+   "ruff_delta": 1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pallets_flask",
+   "sha": "b8eba0a3fa940f85d43aa2a26bd31a75a446eb28",
+   "fired": false,
+   "ruff_delta": -2,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "5cc0f5f8c1f35218ee4bce2d8c943a86f1888b96",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "fastapi_fastapi",
+   "sha": "7fbd30460f480e90faf321b9158bffb5116000d5",
+   "fired": false,
+   "ruff_delta": 7,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "31e497e5ebd13f1a376873be27028b6e8b592a64",
+   "fired": true,
+   "ruff_delta": 3,
+   "n_regressions": 3
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "4e4b507472e290be44042e10c3051d7069303b90",
+   "fired": true,
+   "ruff_delta": -9,
+   "n_regressions": 3
+  },
+  {
+   "repo": "psf_requests",
+   "sha": "8bce583b9547c7b82d44c8e97f37cf9a16cbe758",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "292b9e6fe8f23491680d9cc60f328562e2b1c823",
+   "fired": false,
+   "ruff_delta": -2,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "d755a98b8438c10f3cff61303ceb1fe16d414e9b",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "encode_httpx",
+   "sha": "4a3325f87b01d768cd33b4ed79f81c1f8869f33b",
+   "fired": true,
+   "ruff_delta": 5,
+   "n_regressions": 1
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "80f3e33e4144c2cac0104e47f8d7f50ed8b84821",
+   "fired": true,
+   "ruff_delta": 2,
+   "n_regressions": 1
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "f2ff0419bdeb5a144fd6f74e000ad985447339d3",
+   "fired": true,
+   "ruff_delta": 2,
+   "n_regressions": 3
+  },
+  {
+   "repo": "fastapi_fastapi",
+   "sha": "d0573f5713b0a8ce2dbb3d12d36a7fc34b89e2ff",
+   "fired": false,
+   "ruff_delta": 2,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "d389125606152a6cd57d0f6cadeddf0bd6232215",
+   "fired": false,
+   "ruff_delta": 1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "psf_requests",
+   "sha": "d0285fac4203e8cfed6b5ceeb96b2646076e745d",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "encode_httpx",
+   "sha": "8dc9b6bd59114439128d23a60609bee09daf508c",
+   "fired": false,
+   "ruff_delta": 1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "bfa080f402ddfc383abdbac96fa198e7f2f8ec59",
+   "fired": true,
+   "ruff_delta": 7,
+   "n_regressions": 4
+  },
+  {
+   "repo": "django_django",
+   "sha": "107d9b1d974ae97132751cb1db742fd8e930fb89",
+   "fired": true,
+   "ruff_delta": 7,
+   "n_regressions": 2
+  },
+  {
+   "repo": "django_django",
+   "sha": "375178fc19c1170fe046ad26befeba02fc19548c",
+   "fired": true,
+   "ruff_delta": 11,
+   "n_regressions": 1
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "96cf498c9e63f0469279ff142a90d2e8de695a85",
+   "fired": false,
+   "ruff_delta": -64,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "b9d5d2bacca83edcd6f7cb10c63490ec1b29fccd",
+   "fired": true,
+   "ruff_delta": 7,
+   "n_regressions": 7
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "b778ee806eabbe39c4366de1348f51f47a4dddd6",
+   "fired": false,
+   "ruff_delta": 1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "8aa7d153ae0938539654bdfba3b4edcc23c34d81",
+   "fired": false,
+   "ruff_delta": 2,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pallets_flask",
+   "sha": "5963cb5a5172bce3a1ff7b0f8c64230f043c9cfd",
+   "fired": true,
+   "ruff_delta": -10,
+   "n_regressions": 1
+  },
+  {
+   "repo": "encode_httpx",
+   "sha": "4c01117dd21acc0448f3e7f464aaa743fd8cffce",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "cd9aed5b2ddd6f44067cca3231bb68b825159ee8",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pallets_flask",
+   "sha": "2aa26fff04a98f2435e8e3015e92ef6108d3b485",
+   "fired": false,
+   "ruff_delta": -10,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "2c0be9045bf883e20287ae04766098d7307b94ea",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "encode_httpx",
+   "sha": "6e55ca1af9fd1cb02f6f0916e9ceb7a9b9e82968",
+   "fired": true,
+   "ruff_delta": -6,
+   "n_regressions": 2
+  },
+  {
+   "repo": "django_django",
+   "sha": "1556b1c3b7a18cadf4d66d2ab6301d7fe8646ba5",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "690dd7f38bfd245428bdc618dcca1fbc26284df1",
+   "fired": true,
+   "ruff_delta": 33,
+   "n_regressions": 3
+  },
+  {
+   "repo": "django_django",
+   "sha": "621c5cf4a501c8e80348df0ddbe726defd6be2ed",
+   "fired": true,
+   "ruff_delta": 4,
+   "n_regressions": 3
+  },
+  {
+   "repo": "django_django",
+   "sha": "32c7d3c061b83e9206ef2bf13fbc302a1998f317",
+   "fired": true,
+   "ruff_delta": 5,
+   "n_regressions": 3
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "a43ba78d3bde1630a42aaa95776687d3886891e6",
+   "fired": false,
+   "ruff_delta": 3,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "8228a0c49113a7cd4ab1099fae746268183655fa",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 1
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "027872f569c261bfd23c31dab72019eec118df5a",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "encode_httpx",
+   "sha": "9a362c0b017e764a5d0411b270ed22debad8d4fd",
+   "fired": false,
+   "ruff_delta": 1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "psf_requests",
+   "sha": "c3431bb6f21bf7c88ff86d9a232ba4db54bb91a0",
+   "fired": false,
+   "ruff_delta": -10,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "295249c901e13ec1703ada5c414cd97aba72f3e9",
+   "fired": true,
+   "ruff_delta": -1,
+   "n_regressions": 1
+  },
+  {
+   "repo": "django_django",
+   "sha": "83c9765f45e4622e4a5af3adcd92263a28b13624",
+   "fired": true,
+   "ruff_delta": -2,
+   "n_regressions": 1
+  },
+  {
+   "repo": "fastapi_fastapi",
+   "sha": "ad03e117c0010a563067740c97cb7ab011cb5174",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "psf_requests",
+   "sha": "5fcd843eb23e8e84cd5f60c6d372ef4d678f80fe",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 2
+  },
+  {
+   "repo": "pallets_flask",
+   "sha": "53b8f08218796d95764c5252bccd8a50a173a6fb",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "fastapi_fastapi",
+   "sha": "aa0bca7bb2dc544f8480e9b2a4dab02ed369b9e6",
+   "fired": true,
+   "ruff_delta": 12,
+   "n_regressions": 6
+  },
+  {
+   "repo": "psf_requests",
+   "sha": "780ce3902eccc7f7087e195211daf4c592cb28fb",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "psf_requests",
+   "sha": "724fd44b975c5a078a186e79417656772a3f8ecc",
+   "fired": false,
+   "ruff_delta": -13,
+   "n_regressions": 0
+  },
+  {
+   "repo": "encode_httpx",
+   "sha": "0cbf3c75819a176bf2812e72eee4829bf387cc96",
+   "fired": true,
+   "ruff_delta": 50,
+   "n_regressions": 6
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "203fa9667fb69f6251c0a44b14cf0450ce769a32",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "2487e3cc035e490777b921badc84c11b9fb77b20",
+   "fired": false,
+   "ruff_delta": -31,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "67da22f08e05018ea968fcacbac9ac37ea925d85",
+   "fired": true,
+   "ruff_delta": 2,
+   "n_regressions": 10
+  },
+  {
+   "repo": "psf_requests",
+   "sha": "228c5e68aedc7d5d1e4b5bcc49aa4ae4811fbecd",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "fastapi_fastapi",
+   "sha": "dcfb8b9dda7b8117141b89e84527b48f978e0b31",
+   "fired": true,
+   "ruff_delta": -1,
+   "n_regressions": 5
+  },
+  {
+   "repo": "django_django",
+   "sha": "3d734c09ff0138441dfe0a59010435871d17950f",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "cbf851121ea8086b87dc6ecf52330ef07843a10f",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "7f76251fb7ea8593a47ab55ac22d6cb500b39e2f",
+   "fired": false,
+   "ruff_delta": -4,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "1bca9f9587cfdfc82293c4c83679c6e3a03b5c3f",
+   "fired": true,
+   "ruff_delta": 5,
+   "n_regressions": 4
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "a676017fe4632c931fccc5fa9539ed4c23624fd4",
+   "fired": false,
+   "ruff_delta": 1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "ddafb37a7c6c5c55b8736ce4040b5f50711bf952",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "2757209c9de3764364a8e8af39cefa2445312546",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "deed00c0d803d324a3dfdeba52458b6b009c1a90",
+   "fired": true,
+   "ruff_delta": 0,
+   "n_regressions": 1
+  },
+  {
+   "repo": "django_django",
+   "sha": "29628e0b6e5b1c6324e0c06cc56a49a5aa0747e0",
+   "fired": false,
+   "ruff_delta": -3,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "37cfb49805c86168af7a831fc33ec4aeb83e53da",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "encode_httpx",
+   "sha": "cca62060cb958e89078279e625a752aa0d02c40c",
+   "fired": false,
+   "ruff_delta": -2,
+   "n_regressions": 0
+  },
+  {
+   "repo": "psf_requests",
+   "sha": "cd84b3ff943f733c2e76bb047ab2d3a60cac5ba2",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "0365e5c3a0cf62cdf9328131ea05f7557f969d9e",
+   "fired": true,
+   "ruff_delta": -17,
+   "n_regressions": 6
+  },
+  {
+   "repo": "psf_requests",
+   "sha": "3c0f0b9ab510d7ac6b556088d29fcc050c995357",
+   "fired": true,
+   "ruff_delta": 0,
+   "n_regressions": 3
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "5d0058492c07d3f89f46ccfd2b8e33849f8bd30e",
+   "fired": false,
+   "ruff_delta": 7,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "63662ba6ffe0c8e6d161dc109015d0c2e1619d47",
+   "fired": true,
+   "ruff_delta": 4,
+   "n_regressions": 2
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "6f9b423215df8591b0d9e0062a40cc28678236ac",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "81049deed6a9daaa887abd3cbf217237e225302d",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "d3df44cc8bec142055244053bfdb04daee3d8464",
+   "fired": false,
+   "ruff_delta": -3,
+   "n_regressions": 0
+  },
+  {
+   "repo": "encode_httpx",
+   "sha": "5dc646fb9fb4185669299fd14c06ba23c2b8782f",
+   "fired": true,
+   "ruff_delta": 4,
+   "n_regressions": 1
+  },
+  {
+   "repo": "encode_httpx",
+   "sha": "26cd4f54e8850671b565995f15d5c37328407809",
+   "fired": true,
+   "ruff_delta": 0,
+   "n_regressions": 2
+  },
+  {
+   "repo": "django_django",
+   "sha": "e2efc8965edf684aaf48621680ef54b84e116576",
+   "fired": false,
+   "ruff_delta": 2,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "4af90fcf75596b715d0680ce48c85e6d25d443be",
+   "fired": true,
+   "ruff_delta": 2,
+   "n_regressions": 2
+  },
+  {
+   "repo": "psf_requests",
+   "sha": "d569a2d6bca64dad10928ac36b318e9e5bc16414",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "d7b0e172052d855afe444c599330c907cdc53d93",
+   "fired": true,
+   "ruff_delta": 3,
+   "n_regressions": 7
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "7715d6f50e6d9559787a1b10553fbc5b95aa03cf",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "88a4a97873c9300b9de8d67ac7a4b98a0b26c03f",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 2
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "5939b336cd21c7ef7b7896ed80097765a0a22db7",
+   "fired": true,
+   "ruff_delta": 6,
+   "n_regressions": 1
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "e174df2762569b13601336069c848ec1a96e6682",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "2aae6540ffc94d92d20d42033e3b6447b92c4608",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 1
+  },
+  {
+   "repo": "fastapi_fastapi",
+   "sha": "5429fed84e84e32672c25a953eca3429b841ce90",
+   "fired": false,
+   "ruff_delta": 4,
+   "n_regressions": 0
+  },
+  {
+   "repo": "psf_requests",
+   "sha": "98114245c686ef7cd62c9932071fd972ad3efedb",
+   "fired": false,
+   "ruff_delta": -8,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "433dd737f94b09043f64b873b0ac067b3f97364b",
+   "fired": true,
+   "ruff_delta": 10,
+   "n_regressions": 1
+  },
+  {
+   "repo": "pallets_flask",
+   "sha": "a7b02b3a07ae292ce376df2459eae3ffb4c06d52",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "587da413cad7e479dc89742e663e099072b75ae7",
+   "fired": true,
+   "ruff_delta": 2,
+   "n_regressions": 4
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "77b640d1b7416dcffebfaa7d1ba11b491d89bc3a",
+   "fired": false,
+   "ruff_delta": -5,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "4554f9a783665d64b59c35b53ae71178e56ac783",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "6c89f9261c6f5bde93bd116ef56b7ac96fc0ef21",
+   "fired": false,
+   "ruff_delta": -7,
+   "n_regressions": 0
+  },
+  {
+   "repo": "fastapi_fastapi",
+   "sha": "e4300769ac45c368bcb3a080fdb79890fe413355",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "47bf58d69e3995f0eb04ecb268a9c19e52c52ed5",
+   "fired": true,
+   "ruff_delta": 2,
+   "n_regressions": 3
+  },
+  {
+   "repo": "fastapi_fastapi",
+   "sha": "0b9fe62a10e77daa7471827ff4b4d7459cb72ce5",
+   "fired": false,
+   "ruff_delta": 1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "31275a34c2a80c6243833f658a465c1a3338f4e8",
+   "fired": true,
+   "ruff_delta": 2,
+   "n_regressions": 2
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "5999368002c54db8cde3cd077e53ae36625b7b89",
+   "fired": true,
+   "ruff_delta": -8,
+   "n_regressions": 3
+  },
+  {
+   "repo": "django_django",
+   "sha": "a878bf9b093bf15d751b070d132fec52a7523a47",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "e4852bca78e476873d3acf5a188b98f63cd9d439",
+   "fired": false,
+   "ruff_delta": 5,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "1a8d9bf2549ab2c74aec4000599b8d6afc3a631b",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "388bb5bd9aa3cd43825cd8a3632a57d8204f875f",
+   "fired": true,
+   "ruff_delta": -13,
+   "n_regressions": 3
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "d39ba3260433da5461b17afc475fbf0793cf81ae",
+   "fired": true,
+   "ruff_delta": -5,
+   "n_regressions": 2
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "dd10cb8e9a982fe3d311078d6e1207596e272717",
+   "fired": false,
+   "ruff_delta": 2,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "81739a45b5ae8f534910aaabc7e9b457eaa34163",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 1
+  },
+  {
+   "repo": "django_django",
+   "sha": "1297c0d0d76a708017fe196b61a0ab324df76954",
+   "fired": false,
+   "ruff_delta": -4,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "a14c77aeba5c4209e30adcf50e09eb253b9417f0",
+   "fired": false,
+   "ruff_delta": 4,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "6843c64a95ad4fe9472125c5e832e14681a9bd99",
+   "fired": false,
+   "ruff_delta": -2,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "c4397318d3db4a2db729e98a27666251a1e4b973",
+   "fired": false,
+   "ruff_delta": -27,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "df6d5cd4e7df94f276281a48826202b622c0a68d",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "encode_httpx",
+   "sha": "acb5e6ac500fbe172f5958f480866da719aeb858",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "8f16e7f9fa17f987f8ac36c0da9a2bd47de45e66",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "9c0bf231ab68883fe4b2cdf26fcd3c0b5bec52f0",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pallets_flask",
+   "sha": "1263d3bd142e4964da123f4e59088aa2968ec7e5",
+   "fired": false,
+   "ruff_delta": -15,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "134b759e5def7fd2fd4c74bd2a4f00a4b56e5425",
+   "fired": true,
+   "ruff_delta": -6,
+   "n_regressions": 1
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "b9641ae82d968d4348bfee06b42c69764c1024bc",
+   "fired": true,
+   "ruff_delta": 4,
+   "n_regressions": 4
+  },
+  {
+   "repo": "encode_httpx",
+   "sha": "1d73150c1f663757d63585aecfcb329d0ec00825",
+   "fired": false,
+   "ruff_delta": -11,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "ea91ad4c131816fd0ea8d5f1bfb21b7abd82b47e",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "psf_requests",
+   "sha": "def20cdb0cf1d4fcc3aa4cd3164602d6c4029ac3",
+   "fired": false,
+   "ruff_delta": -4,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "dbb0df2a0ec5bee80bee336fc81408efb30b7e47",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "7deb25b8dd5aa1ed02b5e30cbc67cd1fb0c3d6e6",
+   "fired": false,
+   "ruff_delta": 2,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "82be474efa81e5f2e127d711045a2ec06b206a8e",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pallets_flask",
+   "sha": "88bcf78439b66b5fcba9f4d3a1c56307f98dbf1d",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 2
+  },
+  {
+   "repo": "django_django",
+   "sha": "b22415214a7bdeaf8ccd7b8b21872038ab865991",
+   "fired": true,
+   "ruff_delta": 3,
+   "n_regressions": 3
+  },
+  {
+   "repo": "encode_httpx",
+   "sha": "682cad39ebd7468f65d9590ed68bd03f5a7f8ec8",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 7
+  },
+  {
+   "repo": "pallets_flask",
+   "sha": "a406c297aafa28074d11ec6fd27c246c70418cb4",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "8e864076a93a837a2ece51367f7844a7000fa2ee",
+   "fired": true,
+   "ruff_delta": 0,
+   "n_regressions": 2
+  },
+  {
+   "repo": "django_django",
+   "sha": "49b679371fe9beddcd23a93b5fdbadea914f37f8",
+   "fired": false,
+   "ruff_delta": 1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "8db67b17a372fee109a6b2872b35742bf6f70740",
+   "fired": true,
+   "ruff_delta": -4,
+   "n_regressions": 4
+  },
+  {
+   "repo": "django_django",
+   "sha": "0207bdd2d4157c542c981264c86706b78ca246e9",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "encode_httpx",
+   "sha": "c033ed1b6513759de0c473962f1f597af4be04b3",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "encode_httpx",
+   "sha": "7e6e35160f5c68150f2a9fba7e0dc889efc06510",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "a4e6030904df63b3f10aa0729b86dc6942b0458e",
+   "fired": true,
+   "ruff_delta": 2,
+   "n_regressions": 2
+  },
+  {
+   "repo": "django_django",
+   "sha": "3f4fef432b10fdf69271ccb57181a43484916c7b",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "e3fe0ef29775f3778efa24f79718e6cefdf1c3ca",
+   "fired": true,
+   "ruff_delta": 3,
+   "n_regressions": 5
+  },
+  {
+   "repo": "django_django",
+   "sha": "51aa000378c00a442273f01142acdebc94dec68d",
+   "fired": true,
+   "ruff_delta": -3,
+   "n_regressions": 1
+  },
+  {
+   "repo": "django_django",
+   "sha": "767849b765e881ee905f2bc1175d1c1f47445554",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "d3f00bd5706b35961390d3814dd7e322ead3a9a3",
+   "fired": true,
+   "ruff_delta": 9,
+   "n_regressions": 3
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "e68b1cacd077f49bafa84b95103945b19910993c",
+   "fired": false,
+   "ruff_delta": -2,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "85a94b79cad231818793b5704e35cbe51c0169cd",
+   "fired": true,
+   "ruff_delta": -4,
+   "n_regressions": 3
+  },
+  {
+   "repo": "django_django",
+   "sha": "9dc367dc10594ad024c83d398a8e3c3f8f221446",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 2
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "c02465cee0250cd8040a06032ec8732a6228bd13",
+   "fired": true,
+   "ruff_delta": 3,
+   "n_regressions": 4
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "e2be2ca77f54897a00dd7dd60decfa34ae7b9a06",
+   "fired": false,
+   "ruff_delta": -2,
+   "n_regressions": 0
+  },
+  {
+   "repo": "encode_httpx",
+   "sha": "8e4a8a1c73f60fe5754f95b308beaa725cb8791d",
+   "fired": true,
+   "ruff_delta": 10,
+   "n_regressions": 4
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "f2c0dfe7c454589d9a2681369e51a0d073bfd4ba",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pallets_flask",
+   "sha": "d597db67ded68d4aedf42b9d1d4570573fb79cd6",
+   "fired": true,
+   "ruff_delta": 8,
+   "n_regressions": 2
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "226f0c48bf6863ec452a9c304bde3d7ebed0f752",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "97774429aeb54df4c09895c07cd1b09e70201f7d",
+   "fired": true,
+   "ruff_delta": 35,
+   "n_regressions": 26
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "d290dfd7e9da1bc651094913c9ce8da3c575eff9",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 3
+  },
+  {
+   "repo": "django_django",
+   "sha": "6983a1a540a6e6c3bd941fa15ddd8cb49f9ec74e",
+   "fired": false,
+   "ruff_delta": 1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "ce1b4567620af3ae64c4d9d605a1ac697a3a40df",
+   "fired": true,
+   "ruff_delta": -7,
+   "n_regressions": 2
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "3e013f564b95ea9022ce8cff39c2210bcf76e61e",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "939db88b044d3132f0c5f0af12531d9df80066f3",
+   "fired": true,
+   "ruff_delta": -1,
+   "n_regressions": 1
+  },
+  {
+   "repo": "django_django",
+   "sha": "5e5a17028f4b9cfb5ff777d8c259e079bca0c988",
+   "fired": true,
+   "ruff_delta": 5,
+   "n_regressions": 1
+  },
+  {
+   "repo": "fastapi_fastapi",
+   "sha": "12bc9285f71c0c0f8eaf343764acd1d6f85c4317",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 1
+  },
+  {
+   "repo": "django_django",
+   "sha": "7fce4dc5ff2d23bf43ee645f5bc0d6024ff1627f",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "68e0a169c4f9fa7f8071e014b274fd59e970f9a3",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "fdbfc98003f0ba2d3a12def63a75560791f3602d",
+   "fired": true,
+   "ruff_delta": 2,
+   "n_regressions": 3
+  },
+  {
+   "repo": "pallets_flask",
+   "sha": "e1d356fb713f3272db2a23f9f898c34c5dc79dc0",
+   "fired": false,
+   "ruff_delta": -5,
+   "n_regressions": 0
+  },
+  {
+   "repo": "fastapi_fastapi",
+   "sha": "3f9f4a0f8f7f5db50fbdc3157fe692cf4e68e13f",
+   "fired": true,
+   "ruff_delta": -3,
+   "n_regressions": 1
+  },
+  {
+   "repo": "encode_httpx",
+   "sha": "c38fd68ed78e08ee6056bfd69b50413fd06be988",
+   "fired": true,
+   "ruff_delta": -4,
+   "n_regressions": 2
+  },
+  {
+   "repo": "pallets_flask",
+   "sha": "e21e003f62b57c35e1832c0bf14e9cd27f4e5bea",
+   "fired": false,
+   "ruff_delta": -7,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pallets_flask",
+   "sha": "e609dddd604bd8c808145973d91dcb8bb56a9906",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "encode_httpx",
+   "sha": "d2816c9c48b6ea77c9644ea9229b3b212feed737",
+   "fired": true,
+   "ruff_delta": 0,
+   "n_regressions": 4
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "b2ca906830af3f7b3f8f3b6dc29652dac8b9161c",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pallets_flask",
+   "sha": "4d0cdf95e616d09b9cab0cc35c11b1d3ba1a109e",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "d9ad2cf7618ebd1985c4ba267a65efc95a271aa6",
+   "fired": true,
+   "ruff_delta": 12,
+   "n_regressions": 1
+  },
+  {
+   "repo": "pallets_flask",
+   "sha": "4f8ee8f12946b224e5003405be99aa4e454bdeee",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "adc0f29b8f8fa8a63e0592c38503855a5b615a29",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "d414d393d4f7bff5a7d059346ea7b6c45e0ba256",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "5b95ee3c19be3d6073bb2c991c282efa7d6c1dba",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "encode_httpx",
+   "sha": "83fc0921c175f47607f864678b0b0bba4dbb0413",
+   "fired": true,
+   "ruff_delta": -15,
+   "n_regressions": 2
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "52d5411f6d1a54f9224cf1b8b87ce93b226cf4af",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "31693eb90fad58c5a1b0451c31661fabd0f56817",
+   "fired": false,
+   "ruff_delta": -4,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "46068d850d8debd3611ed6499d48b9907bf07ef6",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "3cf4e133cc36968dbdad8ce57a82e9f72b142967",
+   "fired": false,
+   "ruff_delta": -2,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "24a66db8d39f593306d02263f9c5166c5f703f41",
+   "fired": true,
+   "ruff_delta": -4,
+   "n_regressions": 1
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "b1e430145706556cc676e7cbe49d625b7540088e",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "677d0c366f60222b8cc441af103c36c5b8dba483",
+   "fired": false,
+   "ruff_delta": 4,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "4e405dd9f96e69cdd53901db930a2d79bc4f7e58",
+   "fired": false,
+   "ruff_delta": 1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "04bd0df100809de350be89b64bb85c3524867132",
+   "fired": true,
+   "ruff_delta": 2,
+   "n_regressions": 7
+  },
+  {
+   "repo": "encode_httpx",
+   "sha": "57ae7ea22b0a091ad9dbd01c327b80e8bc67e265",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "0c9631594d8e3d2e1917e2d46ec67afcf719d1bf",
+   "fired": true,
+   "ruff_delta": 0,
+   "n_regressions": 2
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "63546cbf3e02380819732441ad55d95725dca7c5",
+   "fired": false,
+   "ruff_delta": -4,
+   "n_regressions": 0
+  },
+  {
+   "repo": "encode_httpx",
+   "sha": "ba2e51215e4e619540f2a24282b84ed8a738e6fd",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "8ee48174717591bbf74497fded060d7ae83d67ba",
+   "fired": false,
+   "ruff_delta": 1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "fastapi_fastapi",
+   "sha": "f54d8d57a42420019d384aa3b495402545b0af33",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "bbd9f4be90e734df5c290aeb399e8e512f834224",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "d8d607e937bf5a36815007322bf10239f3330475",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "38d361792c02ae2b25323258d070c04d8906495a",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pallets_flask",
+   "sha": "e17e74d3a74b5d32a622587b2b9da9840bf3a7e0",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 3
+  },
+  {
+   "repo": "encode_httpx",
+   "sha": "faededae59b95bd46bdbb063f2b3d3ae5b45ee55",
+   "fired": true,
+   "ruff_delta": 0,
+   "n_regressions": 1
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "bd2eb1e085882bbe97d449ac1879de40b50f458b",
+   "fired": true,
+   "ruff_delta": 2,
+   "n_regressions": 2
+  },
+  {
+   "repo": "pallets_flask",
+   "sha": "15012af70017962c2a22bc3fe670b9cc50782366",
+   "fired": true,
+   "ruff_delta": 8,
+   "n_regressions": 2
+  },
+  {
+   "repo": "django_django",
+   "sha": "76af861356eda3b08bc5e15ad1973f980c7604a3",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 3
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "8c49561470708761f7321504f5e8343811be87ac",
+   "fired": false,
+   "ruff_delta": -221,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "c7d7f2951d0c43280f78c84b65df11d207ea6177",
+   "fired": false,
+   "ruff_delta": -2,
+   "n_regressions": 0
+  },
+  {
+   "repo": "encode_httpx",
+   "sha": "6b60d95a4d504a54210d0a1a4fc65e16ba7a1dff",
+   "fired": true,
+   "ruff_delta": 6,
+   "n_regressions": 2
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "b08a7c4757faf174ab9559526ae295b4da1afb02",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "42e9fd896ee36e928888dffcc34d725c7dcceb47",
+   "fired": false,
+   "ruff_delta": -3,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "45e1ae646cd89fc0e7a6b1187c22d9a4964f75fa",
+   "fired": false,
+   "ruff_delta": -27,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "d779a1c53ecde9056465bd32dbff09992a6632f9",
+   "fired": false,
+   "ruff_delta": -5,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pallets_flask",
+   "sha": "1d610e44b396d11113bb6a5d168cc5e996a6dfb9",
+   "fired": false,
+   "ruff_delta": -2,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "28b1896e9a9aebb4e73d23498977b6c859420445",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pallets_flask",
+   "sha": "7029674775023c076a1dc03367214d178423809a",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "e9103402c0fa873aea58a6a11dba510cd308cb84",
+   "fired": true,
+   "ruff_delta": -8,
+   "n_regressions": 2
+  },
+  {
+   "repo": "django_django",
+   "sha": "fd866c25d1665b73aff0d8312c414ae6f69812a3",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "0ba4bd25ac2c69211c55a37cafd16bd77785c96d",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "9ed275c868c97786c25668cd87ed3fbc8e862f15",
+   "fired": false,
+   "ruff_delta": -4,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "1159791cd5b706f01e282d6773a17b66b7cdac9f",
+   "fired": true,
+   "ruff_delta": -1,
+   "n_regressions": 3
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "9ced73631695890638a2d412ef3d916ec02d63e7",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "b3b71a0922334c70bbc646a4873010f808196671",
+   "fired": false,
+   "ruff_delta": 14,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "539900f117dce5d9b51e2b9e8ff225c423060d52",
+   "fired": true,
+   "ruff_delta": 2,
+   "n_regressions": 1
+  },
+  {
+   "repo": "encode_httpx",
+   "sha": "84731c8be5ba682b04f9456a177430b8315f3188",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "encode_httpx",
+   "sha": "fcc1fe1233c5a47d65ba6d39619a16873efafc70",
+   "fired": false,
+   "ruff_delta": 1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "ad4a8acdb55a80a6a6dec60724b22abed0025399",
+   "fired": true,
+   "ruff_delta": 8,
+   "n_regressions": 5
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "de745a9eaa2c1b40a70d835e7a99a832f405afb6",
+   "fired": false,
+   "ruff_delta": -2,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "57c50d8c1996733cef45204ea069a2c01b2860cc",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "37083fcc1ab12fbc6d53213a92a132191eb79fc1",
+   "fired": false,
+   "ruff_delta": 1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "13e2b002583b0f3e8541b4b1201c10b8c330a865",
+   "fired": true,
+   "ruff_delta": 0,
+   "n_regressions": 1
+  },
+  {
+   "repo": "encode_httpx",
+   "sha": "7f0d43daad60b37d07f7734a83986e9dade59bf7",
+   "fired": false,
+   "ruff_delta": -3,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "b9a58798eed39bf543b9682d9ce43b13378a5074",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "a6c79f4987c020cc9e96d4c5fc47730cd1031b4c",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "bb07ba78073cb738fe858a5fe8f09993dbd805d3",
+   "fired": false,
+   "ruff_delta": 2,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "2e148d70647bfab640ab395fc98ba9492d061dad",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "b0ec442d2498cbb48159f2c2469126c06d1a0d35",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "0f29b503ef804c0a7dbec91d927968ee1ad814d2",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 2
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "988a79de65737e403cd27721ce091760cf62b97f",
+   "fired": false,
+   "ruff_delta": -2,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "3dcd435a0eb4380a3846e9c65140df480975687e",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "encode_httpx",
+   "sha": "315a18b4cf81f95683e6afdc10dba3c75eb512b7",
+   "fired": false,
+   "ruff_delta": 1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "fad7bd4393e09d8c0a9683cc9b2e27f3561edcb2",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "c22cc1096be5aaa3f381976ba0b70a014405dc4f",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "d38a3169a426516623929ff8c2b2c9703d801b75",
+   "fired": true,
+   "ruff_delta": 8,
+   "n_regressions": 1
+  },
+  {
+   "repo": "django_django",
+   "sha": "12cefee5d84b3569ccbde03167c7853e8dac638f",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "encode_httpx",
+   "sha": "95740415db889e68255bf4839ab158dc54e02785",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "00e32eeeff54ff91590f9c31167c61357ab568d4",
+   "fired": false,
+   "ruff_delta": -5,
+   "n_regressions": 0
+  },
+  {
+   "repo": "encode_httpx",
+   "sha": "6b4742303e215ce72e062cf408982e06f50b2c86",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "134ca4d438bd7cbe8f0f287a00d545f96fa04a01",
+   "fired": true,
+   "ruff_delta": 10,
+   "n_regressions": 3
+  },
+  {
+   "repo": "django_django",
+   "sha": "2980f2ab9aabdea3a3b7ec343252889408690630",
+   "fired": true,
+   "ruff_delta": 3,
+   "n_regressions": 1
+  },
+  {
+   "repo": "pallets_flask",
+   "sha": "141fde1d8ec8663b4be98777750d2f58c6fe44ad",
+   "fired": true,
+   "ruff_delta": 0,
+   "n_regressions": 2
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "0de9d7db7a0c3a2e933d59de62735a6b0bffb741",
+   "fired": true,
+   "ruff_delta": 2,
+   "n_regressions": 1
+  },
+  {
+   "repo": "fastapi_fastapi",
+   "sha": "b591de2ace297c1da537e50f64b4066f96553247",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 1
+  },
+  {
+   "repo": "django_django",
+   "sha": "75cd4fc8e3ee9a47bb88b65813a3446b4ed0c2f3",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pallets_flask",
+   "sha": "2beedabaafb16f2ba255c54c0875beb0d43664fd",
+   "fired": false,
+   "ruff_delta": 12,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "768cf5e7ac63c7b26b6f3bd9cdfd2c5bf8ba4654",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "8c12d51ea27479555e226894c50c83043211d71d",
+   "fired": true,
+   "ruff_delta": 14,
+   "n_regressions": 1
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "659715ecd92c3f39ed0b52509adefb73c49fa56c",
+   "fired": true,
+   "ruff_delta": 2,
+   "n_regressions": 2
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "bdbad40f579bd7db7f837bfa998320658add3b89",
+   "fired": true,
+   "ruff_delta": 2,
+   "n_regressions": 3
+  },
+  {
+   "repo": "fastapi_fastapi",
+   "sha": "400a4a99afac7ac5990f935c68b99bfe30cedf3e",
+   "fired": true,
+   "ruff_delta": -4,
+   "n_regressions": 1
+  },
+  {
+   "repo": "encode_httpx",
+   "sha": "869714fbf5f2a1bfda8d6f906930f49032507d7a",
+   "fired": false,
+   "ruff_delta": -4,
+   "n_regressions": 0
+  },
+  {
+   "repo": "encode_httpx",
+   "sha": "6ac49dacdd96f474467d276d2ff1b63edc382684",
+   "fired": true,
+   "ruff_delta": -13,
+   "n_regressions": 5
+  },
+  {
+   "repo": "django_django",
+   "sha": "533532302ae842c95cf7294ef6cd7f3e2bfaca65",
+   "fired": true,
+   "ruff_delta": 13,
+   "n_regressions": 2
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "41ca4dd44eedd959f3fe562895519e3d9df185ca",
+   "fired": false,
+   "ruff_delta": 3,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "5c68ab6e2902b3cf67456d080c5314d3696d43e8",
+   "fired": false,
+   "ruff_delta": 3,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "c3fdeb28fff35573bf86ef04b234c7f5817b0dea",
+   "fired": false,
+   "ruff_delta": 1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "psf_requests",
+   "sha": "4bad1285b695771154eb9d17f42d49cfd6419538",
+   "fired": true,
+   "ruff_delta": -4,
+   "n_regressions": 1
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "fa9490083667eb281d41b6475b2a84ff43361aed",
+   "fired": true,
+   "ruff_delta": 0,
+   "n_regressions": 1
+  },
+  {
+   "repo": "django_django",
+   "sha": "12c1557060fc94fe5e1fbddc4578a4e29d38f77c",
+   "fired": true,
+   "ruff_delta": 6,
+   "n_regressions": 1
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "f636ed8ced651d88097b4fdef0acd0d6cd11b3ac",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "5b7d237db380a75c27137fb37f0396f4a3dc3ecd",
+   "fired": true,
+   "ruff_delta": -49,
+   "n_regressions": 1
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "18394ae96bb903dd6be27ad0998c2fecb174f489",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "bfb746f983aa741afa3709794e70f1e0ab6040b5",
+   "fired": true,
+   "ruff_delta": -2,
+   "n_regressions": 2
+  },
+  {
+   "repo": "fastapi_fastapi",
+   "sha": "51ad909ffe9f5b2d5c9315554e75e39a8a2d725c",
+   "fired": false,
+   "ruff_delta": 1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "fastapi_fastapi",
+   "sha": "ac438b99342c859ae0e10f7064021125bd247bf5",
+   "fired": true,
+   "ruff_delta": 5,
+   "n_regressions": 7
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "bc6ead1a3c28ccf4d3f0823ffbaf2849b7d46214",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 2
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "c0678a4a509c1d2f8b4ee79916234e5b21291f52",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 2
+  },
+  {
+   "repo": "django_django",
+   "sha": "29c4a578af58f6da7c77830a0ff99260f2338d36",
+   "fired": true,
+   "ruff_delta": 4,
+   "n_regressions": 2
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "b042ad255db139adc740cd97047b6607889f9f1c",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "5008a4db440c8f7d108a6979b959025ffb5789ba",
+   "fired": false,
+   "ruff_delta": -41,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "b71de57b210cd3277b096b7124634be627386e8b",
+   "fired": true,
+   "ruff_delta": -4,
+   "n_regressions": 2
+  },
+  {
+   "repo": "encode_httpx",
+   "sha": "a54ecccd5b7e61b29ec13df45ecc0b82a2c168bb",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "95dd2eb1da555b85f7ec2a2c4fc4b8b51107f7af",
+   "fired": true,
+   "ruff_delta": -4,
+   "n_regressions": 2
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "ffad8e08e727162e05f3f791b615d2b67bb6725a",
+   "fired": true,
+   "ruff_delta": 4,
+   "n_regressions": 2
+  },
+  {
+   "repo": "django_django",
+   "sha": "ccc49029b8d84cf3eaaa3593df6370329f7b14e1",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "eddd993cf469df33268097f4bdaf60ccb8f50d3b",
+   "fired": true,
+   "ruff_delta": -1,
+   "n_regressions": 5
+  },
+  {
+   "repo": "fastapi_fastapi",
+   "sha": "dd963511d699b463b416408a0ad705b3dda0d067",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "b9aa3239ab1328c915684d89b87a49459cabd30b",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "d17bc72880caea967ee1f4332941269837b68a2a",
+   "fired": true,
+   "ruff_delta": 4,
+   "n_regressions": 3
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "2cdcc80d442eb702465ef2b4bc3a7da18f1fb807",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "94050a8aaf63f7890e3599bf10f43e1e2a31e8b7",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pallets_flask",
+   "sha": "8590d65a57ad57c99a82fdf4e1c57921d7e1bdcd",
+   "fired": false,
+   "ruff_delta": -16,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "bf55a4708f662f64dc5b1cfd2e8a6a31395bef1c",
+   "fired": false,
+   "ruff_delta": -2,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "6127d76bb47036a9c23d5fab7cc9663953acecd7",
+   "fired": true,
+   "ruff_delta": 0,
+   "n_regressions": 3
+  },
+  {
+   "repo": "pallets_flask",
+   "sha": "dbd4520ccbe0954d8ff4f926ba5f16c4f5291533",
+   "fired": true,
+   "ruff_delta": -2,
+   "n_regressions": 1
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "43b8bd7df7178fbcef59efe39283d786a8bf4af6",
+   "fired": false,
+   "ruff_delta": -65,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "ce165f7bbf0c481a20db6b4b9f764b8bb89348ba",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 2
+  },
+  {
+   "repo": "django_django",
+   "sha": "dbbcfca476e29354c3a5c6221112b55741babc14",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 2
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "b3166a538c3b35c6dbde9b52f9d48278fc7dcfed",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "8096b5251090bf7539c59956e398b027c7525529",
+   "fired": false,
+   "ruff_delta": 1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "a2f2a399566dd68ce7e312fff5a5ba857066797d",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "3c4e78e2361b1e155fe7f6d29f1112c036d8e3b2",
+   "fired": false,
+   "ruff_delta": -2,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "890537253cf235091816d27a5c2fb64943c8e34a",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "encode_httpx",
+   "sha": "e0b4528b170be0835d1ed4ffcafd1141fa9dfc6d",
+   "fired": true,
+   "ruff_delta": 7,
+   "n_regressions": 11
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "08194186b4604f9bc9fc0b73bc1aa158a7fe8059",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "b47e862d3a84dc5cbca84821a3c5586be6b51639",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "django_django",
+   "sha": "f937c9ec975ebd719f0c22e5d1d5f5fb87ff1edd",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 2
+  },
+  {
+   "repo": "scrapy_scrapy",
+   "sha": "f57fc454beb4d7746002bb69457cf8add6cc3bcb",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "415a62e373d96be3aa28dd2dc2e2831940fd428c",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "a3d15b2c60dc4616d5eefa38345b26f1f9e520a6",
+   "fired": false,
+   "ruff_delta": 10,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "7be95f9b30ffd418483bdb57112f9339465d4695",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 2
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "f779d3f863f347e38b4b6be9951642a5d75c36d5",
+   "fired": true,
+   "ruff_delta": 2,
+   "n_regressions": 3
+  },
+  {
+   "repo": "pytest-dev_pytest",
+   "sha": "304f2916fcdce20ad9f353210b9c2ada6051ee79",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "encode_httpx",
+   "sha": "feb404f86b46c3d3650fabc090f8a8dbf3afe3ff",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 2
+  },
+  {
+   "repo": "sphinx-doc_sphinx",
+   "sha": "ba832143860866c543d4904903a120822d17a26a",
+   "fired": false,
+   "ruff_delta": 6,
+   "n_regressions": 0
+  }
+ ]
+}

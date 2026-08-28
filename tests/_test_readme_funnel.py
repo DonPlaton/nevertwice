@@ -156,16 +156,32 @@ def test_the_suite_count_is_counted_rather_than_remembered() -> None:
     """
     import subprocess
     print("\n- the suite count in the README is the real one -")
-    WORDS = {60: "Sixty", 70: "Seventy", 80: "Eighty", 90: "Ninety"}
+    # The table used to stop at ninety, so the hundredth suite made `written` the
+    # literal "?" and `re.search` raised `nothing to repeat` -- the check that exists
+    # to stop a hand-kept number going stale went stale itself, one order of magnitude
+    # up. It now spells any count and escapes what it searches for.
+    TENS = {2: "Twenty", 3: "Thirty", 4: "Forty", 5: "Fifty", 6: "Sixty",
+            7: "Seventy", 8: "Eighty", 9: "Ninety"}
     UNITS = ["", "-one", "-two", "-three", "-four", "-five",
              "-six", "-seven", "-eight", "-nine"]
+    ONES = ["", "One", "Two", "Three", "Four", "Five",
+            "Six", "Seven", "Eight", "Nine"]
+
+    def spell(n: int) -> str:
+        if n >= 100:
+            head = f"{ONES[n // 100]} hundred" if n // 100 < 10 else f"{n // 100} hundred"
+            rest = n % 100
+            return head if rest == 0 else f"{head} {spell(rest).lower()}"
+        if n >= 20:
+            return TENS[n // 10] + UNITS[n % 10]
+        return ONES[n] or "Zero"
     listed = subprocess.run(["git", "ls-files"], cwd=ROOT, capture_output=True, text=True,
                             encoding="utf-8", errors="replace").stdout.splitlines()
     actual = sum(1 for f in listed
                  if re.search(r"(^|/)_test_[^/]*\.py$", f.strip()))
-    written = WORDS.get(actual // 10 * 10, "?") + UNITS[actual % 10]
+    written = spell(actual)
     check(f"the README says {written.lower()} hermetic suites, and there are {actual}",
-          re.search(rf"{written} hermetic suites", TEXT) is not None,
+          re.search(re.escape(written) + r" hermetic suites", TEXT) is not None,
           f"README does not say '{written} hermetic suites' - "
           f"update it, or this number goes stale like every hand-kept count")
 
