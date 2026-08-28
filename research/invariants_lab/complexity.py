@@ -29,6 +29,7 @@ independence -- since it shares neither language nor authors with anything here.
 from __future__ import annotations
 
 import ast
+import re
 import subprocess
 import sys
 from dataclasses import dataclass
@@ -47,9 +48,12 @@ _DECISION = (ast.If, ast.For, ast.AsyncFor, ast.While, ast.ExceptHandler)
 #: statement. Several of them feel like decisions and are not, which is exactly why
 #: this is checked against another implementation rather than reasoned about.
 
+#: What `PLR1702` counts as a nested block, and therefore what this counts. `ast.Match`
+#: was here and is not: the instrument does not count it, and F3's whole point is that
+#: the metric is the metric everyone means rather than this project's taste.
 _NESTS = (
     ast.If, ast.For, ast.AsyncFor, ast.While, ast.With, ast.AsyncWith,
-    ast.Try, ast.Match,
+    ast.Try,
 )
 
 
@@ -120,16 +124,89 @@ def _walk_own_scope(node: ast.AST):
 
 
 def nesting(node: ast.AST) -> int:
-    """Deepest control structure inside this callable, its own body counted as depth 0."""
-    def depth(n: ast.AST, d: int) -> int:
+    """Deepest control structure inside this callable, its own body counted as depth 0.
+
+    Two rules that were wrong until `PLR1702` said so, and neither was visible by
+    reading this function:
+
+    * an **`elif` chain is one level, not one per branch**. In the AST an `elif` is an
+      `If` inside the parent's `orelse`, so walking children charged a level per branch
+      and read a flat three-way chain as depth 3. Every one of the audit's 133 nesting
+      disagreements was this shape;
+    * a **`match` does not count**. That one is a definitional difference rather than a
+      defect -- a `match` is a branch and a reader does feel it -- and it is resolved the
+      way R1 resolved the same question for cyclomatic: the metric has to be the metric
+      everyone means, and the only reachable statement of what everyone means is the
+      instrument.
+    """
+    def depth(n: ast.AST, d: int, *, in_orelse_of_if: bool = False) -> int:
         best = d
         for child in ast.iter_child_nodes(n):
             if isinstance(child, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
                 continue
-            step = 1 if isinstance(child, _NESTS) else 0
+            # `elif`: the sole statement of an `If`'s `orelse` being another `If` is
+            # not a nested block, it is the next arm of the same branch. The AST is
+            # *identical* for `elif x:` and for `else:` followed by an indented `if x:`,
+            # so the column offset is what separates them -- an `elif` sits at its
+            # parent's column, an indented `if` does not. Without the column test this
+            # rule swallowed real nesting: `psf/requests`'s `Server.__exit__` scored 1
+            # where both a reader and PLR1702 say 2.
+            elif_arm = (isinstance(n, ast.If) and isinstance(child, ast.If)
+                        and len(n.orelse) == 1 and n.orelse[0] is child
+                        and child.col_offset == n.col_offset)
+            step = 0 if elif_arm else (1 if isinstance(child, _NESTS) else 0)
             best = max(best, depth(child, d + step))
         return best
     return depth(node, 0)
+
+
+def has_nested_callable(node: ast.AST) -> bool:
+    """Does this callable define another callable inside itself?
+
+    `PLR1702` counts a nested block chain **without resetting at a `def`**, and reports
+    the whole chain at its outermost block. So for a callable that contains a nested
+    function -- or one that *is* nested inside another callable's block chain -- ruff's
+    output cannot be read back as this callable's own depth, in either direction. That
+    is a genuine definitional difference and no amount of parsing recovers the number.
+
+    `audit_axes.py` therefore compares `nesting` only on callables that neither contain
+    nor sit inside another callable, and reports how many that excludes. F3's declared
+    consequence -- drop what has no independent check -- is applied to the excluded set
+    by `ratchet.py`, which does not hold `nesting` on a callable containing a nested
+    `def`.
+    """
+    for child in _walk_own_scope(node):
+        if isinstance(child, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            return True
+    return False
+
+
+def auditable_nesting(source: str) -> set[str]:
+    """Qualnames whose `nesting` value `PLR1702` can be compared against at all."""
+    if not _parses(source):
+        return set()
+    tree = ast.parse(source)
+    out: set[str] = set()
+    duplicated = duplicate_qualnames(source)
+    # `enclosed` is true once the walk has passed through another callable **or** a
+    # block. A block matters for the same reason a callable does: `PLR1702` reports a
+    # chain at its outermost block, so a `def` under `if sys.platform == "win32":` has
+    # its blocks reported at the module-level `if`, outside the function entirely, and
+    # ruff appears to say 0. `psf/requests` and `pytest` both use that idiom.
+    stack: list[tuple[list[str], ast.AST, bool]] = [([], n, False) for n in tree.body]
+    while stack:
+        prefix, node, enclosed = stack.pop()
+        if isinstance(node, _TRANSPARENT):
+            stack.extend((prefix, c, True) for c in _children(node))
+        elif isinstance(node, ast.ClassDef):
+            stack.extend((prefix + [node.name], c, enclosed) for c in node.body)
+        elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            qualname = ".".join(prefix + [node.name])
+            if (not enclosed and not has_nested_callable(node)
+                    and qualname not in duplicated):
+                out.add(qualname)
+            stack.extend((prefix + [node.name], c, True) for c in node.body)
+    return out
 
 
 #: Statements whose bodies still run at import time, so a `def` inside one is an
@@ -149,7 +226,19 @@ def _children(node: ast.AST) -> list[ast.stmt]:
 
 
 def scan_file(source: str) -> dict[str, FuncMetrics]:
-    """Every top-level and method callable in one file, by qualname."""
+    """Every top-level and method callable in one file, by qualname.
+
+    A qualname can be defined more than once in a file -- `@overload` stubs before the
+    real implementation, or one `def` per platform branch. This keys by qualname, so one
+    of them wins, and until F3 the winner was decided by traversal order: `psf/requests`
+    put `cookiejar_from_dict`'s `...` stub (nesting 0) where the real function's metrics
+    (nesting 3) belonged. A ratchet storing that baseline compares next quarter's real
+    function against this quarter's ellipsis.
+
+    Python's own answer is that the **last** definition is the one that runs, so that is
+    the one kept. `duplicate_qualnames()` reports which names had more than one, because
+    a collision resolved silently is a collision nobody can audit.
+    """
     if not _parses(source):
         return {}
     tree = ast.parse(source)
@@ -164,6 +253,10 @@ def scan_file(source: str) -> dict[str, FuncMetrics]:
         elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
             qualname = ".".join(prefix + [node.name])
             end = getattr(node, "end_lineno", node.lineno) or node.lineno
+            previous = out.get(qualname)
+            if previous is not None and previous.lineno > node.lineno:
+                stack.extend((prefix + [node.name], c) for c in node.body)
+                continue  # a later definition already won; this one never runs
             out[qualname] = FuncMetrics(
                 qualname=qualname,
                 lineno=node.lineno,
@@ -175,6 +268,32 @@ def scan_file(source: str) -> dict[str, FuncMetrics]:
             )
             stack.extend((prefix + [node.name], c) for c in node.body)
     return out
+
+
+def duplicate_qualnames(source: str) -> set[str]:
+    """Qualnames this file defines more than once.
+
+    Excluded from the `nesting` agreement audit: `PLR1702` reports per block, so its
+    value for a duplicated name is the maximum across every definition, while this
+    project keeps the last. The two are not the same question and comparing them would
+    manufacture a disagreement out of an ambiguity.
+    """
+    if not _parses(source):
+        return set()
+    tree = ast.parse(source)
+    seen: dict[str, int] = {}
+    stack: list[tuple[list[str], ast.AST]] = [([], n) for n in tree.body]
+    while stack:
+        prefix, node = stack.pop()
+        if isinstance(node, _TRANSPARENT):
+            stack.extend((prefix, c) for c in _children(node))
+        elif isinstance(node, ast.ClassDef):
+            stack.extend((prefix + [node.name], c) for c in node.body)
+        elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            qualname = ".".join(prefix + [node.name])
+            seen[qualname] = seen.get(qualname, 0) + 1
+            stack.extend((prefix + [node.name], c) for c in node.body)
+    return {q for q, n in seen.items() if n > 1}
 
 
 # --------------------------------------------------------------------------
@@ -286,4 +405,144 @@ def ruff_complexity(path: Path) -> dict[str, int] | None:
         except (IndexError, ValueError):
             continue
         out[name] = number
+    return out
+
+
+# --------------------------------------------------------------------------
+# F3: independent instruments for the three axes `C901` cannot see
+# --------------------------------------------------------------------------
+
+#: `ruff`'s pylint-derived rules, each run with its threshold set to zero so the
+#: message carries the *value* rather than a pass or a fail -- the same trick
+#: `ruff_complexity` uses for C901. `RATCHET_R3.md` recorded nesting, returns and
+#: length as unaudited; two of the three had an instrument on this machine all along.
+_RUFF_AXIS_RULES = {
+    "nesting": ("PLR1702", "lint.pylint.max-nested-blocks = 0"),
+    "returns": ("PLR0911", "lint.pylint.max-returns = 0"),
+    "statements": ("PLR0915", "lint.pylint.max-statements = 0"),
+}
+
+
+def _ruff_diagnostics(path: Path, rule: str, config: str) -> list[tuple[int, int]] | None:
+    """`(lineno, value)` for each diagnostic of `rule`, or None if `ruff` did not run.
+
+    None rather than an empty list, because a control that reports "nothing wrong" when
+    it did not run is worse than no control: the agreement it is supposed to check
+    would pass by default.
+    """
+    try:
+        proc = subprocess.run(
+            [sys.executable, "-m", "ruff", "check", "--isolated", "--no-cache",
+             "--preview",       # PLR1702 is a preview rule in ruff 0.15
+             "--ignore-noqa",   # a control a source comment can switch off is not a
+                                # control: `psf/requests` carries `def proxy_bypass(
+                                # ...):  # noqa`, and without this the instrument
+                                # returned nothing there and the audit scored it as
+                                # agreement
+             "--select", rule, "--output-format", "concise",
+             "--config", config, str(path)],
+            capture_output=True, text=True, timeout=120,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+    if proc.returncode not in (0, 1):
+        return None
+    # `path:LINE:COL: error[RULE] message (VALUE > 0)`. Matched with a regex rather
+    # than split on ':' because on Windows the path starts `C:\`, and splitting gives
+    # the drive letter -- a bug that returns an empty result and therefore an agreement
+    # that passes by default.
+    pattern = re.compile(r":(\d+):\d+:\s+\w+\[" + re.escape(rule) + r"\]")
+    out: list[tuple[int, int]] = []
+    for line in proc.stdout.splitlines():
+        match = pattern.search(line)
+        if match is None or "(" not in line:
+            continue
+        try:
+            value = int(line.rsplit("(", 1)[1].split(">")[0].strip())
+        except (IndexError, ValueError):
+            continue
+        out.append((int(match.group(1)), value))
+    return out
+
+
+def _def_lines(source: str) -> dict[int, str]:
+    """`def` line -> qualname, so a diagnostic reported at a definition can be named."""
+    return {m.lineno: q for q, m in scan_file(source).items()}
+
+
+def _func_ranges(source: str) -> list[tuple[int, int, str]]:
+    """`(start, end, qualname)` per callable, innermost last when sorted by width."""
+    if not _parses(source):
+        return []
+    tree = ast.parse(source)
+    out: list[tuple[int, int, str]] = []
+    stack: list[tuple[list[str], ast.AST]] = [([], n) for n in tree.body]
+    while stack:
+        prefix, node = stack.pop()
+        if isinstance(node, _TRANSPARENT):
+            stack.extend((prefix, c) for c in _children(node))
+        elif isinstance(node, ast.ClassDef):
+            stack.extend((prefix + [node.name], c) for c in node.body)
+        elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            qualname = ".".join(prefix + [node.name])
+            end = getattr(node, "end_lineno", node.lineno) or node.lineno
+            out.append((node.lineno, end, qualname))
+            stack.extend((prefix + [node.name], c) for c in node.body)
+    return out
+
+
+def _at_definition(path: Path, axis: str) -> dict[str, int] | None:
+    """Axes `ruff` reports once per function, at the `def` line."""
+    rule, config = _RUFF_AXIS_RULES[axis]
+    diags = _ruff_diagnostics(path, rule, config)
+    if diags is None:
+        return None
+    try:
+        source = path.read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return None
+    names = _def_lines(source)
+    return {names[ln]: v for ln, v in diags if ln in names}
+
+
+def ruff_returns(path: Path) -> dict[str, int] | None:
+    """Per-function return count according to `PLR0911`."""
+    return _at_definition(path, "returns")
+
+
+def ruff_statements(path: Path) -> dict[str, int] | None:
+    """Per-function statement count according to `PLR0915`.
+
+    Not an implementation of this project's `length`, which counts *lines* from `def` to
+    the last statement. Statements and lines are different numbers about the same thing,
+    so this supports a directional check and never an equality one. `AXES_F3.md` says so
+    before the measurement rather than after it.
+    """
+    return _at_definition(path, "statements")
+
+
+def ruff_nesting(path: Path) -> dict[str, int] | None:
+    """Per-function nesting depth according to `PLR1702`.
+
+    `PLR1702` reports once per nested *block group*, not once per function, so each
+    diagnostic is attributed to the innermost callable whose line range contains it and
+    the function's value is the maximum over its own blocks. Attributing to the innermost
+    is what makes this comparable: `nesting()` stops at a nested `def`, and so must the
+    instrument checking it.
+    """
+    rule, config = _RUFF_AXIS_RULES["nesting"]
+    diags = _ruff_diagnostics(path, rule, config)
+    if diags is None:
+        return None
+    try:
+        source = path.read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return None
+    ranges = sorted(_func_ranges(source), key=lambda r: r[1] - r[0])
+    out: dict[str, int] = {}
+    for lineno, value in diags:
+        owner = next((q for start, end, q in ranges if start <= lineno <= end), None)
+        if owner is None:
+            continue  # a module-level block belongs to no callable
+        out[owner] = max(out.get(owner, 0), value)
     return out

@@ -1,0 +1,125 @@
+{
+ "generated": "2026-08-28T16:35:49",
+ "task": "F3",
+ "corpus": "corpus_dev",
+ "in_sample": true,
+ "F3_A_agreement": {
+  "nevertwice": {
+   "set": "nevertwice",
+   "files": 53,
+   "callables": 850,
+   "ruff_unavailable_on": 0,
+   "nesting": {
+    "comparable": 776,
+    "excluded_as_inexpressible": 74,
+    "disagreements": 0,
+    "examples": []
+   },
+   "returns": {
+    "disagreements": 0,
+    "examples": []
+   },
+   "exact": true
+  },
+  "corpus_dev": {
+   "set": "corpus_dev",
+   "files": 296,
+   "callables": 4001,
+   "ruff_unavailable_on": 0,
+   "nesting": {
+    "comparable": 2909,
+    "excluded_as_inexpressible": 1092,
+    "disagreements": 0,
+    "examples": []
+   },
+   "returns": {
+    "disagreements": 0,
+    "examples": []
+   },
+   "exact": true
+  },
+  "verdict": "pass"
+ },
+ "F3_L1_length_direction": {
+  "n_firings": 496,
+  "required_for_80pct_power": 85,
+  "resolvable": true,
+  "also_rose_by_statements": 429,
+  "point": 0.8649193548387096,
+  "ci": [
+   0.8320187227310938,
+   0.8922109177114741
+  ],
+  "p_vs_0.50_one_sided": 5.874707172638405e-66,
+  "verdict": "pass"
+ },
+ "F3_S_flag_rates": {
+  "all_any": {
+   "label": "all four axes, every changed file",
+   "flagged": 1021,
+   "n": 2853,
+   "rate": 0.3578689099193831,
+   "ci": [
+    0.34048060766136795,
+    0.3756394460098002
+   ]
+  },
+  "all_shipped": {
+   "label": "all four axes, shipped code only",
+   "flagged": 909,
+   "n": 2853,
+   "rate": 0.3186119873817035,
+   "ci": [
+    0.3017684289666178,
+    0.3359433534620617
+   ]
+  },
+  "audited_any": {
+   "label": "audited axes, every changed file",
+   "flagged": 983,
+   "n": 2853,
+   "rate": 0.3445495969155275,
+   "ci": [
+    0.32733124561663235,
+    0.36218600174012
+   ]
+  },
+  "audited_shipped": {
+   "label": "audited axes, shipped code only",
+   "flagged": 884,
+   "n": 2853,
+   "rate": 0.30984928145811425,
+   "ci": [
+    0.29314591479842594,
+    0.32706402137076945
+   ]
+  }
+ },
+ "surviving_axes": [
+  "cyclomatic",
+  "nesting",
+  "returns",
+  "length"
+ ],
+ "note": "length is checked against PLR0915, which counts STATEMENTS and not lines. It supports a directional claim and never an equality one. See AXES_F3.md section 2.",
+ "seconds": 334.8,
+ "F3_L2_length_discrimination": {
+  "commits_sampled": 400,
+  "statements_rose": {
+   "n": 586,
+   "fired": 78,
+   "rate": 0.13310580204778158
+  },
+  "statements_flat": {
+   "n": 32825,
+   "fired": 9,
+   "rate": 0.0002741812642802742
+  },
+  "ratio": 485.46643913538117,
+  "fisher_p_one_sided": 2.4645630472250805e-128,
+  "required_per_arm": 152,
+  "resolvable": true,
+  "verdict": "pass"
+ },
+ "seconds_l2": 240.8
+}
