@@ -1,0 +1,706 @@
+{
+ "generated": "2026-08-29",
+ "task": "V1/V2 analysis",
+ "deltas": [
+  {
+   "mechanism": "blast_radius",
+   "metric": "recall",
+   "gate": "> 0.50",
+   "dev": 0.9101,
+   "held": 0.9091,
+   "direction": "higher is better",
+   "delta": -0.0011,
+   "ratio": 0.999,
+   "moved": "worse"
+  },
+  {
+   "mechanism": "blast_radius",
+   "metric": "precision (decidable)",
+   "gate": ">= 0.50",
+   "dev": 0.3961,
+   "held": 0.2742,
+   "direction": "higher is better",
+   "delta": -0.1219,
+   "ratio": 0.692,
+   "moved": "worse"
+  },
+  {
+   "mechanism": "blast_radius",
+   "metric": "fires on the fixed tree",
+   "gate": "-- (paired control)",
+   "dev": 0.2609,
+   "held": 0.3303,
+   "direction": "lower is better",
+   "delta": 0.0694,
+   "ratio": 1.266,
+   "moved": "worse"
+  },
+  {
+   "mechanism": "blast_radius",
+   "metric": "silence-pool flag rate",
+   "gate": "<= 0.05",
+   "dev": 0.278,
+   "held": 0.266,
+   "direction": "lower is better",
+   "delta": -0.012,
+   "ratio": 0.957,
+   "moved": "better"
+  },
+  {
+   "mechanism": "abstention decidable-only",
+   "metric": "recall",
+   "gate": "reported",
+   "dev": 0.6,
+   "held": 0.5973,
+   "direction": "higher is better",
+   "delta": -0.0027,
+   "ratio": 0.996,
+   "moved": "worse"
+  },
+  {
+   "mechanism": "abstention decidable-only",
+   "metric": "flag rate",
+   "gate": "<= 0.05",
+   "dev": 0.01,
+   "held": 0.016,
+   "direction": "lower is better",
+   "delta": 0.006,
+   "ratio": 1.6,
+   "moved": "worse"
+  },
+  {
+   "mechanism": "complexity ratchet",
+   "metric": "flag rate",
+   "gate": "<= 0.05",
+   "dev": 0.364,
+   "held": 0.522,
+   "direction": "lower is better",
+   "delta": 0.158,
+   "ratio": 1.434,
+   "moved": "worse"
+  },
+  {
+   "mechanism": "complexity ratchet",
+   "metric": "agreement with ruff",
+   "gate": "> 0.50",
+   "dev": 0.6373,
+   "held": 0.7548,
+   "direction": "higher is better",
+   "delta": 0.1175,
+   "ratio": 1.184,
+   "moved": "better"
+  },
+  {
+   "mechanism": "complexity ratchet",
+   "metric": "fires on ruff-flat",
+   "gate": "-- (contrast)",
+   "dev": 0.2,
+   "held": 0.2678,
+   "direction": "lower is better",
+   "delta": 0.0678,
+   "ratio": 1.339,
+   "moved": "worse"
+  },
+  {
+   "mechanism": "scale",
+   "metric": "corpus flag rate",
+   "gate": "exploratory",
+   "dev": 0.0989,
+   "held": 0.1835,
+   "direction": "lower is better",
+   "delta": 0.0845,
+   "ratio": 1.855,
+   "moved": "worse"
+  },
+  {
+   "mechanism": "scale",
+   "metric": "recall on found quadratics",
+   "gate": "n >= 20 to score",
+   "dev": 0.1429,
+   "held": 0.0592,
+   "direction": "higher is better",
+   "delta": -0.0836,
+   "ratio": 0.414,
+   "moved": "worse"
+  },
+  {
+   "mechanism": "scale",
+   "metric": "still fires after the fix",
+   "gate": "-- (paired control)",
+   "dev": 0.7143,
+   "held": 0.5066,
+   "direction": "lower is better",
+   "delta": -0.2077,
+   "ratio": 0.709,
+   "moved": "better"
+  },
+  {
+   "mechanism": "the union",
+   "metric": "flag rate",
+   "gate": "<= 0.05",
+   "dev": 0.119,
+   "held": 0.191,
+   "direction": "lower is better",
+   "delta": 0.072,
+   "ratio": 1.605,
+   "moved": "worse"
+  }
+ ],
+ "between_blocks": {
+  "n_blocks": 27,
+  "precision_spread": {
+   "min": 0.05,
+   "max": 0.968,
+   "median": 0.362,
+   "fold": 19.5
+  },
+  "correlations": [
+   {
+    "predictor": "disk_mb",
+    "n_blocks": 27,
+    "spearman_rho": -0.62,
+    "p": 0.0005564,
+    "reading": "monotone with precision"
+   },
+   {
+    "predictor": "py_commits",
+    "n_blocks": 27,
+    "spearman_rho": -0.516,
+    "p": 0.005881,
+    "reading": "monotone with precision"
+   },
+   {
+    "predictor": "total_commits",
+    "n_blocks": 27,
+    "spearman_rho": -0.515,
+    "p": 0.005951,
+    "reading": "monotone with precision"
+   },
+   {
+    "predictor": "contributors",
+    "n_blocks": 27,
+    "spearman_rho": -0.388,
+    "p": 0.04572,
+    "reading": "weak or none"
+   },
+   {
+    "predictor": "py_share",
+    "n_blocks": 27,
+    "spearman_rho": -0.328,
+    "p": 0.09439,
+    "reading": "weak or none"
+   },
+   {
+    "predictor": "n",
+    "n_blocks": 27,
+    "spearman_rho": -0.291,
+    "p": 0.1405,
+    "reading": "weak or none"
+   }
+  ],
+  "collinearity_note": "disk_mb, py_commits and total_commits are three spellings of size and must not be read as three independent findings",
+  "by_domain": [
+   {
+    "domain": "async",
+    "n_blocks": 5,
+    "median_precision": 0.796,
+    "spread": [
+     0.421,
+     0.968
+    ]
+   },
+   {
+    "domain": "data",
+    "n_blocks": 5,
+    "median_precision": 0.22,
+    "spread": [
+     0.05,
+     0.437
+    ]
+   },
+   {
+    "domain": "infrastructure",
+    "n_blocks": 4,
+    "median_precision": 0.372,
+    "spread": [
+     0.274,
+     0.61
+    ]
+   },
+   {
+    "domain": "ml",
+    "n_blocks": 4,
+    "median_precision": 0.324,
+    "spread": [
+     0.283,
+     0.368
+    ]
+   },
+   {
+    "domain": "packaging",
+    "n_blocks": 4,
+    "median_precision": 0.468,
+    "spread": [
+     0.163,
+     0.611
+    ]
+   },
+   {
+    "domain": "scientific",
+    "n_blocks": 5,
+    "median_precision": 0.279,
+    "spread": [
+     0.12,
+     0.377
+    ]
+   }
+  ],
+  "kruskal_across_domains": {
+   "h": 12.88,
+   "p": 0.02453,
+   "groups": 6,
+   "reading": "domain separates precision"
+  },
+  "domain_after_size_control": {
+   "control": "precision residualised on log10(disk_mb)",
+   "size_slope": -0.2403,
+   "h": 4.922,
+   "p": 0.4254,
+   "reading": "domain does NOT survive the size control -- it was size"
+  },
+  "blocks": [
+   {
+    "block": "paramiko_paramiko",
+    "domain": "async",
+    "n": 7,
+    "precision": 0.967741935483871,
+    "precision_ci": [
+     0.8897953040501456,
+     0.9911086285001833
+    ],
+    "recall": 1.0,
+    "contributors": 200,
+    "total_commits": 4068,
+    "py_commits": 2694,
+    "py_share": 0.6622418879056047,
+    "disk_mb": 8.2
+   },
+   {
+    "block": "encode_starlette",
+    "domain": "async",
+    "n": 6,
+    "precision": 0.8666666666666667,
+    "precision_ci": [
+     0.703186733179637,
+     0.9469034451594526
+    ],
+    "recall": 0.6666666666666666,
+    "contributors": 362,
+    "total_commits": 1704,
+    "py_commits": 1028,
+    "py_share": 0.6032863849765259,
+    "disk_mb": 12.3
+   },
+   {
+    "block": "celery_celery",
+    "domain": "async",
+    "n": 46,
+    "precision": 0.796078431372549,
+    "precision_ci": [
+     0.7589575289805639,
+     0.8287723920209709
+    ],
+    "recall": 0.8913043478260869,
+    "contributors": 1587,
+    "total_commits": 13193,
+    "py_commits": 8424,
+    "py_share": 0.6385204274994315,
+    "disk_mb": 46.1
+   },
+   {
+    "block": "PyCQA_pylint",
+    "domain": "packaging",
+    "n": 18,
+    "precision": 0.6111111111111112,
+    "precision_ci": [
+     0.5078245886506263,
+     0.7053008278906345
+    ],
+    "recall": 1.0,
+    "contributors": 753,
+    "total_commits": 10243,
+    "py_commits": 7381,
+    "py_share": 0.7205896709948257,
+    "disk_mb": 50.2
+   },
+   {
+    "block": "pallets_click",
+    "domain": "infrastructure",
+    "n": 7,
+    "precision": 0.6097560975609756,
+    "precision_ci": [
+     0.5214756403534316,
+     0.6913885150341833
+    ],
+    "recall": 1.0,
+    "contributors": 486,
+    "total_commits": 3333,
+    "py_commits": 1552,
+    "py_share": 0.46564656465646564,
+    "disk_mb": 7.2
+   },
+   {
+    "block": "aio-libs_aiohttp",
+    "domain": "async",
+    "n": 43,
+    "precision": 0.5809178743961353,
+    "precision_ci": [
+     0.5470120196973255,
+     0.6140763686957856
+    ],
+    "recall": 0.8372093023255814,
+    "contributors": 914,
+    "total_commits": 14086,
+    "py_commits": 6356,
+    "py_share": 0.4512281698139997,
+    "disk_mb": 50.2
+   },
+   {
+    "block": "python_mypy",
+    "domain": "packaging",
+    "n": 215,
+    "precision": 0.5491157042403579,
+    "precision_ci": [
+     0.5348453218318816,
+     0.5633057450162955
+    ],
+    "recall": 0.9116279069767442,
+    "contributors": 929,
+    "total_commits": 13758,
+    "py_commits": 10318,
+    "py_share": 0.7499636575083588,
+    "disk_mb": 107.5
+   },
+   {
+    "block": "psf_black",
+    "domain": "infrastructure",
+    "n": 27,
+    "precision": 0.44505494505494503,
+    "precision_ci": [
+     0.37473062064338836,
+     0.5176507665512923
+    ],
+    "recall": 0.9629629629629629,
+    "contributors": 581,
+    "total_commits": 2314,
+    "py_commits": 1240,
+    "py_share": 0.5358686257562663,
+    "disk_mb": 14.3
+   },
+   {
+    "block": "apache_airflow",
+    "domain": "data",
+    "n": 373,
+    "precision": 0.4365513054037644,
+    "precision_ci": [
+     0.42277704906340113,
+     0.45042414348817267
+    ],
+    "recall": 0.9061662198391421,
+    "contributors": 4657,
+    "total_commits": 40722,
+    "py_commits": 27890,
+    "py_share": 0.6848877756495261,
+    "disk_mb": 892.9
+   },
+   {
+    "block": "python-trio_trio",
+    "domain": "async",
+    "n": 11,
+    "precision": 0.42105263157894735,
+    "precision_ci": [
+     0.3267381838783353,
+     0.5215036351015815
+    ],
+    "recall": 0.9090909090909091,
+    "contributors": 219,
+    "total_commits": 6641,
+    "py_commits": 2950,
+    "py_share": 0.44421020930582744,
+    "disk_mb": 13.3
+   },
+   {
+    "block": "pypa_pip",
+    "domain": "packaging",
+    "n": 156,
+    "precision": 0.3877551020408163,
+    "precision_ci": [
+     0.36137566275300437,
+     0.41480940463090543
+    ],
+    "recall": 0.8717948717948718,
+    "contributors": 971,
+    "total_commits": 16239,
+    "py_commits": 10892,
+    "py_share": 0.670730956339676,
+    "disk_mb": 93.2
+   },
+   {
+    "block": "scipy_scipy",
+    "domain": "scientific",
+    "n": 112,
+    "precision": 0.3767147379528667,
+    "precision_ci": [
+     0.3590804751896785,
+     0.3946817170012455
+    ],
+    "recall": 0.9285714285714286,
+    "contributors": 2005,
+    "total_commits": 38179,
+    "py_commits": 28608,
+    "py_share": 0.7493124492522067,
+    "disk_mb": 290.8
+   },
+   {
+    "block": "scikit-learn_scikit-learn",
+    "domain": "ml",
+    "n": 136,
+    "precision": 0.3675501761912058,
+    "precision_ci": [
+     0.3559345836721215,
+     0.3793215834080369
+    ],
+    "recall": 0.9117647058823529,
+    "contributors": 3639,
+    "total_commits": 33962,
+    "py_commits": 25420,
+    "py_share": 0.7484835993168836,
+    "disk_mb": 214.0
+   },
+   {
+    "block": "optuna_optuna",
+    "domain": "ml",
+    "n": 97,
+    "precision": 0.3615120274914089,
+    "precision_ci": [
+     0.33722031933872,
+     0.38653307582062835
+    ],
+    "recall": 0.9690721649484536,
+    "contributors": 542,
+    "total_commits": 21666,
+    "py_commits": 17872,
+    "py_share": 0.824886919597526,
+    "disk_mb": 30.7
+   },
+   {
+    "block": "astropy_astropy",
+    "domain": "scientific",
+    "n": 113,
+    "precision": 0.34970059880239523,
+    "precision_ci": [
+     0.33370903983433514,
+     0.36603749050682205
+    ],
+    "recall": 0.9646017699115044,
+    "contributors": 645,
+    "total_commits": 41640,
+    "py_commits": 27857,
+    "py_share": 0.6689961575408261,
+    "disk_mb": 220.2
+   },
+   {
+    "block": "sqlalchemy_sqlalchemy",
+    "domain": "data",
+    "n": 115,
+    "precision": 0.3370050610300685,
+    "precision_ci": [
+     0.3212141633929601,
+     0.3531683451467073
+    ],
+    "recall": 0.8695652173913043,
+    "contributors": 909,
+    "total_commits": 18248,
+    "py_commits": 15142,
+    "py_share": 0.8297895659798334,
+    "disk_mb": 134.1
+   },
+   {
+    "block": "saltstack_salt",
+    "domain": "infrastructure",
+    "n": 86,
+    "precision": 0.298936170212766,
+    "precision_ci": [
+     0.2705374125557966,
+     0.3289715977049931
+    ],
+    "recall": 0.872093023255814,
+    "contributors": 4214,
+    "total_commits": 125636,
+    "py_commits": 99296,
+    "py_share": 0.7903467159094527,
+    "disk_mb": 697.3
+   },
+   {
+    "block": "keras-team_keras",
+    "domain": "ml",
+    "n": 63,
+    "precision": 0.28741496598639454,
+    "precision_ci": [
+     0.262274694373195,
+     0.31393955351416686
+    ],
+    "recall": 0.8888888888888888,
+    "contributors": 1634,
+    "total_commits": 12645,
+    "py_commits": 10871,
+    "py_share": 0.8597073942269672,
+    "disk_mb": 70.7
+   },
+   {
+    "block": "huggingface_transformers",
+    "domain": "ml",
+    "n": 105,
+    "precision": 0.28308823529411764,
+    "precision_ci": [
+     0.2617607886809037,
+     0.30543443296948214
+    ],
+    "recall": 0.9619047619047619,
+    "contributors": 4176,
+    "total_commits": 23814,
+    "py_commits": 18802,
+    "py_share": 0.7895355673133451,
+    "disk_mb": 604.2
+   },
+   {
+    "block": "sympy_sympy",
+    "domain": "scientific",
+    "n": 220,
+    "precision": 0.27908239446178906,
+    "precision_ci": [
+     0.2689569149296575,
+     0.2894381450936812
+    ],
+    "recall": 0.8909090909090909,
+    "contributors": 1511,
+    "total_commits": 62760,
+    "py_commits": 54054,
+    "py_share": 0.8612810707456979,
+    "disk_mb": 237.6
+   },
+   {
+    "block": "ansible_ansible",
+    "domain": "infrastructure",
+    "n": 151,
+    "precision": 0.2741852043455768,
+    "precision_ci": [
+     0.2547608610162982,
+     0.294505292894124
+    ],
+    "recall": 0.9337748344370861,
+    "contributors": 7062,
+    "total_commits": 55529,
+    "py_commits": 35922,
+    "py_share": 0.6469052206954925,
+    "disk_mb": 286.7
+   },
+   {
+    "block": "dask_dask",
+    "domain": "data",
+    "n": 47,
+    "precision": 0.21968365553602812,
+    "precision_ci": [
+     0.19659338038998642,
+     0.2446600483838005
+    ],
+    "recall": 0.8723404255319149,
+    "contributors": 706,
+    "total_commits": 9842,
+    "py_commits": 7799,
+    "py_share": 0.7924202397886608,
+    "disk_mb": 160.8
+   },
+   {
+    "block": "networkx_networkx",
+    "domain": "scientific",
+    "n": 36,
+    "precision": 0.1670061099796334,
+    "precision_ci": [
+     0.14498492632666882,
+     0.1916224012020974
+    ],
+    "recall": 0.9444444444444444,
+    "contributors": 887,
+    "total_commits": 8388,
+    "py_commits": 6691,
+    "py_share": 0.7976871721506915,
+    "disk_mb": 108.5
+   },
+   {
+    "block": "pypa_setuptools",
+    "domain": "packaging",
+    "n": 8,
+    "precision": 0.16279069767441862,
+    "precision_ci": [
+     0.10901036761159542,
+     0.23607360863839227
+    ],
+    "recall": 1.0,
+    "contributors": 736,
+    "total_commits": 16871,
+    "py_commits": 10418,
+    "py_share": 0.6175093355462036,
+    "disk_mb": 55.3
+   },
+   {
+    "block": "pandas-dev_pandas",
+    "domain": "data",
+    "n": 278,
+    "precision": 0.15871697721492709,
+    "precision_ci": [
+     0.15362538227807016,
+     0.1639446351961542
+    ],
+    "recall": 0.920863309352518,
+    "contributors": 4394,
+    "total_commits": 38744,
+    "py_commits": 30722,
+    "py_share": 0.7929485855874459,
+    "disk_mb": 473.1
+   },
+   {
+    "block": "numpy_numpy",
+    "domain": "scientific",
+    "n": 12,
+    "precision": 0.1198044009779951,
+    "precision_ci": [
+     0.09181858126566539,
+     0.15486560377623962
+    ],
+    "recall": 1.0,
+    "contributors": 2149,
+    "total_commits": 41862,
+    "py_commits": 22380,
+    "py_share": 0.5346137308298696,
+    "disk_mb": 224.3
+   },
+   {
+    "block": "pola-rs_polars",
+    "domain": "data",
+    "n": 94,
+    "precision": 0.04956966989868177,
+    "precision_ci": [
+     0.045314666367097106,
+     0.05420153054414241
+    ],
+    "recall": 0.8085106382978723,
+    "contributors": 804,
+    "total_commits": 15384,
+    "py_commits": 8699,
+    "py_share": 0.5654576183047322,
+    "disk_mb": 247.8
+   }
+  ]
+ }
+}

@@ -290,6 +290,16 @@
    "budget": 168,
    "note": "Task D5 of the invariants lab: precision AND recall for the blast-radius checker on the eight-repository corpus, against git grep at a matched flag rate, with every threshold fixed in PREREGISTRATION.md before the run. Two of four gates fail and the mechanism is deleted; the numbers regenerate from research/invariants_lab/measure_blast_radius.py against blast_radius_d5.json and the SHAs in corpus_manifest.json. Every finding is judged mechanically, never by hand, and the 70% abstention rate is reported with the precision it qualifies."
   },
+  "research/invariants_lab/HELDOUT_V.md": {
+   "governance": "backlog",
+   "budget": 148,
+   "note": "Phase V of the invariants lab: every mechanism measured once on twenty-seven repositories the frozen code never saw, against thresholds fixed in PREREGISTRATION-SHIP.md before the corpus was cloned. blast_radius under decidable-only passes all three V1-A gates out of sample; the ratchet, scale's static half and the union fail theirs and are deleted per their declared consequences. The numbers regenerate from research/invariants_lab/analyse_v.py against v_delta.json and the *_heldout.json artifacts run_phase_v.py produced. Provenance of each artifact is established in PROVENANCE_V.md from the data rather than the labels, because three of them are mislabelled."
+  },
+  "research/invariants_lab/PROVENANCE_V.md": {
+   "governance": "backlog",
+   "budget": 32,
+   "note": "The provenance audit that had to run before any Phase V number was interpreted: three artifacts written by the unattended chain carry a hardcoded corpus_dev label under a *_heldout.json name. Ten of eleven artifacts are decided from their own contents by three routes - disjoint block names, census shape, and exclusion against the development run - and every decided one is held out. The numbers regenerate from research/invariants_lab/provenance_audit.py against provenance_v.json. The frozen modules are deliberately not edited; the correction lives here with its evidence."
+  },
   "research/invariants_lab/CORPUS.md": {
    "governance": "backlog",
    "budget": 129,

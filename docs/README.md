@@ -89,6 +89,8 @@ click from here, and `tests/_test_docs_map.py` fails the build if that stops bei
 | [`research/invariants_lab/ENDTOEND_E.md`](../research/invariants_lab/ENDTOEND_E.md) | The gate that decides shipping: does an agent fix a stale caller better with the mechanism than without, and what does a false flag cost when it fires on correct code |
 | [`research/invariants_lab/VERDICT_G1.md`](../research/invariants_lab/VERDICT_G1.md) | NO-GO, and every reason for it: one gate unevaluable, one inconclusive, and what would change each |
 | [`research/invariants_lab/SHIP_G4.md`](../research/invariants_lab/SHIP_G4.md) | Finishing four half-built mechanisms: abstention takes a flag rate from 28% to 1% and doubles the margin over a regex, and it is available only to a checker that cannot decide |
+| [`research/invariants_lab/PROVENANCE_V.md`](../research/invariants_lab/PROVENANCE_V.md) | Three artifacts call themselves in-sample and are not: which corpus each Phase V measurement really ran on, derived from the data because the labels are hardcoded |
+| [`research/invariants_lab/HELDOUT_V.md`](../research/invariants_lab/HELDOUT_V.md) | Twenty-seven repositories the code never saw: recall reproduces to three decimals, every flag rate gets worse, one mechanism survives its gates - and repository size, not domain, is what governs precision |
 | [`research/evidence_manifest.json`](../research/evidence_manifest.json) | Every published number, with its dataset, sample size, model, command, raw file and caveat |
 | [`research/data/README.md`](../research/data/README.md) | Fetching the LongMemEval dataset the benchmarks need |
 
