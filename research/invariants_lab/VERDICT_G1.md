@@ -1,25 +1,81 @@
 # G1 — NO-GO, and every reason for it
 
-**Task G1.** Written to be attacked. Each gate, its threshold as declared *before* the run that
-tested it, its measured value, and what the pair obliges. Nothing here is a decision the owner has
-delegated: G1 recommends, and `.loop/REPORT.md` lists the commands only the owner runs.
+**Task G1, revised 2026-08-29 after Phase V completed.** Written to be attacked. Each gate, its
+threshold as declared *before* the run that tested it, its measured value, and what the pair
+obliges. Nothing here is a decision the owner has delegated: G1 recommends, and `.loop/REPORT.md`
+lists the commands only the owner runs.
+
+> **What this revision changes.** The first version of this page recorded **G-B as UNEVALUABLE**
+> because DNS resolved nothing on this machine and no held-out corpus existed. The network came
+> back, `H3` ran, and the eleven-step chain finished unattended at 04:53. **G-B is now evaluated.**
+> Its answer moves one mechanism from *deleted* to *passing* and deletes three more. The verdict is
+> still NO-GO, and the reason is now a different one — which is the point of measuring.
 
 Skills: `peer-review` (claim → evidence, and *not reported* kept distinct from *reported negative*),
-`scientific-writing`.
+`scientific-writing`, `statistical-power`.
 
 ---
 
 ## The verdict
 
-> **NO-GO.** Not because a mechanism was measured and failed, but because **one gate could not be
-> evaluated at all** and **another is inconclusive rather than positive**. `GOAL-SHIP.md` §1 says
-> nothing ships unless all three pass. Two did not.
+> **NO-GO.** Two of three gates pass. The one that does not is **G-C — the gate that encodes the
+> owner's rule** — and it fails for want of statistical power on an in-sample stand, not for want
+> of an effect. `GOAL-SHIP.md` §1 says nothing ships unless all three pass.
 
 | gate | declared | measured | verdict |
 |---|---|---|---|
-| **G-A** every surviving mechanism is finished — its named missing piece built, tested, its cost measured | Phase F | four named pieces, four built, each with its cost | **PASS** |
-| **G-B** out-of-sample numbers at declared thresholds | Phase V on ≥ 25 held-out repositories | **no corpus exists** | **UNEVALUABLE** |
-| **G-C** the memory measurably works better, harm bounded | net benefit p < 0.05 **and** harm ≤ 0.05 | harm **0.010 PASS**; benefit **p = 1, inconclusive** | **NOT MET** |
+| **G-A** every surviving mechanism is finished | Phase F | four named pieces, four built, each with its cost | **PASS** |
+| **G-B** out-of-sample numbers at declared thresholds | Phase V on ≥ 25 held-out repositories | 27 repositories, 6,868 mutants, 2,623 source commits; **one mechanism passes all three of its gates, three fail theirs** | **PASS**, for what survives |
+| **G-C** the memory measurably works better, harm bounded | net benefit p < 0.05 **and** harm ≤ 0.05 | harm **0.010 PASS**; benefit **p = 1, inconclusive**, and in sample | **NOT MET** |
+
+## G-B — evaluated, and what it decided
+
+Full numbers in [`HELDOUT_V.md`](HELDOUT_V.md); provenance of each artifact in
+[`PROVENANCE_V.md`](PROVENANCE_V.md), derived from the data because three of them are mislabelled.
+
+| mechanism | gate | out of sample | |
+|---|---|---|---|
+| `blast_radius` under `decidable-only` | recall ≥ 0.45 | **0.597** [0.578, 0.616] | pass |
+| | flag rate ≤ 0.05 | **0.016** | pass |
+| | beats `git grep`, matched | 0.597 vs 0.344, p = 5.9 × 10⁻⁶⁹ | pass |
+| complexity ratchet | silence ≤ 0.05 | **0.522** | **fail → deleted** |
+| `scale`, static half | recall ≥ 0.30 on ≥ 20 mined fixes | **0.059** on **152** | **fail → deleted** |
+| the union | flag rate ≤ 0.05 | **0.191** | **fail** |
+
+**One mechanism survived a gate it was not built against.** That has not happened before in this
+project. Everything measured against a silence ceiling on a corpus it *was* built against failed
+that ceiling again, and by more.
+
+### Why the distinction this page kept is the reason the revision is possible
+
+The first version recorded G-B as **UNEVALUABLE** rather than failed, and refused to let the
+absence of a corpus read as a negative result. **Unevaluable is not the same as failed**, and the
+proof is what happened next: the network returned, the same thresholds were applied unchanged, and
+the gate came back *passing* for the one mechanism and *failing* for three. Had the first version
+written "G-B: FAIL" for tidiness, `decidable-only` would now be deleted on the strength of a DNS
+outage.
+
+The same distinction is still live in two places. `power_ship_heldout.json` has **undecided**
+provenance rather than an assumed one — undecided is not the same as wrong, and it was not quietly
+inherited from its input. And G-C below is **not met** for want of power, which is not the same as
+measured-and-refuted.
+
+### The finding G-B produced that no gate asked for
+
+**Recall generalises; precision and silence do not.** `blast_radius` recall moved 0.9101 → 0.9091
+and `decidable-only` recall 0.600 → 0.597 — three decimal places, on repositories chosen to be as
+unlike the development set as the criteria allowed. Over the same move, precision fell 31% and
+every flag rate rose 43–86%.
+
+The between-block model on 27 blocks says why, and the answer is single: **precision tracks
+repository size** (Spearman ρ = −0.620, p = 0.00056 against size on disk). The apparent domain
+effect — `async` blocks at median precision 0.796 against `data` blocks at 0.220, Kruskal–Wallis
+p = 0.025 — **does not survive residualising on log₁₀(size)**: H falls to 4.92, p = 0.43. Domain
+was size wearing a label, and the check that found this was written before its result was seen.
+
+**So an in-sample precision figure is a statement about the size distribution of its corpus.** The
+development eight are small to middling; 0.396 was never a property of the checker. Any project
+quoting a precision number measured on repositories it chose should read that sentence twice.
 
 ## G-A — pass, and what "finished" turned out to mean
 
@@ -28,51 +84,31 @@ produced a number rather than a feature.
 
 | piece | built | its cost, measured |
 |---|---|---|
-| abstention in `blast_radius` | `abstain.py`, six nested policies declared before the run | flag rate 0.278 → **0.010**; recall 0.910 → **0.600** |
+| abstention in `blast_radius` | `abstain.py`, six nested policies declared before the run | flag rate 0.278 → **0.010** in sample, **0.016** out; recall 0.910 → **0.600** / **0.597** |
 | a declared surface | `surface.py`, five surfaces × two policies | the declared surface **does not exist in found history**: `__all__` names the changed symbol for 18 of 859 |
 | independent instruments for the ratchet's three axes | `PLR1702`, `PLR0911`, `PLR0915` | **0 disagreements over 3,685 callables**, after four defects were found and fixed |
 | X1's cold-start experiment | `measure_declared_axis.py`, dynamic judge | base rate **0.013**; refused at 750 required trials against a 400 budget |
 
 **G-A passes on the letter and it is worth reading what it cost.** Two of the four "finishings"
-established that the mechanism cannot do what was hoped: F2 found the declared surface absent, and
-F4 and F5 together found that `scale`'s static half recognises **one of six** ordinary ways to
-write the fault it exists to catch. A gate that says *"the work is finished"* is not a gate that
-says the work succeeded, and G-A is the only one of the three this run passes.
+established that the mechanism cannot do what was hoped, and Phase V confirmed both out of sample.
+A gate that says *"the work is finished"* is not a gate that says the work succeeded.
 
-## G-B — unevaluable, and the distinction matters
+## G-C — harm passes, benefit is inconclusive, and the stand was in sample
 
-**No held-out corpus exists.** `gethostbyname` fails for `github.com`, `pypi.org` and
-`example.com` alike on this machine, while raw TCP to a GitHub address connects; the local proxy
-resolves the name, opens a tunnel, and receives no TLS handshake back. Fixing that means
-reconfiguring the owner's machine, which `GOAL.md` §2 forbids. `RATCHET_R3.md` recorded the same
-two failures one day earlier, so it is a property of this machine and not a blip. Full record:
-[`HELDOUT_H3_BLOCKED.md`](HELDOUT_H3_BLOCKED.md).
-
-**"Unevaluable" is not "failed", and neither is it "passed".** Every threshold in
-[`PREREGISTRATION-SHIP.md`](PREREGISTRATION-SHIP.md) §3 stands untested. The sentence
-`GOAL-SHIP.md` §0.3 wrote as the problem this run existed to solve — *every published number is in
-sample* — **is still true at the end of the run**. That is the single most important fact in this
-document, and no result below softens it.
-
-What was preserved rather than lost: thirty repositories and a falsifiable per-block prediction,
-committed **before** the block was discovered; a 29-file code freeze with hashes a test recomputes;
-and `--corpus heldout` on every harness, so Phase H is four commands rather than a code change.
-
-## G-C — harm passes, benefit is inconclusive
-
-53 benefit trials and 53 harm trials on `corpus_dev`. **In sample.**
+53 benefit trials and 53 harm trials on `corpus_dev`.
 
 ### The harm half — passes, on the cleanest number in the run
 
 | | declared | measured |
 |---|---|---|
-| harm rate = (`broken` + false-flag repair) / trials | ≤ **0.05** | **0.010** (1 of 99) |
+| harm rate | ≤ **0.05** | **0.010** (1 of 99) |
 | the mechanism fires on **correct** code | — | **0 of 53** |
 | a false flag causing an agent to change correct code | — | **0** |
 
 `blast_radius` under `decidable-only` produced **no findings at all** on 53 files where every call
-already binds. F1 measured that silence on a pool of commits; this is the first observation of it
-on files an agent was about to edit. **The harm arm is empty because the mechanism never spoke.**
+already binds. **The harm arm is empty because the mechanism never spoke.** Phase V raises the
+confidence in that number rather than lowering it: the same policy kept 67 findings out of a
+1,000-commit silence pool on twenty-seven unfamiliar repositories, and zero of them undecidable.
 
 ### The benefit half — the direction is right and the evidence is not there
 
@@ -85,51 +121,62 @@ on files an agent was about to edit. **The harm arm is empty because the mechani
 | exact McNemar | **p = 1** |
 
 **Three discordant pairs cannot reject at α = 0.05 under any arrangement** — an exact sign test
-needs six one way. This is an underpowered run, and it is underpowered by a margin that
-[`ENDTOEND_E.md`](ENDTOEND_E.md) §2 computed **before the probe**:
+needs six one way. Underpowered, by a margin [`ENDTOEND_E.md`](ENDTOEND_E.md) §2 computed *before
+the probe*: with 53 tasks and an assumed fix rate of 0.60 the stand needs a base rate of at least
+**6 / (53 × 0.60) = 0.189**, and the measured base rate is **0.174** [0.09, 0.31].
 
-> With 53 tasks and an assumed fix rate of 0.60, the stand needs a base rate of at least
-> **6 / (53 × 0.60) = 0.189**. Below that, using every task in the pool is still not enough.
-
-**The measured base rate is 0.174** [0.09, 0.31]. The prediction written before the data was that
-the stand would fall short if the base rate landed below 0.189, and it landed at 0.174.
+**This is not evidence of no effect. It is the absence of a measurement**, and the distinction is
+the whole reason this page separates *not reported* from *reported negative*.
 
 ## What would change the verdict, per gate
 
-Concrete enough to be checked, and each is a thing somebody could do rather than a hope.
-
 | gate | what would change it |
 |---|---|
-| **G-B** | one working DNS resolution. `clone_heldout.py --plan` is verified, the manifest and predictions are committed, and the four commands are in `HELDOUT_H3_BLOCKED.md` §3. Nothing else is needed |
-| **G-C benefit** | a task pool large enough for the measured base rate: **58 usable trials** at 0.174, against 46. Raising the 400-line file cap widens the pool and trades context truncation for sample size; the held-out corpus would widen it far more |
-| **G-C benefit, alternative** | harder tasks. A base rate of 0.30 needs 33 trials and the current pool would carry it. The tasks are declared in `ENDTOEND_E.md` §2 and were chosen before any of this was known |
-| **G-A for `scale`** | the catalogue of shapes. Six are pinned in `tests/_test_scale.py`; the detector sees one |
+| **G-C benefit** | **the held-out corpus, which now exists.** The stand was capped at 53 tasks because `corpus_dev` had no more; the held-out answer key holds **2,623 source commits**. At the measured base rate of 0.174 the stand needs 58 usable trials against the 46 it had — the new pool clears that by two orders of magnitude, and the same run would be **out of sample**, closing G-B and G-C in one measurement |
+| **G-C benefit, alternative** | harder tasks. A base rate of 0.30 needs 33 trials and even the old pool would carry it |
+| **G-A for `scale`** | the catalogue of shapes. Phase V settled that this is not a detail: 152 real quadratic fixes, 2 of a shape it recognises, and **50.7% of its hits fire on the repaired tree as well** |
+| **the union** | it has never been measured with `decidable-only` in it. When T1 ran, `blast_radius` was deleted; out of sample it is the only survivor. The union that matters has not been run |
+
+**The recommended next measurement is one thing, not four:** re-run the end-to-end stand on the
+held-out corpus with `decidable-only`. It is the only mechanism that passed G-B, the pool that
+starved G-C now exists, and a single run would produce the first out-of-sample end-to-end number
+this project has ever had.
 
 ## What this run establishes anyway
 
-A NO-GO is not an absence of result. Five things are now measured that were not:
+A NO-GO is not an absence of result. Seven things are now measured that were not:
 
-1. **Abstention works, and it is the only lever that did.** 0.278 → 0.010 on the flag rate, and
-   the margin over `git grep` **doubles** as the policy tightens (+0.084 → +0.304,
-   p = 1.1 × 10⁻¹⁴). A regex cannot abstain.
-2. **It is not general.** The ratchet's four axes now all agree exactly with instruments nobody
-   here wrote, and its flag rate moved 0.358 → 0.310. *Abstention is available to a checker that
-   cannot decide and not to one that can.*
-3. **The declared surface that makes `scale` quiet does not exist in found history** — 18 of 859.
-4. **`scale`'s static half recognises one of six shapes**, established twice by independent
-   routes: 0 of 7 real maintainer fixes, and 0 of 2 model-written quadratics.
-5. **The mechanism is silent on correct code**, 0 of 53, end to end.
+1. **Abstention works, and it survives out of sample.** 0.278 → 0.010 in sample, 0.016 out, with
+   the margin over `git grep` at +0.304 and +0.253 respectively — 1,053 commits the checker caught
+   and grep did not, against 396 the other way. A regex cannot abstain; its only quiet is a higher
+   threshold, and a threshold discards true and false alike.
+2. **It is not general.** Abstention is available to a checker that *cannot decide* and not to one
+   that can. The ratchet has nothing to abstain from and moved 0.358 → 0.310 → **0.522**.
+3. **Recall is the number that travels. Precision and silence are not.** Three decimals against
+   31% and 43–86%.
+4. **Repository size governs precision**, and the domain effect that looked real dissolves under a
+   size control.
+5. **`scale`'s static half recognises one of six shapes**, established three times by independent
+   routes and finally at n = 152 rather than n = 7.
+6. **A gate cleared by one thousandth was never cleared.** The three-heuristic union passed in
+   sample at 0.049 against a 0.05 ceiling and reads 0.055 out of sample.
+7. **The mechanism is silent on correct code**, 0 of 53 end to end, and 0 undecidable findings kept
+   on 1,000 unfamiliar commits.
 
 ## The limits of everything above, stated once
 
-- **In sample.** Every number in this document was measured on the eight repositories the
-  mechanisms were tuned on. No claim here transfers to a ninth without Phase V.
+- **G-C is still in sample.** Phase V closed G-B; it did not touch the end-to-end stand. Every
+  benefit and harm number here was measured on the eight repositories the mechanisms were tuned on.
 - **One model, one task shape, one language.** G-C used `qwen3-coder:30b` on one kind of task —
   repair a stale caller after an arity change — in Python.
 - **The memory store is empty in both arms.** E measures the mechanism's *marginal* contribution,
-  which is the contrast the owner's rule names but is not the same as Nevertwice-with-history
-  against Nevertwice-without.
-- **One judge defect, found and not fixed mid-run.** It cost 1 task of 53, excluded from both arms.
-  `ENDTOEND_E.md` §11.
-- **Seven instruments have now been checked against something they did not write, and every check
-  found something.** Assume an eighth.
+  which is the contrast the owner's rule names but is not Nevertwice-with-history against
+  Nevertwice-without.
+- **Recall 0.597 is recall among breakages a static reader can prove.** The answer key's positive
+  class is exactly the two shapes `decidable-only` emits. What share of all real breakages that is,
+  nothing here measures.
+- **Three Phase V artifacts label themselves in sample and are not.** The data is out of sample and
+  the labels are hardcoded literals; see `PROVENANCE_V.md`. The frozen modules were not edited to
+  fix them.
+- **Eight instruments have now been checked against something they did not write, and every check
+  found something.** Assume a ninth.

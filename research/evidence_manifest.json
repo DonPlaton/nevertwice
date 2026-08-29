@@ -673,8 +673,8 @@
   },
   "research/invariants_lab/VERDICT_G1.md": {
    "governance": "backlog",
-   "budget": 57,
-   "note": "Task G1: the GO/NO-GO. NO-GO, with each gate's declared threshold beside its measured value -- G-A passes, G-B is unevaluable because no held-out corpus exists, and G-C's harm half passes while its benefit half is inconclusive at 3 discordant pairs. All numbers in sample."
+   "budget": 106,
+   "note": "Task G1: the GO/NO-GO, revised 2026-08-29 after Phase V completed. Still NO-GO, but for a different reason: G-B is no longer unevaluable -- 27 held-out repositories exist and blast_radius under decidable-only passes all three of its out-of-sample gates while the ratchet, scale's static half and the union fail theirs. G-C remains not met, its benefit half inconclusive at 3 discordant pairs on an in-sample stand the held-out corpus would now unstarve. The budget rises from 57 because the page absorbed the Phase V numbers; the growth is deliberate and its source is research/invariants_lab/HELDOUT_V.md."
   },
   "research/invariants_lab/SHIP_G4.md": {
    "governance": "backlog",
