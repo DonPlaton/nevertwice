@@ -1,0 +1,7155 @@
+{
+ "generated": "2026-08-29T04:41:38",
+ "n": 1000,
+ "pool": 15912,
+ "silence": {
+  "flagged": 522,
+  "rate": 0.522,
+  "ci": [
+   0.4910152521271681,
+   0.5528163704994674
+  ],
+  "p_vs_0.05": 0.0
+ },
+ "agreement": {
+  "decided": 1000,
+  "ruff_rose": 522,
+  "ruff_flat": 478,
+  "fires_on_rose": {
+   "k": 394,
+   "n": 522,
+   "point": 0.7547892720306514,
+   "ci": [
+    0.7161100497522593,
+    0.7897458418629794
+   ],
+   "p_vs_0.50": 1.6449337527452755e-32
+  },
+  "fires_on_flat": {
+   "k": 128,
+   "n": 478,
+   "point": 0.26778242677824265,
+   "ci": [
+    0.23005313951123701,
+    0.30921440184283305
+   ]
+  },
+  "fisher_p_one_sided": 1.4486376700856858e-55
+ },
+ "by_repo": {
+  "PyCQA_pylint": {
+   "n": 22,
+   "flagged": 6
+  },
+  "aio-libs_aiohttp": {
+   "n": 31,
+   "flagged": 13
+  },
+  "ansible_ansible": {
+   "n": 31,
+   "flagged": 21
+  },
+  "apache_airflow": {
+   "n": 76,
+   "flagged": 49
+  },
+  "astropy_astropy": {
+   "n": 43,
+   "flagged": 23
+  },
+  "celery_celery": {
+   "n": 21,
+   "flagged": 10
+  },
+  "dask_dask": {
+   "n": 37,
+   "flagged": 20
+  },
+  "encode_starlette": {
+   "n": 9,
+   "flagged": 3
+  },
+  "huggingface_transformers": {
+   "n": 48,
+   "flagged": 30
+  },
+  "keras-team_keras": {
+   "n": 32,
+   "flagged": 18
+  },
+  "networkx_networkx": {
+   "n": 16,
+   "flagged": 7
+  },
+  "numpy_numpy": {
+   "n": 17,
+   "flagged": 4
+  },
+  "optuna_optuna": {
+   "n": 35,
+   "flagged": 14
+  },
+  "pallets_click": {
+   "n": 15,
+   "flagged": 8
+  },
+  "pandas-dev_pandas": {
+   "n": 89,
+   "flagged": 46
+  },
+  "paramiko_paramiko": {
+   "n": 6,
+   "flagged": 2
+  },
+  "pola-rs_polars": {
+   "n": 45,
+   "flagged": 25
+  },
+  "psf_black": {
+   "n": 11,
+   "flagged": 6
+  },
+  "pypa_pip": {
+   "n": 36,
+   "flagged": 15
+  },
+  "pypa_setuptools": {
+   "n": 15,
+   "flagged": 2
+  },
+  "pypa_virtualenv": {
+   "n": 10,
+   "flagged": 6
+  },
+  "python-trio_trio": {
+   "n": 23,
+   "flagged": 11
+  },
+  "python_mypy": {
+   "n": 50,
+   "flagged": 30
+  },
+  "saltstack_salt": {
+   "n": 58,
+   "flagged": 36
+  },
+  "scikit-learn_scikit-learn": {
+   "n": 58,
+   "flagged": 33
+  },
+  "scipy_scipy": {
+   "n": 44,
+   "flagged": 25
+  },
+  "sqlalchemy_sqlalchemy": {
+   "n": 50,
+   "flagged": 28
+  },
+  "sympy_sympy": {
+   "n": 72,
+   "flagged": 31
+  }
+ },
+ "rows": [
+  {
+   "repo": "pandas-dev_pandas",
+   "sha": "d5213b0c872cb950c9315989ebfd2f358cbb59f8",
+   "fired": true,
+   "ruff_delta": -4,
+   "n_regressions": 4
+  },
+  {
+   "repo": "scikit-learn_scikit-learn",
+   "sha": "2710a9e7eefd2088ce35fd2fb6651d5f97e5ef8b",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 2
+  },
+  {
+   "repo": "apache_airflow",
+   "sha": "d4a0861867d9cab0289f17d82e79f94cc9044d8d",
+   "fired": true,
+   "ruff_delta": 5,
+   "n_regressions": 1
+  },
+  {
+   "repo": "pola-rs_polars",
+   "sha": "6eb69e4820e2dde13cfcdd52a981b3d497fa11ff",
+   "fired": true,
+   "ruff_delta": 2,
+   "n_regressions": 3
+  },
+  {
+   "repo": "pypa_pip",
+   "sha": "6b0892eace9a26452310f096c654f33bf2001e15",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "dask_dask",
+   "sha": "3f6ff720c0b91fe6c47fd76bb0d4dfe4e89093e0",
+   "fired": true,
+   "ruff_delta": 2,
+   "n_regressions": 2
+  },
+  {
+   "repo": "numpy_numpy",
+   "sha": "e2cbe5347523586d90845e8e907c7c80f388ec7e",
+   "fired": false,
+   "ruff_delta": 1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "PyCQA_pylint",
+   "sha": "07e6b8fef4c5d5afc1987adc4771cf97364df884",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pandas-dev_pandas",
+   "sha": "9ed521e363959ea2aa2fd5c987aa08b5730a9454",
+   "fired": false,
+   "ruff_delta": -4,
+   "n_regressions": 0
+  },
+  {
+   "repo": "python-trio_trio",
+   "sha": "6a22df5418e9dd8dbf935a38d75747471d93cb96",
+   "fired": false,
+   "ruff_delta": -5,
+   "n_regressions": 0
+  },
+  {
+   "repo": "networkx_networkx",
+   "sha": "c8c838f5dd0538f29e7753d6fe89c07621adf36e",
+   "fired": true,
+   "ruff_delta": -6,
+   "n_regressions": 1
+  },
+  {
+   "repo": "aio-libs_aiohttp",
+   "sha": "e4266b1eaa09fefa0f4d487dc8f06128584c0537",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "numpy_numpy",
+   "sha": "dec19867f0f9dde76160fccd63d8abfbb2f5dfe1",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pandas-dev_pandas",
+   "sha": "c0625568ce70e85974d3b6ba91f78c329d6e40d5",
+   "fired": false,
+   "ruff_delta": -24,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pypa_pip",
+   "sha": "c5e89fee7a3105026f0541d58e565c2e7d67692d",
+   "fired": false,
+   "ruff_delta": 2,
+   "n_regressions": 0
+  },
+  {
+   "repo": "dask_dask",
+   "sha": "c3993fd94818cd678198b5cbcba687f258d831f4",
+   "fired": false,
+   "ruff_delta": 3,
+   "n_regressions": 0
+  },
+  {
+   "repo": "astropy_astropy",
+   "sha": "7d437a91d952035b980a63580d50b0d8ae238ff9",
+   "fired": true,
+   "ruff_delta": 3,
+   "n_regressions": 12
+  },
+  {
+   "repo": "dask_dask",
+   "sha": "600d4d22d1e9502ffa1adb88f3f3241c19d66f5e",
+   "fired": false,
+   "ruff_delta": -2,
+   "n_regressions": 0
+  },
+  {
+   "repo": "astropy_astropy",
+   "sha": "3b0ad8bece90893ca427e48550d2e1c4fd351c92",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "aio-libs_aiohttp",
+   "sha": "8ab84c52fe58ef34794fa9b12f00b06e626adcc0",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 1
+  },
+  {
+   "repo": "python-trio_trio",
+   "sha": "4b2b0d3e16a1c26f8cae261390705d19e448a15f",
+   "fired": false,
+   "ruff_delta": -3,
+   "n_regressions": 0
+  },
+  {
+   "repo": "celery_celery",
+   "sha": "9c38139d5bdcfd8173fc7fa6d219d99acc59a577",
+   "fired": true,
+   "ruff_delta": 2,
+   "n_regressions": 2
+  },
+  {
+   "repo": "ansible_ansible",
+   "sha": "505c99265ca6e9c75a3c9793b999cbdc46de1956",
+   "fired": false,
+   "ruff_delta": -45,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pola-rs_polars",
+   "sha": "91716496a2a25fe900c263a753e37b8d49439d2b",
+   "fired": false,
+   "ruff_delta": 1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "ansible_ansible",
+   "sha": "0b678d5036f64f95d50d73d3d27a523a2b264050",
+   "fired": true,
+   "ruff_delta": 6,
+   "n_regressions": 7
+  },
+  {
+   "repo": "pandas-dev_pandas",
+   "sha": "200abb25d171e69858c3540023d1626e1d917760",
+   "fired": false,
+   "ruff_delta": -2,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sqlalchemy_sqlalchemy",
+   "sha": "252d692c34f728e3db2f403d596fe0a6ea57bdd4",
+   "fired": true,
+   "ruff_delta": 0,
+   "n_regressions": 4
+  },
+  {
+   "repo": "sympy_sympy",
+   "sha": "4ce41299693109208308747baea4f08a5a19a029",
+   "fired": true,
+   "ruff_delta": 19,
+   "n_regressions": 2
+  },
+  {
+   "repo": "astropy_astropy",
+   "sha": "a99c33e00473cbd72db5258eb2704e576fc05cef",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 1
+  },
+  {
+   "repo": "sympy_sympy",
+   "sha": "3d554f149a5bbe7f0873157edb63b064564b71d4",
+   "fired": true,
+   "ruff_delta": 20,
+   "n_regressions": 10
+  },
+  {
+   "repo": "python_mypy",
+   "sha": "3e034848a29acc374379ae68ff9c450fdb9cc2a2",
+   "fired": false,
+   "ruff_delta": -5,
+   "n_regressions": 0
+  },
+  {
+   "repo": "saltstack_salt",
+   "sha": "6fe58ffd30560ef83b8bd40342a81b3e1f6c228d",
+   "fired": true,
+   "ruff_delta": -7,
+   "n_regressions": 7
+  },
+  {
+   "repo": "scikit-learn_scikit-learn",
+   "sha": "140a5acda8e44384f8e072e2d50a1d28a798cded",
+   "fired": true,
+   "ruff_delta": 12,
+   "n_regressions": 2
+  },
+  {
+   "repo": "optuna_optuna",
+   "sha": "84f848b43783773ba7115a7eacbc1b6bb84674d2",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sqlalchemy_sqlalchemy",
+   "sha": "ad9b85fa8e751f5bfc8c27705e86898131dbc62e",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pandas-dev_pandas",
+   "sha": "f175b33a9976b69b3b44e73ea29dcd5dac01ba90",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pypa_setuptools",
+   "sha": "62b68970f55c071c67f1b84b196285a4f1eddbb1",
+   "fired": false,
+   "ruff_delta": -3,
+   "n_regressions": 0
+  },
+  {
+   "repo": "paramiko_paramiko",
+   "sha": "191a5fc08cb8ce08917ad4e8739d7d5efbec2be2",
+   "fired": false,
+   "ruff_delta": 2,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scikit-learn_scikit-learn",
+   "sha": "dcfb52b5f3e1e270e8a5925215ad13cfb7174b96",
+   "fired": true,
+   "ruff_delta": -3,
+   "n_regressions": 1
+  },
+  {
+   "repo": "optuna_optuna",
+   "sha": "51cad9883eef0e235b8c5d6de97eee6e1a9fc5d1",
+   "fired": true,
+   "ruff_delta": 4,
+   "n_regressions": 1
+  },
+  {
+   "repo": "aio-libs_aiohttp",
+   "sha": "f570fed1086b0181d51cdc4cea6df842519ef196",
+   "fired": true,
+   "ruff_delta": -13,
+   "n_regressions": 2
+  },
+  {
+   "repo": "sympy_sympy",
+   "sha": "1171a1cad9f2c80624608767f3489de19caadcde",
+   "fired": false,
+   "ruff_delta": 1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "huggingface_transformers",
+   "sha": "72fd67929b9a877cb2934985629d80b158f37689",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pypa_pip",
+   "sha": "ce218c340d169e51ea7c2b46f1ad9695f0322bbe",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scikit-learn_scikit-learn",
+   "sha": "2b91769f96359de6a5220af549c96db3f38546a0",
+   "fired": true,
+   "ruff_delta": 102,
+   "n_regressions": 25
+  },
+  {
+   "repo": "optuna_optuna",
+   "sha": "eb9acea2626fb992c593d90e4adceb51e397b9be",
+   "fired": false,
+   "ruff_delta": 2,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sqlalchemy_sqlalchemy",
+   "sha": "c7b489b25802f7a25ef78d0731411295c611cc1c",
+   "fired": true,
+   "ruff_delta": 52,
+   "n_regressions": 7
+  },
+  {
+   "repo": "huggingface_transformers",
+   "sha": "0e0e5c10441e807d55cc675900d3debf81834025",
+   "fired": true,
+   "ruff_delta": 19,
+   "n_regressions": 4
+  },
+  {
+   "repo": "astropy_astropy",
+   "sha": "08a1dfa9cd93760ecdca55045fea0fdfdec313e2",
+   "fired": true,
+   "ruff_delta": 5,
+   "n_regressions": 13
+  },
+  {
+   "repo": "sympy_sympy",
+   "sha": "85dc39b15eb862cdc9ef0e9361eb642eb58d7f4c",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "PyCQA_pylint",
+   "sha": "76a41206c0051a09594ccbca1fa43103f5973c1f",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scipy_scipy",
+   "sha": "fa889096ef63b25f5188bf8077b16ac283409438",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "keras-team_keras",
+   "sha": "2b7120b104c35945d13a04ce3fadb795b923b723",
+   "fired": false,
+   "ruff_delta": -3,
+   "n_regressions": 0
+  },
+  {
+   "repo": "astropy_astropy",
+   "sha": "77fd6fe26abf87c92c0cc7872b065328dc7f4a43",
+   "fired": true,
+   "ruff_delta": 0,
+   "n_regressions": 1
+  },
+  {
+   "repo": "optuna_optuna",
+   "sha": "fcf4cf874712915c5106cca8bfa1859a25ebaf92",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scikit-learn_scikit-learn",
+   "sha": "689f412391582640025938c068d9a6885bc15a26",
+   "fired": false,
+   "ruff_delta": -2,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scipy_scipy",
+   "sha": "e4d0fa1196a2ee49c9c0caba4d6bcc02fbdf8d9d",
+   "fired": false,
+   "ruff_delta": -5,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pola-rs_polars",
+   "sha": "c71d7b55e93294e6133b6e6697c23c17b5f2de2b",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 1
+  },
+  {
+   "repo": "pola-rs_polars",
+   "sha": "a3e772bf882f90b6d92fb55525d5773634c93016",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sympy_sympy",
+   "sha": "0feeafa3c406cd9dda89f6bd30db385405f01bdf",
+   "fired": false,
+   "ruff_delta": 4,
+   "n_regressions": 0
+  },
+  {
+   "repo": "saltstack_salt",
+   "sha": "e04635b5a20319d9e2fb9b2e3a0e04983e0a8778",
+   "fired": true,
+   "ruff_delta": 93,
+   "n_regressions": 23
+  },
+  {
+   "repo": "saltstack_salt",
+   "sha": "af2964f4ddbf9c5635d1528a495e473996cc7b71",
+   "fired": true,
+   "ruff_delta": 5,
+   "n_regressions": 4
+  },
+  {
+   "repo": "apache_airflow",
+   "sha": "87e3733bbcb041416316df29b0ddf4edd65367cd",
+   "fired": false,
+   "ruff_delta": 5,
+   "n_regressions": 0
+  },
+  {
+   "repo": "saltstack_salt",
+   "sha": "b452ed5663e2d94102323a7d45e7f54babcb5fc6",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 1
+  },
+  {
+   "repo": "keras-team_keras",
+   "sha": "9cf5f6f9829681cf3bd1c345d352931452ec54b0",
+   "fired": false,
+   "ruff_delta": 1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "saltstack_salt",
+   "sha": "70186de5320ecfd8070243df386b6ab615fe3f9b",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sympy_sympy",
+   "sha": "0145ee31ec72894f5fcfb3c72181eade9eb08c26",
+   "fired": true,
+   "ruff_delta": 13,
+   "n_regressions": 3
+  },
+  {
+   "repo": "sqlalchemy_sqlalchemy",
+   "sha": "cbd661e0cdfdba98663ae542c6af2863fc30ae09",
+   "fired": true,
+   "ruff_delta": 6,
+   "n_regressions": 2
+  },
+  {
+   "repo": "apache_airflow",
+   "sha": "22ea28f23ece16f34597c103d64cab78884a8bf4",
+   "fired": true,
+   "ruff_delta": 2,
+   "n_regressions": 2
+  },
+  {
+   "repo": "saltstack_salt",
+   "sha": "8a400e0104b38a5d7240ab371781e3eae9c17442",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 2
+  },
+  {
+   "repo": "scipy_scipy",
+   "sha": "e1d50a7b7e90f88b96391073c1183abadcd86c60",
+   "fired": true,
+   "ruff_delta": 45,
+   "n_regressions": 9
+  },
+  {
+   "repo": "psf_black",
+   "sha": "14ba1bf8b6248e6860ba6a0cb9468c4c1c25a102",
+   "fired": true,
+   "ruff_delta": 20,
+   "n_regressions": 5
+  },
+  {
+   "repo": "python-trio_trio",
+   "sha": "39794f6460c1363f98d198d432ddfa9785aea2dd",
+   "fired": true,
+   "ruff_delta": 17,
+   "n_regressions": 7
+  },
+  {
+   "repo": "pandas-dev_pandas",
+   "sha": "2179302807162c1c2dbec196b06c5bc667654420",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "numpy_numpy",
+   "sha": "02f63e0f36d2f6c81b6720229b05518a573aa5cf",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "dask_dask",
+   "sha": "053c5425e415a84de9fef31d2bf94b8fb9ef477e",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "saltstack_salt",
+   "sha": "89dab0ffaecc46a59b3cad11aeae8d31b24c8777",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 1
+  },
+  {
+   "repo": "python_mypy",
+   "sha": "81ec44b0cd1030cef0d884281d872aac7cf7bc08",
+   "fired": true,
+   "ruff_delta": 11,
+   "n_regressions": 4
+  },
+  {
+   "repo": "python_mypy",
+   "sha": "c64236e4ea9a151b2ba9b0da311d3579f15a2c01",
+   "fired": false,
+   "ruff_delta": -2,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sqlalchemy_sqlalchemy",
+   "sha": "3f93103a5ef9128b7b300c51d41dea43dd843834",
+   "fired": true,
+   "ruff_delta": -21,
+   "n_regressions": 12
+  },
+  {
+   "repo": "pandas-dev_pandas",
+   "sha": "8b705675bcb8ae86fb03e388e9969a1772236bf0",
+   "fired": false,
+   "ruff_delta": 8,
+   "n_regressions": 0
+  },
+  {
+   "repo": "ansible_ansible",
+   "sha": "3b8eaf6128b08c00b9097b76854e19f3bc980b62",
+   "fired": true,
+   "ruff_delta": -10,
+   "n_regressions": 1
+  },
+  {
+   "repo": "pandas-dev_pandas",
+   "sha": "673436eb0ee68d1273b372c5f9954cd1eff83bc1",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "optuna_optuna",
+   "sha": "a9d7318f9aec938010efeaad9a22aaa69648f0f3",
+   "fired": false,
+   "ruff_delta": -7,
+   "n_regressions": 0
+  },
+  {
+   "repo": "astropy_astropy",
+   "sha": "c7a59279d689c002879724e3b19edb6cf5f62e38",
+   "fired": true,
+   "ruff_delta": 2,
+   "n_regressions": 1
+  },
+  {
+   "repo": "scikit-learn_scikit-learn",
+   "sha": "94eb61960a13f84a8be0dd527012f929172a0d60",
+   "fired": true,
+   "ruff_delta": 11,
+   "n_regressions": 9
+  },
+  {
+   "repo": "pandas-dev_pandas",
+   "sha": "5771612634e23dbaf4aa4cb42d79d19c458851fa",
+   "fired": false,
+   "ruff_delta": 4,
+   "n_regressions": 0
+  },
+  {
+   "repo": "numpy_numpy",
+   "sha": "40f0844846a9d7665616b142407a3d74cb65a040",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pandas-dev_pandas",
+   "sha": "08d7b2ca47fce41e9ab0929a64acc54c96ea5731",
+   "fired": true,
+   "ruff_delta": 2,
+   "n_regressions": 3
+  },
+  {
+   "repo": "optuna_optuna",
+   "sha": "2dcc7deecca5b468193778ee83c673b50cd6e4fe",
+   "fired": true,
+   "ruff_delta": 0,
+   "n_regressions": 1
+  },
+  {
+   "repo": "apache_airflow",
+   "sha": "bf973b61f91877c20b989dffb86083fbd0761f23",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "saltstack_salt",
+   "sha": "4109c784b74aac4ad9815010edf7fc5f8b610ef4",
+   "fired": true,
+   "ruff_delta": 4,
+   "n_regressions": 4
+  },
+  {
+   "repo": "dask_dask",
+   "sha": "257fc3f95647590cb5a4e55e449b9b9667be21aa",
+   "fired": false,
+   "ruff_delta": 2,
+   "n_regressions": 0
+  },
+  {
+   "repo": "PyCQA_pylint",
+   "sha": "262e2fd292d381457775615b8fab2ad165a9fd98",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "keras-team_keras",
+   "sha": "967817c22657b31d4bb08f41e118e4118012284b",
+   "fired": false,
+   "ruff_delta": -9,
+   "n_regressions": 0
+  },
+  {
+   "repo": "dask_dask",
+   "sha": "1a9c1491299d0339edc97e9a56850e865c1512b4",
+   "fired": true,
+   "ruff_delta": 0,
+   "n_regressions": 1
+  },
+  {
+   "repo": "python_mypy",
+   "sha": "5cc14390337f28e6f90efaf0ad5c4b1d322a8638",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "dask_dask",
+   "sha": "c76c819fcf7402a4c39632628e9ebed3c91b9288",
+   "fired": true,
+   "ruff_delta": 2,
+   "n_regressions": 6
+  },
+  {
+   "repo": "sympy_sympy",
+   "sha": "9eb63b313a36de7523bd24c51b4a8b8844031b4d",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pola-rs_polars",
+   "sha": "c00a2bfefe4b369df0a0da54a84fc8b911849797",
+   "fired": false,
+   "ruff_delta": -3,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scikit-learn_scikit-learn",
+   "sha": "4a96ecf5e1723df0cb9a47a34e27dca3aa7c9cc3",
+   "fired": false,
+   "ruff_delta": -6,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pandas-dev_pandas",
+   "sha": "1f02bf240c3d0d3da338af868d056bfc169b28c2",
+   "fired": false,
+   "ruff_delta": 1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "python-trio_trio",
+   "sha": "1c2c1cb53fd8afbea58dd1c996791573f2f6ed16",
+   "fired": true,
+   "ruff_delta": 2,
+   "n_regressions": 7
+  },
+  {
+   "repo": "huggingface_transformers",
+   "sha": "a135f595368581fb91f13a523be778b902ce0e07",
+   "fired": true,
+   "ruff_delta": 2,
+   "n_regressions": 1
+  },
+  {
+   "repo": "pola-rs_polars",
+   "sha": "57139eb9037d8242383fa1424cb32bb3bfd36053",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 1
+  },
+  {
+   "repo": "astropy_astropy",
+   "sha": "af206693bb631bd92d2ee374d4b866209dd0d445",
+   "fired": true,
+   "ruff_delta": 25,
+   "n_regressions": 2
+  },
+  {
+   "repo": "pypa_pip",
+   "sha": "bbc29f0c6cb028f11e0df058e885edade9d0e929",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pandas-dev_pandas",
+   "sha": "3340f27e2210553b5bd7b08a3ade3d20ca3b1220",
+   "fired": false,
+   "ruff_delta": -2,
+   "n_regressions": 0
+  },
+  {
+   "repo": "python_mypy",
+   "sha": "5a808e19fbece2517b0dd8c67acec2bdea93950c",
+   "fired": true,
+   "ruff_delta": -8,
+   "n_regressions": 3
+  },
+  {
+   "repo": "celery_celery",
+   "sha": "a6b7aca6719c262c76e6b844cb137298a43b837d",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sympy_sympy",
+   "sha": "0c0c82b19d509a2bb4734283a8b3afd8b66d2ba2",
+   "fired": false,
+   "ruff_delta": -4,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sympy_sympy",
+   "sha": "c6981704a7ab499930cf47a7753570126144b123",
+   "fired": true,
+   "ruff_delta": 3,
+   "n_regressions": 3
+  },
+  {
+   "repo": "pandas-dev_pandas",
+   "sha": "75d0cc63610b679b6634bda834788f9c6ec6b480",
+   "fired": true,
+   "ruff_delta": -4,
+   "n_regressions": 1
+  },
+  {
+   "repo": "apache_airflow",
+   "sha": "1f8b3f94097a9696a59efab07d0ab2c8e3b5878a",
+   "fired": false,
+   "ruff_delta": 1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pallets_click",
+   "sha": "700798252a509ca57bc7a12f7aa7fd67f9f8fd25",
+   "fired": false,
+   "ruff_delta": -18,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sqlalchemy_sqlalchemy",
+   "sha": "5ceef4809d2eeb5030eb25668064b0a4a6262eba",
+   "fired": true,
+   "ruff_delta": 6,
+   "n_regressions": 5
+  },
+  {
+   "repo": "pandas-dev_pandas",
+   "sha": "cf38800a0843ce10fbd7ada1cb548caf604f2e62",
+   "fired": true,
+   "ruff_delta": 2,
+   "n_regressions": 2
+  },
+  {
+   "repo": "pola-rs_polars",
+   "sha": "3f34ad162f6b22ea7d62152e510db6001c9c15e6",
+   "fired": true,
+   "ruff_delta": 0,
+   "n_regressions": 1
+  },
+  {
+   "repo": "pypa_pip",
+   "sha": "ff2854a855cb3643a69d8e7c2b020c153107d2b2",
+   "fired": true,
+   "ruff_delta": -28,
+   "n_regressions": 3
+  },
+  {
+   "repo": "sqlalchemy_sqlalchemy",
+   "sha": "a4252a12b0e1411cea7a636025ef9b97cb824f17",
+   "fired": false,
+   "ruff_delta": -15,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pandas-dev_pandas",
+   "sha": "72cd001f8ae15e93026d8eb69044c918bc268171",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scipy_scipy",
+   "sha": "485b043a6be8edf89d6a54369098aa941201b485",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "paramiko_paramiko",
+   "sha": "03df3cf9cd0f12cc04abe88a8674e6968363340c",
+   "fired": true,
+   "ruff_delta": 3,
+   "n_regressions": 1
+  },
+  {
+   "repo": "pandas-dev_pandas",
+   "sha": "28a839b24431776222c3574df3478cbc9ef6c1da",
+   "fired": true,
+   "ruff_delta": -2,
+   "n_regressions": 3
+  },
+  {
+   "repo": "pandas-dev_pandas",
+   "sha": "ebcfee442b04c083b054461bb421edc031b0cb40",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "astropy_astropy",
+   "sha": "e3672c0b7c850913b7ff1b654c3713bd6ac605c9",
+   "fired": true,
+   "ruff_delta": 9,
+   "n_regressions": 1
+  },
+  {
+   "repo": "dask_dask",
+   "sha": "c517816551d9766adcf7f8c24b4a4ccba4370916",
+   "fired": true,
+   "ruff_delta": 3,
+   "n_regressions": 2
+  },
+  {
+   "repo": "pypa_virtualenv",
+   "sha": "48f6fdcc14b8654236f9081adbff10a32f536940",
+   "fired": false,
+   "ruff_delta": 1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "apache_airflow",
+   "sha": "569599ab4fc6a3c7b6e34e23bfea65bb50551c1f",
+   "fired": true,
+   "ruff_delta": -13,
+   "n_regressions": 2
+  },
+  {
+   "repo": "pallets_click",
+   "sha": "1bc0a1995d9a0b6b25d63c96a7fb55a181449bcd",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pandas-dev_pandas",
+   "sha": "9d77a5641a912833fc6459ad67ecd8900f9f9e95",
+   "fired": true,
+   "ruff_delta": 8,
+   "n_regressions": 13
+  },
+  {
+   "repo": "pandas-dev_pandas",
+   "sha": "43a463d22c606f05565e99bdd771029eb5cfef2d",
+   "fired": false,
+   "ruff_delta": 1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "encode_starlette",
+   "sha": "4d5708e4688ff4d89888224668d9435b3e9e7000",
+   "fired": true,
+   "ruff_delta": -39,
+   "n_regressions": 26
+  },
+  {
+   "repo": "scikit-learn_scikit-learn",
+   "sha": "0b5cd27ac5616d15e7be1261d18a0da67f4c3a45",
+   "fired": false,
+   "ruff_delta": 1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pandas-dev_pandas",
+   "sha": "98f51f53ecfa217a381938db84270e52ca59c9cb",
+   "fired": true,
+   "ruff_delta": 4,
+   "n_regressions": 5
+  },
+  {
+   "repo": "pola-rs_polars",
+   "sha": "2d5511be3963448f4dde42b01470f1fa0c258302",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 7
+  },
+  {
+   "repo": "aio-libs_aiohttp",
+   "sha": "c3789965cdf023d5069d1f04e853a3c6f7a7ab3d",
+   "fired": true,
+   "ruff_delta": -1,
+   "n_regressions": 2
+  },
+  {
+   "repo": "scipy_scipy",
+   "sha": "2e7871ca53c629dc907a426b6666b70989c75ef2",
+   "fired": true,
+   "ruff_delta": 11,
+   "n_regressions": 4
+  },
+  {
+   "repo": "aio-libs_aiohttp",
+   "sha": "fc126aa1101b95936f41dd290e66baea1ab8b3cb",
+   "fired": false,
+   "ruff_delta": -3,
+   "n_regressions": 0
+  },
+  {
+   "repo": "aio-libs_aiohttp",
+   "sha": "af81631131d10cb2834ce409890f5729ad403304",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "python_mypy",
+   "sha": "03638dd670373db0b8f00cc3bcec256d09729d06",
+   "fired": true,
+   "ruff_delta": 16,
+   "n_regressions": 24
+  },
+  {
+   "repo": "huggingface_transformers",
+   "sha": "11d86d3de420210073538c8d7e1e44f9492d02bc",
+   "fired": true,
+   "ruff_delta": 6,
+   "n_regressions": 1
+  },
+  {
+   "repo": "astropy_astropy",
+   "sha": "8eeca750e946b66d5b3f56eb8a3ae6a81dff187d",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "saltstack_salt",
+   "sha": "f63f3d8c6c743914ae4a71eada6a7541f92cd78b",
+   "fired": true,
+   "ruff_delta": 4,
+   "n_regressions": 2
+  },
+  {
+   "repo": "apache_airflow",
+   "sha": "cc7abdc7d19cb420d23b483cae3e44d601fba1f3",
+   "fired": false,
+   "ruff_delta": -2,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sympy_sympy",
+   "sha": "d73eae1a2ef277fcbc5a3014ff89ac58080a481b",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 3
+  },
+  {
+   "repo": "sqlalchemy_sqlalchemy",
+   "sha": "5f6ed1a3f8bb0b2a724c7f07b98936433a3ef053",
+   "fired": true,
+   "ruff_delta": 14,
+   "n_regressions": 9
+  },
+  {
+   "repo": "celery_celery",
+   "sha": "321462da36f785ccda38c0fab9e51bbb24d332ff",
+   "fired": true,
+   "ruff_delta": 8,
+   "n_regressions": 2
+  },
+  {
+   "repo": "networkx_networkx",
+   "sha": "b4397e368258cf1a33e7dedee8ede116878ffdac",
+   "fired": false,
+   "ruff_delta": -3,
+   "n_regressions": 0
+  },
+  {
+   "repo": "ansible_ansible",
+   "sha": "ab40c72a3c5d10c98ffbd886dfb8a3f005366fa1",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "apache_airflow",
+   "sha": "cf77c3b96609aa8c260566274d54b06eb38c8100",
+   "fired": true,
+   "ruff_delta": 13,
+   "n_regressions": 3
+  },
+  {
+   "repo": "python_mypy",
+   "sha": "668256364bc320a371e0a705436f1a700a724edc",
+   "fired": true,
+   "ruff_delta": 11,
+   "n_regressions": 5
+  },
+  {
+   "repo": "encode_starlette",
+   "sha": "155c8dd62586f0a7aa1d5ffbf960026ebc6692a2",
+   "fired": false,
+   "ruff_delta": 1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "saltstack_salt",
+   "sha": "6421cd5284d005c10f7aace6523dcb04662c9e0f",
+   "fired": true,
+   "ruff_delta": 2,
+   "n_regressions": 6
+  },
+  {
+   "repo": "pandas-dev_pandas",
+   "sha": "9a678df32112fdac7fa082954dd4b44f82d9301c",
+   "fired": true,
+   "ruff_delta": -11,
+   "n_regressions": 1
+  },
+  {
+   "repo": "optuna_optuna",
+   "sha": "df567e0cccbf92420eeb2c65d6a4ffc0736cdaa8",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "dask_dask",
+   "sha": "0c11e81630c2d882d9a1e78798461d45f67d65c4",
+   "fired": true,
+   "ruff_delta": 7,
+   "n_regressions": 1
+  },
+  {
+   "repo": "scikit-learn_scikit-learn",
+   "sha": "0292f14699d800480b75041f925e3366d8fa0823",
+   "fired": true,
+   "ruff_delta": 2,
+   "n_regressions": 3
+  },
+  {
+   "repo": "sqlalchemy_sqlalchemy",
+   "sha": "409a95adf44f577a204114469ff414bebefca293",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pandas-dev_pandas",
+   "sha": "1819bbbfb5e8887bcc2bfbfcaf75e83f61ffc27c",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "saltstack_salt",
+   "sha": "6db89150211d3f0fda58c9780eac3debd3daa9b2",
+   "fired": true,
+   "ruff_delta": 4,
+   "n_regressions": 2
+  },
+  {
+   "repo": "pola-rs_polars",
+   "sha": "6a7adcefbd999e96fac690a467b2ccac12d19191",
+   "fired": true,
+   "ruff_delta": 2,
+   "n_regressions": 3
+  },
+  {
+   "repo": "python_mypy",
+   "sha": "9a35fdc94c71f6c427624b9b4d51f7495cbb97f9",
+   "fired": true,
+   "ruff_delta": 2,
+   "n_regressions": 1
+  },
+  {
+   "repo": "optuna_optuna",
+   "sha": "2ef7598462b69240fedd13eafeb42b83ebe3fbcc",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pola-rs_polars",
+   "sha": "99de56eda47e86bb341fc0d3caeeb1506cf0ca0a",
+   "fired": true,
+   "ruff_delta": 6,
+   "n_regressions": 2
+  },
+  {
+   "repo": "scipy_scipy",
+   "sha": "0ea748b03fb949919287bc9f57ba0e0df0fdad4a",
+   "fired": false,
+   "ruff_delta": -3,
+   "n_regressions": 0
+  },
+  {
+   "repo": "psf_black",
+   "sha": "5f9eb9e4f7baa35cb87eb3f8a9fed81f1195a72e",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 1
+  },
+  {
+   "repo": "huggingface_transformers",
+   "sha": "b6f332ecaf18054109294dd2efa1a5e6aa274a03",
+   "fired": false,
+   "ruff_delta": 33,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scipy_scipy",
+   "sha": "1077a81fa051cdda27ed6aa0e63d04aa9ff037db",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "apache_airflow",
+   "sha": "43d3fb5ac09ce6b0726af3faf2be4e197d2c40ec",
+   "fired": true,
+   "ruff_delta": 29,
+   "n_regressions": 7
+  },
+  {
+   "repo": "paramiko_paramiko",
+   "sha": "c50f825aac15f878647ffb7533fdbe157399ca8b",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "aio-libs_aiohttp",
+   "sha": "1b45c733f07d59f9f56cf468b39cec109f745ff8",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sqlalchemy_sqlalchemy",
+   "sha": "031ef0807838842a827135dbace760da7aec215e",
+   "fired": true,
+   "ruff_delta": 35,
+   "n_regressions": 5
+  },
+  {
+   "repo": "scikit-learn_scikit-learn",
+   "sha": "398fa9d136a3a50926d35fb5f521163b16cdd9d1",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 3
+  },
+  {
+   "repo": "keras-team_keras",
+   "sha": "75cd9546585da2d00a5dc51ae79570295be2b003",
+   "fired": false,
+   "ruff_delta": -4,
+   "n_regressions": 0
+  },
+  {
+   "repo": "apache_airflow",
+   "sha": "23a68fa4e61ba795340f095ab64fbcaeebd57db4",
+   "fired": true,
+   "ruff_delta": -3,
+   "n_regressions": 1
+  },
+  {
+   "repo": "ansible_ansible",
+   "sha": "01a6081b4902c5bf62075aaab3d24a1c8ac167b5",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sympy_sympy",
+   "sha": "7eb81c95c6e7e5653be093fd24a0d7770250aefa",
+   "fired": true,
+   "ruff_delta": 8,
+   "n_regressions": 6
+  },
+  {
+   "repo": "pallets_click",
+   "sha": "5fc3423ae54990cec5a8b41d2c7b489da41475b0",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "python_mypy",
+   "sha": "50ac875cbf26705cddabaacf144065b733fc7ccf",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 2
+  },
+  {
+   "repo": "pandas-dev_pandas",
+   "sha": "82bdc1dc80330330ab34e8a3a8c1e37b7e3a9b43",
+   "fired": true,
+   "ruff_delta": 9,
+   "n_regressions": 2
+  },
+  {
+   "repo": "scikit-learn_scikit-learn",
+   "sha": "76d5f061a8068ef5dce469b52c7f8322c518e2a2",
+   "fired": false,
+   "ruff_delta": 5,
+   "n_regressions": 0
+  },
+  {
+   "repo": "python_mypy",
+   "sha": "26673bea8d54ddcb4a0a52e571409c64cbf1b887",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "dask_dask",
+   "sha": "1072424daf617943714c68f6251f7b9f4c442ffc",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sqlalchemy_sqlalchemy",
+   "sha": "37c943233a4b01428cf4b67d766d2685309ab0e8",
+   "fired": false,
+   "ruff_delta": 1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pypa_pip",
+   "sha": "3e56733df440017626a23d133b1845468a07bdcd",
+   "fired": false,
+   "ruff_delta": 9,
+   "n_regressions": 0
+  },
+  {
+   "repo": "saltstack_salt",
+   "sha": "aabba2793a48959a023eb5fbe214b49561548b65",
+   "fired": true,
+   "ruff_delta": -14,
+   "n_regressions": 2
+  },
+  {
+   "repo": "apache_airflow",
+   "sha": "4fa91d7540b93420a6c7c43737e3ac881b418873",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sympy_sympy",
+   "sha": "1b4ccf8998c6a94e819a0264566e7d3ca9e64863",
+   "fired": false,
+   "ruff_delta": -4,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pypa_virtualenv",
+   "sha": "e813ac1fd3c0a21a7c2a2448650bbe6ac53b8753",
+   "fired": true,
+   "ruff_delta": 3,
+   "n_regressions": 4
+  },
+  {
+   "repo": "python-trio_trio",
+   "sha": "ac093e964a76793303d204ad5b34061f1bf785fa",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 4
+  },
+  {
+   "repo": "pandas-dev_pandas",
+   "sha": "4558e7d1fc0353cd0dd3a9e86ee858c5581b65e7",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "saltstack_salt",
+   "sha": "ae69865ab3dd869cea93e165bd4438298af9ba9d",
+   "fired": true,
+   "ruff_delta": 6,
+   "n_regressions": 1
+  },
+  {
+   "repo": "ansible_ansible",
+   "sha": "bad8843124a50493141a3e3d7920353239021389",
+   "fired": false,
+   "ruff_delta": 7,
+   "n_regressions": 0
+  },
+  {
+   "repo": "python_mypy",
+   "sha": "bab275ff0cf07bf30954b3969dcd440e82f144e0",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 1
+  },
+  {
+   "repo": "pandas-dev_pandas",
+   "sha": "1e21130faf832e8aaee7bc223f97d10549961ec3",
+   "fired": false,
+   "ruff_delta": -2,
+   "n_regressions": 0
+  },
+  {
+   "repo": "python_mypy",
+   "sha": "404d5c97ce6f0f32acc687ee5695371eac0cba94",
+   "fired": true,
+   "ruff_delta": 3,
+   "n_regressions": 1
+  },
+  {
+   "repo": "saltstack_salt",
+   "sha": "464eef6fe16a6dd26db48db7e8be93b8d17ecfe7",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "saltstack_salt",
+   "sha": "73f9654018e16078161fbda5d8f26e4fc9173e36",
+   "fired": false,
+   "ruff_delta": 18,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pandas-dev_pandas",
+   "sha": "e067fe655e3d5ca2593c4cfba34bdaa456e8827d",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sqlalchemy_sqlalchemy",
+   "sha": "ffc375d1f02205838485dd1e3e181037b2c0a580",
+   "fired": true,
+   "ruff_delta": 4,
+   "n_regressions": 2
+  },
+  {
+   "repo": "apache_airflow",
+   "sha": "0d0cfec70d19a2ff752275d428e9a5f51c4d0906",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "huggingface_transformers",
+   "sha": "cd8c93f701de526df454c774a2159cdabf0ebc92",
+   "fired": true,
+   "ruff_delta": 3,
+   "n_regressions": 4
+  },
+  {
+   "repo": "networkx_networkx",
+   "sha": "3b241e97718fb782fd1b35ae42b372f61ba59f7c",
+   "fired": false,
+   "ruff_delta": -3,
+   "n_regressions": 0
+  },
+  {
+   "repo": "dask_dask",
+   "sha": "a1a75a766243f1f84ac1df502de3faf8ce4ebc81",
+   "fired": false,
+   "ruff_delta": 1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sqlalchemy_sqlalchemy",
+   "sha": "758dc7ed2b322069b80fb21b5cc3296d2a8c6c92",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "celery_celery",
+   "sha": "c718a6b50f00ea9b107cef225b89bd47c06e2a95",
+   "fired": true,
+   "ruff_delta": 8,
+   "n_regressions": 4
+  },
+  {
+   "repo": "sympy_sympy",
+   "sha": "4936411c378fbbcd813dce69ae62d41c73e93934",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "apache_airflow",
+   "sha": "a8d9df17aa60a1a6190e24102da90ef7437b007a",
+   "fired": true,
+   "ruff_delta": 2,
+   "n_regressions": 2
+  },
+  {
+   "repo": "sympy_sympy",
+   "sha": "6f83e91140dbfaa43ed28aa0001731551ffd1c80",
+   "fired": false,
+   "ruff_delta": -10,
+   "n_regressions": 0
+  },
+  {
+   "repo": "optuna_optuna",
+   "sha": "55c6ec30cad48ff6f98deea78fe41087b38f7a31",
+   "fired": true,
+   "ruff_delta": -5,
+   "n_regressions": 1
+  },
+  {
+   "repo": "celery_celery",
+   "sha": "22ceb946b56ed5eeb9c28240d0c6182cb0702992",
+   "fired": true,
+   "ruff_delta": -9,
+   "n_regressions": 3
+  },
+  {
+   "repo": "pola-rs_polars",
+   "sha": "ab5200db2a5d97a479e7fb981041ae6b2541f48b",
+   "fired": true,
+   "ruff_delta": 0,
+   "n_regressions": 1
+  },
+  {
+   "repo": "python_mypy",
+   "sha": "4ca67f9ca6f27c628448b7bceca6b67c29769108",
+   "fired": true,
+   "ruff_delta": 8,
+   "n_regressions": 5
+  },
+  {
+   "repo": "celery_celery",
+   "sha": "f6a5c316c664505ba202cd29d0ac7fc999c34599",
+   "fired": true,
+   "ruff_delta": 5,
+   "n_regressions": 2
+  },
+  {
+   "repo": "dask_dask",
+   "sha": "d19497e267c09cc7875144de6513053f09dddac9",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "celery_celery",
+   "sha": "8c6b1ba01062238347f00433badccd6d7605c3c4",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "huggingface_transformers",
+   "sha": "a5997dd81a76d669e81a42f8efafcfd1745704b9",
+   "fired": true,
+   "ruff_delta": 2,
+   "n_regressions": 2
+  },
+  {
+   "repo": "apache_airflow",
+   "sha": "591a9e8346a90ff5d742301e320de041410d134f",
+   "fired": false,
+   "ruff_delta": -3,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sympy_sympy",
+   "sha": "7c74c8f737e55799c6dd1e3b97ce684151fffb2c",
+   "fired": false,
+   "ruff_delta": 3,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pandas-dev_pandas",
+   "sha": "6b8cc988249836dd16825b8828a861f59d17e871",
+   "fired": true,
+   "ruff_delta": 3,
+   "n_regressions": 8
+  },
+  {
+   "repo": "python_mypy",
+   "sha": "a9bb7378d8229d20d03dcd29f7d07c7238b67188",
+   "fired": false,
+   "ruff_delta": -4,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pypa_pip",
+   "sha": "ceecceea19a10eb2aea6c6543f3b38afb39cd67f",
+   "fired": true,
+   "ruff_delta": 4,
+   "n_regressions": 3
+  },
+  {
+   "repo": "celery_celery",
+   "sha": "a1cc46a44bab4ca46f1e1a0805e8e06a1dd23397",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pypa_pip",
+   "sha": "e14a66f1b99b2cc9de30e6aa70edd30800a03c33",
+   "fired": true,
+   "ruff_delta": 2,
+   "n_regressions": 1
+  },
+  {
+   "repo": "sqlalchemy_sqlalchemy",
+   "sha": "e5f1a3fb7dc1888ed187fdeae8171e4ff322dab6",
+   "fired": true,
+   "ruff_delta": 17,
+   "n_regressions": 7
+  },
+  {
+   "repo": "apache_airflow",
+   "sha": "235a87d2eedfc84d3a3699e375129db63847745c",
+   "fired": false,
+   "ruff_delta": 1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "psf_black",
+   "sha": "db2e3e7b317b40685ba4618235a8388c7c6ea5e2",
+   "fired": true,
+   "ruff_delta": 0,
+   "n_regressions": 3
+  },
+  {
+   "repo": "python_mypy",
+   "sha": "962d7b46b89e8481b47ebcdee95a702af1b88634",
+   "fired": true,
+   "ruff_delta": 4,
+   "n_regressions": 4
+  },
+  {
+   "repo": "scipy_scipy",
+   "sha": "5fc4bf638f4ecd2b4fb8239892ad385b7c21ed80",
+   "fired": true,
+   "ruff_delta": 2,
+   "n_regressions": 1
+  },
+  {
+   "repo": "huggingface_transformers",
+   "sha": "c2e3cc24e09a3113e650d381c9913a3ccfa23fa3",
+   "fired": true,
+   "ruff_delta": 5,
+   "n_regressions": 5
+  },
+  {
+   "repo": "scikit-learn_scikit-learn",
+   "sha": "4fd35ca21add0a9fb2ce0e51c412cdf13f59c147",
+   "fired": true,
+   "ruff_delta": 3,
+   "n_regressions": 4
+  },
+  {
+   "repo": "python-trio_trio",
+   "sha": "18d428863b9d4ee427d133cafa7259115dd0c2a8",
+   "fired": true,
+   "ruff_delta": 10,
+   "n_regressions": 5
+  },
+  {
+   "repo": "saltstack_salt",
+   "sha": "4fef467b64b554ab9a9a7f4fe174243a20ab11b8",
+   "fired": true,
+   "ruff_delta": 21,
+   "n_regressions": 7
+  },
+  {
+   "repo": "psf_black",
+   "sha": "a37abdcbc5d8828428cea8b9daca65d9ee0994b5",
+   "fired": true,
+   "ruff_delta": 3,
+   "n_regressions": 4
+  },
+  {
+   "repo": "pola-rs_polars",
+   "sha": "cc9667c4c1cf59e5527c706ce9bc7131a2cc178c",
+   "fired": false,
+   "ruff_delta": 1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pola-rs_polars",
+   "sha": "2c6bae14146d1d5d5856e71ca16ff43589be3f6d",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "psf_black",
+   "sha": "bd622eda1aab7c8c6604282e2fa78381ee6370f3",
+   "fired": true,
+   "ruff_delta": 6,
+   "n_regressions": 5
+  },
+  {
+   "repo": "aio-libs_aiohttp",
+   "sha": "0baac725295eb1f51eca3d7561f30bf532cdb306",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sqlalchemy_sqlalchemy",
+   "sha": "be57def4b909a447b10fff21bf957c804132b5ec",
+   "fired": false,
+   "ruff_delta": 3,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pandas-dev_pandas",
+   "sha": "307c69a37b7f652450e2a3ba7578fdaa7b8d427d",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scipy_scipy",
+   "sha": "fd1afd307000dee3be8d2b79c253fb724a184deb",
+   "fired": false,
+   "ruff_delta": 9,
+   "n_regressions": 0
+  },
+  {
+   "repo": "astropy_astropy",
+   "sha": "a6e0ad83e365315d94389f25078fc7f49e90d97a",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "ansible_ansible",
+   "sha": "06d4f4ad0e8f62c6b02b01833b94a0e44be008d0",
+   "fired": true,
+   "ruff_delta": -5,
+   "n_regressions": 9
+  },
+  {
+   "repo": "huggingface_transformers",
+   "sha": "a6981076eca5494b9d230f13217c14b93443888a",
+   "fired": true,
+   "ruff_delta": -8,
+   "n_regressions": 4
+  },
+  {
+   "repo": "psf_black",
+   "sha": "9b82120ddb81373377b58da5de7caa9495a1551e",
+   "fired": false,
+   "ruff_delta": 3,
+   "n_regressions": 0
+  },
+  {
+   "repo": "saltstack_salt",
+   "sha": "641f1f22931c41b0ca5f67b6a93bd4da06f98f4f",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "psf_black",
+   "sha": "4ea75cd49521ed7fd8384e7a739e1abb1b6de46a",
+   "fired": false,
+   "ruff_delta": 1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pypa_pip",
+   "sha": "5a7269a52bd8ac9b0c1ae4899e4be470ed411da9",
+   "fired": true,
+   "ruff_delta": 7,
+   "n_regressions": 2
+  },
+  {
+   "repo": "optuna_optuna",
+   "sha": "539d061df32554a29a22de63885605bb75d0df87",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 2
+  },
+  {
+   "repo": "pandas-dev_pandas",
+   "sha": "230aaa5ab0aa365a7b190da40342b7a7e5cf1ef5",
+   "fired": true,
+   "ruff_delta": 3,
+   "n_regressions": 2
+  },
+  {
+   "repo": "saltstack_salt",
+   "sha": "fb9d1dbafeabd322d0d9aa42def42caaa2a7e743",
+   "fired": false,
+   "ruff_delta": 3,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scikit-learn_scikit-learn",
+   "sha": "1c3dcb4f33e0a031ee01642f4fa404f4603b84d3",
+   "fired": true,
+   "ruff_delta": 8,
+   "n_regressions": 4
+  },
+  {
+   "repo": "ansible_ansible",
+   "sha": "c6301a9fc7807bca57236f19e654df85632cb3f9",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 3
+  },
+  {
+   "repo": "scipy_scipy",
+   "sha": "c4e56c46ec2cdcba15f676209ebe7db79a42c544",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 1
+  },
+  {
+   "repo": "saltstack_salt",
+   "sha": "ec2a8a82c8d2690806cc9793a9fec56b686a3aa2",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 5
+  },
+  {
+   "repo": "PyCQA_pylint",
+   "sha": "6c29ff712a93a7ff2348862c61a534ceaa4481eb",
+   "fired": false,
+   "ruff_delta": -19,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pandas-dev_pandas",
+   "sha": "c401a4a37b5526312dc19fae97e5bec3762c8c00",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "apache_airflow",
+   "sha": "f366d955cd3be551c96ad7f794e0b8525900d13d",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scikit-learn_scikit-learn",
+   "sha": "ce9814bbe88edd9d5ef1b1d003d5e05656490a34",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 1
+  },
+  {
+   "repo": "PyCQA_pylint",
+   "sha": "c1fe6e175f80df385129aa77ad363009b22f8089",
+   "fired": false,
+   "ruff_delta": -2,
+   "n_regressions": 0
+  },
+  {
+   "repo": "astropy_astropy",
+   "sha": "e017bebe3c21aefc31dd66d99ab876f63d75efee",
+   "fired": false,
+   "ruff_delta": 1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "python_mypy",
+   "sha": "bfdac59f24783b003daef5d8771030475601d4e0",
+   "fired": true,
+   "ruff_delta": 0,
+   "n_regressions": 1
+  },
+  {
+   "repo": "ansible_ansible",
+   "sha": "de3d188cdd3f9f96e5067eb1b017be70542a7d0e",
+   "fired": true,
+   "ruff_delta": 6,
+   "n_regressions": 2
+  },
+  {
+   "repo": "keras-team_keras",
+   "sha": "c215f14d661de3e1587c26229d8f1a8cf0257563",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sympy_sympy",
+   "sha": "0f187e5244f7795a30dfce44cba4348e397fcef2",
+   "fired": false,
+   "ruff_delta": 15,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scikit-learn_scikit-learn",
+   "sha": "b5f8f1c6aadd97a5eb0f76b40f0a797b434b4f0b",
+   "fired": false,
+   "ruff_delta": -2,
+   "n_regressions": 0
+  },
+  {
+   "repo": "astropy_astropy",
+   "sha": "51c85dea96774f9e824eacaa2937c1a0fa658ec0",
+   "fired": true,
+   "ruff_delta": 0,
+   "n_regressions": 1
+  },
+  {
+   "repo": "sqlalchemy_sqlalchemy",
+   "sha": "660ff51df0433607b12c58a12c7355107c1773f5",
+   "fired": true,
+   "ruff_delta": 5,
+   "n_regressions": 3
+  },
+  {
+   "repo": "python_mypy",
+   "sha": "3dce3fd18e3e48c1e892951950865ea97f4ee4ed",
+   "fired": true,
+   "ruff_delta": 3,
+   "n_regressions": 4
+  },
+  {
+   "repo": "saltstack_salt",
+   "sha": "13da73d41425dcbaaeec560df4f118314ed7998c",
+   "fired": true,
+   "ruff_delta": 2,
+   "n_regressions": 1
+  },
+  {
+   "repo": "python_mypy",
+   "sha": "b027308116d19dc79bf80334ff06aab7c0001e11",
+   "fired": true,
+   "ruff_delta": -3,
+   "n_regressions": 3
+  },
+  {
+   "repo": "python_mypy",
+   "sha": "53ebb6b0d4df68808b3f0257fa8df3b298cc0986",
+   "fired": true,
+   "ruff_delta": 0,
+   "n_regressions": 3
+  },
+  {
+   "repo": "PyCQA_pylint",
+   "sha": "90d963058ea1faba53e27b425662efe421b535a4",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "aio-libs_aiohttp",
+   "sha": "9116128886ebf4dde5136259546aca6dc9393e46",
+   "fired": true,
+   "ruff_delta": 7,
+   "n_regressions": 2
+  },
+  {
+   "repo": "pypa_virtualenv",
+   "sha": "524d95e782d810243cf9cd344a88711591c94efc",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pandas-dev_pandas",
+   "sha": "902179dc59c24e0f0820ffb25fb1ecf7e04c401d",
+   "fired": true,
+   "ruff_delta": 6,
+   "n_regressions": 2
+  },
+  {
+   "repo": "scikit-learn_scikit-learn",
+   "sha": "62389681eafb4609b70426c81b0223e8bcea9d2a",
+   "fired": true,
+   "ruff_delta": 9,
+   "n_regressions": 5
+  },
+  {
+   "repo": "pandas-dev_pandas",
+   "sha": "fbd39d9a708b6a1b41372c7372f0a238a5a86c43",
+   "fired": false,
+   "ruff_delta": 2,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sympy_sympy",
+   "sha": "03ef8e1f2f0f7f928ed82115d8d1efd89129e8db",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 5
+  },
+  {
+   "repo": "sqlalchemy_sqlalchemy",
+   "sha": "9ad570a39ab217b38c6afbabfa277f731da12f52",
+   "fired": false,
+   "ruff_delta": 3,
+   "n_regressions": 0
+  },
+  {
+   "repo": "saltstack_salt",
+   "sha": "4d617dd44a54d61e4bc474b4edd74bca84c53075",
+   "fired": true,
+   "ruff_delta": 39,
+   "n_regressions": 4
+  },
+  {
+   "repo": "pypa_pip",
+   "sha": "1ad0495fdd61c3c1fa67645558c4dec5751c21e1",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "keras-team_keras",
+   "sha": "7689bcccbfad926d8ed6a1f22866a71de6e2e12e",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "celery_celery",
+   "sha": "eeb31f342eb96af89db2b2a66c068ab673aa4748",
+   "fired": false,
+   "ruff_delta": -12,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pandas-dev_pandas",
+   "sha": "161f7622cbf41075fcb1dd9d671359d74c7b05cb",
+   "fired": true,
+   "ruff_delta": 2,
+   "n_regressions": 3
+  },
+  {
+   "repo": "pypa_pip",
+   "sha": "a9997127b93a2bf1eaf290d1125a9e9e9d0ec53f",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "aio-libs_aiohttp",
+   "sha": "ed76d39d4e7b495e0aed6934dcf34c68a7b6ae4f",
+   "fired": false,
+   "ruff_delta": -3,
+   "n_regressions": 0
+  },
+  {
+   "repo": "huggingface_transformers",
+   "sha": "2c05b8a56c595b094b34f32f30bb477725f8a8fd",
+   "fired": true,
+   "ruff_delta": 0,
+   "n_regressions": 1
+  },
+  {
+   "repo": "pypa_pip",
+   "sha": "87efd2f82253da2495474e5a4d12691b45c20490",
+   "fired": true,
+   "ruff_delta": 3,
+   "n_regressions": 1
+  },
+  {
+   "repo": "apache_airflow",
+   "sha": "ffa2fb21e01908fe242aa39d6c967982bcc91d58",
+   "fired": true,
+   "ruff_delta": 0,
+   "n_regressions": 2
+  },
+  {
+   "repo": "scikit-learn_scikit-learn",
+   "sha": "1cda8ed987347e4a0b21e969be221f9480ce3d6b",
+   "fired": true,
+   "ruff_delta": 5,
+   "n_regressions": 2
+  },
+  {
+   "repo": "pola-rs_polars",
+   "sha": "3a36b2a11b9755e138ad10e95ec828851b910dea",
+   "fired": true,
+   "ruff_delta": 5,
+   "n_regressions": 2
+  },
+  {
+   "repo": "huggingface_transformers",
+   "sha": "45fc8c7951f978c0f8f13c8bab52c744cd5c4784",
+   "fired": false,
+   "ruff_delta": -29,
+   "n_regressions": 0
+  },
+  {
+   "repo": "huggingface_transformers",
+   "sha": "666a6f078c38b0926ef8b5efa3b6f577c5c9df2b",
+   "fired": true,
+   "ruff_delta": 3,
+   "n_regressions": 1
+  },
+  {
+   "repo": "scipy_scipy",
+   "sha": "8d6168be4830c913938289e0061a861cc129a49c",
+   "fired": false,
+   "ruff_delta": 1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "astropy_astropy",
+   "sha": "760545cfe727ea9c50634f06058fa148a4066800",
+   "fired": false,
+   "ruff_delta": -3,
+   "n_regressions": 0
+  },
+  {
+   "repo": "apache_airflow",
+   "sha": "b0f7f91fe29d1314b71c76de0f11d2dbe81c5c4a",
+   "fired": true,
+   "ruff_delta": 35,
+   "n_regressions": 38
+  },
+  {
+   "repo": "saltstack_salt",
+   "sha": "c072fa0241964014c82adf5049b8b408b5befdd6",
+   "fired": true,
+   "ruff_delta": 6,
+   "n_regressions": 4
+  },
+  {
+   "repo": "scikit-learn_scikit-learn",
+   "sha": "d40d993199e2a627690fdd9b44a3d5b9e5331563",
+   "fired": false,
+   "ruff_delta": -21,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pallets_click",
+   "sha": "00883dd3d0a29f68f375cab5e21cef0669941aba",
+   "fired": true,
+   "ruff_delta": 93,
+   "n_regressions": 3
+  },
+  {
+   "repo": "scikit-learn_scikit-learn",
+   "sha": "90df49c76b1f8cf036c512c6d050751693628838",
+   "fired": false,
+   "ruff_delta": 8,
+   "n_regressions": 0
+  },
+  {
+   "repo": "python_mypy",
+   "sha": "74cfa3d46ae6a9c0033bf95d88462619bc3bc044",
+   "fired": true,
+   "ruff_delta": 5,
+   "n_regressions": 6
+  },
+  {
+   "repo": "dask_dask",
+   "sha": "47d3d1980fb2f7ccb7bdb1c4205d4308664c71c6",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 2
+  },
+  {
+   "repo": "keras-team_keras",
+   "sha": "a6dea64b66b799a195195dfcd8763d05614c5cbb",
+   "fired": false,
+   "ruff_delta": -6,
+   "n_regressions": 0
+  },
+  {
+   "repo": "astropy_astropy",
+   "sha": "a362cb467cb324cdc736283d4c3d381ee0338502",
+   "fired": false,
+   "ruff_delta": 1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sympy_sympy",
+   "sha": "5e280596252cace7f0a3802598f91a766974db4e",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scikit-learn_scikit-learn",
+   "sha": "21686b7147ea9f24a8e415d05a5046477e976864",
+   "fired": true,
+   "ruff_delta": 24,
+   "n_regressions": 4
+  },
+  {
+   "repo": "sympy_sympy",
+   "sha": "031e6ff0c15e7acc3bac1851d96146e352f57732",
+   "fired": false,
+   "ruff_delta": 4,
+   "n_regressions": 0
+  },
+  {
+   "repo": "apache_airflow",
+   "sha": "b63b42429ffea52ec9c9a0ead7dbc258ea4c2900",
+   "fired": true,
+   "ruff_delta": 30,
+   "n_regressions": 27
+  },
+  {
+   "repo": "python_mypy",
+   "sha": "33692c023a2cbcfb4b553c8bb7eae770c7de118e",
+   "fired": false,
+   "ruff_delta": -12,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pandas-dev_pandas",
+   "sha": "f43020102e0685bb93260986e66d4ae539e64ca3",
+   "fired": true,
+   "ruff_delta": 3,
+   "n_regressions": 2
+  },
+  {
+   "repo": "pandas-dev_pandas",
+   "sha": "50ac1907abeef8e6824472988a9f015dcd25bb21",
+   "fired": false,
+   "ruff_delta": -7,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pola-rs_polars",
+   "sha": "1f853722593713f8ca51c21c8011d68dafa99659",
+   "fired": true,
+   "ruff_delta": 3,
+   "n_regressions": 3
+  },
+  {
+   "repo": "pandas-dev_pandas",
+   "sha": "7b09a3ca3b9c60f540f2363e29552491406d66a6",
+   "fired": false,
+   "ruff_delta": -25,
+   "n_regressions": 0
+  },
+  {
+   "repo": "apache_airflow",
+   "sha": "154399c443e778d746997a25601ed72c30dce8c7",
+   "fired": true,
+   "ruff_delta": 2,
+   "n_regressions": 1
+  },
+  {
+   "repo": "saltstack_salt",
+   "sha": "b5c096920e06c8de04a015b6197be28d198530b0",
+   "fired": true,
+   "ruff_delta": 13,
+   "n_regressions": 12
+  },
+  {
+   "repo": "psf_black",
+   "sha": "b895a73fd4997657a80f2f3f2785c5d496739f6e",
+   "fired": true,
+   "ruff_delta": 18,
+   "n_regressions": 3
+  },
+  {
+   "repo": "huggingface_transformers",
+   "sha": "225254c1835c6233e93a93671ade7a128e21776a",
+   "fired": false,
+   "ruff_delta": -27,
+   "n_regressions": 0
+  },
+  {
+   "repo": "saltstack_salt",
+   "sha": "87b70186c32be9b87c070911ec1e6fdef752a7fe",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 1
+  },
+  {
+   "repo": "pypa_pip",
+   "sha": "798d814629440d73256d12d0e5dc2544310af342",
+   "fired": true,
+   "ruff_delta": 0,
+   "n_regressions": 1
+  },
+  {
+   "repo": "scipy_scipy",
+   "sha": "deab891c2d3b7f078c9964317f64b1c9c7b54775",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 1
+  },
+  {
+   "repo": "pallets_click",
+   "sha": "dcc07195f9d3c120d419cb8d2d1d732e61f6f289",
+   "fired": true,
+   "ruff_delta": 6,
+   "n_regressions": 2
+  },
+  {
+   "repo": "pandas-dev_pandas",
+   "sha": "0359f1706ebe69df627b58f95c4ae2cee0b5acaf",
+   "fired": true,
+   "ruff_delta": 14,
+   "n_regressions": 10
+  },
+  {
+   "repo": "ansible_ansible",
+   "sha": "f510d59943f7f00f74e42ad78780e9e89787e991",
+   "fired": true,
+   "ruff_delta": 30,
+   "n_regressions": 6
+  },
+  {
+   "repo": "saltstack_salt",
+   "sha": "3888fe16548c0733dcdceedf630e483cc3e2aeb2",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scikit-learn_scikit-learn",
+   "sha": "022217383f4f9282ca36587fe52fe9d0101c4853",
+   "fired": false,
+   "ruff_delta": 1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scikit-learn_scikit-learn",
+   "sha": "a3a1b8fb819fdc4504d546c3b3f27254109a8e3f",
+   "fired": true,
+   "ruff_delta": 3,
+   "n_regressions": 2
+  },
+  {
+   "repo": "apache_airflow",
+   "sha": "0b2b173625d700b76354daf38b76654d286e1cd5",
+   "fired": true,
+   "ruff_delta": 9,
+   "n_regressions": 4
+  },
+  {
+   "repo": "sympy_sympy",
+   "sha": "e02b1afd535c7ce6c64e72d86be6cd18e2ae2fad",
+   "fired": false,
+   "ruff_delta": 2,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pypa_pip",
+   "sha": "1e41f018234e34bd1aa02c16526362c1dd302661",
+   "fired": true,
+   "ruff_delta": 9,
+   "n_regressions": 5
+  },
+  {
+   "repo": "scipy_scipy",
+   "sha": "0ac6ae805136aa0af7105e58a181b9c7f566b8f9",
+   "fired": false,
+   "ruff_delta": -2,
+   "n_regressions": 0
+  },
+  {
+   "repo": "networkx_networkx",
+   "sha": "f1e8e8bbfe9d324a2c3f46f28f7bb292ea78cc3b",
+   "fired": false,
+   "ruff_delta": 1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "python_mypy",
+   "sha": "15f1287521f7e82a5f02405c441ae5b3fddb9d94",
+   "fired": true,
+   "ruff_delta": 5,
+   "n_regressions": 5
+  },
+  {
+   "repo": "apache_airflow",
+   "sha": "46a337c8cda6fcc515fffe9a4e4cc324edaefa0a",
+   "fired": true,
+   "ruff_delta": 38,
+   "n_regressions": 6
+  },
+  {
+   "repo": "sympy_sympy",
+   "sha": "c8d798215d9b9575c487fec842cac10075d11617",
+   "fired": true,
+   "ruff_delta": 22,
+   "n_regressions": 3
+  },
+  {
+   "repo": "keras-team_keras",
+   "sha": "d5a88bdb137c0d3039b8f4bbbe8c7099925cc10c",
+   "fired": true,
+   "ruff_delta": 5,
+   "n_regressions": 2
+  },
+  {
+   "repo": "scipy_scipy",
+   "sha": "1e58ed5d95e35d2fb948f660946e25123fea4822",
+   "fired": true,
+   "ruff_delta": 6,
+   "n_regressions": 4
+  },
+  {
+   "repo": "aio-libs_aiohttp",
+   "sha": "5be5af3c900ef9ead3387a1193fc4ff4ad1e5594",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "python-trio_trio",
+   "sha": "0b5d131f00c63167f68bc90bae361122a29e36cb",
+   "fired": false,
+   "ruff_delta": 2,
+   "n_regressions": 0
+  },
+  {
+   "repo": "astropy_astropy",
+   "sha": "cd92a5dbf98c6c396894f8b498b8dd5a8760df88",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pola-rs_polars",
+   "sha": "a6ca94dc920873b0757fd656ed100b576583b936",
+   "fired": false,
+   "ruff_delta": 1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "python-trio_trio",
+   "sha": "7f80ab640546593876527aebf58f01082b415691",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scipy_scipy",
+   "sha": "1eb9fd22fc63e67e5ff90a072d214f5d3c09da7f",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "aio-libs_aiohttp",
+   "sha": "0f038b1f899a6621213dba18ed98a430ae23f495",
+   "fired": false,
+   "ruff_delta": 1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "keras-team_keras",
+   "sha": "e5c45f073639d5af68929f80470793be95635926",
+   "fired": true,
+   "ruff_delta": 5,
+   "n_regressions": 4
+  },
+  {
+   "repo": "pypa_setuptools",
+   "sha": "1719601cb5dc667e57b9c2078b2012d22537f55a",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sympy_sympy",
+   "sha": "c746d6a2a4b80f0cf40618371a08551b54a53aac",
+   "fired": false,
+   "ruff_delta": -12,
+   "n_regressions": 0
+  },
+  {
+   "repo": "encode_starlette",
+   "sha": "2a8c045822238764ef5b2dd70d8148b201e5e4d2",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sqlalchemy_sqlalchemy",
+   "sha": "47670faa30c99fa2bd92bd9caf35cd30470534b5",
+   "fired": true,
+   "ruff_delta": 2,
+   "n_regressions": 1
+  },
+  {
+   "repo": "pola-rs_polars",
+   "sha": "f553c4c904d86aa7a78ec6640c02508a72e5455d",
+   "fired": true,
+   "ruff_delta": 7,
+   "n_regressions": 2
+  },
+  {
+   "repo": "scikit-learn_scikit-learn",
+   "sha": "21e5c2b2f0a94b0bef33518bf117be2d89081938",
+   "fired": false,
+   "ruff_delta": 1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "astropy_astropy",
+   "sha": "4587e32133a5d7f142cd93d98d873620eda941e9",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "python_mypy",
+   "sha": "1102e913d559eccd3caca78c0d850359aa196ecd",
+   "fired": true,
+   "ruff_delta": 2,
+   "n_regressions": 1
+  },
+  {
+   "repo": "scikit-learn_scikit-learn",
+   "sha": "a7e17117bb15eb3f51ebccc1bd53e42fcb4e6cd8",
+   "fired": true,
+   "ruff_delta": 18,
+   "n_regressions": 3
+  },
+  {
+   "repo": "sqlalchemy_sqlalchemy",
+   "sha": "d640192877e4d1da75e8dea34d2374c404e80538",
+   "fired": false,
+   "ruff_delta": 1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pola-rs_polars",
+   "sha": "3cf3801c1aae7c37c5d3fcd16d2c8c4e639349ee",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sqlalchemy_sqlalchemy",
+   "sha": "97d81d346fe624e7bee818dc7ac9ca00ec343f6d",
+   "fired": false,
+   "ruff_delta": -26,
+   "n_regressions": 0
+  },
+  {
+   "repo": "astropy_astropy",
+   "sha": "113ef7a18f3d4a63d4f6dfbb8ac047d1a9c58f58",
+   "fired": true,
+   "ruff_delta": 8,
+   "n_regressions": 4
+  },
+  {
+   "repo": "python_mypy",
+   "sha": "61f6358306e82b2560bd98f376e1457c8ce4227b",
+   "fired": false,
+   "ruff_delta": 3,
+   "n_regressions": 0
+  },
+  {
+   "repo": "apache_airflow",
+   "sha": "22e44ab9f2f3a68aa2ed236cfe514554dd479a38",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "apache_airflow",
+   "sha": "a0d563aa4b391177548fa86500d34625268525d5",
+   "fired": false,
+   "ruff_delta": 3,
+   "n_regressions": 0
+  },
+  {
+   "repo": "huggingface_transformers",
+   "sha": "44a0490d3c46e62134b3fc1f0609cbdf83e571da",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pandas-dev_pandas",
+   "sha": "6971c9ca62c47785414bd5ddcc7a895147d07f51",
+   "fired": false,
+   "ruff_delta": -10,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pandas-dev_pandas",
+   "sha": "456fcb9829f4e8fba200658efff6ba26152009cd",
+   "fired": false,
+   "ruff_delta": 1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sqlalchemy_sqlalchemy",
+   "sha": "3564ea86e7cd982a353b42be4105a40bdf9415a3",
+   "fired": true,
+   "ruff_delta": -49,
+   "n_regressions": 3
+  },
+  {
+   "repo": "sqlalchemy_sqlalchemy",
+   "sha": "87002643407f886f13a3b53283ea0b6dafa695cc",
+   "fired": false,
+   "ruff_delta": 11,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sympy_sympy",
+   "sha": "1af5040d2466d2e6455eb07454f7da8dd345a9b8",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 2
+  },
+  {
+   "repo": "apache_airflow",
+   "sha": "ecc5af70ebd845c873f30fa7ef85790edbf3351c",
+   "fired": true,
+   "ruff_delta": 4,
+   "n_regressions": 2
+  },
+  {
+   "repo": "pypa_pip",
+   "sha": "03118f7ae2f9b1244dfad54548ad4f5f206b6fe0",
+   "fired": true,
+   "ruff_delta": 3,
+   "n_regressions": 3
+  },
+  {
+   "repo": "python_mypy",
+   "sha": "103f5f3ec3fcc8fba429edcc4ee61c1370153ff9",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pola-rs_polars",
+   "sha": "04f15a17ccb50d1a66fb17a491e63e812d929a47",
+   "fired": false,
+   "ruff_delta": 9,
+   "n_regressions": 0
+  },
+  {
+   "repo": "huggingface_transformers",
+   "sha": "a64996e33be9d2a32b199a5e944403ecbca9fb18",
+   "fired": true,
+   "ruff_delta": 0,
+   "n_regressions": 2
+  },
+  {
+   "repo": "pandas-dev_pandas",
+   "sha": "ac7ca2390d88c256f955f8ab55103a66300ccee6",
+   "fired": true,
+   "ruff_delta": 2,
+   "n_regressions": 4
+  },
+  {
+   "repo": "apache_airflow",
+   "sha": "208fba009980f66ccda3b238929c6cc90214eda4",
+   "fired": false,
+   "ruff_delta": 5,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scikit-learn_scikit-learn",
+   "sha": "21475c3863167724e69c6c56a4415eaf0ec82b88",
+   "fired": true,
+   "ruff_delta": 3,
+   "n_regressions": 6
+  },
+  {
+   "repo": "numpy_numpy",
+   "sha": "c2b11e885235161de4cf34eff4392ef9c746dad3",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "PyCQA_pylint",
+   "sha": "f9baa0939ee8e3b5b5ee76ca3e9bdad16906d588",
+   "fired": false,
+   "ruff_delta": -8,
+   "n_regressions": 0
+  },
+  {
+   "repo": "optuna_optuna",
+   "sha": "a8fd60ae373edc4d972f3ac2fddcf893eca76c0c",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "keras-team_keras",
+   "sha": "dc0f3467fc66d9fa2243c58af126a78074136899",
+   "fired": true,
+   "ruff_delta": 14,
+   "n_regressions": 6
+  },
+  {
+   "repo": "pola-rs_polars",
+   "sha": "753fd1254272d122d4108a36c85476c40c65239c",
+   "fired": false,
+   "ruff_delta": -14,
+   "n_regressions": 0
+  },
+  {
+   "repo": "astropy_astropy",
+   "sha": "68d02b775a63014b849a88bb3b3310a2dccaa189",
+   "fired": true,
+   "ruff_delta": 7,
+   "n_regressions": 8
+  },
+  {
+   "repo": "celery_celery",
+   "sha": "b1b2b1de52d32bec81242bfa7c23a4e65b81dee9",
+   "fired": true,
+   "ruff_delta": -10,
+   "n_regressions": 3
+  },
+  {
+   "repo": "pola-rs_polars",
+   "sha": "b2d7e77708c80cf6370b259df7fa3bc7c6234cb2",
+   "fired": true,
+   "ruff_delta": 2,
+   "n_regressions": 3
+  },
+  {
+   "repo": "pandas-dev_pandas",
+   "sha": "c14c0949f8893d93691ecd8937662b937cbcbffa",
+   "fired": true,
+   "ruff_delta": 29,
+   "n_regressions": 3
+  },
+  {
+   "repo": "apache_airflow",
+   "sha": "a9772cf287111a63eac8c2deb1190f7054d7580f",
+   "fired": true,
+   "ruff_delta": 9,
+   "n_regressions": 1
+  },
+  {
+   "repo": "pola-rs_polars",
+   "sha": "66b125a384be9a1b0ff27e0b1391adf9dddeae1c",
+   "fired": true,
+   "ruff_delta": 12,
+   "n_regressions": 6
+  },
+  {
+   "repo": "apache_airflow",
+   "sha": "4b08a0fc67386bb0b81250b0521bfc3a0678955e",
+   "fired": true,
+   "ruff_delta": 3,
+   "n_regressions": 1
+  },
+  {
+   "repo": "scikit-learn_scikit-learn",
+   "sha": "7c935a32358839588b9509d6b71efda466ffae88",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "ansible_ansible",
+   "sha": "b4b24a0889ae52a4ee88e5754eef97ed258915a7",
+   "fired": false,
+   "ruff_delta": -18,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sqlalchemy_sqlalchemy",
+   "sha": "ac9eb5c9c3bc33c38eff5407fa4724c9277ba342",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "python_mypy",
+   "sha": "bec5cad6ca204fc30b9f47656521df8b7f7b90fc",
+   "fired": true,
+   "ruff_delta": 2,
+   "n_regressions": 2
+  },
+  {
+   "repo": "sqlalchemy_sqlalchemy",
+   "sha": "3ebd1b30eb392ff62f08f0755e79a228d61ba7d2",
+   "fired": true,
+   "ruff_delta": 3,
+   "n_regressions": 2
+  },
+  {
+   "repo": "pypa_pip",
+   "sha": "fb2221c97baf7621012f2db422be4243ff657754",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scipy_scipy",
+   "sha": "36f0ca4820368c7bc6a5e08a3efb13679c1384c1",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 2
+  },
+  {
+   "repo": "pola-rs_polars",
+   "sha": "43a01a5df0eb51d9473a802304f74d04eff22f54",
+   "fired": true,
+   "ruff_delta": 4,
+   "n_regressions": 13
+  },
+  {
+   "repo": "sympy_sympy",
+   "sha": "1ed65428ed47512e2a74d140890b6ec0e521ec55",
+   "fired": true,
+   "ruff_delta": 0,
+   "n_regressions": 4
+  },
+  {
+   "repo": "pola-rs_polars",
+   "sha": "a5f2604c50b3a09d32cd1f0ccb59079ccf6424e1",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 6
+  },
+  {
+   "repo": "sympy_sympy",
+   "sha": "8c4cafa65d6141ee0f6f4b30f4bd82221c24077b",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "dask_dask",
+   "sha": "a504115312b1e591604276a3098b2e0076bf49e1",
+   "fired": false,
+   "ruff_delta": 5,
+   "n_regressions": 0
+  },
+  {
+   "repo": "astropy_astropy",
+   "sha": "fa81aea33f041c847b32063cd9acb63a2f401d1b",
+   "fired": false,
+   "ruff_delta": 3,
+   "n_regressions": 0
+  },
+  {
+   "repo": "celery_celery",
+   "sha": "1c99a986dd5fb0271a4dfcd0171c4eb0e23e406f",
+   "fired": true,
+   "ruff_delta": 21,
+   "n_regressions": 2
+  },
+  {
+   "repo": "scikit-learn_scikit-learn",
+   "sha": "bb261bfd23e6d2085e6c7497290e39f46a64d1ac",
+   "fired": true,
+   "ruff_delta": 7,
+   "n_regressions": 1
+  },
+  {
+   "repo": "sympy_sympy",
+   "sha": "aa2c684ef24e28851756bb92db3b7f4a504b09f6",
+   "fired": true,
+   "ruff_delta": -9,
+   "n_regressions": 10
+  },
+  {
+   "repo": "PyCQA_pylint",
+   "sha": "a96f60eeec49110748d9180724d74a05dd74f136",
+   "fired": false,
+   "ruff_delta": -5,
+   "n_regressions": 0
+  },
+  {
+   "repo": "huggingface_transformers",
+   "sha": "2e2855f0824c8334d40d9c1e7ff2ce4e1fd44eac",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 1
+  },
+  {
+   "repo": "pola-rs_polars",
+   "sha": "96ad535f9ee3ebc53dfaddca7c2e921ad900bb12",
+   "fired": false,
+   "ruff_delta": 1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "python-trio_trio",
+   "sha": "67bc28ffcd621260842f127981b5d167e5e3e0fa",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "apache_airflow",
+   "sha": "3e88f47c2cb7f4eb97b3f2da1d778a680e7a366a",
+   "fired": true,
+   "ruff_delta": 5,
+   "n_regressions": 1
+  },
+  {
+   "repo": "dask_dask",
+   "sha": "47d025476312c6a8155192196b8da3b5af0c13e4",
+   "fired": false,
+   "ruff_delta": 3,
+   "n_regressions": 0
+  },
+  {
+   "repo": "dask_dask",
+   "sha": "2e9e247771a30611eb133d03892135cd72cf4ba4",
+   "fired": false,
+   "ruff_delta": -3,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scikit-learn_scikit-learn",
+   "sha": "b0bf5d7280e8768e3add0d9c83ae950436a1b878",
+   "fired": true,
+   "ruff_delta": 6,
+   "n_regressions": 3
+  },
+  {
+   "repo": "scikit-learn_scikit-learn",
+   "sha": "1537b28a39510843ec4b7aa468a0c405fd21098c",
+   "fired": false,
+   "ruff_delta": 16,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pypa_pip",
+   "sha": "c9f8e0055219fc09f9679b1ae12353c0b7df0a2b",
+   "fired": false,
+   "ruff_delta": 2,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sympy_sympy",
+   "sha": "cff4046e25309c3c69725f4898010e3b471cb42e",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pallets_click",
+   "sha": "3d3ea9c64420fd8978a41ce8b4db3ac2d245849c",
+   "fired": true,
+   "ruff_delta": 2,
+   "n_regressions": 1
+  },
+  {
+   "repo": "apache_airflow",
+   "sha": "aff2c4498db7c98985995a568412b07c5aa835b6",
+   "fired": true,
+   "ruff_delta": 3,
+   "n_regressions": 19
+  },
+  {
+   "repo": "python-trio_trio",
+   "sha": "ca2c652ae43feeb88e54ac25655f079282f5d5c4",
+   "fired": true,
+   "ruff_delta": 5,
+   "n_regressions": 4
+  },
+  {
+   "repo": "celery_celery",
+   "sha": "a571aac0d9bac112a91802a671750811adf000a4",
+   "fired": false,
+   "ruff_delta": 1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scipy_scipy",
+   "sha": "10355bc1d9dd907eba85f757f6fe7e396affbbd1",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sqlalchemy_sqlalchemy",
+   "sha": "1da55184e52ae6698ab02c368a43b0c037b17049",
+   "fired": false,
+   "ruff_delta": 3,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scipy_scipy",
+   "sha": "530fab955048c044fb431cfb0c192a130c7596c5",
+   "fired": true,
+   "ruff_delta": 4,
+   "n_regressions": 7
+  },
+  {
+   "repo": "huggingface_transformers",
+   "sha": "69fd225a38c5eda95bf7b37a27e6f44aa77e34a7",
+   "fired": true,
+   "ruff_delta": 10,
+   "n_regressions": 5
+  },
+  {
+   "repo": "pola-rs_polars",
+   "sha": "ae87dbbb634f971d055ce35546b9a154b92e22b7",
+   "fired": true,
+   "ruff_delta": -7,
+   "n_regressions": 1
+  },
+  {
+   "repo": "pandas-dev_pandas",
+   "sha": "931e0e5596e5714ecab5665d10735c155a2313f7",
+   "fired": true,
+   "ruff_delta": 5,
+   "n_regressions": 6
+  },
+  {
+   "repo": "aio-libs_aiohttp",
+   "sha": "d3cd8ba42989392eae2380a06bdf5aa5d518c1d8",
+   "fired": true,
+   "ruff_delta": 5,
+   "n_regressions": 1
+  },
+  {
+   "repo": "huggingface_transformers",
+   "sha": "ac5d4cf6de24b4f7fa92996e92d1d71dd5411a6a",
+   "fired": true,
+   "ruff_delta": 4,
+   "n_regressions": 7
+  },
+  {
+   "repo": "optuna_optuna",
+   "sha": "bedc8f215f71fcd4de959678c6c0438d30e9ba88",
+   "fired": true,
+   "ruff_delta": -2,
+   "n_regressions": 4
+  },
+  {
+   "repo": "scipy_scipy",
+   "sha": "d419874eb4608dd6a91b02da0517dcf0cba7cf7e",
+   "fired": true,
+   "ruff_delta": 3,
+   "n_regressions": 1
+  },
+  {
+   "repo": "dask_dask",
+   "sha": "d33125c5249c9e996913ffca9315b3b9ce5cc55d",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 2
+  },
+  {
+   "repo": "python-trio_trio",
+   "sha": "26cc6eed38cd82da58c8e29d6d2b98d7bd0ca77d",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "huggingface_transformers",
+   "sha": "f1e8a51f08eeecacf0cde33d40702d70c737003b",
+   "fired": false,
+   "ruff_delta": 1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "python-trio_trio",
+   "sha": "e7556b4ef778a6b89bcb93d0c664799dda0e7e83",
+   "fired": false,
+   "ruff_delta": 1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "aio-libs_aiohttp",
+   "sha": "e09b86204c9099389c530b2886770e0060a05f63",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "huggingface_transformers",
+   "sha": "9df8b301ceb6697a713fbe4034dc02395e5b28cd",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "PyCQA_pylint",
+   "sha": "8f12337deed0e532516307522041842227bd25a6",
+   "fired": false,
+   "ruff_delta": -7,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pandas-dev_pandas",
+   "sha": "7acfc38f9e31d609d8de14458679f179817adad5",
+   "fired": false,
+   "ruff_delta": -8,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sympy_sympy",
+   "sha": "556cc4e7154f9db8167034d91d07368e185e1763",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 4
+  },
+  {
+   "repo": "apache_airflow",
+   "sha": "eb60174dbda2767f78eae346f9d546d00e75c0a5",
+   "fired": true,
+   "ruff_delta": 6,
+   "n_regressions": 6
+  },
+  {
+   "repo": "saltstack_salt",
+   "sha": "9dc95bec1910cb664b07166af998643072398db3",
+   "fired": true,
+   "ruff_delta": 2,
+   "n_regressions": 3
+  },
+  {
+   "repo": "networkx_networkx",
+   "sha": "68592fbbf216362d5193108fc8e797952716f725",
+   "fired": true,
+   "ruff_delta": 24,
+   "n_regressions": 2
+  },
+  {
+   "repo": "optuna_optuna",
+   "sha": "c3e2d981485c92efed11475c52c93eeae3ec6892",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "apache_airflow",
+   "sha": "ef0004035edb27507c6899b11bd24166ce3a08c0",
+   "fired": true,
+   "ruff_delta": 6,
+   "n_regressions": 1
+  },
+  {
+   "repo": "sqlalchemy_sqlalchemy",
+   "sha": "0197a70343a7d6f4eb387bbd461e0624e2dc436b",
+   "fired": false,
+   "ruff_delta": 10,
+   "n_regressions": 0
+  },
+  {
+   "repo": "apache_airflow",
+   "sha": "b757bd8df824d4eba952f6e140bcb373bc3f1003",
+   "fired": true,
+   "ruff_delta": 0,
+   "n_regressions": 5
+  },
+  {
+   "repo": "astropy_astropy",
+   "sha": "e91916d9be59075fc32af890d46001d2483769a5",
+   "fired": true,
+   "ruff_delta": -4,
+   "n_regressions": 6
+  },
+  {
+   "repo": "pandas-dev_pandas",
+   "sha": "b9eed842a4844f3398387bc7ed643b1586c695f6",
+   "fired": true,
+   "ruff_delta": 5,
+   "n_regressions": 3
+  },
+  {
+   "repo": "scipy_scipy",
+   "sha": "195e722ebb21c3f5b8efb8ea8ac94bc3b921efbe",
+   "fired": true,
+   "ruff_delta": 21,
+   "n_regressions": 1
+  },
+  {
+   "repo": "aio-libs_aiohttp",
+   "sha": "dc38630b168a169139974617d75e176530c91696",
+   "fired": true,
+   "ruff_delta": 2,
+   "n_regressions": 6
+  },
+  {
+   "repo": "sqlalchemy_sqlalchemy",
+   "sha": "6f604f911640d92f705fc6611bfaa3e2600c4ee1",
+   "fired": true,
+   "ruff_delta": -11,
+   "n_regressions": 4
+  },
+  {
+   "repo": "huggingface_transformers",
+   "sha": "7334bf6c21c65b6090e16247e294b737581c6d2e",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 1
+  },
+  {
+   "repo": "PyCQA_pylint",
+   "sha": "0ae02d716b560383d8577b11b62f9f91c6f755a4",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "saltstack_salt",
+   "sha": "6bb7b322e0db83dc8e89924afb4d25ba041ca04a",
+   "fired": true,
+   "ruff_delta": 44,
+   "n_regressions": 13
+  },
+  {
+   "repo": "keras-team_keras",
+   "sha": "1623ea6166e9730e3e51af0417250d5480b03402",
+   "fired": true,
+   "ruff_delta": 11,
+   "n_regressions": 5
+  },
+  {
+   "repo": "huggingface_transformers",
+   "sha": "75d5f98fd2a154bb5bfc0879c4a6e389c6789be5",
+   "fired": true,
+   "ruff_delta": -10,
+   "n_regressions": 4
+  },
+  {
+   "repo": "celery_celery",
+   "sha": "2a6065514000be6af9c0501eaf4def93ad343e2e",
+   "fired": true,
+   "ruff_delta": 0,
+   "n_regressions": 2
+  },
+  {
+   "repo": "huggingface_transformers",
+   "sha": "737681477c038d9ed060c4df03b0ebb5b50b69d0",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "python-trio_trio",
+   "sha": "7e7a809c51d05729011506bc9de38cd97a35be44",
+   "fired": true,
+   "ruff_delta": -23,
+   "n_regressions": 1
+  },
+  {
+   "repo": "pypa_pip",
+   "sha": "929c95833d2214631a8493c4822a78d88766f44d",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pypa_pip",
+   "sha": "163149fff390d17f3a5cea86869def66f7188706",
+   "fired": true,
+   "ruff_delta": -1,
+   "n_regressions": 3
+  },
+  {
+   "repo": "saltstack_salt",
+   "sha": "eb464248ab0092dce953d9efd254276e12761309",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "apache_airflow",
+   "sha": "d2b35e8b0ba5d45187cbfe6c0e7ebf0107180db4",
+   "fired": false,
+   "ruff_delta": 3,
+   "n_regressions": 0
+  },
+  {
+   "repo": "PyCQA_pylint",
+   "sha": "f246b99f538034b6ff7591ecee1f1167c266e437",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "ansible_ansible",
+   "sha": "2250257809baf77dd6d63d56e4eca10b2952250a",
+   "fired": true,
+   "ruff_delta": -71,
+   "n_regressions": 2
+  },
+  {
+   "repo": "astropy_astropy",
+   "sha": "494dcaea4fe2238a305421dd8e4fe1678593b4cf",
+   "fired": true,
+   "ruff_delta": 6,
+   "n_regressions": 2
+  },
+  {
+   "repo": "keras-team_keras",
+   "sha": "fb0b1e62a3e6d3907f67f3ddbf8a9782b3cc47ff",
+   "fired": true,
+   "ruff_delta": 2,
+   "n_regressions": 6
+  },
+  {
+   "repo": "scikit-learn_scikit-learn",
+   "sha": "93f6ce994b92513a35f2ee417c77bc21d4d9fdc0",
+   "fired": false,
+   "ruff_delta": -5,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pypa_pip",
+   "sha": "e8eda16ed84fa861dccb490167010db49a6828c8",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pypa_setuptools",
+   "sha": "226e1a284dde19b09530a27c66dd18e72f2971b1",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pypa_setuptools",
+   "sha": "f0b1de18a998262590ca3feec0dffbc0f83c479b",
+   "fired": false,
+   "ruff_delta": -3,
+   "n_regressions": 0
+  },
+  {
+   "repo": "saltstack_salt",
+   "sha": "19c4b34b283f53dd5be5dcedf6b7034f9e3d0f9c",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pandas-dev_pandas",
+   "sha": "f738581fbb179fbe78bc4a4c81f7c31162c4a9e3",
+   "fired": true,
+   "ruff_delta": 4,
+   "n_regressions": 2
+  },
+  {
+   "repo": "python_mypy",
+   "sha": "db2faa7a16153ae0e7100bd60206f89e3ee69a55",
+   "fired": true,
+   "ruff_delta": 9,
+   "n_regressions": 5
+  },
+  {
+   "repo": "apache_airflow",
+   "sha": "535df252d573db79c7f65caaf3c8f379f8a74848",
+   "fired": true,
+   "ruff_delta": 7,
+   "n_regressions": 7
+  },
+  {
+   "repo": "PyCQA_pylint",
+   "sha": "05e50e20d55c898685684e91ea7cb82bba7349b0",
+   "fired": false,
+   "ruff_delta": -25,
+   "n_regressions": 0
+  },
+  {
+   "repo": "python-trio_trio",
+   "sha": "0734cad2ce7de8d1f0b710b79ea5ed9cdbec6eae",
+   "fired": true,
+   "ruff_delta": 2,
+   "n_regressions": 1
+  },
+  {
+   "repo": "saltstack_salt",
+   "sha": "69733eb42bf9d2dcdcaabcbda5c6fcb411c56161",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pandas-dev_pandas",
+   "sha": "8d277e3107b45ef18f60821e95ccaac2742b824d",
+   "fired": true,
+   "ruff_delta": 5,
+   "n_regressions": 11
+  },
+  {
+   "repo": "apache_airflow",
+   "sha": "55fe75d083499c6fbaaca35d6dbad4487f4a9ad0",
+   "fired": true,
+   "ruff_delta": -59,
+   "n_regressions": 1
+  },
+  {
+   "repo": "pola-rs_polars",
+   "sha": "026377c45c04cfe225f508d53750cef79ef88af6",
+   "fired": true,
+   "ruff_delta": -11,
+   "n_regressions": 4
+  },
+  {
+   "repo": "pandas-dev_pandas",
+   "sha": "e5ea6c86dccd19714902e5de8b883d50c0705b45",
+   "fired": false,
+   "ruff_delta": 1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "saltstack_salt",
+   "sha": "38203e3d2c50ae77eca940d577df71576262ca2a",
+   "fired": false,
+   "ruff_delta": 3,
+   "n_regressions": 0
+  },
+  {
+   "repo": "networkx_networkx",
+   "sha": "a796f526c7ce6a7f182aee4b81b8499feabe1a45",
+   "fired": true,
+   "ruff_delta": 13,
+   "n_regressions": 6
+  },
+  {
+   "repo": "python_mypy",
+   "sha": "fec532028dcb7def7af4356e529fffb38c4afcea",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pandas-dev_pandas",
+   "sha": "3fde134617822773b23cf484310820298d9f88ac",
+   "fired": true,
+   "ruff_delta": 3,
+   "n_regressions": 1
+  },
+  {
+   "repo": "numpy_numpy",
+   "sha": "8b6c850cf3e6ec664705e9823014e59edc1a26e7",
+   "fired": false,
+   "ruff_delta": 6,
+   "n_regressions": 0
+  },
+  {
+   "repo": "astropy_astropy",
+   "sha": "9ba6d1f40688ed02b51c552b14e35a8c9f6f35d7",
+   "fired": true,
+   "ruff_delta": -2,
+   "n_regressions": 12
+  },
+  {
+   "repo": "pypa_setuptools",
+   "sha": "766d1fbd091c92d68c85eae404aee1d792c815aa",
+   "fired": true,
+   "ruff_delta": 7,
+   "n_regressions": 2
+  },
+  {
+   "repo": "scipy_scipy",
+   "sha": "3a5b9098c40c8eb2b5963811cf84f67acf94261f",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pypa_setuptools",
+   "sha": "df45427cbb67c1149fcf5d2d1e2705e69b3baf0c",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scipy_scipy",
+   "sha": "0a1c77472c6b316a49e4755a304adfd7273492a4",
+   "fired": false,
+   "ruff_delta": 2,
+   "n_regressions": 0
+  },
+  {
+   "repo": "dask_dask",
+   "sha": "7168524828cc6c21cdf41f17702f7b5aad658c90",
+   "fired": true,
+   "ruff_delta": 14,
+   "n_regressions": 10
+  },
+  {
+   "repo": "scikit-learn_scikit-learn",
+   "sha": "e41753ebd57c44ae91b389f190c43ddc0b384a75",
+   "fired": true,
+   "ruff_delta": -27,
+   "n_regressions": 1
+  },
+  {
+   "repo": "pandas-dev_pandas",
+   "sha": "44c82df5befaed201e344f71689f13493adde8e4",
+   "fired": true,
+   "ruff_delta": 3,
+   "n_regressions": 1
+  },
+  {
+   "repo": "scipy_scipy",
+   "sha": "45b89c1378830a93692b42936b6dfcd99bbcf06c",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "python_mypy",
+   "sha": "9f6b3731367a975da84fa7a0e96ced46716b6e16",
+   "fired": true,
+   "ruff_delta": 11,
+   "n_regressions": 2
+  },
+  {
+   "repo": "scipy_scipy",
+   "sha": "93a83250477867c4ed83e91101fe6e24c984d166",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "apache_airflow",
+   "sha": "5779c186321166ad272a02153cc20c3b514f5843",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "dask_dask",
+   "sha": "095d2701ebe8a947849fae0a0624f1e2d5f3c8d5",
+   "fired": true,
+   "ruff_delta": 6,
+   "n_regressions": 3
+  },
+  {
+   "repo": "pypa_setuptools",
+   "sha": "b96da7b0feee847c2a2b51678da402731378b097",
+   "fired": false,
+   "ruff_delta": -3,
+   "n_regressions": 0
+  },
+  {
+   "repo": "python-trio_trio",
+   "sha": "f890f8fcb4940d7dca62ee5a27d091e50536c4e0",
+   "fired": true,
+   "ruff_delta": -89,
+   "n_regressions": 2
+  },
+  {
+   "repo": "pandas-dev_pandas",
+   "sha": "37526c1ddbe0952dffe16ac0fe158a00aa7b397f",
+   "fired": true,
+   "ruff_delta": 5,
+   "n_regressions": 2
+  },
+  {
+   "repo": "scipy_scipy",
+   "sha": "90eafb22f144a66f89a0cd759316e723c0aedc4d",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 2
+  },
+  {
+   "repo": "optuna_optuna",
+   "sha": "5d8ca833a86e8e55a01ea015beee64d100fe25b7",
+   "fired": false,
+   "ruff_delta": -5,
+   "n_regressions": 0
+  },
+  {
+   "repo": "astropy_astropy",
+   "sha": "e648d816a5f80827b545888073660161d54f6b1c",
+   "fired": false,
+   "ruff_delta": 16,
+   "n_regressions": 0
+  },
+  {
+   "repo": "ansible_ansible",
+   "sha": "1e0ab16247b4657c27e42f757094c8a1202346bf",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 1
+  },
+  {
+   "repo": "dask_dask",
+   "sha": "f43153bf39d2db446275c733e7bb513d3e228b66",
+   "fired": false,
+   "ruff_delta": -12,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pypa_virtualenv",
+   "sha": "48d13613c7d1db0e655ee1bbc206fb59948fb124",
+   "fired": false,
+   "ruff_delta": -2,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sympy_sympy",
+   "sha": "2a1afca9477eb781f16d5d6b63fa37abed7740a3",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "aio-libs_aiohttp",
+   "sha": "308e2dbd6057e6450ce526062236143413b663af",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scikit-learn_scikit-learn",
+   "sha": "3d89ae17e31aa1ee29de9420ec405ec661f56934",
+   "fired": true,
+   "ruff_delta": 0,
+   "n_regressions": 1
+  },
+  {
+   "repo": "optuna_optuna",
+   "sha": "11721cc081ec290a5c16c09de57b5be06818a51b",
+   "fired": false,
+   "ruff_delta": 3,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scikit-learn_scikit-learn",
+   "sha": "ddc27911cc85798dbdb35e141ec2ffb7150e42f7",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "dask_dask",
+   "sha": "43ea3865fbc394b65738115a9d7c5cf33ac1e92c",
+   "fired": true,
+   "ruff_delta": 4,
+   "n_regressions": 3
+  },
+  {
+   "repo": "pola-rs_polars",
+   "sha": "bc6632c02775ad85e3b1cfbdc5b4b9868c9e7803",
+   "fired": true,
+   "ruff_delta": 3,
+   "n_regressions": 1
+  },
+  {
+   "repo": "sqlalchemy_sqlalchemy",
+   "sha": "0fe8f4a3e79c8fc805e7a84849920c7258177f41",
+   "fired": true,
+   "ruff_delta": 11,
+   "n_regressions": 6
+  },
+  {
+   "repo": "apache_airflow",
+   "sha": "d08284ed251b7c5712190181623b500a38cd640d",
+   "fired": true,
+   "ruff_delta": 3,
+   "n_regressions": 6
+  },
+  {
+   "repo": "sympy_sympy",
+   "sha": "7e46d4a0eef5312714f383d3e6e1bbc2577bf752",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 2
+  },
+  {
+   "repo": "pypa_pip",
+   "sha": "5245e62bcf2f6103d932237a202267ae1fae5404",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scikit-learn_scikit-learn",
+   "sha": "f893565773c7783dadb217ff984c8c37801d8509",
+   "fired": true,
+   "ruff_delta": 0,
+   "n_regressions": 2
+  },
+  {
+   "repo": "scikit-learn_scikit-learn",
+   "sha": "de560bfcfb31983f353b69ad79a5921e66b616a8",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "optuna_optuna",
+   "sha": "6009eed4375f616f953fb016324f413cb57e0880",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scikit-learn_scikit-learn",
+   "sha": "4b8cd880397f279200b8faf9c75df13801cb45b7",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "aio-libs_aiohttp",
+   "sha": "98086dc2429cbb0ab7e9d1c257396ef781999ed5",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "keras-team_keras",
+   "sha": "cfff1d98e78e9b2b92de48837aa0c207b234d397",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 2
+  },
+  {
+   "repo": "pandas-dev_pandas",
+   "sha": "b59bf6c7eac082b903e881ed9da351379aaa7eed",
+   "fired": true,
+   "ruff_delta": 0,
+   "n_regressions": 1
+  },
+  {
+   "repo": "saltstack_salt",
+   "sha": "5479f8885551d019d36c6dbfb7bac50a8fd49e4f",
+   "fired": true,
+   "ruff_delta": 5,
+   "n_regressions": 2
+  },
+  {
+   "repo": "saltstack_salt",
+   "sha": "db54457ca6ad65e8580f0dc164aa9a5f6c87be2f",
+   "fired": true,
+   "ruff_delta": 0,
+   "n_regressions": 2
+  },
+  {
+   "repo": "astropy_astropy",
+   "sha": "5415ef855820fc5749bd14be0b7042159c725efc",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sqlalchemy_sqlalchemy",
+   "sha": "74e00ed0fa3d9ade12b9076cc2e59b5ecf4886bb",
+   "fired": true,
+   "ruff_delta": 3,
+   "n_regressions": 4
+  },
+  {
+   "repo": "saltstack_salt",
+   "sha": "9e56a7e9db380d3206129c157283bba3dcada9b8",
+   "fired": true,
+   "ruff_delta": 5,
+   "n_regressions": 2
+  },
+  {
+   "repo": "optuna_optuna",
+   "sha": "f843e46ee10b218e4357c457086a2f1dd73a845a",
+   "fired": true,
+   "ruff_delta": 4,
+   "n_regressions": 3
+  },
+  {
+   "repo": "scikit-learn_scikit-learn",
+   "sha": "f0cce3ad8eb6a293c579fe4a95aedbb60b1780b5",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sqlalchemy_sqlalchemy",
+   "sha": "8f4ac0c0f07509d2f8a4bce9cbb07ac08ad04044",
+   "fired": false,
+   "ruff_delta": 2,
+   "n_regressions": 0
+  },
+  {
+   "repo": "celery_celery",
+   "sha": "115ce982aa0fc3f3359b18448366436737e6f898",
+   "fired": false,
+   "ruff_delta": 2,
+   "n_regressions": 0
+  },
+  {
+   "repo": "dask_dask",
+   "sha": "fbe5174693ade649e9e4f881f16e55ec28399cf7",
+   "fired": false,
+   "ruff_delta": 16,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pandas-dev_pandas",
+   "sha": "69c58da27cb61a81a94cc3a5da3a2c1870b4e693",
+   "fired": false,
+   "ruff_delta": -5,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scikit-learn_scikit-learn",
+   "sha": "aae5c83554af61b4f49257663241d522c5ce909d",
+   "fired": true,
+   "ruff_delta": 2,
+   "n_regressions": 2
+  },
+  {
+   "repo": "scipy_scipy",
+   "sha": "7e1d74afd74963216e77337c240217a65b8ff69d",
+   "fired": true,
+   "ruff_delta": 2,
+   "n_regressions": 3
+  },
+  {
+   "repo": "pallets_click",
+   "sha": "5961d31fb566f089ad468a5b26a32f1ebfa7f63e",
+   "fired": true,
+   "ruff_delta": 4,
+   "n_regressions": 10
+  },
+  {
+   "repo": "apache_airflow",
+   "sha": "fbd994a4cff32be42474c5a121ec6fb888d05cd8",
+   "fired": true,
+   "ruff_delta": 44,
+   "n_regressions": 11
+  },
+  {
+   "repo": "astropy_astropy",
+   "sha": "a17495b09a9ac77a68a4bdf6ad373b6128ffb91c",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sqlalchemy_sqlalchemy",
+   "sha": "2bac535f506dd68595d64d6cdf21e2d4937c2c9f",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 2
+  },
+  {
+   "repo": "huggingface_transformers",
+   "sha": "de8a0b7547451f8f7ef2c0ac1f338ba77c614cec",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "python_mypy",
+   "sha": "b41205f10363ea1d2c3b11f9b8ae07f488fd2868",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "celery_celery",
+   "sha": "8c7ac5d84d245028f02b5d7f6a8684a1ce84dc9e",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pypa_virtualenv",
+   "sha": "7928094d2df6910802a638e6919cf5e30977956d",
+   "fired": true,
+   "ruff_delta": 6,
+   "n_regressions": 2
+  },
+  {
+   "repo": "pandas-dev_pandas",
+   "sha": "b387da894076c7427ba7a2fb467c3e821a2cef27",
+   "fired": true,
+   "ruff_delta": -2,
+   "n_regressions": 3
+  },
+  {
+   "repo": "optuna_optuna",
+   "sha": "95b0030c7412674db3e4685c9820dadfa73d266f",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 3
+  },
+  {
+   "repo": "sympy_sympy",
+   "sha": "31527d6efc52059384496deda6fafaaeb49035df",
+   "fired": false,
+   "ruff_delta": -7,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scikit-learn_scikit-learn",
+   "sha": "c66787ab550d9acb9e0db2192916b220fddeca02",
+   "fired": true,
+   "ruff_delta": 4,
+   "n_regressions": 2
+  },
+  {
+   "repo": "ansible_ansible",
+   "sha": "60e3af42d5c9ba42bf283512b734513ac40c3bec",
+   "fired": true,
+   "ruff_delta": 11,
+   "n_regressions": 18
+  },
+  {
+   "repo": "scikit-learn_scikit-learn",
+   "sha": "4eac46a3b11afe4b147515c336a0f3f27dcd3aa0",
+   "fired": false,
+   "ruff_delta": -3,
+   "n_regressions": 0
+  },
+  {
+   "repo": "optuna_optuna",
+   "sha": "48883f731d5704009b2a1f592dba307e48facfef",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pandas-dev_pandas",
+   "sha": "5524386c5235e746a6ec52a6b5f449ebf314712f",
+   "fired": false,
+   "ruff_delta": 3,
+   "n_regressions": 0
+  },
+  {
+   "repo": "networkx_networkx",
+   "sha": "fa65699695214ae1eea65074502b28edbe2ad331",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "huggingface_transformers",
+   "sha": "72d363d9791c64eff21ed7535c690de2c636d508",
+   "fired": false,
+   "ruff_delta": -6,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sympy_sympy",
+   "sha": "6fedaa84929e9bd101b0ada26f81bcbd388b7ee2",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 5
+  },
+  {
+   "repo": "celery_celery",
+   "sha": "65efd101beca12e95ea60e5b6a2aa2587e492f59",
+   "fired": false,
+   "ruff_delta": -8,
+   "n_regressions": 0
+  },
+  {
+   "repo": "optuna_optuna",
+   "sha": "4270de60d15d21a55a7b711c6ff6b685b2707257",
+   "fired": true,
+   "ruff_delta": -30,
+   "n_regressions": 6
+  },
+  {
+   "repo": "aio-libs_aiohttp",
+   "sha": "a718aa6fef86b18b548c44516b394b1f55a54198",
+   "fired": true,
+   "ruff_delta": 2,
+   "n_regressions": 1
+  },
+  {
+   "repo": "scikit-learn_scikit-learn",
+   "sha": "dc9955b5d4fde7c9d28c9ae9a7372a25caf12794",
+   "fired": true,
+   "ruff_delta": 16,
+   "n_regressions": 3
+  },
+  {
+   "repo": "optuna_optuna",
+   "sha": "9a8973bc7b87ecff93c89bb58638c9940cd5ceb3",
+   "fired": false,
+   "ruff_delta": 1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "networkx_networkx",
+   "sha": "1e4fc082f49690c9c04d882454885fd7492897b8",
+   "fired": true,
+   "ruff_delta": 0,
+   "n_regressions": 1
+  },
+  {
+   "repo": "optuna_optuna",
+   "sha": "7d474abe79dc2f450cb68e30279c6939a62b26a5",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sympy_sympy",
+   "sha": "a76f0535e3630d4c9a101c6f5d705296a2119b0d",
+   "fired": true,
+   "ruff_delta": -2,
+   "n_regressions": 2
+  },
+  {
+   "repo": "ansible_ansible",
+   "sha": "7844a40046d5e7018f12d0157ec08009d8c70aff",
+   "fired": false,
+   "ruff_delta": -2,
+   "n_regressions": 0
+  },
+  {
+   "repo": "apache_airflow",
+   "sha": "d0dbf4c0cbf4d969ff23c045cc8353701f022c1a",
+   "fired": true,
+   "ruff_delta": 11,
+   "n_regressions": 16
+  },
+  {
+   "repo": "pandas-dev_pandas",
+   "sha": "5a20ea262eadbabc487fbe1d83ab4b6085f4c7c0",
+   "fired": true,
+   "ruff_delta": 9,
+   "n_regressions": 5
+  },
+  {
+   "repo": "saltstack_salt",
+   "sha": "c21a49a753c1ab29c44d884d1a4420ac2c92391e",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pandas-dev_pandas",
+   "sha": "8913b7e84ac75b1093bf708e0d1a9a0789e8cfcd",
+   "fired": false,
+   "ruff_delta": -5,
+   "n_regressions": 0
+  },
+  {
+   "repo": "saltstack_salt",
+   "sha": "8e4f8e0d0c6677ac95ad0954d739744bf1a2779f",
+   "fired": false,
+   "ruff_delta": -2,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scipy_scipy",
+   "sha": "ca1004055343526cfb290fdfd63b83873dc47abd",
+   "fired": true,
+   "ruff_delta": 3,
+   "n_regressions": 2
+  },
+  {
+   "repo": "pypa_setuptools",
+   "sha": "65536e456ed4e721a116094b5f18093ef90eb3c4",
+   "fired": false,
+   "ruff_delta": -27,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pola-rs_polars",
+   "sha": "3d51dca03e8904b9c94e61dd7d235f97b54d1ca7",
+   "fired": false,
+   "ruff_delta": -6,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scikit-learn_scikit-learn",
+   "sha": "fcc11d22e5017857a0235220140d1278de6578a0",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "dask_dask",
+   "sha": "96d0853e50abee8e2002445b525c473d97eb83c7",
+   "fired": true,
+   "ruff_delta": 18,
+   "n_regressions": 5
+  },
+  {
+   "repo": "apache_airflow",
+   "sha": "0a0b33aca7293c47f9afb6a5a10d63ba4013b6f5",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sympy_sympy",
+   "sha": "9976da486fe23c203b0ab311b472502771ef9323",
+   "fired": true,
+   "ruff_delta": 17,
+   "n_regressions": 2
+  },
+  {
+   "repo": "pallets_click",
+   "sha": "dd39a03c407dcbb4d5035e80a2a5b73347960718",
+   "fired": true,
+   "ruff_delta": 5,
+   "n_regressions": 2
+  },
+  {
+   "repo": "scipy_scipy",
+   "sha": "759e0feb577307ed1aa36cda272d55293b18711f",
+   "fired": true,
+   "ruff_delta": 6,
+   "n_regressions": 6
+  },
+  {
+   "repo": "sqlalchemy_sqlalchemy",
+   "sha": "22300dbd24f2152636491d2287bee08935e14282",
+   "fired": false,
+   "ruff_delta": 3,
+   "n_regressions": 0
+  },
+  {
+   "repo": "saltstack_salt",
+   "sha": "d6b9dc13ddd9dd00a0683f554394d8f8d91e820b",
+   "fired": true,
+   "ruff_delta": 2,
+   "n_regressions": 2
+  },
+  {
+   "repo": "sympy_sympy",
+   "sha": "48073432c2a126dcb1a697ffc1578a0bb6d46617",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 2
+  },
+  {
+   "repo": "dask_dask",
+   "sha": "964d167258bbbfff41aa8c8306db7aef34f479b8",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "apache_airflow",
+   "sha": "3d8c3db7f1f02b0737a23ef79eeb6c4fd0abcef7",
+   "fired": true,
+   "ruff_delta": 3,
+   "n_regressions": 1
+  },
+  {
+   "repo": "pola-rs_polars",
+   "sha": "cc1e713746f69e8409a3ff238bb7fae2564caf70",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "huggingface_transformers",
+   "sha": "b07770c5eb2176693990b376c6e398caf197aec1",
+   "fired": true,
+   "ruff_delta": 3,
+   "n_regressions": 1
+  },
+  {
+   "repo": "sqlalchemy_sqlalchemy",
+   "sha": "02001e9458802ebb512a140aa24e663b364dc3ad",
+   "fired": false,
+   "ruff_delta": 1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sympy_sympy",
+   "sha": "e69fd24e112e290ab12ad48b8588c58508316c5f",
+   "fired": true,
+   "ruff_delta": 3,
+   "n_regressions": 1
+  },
+  {
+   "repo": "sqlalchemy_sqlalchemy",
+   "sha": "0a8edf6feb25a046505ef79796695fac90c152d4",
+   "fired": true,
+   "ruff_delta": 22,
+   "n_regressions": 1
+  },
+  {
+   "repo": "huggingface_transformers",
+   "sha": "0234de8418b253e843dda0a18a3e18476de52781",
+   "fired": true,
+   "ruff_delta": 4,
+   "n_regressions": 5
+  },
+  {
+   "repo": "sympy_sympy",
+   "sha": "ad91ebea5c3ff911e2af7b55eddd6044348f9aef",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scikit-learn_scikit-learn",
+   "sha": "b2dcfdd0a837781923dab3ea96cc860e66babdc4",
+   "fired": true,
+   "ruff_delta": 7,
+   "n_regressions": 7
+  },
+  {
+   "repo": "saltstack_salt",
+   "sha": "c7ae3ba592b3be2478af6ef10ff3685749ae26ad",
+   "fired": true,
+   "ruff_delta": 33,
+   "n_regressions": 5
+  },
+  {
+   "repo": "pola-rs_polars",
+   "sha": "f18c306049e4246d55285218e6c31c9243c4ce3f",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "PyCQA_pylint",
+   "sha": "69f9ad34d6033309d4c7622dce053443a7864385",
+   "fired": false,
+   "ruff_delta": -4,
+   "n_regressions": 0
+  },
+  {
+   "repo": "optuna_optuna",
+   "sha": "29815a640dfc7f5fc901e2551c53ff5419713026",
+   "fired": false,
+   "ruff_delta": 1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "apache_airflow",
+   "sha": "a715aa692e88160cb8e9df4effda2440e4778c17",
+   "fired": true,
+   "ruff_delta": 12,
+   "n_regressions": 9
+  },
+  {
+   "repo": "pandas-dev_pandas",
+   "sha": "6d375732db0b7835eafb0821883ee34bb82ad5cc",
+   "fired": true,
+   "ruff_delta": 3,
+   "n_regressions": 4
+  },
+  {
+   "repo": "psf_black",
+   "sha": "dd4477b70120bf736144c38ec50144253f34dce2",
+   "fired": false,
+   "ruff_delta": -3,
+   "n_regressions": 0
+  },
+  {
+   "repo": "aio-libs_aiohttp",
+   "sha": "f159f4caa65edb095abf98976dc4f07f6ddc70eb",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "aio-libs_aiohttp",
+   "sha": "996c9292dadfe4dea2e1e014bb7f12d19d2e80d9",
+   "fired": true,
+   "ruff_delta": 7,
+   "n_regressions": 2
+  },
+  {
+   "repo": "keras-team_keras",
+   "sha": "76292371208068b5b0a87bca853178441fc390f4",
+   "fired": false,
+   "ruff_delta": -26,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pola-rs_polars",
+   "sha": "984936172b6b27cff9e19bcf902cc1c3faad4497",
+   "fired": true,
+   "ruff_delta": 3,
+   "n_regressions": 2
+  },
+  {
+   "repo": "huggingface_transformers",
+   "sha": "9a687ebb7750edee86047e0f243c332effdf86b6",
+   "fired": false,
+   "ruff_delta": 7,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pola-rs_polars",
+   "sha": "2e28176b56b01bebce00d2144433c0ad2c3a64c3",
+   "fired": true,
+   "ruff_delta": 0,
+   "n_regressions": 2
+  },
+  {
+   "repo": "aio-libs_aiohttp",
+   "sha": "b78cef374c1e0bcce62faef144b9f5067c3bf53e",
+   "fired": false,
+   "ruff_delta": 1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "paramiko_paramiko",
+   "sha": "d26bf3e63efea0002fd81c7579f2b37cc6c587c1",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sqlalchemy_sqlalchemy",
+   "sha": "2692238f45ae4d2f46949dfa52b16132bd266e0e",
+   "fired": false,
+   "ruff_delta": 7,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sqlalchemy_sqlalchemy",
+   "sha": "518d91134ce27744a8276934c527d899c3080985",
+   "fired": true,
+   "ruff_delta": 2,
+   "n_regressions": 1
+  },
+  {
+   "repo": "sympy_sympy",
+   "sha": "9b4343e27f23f0834ca1ad70d8042180945c6ac0",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 1
+  },
+  {
+   "repo": "huggingface_transformers",
+   "sha": "b4e559cfa15f27c114fbbd831b76d910132d6e99",
+   "fired": true,
+   "ruff_delta": 2,
+   "n_regressions": 2
+  },
+  {
+   "repo": "pola-rs_polars",
+   "sha": "5ee5da3e79e68f3ecdb883cb8709784770061409",
+   "fired": false,
+   "ruff_delta": -5,
+   "n_regressions": 0
+  },
+  {
+   "repo": "numpy_numpy",
+   "sha": "4ff8d0aa471c8f2c463e50e24b38e71a94eb7c36",
+   "fired": true,
+   "ruff_delta": 9,
+   "n_regressions": 3
+  },
+  {
+   "repo": "pandas-dev_pandas",
+   "sha": "3e4e4b3bfc38651d728074df1eb4c42d3b033047",
+   "fired": true,
+   "ruff_delta": -31,
+   "n_regressions": 1
+  },
+  {
+   "repo": "encode_starlette",
+   "sha": "f1c50496439d497dca1645d985d0138d7b643ae9",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "psf_black",
+   "sha": "ebe6018e3254629788376e619207719fbe34a849",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "saltstack_salt",
+   "sha": "f49ceafe910a4e584ffb60f3cb76292852b87bbd",
+   "fired": true,
+   "ruff_delta": 8,
+   "n_regressions": 10
+  },
+  {
+   "repo": "dask_dask",
+   "sha": "6aea3b046771ddfbae841ef94b2490b9a102208b",
+   "fired": true,
+   "ruff_delta": 18,
+   "n_regressions": 49
+  },
+  {
+   "repo": "sympy_sympy",
+   "sha": "f263543403c797c85eb9f060a84465d5b3e7e86e",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "python_mypy",
+   "sha": "109c8ce84685136d1cd89c86d4b3458272a6144f",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "python-trio_trio",
+   "sha": "e1da9d2120d4823b6ce5f0d47574ff103ce13d35",
+   "fired": false,
+   "ruff_delta": -8,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pallets_click",
+   "sha": "81930b58c35ce8550a8dca61116a2649b8e23fc3",
+   "fired": true,
+   "ruff_delta": 0,
+   "n_regressions": 4
+  },
+  {
+   "repo": "sympy_sympy",
+   "sha": "a521b2d93a141f91b020456fceb1bec15fbed58b",
+   "fired": true,
+   "ruff_delta": 17,
+   "n_regressions": 4
+  },
+  {
+   "repo": "sympy_sympy",
+   "sha": "ca0f5959638881217586cb88615dbca879a35270",
+   "fired": false,
+   "ruff_delta": -3,
+   "n_regressions": 0
+  },
+  {
+   "repo": "saltstack_salt",
+   "sha": "4822e254e36b36e45c925a9ed3dd9e6e1c4b5c80",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sympy_sympy",
+   "sha": "79aa5c3a6ed49cee5c4d933cb2738278d7737a52",
+   "fired": false,
+   "ruff_delta": 10,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pola-rs_polars",
+   "sha": "0b155a8ba46d7b5246105c2dcc45b791a3928c68",
+   "fired": true,
+   "ruff_delta": 2,
+   "n_regressions": 3
+  },
+  {
+   "repo": "sympy_sympy",
+   "sha": "a9dfa3dcda8e04d14b18eb3741b328c279f04097",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "apache_airflow",
+   "sha": "bef48242f8143f88a1805803ab30aad1bc6c2e7b",
+   "fired": false,
+   "ruff_delta": 2,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scikit-learn_scikit-learn",
+   "sha": "72fb54c767c9b78c40738f4fb0121fe2c6e6461e",
+   "fired": true,
+   "ruff_delta": -2,
+   "n_regressions": 1
+  },
+  {
+   "repo": "keras-team_keras",
+   "sha": "865893bae2b63e643736ad41d4149082e161c273",
+   "fired": true,
+   "ruff_delta": 3,
+   "n_regressions": 2
+  },
+  {
+   "repo": "astropy_astropy",
+   "sha": "bdb4946c04c0fba7663d320699abae32ba466907",
+   "fired": false,
+   "ruff_delta": 1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "apache_airflow",
+   "sha": "62ebef26fc3c71f8ac354951e6fb3d69f297752c",
+   "fired": false,
+   "ruff_delta": 10,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pypa_pip",
+   "sha": "6e2bfe8323ff4c9b54bd9ba28095103a59599cd6",
+   "fired": false,
+   "ruff_delta": -14,
+   "n_regressions": 0
+  },
+  {
+   "repo": "dask_dask",
+   "sha": "18649b1bcd94fcdd86b7b38cdf6705469906191c",
+   "fired": false,
+   "ruff_delta": 2,
+   "n_regressions": 0
+  },
+  {
+   "repo": "python_mypy",
+   "sha": "47bafd63d8087687d717e41202d15b569188c7f9",
+   "fired": true,
+   "ruff_delta": 0,
+   "n_regressions": 1
+  },
+  {
+   "repo": "PyCQA_pylint",
+   "sha": "c09730bd6497daf1c0373783b68b642b11140db8",
+   "fired": true,
+   "ruff_delta": 3,
+   "n_regressions": 3
+  },
+  {
+   "repo": "apache_airflow",
+   "sha": "3ed07474649b1e202f9b106105fef21f7b2cfddc",
+   "fired": true,
+   "ruff_delta": -49,
+   "n_regressions": 3
+  },
+  {
+   "repo": "apache_airflow",
+   "sha": "2af2b1741272b96325863d184c1b0c39f4ab5f41",
+   "fired": true,
+   "ruff_delta": 6,
+   "n_regressions": 5
+  },
+  {
+   "repo": "pypa_pip",
+   "sha": "b82516c9cab2f8f804a5eedf3d6bfbcfb3ab05f4",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "python_mypy",
+   "sha": "f19e6e47b7bdcf3850dd228e1da6466f2ffbfb4d",
+   "fired": true,
+   "ruff_delta": 3,
+   "n_regressions": 1
+  },
+  {
+   "repo": "scipy_scipy",
+   "sha": "8a3e9fa101352493a5e8f3b071d03cc1f2ed20dc",
+   "fired": false,
+   "ruff_delta": -3,
+   "n_regressions": 0
+  },
+  {
+   "repo": "huggingface_transformers",
+   "sha": "de5ca373acefc3c5cfc99aa697e7a073f7a2de23",
+   "fired": true,
+   "ruff_delta": 3,
+   "n_regressions": 3
+  },
+  {
+   "repo": "python-trio_trio",
+   "sha": "2265ddeb15db89592406bc52eb6313cdd9a4ded7",
+   "fired": true,
+   "ruff_delta": -3,
+   "n_regressions": 6
+  },
+  {
+   "repo": "numpy_numpy",
+   "sha": "0c3d18f57c842047ae23383c2eae46a042faef5d",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "saltstack_salt",
+   "sha": "fa2f9cf7bd3bb9cc2512a2d124c2a32bb408b944",
+   "fired": true,
+   "ruff_delta": 32,
+   "n_regressions": 4
+  },
+  {
+   "repo": "keras-team_keras",
+   "sha": "6c1ce0f6e9059c93c87d839b7e091d857cbfc0de",
+   "fired": true,
+   "ruff_delta": 2,
+   "n_regressions": 1
+  },
+  {
+   "repo": "sympy_sympy",
+   "sha": "633fd56f51c6f221393ce91a7982f9cf72f9d2c8",
+   "fired": false,
+   "ruff_delta": -4,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sympy_sympy",
+   "sha": "1a8188034f12bf5db3f24f262a0e3e16a3b4ce04",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sympy_sympy",
+   "sha": "a58736b28b9a3c0317fbc96c6a2b4ffcb475307c",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pypa_pip",
+   "sha": "bbe99ce62d626f6c01552c3fcab953b014674c53",
+   "fired": true,
+   "ruff_delta": 0,
+   "n_regressions": 3
+  },
+  {
+   "repo": "python_mypy",
+   "sha": "2fbfaac60e70463e06ab27ffad508f586a9d20dd",
+   "fired": true,
+   "ruff_delta": 0,
+   "n_regressions": 2
+  },
+  {
+   "repo": "huggingface_transformers",
+   "sha": "d29738f5b45d9c868ef9775388700c8d08b5800d",
+   "fired": true,
+   "ruff_delta": -40,
+   "n_regressions": 2
+  },
+  {
+   "repo": "numpy_numpy",
+   "sha": "d3d2db1ac1d1302a075622ada2ef70aad9ae9bd8",
+   "fired": false,
+   "ruff_delta": 5,
+   "n_regressions": 0
+  },
+  {
+   "repo": "PyCQA_pylint",
+   "sha": "ca66de9c52fcfbfab8b59da992354cb4cbeee57c",
+   "fired": true,
+   "ruff_delta": 0,
+   "n_regressions": 2
+  },
+  {
+   "repo": "pola-rs_polars",
+   "sha": "5993d953e34d686db1574c6ac0d1efe7bbb273a2",
+   "fired": false,
+   "ruff_delta": 24,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pandas-dev_pandas",
+   "sha": "a7d1103081e4b49f64a0f872c40ed6c16d275506",
+   "fired": true,
+   "ruff_delta": -4,
+   "n_regressions": 2
+  },
+  {
+   "repo": "pallets_click",
+   "sha": "0480a56579de344bf40dcc40be8ec5ffc1b5fab3",
+   "fired": true,
+   "ruff_delta": 0,
+   "n_regressions": 2
+  },
+  {
+   "repo": "huggingface_transformers",
+   "sha": "d1123114da1ab4395198146f4f84dae7fe8b693e",
+   "fired": true,
+   "ruff_delta": -4,
+   "n_regressions": 3
+  },
+  {
+   "repo": "sympy_sympy",
+   "sha": "ad04a27f1e8809de6b24b62ca17b5b2bd107474e",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 6
+  },
+  {
+   "repo": "scikit-learn_scikit-learn",
+   "sha": "246f95e428a1bb1db1c158edb5c574e4ea454f50",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pandas-dev_pandas",
+   "sha": "8c52003df4e00618f53cc4b58916417b6ad6b6a5",
+   "fired": true,
+   "ruff_delta": -5,
+   "n_regressions": 7
+  },
+  {
+   "repo": "dask_dask",
+   "sha": "c850d0652cc206ea537f4df2dd6b8e07a90de422",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sympy_sympy",
+   "sha": "8f866ef3065aa58c04dc72999c9cf4a75bd51c50",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "huggingface_transformers",
+   "sha": "3883e3a75e20cd7bbda200993b218d81b97859e7",
+   "fired": true,
+   "ruff_delta": 8,
+   "n_regressions": 1
+  },
+  {
+   "repo": "sympy_sympy",
+   "sha": "30f89d2aa88bdcba6154975215f2e402ee7a1eb5",
+   "fired": false,
+   "ruff_delta": -4,
+   "n_regressions": 0
+  },
+  {
+   "repo": "huggingface_transformers",
+   "sha": "a3add29097b5d0aadb57020507240b29d47dd7b3",
+   "fired": true,
+   "ruff_delta": 36,
+   "n_regressions": 8
+  },
+  {
+   "repo": "PyCQA_pylint",
+   "sha": "0bc45e9037416203bd11f83b84a906fcec1a47f0",
+   "fired": true,
+   "ruff_delta": 2,
+   "n_regressions": 2
+  },
+  {
+   "repo": "scipy_scipy",
+   "sha": "35dd7b989c5c14ac2548b4e9b7620aadcf10d2c7",
+   "fired": false,
+   "ruff_delta": 1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "ansible_ansible",
+   "sha": "ab6ee1a28251387df9b98920284e133fdc0ed320",
+   "fired": true,
+   "ruff_delta": 9,
+   "n_regressions": 6
+  },
+  {
+   "repo": "networkx_networkx",
+   "sha": "e92dd05610420c9847c006dd9cf144e89b33bcf2",
+   "fired": false,
+   "ruff_delta": -3,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sympy_sympy",
+   "sha": "a31843cd719319bbd1f4f456ee2e87a6a4cf1936",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sqlalchemy_sqlalchemy",
+   "sha": "b7e151ac5cf5a0c13b9a30bc6841ed0cfe322536",
+   "fired": true,
+   "ruff_delta": 4,
+   "n_regressions": 18
+  },
+  {
+   "repo": "scipy_scipy",
+   "sha": "6c7a6aed91961fcf6dac9144fedbb4c37ba58ed1",
+   "fired": true,
+   "ruff_delta": 6,
+   "n_regressions": 2
+  },
+  {
+   "repo": "numpy_numpy",
+   "sha": "cb62246d33386205f4e1d70429da17865dfdfbd9",
+   "fired": false,
+   "ruff_delta": 1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pandas-dev_pandas",
+   "sha": "7c4efe09b7803967f75656f856138c732a888884",
+   "fired": true,
+   "ruff_delta": 2,
+   "n_regressions": 2
+  },
+  {
+   "repo": "pola-rs_polars",
+   "sha": "6b1e8935a484d8e600ff567695f7803fcf611b82",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sympy_sympy",
+   "sha": "748c96db7ed03e6bff61c874535dab71f950c843",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sympy_sympy",
+   "sha": "63b9be31175a7f971b1c3ba28d0f2bdda72b3938",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "networkx_networkx",
+   "sha": "290ebce534b84f9db20ec58b98cbb170e65a0ba1",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "networkx_networkx",
+   "sha": "9001c9e788be465d4a96d387f5888b9bffca2585",
+   "fired": false,
+   "ruff_delta": 1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pypa_pip",
+   "sha": "a6cdb490b0d4f32fe9aa2f7100def1c808e6a283",
+   "fired": false,
+   "ruff_delta": -6,
+   "n_regressions": 0
+  },
+  {
+   "repo": "ansible_ansible",
+   "sha": "70cdf477e4e43500630186a11753ee744173dc5a",
+   "fired": true,
+   "ruff_delta": 14,
+   "n_regressions": 20
+  },
+  {
+   "repo": "apache_airflow",
+   "sha": "adf903571bb65dfdb0394099038035f6621f2232",
+   "fired": true,
+   "ruff_delta": 19,
+   "n_regressions": 2
+  },
+  {
+   "repo": "sympy_sympy",
+   "sha": "e6be211a771c5a06a5daf2c9662b074e1d3240ea",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 1
+  },
+  {
+   "repo": "dask_dask",
+   "sha": "4790918684e99b3cabbe4050ff13858ae42d8d99",
+   "fired": true,
+   "ruff_delta": 3,
+   "n_regressions": 2
+  },
+  {
+   "repo": "apache_airflow",
+   "sha": "6ef5165a2b6dbd6e06f33dee6ffc953331955c7c",
+   "fired": true,
+   "ruff_delta": 8,
+   "n_regressions": 2
+  },
+  {
+   "repo": "huggingface_transformers",
+   "sha": "ebd94b0f6f215f6bc0f70e61eba075eb9196f9ef",
+   "fired": false,
+   "ruff_delta": -13,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pandas-dev_pandas",
+   "sha": "e13d8080d39096f354916fd7ad58b887a2ab2519",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pypa_pip",
+   "sha": "61bb651bf168a0d6b7786c18f94a3cc0bc938cc6",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "networkx_networkx",
+   "sha": "f9b6c1e15e3a4747de9510d774df4e26abfb886f",
+   "fired": true,
+   "ruff_delta": 5,
+   "n_regressions": 4
+  },
+  {
+   "repo": "keras-team_keras",
+   "sha": "3c8c310d321dba618ed366682abf9a2888eab89b",
+   "fired": true,
+   "ruff_delta": 6,
+   "n_regressions": 5
+  },
+  {
+   "repo": "pandas-dev_pandas",
+   "sha": "602ab16bf376fb4e7969891543352ce00a2eb40a",
+   "fired": true,
+   "ruff_delta": 0,
+   "n_regressions": 3
+  },
+  {
+   "repo": "astropy_astropy",
+   "sha": "e2ae49ebf084a1f65c0cbab760502d246cf5a141",
+   "fired": true,
+   "ruff_delta": 9,
+   "n_regressions": 5
+  },
+  {
+   "repo": "ansible_ansible",
+   "sha": "8a1fbed5d6a61583950024df60ac74d5c98d6cca",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "apache_airflow",
+   "sha": "95917f1153ff2e487c5fb9777c16821e70f2dadc",
+   "fired": true,
+   "ruff_delta": -4,
+   "n_regressions": 2
+  },
+  {
+   "repo": "keras-team_keras",
+   "sha": "ee179f7da155c3cb8129b954db828906886ad4e4",
+   "fired": true,
+   "ruff_delta": -3,
+   "n_regressions": 1
+  },
+  {
+   "repo": "pallets_click",
+   "sha": "349875d795837a8ca1173621001bb585e1640207",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pallets_click",
+   "sha": "e68766c35ab134af2db2abf7cbd6f31e9b25d150",
+   "fired": false,
+   "ruff_delta": 5,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pallets_click",
+   "sha": "85d507685c7b6c90079c85dfacb51bb834a519e3",
+   "fired": true,
+   "ruff_delta": 3,
+   "n_regressions": 3
+  },
+  {
+   "repo": "networkx_networkx",
+   "sha": "2487230c26861e01ba4b2c6996fb8df80a9c292d",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "keras-team_keras",
+   "sha": "951f9ae24fa858d533e8e2501382ef9614354214",
+   "fired": false,
+   "ruff_delta": -2,
+   "n_regressions": 0
+  },
+  {
+   "repo": "aio-libs_aiohttp",
+   "sha": "5241897f6459926028803caaa4782b8ba84f0562",
+   "fired": true,
+   "ruff_delta": 7,
+   "n_regressions": 2
+  },
+  {
+   "repo": "python_mypy",
+   "sha": "15f23850f3104e92054f5d697535bacb7eefc980",
+   "fired": false,
+   "ruff_delta": -3,
+   "n_regressions": 0
+  },
+  {
+   "repo": "numpy_numpy",
+   "sha": "cefd3523a63cfd5ede693d53d3821e37fa8ca158",
+   "fired": false,
+   "ruff_delta": 1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "keras-team_keras",
+   "sha": "f5e4c9cff9882331fa0332ff4b26155620454ea1",
+   "fired": true,
+   "ruff_delta": 68,
+   "n_regressions": 2
+  },
+  {
+   "repo": "sympy_sympy",
+   "sha": "b72bae3d2b67dd5c74a124db3e007283ee2b6d77",
+   "fired": true,
+   "ruff_delta": 0,
+   "n_regressions": 1
+  },
+  {
+   "repo": "optuna_optuna",
+   "sha": "07ba7ba4f6740d1c066fbc54d47474a5ce178eb1",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "apache_airflow",
+   "sha": "054904bb9a68eb50070a14fe7300cb1e78e2c579",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "ansible_ansible",
+   "sha": "84e473a26ea95afec207409c42ba872c009fe6b6",
+   "fired": true,
+   "ruff_delta": 3,
+   "n_regressions": 3
+  },
+  {
+   "repo": "pandas-dev_pandas",
+   "sha": "d6c3ae5f7c04c4e3031c4247a7cd1665e613ed0d",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pallets_click",
+   "sha": "6e33882c11f0d11d1f213294b2840db93df556a3",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "huggingface_transformers",
+   "sha": "1e2e28f3c804db6c697ebcb37dc48093bd7d7190",
+   "fired": false,
+   "ruff_delta": -2,
+   "n_regressions": 0
+  },
+  {
+   "repo": "PyCQA_pylint",
+   "sha": "ee910755b90af58d6aa9b908b5afe4310c5b26db",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "numpy_numpy",
+   "sha": "4a9ad17e58a042931798c32b39b137f52abc3aed",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "keras-team_keras",
+   "sha": "242f984013dc329b9805733d2c62659443dcb23a",
+   "fired": true,
+   "ruff_delta": 46,
+   "n_regressions": 3
+  },
+  {
+   "repo": "pandas-dev_pandas",
+   "sha": "f2a0125663bbcf8701347c00329c311e7391608e",
+   "fired": false,
+   "ruff_delta": 1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scikit-learn_scikit-learn",
+   "sha": "3957fc3b343c6057f933f91c3f701ff415cf500b",
+   "fired": true,
+   "ruff_delta": 15,
+   "n_regressions": 23
+  },
+  {
+   "repo": "python-trio_trio",
+   "sha": "a667a52c78a7f38c9a0475f59a6b245c4710c57f",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pypa_pip",
+   "sha": "5bb9899938b229843194770045a23178aa3fc4b4",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 2
+  },
+  {
+   "repo": "pypa_setuptools",
+   "sha": "6c6d69e0213c4012caa36f0087f1fe54bac62c89",
+   "fired": false,
+   "ruff_delta": -7,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scipy_scipy",
+   "sha": "30b8165b20f435c0d1bfb80cdc189f6f7e4fa721",
+   "fired": true,
+   "ruff_delta": 2,
+   "n_regressions": 3
+  },
+  {
+   "repo": "dask_dask",
+   "sha": "603d06448d9d440914e788ea5d1ac59cb8059263",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 2
+  },
+  {
+   "repo": "saltstack_salt",
+   "sha": "ba3dc0cb55b9bf819fe6ad0ff275294b1fe39404",
+   "fired": true,
+   "ruff_delta": 3,
+   "n_regressions": 1
+  },
+  {
+   "repo": "aio-libs_aiohttp",
+   "sha": "42930b0c023af52782ec026d0e850f5f0c0bcdcd",
+   "fired": true,
+   "ruff_delta": -1,
+   "n_regressions": 2
+  },
+  {
+   "repo": "aio-libs_aiohttp",
+   "sha": "7dad207b41a72a6349e3fac1ca6b65d665ee8a0f",
+   "fired": false,
+   "ruff_delta": 1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "apache_airflow",
+   "sha": "89a021cd72fd4589c0244a1127be5b193a93d6da",
+   "fired": true,
+   "ruff_delta": 2,
+   "n_regressions": 1
+  },
+  {
+   "repo": "astropy_astropy",
+   "sha": "22557281e9d9aa7f4b8387b365fdd98a65d87691",
+   "fired": true,
+   "ruff_delta": -5,
+   "n_regressions": 2
+  },
+  {
+   "repo": "python_mypy",
+   "sha": "a568f3ab178ad261b5f45db6ec2c73113afbd287",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pandas-dev_pandas",
+   "sha": "1f81f47c486da7cbbea2aa4f9f177d75eb80c2f2",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pypa_setuptools",
+   "sha": "6474847292f1cf4fcda55afe2cd5e46497ce339f",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "python_mypy",
+   "sha": "e86c0dc32c0c424fc0d25f8c37f3cd9b5276c6a3",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "astropy_astropy",
+   "sha": "26170fb8b67c6b31784449a979edaa161ac0488a",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "saltstack_salt",
+   "sha": "86e231bb513eb757ed1956cfc9e904df5bf9790a",
+   "fired": false,
+   "ruff_delta": -2,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sqlalchemy_sqlalchemy",
+   "sha": "beff0e1e132e8005611ed4d3f07955252a7e8d72",
+   "fired": true,
+   "ruff_delta": -99,
+   "n_regressions": 3
+  },
+  {
+   "repo": "python_mypy",
+   "sha": "eb41417ee8327e7d41e30f56a9cd2850b660b51e",
+   "fired": true,
+   "ruff_delta": 8,
+   "n_regressions": 4
+  },
+  {
+   "repo": "python-trio_trio",
+   "sha": "3d355c4a56de647ee7815df5249aaff6515a935a",
+   "fired": true,
+   "ruff_delta": 19,
+   "n_regressions": 2
+  },
+  {
+   "repo": "huggingface_transformers",
+   "sha": "7addc9346c89563c0d36b30fa3534c58d3a1de05",
+   "fired": false,
+   "ruff_delta": -3,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pandas-dev_pandas",
+   "sha": "9d8624726a23aacb9bce788051f47053a317d490",
+   "fired": true,
+   "ruff_delta": -1,
+   "n_regressions": 2
+  },
+  {
+   "repo": "pola-rs_polars",
+   "sha": "898c89a2813dee1505cb3e1709cd2e0408d92075",
+   "fired": false,
+   "ruff_delta": -2,
+   "n_regressions": 0
+  },
+  {
+   "repo": "ansible_ansible",
+   "sha": "48098ba688395948adfa15a1e5c11c66dfe22e00",
+   "fired": true,
+   "ruff_delta": 7,
+   "n_regressions": 5
+  },
+  {
+   "repo": "scipy_scipy",
+   "sha": "21c5e5c97d0feda5b6056378396f1d5fa6dafb43",
+   "fired": true,
+   "ruff_delta": 6,
+   "n_regressions": 3
+  },
+  {
+   "repo": "scipy_scipy",
+   "sha": "7bd9fc95d6a032b525bd366ed211bd7eb358ee46",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pola-rs_polars",
+   "sha": "a73d13a8d8bc12a4dac6155331db6bf2b63e4dd6",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 1
+  },
+  {
+   "repo": "pypa_pip",
+   "sha": "666f6db0697c900273816c99e721d84590bfb347",
+   "fired": false,
+   "ruff_delta": -16,
+   "n_regressions": 0
+  },
+  {
+   "repo": "aio-libs_aiohttp",
+   "sha": "c13be49277649f885a71bfd0bf78d18ee51af95c",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "python-trio_trio",
+   "sha": "efb739c329760a93c5f60bad624a16ccf2e78b16",
+   "fired": false,
+   "ruff_delta": -3,
+   "n_regressions": 0
+  },
+  {
+   "repo": "celery_celery",
+   "sha": "97d3d1fe47785a29e86aa004d6cbdc695e232944",
+   "fired": true,
+   "ruff_delta": -2,
+   "n_regressions": 1
+  },
+  {
+   "repo": "keras-team_keras",
+   "sha": "a44f5bee5981546ec803f292cc0b20e8bed40cf2",
+   "fired": false,
+   "ruff_delta": -2,
+   "n_regressions": 0
+  },
+  {
+   "repo": "saltstack_salt",
+   "sha": "c8a78c7ceb6f77f0e3775622c7eec809fbd1c192",
+   "fired": false,
+   "ruff_delta": 2,
+   "n_regressions": 0
+  },
+  {
+   "repo": "apache_airflow",
+   "sha": "e9f544cc3fb1ac3d7709b3c54804dd6fdd510eca",
+   "fired": false,
+   "ruff_delta": -65,
+   "n_regressions": 0
+  },
+  {
+   "repo": "apache_airflow",
+   "sha": "0afe3d129db2792f58f6fd8cc5e278aba9cf166c",
+   "fired": false,
+   "ruff_delta": 3,
+   "n_regressions": 0
+  },
+  {
+   "repo": "aio-libs_aiohttp",
+   "sha": "bb78691e70e9519459017d66e5c110ccaa176541",
+   "fired": true,
+   "ruff_delta": 5,
+   "n_regressions": 3
+  },
+  {
+   "repo": "pypa_pip",
+   "sha": "0e240d7ddeb28c73d2906657eab7c7a215747f4d",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 1
+  },
+  {
+   "repo": "python_mypy",
+   "sha": "20b0b9b460cd11a4755f70ae08823fa6a8f5fbd4",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pandas-dev_pandas",
+   "sha": "8654a9ed3cc2246ef9eaf2fe8725369a2e885d35",
+   "fired": true,
+   "ruff_delta": 2,
+   "n_regressions": 1
+  },
+  {
+   "repo": "astropy_astropy",
+   "sha": "e1f1a88f2d21e6ceb4dfa420d87e8446205f423e",
+   "fired": false,
+   "ruff_delta": -31,
+   "n_regressions": 0
+  },
+  {
+   "repo": "huggingface_transformers",
+   "sha": "9ef15d7016bd5fb307e961b2e8e56f14748913da",
+   "fired": true,
+   "ruff_delta": 0,
+   "n_regressions": 3
+  },
+  {
+   "repo": "saltstack_salt",
+   "sha": "30444a42f2ebaf289caef68a609421a1a7fdf4a3",
+   "fired": true,
+   "ruff_delta": 2,
+   "n_regressions": 2
+  },
+  {
+   "repo": "apache_airflow",
+   "sha": "796b46ee8aba6ebaef767ec5592b826a636174e3",
+   "fired": true,
+   "ruff_delta": 4,
+   "n_regressions": 5
+  },
+  {
+   "repo": "huggingface_transformers",
+   "sha": "3f43d824b909ec92cde5311e9be016767c0fb11b",
+   "fired": true,
+   "ruff_delta": 66,
+   "n_regressions": 4
+  },
+  {
+   "repo": "saltstack_salt",
+   "sha": "429c3e08a12c97cb41fc86939cf08ae683c97cc1",
+   "fired": true,
+   "ruff_delta": 3,
+   "n_regressions": 3
+  },
+  {
+   "repo": "astropy_astropy",
+   "sha": "bf03e5187e759618f17642e33c115c567551a07a",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "python_mypy",
+   "sha": "20acf99d967ee1bc7894fe070d33cbe5949d38ab",
+   "fired": true,
+   "ruff_delta": 6,
+   "n_regressions": 4
+  },
+  {
+   "repo": "pandas-dev_pandas",
+   "sha": "590e20c9f83339bb9ba8811ec1fd77508acffaa6",
+   "fired": false,
+   "ruff_delta": -2,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pandas-dev_pandas",
+   "sha": "ce8f6e89b83af4c8632c9cb61aa78b868beeaecc",
+   "fired": false,
+   "ruff_delta": 2,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scikit-learn_scikit-learn",
+   "sha": "1b1e10c3251bda9240f115123f6c17c8fde50e35",
+   "fired": true,
+   "ruff_delta": 9,
+   "n_regressions": 16
+  },
+  {
+   "repo": "celery_celery",
+   "sha": "62647576d413a6727f7088d33ffc725c9b65cf72",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pypa_pip",
+   "sha": "a4102d179aeb3fadd8945edc911622722e55f4c9",
+   "fired": true,
+   "ruff_delta": 2,
+   "n_regressions": 2
+  },
+  {
+   "repo": "saltstack_salt",
+   "sha": "76f8dbfa6267fd632a51816e2bbd4403b48ba4d0",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "celery_celery",
+   "sha": "c6ce1aa6f8127f2960d95488f1d25b929591ee2b",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "dask_dask",
+   "sha": "dcc1fdebb14816881c9719081fffc3eaeea919b4",
+   "fired": false,
+   "ruff_delta": -3,
+   "n_regressions": 0
+  },
+  {
+   "repo": "networkx_networkx",
+   "sha": "3ee0390949d2789734c0930898df72bb9c511a19",
+   "fired": true,
+   "ruff_delta": 15,
+   "n_regressions": 26
+  },
+  {
+   "repo": "scikit-learn_scikit-learn",
+   "sha": "a097bf81785d43a68d3b3ad99e063ca9f45a0403",
+   "fired": true,
+   "ruff_delta": 5,
+   "n_regressions": 6
+  },
+  {
+   "repo": "saltstack_salt",
+   "sha": "7a7018261ef4943b04e34563ef7472d81114334c",
+   "fired": true,
+   "ruff_delta": 4,
+   "n_regressions": 4
+  },
+  {
+   "repo": "aio-libs_aiohttp",
+   "sha": "ff367758bded54c1a1b558886a2e2ca30e5f6434",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "numpy_numpy",
+   "sha": "3c8a0be17fa73a67a208a0ebb74409c647550ed3",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 2
+  },
+  {
+   "repo": "apache_airflow",
+   "sha": "5b5f8f4650e52a5a6c7e1ed6fb2cbbca1145d14e",
+   "fired": false,
+   "ruff_delta": -3,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scikit-learn_scikit-learn",
+   "sha": "b461547fc2f089c5f21a233c17304034f1258d8f",
+   "fired": false,
+   "ruff_delta": 2,
+   "n_regressions": 0
+  },
+  {
+   "repo": "optuna_optuna",
+   "sha": "fd5362dfdd7adf003aa58b2900fe590a6d145095",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 1
+  },
+  {
+   "repo": "sqlalchemy_sqlalchemy",
+   "sha": "3cd9a5b42f850618141ec459cffe30d0ade0f191",
+   "fired": true,
+   "ruff_delta": 0,
+   "n_regressions": 2
+  },
+  {
+   "repo": "pandas-dev_pandas",
+   "sha": "b8371f5e6f329bfe1b5f1e099e221c8219fc6bbd",
+   "fired": false,
+   "ruff_delta": 8,
+   "n_regressions": 0
+  },
+  {
+   "repo": "ansible_ansible",
+   "sha": "243aea45cea543fc1ef7c43d380a68aa1c7b338a",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 1
+  },
+  {
+   "repo": "sqlalchemy_sqlalchemy",
+   "sha": "abc376c7025b53c790392026e0deaf305299ab6f",
+   "fired": true,
+   "ruff_delta": 4,
+   "n_regressions": 2
+  },
+  {
+   "repo": "sympy_sympy",
+   "sha": "e658e110e2887702a644621e420cfbf76c83a786",
+   "fired": true,
+   "ruff_delta": 7,
+   "n_regressions": 2
+  },
+  {
+   "repo": "numpy_numpy",
+   "sha": "9d1d44fc120c451a4925720027e85c70e13c26f2",
+   "fired": true,
+   "ruff_delta": 3,
+   "n_regressions": 3
+  },
+  {
+   "repo": "aio-libs_aiohttp",
+   "sha": "aedc79e8319e5accc7808238f5dbc7077f36ba5f",
+   "fired": false,
+   "ruff_delta": 30,
+   "n_regressions": 0
+  },
+  {
+   "repo": "psf_black",
+   "sha": "60d734a84d5c30f1ca52e6364acf3843f2f612dc",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "PyCQA_pylint",
+   "sha": "647b05e964779f5bd0d449998580a37344784c0a",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pypa_pip",
+   "sha": "cd01e4fd8f90b3c098c10e4780b6da8b523c12c1",
+   "fired": true,
+   "ruff_delta": -19,
+   "n_regressions": 6
+  },
+  {
+   "repo": "scipy_scipy",
+   "sha": "a346c295ef587e519b00faa33b896e50164603fd",
+   "fired": true,
+   "ruff_delta": 2,
+   "n_regressions": 2
+  },
+  {
+   "repo": "scikit-learn_scikit-learn",
+   "sha": "2c0bd624ac6862af35ae9b1af8f3786d538f6b93",
+   "fired": false,
+   "ruff_delta": 7,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pola-rs_polars",
+   "sha": "f6bcaf8fcf355aded7fde4cc92574bc78a6189cc",
+   "fired": true,
+   "ruff_delta": 8,
+   "n_regressions": 7
+  },
+  {
+   "repo": "pandas-dev_pandas",
+   "sha": "558a594061b70581b618789c8b8097904e578885",
+   "fired": true,
+   "ruff_delta": 4,
+   "n_regressions": 5
+  },
+  {
+   "repo": "aio-libs_aiohttp",
+   "sha": "aa4ef4b37479a1935520bf0c3de0dc8bf75da50a",
+   "fired": true,
+   "ruff_delta": 2,
+   "n_regressions": 1
+  },
+  {
+   "repo": "scipy_scipy",
+   "sha": "efeb89aa95ac4e14cfb16f0cd5ae6d0ce646cee3",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pypa_virtualenv",
+   "sha": "599907870e9a501224cf603af863c712e581c752",
+   "fired": true,
+   "ruff_delta": -4,
+   "n_regressions": 7
+  },
+  {
+   "repo": "astropy_astropy",
+   "sha": "68cfc72003393ba40d95f3dba873cf028397eab9",
+   "fired": true,
+   "ruff_delta": -38,
+   "n_regressions": 5
+  },
+  {
+   "repo": "dask_dask",
+   "sha": "3715ab5d68f944ef8bdcd9600e74aaa6c7ebf2ae",
+   "fired": false,
+   "ruff_delta": 1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "PyCQA_pylint",
+   "sha": "cb37ae4fc24a8756a5f965cdc6ab9c472f909ab0",
+   "fired": true,
+   "ruff_delta": -8,
+   "n_regressions": 2
+  },
+  {
+   "repo": "pola-rs_polars",
+   "sha": "ef2160208b6f23586b4006f33020f4d8b91172b1",
+   "fired": true,
+   "ruff_delta": 6,
+   "n_regressions": 3
+  },
+  {
+   "repo": "saltstack_salt",
+   "sha": "03a95136bfc63b814f7e9d04270edc65a27ccd9d",
+   "fired": true,
+   "ruff_delta": 75,
+   "n_regressions": 57
+  },
+  {
+   "repo": "apache_airflow",
+   "sha": "99f86ccfa59df6aa1aa33afce5e0b66dd5df9a3d",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "python_mypy",
+   "sha": "5fb8d6262f2ade83234e46334eb3fb8a4bbaedc0",
+   "fired": true,
+   "ruff_delta": 27,
+   "n_regressions": 7
+  },
+  {
+   "repo": "pandas-dev_pandas",
+   "sha": "8f472ae439b2054fa879f427b95023bb063ba69a",
+   "fired": false,
+   "ruff_delta": 41,
+   "n_regressions": 0
+  },
+  {
+   "repo": "numpy_numpy",
+   "sha": "6492f632a92439c82c74efa6753e10ce9360c6ba",
+   "fired": true,
+   "ruff_delta": 12,
+   "n_regressions": 5
+  },
+  {
+   "repo": "sqlalchemy_sqlalchemy",
+   "sha": "269313218ddd06a21387085295c553becbd00e46",
+   "fired": false,
+   "ruff_delta": -2,
+   "n_regressions": 0
+  },
+  {
+   "repo": "optuna_optuna",
+   "sha": "992b87817296884a7d6a7557510be1d0c827b4f1",
+   "fired": true,
+   "ruff_delta": 4,
+   "n_regressions": 4
+  },
+  {
+   "repo": "sympy_sympy",
+   "sha": "297fb65616f1a782c134868a36e5faba560b0062",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 2
+  },
+  {
+   "repo": "aio-libs_aiohttp",
+   "sha": "b1f1d20d7a3c99353d6dfd5bbe8bee4f99061bcd",
+   "fired": false,
+   "ruff_delta": 1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "astropy_astropy",
+   "sha": "005b988ce864f06c013e2ae7f1d8bde820430baa",
+   "fired": false,
+   "ruff_delta": 3,
+   "n_regressions": 0
+  },
+  {
+   "repo": "python_mypy",
+   "sha": "dc42e288cc8eb8ae409a6e678873353a84dabc59",
+   "fired": true,
+   "ruff_delta": -4,
+   "n_regressions": 10
+  },
+  {
+   "repo": "PyCQA_pylint",
+   "sha": "20976c36f1e48061e72379979411bc695564a518",
+   "fired": false,
+   "ruff_delta": -46,
+   "n_regressions": 0
+  },
+  {
+   "repo": "ansible_ansible",
+   "sha": "29f803b16ac17f787c3b32961132540ca0f87b4f",
+   "fired": false,
+   "ruff_delta": -29,
+   "n_regressions": 0
+  },
+  {
+   "repo": "keras-team_keras",
+   "sha": "0322038b8a0e75771886b2092636435fc0154973",
+   "fired": false,
+   "ruff_delta": -6,
+   "n_regressions": 0
+  },
+  {
+   "repo": "huggingface_transformers",
+   "sha": "e20faa6f0317657c3c03c61c7550d0b805911ddb",
+   "fired": true,
+   "ruff_delta": 16,
+   "n_regressions": 6
+  },
+  {
+   "repo": "astropy_astropy",
+   "sha": "050784b212ce3deb7b544ef757a9dc64ec678b12",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 2
+  },
+  {
+   "repo": "sympy_sympy",
+   "sha": "b7a2b7933ac48fc40725c24333c18b432c861a18",
+   "fired": true,
+   "ruff_delta": 7,
+   "n_regressions": 14
+  },
+  {
+   "repo": "sqlalchemy_sqlalchemy",
+   "sha": "b7cf11b163dd7d15f56634a41dcceb880821ecf3",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 3
+  },
+  {
+   "repo": "saltstack_salt",
+   "sha": "f4ba89735c6ee0ab439827b48738e836e64e65a0",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "astropy_astropy",
+   "sha": "fbf07465720b6f7842f7c863e77bd78803e6104b",
+   "fired": true,
+   "ruff_delta": 36,
+   "n_regressions": 3
+  },
+  {
+   "repo": "keras-team_keras",
+   "sha": "52380ed4437749467912e34a3b485a928160828f",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "optuna_optuna",
+   "sha": "5807da86d119f8be3f30a50d326b5211243711b6",
+   "fired": true,
+   "ruff_delta": 13,
+   "n_regressions": 16
+  },
+  {
+   "repo": "networkx_networkx",
+   "sha": "7e4d02c2daed10e985f9c6cc41ec0789b498f437",
+   "fired": true,
+   "ruff_delta": -4,
+   "n_regressions": 3
+  },
+  {
+   "repo": "numpy_numpy",
+   "sha": "baeaeac6885d67238321101863a7753d366c535e",
+   "fired": false,
+   "ruff_delta": -4,
+   "n_regressions": 0
+  },
+  {
+   "repo": "optuna_optuna",
+   "sha": "a018174924cb0d098652f5b1af5f27f2f7a60422",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 2
+  },
+  {
+   "repo": "keras-team_keras",
+   "sha": "770cb289f7fa49a61230d6d8e9c875e552adb0bc",
+   "fired": true,
+   "ruff_delta": 0,
+   "n_regressions": 3
+  },
+  {
+   "repo": "python_mypy",
+   "sha": "a9fda34dc68896df0405d8d9d8084148b7917bf5",
+   "fired": true,
+   "ruff_delta": 0,
+   "n_regressions": 1
+  },
+  {
+   "repo": "numpy_numpy",
+   "sha": "008c9318789050ee53b3bd420b3610cf4c4f338e",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sympy_sympy",
+   "sha": "367584c76169c6958432c2a121de170168e9d060",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "apache_airflow",
+   "sha": "be51aece54ef98a8868845ad8033f08689dd7ad1",
+   "fired": true,
+   "ruff_delta": -4,
+   "n_regressions": 7
+  },
+  {
+   "repo": "python_mypy",
+   "sha": "71942c0bf7e2ce340092ac7e98352823755d4d63",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 1
+  },
+  {
+   "repo": "keras-team_keras",
+   "sha": "310bcde4c20bdc2cd57ab033aece5361b5b0a470",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scikit-learn_scikit-learn",
+   "sha": "7ea78614829a144f2f82e94fca515722a0fc2ef3",
+   "fired": true,
+   "ruff_delta": 16,
+   "n_regressions": 9
+  },
+  {
+   "repo": "huggingface_transformers",
+   "sha": "13791d8f482aad9ac31c29866eafc760ccbfa0f3",
+   "fired": false,
+   "ruff_delta": -52,
+   "n_regressions": 0
+  },
+  {
+   "repo": "astropy_astropy",
+   "sha": "3f7313ea25ff8dcc0e651e6f83618ad40d4b7b45",
+   "fired": true,
+   "ruff_delta": 2,
+   "n_regressions": 2
+  },
+  {
+   "repo": "astropy_astropy",
+   "sha": "69c2638bcd41048c4c44fc3635c4f66f5b675ab5",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "celery_celery",
+   "sha": "12a00a2513efb1e971e86322afb8b1a127e78860",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 1
+  },
+  {
+   "repo": "celery_celery",
+   "sha": "5f019dfa6f7d74978edb2cd4eed2b08537edba57",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pola-rs_polars",
+   "sha": "9e7b2c92392a28f30c7c6ad683c3662dcffb8b89",
+   "fired": false,
+   "ruff_delta": -5,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sympy_sympy",
+   "sha": "005c048fc521c289af90d3131ebc537974658e83",
+   "fired": true,
+   "ruff_delta": -19,
+   "n_regressions": 5
+  },
+  {
+   "repo": "pandas-dev_pandas",
+   "sha": "cf05e2fbbd7284f30fed75508a8b937d3dc739ca",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scipy_scipy",
+   "sha": "1cc1dffe99376f1be48d8037b1f32e1121455994",
+   "fired": true,
+   "ruff_delta": 14,
+   "n_regressions": 4
+  },
+  {
+   "repo": "aio-libs_aiohttp",
+   "sha": "b9419c2f1ebc0678a8311018af107e446616cb9b",
+   "fired": true,
+   "ruff_delta": -5,
+   "n_regressions": 2
+  },
+  {
+   "repo": "optuna_optuna",
+   "sha": "a6578e1ba5c476b27fcf89ba64c101ecf73e33b6",
+   "fired": false,
+   "ruff_delta": -34,
+   "n_regressions": 0
+  },
+  {
+   "repo": "saltstack_salt",
+   "sha": "172a1859de308855ec23de45fd7cde5b300ce367",
+   "fired": true,
+   "ruff_delta": 4,
+   "n_regressions": 3
+  },
+  {
+   "repo": "keras-team_keras",
+   "sha": "ca8f90ac2e82344409e2f23b112fc8670aa1078d",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 2
+  },
+  {
+   "repo": "sqlalchemy_sqlalchemy",
+   "sha": "977e86dc9be38d9f8a16e1f17141486b0f84a43a",
+   "fired": true,
+   "ruff_delta": 0,
+   "n_regressions": 9
+  },
+  {
+   "repo": "sympy_sympy",
+   "sha": "49b8926b29d2018c9f4e75608cb757da4fb66913",
+   "fired": false,
+   "ruff_delta": -10,
+   "n_regressions": 0
+  },
+  {
+   "repo": "dask_dask",
+   "sha": "2c8296c80ec436cc8a7fef98a2832a9032b287ff",
+   "fired": true,
+   "ruff_delta": 2,
+   "n_regressions": 1
+  },
+  {
+   "repo": "PyCQA_pylint",
+   "sha": "545ffeff2904fc9c8672b8b575dc894a29ffb8db",
+   "fired": true,
+   "ruff_delta": -15,
+   "n_regressions": 7
+  },
+  {
+   "repo": "huggingface_transformers",
+   "sha": "e3f028f3af9e2fd42bb8cf52ec1bcf720b6fbaf1",
+   "fired": true,
+   "ruff_delta": 4,
+   "n_regressions": 6
+  },
+  {
+   "repo": "scipy_scipy",
+   "sha": "201edb0a859d883facdfaeaad4919e9c6c207f15",
+   "fired": true,
+   "ruff_delta": 2,
+   "n_regressions": 5
+  },
+  {
+   "repo": "python_mypy",
+   "sha": "b6f2ea326fdb18c180f2f89e81e5018f1e8f734f",
+   "fired": false,
+   "ruff_delta": 1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pypa_setuptools",
+   "sha": "c11cc27ac8c3e5ecab512b28b711aee94cab079b",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "apache_airflow",
+   "sha": "6df947d44fcb59e08f1dd899ee50e403ff40d9d3",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pallets_click",
+   "sha": "82d9b0c56b1dfec813ac3c16934a5eb401f302f7",
+   "fired": false,
+   "ruff_delta": 110,
+   "n_regressions": 0
+  },
+  {
+   "repo": "ansible_ansible",
+   "sha": "dd63dfcf1ec50bade4eaf8925330d7c96e475cc5",
+   "fired": true,
+   "ruff_delta": 9,
+   "n_regressions": 10
+  },
+  {
+   "repo": "apache_airflow",
+   "sha": "c60947726082905f7b369a90e8d37fcdb873149f",
+   "fired": false,
+   "ruff_delta": 7,
+   "n_regressions": 0
+  },
+  {
+   "repo": "keras-team_keras",
+   "sha": "1c221934aaeab20ed5b6fa245b33b00a8b557533",
+   "fired": true,
+   "ruff_delta": 19,
+   "n_regressions": 3
+  },
+  {
+   "repo": "pandas-dev_pandas",
+   "sha": "13f3f5aaec91943436ce840cad7f88bf892a68b2",
+   "fired": true,
+   "ruff_delta": 4,
+   "n_regressions": 1
+  },
+  {
+   "repo": "huggingface_transformers",
+   "sha": "7c393181366f868ea4cac7fc9da8af5c5e7972ee",
+   "fired": false,
+   "ruff_delta": 1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scikit-learn_scikit-learn",
+   "sha": "7ef342ee8983c8a3613a09ca6e3d11dba344e2f1",
+   "fired": true,
+   "ruff_delta": 6,
+   "n_regressions": 3
+  },
+  {
+   "repo": "pypa_setuptools",
+   "sha": "3c5cf653dbc0ab10d08738ee4e4db26710903466",
+   "fired": false,
+   "ruff_delta": 2,
+   "n_regressions": 0
+  },
+  {
+   "repo": "astropy_astropy",
+   "sha": "e8aaee88c11a25b6c5054eb09953345048bb5202",
+   "fired": false,
+   "ruff_delta": 1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "apache_airflow",
+   "sha": "84a59a6d74510aff4059a3ca2da793d996e86fa1",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pandas-dev_pandas",
+   "sha": "e299560dff3c3620506d7326aef82b68d6a7e3e6",
+   "fired": true,
+   "ruff_delta": 4,
+   "n_regressions": 1
+  },
+  {
+   "repo": "dask_dask",
+   "sha": "f1047f26509482a34f417a06e4298b5a411c5e11",
+   "fired": true,
+   "ruff_delta": 0,
+   "n_regressions": 3
+  },
+  {
+   "repo": "scipy_scipy",
+   "sha": "860ede04e2d1a673dcc6c22fb4be16720f78ba1e",
+   "fired": false,
+   "ruff_delta": -40,
+   "n_regressions": 0
+  },
+  {
+   "repo": "saltstack_salt",
+   "sha": "83f551aeca1552a57044416a14c6095091127bfb",
+   "fired": true,
+   "ruff_delta": 21,
+   "n_regressions": 3
+  },
+  {
+   "repo": "pandas-dev_pandas",
+   "sha": "0085460adb38a864611f84d3edae7f1ffe02f0d1",
+   "fired": true,
+   "ruff_delta": 3,
+   "n_regressions": 11
+  },
+  {
+   "repo": "scikit-learn_scikit-learn",
+   "sha": "7f079e3377437438166ad1de1f141aee00f45f6b",
+   "fired": true,
+   "ruff_delta": 16,
+   "n_regressions": 13
+  },
+  {
+   "repo": "astropy_astropy",
+   "sha": "2282b82f4514e333019ba1bece60632a250d3fb1",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "ansible_ansible",
+   "sha": "5c2d830dea986a8c7bd8c286b86bdce326cd7eb1",
+   "fired": true,
+   "ruff_delta": 28,
+   "n_regressions": 7
+  },
+  {
+   "repo": "apache_airflow",
+   "sha": "57ca63dd9ec7cdbb2317adf4015ab1fe909e7d14",
+   "fired": true,
+   "ruff_delta": 5,
+   "n_regressions": 3
+  },
+  {
+   "repo": "astropy_astropy",
+   "sha": "ad89e569ab54ed8e34c66e334ac3c9f77938344c",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 1
+  },
+  {
+   "repo": "optuna_optuna",
+   "sha": "eff7c06f4f573827dae25d949b786e0f5852323a",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "apache_airflow",
+   "sha": "efce3b19955c2bfaf34f0d5e8c711434ac883c34",
+   "fired": true,
+   "ruff_delta": 0,
+   "n_regressions": 1
+  },
+  {
+   "repo": "scikit-learn_scikit-learn",
+   "sha": "69c8489a4cdecbe4bacf7b0bf9bcb8af70636ab5",
+   "fired": true,
+   "ruff_delta": 2,
+   "n_regressions": 2
+  },
+  {
+   "repo": "encode_starlette",
+   "sha": "e0176007d3d07a35c461529e3fd4cd7d83c2548e",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 1
+  },
+  {
+   "repo": "keras-team_keras",
+   "sha": "eec1fbdf90236c2ab8a0c0352d65c30c5b401620",
+   "fired": true,
+   "ruff_delta": 19,
+   "n_regressions": 6
+  },
+  {
+   "repo": "ansible_ansible",
+   "sha": "e9d7fa04181e91effad9fbfa2026e3994d695776",
+   "fired": false,
+   "ruff_delta": -5,
+   "n_regressions": 0
+  },
+  {
+   "repo": "apache_airflow",
+   "sha": "6952b196863aeb50632656bb4004129159ff573e",
+   "fired": true,
+   "ruff_delta": 4,
+   "n_regressions": 6
+  },
+  {
+   "repo": "saltstack_salt",
+   "sha": "20bf4eed1d34cf8edfa41a73a9769ffa7a977449",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pypa_virtualenv",
+   "sha": "caff2651ba2ad8482aded42eac23c8fc02d590b6",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 2
+  },
+  {
+   "repo": "sympy_sympy",
+   "sha": "368f010af228ab7f2d6f06c486fd20e9d7cbbf3c",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pypa_pip",
+   "sha": "01c985a663fe698a794118c68153d5494514835c",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "huggingface_transformers",
+   "sha": "b9090ae58cdaf9e7a195f38d3b2574dd408acaa6",
+   "fired": true,
+   "ruff_delta": 21,
+   "n_regressions": 3
+  },
+  {
+   "repo": "pandas-dev_pandas",
+   "sha": "b87bf854519466182b43f9f7d5b6c9d91be87ad0",
+   "fired": true,
+   "ruff_delta": 2,
+   "n_regressions": 2
+  },
+  {
+   "repo": "scipy_scipy",
+   "sha": "3a9acef9917026bcb4c9d6eee1caddfea21812fd",
+   "fired": true,
+   "ruff_delta": 6,
+   "n_regressions": 8
+  },
+  {
+   "repo": "encode_starlette",
+   "sha": "ef34ece46e0572852e63a76b32b11cd4aed457de",
+   "fired": true,
+   "ruff_delta": 0,
+   "n_regressions": 2
+  },
+  {
+   "repo": "pypa_pip",
+   "sha": "d6e333fb636424d7dca15f4e8aa61cdaab9cdd31",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sympy_sympy",
+   "sha": "82d5df65788101483d07d37c833f45066c0091e9",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "apache_airflow",
+   "sha": "594d93d3b0882132615ec26770ea77ff6aac5dff",
+   "fired": true,
+   "ruff_delta": -1,
+   "n_regressions": 1
+  },
+  {
+   "repo": "python-trio_trio",
+   "sha": "36414110c7e7cd9fda839fb027ca9b4df6974b87",
+   "fired": false,
+   "ruff_delta": -2,
+   "n_regressions": 0
+  },
+  {
+   "repo": "apache_airflow",
+   "sha": "ecd6fd4ad24a88c8831c8a802d0ed020a64b5f44",
+   "fired": true,
+   "ruff_delta": 16,
+   "n_regressions": 4
+  },
+  {
+   "repo": "sympy_sympy",
+   "sha": "dcff00bb006233d1af1607e3199afad9fedc65a0",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sympy_sympy",
+   "sha": "6c0629da80a621120ae703a9bae81ad7678c1586",
+   "fired": false,
+   "ruff_delta": -7,
+   "n_regressions": 0
+  },
+  {
+   "repo": "ansible_ansible",
+   "sha": "8db9bd757444fba6dd23fcb067e261d877926a33",
+   "fired": false,
+   "ruff_delta": -5,
+   "n_regressions": 0
+  },
+  {
+   "repo": "astropy_astropy",
+   "sha": "2160c2b0a9306def44bf984e34d98af25e23fe48",
+   "fired": true,
+   "ruff_delta": -9,
+   "n_regressions": 1
+  },
+  {
+   "repo": "pandas-dev_pandas",
+   "sha": "3e6adacadfba33ae453a405427ccee98bd07124e",
+   "fired": false,
+   "ruff_delta": -4,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sympy_sympy",
+   "sha": "2d3dada71555a569ba120e299f2325d44b1b4c98",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "apache_airflow",
+   "sha": "9a6baab5a271b28b6b3cbf96ffa151ac7dc79013",
+   "fired": true,
+   "ruff_delta": -14,
+   "n_regressions": 4
+  },
+  {
+   "repo": "sympy_sympy",
+   "sha": "1ed9b554c269dc513bc920dcef0dbbe028f642bb",
+   "fired": true,
+   "ruff_delta": -12,
+   "n_regressions": 4
+  },
+  {
+   "repo": "sympy_sympy",
+   "sha": "e01a56db699079920ab4fe3f8f233cd59e706ed1",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "python_mypy",
+   "sha": "eb1eb0d9e8caa63890f7d4a1c2b3f204fdcb483c",
+   "fired": false,
+   "ruff_delta": 2,
+   "n_regressions": 0
+  },
+  {
+   "repo": "dask_dask",
+   "sha": "8e5b3f0abd07ec634c29d5e8c665884b35882a24",
+   "fired": true,
+   "ruff_delta": 10,
+   "n_regressions": 2
+  },
+  {
+   "repo": "apache_airflow",
+   "sha": "34154803ac73d62d3e969e480405df3073032622",
+   "fired": false,
+   "ruff_delta": -3,
+   "n_regressions": 0
+  },
+  {
+   "repo": "apache_airflow",
+   "sha": "eed5d5b7cc8b95a7e7ab0ac5f92c1d3a173dfc75",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 3
+  },
+  {
+   "repo": "huggingface_transformers",
+   "sha": "5450e7c84afc9e93e897705de0dfb6b53b2b07e2",
+   "fired": false,
+   "ruff_delta": 17,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pandas-dev_pandas",
+   "sha": "bf569f983bc1ebe6244ca2603a591c05cb88d055",
+   "fired": true,
+   "ruff_delta": 4,
+   "n_regressions": 4
+  },
+  {
+   "repo": "python_mypy",
+   "sha": "7c9097b971071b2fc80daa6f151c1a6a5f82fc1a",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scipy_scipy",
+   "sha": "01c96ea4c97fac7b0449067626e42e1a57a48242",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 3
+  },
+  {
+   "repo": "pandas-dev_pandas",
+   "sha": "bb0c2e8da22ecb63036ddd3407569468716e9b1a",
+   "fired": true,
+   "ruff_delta": 4,
+   "n_regressions": 4
+  },
+  {
+   "repo": "pandas-dev_pandas",
+   "sha": "59a06fdc14b1758ba503fb67b99abde92dceb781",
+   "fired": true,
+   "ruff_delta": 4,
+   "n_regressions": 4
+  },
+  {
+   "repo": "encode_starlette",
+   "sha": "ce62bdfa51dc5d1c4094dcfacaf18287939c7d40",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sqlalchemy_sqlalchemy",
+   "sha": "e31211c578854d63128a30c036e40eee5c43edc7",
+   "fired": false,
+   "ruff_delta": -14,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pypa_pip",
+   "sha": "8add656f952352c86259bc305d4e17b539e4f808",
+   "fired": false,
+   "ruff_delta": -3,
+   "n_regressions": 0
+  },
+  {
+   "repo": "apache_airflow",
+   "sha": "379b7c09d17772b9afb16998bb9cd8c1622df960",
+   "fired": true,
+   "ruff_delta": 0,
+   "n_regressions": 8
+  },
+  {
+   "repo": "pandas-dev_pandas",
+   "sha": "a0a6e048ad5c31b87f84789d093ac6a70f4c7f5e",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "python_mypy",
+   "sha": "725a24a82fdf79521db5d0c43549e8731f793c55",
+   "fired": true,
+   "ruff_delta": -6,
+   "n_regressions": 4
+  },
+  {
+   "repo": "pypa_virtualenv",
+   "sha": "3816e7c7881bdc9ca99e18fe69810c856c9a9d2d",
+   "fired": false,
+   "ruff_delta": 7,
+   "n_regressions": 0
+  },
+  {
+   "repo": "python_mypy",
+   "sha": "f0b0fe7a8138a2cf13a303323d0ea66f6abce0a8",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pandas-dev_pandas",
+   "sha": "c9fb01823bfc987581711bda8bf9625a8ed7fccf",
+   "fired": true,
+   "ruff_delta": 0,
+   "n_regressions": 2
+  },
+  {
+   "repo": "scipy_scipy",
+   "sha": "8d5b840fbcd80a0c8b9cf3f041d6fee7954faff4",
+   "fired": true,
+   "ruff_delta": 48,
+   "n_regressions": 4
+  },
+  {
+   "repo": "dask_dask",
+   "sha": "36db9e9a6de8ab5173375a54097a4341f6a440bf",
+   "fired": true,
+   "ruff_delta": 5,
+   "n_regressions": 5
+  },
+  {
+   "repo": "pandas-dev_pandas",
+   "sha": "e71052cc40ebd3a8ce163320c47b8b8f7000b088",
+   "fired": true,
+   "ruff_delta": 4,
+   "n_regressions": 4
+  },
+  {
+   "repo": "python-trio_trio",
+   "sha": "6e968a3950f2615404eb3a21a48b941370ce81e0",
+   "fired": true,
+   "ruff_delta": 3,
+   "n_regressions": 2
+  },
+  {
+   "repo": "keras-team_keras",
+   "sha": "dfe8af72989844a141c68a534a4444b35f4fbae1",
+   "fired": true,
+   "ruff_delta": -3,
+   "n_regressions": 2
+  },
+  {
+   "repo": "sqlalchemy_sqlalchemy",
+   "sha": "54e848dfed020e0600fb0d50a80a4d94ad745747",
+   "fired": true,
+   "ruff_delta": 3,
+   "n_regressions": 1
+  },
+  {
+   "repo": "sympy_sympy",
+   "sha": "720f6eeaa3e266c66912db86663c0a714d927235",
+   "fired": false,
+   "ruff_delta": -12,
+   "n_regressions": 0
+  },
+  {
+   "repo": "huggingface_transformers",
+   "sha": "2f12e408225b1ebceb0d2f701ce419d46678dc31",
+   "fired": true,
+   "ruff_delta": 0,
+   "n_regressions": 7
+  },
+  {
+   "repo": "sympy_sympy",
+   "sha": "19a569b2a2cc3e12d914bf547c18c41d07e81666",
+   "fired": false,
+   "ruff_delta": 1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pola-rs_polars",
+   "sha": "4d8e13a16d6b404447797abd288695dd0b87882b",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "huggingface_transformers",
+   "sha": "ffe60fdcd60c17c3f216694160c2521da90f984c",
+   "fired": false,
+   "ruff_delta": -12,
+   "n_regressions": 0
+  },
+  {
+   "repo": "ansible_ansible",
+   "sha": "4b2cdadc98d823350d51cacb6e814b03067298b4",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 2
+  },
+  {
+   "repo": "sqlalchemy_sqlalchemy",
+   "sha": "0df750223a5f6ee4cfa987a4abd5ab4691007350",
+   "fired": true,
+   "ruff_delta": -2,
+   "n_regressions": 5
+  },
+  {
+   "repo": "apache_airflow",
+   "sha": "47ebe99972b2cc3cc007460e28461b1676c03706",
+   "fired": true,
+   "ruff_delta": 20,
+   "n_regressions": 3
+  },
+  {
+   "repo": "scikit-learn_scikit-learn",
+   "sha": "76ef8b0ef07f9c03b97d29a51e1543be7720e85a",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "python_mypy",
+   "sha": "48c4a47c457b03caf00be2e2dacd91c3635cdc90",
+   "fired": false,
+   "ruff_delta": -4,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pola-rs_polars",
+   "sha": "c12971086ee65afa9112a0ac5cf0de95bef58e2d",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 5
+  },
+  {
+   "repo": "scikit-learn_scikit-learn",
+   "sha": "199cdfd7681c1f90bbea72be7ee5d0683a243326",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pandas-dev_pandas",
+   "sha": "ef349ca2ba28a1314e1bbdddacaf46be89ed430b",
+   "fired": false,
+   "ruff_delta": -3,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sqlalchemy_sqlalchemy",
+   "sha": "eb6f1f87f6f632c16bde4b8e947f6e302e7c5c8b",
+   "fired": false,
+   "ruff_delta": -14,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scipy_scipy",
+   "sha": "a8030703a24f4d061cd776de30b3c30d0f0e0255",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 1
+  },
+  {
+   "repo": "ansible_ansible",
+   "sha": "fedd1779ccd506e63dafd5d014651ba923300d17",
+   "fired": true,
+   "ruff_delta": 65,
+   "n_regressions": 4
+  },
+  {
+   "repo": "ansible_ansible",
+   "sha": "9de6fea2fab5f9cc576fffa9c86f583122b389a9",
+   "fired": true,
+   "ruff_delta": 2,
+   "n_regressions": 1
+  },
+  {
+   "repo": "python-trio_trio",
+   "sha": "cf2b3b5a5799a555ce28000abb082140044cddbf",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pypa_setuptools",
+   "sha": "962664bbb8564ccd3cff8072f20d56a9bdcf3043",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "apache_airflow",
+   "sha": "8d4d4b164e27ea9fae37822ca653571a3d68c1f3",
+   "fired": true,
+   "ruff_delta": 0,
+   "n_regressions": 2
+  },
+  {
+   "repo": "pypa_pip",
+   "sha": "c12139de9b51da9947d3b36b4f0e2e0c8f467663",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 2
+  },
+  {
+   "repo": "apache_airflow",
+   "sha": "7c03dabdcddfda99e8b663bd254ce18637278407",
+   "fired": false,
+   "ruff_delta": -2,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pandas-dev_pandas",
+   "sha": "4202f6a9c20365c0a1943338bdd933b70b6bda10",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 1
+  },
+  {
+   "repo": "optuna_optuna",
+   "sha": "f4da1d51694289a40e96fef16e946e6cb3dbd027",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 1
+  },
+  {
+   "repo": "optuna_optuna",
+   "sha": "67fd3783ea2671e329fe9d362b5bbf3443fbf75d",
+   "fired": false,
+   "ruff_delta": -56,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pypa_virtualenv",
+   "sha": "b00d59c9308fc0feaf3ea8e62bb2b6223c48c01e",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 2
+  },
+  {
+   "repo": "pandas-dev_pandas",
+   "sha": "ae16bf99467d7d26abe506ba95079b07442860a8",
+   "fired": false,
+   "ruff_delta": 7,
+   "n_regressions": 0
+  },
+  {
+   "repo": "saltstack_salt",
+   "sha": "1d7309970fa2cc335ded281ebb2ee957279a78be",
+   "fired": false,
+   "ruff_delta": 1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "apache_airflow",
+   "sha": "4c5d85aeec5382d4da6505f33581076b526c37de",
+   "fired": true,
+   "ruff_delta": 0,
+   "n_regressions": 3
+  },
+  {
+   "repo": "optuna_optuna",
+   "sha": "ce0de9458a793b15db71e1a0d01e8fc45e2aa400",
+   "fired": true,
+   "ruff_delta": 2,
+   "n_regressions": 1
+  },
+  {
+   "repo": "pypa_pip",
+   "sha": "b3e16f9a9da0e4ca061a9d3566b7f9c335d67c5f",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "pypa_setuptools",
+   "sha": "4e29d013f13dda7d9db7daaab011ab037af21f66",
+   "fired": false,
+   "ruff_delta": 4,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sympy_sympy",
+   "sha": "b2aae57b57e27573f939012ac6a0eae5016bb0f9",
+   "fired": true,
+   "ruff_delta": -16,
+   "n_regressions": 30
+  },
+  {
+   "repo": "sympy_sympy",
+   "sha": "dfd880088db530e9f3f700905df82efb2da9d708",
+   "fired": true,
+   "ruff_delta": -3,
+   "n_regressions": 1
+  },
+  {
+   "repo": "pandas-dev_pandas",
+   "sha": "a3cddfa9c4302c13747509caef7a056159010adf",
+   "fired": false,
+   "ruff_delta": 5,
+   "n_regressions": 0
+  },
+  {
+   "repo": "encode_starlette",
+   "sha": "2e0bd33f59c9ffa1559bfe84cdfa8513f4b3ab41",
+   "fired": false,
+   "ruff_delta": -7,
+   "n_regressions": 0
+  },
+  {
+   "repo": "paramiko_paramiko",
+   "sha": "c67cf36c6596879b7e161d5c99db8c4e1c2a9c44",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sqlalchemy_sqlalchemy",
+   "sha": "b9a67d1458ad4a307e9f25625731c8e85c2f2daf",
+   "fired": false,
+   "ruff_delta": 5,
+   "n_regressions": 0
+  },
+  {
+   "repo": "dask_dask",
+   "sha": "b7ab441aa52c843f6dd4415fe256091b8a5f5b21",
+   "fired": true,
+   "ruff_delta": 4,
+   "n_regressions": 1
+  },
+  {
+   "repo": "sympy_sympy",
+   "sha": "c3c824dfc4258523066edb3874ef84a333aad324",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 2
+  },
+  {
+   "repo": "astropy_astropy",
+   "sha": "43c0fc38a99e425ce5207ddf135919ef0ea51e6b",
+   "fired": true,
+   "ruff_delta": -1,
+   "n_regressions": 2
+  },
+  {
+   "repo": "sqlalchemy_sqlalchemy",
+   "sha": "d6fcdb5da02206b50cf8296496aff4c7d903e9b9",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "scikit-learn_scikit-learn",
+   "sha": "7f1e15d5c253d5dfdc8c55b5f1c6139e9bcd1de3",
+   "fired": false,
+   "ruff_delta": -6,
+   "n_regressions": 0
+  },
+  {
+   "repo": "apache_airflow",
+   "sha": "dcb19a9103aff5f0c2315538ed9eb3374a471561",
+   "fired": true,
+   "ruff_delta": 15,
+   "n_regressions": 2
+  },
+  {
+   "repo": "dask_dask",
+   "sha": "00572071d15e7e8cfc20d8342b00aabadf0d2102",
+   "fired": true,
+   "ruff_delta": -1,
+   "n_regressions": 5
+  },
+  {
+   "repo": "pola-rs_polars",
+   "sha": "371373e20814244435078d578870c02da8750b94",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "ansible_ansible",
+   "sha": "6215922889c11b57eaa5bbd6f46c50d7a9d742a3",
+   "fired": true,
+   "ruff_delta": -27,
+   "n_regressions": 4
+  },
+  {
+   "repo": "saltstack_salt",
+   "sha": "d7a31803b7a9a7c02440c4c11851a5378a7737a9",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "sqlalchemy_sqlalchemy",
+   "sha": "9fca5d827d880ccc529c94bb65c46de6aafd227c",
+   "fired": true,
+   "ruff_delta": 17,
+   "n_regressions": 6
+  },
+  {
+   "repo": "scikit-learn_scikit-learn",
+   "sha": "1a4cadbeab062bc12c8e1c5d0e4e727ec857078c",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "saltstack_salt",
+   "sha": "19bbf51a2ef49c4fc6741c75eaa45892661fc411",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  },
+  {
+   "repo": "huggingface_transformers",
+   "sha": "fb0ae12947a29e1b571d1aa6b3b79cd74e50b643",
+   "fired": true,
+   "ruff_delta": 3,
+   "n_regressions": 6
+  },
+  {
+   "repo": "optuna_optuna",
+   "sha": "69a0ca6cc1688c8ea2b32c762f7aaa4d22bb80ac",
+   "fired": false,
+   "ruff_delta": -5,
+   "n_regressions": 0
+  },
+  {
+   "repo": "networkx_networkx",
+   "sha": "f11be174baf322ebe18898298db444a54f66ed66",
+   "fired": false,
+   "ruff_delta": -1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "ansible_ansible",
+   "sha": "23e2ca91c2b73280e84e805d04be3a768b584aee",
+   "fired": true,
+   "ruff_delta": -9,
+   "n_regressions": 1
+  },
+  {
+   "repo": "scipy_scipy",
+   "sha": "5f5494df18d3a06a96db9afb4a5edb2501fee44d",
+   "fired": true,
+   "ruff_delta": 3,
+   "n_regressions": 3
+  },
+  {
+   "repo": "saltstack_salt",
+   "sha": "a02f125faab374ed8f5d0ae56ac32e093a23636b",
+   "fired": false,
+   "ruff_delta": 1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "keras-team_keras",
+   "sha": "78fd5adeb16f0dc6e3e6851a7786b3d56938ff99",
+   "fired": true,
+   "ruff_delta": 1,
+   "n_regressions": 10
+  },
+  {
+   "repo": "pypa_virtualenv",
+   "sha": "09c1c69af5be58a80975d529fbc89fdf0254fddc",
+   "fired": true,
+   "ruff_delta": 2,
+   "n_regressions": 1
+  },
+  {
+   "repo": "saltstack_salt",
+   "sha": "47341772ac15d5e20af9e07a2ef25544e1f4e303",
+   "fired": true,
+   "ruff_delta": 47,
+   "n_regressions": 7
+  },
+  {
+   "repo": "astropy_astropy",
+   "sha": "d537c4de99806ce41a154850509db674ac15b1a6",
+   "fired": true,
+   "ruff_delta": -1,
+   "n_regressions": 2
+  },
+  {
+   "repo": "encode_starlette",
+   "sha": "704b582d89838127991ae6402ba5659f4af9d996",
+   "fired": false,
+   "ruff_delta": 1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "apache_airflow",
+   "sha": "5a6dcfd8655c9622f3838a0e66948dc3091afccb",
+   "fired": true,
+   "ruff_delta": -1,
+   "n_regressions": 1
+  },
+  {
+   "repo": "pypa_setuptools",
+   "sha": "332a0532bf3293cf7c3d0fbfbb4664a5a98b9ec0",
+   "fired": true,
+   "ruff_delta": -2,
+   "n_regressions": 1
+  },
+  {
+   "repo": "paramiko_paramiko",
+   "sha": "3a8887a42083dda796f50e1e9b32f625abcb5d5a",
+   "fired": true,
+   "ruff_delta": 0,
+   "n_regressions": 3
+  },
+  {
+   "repo": "keras-team_keras",
+   "sha": "dd0f1f480613ceffd994658e5632d54c660d1e73",
+   "fired": false,
+   "ruff_delta": 1,
+   "n_regressions": 0
+  },
+  {
+   "repo": "PyCQA_pylint",
+   "sha": "a379cc4df1ad303021628eca90e34b98c36c1b2b",
+   "fired": true,
+   "ruff_delta": -1,
+   "n_regressions": 2
+  },
+  {
+   "repo": "optuna_optuna",
+   "sha": "cdee7656b4559c78976972340869509bc1f79286",
+   "fired": false,
+   "ruff_delta": 0,
+   "n_regressions": 0
+  }
+ ]
+}

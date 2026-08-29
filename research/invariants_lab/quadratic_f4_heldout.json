@@ -1,0 +1,5027 @@
+{
+ "generated": "2026-08-29T04:48:59",
+ "task": "F4",
+ "corpus": "corpus_dev",
+ "in_sample": true,
+ "message_matched": 213,
+ "per_repo_matched": {
+  "aio-libs_aiohttp": 2,
+  "ansible_ansible": 5,
+  "apache_airflow": 4,
+  "astropy_astropy": 0,
+  "celery_celery": 0,
+  "dask_dask": 3,
+  "encode_starlette": 0,
+  "huggingface_transformers": 3,
+  "keras-team_keras": 6,
+  "networkx_networkx": 10,
+  "numpy_numpy": 4,
+  "optuna_optuna": 0,
+  "pallets_click": 0,
+  "pandas-dev_pandas": 0,
+  "paramiko_paramiko": 0,
+  "pola-rs_polars": 4,
+  "psf_black": 20,
+  "PyCQA_pylint": 3,
+  "pypa_pip": 0,
+  "pypa_setuptools": 2,
+  "pypa_virtualenv": 0,
+  "python-trio_trio": 0,
+  "python_mypy": 6,
+  "saltstack_salt": 3,
+  "scikit-learn_scikit-learn": 21,
+  "scipy_scipy": 28,
+  "sqlalchemy_sqlalchemy": 1,
+  "sympy_sympy": 88
+ },
+ "rejected_on_reading": 61,
+ "confirmed": 152,
+ "taxonomy_of_fixes": {
+  "accumulation in a loop": 161,
+  "container became a hash": 36,
+  "something else": 131,
+  "nested-walk removed": 2,
+  "accumulation replaced by join": 1
+ },
+ "of_a_shape_the_detector_has_a_rule_for": 2,
+ "required_to_score": 20,
+ "scorable": true,
+ "recall_on_found_quadratics": {
+  "caught": 9,
+  "n": 152,
+  "point": 0.05921052631578947,
+  "ci": [
+   0.03146030398541716,
+   0.10869148223357714
+  ]
+ },
+ "generated_class_recall": 1.0,
+ "paired_arm": {
+  "still_fires_after_the_fix": 77,
+  "rate": 0.506578947368421,
+  "reading": "a detector that fires on both arms is responding to the shape of the file rather than to the fault"
+ },
+ "verdict": "scored",
+ "cases": [
+  {
+   "sha": "73d6da757faf57e43df52e3332a7a3b9ee67cdba",
+   "subject": "Make get_group run in O(n*log(n)) instead of O(n^2) by using a cache",
+   "kinds": [
+    "accumulation in a loop"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": true,
+   "repo": "ansible_ansible",
+   "files": [
+    {
+     "path": "lib/ansible/inventory/__init__.py",
+     "credited": 0,
+     "pre": 1,
+     "post": 1,
+     "removed_axes": [],
+     "example": "a membership test against 'groups' inside a loop over it; a set costs the same once"
+    }
+   ]
+  },
+  {
+   "sha": "e0f61dfce445241bb3bea7606dd84096ad3c1149",
+   "subject": "Fix iptables match extension bug (#86147)",
+   "kinds": [
+    "container became a hash"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": false,
+   "repo": "ansible_ansible",
+   "files": [
+    {
+     "path": "lib/ansible/modules/iptables.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "07fe1d2a69cbe4f684a1989c047737c0686c4417",
+   "subject": "Refactor dedent nested loops (#34409)",
+   "kinds": [
+    "accumulation in a loop",
+    "accumulation in a loop",
+    "accumulation in a loop",
+    "accumulation in a loop",
+    "something else",
+    "something else",
+    "something else",
+    "something else",
+    "something else",
+    "something else"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": true,
+   "still_fires_after": true,
+   "repo": "apache_airflow",
+   "files": [
+    {
+     "path": "airflow/models/taskinstance.py",
+     "credited": 0,
+     "pre": 1,
+     "post": 1,
+     "removed_axes": [],
+     "example": "list(tis) pulls the whole axis into memory"
+    },
+    {
+     "path": "airflow/providers/google/cloud/transfers/sql_to_gcs.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "airflow/www/security_manager.py",
+     "credited": 0,
+     "pre": 3,
+     "post": 3,
+     "removed_axes": [],
+     "example": "set(action_names) pulls the whole axis into memory"
+    },
+    {
+     "path": "airflow/www/views.py",
+     "credited": 0,
+     "pre": 1,
+     "post": 1,
+     "removed_axes": [],
+     "example": "list(tis) pulls the whole axis into memory"
+    },
+    {
+     "path": "dev/breeze/src/airflow_breeze/utils/exclude_from_matrix.py",
+     "credited": 1,
+     "pre": 1,
+     "post": 2,
+     "removed_axes": [],
+     "example": "set(list_1) pulls the whole axis into memory"
+    },
+    {
+     "path": "dev/breeze/src/airflow_breeze/utils/selective_checks.py",
+     "credited": 0,
+     "pre": 2,
+     "post": 2,
+     "removed_axes": [],
+     "example": "tuple(current_test_types) pulls the whole axis into memory"
+    },
+    {
+     "path": "dev/retag_docker_images.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "docs/exts/airflow_intersphinx.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "tests/models/test_dag.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "tests/sensors/test_external_task_sensor.py",
+     "credited": 0,
+     "pre": 1,
+     "post": 1,
+     "removed_axes": [],
+     "example": "list(map_indexes) pulls the whole axis into memory"
+    }
+   ]
+  },
+  {
+   "sha": "6f75a8a9172725f63b14b83b4b57c4a10a4286c8",
+   "subject": "improve performance of pr script in dev/stats (#32735)",
+   "kinds": [
+    "accumulation in a loop"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": false,
+   "repo": "apache_airflow",
+   "files": [
+    {
+     "path": "dev/stats/get_important_pr_candidates.py",
+     "credited": 0,
+     "pre": 1,
+     "post": 0,
+     "removed_axes": [],
+     "example": "sorted(selected_prs) pulls the whole axis into memory"
+    }
+   ]
+  },
+  {
+   "sha": "ee38382efa54565c4b389eaeb536f0d45e12d498",
+   "subject": "Use linear time regular expressions (#32303)",
+   "kinds": [
+    "something else",
+    "something else",
+    "something else",
+    "something else",
+    "something else",
+    "something else",
+    "something else",
+    "something else",
+    "something else",
+    "accumulation in a loop",
+    "accumulation in a loop",
+    "something else",
+    "accumulation in a loop",
+    "something else",
+    "accumulation in a loop",
+    "something else",
+    "accumulation in a loop",
+    "something else",
+    "something else",
+    "something else",
+    "something else",
+    "something else",
+    "accumulation in a loop",
+    "something else",
+    "accumulation in a loop",
+    "something else"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": true,
+   "repo": "apache_airflow",
+   "files": [
+    {
+     "path": "airflow/api_connexion/endpoints/provider_endpoint.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "airflow/cli/commands/provider_command.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "airflow/cli/commands/user_command.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "airflow/config_templates/default_celery.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "airflow/configuration.py",
+     "credited": 0,
+     "pre": 3,
+     "post": 3,
+     "removed_axes": [],
+     "example": "fh.read() reads the whole axis at once"
+    },
+    {
+     "path": "airflow/decorators/base.py",
+     "credited": 0,
+     "pre": 1,
+     "post": 1,
+     "removed_axes": [],
+     "example": "set(parameters) pulls the whole axis into memory"
+    },
+    {
+     "path": "airflow/kubernetes/pod_generator.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "airflow/kubernetes/pod_generator_deprecated.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "airflow/metrics/validators.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "airflow/models/dag.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "airflow/models/dagrun.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "airflow/security/utils.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "airflow/serialization/serde.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "airflow/utils/cli.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "airflow/utils/db_cleanup.py",
+     "credited": 0,
+     "pre": 2,
+     "post": 2,
+     "removed_axes": [],
+     "example": "sorted(archived_table_names) pulls the whole axis into memory"
+    },
+    {
+     "path": "airflow/utils/email.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "airflow/utils/file.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "airflow/utils/log/colored_log.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "airflow/utils/log/logging_mixin.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "airflow/utils/log/secrets_masker.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "airflow/utils/task_group.py",
+     "credited": 0,
+     "pre": 2,
+     "post": 2,
+     "removed_axes": [],
+     "example": "list(self) pulls the whole axis into memory"
+    },
+    {
+     "path": "airflow/www/fab_security/manager.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "airflow/www/views.py",
+     "credited": 0,
+     "pre": 1,
+     "post": 1,
+     "removed_axes": [],
+     "example": "list(tis) pulls the whole axis into memory"
+    },
+    {
+     "path": "dev/breeze/src/airflow_breeze/pre_commit_ids.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "kubernetes_tests/test_base.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "tests/utils/log/test_secrets_masker.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "4195f5acab4d7d9e1f931b24fedb0d79bb330635",
+   "subject": "Quadratic definition time in xarray.DataArray.to_zarr(compute=False) (#12299)",
+   "kinds": [
+    "accumulation in a loop"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": true,
+   "repo": "dask_dask",
+   "files": [
+    {
+     "path": "dask/_task_spec.py",
+     "credited": 0,
+     "pre": 8,
+     "post": 8,
+     "removed_axes": [],
+     "example": "a membership test against 'dsk' inside a loop over it; a set costs the same once"
+    }
+   ]
+  },
+  {
+   "sha": "5c6627aa036965f21a23b321ab7875dbb7e25389",
+   "subject": "Improve to_parquet error for appended divisions overlap (#9102)",
+   "kinds": [
+    "accumulation in a loop",
+    "accumulation in a loop",
+    "accumulation in a loop"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": true,
+   "repo": "dask_dask",
+   "files": [
+    {
+     "path": "dask/dataframe/io/parquet/arrow.py",
+     "credited": 0,
+     "pre": 8,
+     "post": 8,
+     "removed_axes": [],
+     "example": "set(names) pulls the whole axis into memory"
+    },
+    {
+     "path": "dask/dataframe/io/parquet/fastparquet.py",
+     "credited": 0,
+     "pre": 15,
+     "post": 15,
+     "removed_axes": [],
+     "example": "list(cats) pulls the whole axis into memory"
+    },
+    {
+     "path": "dask/dataframe/io/tests/test_parquet.py",
+     "credited": 0,
+     "pre": 7,
+     "post": 7,
+     "removed_axes": [],
+     "example": "list(columns) pulls the whole axis into memory"
+    }
+   ]
+  },
+  {
+   "sha": "6834d40cd743bd478a3480c80846b84b6839c74b",
+   "subject": "Avoid quadratic-time performance for HLG culling (#7403)",
+   "kinds": [
+    "container became a hash"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": true,
+   "repo": "dask_dask",
+   "files": [
+    {
+     "path": "dask/highlevelgraph.py",
+     "credited": 0,
+     "pre": 2,
+     "post": 2,
+     "removed_axes": [],
+     "example": "a membership test against 'dependencies' inside a loop over it; a set costs the same once"
+    }
+   ]
+  },
+  {
+   "sha": "4ece3b9433ea0bedff0d64fe00623c35766d7d44",
+   "subject": "add VITS model (#24085)",
+   "kinds": [
+    "something else",
+    "something else",
+    "accumulation in a loop",
+    "something else",
+    "something else",
+    "something else",
+    "accumulation in a loop"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": false,
+   "repo": "huggingface_transformers",
+   "files": [
+    {
+     "path": "src/transformers/__init__.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "src/transformers/models/__init__.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "src/transformers/models/auto/configuration_auto.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "src/transformers/models/auto/modeling_auto.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "src/transformers/models/auto/tokenization_auto.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "src/transformers/utils/dummy_pt_objects.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "utils/check_config_attributes.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "6ee1474b67b088829555364a14ebfb45e661fac4",
+   "subject": "Accumulate tokens into batches in `PreTrainedTokenizerBase.add_tokens()` (#17119)",
+   "kinds": [
+    "accumulation in a loop"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": false,
+   "repo": "huggingface_transformers",
+   "files": [
+    {
+     "path": "src/transformers/tokenization_utils_base.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "5e51d02a94f08d461a831cd85a495d225ace7278",
+   "subject": "Use linear time algorithm for topological sorting. (#6347)",
+   "kinds": [
+    "accumulation in a loop"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": true,
+   "repo": "keras-team_keras",
+   "files": [
+    {
+     "path": "keras/engine/topology.py",
+     "credited": 0,
+     "pre": 3,
+     "post": 3,
+     "removed_axes": [],
+     "example": "set(inputs) pulls the whole axis into memory"
+    }
+   ]
+  },
+  {
+   "sha": "87a4fbd704fd0feba948e6d7a17da0c1ace7daf2",
+   "subject": "Add shuffle test for train/validation split in image_dataset_from_directory. (#23109)",
+   "kinds": [
+    "accumulation in a loop"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": false,
+   "repo": "keras-team_keras",
+   "files": [
+    {
+     "path": "keras/src/utils/image_dataset_utils_test.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "ff1fd2848d2886716ee2087e97cde1e6ace9b686",
+   "subject": "Optimize steps_per_execution performance across backends (#23305)",
+   "kinds": [
+    "something else",
+    "something else",
+    "something else",
+    "accumulation in a loop"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": true,
+   "repo": "keras-team_keras",
+   "files": [
+    {
+     "path": "keras/src/backend/jax/trainer.py",
+     "credited": 0,
+     "pre": 1,
+     "post": 1,
+     "removed_axes": [],
+     "example": "list(variables) pulls the whole axis into memory"
+    },
+    {
+     "path": "keras/src/backend/numpy/trainer.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "keras/src/backend/openvino/trainer.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "keras/src/backend/tensorflow/trainer.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "1f7e8d962303b36834774f966fb81578d5b1e18a",
+   "subject": "Make strongly_connected_components linear time O(m+n) (#2994)",
+   "kinds": [
+    "accumulation in a loop",
+    "something else"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": true,
+   "repo": "networkx_networkx",
+   "files": [
+    {
+     "path": "networkx/algorithms/components/strongly_connected.py",
+     "credited": 0,
+     "pre": 2,
+     "post": 2,
+     "removed_axes": [],
+     "example": "list(G) pulls the whole axis into memory"
+    },
+    {
+     "path": "networkx/algorithms/components/tests/test_strongly_connected.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "341f7115c1f33a804b4d3281c9a5def24e3f64fa",
+   "subject": "Add benchmark suite for shortest path algorithms on weighted graphs (#8059)",
+   "kinds": [
+    "container became a hash",
+    "something else"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": false,
+   "repo": "networkx_networkx",
+   "files": [
+    {
+     "path": "benchmarks/benchmarks/benchmark_algorithms.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "benchmarks/benchmarks/utils.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "4d0620478b7a7f00e5a4f041b70ad5724b4f55ce",
+   "subject": "Faster operators in algorithms/operators/all.py (#5121)",
+   "kinds": [
+    "container became a hash",
+    "something else"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": true,
+   "repo": "networkx_networkx",
+   "files": [
+    {
+     "path": "networkx/algorithms/operators/all.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 4,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "networkx/algorithms/operators/binary.py",
+     "credited": 0,
+     "pre": 10,
+     "post": 6,
+     "removed_axes": [],
+     "example": "set(G) pulls the whole axis into memory"
+    }
+   ]
+  },
+  {
+   "sha": "643f45705eb68068e430367847829a35152f0ca5",
+   "subject": "O(n^2) -> O(n) implementation for scale_free_graph (#4727)",
+   "kinds": [
+    "accumulation in a loop"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": true,
+   "repo": "networkx_networkx",
+   "files": [
+    {
+     "path": "networkx/generators/directed.py",
+     "credited": 0,
+     "pre": 1,
+     "post": 2,
+     "removed_axes": [],
+     "example": "set(G) pulls the whole axis into memory"
+    }
+   ]
+  },
+  {
+   "sha": "a5652a9d440b6d98ec7c88761834adc293680d42",
+   "subject": "Fix \"accidentally quadratic\" use of list as queue in `full_rary_tree` (#8808)",
+   "kinds": [
+    "accumulation in a loop",
+    "something else"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": false,
+   "repo": "networkx_networkx",
+   "files": [
+    {
+     "path": "networkx/generators/classic.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "networkx/generators/tests/test_classic.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "bb5fb2ed0b3df59488b2a65a21ebf31c009cb450",
+   "subject": "Add Boykov Kolmogorov algorithm for maximum flow problems.",
+   "kinds": [
+    "accumulation in a loop",
+    "accumulation in a loop",
+    "accumulation in a loop",
+    "accumulation in a loop",
+    "something else",
+    "something else",
+    "accumulation in a loop",
+    "accumulation in a loop"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": true,
+   "repo": "networkx_networkx",
+   "files": [
+    {
+     "path": "networkx/algorithms/connectivity/connectivity.py",
+     "credited": 0,
+     "pre": 2,
+     "post": 2,
+     "removed_axes": [],
+     "example": "list(G) pulls the whole axis into memory"
+    },
+    {
+     "path": "networkx/algorithms/connectivity/tests/test_connectivity.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "networkx/algorithms/connectivity/tests/test_cuts.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "networkx/algorithms/connectivity/tests/test_kcutsets.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "networkx/algorithms/flow/__init__.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "networkx/algorithms/flow/maxflow.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "networkx/algorithms/flow/tests/test_maxflow.py",
+     "credited": 0,
+     "pre": 2,
+     "post": 2,
+     "removed_axes": [],
+     "example": "set(G) pulls the whole axis into memory"
+    },
+    {
+     "path": "networkx/algorithms/flow/tests/test_maxflow_large_graph.py",
+     "credited": 0,
+     "pre": 2,
+     "post": 2,
+     "removed_axes": [],
+     "example": "set(G) pulls the whole axis into memory"
+    }
+   ]
+  },
+  {
+   "sha": "f4bddd223c50b3d1f2d53ef4d680cc424a8d146b",
+   "subject": "Avoid quadratic behavior in connected_cuthill_mckee_ordering",
+   "kinds": [
+    "container became a hash"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": false,
+   "repo": "networkx_networkx",
+   "files": [
+    {
+     "path": "networkx/utils/rcm.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "a8556c1007dbf7eb329caaa3dbffc9cd708359ec",
+   "subject": "MAINT: Use a set instead of a dictionary",
+   "kinds": [
+    "container became a hash"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": true,
+   "repo": "numpy_numpy",
+   "files": [
+    {
+     "path": "numpy/core/numeric.py",
+     "credited": 0,
+     "pre": 2,
+     "post": 3,
+     "removed_axes": [],
+     "example": "list(axes_a) pulls the whole axis into memory"
+    }
+   ]
+  },
+  {
+   "sha": "0a6396ba56d2d7fac4ce4fef5ea15c97e82b299b",
+   "subject": "batch --line-ranges node conversion to avoid quadratic removal (#5213)",
+   "kinds": [
+    "container became a hash"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": true,
+   "repo": "psf_black",
+   "files": [
+    {
+     "path": "src/black/ranges.py",
+     "credited": 0,
+     "pre": 1,
+     "post": 1,
+     "removed_axes": [],
+     "example": "sorted(lines) pulls the whole axis into memory"
+    }
+   ]
+  },
+  {
+   "sha": "177744ee918f70d7c7da86407959a84e31682902",
+   "subject": "avoid quadratic named-escape scan when splitting long strings (#5183)",
+   "kinds": [
+    "accumulation in a loop"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": true,
+   "repo": "psf_black",
+   "files": [
+    {
+     "path": "src/black/trans.py",
+     "credited": 0,
+     "pre": 2,
+     "post": 2,
+     "removed_axes": [],
+     "example": "a loop over 'it' inside a loop over 'it'"
+    }
+   ]
+  },
+  {
+   "sha": "2228890d6210e10d9ea3c24cb123a4d6b47f36b9",
+   "subject": "Cache child sibling lookups",
+   "kinds": [
+    "accumulation in a loop"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": true,
+   "still_fires_after": true,
+   "repo": "psf_black",
+   "files": [
+    {
+     "path": "blib2to3/pytree.py",
+     "credited": 1,
+     "pre": 2,
+     "post": 2,
+     "removed_axes": [],
+     "example": "list(children) pulls the whole axis into memory"
+    }
+   ]
+  },
+  {
+   "sha": "308e2ee7dce7435f844ef3517cfe41f7b05f023c",
+   "subject": "avoid quadratic per-leaf subtree walk in is_complex_subscript (#5239)",
+   "kinds": [
+    "accumulation in a loop"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": true,
+   "repo": "psf_black",
+   "files": [
+    {
+     "path": "src/black/lines.py",
+     "credited": 0,
+     "pre": 4,
+     "post": 4,
+     "removed_axes": [],
+     "example": "a membership test against 'leaves' inside a loop over it; a set costs the same once"
+    }
+   ]
+  },
+  {
+   "sha": "46c2abc37cd74a974cf9820ab07c98274d2a267e",
+   "subject": "avoid quadratic multiline-string context scan in is_line_short_enough (#5188)",
+   "kinds": [
+    "container became a hash"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": true,
+   "repo": "psf_black",
+   "files": [
+    {
+     "path": "src/black/lines.py",
+     "credited": 0,
+     "pre": 4,
+     "post": 4,
+     "removed_axes": [],
+     "example": "a membership test against 'leaves' inside a loop over it; a set costs the same once"
+    }
+   ]
+  },
+  {
+   "sha": "505bbfc909a0479befa113b39a611891e3fde5f9",
+   "subject": "avoid quadratic child-list rescan when wrapping nodes in parens (#5184)",
+   "kinds": [
+    "accumulation in a loop",
+    "accumulation in a loop"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": true,
+   "repo": "psf_black",
+   "files": [
+    {
+     "path": "src/black/linegen.py",
+     "credited": 0,
+     "pre": 1,
+     "post": 1,
+     "removed_axes": [],
+     "example": "list(children) pulls the whole axis into memory"
+    },
+    {
+     "path": "src/black/nodes.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "513058f032123cb5892549c0b981aa98f3376ffc",
+   "subject": "avoid quadratic node removal when converting fmt: off/on blocks (#5232)",
+   "kinds": [
+    "accumulation in a loop",
+    "accumulation in a loop"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": true,
+   "repo": "psf_black",
+   "files": [
+    {
+     "path": "src/black/comments.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "src/blib2to3/pytree.py",
+     "credited": 0,
+     "pre": 2,
+     "post": 2,
+     "removed_axes": [],
+     "example": "list(children) pulls the whole axis into memory"
+    }
+   ]
+  },
+  {
+   "sha": "67ffc34df80a57fce8c2fb56dec079d4acba2437",
+   "subject": "fix quadratic backtracking in unicode escape normalization (#5163)",
+   "kinds": [
+    "accumulation in a loop"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": false,
+   "repo": "psf_black",
+   "files": [
+    {
+     "path": "src/black/strings.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "70cac98cd578327216363d5ba0e643b6bc5fd3a8",
+   "subject": "avoid quadratic child rescan in normalize_invisible_parens (#5322)",
+   "kinds": [
+    "accumulation in a loop"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": true,
+   "repo": "psf_black",
+   "files": [
+    {
+     "path": "src/black/linegen.py",
+     "credited": 0,
+     "pre": 1,
+     "post": 1,
+     "removed_axes": [],
+     "example": "list(children) pulls the whole axis into memory"
+    }
+   ]
+  },
+  {
+   "sha": "8140f6e47ed15762ec0bf0d03ee03869fa655ce2",
+   "subject": "avoid quadratic suite scan per fmt: skip in compound-statement check (#5190)",
+   "kinds": [
+    "accumulation in a loop"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": false,
+   "repo": "psf_black",
+   "files": [
+    {
+     "path": "src/black/comments.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "bf83d5f10563ed454b57fd88de63c6e8062453c0",
+   "subject": "avoid quadratic token-lookahead scan in the parser's TokenProxy (#5186)",
+   "kinds": [
+    "accumulation in a loop"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": false,
+   "repo": "psf_black",
+   "files": [
+    {
+     "path": "src/blib2to3/pgen2/driver.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "c4c9a93111309459a3f0e1e268160f7ef2159077",
+   "subject": "avoid quadratic child rescan in append_leaves (#5199)",
+   "kinds": [
+    "accumulation in a loop"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": true,
+   "repo": "psf_black",
+   "files": [
+    {
+     "path": "src/black/lines.py",
+     "credited": 0,
+     "pre": 4,
+     "post": 4,
+     "removed_axes": [],
+     "example": "a membership test against 'leaves' inside a loop over it; a set costs the same once"
+    }
+   ]
+  },
+  {
+   "sha": "cb8cddd35d9bccef548e8a5aadac2c2d16a04d3b",
+   "subject": "fix quadratic fmt: skip/off handling in normalize_fmt_off (#5169)",
+   "kinds": [
+    "accumulation in a loop"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": false,
+   "repo": "psf_black",
+   "files": [
+    {
+     "path": "src/black/comments.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "ce1897a8f20d0f64844dd666d07f4003500d0e09",
+   "subject": "fix quadratic backtracking in debug f-string quote detection (#5165)",
+   "kinds": [
+    "accumulation in a loop"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": true,
+   "repo": "psf_black",
+   "files": [
+    {
+     "path": "src/black/trans.py",
+     "credited": 0,
+     "pre": 2,
+     "post": 2,
+     "removed_axes": [],
+     "example": "a loop over 'it' inside a loop over 'it'"
+    }
+   ]
+  },
+  {
+   "sha": "d240ca25ea73dad793750977fb7b7cdfbeadd2eb",
+   "subject": "Make `is_complex_subscript()` ignore list literals",
+   "kinds": [
+    "accumulation in a loop"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": true,
+   "repo": "psf_black",
+   "files": [
+    {
+     "path": "black.py",
+     "credited": 0,
+     "pre": 4,
+     "post": 4,
+     "removed_axes": [],
+     "example": "a loop over 'children' inside a loop over 'children'"
+    }
+   ]
+  },
+  {
+   "sha": "d32101360027916aaa0875e5e5280e889fd7300b",
+   "subject": "avoid quadratic opening-bracket scan in is_one_sequence_between (#5177)",
+   "kinds": [
+    "accumulation in a loop"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": false,
+   "repo": "psf_black",
+   "files": [
+    {
+     "path": "src/black/nodes.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "f2dc344b437f29feaed186f27a66a8de4ffab7be",
+   "subject": "avoid quadratic per-leaf copy in StringMerger.do_transform (#5220)",
+   "kinds": [
+    "accumulation in a loop"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": true,
+   "repo": "psf_black",
+   "files": [
+    {
+     "path": "src/black/trans.py",
+     "credited": 0,
+     "pre": 2,
+     "post": 2,
+     "removed_axes": [],
+     "example": "a loop over 'it' inside a loop over 'it'"
+    }
+   ]
+  },
+  {
+   "sha": "f825e7ef28c65689e06453d0c3a00310b90cdfdb",
+   "subject": "Remove slow assertion (#1592)",
+   "kinds": [
+    "nested-walk removed"
+   ],
+   "confirmed": true,
+   "detectable_shape": true,
+   "caught": true,
+   "still_fires_after": true,
+   "repo": "psf_black",
+   "files": [
+    {
+     "path": "src/black/__init__.py",
+     "credited": 1,
+     "pre": 5,
+     "post": 4,
+     "removed_axes": [
+      "leaves"
+     ],
+     "example": "a membership test against 'leaves' inside a loop over it; a set costs the same once"
+    }
+   ]
+  },
+  {
+   "sha": "f90421166726f7de6208002c185d26960a1b9240",
+   "subject": "avoid quadratic leaf re-adding in get_leaves_inside_matching_brackets (#5242)",
+   "kinds": [
+    "nested-walk removed"
+   ],
+   "confirmed": true,
+   "detectable_shape": true,
+   "caught": false,
+   "still_fires_after": false,
+   "repo": "psf_black",
+   "files": [
+    {
+     "path": "src/black/brackets.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [
+      "range"
+     ],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "fcab6484062fbf1ded2333900ea600b9bc21ac69",
+   "subject": "avoid quadratic tree traversal in pre_order/post_order/leaves (#5235)",
+   "kinds": [
+    "accumulation in a loop"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": true,
+   "repo": "psf_black",
+   "files": [
+    {
+     "path": "src/blib2to3/pytree.py",
+     "credited": 0,
+     "pre": 2,
+     "post": 3,
+     "removed_axes": [],
+     "example": "list(children) pulls the whole axis into memory"
+    }
+   ]
+  },
+  {
+   "sha": "1453abcf3b8b3c9be715f4201571cbfff92f3699",
+   "subject": "Cap hash bucket Cartesian product to prevent quadratic blow-up",
+   "kinds": [
+    "accumulation in a loop"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": true,
+   "repo": "PyCQA_pylint",
+   "files": [
+    {
+     "path": "pylint/checkers/symilar.py",
+     "credited": 0,
+     "pre": 1,
+     "post": 1,
+     "removed_axes": [],
+     "example": "sorted(couples) pulls the whole axis into memory"
+    }
+   ]
+  },
+  {
+   "sha": "ee5cb9e719137a83e66e77ee822e08b4a43f34cd",
+   "subject": "use a set instead of a dict with dumb values",
+   "kinds": [
+    "container became a hash"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": false,
+   "repo": "PyCQA_pylint",
+   "files": [
+    {
+     "path": "reporters/text.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "157b87dcf5253c0f3b00d680cd95896366a8110b",
+   "subject": "Optimize load_graph to avoid O(n**2) 'not ready' tracking (#20786)",
+   "kinds": [
+    "container became a hash"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": true,
+   "repo": "python_mypy",
+   "files": [
+    {
+     "path": "mypy/build.py",
+     "credited": 0,
+     "pre": 19,
+     "post": 19,
+     "removed_axes": [],
+     "example": "a membership test against 'graph' inside a loop over it; a set costs the same once"
+    }
+   ]
+  },
+  {
+   "sha": "1f8621c483baf4641c317ad755f814bcb9e41296",
+   "subject": "subtypes: fast path for Union/Union subtype check (#14277)",
+   "kinds": [
+    "container became a hash",
+    "accumulation in a loop"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": true,
+   "repo": "python_mypy",
+   "files": [
+    {
+     "path": "mypy/subtypes.py",
+     "credited": 0,
+     "pre": 3,
+     "post": 3,
+     "removed_axes": [],
+     "example": "a loop over 'items' inside a loop over 'items'"
+    },
+    {
+     "path": "mypy/types.py",
+     "credited": 0,
+     "pre": 13,
+     "post": 13,
+     "removed_axes": [],
+     "example": "a membership test against 'items' inside a loop over it; a set costs the same once"
+    }
+   ]
+  },
+  {
+   "sha": "56b111ee4771fe5df29397553063f3a15ef4fbd8",
+   "subject": "runtests: typecheck self just once",
+   "kinds": [
+    "accumulation in a loop"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": false,
+   "repo": "python_mypy",
+   "files": [
+    {
+     "path": "runtests.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "5a683cf7c5bc1ca8fe4a0ece26f7080cc8b777e2",
+   "subject": "Optimize the computation of lib_path (#4982)",
+   "kinds": [
+    "container became a hash",
+    "something else",
+    "something else"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": true,
+   "repo": "python_mypy",
+   "files": [
+    {
+     "path": "mypy/build.py",
+     "credited": 0,
+     "pre": 9,
+     "post": 11,
+     "removed_axes": [],
+     "example": "a membership test against 'ascc' inside a loop over it; a set costs the same once"
+    },
+    {
+     "path": "mypy/dmypy_server.py",
+     "credited": 0,
+     "pre": 1,
+     "post": 1,
+     "removed_axes": [],
+     "example": "tuple(sources) pulls the whole axis into memory"
+    },
+    {
+     "path": "mypy/find_sources.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "b0319aff582d918ec6e5a3bf69860a958eb31261",
+   "subject": "In bazel mode, always use \".\" as the cache prefix. (#6122)",
+   "kinds": [
+    "accumulation in a loop"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": true,
+   "repo": "python_mypy",
+   "files": [
+    {
+     "path": "mypy/build.py",
+     "credited": 0,
+     "pre": 9,
+     "post": 9,
+     "removed_axes": [],
+     "example": "a membership test against 'ascc' inside a loop over it; a set costs the same once"
+    }
+   ]
+  },
+  {
+   "sha": "03561b784003035e4b9d11e95a9e508460440b04",
+   "subject": "Fix tmpfile cleanup for windows (itertools not supported), Fix #6209",
+   "kinds": [
+    "accumulation in a loop"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": false,
+   "repo": "saltstack_salt",
+   "files": [
+    {
+     "path": "salt/modules/file.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "7061ad7a2328891c1dd36b8805da5b531db26bc4",
+   "subject": "Fix an O(n^2) performance bug in sysctl.present",
+   "kinds": [
+    "something else",
+    "accumulation in a loop",
+    "accumulation in a loop",
+    "something else",
+    "something else",
+    "something else"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": false,
+   "repo": "saltstack_salt",
+   "files": [
+    {
+     "path": "salt/modules/freebsd_sysctl.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "salt/modules/mac_sysctl.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "salt/modules/netbsd_sysctl.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "salt/modules/openbsd_sysctl.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "salt/states/sysctl.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "tests/unit/states/test_sysctl.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "7a53961e434c0c983b7fb3d847bbddecaf95ea3a",
+   "subject": "Fix O(n^2) string concatenation in freebsd_sysctl.py",
+   "kinds": [
+    "accumulation replaced by join"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": false,
+   "repo": "saltstack_salt",
+   "files": [
+    {
+     "path": "salt/modules/freebsd_sysctl.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "0c4252cc52ccb4f150e2e7564f40ff8af83f47cc",
+   "subject": "Revert \"ENH Perform KNN imputation without O(n^2) memory cost\" accidentally pushed to master",
+   "kinds": [
+    "something else",
+    "something else",
+    "accumulation in a loop",
+    "something else"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": false,
+   "repo": "scikit-learn_scikit-learn",
+   "files": [
+    {
+     "path": "sklearn/impute/_knn.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "sklearn/impute/tests/test_knn.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "sklearn/metrics/pairwise.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "sklearn/metrics/tests/test_pairwise.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "18f6e62bf0cb9b3e54e5f7b319dd3e1e0c76df1c",
+   "subject": "Performance tweaking in ward_tree.",
+   "kinds": [
+    "container became a hash"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": false,
+   "repo": "scikit-learn_scikit-learn",
+   "files": [
+    {
+     "path": "sklearn/cluster/hierarchical.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "20d5eaf42601b8216fe7daa2fb073d569d28a6b7",
+   "subject": "DOC fix an import in the docsting of RationalQuadratic (#21156)",
+   "kinds": [
+    "accumulation in a loop"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": false,
+   "repo": "scikit-learn_scikit-learn",
+   "files": [
+    {
+     "path": "sklearn/gaussian_process/kernels.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "244d118ef77a513b487b95b721179c395cbc1660",
+   "subject": "ENH Perform KNN imputation without O(n^2) memory cost (#16397)",
+   "kinds": [
+    "something else",
+    "something else",
+    "accumulation in a loop",
+    "something else"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": false,
+   "repo": "scikit-learn_scikit-learn",
+   "files": [
+    {
+     "path": "sklearn/impute/_knn.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "sklearn/impute/tests/test_knn.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "sklearn/metrics/pairwise.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "sklearn/metrics/tests/test_pairwise.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "5bd81234e6e6501ddcddbfdfdc80b90a1302af55",
+   "subject": "MAINT Parameter validation for `QuadraticDiscriminantAnalysis` (#24218)",
+   "kinds": [
+    "accumulation in a loop",
+    "something else",
+    "something else"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": false,
+   "repo": "scikit-learn_scikit-learn",
+   "files": [
+    {
+     "path": "sklearn/discriminant_analysis.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "sklearn/tests/test_common.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "sklearn/tests/test_discriminant_analysis.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "669e2b4c26187984fb0b6997c40ab1b8f98902f7",
+   "subject": "BUG lower space complexity of estimate_bandwidth to linear",
+   "kinds": [
+    "accumulation in a loop"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": false,
+   "repo": "scikit-learn_scikit-learn",
+   "files": [
+    {
+     "path": "sklearn/cluster/mean_shift_.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "6e50c8f35e67719e5b528b66bfe75444ec0008ed",
+   "subject": "[MRG+2] DOC framework for keeping API refs for deprecated classes/funcs (#7725)",
+   "kinds": [
+    "accumulation in a loop",
+    "something else",
+    "accumulation in a loop",
+    "something else",
+    "something else",
+    "accumulation in a loop",
+    "something else",
+    "something else",
+    "accumulation in a loop",
+    "something else",
+    "something else",
+    "something else"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": false,
+   "repo": "scikit-learn_scikit-learn",
+   "files": [
+    {
+     "path": "sklearn/cross_validation.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "sklearn/datasets/lfw.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "sklearn/decomposition/pca.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "sklearn/discriminant_analysis.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "sklearn/gaussian_process/gaussian_process.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "sklearn/grid_search.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "sklearn/lda.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "sklearn/learning_curve.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "sklearn/mixture/dpgmm.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "sklearn/mixture/gmm.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "sklearn/qda.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "sklearn/tests/test_discriminant_analysis.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "76e81962bc4c9e048b0e12e66c781f33c0706990",
+   "subject": "FIX Inconsistencies between solvers in `LinearDiscriminantAnalysis` and `QuadraticDiscriminantAnalysis` (#33626)",
+   "kinds": [
+    "accumulation in a loop",
+    "something else"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": false,
+   "repo": "scikit-learn_scikit-learn",
+   "files": [
+    {
+     "path": "sklearn/discriminant_analysis.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "sklearn/tests/test_discriminant_analysis.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "786eeb71122ec0712aa2270e29a5b5ee9d1b871b",
+   "subject": "DOC Documented attributes in QuadraticDiscriminantAnalysis, RadiusNeighborsClassifier and KNeighborsClassifier, (#14374)",
+   "kinds": [
+    "accumulation in a loop",
+    "accumulation in a loop"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": false,
+   "repo": "scikit-learn_scikit-learn",
+   "files": [
+    {
+     "path": "sklearn/discriminant_analysis.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "sklearn/neighbors/classification.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "7d13009364afd85abd964a93bcafdbe138823cfe",
+   "subject": "ENH Avoid unnecessary O(n^2) calculation in affinity propagation (#9617)",
+   "kinds": [
+    "accumulation in a loop"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": false,
+   "repo": "scikit-learn_scikit-learn",
+   "files": [
+    {
+     "path": "sklearn/cluster/affinity_propagation_.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "99916c40d1f145d75a3393c8d6357593c2b0a486",
+   "subject": "ENH Improve regularization messages for QuadraticDiscriminantAnalysis (#19731)",
+   "kinds": [
+    "accumulation in a loop",
+    "something else",
+    "something else"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": false,
+   "repo": "scikit-learn_scikit-learn",
+   "files": [
+    {
+     "path": "sklearn/discriminant_analysis.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "sklearn/tests/test_common.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "sklearn/tests/test_discriminant_analysis.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "9a0bb254f04a1cd58a77da29bda074213b247548",
+   "subject": "Fix: improve speed of trees with MAE criterion from O(n^2) to O(n log n) (#32100)",
+   "kinds": [
+    "accumulation in a loop"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": false,
+   "repo": "scikit-learn_scikit-learn",
+   "files": [
+    {
+     "path": "sklearn/tree/tests/test_tree.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "a343963d961225be25468ca64b54896dcba48e87",
+   "subject": "DOC Ensures that QuadraticDiscriminantAnalysis passes numpydoc validation (#21346)",
+   "kinds": [
+    "something else",
+    "accumulation in a loop"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": false,
+   "repo": "scikit-learn_scikit-learn",
+   "files": [
+    {
+     "path": "maint_tools/test_docstrings.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "sklearn/discriminant_analysis.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "a7a834bdb7a51ec260ff005715d50ab6ed01a16b",
+   "subject": "ENH improved error anisotropic  RationalQuadratic kernel (#12603)",
+   "kinds": [
+    "accumulation in a loop",
+    "accumulation in a loop"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": false,
+   "repo": "scikit-learn_scikit-learn",
+   "files": [
+    {
+     "path": "sklearn/gaussian_process/kernels.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "sklearn/gaussian_process/tests/test_kernels.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "ae9eaf83a123c033975d0f69a8217e6699951851",
+   "subject": "ENH Perform KNN imputation without O(n^2) memory cost",
+   "kinds": [
+    "something else",
+    "something else",
+    "accumulation in a loop",
+    "something else"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": false,
+   "repo": "scikit-learn_scikit-learn",
+   "files": [
+    {
+     "path": "sklearn/impute/_knn.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "sklearn/impute/tests/test_knn.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "sklearn/metrics/pairwise.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "sklearn/metrics/tests/test_pairwise.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "c9613924245489440b82ff05ba9937ffc443b572",
+   "subject": "REFACTOR Changed order of l and alpha in RationalQuadratic kernel",
+   "kinds": [
+    "something else",
+    "something else",
+    "accumulation in a loop",
+    "something else"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": false,
+   "repo": "scikit-learn_scikit-learn",
+   "files": [
+    {
+     "path": "examples/gaussian_process/plot_gpr_co2.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "examples/gaussian_process/plot_gpr_prior_posterior.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "sklearn/gaussian_process/kernels.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "sklearn/gaussian_process/tests/test_kernels.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "e04f9cb981b202d581bf7843d4fda9cd010e89a9",
+   "subject": "ENH: Add `covariance_estimator` to `QuadraticDiscriminantAnalysis` (#32108)",
+   "kinds": [
+    "something else",
+    "container became a hash",
+    "something else",
+    "something else"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": true,
+   "repo": "scikit-learn_scikit-learn",
+   "files": [
+    {
+     "path": "examples/classification/plot_lda_qda.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "sklearn/discriminant_analysis.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "sklearn/tests/test_discriminant_analysis.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "sklearn/utils/estimator_checks.py",
+     "credited": 0,
+     "pre": 2,
+     "post": 2,
+     "removed_axes": [],
+     "example": "set(estimator_params) pulls the whole axis into memory"
+    }
+   ]
+  },
+  {
+   "sha": "08b0b8d870eddd1cbe4d94037dcc76fcc1af0271",
+   "subject": "ENH: Adds quadratic_assignment with two methods (#12775)",
+   "kinds": [
+    "something else",
+    "accumulation in a loop"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": false,
+   "repo": "scipy_scipy",
+   "files": [
+    {
+     "path": "scipy/optimize/__init__.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "scipy/optimize/optimize.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "168974ea5b676d0b6da0b7356bdf687f8a302253",
+   "subject": "DEP: signal: remove scipy.signal.{bspline,quadratic,cubic}",
+   "kinds": [
+    "something else",
+    "accumulation in a loop",
+    "something else",
+    "something else",
+    "accumulation in a loop"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": true,
+   "repo": "scipy_scipy",
+   "files": [
+    {
+     "path": "scipy/signal/__init__.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "scipy/signal/_bsplines.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "scipy/signal/bsplines.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "scipy/signal/tests/test_bsplines.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "tools/refguide_check.py",
+     "credited": 0,
+     "pre": 5,
+     "post": 5,
+     "removed_axes": [],
+     "example": "a membership test against 'module_names' inside a loop over it; a set costs the same once"
+    }
+   ]
+  },
+  {
+   "sha": "345ad9641ae46af63d4fd77de34cf6f5da9b4ce4",
+   "subject": "Optimize _group_columns implementation",
+   "kinds": [
+    "accumulation in a loop"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": false,
+   "repo": "scipy_scipy",
+   "files": [
+    {
+     "path": "scipy/optimize/_group_columns.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "3946a431c09c791e64283447de8da14060d42890",
+   "subject": "MAINT: optimize.quadratic_assignment: SPEC-007 transition to rng (#21848)",
+   "kinds": [
+    "accumulation in a loop",
+    "something else"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": false,
+   "repo": "scipy_scipy",
+   "files": [
+    {
+     "path": "scipy/optimize/_qap.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "scipy/optimize/tests/test_quadratic_assignment.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "3d851c7d3e9e9da85a90b3b0b11e72e4b336b0bc",
+   "subject": "Deprecate scipy.signal.{bspline, quadratic, cubic} (#17455)",
+   "kinds": [
+    "accumulation in a loop",
+    "something else"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": false,
+   "repo": "scipy_scipy",
+   "files": [
+    {
+     "path": "scipy/signal/_bsplines.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "scipy/signal/tests/test_bsplines.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "4fa1ee0affe4bd74a99a345394cd00486cdfed2c",
+   "subject": "MAINT: interpolate: ensure backcompat for interp1d with nans",
+   "kinds": [
+    "accumulation in a loop",
+    "accumulation in a loop"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": false,
+   "repo": "scipy_scipy",
+   "files": [
+    {
+     "path": "scipy/interpolate/interpolate.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "scipy/interpolate/tests/test_interpolate.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "5733a27abcca816a642d20be922fb88650b52558",
+   "subject": "TST: weightedtau rng thread safety",
+   "kinds": [
+    "accumulation in a loop"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": false,
+   "repo": "scipy_scipy",
+   "files": [
+    {
+     "path": "scipy/stats/tests/test_stats.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "6fc30cb081ba64ab3494cb7fc37e51bdbd439e1e",
+   "subject": "ENH: optimize: speed up `LbfgsInvHessProduct.todense` on large matrices (#22556)",
+   "kinds": [
+    "accumulation in a loop",
+    "something else"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": false,
+   "repo": "scipy_scipy",
+   "files": [
+    {
+     "path": "scipy/optimize/_lbfgsb_py.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "scipy/optimize/tests/test_lbfgsb_hessinv.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "828141287f0379e01c702b396f9d57ed5ca2eff4",
+   "subject": "MAINT: optimize.quadratic_assignment: SPEC 7 follow-up (#24394)",
+   "kinds": [
+    "accumulation in a loop",
+    "something else"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": false,
+   "repo": "scipy_scipy",
+   "files": [
+    {
+     "path": "scipy/optimize/_qap.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "scipy/optimize/tests/test_quadratic_assignment.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "837887fd10f2d07098776ea70f1f256acf03b448",
+   "subject": "MAINT: make the magnitude of the gradient a feature of the local quadratic approximation of the objective function",
+   "kinds": [
+    "accumulation in a loop",
+    "something else"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": false,
+   "repo": "scipy_scipy",
+   "files": [
+    {
+     "path": "scipy/optimize/_trustregion.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "scipy/optimize/_trustregion_ncg.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "8c567caa32cc429b13d1751a4982abeaf77a5760",
+   "subject": "Improve interpolate.interp1d documentation explaining what slinear, quadratic and cubic keywords mean",
+   "kinds": [
+    "accumulation in a loop"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": false,
+   "repo": "scipy_scipy",
+   "files": [
+    {
+     "path": "scipy/interpolate/interpolate.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "ac275bf76dbaeebb929f835123da6c6ac2ac05a9",
+   "subject": "DOC: sparse: LIL is *not* efficient at all",
+   "kinds": [
+    "accumulation in a loop"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": false,
+   "repo": "scipy_scipy",
+   "files": [
+    {
+     "path": "scipy/sparse/lil.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "adf1f0e3cb69aaf451eb636116fe1d5b2a99c736",
+   "subject": "ENH: Reduce memory usage during approx_derivative",
+   "kinds": [
+    "accumulation in a loop"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": false,
+   "repo": "scipy_scipy",
+   "files": [
+    {
+     "path": "scipy/optimize/_numdiff.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "bec021241dcb39c8ce29b7682a3b787ca19931f9",
+   "subject": "Add complexity remark to kendalltau",
+   "kinds": [
+    "accumulation in a loop"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": false,
+   "repo": "scipy_scipy",
+   "files": [
+    {
+     "path": "scipy/stats/_stats_py.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "c44d3311b3dcad78bf2fc9fc4af234518e67a4ff",
+   "subject": "Added test against trivial quadratic implementation",
+   "kinds": [
+    "accumulation in a loop"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": false,
+   "repo": "scipy_scipy",
+   "files": [
+    {
+     "path": "scipy/stats/tests/test_stats.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "c6e08acad65674e140e1b08c00c107eb5fa2ac50",
+   "subject": "ENH: extend the quadratic model class in optimize/trust-region",
+   "kinds": [
+    "accumulation in a loop",
+    "something else",
+    "something else"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": false,
+   "repo": "scipy_scipy",
+   "files": [
+    {
+     "path": "scipy/optimize/_trustregion.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "scipy/optimize/_trustregion_dogleg.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "scipy/optimize/_trustregion_ncg.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "cefc90760e745bfca5c71f723332a9945b105ee4",
+   "subject": "ENH: n-D and nan_policy support for scipy.stats.percentileofscore (#13572)",
+   "kinds": [
+    "accumulation in a loop",
+    "accumulation in a loop"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": false,
+   "repo": "scipy_scipy",
+   "files": [
+    {
+     "path": "scipy/stats/_stats_py.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "scipy/stats/tests/test_stats.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "ddfccf753e7813de6b39a8353c6fc7471b7ae7de",
+   "subject": "DOC: add a single quotation mark to fix a slight typo ('quadratic -> 'quadratic') (#7014)",
+   "kinds": [
+    "accumulation in a loop"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": false,
+   "repo": "scipy_scipy",
+   "files": [
+    {
+     "path": "scipy/interpolate/interpolate.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "f35c4cc54fd9fa0e373127c76028275ce7c588e5",
+   "subject": "Vectorize block_diag to avoid inner loops over block elements",
+   "kinds": [
+    "accumulation in a loop"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": false,
+   "repo": "scipy_scipy",
+   "files": [
+    {
+     "path": "scipy/sparse/construct.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "fa69f2df9288684e9504884a2f3c989d89c01909",
+   "subject": "MAINT: Refactored quadratic function operations + tests",
+   "kinds": [
+    "something else",
+    "accumulation in a loop",
+    "accumulation in a loop",
+    "something else"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": false,
+   "repo": "scipy_scipy",
+   "files": [
+    {
+     "path": "scipy/optimize/_lsq_common.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "scipy/optimize/_lsq_dogbox.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "scipy/optimize/_lsq_trf.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "scipy/optimize/tests/test_least_squares.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "121a17bb32046b980f120abca4793aad116aa23c",
+   "subject": "fix catastrophic backtracking in sqlite inline unique reflection regex",
+   "kinds": [
+    "accumulation in a loop",
+    "something else"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": true,
+   "repo": "sqlalchemy_sqlalchemy",
+   "files": [
+    {
+     "path": "lib/sqlalchemy/dialects/sqlite/base.py",
+     "credited": 0,
+     "pre": 2,
+     "post": 2,
+     "removed_axes": [],
+     "example": "tuple(cols) pulls the whole axis into memory"
+    },
+    {
+     "path": "test/dialect/sqlite/test_reflection.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "06a581984037f772d7cda68689e5764427a10fc7",
+   "subject": "InhomogeneousTernaryQuadratic docstring",
+   "kinds": [
+    "accumulation in a loop"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": true,
+   "repo": "sympy_sympy",
+   "files": [
+    {
+     "path": "sympy/solvers/diophantine/diophantine.py",
+     "credited": 0,
+     "pre": 10,
+     "post": 10,
+     "removed_axes": [],
+     "example": "dict(var) pulls the whole axis into memory"
+    }
+   ]
+  },
+  {
+   "sha": "07b33e350b91538314efa1b2a1e516ff6add2c6e",
+   "subject": "minor adjustments in quadratic_denom_rule",
+   "kinds": [
+    "accumulation in a loop"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": true,
+   "repo": "sympy_sympy",
+   "files": [
+    {
+     "path": "sympy/integrals/manualintegrate.py",
+     "credited": 0,
+     "pre": 1,
+     "post": 1,
+     "removed_axes": [],
+     "example": "list(sequence) pulls the whole axis into memory"
+    }
+   ]
+  },
+  {
+   "sha": "09c03dc8a17ebd2c65c90f4a12af78a91c715d90",
+   "subject": "add type hints to quadratic_residues",
+   "kinds": [
+    "accumulation in a loop",
+    "something else"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": true,
+   "repo": "sympy_sympy",
+   "files": [
+    {
+     "path": "sympy/ntheory/residue_ntheory.py",
+     "credited": 0,
+     "pre": 3,
+     "post": 3,
+     "removed_axes": [],
+     "example": "sorted(res) pulls the whole axis into memory"
+    },
+    {
+     "path": "sympy/ntheory/tests/test_residue.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "15e24170f085d45faf31eb5ec7c397102e13d59d",
+   "subject": "manualintegrate: added tests for quadratic_denom_rule + adjustments",
+   "kinds": [
+    "accumulation in a loop",
+    "something else"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": true,
+   "repo": "sympy_sympy",
+   "files": [
+    {
+     "path": "sympy/integrals/manualintegrate.py",
+     "credited": 0,
+     "pre": 1,
+     "post": 1,
+     "removed_axes": [],
+     "example": "list(sequence) pulls the whole axis into memory"
+    },
+    {
+     "path": "sympy/integrals/tests/test_manual.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "1e686b2813b7b22a70b32b0382303fe2e2914c59",
+   "subject": "perf(printing): make print_seq O(n) rather than quadratic",
+   "kinds": [
+    "accumulation in a loop"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": true,
+   "repo": "sympy_sympy",
+   "files": [
+    {
+     "path": "sympy/printing/pretty/pretty.py",
+     "credited": 0,
+     "pre": 10,
+     "post": 10,
+     "removed_axes": [],
+     "example": "list(args) pulls the whole axis into memory"
+    }
+   ]
+  },
+  {
+   "sha": "20fcf62d0589c271089becc01a09631ac5c5f254",
+   "subject": "additional BinaryQuadratic test",
+   "kinds": [
+    "container became a hash"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": false,
+   "repo": "sympy_sympy",
+   "files": [
+    {
+     "path": "sympy/solvers/diophantine/tests/test_diophantine.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "21bbba2188f6afdb16e53ca74869c8c9214c3904",
+   "subject": "diop: quadratic",
+   "kinds": [
+    "container became a hash"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": true,
+   "still_fires_after": true,
+   "repo": "sympy_sympy",
+   "files": [
+    {
+     "path": "sympy/solvers/diophantine.py",
+     "credited": 2,
+     "pre": 7,
+     "post": 8,
+     "removed_axes": [],
+     "example": "list(sol) pulls the whole axis into memory"
+    }
+   ]
+  },
+  {
+   "sha": "24b65bfa22d0ca9f327f38f432b9e39bc308eb50",
+   "subject": "fix missing special case in manualintegrate quadratic denom rule",
+   "kinds": [
+    "accumulation in a loop",
+    "something else"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": true,
+   "repo": "sympy_sympy",
+   "files": [
+    {
+     "path": "sympy/integrals/manualintegrate.py",
+     "credited": 0,
+     "pre": 1,
+     "post": 1,
+     "removed_axes": [],
+     "example": "list(sequence) pulls the whole axis into memory"
+    },
+    {
+     "path": "sympy/integrals/tests/test_manual.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "2b70369b918423eeb91c52575a37463432a16f88",
+   "subject": "Optimize quadratic_congruence",
+   "kinds": [
+    "accumulation in a loop",
+    "something else"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": false,
+   "repo": "sympy_sympy",
+   "files": [
+    {
+     "path": "sympy/ntheory/residue_ntheory.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "sympy/ntheory/tests/test_residue.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "3328a434dd62a7c948bb0902628db48d4c0d93aa",
+   "subject": "quadratic congruence equation",
+   "kinds": [
+    "something else",
+    "container became a hash",
+    "container became a hash"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": false,
+   "repo": "sympy_sympy",
+   "files": [
+    {
+     "path": "sympy/ntheory/__init__.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "sympy/ntheory/residue_ntheory.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "sympy/ntheory/tests/test_residue.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "3c43569fb63a6094e0470715ac31f639d8984382",
+   "subject": "make all_close more robust",
+   "kinds": [
+    "container became a hash",
+    "something else"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": true,
+   "still_fires_after": true,
+   "repo": "sympy_sympy",
+   "files": [
+    {
+     "path": "sympy/core/numbers.py",
+     "credited": 1,
+     "pre": 1,
+     "post": 0,
+     "removed_axes": [],
+     "example": "list(args) pulls the whole axis into memory"
+    },
+    {
+     "path": "sympy/core/tests/test_numbers.py",
+     "credited": 0,
+     "pre": 2,
+     "post": 2,
+     "removed_axes": [],
+     "example": "a membership test against 'zeros' inside a loop over it; a set costs the same once"
+    }
+   ]
+  },
+  {
+   "sha": "3d554f149a5bbe7f0873157edb63b064564b71d4",
+   "subject": "modify roots_binomial and roots_quadratic",
+   "kinds": [
+    "something else",
+    "something else",
+    "accumulation in a loop",
+    "something else",
+    "something else"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": true,
+   "repo": "sympy_sympy",
+   "files": [
+    {
+     "path": "sympy/integrals/tests/test_quadrature.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "sympy/polys/polyroots.py",
+     "credited": 0,
+     "pre": 3,
+     "post": 3,
+     "removed_axes": [],
+     "example": "sorted(factors) pulls the whole axis into memory"
+    },
+    {
+     "path": "sympy/polys/rootoftools.py",
+     "credited": 0,
+     "pre": 2,
+     "post": 2,
+     "removed_axes": [],
+     "example": "sorted(reals) pulls the whole axis into memory"
+    },
+    {
+     "path": "sympy/polys/tests/test_polyroots.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "sympy/solvers/tests/test_ode.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "4125d18229441781295fefbd6317314008ebe276",
+   "subject": "improve sqrt linear rule, simplify quadratic denom rule",
+   "kinds": [
+    "container became a hash",
+    "something else",
+    "something else",
+    "accumulation in a loop"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": true,
+   "repo": "sympy_sympy",
+   "files": [
+    {
+     "path": "sympy/integrals/manualintegrate.py",
+     "credited": 0,
+     "pre": 1,
+     "post": 1,
+     "removed_axes": [],
+     "example": "list(sequence) pulls the whole axis into memory"
+    },
+    {
+     "path": "sympy/integrals/tests/test_integrals.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "sympy/integrals/tests/test_manual.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "sympy/solvers/ode/tests/test_single.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "4245feb127b5bcb044bfd8abe1edf9969cea80d7",
+   "subject": "integrals: restrict trig_cmplx_exp_rule to genuine exp factors",
+   "kinds": [
+    "accumulation in a loop"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": true,
+   "repo": "sympy_sympy",
+   "files": [
+    {
+     "path": "sympy/integrals/manualintegrate.py",
+     "credited": 0,
+     "pre": 1,
+     "post": 1,
+     "removed_axes": [],
+     "example": "list(sequence) pulls the whole axis into memory"
+    }
+   ]
+  },
+  {
+   "sha": "496d7fe2410d309685722d41a270d8cc50b15146",
+   "subject": "manualintegrate: handle degenerate symbolic quadratics",
+   "kinds": [
+    "accumulation in a loop",
+    "something else"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": true,
+   "repo": "sympy_sympy",
+   "files": [
+    {
+     "path": "sympy/integrals/manualintegrate.py",
+     "credited": 0,
+     "pre": 1,
+     "post": 1,
+     "removed_axes": [],
+     "example": "list(sequence) pulls the whole axis into memory"
+    },
+    {
+     "path": "sympy/integrals/tests/test_manual.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "4a710f5cfe539a9ea554d8946f97ebcced2644b3",
+   "subject": "Reworked C89 Max/Min printing, added performance test",
+   "kinds": [
+    "accumulation in a loop",
+    "something else"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": false,
+   "repo": "sympy_sympy",
+   "files": [
+    {
+     "path": "sympy/printing/ccode.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "sympy/printing/tests/test_ccode.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "4be71a8eb5c0b6cb21a8508945be28481c4b81f0",
+   "subject": "\tPrimitivity testing",
+   "kinds": [
+    "accumulation in a loop"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": true,
+   "repo": "sympy_sympy",
+   "files": [
+    {
+     "path": "sympy/combinatorics/perm_groups.py",
+     "credited": 0,
+     "pre": 2,
+     "post": 2,
+     "removed_axes": [],
+     "example": "a loop over 'gens' inside a loop over 'gens'"
+    }
+   ]
+  },
+  {
+   "sha": "4cb30099a5504eba91b2b6328e1da206cc4bb1e5",
+   "subject": "diop: parametrize_ternary_quadratic",
+   "kinds": [
+    "accumulation in a loop"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": true,
+   "repo": "sympy_sympy",
+   "files": [
+    {
+     "path": "sympy/solvers/diophantine.py",
+     "credited": 0,
+     "pre": 9,
+     "post": 9,
+     "removed_axes": [],
+     "example": "tuple(l) pulls the whole axis into memory"
+    }
+   ]
+  },
+  {
+   "sha": "4e1d750ba62c2c96935a0e402c25c5c344e30de1",
+   "subject": "Fixed a bug in linear diophantine solver and one in quadratic diophantine solver",
+   "kinds": [
+    "accumulation in a loop",
+    "container became a hash"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": true,
+   "still_fires_after": true,
+   "repo": "sympy_sympy",
+   "files": [
+    {
+     "path": "sympy/solvers/diophantine.py",
+     "credited": 1,
+     "pre": 1,
+     "post": 1,
+     "removed_axes": [],
+     "example": "list(sol) pulls the whole axis into memory"
+    },
+    {
+     "path": "sympy/solvers/tests/test_diophantine.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "50c7f94652d80dfb067636b67db6c93e32fdadee",
+   "subject": "improve sqrt linear rule, simplify quadratic denom rule",
+   "kinds": [
+    "container became a hash",
+    "something else",
+    "something else",
+    "accumulation in a loop"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": true,
+   "repo": "sympy_sympy",
+   "files": [
+    {
+     "path": "sympy/integrals/manualintegrate.py",
+     "credited": 0,
+     "pre": 1,
+     "post": 1,
+     "removed_axes": [],
+     "example": "list(sequence) pulls the whole axis into memory"
+    },
+    {
+     "path": "sympy/integrals/tests/test_integrals.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "sympy/integrals/tests/test_manual.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "sympy/solvers/ode/tests/test_single.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "5421cb9dd3263e80952cc1ba74cceb9042ee9c47",
+   "subject": "manualintegrate(special_function_rule): add degenerate cases",
+   "kinds": [
+    "accumulation in a loop"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": true,
+   "repo": "sympy_sympy",
+   "files": [
+    {
+     "path": "sympy/integrals/manualintegrate.py",
+     "credited": 0,
+     "pre": 1,
+     "post": 1,
+     "removed_axes": [],
+     "example": "list(sequence) pulls the whole axis into memory"
+    }
+   ]
+  },
+  {
+   "sha": "6f83e91140dbfaa43ed28aa0001731551ffd1c80",
+   "subject": "Changed minlex to use the linear time least_rotation.",
+   "kinds": [
+    "accumulation in a loop",
+    "something else",
+    "accumulation in a loop",
+    "accumulation in a loop"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": true,
+   "still_fires_after": true,
+   "repo": "sympy_sympy",
+   "files": [
+    {
+     "path": "sympy/combinatorics/permutations.py",
+     "credited": 0,
+     "pre": 4,
+     "post": 4,
+     "removed_axes": [],
+     "example": "list(a) pulls the whole axis into memory"
+    },
+    {
+     "path": "sympy/combinatorics/polyhedron.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "sympy/utilities/iterables.py",
+     "credited": 1,
+     "pre": 10,
+     "post": 6,
+     "removed_axes": [],
+     "example": "list(seq) pulls the whole axis into memory"
+    },
+    {
+     "path": "sympy/utilities/tests/test_iterables.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "73d029bbaef26bdbcb38e22466dfd4768f0577d1",
+   "subject": "Refactoring of `quadratic_congruence`",
+   "kinds": [
+    "accumulation in a loop"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": false,
+   "repo": "sympy_sympy",
+   "files": [
+    {
+     "path": "sympy/ntheory/residue_ntheory.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "7574f2de49597dac6f69e274be1b88e7930771d4",
+   "subject": "Update tests for _diop_ternary_quadratic_normal to return sets.",
+   "kinds": [
+    "container became a hash"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": false,
+   "repo": "sympy_sympy",
+   "files": [
+    {
+     "path": "sympy/solvers/diophantine/tests/test_diophantine.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "75b47904408e1fde10b9cbf73446f76e915f3b51",
+   "subject": "Selection of integer-valued solutions",
+   "kinds": [
+    "container became a hash",
+    "accumulation in a loop"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": true,
+   "repo": "sympy_sympy",
+   "files": [
+    {
+     "path": "sympy/solvers/diophantine.py",
+     "credited": 0,
+     "pre": 10,
+     "post": 10,
+     "removed_axes": [],
+     "example": "a loop over 'var' inside a loop over 'var'"
+    },
+    {
+     "path": "sympy/solvers/tests/test_diophantine.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "7907fec3f2286aedde5ac02c4ce8145e4525d37f",
+   "subject": "integrals: Add G&R 2.263.3 reduction for quadratic forms",
+   "kinds": [
+    "accumulation in a loop",
+    "something else"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": true,
+   "repo": "sympy_sympy",
+   "files": [
+    {
+     "path": "sympy/integrals/manualintegrate.py",
+     "credited": 0,
+     "pre": 1,
+     "post": 1,
+     "removed_axes": [],
+     "example": "list(sequence) pulls the whole axis into memory"
+    },
+    {
+     "path": "sympy/integrals/tests/test_manual.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "791f3198231b6dfb117f1ad5cb2d6e5a6df28972",
+   "subject": "diophantine: add support of cornacchia when a+b>m",
+   "kinds": [
+    "accumulation in a loop",
+    "container became a hash"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": true,
+   "repo": "sympy_sympy",
+   "files": [
+    {
+     "path": "sympy/solvers/diophantine/diophantine.py",
+     "credited": 0,
+     "pre": 7,
+     "post": 7,
+     "removed_axes": [],
+     "example": "dict(var) pulls the whole axis into memory"
+    },
+    {
+     "path": "sympy/solvers/diophantine/tests/test_diophantine.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "7c671fb9d5b6199d6b1e8949b0026dc6eadddfeb",
+   "subject": "Revert \"Merge pull request #30079 from salastro/expsin_quadratic\"",
+   "kinds": [
+    "accumulation in a loop",
+    "something else"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": true,
+   "repo": "sympy_sympy",
+   "files": [
+    {
+     "path": "sympy/integrals/manualintegrate.py",
+     "credited": 0,
+     "pre": 1,
+     "post": 1,
+     "removed_axes": [],
+     "example": "list(sequence) pulls the whole axis into memory"
+    },
+    {
+     "path": "sympy/integrals/tests/test_manual.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "871afaf8e8cce231e902b6ae09761ae228bd7f72",
+   "subject": "diop: diop_quadratic (2)",
+   "kinds": [
+    "accumulation in a loop"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": true,
+   "still_fires_after": true,
+   "repo": "sympy_sympy",
+   "files": [
+    {
+     "path": "sympy/solvers/diophantine.py",
+     "credited": 1,
+     "pre": 5,
+     "post": 8,
+     "removed_axes": [],
+     "example": "set(fund_solns) pulls the whole axis into memory"
+    }
+   ]
+  },
+  {
+   "sha": "937ca3ccb5e2df7e6274b38758178d3fb3ab712b",
+   "subject": "Further optimize quadratic_congruence",
+   "kinds": [
+    "accumulation in a loop"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": false,
+   "repo": "sympy_sympy",
+   "files": [
+    {
+     "path": "sympy/ntheory/residue_ntheory.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "9719bbe8ffe04559e3a48f11ee1f9b26cad08240",
+   "subject": "manualintegrate: handle n<-1 in sqrt_quadratic_rule",
+   "kinds": [
+    "accumulation in a loop",
+    "something else"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": true,
+   "repo": "sympy_sympy",
+   "files": [
+    {
+     "path": "sympy/integrals/manualintegrate.py",
+     "credited": 0,
+     "pre": 1,
+     "post": 1,
+     "removed_axes": [],
+     "example": "list(sequence) pulls the whole axis into memory"
+    },
+    {
+     "path": "sympy/integrals/tests/test_manual.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "97d0557a58b4b5d4fa477d71c636bcaa7fa0a3e3",
+   "subject": "Hermite quadratic version to Mack's Linear version",
+   "kinds": [
+    "accumulation in a loop",
+    "something else"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": false,
+   "repo": "sympy_sympy",
+   "files": [
+    {
+     "path": "sympy/integrals/risch.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "sympy/integrals/tests/test_risch.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "9b1f3d7402538c587a00fa4df162208998727830",
+   "subject": "solve modifications",
+   "kinds": [
+    "accumulation in a loop",
+    "something else",
+    "something else",
+    "accumulation in a loop",
+    "something else",
+    "something else",
+    "container became a hash"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": true,
+   "repo": "sympy_sympy",
+   "files": [
+    {
+     "path": "sympy/core/tests/test_wester.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "sympy/polys/tests/test_polyroots.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "sympy/simplify/tests/test_simplify.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "sympy/solvers/ode.py",
+     "credited": 0,
+     "pre": 10,
+     "post": 10,
+     "removed_axes": [],
+     "example": "list(funcs) pulls the whole axis into memory"
+    },
+    {
+     "path": "sympy/solvers/solvers.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "sympy/solvers/tests/test_ode.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "sympy/solvers/tests/test_solvers.py",
+     "credited": 0,
+     "pre": 1,
+     "post": 1,
+     "removed_axes": [],
+     "example": "set(s) pulls the whole axis into memory"
+    }
+   ]
+  },
+  {
+   "sha": "a25d3d5244871a1f2da207518275027743c9b184",
+   "subject": "manualintegrate: extend trig_cmplx_exp_rule to handle quadratic phase integrals",
+   "kinds": [
+    "accumulation in a loop"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": true,
+   "repo": "sympy_sympy",
+   "files": [
+    {
+     "path": "sympy/integrals/manualintegrate.py",
+     "credited": 0,
+     "pre": 1,
+     "post": 1,
+     "removed_axes": [],
+     "example": "list(sequence) pulls the whole axis into memory"
+    }
+   ]
+  },
+  {
+   "sha": "a66d531a7850ee711001f7ef6f824c67f6508525",
+   "subject": "A minor improvement to `_sqrt_mod_tonelli_shanks`.",
+   "kinds": [
+    "accumulation in a loop"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": false,
+   "repo": "sympy_sympy",
+   "files": [
+    {
+     "path": "sympy/ntheory/residue_ntheory.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "ae12343b5c36bebd4a99af005c928834612bab91",
+   "subject": "continued_fraction_periodic() to handle quadratic irrational numbers",
+   "kinds": [
+    "accumulation in a loop",
+    "accumulation in a loop"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": false,
+   "repo": "sympy_sympy",
+   "files": [
+    {
+     "path": "sympy/ntheory/continued_fraction.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "sympy/ntheory/tests/test_ntheory.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "af53d18f0b5582c28826af5a1463b7cd9af2d97a",
+   "subject": "Issue 1468: cubic, quartic, roots, Poly mods",
+   "kinds": [
+    "accumulation in a loop",
+    "accumulation in a loop",
+    "container became a hash"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": true,
+   "repo": "sympy_sympy",
+   "files": [
+    {
+     "path": "sympy/polys/polynomial.py",
+     "credited": 0,
+     "pre": 16,
+     "post": 16,
+     "removed_axes": [],
+     "example": "frozenset(symbols) pulls the whole axis into memory"
+    },
+    {
+     "path": "sympy/polys/rootfinding.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "sympy/polys/tests/test_polynomial.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "b102198d811ca4cbf2bf82ac6116acc2a2db3d7e",
+   "subject": "Implemented RootOf class.",
+   "kinds": [
+    "something else",
+    "accumulation in a loop"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": false,
+   "repo": "sympy_sympy",
+   "files": [
+    {
+     "path": "sympy/simplify/__init__.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "sympy/simplify/rewrite.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "b1deca128707760e8e6fd3694ea19b0a2d209277",
+   "subject": "test test_quadratic_parameter_passing; update tests for check_param",
+   "kinds": [
+    "container became a hash"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": false,
+   "repo": "sympy_sympy",
+   "files": [
+    {
+     "path": "sympy/solvers/diophantine/tests/test_diophantine.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "b3819e11fe6c41213e848ca46a852391a45c4078",
+   "subject": "Update tests to use set literals. Fixed case where no equality was actually tested. Uncomment out cases for test_quadratic_elliptical_case.",
+   "kinds": [
+    "container became a hash"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": false,
+   "repo": "sympy_sympy",
+   "files": [
+    {
+     "path": "sympy/solvers/diophantine/tests/test_diophantine.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "b38fa5279e0be610be02385db1bcc55935980f3d",
+   "subject": "Use a set instead of a FiniteSet",
+   "kinds": [
+    "container became a hash"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": false,
+   "repo": "sympy_sympy",
+   "files": [
+    {
+     "path": "sympy/stats/crv.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "b5c5bb419b43b27298f907a7dfd84d89b21a7c35",
+   "subject": "manualintegrate: refactoring and adjustments",
+   "kinds": [
+    "accumulation in a loop"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": true,
+   "repo": "sympy_sympy",
+   "files": [
+    {
+     "path": "sympy/integrals/manualintegrate.py",
+     "credited": 0,
+     "pre": 1,
+     "post": 1,
+     "removed_axes": [],
+     "example": "list(sequence) pulls the whole axis into memory"
+    }
+   ]
+  },
+  {
+   "sha": "bf073fe269d8e89530bb9f5e1bf93f39f158fefd",
+   "subject": "Implement is_rational method for trig (and inverse) functions (issue 3215)",
+   "kinds": [
+    "something else",
+    "accumulation in a loop"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": false,
+   "repo": "sympy_sympy",
+   "files": [
+    {
+     "path": "sympy/core/tests/test_assumptions.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "sympy/functions/elementary/trigonometric.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "c63b1509d8af32b3a46a1d508effe78e495c1320",
+   "subject": "Fix branch cut error in sqrt_quadratic_reduction_rule",
+   "kinds": [
+    "accumulation in a loop",
+    "something else"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": true,
+   "repo": "sympy_sympy",
+   "files": [
+    {
+     "path": "sympy/integrals/manualintegrate.py",
+     "credited": 0,
+     "pre": 1,
+     "post": 1,
+     "removed_axes": [],
+     "example": "list(sequence) pulls the whole axis into memory"
+    },
+    {
+     "path": "sympy/integrals/tests/test_manual.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "c699a0c448be3eedb828e6ce9fb0df4e16450cc3",
+   "subject": "perf(solvers): make linear_eq_to_matrix faster",
+   "kinds": [
+    "container became a hash"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": true,
+   "repo": "sympy_sympy",
+   "files": [
+    {
+     "path": "sympy/solvers/solveset.py",
+     "credited": 0,
+     "pre": 12,
+     "post": 13,
+     "removed_axes": [],
+     "example": "list(mask) pulls the whole axis into memory"
+    }
+   ]
+  },
+  {
+   "sha": "c8d798215d9b9575c487fec842cac10075d11617",
+   "subject": "Quadratic diophantine equation is solved for elliptical case and simple hyperbolic case",
+   "kinds": [
+    "container became a hash",
+    "container became a hash"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": false,
+   "repo": "sympy_sympy",
+   "files": [
+    {
+     "path": "sympy/solvers/diophantine.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "sympy/solvers/tests/test_diophantine.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "caf237ac30349e447b1ebee14e3c26d6f0ecd802",
+   "subject": "If `p` is special, `d` is now fixed",
+   "kinds": [
+    "accumulation in a loop"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": false,
+   "repo": "sympy_sympy",
+   "files": [
+    {
+     "path": "sympy/ntheory/residue_ntheory.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "cff342534260e19456595b90461db7835e1171af",
+   "subject": "Issue 1468: cubic, quartic, roots, Poly mods",
+   "kinds": [
+    "accumulation in a loop",
+    "accumulation in a loop",
+    "container became a hash"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": true,
+   "repo": "sympy_sympy",
+   "files": [
+    {
+     "path": "sympy/polys/polynomial.py",
+     "credited": 0,
+     "pre": 16,
+     "post": 16,
+     "removed_axes": [],
+     "example": "frozenset(symbols) pulls the whole axis into memory"
+    },
+    {
+     "path": "sympy/polys/rootfinding.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "sympy/polys/tests/test_polynomial.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "d6dfe1c44befb3ff7fb46a33255688b15be32b9b",
+   "subject": "Solution method improved for quadratic Diophantine modules",
+   "kinds": [
+    "container became a hash",
+    "something else"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": true,
+   "still_fires_after": true,
+   "repo": "sympy_sympy",
+   "files": [
+    {
+     "path": "sympy/solvers/diophantine.py",
+     "credited": 1,
+     "pre": 1,
+     "post": 1,
+     "removed_axes": [],
+     "example": "list(sol) pulls the whole axis into memory"
+    },
+    {
+     "path": "sympy/solvers/tests/test_diophantine.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "d7272c9ed1d922534ad6beca83a6a9e8e38dd129",
+   "subject": "Sort roots in roots_quadratic() if both are numerical",
+   "kinds": [
+    "accumulation in a loop",
+    "something else"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": true,
+   "repo": "sympy_sympy",
+   "files": [
+    {
+     "path": "sympy/polys/polyroots.py",
+     "credited": 0,
+     "pre": 1,
+     "post": 1,
+     "removed_axes": [],
+     "example": "list(roots) pulls the whole axis into memory"
+    },
+    {
+     "path": "sympy/polys/tests/test_polyroots.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "d8cbc91db02e510b7ede7967ef5989f06a476338",
+   "subject": "manualintegrate: adapted tests",
+   "kinds": [
+    "accumulation in a loop",
+    "something else",
+    "something else"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": true,
+   "repo": "sympy_sympy",
+   "files": [
+    {
+     "path": "sympy/integrals/manualintegrate.py",
+     "credited": 0,
+     "pre": 1,
+     "post": 1,
+     "removed_axes": [],
+     "example": "list(sequence) pulls the whole axis into memory"
+    },
+    {
+     "path": "sympy/integrals/tests/test_integrals.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "sympy/integrals/tests/test_manual.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "da7612904fd25d40d16a97b07194e2108db53e3e",
+   "subject": "Solutions for quadratic ternary forms implemented",
+   "kinds": [
+    "accumulation in a loop",
+    "something else"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": false,
+   "repo": "sympy_sympy",
+   "files": [
+    {
+     "path": "sympy/solvers/diophantine.py",
+     "credited": 0,
+     "pre": 1,
+     "post": 0,
+     "removed_axes": [],
+     "example": "list(sol) pulls the whole axis into memory"
+    },
+    {
+     "path": "sympy/solvers/tests/test_diophantine.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "dd61378e16470448084b4935d359d5d20bdc8989",
+   "subject": "Added discriminant function for Polys.",
+   "kinds": [
+    "something else",
+    "accumulation in a loop",
+    "something else",
+    "something else"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": true,
+   "repo": "sympy_sympy",
+   "files": [
+    {
+     "path": "sympy/polys/__init__.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "sympy/polys/algorithms.py",
+     "credited": 0,
+     "pre": 2,
+     "post": 2,
+     "removed_axes": [],
+     "example": "sorted(G) pulls the whole axis into memory"
+    },
+    {
+     "path": "sympy/polys/tests/test_polynomial.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "sympy/polys/wrappers.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "e0e0a182d7edff485f7fce6645a50f1735832988",
+   "subject": "added ``sqrt_mod, quadratic_residue, primitive_root, nthroot_mod`` added `is_nthpow_residue``; faster ``n_order``",
+   "kinds": [
+    "something else",
+    "container became a hash",
+    "accumulation in a loop"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": false,
+   "repo": "sympy_sympy",
+   "files": [
+    {
+     "path": "sympy/ntheory/__init__.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "sympy/ntheory/residue_ntheory.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "sympy/ntheory/tests/test_ntheory.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "e3b816a8ae19bfcfda73b127e3400462ead10f87",
+   "subject": "diop: ternary quadratic",
+   "kinds": [
+    "accumulation in a loop"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": true,
+   "repo": "sympy_sympy",
+   "files": [
+    {
+     "path": "sympy/solvers/diophantine.py",
+     "credited": 0,
+     "pre": 9,
+     "post": 9,
+     "removed_axes": [],
+     "example": "tuple(l) pulls the whole axis into memory"
+    }
+   ]
+  },
+  {
+   "sha": "e43bb161881bc72359c7ba30d63402852e232aa7",
+   "subject": "Fix lambdify for Sum employing nested loops",
+   "kinds": [
+    "accumulation in a loop",
+    "something else",
+    "something else"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": true,
+   "repo": "sympy_sympy",
+   "files": [
+    {
+     "path": "sympy/printing/pycode.py",
+     "credited": 0,
+     "pre": 1,
+     "post": 1,
+     "removed_axes": [],
+     "example": "dict(_kf) pulls the whole axis into memory"
+    },
+    {
+     "path": "sympy/printing/tests/test_lambdarepr.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "sympy/utilities/tests/test_lambdify.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "e4ea6cc789b9669603e10601a8120b97dee72f5d",
+   "subject": "manualintegrate: quadratic_denom_rule adjustment",
+   "kinds": [
+    "accumulation in a loop"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": true,
+   "repo": "sympy_sympy",
+   "files": [
+    {
+     "path": "sympy/integrals/manualintegrate.py",
+     "credited": 0,
+     "pre": 1,
+     "post": 1,
+     "removed_axes": [],
+     "example": "list(sequence) pulls the whole axis into memory"
+    }
+   ]
+  },
+  {
+   "sha": "e600f98d67c19540f525e85b95880932f8607ec5",
+   "subject": "Added quadratic=True to RootSum in ratint()",
+   "kinds": [
+    "accumulation in a loop"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": false,
+   "repo": "sympy_sympy",
+   "files": [
+    {
+     "path": "sympy/integrals/rationaltools.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "ea965dec029a9f7fb030a1573cc74cef7a9fb1e3",
+   "subject": "Sort roots in roots_quadratic() if both are numerical",
+   "kinds": [
+    "accumulation in a loop",
+    "something else"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": true,
+   "repo": "sympy_sympy",
+   "files": [
+    {
+     "path": "sympy/polys/polyroots.py",
+     "credited": 0,
+     "pre": 1,
+     "post": 1,
+     "removed_axes": [],
+     "example": "list(roots) pulls the whole axis into memory"
+    },
+    {
+     "path": "sympy/polys/tests/test_polyroots.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "f11ee2d7b9aea46a6ceada3c57ab8ab03476fe66",
+   "subject": "fixed bug in ``quadratic_residues``; small change in ``_sqrt_mod_prime_power``; added comments and a test.",
+   "kinds": [
+    "accumulation in a loop",
+    "accumulation in a loop"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": false,
+   "repo": "sympy_sympy",
+   "files": [
+    {
+     "path": "sympy/ntheory/residue_ntheory.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "sympy/ntheory/tests/test_ntheory.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "f12b329b4cba44ceee4b50cea667bbf7149fbdb5",
+   "subject": "manualintegrate: improved pattern and early stop in sqrt_quadratic_rule",
+   "kinds": [
+    "accumulation in a loop",
+    "something else",
+    "something else"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": true,
+   "repo": "sympy_sympy",
+   "files": [
+    {
+     "path": "sympy/integrals/manualintegrate.py",
+     "credited": 0,
+     "pre": 1,
+     "post": 1,
+     "removed_axes": [],
+     "example": "list(sequence) pulls the whole axis into memory"
+    },
+    {
+     "path": "sympy/integrals/tests/test_integrals.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    },
+    {
+     "path": "sympy/integrals/tests/test_manual.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "f589411f51389ede41085159a419e7554dfc0bc1",
+   "subject": "Style cleanups and a regression test for quadratic_denom_rule",
+   "kinds": [
+    "accumulation in a loop",
+    "something else"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": true,
+   "repo": "sympy_sympy",
+   "files": [
+    {
+     "path": "sympy/integrals/manualintegrate.py",
+     "credited": 0,
+     "pre": 1,
+     "post": 1,
+     "removed_axes": [],
+     "example": "list(sequence) pulls the whole axis into memory"
+    },
+    {
+     "path": "sympy/integrals/tests/test_manual.py",
+     "credited": 0,
+     "pre": 0,
+     "post": 0,
+     "removed_axes": [],
+     "example": null
+    }
+   ]
+  },
+  {
+   "sha": "fd35f7fc852f7cab7edceb24144f589483d4e9d3",
+   "subject": "Handle unresolved degenerate case in sqrt_quadratic_rule(",
+   "kinds": [
+    "accumulation in a loop"
+   ],
+   "confirmed": true,
+   "detectable_shape": false,
+   "caught": false,
+   "still_fires_after": true,
+   "repo": "sympy_sympy",
+   "files": [
+    {
+     "path": "sympy/integrals/manualintegrate.py",
+     "credited": 0,
+     "pre": 1,
+     "post": 1,
+     "removed_axes": [],
+     "example": "list(sequence) pulls the whole axis into memory"
+    }
+   ]
+  }
+ ],
+ "seconds": 206.8
+}

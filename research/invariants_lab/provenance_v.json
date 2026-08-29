@@ -1,0 +1,169 @@
+{
+ "generated": "2026-08-29",
+ "task": "V provenance",
+ "corpora_overlap": [],
+ "scales": {
+  "corpus_dev": {
+   "n_mutants": 868,
+   "n_clusters": 350
+  },
+  "heldout": {
+   "n_mutants": 6868,
+   "n_clusters": 2623
+  }
+ },
+ "artifacts": [
+  {
+   "artifact": "abstention_f1_heldout.json",
+   "label": "corpus_dev",
+   "label_in_sample": true,
+   "derived": "heldout",
+   "route": "28 held-out block names, 0 development",
+   "block_names": {
+    "corpus_dev": 0,
+    "heldout": 28
+   },
+   "mislabelled": true,
+   "unlabelled": false
+  },
+  {
+   "artifact": "blast_radius_d5_heldout.json",
+   "label": null,
+   "label_in_sample": null,
+   "derived": "heldout",
+   "route": "29 held-out block names, 0 development",
+   "block_names": {
+    "corpus_dev": 0,
+    "heldout": 29
+   },
+   "mislabelled": false,
+   "unlabelled": true
+  },
+  {
+   "artifact": "corpus_census_heldout.json",
+   "label": null,
+   "label_in_sample": null,
+   "derived": "heldout",
+   "route": "33 held-out block names, 0 development",
+   "block_names": {
+    "corpus_dev": 0,
+    "heldout": 33
+   },
+   "mislabelled": false,
+   "unlabelled": true
+  },
+  {
+   "artifact": "mutant_controls_heldout.json",
+   "label": null,
+   "label_in_sample": null,
+   "derived": "heldout",
+   "route": "29 held-out block names, 0 development",
+   "block_names": {
+    "corpus_dev": 0,
+    "heldout": 29
+   },
+   "mislabelled": false,
+   "unlabelled": true
+  },
+  {
+   "artifact": "mutants_heldout.json",
+   "label": null,
+   "label_in_sample": null,
+   "derived": "heldout",
+   "route": "32 held-out block names, 0 development",
+   "block_names": {
+    "corpus_dev": 0,
+    "heldout": 32
+   },
+   "mislabelled": false,
+   "unlabelled": true
+  },
+  {
+   "artifact": "power_ship_heldout.json",
+   "label": "heldout",
+   "label_in_sample": null,
+   "derived": null,
+   "route": "no block names, no counts, no census twin -- undecided",
+   "block_names": {
+    "corpus_dev": 0,
+    "heldout": 0
+   },
+   "mislabelled": false,
+   "unlabelled": false
+  },
+  {
+   "artifact": "quadratic_f4_heldout.json",
+   "label": "corpus_dev",
+   "label_in_sample": true,
+   "derived": "heldout",
+   "route": "28 held-out block names, 0 development",
+   "block_names": {
+    "corpus_dev": 0,
+    "heldout": 28
+   },
+   "mislabelled": true,
+   "unlabelled": false
+  },
+  {
+   "artifact": "ratchet_r3_heldout.json",
+   "label": null,
+   "label_in_sample": null,
+   "derived": "heldout",
+   "route": "28 held-out block names, 0 development",
+   "block_names": {
+    "corpus_dev": 0,
+    "heldout": 28
+   },
+   "mislabelled": false,
+   "unlabelled": true
+  },
+  {
+   "artifact": "scale_x4_heldout.json",
+   "label": null,
+   "label_in_sample": null,
+   "derived": "heldout",
+   "route": "census differs from the development run (considered 834 vs 738, no_axis_present 166 vs 262, fired 153 vs 73); two corpora exist",
+   "block_names": {
+    "corpus_dev": 0,
+    "heldout": 0
+   },
+   "mislabelled": false,
+   "unlabelled": true
+  },
+  {
+   "artifact": "surface_f2_heldout.json",
+   "label": "corpus_dev",
+   "label_in_sample": true,
+   "derived": "heldout",
+   "route": "n_mutants=6755 within 5% of heldout's 6868",
+   "block_names": {
+    "corpus_dev": 0,
+    "heldout": 0
+   },
+   "mislabelled": true,
+   "unlabelled": false
+  },
+  {
+   "artifact": "together_t1_heldout.json",
+   "label": null,
+   "label_in_sample": null,
+   "derived": "heldout",
+   "route": "28 held-out block names, 0 development",
+   "block_names": {
+    "corpus_dev": 0,
+    "heldout": 28
+   },
+   "mislabelled": false,
+   "unlabelled": true
+  }
+ ],
+ "mislabelled": [
+  "abstention_f1_heldout.json",
+  "quadratic_f4_heldout.json",
+  "surface_f2_heldout.json"
+ ],
+ "undecided": [
+  "power_ship_heldout.json"
+ ],
+ "all_heldout": true
+}

@@ -1,5 +1,5 @@
 {
- "generated": "2026-08-29T00:12:12",
+ "generated": "2026-08-29T04:53:58",
  "task": "V",
  "corpus": "heldout",
  "plan": false,
@@ -13,22 +13,91 @@
   {
    "step": "mutate.py",
    "what": "H3 answer key",
+   "status": "skipped",
+   "why": "artifact already exists"
+  },
+  {
+   "step": "verify_mutants.py",
+   "what": "H3 control: CPython's binder, independently",
    "returncode": 0,
-   "seconds": 464.8,
+   "seconds": 150.2,
    "tail": "",
    "artifact_written": true,
    "status": "ok"
   },
   {
-   "step": "verify_mutants.py",
-   "what": "H3 control: CPython's binder, independently",
-   "returncode": 1,
-   "seconds": 148.8,
-   "tail": "\n--- stderr ---\n<unknown>:639: SyntaxWarning: \"\\ \" is an invalid escape sequence. Such sequences will not work in the future. Did you mean \"\\\\ \"? A raw string is also an option.\n<unknown>:513: SyntaxWarning: \"\\ \" is an invalid escape sequence. Such sequences will not work in the future. Did you mean \"\\\\ \"? A raw string is also an option.\n<unknown>:607: SyntaxWarning: \"\\ \" is an invalid escape sequence. Such sequences will not work in the future. Did you mean \"\\\\ \"? A raw string is also an option.\n<unknown>:118: SyntaxWarning: \"\\/\" is an invalid escape sequence. Such sequences will not work in the future. Did you mean \"\\\\/\"? A raw string is also an option.\n<unknown>:119: SyntaxWarning: \"\\/\" is an invalid escape sequence. Such sequences will not work in the future. Did you mean \"\\\\/\"? A raw string is also an option.\nTraceback (most recent call last):\n  File \"D:\\Coding\\nevertwice\\research\\invariants_lab\\verify_mutants.py\", line 339, in <module>\n    raise SystemExit(main())\n                     ~~~~^^\n  File \"D:\\Coding\\nevertwice\\research\\invariants_lab\\verify_mutants.py\", line 307, in main\n    out = verify(data[\"mutants\"])\n  File \"D:\\Coding\\nevertwice\\research\\invariants_lab\\verify_mutants.py\", line 270, in verify\n    confirmed = [r for r in results if r[\"agrees\"]]\n                                       ~^^^^^^^^^^\nKeyError: 'agrees'",
-   "artifact_written": false,
-   "status": "FAILED"
+   "step": "power_ship.py",
+   "what": "H4 which gates resolve",
+   "returncode": 0,
+   "seconds": 1.4,
+   "tail": "H4 -- can heldout resolve each declared gate?\n  corpus shape: census=True, mutants=True, repositories=28, commits=15912, silence_pool=1000, positives=6755, source_commits=2595, mined_quadratics=None\n\ngate                         null  effect  n needed   n have  verdict\n------------------------------------------------------------------------------\nV1-A recall                  0.45   0.600        84     2595  resolvable\nV1-A silence                 0.05   0.015       206     1000  resolvable\nV1-B ratchet agreement       0.50   0.640        93    15912  resolvable\nV1-B ratchet silence         0.05   0.300        14    15912  resolvable\nV1-C scale silence           0.05   0.015       206    15912  resolvable\nV1-C scale recall            0.30   0.600        19        -  unknown\nV2 union flag rate           0.05   0.015       206     1000  resolvable\n------------------------------------------------------------------------------\nsample not yet built for: V1-C scale recall\nGOAL-SHIP.md H4: a gate the corpus cannot resolve is enlarged or WITHDRAWN before the measurement, never after.",
+   "artifact_written": true,
+   "status": "ok"
+  },
+  {
+   "step": "measure_blast_radius.py",
+   "what": "V1-A baseline",
+   "returncode": 0,
+   "seconds": 5733.8,
+   "tail": "",
+   "artifact_written": true,
+   "status": "ok"
+  },
+  {
+   "step": "measure_abstention.py",
+   "what": "V1-A decidable-only",
+   "returncode": 0,
+   "seconds": 7789.0,
+   "tail": "F1 abstention ladder -- corpus_dev, IN SAMPLE, 2595 clusters, silence pool 1000\n\npolicy                             recall    cost          flag rate    kept  undec   grep@match\n-------------------------------------------------------------------------------------------------\nemit-all               0.909 [0.90,0.92]  +0.000 0.266 [0.24,0.29]    3546    74%     0.891 @2\nno-bare-mentions       0.908 [0.90,0.92]  +0.002 0.228 [0.20,0.26]    2596    65%     0.891 @2\nno-star-calls          0.908 [0.90,0.92]  +0.002 0.219 [0.19,0.25]    2499    63%     0.891 @2\nno-unknown-receiver    0.613 [0.59,0.63]  +0.296 0.142 [0.12,0.17]    1323    68%     0.450 @5\nno-kind-changes        0.613 [0.59,0.63]  +0.296 0.139 [0.12,0.16]    1294    68%     0.450 @5\ndecidable-only         0.597 [0.58,0.62]  +0.312 0.016 [0.01,0.03]      67     0%     0.344 @7\n-------------------------------------------------------------------------------------------------\nnamed: decidable-only -- flag rate 0.016 at a recall cost of 0.312\n\nprecision is omitted from this table on purpose. Every precision figure here is agreement between two implementations of 'undecidable' -- the answer key's oracle and the abstention rule -- and is NOT evidence about the world. See ABSTENTION_F1.md section 1.",
+   "artifact_written": true,
+   "status": "ok"
+  },
+  {
+   "step": "measure_surface.py",
+   "what": "V1-A the scoping grid",
+   "returncode": 0,
+   "seconds": 1770.9,
+   "tail": "\nthe declaration census, recomputed:\n  of 6755 positives, 679 (10.05%) are named by their defining module's __all__; 1126 are private by convention\n\npolicy           surface                kind                    recall    cost          flag rate    kept\n----------------------------------------------------------------------------------------------------------\nemit-all         everything             baseline    0.909 [0.90,0.92]  +0.000 0.266 [0.24,0.29]    3546\nemit-all         public-by-convention   convention  0.740 [0.72,0.76]  +0.169 0.227 [0.20,0.25]    3144\nemit-all         shipped-consumers      convention  0.575 [0.56,0.59]  +0.334 0.207 [0.18,0.23]    1983\nemit-all         both                   convention  0.466 [0.45,0.49]  +0.443 0.171 [0.15,0.20]    1747\nemit-all         declared-public        declaration 0.097 [0.09,0.11]  +0.812 0.042 [0.03,0.06]     617 (withdrawn)\ndecidable-only   everything             baseline    0.597 [0.58,0.62]  +0.312 0.016 [0.01,0.03]      67\ndecidable-only   public-by-convention   convention  0.509 [0.49,0.53]  +0.400 0.016 [0.01,0.03]      65\ndecidable-only   shipped-consumers      convention  0.326 [0.31,0.34]  +0.583 0.011 [0.01,0.02]      31\ndecidable-only   both                   convention  0.277 [0.26,0.30]  +0.632 0.011 [0.01,0.02]      29\ndecidable-only   declared-public        declaration 0.050 [0.04,0.06]  +0.859 0.001 [0.00,0.01]       2 (withdrawn)\n----------------------------------------------------------------------------------------------------------\n\ndo the two levers multiply?\n  emit-all         both observed 0.171  if independent 0.177  difference -0.006\n  decidable-only   both observed 0.011  if independent 0.011  difference +0.000\n\nnamed: decidable-only + everything -- flag rate 0.016, recall 0.597, cost 0.312\n\npublic-by-convention and shipped-consumers are CONVENTIONS, not declarations. declared-public is the only declaration and its gate was withdrawn in SURFACE_F2.md section 1 on a base rate of 18 of 859.",
+   "artifact_written": true,
+   "status": "ok"
+  },
+  {
+   "step": "measure_ratchet.py",
+   "what": "V1-B the ratchet",
+   "returncode": 0,
+   "seconds": 569.3,
+   "tail": "",
+   "artifact_written": true,
+   "status": "ok"
+  },
+  {
+   "step": "measure_scale.py",
+   "what": "V1-C scale",
+   "returncode": 0,
+   "seconds": 233.4,
+   "tail": "",
+   "artifact_written": true,
+   "status": "ok"
+  },
+  {
+   "step": "mine_quadratics.py",
+   "what": "V1-C found quadratics",
+   "returncode": 0,
+   "seconds": 208.0,
+   "tail": "    accumulation in a loop             161\n    something else                     131\n    container became a hash            36\n    nested-walk removed                2\n    accumulation replaced by join      1\n  of a shape `scale` has a rule for: 2/152\n\n  caught before the fix      : 9/152 = 0.059 [0.03, 0.11]\n  on the generated class     : 1.000\n  still fires after the fix  : 77/152 = 0.507\n\n  verdict: scored\n\n  missed  ansible_ansible      73d6da757  Make get_group run in O(n*log(n)) instead of O(n^2) by using a cache\n  missed  ansible_ansible      e0f61dfce  Fix iptables match extension bug (#86147)\n  CAUGHT  apache_airflow       07fe1d2a6  Refactor dedent nested loops (#34409)\n  missed  apache_airflow       6f75a8a91  improve performance of pr script in dev/stats (#32735)\n  missed  apache_airflow       ee38382ef  Use linear time regular expressions (#32303)\n  missed  dask_dask            4195f5aca  Quadratic definition time in xarray.DataArray.to_zarr(compute=False) (\n  missed  dask_dask            5c6627aa0  Improve to_parquet error for appended divisions overlap (#9102)\n  missed  dask_dask            6834d40cd  Avoid quadratic-time performance for HLG culling (#7403)\n  missed  huggingface_transformers 4ece3b943  add VITS model (#24085)\n  missed  huggingface_transformers 6ee1474b6  Accumulate tokens into batches in `PreTrainedTokenizerBase.add_tokens(\n  missed  keras-team_keras     5e51d02a9  Use linear time algorithm for topological sorting. (#6347)\n  missed  keras-team_keras     87a4fbd70  Add shuffle test for train/validation split in image_dataset_from_dire",
+   "artifact_written": true,
+   "status": "ok"
+  },
+  {
+   "step": "measure_together.py",
+   "what": "V2 the union",
+   "returncode": 0,
+   "seconds": 298.9,
+   "tail": "",
+   "artifact_written": true,
+   "status": "ok"
   }
  ],
- "completed": false,
+ "completed": true,
  "disk_gb": 5.41
 }

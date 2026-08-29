@@ -1,0 +1,311 @@
+{
+ "generated": "2026-08-29T04:32:09",
+ "task": "F2",
+ "corpus": "corpus_dev",
+ "in_sample": true,
+ "n_clusters": 2595,
+ "silence_pool": 1000,
+ "n_mutants": 6755,
+ "ceiling": 0.05,
+ "baseline": {
+  "recall": 0.9090558766859345,
+  "flag_rate": 0.266
+ },
+ "declaration_census": {
+  "positives": 6755,
+  "module_has_all": 1165,
+  "module_names_the_symbol": 679,
+  "share_named": 0.10051813471502591,
+  "private_by_convention": 1126,
+  "unreadable": 0
+ },
+ "grid": [
+  {
+   "policy": "emit-all",
+   "surface": "everything",
+   "kind": "baseline",
+   "withdrawn": false,
+   "recall": {
+    "hits": 2359,
+    "n": 2595,
+    "point": 0.9090558766859345,
+    "ci": [
+     0.8973801667910454,
+     0.9195223005735386
+    ]
+   },
+   "recall_cost": 0.0,
+   "silence": {
+    "flagged": 266,
+    "n": 1000,
+    "rate": 0.266,
+    "ci": [
+     0.23954672321443168,
+     0.29424419975680804
+    ],
+    "findings_kept": 3546
+   }
+  },
+  {
+   "policy": "emit-all",
+   "surface": "public-by-convention",
+   "kind": "convention",
+   "withdrawn": false,
+   "recall": {
+    "hits": 1921,
+    "n": 2595,
+    "point": 0.7402697495183044,
+    "ci": [
+     0.723052529220549,
+     0.7567766638098967
+    ]
+   },
+   "recall_cost": 0.16878612716763008,
+   "silence": {
+    "flagged": 227,
+    "n": 1000,
+    "rate": 0.227,
+    "ci": [
+     0.20211062426744336,
+     0.2539787858656698
+    ],
+    "findings_kept": 3144
+   }
+  },
+  {
+   "policy": "emit-all",
+   "surface": "shipped-consumers",
+   "kind": "convention",
+   "withdrawn": false,
+   "recall": {
+    "hits": 1493,
+    "n": 2595,
+    "point": 0.5753371868978805,
+    "ci": [
+     0.5562216540032484,
+     0.5942300015500027
+    ]
+   },
+   "recall_cost": 0.33371868978805397,
+   "silence": {
+    "flagged": 207,
+    "n": 1000,
+    "rate": 0.207,
+    "ci": [
+     0.18303292798076143,
+     0.23320955249177389
+    ],
+    "findings_kept": 1983
+   }
+  },
+  {
+   "policy": "emit-all",
+   "surface": "both",
+   "kind": "convention",
+   "withdrawn": false,
+   "recall": {
+    "hits": 1210,
+    "n": 2595,
+    "point": 0.4662813102119461,
+    "ci": [
+     0.44715153674784885,
+     0.485510765753893
+    ]
+   },
+   "recall_cost": 0.4427745664739884,
+   "silence": {
+    "flagged": 171,
+    "n": 1000,
+    "rate": 0.171,
+    "ci": [
+     0.14893385518054872,
+     0.19558415190294662
+    ],
+    "findings_kept": 1747
+   }
+  },
+  {
+   "policy": "emit-all",
+   "surface": "declared-public",
+   "kind": "declaration",
+   "withdrawn": true,
+   "recall": {
+    "hits": 253,
+    "n": 2595,
+    "point": 0.097495183044316,
+    "ci": [
+     0.0866701788021591,
+     0.10951010649006135
+    ]
+   },
+   "recall_cost": 0.8115606936416184,
+   "silence": {
+    "flagged": 42,
+    "n": 1000,
+    "rate": 0.042,
+    "ci": [
+     0.031220885546165443,
+     0.05628442522660306
+    ],
+    "findings_kept": 617
+   }
+  },
+  {
+   "policy": "decidable-only",
+   "surface": "everything",
+   "kind": "baseline",
+   "withdrawn": false,
+   "recall": {
+    "hits": 1550,
+    "n": 2595,
+    "point": 0.5973025048169557,
+    "ci": [
+     0.5783023350684948,
+     0.616015020569336
+    ]
+   },
+   "recall_cost": 0.3117533718689788,
+   "silence": {
+    "flagged": 16,
+    "n": 1000,
+    "rate": 0.016,
+    "ci": [
+     0.00987224200227739,
+     0.025832060211739977
+    ],
+    "findings_kept": 67
+   }
+  },
+  {
+   "policy": "decidable-only",
+   "surface": "public-by-convention",
+   "kind": "convention",
+   "withdrawn": false,
+   "recall": {
+    "hits": 1320,
+    "n": 2595,
+    "point": 0.5086705202312138,
+    "ci": [
+     0.48943727880126503,
+     0.5278781291268584
+    ]
+   },
+   "recall_cost": 0.4003853564547206,
+   "silence": {
+    "flagged": 16,
+    "n": 1000,
+    "rate": 0.016,
+    "ci": [
+     0.00987224200227739,
+     0.025832060211739977
+    ],
+    "findings_kept": 65
+   }
+  },
+  {
+   "policy": "decidable-only",
+   "surface": "shipped-consumers",
+   "kind": "convention",
+   "withdrawn": false,
+   "recall": {
+    "hits": 846,
+    "n": 2595,
+    "point": 0.3260115606936416,
+    "ci": [
+     0.30824499114689585,
+     0.3442924897620917
+    ]
+   },
+   "recall_cost": 0.5830443159922929,
+   "silence": {
+    "flagged": 11,
+    "n": 1000,
+    "rate": 0.011,
+    "ci": [
+     0.006153174098086636,
+     0.019589395700786275
+    ],
+    "findings_kept": 31
+   }
+  },
+  {
+   "policy": "decidable-only",
+   "surface": "both",
+   "kind": "convention",
+   "withdrawn": false,
+   "recall": {
+    "hits": 720,
+    "n": 2595,
+    "point": 0.2774566473988439,
+    "ci": [
+     0.2605682208417679,
+     0.2950029756697278
+    ]
+   },
+   "recall_cost": 0.6315992292870906,
+   "silence": {
+    "flagged": 11,
+    "n": 1000,
+    "rate": 0.011,
+    "ci": [
+     0.006153174098086636,
+     0.019589395700786275
+    ],
+    "findings_kept": 29
+   }
+  },
+  {
+   "policy": "decidable-only",
+   "surface": "declared-public",
+   "kind": "declaration",
+   "withdrawn": true,
+   "recall": {
+    "hits": 129,
+    "n": 2595,
+    "point": 0.04971098265895954,
+    "ci": [
+     0.0419938428315489,
+     0.05875930543456846
+    ]
+   },
+   "recall_cost": 0.8593448940269749,
+   "silence": {
+    "flagged": 1,
+    "n": 1000,
+    "rate": 0.001,
+    "ci": [
+     0.00017654637062607765,
+     0.005642558597957937
+    ],
+    "findings_kept": 2
+   }
+  }
+ ],
+ "additivity": {
+  "emit-all": {
+   "everything": 0.266,
+   "public_by_convention": 0.227,
+   "shipped_consumers": 0.207,
+   "both_observed": 0.171,
+   "both_if_independent": 0.17665037593984964,
+   "observed_minus_predicted": -0.005650375939849628
+  },
+  "decidable-only": {
+   "everything": 0.016,
+   "public_by_convention": 0.016,
+   "shipped_consumers": 0.011,
+   "both_observed": 0.011,
+   "both_if_independent": 0.011,
+   "observed_minus_predicted": 0.0
+  }
+ },
+ "outcome": {
+  "reached_ceiling": true,
+  "named": "decidable-only + everything",
+  "recall": 0.5973025048169557,
+  "recall_cost": 0.3117533718689788,
+  "flag_rate": 0.016
+ },
+ "note": "public-by-convention and shipped-consumers are CONVENTIONS, not declarations. declared-public is the only declaration and its gate was withdrawn in SURFACE_F2.md section 1 on a base rate of 18 of 859.",
+ "seconds": 1765.1
+}
