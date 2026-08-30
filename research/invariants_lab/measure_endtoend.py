@@ -36,11 +36,26 @@ import abstain  # noqa: E402
 import binding  # noqa: E402
 import sigscan  # noqa: E402
 import blast_radius_deleted as br  # noqa: E402
+import corpora  # noqa: E402
 from corpora import repos_for  # noqa: E402
 from corpusio import BlobReader, progress  # noqa: E402
 
-MUTANTS = Path(__file__).with_name("mutants.json")
-ARTIFACT = Path(__file__).with_name("endtoend_e.json")
+#: The corpus is an argument, exactly as it is in the Phase V harnesses, so the same
+#: stand runs against a corpus this file does not name. `corpora.py` is frozen and its
+#: static lock forbids any other module from spelling the held-out path, so every path
+#: below comes from its API rather than from a literal here.
+CORPUS = "dev"
+
+MUTANTS = corpora.mutants_path(CORPUS)
+ARTIFACT = corpora.artifact_path("endtoend_e.json", CORPUS)
+
+
+def _select_corpus(name: str) -> None:
+    """Rebind every path before anything runs. Called once, from main()."""
+    global CORPUS, MUTANTS, ARTIFACT
+    CORPUS = name
+    MUTANTS = corpora.mutants_path(name)
+    ARTIFACT = corpora.artifact_path("endtoend_e.json", name)
 
 SEED = 20260828
 POLICY = "decidable-only"     # the policy F1's declared rule named
@@ -88,7 +103,7 @@ def build_pool() -> list[dict]:
     """Every task satisfying ENDTOEND_E.md section 2, one per source commit, seeded."""
     mutants = [m for m in json.loads(MUTANTS.read_text(encoding="utf-8"))["mutants"]
                if m["confirmed"] and m["breakage"] == "arity"]
-    repos = {r.name: r for r in repos_for("dev")}
+    repos = {r.name: r for r in repos_for(CORPUS)}
     readers: dict[str, BlobReader] = {}
     by_commit: dict[tuple[str, str], dict] = {}
     try:
@@ -332,7 +347,10 @@ def summarise(raw: dict, stage: str) -> dict:
     return {
         "generated": time.strftime("%Y-%m-%dT%H:%M:%S"),
         "task": "E", "stage": stage, "model": raw["model"],
-        "corpus": "corpus_dev", "in_sample": True,
+        # Read from CORPUS rather than written as a literal. The literal is the defect
+        # PROVENANCE_V.md documents in three Phase V artifacts: a provenance field that
+        # is a sentence rather than a reading survives a corpus change silently.
+        "corpus": CORPUS, "in_sample": CORPUS == "dev",
         "policy": POLICY,
         "pool": raw["pool"],
         "benefit": {
@@ -369,7 +387,8 @@ def summarise(raw: dict, stage: str) -> dict:
 
 def _print(d: dict) -> None:
     b, h = d["benefit"], d["harm"]
-    print(f"Phase E -- {d['stage']} -- {d['model']} -- {d['corpus']}, IN SAMPLE")
+    print(f"Phase E -- {d['stage']} -- {d['model']} -- {d['corpus']}, "
+          f"{'IN SAMPLE' if d.get('in_sample') else 'OUT OF SAMPLE'}")
     print(f"  policy {d['policy']}   task pool {d['pool']}")
     print()
     print(f"  benefit arm: {b['trials']} trials, {b['usable']} usable, "
@@ -413,7 +432,9 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--trials", type=int, default=0)
     ap.add_argument("--harm-trials", type=int, default=0)
     ap.add_argument("--print", dest="show", action="store_true")
+    corpora.add_corpus_argument(ap)
     args = ap.parse_args(argv)
+    _select_corpus(args.corpus)
     if args.show:
         _print(json.loads(ARTIFACT.read_text(encoding="utf-8")))
         return 0

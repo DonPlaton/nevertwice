@@ -21,6 +21,35 @@ shipped feature reappears as an open promise.
 
 ## Near term
 
+**Order is deliberate, decided 2026-08-30.** Everything already started is finished and polished
+to work out of the box for a new user first; the branch ships only if the polygon result is
+positive; the two benchmark items at the end of this section are what close the gap to the field
+and are not started before the rest is done.
+
+- **A public page still shows withdrawn numbers.** `docs/COMPARISON.md` renders the July
+  head-to-head — Nevertwice ahead of Mem0, LangMem and A-MEM on every column — inside a
+  generated region with no withdrawal banner, while the evidence register marks all sixteen of
+  those figures withdrawn. A reader who clones the repository today sees retracted results
+  presented as current.
+  **Today:** the withdrawal itself is recorded honestly, with its reason, for 128 of 154 claims;
+  `docs/BENCHMARKS.md` carries the banner on every affected section. What is missing is that
+  `docs/COMPARISON.md` is registered `backlog` rather than `governed`, so the test that forbids
+  citing a withdrawn claim does not look at it, and the banner never reached the page.
+- **A head-to-head that survives its own audit.** The July stand ran Nevertwice, Mem0, LangMem
+  and A-MEM on the same 500 questions with the same local embedder, and Nevertwice led every
+  column. It was withdrawn because the corpus is third-party, uncommitted and unhashed, so nobody
+  — including us — can reproduce or even pin it.
+  **Today:** the harness exists and runs with one command, the adapters for Zep and Cognee record
+  their blocker instead of a fabricated number, and the withdrawal states its reason. What is
+  missing is a committed, content-hashed dataset the run can be pinned to.
+- **The invariants track: ship it or delete it, on the end-to-end result.** G-A and G-B pass;
+  `blast_radius` under `decidable-only` cleared all three out-of-sample gates on 27 repositories
+  it was never built against, and the ratchet, `scale`'s static half and the union failed theirs
+  and are deleted.
+  **Today:** the branch `invariants/v3` carries the whole result and nothing is promoted —
+  `nevertwice/invariants/` is empty and a test pins that. G-C, the gate that decides shipping, is
+  running on the held-out corpus at 150 benefit and 150 harm trials; the in-sample stand was
+  capped at 53 tasks and could not resolve.
 - **Baselines the headline numbers have never been run against.** Three arms named in
   [`research/BASELINES.md`](research/BASELINES.md) do not exist yet: a hand-written
   `AGENTS.md` carrying the same rule as a guard, an LLM session summary injected at an equal
@@ -50,13 +79,41 @@ shipped feature reappears as an open promise.
   the 85 ms on the banner - cannot be traced to a committed artifact. Saving that file is
   the prerequisite for the rest.
 
+### The two that close the gap to the field — after everything above
+
+- **A number on a dataset we did not choose, that still separates systems.** Winning our own
+  stand is the same circularity as scoring a detector against positives its author generated,
+  and this project has now been burned by that shape twice. **LoCoMo is not a candidate** and the
+  reason is unchanged: plain BM25 scores about 94% on it, so it no longer separates memory
+  systems, and a vendor headline of 92.5 there says little about one.
+  BEAM is the candidate, or LongMemEval outside the oracle setting, on the same open local stand,
+  with the corpus committed and content-hashed so the result cannot be withdrawn for the reason
+  the last one was.
+  **Today:** every external retrieval figure this project has published is withdrawn, so the
+  honest public position is a strong design with no reproducible external number. The stand,
+  the adapters and the registration machinery all exist; the dataset and the run do not.
+- **A benchmark for supersession, which nobody in the field has.** LoCoMo, LongMemEval and BEAM
+  all measure whether a system *recalls* a fact. None measures whether it returns a fact that has
+  since been **retracted** - and staleness is a real failure mode, because an agent acting on a
+  withdrawn fact writes wrong code. The protocol is small: assert *A*, assert *not-A*, query, and
+  score whether the superseded fact comes back and at what rank.
+  **Today:** a five-fact probe against Mem0 2.0.19 exists in the polygon and shows the retracted
+  fact returned at **rank 1**, ahead of both of its replacements - which follows from that
+  system's published ADD-only design rather than from a defect. That is a sketch, not a
+  benchmark: it has no dataset, no baselines, no intervals, and Nevertwice's own side of it has
+  never been measured at all.
+
 ## Exploring
 
 - **More benchmark protocols.** BEAM is a candidate, added only if it runs on the same open,
   local, reproducible stand as everything else. LoCoMo is **not** a candidate: plain BM25
   scores about 94% on it, so it no longer separates memory systems.
-  **Today:** LongMemEval-oracle retrieval and a live agent validation are published, with
-  every figure registered in [`research/evidence_manifest.json`](research/evidence_manifest.json).
+  **Today:** the LongMemEval-oracle retrieval figures and the head-to-head that stood on the same
+  corpus were **withdrawn in 2026-08** - the dataset is third-party, uncommitted and unhashed, so
+  the run cannot be reproduced or pinned. The live agent validation stands. Every figure, live or
+  withdrawn, is registered in
+  [`research/evidence_manifest.json`](research/evidence_manifest.json) with its reason, which is
+  why the withdrawal is visible at all.
 - **Registering the study write-ups.** Give the 22 study pages under `research/` the same
   backing the front-page documents already have, or decide they should stay self-evidencing
   beside their own `.json` files.
