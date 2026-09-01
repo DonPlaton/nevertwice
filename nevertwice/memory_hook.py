@@ -347,6 +347,10 @@ def local_routing_desc() -> str:
     return "all tracked projects use cloud"
 
 MAX_TRANSCRIPT_CHARS = env_int("NEVERTWICE_MAX_TRANSCRIPT", 12000)
+# Minimum transcript growth before a processed session is mined again. Defaults to one
+# extractor window: less than that cannot contain a window of genuinely new material,
+# and re-mining on less is what forked note sets in the 2026-09 vault review.
+REMINE_MIN_GROWTH_BYTES = env_int("NEVERTWICE_REMINE_MIN_GROWTH", MAX_TRANSCRIPT_CHARS)
 # Head share of the budget when a long transcript is split head+tail (audit M3:
 # a fixed 2000-char head lost the project setup on long sessions). 0-override via
 # NEVERTWICE_TRUNCATE_HEAD_CHARS; else derived from the fraction.
@@ -1883,7 +1887,12 @@ def _transcript_grew(entry, path) -> bool:
         return False                         # legacy entry: no watermark, never re-trigger
     try:
         rec = int(entry.get("bytes") or 0)
-        return os.path.getsize(path) > rec   # rec may legitimately be 0 (empty at mark time)
+        # A sliver of growth is not a second half of a session. Without a floor, an
+        # 18 MB transcript re-triggers on +35 kB (0.19%) and the re-mine re-reads a
+        # window that has slid, forking the session's notes. The floor is expressed
+        # against the extractor's own window: below it there cannot be a window's
+        # worth of new material to extract.
+        return (os.path.getsize(path) - rec) >= REMINE_MIN_GROWTH_BYTES
     except (OSError, ValueError, TypeError):
         return False
 
@@ -1990,8 +1999,16 @@ def truncate_smart(text: str, max_chars: int) -> str:
     return text[:head_len] + sep + text[-tail_len:]
 
 
-def _iter_events(path: str):
-    """Yield parsed events from a JSONL transcript (resilient to partial lines)."""
+def _iter_events(path: str, from_byte: int = 0):
+    """Yield parsed events from a JSONL transcript (resilient to partial lines).
+
+    `from_byte` mines only the region added since a recorded watermark. Re-reading a
+    grown transcript from zero is what forks a session's notes: `truncate_smart` keeps a
+    head+tail window anchored to EOF, so growth slides the tail, the extractor sees a
+    different document, invents different titles, and the slug-keyed absorb misses - the
+    old notes are then retired as superseded by their own rename. Reading only the new
+    region removes the slide at its source.
+    """
     if not path or not Path(path).exists():
         return
     try:
@@ -2000,6 +2017,11 @@ def _iter_events(path: str):
         # which is a ValueError, slips past `except OSError`, and crashed the hook
         # mid-sweep, aborting every later session in the batch (audit A1).
         with open(path, encoding="utf-8", errors="replace") as f:
+            if from_byte > 0:
+                # Seek by BYTES but resume on a line boundary: a watermark can land
+                # mid-line, and half a JSON object is not an event.
+                f.buffer.seek(from_byte)
+                f.readline()               # discard the (possibly partial) first line
             for line in f:
                 line = line.strip()
                 if not line:
@@ -2068,7 +2090,7 @@ def _format_event(evt: dict, cap: int) -> list[str]:
     return []
 
 
-def read_transcript(path: str) -> dict:
+def read_transcript(path: str, from_byte: int = 0) -> dict:
     """Single full pass - returns {body, cwd, timestamp}.
 
     Body lines are individually capped at MAX_MESSAGE_CHARS so one giant paste
@@ -2077,7 +2099,7 @@ def read_transcript(path: str) -> dict:
     lines: list[str] = []
     cwd = ts = None
     cap = MAX_MESSAGE_CHARS
-    for evt in _iter_events(path):
+    for evt in _iter_events(path, from_byte):
         ec, et = _evt_meta(evt)
         cwd = cwd or ec
         ts = ts or et
@@ -4545,7 +4567,12 @@ def process_session(session_id: str, cwd: str, transcript_path: str,
             t_size = os.path.getsize(transcript_path)
         except OSError:
             t_size = 0
-        parsed = read_transcript(transcript_path)
+        # On a re-mine, read only what was added since the watermark. Reading from zero
+        # is what let a slid window re-title the same session's notes (vault review 2026-09).
+        _from = 0
+        if isinstance(prior, dict) and isinstance(prior.get("bytes"), int):
+            _from = max(0, int(prior["bytes"]))
+        parsed = read_transcript(transcript_path, from_byte=_from)
     if not parsed["body"]:
         log(f"Empty transcript for {session_id[:8]} - marked, nothing to extract")
         mark_processed(processed_db, session_id, transcript_path)

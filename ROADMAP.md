@@ -46,10 +46,12 @@ and are not started before the rest is done.
   `blast_radius` under `decidable-only` cleared all three out-of-sample gates on 27 repositories
   it was never built against, and the ratchet, `scale`'s static half and the union failed theirs
   and are deleted.
-  **Today:** the branch `invariants/v3` carries the whole result and nothing is promoted —
-  `nevertwice/invariants/` is empty and a test pins that. G-C, the gate that decides shipping, is
-  running on the held-out corpus at 150 benefit and 150 harm trials; the in-sample stand was
-  capped at 53 tasks and could not resolve.
+  **Today:** answered — G-C was re-run out of sample at 150 benefit and 150 harm trials and is
+  **not met**: 5 fixed against 2 broken on 87 usable pairs, p = 0.453, harm passing at 0.013. The
+  verdict is NO-GO on evidence rather than on a missing measurement, so nothing ships;
+  `nevertwice/invariants/` is empty and a test pins that. What remains is a rerun on an unloaded
+  GPU — 92 of 300 attempts timed out and a timeout correlates with larger inputs, so the usable
+  pairs are biased toward smaller files.
 - **Baselines the headline numbers have never been run against.** Three arms named in
   [`research/BASELINES.md`](research/BASELINES.md) do not exist yet: a hand-written
   `AGENTS.md` carrying the same rule as a guard, an LLM session summary injected at an equal
@@ -102,6 +104,67 @@ and are not started before the rest is done.
   system's published ADD-only design rather than from a defect. That is a sketch, not a
   benchmark: it has no dataset, no baselines, no intervals, and Nevertwice's own side of it has
   never been measured at all.
+
+## Architectural erosion — after everything in Near term
+
+Recorded 2026-09-02 from a developer's account of eighteen months building a large project
+with an AI assistant. The failure he describes is not bad code: *"the problem is not that the
+AI's code is bad from scratch. With small daily changes hardcode accumulates, unneeded modules
+appear, DRY is broken completely."* Two symptoms recur — *"I changed it, but file X had a
+hardcoded value so everything broke"* and *"module X pulled in module Y, though they are
+supposed to be fully independent."* He ends: **"there are only two moments when you can turn
+back — when you stop understanding your own code, or when everything collapses."**
+
+Both are too late, and that is the finding. Every invariant this project has built is
+**per-diff**: it answers *is this change bad?* None answers *where is the integral heading over
+ninety days?*
+
+Three things this account refutes about work already done, kept here so a next attempt does not
+rebuild them:
+
+- **The blast-radius checker would not have saved that project.** Of the four symptoms it
+  addresses one, partially. A hardcoded constant is not a contract change; DRY violations pass;
+  copy-paste passes and each copy is individually clean.
+- **A per-file complexity ratchet cannot see duplication**, because duplication is a
+  *cross-file* property. Three copies of a function raise no single file's complexity.
+- **A ratchet whose baseline moves after every accepted diff is theatre.** It permits unbounded
+  degradation over a thousand commits, each one individually not a regression. The baseline has
+  to be sticky and monotone.
+
+- **Module boundary contracts.** A vault note declares which modules may import which — the
+  human states the *intention*, the machine holds the line. `ast` over the import graph,
+  standard library, small. This has the shape Phase V measured as the only one that survives:
+  it is silent until a project declares an axis, exactly like the scale assertions that passed
+  their gates while every whole-repository detector failed on flag rate.
+  **Today:** nothing declares module boundaries; `networkx` import-cycle detection exists in the
+  lab from R1 but answers a different question, and `nevertwice/invariants/` is empty.
+- **Cross-file duplication and constant sprawl.** Normalised AST-subtree hashing catches
+  copy-paste through renamed variables; a repeated-literal counter catches constants spreading
+  across files. Standard library.
+  **Today:** nothing measures either. **The open risk is silence, not detection** — real
+  repositories are full of duplication, and Phase V deleted two mechanisms that were
+  substantially right and could not stop talking. This one must be scoped to a declaration
+  before it is built, or it will fail the same gate.
+- **A structural-health trend in `digest`.** The third turning point the account says does not
+  exist: not *is this diff bad* but *what has the integral done this quarter*. Cheapest item
+  here and it aims straight at the gap.
+  **Today:** `digest --days 7` and the offline dashboard report activity, not structural drift.
+- **Anticipation on the derivative.** Score by the trend of a structural metric rather than by
+  similarity to a past break.
+  **Today:** anticipation scores IDF-weighted coverage of a past mistake, so it can only fire on
+  something that already happened once.
+
+**Why the ordering changed.** The database authority boundary moves below these: it addresses a
+rare catastrophic event, and this is daily erosion. The account is eighteen months of field
+evidence that the quiet integral is what kills a project, not the dramatic single failure.
+
+**Where the account's prescription is wrong, and it matters.** It concludes "do the key parts by
+hand". That does not follow from its own diagnosis: the human dropped out *before* the collapse,
+for the same reason — no signal. Nobody notices 0.5% degradation per commit, human or machine.
+Manual work relocates the integral problem rather than solving it. What *is* right, and is the
+real boundary between doing and delegating: **"X and Y must be independent" is an intention, not
+a property.** It exists nowhere in the code and cannot be derived from it. It has to be
+declared — which is precisely what the first item above builds.
 
 ## Exploring
 
