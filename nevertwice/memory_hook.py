@@ -524,6 +524,10 @@ PROMPT_RECALL_K = env_int("NEVERTWICE_PROMPT_RECALL_K", 3)
 PROMPT_RECALL_MAX_PER_SESSION = env_int("NEVERTWICE_PROMPT_RECALL_MAX", 6)
 # Prompts shorter than this (after trimming) are treated as trivial → skipped.
 PROMPT_RECALL_MIN_CHARS = env_int("NEVERTWICE_PROMPT_RECALL_MIN_CHARS", 16)
+# Abstention on the per-turn path. A hit weaker than this FRACTION of the batch's best hit
+# is refused even when there is room for it - the distinction `budget.py` exists to make and
+# the one truncation can never make. 0 disables and restores take-the-top-K behaviour.
+PROMPT_RECALL_MIN_VALUE = env_float("NEVERTWICE_PROMPT_RECALL_MIN_VALUE", 0.35)
 # Tight budget so recall never noticeably delays an interactive prompt: a busy
 # GPU fails the ping fast and the path drops to lexical-only.
 PROMPT_RECALL_EMBED_TIMEOUT = env_int("NEVERTWICE_PROMPT_RECALL_EMBED_TIMEOUT", 2)
@@ -5363,6 +5367,13 @@ def retrieve_relevant(project: str, query: str, k: int,
                     extra.append(ln)
         top = (top + extra)[:k + k]      # cap total at 2k
     hits = [_hit(s, rec_of[s]) for s in top]
+    # Carry the fused score so a caller can decide whether a hit is WORTH its tokens.
+    # The raw value is not comparable across fusion modes - RRF lives around 1/60 while
+    # calibrated fusion is a logistic (0,1) - so callers must normalise against the batch
+    # rather than compare to an absolute constant. `_relative_value` below does that; this
+    # project has twice shipped a threshold written on the wrong scale and will not again.
+    for _h in hits:
+        _h["score"] = float(scores.get(_h.get("stem"), 0.0))
     # Relation-aware expansion (Phase 2b on the hot path): append a TIGHTLY bounded set of
     # lessons reached by the precise hits' typed edges, so a session-start card about a bug
     # also carries its fix. Opt-in (graph_expand>0, SessionStart only) and purely additive:
@@ -5554,6 +5565,25 @@ def _fit_fact_line(line: str, room: int) -> str:
     if not head or len(head) > room:
         return ""
     return head if len(head) == room else line[:room - 1].rstrip() + "…"
+
+
+def _relative_value(hits: list[dict]) -> dict[str, float]:
+    """Each hit's strength as a fraction of the strongest hit in the same batch.
+
+    Scale-free on purpose. The fused score means different things under RRF and under
+    calibrated fusion, so an absolute threshold would silently mean "keep everything" in
+    one mode and "keep nothing" in the other. A relative value asks the only question that
+    survives both: *how good is this next to the best thing retrieval found for this query?*
+
+    An empty or all-zero batch yields 1.0 for every hit - when nothing can be ranked, the
+    budget must not be the thing that decides, and refusing everything on a degenerate
+    score would be truncation wearing a policy's clothes.
+    """
+    scores = [float(h.get("score") or 0.0) for h in hits]
+    top = max(scores, default=0.0)
+    if top <= 0:
+        return {h.get("stem", ""): 1.0 for h in hits}
+    return {h.get("stem", ""): (float(h.get("score") or 0.0) / top) for h in hits}
 
 
 def _fact_line(r: dict, stale: bool = False) -> str:
@@ -5870,6 +5900,13 @@ def emit_prompt_recall(cwd: str, prompt: str, session_id: str) -> None:
                              alive_timeout=PROMPT_RECALL_ALIVE_TIMEOUT, cache=cache,
                              recency_fallback=False)   # off-topic prompt → stay silent, not noise
     fresh = [h for h in hits if h.get("stem") not in seen][:PROMPT_RECALL_K]
+    if PROMPT_RECALL_MIN_VALUE > 0 and fresh:
+        # Refuse the weak tail rather than truncate it. Relative to the batch's best hit,
+        # so this behaves the same under RRF and under calibrated fusion.
+        value = _relative_value(fresh)
+        kept = [h for h in fresh if value.get(h.get("stem", ""), 1.0) >= PROMPT_RECALL_MIN_VALUE]
+        if kept:                       # never abstain into silence on a query that ranked
+            fresh = kept               # something: the top hit always has value 1.0
     cross = []
     if INJECT_CROSS_PROJECT:
         cross = [c for c in retrieve_cross_project(
