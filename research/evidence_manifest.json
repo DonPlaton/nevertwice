@@ -673,13 +673,18 @@
   },
   "research/invariants_lab/VERDICT_G1.md": {
    "governance": "backlog",
-   "budget": 106,
+   "budget": 148,
    "note": "Task G1: the GO/NO-GO, revised 2026-08-29 after Phase V completed. Still NO-GO, but for a different reason: G-B is no longer unevaluable -- 27 held-out repositories exist and blast_radius under decidable-only passes all three of its out-of-sample gates while the ratchet, scale's static half and the union fail theirs. G-C remains not met, its benefit half inconclusive at 3 discordant pairs on an in-sample stand the held-out corpus would now unstarve. The budget rises from 57 because the page absorbed the Phase V numbers; the growth is deliberate and its source is research/invariants_lab/HELDOUT_V.md."
   },
   "research/invariants_lab/SHIP_G4.md": {
    "governance": "backlog",
    "budget": 88,
    "note": "Task G4: the invariants/v3 write-up for a reader outside this project -- what finishing four half-built mechanisms showed, why abstention is the only lever that moved a flag rate by an order of magnitude, and why it is not general."
+  },
+  "research/invariants_lab/ENDTOEND_HELDOUT.md": {
+   "governance": "backlog",
+   "budget": 49,
+   "note": "The shipping gate re-run out of sample: 150 benefit and 150 harm trials on the held-out corpus, 87 usable pairs against the 37 PREREGISTRATION-SHIP.md required. Net benefit p = 0.453 with 5 fixed against 2 broken, so G-C is not met and the NO-GO stands on evidence rather than on a missing measurement; harm passes at 0.013. Numbers regenerate from research/invariants_lab/measure_endtoend.py --corpus heldout against endtoend_e_heldout.json. The 92 harness timeouts and the selection bias they imply are stated with the verdict rather than after it."
   }
  },
  "claims": [
@@ -2015,7 +2020,7 @@
    "printed": [
     "86%",
     "-86%",
-    "\u221286%"
+    "−86%"
    ],
    "unit": "relative reduction",
    "dataset": "live_validation_tasks",
@@ -4285,7 +4290,7 @@
    "statement": "active guards deliver the same prevention for 31x fewer memory tokens than always-injecting the recalled text",
    "value": 31.0,
    "printed": [
-    "31\u00d7",
+    "31×",
     "31x"
    ],
    "unit": "ratio",
@@ -4345,7 +4350,7 @@
    "statement": "answering a counterfactual from the causal graph costs ~300 tokens against ~2,250 to dump the 15 notes that mention the entity - 7x cheaper",
    "value": 7.0,
    "printed": [
-    "7\u00d7",
+    "7×",
     "7x"
    ],
    "unit": "ratio",
@@ -5520,7 +5525,7 @@
    "statement": "Task C token economy, project_alpha: ratio = 34.6",
    "value": 34.6,
    "printed": [
-    "34.6\u00d7",
+    "34.6×",
     "34.6x",
     "34.6"
    ],
@@ -5640,7 +5645,7 @@
    "statement": "Task C token economy, project_beta: ratio = 46.6",
    "value": 46.6,
    "printed": [
-    "46.6\u00d7",
+    "46.6×",
     "46.6x",
     "46.6"
    ],
@@ -5760,7 +5765,7 @@
    "statement": "Task C token economy, project_delta: ratio = 115.0",
    "value": 115.0,
    "printed": [
-    "115\u00d7",
+    "115×",
     "115x",
     "115"
    ],
@@ -5801,7 +5806,7 @@
    "statement": "the current-snapshot surface is 2.5x cheaper than the full Context journal",
    "value": 2.5,
    "printed": [
-    "2.5\u00d7",
+    "2.5×",
     "2.5x"
    ],
    "unit": "ratio",
@@ -7173,7 +7178,7 @@
   },
   {
    "literal": "200.76",
-   "reason": "percent-encoded fragment of the LongMemEval badge label ('%20\u203a%200.76')"
+   "reason": "percent-encoded fragment of the LongMemEval badge label ('%20›%200.76')"
   },
   {
    "pattern": "^0\\d$",

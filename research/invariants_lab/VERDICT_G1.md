@@ -18,15 +18,17 @@ Skills: `peer-review` (claim → evidence, and *not reported* kept distinct from
 
 ## The verdict
 
-> **NO-GO.** Two of three gates pass. The one that does not is **G-C — the gate that encodes the
-> owner's rule** — and it fails for want of statistical power on an in-sample stand, not for want
-> of an effect. `GOAL-SHIP.md` §1 says nothing ships unless all three pass.
+> **NO-GO, and now on evidence rather than on a missing measurement.** Two of three gates pass.
+> The one that does not is **G-C — the gate that encodes the owner's rule**. It has now been
+> re-run on the held-out corpus at 150 benefit and 150 harm trials, with 87 usable pairs against
+> the 37 the preregistration required, and it still does not resolve: 5 fixed, 2 broken,
+> p = 0.453. `GOAL-SHIP.md` §1 says nothing ships unless all three pass. **Do not push.**
 
 | gate | declared | measured | verdict |
 |---|---|---|---|
 | **G-A** every surviving mechanism is finished | Phase F | four named pieces, four built, each with its cost | **PASS** |
 | **G-B** out-of-sample numbers at declared thresholds | Phase V on ≥ 25 held-out repositories | 27 repositories, 6,868 mutants, 2,623 source commits; **one mechanism passes all three of its gates, three fail theirs** | **PASS**, for what survives |
-| **G-C** the memory measurably works better, harm bounded | net benefit p < 0.05 **and** harm ≤ 0.05 | harm **0.010 PASS**; benefit **p = 1, inconclusive**, and in sample | **NOT MET** |
+| **G-C** the memory measurably works better, harm bounded | net benefit p < 0.05 **and** harm ≤ 0.05 | **out of sample**: harm **0.013 PASS**; benefit **p = 0.453**, 5 fixed against 2 broken on 87 usable paired trials | **NOT MET** |
 
 ## G-B — evaluated, and what it decided
 
@@ -57,8 +59,8 @@ outage.
 
 The same distinction is still live in two places. `power_ship_heldout.json` has **undecided**
 provenance rather than an assumed one — undecided is not the same as wrong, and it was not quietly
-inherited from its input. And G-C below is **not met** for want of power, which is not the same as
-measured-and-refuted.
+inherited from its input. G-C below has since crossed that line in the other direction: it was *not measured* in sample and
+is now **measured and not met** out of sample, which is a stronger and more useful thing to be.
 
 ### The finding G-B produced that no gate asked for
 
@@ -93,7 +95,36 @@ produced a number rather than a feature.
 established that the mechanism cannot do what was hoped, and Phase V confirmed both out of sample.
 A gate that says *"the work is finished"* is not a gate that says the work succeeded.
 
-## G-C — harm passes, benefit is inconclusive, and the stand was in sample
+## G-C — measured out of sample, and still not met
+
+Re-run on the held-out corpus at **150 benefit and 150 harm trials** over a 514-task pool. Full
+page: [`ENDTOEND_HELDOUT.md`](ENDTOEND_HELDOUT.md). The in-sample stand is kept below it because
+the pair is the finding.
+
+| | declared | out of sample | in sample |
+|---|---|---|---|
+| net benefit | McNemar p < 0.05 | **p = 0.453**; 5 fixed, 2 broken, 7 discordant | p = 1; 2 fixed, 1 broken, 3 discordant |
+| harm | ≤ 0.05 | **0.013** (3 of 234) | 0.010 (1 of 99) |
+| usable paired trials | ≥ 37 required | **87** | 46 |
+| base rate | measured, not assumed | 0.276 [0.193, 0.378] | 0.174 [0.09, 0.31] |
+
+**The off arm failed 24 times of 87; the on arm 21.** Three fewer failures out of eighty-seven,
+with the mechanism firing on 57 of 150 trials. Five fixed against two broken is not a
+one-directional effect: delivering a true finding sometimes makes an agent remove a definition the
+file needed.
+
+**Harm passes and stopped being zero.** In sample the mechanism fired on **0 of 53** correct trees;
+out of sample on **2 of 150**, and one of those firings caused a repair to correct code. Nothing
+broke. The claim that it is *perfectly* silent on correct code does not survive the move, which is
+the same direction every other Phase V number moved.
+
+**The limitation, stated with the verdict rather than after it.** 92 of the 300 attempts across
+both arms failed with `harness: TimeoutError` — the 30B model was cycling in and out of a GPU at
+98% of its memory. The run is **not underpowered**: 87 usable exceeds the 37 required. But a
+timeout correlates with larger inputs, so the surviving trials are biased toward smaller files, and
+a rerun on an unloaded GPU is the cheap way to overturn this if anyone wants to.
+
+### The in-sample stand, kept for the contrast
 
 53 benefit trials and 53 harm trials on `corpus_dev`.
 
@@ -132,7 +163,7 @@ the whole reason this page separates *not reported* from *reported negative*.
 
 | gate | what would change it |
 |---|---|
-| **G-C benefit** | **the held-out corpus, which now exists.** The stand was capped at 53 tasks because `corpus_dev` had no more; the held-out answer key holds **2,623 source commits**. At the measured base rate of 0.174 the stand needs 58 usable trials against the 46 it had — the new pool clears that by two orders of magnitude, and the same run would be **out of sample**, closing G-B and G-C in one measurement |
+| **G-C benefit** | **done, and it did not change the answer.** The stand was re-run out of sample on a 514-task pool: 87 usable pairs against the 37 required, base rate 0.276, and the off arm failed 24 times against the on arm's 21. See [`ENDTOEND_HELDOUT.md`](ENDTOEND_HELDOUT.md). What would change it now is a rerun on an unloaded GPU: 92 of 300 attempts timed out while the model cycled in and out of a full card, and a timeout correlates with the larger inputs, so the surviving trials are biased toward smaller files |
 | **G-C benefit, alternative** | harder tasks. A base rate of 0.30 needs 33 trials and even the old pool would carry it |
 | **G-A for `scale`** | the catalogue of shapes. Phase V settled that this is not a detail: 152 real quadratic fixes, 2 of a shape it recognises, and **50.7% of its hits fire on the repaired tree as well** |
 | **the union** | it has never been measured with `decidable-only` in it. When T1 ran, `blast_radius` was deleted; out of sample it is the only survivor. The union that matters has not been run |
