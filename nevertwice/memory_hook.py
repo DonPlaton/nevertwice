@@ -5525,6 +5525,28 @@ def _load_rankers():
     return _sibling("rankers")
 
 
+def _live_note_exists(stem: str, ntype: str) -> bool:
+    """True when this note is still live - present in its type folder, not retired.
+
+    A hit reaches a person from an INDEX, not from the folder, so nothing guarantees the
+    file behind it still exists: supersede_note moves it into Superseded/ and a stale
+    SQLite row or embedding vector can outlive that move. An unknown ntype is kept rather
+    than dropped - recall must degrade toward showing too much, never toward silently
+    hiding a live lesson because a type label was unexpected.
+    """
+    folder = TYPE_FOLDER.get(ntype)
+    if not stem or not folder:
+        return True
+    base = VAULT / folder
+    if not base.exists():
+        return True          # no folder to check against (fixtures, fresh store): keep
+    # Archive/ is age, not retraction: a note older than the retention window is still
+    # true and must still be recallable. Only Superseded/ means "this was replaced".
+    if (base / f"{stem}.md").exists() or (base / "Archive" / f"{stem}.md").exists():
+        return True
+    return not (base / "Superseded" / f"{stem}.md").exists()
+
+
 def retrieve_relevant(project: str, query: str, k: int,
                       embed_timeout: int | None = None,
                       alive_timeout: int = 2, cache: dict | None = None,
@@ -5636,6 +5658,13 @@ def retrieve_relevant(project: str, query: str, k: int,
     # project has twice shipped a threshold written on the wrong scale and will not again.
     for _h in hits:
         _h["score"] = float(scores.get(_h.get("stem"), 0.0))
+    # A retracted fact must never come back. Today that holds only STRUCTURALLY - the
+    # live folders are flat-globbed and Superseded/ is a subdirectory - so an index row or
+    # a cached vector that outlived the file it describes can still surface one. Mem0
+    # returns the retracted fact FIRST by design; this store's whole claim is that it does
+    # not, and a claim that rests on a glob is not a guarantee. One stat per delivered hit
+    # makes it one.
+    hits = [_h for _h in hits if _live_note_exists(_h.get("stem", ""), _h.get("ntype", ""))]
     # Relation-aware expansion (Phase 2b on the hot path): append a TIGHTLY bounded set of
     # lessons reached by the precise hits' typed edges, so a session-start card about a bug
     # also carries its fix. Opt-in (graph_expand>0, SessionStart only) and purely additive:
