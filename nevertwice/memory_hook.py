@@ -3681,8 +3681,29 @@ def write_session_note(project: str, date: str, time_str: str, summary: str,
         f"**Project:** [[{project}]]",
         "",
     ]
+    # MERGE with what the note already lists instead of replacing it. The lists were
+    # rebuilt from the LATEST extraction only, so a re-mine orphaned everything the
+    # previous pass had written: one session note was rewritten four times in a day and
+    # ended up indexing a fifth, unrelated cluster, while 18 notes carrying that same
+    # session id appeared in neither the note nor the project Context (review 2026-09).
+    # An agent following Index -> Context -> note could not reach them at all, while
+    # entity pages still asserted the conclusions those notes were the source for.
+    merged: dict[str, list[str]] = {nt: list(links.get(nt, []) or []) for nt in TYPED_TYPES}
+    if fp.exists():
+        try:
+            _prior_text = fp.read_text(encoding="utf-8", errors="replace")
+        except OSError:
+            _prior_text = ""
+        for _lk in re.findall(r"\[\[([^]|#]+)", _prior_text):
+            _lk = _lk.strip()
+            _parsed = parse_typed_stem(_lk)
+            if not _parsed:
+                continue                       # project/session links are not typed notes
+            _nt = _parsed.get("ntype")
+            if _nt in merged and _lk not in merged[_nt]:
+                merged[_nt].append(_lk)        # keep this pass first, then what was there
     for nt in TYPED_TYPES:
-        block = _link_section(links.get(nt, []), NTYPE_LABEL[nt])
+        block = _link_section(merged.get(nt, []), NTYPE_LABEL[nt])
         if block:
             sections += [block, ""]
     sections.append(body_tags)
