@@ -84,22 +84,23 @@ What survived re-measurement at HEAD, and what it cost:
 
 | claim | result | evidence |
 |---|---|---|
-| handing back a fact that has since been **retracted** | **0.042** of the time, against **0.917** for Mem0 2.0.19 and **0.950** for an append-only file with term matching, on the same cases | [SUPERSESSION.md](research/SUPERSESSION.md) |
+| external retrieval, one pool and one embedder for everyone | R@5 **0.802** against Mem0 2.0.19's **0.758**, LangMem's 0.692 and A-MEM's 0.692, on a hash-pinned LongMemEval corpus | [EXTERNAL_RETRIEVAL.md](research/EXTERNAL_RETRIEVAL.md) |
+| handing back a fact that has since been **retracted** | **0.042** of the time, against **0.917** for Mem0 and **0.950** for an append-only file with term matching | [SUPERSESSION.md](research/SUPERSESSION.md) |
 | acting vs *always-injecting* the same lesson | same error prevention for **31×** fewer memory tokens | [ACTIVE_MEMORY.md](research/ACTIVE_MEMORY.md) |
 | memory-poisoning acceptance attacks | **81%** blocked overall - **100%** of prompt injection, **25%** of plausible-false facts | [POISONING.md](research/POISONING.md) |
 | what being there costs | PreToolUse **89 ms** end to end - a tenth of a second, and it moves by a third between sessions - and zero context tokens until a guard fires | [BENCHMARKS.md](docs/BENCHMARKS.md) |
 
-Read the first and second rows against each other. The first is the only figure here measured
-against other systems on a corpus this repository ships - and on the column everybody else
-measures, Mem0 leads: it returns the wanted fact 0.950 of the time against our 0.933. It wins
-retrieval and loses retraction, which is what its published ADD-only design predicts; the test
-that matters is **Mem0 against a plain append-only file, p = 0.69** - indistinguishable. The
-second row is a regression of ours: against the withdrawn first-release artifact the current
-engine blocks *fewer* plausible false facts, not more. Both are here because a project whose
-argument is reproducibility does not get to publish only the deltas that flatter it.
+The first two rows are the comparative ones. Retrieval runs on a corpus we did not build,
+pinned by content hash so the run can be named; supersession runs on one we did build, committed
+and hashed, where an append-only text file is the floor and Mem0 is statistically tied with it
+(p = 0.69) because its design says both facts survive on purpose. On supersession's *other*
+column - returning the replacement - Mem0 leads us 0.950 to 0.933, and that is in the table too.
+So is the third row's regression: against the withdrawn first-release artifact the current engine
+blocks *fewer* plausible false facts, not more. A project whose argument is reproducibility does
+not get to publish only the deltas that flatter it.
 
-The retrieval comparison against the funded leaders stood on the uncommitted dataset, so it is
-withdrawn too:
+The 2026-07 run of that retrieval stand stays withdrawn - its corpus could not be identified -
+and the re-run above is a separate claim family on a named one:
 
 <!-- claims:head-to-head -->
 > **Withdrawn 2026-08.** the LongMemEval-oracle dataset is third-party and not committed (research/data/longmemeval_oracle.json is absent here), and no content hash was recorded when the number was produced, so the run cannot be reproduced or even pinned to a revision
@@ -107,11 +108,9 @@ withdrawn too:
 > The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/head_to_head.py` is what re-measures this one.
 <!-- /claims:head-to-head -->
 
-Two caveats the withdrawal does not touch, both measured rather than hidden: the payoff scales with
-the agent's own capability - memory removes the *knowledge* bottleneck, not the reasoning one - and
-retrieval R@k had stopped separating serious systems well before these numbers were pulled, which is
-why the work that matters comes after retrieval. Those, the baseline gates a headline has to clear,
-and the results we deleted rather than shipped: [BENCHMARKS.md](docs/BENCHMARKS.md) ·
+One caveat neither run touches: the payoff scales with the agent's own capability, because memory
+removes the *knowledge* bottleneck and not the reasoning one. The baseline gates a headline has to
+clear and the results we deleted rather than shipped: [BENCHMARKS.md](docs/BENCHMARKS.md) ·
 [BASELINES.md](research/BASELINES.md) · [WEAKNESSES.md](docs/WEAKNESSES.md) ·
 [the research lab](research/).
 

@@ -10,12 +10,17 @@ the load-bearing sources here are the cited papers and docs.
 > Retrieval recall@k and end-to-end answer accuracy are different axes and never share a table. Answer accuracy depends on the reader model as much as on the memory; ranking the two together would compare a retrieval pipeline against a retrieval pipeline plus an LLM.
 <!-- /comparison:snapshot-note -->
 
-## The one comparison here that is not withdrawn
+## The comparisons that are not withdrawn
 
 Everything measured on this page comes from the July head-to-head and is retracted, for the
-reason the banner above gives. One comparison has since been made on a corpus this repository
-ships, and it lives on its own page:
-[`research/SUPERSESSION.md`](../research/SUPERSESSION.md).
+reason the banner above gives. Two comparisons have since been made and live on their own pages:
+
+- [`research/EXTERNAL_RETRIEVAL.md`](../research/EXTERNAL_RETRIEVAL.md) - the same retrieval
+  stand as the withdrawn tables below, re-run on a corpus pinned by content hash so the run can
+  name its own input. Every figure returns identical to three decimals, ours and every
+  competitor's, which says the retraction cost nothing in accuracy and was still correct.
+- [`research/SUPERSESSION.md`](../research/SUPERSESSION.md) - the axis nobody else measures, on
+  a corpus this repository ships.
 
 It measures the row in the matrix below that reads "ADD-only (nothing deleted)" for Mem0. On
 cases where a fact is replaced, Mem0 and an append-only markdown file with term matching hand

@@ -9575,7 +9575,8 @@
     "high": 0.8346
    },
    "cited_in": [
-    "docs/BENCHMARKS.md"
+    "docs/BENCHMARKS.md",
+    "README.md"
    ],
    "commit": "e84025e1eced1a0d34cd0baa55265677397956b2",
    "note": "Same 940-session pool, same 500 questions, same local bge-m3, same scoring function. Competitor versions are recorded in the artifact.",
@@ -9755,7 +9756,8 @@
     "high": 0.7935
    },
    "cited_in": [
-    "docs/BENCHMARKS.md"
+    "docs/BENCHMARKS.md",
+    "README.md"
    ],
    "commit": "e84025e1eced1a0d34cd0baa55265677397956b2",
    "note": "Same 940-session pool, same 500 questions, same local bge-m3, same scoring function. Competitor versions are recorded in the artifact.",
@@ -9935,7 +9937,8 @@
     "high": 0.7309
    },
    "cited_in": [
-    "docs/BENCHMARKS.md"
+    "docs/BENCHMARKS.md",
+    "README.md"
    ],
    "commit": "e84025e1eced1a0d34cd0baa55265677397956b2",
    "note": "Same 940-session pool, same 500 questions, same local bge-m3, same scoring function. Competitor versions are recorded in the artifact.",
@@ -10115,7 +10118,8 @@
     "high": 0.7309
    },
    "cited_in": [
-    "docs/BENCHMARKS.md"
+    "docs/BENCHMARKS.md",
+    "README.md"
    ],
    "commit": "e84025e1eced1a0d34cd0baa55265677397956b2",
    "note": "Same 940-session pool, same 500 questions, same local bge-m3, same scoring function. Competitor versions are recorded in the artifact.",
