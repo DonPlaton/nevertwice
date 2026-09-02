@@ -146,5 +146,18 @@ def _save_json_generations(path: Path, text: str) -> None:
     mid-save (audit D1). Primary FIRST, then .bak: each write is atomic, and on a
     crash between them the loader reads the already-updated primary, so the latest
     snapshot is never silently lost to a stale primary (audit LOW)."""
+    # `.prev` is the generation BEFORE this write, and it is what a rollback needs.
+    # `.bak` cannot serve that purpose: by design (above) it holds the same known-good
+    # text as the primary, so in the steady state the two are byte-identical - which the
+    # 2026-09 review found while looking for a way to undo a destructive re-mine and
+    # discovering there was none. Keeping `.bak` unchanged preserves the crash property
+    # audit D1 chose it for; `.prev` adds the one it never had.
+    try:
+        if path.exists():
+            old_text = path.read_text(encoding="utf-8")
+            if old_text != text:                       # an unchanged write keeps the older prev
+                write_atomic(path.with_name(path.name + ".prev"), old_text)
+    except OSError:
+        pass                                           # a rollback copy is never worth failing a save
     write_atomic(path, text)
     write_atomic(path.with_name(path.name + ".bak"), text)
