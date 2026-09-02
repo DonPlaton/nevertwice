@@ -159,11 +159,17 @@ def main(argv: list[str] | None = None) -> int:
         by_note.setdefault(p, set()).add(tag)
     for p, tags in by_note.items():
         text = p.read_text(encoding="utf-8", errors="replace")
+        # REBUILD the list rather than splicing it. Deleting one element with a regex
+        # leaves a trailing comma - `tags: ["a", "b", ]` - which the current parser
+        # tolerates and a stricter one will not. Found by reading the output of this
+        # tool's own first real run.
+        def _drop(mo, _tags=tags):
+            kept = [t.strip() for t in mo.group(1).split(",")
+                    if t.strip() and t.strip().strip('"\'') not in _tags]
+            return "tags: [" + ", ".join(kept) + "]"
+        text = re.sub(r"^tags:\s*\[(.*)\]\s*$", _drop, text, flags=re.M)
         for tag in tags:
-            text = re.sub(rf'(^tags:\s*\[.*?)"?{re.escape(tag)}"?,?\s*', r"\1", text,
-                          flags=re.M)
             text = re.sub(rf"^#{re.escape(tag)}\b\s*", "", text, flags=re.M)
-        p.write_text(text, encoding="utf-8")
         print(f"  untagged  {p.name}  ({', '.join(sorted(tags))})")
 
     print("\nRe-run without --apply to confirm the store is clean, then rebuild the index:")
