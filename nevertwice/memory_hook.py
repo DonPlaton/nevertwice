@@ -1486,15 +1486,36 @@ def derive_project_from_cwd(cwd: str) -> str:
 # every session in a sweep, re-scanning all notes O(N×sessions). The vault is
 # locked during processing, so the snapshot can't drift mid-run.
 _TAG_COUNTS: dict[str, int] | None = None
+# Per-project tag counts, so an extraction is grounded on ITS OWN project's vocabulary
+# rather than on whichever project happens to hold the most notes in the vault.
+_TAG_COUNTS_BY_PROJECT: dict[str, dict[str, int]] = {}
+# Below this, a project's own vocabulary is too thin to ground on and is padded from the
+# global one - a new project must not be left with no grounding, which invites a fresh
+# invented tag per note.
+MIN_PROJECT_TAG_VOCAB = env_int("NEVERTWICE_MIN_PROJECT_TAGS", 5)
 _TITLE_SLUGS: dict[str, dict[str, list[str]]] = {}
 _TAG_SKIP = {*TYPED_TYPES, "session", "context", "index"}
 
 
-def collect_existing_tags(min_count: int = 2, top_k: int = 30) -> tuple[str, ...]:
-    """Top tags in use, lowercase canonical (grounds the extraction prompt)."""
-    global _TAG_COUNTS
+def collect_existing_tags(min_count: int = 2, top_k: int = 30,
+                          project: str | None = None) -> tuple[str, ...]:
+    """Top tags in use, lowercase canonical (grounds the extraction prompt).
+
+    `project` scopes the vocabulary to that project's own notes. Without it the prompt is
+    grounded on the WHOLE vault, so a batch run hands one project the signature tags of
+    whichever project has the most notes: nine `gears_experiments` notes -- an ML
+    architecture project with nothing quantum in it -- were re-tagged `quantum_computing`
+    that way, losing their own `qa`/`testing` tags in the process, so they stopped
+    matching their own queries while surfacing for the other project's (review 2026-09).
+
+    A project with too small a vocabulary of its own falls back to the global one: a new
+    project must not be left with no grounding at all, which would invite the model to
+    invent a fresh tag per note.
+    """
+    global _TAG_COUNTS, _TAG_COUNTS_BY_PROJECT
     if _TAG_COUNTS is None:
         counter: dict[str, int] = {}
+        by_project: dict[str, dict[str, int]] = {}
         for folder in ("Patterns", "Mistakes", "Decisions", "Sessions"):
             d = VAULT / folder
             if not d.exists():
@@ -1504,19 +1525,36 @@ def collect_existing_tags(min_count: int = 2, top_k: int = 30) -> tuple[str, ...
                     txt = p.read_text(encoding="utf-8", errors="ignore")
                 except OSError:
                     continue
+                owner = (parse_typed_stem(p.stem) or {}).get("project") or ""
                 for tag in re.findall(r"#([\w/\-]+)", txt):
                     t = tag.lower()
                     if t.startswith("project/") or t in _TAG_SKIP:
                         continue
                     counter[t] = counter.get(t, 0) + 1
+                    if owner:
+                        pc = by_project.setdefault(owner, {})
+                        pc[t] = pc.get(t, 0) + 1
         _TAG_COUNTS = counter
-    eligible = [t for t, n in _TAG_COUNTS.items() if n >= min_count]
-    return tuple(sorted(eligible, key=lambda t: -_TAG_COUNTS[t])[:top_k])
+        _TAG_COUNTS_BY_PROJECT = by_project
+
+    def _top(counts: dict[str, int]) -> list[str]:
+        return sorted([t for t, n in counts.items() if n >= min_count],
+                      key=lambda t: -counts[t])[:top_k]
+
+    if project:
+        own = _top(_TAG_COUNTS_BY_PROJECT.get(project, {}))
+        if len(own) >= MIN_PROJECT_TAG_VOCAB:
+            return tuple(own)
+        # too thin to ground on alone: pad with the global vocabulary, own tags first
+        pad = [t for t in _top(_TAG_COUNTS) if t not in own]
+        return tuple((own + pad)[:top_k])
+    return tuple(_top(_TAG_COUNTS))
 
 
 def _clear_tag_counts():
-    global _TAG_COUNTS
+    global _TAG_COUNTS, _TAG_COUNTS_BY_PROJECT
     _TAG_COUNTS = None
+    _TAG_COUNTS_BY_PROJECT = {}
 
 
 collect_existing_tags.cache_clear = _clear_tag_counts   # back-compat with callers
@@ -4683,7 +4721,9 @@ def process_session(session_id: str, cwd: str, transcript_path: str,
         MAX_TRANSCRIPT_CHARS,
     )
 
-    tag_vocab = collect_existing_tags()
+    # Scoped to THIS project: a batch run used to hand one project the signature tags of
+    # whichever project had the most notes in the vault.
+    tag_vocab = collect_existing_tags(project=project_hint)
     # Ground dedup on the notes ALREADY WRITTEN FOR THIS SESSION'S DAY, not on the
     # globally newest forty. On a re-mine the newest forty can contain none of this
     # session's own notes, which is how one session forked into 72 live + 41 retired.
