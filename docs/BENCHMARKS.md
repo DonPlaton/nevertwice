@@ -9,13 +9,17 @@ Two kinds of number here, and the difference matters:
 - **Internal / real-store tasks:** self-consistency, temporal correctness, token economy
   on the owner's real bilingual (RU/EN) store (`research/eval_harness.py`, GPU-free, no key).
 
-Almost every number below was **withdrawn in 2026-08**. Each claim used to carry the commit that
-last touched its artifact *file* rather than the commit whose code produced it; once the claims
-were made to name the source files their commands import, the external-retrieval corpus turned out
-to describe the first release, and the internal tasks turned out to rest on a private store no
-third party can rebuild. The studies, their designs and their honest caveats stay here - the
-figures do not. `python tools/check_freshness.py --list-stale` lists every one and the gate that
-blocks re-measuring it.
+Most numbers below were **withdrawn in 2026-08**, and the ones that were not are marked as such
+where they appear. Each claim used to carry the commit that last touched its artifact *file*
+rather than the commit whose code produced it; once the claims were made to name the source files
+their commands import, the external-retrieval corpus turned out to describe the first release, and
+the internal tasks turned out to rest on a private store no third party can rebuild. The studies,
+their designs and their honest caveats stay here; the figures do not.
+
+Two families have since been re-measured and are live: external retrieval, on a corpus now pinned
+by content hash, and supersession, on a corpus committed here. Both are below.
+`python tools/check_freshness.py --list-stale` lists every number that is still withdrawn and the
+gate that blocks re-measuring it.
 
 ## Speed: what the hot paths cost
 
