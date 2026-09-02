@@ -4515,13 +4515,19 @@ def build_entity_card(entity: str, etype: str | None = None, idx: dict | None = 
         if n["ntype"] in by_type:
             by_type[n["ntype"]].append(n)
     lines = [f"# 🧠 {ent} · {etype}", "",
-             f"**Where it appears:** {', '.join(projects)}  ({len(notes)} notes)"
-             if projects else f"**Notes:** {len(notes)}"]
+             f"**Where it appears:** {', '.join(projects)}  ({len(notes)} live notes)"
+             if projects else f"**Live notes:** {len(notes)}"]
     if rel_bits:
         lines.append("**Related:** " + "  ·  ".join(rel_bits))
     if first_seen:
         span = f"_First seen: {first_seen} · last seen: {last_seen}"
-        span += f" · mentions: {tl.get('count', len(notes))}_" if tl else "_"
+        # `mentions` counts live AND superseded notes (graph.py), while the note count
+        # above counts live ones only. Printed side by side unlabelled they read as one
+        # quantity, and 202 of 2739 cards disagreed - one was born at "3 notes /
+        # 9 mentions" (review 2026-09). Each label now says what it counts.
+        _mentions = tl.get("count", len(notes)) if tl else len(notes)
+        _incl = " incl. superseded" if tl and _mentions > len(notes) else ""
+        span += f" · mentions: {_mentions}{_incl}_" if tl else "_"
         lines.append(span)
     for kind, label in (("mistake", "**⚠️ Pitfalls:**"), ("pattern", "**✅ Patterns:**"),
                         ("decision", "**🎯 Decisions:**")):
