@@ -387,6 +387,10 @@ INJECT_CONTEXT = os.environ.get("NEVERTWICE_INJECT", "1") != "0"
 # the context window. Sections are added by priority (card → mistakes → patterns →
 # cross-project) until the budget is hit. ~2200 chars ≈ 550 tokens.
 INJECT_BUDGET_CHARS = env_int("NEVERTWICE_INJECT_BUDGET_CHARS", 2200)
+# Abstention on the session-start payload, as a FRACTION of the best item in the same
+# section. A lesson weaker than this is refused even when there is room for it - which
+# truncation, being a size check, can never do. 0 restores pure truncation.
+INJECT_MIN_VALUE = env_float("NEVERTWICE_INJECT_MIN_VALUE", 0.35)
 # The injection reports its own cost, what the budget refused, and what it saved (receipt.py).
 # NO room is reserved: the payload is assembled exactly as without a receipt and the line is
 # appended only into leftover slack (degrading/vanishing rather than displacing a lesson) -
@@ -5957,6 +5961,18 @@ def emit_session_start_context(cwd: str) -> None:
         if not items or used[0] >= INJECT_BUDGET_CHARS:
             rcpt.hold(len(items or ()))
             return
+        # Refuse the weak tail BEFORE the character budget sees it. The loop below is
+        # truncation: it drops what does not fit and cannot refuse what does, so a
+        # worthless lesson is injected whenever there happens to be room. This is the
+        # distinction budget.py was written for, and it was wired only to api.py -- the
+        # path that does not spend on every session start.
+        if INJECT_MIN_VALUE > 0 and len(items) > 1 and any(r.get("score") for r in items):
+            value = _relative_value(list(items))
+            keep = [r for r in items
+                    if value.get(r.get("stem", ""), 1.0) >= INJECT_MIN_VALUE]
+            if keep:                          # the top item always scores 1.0, so the
+                rcpt.hold(len(items) - len(keep))   # "show at least one" guarantee holds
+                items = keep
         section, added = ["", header_line], False
         # The section's own heading costs room too. It used to be free in the accounting
         # (only fact lines were counted), so three sections leaked ~110 chars past a margin
