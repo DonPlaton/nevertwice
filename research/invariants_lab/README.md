@@ -1,5 +1,13 @@
 # Six mechanisms, measured properly: what the corpus said
 
+<!-- withdrawn-banner -->
+> **Withdrawn: figures on this page must not be quoted.** They were retracted in 2026-08
+> and remain here because deleting a result one was wrong about destroys the record of
+> having been wrong. The design, the method and the caveats stand; the numbers do not.
+> Each figure's own reason is in
+> [`research/evidence_manifest.json`](../evidence_manifest.json), and
+> `python tools/check_freshness.py --list-stale` lists every one.
+
 **Task T5.** The previous attempt measured one of six mechanisms, half-finished, on a corpus whose
 answer key was entirely negative, and reported the result as a verdict on the idea. This run built
 the corpus first, declared every threshold in writing before the run that tested it, closed eight

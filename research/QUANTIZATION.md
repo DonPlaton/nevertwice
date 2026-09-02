@@ -1,5 +1,13 @@
 # One bit per dimension: scaling recall without a database
 
+<!-- withdrawn-banner -->
+> **Withdrawn: figures on this page must not be quoted.** They were retracted in 2026-08
+> and remain here because deleting a result one was wrong about destroys the record of
+> having been wrong. The design, the method and the caveats stand; the numbers do not.
+> Each figure's own reason is in
+> [`research/evidence_manifest.json`](evidence_manifest.json), and
+> `python tools/check_freshness.py --list-stale` lists every one.
+
 A reproducible study of how far the retrieval index compresses before recall moves, and
 why Nevertwice needs no approximate-nearest-neighbour dependency to scale. Every number is
 on the LongMemEval-oracle stand (940 sessions, 500 questions, local bge-m3), scored exactly

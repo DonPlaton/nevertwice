@@ -1,5 +1,13 @@
 # Retrieval as posterior inference (results & findings)
 
+<!-- withdrawn-banner -->
+> **Withdrawn: figures on this page must not be quoted.** They were retracted in 2026-08
+> and remain here because deleting a result one was wrong about destroys the record of
+> having been wrong. The design, the method and the caveats stand; the numbers do not.
+> Each figure's own reason is in
+> [`research/evidence_manifest.json`](evidence_manifest.json), and
+> `python tools/check_freshness.py --list-stale` lists every one.
+
 *Companion to `research/posterior_model.py`. Reproduce: `python research/posterior_model.py --save`
 (CPU, seeded, ~2.4 s). Fit on the longitudinal benchmark world (`LONGITUDINAL_BENCH.md`), train
 seeds {0,1,2,3}, held-out test

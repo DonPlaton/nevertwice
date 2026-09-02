@@ -1,5 +1,13 @@
 # Cold start: the pack fires from minute zero, and there is nothing there to catch
 
+<!-- withdrawn-banner -->
+> **Withdrawn: figures on this page must not be quoted.** They were retracted in 2026-08
+> and remain here because deleting a result one was wrong about destroys the record of
+> having been wrong. The design, the method and the caveats stand; the numbers do not.
+> Each figure's own reason is in
+> [`research/evidence_manifest.json`](../evidence_manifest.json), and
+> `python tools/check_freshness.py --list-stale` lists every one.
+
 **Task T3.** The headline axis, and it fails on both models — for a reason that is the most
 interesting thing this run found.
 

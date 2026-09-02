@@ -1,5 +1,13 @@
 # G1 — NO-GO, and every reason for it
 
+<!-- withdrawn-banner -->
+> **Withdrawn: figures on this page must not be quoted.** They were retracted in 2026-08
+> and remain here because deleting a result one was wrong about destroys the record of
+> having been wrong. The design, the method and the caveats stand; the numbers do not.
+> Each figure's own reason is in
+> [`research/evidence_manifest.json`](../evidence_manifest.json), and
+> `python tools/check_freshness.py --list-stale` lists every one.
+
 **Task G1, revised 2026-08-29 after Phase V completed.** Written to be attacked. Each gate, its
 threshold as declared *before* the run that tested it, its measured value, and what the pair
 obliges. Nothing here is a decision the owner has delegated: G1 recommends, and `.loop/REPORT.md`

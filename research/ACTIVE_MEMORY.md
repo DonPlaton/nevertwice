@@ -1,5 +1,13 @@
 # Active Memory: memory that earns its tokens
 
+<!-- withdrawn-banner -->
+> **Withdrawn: figures on this page must not be quoted.** They were retracted in 2026-08
+> and remain here because deleting a result one was wrong about destroys the record of
+> having been wrong. The design, the method and the caveats stand; the numbers do not.
+> Each figure's own reason is in
+> [`research/evidence_manifest.json`](evidence_manifest.json), and
+> `python tools/check_freshness.py --list-stale` lists every one.
+
 > Research vision (2026-07). The thesis behind Nevertwice v2. Status:
 > design + first system (the Popperian guard layer) under construction; the longitudinal
 > benchmark that keeps it honest is built alongside.

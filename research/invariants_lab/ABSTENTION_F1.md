@@ -1,5 +1,13 @@
 # F1 — abstention: the ladder, declared before the run
 
+<!-- withdrawn-banner -->
+> **Withdrawn: figures on this page must not be quoted.** They were retracted in 2026-08
+> and remain here because deleting a result one was wrong about destroys the record of
+> having been wrong. The design, the method and the caveats stand; the numbers do not.
+> Each figure's own reason is in
+> [`research/evidence_manifest.json`](../evidence_manifest.json), and
+> `python tools/check_freshness.py --list-stale` lists every one.
+
 **Task F1.** `BLAST_RADIUS_D5.md` closed with three things a next attempt should carry, and the
 third names this experiment: *"emitting only decidable findings is the untried route, and it is a
 different filter from the one tried here — abstention, not compatibility. Its cost in recall is

@@ -1,0 +1,183 @@
+"""Every page that prints a withdrawn figure has to say so, not just the front ones.
+
+`docs/COMPARISON.md` got a withdrawal banner by hand in 2026-09, and writing it made the
+real shape of the problem visible: **forty-four** registered pages print at least one figure
+the evidence register marks withdrawn, and none of them tell the reader. The front-page
+documents are governed, so their numbers are generated from live claims and cannot drift.
+The study archive is `backlog`, which caps how many unregistered numbers a page may print
+but says nothing about whether the numbers it prints are still true.
+
+That is the wrong way round. A retracted result is exactly the thing a reader is most likely
+to quote back at you, and the study pages are where the detail lives, so they are where
+someone goes to check.
+
+This tool stamps the banner, and `tests/_test_withdrawn_pages.py` fails if a page stops
+carrying one it needs. Neither deletes anything: a project that removes its retracted results
+loses the record of having been wrong, which is the only part of being wrong that is useful.
+
+    python tools/stamp_withdrawn.py            # report, change nothing
+    python tools/stamp_withdrawn.py --apply
+"""
+from __future__ import annotations
+
+import argparse
+import json
+import posixpath
+import re
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
+MANIFEST = ROOT / "research" / "evidence_manifest.json"
+
+#: Fenced blocks are commands and sample output - a number there is an illustration of a
+#: command, not a claim the page is making.
+FENCE = re.compile(r"```.*?```", re.S)
+
+#: Any of these anywhere on the page means the page already qualifies its own numbers.
+MARKERS = ("withdrawn", "WITHDRAWN", "retracted", "RETRACTED")
+
+BANNER_ID = "<!-- withdrawn-banner -->"
+#: No count in the banner, for two reasons. A count is itself a number on the page, and four
+#: `backlog` pages went one over a budget that may only shrink. It is also a number that goes
+#: stale the moment the register changes - a correction that needs correcting.
+BANNER = (
+    BANNER_ID + "\n"
+    "> **Withdrawn: figures on this page must not be quoted.** They were retracted in 2026-08\n"
+    "> and remain here because deleting a result one was wrong about destroys the record of\n"
+    "> having been wrong. The design, the method and the caveats stand; the numbers do not.\n"
+    "> Each figure's own reason is in\n"
+    "> [`research/evidence_manifest.json`]({link}), and\n"
+    "> `python tools/check_freshness.py --list-stale` lists every one.\n"
+)
+
+
+def _link_from(rel: str) -> str:
+    """The register, reached from the page being stamped.
+
+    One hard-coded `../research/...` is right for `docs/` and wrong for both of the other
+    depths the register covers. A dead link inside a correction is worse than none: it reads
+    as a citation and resolves to nothing.
+    """
+    here = posixpath.dirname(rel.replace("\\", "/")) or "."
+    return posixpath.relpath("research/evidence_manifest.json", here)
+
+
+#: Three or more decimals, or a two-digit percentage. `0.80` and `0.05` are numbers this
+#: repository prints about a dozen unrelated things.
+_PRECISE = re.compile(r"^\d+\.\d{3,}$|^\d{2,}(\.\d+)?%$")
+#: Two decimals: weak on its own, usable in company.
+_COARSE = re.compile(r"^\d+\.\d{2}$|^\d+(\.\d+)?%$")
+#: A mantissa of nothing but zeros identifies no study.
+_ROUND = re.compile(r"^[01]\.0+$")
+
+
+def _strength(printed: str) -> int:
+    """How much evidence one matched form is that the page cited that study.
+
+    A first pass took any form with a dot in it and flagged forty-five pages, several of
+    them on `0.000` and `1.000` - values that appear wherever a rate is perfect or a count
+    is empty, and identify nothing. Stamping "figures on this page are withdrawn" onto a
+    page that never cited the study is its own false statement, so the bar is: one precise
+    form is enough, two coarse ones are enough, and one coarse one is not.
+    """
+    p = printed.strip()
+    if _ROUND.match(p):
+        return 0
+    if _PRECISE.match(p):
+        return 2
+    if _COARSE.match(p):
+        return 1
+    return 0
+
+
+def _distinctive(printed: str) -> bool:
+    return _strength(printed) > 0
+
+
+def withdrawn_claims(manifest: dict) -> list[dict]:
+    return [c for c in manifest["claims"] if c.get("withdrawn_on") or c.get("stale")]
+
+
+def figures_on_page(text: str, claims: list[dict]) -> list[tuple[str, str]]:
+    body = FENCE.sub(" ", text)
+    found = []
+    for c in claims:
+        for printed in c.get("printed", []):
+            p = str(printed)
+            if not _distinctive(p):
+                continue
+            if re.search(rf"(?<![\w.]){re.escape(p)}(?![\w])", body):
+                found.append((c["id"], p))
+                break
+    return found
+
+
+#: A page is stamped at two points of evidence: one high-precision figure, or two coarse
+#: ones. Below that the match is likelier to be a coincidence than a citation.
+STAMP_AT = 2
+
+
+def needs_banner(path: Path, claims: list[dict]) -> list[tuple[str, str]]:
+    """The figures that oblige this page to carry a banner, or an empty list."""
+    text = path.read_text(encoding="utf-8", errors="replace")
+    if any(m in text for m in MARKERS):
+        return []
+    figs = figures_on_page(text, claims)
+    return figs if sum(_strength(pr) for _cid, pr in figs) >= STAMP_AT else []
+
+
+def insert(text: str, link: str) -> str:
+    """Put the banner under the page title, where the reader is already looking.
+
+    Under, not above: a banner before the H1 makes the page look like a notice rather than a
+    study, and the studies are still worth reading.
+    """
+    banner = BANNER.format(link=link)
+    lines = text.splitlines(keepends=True)
+    for i, line in enumerate(lines):
+        if line.startswith("# "):
+            rest = lines[i + 1:]
+            while rest and not rest[0].strip():
+                rest.pop(0)
+            return "".join(lines[:i + 1]) + "\n" + banner + "\n" + "".join(rest)
+    return banner + "\n" + text
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument("--apply", action="store_true", help="write the banners (default: report)")
+    args = ap.parse_args()
+
+    manifest = json.loads(MANIFEST.read_text(encoding="utf-8"))
+    claims = withdrawn_claims(manifest)
+    todo = []
+    for rel, entry in sorted(manifest["documents"].items()):
+        if entry.get("governance") == "exempt":
+            continue
+        p = ROOT / rel
+        if not p.exists():
+            continue
+        figs = needs_banner(p, claims)
+        if figs:
+            todo.append((rel, p, figs))
+
+    print(f"{len(claims)} withdrawn claims; {len(todo)} page(s) print one without saying so")
+    for rel, _p, figs in todo:
+        ids = sorted({cid for cid, _ in figs})
+        print(f"  {rel:52s} {len(figs):>3} figures  e.g. {ids[0]}")
+
+    if not args.apply:
+        if todo:
+            print("\nnothing written - rerun with --apply")
+        return 1 if todo else 0
+
+    for rel, p, figs in todo:
+        p.write_text(insert(p.read_text(encoding="utf-8"), _link_from(rel)),
+                     encoding="utf-8")
+    print(f"\nstamped {len(todo)} page(s)")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

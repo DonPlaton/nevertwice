@@ -1,5 +1,13 @@
 # Live validation - does Active Memory actually work on a real model?
 
+<!-- withdrawn-banner -->
+> **Withdrawn: figures on this page must not be quoted.** They were retracted in 2026-08
+> and remain here because deleting a result one was wrong about destroys the record of
+> having been wrong. The design, the method and the caveats stand; the numbers do not.
+> Each figure's own reason is in
+> [`research/evidence_manifest.json`](evidence_manifest.json), and
+> `python tools/check_freshness.py --list-stale` lists every one.
+
 Code can pass its tests and still be a non-product. The whole Active Memory thesis rests on one
 empirical claim the simulation only *assumed*: that a fired guard/warning changes a real model's
 output. This is the end-to-end measurement of that claim on DeepSeek (`deepseek-chat`), with an

@@ -609,9 +609,7 @@ Schema:
   "tags": ["tag1", "tag2", "tag3"]
 }}
 
-LANGUAGE: write title/description/prevention/context_update/session_summary in the
-dominant language of the SESSION content (a Russian session gets Russian notes, an
-English session English ones). Tags and entities stay lowercase ASCII kebab-case.
+LANGUAGE: {language_rule} Tags and entities stay lowercase ASCII kebab-case.
 
 All tags lowercase. Empty categories = []. If the session is trivial (reading/discussion),
 return everything empty and fill only session_summary.
@@ -1497,7 +1495,11 @@ _TAG_COUNTS_BY_PROJECT: dict[str, dict[str, int]] = {}
 # global one - a new project must not be left with no grounding, which invites a fresh
 # invented tag per note.
 MIN_PROJECT_TAG_VOCAB = env_int("NEVERTWICE_MIN_PROJECT_TAGS", 5)
-_TITLE_SLUGS: dict[str, dict[str, list[str]]] = {}
+# project -> ntype -> [(date, slug)]. The date half is what lets `collect_existing_titles`
+# put a session's own day at the front of the window, and every writer below has to keep
+# that pair shape: a bare slug read back as a pair raises, and read back as a membership
+# test silently misses. Both happened once the window became date-aware (2026-09-02).
+_TITLE_SLUGS: dict[str, dict[str, list[tuple[str, str]]]] = {}
 _TAG_SKIP = {*TYPED_TYPES, "session", "context", "index"}
 
 
@@ -1564,6 +1566,48 @@ def _clear_tag_counts():
 collect_existing_tags.cache_clear = _clear_tag_counts   # back-compat with callers
 
 
+#: A note is "in Cyrillic" once this many of its letters are; below it, a borrowed word or a
+#: quoted error message is not a language change.
+_CYR_MIN_SHARE = 0.12
+
+
+def dominant_script(text: str) -> str:
+    """`"cyrillic"`, `"latin"`, or `""` when the sample is too short or too mixed to call.
+
+    Counts letters, not bytes: a Russian session is full of Latin identifiers and paths, so a
+    simple majority vote reads almost every bilingual transcript as English. A share of
+    Cyrillic letters above a low floor is the signal - Russian prose cannot happen by
+    accident, while Latin can, being what code is written in.
+    """
+    cyr = sum(1 for ch in text if "\u0400" <= ch <= "\u04ff")
+    lat = sum(1 for ch in text if ch.isascii() and ch.isalpha())
+    total = cyr + lat
+    if total < 200:
+        return ""                          # too little to judge; say nothing rather than guess
+    if cyr / total >= _CYR_MIN_SHARE:
+        return "cyrillic"
+    return "latin"
+
+
+def language_rule(transcript: str) -> str:
+    """The LANGUAGE line, with the answer already worked out.
+
+    The prompt used to state the rule - *write in the dominant language of the session* - and
+    leave the model to apply it. Measured on `supersession_v1`, a corpus that is entirely
+    English, the local model wrote 17 of 123 notes in Russian: a drift of 0.138. An explicit
+    instruction naming one language is a different kind of ask, and costs nothing extra.
+    """
+    script = dominant_script(transcript)
+    if script == "cyrillic":
+        return ("write title/description/prevention/context_update/session_summary in "
+                "RUSSIAN. The session is in Russian; do not answer in English.")
+    if script == "latin":
+        return ("write title/description/prevention/context_update/session_summary in "
+                "ENGLISH. The session is in English; do not answer in any other language.")
+    return ("write title/description/prevention/context_update/session_summary in the "
+            "dominant language of the SESSION content above.")
+
+
 TITLE_WINDOW = 40                 # slugs shown to the extractor as "already exists"
 
 
@@ -1614,8 +1658,13 @@ def _unregister_slug(stem: str) -> None:
     if not parsed:
         return
     bucket = _TITLE_SLUGS.get(parsed["project"], {}).get(parsed["ntype"])
-    if bucket and parsed["slug"] in bucket:
-        bucket.remove(parsed["slug"])
+    if not bucket:
+        return
+    # Drop every entry carrying this slug, whatever date it was written under: the retired
+    # note is gone from the live folder, so no date of it should still ground the extractor.
+    kept = [row for row in bucket if row[1] != parsed["slug"]]
+    if len(kept) != len(bucket):
+        bucket[:] = kept
 
 
 def register_written_notes(project: str, tags, links: dict) -> None:
@@ -1632,10 +1681,12 @@ def register_written_notes(project: str, tags, links: dict) -> None:
         slot = _TITLE_SLUGS[project]
         for nt, stems in (links or {}).items():
             bucket = slot.setdefault(nt, [])
+            seen = {sl for _dt, sl in bucket}
             for stem in stems:
                 parsed = parse_typed_stem(stem)
-                if parsed and parsed["slug"] not in bucket:
-                    bucket.append(parsed["slug"])
+                if parsed and parsed["slug"] not in seen:
+                    bucket.append((parsed["date"], parsed["slug"]))
+                    seen.add(parsed["slug"])
 
 
 # ── Advisory lock (sentinel file, race-safe via O_EXCL) ───────────────
@@ -2084,9 +2135,16 @@ def _iter_events(path: str, from_byte: int = 0):
         with open(path, encoding="utf-8", errors="replace") as f:
             if from_byte > 0:
                 # Seek by BYTES but resume on a line boundary: a watermark can land
-                # mid-line, and half a JSON object is not an event.
-                f.buffer.seek(from_byte)
-                f.readline()               # discard the (possibly partial) first line
+                # mid-line, and half a JSON object is not an event. Whether it landed
+                # mid-line has to be CHECKED, not assumed - the watermark is recorded as
+                # the file size after a completed write, so the common case is that it sits
+                # exactly on a newline, and discarding unconditionally threw away the first
+                # complete event of every re-mine. Measured 2026-09-02: eight events lost
+                # across eight growth stages, one per trigger, silently.
+                f.buffer.seek(max(0, from_byte - 1))
+                mid_line = f.buffer.read(1) != b"\n"        # buffer now sits at from_byte
+                if mid_line:
+                    f.readline()           # discard the partial remainder of that line
             for line in f:
                 line = line.strip()
                 if not line:
@@ -4830,6 +4888,7 @@ def process_session(session_id: str, cwd: str, transcript_path: str,
         existing_mistakes=", ".join(existing["mistake"]) or "(none)",
         existing_decisions=", ".join(existing["decision"]) or "(none)",
         brain_block=_brain_prompt_block(),     # F1: typed-entity ask, "" unless a brain profile is on
+        language_rule=language_rule(transcript_full),
     )
     extraction = generate_json(prompt, project=project_hint)
     if not extraction:

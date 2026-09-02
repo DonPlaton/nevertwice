@@ -1,5 +1,13 @@
 # Rare-event / black-swan memory (results & findings)
 
+<!-- withdrawn-banner -->
+> **Withdrawn: figures on this page must not be quoted.** They were retracted in 2026-08
+> and remain here because deleting a result one was wrong about destroys the record of
+> having been wrong. The design, the method and the caveats stand; the numbers do not.
+> Each figure's own reason is in
+> [`research/evidence_manifest.json`](evidence_manifest.json), and
+> `python tools/check_freshness.py --list-stale` lists every one.
+
 *Companion to `research/rare_event.py`. Reproduce: `python research/rare_event.py --save`
 (CPU, seeded, ~0.5 s). 10 common clusters × 20 notes + 8 rare precursors, top-5, W=0.35.*
 

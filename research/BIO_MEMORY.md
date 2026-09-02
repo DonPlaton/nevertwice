@@ -1,5 +1,13 @@
 # Replication-weighted, bi-temporal memory for scientific claims (results)
 
+<!-- withdrawn-banner -->
+> **Withdrawn: figures on this page must not be quoted.** They were retracted in 2026-08
+> and remain here because deleting a result one was wrong about destroys the record of
+> having been wrong. The design, the method and the caveats stand; the numbers do not.
+> Each figure's own reason is in
+> [`research/evidence_manifest.json`](evidence_manifest.json), and
+> `python tools/check_freshness.py --list-stale` lists every one.
+
 *Companion to `research/bio_memory.py`. Reproduce: `python research/bio_memory.py --save`
 (CPU, stdlib, instant). The part of the roadmap that serves the life-extension mission directly.*
 

@@ -1,5 +1,13 @@
 # Matryoshka — the mechanism does nothing, and the product win was already there
 
+<!-- withdrawn-banner -->
+> **Withdrawn: figures on this page must not be quoted.** They were retracted in 2026-08
+> and remain here because deleting a result one was wrong about destroys the record of
+> having been wrong. The design, the method and the caveats stand; the numbers do not.
+> Each figure's own reason is in
+> [`research/evidence_manifest.json`](evidence_manifest.json), and
+> `python tools/check_freshness.py --list-stale` lists every one.
+
 **Run 2026-08-27** on the frozen external held-out set, RTX 5090, fp16. Thresholds fixed first in
 [`EMBED_M4_THRESHOLD.md`](EMBED_M4_THRESHOLD.md) and committed before anything was trained.
 Artifacts: `research/embed_universal/heldout/matryoshka_v1.json`,

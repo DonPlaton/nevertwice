@@ -1,5 +1,13 @@
 # Out of sample: recall generalises, silence does not, and one mechanism survives
 
+<!-- withdrawn-banner -->
+> **Withdrawn: figures on this page must not be quoted.** They were retracted in 2026-08
+> and remain here because deleting a result one was wrong about destroys the record of
+> having been wrong. The design, the method and the caveats stand; the numbers do not.
+> Each figure's own reason is in
+> [`research/evidence_manifest.json`](../evidence_manifest.json), and
+> `python tools/check_freshness.py --list-stale` lists every one.
+
 **Tasks V1-A, V1-B, V1-C, V2.** Twenty-seven repositories the code never saw, 6,868 mutants over
 2,623 source commits, every threshold declared in `PREREGISTRATION-SHIP.md` before the first clone
 and every measurement run once against frozen code.

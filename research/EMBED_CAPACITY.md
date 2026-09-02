@@ -1,5 +1,13 @@
 # Capacity sweep — no arm earns promotion, and the curve points down
 
+<!-- withdrawn-banner -->
+> **Withdrawn: figures on this page must not be quoted.** They were retracted in 2026-08
+> and remain here because deleting a result one was wrong about destroys the record of
+> having been wrong. The design, the method and the caveats stand; the numbers do not.
+> Each figure's own reason is in
+> [`research/evidence_manifest.json`](evidence_manifest.json), and
+> `python tools/check_freshness.py --list-stale` lists every one.
+
 **Run 2026-08-27** on the frozen external held-out set, RTX 5090, fp16. Rules fixed first in
 [`EMBED_M5_THRESHOLD.md`](EMBED_M5_THRESHOLD.md), committed before any rank was trained.
 Artifact: `research/embed_universal/heldout/capacity_sweep.json`.

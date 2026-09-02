@@ -104,15 +104,14 @@ set_profile("research")
 blk = m._brain_prompt_block()
 check("brain_block present + lists the ontology for research",
       "entity_types" in blk and "method" in blk and "paper" in blk)
-formatted = m.EXTRACTION_PROMPT.format(
-    transcript="x", project_hint="p", tag_vocab="t",
-    existing_patterns="-", existing_mistakes="-", existing_decisions="-", brain_block=blk)
+_FIELDS = dict(transcript="x", project_hint="p", tag_vocab="t", existing_patterns="-",
+               existing_mistakes="-", existing_decisions="-",
+               language_rule=m.language_rule("x"))
+formatted = m.EXTRACTION_PROMPT.format(brain_block=blk, **_FIELDS)
 check("EXTRACTION_PROMPT formats with brain_block (no KeyError, placeholder consumed)",
       "{brain_block}" not in formatted and "entity_types" in formatted)
 check("prompt with empty brain_block carries no entity_types ask (coding parity)",
-      "entity_types" not in m.EXTRACTION_PROMPT.format(
-          transcript="x", project_hint="p", tag_vocab="t",
-          existing_patterns="-", existing_mistakes="-", existing_decisions="-", brain_block=""))
+      "entity_types" not in m.EXTRACTION_PROMPT.format(brain_block="", **_FIELDS))
 
 # ── storage round-trip + graph type index ───────────────────────────────────────
 print("storage round-trip + graph type index")

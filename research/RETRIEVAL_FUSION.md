@@ -1,5 +1,13 @@
 # Calibrated score fusion: why rank fusion leaves recall on the table
 
+<!-- withdrawn-banner -->
+> **Withdrawn: figures on this page must not be quoted.** They were retracted in 2026-08
+> and remain here because deleting a result one was wrong about destroys the record of
+> having been wrong. The design, the method and the caveats stand; the numbers do not.
+> Each figure's own reason is in
+> [`research/evidence_manifest.json`](evidence_manifest.json), and
+> `python tools/check_freshness.py --list-stale` lists every one.
+
 A short, reproducible study of how Nevertwice fuses its semantic and lexical signals, and
 why the shipped ranker changed from reciprocal rank fusion (RRF) to calibrated score
 fusion. Every number here is on the public LongMemEval-oracle stand (940 sessions in one

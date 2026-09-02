@@ -1,0 +1,1792 @@
+{
+ "name": "supersession_v1",
+ "generated_by": "research/gen_supersession_dataset.py",
+ "license": "same as this repository - the cases are written here, not scraped",
+ "shapes": {
+  "approach_abandoned": 15,
+  "control": 20,
+  "narrowed": 15,
+  "retracted_no_replacement": 15,
+  "value_replaced": 15
+ },
+ "n": 80,
+ "cases": [
+  {
+   "id": "val-http-timeout",
+   "shape": "value_replaced",
+   "domain": "the API client",
+   "sessions": [
+    [
+     "Spent the session on the API client. Settled it: the HTTP client timeout is 30 seconds.",
+     "Ran the full test suite afterwards and it stayed green."
+    ],
+    [
+     "Came back to the API client. That earlier decision is off: the HTTP client timeout is 5 seconds.",
+     "Pairing session, roughly ninety minutes, no interruptions."
+    ]
+   ],
+   "query": "what is the HTTP client timeout",
+   "current": [
+    "5 second",
+    "5s"
+   ],
+   "superseded": [
+    "30 second",
+    "30s"
+   ]
+  },
+  {
+   "id": "val-pg-version",
+   "shape": "value_replaced",
+   "domain": "the database",
+   "sessions": [
+    [
+     "Worked through the database today. The outcome: we run PostgreSQL 14 in production.",
+     "Left a note in the tracker so the next person does not redo this."
+    ],
+    [
+     "Reopened the database after the last review. The new position: production was upgraded to PostgreSQL 16.",
+     "Rolled it out behind the usual staged release."
+    ]
+   ],
+   "query": "which PostgreSQL version runs in production",
+   "current": [
+    "postgresql 16",
+    "pg 16"
+   ],
+   "superseded": [
+    "postgresql 14",
+    "pg 14"
+   ]
+  },
+  {
+   "id": "val-batch-size",
+   "shape": "value_replaced",
+   "domain": "the training job",
+   "sessions": [
+    [
+     "Picked up the the training job thread again. Confirmed that the training batch size is 32.",
+     "The change touched three files and none of them were config."
+    ],
+    [
+     "the training job changed this week. The training batch size is now 128.",
+     "Checked the dashboards for an hour after and nothing moved."
+    ]
+   ],
+   "query": "what batch size does training use",
+   "current": [
+    "128"
+   ],
+   "superseded": [
+    "32"
+   ]
+  },
+  {
+   "id": "val-node-version",
+   "shape": "value_replaced",
+   "domain": "the frontend build",
+   "sessions": [
+    [
+     "Reviewed how the frontend build is set up. As of today, the build targets Node 18.",
+     "Pairing session, roughly ninety minutes, no interruptions."
+    ],
+    [
+     "Had to revisit the frontend build. What holds now is that the build targets Node 22.",
+     "The reviewer asked for one rename and otherwise approved it."
+    ]
+   ],
+   "query": "which Node version does the build target",
+   "current": [
+    "node 22"
+   ],
+   "superseded": [
+    "node 18"
+   ]
+  },
+  {
+   "id": "val-retry-count",
+   "shape": "value_replaced",
+   "domain": "the queue worker",
+   "sessions": [
+    [
+     "Cleared the open question on the queue worker: the worker retries a failed job 3 times.",
+     "Rolled it out behind the usual staged release."
+    ],
+    [
+     "Reversed the earlier call on the queue worker: the worker now retries a failed job 10 times.",
+     "Documented it in the README section that was already stale."
+    ]
+   ],
+   "query": "how many times does the worker retry",
+   "current": [
+    "10 time"
+   ],
+   "superseded": [
+    "3 time"
+   ]
+  },
+  {
+   "id": "val-cache-ttl",
+   "shape": "value_replaced",
+   "domain": "the cache layer",
+   "sessions": [
+    [
+     "Wrote up the the cache layer decision. Cache entries expire after 60 seconds, and the code now matches.",
+     "Checked the dashboards for an hour after and nothing moved."
+    ],
+    [
+     "Follow-up on the cache layer, and it did not survive. Cache entries expire after 15 minutes.",
+     "Ran the full test suite afterwards and it stayed green."
+    ]
+   ],
+   "query": "how long do cache entries live",
+   "current": [
+    "15 minute"
+   ],
+   "superseded": [
+    "60 second"
+   ]
+  },
+  {
+   "id": "val-port",
+   "shape": "value_replaced",
+   "domain": "the dev server",
+   "sessions": [
+    [
+     "Spent the session on the dev server. Settled it: the dev server listens on port 3000.",
+     "The reviewer asked for one rename and otherwise approved it."
+    ],
+    [
+     "Came back to the dev server. That earlier decision is off: the dev server listens on port 8080.",
+     "Left a note in the tracker so the next person does not redo this."
+    ]
+   ],
+   "query": "which port does the dev server use",
+   "current": [
+    "8080"
+   ],
+   "superseded": [
+    "3000"
+   ]
+  },
+  {
+   "id": "val-region",
+   "shape": "value_replaced",
+   "domain": "the deployment",
+   "sessions": [
+    [
+     "Worked through the deployment today. The outcome: the service is deployed in eu-west-1.",
+     "Documented it in the README section that was already stale."
+    ],
+    [
+     "Reopened the deployment after the last review. The new position: the service was moved to us-east-2.",
+     "The change touched three files and none of them were config."
+    ]
+   ],
+   "query": "which region is the service deployed in",
+   "current": [
+    "us-east-2"
+   ],
+   "superseded": [
+    "eu-west-1"
+   ]
+  },
+  {
+   "id": "val-py-version",
+   "shape": "value_replaced",
+   "domain": "the toolchain",
+   "sessions": [
+    [
+     "Picked up the the toolchain thread again. Confirmed that the project pins Python 3.11.",
+     "Ran the full test suite afterwards and it stayed green."
+    ],
+    [
+     "the toolchain changed this week. The project now pins Python 3.13.",
+     "Pairing session, roughly ninety minutes, no interruptions."
+    ]
+   ],
+   "query": "which Python version is pinned",
+   "current": [
+    "3.13"
+   ],
+   "superseded": [
+    "3.11"
+   ]
+  },
+  {
+   "id": "val-replicas",
+   "shape": "value_replaced",
+   "domain": "capacity",
+   "sessions": [
+    [
+     "Reviewed how capacity is set up. As of today, the API runs with 4 replicas.",
+     "Left a note in the tracker so the next person does not redo this."
+    ],
+    [
+     "Had to revisit capacity. What holds now is that the API runs with 12 replicas after the load test.",
+     "Rolled it out behind the usual staged release."
+    ]
+   ],
+   "query": "how many API replicas run",
+   "current": [
+    "12 replica"
+   ],
+   "superseded": [
+    "4 replica"
+   ]
+  },
+  {
+   "id": "val-lr",
+   "shape": "value_replaced",
+   "domain": "training",
+   "sessions": [
+    [
+     "Cleared the open question on training: the learning rate is 3e-4.",
+     "The change touched three files and none of them were config."
+    ],
+    [
+     "Reversed the earlier call on training: the learning rate was lowered to 5e-5.",
+     "Checked the dashboards for an hour after and nothing moved."
+    ]
+   ],
+   "query": "what learning rate does training use",
+   "current": [
+    "5e-5"
+   ],
+   "superseded": [
+    "3e-4"
+   ]
+  },
+  {
+   "id": "val-chunk",
+   "shape": "value_replaced",
+   "domain": "ingestion",
+   "sessions": [
+    [
+     "Wrote up the ingestion decision. Documents are chunked at 512 tokens, and the code now matches.",
+     "Pairing session, roughly ninety minutes, no interruptions."
+    ],
+    [
+     "Follow-up on ingestion, and it did not survive. Documents are chunked at 1024 tokens now.",
+     "The reviewer asked for one rename and otherwise approved it."
+    ]
+   ],
+   "query": "what chunk size does ingestion use",
+   "current": [
+    "1024"
+   ],
+   "superseded": [
+    "512"
+   ]
+  },
+  {
+   "id": "val-quorum",
+   "shape": "value_replaced",
+   "domain": "the cluster",
+   "sessions": [
+    [
+     "Spent the session on the cluster. Settled it: the cluster needs a quorum of 3 nodes.",
+     "Rolled it out behind the usual staged release."
+    ],
+    [
+     "Came back to the cluster. That earlier decision is off: the cluster needs a quorum of 5 nodes after the resize.",
+     "Documented it in the README section that was already stale."
+    ]
+   ],
+   "query": "what quorum does the cluster need",
+   "current": [
+    "5 node"
+   ],
+   "superseded": [
+    "3 node"
+   ]
+  },
+  {
+   "id": "val-license",
+   "shape": "value_replaced",
+   "domain": "licensing",
+   "sessions": [
+    [
+     "Worked through licensing today. The outcome: the project is released under AGPL-3.0.",
+     "Checked the dashboards for an hour after and nothing moved."
+    ],
+    [
+     "Reopened licensing after the last review. The new position: the project was relicensed to Apache-2.0.",
+     "Ran the full test suite afterwards and it stayed green."
+    ]
+   ],
+   "query": "what licence is the project under",
+   "current": [
+    "apache-2.0",
+    "apache 2.0"
+   ],
+   "superseded": [
+    "agpl"
+   ]
+  },
+  {
+   "id": "val-branch",
+   "shape": "value_replaced",
+   "domain": "the repository",
+   "sessions": [
+    [
+     "Picked up the the repository thread again. Confirmed that the default branch is master.",
+     "The reviewer asked for one rename and otherwise approved it."
+    ],
+    [
+     "the repository changed this week. The default branch was renamed to main.",
+     "Left a note in the tracker so the next person does not redo this."
+    ]
+   ],
+   "query": "what is the default branch",
+   "current": [
+    "main"
+   ],
+   "superseded": [
+    "master"
+   ]
+  },
+  {
+   "id": "app-cache-store",
+   "shape": "approach_abandoned",
+   "domain": "caching",
+   "sessions": [
+    [
+     "Reviewed how caching is set up. As of today, we cache session data in Redis.",
+     "Documented it in the README section that was already stale."
+    ],
+    [
+     "Had to revisit caching. What holds now is that we replaced Redis with an in-process LRU cache.",
+     "The change touched three files and none of them were config."
+    ]
+   ],
+   "query": "how is session data cached",
+   "current": [
+    "lru",
+    "in-process"
+   ],
+   "superseded": [
+    "redis"
+   ]
+  },
+  {
+   "id": "app-auth",
+   "shape": "approach_abandoned",
+   "domain": "authentication",
+   "sessions": [
+    [
+     "Cleared the open question on authentication: authentication uses JWT tokens signed with HS256.",
+     "Ran the full test suite afterwards and it stayed green."
+    ],
+    [
+     "Reversed the earlier call on authentication: authentication moved to opaque session cookies backed by the database.",
+     "Pairing session, roughly ninety minutes, no interruptions."
+    ]
+   ],
+   "query": "how does authentication work",
+   "current": [
+    "session cookie",
+    "opaque"
+   ],
+   "superseded": [
+    "jwt",
+    "hs256"
+   ]
+  },
+  {
+   "id": "app-bundler",
+   "shape": "approach_abandoned",
+   "domain": "the build",
+   "sessions": [
+    [
+     "Wrote up the the build decision. The frontend is bundled with Webpack, and the code now matches.",
+     "Left a note in the tracker so the next person does not redo this."
+    ],
+    [
+     "Follow-up on the build, and it did not survive. The frontend is bundled with Vite now.",
+     "Rolled it out behind the usual staged release."
+    ]
+   ],
+   "query": "which bundler does the frontend use",
+   "current": [
+    "vite"
+   ],
+   "superseded": [
+    "webpack"
+   ]
+  },
+  {
+   "id": "app-orm",
+   "shape": "approach_abandoned",
+   "domain": "data access",
+   "sessions": [
+    [
+     "Spent the session on data access. Settled it: data access goes through the SQLAlchemy ORM.",
+     "The change touched three files and none of them were config."
+    ],
+    [
+     "Came back to data access. That earlier decision is off: data access was rewritten as hand-written SQL with asyncpg.",
+     "Checked the dashboards for an hour after and nothing moved."
+    ]
+   ],
+   "query": "how does the code access the database",
+   "current": [
+    "asyncpg",
+    "hand-written sql"
+   ],
+   "superseded": [
+    "sqlalchemy",
+    "orm"
+   ]
+  },
+  {
+   "id": "app-queue",
+   "shape": "approach_abandoned",
+   "domain": "background work",
+   "sessions": [
+    [
+     "Worked through background work today. The outcome: background jobs run on Celery with RabbitMQ.",
+     "Pairing session, roughly ninety minutes, no interruptions."
+    ],
+    [
+     "Reopened background work after the last review. The new position: background jobs run on a Postgres-backed queue instead.",
+     "The reviewer asked for one rename and otherwise approved it."
+    ]
+   ],
+   "query": "what runs background jobs",
+   "current": [
+    "postgres-backed"
+   ],
+   "superseded": [
+    "celery",
+    "rabbitmq"
+   ]
+  },
+  {
+   "id": "app-ci",
+   "shape": "approach_abandoned",
+   "domain": "continuous integration",
+   "sessions": [
+    [
+     "Picked up the continuous integration thread again. Confirmed that CI runs on Jenkins.",
+     "Rolled it out behind the usual staged release."
+    ],
+    [
+     "continuous integration changed this week. CI was migrated to GitHub Actions.",
+     "Documented it in the README section that was already stale."
+    ]
+   ],
+   "query": "where does CI run",
+   "current": [
+    "github actions"
+   ],
+   "superseded": [
+    "jenkins"
+   ]
+  },
+  {
+   "id": "app-search",
+   "shape": "approach_abandoned",
+   "domain": "search",
+   "sessions": [
+    [
+     "Reviewed how search is set up. As of today, search is powered by Elasticsearch.",
+     "Checked the dashboards for an hour after and nothing moved."
+    ],
+    [
+     "Had to revisit search. What holds now is that search is powered by Postgres full-text search.",
+     "Ran the full test suite afterwards and it stayed green."
+    ]
+   ],
+   "query": "what powers search",
+   "current": [
+    "full-text",
+    "tsvector"
+   ],
+   "superseded": [
+    "elasticsearch"
+   ]
+  },
+  {
+   "id": "app-styling",
+   "shape": "approach_abandoned",
+   "domain": "the UI",
+   "sessions": [
+    [
+     "Cleared the open question on the UI: components are styled with styled-components.",
+     "The reviewer asked for one rename and otherwise approved it."
+    ],
+    [
+     "Reversed the earlier call on the UI: components are styled with Tailwind utility classes.",
+     "Left a note in the tracker so the next person does not redo this."
+    ]
+   ],
+   "query": "how are components styled",
+   "current": [
+    "tailwind"
+   ],
+   "superseded": [
+    "styled-components"
+   ]
+  },
+  {
+   "id": "app-packaging",
+   "shape": "approach_abandoned",
+   "domain": "packaging",
+   "sessions": [
+    [
+     "Wrote up the packaging decision. The package is built and published with Poetry, and the code now matches.",
+     "Documented it in the README section that was already stale."
+    ],
+    [
+     "Follow-up on packaging, and it did not survive. The package is built with hatchling and published by CI.",
+     "The change touched three files and none of them were config."
+    ]
+   ],
+   "query": "how is the package built",
+   "current": [
+    "hatchling"
+   ],
+   "superseded": [
+    "poetry"
+   ]
+  },
+  {
+   "id": "app-state",
+   "shape": "approach_abandoned",
+   "domain": "the frontend",
+   "sessions": [
+    [
+     "Spent the session on the frontend. Settled it: global state is held in Redux.",
+     "Ran the full test suite afterwards and it stayed green."
+    ],
+    [
+     "Came back to the frontend. That earlier decision is off: global state moved to Zustand stores.",
+     "Pairing session, roughly ninety minutes, no interruptions."
+    ]
+   ],
+   "query": "how is global state held",
+   "current": [
+    "zustand"
+   ],
+   "superseded": [
+    "redux"
+   ]
+  },
+  {
+   "id": "app-infra",
+   "shape": "approach_abandoned",
+   "domain": "provisioning",
+   "sessions": [
+    [
+     "Worked through provisioning today. The outcome: infrastructure is provisioned with Terraform.",
+     "Left a note in the tracker so the next person does not redo this."
+    ],
+    [
+     "Reopened provisioning after the last review. The new position: infrastructure is provisioned with Pulumi in TypeScript.",
+     "Rolled it out behind the usual staged release."
+    ]
+   ],
+   "query": "how is infrastructure provisioned",
+   "current": [
+    "pulumi"
+   ],
+   "superseded": [
+    "terraform"
+   ]
+  },
+  {
+   "id": "app-migrations",
+   "shape": "approach_abandoned",
+   "domain": "the schema",
+   "sessions": [
+    [
+     "Picked up the the schema thread again. Confirmed that schema migrations run through Alembic.",
+     "The change touched three files and none of them were config."
+    ],
+    [
+     "the schema changed this week. Schema migrations are plain numbered SQL files applied by a shell script.",
+     "Checked the dashboards for an hour after and nothing moved."
+    ]
+   ],
+   "query": "how do schema migrations run",
+   "current": [
+    "numbered sql",
+    "shell script"
+   ],
+   "superseded": [
+    "alembic"
+   ]
+  },
+  {
+   "id": "app-serialisation",
+   "shape": "approach_abandoned",
+   "domain": "the wire format",
+   "sessions": [
+    [
+     "Reviewed how the wire format is set up. As of today, messages are serialised as Protobuf.",
+     "Pairing session, roughly ninety minutes, no interruptions."
+    ],
+    [
+     "Had to revisit the wire format. What holds now is that messages are serialised as newline-delimited JSON.",
+     "The reviewer asked for one rename and otherwise approved it."
+    ]
+   ],
+   "query": "how are messages serialised",
+   "current": [
+    "newline-delimited",
+    "ndjson"
+   ],
+   "superseded": [
+    "protobuf"
+   ]
+  },
+  {
+   "id": "app-secrets",
+   "shape": "approach_abandoned",
+   "domain": "secrets",
+   "sessions": [
+    [
+     "Cleared the open question on secrets: secrets are read from HashiCorp Vault at boot.",
+     "Rolled it out behind the usual staged release."
+    ],
+    [
+     "Reversed the earlier call on secrets: secrets are injected as environment variables by the orchestrator.",
+     "Documented it in the README section that was already stale."
+    ]
+   ],
+   "query": "where do secrets come from",
+   "current": [
+    "environment variable"
+   ],
+   "superseded": [
+    "vault"
+   ]
+  },
+  {
+   "id": "app-e2e",
+   "shape": "approach_abandoned",
+   "domain": "testing",
+   "sessions": [
+    [
+     "Wrote up the testing decision. End-to-end tests are driven by Selenium, and the code now matches.",
+     "Checked the dashboards for an hour after and nothing moved."
+    ],
+    [
+     "Follow-up on testing, and it did not survive. End-to-end tests are driven by Playwright.",
+     "Ran the full test suite afterwards and it stayed green."
+    ]
+   ],
+   "query": "what drives the end-to-end tests",
+   "current": [
+    "playwright"
+   ],
+   "superseded": [
+    "selenium"
+   ]
+  },
+  {
+   "id": "ret-beta-flag",
+   "shape": "retracted_no_replacement",
+   "domain": "feature flags",
+   "sessions": [
+    [
+     "Spent the session on feature flags. Settled it: the beta_dashboard feature flag gates the new UI.",
+     "The reviewer asked for one rename and otherwise approved it."
+    ],
+    [
+     "Came back to feature flags. That earlier decision is off: the beta_dashboard flag was deleted; the new UI is now unconditional.",
+     "Left a note in the tracker so the next person does not redo this."
+    ]
+   ],
+   "query": "what does the beta_dashboard flag control",
+   "current": [
+    "delet",
+    "remov",
+    "unconditional"
+   ],
+   "superseded": [
+    "gates the new ui",
+    "gated behind"
+   ]
+  },
+  {
+   "id": "ret-legacy-endpoint",
+   "shape": "retracted_no_replacement",
+   "domain": "the API",
+   "sessions": [
+    [
+     "Worked through the API today. The outcome: the /v1/export endpoint streams a CSV of all records.",
+     "Documented it in the README section that was already stale."
+    ],
+    [
+     "Reopened the API after the last review. The new position: the /v1/export endpoint was removed with no replacement.",
+     "The change touched three files and none of them were config."
+    ]
+   ],
+   "query": "what does /v1/export do",
+   "current": [
+    "remov",
+    "delet",
+    "no replacement"
+   ],
+   "superseded": [
+    "streams a csv",
+    "csv of all records"
+   ]
+  },
+  {
+   "id": "ret-telemetry",
+   "shape": "retracted_no_replacement",
+   "domain": "telemetry",
+   "sessions": [
+    [
+     "Picked up the telemetry thread again. Confirmed that the client reports anonymous usage counters on startup.",
+     "Ran the full test suite afterwards and it stayed green."
+    ],
+    [
+     "telemetry changed this week. Usage reporting was stripped out entirely; the client sends nothing.",
+     "Pairing session, roughly ninety minutes, no interruptions."
+    ]
+   ],
+   "query": "what does the client report on startup",
+   "current": [
+    "nothing",
+    "strip",
+    "remov"
+   ],
+   "superseded": [
+    "usage counters",
+    "anonymous usage"
+   ]
+  },
+  {
+   "id": "ret-mirror",
+   "shape": "retracted_no_replacement",
+   "domain": "infrastructure",
+   "sessions": [
+    [
+     "Reviewed how infrastructure is set up. As of today, a read replica in ap-south-1 serves analytics queries.",
+     "Left a note in the tracker so the next person does not redo this."
+    ],
+    [
+     "Had to revisit infrastructure. What holds now is that the ap-south-1 replica was decommissioned; analytics reads hit the primary.",
+     "Rolled it out behind the usual staged release."
+    ]
+   ],
+   "query": "what serves analytics queries",
+   "current": [
+    "primary",
+    "decommission"
+   ],
+   "superseded": [
+    "replica in ap-south-1",
+    "read replica"
+   ]
+  },
+  {
+   "id": "ret-plugin-api",
+   "shape": "retracted_no_replacement",
+   "domain": "extensibility",
+   "sessions": [
+    [
+     "Cleared the open question on extensibility: third-party plugins load through the entry_points group.",
+     "The change touched three files and none of them were config."
+    ],
+    [
+     "Reversed the earlier call on extensibility: the plugin system was removed before 1.0 and never shipped.",
+     "Checked the dashboards for an hour after and nothing moved."
+    ]
+   ],
+   "query": "how do third-party plugins load",
+   "current": [
+    "remov",
+    "never shipped"
+   ],
+   "superseded": [
+    "entry_points group",
+    "load through the entry"
+   ]
+  },
+  {
+   "id": "ret-mobile",
+   "shape": "retracted_no_replacement",
+   "domain": "clients",
+   "sessions": [
+    [
+     "Wrote up the clients decision. The iOS client shares the sync engine with the web app, and the code now matches.",
+     "Pairing session, roughly ninety minutes, no interruptions."
+    ],
+    [
+     "Follow-up on clients, and it did not survive. The iOS client was discontinued; only the web app remains.",
+     "The reviewer asked for one rename and otherwise approved it."
+    ]
+   ],
+   "query": "what does the iOS client do",
+   "current": [
+    "discontinu",
+    "only the web"
+   ],
+   "superseded": [
+    "shares the sync engine"
+   ]
+  },
+  {
+   "id": "ret-cron",
+   "shape": "retracted_no_replacement",
+   "domain": "scheduling",
+   "sessions": [
+    [
+     "Spent the session on scheduling. Settled it: a nightly cron compacts the audit log at 03:00.",
+     "Rolled it out behind the usual staged release."
+    ],
+    [
+     "Came back to scheduling. That earlier decision is off: nightly compaction was dropped; the audit log is append-only forever.",
+     "Documented it in the README section that was already stale."
+    ]
+   ],
+   "query": "what happens to the audit log at night",
+   "current": [
+    "append-only",
+    "drop"
+   ],
+   "superseded": [
+    "compacts the audit log",
+    "03:00"
+   ]
+  },
+  {
+   "id": "ret-grpc",
+   "shape": "retracted_no_replacement",
+   "domain": "transport",
+   "sessions": [
+    [
+     "Worked through transport today. The outcome: internal services talk over gRPC on port 9090.",
+     "Checked the dashboards for an hour after and nothing moved."
+    ],
+    [
+     "Reopened transport after the last review. The new position: gRPC was ripped out; everything is plain HTTP now.",
+     "Ran the full test suite afterwards and it stayed green."
+    ]
+   ],
+   "query": "how do internal services talk to each other",
+   "current": [
+    "plain http",
+    "ripped out"
+   ],
+   "superseded": [
+    "grpc on port 9090",
+    "9090"
+   ]
+  },
+  {
+   "id": "ret-sso",
+   "shape": "retracted_no_replacement",
+   "domain": "access",
+   "sessions": [
+    [
+     "Picked up the access thread again. Confirmed that staff sign in through the Okta SAML integration.",
+     "The reviewer asked for one rename and otherwise approved it."
+    ],
+    [
+     "access changed this week. The Okta integration was cancelled and staff use ordinary accounts.",
+     "Left a note in the tracker so the next person does not redo this."
+    ]
+   ],
+   "query": "how do staff sign in",
+   "current": [
+    "ordinary account",
+    "cancel"
+   ],
+   "superseded": [
+    "okta",
+    "saml"
+   ]
+  },
+  {
+   "id": "ret-webhook",
+   "shape": "retracted_no_replacement",
+   "domain": "integrations",
+   "sessions": [
+    [
+     "Reviewed how integrations is set up. As of today, a webhook posts every order to the partner endpoint.",
+     "Documented it in the README section that was already stale."
+    ],
+    [
+     "Had to revisit integrations. What holds now is that the partner integration was terminated and the webhook deleted.",
+     "The change touched three files and none of them were config."
+    ]
+   ],
+   "query": "what does the order webhook do",
+   "current": [
+    "terminat",
+    "delet",
+    "remov"
+   ],
+   "superseded": [
+    "posts every order",
+    "partner endpoint"
+   ]
+  },
+  {
+   "id": "ret-gpu-node",
+   "shape": "retracted_no_replacement",
+   "domain": "infrastructure",
+   "sessions": [
+    [
+     "Cleared the open question on infrastructure: one A100 node is reserved for nightly training.",
+     "Ran the full test suite afterwards and it stayed green."
+    ],
+    [
+     "Reversed the earlier call on infrastructure: the reserved GPU node was given up; training rents capacity per run.",
+     "Pairing session, roughly ninety minutes, no interruptions."
+    ]
+   ],
+   "query": "what is the reserved GPU node for",
+   "current": [
+    "per run",
+    "rent",
+    "given up"
+   ],
+   "superseded": [
+    "a100 node is reserved",
+    "reserved for nightly"
+   ]
+  },
+  {
+   "id": "ret-cli-flag",
+   "shape": "retracted_no_replacement",
+   "domain": "the CLI",
+   "sessions": [
+    [
+     "Wrote up the the CLI decision. The --legacy flag restores the pre-2.0 output format, and the code now matches.",
+     "Left a note in the tracker so the next person does not redo this."
+    ],
+    [
+     "Follow-up on the CLI, and it did not survive. The --legacy flag was dropped in 3.0 with no equivalent.",
+     "Rolled it out behind the usual staged release."
+    ]
+   ],
+   "query": "what does the --legacy flag do",
+   "current": [
+    "drop",
+    "remov",
+    "no equivalent"
+   ],
+   "superseded": [
+    "restores the pre-2.0",
+    "pre-2.0 output"
+   ]
+  },
+  {
+   "id": "ret-audit-ui",
+   "shape": "retracted_no_replacement",
+   "domain": "the admin panel",
+   "sessions": [
+    [
+     "Spent the session on the admin panel. Settled it: the audit tab shows a filterable event history.",
+     "The change touched three files and none of them were config."
+    ],
+    [
+     "Came back to the admin panel. That earlier decision is off: the audit tab was taken out of the admin panel entirely.",
+     "Checked the dashboards for an hour after and nothing moved."
+    ]
+   ],
+   "query": "what does the audit tab show",
+   "current": [
+    "taken out",
+    "remov",
+    "delet"
+   ],
+   "superseded": [
+    "filterable event history",
+    "shows a filterable"
+   ]
+  },
+  {
+   "id": "ret-i18n",
+   "shape": "retracted_no_replacement",
+   "domain": "localisation",
+   "sessions": [
+    [
+     "Worked through localisation today. The outcome: the app ships German and French translations.",
+     "Pairing session, roughly ninety minutes, no interruptions."
+    ],
+    [
+     "Reopened localisation after the last review. The new position: translations were dropped; the app is English-only.",
+     "The reviewer asked for one rename and otherwise approved it."
+    ]
+   ],
+   "query": "which translations does the app ship",
+   "current": [
+    "english-only",
+    "drop"
+   ],
+   "superseded": [
+    "german and french"
+   ]
+  },
+  {
+   "id": "ret-sandbox",
+   "shape": "retracted_no_replacement",
+   "domain": "the API",
+   "sessions": [
+    [
+     "Picked up the the API thread again. Confirmed that a sandbox environment mirrors production for partners.",
+     "Rolled it out behind the usual staged release."
+    ],
+    [
+     "the API changed this week. The sandbox was shut down and partners test against their own stubs.",
+     "Documented it in the README section that was already stale."
+    ]
+   ],
+   "query": "what is the sandbox environment for",
+   "current": [
+    "shut down",
+    "own stub"
+   ],
+   "superseded": [
+    "mirrors production"
+   ]
+  },
+  {
+   "id": "nar-retry-scope",
+   "shape": "narrowed",
+   "domain": "the HTTP client",
+   "sessions": [
+    [
+     "Reviewed how the HTTP client is set up. As of today, the client retries every failed request.",
+     "Checked the dashboards for an hour after and nothing moved."
+    ],
+    [
+     "Had to revisit the HTTP client. What holds now is that the client retries only on 5xx responses; 4xx is never retried.",
+     "Ran the full test suite afterwards and it stayed green."
+    ]
+   ],
+   "query": "when does the client retry",
+   "current": [
+    "5xx"
+   ],
+   "superseded": [
+    "every failed request"
+   ]
+  },
+  {
+   "id": "nar-cache-scope",
+   "shape": "narrowed",
+   "domain": "caching",
+   "sessions": [
+    [
+     "Cleared the open question on caching: all API responses are cached.",
+     "The reviewer asked for one rename and otherwise approved it."
+    ],
+    [
+     "Reversed the earlier call on caching: only GET responses are cached; writes bypass the cache entirely.",
+     "Left a note in the tracker so the next person does not redo this."
+    ]
+   ],
+   "query": "which responses are cached",
+   "current": [
+    "get respons",
+    "only get"
+   ],
+   "superseded": [
+    "all api responses"
+   ]
+  },
+  {
+   "id": "nar-audit-scope",
+   "shape": "narrowed",
+   "domain": "auditing",
+   "sessions": [
+    [
+     "Wrote up the auditing decision. Every table change is written to the audit log, and the code now matches.",
+     "Documented it in the README section that was already stale."
+    ],
+    [
+     "Follow-up on auditing, and it did not survive. Only changes to billing tables are audited now.",
+     "The change touched three files and none of them were config."
+    ]
+   ],
+   "query": "which changes are audited",
+   "current": [
+    "billing"
+   ],
+   "superseded": [
+    "every table change"
+   ]
+  },
+  {
+   "id": "nar-gpu-scope",
+   "shape": "narrowed",
+   "domain": "the trainer",
+   "sessions": [
+    [
+     "Spent the session on the trainer. Settled it: the trainer runs on GPU for every job.",
+     "Ran the full test suite afterwards and it stayed green."
+    ],
+    [
+     "Came back to the trainer. That earlier decision is off: GPU is used only for jobs above 10M parameters; smaller ones run on CPU.",
+     "Pairing session, roughly ninety minutes, no interruptions."
+    ]
+   ],
+   "query": "when does the trainer use the GPU",
+   "current": [
+    "10m parameter",
+    "above 10m"
+   ],
+   "superseded": [
+    "every job"
+   ]
+  },
+  {
+   "id": "nar-lint-scope",
+   "shape": "narrowed",
+   "domain": "linting",
+   "sessions": [
+    [
+     "Worked through linting today. The outcome: the pre-commit hook lints the whole repository.",
+     "Left a note in the tracker so the next person does not redo this."
+    ],
+    [
+     "Reopened linting after the last review. The new position: the hook lints only the staged files.",
+     "Rolled it out behind the usual staged release."
+    ]
+   ],
+   "query": "what does the pre-commit hook lint",
+   "current": [
+    "staged file"
+   ],
+   "superseded": [
+    "whole repository"
+   ]
+  },
+  {
+   "id": "nar-notify-scope",
+   "shape": "narrowed",
+   "domain": "alerting",
+   "sessions": [
+    [
+     "Picked up the alerting thread again. Confirmed that every failed deploy pages the on-call engineer.",
+     "The change touched three files and none of them were config."
+    ],
+    [
+     "alerting changed this week. Only production deploy failures page on-call; staging failures go to Slack.",
+     "Checked the dashboards for an hour after and nothing moved."
+    ]
+   ],
+   "query": "which deploy failures page on-call",
+   "current": [
+    "production"
+   ],
+   "superseded": [
+    "every failed deploy"
+   ]
+  },
+  {
+   "id": "nar-encrypt-scope",
+   "shape": "narrowed",
+   "domain": "storage",
+   "sessions": [
+    [
+     "Reviewed how storage is set up. As of today, all uploaded files are encrypted at rest.",
+     "Pairing session, roughly ninety minutes, no interruptions."
+    ],
+    [
+     "Had to revisit storage. What holds now is that encryption at rest applies only to files in the private bucket.",
+     "The reviewer asked for one rename and otherwise approved it."
+    ]
+   ],
+   "query": "which files are encrypted at rest",
+   "current": [
+    "private bucket"
+   ],
+   "superseded": [
+    "all uploaded files"
+   ]
+  },
+  {
+   "id": "nar-index-scope",
+   "shape": "narrowed",
+   "domain": "the index",
+   "sessions": [
+    [
+     "Cleared the open question on the index: the search index covers every document in the store.",
+     "Rolled it out behind the usual staged release."
+    ],
+    [
+     "Reversed the earlier call on the index: the index covers documents from the last 90 days only.",
+     "Documented it in the README section that was already stale."
+    ]
+   ],
+   "query": "what does the search index cover",
+   "current": [
+    "90 day"
+   ],
+   "superseded": [
+    "every document"
+   ]
+  },
+  {
+   "id": "nar-backup-scope",
+   "shape": "narrowed",
+   "domain": "backups",
+   "sessions": [
+    [
+     "Wrote up the backups decision. The nightly backup dumps every database, and the code now matches.",
+     "Checked the dashboards for an hour after and nothing moved."
+    ],
+    [
+     "Follow-up on backups, and it did not survive. The nightly backup covers the primary database only.",
+     "Ran the full test suite afterwards and it stayed green."
+    ]
+   ],
+   "query": "what does the nightly backup cover",
+   "current": [
+    "primary database only",
+    "primary only"
+   ],
+   "superseded": [
+    "every database"
+   ]
+  },
+  {
+   "id": "nar-ratelimit-scope",
+   "shape": "narrowed",
+   "domain": "rate limiting",
+   "sessions": [
+    [
+     "Spent the session on rate limiting. Settled it: rate limits apply to every caller.",
+     "The reviewer asked for one rename and otherwise approved it."
+    ],
+    [
+     "Came back to rate limiting. That earlier decision is off: rate limits apply only to unauthenticated callers.",
+     "Left a note in the tracker so the next person does not redo this."
+    ]
+   ],
+   "query": "who is rate limited",
+   "current": [
+    "unauthenticated"
+   ],
+   "superseded": [
+    "every caller"
+   ]
+  },
+  {
+   "id": "nar-compress-scope",
+   "shape": "narrowed",
+   "domain": "transport",
+   "sessions": [
+    [
+     "Worked through transport today. The outcome: every response is gzip-compressed.",
+     "Documented it in the README section that was already stale."
+    ],
+    [
+     "Reopened transport after the last review. The new position: only responses above 8 KB are compressed.",
+     "The change touched three files and none of them were config."
+    ]
+   ],
+   "query": "which responses are compressed",
+   "current": [
+    "8 kb",
+    "8kb"
+   ],
+   "superseded": [
+    "every response"
+   ]
+  },
+  {
+   "id": "nar-mfa-scope",
+   "shape": "narrowed",
+   "domain": "security",
+   "sessions": [
+    [
+     "Picked up the security thread again. Confirmed that MFA is required for all users.",
+     "Ran the full test suite afterwards and it stayed green."
+    ],
+    [
+     "security changed this week. MFA is required only for accounts with admin scope.",
+     "Pairing session, roughly ninety minutes, no interruptions."
+    ]
+   ],
+   "query": "who needs MFA",
+   "current": [
+    "admin scope"
+   ],
+   "superseded": [
+    "all users"
+   ]
+  },
+  {
+   "id": "nar-replay-scope",
+   "shape": "narrowed",
+   "domain": "the event log",
+   "sessions": [
+    [
+     "Reviewed how the event log is set up. As of today, the consumer replays the entire event log on boot.",
+     "Left a note in the tracker so the next person does not redo this."
+    ],
+    [
+     "Had to revisit the event log. What holds now is that the consumer replays only events since the last checkpoint.",
+     "Rolled it out behind the usual staged release."
+    ]
+   ],
+   "query": "what does the consumer replay on boot",
+   "current": [
+    "checkpoint"
+   ],
+   "superseded": [
+    "entire event log"
+   ]
+  },
+  {
+   "id": "nar-shard-scope",
+   "shape": "narrowed",
+   "domain": "sharding",
+   "sessions": [
+    [
+     "Cleared the open question on sharding: every tenant gets its own database shard.",
+     "The change touched three files and none of them were config."
+    ],
+    [
+     "Reversed the earlier call on sharding: only tenants above 50k records get a dedicated shard.",
+     "Checked the dashboards for an hour after and nothing moved."
+    ]
+   ],
+   "query": "which tenants get a dedicated shard",
+   "current": [
+    "50k"
+   ],
+   "superseded": [
+    "every tenant"
+   ]
+  },
+  {
+   "id": "nar-trace-scope",
+   "shape": "narrowed",
+   "domain": "tracing",
+   "sessions": [
+    [
+     "Wrote up the tracing decision. Every request is traced end to end, and the code now matches.",
+     "Pairing session, roughly ninety minutes, no interruptions."
+    ],
+    [
+     "Follow-up on tracing, and it did not survive. One request in a hundred is sampled for tracing.",
+     "The reviewer asked for one rename and otherwise approved it."
+    ]
+   ],
+   "query": "which requests are traced",
+   "current": [
+    "one in a hundred",
+    "sampled"
+   ],
+   "superseded": [
+    "every request"
+   ]
+  },
+  {
+   "id": "ctl-db-cache",
+   "shape": "control",
+   "domain": "the stack",
+   "sessions": [
+    [
+     "Spent the session on the stack. Settled it: the primary database is PostgreSQL 16.",
+     "Rolled it out behind the usual staged release."
+    ],
+    [
+     "Separate thread on the stack the same week: the cache layer is Redis 7.",
+     "Documented it in the README section that was already stale."
+    ]
+   ],
+   "query": "which database does the project use",
+   "current": [
+    "postgresql 16",
+    "postgres 16"
+   ],
+   "superseded": []
+  },
+  {
+   "id": "ctl-lang-test",
+   "shape": "control",
+   "domain": "the stack",
+   "sessions": [
+    [
+     "Worked through the stack today. The outcome: the service is written in Rust.",
+     "Checked the dashboards for an hour after and nothing moved."
+    ],
+    [
+     "Also landed, unrelated to the above: the integration tests are written in Python.",
+     "Ran the full test suite afterwards and it stayed green."
+    ]
+   ],
+   "query": "what language is the service written in",
+   "current": [
+    "rust"
+   ],
+   "superseded": []
+  },
+  {
+   "id": "ctl-port-pair",
+   "shape": "control",
+   "domain": "networking",
+   "sessions": [
+    [
+     "Picked up the networking thread again. Confirmed that the API listens on port 8443.",
+     "The reviewer asked for one rename and otherwise approved it."
+    ],
+    [
+     "Second item on networking this sprint. The metrics endpoint listens on port 9100.",
+     "Left a note in the tracker so the next person does not redo this."
+    ]
+   ],
+   "query": "which port does the API listen on",
+   "current": [
+    "8443"
+   ],
+   "superseded": []
+  },
+  {
+   "id": "ctl-env",
+   "shape": "control",
+   "domain": "environments",
+   "sessions": [
+    [
+     "Reviewed how environments is set up. As of today, staging deploys on every merge to main.",
+     "Documented it in the README section that was already stale."
+    ],
+    [
+     "While that was in review, a different piece of environments got settled: production deploys on a tagged release.",
+     "The change touched three files and none of them were config."
+    ]
+   ],
+   "query": "when does production deploy",
+   "current": [
+    "tag"
+   ],
+   "superseded": []
+  },
+  {
+   "id": "ctl-model",
+   "shape": "control",
+   "domain": "models",
+   "sessions": [
+    [
+     "Cleared the open question on models: the embedder is bge-m3.",
+     "Ran the full test suite afterwards and it stayed green."
+    ],
+    [
+     "Unrelated to the earlier change, the reranker is a cross-encoder.",
+     "Pairing session, roughly ninety minutes, no interruptions."
+    ]
+   ],
+   "query": "which embedder is used",
+   "current": [
+    "bge-m3"
+   ],
+   "superseded": []
+  },
+  {
+   "id": "ctl-storage",
+   "shape": "control",
+   "domain": "storage",
+   "sessions": [
+    [
+     "Wrote up the storage decision. User uploads go to S3, and the code now matches.",
+     "Left a note in the tracker so the next person does not redo this."
+    ],
+    [
+     "One more storage item, independent of the first: database backups go to Glacier.",
+     "Rolled it out behind the usual staged release."
+    ]
+   ],
+   "query": "where do user uploads go",
+   "current": [
+    "s3"
+   ],
+   "superseded": []
+  },
+  {
+   "id": "ctl-auth-pair",
+   "shape": "control",
+   "domain": "security",
+   "sessions": [
+    [
+     "Spent the session on security. Settled it: the admin panel requires hardware MFA.",
+     "The change touched three files and none of them were config."
+    ],
+    [
+     "Separate thread on security the same week: the public API uses scoped tokens.",
+     "Checked the dashboards for an hour after and nothing moved."
+    ]
+   ],
+   "query": "what does the admin panel require",
+   "current": [
+    "mfa",
+    "hardware"
+   ],
+   "superseded": []
+  },
+  {
+   "id": "ctl-fmt",
+   "shape": "control",
+   "domain": "tooling",
+   "sessions": [
+    [
+     "Worked through tooling today. The outcome: Python code is formatted with ruff.",
+     "Pairing session, roughly ninety minutes, no interruptions."
+    ],
+    [
+     "Also landed, unrelated to the above: SQL migrations are checked with sqlfluff.",
+     "The reviewer asked for one rename and otherwise approved it."
+    ]
+   ],
+   "query": "how is Python code formatted",
+   "current": [
+    "ruff"
+   ],
+   "superseded": []
+  },
+  {
+   "id": "ctl-obs",
+   "shape": "control",
+   "domain": "observability",
+   "sessions": [
+    [
+     "Picked up the observability thread again. Confirmed that traces are exported to Tempo.",
+     "Rolled it out behind the usual staged release."
+    ],
+    [
+     "Second item on observability this sprint. Logs are shipped to Loki.",
+     "Documented it in the README section that was already stale."
+    ]
+   ],
+   "query": "where are traces exported",
+   "current": [
+    "tempo"
+   ],
+   "superseded": []
+  },
+  {
+   "id": "ctl-limits",
+   "shape": "control",
+   "domain": "limits",
+   "sessions": [
+    [
+     "Reviewed how limits is set up. As of today, the upload size limit is 25 MB.",
+     "Checked the dashboards for an hour after and nothing moved."
+    ],
+    [
+     "While that was in review, a different piece of limits got settled: the request rate limit is 100 per minute.",
+     "Ran the full test suite afterwards and it stayed green."
+    ]
+   ],
+   "query": "what is the upload size limit",
+   "current": [
+    "25 mb",
+    "25mb"
+   ],
+   "superseded": []
+  },
+  {
+   "id": "ctl-sched",
+   "shape": "control",
+   "domain": "scheduling",
+   "sessions": [
+    [
+     "Cleared the open question on scheduling: reindexing runs weekly on Sunday.",
+     "The reviewer asked for one rename and otherwise approved it."
+    ],
+    [
+     "Unrelated to the earlier change, certificate renewal runs every 60 days.",
+     "Left a note in the tracker so the next person does not redo this."
+    ]
+   ],
+   "query": "when does reindexing run",
+   "current": [
+    "sunday",
+    "weekly"
+   ],
+   "superseded": []
+  },
+  {
+   "id": "ctl-clients",
+   "shape": "control",
+   "domain": "clients",
+   "sessions": [
+    [
+     "Wrote up the clients decision. The CLI is distributed through Homebrew, and the code now matches.",
+     "Documented it in the README section that was already stale."
+    ],
+    [
+     "One more clients item, independent of the first: the desktop app ships as a signed installer.",
+     "The change touched three files and none of them were config."
+    ]
+   ],
+   "query": "how is the CLI distributed",
+   "current": [
+    "homebrew"
+   ],
+   "superseded": []
+  },
+  {
+   "id": "ctl-queue-pair",
+   "shape": "control",
+   "domain": "background work",
+   "sessions": [
+    [
+     "Spent the session on background work. Settled it: the ingest queue is backed by NATS.",
+     "Ran the full test suite afterwards and it stayed green."
+    ],
+    [
+     "Separate thread on background work the same week: the email queue is backed by SQS.",
+     "Pairing session, roughly ninety minutes, no interruptions."
+    ]
+   ],
+   "query": "what backs the ingest queue",
+   "current": [
+    "nats"
+   ],
+   "superseded": []
+  },
+  {
+   "id": "ctl-doc",
+   "shape": "control",
+   "domain": "documentation",
+   "sessions": [
+    [
+     "Worked through documentation today. The outcome: the API reference is generated from OpenAPI.",
+     "Left a note in the tracker so the next person does not redo this."
+    ],
+    [
+     "Also landed, unrelated to the above: the tutorials are hand-written in MDX.",
+     "Rolled it out behind the usual staged release."
+    ]
+   ],
+   "query": "how is the API reference generated",
+   "current": [
+    "openapi"
+   ],
+   "superseded": []
+  },
+  {
+   "id": "ctl-runtime",
+   "shape": "control",
+   "domain": "runtime",
+   "sessions": [
+    [
+     "Picked up the runtime thread again. Confirmed that the worker runs on Python 3.13.",
+     "The change touched three files and none of them were config."
+    ],
+    [
+     "Second item on runtime this sprint. The sidecar runs on Go 1.23.",
+     "Checked the dashboards for an hour after and nothing moved."
+    ]
+   ],
+   "query": "which runtime does the worker use",
+   "current": [
+    "3.13"
+   ],
+   "superseded": []
+  },
+  {
+   "id": "ctl-net",
+   "shape": "control",
+   "domain": "networking",
+   "sessions": [
+    [
+     "Reviewed how networking is set up. As of today, ingress terminates TLS at the load balancer.",
+     "Pairing session, roughly ninety minutes, no interruptions."
+    ],
+    [
+     "While that was in review, a different piece of networking got settled: egress goes through a NAT gateway.",
+     "The reviewer asked for one rename and otherwise approved it."
+    ]
+   ],
+   "query": "where does ingress terminate TLS",
+   "current": [
+    "load balancer"
+   ],
+   "superseded": []
+  },
+  {
+   "id": "ctl-review",
+   "shape": "control",
+   "domain": "process",
+   "sessions": [
+    [
+     "Cleared the open question on process: every pull request needs two approvals.",
+     "Rolled it out behind the usual staged release."
+    ],
+    [
+     "Unrelated to the earlier change, every release needs a signed changelog entry.",
+     "Documented it in the README section that was already stale."
+    ]
+   ],
+   "query": "how many approvals does a PR need",
+   "current": [
+    "two approval"
+   ],
+   "superseded": []
+  },
+  {
+   "id": "ctl-metrics",
+   "shape": "control",
+   "domain": "observability",
+   "sessions": [
+    [
+     "Wrote up the observability decision. Request latency is tracked as a histogram, and the code now matches.",
+     "Checked the dashboards for an hour after and nothing moved."
+    ],
+    [
+     "One more observability item, independent of the first: queue depth is tracked as a gauge.",
+     "Ran the full test suite afterwards and it stayed green."
+    ]
+   ],
+   "query": "how is request latency tracked",
+   "current": [
+    "histogram"
+   ],
+   "superseded": []
+  },
+  {
+   "id": "ctl-store",
+   "shape": "control",
+   "domain": "storage",
+   "sessions": [
+    [
+     "Spent the session on storage. Settled it: session state lives in browser localStorage.",
+     "The reviewer asked for one rename and otherwise approved it."
+    ],
+    [
+     "Separate thread on storage the same week: audit records live in an append-only table.",
+     "Left a note in the tracker so the next person does not redo this."
+    ]
+   ],
+   "query": "where does session state live",
+   "current": [
+    "localstorage"
+   ],
+   "superseded": []
+  },
+  {
+   "id": "ctl-alerting",
+   "shape": "control",
+   "domain": "alerting",
+   "sessions": [
+    [
+     "Worked through alerting today. The outcome: paging alerts go to PagerDuty.",
+     "Documented it in the README section that was already stale."
+    ],
+    [
+     "Also landed, unrelated to the above: weekly digests go to email.",
+     "The change touched three files and none of them were config."
+    ]
+   ],
+   "query": "where do paging alerts go",
+   "current": [
+    "pagerduty"
+   ],
+   "superseded": []
+  }
+ ]
+}

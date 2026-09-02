@@ -1,5 +1,13 @@
 # F5 — the cold-start experiment X1 named and nobody ran
 
+<!-- withdrawn-banner -->
+> **Withdrawn: figures on this page must not be quoted.** They were retracted in 2026-08
+> and remain here because deleting a result one was wrong about destroys the record of
+> having been wrong. The design, the method and the caveats stand; the numbers do not.
+> Each figure's own reason is in
+> [`research/evidence_manifest.json`](../evidence_manifest.json), and
+> `python tools/check_freshness.py --list-stale` lists every one.
+
 **Task F5.** `COLDSTART_T3.md` failed, and the reason it failed generalises:
 
 > A preconfigured invariant can only help where the model is wrong. What ships in the box has to
