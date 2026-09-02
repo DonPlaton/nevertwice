@@ -65,6 +65,20 @@ ARTIFACTS = [
              "cache needs the embedder. The corpus is verified against its committed hash "
              "before a byte is read, which is the property the 2026-07 run of this file lacked "
              "and was withdrawn for."},
+    {"file": "research/results/longmem_s.json",
+     "command": ["python", "research/longmem_eval.py", "--data=s", "--save",
+                 "--out=research/results/longmem_s.json"],
+     "kind": HARDWARE, "task": "external-retrieval",
+     "inputs": ["research/data/longmemeval_s.json (third-party, MIT, hash-pinned in "
+                "research/corpus_pin.py; 278 MB, fetch with `python research/corpus_pin.py "
+                "--fetch longmemeval_s`)",
+                "a local Ollama serving bge-m3",
+                "research/data/longmem_embeds__longmemeval_s.json (built by --data=s --embed, "
+                "about half an hour, 272 MB)"],
+     "note": "the same benchmark outside the oracle setting: 19,206 retrievable sessions of the "
+             "19,829 unique ids, the other 623 carrying no text in the published corpus. "
+             "Deterministic given the embedding cache; the report itself takes about half an "
+             "hour because the ranking is pure Python over twenty thousand vectors."},
     {"file": "research/results/head_to_head_v2.json",
      "command": ["python", "research/head_to_head.py", "--only=nevertwice,mem0,langmem,amem",
                  "--save", "--out=research/results/head_to_head_v2.json"],

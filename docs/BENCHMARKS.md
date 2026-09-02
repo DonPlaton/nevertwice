@@ -127,7 +127,22 @@ the re-run found: [`research/EXTERNAL_RETRIEVAL.md`](../research/EXTERNAL_RETRIE
 | **+ trained cross-encoder (opt-in)** | **0.614** | **0.826** | **0.858** | **0.712** |
 <!-- /claims:longmem-pinned -->
 
-Four systems on that same pool, same embedder, same scoring function, same 500 questions:
+The same methods on the **non-oracle** pool - 19,206 retrievable sessions against the oracle
+variant's 940, the same questions and the same annotated evidence:
+
+<!-- claims:longmem-s -->
+| method | R@1 | R@5 | R@10 | MRR |
+|---|---|---|---|---|
+| semantic (bge-m3) | 0.188 | 0.344 | 0.426 | 0.266 |
+| lexical (BM25) | 0.242 | 0.442 | 0.534 | 0.338 |
+| **calibrated fusion (shipped default, 0 deps)** | **0.264** | **0.452** | **0.554** | **0.362** |
+<!-- /claims:longmem-s -->
+
+Everything falls, which is what twenty-one times the haystack does, and the shape holds: fusion
+still beats both signals it fuses. Running it also found that the harness's own inertness check
+had been passing for the wrong reason; that story is on the study page.
+
+Four systems on the oracle pool, same embedder, same scoring function, same 500 questions:
 
 <!-- claims:head-to-head-pinned -->
 | system | R@1 | R@5 | R@10 | MRR |

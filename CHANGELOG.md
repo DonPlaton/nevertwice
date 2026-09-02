@@ -43,7 +43,24 @@ empty.
   still right, because at the time nobody could have shown that. The withdrawn claims stay
   withdrawn - they were measured on a file that still cannot be identified, and reviving them
   because a later run agrees would be assuming the conclusion. The re-run is a new claim family
-  on a named corpus. `research/EXTERNAL_RETRIEVAL.md`.
+  on a named corpus.
+
+  **And the same benchmark outside the oracle setting**, which is what the roadmap actually
+  asked for: the standard variant pools 19,206 retrievable sessions against the oracle's 940,
+  the same 500 questions and the same annotated evidence. Everything falls - the shipped fusion
+  reads R@5 0.452 against 0.802 - and the shape holds, fusion still beating both signals it
+  fuses. `research/EXTERNAL_RETRIEVAL.md`.
+
+- **A safety check that had been passing for the wrong reason.** The retrieval harness ranks a
+  `semantic+recur` arm to show that the production recurrence prior changes nothing when every
+  note has recurrence 1, the boost being exactly 0.0. The two arms broke ties differently:
+  `semantic` resolved equal scores by session id, `semantic+recur` left them to the stable
+  sort's fallback order. On 940 sessions the orders agreed often enough for recall@k to match
+  and the check printed "inert by construction"; on 19,206 they disagreed and it reported a
+  changed ranking for a boost of zero. It had been testing the tie-break and getting away with
+  it because the pool was small. Both arms now use the same key and the check asserts the two
+  rankings are **identical**, which is what "changes nothing" means. Found by running the larger
+  pool, not by reading the code.
 
 - **A benchmark for supersession, which nobody in the field has.** LoCoMo, LongMemEval and
   BEAM all ask whether a system *recalls* a fact. None asks whether it hands back one that has

@@ -41,10 +41,11 @@ and are not started before the rest is done.
   **Today:** the retrieval head-to-head is closed and reproducible. `research/corpus_pin.py`
   holds the corpus sha256, both harnesses verify it before reading a byte and stamp it into the
   result, and the re-run reproduces every 2026-07 figure to three decimals across all four
-  systems (`research/EXTERNAL_RETRIEVAL.md`). The oracle pool is 940 sessions; the standard
-  non-oracle pool is 19,829, is fetched, hash-pinned and embedded, and what is missing there is
-  the competitor arms, which cost about twenty-one times their ingest rather than any new
-  machinery.
+  systems (`research/EXTERNAL_RETRIEVAL.md`). The non-oracle pool is done too - 19,206
+  retrievable sessions against the oracle's 940, where the shipped fusion reads R@5 0.452 - and
+  running it found that the harness's own inertness check had been passing for the wrong reason.
+  What is missing there is the competitor arms, which cost about twenty-one times their ingest
+  rather than any new machinery.
 - **The invariants track: ship it or delete it, on the end-to-end result.** G-A and G-B pass;
   `blast_radius` under `decidable-only` cleared all three out-of-sample gates on 27 repositories
   it was never built against, and the ratchet, `scale`'s static half and the union failed theirs

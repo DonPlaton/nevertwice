@@ -77,10 +77,59 @@ Every system ingests the same sessions, is queried with the same 500 questions, 
 the same function against the same human-annotated ground truth. All of them use the same local
 embedder, so this isolates the memory pipeline rather than the embedder.
 
+## The same benchmark outside the oracle setting
+
+The oracle variant pools 940 sessions. The standard variant pools **19,206** - the same 500
+questions, the same annotated evidence, twenty-one times the haystack. This is the setting the
+roadmap meant when it asked for a number "outside the oracle setting", and it is where a
+retrieval claim earns its keep.
+
+| method | R@1 | R@5 | R@10 | MRR |
+|---|---|---|---|---|
+| semantic (bge-m3 bi-encoder) | 0.188 | 0.344 | 0.426 | 0.266 |
+| lexical (term overlap, no embedder) | 0.242 | 0.442 | 0.534 | 0.338 |
+| **calibrated score fusion** (shipped default) | 0.264 | 0.452 | 0.554 | 0.362 |
+
+Everything falls, which is what a twenty-one-fold haystack does, and the shape holds: fusion
+beats both signals it fuses, by +0.108 at R@5
+over semantic alone and +0.010 over lexical.
+Lexical retrieval beats the bi-encoder on this pool, as it did on the smaller one; the fusion is
+what makes the pair worth having.
+
+The competitor arms have not been run here. Their cost is ingest, and ingest is twenty-one times
+larger; the four-system comparison above stands on the oracle pool.
+
+**623 of the 19,829 sessions carry no text at all** in the published corpus and are
+skipped, which is where the pool size comes from. That is a property of the dataset, stated here
+so the number is not mistaken for a loading failure on our side.
+
+### What running it found
+
+Two things, neither of them in the results table.
+
+**The Pareto-safety check was passing for the wrong reason.** The harness ranks a
+`semantic+recur` arm to prove that the production recurrence prior changes nothing when every
+note has recurrence 1 - the boost is exactly 0.0, so adding it must be inert. The two arms broke
+ties differently: `semantic` resolved equal scores by session id, `semantic+recur` left them to
+the stable sort's fallback order. On 940 sessions the two orders agreed often enough for recall@k
+to match and the check printed "inert by construction". On 19,206 they disagreed, and the check
+reported a CHANGED ranking for a boost of zero. It had never tested the boost; it had tested the
+tie-break, and got away with it because the pool was small. Both arms now use the same key and
+the check asserts the two lists are **identical**, which is what "changes nothing" means.
+
+**A larger pool is a different instrument, not the same one further away.** Everything about this
+corpus that made the oracle result look stable - few ties, a small candidate set, a generous
+top-10 - stops holding at twenty-one times the size. The oracle numbers are not wrong; they
+answer an easier question, and this page now prints both so nobody has to guess which one a
+headline came from.
+
 ## What is still missing
 
-- **This is one dataset.** It is external and it is not one we built, which is the point, but a
-  single benchmark is a single benchmark. BEAM remains the other candidate.
+- **This is one dataset, in two sizes.** It is external and not one we built, which is the
+  point, but a single benchmark is a single benchmark. BEAM remains the other candidate.
+- **The competitors ran on the oracle pool only.** The non-oracle numbers above are ours and the
+  two baselines the harness computes; extending the four-system table to the larger pool is
+  ingest cost, not new machinery.
 - **Two systems record a blocker rather than a number.** Zep needs Neo4j or FalkorDB, and Cognee
   needs an adapter nobody has written. A blocker is recorded instead of an estimate.
 - **Competitor versions move.** The result file records the installed version of every package it

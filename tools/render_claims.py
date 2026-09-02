@@ -150,6 +150,17 @@ def render_longmem_pinned(c: Claims) -> str:
     return _apply_bold(rows, ["method", "R@1", "R@5", "R@10", "MRR"], 3)
 
 
+def render_longmem_s(c: Claims) -> str:
+    """The same methods on the non-oracle pool: twenty-one times the haystack, same questions."""
+    rows = [[label,
+             c.value(f"longmem_s.{slug}.recall_at_1"),
+             c.value(f"longmem_s.{slug}.recall_at_5"),
+             c.value(f"longmem_s.{slug}.recall_at_10"),
+             round(c.value(f"longmem_s.{slug}.mrr"), 3)]
+            for label, slug in RETRIEVAL_ROWS if slug in ("semantic", "lexical", "hybrid")]
+    return _apply_bold(rows, ["method", "R@1", "R@5", "R@10", "MRR"], 3)
+
+
 def render_head_to_head_pinned(c: Claims) -> str:
     rows = [[label,
              c.value(f"h2h_pinned.{slug}.recall_at_1"),
@@ -345,6 +356,7 @@ def render_baselines_summary(c: Claims) -> str:
 RENDERERS = {
     "longmem-benchmarks": render_longmem_benchmarks,
     "longmem-pinned": render_longmem_pinned,
+    "longmem-s": render_longmem_s,
     "head-to-head-pinned": render_head_to_head_pinned,
     "head-to-head": render_head_to_head,
     "latency": render_latency,

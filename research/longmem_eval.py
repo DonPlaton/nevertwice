@@ -249,6 +249,7 @@ def evaluate():
         print(f"[xrerank] loading cross-encoder {xr.MODEL} …", file=sys.stderr)
         xr._load()                                     # warm the model once, up front
     t0, n = time.time(), 0
+    identical_lists = True          # every semantic+recur list matched its semantic twin exactly
     for e in data:
         qid = e["question_id"]
         rel = set(e["answer_session_ids"])
@@ -265,10 +266,18 @@ def evaluate():
         cal = calibrated(cos, bm)
         hyb = sorted(cal, key=lambda s: (-cal[s], s))
         # semantic + the production recurrence boost (recurrence=1 here → boost=0:
-        # this must NOT change the ranking - the Pareto-safety check on real vectors)
+        # this must NOT change the ranking - the Pareto-safety check on real vectors).
+        #
+        # The tie-break has to match `sem` exactly or the check tests the tie-break instead of
+        # the boost. It did not: `sem` resolved ties by session id and this line left them to
+        # the stable sort's fallback order. On the 940-session pool the two agreed often enough
+        # to report "inert"; on 19,206 they disagreed and the harness reported a CHANGED ranking
+        # for a boost that is exactly 0.0. Same key, and the two lists must now be identical.
         semr = sorted(pool_ids,
-                      key=lambda s: -(m.cosine(q, svec[s]) + m._recur_boost({"recurrence": 1})))
+                      key=lambda s: (-(cos[s] + m._recur_boost({"recurrence": 1})), s))
         n += 1
+        if semr != sem:
+            identical_lists = False
         ranked_lists = [("semantic", sem), ("lexical", lex),
                         ("hybrid", hyb), ("semantic+recur", semr)]
         if RERANK:
@@ -316,8 +325,11 @@ def evaluate():
     hy, se = out["hybrid"]["recall@5"], out["semantic"]["recall@5"]
     print(f"\n  → calibrated hybrid vs semantic-only @5: {hy - se:+.3f} "
           f"(external GT, not internal-linkage - this is a real recall number)")
-    inert = all(abs(out["semantic"][f"recall@{k}"] - out["semantic+recur"][f"recall@{k}"]) < 1e-9
-                for k in KS)
+    # List identity, not recall agreement: two different rankings can score the same recall@k
+    # and the claim being made is that the boost changes nothing at all.
+    inert = identical_lists and all(
+        abs(out["semantic"][f"recall@{k}"] - out["semantic+recur"][f"recall@{k}"]) < 1e-9
+        for k in KS)
     # NB: every session here is distinct (recurrence=1 → _recur_boost=0), so this is a
     # by-CONSTRUCTION no-harm floor - relevance retrieval is provably unchanged by the
     # recurrence prior - NOT an empirical test of the adaptive scaling (no public corpus
