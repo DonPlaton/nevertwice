@@ -4441,6 +4441,34 @@ def _existing_entity_card(entity: str) -> Path | None:
     return hits[0] if hits else None
 
 
+def _collapse_restatements(notes: list[dict]) -> list[dict]:
+    """One observation stored twice is one observation, not two corroborations.
+
+    An entity card's note count is read as strength of evidence. The vault review found
+    the same fact filed as BOTH a pattern and a decision -- same slug, same date, same
+    session -- and counted twice; and three live decisions asserting the identical result
+    with no supersede between them, which the card then presented as three confirmations.
+    For a project being prepared for arXiv, where independent confirmation is
+    load-bearing, duplication inflated into corroboration is the more dangerous direction
+    of error, and this vault already holds a mistake note about exactly that.
+
+    Collapse on (slug, date, session): those three together identify one observation
+    written more than once. Notes that merely share a slug across different sessions are
+    genuine recurrences and are left alone -- that signal is what recurrence exists for.
+    """
+    seen: set[tuple] = set()
+    out: list[dict] = []
+    for n in notes:
+        stem = n.get("stem") or ""
+        parsed = parse_typed_stem(stem) or {}
+        key = (parsed.get("slug") or stem, parsed.get("date") or "", n.get("session") or "")
+        if key[0] and key in seen:
+            continue
+        seen.add(key)
+        out.append(n)
+    return out
+
+
 def build_entity_card(entity: str, etype: str | None = None, idx: dict | None = None,
                       sup: dict | None = None) -> str:
     """Distil every live note tagged with `entity` (across ALL projects) into a standalone
@@ -4457,6 +4485,9 @@ def build_entity_card(entity: str, etype: str | None = None, idx: dict | None = 
     # None and the graph index is built (F4); a caller doing a bulk refresh passes a shared
     # markdown idx instead, so the helpers reuse it and the vault is scanned once, not per card.
     notes = notes_for_entity(ent, None, k=500, idx=idx)
+    # A card's note count reads as strength of evidence, so one observation stored twice
+    # must not read as two. See _collapse_restatements.
+    notes = _collapse_restatements(notes)
     if not notes:
         return ""
     etype = etype or entity_types_index().get(ent, "entity")
