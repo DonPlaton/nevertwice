@@ -3726,6 +3726,41 @@ def _fit_context_tail(project: str, head: str, recent: list, reserve: int) -> li
     return recent
 
 
+_STATE_HEADINGS = ("## Accumulated state", "## Накопленное состояние")
+
+
+def _accumulated_header(old: list[str], state: str) -> str:
+    """Build the compacted block so its counter and span are CUMULATIVE.
+
+    Both used to describe only the current pass. The counter reported the entries folded
+    by THIS run, so a second compaction wrote "compacted from 2" over "compacted from 8"
+    -- and because the next pass then believed only 2 had ever been folded, the hole was
+    undetectable. The span collapsed the same way: (2026-05-04 → 2026-08-28) became
+    (2026-05-04 → 2026-05-04). Both measured in the 2026-09 vault review, in projects
+    that had never been re-extracted.
+
+    A previous accumulated block is ONE entry in `old` but stands for the count it
+    carries; counting it as one is what made the number shrink.
+    """
+    prior_count, prior_first = 0, ""
+    for e in old:
+        if e.startswith(_STATE_HEADINGS):
+            c = re.search(r"ompacted from (\d+)", e)
+            if c:
+                prior_count = max(prior_count, int(c.group(1)))
+            sp = re.search(r"\((\d{4}-\d{2}-\d{2})\s*[→-]", e)
+            if sp:
+                prior_first = sp.group(1)
+    m_old = re.search(r"(\d{4}-\d{2}-\d{2})", old[0]) if old else None
+    m_new = re.search(r"(\d{4}-\d{2}-\d{2})", old[-1]) if old else None
+    first = prior_first or (m_old.group(1) if m_old else "")
+    last = m_new.group(1) if m_new else ""
+    span = f" ({first} → {last})" if (first and last) else ""
+    folded = prior_count + len([e for e in old if not e.startswith(_STATE_HEADINGS)])
+    return (f"## Accumulated state (compacted){span}\n\n{state.strip()}\n\n"
+            f"_Compacted from {folded} earlier entries._")
+
+
 def compact_context_if_needed(fp: Path, project: str, allow_llm: bool = True):
     """When a Context file outgrows CONTEXT_MAX_BYTES, fold the oldest entries into
     one rolling 'state' block and keep only the most recent verbatim (audit
@@ -3837,11 +3872,7 @@ def compact_context_if_needed(fp: Path, project: str, allow_llm: bool = True):
                 old_links.append(lnk)
     if len(old_links) > CONTEXT_LINK_ARCHIVE_MAX:
         old_links = old_links[-CONTEXT_LINK_ARCHIVE_MAX:]
-    m_old = re.search(r"(\d{4}-\d{2}-\d{2})", old[0])
-    m_new = re.search(r"(\d{4}-\d{2}-\d{2})", old[-1])
-    span = f" ({m_old.group(1)} → {m_new.group(1)})" if (m_old and m_new) else ""
-    base = (f"## Accumulated state (compacted){span}\n\n{state.strip()}\n\n"
-            f"_Compacted from {len(old)} earlier entries._")
+    base = _accumulated_header(old, state)
 
     def _with_links(links):
         return base + ("\n\n**Link archive:** "
