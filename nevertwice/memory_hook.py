@@ -3554,6 +3554,13 @@ def write_typed_note(folder: str, item, project: str, date: str,
             _, _d_old, _p_old = _parse_note_body(_old_lines)
         except OSError:
             _d_old = _p_old = ""
+        # If the new extraction supplied no "how to avoid", inherit the one the note
+        # already had instead of demoting it to a historical fragment. A mistake note
+        # whose prevention half is missing tells an agent that something broke and not
+        # what to do differently - which is the failure this whole store exists to
+        # prevent, and 659 of 1549 live mistakes were in that state (review 2026-09).
+        if not (prevention or "").strip() and (_p_old or "").strip():
+            prevention = _p_old.strip()
         for _frag in (_d_old, _p_old):
             _frag = (_frag or "").strip()
             if _frag and _frag not in desc and _frag not in prevention:
