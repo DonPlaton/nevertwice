@@ -2931,11 +2931,25 @@ _NTYPE_LABEL_LEGACY = ("Паттерны", "Ошибки", "Решения")
 def _unique_path(folder: Path, base_stem: str) -> Path:
     """Collision-free .md path: appends -2, -3, … and finally a 6-char
     fingerprint when all numeric suffixes are taken, so we never silently
-    overwrite an existing note."""
+    overwrite an existing note.
+
+    A stem is taken when it exists in the live folder **or in `Superseded/`**. Checking
+    only the live folder let a retired stem be re-minted live, so the vault asserted both
+    "retired, use the replacement" and "current" for one name - five basenames collided
+    that way in the 2026-09 review, and every consumer keyed on stem (recall's Superseded
+    filter, the embedding index, memory_search, Obsidian's own link resolution) then
+    picked one arbitrarily. That defeats supersession, which is the one mechanism this
+    store has that an ADD-only competitor does not.
+
+    `Archive/` is deliberately NOT included: an archived note is old, not retracted, and
+    a new note legitimately reuses its name.
+    """
+    retired = folder / "Superseded"
     for n in range(1, 10):
         suffix = "" if n == 1 else f"-{n}"
-        fp = folder / f"{base_stem}{suffix}.md"
-        if not fp.exists():
+        name = f"{base_stem}{suffix}.md"
+        fp = folder / name
+        if not fp.exists() and not (retired / name).exists():
             return fp
     import secrets
     fp = folder / f"{base_stem}-{secrets.token_hex(3)}.md"
