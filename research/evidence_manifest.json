@@ -2301,7 +2301,7 @@
    "cited_in": [
     "README.md"
    ],
-   "commit": "20ae0aa627ae89c52f399df88e75275153a203d5",
+   "commit": "1d89d736474e7b1144188e991339df42074fa14a",
    "produced_by": [
     "research/poisoning.py",
     "nevertwice/causal.py",
@@ -2336,7 +2336,7 @@
    "pointer": "precision",
    "ci": null,
    "cited_in": [],
-   "commit": "20ae0aa627ae89c52f399df88e75275153a203d5",
+   "commit": "1d89d736474e7b1144188e991339df42074fa14a",
    "produced_by": [
     "research/poisoning.py",
     "nevertwice/causal.py",
@@ -2375,7 +2375,7 @@
    "cited_in": [
     "README.md"
    ],
-   "commit": "20ae0aa627ae89c52f399df88e75275153a203d5",
+   "commit": "1d89d736474e7b1144188e991339df42074fa14a",
    "produced_by": [
     "research/poisoning.py",
     "nevertwice/causal.py",
@@ -2414,7 +2414,7 @@
    "cited_in": [
     "README.md"
    ],
-   "commit": "20ae0aa627ae89c52f399df88e75275153a203d5",
+   "commit": "1d89d736474e7b1144188e991339df42074fa14a",
    "produced_by": [
     "research/poisoning.py",
     "nevertwice/causal.py",
@@ -2454,7 +2454,7 @@
    "ci": null,
    "ci_note": "6 seeds on a synthetic world; report the spread, not a CI.",
    "cited_in": [],
-   "commit": "20ae0aa627ae89c52f399df88e75275153a203d5",
+   "commit": "1d89d736474e7b1144188e991339df42074fa14a",
    "produced_by": [
     "research/forgetting.py",
     "nevertwice/build_user_model.py",
@@ -4402,7 +4402,7 @@
     "README.md",
     "docs/BENCHMARKS.md"
    ],
-   "commit": "9dce11da77d69686bb1ae33a8fff3f4fbc58b4a9",
+   "commit": "1d89d736474e7b1144188e991339df42074fa14a",
    "produced_by": [
     "research/latency_bench.py",
     "nevertwice/causal.py",
@@ -4442,7 +4442,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "9dce11da77d69686bb1ae33a8fff3f4fbc58b4a9",
+   "commit": "1d89d736474e7b1144188e991339df42074fa14a",
    "produced_by": [
     "research/latency_bench.py",
     "nevertwice/causal.py",
@@ -4482,7 +4482,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "9dce11da77d69686bb1ae33a8fff3f4fbc58b4a9",
+   "commit": "1d89d736474e7b1144188e991339df42074fa14a",
    "produced_by": [
     "research/latency_bench.py",
     "nevertwice/causal.py",
@@ -4522,7 +4522,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "9dce11da77d69686bb1ae33a8fff3f4fbc58b4a9",
+   "commit": "1d89d736474e7b1144188e991339df42074fa14a",
    "produced_by": [
     "research/latency_bench.py",
     "nevertwice/causal.py",
@@ -6002,8 +6002,8 @@
     "nevertwice/why_fired.py",
     "sandbox_guard.py"
    ],
-   "stale": "this ratio is the *semantic* path: the demo uses a local bge-m3 through Ollama when one is running, and falls back to lexical search when it is not (examples/scenario_demo.py:146). Reproducing it needs a local Ollama server with bge-m3 pulled - a gated local-model resource that a fresh clone and CI do not have. The no-embedder ratio from the same command is published instead",
-   "withdrawn_on": "2026-08-25"
+   "stale": "re-run at HEAD on 2026-09-02 the demo reports 5.3x (93 tokens top-3 vs 489 for the whole store), not the published 9.1x, and the 220-note scenario does not run in the default invocation at all. The same 5.3x appears with the embedder made unreachable, so it is not the no-embedder condition the claim names. Why the ratio moved is NOT established -- attributing it to the 2026-09 recall-abstention change without evidence would be a guess -- so the number is withdrawn rather than restamped or quietly rewritten. Reproduce: python examples/scenario_demo.py.",
+   "withdrawn_on": "2026-09-02"
   },
   {
    "id": "demo.recall_ratio_default",
@@ -6052,7 +6052,9 @@
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "stale": "re-run at HEAD on 2026-09-02 the demo reports 5.3x (93 tokens top-3 vs 489 for the whole store), not the published 9.1x, and the 220-note scenario does not run in the default invocation at all. The same 5.3x appears with the embedder made unreachable, so it is not the no-embedder condition the claim names. Why the ratio moved is NOT established -- attributing it to the 2026-09 recall-abstention change without evidence would be a guess -- so the number is withdrawn rather than restamped or quietly rewritten. Reproduce: python examples/scenario_demo.py.",
+   "withdrawn_on": "2026-09-02"
   },
   {
    "id": "demo.recall_ratio_220_notes",
@@ -6102,7 +6104,9 @@
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "stale": "re-run at HEAD on 2026-09-02 the demo reports 5.3x (93 tokens top-3 vs 489 for the whole store), not the published 9.1x, and the 220-note scenario does not run in the default invocation at all. The same 5.3x appears with the embedder made unreachable, so it is not the no-embedder condition the claim names. Why the ratio moved is NOT established -- attributing it to the 2026-09 recall-abstention change without evidence would be a guess -- so the number is withdrawn rather than restamped or quietly rewritten. Reproduce: python examples/scenario_demo.py.",
+   "withdrawn_on": "2026-09-02"
   },
   {
    "id": "embed_specialize.recall_drop",
@@ -6146,7 +6150,7 @@
    "raw_gap": "A property of the shipped pack; a test should assert it (task D1).",
    "ci": null,
    "cited_in": [],
-   "commit": "9b941fc8b9370b75483c75066ba9bd3ddd9ccf8a",
+   "commit": "1d89d736474e7b1144188e991339df42074fa14a",
    "produced_by": [
     "nevertwice/guards.py",
     "nevertwice/causal.py",
