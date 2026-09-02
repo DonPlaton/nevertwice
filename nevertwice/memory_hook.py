@@ -6196,8 +6196,20 @@ def emit_pretooluse_guard(session: dict, cwd: str) -> None:
         return
     if not hits:
         return
+    # A guard that has already spoken this session says nothing new by repeating. Blocking
+    # guards are exempt: a hard stop is never withheld to save context, the same trade
+    # api.py refuses to make for the budget.
+    _sid = session.get("session_id") or ""
+    if _sid:
+        _by_id = {g.get("id"): g for g in ledger}
+        _fresh = [h for h in hits
+                  if h.get("status") == "blocking"
+                  or not _g.already_delivered(_by_id.get(h["id"], {}), _sid)]
+        if not _fresh:
+            return                                         # every hit is a repeat → stay silent
+        hits = _fresh
     try:
-        _g.record_fired([h["id"] for h in hits], guards=ledger)   # reuse the loaded ledger - and only
+        _g.record_fired([h["id"] for h in hits], guards=ledger, session=_sid)  # and only
     except Exception:                                      # on the rare hit path; telemetry only,
         pass                                               # never fatal on the hot path
     try:                                                   # a fired guard caught a repeat at ~0 tokens

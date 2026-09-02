@@ -48,6 +48,7 @@ except Exception:
 # Popperian lifecycle constants (env-overridable for experiments).
 import os
 K_PROMOTE = m.env_int("NEVERTWICE_GUARD_PROMOTE", 3)   # distinct-session corroborations → blocking
+SEEN_SESSIONS_CAP = m.env_int("NEVERTWICE_GUARD_SEEN_CAP", 50)  # bounded: a ledger entry is not a log
 M_RETIRE = m.env_int("NEVERTWICE_GUARD_RETIRE", 3)     # false positives → demote/retire
 MAX_PATTERN = 200            # ReDoS guard: cap LLM-authored pattern length
 MAX_CHECK_CHARS = 20000      # cap the text we scan, so a huge diff can't stall the hot path
@@ -434,7 +435,7 @@ def _confidence(g: dict) -> float:
     return 0.5 if interval["point"] is None else round(interval["point"], 3)
 
 
-def record_fired(guard_ids, guards=None, persist=True) -> None:
+def record_fired(guard_ids, guards=None, persist=True, session=None) -> None:
     """Bump the fired counters for a set of hits in ONE pass and (at most) one atomic write -
     the telemetry behind `guards list`'s fired= column, distinct from the helped/false-positive
     verdict. Every check surface (the PreToolUse hot path, api.guards_check, the MCP tool)
@@ -449,6 +450,19 @@ def record_fired(guard_ids, guards=None, persist=True) -> None:
         if g.get("id") in ids:
             g["fired"] = g.get("fired", 0) + 1
             g["last_fired"] = stamp
+            # Record WHICH session saw it. Without this `seen_sessions` stays empty on
+            # every automatic path, so `corroborations` never grows, the advisory→blocking
+            # promotion gated on K distinct sessions can never fire, a noisy guard can
+            # never be retired on evidence, and - because nothing knows the guard was
+            # already delivered - the same advisory re-injects on every matching
+            # PreToolUse for the whole session (review 2026-09). Both hot-path callers
+            # had the id in scope and discarded it.
+            if session:
+                seen = g.get("seen_sessions") or []
+                if session not in seen:
+                    seen.append(session)
+                    g["seen_sessions"] = seen[-SEEN_SESSIONS_CAP:]
+                    g["corroborations"] = len(g["seen_sessions"])
             hit = True
     if hit and persist:
         # persist regardless of who loaded the list: every check surface hands us the
@@ -716,3 +730,15 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+def already_delivered(guard: dict, session: str | None) -> bool:
+    """True when this guard already fired for this session.
+
+    Callers use it to stay silent on a repeat. A guard that has said its piece once has
+    said it; repeating the same advisory on every matching tool call in a session is pure
+    token cost with no new information, and it is what an empty `seen_sessions` allowed.
+    """
+    if not session:
+        return False
+    return session in (guard.get("seen_sessions") or ())

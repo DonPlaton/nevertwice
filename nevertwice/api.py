@@ -251,7 +251,8 @@ def guards_check(action_text: str, *, project: str | None = None,
                  path: str | None = None, tool: str | None = None,
                  explain: bool = False, deep: bool = False,
                  budget: "_budget.Ledger | None" = None,
-                 policy: "_budget.Policy | None" = None) -> list[dict]:
+                 policy: "_budget.Policy | None" = None,
+                 session: str | None = None) -> list[dict]:
     """Active memory, axis A - the 0-token hot path. Return the guards that fire for a
     proposed action (a diff, command, or code the agent is about to write), or `[]` - and
     NOTHING reaches context unless one matches. Each hit is `{id, status, message, scope}`;
@@ -269,7 +270,10 @@ def guards_check(action_text: str, *, project: str | None = None,
     hits = _guards.check(action_text, project=project, path=path, tool=tool, guards=ledger)
     if hits:
         try:
-            _guards.record_fired([h["id"] for h in hits], guards=ledger)   # guards list fired=
+            # `session` closes the feedback loop: without it seen_sessions stays empty,
+            # corroborations never grow, and the advisory→blocking promotion gated on K
+            # distinct sessions can never fire. Optional, so existing callers are unchanged.
+            _guards.record_fired([h["id"] for h in hits], guards=ledger, session=session)
         except Exception:
             pass
         if explain:
