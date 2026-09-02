@@ -6523,7 +6523,14 @@ def main():
     cwd = session.get("cwd", os.getcwd())
     transcript_path = session.get("transcript_path", "")
     event = session.get("hook_event_name", "")
-    trigger = session.get("trigger") or session.get("reason") or event or "manual"
+    # `trigger` records WHICH PIPELINE PATH wrote this note, so the hook event wins. The
+    # payload's own `trigger`/`reason` is a different vocabulary - PreCompact sends
+    # auto|manual, SessionStart sends a source - and reading it first mixed the two in one
+    # field: vault-wide it carries watch=578 and process_now=498 beside auto=3, manual=1,
+    # clear=1, and it flipped in OPPOSITE directions for two session notes in one batch
+    # (review 2026-09). The payload value is kept separately rather than discarded.
+    hook_trigger = (session.get("trigger") or session.get("reason") or "").strip()
+    trigger = event or hook_trigger or "manual"
     # Generic-ingestion fields (any agent): agent label, explicit project, and a
     # raw transcript passed inline instead of a Claude Code JSONL file.
     agent = (session.get("agent") or DEFAULT_AGENT).strip() or DEFAULT_AGENT
