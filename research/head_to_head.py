@@ -37,6 +37,7 @@ sys.path.insert(0, str(HERE.parent / "nevertwice"))
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import sandbox_guard  # noqa: E402 - one store sandbox for the whole repo
 sandbox_guard.isolate()  # throwaway store, verified, before any project import
+import corpus_pin
 import memory_hook as m
 import longmem_eval as le
 
@@ -80,10 +81,11 @@ def _args():
     ap.add_argument("--mem0-infer", action="store_true", help="Mem0 with its LLM fact-extraction (slow)")
     ap.add_argument("--sessions", type=int, default=None, help="cap ingested sessions (testing only)")
     ap.add_argument("--save", action="store_true")
+    ap.add_argument("--out", default="", help="write the result here instead of head_to_head.json")
     return ap.parse_args()
 
 
-ARGS = _args() if __name__ == "__main__" else argparse.Namespace(
+ARGS = _args() if __name__ == "__main__" else argparse.Namespace(out="",
     only="", limit=None, mem0_infer=False, sessions=None, save=False)
 
 
@@ -338,8 +340,13 @@ ADAPTERS = {"nevertwice": run_nevertwice, "mem0": run_mem0, "langmem": run_langm
 
 
 def main():
-    if not le.ORACLE.exists():
-        print("Dataset absent - see data/README.md", file=sys.stderr)
+    # The corpus is verified against its committed hash before anything is ingested. The July
+    # run of this stand was withdrawn because the file behind it could not be identified after
+    # the fact; a run that cannot name its bytes is a run that produces nothing.
+    try:
+        provenance = corpus_pin.record(le.CORPUS)
+    except (corpus_pin.CorpusMismatch, KeyError) as e:
+        print(e, file=sys.stderr)
         sys.exit(1)
     data = json.loads(le.ORACLE.read_text(encoding="utf-8"))
     if ARGS.limit:
@@ -349,12 +356,13 @@ def main():
 
     bar = "=" * 80
     print(bar)
-    print(f"  HEAD-TO-HEAD - LongMemEval-oracle, {len(pool)} sessions / {len(data)} questions")
+    print(f"  HEAD-TO-HEAD - {le.CORPUS}, {len(pool)} sessions / {len(data)} questions")
+    print(f"  corpus sha256 {provenance['sha256'][:16]}... ({provenance['licence']})")
     print(f"  same metric as longmem_eval.py · competitors on LOCAL Ollama ({EMBED_MODEL})")
     print(bar)
 
     # load existing results so a single-system re-run doesn't drop the others
-    out_path = HERE / "head_to_head.json"
+    out_path = Path(ARGS.out) if getattr(ARGS, "out", "") else (HERE / "head_to_head.json")
     results = {}
     if out_path.exists():
         try:
@@ -362,6 +370,9 @@ def main():
         except (json.JSONDecodeError, OSError):
             results = {}
 
+    results["_provenance"] = provenance
+    results["_questions"] = len(data)
+    results["_pool_sessions"] = len(pool)
     for name in want:
         fn = ADAPTERS.get(name)
         if not fn:
@@ -384,7 +395,8 @@ def main():
 
     # honest verdict
     print("\n- VERDICT -")
-    ranked = {k: v for k, v in results.items() if isinstance(v, dict) and "recall@5" in v}
+    ranked = {k: v for k, v in results.items()
+              if not k.startswith("_") and isinstance(v, dict) and "recall@5" in v}
     if "nevertwice" in ranked and len(ranked) > 1:
         a = ranked["nevertwice"]["recall@5"]
         for k, v in ranked.items():

@@ -104,7 +104,16 @@ except Exception:
     pass
 
 DATA = HERE / "data"
-ORACLE = DATA / "longmemeval_oracle.json"
+
+# Which LongMemEval variant this run is on. `oracle` is the small global pool (940 sessions);
+# `s` is the standard non-oracle set (19,829). Selected with `--data=s`, and pinned by content
+# hash either way - the sixteen figures withdrawn in 2026-08 were withdrawn because nobody could
+# say which bytes produced them, and `corpus_pin` exists so that cannot recur.
+import corpus_pin                                              # noqa: E402 - after sys.path setup
+
+_DATA_ARG = next((a.split("=", 1)[1] for a in sys.argv if a.startswith("--data=")), "oracle")
+CORPUS = {"oracle": "longmemeval_oracle", "s": "longmemeval_s"}.get(_DATA_ARG, _DATA_ARG)
+ORACLE = corpus_pin.path_of(CORPUS)
 
 
 def _emb_path(model=None):
@@ -112,10 +121,13 @@ def _emb_path(model=None):
     different models in one file. bge-m3 keeps the original filename so the
     first benchmark's cache still loads unchanged."""
     model = model or m.EMBED_MODEL
+    # The corpus is part of the cache identity. Without it a run on the 19,829-session pool
+    # would load and extend the 940-session cache, and the two would silently merge.
+    corpus = "" if CORPUS == "longmemeval_oracle" else f"__{CORPUS}"
     if model == "bge-m3":
-        return DATA / "longmem_embeds.json"
+        return DATA / f"longmem_embeds{corpus}.json"
     slug = "".join(c if (c.isalnum() or c in "-.") else "_" for c in model)
-    return DATA / f"longmem_embeds__{slug}.json"
+    return DATA / f"longmem_embeds{corpus}__{slug}.json"
 
 
 EMB = _emb_path()
@@ -159,6 +171,8 @@ def _passage(qtokens, text, budget):
 
 
 def load():
+    # Verify BEFORE reading: a mismatched corpus must stop the run, not colour its numbers.
+    corpus_pin.verify(CORPUS)
     data = json.loads(ORACLE.read_text(encoding="utf-8"))
     if LIMIT:
         data = data[:LIMIT]
@@ -287,7 +301,7 @@ def evaluate():
                 agg[mth][0][k] += rec[k]
             agg[mth][1][0] += mr
     print("=" * 74)
-    print(f"  LongMemEval-oracle (global pool) - external retrieval recall@k")
+    print(f"  {CORPUS} (global pool) - external retrieval recall@k")
     print(f"  {len(pool_ids)} sessions in the shared store, {n} questions, embedder={m.EMBED_MODEL}")
     print("=" * 74)
     print(f"  {'method':16} " + " ".join(f"{'R@'+str(k):>7}" for k in KS) + f" {'MRR':>7}")
@@ -346,7 +360,8 @@ def evaluate():
         print(f"    → {verdict}")
     if "--save" in sys.argv:
         res = {"sessions": len(pool_ids), "questions": n, "embedder": m.EMBED_MODEL,
-               "methods": out, "recur_inert": inert}
+               "methods": out, "recur_inert": inert,
+               "provenance": corpus_pin.record(CORPUS)}
         if rerank_cost:
             res["rerank"] = rerank_cost
         if xrerank_cost:

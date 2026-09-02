@@ -126,12 +126,38 @@ def _retrieval_table(c: Claims, places: int) -> str:
     return _apply_bold(rows, ["method", "R@1", "R@5", "R@10", "MRR"], places)
 
 
+HEAD_TO_HEAD_ROWS = [("**Nevertwice (calibrated fusion)**", "nevertwice"),
+                     ("Mem0", "mem0"), ("LangMem", "langmem"), ("A-MEM", "amem")]
+
+
 def render_longmem_benchmarks(c: Claims) -> str:
     return _retrieval_table(c, 3)
 
 
-HEAD_TO_HEAD_ROWS = [("**Nevertwice (calibrated fusion)**", "nevertwice"),
-                     ("Mem0", "mem0"), ("LangMem", "langmem"), ("A-MEM", "amem")]
+def render_longmem_pinned(c: Claims) -> str:
+    """The same table from the 2026-09 re-run on the hash-pinned corpus.
+
+    A separate family from `longmem.*`, deliberately. The withdrawn claims describe a file
+    nobody can identify; these describe one whose sha256 is in `research/corpus_pin.py`. Merging
+    them would launder the provenance of the first set through the second.
+    """
+    rows = [[label,
+             c.value(f"longmem_pinned.{slug}.recall_at_1"),
+             c.value(f"longmem_pinned.{slug}.recall_at_5"),
+             c.value(f"longmem_pinned.{slug}.recall_at_10"),
+             round(c.value(f"longmem_pinned.{slug}.mrr"), 3)]
+            for label, slug in RETRIEVAL_ROWS]
+    return _apply_bold(rows, ["method", "R@1", "R@5", "R@10", "MRR"], 3)
+
+
+def render_head_to_head_pinned(c: Claims) -> str:
+    rows = [[label,
+             c.value(f"h2h_pinned.{slug}.recall_at_1"),
+             c.value(f"h2h_pinned.{slug}.recall_at_5"),
+             c.value(f"h2h_pinned.{slug}.recall_at_10"),
+             round(c.value(f"h2h_pinned.{slug}.mrr"), 3)]
+            for label, slug in HEAD_TO_HEAD_ROWS]
+    return _apply_bold(rows, ["system", "R@1", "R@5", "R@10", "MRR"], 3)
 
 
 def render_head_to_head(c: Claims) -> str:
@@ -318,6 +344,8 @@ def render_baselines_summary(c: Claims) -> str:
 
 RENDERERS = {
     "longmem-benchmarks": render_longmem_benchmarks,
+    "longmem-pinned": render_longmem_pinned,
+    "head-to-head-pinned": render_head_to_head_pinned,
     "head-to-head": render_head_to_head,
     "latency": render_latency,
     "task-a": render_task_a,

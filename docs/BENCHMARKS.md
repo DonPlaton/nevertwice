@@ -103,14 +103,48 @@ points. Nothing on the curve clears both, so both defaults are 0 and the switche
 The one that did pay: re-mining a grown transcript from its recorded watermark instead of from
 byte zero reads **77.8% fewer bytes** at identical coverage of the appended material.
 
-## External retrieval: LongMemEval-oracle (the headline)
+## External retrieval: LongMemEval, on a hash-pinned corpus
 
 Real agent sessions in one shared store, each question carrying **human-annotated** evidence
-sessions (`answer_session_ids`). Relevance is **independent of our embeddings**, so this is a real
-recall number rather than a self-grade - which is exactly why it is the one worth restoring first.
+sessions (`answer_session_ids`). Relevance is independent of our embeddings, so this is a real
+recall number rather than a self-grade.
+
+The 2026-07 run of this benchmark was withdrawn because the corpus behind it could not be
+identified after the fact. `research/corpus_pin.py` now holds its sha256, the harness verifies it
+before reading a byte, and the fingerprint is stamped into every result file. Full method and what
+the re-run found: [`research/EXTERNAL_RETRIEVAL.md`](../research/EXTERNAL_RETRIEVAL.md).
+
+<!-- claims:longmem-pinned -->
+| method | R@1 | R@5 | R@10 | MRR |
+|---|---|---|---|---|
+| semantic (bge-m3) | 0.422 | 0.652 | 0.728 | 0.528 |
+| lexical (BM25) | 0.522 | 0.752 | 0.834 | 0.623 |
+| **calibrated fusion (shipped default, 0 deps)** | 0.550 | 0.802 | **0.858** | 0.657 |
+| **+ trained cross-encoder (opt-in)** | **0.614** | **0.826** | **0.858** | **0.712** |
+<!-- /claims:longmem-pinned -->
+
+Four systems on that same pool, same embedder, same scoring function, same 500 questions:
+
+<!-- claims:head-to-head-pinned -->
+| system | R@1 | R@5 | R@10 | MRR |
+|---|---|---|---|---|
+| **Nevertwice (calibrated fusion)** | **0.550** | **0.802** | **0.858** | **0.651** |
+| Mem0 | 0.478 | 0.758 | 0.846 | 0.603 |
+| LangMem | 0.426 | 0.692 | 0.782 | 0.543 |
+| A-MEM | 0.428 | 0.692 | 0.782 | 0.544 |
+<!-- /claims:head-to-head-pinned -->
+
 Reproduce:
-`python research/longmem_eval.py [--xrerank]` (dataset fetched separately, see
-[`research/data/README.md`](../research/data/README.md)).
+
+```bash
+python research/corpus_pin.py --fetch longmemeval_oracle
+python research/longmem_eval.py --embed
+python research/longmem_eval.py --save --out=research/results/longmem_oracle.json
+python research/head_to_head.py --only=nevertwice,mem0,langmem,amem --save \
+       --out=research/results/head_to_head_v2.json
+```
+
+### The 2026-07 run, which stays withdrawn
 
 <!-- claims:longmem-benchmarks -->
 > **Withdrawn 2026-08.** the LongMemEval-oracle dataset is third-party and not committed (research/data/longmemeval_oracle.json is absent here), and no content hash was recorded when the number was produced, so the run cannot be reproduced or even pinned to a revision

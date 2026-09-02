@@ -50,6 +50,34 @@ HARDWARE = "needs-hardware"
 
 #: Every committed research artifact, what makes it, and what it takes to remake it.
 ARTIFACTS = [
+    {"file": "research/results/longmem_oracle.json",
+     "command": ["python", "research/longmem_eval.py", "--save",
+                 "--out=research/results/longmem_oracle.json"],
+     "kind": HARDWARE, "task": "external-retrieval",
+     "inputs": ["research/data/longmemeval_oracle.json (third-party, MIT, hash-pinned in "
+                "research/corpus_pin.py; fetch with `python research/corpus_pin.py --fetch "
+                "longmemeval_oracle`)",
+                "a local Ollama serving bge-m3",
+                "research/data/longmem_embeds.json (built by --embed, about a minute)"],
+     "note": "external retrieval recall@k on the global pool of the pinned LongMemEval-oracle "
+             "corpus. Deterministic given the embedding cache: the ranking is arithmetic over "
+             "stored vectors, so re-running the report reproduces exactly, while rebuilding the "
+             "cache needs the embedder. The corpus is verified against its committed hash "
+             "before a byte is read, which is the property the 2026-07 run of this file lacked "
+             "and was withdrawn for."},
+    {"file": "research/results/head_to_head_v2.json",
+     "command": ["python", "research/head_to_head.py", "--only=nevertwice,mem0,langmem,amem",
+                 "--save", "--out=research/results/head_to_head_v2.json"],
+     "kind": HARDWARE, "task": "external-retrieval",
+     "inputs": ["research/data/longmemeval_oracle.json (hash-pinned, see above)",
+                "a local Ollama serving bge-m3",
+                "for the competitor arms: an environment with mem0ai, langgraph + langmem + "
+                "langchain-ollama, and chromadb"],
+     "volatile": ["ingest_s", "query_s", "_wall_s"],
+     "note": "the same four systems on the same pinned pool with the same embedder and the same "
+             "scoring function. Zep and Cognee record a blocker rather than a number: the first "
+             "needs Neo4j or FalkorDB, the second an unwritten adapter. The timings move with "
+             "the machine and are marked volatile; the recall columns do not."},
     {"file": "research/results/supersession_v1.json",
      "command": ["python", "research/supersession_bench.py",
                  "--arms", "nevertwice,naive", "--out",
