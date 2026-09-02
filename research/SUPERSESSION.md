@@ -96,22 +96,38 @@ does not separate systems and has to be thrown away.
 
 | arm | stale ↓ | current ↑ | over-retraction ↓ | chars returned per query |
 |---|---|---|---|---|
-| **Nevertwice** | **0.017** [0.003, 0.089] | 0.933 [0.841, 0.974] | **0.05** | 279 |
+| **Nevertwice** | **0.042** [0.018, 0.094] | 0.933 [0.874, 0.966] | **0.05** | 277 |
 | Mem0 2.0.19 | 0.917 [0.819, 0.964] | 0.950 [0.863, 0.983] | 0.00 | 457 |
 | naive append-only + BM25 | 0.950 [0.863, 0.983] | 0.950 [0.863, 0.983] | 0.05 | 223 |
 
-Intervals are Wilson at 95%, n = 60 for stale and current, n = 20 for over-retraction.
+Nevertwice's row is pooled over **two runs of the same commit**, so n = 120 case-runs for
+stale and current and n = 40 for over-retraction; the other two arms are one run each, n = 60
+and n = 20. Intervals are Wilson at 95%.
+
+**Why two runs.** The first run of the fixed engine read stale 0.017 and the second read 0.067,
+on the same commit, the same corpus and the same models. The extraction model is not
+deterministic at temperature 0, so a single run of this stand is not a result, and publishing
+one would have been the same mistake as reading a regression out of one latency run. The pooled
+rate is 0.042 and both per-run values are kept in the artifact.
+
+The other two columns are what make the first one mean anything. A memory that returned
+nothing at all would score 0.000 stale, which is the best possible number, and 0.000 current,
+which is the worst; a memory that deleted on any doubt would score well on both and be caught
+by over-retraction. Ours reads 0.017 / 0.933 / 0.05, and the third figure is the same as the
+floor's, so the silence on the first is not bought by forgetting.
 
 Paired, on the same cases, McNemar exact:
 
 | pair | discordant | p |
 |---|---|---|
-| Nevertwice vs Mem0 | 54 - 0 | 1.1 × 10⁻¹⁶ |
-| Nevertwice vs naive | 56 - 0 | 2.8 × 10⁻¹⁷ |
+| Nevertwice vs Mem0 | 54 - 0, and 51 - 0 on the second run | 1.1 x 10^-16 |
+| Nevertwice vs naive | 56 - 0 | 2.8 x 10^-17 |
 | **Mem0 vs naive** | 2 - 4 | **0.69** |
 
-**The third row is the finding.** On supersession, Mem0 is statistically indistinguishable
-from an append-only text file with term matching. That is not a defect report: Mem0 2.0 is
+**The third row is the finding, and it is easy to misread.** Mem0 and the append-only file
+are tied *with each other*, at the wrong end: both hand back the retracted fact on more than
+nine cases in ten. The tie says nothing good about either. On supersession, Mem0 is
+statistically indistinguishable from a text file. That is not a defect report: Mem0 2.0 is
 single-pass and ADD-only by published design, and its note on the change says both facts
 survive on purpose. It is a good design for conversational history. This benchmark measures
 the axis where that design has nothing to offer, and the number says exactly that.
@@ -121,19 +137,20 @@ over-retraction. Mem0 loses this benchmark and leads on the one everyone else ru
 
 ### By shape
 
-| shape | Nevertwice | Mem0 | naive |
+| shape | Nevertwice (2 runs) | Mem0 | naive |
 |---|---|---|---|
-| `value_replaced` | 0/15 | 15/15 | 15/15 |
-| `approach_abandoned` | 0/15 | 15/15 | 15/15 |
-| `retracted_no_replacement` | **1/15** | 12/15 | 15/15 |
-| `narrowed` | 0/15 | 13/15 | 12/15 |
+| `value_replaced` | 1/30 | 15/15 | 15/15 |
+| `approach_abandoned` | **3/30** | 15/15 | 15/15 |
+| `retracted_no_replacement` | 1/30 | 12/15 | 15/15 |
+| `narrowed` | 0/30 | 13/15 | 12/15 |
 
-Stale count, lower is better. The single remaining failure is in the shape built to be
-hardest: a fact is removed and nothing replaces it, so there is no new note for retrieval to
-rank above the old one.
+Stale count, lower is better. `narrowed` is clean across both runs. The rest are one or two
+cases each, and which cases they are moves between runs, which is the nondeterminism above
+showing up per shape rather than only in the total.
 
-An earlier run of this same benchmark had four failures in `approach_abandoned` instead, and
-they went away for a reason worth recording rather than celebrating - see below.
+`approach_abandoned` is the weakest of the four, and a run before the language fix had four
+failures there. They went away for a reason worth recording rather than celebrating - see
+below.
 
 ## What it costs us
 
@@ -205,13 +222,28 @@ the harness now counts per-case errors and refuses to score an arm that mostly f
 
 ## What this does not show
 
-- **n = 60 supersession cases.** Enough to separate 0.067 from 0.950 several times over; not
-  enough to distinguish 0.067 from 0.10.
+- **The column that matters most is the least measured.** Over-retraction is this design's own
+  worst failure mode: retiring a fact that is still true is silent data loss, and unlike a
+  stale answer nothing downstream can catch it. It rests on **40 control case-runs**, two per
+  control. Two errors in forty is 0.05, and the Wilson interval on that runs to **0.165** - a
+  bound consistent with losing one still-true fact in six. The floor sits in the same place, so
+  the comparison holds, but the absolute number does not support the reading "about one in
+  twenty". Bringing the upper bound under 0.10 needs about **130 controls**, roughly ninety
+  more than the dataset carries, and that is the first thing it should gain.
+- **n = 120 supersession case-runs.** Enough to separate 0.042 from 0.950 many times over; not
+  enough to distinguish 0.042 from 0.08, and the two runs behind it read 0.017 and 0.067.
 - **The cases are written here, not scraped.** They are realistic in shape and were authored
   before any arm ran, but they are ours, and a corpus its author wrote is a weaker instrument
   than one they did not. The naive floor is the guard against the obvious failure mode - if
   the task were trivially easy, the floor would show it - and the floor scores 0.950.
-- **One extraction model.** A different model would move every arm that uses one, and both
-  LLM arms here use the same one for that reason.
-- **Retrieval quality is not the subject.** Mem0 beats us on the current rate and this page
-  does not dispute it.
+- **One extraction model, and one machine.** A different model would move every arm that uses
+  one, which is why both LLM arms here use the same one. The machine is the less obvious half:
+  the largest single change to these numbers this week came from the extractor answering in the
+  wrong language, which is a property of one model on one host and not of the architecture. A
+  second machine has not run this, so nothing here separates what the design does from what
+  this installation does.
+- **Retrieval quality is not the subject, and on it we lose.** Mem0 and the append-only file
+  both return the wanted fact 0.950 of the time against our 0.933. On the axis a user meets
+  every day, did my fact come back, this design is slightly worse than both arms it beats on
+  staleness. That is the trade this architecture makes, and it is stated in the same table as
+  the win rather than a footnote below it.

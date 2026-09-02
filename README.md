@@ -84,10 +84,10 @@ What survived re-measurement at HEAD, and what it cost:
 
 | claim | result | evidence |
 |---|---|---|
-| handing back a fact that has since been **retracted** | **0.017** of the time, against **0.917** for Mem0 2.0.19 and **0.950** for an append-only file with term matching, on the same 60 cases | [SUPERSESSION.md](research/SUPERSESSION.md) |
+| handing back a fact that has since been **retracted** | **0.042** of the time, against **0.917** for Mem0 2.0.19 and **0.950** for an append-only file with term matching, on the same cases | [SUPERSESSION.md](research/SUPERSESSION.md) |
 | acting vs *always-injecting* the same lesson | same error prevention for **31×** fewer memory tokens | [ACTIVE_MEMORY.md](research/ACTIVE_MEMORY.md) |
 | memory-poisoning acceptance attacks | **81%** blocked overall - **100%** of prompt injection, **25%** of plausible-false facts | [POISONING.md](research/POISONING.md) |
-| what being there costs | PreToolUse **98 ms** end to end - a tenth of a second, and it moves by a third between sessions - and zero context tokens until a guard fires | [BENCHMARKS.md](docs/BENCHMARKS.md) |
+| what being there costs | PreToolUse **89 ms** end to end - a tenth of a second, and it moves by a third between sessions - and zero context tokens until a guard fires | [BENCHMARKS.md](docs/BENCHMARKS.md) |
 
 Read the first and second rows against each other. The first is the only figure here measured
 against other systems on a corpus this repository ships - and on the column everybody else

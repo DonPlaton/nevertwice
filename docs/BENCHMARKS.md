@@ -1,6 +1,6 @@
 # Benchmarks & real-task evaluation
 
-<p align="center"><img src="benchmarks.png" alt="Four panels of live measurements. Supersession: how often each system hands back a fact that has since been retracted - Nevertwice 0.02, Mem0 2.0.19 0.92, an append-only store with BM25 0.95, each with a confidence interval. Hot-path latency in milliseconds for the cold import and the three hooks. Poisoning defence, with the weakest cell - a plausible false fact, blocked one time in four - drawn in the negative colour and hatched rather than left out. And four embedding ideas that were measured against a pre-declared threshold, missed it, and were deleted." width="880"></p>
+<p align="center"><img src="benchmarks.png" alt="Four panels of live measurements. Supersession: how often each system hands back a fact that has since been retracted - Nevertwice 0.04, Mem0 2.0.19 0.92, an append-only store with BM25 0.95, each with a confidence interval. Hot-path latency in milliseconds for the cold import and the three hooks. Poisoning defence, with the weakest cell - a plausible false fact, blocked one time in four - drawn in the negative colour and hatched rather than left out. And four embedding ideas that were measured against a pre-declared threshold, missed it, and were deleted." width="880"></p>
 
 Regenerate it with `python research/gen_benchmarks_figure.py`, which reads every value from the evidence register and refuses to draw a withdrawn one. The figure it replaced was drawn by hand in July, had no generator, and rendered four numbers that were retracted a month later - a chart travels further than the page it sits on, so the retraction never reached anyone who saw only the image.
 
@@ -27,10 +27,10 @@ Python 3.14; reproduce anywhere with `python research/latency_bench.py`:
 <!-- claims:latency -->
 | hot path | cost | when it is paid |
 |---|---|---|
-| PreToolUse end-to-end | **98 ms** | every tool call (interpreter start included) |
-| UserPromptSubmit end-to-end | 95 ms | per prompt (task-aware recall) |
-| SessionStart end-to-end, idle | 91 ms | per session start with no backlog |
-| cold import of the engine | 31 ms | once per hook process (inside the numbers above) |
+| PreToolUse end-to-end | **89 ms** | every tool call (interpreter start included) |
+| UserPromptSubmit end-to-end | 83 ms | per prompt (task-aware recall) |
+| SessionStart end-to-end, idle | 82 ms | per session start with no backlog |
+| cold import of the engine | 28 ms | once per hook process (inside the numbers above) |
 
 <sub>**Withdrawn** - `guards.check()` over a seeded ledger, lexical recall, no embedder: the bench's seed lands in the subprocess store while the in-process half reads the store pinned at import, so this row now measures an empty store (0 guards, 0 notes) instead of the seeded one the published number describes - the measurement, not just the value, is broken</sub>
 <!-- /claims:latency -->
@@ -60,25 +60,33 @@ breakdown and what it costs us: [`research/SUPERSESSION.md`](../research/SUPERSE
 
 | arm | returns the retracted fact | returns the replacement | retires a still-true fact |
 |---|---|---|---|
-| **Nevertwice** | **0.017** [0.003, 0.089] | 0.933 [0.841, 0.974] | 0.05 |
+| **Nevertwice** | **0.042** [0.018, 0.094] | 0.933 [0.874, 0.966] | 0.05 |
 | Mem0 2.0.19 | 0.917 [0.819, 0.964] | 0.950 [0.863, 0.983] | 0.00 |
 | append-only markdown + BM25 | 0.950 [0.863, 0.983] | 0.950 [0.863, 0.983] | 0.05 |
 
-n = 60 supersession cases and 20 controls, Wilson intervals, one local stand, the same
+Nevertwice's row is pooled over two runs of the same commit, which read 0.017 and 0.067 -
+the extraction model is not deterministic at temperature 0 and one run of this stand is not a
+result. n = 60 supersession cases and 20 controls per run, Wilson intervals, one local stand, the same
 embedder and same extraction model for every arm. Paired, on the same cases: Nevertwice
-against Mem0 gives **54** discordant pairs and not one in the other direction; **Mem0
-against the append-only floor, McNemar p = 0.69** - indistinguishable.
+against Mem0 gives **54** discordant pairs on the first run and 51 on the second, and not one
+in the other direction in either. Mem0 and the
+append-only file are tied with each other at **McNemar p = 0.69** - tied at the bad end of the
+column, both returning the retracted fact almost every time. Being indistinguishable from a
+text file is the finding, not a compliment to the text file.
 
 The floor is why the table is worth printing. A benchmark only one vendor's architecture fails
 is a benchmark about that vendor; this one is failed by an append-only text file too, which is
-what supersession costs when nothing implements it.
+what supersession costs when nothing implements it. The floor also rules out the cheap
+explanation for our own number: a system that returned nothing would score 0.000 stale and
+0.000 current, and ours returns the wanted fact 0.933 of the time while retiring a still-true
+one exactly as rarely as the floor does.
 
 Two things it does not show. The dataset is written here rather than scraped, which is a
 weaker instrument than an external corpus - the floor's 0.950 is the guard against the task
 being trivially easy. And Mem0 still edges us on returning the replacement, 0.950
 against 0.933; this page does not dispute it.
 
-Payload per query on the same corpus: Nevertwice **279** characters, Mem0 **457**.
+Payload per query on the same corpus: Nevertwice **277** characters, Mem0 **457**.
 
 ## Abstention: does refusing a weak hit pay for itself?
 

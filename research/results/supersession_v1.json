@@ -1425,6 +1425,1435 @@
    "seconds": 271.5,
    "config": "ollama qwen3-coder:30b + bge-m3, k=5"
   },
+  "nevertwice_run2": {
+   "rows": [
+    {
+     "id": "val-http-timeout",
+     "shape": "value_replaced",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 191,
+     "returned": [
+      "http-client-timeout-configuration The HTTP client timeout was incorrectly configured to 5 seconds. This configuration is now confirmed and documented as the correct value for the API client. "
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_absent": false,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "val-pg-version",
+     "shape": "value_replaced",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 218,
+     "returned": [
+      "postgresql-version-in-production The production PostgreSQL version was upgraded from a previous version to PostgreSQL 16. The upgrade was rolled out using the usual staged release process, ensuring minimal disruption. "
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_absent": false,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "val-batch-size",
+     "shape": "value_replaced",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 180,
+     "returned": [
+      "training-batch-size-confirmed The training batch size was confirmed to be 128 after the job changed this week. No movement was observed in dashboards for an hour after the change. "
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_absent": false,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "val-node-version",
+     "shape": "value_replaced",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 149,
+     "returned": [
+      "frontend-build-target-node22 The frontend build target was updated to Node 22. The reviewer requested one rename and approved the change after that. "
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_absent": false,
+     "notes_written": 2,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "val-retry-count",
+     "shape": "value_replaced",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 179,
+     "returned": [
+      "queue-worker-retry-logic The queue worker now retries failed jobs up to 10 times instead of a single attempt. This improves reliability by handling transient failures gracefully. "
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_absent": false,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "val-cache-ttl",
+     "shape": "value_replaced",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 304,
+     "returned": [
+      "cache-expiration-timeout Cache entries are set to expire after 15 minutes, which was decided as a reasonable timeout for the cache layer. ",
+      "cache-layer-expiration Cache entries expire after 15 minutes. This was confirmed by running the full test suite which stayed green after the cache layer was removed. "
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_absent": false,
+     "notes_written": 2,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "val-port",
+     "shape": "value_replaced",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 209,
+     "returned": [
+      "dev-server-port-configuration The development server listens on port 8080, not the previously assumed port. This was confirmed by direct inspection and noted in the tracker to prevent future misconfiguration. "
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_absent": false,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "val-region",
+     "shape": "value_replaced",
+     "n_hits": 2,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": true,
+     "chars_returned": 344,
+     "returned": [
+      "service-deployment-in-eu-west-1 The service was successfully deployed in the eu-west-1 region. This deployment was documented in the README file which was previously stale. ",
+      "service-deployment-in-us-east-2 The service was moved from its previous location to us-east-2. This change involved three files but did not touch any configuration files. "
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_absent": false,
+     "notes_written": 2,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "val-py-version",
+     "shape": "value_replaced",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 158,
+     "returned": [
+      "python-version-pinning The project now pins Python 3.13 to ensure consistent environment setup and avoid compatibility issues arising from toolchain changes. "
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_absent": false,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "val-replicas",
+     "shape": "value_replaced",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 177,
+     "returned": [
+      "api-capacity-replicas The API was scaled to 12 replicas after a load test to handle capacity requirements. This was deployed using a staged release process to ensure stability. "
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_absent": false,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "val-lr",
+     "shape": "value_replaced",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 225,
+     "returned": [
+      "learning-rate-configuration Lowering the learning rate to 5e-5 did not result in observable progress after an hour of monitoring. This suggests that the learning rate alone may not be the bottleneck for training convergence. "
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_absent": false,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "val-chunk",
+     "shape": "value_replaced",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 388,
+     "returned": [
+      "ingestion-chunk-size The decision was made to chunk documents at 1024 tokens, as approved by the reviewer. This size provides a good balance between context retention and processing overhead. ",
+      "document-ingestion-chunking Documents are now chunked at 1024 tokens, which was approved by the reviewer after a minor rename. This approach balances processing efficiency with content retention. "
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_absent": false,
+     "notes_written": 2,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "val-quorum",
+     "shape": "value_replaced",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 300,
+     "returned": [
+      "cluster-quorum-requirement After a cluster resize, the quorum requirement changed from an earlier assumption to 5 nodes. This was documented in the README section that had become stale. ",
+      "staged-release-rollout The decision to implement a staged rollout for the release was made and is being followed. "
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_absent": false,
+     "notes_written": 2,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "val-license",
+     "shape": "value_replaced",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 185,
+     "returned": [
+      "license-agpl3-replaced-by-apache-2-0 The project was relicensed from AGPL-3.0 to Apache-2.0 after a review. The change was verified by running the full test suite which remained green. "
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_absent": false,
+     "notes_written": 2,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "val-branch",
+     "shape": "value_replaced",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": false,
+     "chars_returned": 248,
+     "returned": [
+      "branch-renaming-protocol When a repository's default branch is renamed, it's important to update local configurations and inform team members to avoid confusion. A note was left in the tracker to prevent future team members from redoing this work. "
+     ],
+     "current_live": false,
+     "current_retired": false,
+     "current_absent": true,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "app-cache-store",
+     "shape": "approach_abandoned",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 261,
+     "returned": [
+      "redis-session-caching-replaced Redis was replaced with an in-process LRU cache for session caching. The change touched three files and did not involve configuration files. This approach reduces external dependencies and improves performance within the process. "
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_absent": false,
+     "notes_written": 2,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "app-auth",
+     "shape": "approach_abandoned",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 385,
+     "returned": [
+      "jwt-authentication-with-hs256 JWT authentication using HS256 was initially implemented but later replaced with opaque session cookies backed by the database for better security and state management. ",
+      "opaque-session-cookies Decision made to move away from JWT-based authentication towards opaque session cookies stored in the database, improving security and simplifying state handling. "
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_absent": false,
+     "notes_written": 2,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "app-bundler",
+     "shape": "approach_abandoned",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 357,
+     "returned": [
+      "use-vite-for-frontend-bundling The decision was made to use Vite for frontend bundling, replacing the previous Webpack setup. This change was rolled out behind a staged release. ",
+      "frontend-bundling-with-vite The frontend is now bundled with Vite instead of Webpack. This change was made during a staged release and the previous Webpack setup did not survive. "
+     ],
+     "current_live": true,
+     "current_retired": true,
+     "current_absent": false,
+     "notes_written": 4,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "app-orm",
+     "shape": "approach_abandoned",
+     "n_hits": 3,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": true,
+     "chars_returned": 541,
+     "returned": [
+      "incorrect-assumption-about-data-access The initial assumption that SQLAlchemy ORM would be used for data access was incorrect. Verify implementation details before making assumptions about codebase structure.",
+      "asyncpg-for-data-access Hand-written SQL with asyncpg was chosen for data access instead of SQLAlchemy ORM. This approach offers more control and better performance for specific use cases. ",
+      "use-asyncpg-for-data-access Decision to use asyncpg with hand-written SQL for data access was made due to performance and control requirements. "
+     ],
+     "current_live": true,
+     "current_retired": true,
+     "current_absent": false,
+     "notes_written": 5,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "app-queue",
+     "shape": "approach_abandoned",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 453,
+     "returned": [
+      "use-postgres-backed-queue-for-background-jobs The decision was made to use a Postgres-backed queue for background jobs instead of an in-memory solution, ensuring reliability and persistence across system restarts. ",
+      "background-jobs-with-celery Background jobs are now implemented using a Postgres-backed queue with Celery. This approach provides reliable job processing and persistence, addressing previous concerns about job loss during system restarts. "
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_absent": false,
+     "notes_written": 2,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "app-ci",
+     "shape": "approach_abandoned",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 200,
+     "returned": [
+      "ci-deployment-staged CI was migrated to GitHub Actions and the change was documented in the README section that was already stale. This ensures deployment consistency and reduces manual intervention. "
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_absent": false,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "app-search",
+     "shape": "approach_abandoned",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 197,
+     "returned": [
+      "postgres-fulltext-search Search functionality is powered by Postgres full-text search, which was confirmed to work correctly after running the full test suite. The system remains stable and green. "
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_absent": false,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "app-styling",
+     "shape": "approach_abandoned",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 201,
+     "returned": [
+      "styled-components-usage Components are styled with Tailwind utility classes instead of styled-components. This approach improves performance and reduces bundle size by avoiding runtime CSS generation. "
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_absent": false,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "app-packaging",
+     "shape": "approach_abandoned",
+     "n_hits": 4,
+     "stale_returned": true,
+     "stale_rank": 2,
+     "current_returned": true,
+     "chars_returned": 725,
+     "returned": [
+      "package-build-and-publish-with-hatchling The package is built with hatchling and published by CI. The change touched three files and none of them were config. ",
+      "package-build-and-publish-with-poetry The project is built and published using Poetry, which was documented in the README to resolve a stale section. This approach ensures consistent dependency management and packaging. ",
+      "use-hatchling-for-packaging The decision was made to use hatchling for packaging, as the package is built with hatchling and published by CI. ",
+      "use-poetry-for-packaging The decision was made to use Poetry for building and publishing the package. This choice ensures consistent dependency handling and aligns with modern Python packaging practices. "
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_absent": false,
+     "notes_written": 4,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "app-state",
+     "shape": "approach_abandoned",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 264,
+     "returned": [
+      "frontend-global-state-in-zustand Global state management was moved from Redux to Zustand stores, which provides a more lightweight and flexible approach for managing application state in the frontend. This change improves performance and reduces boilerplate code. "
+     ],
+     "current_live": true,
+     "current_retired": true,
+     "current_absent": false,
+     "notes_written": 2,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "app-infra",
+     "shape": "approach_abandoned",
+     "n_hits": 3,
+     "stale_returned": true,
+     "stale_rank": 2,
+     "current_returned": true,
+     "chars_returned": 683,
+     "returned": [
+      "infrastructure-provisioning-with-pulumi Infrastructure is provisioned with Pulumi in TypeScript, rolled out behind a staged release. This approach provides declarative infrastructure management and type safety. ",
+      "infrastructure-provisioning-with-terraform Using Terraform for infrastructure provisioning was successful and completed the task. A note was left in the tracker to prevent redundant work by future team members. ",
+      "use-pulumi-for-infrastructure The decision was made to use Pulumi for infrastructure provisioning in TypeScript, replacing previous tools or methods. This choice leverages Pulumi's ability to define infrastructure as code with full type safety and scalability. "
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_absent": false,
+     "notes_written": 3,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "app-migrations",
+     "shape": "approach_abandoned",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 269,
+     "returned": [
+      "schema-migration-through-alembic Schema migrations are handled via plain numbered SQL files applied by a shell script. After the schema changed, dashboards were checked for an hour and nothing moved, indicating a potential issue with migration execution or monitoring. "
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_absent": false,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "app-serialisation",
+     "shape": "approach_abandoned",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 180,
+     "returned": [
+      "protobuf-message-serialization Messages are serialized as newline-delimited JSON. This format was confirmed after a review and a minor rename was requested but otherwise approved. "
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_absent": false,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "app-secrets",
+     "shape": "approach_abandoned",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 313,
+     "returned": [
+      "secrets-from-vault-at-boot Secrets are injected as environment variables by the orchestrator, not loaded from a vault at boot time. This was documented in the README section that was already stale. ",
+      "staged-release-for-secrets-rollout The rollout of secrets should be staged to avoid disruptions during deployment. "
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_absent": false,
+     "notes_written": 2,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "app-e2e",
+     "shape": "approach_abandoned",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 448,
+     "returned": [
+      "end-to-end-tests-driven-by-playwright End-to-end tests are driven by Playwright, which ensures reliable browser automation and test execution. The full test suite was run after the change and remained green, confirming no regressions were introduced. ",
+      "end-to-end-tests-driven-by-selenium The decision was made to use Playwright for end-to-end tests instead of Selenium, based on better performance and more reliable browser automation capabilities. "
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_absent": false,
+     "notes_written": 2,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "ret-beta-flag",
+     "shape": "retracted_no_replacement",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 400,
+     "returned": [
+      "beta-dashboard-feature-flag The beta_dashboard feature flag was used to control access to a new UI component. It has now been removed and the new UI is unconditional, meaning all users see it. ",
+      "feature-flag-gating Using feature flags to gate new UI elements allows for gradual rollout and rollback. However, if the flag is removed without proper tracking, it can lead to confusion and redundant work. "
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_absent": false,
+     "notes_written": 2,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "ret-legacy-endpoint",
+     "shape": "retracted_no_replacement",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 164,
+     "returned": [
+      "api-export-returns-csv The /v1/export endpoint was removed with no replacement, affecting API behavior. This change touched three files and none were config files. "
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_absent": false,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "ret-telemetry",
+     "shape": "retracted_no_replacement",
+     "n_hits": 0,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": false,
+     "chars_returned": 0,
+     "returned": [],
+     "current_live": false,
+     "current_retired": false,
+     "current_absent": true,
+     "notes_written": 0,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "ret-mirror",
+     "shape": "retracted_no_replacement",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 195,
+     "returned": [
+      "read-replica-for-analytics The analytics reads were hitting the primary database after the ap-south-1 replica was decommissioned. The rollout was done behind a staged release to minimize impact. "
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_absent": false,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "ret-plugin-api",
+     "shape": "retracted_no_replacement",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 247,
+     "returned": [
+      "third-party-plugins-loading The plugin system was removed before version 1.0 and never shipped, which means third-party plugins cannot be loaded in the current architecture. This was confirmed by checking dashboards for an hour after the removal. "
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_absent": false,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "ret-mobile",
+     "shape": "retracted_no_replacement",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 152,
+     "returned": [
+      "ios-client-sync-engine The iOS client was discontinued and only the web app remains. The reviewer approved a rename and no other changes were required. "
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_absent": false,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "ret-cron",
+     "shape": "retracted_no_replacement",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 377,
+     "returned": [
+      "nightly-cron-audit-log-compaction The decision to implement nightly compaction for audit logs was dropped. The audit log is now append-only and persists forever. This pattern documents the change in behavior and the reasoning behind it. ",
+      "staged-release-rollout The staged rollout strategy was decided upon for releases, ensuring controlled deployment and rollback capabilities. "
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_absent": false,
+     "notes_written": 2,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "ret-grpc",
+     "shape": "retracted_no_replacement",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 557,
+     "returned": [
+      "grpc-communication-established The system was initially configured to use gRPC for communication, but after a review, the gRPC transport was removed and replaced with plain HTTP. This change was tested and the full test suite remained green, indicating that the transition did not introduce regressions. ",
+      "transport-switch-to-http The decision was made to switch from gRPC to plain HTTP for communication after reviewing the system's requirements and performance characteristics. The change was validated by running the full test suite, which remained green. "
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_absent": false,
+     "notes_written": 2,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "ret-sso",
+     "shape": "retracted_no_replacement",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 173,
+     "returned": [
+      "okta-integration-cancelled The Okta integration was cancelled, and staff now use ordinary accounts instead. This change affects access control and authentication processes. "
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_absent": false,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "ret-webhook",
+     "shape": "retracted_no_replacement",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 278,
+     "returned": [
+      "webhook-integration-documentation The partner integration was terminated and the webhook deleted, which required changes to three files that were not config files. This shows a clear pattern of integration cleanup involving code modifications rather than configuration updates. "
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_absent": false,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "ret-gpu-node",
+     "shape": "retracted_no_replacement",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 176,
+     "returned": [
+      "gpu-capacity-rental The team decided to switch from reserving a GPU node to renting training capacity per run. This change improves resource utilization and reduces idle time. "
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_absent": false,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "ret-cli-flag",
+     "shape": "retracted_no_replacement",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 300,
+     "returned": [
+      "cli-flag-legacy-output-format The --legacy flag was dropped in version 3.0 with no equivalent, and the rollout was staged. ",
+      "use-legacy-flag-for-backward-compatibility The decision was made to not provide a direct replacement for the --legacy flag in version 3.0, as it was dropped with no equivalent. "
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_absent": false,
+     "notes_written": 2,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "ret-audit-ui",
+     "shape": "retracted_no_replacement",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 254,
+     "returned": [
+      "admin-panel-audit-filtering The audit tab was removed from the admin panel, requiring a reassessment of how audit data is accessed and filtered. This change necessitated checking dashboards for an hour without any movement, confirming the tab's removal. "
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_absent": false,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "ret-i18n",
+     "shape": "retracted_no_replacement",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 381,
+     "returned": [
+      "app-is-english-only The decision was made to drop all translations and keep the app English-only, as approved by the reviewer after a minor rename. ",
+      "localization-pairing-session The session involved reviewing localization changes, specifically handling translation drops and confirming the app is now English-only. The reviewer approved most changes with only one rename requested. "
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_absent": false,
+     "notes_written": 2,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "ret-sandbox",
+     "shape": "retracted_no_replacement",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 386,
+     "returned": [
+      "sandbox-environment-mirrors-production The sandbox environment was shut down and partners now test against their own stubs. This change required updating documentation in the README to reflect the new testing setup. ",
+      "staged-release-rollout The API change was implemented in a staged rollout, allowing gradual migration of partners to the new testing setup without disrupting production. "
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_absent": false,
+     "notes_written": 2,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "nar-retry-scope",
+     "shape": "narrowed",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 198,
+     "returned": [
+      "http-client-retry-logic The HTTP client retries only on 5xx responses; 4xx errors are never retried. This behavior was verified by running the full test suite which remained green after the change. "
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_absent": false,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "nar-cache-scope",
+     "shape": "narrowed",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 327,
+     "returned": [
+      "get-response-caching Only GET API responses are cached to avoid inconsistency with write operations. This prevents cache pollution from mutable data changes. ",
+      "cache-implementation-approved The decision was made to implement caching only for GET requests, with writes bypassing the cache entirely. This ensures data consistency. "
+     ],
+     "current_live": true,
+     "current_retired": true,
+     "current_absent": false,
+     "notes_written": 3,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "nar-audit-scope",
+     "shape": "narrowed",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 252,
+     "returned": [
+      "audit-log-table-changes Only changes to billing tables are audited now. The previous auditing approach did not survive follow-up discussions. ",
+      "document-audit-decision It was decided that only billing table changes should be audited, not all audit logs. "
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_absent": false,
+     "notes_written": 2,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "nar-gpu-scope",
+     "shape": "narrowed",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 176,
+     "returned": [
+      "trainer-gpu-utilization The trainer uses GPU only for jobs with more than 10M parameters; smaller models run on CPU. This was confirmed during a ninety-minute pairing session. "
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_absent": false,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "nar-lint-scope",
+     "shape": "narrowed",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 219,
+     "returned": [
+      "pre-commit-hook-lints-repository The pre-commit hook now lints only staged files, which improves performance and reduces noise during development. This change was rolled out as part of the usual staged release process. "
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_absent": false,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "nar-notify-scope",
+     "shape": "narrowed",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 170,
+     "returned": [
+      "deploy-alerting-works Production deploy failures trigger on-call alerts, while staging failures go to Slack. This setup was verified to work after an hour of monitoring. "
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_absent": false,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "nar-encrypt-scope",
+     "shape": "narrowed",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 154,
+     "returned": [
+      "encryption-at-rest-scope Encryption at rest applies only to files in the private bucket. This was confirmed after a review and a rename request was made. "
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_absent": false,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "nar-index-scope",
+     "shape": "narrowed",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 198,
+     "returned": [
+      "index-documentation-update Reversing an earlier call on the index to ensure it covers documents from the last 90 days only, and documenting this change in the README section that was already stale. "
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_absent": false,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "nar-backup-scope",
+     "shape": "narrowed",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": false,
+     "chars_returned": 375,
+     "returned": [
+      "nightly-backup-database-dump The nightly backup process only covers the primary database, not the full system. This was confirmed after running the full test suite which stayed green. ",
+      "backups-decision-written A decision was made regarding backups, but the details are not fully specified in this session. It is noted that the backup process did not survive a follow-up test. "
+     ],
+     "current_live": false,
+     "current_retired": false,
+     "current_absent": true,
+     "notes_written": 2,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "nar-ratelimit-scope",
+     "shape": "narrowed",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 299,
+     "returned": [
+      "rate-limiting-applies-to-unauthenticated-calls Rate limiting is enforced only for unauthenticated callers, not for authenticated ones. This was confirmed through investigation and note-taking. ",
+      "rename-approved-by-reviewer The renaming decision was approved by a reviewer after discussion and review. "
+     ],
+     "current_live": true,
+     "current_retired": true,
+     "current_absent": false,
+     "notes_written": 3,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "nar-compress-scope",
+     "shape": "narrowed",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 143,
+     "returned": [
+      "response-compression Only responses above 8 KB are compressed. This change was made by modifying three files, none of which were config files. "
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_absent": false,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "nar-mfa-scope",
+     "shape": "narrowed",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 218,
+     "returned": [
+      "mfa-required-for-admin-accounts MFA is now required only for accounts with admin scope, not all users. This change was implemented to reduce friction for regular users while maintaining security for privileged access. "
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_absent": false,
+     "notes_written": 2,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "nar-replay-scope",
+     "shape": "narrowed",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 183,
+     "returned": [
+      "event-log-replay-on-boot The consumer replays only events since the last checkpoint during boot. This ensures efficient recovery and avoids redundant processing of historical events. "
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_absent": false,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "nar-shard-scope",
+     "shape": "narrowed",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 205,
+     "returned": [
+      "sharding-tenant-database Only tenants with above 50k records get a dedicated shard. This approach was tested and monitored for an hour after implementation, but no movement was observed in the dashboards. "
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_absent": false,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "nar-trace-scope",
+     "shape": "narrowed",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": false,
+     "chars_returned": 272,
+     "returned": [
+      "trace-all-requests The decision was made to trace all requests, but this did not survive the review process. ",
+      "end-to-end-request-tracing The system traces one request in a hundred for sampling. This approach was approved by the reviewer with only a minor rename requested. "
+     ],
+     "current_live": false,
+     "current_retired": false,
+     "current_absent": true,
+     "notes_written": 2,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "ctl-db-cache",
+     "shape": "control",
+     "n_hits": 3,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 497,
+     "returned": [
+      "postgresql-16-primary-database The decision was made to use PostgreSQL 16 as the primary database for the project, likely due to its stability and feature set. ",
+      "redis-cache-layer-documentation The Redis 7 cache layer was documented in the README section, which was already stale. This ensures that the cache layer is properly tracked and understood by the team. ",
+      "staged-release-deployment A staged release deployment strategy was chosen to ensure controlled rollouts and reduce risk during updates. "
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_absent": false,
+     "notes_written": 3,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "ctl-lang-test",
+     "shape": "control",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 222,
+     "returned": [
+      "rust-service-implementation Implemented a Rust service with proper error handling and integration testing. The service was built using standard Rust practices and integrated with existing Python-based test infrastructure. "
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_absent": false,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "ctl-port-pair",
+     "shape": "control",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 399,
+     "returned": [
+      "api-listens-on-port-8443 The API was confirmed to be listening on port 8443, which is a key part of the networking setup. This confirms the expected behavior and ensures proper communication. ",
+      "metrics-endpoint-listens-on-port-9100 The metrics endpoint was found to listen on port 9100. This is a known configuration detail that should be documented to avoid redundant discovery by future developers. "
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_absent": false,
+     "notes_written": 2,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "ctl-env",
+     "shape": "control",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 349,
+     "returned": [
+      "staging-deploy-on-merge Staging deployments are triggered on merge events, ensuring code stability before production. This pattern was confirmed as part of the deployment workflow. ",
+      "production-deploys-on-tagged-release Production deployments are now configured to occur only on tagged releases, ensuring controlled and intentional deployment cycles. "
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_absent": false,
+     "notes_written": 2,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "ctl-model",
+     "shape": "control",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": false,
+     "chars_returned": 426,
+     "returned": [
+      "embedder-configuration-validation Validating embedder configurations during ingestion prevents misalignment between model inputs and expected formats. This pattern ensures that configuration mismatches are caught early in the pipeline. ",
+      "reranker-is-cross-encoder The reranker is confirmed to be a cross-encoder model, which impacts how ranking scores are computed and affects performance trade-offs between speed and accuracy. "
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_absent": false,
+     "notes_written": 2,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "ctl-storage",
+     "shape": "control",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 380,
+     "returned": [
+      "s3-storage-for-uploads Uploads are stored in S3, which is appropriate for scalable and durable object storage. This decision was made to support the staged release process. ",
+      "storage-decision-consistency Storage decisions are consistently applied across different data types. Database backups are stored in Glacier, while uploads go to S3, maintaining clear separation of concerns. "
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_absent": false,
+     "notes_written": 2,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "ctl-auth-pair",
+     "shape": "control",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 153,
+     "returned": [
+      "admin-panel-mfa-requirement The admin panel requires MFA for access. This was confirmed during a security review and implemented as a standard practice. "
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_absent": false,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "ctl-fmt",
+     "shape": "control",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 419,
+     "returned": [
+      "ruff-formatting-for-python Python code formatting is now handled by ruff, which integrates well with the existing toolchain and improves consistency. It was adopted as the primary formatter for Python files. ",
+      "adopt-ruff-for-formatting The team decided to adopt ruff for Python formatting because it is fast, integrates well with existing tools like pre-commit hooks, and provides consistent results across the codebase. "
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_absent": false,
+     "notes_written": 2,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "ctl-obs",
+     "shape": "control",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": false,
+     "chars_returned": 159,
+     "returned": [
+      "logs-exported-to-loki Logs are successfully shipped to Loki for observability. The documentation was updated in the README section which was previously stale. "
+     ],
+     "current_live": true,
+     "current_retired": true,
+     "current_absent": false,
+     "notes_written": 2,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "ctl-limits",
+     "shape": "control",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": false,
+     "chars_returned": 171,
+     "returned": [
+      "upload-size-limit-check The system enforces an upload size limit which was validated through a full test suite. The request rate limit was also updated to 100 per minute. "
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_absent": false,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "ctl-sched",
+     "shape": "control",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": false,
+     "chars_returned": 163,
+     "returned": [
+      "certificate-renewal-schedule Certificate renewal runs every 60 days. This pattern ensures that the process is tracked and not repeated by subsequent team members. "
+     ],
+     "current_live": false,
+     "current_retired": false,
+     "current_absent": true,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "ctl-clients",
+     "shape": "control",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 334,
+     "returned": [
+      "cli-distributed-via-homebrew The command-line interface is distributed through Homebrew to ensure consistent and secure installation across platforms. ",
+      "cli-distribution-homebrew The CLI tool is distributed via Homebrew, which requires a signed installer for the desktop app. This approach ensures secure and standardized distribution. "
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_absent": false,
+     "notes_written": 2,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "ctl-queue-pair",
+     "shape": "control",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 235,
+     "returned": [
+      "ingest-queue-backed-by-nats The ingest queue is successfully backed by NATS, ensuring reliable message handling and system scalability. This setup allows for asynchronous processing of incoming data without blocking the main workflow. "
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_absent": false,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "ctl-doc",
+     "shape": "control",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 147,
+     "returned": [
+      "api-reference-generation The API reference is generated from OpenAPI specifications. This process was documented and validated during the session. "
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_absent": false,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "ctl-runtime",
+     "shape": "control",
+     "n_hits": 0,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": false,
+     "chars_returned": 0,
+     "returned": [],
+     "current_live": false,
+     "current_retired": false,
+     "current_absent": true,
+     "notes_written": 0,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "ctl-net",
+     "shape": "control",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": false,
+     "chars_returned": 363,
+     "returned": [
+      "tls-ingress-termination TLS ingress termination was configured correctly, with a rename requested and approved by the reviewer. The setup ensures secure communication termination at the ingress point. ",
+      "egress-through-nat-gateway Egress traffic is routed through a NAT gateway, which was confirmed as the correct approach for managing outbound network connections. "
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_absent": false,
+     "notes_written": 2,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "ctl-review",
+     "shape": "control",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 390,
+     "returned": [
+      "pull-request-approval-process Implementing a staged rollout of a two-approval policy for pull requests proved effective in maintaining code quality while enabling gradual adoption. The process was communicated clearly to all team members. ",
+      "signed-changelog-entry-for-release Every release requires a signed changelog entry. This was documented in the README section which was already stale. "
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_absent": false,
+     "notes_written": 2,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "ctl-metrics",
+     "shape": "control",
+     "n_hits": 3,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 550,
+     "returned": [
+      "latency-tracking-histogram Request latency is tracked as a histogram, which was implemented and verified to match the expected behavior. The code changes were confirmed to be in place. ",
+      "observability-decision The decision was made to track queue depth as a gauge for observability, which complements existing latency tracking mechanisms. ",
+      "queue-depth-gauge-tracking Queue depth is tracked as a gauge for observability. This approach provides real-time visibility into system load and helps identify potential bottlenecks or resource contention issues. "
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_absent": false,
+     "notes_written": 3,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "ctl-store",
+     "shape": "control",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 207,
+     "returned": [
+      "session-state-in-localstorage The session state is stored in localStorage, which persists across page reloads. This allows for maintaining user context and avoiding redundant computations during navigation. "
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_absent": false,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "ctl-alerting",
+     "shape": "control",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 134,
+     "returned": [
+      "paging-alerts-to-pagerduty Paging alerts are configured to go to PagerDuty. This was documented in the existing stale README section. "
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_absent": false,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    }
+   ],
+   "n_supersession": 60,
+   "n_control": 20,
+   "stale_rate": 0.0667,
+   "stale_ci": [
+    0.0262,
+    0.1593
+   ],
+   "current_rate": 0.9333,
+   "current_ci": [
+    0.8407,
+    0.9738
+   ],
+   "over_retraction_rate": 0.3,
+   "over_retraction_ci": [
+    0.1455,
+    0.519
+   ],
+   "mean_chars_returned": 275.7,
+   "max_chars_returned": 725,
+   "stale_at_rank_1": 2,
+   "control_retired_by_memory": 1,
+   "control_never_written": 2,
+   "control_written_but_unranked": 4,
+   "true_over_retraction_rate": 0.05,
+   "notes_written": 129,
+   "notes_in_cyrillic": 0,
+   "language_drift_rate": 0.0,
+   "cases_touched_by_drift": 0,
+   "seconds": 268.6,
+   "config": "ollama qwen3-coder:30b + bge-m3, k=5"
+  },
   "mem0": {
    "rows": [
     {
@@ -3770,6 +5199,46 @@
   "supersession_cases": 60,
   "control_cases": 20
  },
+ "pooled_nevertwice": {
+  "runs": 2,
+  "stale": {
+   "k": 5,
+   "n": 120,
+   "rate": 0.0417,
+   "ci": [
+    0.0179,
+    0.0938
+   ],
+   "per_run": [
+    0.0167,
+    0.0667
+   ]
+  },
+  "current": {
+   "k": 112,
+   "n": 120,
+   "rate": 0.9333,
+   "ci": [
+    0.8739,
+    0.9658
+   ],
+   "per_run": [
+    0.9333,
+    0.9333
+   ]
+  },
+  "over_retraction": {
+   "k": 2,
+   "n": 40,
+   "rate": 0.05,
+   "ci": [
+    0.0138,
+    0.165
+   ]
+  },
+  "mean_chars_returned": 277.1
+ },
+ "pooled_note": "Two runs of the same commit on the same corpus with the same models read stale 0.0167 and 0.0667. The extraction model is not deterministic at temperature 0, so the published rate is pooled over case-runs and the per-run values are kept beside it. One run of this stand is not a result.",
  "pairs": [
   {
    "a": "mem0",
@@ -3797,6 +5266,16 @@
    "stale_only_nevertwice": 0,
    "discordant": 56,
    "p_mcnemar": 2.7755575615628914e-17
+  }
+ ],
+ "pairs_per_engine_run": [
+  {
+   "nevertwice_only": 0,
+   "mem0_only": 54
+  },
+  {
+   "nevertwice_only": 0,
+   "mem0_only": 51
   }
  ]
 }

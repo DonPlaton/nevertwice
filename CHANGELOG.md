@@ -29,9 +29,13 @@ empty.
 
   | arm | stale | current | over-retraction |
   |---|---|---|---|
-  | Nevertwice | **0.017** | 0.933 | 0.05 |
+  | Nevertwice | **0.042** | 0.933 | 0.05 |
   | Mem0 2.0.19 | 0.917 | 0.950 | 0.00 |
   | append-only markdown + BM25 | 0.950 | 0.950 | 0.05 |
+
+  Nevertwice's row is pooled over two runs of the same commit, which read 0.017 and 0.067. The
+  extraction model is not deterministic at temperature 0, so one run of this stand is not a
+  result - the same lesson as the latency retraction below, one level up.
 
   Paired on the same 60 cases: Nevertwice against Mem0 gives 54 discordant pairs and not one
   the other way. **Mem0 against the append-only floor: p = 0.69** - on this axis their design
@@ -43,6 +47,11 @@ empty.
   over four shapes plus 20 controls, built by a generator that refuses to write a case no arm
   could score. Every external figure this project published before was withdrawn for want of
   exactly that. Full method and caveats: `research/SUPERSESSION.md`.
+
+  Two things the table does not say on its own, and the page now does. On the column a user
+  meets every day, did my fact come back, this design **loses**: 0.933 against 0.950 for both
+  other arms. And over-retraction, the design's own worst failure mode, rests on 20 controls,
+  so an observed 0.05 carries a Wilson upper bound of 0.236.
 
 - **`tools/stamp_withdrawn.py`** and `tests/_test_withdrawn_pages.py` - a retracted figure now
   says so on the page that prints it. `docs/COMPARISON.md` was corrected by hand, and doing it
@@ -99,10 +108,14 @@ empty.
   anything else did: **0 of 128** notes in Cyrillic, stale 0.067 → **0.017**, current 0.867 →
   **0.933**.
 
-- **Two hot paths got slower and the numbers say so.** UserPromptSubmit 88 → 95 ms and
-  SessionStart 85 → 91 ms against their 2026-08 values, on the same statistic (the minimum of
-  five repeats). PreToolUse went the other way, 102 → 98 ms. Published rather than re-run
-  until it flatters.
+- **A latency regression was published and then retracted the same day.** The claims were
+  re-measured because an engine change staled them, and the run happened while a 30B model
+  was resident: UserPromptSubmit read 95 ms against its published 88, SessionStart 91
+  against 85. That went out as a measured regression. Re-run at the same commit on an idle
+  machine: 28 / 89 / 83 / 82 ms, at or below every published value. There was no
+  regression. The bench moves about fifteen per cent with ambient load, which this
+  repository already documented, and one run of it cannot support a claim about a change,
+  including a claim against ourselves.
 
 ### Fixed
 

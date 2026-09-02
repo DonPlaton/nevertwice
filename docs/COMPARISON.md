@@ -10,6 +10,26 @@ the load-bearing sources here are the cited papers and docs.
 > Retrieval recall@k and end-to-end answer accuracy are different axes and never share a table. Answer accuracy depends on the reader model as much as on the memory; ranking the two together would compare a retrieval pipeline against a retrieval pipeline plus an LLM.
 <!-- /comparison:snapshot-note -->
 
+## The one comparison here that is not withdrawn
+
+Everything measured on this page comes from the July head-to-head and is retracted, for the
+reason the banner above gives. One comparison has since been made on a corpus this repository
+ships, and it lives on its own page:
+[`research/SUPERSESSION.md`](../research/SUPERSESSION.md).
+
+It measures the row in the matrix below that reads "ADD-only (nothing deleted)" for Mem0. On
+cases where a fact is replaced, Mem0 and an append-only markdown file with term matching hand
+the retracted fact back at rates that are **tied with each other** and far above Nevertwice's.
+On the other column, returning the replacement, Mem0 leads. The figures, the intervals, the
+paired test and the caveats are on that page rather than repeated here, so there is one place
+to correct if they change.
+
+That is not a defect report. Mem0's current major version is single-pass and ADD-only by
+published design, and its own note says both facts survive on purpose, which is defensible for
+conversational history.
+The benchmark measures the axis where that design has nothing to offer, and it says nothing
+about the axes where Mem0 is strong.
+
 ## What each vendor documents
 
 Read from each system's own documentation, papers and repository at the survey date

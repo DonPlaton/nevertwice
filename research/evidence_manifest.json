@@ -737,7 +737,7 @@
   },
   "research/SUPERSESSION.md": {
    "governance": "backlog",
-   "budget": 89,
+   "budget": 111,
    "note": "Every figure on this page is registered above; the budget covers the per-shape breakdown and the prose, which restate registered numbers in other shapes. The study pages are backlog by the same rule as the rest of the archive.",
    "budget_metric": "evidence-bearing numeric tokens: numbers outside fenced blocks and generated regions, excluding years, months, Python versions and bare single digits",
    "generator": "research/supersession_bench.py"
@@ -2364,7 +2364,7 @@
    "cited_in": [
     "README.md"
    ],
-   "commit": "df0554e02f3ca91e33af70b7a5b67685093ad651",
+   "commit": "021a00a863b0c06e7d990cbf0833bec7edea1018",
    "produced_by": [
     "research/poisoning.py",
     "nevertwice/causal.py",
@@ -2399,7 +2399,7 @@
    "pointer": "precision",
    "ci": null,
    "cited_in": [],
-   "commit": "df0554e02f3ca91e33af70b7a5b67685093ad651",
+   "commit": "021a00a863b0c06e7d990cbf0833bec7edea1018",
    "produced_by": [
     "research/poisoning.py",
     "nevertwice/causal.py",
@@ -2438,7 +2438,7 @@
    "cited_in": [
     "README.md"
    ],
-   "commit": "df0554e02f3ca91e33af70b7a5b67685093ad651",
+   "commit": "021a00a863b0c06e7d990cbf0833bec7edea1018",
    "produced_by": [
     "research/poisoning.py",
     "nevertwice/causal.py",
@@ -2477,7 +2477,7 @@
    "cited_in": [
     "README.md"
    ],
-   "commit": "df0554e02f3ca91e33af70b7a5b67685093ad651",
+   "commit": "021a00a863b0c06e7d990cbf0833bec7edea1018",
    "produced_by": [
     "research/poisoning.py",
     "nevertwice/causal.py",
@@ -2517,7 +2517,7 @@
    "ci": null,
    "ci_note": "6 seeds on a synthetic world; report the spread, not a CI.",
    "cited_in": [],
-   "commit": "df0554e02f3ca91e33af70b7a5b67685093ad651",
+   "commit": "021a00a863b0c06e7d990cbf0833bec7edea1018",
    "produced_by": [
     "research/forgetting.py",
     "nevertwice/build_user_model.py",
@@ -4447,11 +4447,11 @@
   },
   {
    "id": "latency.pretooluse_end_to_end",
-   "statement": "the PreToolUse hook end to end: 98 ms",
-   "value": 98,
+   "statement": "the PreToolUse hook end to end: 89 ms",
+   "value": 89,
    "printed": [
-    "98 ms",
-    "98"
+    "89 ms",
+    "89"
    ],
    "unit": "milliseconds",
    "dataset": null,
@@ -4463,14 +4463,14 @@
    "ci": {
     "method": "min / median / max over repeats",
     "level": null,
-    "low": 98,
-    "high": 107
+    "low": 89,
+    "high": 95
    },
    "cited_in": [
     "README.md",
     "docs/BENCHMARKS.md"
    ],
-   "commit": "df0554e02f3ca91e33af70b7a5b67685093ad651",
+   "commit": "021a00a863b0c06e7d990cbf0833bec7edea1018",
    "produced_by": [
     "research/latency_bench.py",
     "nevertwice/causal.py",
@@ -4490,15 +4490,15 @@
     "sandbox_guard.py"
    ],
    "caveat": "Cross-SESSION variance on this machine is large: the same minimum-of-5 statistic gave 142 ms (2026-08-25), 114 ms and 98 ms for PreToolUse within a day, on an otherwise unchanged tree. `--repeat` stabilises the number WITHIN a session and does not across them, so read this as ~0.1 s of end-to-end cost including interpreter start, not as a figure precise to the millisecond. The drop from the previously published 142 ms is machine state, not an optimisation.",
-   "note": "Re-measured at this commit. The published statistic is the artifact's `ms`: the minimum over five repeats, each itself the best of three invocations - a busy host can only push it up, which is the direction a latency claim should err in. Two paths moved the wrong way against their 2026-08 values: UserPromptSubmit 88 to 95 and SessionStart 85 to 91. PreToolUse moved the other way, 102 to 98. Ollama held a 30B model resident throughout, which is the condition this system runs in; the change is published rather than re-run until it flatters."
+   "note": "Minimum over five repeats, each the best of three invocations, on an idle machine at this commit. An earlier stamp today came from a run taken while a 30B model was resident and read 31 / 98 / 95 / 91; it was published as a regression against the 2026-08 values and it was not one. The same statistic on the same tree moves by roughly fifteen per cent with ambient load, so no single run of this bench supports a claim about a change."
   },
   {
    "id": "latency.userpromptsubmit",
-   "statement": "UserPromptSubmit end to end: 95 ms",
-   "value": 95,
+   "statement": "UserPromptSubmit end to end: 83 ms",
+   "value": 83,
    "printed": [
-    "95 ms",
-    "95"
+    "83 ms",
+    "83"
    ],
    "unit": "milliseconds",
    "dataset": null,
@@ -4510,13 +4510,13 @@
    "ci": {
     "method": "min / median / max over repeats",
     "level": null,
-    "low": 95,
-    "high": 97
+    "low": 83,
+    "high": 86
    },
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "df0554e02f3ca91e33af70b7a5b67685093ad651",
+   "commit": "021a00a863b0c06e7d990cbf0833bec7edea1018",
    "produced_by": [
     "research/latency_bench.py",
     "nevertwice/causal.py",
@@ -4536,15 +4536,15 @@
     "sandbox_guard.py"
    ],
    "caveat": "Cross-SESSION variance on this machine is large: the same minimum-of-5 statistic gave 142 ms (2026-08-25), 114 ms and 98 ms for PreToolUse within a day, on an otherwise unchanged tree. `--repeat` stabilises the number WITHIN a session and does not across them, so read this as ~0.1 s of end-to-end cost including interpreter start, not as a figure precise to the millisecond. The drop from the previously published 142 ms is machine state, not an optimisation.",
-   "note": "Re-measured at this commit. The published statistic is the artifact's `ms`: the minimum over five repeats, each itself the best of three invocations - a busy host can only push it up, which is the direction a latency claim should err in. Two paths moved the wrong way against their 2026-08 values: UserPromptSubmit 88 to 95 and SessionStart 85 to 91. PreToolUse moved the other way, 102 to 98. Ollama held a 30B model resident throughout, which is the condition this system runs in; the change is published rather than re-run until it flatters."
+   "note": "Minimum over five repeats, each the best of three invocations, on an idle machine at this commit. An earlier stamp today came from a run taken while a 30B model was resident and read 31 / 98 / 95 / 91; it was published as a regression against the 2026-08 values and it was not one. The same statistic on the same tree moves by roughly fifteen per cent with ambient load, so no single run of this bench supports a claim about a change."
   },
   {
    "id": "latency.sessionstart",
-   "statement": "SessionStart end to end, idle: 91 ms",
-   "value": 91,
+   "statement": "SessionStart end to end, idle: 82 ms",
+   "value": 82,
    "printed": [
-    "91 ms",
-    "91"
+    "82 ms",
+    "82"
    ],
    "unit": "milliseconds",
    "dataset": null,
@@ -4556,13 +4556,13 @@
    "ci": {
     "method": "min / median / max over repeats",
     "level": null,
-    "low": 91,
-    "high": 103
+    "low": 82,
+    "high": 86
    },
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "df0554e02f3ca91e33af70b7a5b67685093ad651",
+   "commit": "021a00a863b0c06e7d990cbf0833bec7edea1018",
    "produced_by": [
     "research/latency_bench.py",
     "nevertwice/causal.py",
@@ -4582,15 +4582,15 @@
     "sandbox_guard.py"
    ],
    "caveat": "Cross-SESSION variance on this machine is large: the same minimum-of-5 statistic gave 142 ms (2026-08-25), 114 ms and 98 ms for PreToolUse within a day, on an otherwise unchanged tree. `--repeat` stabilises the number WITHIN a session and does not across them, so read this as ~0.1 s of end-to-end cost including interpreter start, not as a figure precise to the millisecond. The drop from the previously published 142 ms is machine state, not an optimisation.",
-   "note": "Re-measured at this commit. The published statistic is the artifact's `ms`: the minimum over five repeats, each itself the best of three invocations - a busy host can only push it up, which is the direction a latency claim should err in. Two paths moved the wrong way against their 2026-08 values: UserPromptSubmit 88 to 95 and SessionStart 85 to 91. PreToolUse moved the other way, 102 to 98. Ollama held a 30B model resident throughout, which is the condition this system runs in; the change is published rather than re-run until it flatters."
+   "note": "Minimum over five repeats, each the best of three invocations, on an idle machine at this commit. An earlier stamp today came from a run taken while a 30B model was resident and read 31 / 98 / 95 / 91; it was published as a regression against the 2026-08 values and it was not one. The same statistic on the same tree moves by roughly fifteen per cent with ambient load, so no single run of this bench supports a claim about a change."
   },
   {
    "id": "latency.cold",
-   "statement": "cold import of the engine: 31 ms",
-   "value": 31,
+   "statement": "cold import of the engine: 28 ms",
+   "value": 28,
    "printed": [
-    "31 ms",
-    "31"
+    "28 ms",
+    "28"
    ],
    "unit": "milliseconds",
    "dataset": null,
@@ -4602,13 +4602,13 @@
    "ci": {
     "method": "min / median / max over repeats",
     "level": null,
-    "low": 31,
-    "high": 33
+    "low": 28,
+    "high": 30
    },
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "df0554e02f3ca91e33af70b7a5b67685093ad651",
+   "commit": "021a00a863b0c06e7d990cbf0833bec7edea1018",
    "produced_by": [
     "research/latency_bench.py",
     "nevertwice/causal.py",
@@ -4628,7 +4628,7 @@
     "sandbox_guard.py"
    ],
    "caveat": "Cross-SESSION variance on this machine is large: the same minimum-of-5 statistic gave 142 ms (2026-08-25), 114 ms and 98 ms for PreToolUse within a day, on an otherwise unchanged tree. `--repeat` stabilises the number WITHIN a session and does not across them, so read this as ~0.1 s of end-to-end cost including interpreter start, not as a figure precise to the millisecond. The drop from the previously published 142 ms is machine state, not an optimisation.",
-   "note": "Re-measured at this commit. The published statistic is the artifact's `ms`: the minimum over five repeats, each itself the best of three invocations - a busy host can only push it up, which is the direction a latency claim should err in. Two paths moved the wrong way against their 2026-08 values: UserPromptSubmit 88 to 95 and SessionStart 85 to 91. PreToolUse moved the other way, 102 to 98. Ollama held a 30B model resident throughout, which is the condition this system runs in; the change is published rather than re-run until it flatters."
+   "note": "Minimum over five repeats, each the best of three invocations, on an idle machine at this commit. An earlier stamp today came from a run taken while a 30B model was resident and read 31 / 98 / 95 / 91; it was published as a regression against the 2026-08 values and it was not one. The same statistic on the same tree moves by roughly fifteen per cent with ambient load, so no single run of this bench supports a claim about a change."
   },
   {
    "id": "latency.perf_audit_range",
@@ -6237,7 +6237,7 @@
    "raw_gap": "A property of the shipped pack; a test should assert it (task D1).",
    "ci": null,
    "cited_in": [],
-   "commit": "df0554e02f3ca91e33af70b7a5b67685093ad651",
+   "commit": "021a00a863b0c06e7d990cbf0833bec7edea1018",
    "produced_by": [
     "nevertwice/guards.py",
     "nevertwice/causal.py",
@@ -7209,32 +7209,34 @@
   },
   {
    "id": "supersession.nevertwice.stale_rate",
-   "statement": "Nevertwice returns a retracted fact as a current assertion on 1.7% of supersession cases",
-   "value": 0.0167,
+   "statement": "Nevertwice returns a retracted fact as a current assertion on 4.2% of supersession case-runs, pooled over two runs of the same commit",
+   "value": 0.0417,
    "printed": [
+    "0.042",
+    "0.018",
+    "0.094",
+    "0.04",
     "0.017",
-    "0.003",
-    "0.089",
-    "0.02"
+    "0.067"
    ],
    "unit": "rate",
    "dataset": "supersession_v1",
    "environment": "local_supersession_stand",
-   "n": 60,
+   "n": 120,
    "command": "python research/supersession_bench.py",
    "raw": "research/results/supersession_v1.json",
-   "pointer": "arms.nevertwice.stale_rate",
+   "pointer": "pooled_nevertwice.stale.rate",
    "ci": {
     "method": "wilson",
     "level": 0.95,
-    "low": 0.0029,
-    "high": 0.0886
+    "low": 0.0179,
+    "high": 0.0938
    },
    "cited_in": [
     "README.md",
     "docs/BENCHMARKS.md"
    ],
-   "commit": "df0554e02f3ca91e33af70b7a5b67685093ad651",
+   "commit": "021a00a863b0c06e7d990cbf0833bec7edea1018",
    "produced_by": [
     "research/supersession_bench.py",
     "nevertwice/__init__.py",
@@ -7267,35 +7269,36 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "note": "Pooled over two runs of the same commit: the extraction model is not deterministic at temperature 0 and the two runs read 0.0167 and 0.0667. One run of this stand is not a result, so the published figure is the pooled rate over 120 case-runs with the per-run values recorded beside it in the artifact."
   },
   {
    "id": "supersession.nevertwice.current_rate",
-   "statement": "Nevertwice returns the replacement fact on 93.3% of supersession cases",
+   "statement": "Nevertwice returns the replacement fact on 93.3% of supersession case-runs",
    "value": 0.9333,
    "printed": [
     "0.933",
-    "0.841",
-    "0.974"
+    "0.874",
+    "0.966"
    ],
    "unit": "rate",
    "dataset": "supersession_v1",
    "environment": "local_supersession_stand",
-   "n": 60,
+   "n": 120,
    "command": "python research/supersession_bench.py",
    "raw": "research/results/supersession_v1.json",
-   "pointer": "arms.nevertwice.current_rate",
+   "pointer": "pooled_nevertwice.current.rate",
    "ci": {
     "method": "wilson",
     "level": 0.95,
-    "low": 0.8407,
-    "high": 0.9738
+    "low": 0.8739,
+    "high": 0.9658
    },
    "cited_in": [
     "README.md",
     "docs/BENCHMARKS.md"
    ],
-   "commit": "df0554e02f3ca91e33af70b7a5b67685093ad651",
+   "commit": "021a00a863b0c06e7d990cbf0833bec7edea1018",
    "produced_by": [
     "research/supersession_bench.py",
     "nevertwice/__init__.py",
@@ -7328,27 +7331,35 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "note": "Pooled over two runs of the same commit: the extraction model is not deterministic at temperature 0 and the two runs read 0.9333 and 0.9333. One run of this stand is not a result, so the published figure is the pooled rate over 120 case-runs with the per-run values recorded beside it in the artifact."
   },
   {
    "id": "supersession.nevertwice.over_retraction_rate",
-   "statement": "Nevertwice retires a still-true fact on 1 of 20 control cases",
+   "statement": "Nevertwice retires a still-true fact on 2 of 40 control case-runs",
    "value": 0.05,
    "printed": [
-    "0.05"
+    "0.05",
+    "0.014",
+    "0.165"
    ],
    "unit": "rate",
    "dataset": "supersession_v1",
    "environment": "local_supersession_stand",
-   "n": 20,
+   "n": 40,
    "command": "python research/supersession_bench.py",
    "raw": "research/results/supersession_v1.json",
-   "pointer": "arms.nevertwice.true_over_retraction_rate",
-   "ci": null,
+   "pointer": "pooled_nevertwice.over_retraction.rate",
+   "ci": {
+    "method": "wilson",
+    "level": 0.95,
+    "low": 0.0138,
+    "high": 0.165
+   },
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "df0554e02f3ca91e33af70b7a5b67685093ad651",
+   "commit": "021a00a863b0c06e7d990cbf0833bec7edea1018",
    "produced_by": [
     "research/supersession_bench.py",
     "nevertwice/__init__.py",
@@ -7381,7 +7392,8 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "note": "2 of 40 controls over two runs. At n=40 an observed 0.05 is bounded above at 0.165; about 130 controls would put that under 0.10. This is the design's own worst failure mode and it remains the least measured column here."
   },
   {
    "id": "supersession.mem0.stale_rate",
@@ -7412,7 +7424,7 @@
     "README.md",
     "docs/BENCHMARKS.md"
    ],
-   "commit": "df0554e02f3ca91e33af70b7a5b67685093ad651",
+   "commit": "021a00a863b0c06e7d990cbf0833bec7edea1018",
    "produced_by": [
     "research/supersession_bench.py",
     "nevertwice/__init__.py",
@@ -7474,7 +7486,7 @@
     "README.md",
     "docs/BENCHMARKS.md"
    ],
-   "commit": "df0554e02f3ca91e33af70b7a5b67685093ad651",
+   "commit": "021a00a863b0c06e7d990cbf0833bec7edea1018",
    "produced_by": [
     "research/supersession_bench.py",
     "nevertwice/__init__.py",
@@ -7514,7 +7526,9 @@
    "statement": "Mem0 2.0.19 retires no still-true fact on the 20 control cases",
    "value": 0.0,
    "printed": [
-    "0.00"
+    "0.00",
+    "0.000",
+    "0.161"
    ],
    "unit": "rate",
    "dataset": "supersession_v1",
@@ -7523,11 +7537,16 @@
    "command": "python research/supersession_bench.py",
    "raw": "research/results/supersession_v1.json",
    "pointer": "arms.mem0.over_retraction_rate",
-   "ci": null,
+   "ci": {
+    "method": "wilson",
+    "level": 0.95,
+    "low": 0.0,
+    "high": 0.1611
+   },
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "df0554e02f3ca91e33af70b7a5b67685093ad651",
+   "commit": "021a00a863b0c06e7d990cbf0833bec7edea1018",
    "produced_by": [
     "research/supersession_bench.py",
     "nevertwice/__init__.py",
@@ -7560,7 +7579,8 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "note": "0 of 20 controls. The interval is wide because the control arm is small: at n=20 an observed 0.05 is bounded above at 0.1611. Reading this column as 'about one in twenty' is reading more than 20 cases can support. Narrowing the upper bound below 0.10 needs roughly 120 controls."
   },
   {
    "id": "supersession.naive.stale_rate",
@@ -7590,7 +7610,7 @@
     "README.md",
     "docs/BENCHMARKS.md"
    ],
-   "commit": "df0554e02f3ca91e33af70b7a5b67685093ad651",
+   "commit": "021a00a863b0c06e7d990cbf0833bec7edea1018",
    "produced_by": [
     "research/supersession_bench.py",
     "nevertwice/__init__.py",
@@ -7651,7 +7671,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "df0554e02f3ca91e33af70b7a5b67685093ad651",
+   "commit": "021a00a863b0c06e7d990cbf0833bec7edea1018",
    "produced_by": [
     "research/supersession_bench.py",
     "nevertwice/__init__.py",
@@ -7691,7 +7711,9 @@
    "statement": "the append-only floor loses a still-true fact on 1 of 20 control cases",
    "value": 0.05,
    "printed": [
-    "0.05"
+    "0.05",
+    "0.009",
+    "0.236"
    ],
    "unit": "rate",
    "dataset": "supersession_v1",
@@ -7700,11 +7722,16 @@
    "command": "python research/supersession_bench.py",
    "raw": "research/results/supersession_v1.json",
    "pointer": "arms.naive.over_retraction_rate",
-   "ci": null,
+   "ci": {
+    "method": "wilson",
+    "level": 0.95,
+    "low": 0.0089,
+    "high": 0.2361
+   },
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "df0554e02f3ca91e33af70b7a5b67685093ad651",
+   "commit": "021a00a863b0c06e7d990cbf0833bec7edea1018",
    "produced_by": [
     "research/supersession_bench.py",
     "nevertwice/__init__.py",
@@ -7737,7 +7764,8 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "note": "1 of 20 controls. The interval is wide because the control arm is small: at n=20 an observed 0.05 is bounded above at 0.2361. Reading this column as 'about one in twenty' is reading more than 20 cases can support. Narrowing the upper bound below 0.10 needs roughly 120 controls."
   },
   {
    "id": "supersession.nevertwice_vs_mem0.p_mcnemar",
@@ -7755,7 +7783,7 @@
    "pointer": "pairs[1].p_mcnemar",
    "ci": null,
    "cited_in": [],
-   "commit": "df0554e02f3ca91e33af70b7a5b67685093ad651",
+   "commit": "021a00a863b0c06e7d990cbf0833bec7edea1018",
    "produced_by": [
     "research/supersession_bench.py",
     "nevertwice/__init__.py",
@@ -7809,7 +7837,7 @@
     "README.md",
     "docs/BENCHMARKS.md"
    ],
-   "commit": "df0554e02f3ca91e33af70b7a5b67685093ad651",
+   "commit": "021a00a863b0c06e7d990cbf0833bec7edea1018",
    "produced_by": [
     "research/supersession_bench.py",
     "nevertwice/__init__.py",
@@ -7846,23 +7874,23 @@
   },
   {
    "id": "supersession.nevertwice.chars_per_query",
-   "statement": "Nevertwice returns 279 characters per query on this corpus",
-   "value": 278.5,
+   "statement": "Nevertwice returns 277 characters per query on this corpus",
+   "value": 277.1,
    "printed": [
-    "279"
+    "277"
    ],
    "unit": "characters",
    "dataset": "supersession_v1",
    "environment": "local_supersession_stand",
-   "n": 80,
+   "n": 160,
    "command": "python research/supersession_bench.py",
    "raw": "research/results/supersession_v1.json",
-   "pointer": "arms.nevertwice.mean_chars_returned",
+   "pointer": "pooled_nevertwice.mean_chars_returned",
    "ci": null,
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "df0554e02f3ca91e33af70b7a5b67685093ad651",
+   "commit": "021a00a863b0c06e7d990cbf0833bec7edea1018",
    "produced_by": [
     "research/supersession_bench.py",
     "nevertwice/__init__.py",
@@ -7915,7 +7943,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "df0554e02f3ca91e33af70b7a5b67685093ad651",
+   "commit": "021a00a863b0c06e7d990cbf0833bec7edea1018",
    "produced_by": [
     "research/supersession_bench.py",
     "nevertwice/__init__.py",
@@ -7966,7 +7994,7 @@
    "pointer": null,
    "ci": null,
    "cited_in": [],
-   "commit": "df0554e02f3ca91e33af70b7a5b67685093ad651",
+   "commit": "021a00a863b0c06e7d990cbf0833bec7edea1018",
    "produced_by": [
     "research/supersession_bench.py",
     "nevertwice/__init__.py",
@@ -8019,10 +8047,9 @@
    "pointer": "dataset.supersession_cases",
    "ci": null,
    "cited_in": [
-    "README.md",
     "docs/BENCHMARKS.md"
    ],
-   "commit": "df0554e02f3ca91e33af70b7a5b67685093ad651",
+   "commit": "021a00a863b0c06e7d990cbf0833bec7edea1018",
    "produced_by": [
     "research/supersession_bench.py",
     "nevertwice/__init__.py",
@@ -8075,7 +8102,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "df0554e02f3ca91e33af70b7a5b67685093ad651",
+   "commit": "021a00a863b0c06e7d990cbf0833bec7edea1018",
    "produced_by": [
     "research/supersession_bench.py",
     "nevertwice/__init__.py",
@@ -8112,10 +8139,11 @@
   },
   {
    "id": "supersession.nevertwice_vs_mem0.discordant",
-   "statement": "Nevertwice against Mem0 on the same cases: 54 discordant pairs, every one against Mem0",
+   "statement": "Nevertwice against Mem0 on the same cases: 54 discordant pairs in the first engine run and 51 in the second, none in the other direction in either",
    "value": 54,
    "printed": [
-    "54"
+    "54",
+    "51"
    ],
    "unit": "pairs",
    "dataset": "supersession_v1",
@@ -8123,12 +8151,12 @@
    "n": 60,
    "command": "python research/supersession_bench.py",
    "raw": "research/results/supersession_v1.json",
-   "pointer": "pairs[1].discordant",
+   "pointer": "pairs_per_engine_run[0].mem0_only",
    "ci": null,
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "df0554e02f3ca91e33af70b7a5b67685093ad651",
+   "commit": "021a00a863b0c06e7d990cbf0833bec7edea1018",
    "produced_by": [
     "research/supersession_bench.py",
     "nevertwice/__init__.py",
@@ -8181,7 +8209,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "df0554e02f3ca91e33af70b7a5b67685093ad651",
+   "commit": "021a00a863b0c06e7d990cbf0833bec7edea1018",
    "produced_by": [
     "research/abstention_ab.py",
     "nevertwice/__init__.py",
@@ -8230,7 +8258,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "df0554e02f3ca91e33af70b7a5b67685093ad651",
+   "commit": "021a00a863b0c06e7d990cbf0833bec7edea1018",
    "produced_by": [
     "research/abstention_ab.py",
     "nevertwice/__init__.py",
@@ -8279,7 +8307,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "df0554e02f3ca91e33af70b7a5b67685093ad651",
+   "commit": "021a00a863b0c06e7d990cbf0833bec7edea1018",
    "produced_by": [
     "research/abstention_ab.py",
     "nevertwice/__init__.py",
@@ -8328,7 +8356,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "df0554e02f3ca91e33af70b7a5b67685093ad651",
+   "commit": "021a00a863b0c06e7d990cbf0833bec7edea1018",
    "produced_by": [
     "research/abstention_ab.py",
     "nevertwice/__init__.py",
@@ -8375,7 +8403,7 @@
    "pointer": "remine.delta_read_coverage",
    "ci": null,
    "cited_in": [],
-   "commit": "df0554e02f3ca91e33af70b7a5b67685093ad651",
+   "commit": "021a00a863b0c06e7d990cbf0833bec7edea1018",
    "produced_by": [
     "research/abstention_ab.py",
     "nevertwice/__init__.py",
@@ -8422,7 +8450,7 @@
    "pointer": "matched_false_positive_rate",
    "ci": null,
    "cited_in": [],
-   "commit": "df0554e02f3ca91e33af70b7a5b67685093ad651",
+   "commit": "021a00a863b0c06e7d990cbf0833bec7edea1018",
    "produced_by": [
     "research/cheap_baselines.py",
     "nevertwice/anticipate.py",
@@ -8465,7 +8493,7 @@
     "high": 0.7262
    },
    "cited_in": [],
-   "commit": "df0554e02f3ca91e33af70b7a5b67685093ad651",
+   "commit": "021a00a863b0c06e7d990cbf0833bec7edea1018",
    "produced_by": [
     "research/cheap_baselines.py",
     "nevertwice/anticipate.py",
@@ -8508,7 +8536,7 @@
     "high": 0.3731
    },
    "cited_in": [],
-   "commit": "df0554e02f3ca91e33af70b7a5b67685093ad651",
+   "commit": "021a00a863b0c06e7d990cbf0833bec7edea1018",
    "produced_by": [
     "research/cheap_baselines.py",
     "nevertwice/anticipate.py",
@@ -8551,7 +8579,7 @@
     "high": 0.6386
    },
    "cited_in": [],
-   "commit": "df0554e02f3ca91e33af70b7a5b67685093ad651",
+   "commit": "021a00a863b0c06e7d990cbf0833bec7edea1018",
    "produced_by": [
     "research/cheap_baselines.py",
     "nevertwice/anticipate.py",
@@ -8589,7 +8617,7 @@
    "pointer": "arms.nevertwice.tokens_per_episode",
    "ci": null,
    "cited_in": [],
-   "commit": "df0554e02f3ca91e33af70b7a5b67685093ad651",
+   "commit": "021a00a863b0c06e7d990cbf0833bec7edea1018",
    "produced_by": [
     "research/cheap_baselines.py",
     "nevertwice/anticipate.py",
@@ -8627,7 +8655,7 @@
    "pointer": "arms.curated_agents_md.tokens_per_episode",
    "ci": null,
    "cited_in": [],
-   "commit": "df0554e02f3ca91e33af70b7a5b67685093ad651",
+   "commit": "021a00a863b0c06e7d990cbf0833bec7edea1018",
    "produced_by": [
     "research/cheap_baselines.py",
     "nevertwice/anticipate.py",

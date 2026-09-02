@@ -102,6 +102,15 @@ and are not started before the rest is done.
   **Today:** every external retrieval figure this project has published is withdrawn, so the
   honest public position is a strong design with no reproducible external number. The stand,
   the adapters and the registration machinery all exist; the dataset and the run do not.
+- **The supersession benchmark's control arm is underpowered.** Over-retraction is the
+  design's own worst failure mode, silently retiring a fact that is still true, and nothing
+  downstream can catch it the way a stale answer can be caught. It is measured on 20 controls,
+  so an observed 0.05 carries a Wilson upper bound of 0.236. Raised by a review of the
+  benchmark rather than by the benchmark itself.
+  **Today:** the interval is published rather than the bare rate, and the floor sits in the
+  same place, so the *comparison* holds even though the absolute number is loose. What is
+  missing is power: about 130 controls would put the upper bound under 0.10. It is a dataset
+  change, so it re-runs every arm.
 - **The supersession benchmark's remaining shape: a fact removed with nothing to replace it.**
   The one stale result left is there, and it is the shape built to be hardest - there is no new
   note for retrieval to rank above the old one, so ranking cannot help and only retirement can.
