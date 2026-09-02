@@ -31,10 +31,13 @@ and are not started before the rest is done.
   generated region with no withdrawal banner, while the evidence register marks all sixteen of
   those figures withdrawn. A reader who clones the repository today sees retracted results
   presented as current.
-  **Today:** the withdrawal itself is recorded honestly, with its reason, for 128 of 154 claims;
-  `docs/BENCHMARKS.md` carries the banner on every affected section. What is missing is that
-  `docs/COMPARISON.md` is registered `backlog` rather than `governed`, so the test that forbids
-  citing a withdrawn claim does not look at it, and the banner never reached the page.
+  **Today:** DONE for the reader - `docs/COMPARISON.md` now carries a WITHDRAWN banner above
+  the generated regions, saying the numbers must not be quoted and why, and
+  `tests/_test_withdrawn_not_quoted.py` fails if it disappears. The tables are kept rather than
+  deleted, because deleting a retracted result is how a project quietly loses the memory of
+  having been wrong. What remains is the underlying cause: the page is registered `backlog`
+  rather than `governed`, so the test that forbids citing a withdrawn claim still does not look
+  at it. Governing it means every number on the page must resolve to a registered claim.
 - **A head-to-head that survives its own audit.** The July stand ran Nevertwice, Mem0, LangMem
   and A-MEM on the same 500 questions with the same local embedder, and Nevertwice led every
   column. It was withdrawn because the corpus is third-party, uncommitted and unhashed, so nobody

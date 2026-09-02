@@ -363,9 +363,9 @@
   },
   "docs/COMPARISON.md": {
    "governance": "backlog",
-   "budget": 25,
+   "budget": 27,
    "target": "B4",
-   "note": "The vendor matrix, repository activity, verified-run and retrieval tables are generated from docs/comparison_data.json, docs/comparison_snapshot.json and the evidence manifest; the budget covers only the prose that remains.",
+   "note": "The vendor matrix, repository activity, verified-run and retrieval tables are generated from docs/comparison_data.json, docs/comparison_snapshot.json and the evidence manifest; the budget covers only the prose that remains. A WITHDRAWN banner was added above the generated regions in 2026-09: the page renders the July head-to-head while the register marks all sixteen of those figures withdrawn, and the citation guard does not look at this page because it is backlog rather than governed, so the retraction never reached the reader. The budget rises for the banner's own figures.",
    "budget_metric": "evidence-bearing numeric tokens: numbers outside fenced blocks, excluding years, months, Python versions and bare single digits",
    "generator": "tools/comparison_snapshot.py"
   },

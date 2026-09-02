@@ -69,6 +69,18 @@ sometimes different question subsets. This table is retrieval R@k with every var
 the memory pipeline itself, so compare methodology before headlines. `research/head_to_head.py`
 reruns the whole stand, on the competitors' own packages, with one command.
 
+> **WITHDRAWN 2026-08.** Every number in the two tables below must not be quoted.
+> The run happened and Nevertwice led every column, but the LongMemEval-oracle
+> corpus it stood on is third-party, uncommitted and unhashed — `research/data/longmemeval_oracle.json`
+> is absent here and no content hash was recorded — so **nobody, including us, can
+> reproduce or even pin it**. 130 of 154 registered claims are withdrawn for the same
+> reason; `research/evidence_manifest.json` carries each one with its cause.
+>
+> The tables are kept rather than deleted because deleting a retracted result is how a
+> project quietly loses the memory of having been wrong. What replaces them is named in
+> [`ROADMAP.md`](../ROADMAP.md): a head-to-head on a committed, content-hashed corpus that
+> cannot be withdrawn for this reason again.
+
 ### What could actually be run
 
 <!-- comparison:verified -->
