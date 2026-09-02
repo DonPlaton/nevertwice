@@ -1522,10 +1522,22 @@ def _clear_tag_counts():
 collect_existing_tags.cache_clear = _clear_tag_counts   # back-compat with callers
 
 
-def collect_existing_titles(project: str) -> dict[str, tuple[str, ...]]:
-    """Existing typed-note title-slugs for `project` (grounds LLM dedup)."""
+TITLE_WINDOW = 40                 # slugs shown to the extractor as "already exists"
+
+
+def collect_existing_titles(project: str, for_date: str | None = None
+                            ) -> dict[str, tuple[str, ...]]:
+    """Existing typed-note title-slugs for `project` (grounds LLM dedup).
+
+    `for_date` puts the notes ALREADY WRITTEN FOR THAT DAY at the front of the window.
+    Without it the window is the globally newest 40 in chronological glob order, which
+    is exactly wrong when a session is re-mined: a project with 227 live patterns, 127 of
+    them newer than the session's own date, gave a window containing ZERO notes from that
+    date - so the extractor was told to avoid duplicates while being shown none of the
+    ones it was about to create (vault review 2026-09).
+    """
     if project not in _TITLE_SLUGS:
-        out: dict[str, list[str]] = {nt: [] for nt in TYPED_TYPES}
+        out: dict[str, list[tuple[str, str]]] = {nt: [] for nt in TYPED_TYPES}
         for ntype in TYPED_TYPES:
             d = VAULT / TYPE_FOLDER[ntype]
             if not d.exists():
@@ -1533,9 +1545,20 @@ def collect_existing_titles(project: str) -> dict[str, tuple[str, ...]]:
             for p in d.glob("*.md"):
                 parsed = parse_typed_stem(p.stem)
                 if parsed and parsed["project"] == project and parsed["ntype"] == ntype:
-                    out[ntype].append(parsed["slug"])
+                    out[ntype].append((p.stem[:10], parsed["slug"]))
         _TITLE_SLUGS[project] = out
-    return {nt: tuple(slugs[-40:]) for nt, slugs in _TITLE_SLUGS[project].items()}
+
+    picked: dict[str, tuple[str, ...]] = {}
+    for nt, rows in _TITLE_SLUGS[project].items():
+        if for_date:
+            same = [sl for dt, sl in rows if dt == for_date]
+            other = [sl for dt, sl in rows if dt != for_date]
+            # the day's own notes first, then the newest others fill the remainder
+            window = same[-TITLE_WINDOW:] + other[-(max(0, TITLE_WINDOW - len(same))):]
+            picked[nt] = tuple(window[-TITLE_WINDOW:] if len(window) > TITLE_WINDOW else window)
+        else:
+            picked[nt] = tuple(sl for _dt, sl in rows[-TITLE_WINDOW:])
+    return picked
 
 
 collect_existing_titles.cache_clear = _TITLE_SLUGS.clear   # back-compat with callers
@@ -4609,7 +4632,12 @@ def process_session(session_id: str, cwd: str, transcript_path: str,
     )
 
     tag_vocab = collect_existing_tags()
-    existing = collect_existing_titles(project_hint)
+    # Ground dedup on the notes ALREADY WRITTEN FOR THIS SESSION'S DAY, not on the
+    # globally newest forty. On a re-mine the newest forty can contain none of this
+    # session's own notes, which is how one session forked into 72 live + 41 retired.
+    _dt = _parse_iso(parsed.get("timestamp"))
+    _for_date = (_dt or datetime.now()).strftime("%Y-%m-%d")
+    existing = collect_existing_titles(project_hint, for_date=_for_date)
 
     prompt = EXTRACTION_PROMPT.format(
         transcript=transcript_full,
