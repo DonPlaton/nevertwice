@@ -34,16 +34,17 @@ and are not started before the rest is done.
   a withdrawn figure with nothing saying so; `tools/stamp_withdrawn.py` stamps the banner and
   `tests/_test_withdrawn_pages.py` fails if a page that needs one loses it. Nothing was deleted,
   because deleting a retracted result is how a project loses the memory of having been wrong.
-- **A *retrieval* head-to-head that survives its own audit.** The July stand ran Nevertwice,
-  Mem0, LangMem and A-MEM on the same 500 questions with the same local embedder, and Nevertwice
-  led every column. It was withdrawn because the corpus is third-party, uncommitted and unhashed,
-  so nobody — including us — can reproduce or even pin it.
-  **Today:** the supersession half of this is done and its dataset is committed and hashed
-  (`research/SUPERSESSION.md`), which is what the withdrawal was for. It does not close the
-  retrieval question: on that axis Mem0 returns the wanted fact more often than we do, 0.950
-  against 0.867, and the only corpus where that is measured is one we wrote. The harness for the
-  external comparison exists and runs with one command; the committed, content-hashed retrieval
-  corpus does not.
+- **A second external dataset, and the non-oracle pool for every arm.** LongMemEval is pinned
+  and re-run, and one benchmark is one benchmark. BEAM is the other candidate named here, on the
+  same open local stand. **LoCoMo is not a candidate** for the unchanged reason: plain BM25
+  scores about 94% on it, so it no longer separates memory systems.
+  **Today:** the retrieval head-to-head is closed and reproducible. `research/corpus_pin.py`
+  holds the corpus sha256, both harnesses verify it before reading a byte and stamp it into the
+  result, and the re-run reproduces every 2026-07 figure to three decimals across all four
+  systems (`research/EXTERNAL_RETRIEVAL.md`). The oracle pool is 940 sessions; the standard
+  non-oracle pool is 19,829, is fetched, hash-pinned and embedded, and what is missing there is
+  the competitor arms, which cost about twenty-one times their ingest rather than any new
+  machinery.
 - **The invariants track: ship it or delete it, on the end-to-end result.** G-A and G-B pass;
   `blast_radius` under `decidable-only` cleared all three out-of-sample gates on 27 repositories
   it was never built against, and the ratchet, `scale`'s static half and the union failed theirs
@@ -92,16 +93,16 @@ and are not started before the rest is done.
 ### The two that close the gap to the field — after everything above
 
 - **A number on a dataset we did not choose, that still separates systems.** Winning our own
-  stand is the same circularity as scoring a detector against positives its author generated,
-  and this project has now been burned by that shape twice. **LoCoMo is not a candidate** and the
-  reason is unchanged: plain BM25 scores about 94% on it, so it no longer separates memory
-  systems, and a vendor headline of 92.5 there says little about one.
-  BEAM is the candidate, or LongMemEval outside the oracle setting, on the same open local stand,
-  with the corpus committed and content-hashed so the result cannot be withdrawn for the reason
-  the last one was.
-  **Today:** every external retrieval figure this project has published is withdrawn, so the
-  honest public position is a strong design with no reproducible external number. The stand,
-  the adapters and the registration machinery all exist; the dataset and the run do not.
+  stand is the same circularity as scoring a detector against positives its author generated, and
+  this project has been burned by that shape twice. **LoCoMo is not a candidate** and the reason
+  is unchanged: plain BM25 scores about 94% on it, so it no longer separates memory systems, and
+  a vendor headline of 92.5 there says little about one. BEAM is the remaining candidate, on the
+  same open local stand.
+  **Today:** LongMemEval is done, on a corpus hash-pinned in `research/corpus_pin.py` that the
+  harness verifies before reading a byte - the property whose absence took the 2026-07 figures
+  down. Four systems, one pool, one embedder, one scoring function, and every figure reproduces
+  the withdrawn run to three decimals (`research/EXTERNAL_RETRIEVAL.md`). It is one dataset, and
+  the 19,829-session non-oracle pool has been embedded but not yet run for the competitor arms.
 - **The supersession benchmark's control arm is underpowered.** Over-retraction is the
   design's own worst failure mode, silently retiring a fact that is still true, and nothing
   downstream can catch it the way a stale answer can be caught. It is measured on 20 controls,
@@ -115,11 +116,12 @@ and are not started before the rest is done.
   The one stale result left is there, and it is the shape built to be hardest - there is no new
   note for retrieval to rank above the old one, so ranking cannot help and only retirement can.
   **Today:** the benchmark exists, is committed and content-hashed, and separates systems -
-  Nevertwice 0.017 stale against Mem0's 0.917 and an append-only file's 0.950, with Mem0 and the
-  file statistically indistinguishable from each other (`research/SUPERSESSION.md`). Three of the
-  four shapes score zero and the fourth scores one in fifteen. An earlier run had four failures in
-  `approach_abandoned` instead; they were an artifact of the extractor answering in the wrong
-  language, which gave the replacement note a title the slug-keyed match could not find.
+  Nevertwice 0.042 stale against Mem0's 0.917 and an append-only file's 0.950, with Mem0 and the
+  file statistically indistinguishable from each other (`research/SUPERSESSION.md`). Pooled over
+  two runs of the same commit, `narrowed` is clean and the rest are one or two cases each. An
+  earlier run had four failures in `approach_abandoned`; they were an artifact of the extractor
+  answering in the wrong language, which gave the replacement note a title the slug-keyed match
+  could not find.
 
 ## Architectural erosion — after everything in Near term
 

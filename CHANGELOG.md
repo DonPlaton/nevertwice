@@ -16,6 +16,35 @@ empty.
 
 ### Added
 
+- **The external retrieval benchmark, on a corpus pinned by content hash.** Sixteen figures came
+  down in 2026-08 for one reason: the LongMemEval corpus is third-party and uncommitted, and no
+  content hash was recorded when the numbers were produced, so the run could not be pinned to a
+  revision. `research/corpus_pin.py` closes that. The corpus stays out of git - 15 MB for the
+  oracle variant, 278 MB for the standard one - and its sha256 comes in, committed in source with
+  the URL it came from and the licence that permits the fetch. Both harnesses verify before
+  reading a byte, and `verify()` raises rather than warns: a warning about a corpus mismatch is
+  one nobody reads until the numbers are already public.
+
+  Re-run on the pinned bytes, **every figure returns identical to three decimals**, ours and all
+  three competitors'.
+
+  | | R@1 | R@5 | R@10 | MRR |
+  |---|---|---|---|---|
+  | semantic (bge-m3) | 0.422 | 0.652 | 0.728 | 0.528 |
+  | lexical, no embedder | 0.522 | 0.752 | 0.834 | 0.623 |
+  | **calibrated fusion (shipped)** | **0.550** | **0.802** | 0.858 | 0.657 |
+  | + trained cross-encoder (opt-in) | 0.614 | 0.826 | 0.858 | 0.712 |
+
+  Head to head on the same pool, same embedder, same scoring function, 500 questions over 940
+  sessions: Nevertwice R@5 **0.802**, Mem0 2.0.19 0.758, LangMem 0.692, A-MEM 0.692. Zep and
+  Cognee record a blocker rather than a number, as before.
+
+  The result cuts both ways and the page says so. The retraction cost nothing in accuracy; it was
+  still right, because at the time nobody could have shown that. The withdrawn claims stay
+  withdrawn - they were measured on a file that still cannot be identified, and reviving them
+  because a later run agrees would be assuming the conclusion. The re-run is a new claim family
+  on a named corpus. `research/EXTERNAL_RETRIEVAL.md`.
+
 - **A benchmark for supersession, which nobody in the field has.** LoCoMo, LongMemEval and
   BEAM all ask whether a system *recalls* a fact. None asks whether it hands back one that has
   since been retracted - for a chat companion a nuance, for a coding agent the whole problem,

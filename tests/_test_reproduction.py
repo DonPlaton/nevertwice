@@ -146,8 +146,21 @@ def test_canonical_hashing_strips_only_declared_fields() -> None:
         check("an absent file has no hash", R.canonical(Path(tmp) / "nope.json", []) is None)
 
     declared = {v for a in R.ARTIFACTS for v in (a.get("volatile") or [])}
+
+    def timing_shaped(v: str) -> bool:
+        """A name that can only be a duration.
+
+        The first three patterns missed this repository's own convention: the benches write
+        `ingest_s`, `query_s` and `_wall_s`, seconds with an `_s` suffix, which are as
+        timing-shaped as `_ms` and were rejected. The point of the rule is that declaring a
+        RESULT volatile makes the reproduction check vacuous, and a trailing `_s` cannot name
+        a result any more than a trailing `_ms` can.
+        """
+        return ("latency" in v or "seconds" in v or "ms" in v
+                or v.endswith("_s") or v == "seconds")
+
     check("only timing-shaped fields are declared volatile",
-          all("latency" in v or "seconds" in v or "ms" in v for v in declared),
+          all(timing_shaped(v) for v in declared),
           f"{sorted(declared)} - declaring a RESULT volatile would make the check vacuous")
 
 
