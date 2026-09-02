@@ -3433,6 +3433,24 @@ def write_typed_note(folder: str, item, project: str, date: str,
                                                      project, "mistake", r_slug))
             resolved = [mp.stem for mp in resolve_targets]
 
+    # An absorb rewrite used to rebuild frontmatter from scratch, carrying forward only
+    # recurrence and sources. Everything else was silently dropped - `status`,
+    # `resolved_by`, `resolves`, `relations`, `salience`, `supersedes` - which REOPENED
+    # shipped fixes: the mistake lost `status: resolved` while the decision that fixed it
+    # still carried `resolves:` pointing at it, so a dead bug was re-injected at
+    # SessionStart against a fix that was committed and tested (vault review 2026-09).
+    # These are carried unless the new extraction supplies its own value.
+    _carried: dict = {}
+    if absorb_into is not None:
+        try:
+            _old_fm = _read_frontmatter_file(absorb_into)
+        except Exception:                       # a corrupt prior must not lose the new note
+            _old_fm = {}
+        for _k in ("status", "resolved_by", "resolves", "relations", "salience",
+                   "supersedes", "valid_to", "confidence"):
+            if _old_fm.get(_k) not in (None, "", [], {}):
+                _carried[_k] = _old_fm[_k]
+
     fm = {"date": date, "project": project, "tags": tags, "type": ntype}
     # M-5. Unlike every other frontmatter field, valid_from used to pass the raw LLM
     # value through - a crafted multi-line string could close the YAML fence early
@@ -3478,6 +3496,12 @@ def write_typed_note(folder: str, item, project: str, date: str,
     if resolved:
         fm["resolves"] = resolved
     icon = TYPE_ICON.get(ntype, "")
+    # Apply what the absorb carried, WITHOUT overwriting anything this extraction set:
+    # a fresh `resolves` or a new `status` is newer information and wins. Everything the
+    # new pass simply did not mention keeps the value the note already had.
+    for _k, _v in _carried.items():
+        fm.setdefault(_k, _v)
+
     body_tags = render_body_tags(tags, [f"project/{project}", ntype])
 
     # Absorb must not DISCARD the previous statement (review 2026-08): the rewrite
