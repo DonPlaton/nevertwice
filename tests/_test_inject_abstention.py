@@ -28,21 +28,29 @@ def check(name, cond, detail=""):
 
 
 print("\n- the knob is a fraction, and it is on by default -")
-check("INJECT_MIN_VALUE is a fraction", 0.0 < m.INJECT_MIN_VALUE < 1.0, str(m.INJECT_MIN_VALUE))
+check("INJECT_MIN_VALUE is a fraction in range", 0.0 <= m.INJECT_MIN_VALUE < 1.0,
+      str(m.INJECT_MIN_VALUE))
+# Measured 2026-09-02 (research/ABSTENTION_AB.md): at 0.35 the payload is 26.6% smaller and
+# the wanted fact is present 8.7 points less often, against a pre-declared gate of 20% for at
+# most 2 points. The default is OFF and this pins it, so a future change to the constant has
+# to come with a measurement rather than a preference.
+check("the default is off until a measurement says otherwise", m.INJECT_MIN_VALUE == 0.0,
+      str(m.INJECT_MIN_VALUE))
 check("it is the same shape as the per-turn knob",
-      0.0 < m.PROMPT_RECALL_MIN_VALUE < 1.0)
+      0.0 <= m.PROMPT_RECALL_MIN_VALUE < 1.0)
 
 print("\n- the filter refuses the weak tail while there is room -")
 items = [{"stem": "strong", "score": 1.0}, {"stem": "weak", "score": 0.05}]
 val = m._relative_value(items)
-kept = [r for r in items if val[r["stem"]] >= m.INJECT_MIN_VALUE]
+ARMED = 0.35                      # the value the sweep used, so the checks below still bite
+kept = [r for r in items if val[r["stem"]] >= ARMED]
 check("the weak item is refused", [r["stem"] for r in kept] == ["strong"], str(kept))
 
 print("\n- the 'show at least one' guarantee survives -")
 only_weak = [{"stem": "a", "score": 0.001}]
 v2 = m._relative_value(only_weak)
 check("a lone item always scores 1.0 and is kept",
-      v2["a"] >= m.INJECT_MIN_VALUE, str(v2))
+      v2["a"] >= ARMED, str(v2))
 
 print("\n- unscored items are left alone rather than silently dropped -")
 unscored = [{"stem": "x"}, {"stem": "y"}]

@@ -26,25 +26,24 @@ to work out of the box for a new user first; the branch ships only if the polygo
 positive; the two benchmark items at the end of this section are what close the gap to the field
 and are not started before the rest is done.
 
-- **A public page still shows withdrawn numbers.** `docs/COMPARISON.md` renders the July
-  head-to-head — Nevertwice ahead of Mem0, LangMem and A-MEM on every column — inside a
-  generated region with no withdrawal banner, while the evidence register marks all sixteen of
-  those figures withdrawn. A reader who clones the repository today sees retracted results
-  presented as current.
-  **Today:** DONE for the reader - `docs/COMPARISON.md` now carries a WITHDRAWN banner above
-  the generated regions, saying the numbers must not be quoted and why, and
-  `tests/_test_withdrawn_not_quoted.py` fails if it disappears. The tables are kept rather than
-  deleted, because deleting a retracted result is how a project quietly loses the memory of
-  having been wrong. What remains is the underlying cause: the page is registered `backlog`
-  rather than `governed`, so the test that forbids citing a withdrawn claim still does not look
-  at it. Governing it means every number on the page must resolve to a registered claim.
-- **A head-to-head that survives its own audit.** The July stand ran Nevertwice, Mem0, LangMem
-  and A-MEM on the same 500 questions with the same local embedder, and Nevertwice led every
-  column. It was withdrawn because the corpus is third-party, uncommitted and unhashed, so nobody
-  — including us — can reproduce or even pin it.
-  **Today:** the harness exists and runs with one command, the adapters for Zep and Cognee record
-  their blocker instead of a fabricated number, and the withdrawal states its reason. What is
-  missing is a committed, content-hashed dataset the run can be pinned to.
+- **Governing `docs/COMPARISON.md`.** The page is registered `backlog`, so the number-coverage
+  check does not look at it; governing it means every figure on the page - including the vendor
+  matrix and the star counts, which are third-party facts rather than measurements - has to
+  resolve to a registered claim or an external citation.
+  **Today:** the reader-facing half is done and generalised. Thirty-six registered pages printed
+  a withdrawn figure with nothing saying so; `tools/stamp_withdrawn.py` stamps the banner and
+  `tests/_test_withdrawn_pages.py` fails if a page that needs one loses it. Nothing was deleted,
+  because deleting a retracted result is how a project loses the memory of having been wrong.
+- **A *retrieval* head-to-head that survives its own audit.** The July stand ran Nevertwice,
+  Mem0, LangMem and A-MEM on the same 500 questions with the same local embedder, and Nevertwice
+  led every column. It was withdrawn because the corpus is third-party, uncommitted and unhashed,
+  so nobody — including us — can reproduce or even pin it.
+  **Today:** the supersession half of this is done and its dataset is committed and hashed
+  (`research/SUPERSESSION.md`), which is what the withdrawal was for. It does not close the
+  retrieval question: on that axis Mem0 returns the wanted fact more often than we do, 0.950
+  against 0.867, and the only corpus where that is measured is one we wrote. The harness for the
+  external comparison exists and runs with one command; the committed, content-hashed retrieval
+  corpus does not.
 - **The invariants track: ship it or delete it, on the end-to-end result.** G-A and G-B pass;
   `blast_radius` under `decidable-only` cleared all three out-of-sample gates on 27 repositories
   it was never built against, and the ratchet, `scale`'s static half and the union failed theirs
@@ -55,14 +54,18 @@ and are not started before the rest is done.
   `nevertwice/invariants/` is empty and a test pins that. What remains is a rerun on an unloaded
   GPU — 92 of 300 attempts timed out and a timeout correlates with larger inputs, so the usable
   pairs are biased toward smaller files.
-- **Baselines the headline numbers have never been run against.** Three arms named in
-  [`research/BASELINES.md`](research/BASELINES.md) do not exist yet: a hand-written
-  `AGENTS.md` carrying the same rule as a guard, an LLM session summary injected at an equal
-  token budget, and the linter or test that already catches the same class of mistake.
-  **Today:** the gaps are published rather than hidden - the baseline matrix marks each one
-  `not_compared`, and a test fails if a headline quietly drops one. The repeat-error result
-  is the one that needs them most: until the `AGENTS.md` arm runs, it does not distinguish
-  *this system works* from *writing the rule down works*.
+- **The cheap baselines have been run, on the wrong stand.** The comparison a reader wants is
+  against the *headline* - the repeat-error result from the live validation - and what exists is
+  the same comparison on the F2 matched-condition corpus, which is a different experiment with a
+  different corpus and no model in the loop.
+  **Today:** the arms exist and their numbers are registered rather than promised. Held to one
+  false-positive rate of 0.2 on 60 episodes: guards catch **0.567**, a hand-written always-present
+  `AGENTS.md` catches **0.200** at fifteen times the token cost (203.6 per episode against 13.93,
+  and paid on every episode rather than when something fires), and the relevant linter or test -
+  scored generously in the baseline's favour - catches **0.467**. What remains is porting the
+  `AGENTS.md` arm onto the live-validation stand, where the headline actually lives; until then
+  that headline still does not distinguish *this system works* from *writing the rule down works*
+  under a real model.
 - **Universal guard pack default-on decision.** The pack (11 high-precision pitfalls, 0
   tokens until they fire) is opt-in behind `NEVERTWICE_GUARD_PACK`.
   **Today:** the pack ships and is seeded on request; what is missing is a measured
@@ -77,12 +80,14 @@ and are not started before the rest is done.
   **Today:** anticipation scores IDF-weighted coverage, with an optional embedding blend that
   abstains whenever the cached vectors are from a different embedding space. Both are
   order-blind.
-- **Latency measurements that survive the run.** A CI job that catches hot-path
-  regressions, on top of a result file the benchmark actually writes.
-  **Today:** `research/latency_bench.py` prints its numbers and saves nothing, so the
-  hot-path figures in the README and [`docs/BENCHMARKS.md`](docs/BENCHMARKS.md) - including
-  the 85 ms on the banner - cannot be traced to a committed artifact. Saving that file is
-  the prerequisite for the rest.
+- **A CI job that catches a hot-path regression.** Two paths got slower this cycle -
+  UserPromptSubmit 88 to 95 ms, SessionStart 85 to 91 ms - and nothing noticed until the claims
+  were re-measured by hand for an unrelated reason.
+  **Today:** `research/latency_bench.py --save` writes `research/latency_bench.json` with a
+  minimum, median and maximum per path, and the four published figures point into it. What is
+  missing is the job that runs it and fails on a regression, which is harder than it sounds: the
+  same statistic on the same unchanged tree moves by a third between sessions on this machine, so
+  a naive threshold would fail on the weather.
 
 ### The two that close the gap to the field — after everything above
 
@@ -97,16 +102,15 @@ and are not started before the rest is done.
   **Today:** every external retrieval figure this project has published is withdrawn, so the
   honest public position is a strong design with no reproducible external number. The stand,
   the adapters and the registration machinery all exist; the dataset and the run do not.
-- **A benchmark for supersession, which nobody in the field has.** LoCoMo, LongMemEval and BEAM
-  all measure whether a system *recalls* a fact. None measures whether it returns a fact that has
-  since been **retracted** - and staleness is a real failure mode, because an agent acting on a
-  withdrawn fact writes wrong code. The protocol is small: assert *A*, assert *not-A*, query, and
-  score whether the superseded fact comes back and at what rank.
-  **Today:** a five-fact probe against Mem0 2.0.19 exists in the polygon and shows the retracted
-  fact returned at **rank 1**, ahead of both of its replacements - which follows from that
-  system's published ADD-only design rather than from a defect. That is a sketch, not a
-  benchmark: it has no dataset, no baselines, no intervals, and Nevertwice's own side of it has
-  never been measured at all.
+- **The supersession benchmark's remaining shape: a fact removed with nothing to replace it.**
+  The one stale result left is there, and it is the shape built to be hardest - there is no new
+  note for retrieval to rank above the old one, so ranking cannot help and only retirement can.
+  **Today:** the benchmark exists, is committed and content-hashed, and separates systems -
+  Nevertwice 0.017 stale against Mem0's 0.917 and an append-only file's 0.950, with Mem0 and the
+  file statistically indistinguishable from each other (`research/SUPERSESSION.md`). Three of the
+  four shapes score zero and the fourth scores one in fifteen. An earlier run had four failures in
+  `approach_abandoned` instead; they were an artifact of the extractor answering in the wrong
+  language, which gave the replacement note a title the slug-keyed match could not find.
 
 ## Architectural erosion — after everything in Near term
 

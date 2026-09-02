@@ -30,6 +30,17 @@ These are the only vars in [`.env.example`](../.env.example). Most people set ze
 | `NEVERTWICE_EMBED_MODEL` | per-provider | Override the embedding model (e.g. `text-embedding-3-small`). |
 | `OPENAI_API_KEY` · `VOYAGE_API_KEY` · `COHERE_API_KEY` | n/a | Key for the matching cloud embedder (Gemini reuses `GEMINI_API_KEY`). |
 
+**Why the default embedder is still `bge-m3`, and not the model we fine-tuned for this.** A
+LoRA fine-tune trained on this project's own store beat stock `bge-m3` on that store by a wide
+margin, and then did not transfer: on an external held-out set its gain does not resolve - the
+confidence interval crosses zero. Four attempts to widen it - hard-negative mining,
+distillation, Matryoshka training and a large increase in adapter capacity - each missed a
+threshold declared before it ran and were deleted, and dimension truncation costs recall while
+buying nothing a naive truncation does not. The default moves when an external benchmark
+separates the two, and not before. Figures and method:
+[`research/EMBED_HELDOUT_BASELINE.md`](../research/EMBED_HELDOUT_BASELINE.md) and the
+`EMBED_*` pages beside it.
+
 Everything below is **advanced**: rarely needed, safe to ignore.
 
 ---

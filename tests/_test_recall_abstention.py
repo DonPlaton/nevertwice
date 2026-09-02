@@ -60,9 +60,9 @@ check("two identically sized hits get different decisions",
 
 print("\n- the killswitch and the default -")
 check("the knob exists and defaults to a fraction, not a raw score",
-      0.0 < m.PROMPT_RECALL_MIN_VALUE < 1.0, str(m.PROMPT_RECALL_MIN_VALUE))
+      0.0 <= m.PROMPT_RECALL_MIN_VALUE < 1.0, str(m.PROMPT_RECALL_MIN_VALUE))
 check("the top hit always clears any threshold below 1.0",
-      m._relative_value([hit("only", 0.004)])["only"] >= m.PROMPT_RECALL_MIN_VALUE)
+      m._relative_value([hit("only", 0.004)])["only"] >= 0.35)
 
 print(f"\nrecall abstention: {len(RUN) - len(FAILED)} passed, {len(FAILED)} failed")
 sys.exit(1 if FAILED else 0)

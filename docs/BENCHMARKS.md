@@ -1,6 +1,8 @@
 # Benchmarks & real-task evaluation
 
-<p align="center"><img src="benchmarks.png" alt="Same-stand LongMemEval-oracle R@5 bars: Nevertwice with the opt-in cross-encoder and with the shipped zero-dependency fusion, ahead of Mem0, LangMem and A-MEM. Beside them the four figures that matter: repeat-error rate with a guard on, recall leaner than dumping the store, zero tokens until a guard fires, and the full hook cost per tool call" width="880"></p>
+<p align="center"><img src="benchmarks.png" alt="Four panels of live measurements. Supersession: how often each system hands back a fact that has since been retracted - Nevertwice 0.02, Mem0 2.0.19 0.92, an append-only store with BM25 0.95, each with a confidence interval. Hot-path latency in milliseconds for the cold import and the three hooks. Poisoning defence, with the weakest cell - a plausible false fact, blocked one time in four - drawn in the negative colour and hatched rather than left out. And four embedding ideas that were measured against a pre-declared threshold, missed it, and were deleted." width="880"></p>
+
+Regenerate it with `python research/gen_benchmarks_figure.py`, which reads every value from the evidence register and refuses to draw a withdrawn one. The figure it replaced was drawn by hand in July, had no generator, and rendered four numbers that were retracted a month later - a chart travels further than the page it sits on, so the retraction never reached anyone who saw only the image.
 
 Two kinds of number here, and the difference matters:
 - **External retrieval (LongMemEval-oracle):** the headline, independent ground truth.
@@ -25,10 +27,10 @@ Python 3.14; reproduce anywhere with `python research/latency_bench.py`:
 <!-- claims:latency -->
 | hot path | cost | when it is paid |
 |---|---|---|
-| PreToolUse end-to-end | **102 ms** | every tool call (interpreter start included) |
-| UserPromptSubmit end-to-end | 88 ms | per prompt (task-aware recall) |
-| SessionStart end-to-end, idle | 85 ms | per session start with no backlog |
-| cold import of the engine | 30 ms | once per hook process (inside the numbers above) |
+| PreToolUse end-to-end | **98 ms** | every tool call (interpreter start included) |
+| UserPromptSubmit end-to-end | 95 ms | per prompt (task-aware recall) |
+| SessionStart end-to-end, idle | 91 ms | per session start with no backlog |
+| cold import of the engine | 31 ms | once per hook process (inside the numbers above) |
 
 <sub>**Withdrawn** - `guards.check()` over a seeded ledger, lexical recall, no embedder: the bench's seed lands in the subprocess store while the in-process half reads the store pinned at import, so this row now measures an empty store (0 guards, 0 notes) instead of the seeded one the published number describes - the measurement, not just the value, is broken</sub>
 <!-- /claims:latency -->
@@ -50,6 +52,48 @@ every hook process imported network machinery the guard path never uses. The bef
 withdrawn - they describe a tree no committed artifact records, and re-measuring them means
 checking out and running the pre-audit engine. The lesson generalizes and needs no number: hooks
 get measured end to end, because module-level convenience is a per-tool-call tax.
+
+## Supersession: does a retracted fact come back?
+
+The one comparison here that runs on a corpus this repository ships. Full method, per-shape
+breakdown and what it costs us: [`research/SUPERSESSION.md`](../research/SUPERSESSION.md).
+
+| arm | returns the retracted fact | returns the replacement | retires a still-true fact |
+|---|---|---|---|
+| **Nevertwice** | **0.017** [0.003, 0.089] | 0.933 [0.841, 0.974] | 0.05 |
+| Mem0 2.0.19 | 0.917 [0.819, 0.964] | 0.950 [0.863, 0.983] | 0.00 |
+| append-only markdown + BM25 | 0.950 [0.863, 0.983] | 0.950 [0.863, 0.983] | 0.05 |
+
+n = 60 supersession cases and 20 controls, Wilson intervals, one local stand, the same
+embedder and same extraction model for every arm. Paired, on the same cases: Nevertwice
+against Mem0 gives **54** discordant pairs and not one in the other direction; **Mem0
+against the append-only floor, McNemar p = 0.69** - indistinguishable.
+
+The floor is why the table is worth printing. A benchmark only one vendor's architecture fails
+is a benchmark about that vendor; this one is failed by an append-only text file too, which is
+what supersession costs when nothing implements it.
+
+Two things it does not show. The dataset is written here rather than scraped, which is a
+weaker instrument than an external corpus - the floor's 0.950 is the guard against the task
+being trivially easy. And Mem0 still edges us on returning the replacement, 0.950
+against 0.933; this page does not dispute it.
+
+Payload per query on the same corpus: Nevertwice **279** characters, Mem0 **457**.
+
+## Abstention: does refusing a weak hit pay for itself?
+
+No, on the only labelled store this project has, and the defaults were turned off because of
+it. Full sweep: [`research/ABSTENTION_AB.md`](../research/ABSTENTION_AB.md).
+
+Both retrieval paths shipped with a value threshold at 0.35 - a hit scoring below that
+fraction of the batch's best hit is refused even when there is room for it, which is the
+distinction between *does it fit* and *is it worth it*. Swept over a curve rather than
+compared to off: at the shipped threshold the payload is 26.6% smaller and the wanted fact
+comes back 8.7 points less often, against a gate written before the run of 20% for at most 2
+points. Nothing on the curve clears both, so both defaults are 0 and the switches stay opt-in.
+
+The one that did pay: re-mining a grown transcript from its recorded watermark instead of from
+byte zero reads **77.8% fewer bytes** at identical coverage of the appended material.
 
 ## External retrieval: LongMemEval-oracle (the headline)
 

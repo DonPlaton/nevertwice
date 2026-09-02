@@ -5,6 +5,171 @@ versions are [semantic](https://semver.org). Dates are UTC.
 
 ## [Unreleased]
 
+Two threads. A research programme that ended in **NO-GO** and deleted most of what it built,
+and a review of the engine that has been running in production on the author's machine for
+three months. The review found fifteen defects; a benchmark built to check one of this
+project's central claims immediately found two more, and one of the three new mechanisms
+failed the gate written for it before it ran.
+
+Nothing here is a release. `nevertwice/invariants/` is empty and a test pins that it stays
+empty.
+
+### Added
+
+- **A benchmark for supersession, which nobody in the field has.** LoCoMo, LongMemEval and
+  BEAM all ask whether a system *recalls* a fact. None asks whether it hands back one that has
+  since been retracted - for a chat companion a nuance, for a coding agent the whole problem,
+  because an agent acting on a withdrawn fact writes wrong code confidently and the wrongness
+  is invisible until it runs.
+
+  Three rates, because any one alone is trivially gamed: **stale**, **current**, and
+  **over-retraction** measured on control cases where two facts are simply different and both
+  still true. A system answering "I have nothing" scores perfectly on the first and zero on
+  the second, and the pair says so immediately.
+
+  | arm | stale | current | over-retraction |
+  |---|---|---|---|
+  | Nevertwice | **0.017** | 0.933 | 0.05 |
+  | Mem0 2.0.19 | 0.917 | 0.950 | 0.00 |
+  | append-only markdown + BM25 | 0.950 | 0.950 | 0.05 |
+
+  Paired on the same 60 cases: Nevertwice against Mem0 gives 54 discordant pairs and not one
+  the other way. **Mem0 against the append-only floor: p = 0.69** - on this axis their design
+  is indistinguishable from a text file, which is what single-pass ADD-only predicts and what
+  their own design note says happens on purpose. Their retrieval still edges ours, 0.950
+  against 0.933, and the page says so.
+
+  The dataset is committed and content-hashed - `research/data/supersession_v1.json`, 80 cases
+  over four shapes plus 20 controls, built by a generator that refuses to write a case no arm
+  could score. Every external figure this project published before was withdrawn for want of
+  exactly that. Full method and caveats: `research/SUPERSESSION.md`.
+
+- **`tools/stamp_withdrawn.py`** and `tests/_test_withdrawn_pages.py` - a retracted figure now
+  says so on the page that prints it. `docs/COMPARISON.md` was corrected by hand, and doing it
+  exposed the general case: **36 registered pages** printed at least one withdrawn figure and
+  none told the reader. The front pages are governed, so their numbers are generated from live
+  claims and cannot drift; the study archive is `backlog`, which caps how many unregistered
+  numbers a page may print and says nothing about whether they are still true. That is the
+  wrong way round - the studies are where someone goes to check. Nothing was deleted: a
+  project that removes the results it was wrong about loses the only useful part of having
+  been wrong.
+
+- **`research/gen_benchmarks_figure.py`** - `docs/benchmarks.png` had no generator. It was
+  drawn by hand in July and rendered four LongMemEval-oracle bars that were retracted a month
+  later, embedded with alt-text promising three more retracted results. A chart travels
+  further than the page it sits on, so the retraction never reached anyone who saw only the
+  image. The replacement reads every value from the evidence register at draw time and refuses
+  to draw a withdrawn one; the provenance line is drawn into the figure.
+
+- **`research/abstention_ab.py`** - the measurement three mechanisms shipped without. Each
+  switch is swept over a curve rather than compared to *off*, because a default only ever
+  tested against its own absence cannot be shown to be the right default.
+
+- **`tools/sync_install.py`** - a reversible way to update a hand-rolled flat install. Backs
+  up, copies, then verifies by importing the installed engine in a subprocess against a
+  throwaway store. Never copies `.secrets.env`, `twin_calibration.json`, `guards.json` or
+  `.processed_sessions.json`: machine state, not code.
+
+- **`tools/repair_vault.py`** - puts accumulated store damage one reviewed command away.
+  Renames, never deletes.
+
+### Changed
+
+- **Value-based abstention is off by default, on the measurement rather than on doubt.** It
+  shipped at 0.35 on both the recall and injection paths with tests proving the mechanism
+  works and nothing measuring whether it helps. Swept over the labelled corpus: at 0.35 the
+  payload is 26.6% smaller and the wanted fact comes back 8.7 points less often, against a
+  gate - written before the run - of 20% for at most 2 points. No threshold on the curve
+  clears both. Sixty characters is not worth an eight-point drop in finding the right lesson.
+  Kept as an opt-in switch, because the trade plausibly reverses on a store where recall
+  returns ten hits rather than one and a half; that is a hypothesis and it is labelled as one.
+  `research/ABSTENTION_AB.md`.
+
+- **The extractor is told which language to answer in, instead of being asked to work it
+  out.** The prompt stated the rule - write in the dominant language of the session - and left
+  the model to apply it. On a corpus with no Russian in it, the local model wrote 17 of 123
+  notes in Russian: a drift of 0.138. The condition is now resolved in Python and the prompt
+  names one language; the detector counts letters rather than bytes, because a Russian session
+  is full of Latin identifiers and a majority vote reads almost every bilingual transcript as
+  English.
+
+  It was not a cosmetic defect. Those notes were correct and unfindable by an English query,
+  and a replacement written in the wrong language gets a title the slug-keyed match cannot
+  find, so the old note is never retired. Fixing it moved the supersession benchmark more than
+  anything else did: **0 of 128** notes in Cyrillic, stale 0.067 → **0.017**, current 0.867 →
+  **0.933**.
+
+- **Two hot paths got slower and the numbers say so.** UserPromptSubmit 88 → 95 ms and
+  SessionStart 85 → 91 ms against their 2026-08 values, on the same statistic (the minimum of
+  five repeats). PreToolUse went the other way, 102 → 98 ms. Published rather than re-run
+  until it flatters.
+
+### Fixed
+
+Fifteen defects in the engine, each with a test that fails without the fix.
+
+- **The extractor was grounded on the wrong project's vocabulary.** `collect_existing_tags`
+  scanned the whole store, so a batch run handed one project the signature tags of whichever
+  project held the most notes. Nine notes from an ML project acquired `quantum_computing` and
+  began surfacing for a different project's queries while no longer matching their own.
+- **A re-mined session re-read its transcript from byte zero.** The extractor's window is
+  anchored to the end of the file, so growth slid it, the model saw a different document,
+  invented different titles, and the old notes were retired as superseded by their own rename.
+  Re-mining now reads only the region added since the recorded watermark: **77.8% fewer bytes**
+  over eight growth stages, at identical coverage.
+- **The delta reader threw away one whole event per re-mine.** It seeked to the watermark and
+  discarded a line unconditionally, on the assumption that a byte offset lands mid-line. A
+  watermark is the file size after a completed write, so it lands on a newline nearly every
+  time. Found by measuring the mechanism, not by reading it.
+- **The title cache crashed the second session of every sweep, and silently kept retired
+  titles.** Making the dedup window date-aware changed the cache's entries from a slug to a
+  `(date, slug)` pair in one of the three places that touch it. The appender kept writing a
+  bare string, which the next date-aware read unpacked as a pair - `ValueError`, taking down
+  the second session for a project in any single process: a sweep, `ingest.py`, the watch
+  daemon, or `capture_session` twice in a row. The remover kept testing `slug in bucket`
+  against a list of pairs, always false, so a note that had just been retired was still
+  offered to the extractor as an existing title. The crash is the loud half; the silent one is
+  the dangerous one.
+- **A retired stem could be re-minted live under the same name**, overwriting the earlier
+  retired note's history.
+- **A rewrite could strip a mistake of its "how to avoid" half**, leaving the record of the
+  error without the part that prevents it.
+- **A re-labelled entity minted a third card** instead of updating its own.
+- **One observation stored twice counted twice**, so duplication read as corroboration.
+- **A re-mined session note dropped the notes an earlier pass had linked.**
+- **The entity card's two counts did not say what each of them counted.**
+- **`trigger` recorded whatever the payload happened to say** rather than the pipeline path
+  the run actually took.
+- **A guard could repeat itself in one session** because nothing recorded which session had
+  already seen it.
+- **The compacted context block lost the ability to show a hole** - counts and spans are now
+  cumulative.
+- **An absorb rewrite could reopen a fix that had already shipped.**
+- **The store kept only one previous generation**; a bad write is now undoable.
+
+### Research
+
+- **Phase V: the invariants track is NO-GO, on evidence rather than on a missing
+  measurement.** Six mechanisms were built; one survived. `blast_radius` under
+  `decidable-only` cleared all three of its out-of-sample gates on 27 repositories the frozen
+  code had never seen. The complexity ratchet, `scale`'s static half and the three-heuristic
+  union each failed theirs and were deleted. The end-to-end gate was then re-run out of sample
+  at 150 benefit and 150 harm trials and is **not met**: 5 fixed against 2 broken on 87 usable
+  pairs, p = 0.453. Nothing was promoted.
+
+  Three findings worth carrying. **Recall generalises and precision does not** - recall moved
+  by three ten-thousandths across repositories chosen to be as unlike the development set as
+  possible, while precision fell 31% and every flag rate rose 43 - 86%. **Repository size
+  governs precision** (Spearman ρ = −0.620, p = 0.00056), and the apparent domain effect does
+  not survive residualising on it (p = 0.025 → 0.43). **A gate cleared by one thousandth was
+  never cleared**: the union passed in sample at 0.049 against a 0.05 ceiling and reads 0.055
+  out of sample.
+
+- **The fine-tuned embedder does not resolve on external material.** +0.0278 recall@1 with an
+  interval of [−0.005, 0.065]. Hard-negative mining, distillation, Matryoshka training and a
+  64× capacity increase each failed their pre-declared thresholds and were deleted. `bge-m3`
+  remains the default.
+
 ## [2.4.0] - 2026-08-26
 
 The release that followed the 2026-08-24 external audit. Two thirds of it is machinery

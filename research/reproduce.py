@@ -50,6 +50,31 @@ HARDWARE = "needs-hardware"
 
 #: Every committed research artifact, what makes it, and what it takes to remake it.
 ARTIFACTS = [
+    {"file": "research/results/supersession_v1.json",
+     "command": ["python", "research/supersession_bench.py",
+                 "--arms", "nevertwice,naive", "--out",
+                 "research/results/supersession_v1.json"],
+     "kind": HARDWARE, "task": "supersession",
+     "inputs": ["research/data/supersession_v1.json",
+                "a local Ollama serving bge-m3 and qwen3-coder:30b",
+                "for the Mem0 arm: a separate environment with mem0ai[extras]"],
+     "volatile": ["seconds"],
+     "note": "the three-arm supersession stand. The naive arm is deterministic and needs "
+             "nothing; the two LLM arms call a local extraction model, so their per-case "
+             "results move between runs even at temperature 0 - the published figures moved "
+             "when the extractor stopped answering in the wrong language. The dataset is "
+             "committed and hash-checked (gen_supersession_dataset.py --check), which is the "
+             "half a stranger verifies without the model. The Mem0 arm runs from its own "
+             "environment and is merged in by --compare."},
+    {"file": "research/results/abstention_ab.json",
+     "command": ["python", "research/abstention_ab.py", "--part", "all",
+                 "--out", "research/results/abstention_ab.json"],
+     "kind": HARDWARE, "task": "abstention",
+     "inputs": ["research/data/supersession_v1.json",
+                "a local Ollama serving bge-m3 and qwen3-coder:30b"],
+     "note": "the sweep that turned both abstention defaults off. The re-mining half is pure "
+             "file I/O and reproduces exactly; the two retrieval sweeps build a store first, "
+             "so they need the model."},
     {"file": "research/matched_conditions.json",
      "command": ["python", "research/matched_conditions.py", "--save"],
      "kind": DETERMINISTIC, "task": "F1",

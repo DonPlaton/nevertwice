@@ -113,8 +113,15 @@ def figures_on_page(text: str, claims: list[dict]) -> list[tuple[str, str]]:
     return found
 
 
-#: A page is stamped at two points of evidence: one high-precision figure, or two coarse
-#: ones. Below that the match is likelier to be a coincidence than a citation.
+#: One high-precision figure is a citation. Any number of coarse ones are not.
+#:
+#: The rule started as "two points, so two coarse forms count", and `research/ABSTENTION_AB.md`
+#: showed why that is wrong: its threshold sweep runs over 0.35, 0.75 and 0.90, three round
+#: numbers that happen to equal three withdrawn recall figures from studies it never cites.
+#: Two coincidences are not evidence of one citation - they are evidence that round numbers
+#: are common. A page whose only overlap is coarse escapes the stamp, and that is the right
+#: error to make: a false retraction notice is a false statement, while a missed one leaves
+#: the page as it already was.
 STAMP_AT = 2
 
 
@@ -124,7 +131,7 @@ def needs_banner(path: Path, claims: list[dict]) -> list[tuple[str, str]]:
     if any(m in text for m in MARKERS):
         return []
     figs = figures_on_page(text, claims)
-    return figs if sum(_strength(pr) for _cid, pr in figs) >= STAMP_AT else []
+    return figs if any(_strength(pr) >= STAMP_AT for _cid, pr in figs) else []
 
 
 def insert(text: str, link: str) -> str:
@@ -144,9 +151,33 @@ def insert(text: str, link: str) -> str:
     return banner + "\n" + text
 
 
+def remove(text: str) -> str:
+    """Strip a banner this page no longer earns.
+
+    Tightening the rule left eleven pages carrying a retraction notice justified only by
+    round numbers they never cited. A false retraction is as wrong as a missing one, and
+    worse in one way: it invites a reader to distrust results that are fine.
+    """
+    lines = text.splitlines(keepends=True)
+    out, i = [], 0
+    while i < len(lines):
+        if lines[i].startswith(BANNER_ID):
+            i += 1
+            while i < len(lines) and lines[i].startswith(">"):
+                i += 1
+            while i < len(lines) and not lines[i].strip():
+                i += 1
+            continue
+        out.append(lines[i])
+        i += 1
+    return "".join(out)
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--apply", action="store_true", help="write the banners (default: report)")
+    ap.add_argument("--unstamp", action="store_true",
+                    help="also remove banners from pages the current rule would not stamp")
     args = ap.parse_args()
 
     manifest = json.loads(MANIFEST.read_text(encoding="utf-8"))
@@ -176,6 +207,22 @@ def main() -> int:
         p.write_text(insert(p.read_text(encoding="utf-8"), _link_from(rel)),
                      encoding="utf-8")
     print(f"\nstamped {len(todo)} page(s)")
+
+    if args.unstamp:
+        removed = 0
+        for rel in sorted(manifest["documents"]):
+            f = ROOT / rel
+            if not f.exists():
+                continue
+            text = f.read_text(encoding="utf-8", errors="replace")
+            if BANNER_ID not in text:
+                continue
+            figs = figures_on_page(text, claims)
+            if not any(_strength(pr) >= STAMP_AT for _cid, pr in figs):
+                f.write_text(remove(text), encoding="utf-8")
+                print(f"  unstamped {rel} - its only overlap was round numbers")
+                removed += 1
+        print(f"unstamped {removed} page(s)")
     return 0
 
 

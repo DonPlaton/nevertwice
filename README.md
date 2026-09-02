@@ -84,13 +84,19 @@ What survived re-measurement at HEAD, and what it cost:
 
 | claim | result | evidence |
 |---|---|---|
+| handing back a fact that has since been **retracted** | **0.017** of the time, against **0.917** for Mem0 2.0.19 and **0.950** for an append-only file with term matching, on the same 60 cases | [SUPERSESSION.md](research/SUPERSESSION.md) |
 | acting vs *always-injecting* the same lesson | same error prevention for **31×** fewer memory tokens | [ACTIVE_MEMORY.md](research/ACTIVE_MEMORY.md) |
 | memory-poisoning acceptance attacks | **81%** blocked overall - **100%** of prompt injection, **25%** of plausible-false facts | [POISONING.md](research/POISONING.md) |
-| what being there costs | PreToolUse **102 ms** end to end - a tenth of a second, and it moves by a third between sessions - and zero context tokens until a guard fires | [BENCHMARKS.md](docs/BENCHMARKS.md) |
+| what being there costs | PreToolUse **98 ms** end to end - a tenth of a second, and it moves by a third between sessions - and zero context tokens until a guard fires | [BENCHMARKS.md](docs/BENCHMARKS.md) |
 
-The poisoning row is the one to read twice: against the withdrawn first-release artifact, the current
-engine blocks *fewer* false facts, not more. That regression is published here because a project
-whose argument is reproducibility does not get to report only the deltas that flatter it.
+Read the first and second rows against each other. The first is the only figure here measured
+against other systems on a corpus this repository ships - and on the column everybody else
+measures, Mem0 leads: it returns the wanted fact 0.950 of the time against our 0.933. It wins
+retrieval and loses retraction, which is what its published ADD-only design predicts; the test
+that matters is **Mem0 against a plain append-only file, p = 0.69** - indistinguishable. The
+second row is a regression of ours: against the withdrawn first-release artifact the current
+engine blocks *fewer* plausible false facts, not more. Both are here because a project whose
+argument is reproducibility does not get to publish only the deltas that flatter it.
 
 The retrieval comparison against the funded leaders stood on the uncommitted dataset, so it is
 withdrawn too:
@@ -101,14 +107,13 @@ withdrawn too:
 > The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/head_to_head.py` is what re-measures this one.
 <!-- /claims:head-to-head -->
 
-Two caveats we measured rather than hid, and which the withdrawal does not touch: the payoff scales
-with the agent's own capability (memory removes the *knowledge* bottleneck, not the reasoning one),
-and retrieval R@k had stopped discriminating between serious systems well before these numbers were
-pulled - which is why the work that matters is after retrieval, resolving contradictions at write
-time, resisting poisoning, forgetting the right things. Those, the baseline gates a headline has to
-clear, and the negative results we deleted rather than shipped:
-[BENCHMARKS.md](docs/BENCHMARKS.md) · [BASELINES.md](research/BASELINES.md) ·
-[WEAKNESSES.md](docs/WEAKNESSES.md) · [the research lab](research/).
+Two caveats the withdrawal does not touch, both measured rather than hidden: the payoff scales with
+the agent's own capability - memory removes the *knowledge* bottleneck, not the reasoning one - and
+retrieval R@k had stopped separating serious systems well before these numbers were pulled, which is
+why the work that matters comes after retrieval. Those, the baseline gates a headline has to clear,
+and the results we deleted rather than shipped: [BENCHMARKS.md](docs/BENCHMARKS.md) ·
+[BASELINES.md](research/BASELINES.md) · [WEAKNESSES.md](docs/WEAKNESSES.md) ·
+[the research lab](research/).
 
 ## How it works
 
@@ -155,7 +160,7 @@ With no backend at all, extraction pauses loudly (sessions are kept and retried,
 recall runs on lexical search until an embedder shows up. The five-minute walkthrough is in
 [QUICKSTART.md](QUICKSTART.md); every environment variable is in [CONFIG.md](docs/CONFIG.md).
 
-Contributing: `pip install -e ".[dev]"`, then `python -m pytest -q`. One hundred thirty hermetic suites -
+Contributing: `pip install -e ".[dev]"`, then `python -m pytest -q`. One hundred thirty-three hermetic suites -
 LLMs, embedders, the optional reranker, network and GPU execution are disabled or mocked, and a lint
 fails the build if a script reaches a memory store without declaring which store it means. CI runs
 them on Linux, Windows and macOS across four Python versions.

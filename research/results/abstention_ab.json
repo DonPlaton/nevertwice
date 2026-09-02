@@ -1,0 +1,288 @@
+{
+ "store": "C:\\Users\\Platon\\AppData\\Local\\Temp\\nevertwice_abstention_u2jvn1v8",
+ "remine": {
+  "events": 3200,
+  "stages": 8,
+  "final_bytes": 1391395,
+  "window_chars": 12000,
+  "full_read_bytes_total": 6261140,
+  "delta_read_bytes_total": 1391395,
+  "byte_reduction": 0.7778,
+  "full_read_coverage": 1.0,
+  "delta_read_coverage": 1.0,
+  "events_only_delta_saw": [],
+  "events_only_full_saw": [],
+  "per_stage": [
+   {
+    "stage": 0,
+    "file_bytes": 173865,
+    "full_read_bytes": 173865,
+    "delta_read_bytes": 173865,
+    "full_cumulative_coverage": 1.0,
+    "delta_cumulative_coverage": 1.0
+   },
+   {
+    "stage": 1,
+    "file_bytes": 348000,
+    "full_read_bytes": 348000,
+    "delta_read_bytes": 174135,
+    "full_cumulative_coverage": 1.0,
+    "delta_cumulative_coverage": 1.0
+   },
+   {
+    "stage": 2,
+    "file_bytes": 521865,
+    "full_read_bytes": 521865,
+    "delta_read_bytes": 173865,
+    "full_cumulative_coverage": 1.0,
+    "delta_cumulative_coverage": 1.0
+   },
+   {
+    "stage": 3,
+    "file_bytes": 695597,
+    "full_read_bytes": 695597,
+    "delta_read_bytes": 173732,
+    "full_cumulative_coverage": 1.0,
+    "delta_cumulative_coverage": 1.0
+   },
+   {
+    "stage": 4,
+    "file_bytes": 869620,
+    "full_read_bytes": 869620,
+    "delta_read_bytes": 174023,
+    "full_cumulative_coverage": 1.0,
+    "delta_cumulative_coverage": 1.0
+   },
+   {
+    "stage": 5,
+    "file_bytes": 1043344,
+    "full_read_bytes": 1043344,
+    "delta_read_bytes": 173724,
+    "full_cumulative_coverage": 1.0,
+    "delta_cumulative_coverage": 1.0
+   },
+   {
+    "stage": 6,
+    "file_bytes": 1217454,
+    "full_read_bytes": 1217454,
+    "delta_read_bytes": 174110,
+    "full_cumulative_coverage": 1.0,
+    "delta_cumulative_coverage": 1.0
+   },
+   {
+    "stage": 7,
+    "file_bytes": 1391395,
+    "full_read_bytes": 1391395,
+    "delta_read_bytes": 173941,
+    "full_cumulative_coverage": 1.0,
+    "delta_cumulative_coverage": 1.0
+   }
+  ]
+ },
+ "captured_cases": 80,
+ "mean_hits_returned": 1.21,
+ "recall_sweep": [
+  {
+   "threshold": 0.0,
+   "cases": 69,
+   "mean_chars": 229.2,
+   "mean_hits": 1.41,
+   "current_rate": 0.8696,
+   "stale_rate": 0.2899,
+   "char_reduction_vs_off": 0.0,
+   "current_delta_vs_off": 0.0
+  },
+  {
+   "threshold": 0.1,
+   "cases": 69,
+   "mean_chars": 216.7,
+   "mean_hits": 1.33,
+   "current_rate": 0.8551,
+   "stale_rate": 0.2754,
+   "char_reduction_vs_off": 0.0545,
+   "current_delta_vs_off": -0.0145
+  },
+  {
+   "threshold": 0.2,
+   "cases": 69,
+   "mean_chars": 200.1,
+   "mean_hits": 1.28,
+   "current_rate": 0.8406,
+   "stale_rate": 0.2754,
+   "char_reduction_vs_off": 0.127,
+   "current_delta_vs_off": -0.029
+  },
+  {
+   "threshold": 0.3,
+   "cases": 69,
+   "mean_chars": 168.3,
+   "mean_hits": 1.12,
+   "current_rate": 0.7826,
+   "stale_rate": 0.2464,
+   "char_reduction_vs_off": 0.2657,
+   "current_delta_vs_off": -0.087
+  },
+  {
+   "threshold": 0.35,
+   "cases": 69,
+   "mean_chars": 168.3,
+   "mean_hits": 1.12,
+   "current_rate": 0.7826,
+   "stale_rate": 0.2464,
+   "char_reduction_vs_off": 0.2657,
+   "current_delta_vs_off": -0.087
+  },
+  {
+   "threshold": 0.4,
+   "cases": 69,
+   "mean_chars": 162.1,
+   "mean_hits": 1.09,
+   "current_rate": 0.7681,
+   "stale_rate": 0.2464,
+   "char_reduction_vs_off": 0.2928,
+   "current_delta_vs_off": -0.1015
+  },
+  {
+   "threshold": 0.5,
+   "cases": 69,
+   "mean_chars": 159.4,
+   "mean_hits": 1.07,
+   "current_rate": 0.7681,
+   "stale_rate": 0.2464,
+   "char_reduction_vs_off": 0.3045,
+   "current_delta_vs_off": -0.1015
+  },
+  {
+   "threshold": 0.6,
+   "cases": 69,
+   "mean_chars": 157.4,
+   "mean_hits": 1.06,
+   "current_rate": 0.7536,
+   "stale_rate": 0.2464,
+   "char_reduction_vs_off": 0.3133,
+   "current_delta_vs_off": -0.116
+  },
+  {
+   "threshold": 0.75,
+   "cases": 69,
+   "mean_chars": 149.5,
+   "mean_hits": 1.01,
+   "current_rate": 0.7536,
+   "stale_rate": 0.2174,
+   "char_reduction_vs_off": 0.3477,
+   "current_delta_vs_off": -0.116
+  },
+  {
+   "threshold": 0.9,
+   "cases": 69,
+   "mean_chars": 145.0,
+   "mean_hits": 1.0,
+   "current_rate": 0.7536,
+   "stale_rate": 0.2174,
+   "char_reduction_vs_off": 0.3674,
+   "current_delta_vs_off": -0.116
+  }
+ ],
+ "inject_sweep": [
+  {
+   "threshold": 0.0,
+   "cases": 69,
+   "mean_chars": 229.2,
+   "mean_hits": 1.41,
+   "current_rate": 0.8696,
+   "stale_rate": 0.2899,
+   "char_reduction_vs_off": 0.0,
+   "current_delta_vs_off": 0.0
+  },
+  {
+   "threshold": 0.1,
+   "cases": 69,
+   "mean_chars": 216.7,
+   "mean_hits": 1.33,
+   "current_rate": 0.8551,
+   "stale_rate": 0.2754,
+   "char_reduction_vs_off": 0.0545,
+   "current_delta_vs_off": -0.0145
+  },
+  {
+   "threshold": 0.2,
+   "cases": 69,
+   "mean_chars": 200.1,
+   "mean_hits": 1.28,
+   "current_rate": 0.8406,
+   "stale_rate": 0.2754,
+   "char_reduction_vs_off": 0.127,
+   "current_delta_vs_off": -0.029
+  },
+  {
+   "threshold": 0.3,
+   "cases": 69,
+   "mean_chars": 168.3,
+   "mean_hits": 1.12,
+   "current_rate": 0.7826,
+   "stale_rate": 0.2464,
+   "char_reduction_vs_off": 0.2657,
+   "current_delta_vs_off": -0.087
+  },
+  {
+   "threshold": 0.35,
+   "cases": 69,
+   "mean_chars": 168.3,
+   "mean_hits": 1.12,
+   "current_rate": 0.7826,
+   "stale_rate": 0.2464,
+   "char_reduction_vs_off": 0.2657,
+   "current_delta_vs_off": -0.087
+  },
+  {
+   "threshold": 0.4,
+   "cases": 69,
+   "mean_chars": 162.1,
+   "mean_hits": 1.09,
+   "current_rate": 0.7681,
+   "stale_rate": 0.2464,
+   "char_reduction_vs_off": 0.2928,
+   "current_delta_vs_off": -0.1015
+  },
+  {
+   "threshold": 0.5,
+   "cases": 69,
+   "mean_chars": 159.4,
+   "mean_hits": 1.07,
+   "current_rate": 0.7681,
+   "stale_rate": 0.2464,
+   "char_reduction_vs_off": 0.3045,
+   "current_delta_vs_off": -0.1015
+  },
+  {
+   "threshold": 0.6,
+   "cases": 69,
+   "mean_chars": 157.4,
+   "mean_hits": 1.06,
+   "current_rate": 0.7536,
+   "stale_rate": 0.2464,
+   "char_reduction_vs_off": 0.3133,
+   "current_delta_vs_off": -0.116
+  },
+  {
+   "threshold": 0.75,
+   "cases": 69,
+   "mean_chars": 149.5,
+   "mean_hits": 1.01,
+   "current_rate": 0.7536,
+   "stale_rate": 0.2174,
+   "char_reduction_vs_off": 0.3477,
+   "current_delta_vs_off": -0.116
+  },
+  {
+   "threshold": 0.9,
+   "cases": 69,
+   "mean_chars": 145.0,
+   "mean_hits": 1.0,
+   "current_rate": 0.7536,
+   "stale_rate": 0.2174,
+   "char_reduction_vs_off": 0.3674,
+   "current_delta_vs_off": -0.116
+  }
+ ]
+}

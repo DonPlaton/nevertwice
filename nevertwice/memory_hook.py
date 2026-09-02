@@ -389,8 +389,18 @@ INJECT_CONTEXT = os.environ.get("NEVERTWICE_INJECT", "1") != "0"
 INJECT_BUDGET_CHARS = env_int("NEVERTWICE_INJECT_BUDGET_CHARS", 2200)
 # Abstention on the session-start payload, as a FRACTION of the best item in the same
 # section. A lesson weaker than this is refused even when there is room for it - which
-# truncation, being a size check, can never do. 0 restores pure truncation.
-INJECT_MIN_VALUE = env_float("NEVERTWICE_INJECT_MIN_VALUE", 0.35)
+# truncation, being a size check, can never do.
+#
+# DEFAULT 0 - OFF - on the measurement, not on doubt. It shipped at 0.35 with tests proving
+# the mechanism works and nothing measuring whether it helps. `research/abstention_ab.py`
+# swept it over the labelled corpus in `research/data/supersession_v1.json`: at 0.35 the
+# payload is 26.6% smaller and the wanted fact is present 8.7 points less often. The gate
+# written before the run asked for a 20% saving with at most 2 points of loss, and no
+# threshold on the curve clears both - the cheapest useful one, 0.10, costs 1.5 points for a
+# 5% saving. Sixty characters is not worth an eight-point drop in finding the right lesson.
+# Left in as an opt-in switch, because the trade may well go the other way on a store where
+# recall returns ten hits rather than one and a half.
+INJECT_MIN_VALUE = env_float("NEVERTWICE_INJECT_MIN_VALUE", 0.0)
 # The injection reports its own cost, what the budget refused, and what it saved (receipt.py).
 # NO room is reserved: the payload is assembled exactly as without a receipt and the line is
 # appended only into leftover slack (degrading/vanishing rather than displacing a lesson) -
@@ -535,7 +545,9 @@ PROMPT_RECALL_MIN_CHARS = env_int("NEVERTWICE_PROMPT_RECALL_MIN_CHARS", 16)
 # Abstention on the per-turn path. A hit weaker than this FRACTION of the batch's best hit
 # is refused even when there is room for it - the distinction `budget.py` exists to make and
 # the one truncation can never make. 0 disables and restores take-the-top-K behaviour.
-PROMPT_RECALL_MIN_VALUE = env_float("NEVERTWICE_PROMPT_RECALL_MIN_VALUE", 0.35)
+# DEFAULT 0 - OFF, for the reason recorded at INJECT_MIN_VALUE above: measured, missed its
+# pre-declared gate, kept as an opt-in switch rather than deleted.
+PROMPT_RECALL_MIN_VALUE = env_float("NEVERTWICE_PROMPT_RECALL_MIN_VALUE", 0.0)
 # Tight budget so recall never noticeably delays an interactive prompt: a busy
 # GPU fails the ping fast and the path drops to lexical-only.
 PROMPT_RECALL_EMBED_TIMEOUT = env_int("NEVERTWICE_PROMPT_RECALL_EMBED_TIMEOUT", 2)

@@ -28,6 +28,7 @@ from __future__ import annotations
 
 import json
 import subprocess
+import re
 import sys
 from pathlib import Path
 
@@ -179,13 +180,23 @@ def test_withdrawal_costs_something() -> None:
         """
         return len(form) >= 3 and any(ch.isdigit() for ch in form)
 
+    def prints(form: str, text: str) -> bool:
+        """A whole number, not a prefix of a longer one.
+
+        Plain containment convicted three live claims of being withdrawn ones: `0.86` sits
+        inside `0.867` and `0.75` inside `0.754`, so publishing a new measurement whose value
+        happens to extend an old retracted one failed this check. The boundary is the fix -
+        a digit or a decimal point on either side means this is a different number.
+        """
+        return re.search(rf"(?<![\w.]){re.escape(form)}(?![\w])", text) is not None
+
     still_printed = []
     for claim in stale:
         for printed in claim["printed"]:
             if printed in published_forms or not distinctive(printed):
                 continue           # another, live claim legitimately prints the same token
             for name, text in texts.items():
-                if printed in text:
+                if prints(printed, text):
                     still_printed.append(f"{claim['id']} -> {name} still prints {printed!r}")
     check("no withdrawn number is still printed in a governed document", not still_printed,
           "; ".join(still_printed[:4]))
