@@ -4394,6 +4394,32 @@ def _entity_card_stem(entity: str, etype: str) -> str:
     return f"{t}-{e[0]}" if e else ""
 
 
+def _existing_entity_card(entity: str) -> Path | None:
+    """An existing card for this entity under ANY type prefix, or None.
+
+    The stem bakes the CURRENT type label, and the type is re-resolved on every refresh,
+    so a re-label -- or a typo -- used to mint a NEW card and orphan the old one forever.
+    The docstring's promise that "a regenerated card overwrites its predecessor instead of
+    duplicating" was false: one Dart class ended up as concept-, tool- AND method- cards
+    with disjoint edges and contradictory resolution state, and refresh_entity_cards
+    iterates one type per entity, so every orphan stayed frozen (review 2026-09).
+
+    Reusing the existing path keeps one card per entity across a re-label. The type shown
+    inside the card still follows the index; only the filename stops multiplying.
+    """
+    d = VAULT / "Entities"
+    if not d.exists():
+        return None
+    norm = _norm_entities([entity])
+    if not norm:
+        return None
+    # Split on the FIRST hyphen: the type is one token, the entity may contain hyphens.
+    # A plain endswith() would let the entity "service" hijack "report-service"'s card.
+    hits = sorted(q for q in d.glob(f"*-{norm[0]}.md")
+                  if q.stem.split("-", 1)[1:] == [norm[0]])
+    return hits[0] if hits else None
+
+
 def build_entity_card(entity: str, etype: str | None = None, idx: dict | None = None,
                       sup: dict | None = None) -> str:
     """Distil every live note tagged with `entity` (across ALL projects) into a standalone
@@ -4466,7 +4492,10 @@ def write_entity_card(entity: str, etype: str | None = None, idx: dict | None = 
     if not norm:
         return ""
     etype = etype or entity_types_index().get(norm[0], "entity")
-    stem = _entity_card_stem(norm[0], etype)
+    # Reuse the card this entity already has, whatever prefix it was minted under, so a
+    # re-label updates one file instead of minting a third and orphaning two.
+    _prior = _existing_entity_card(norm[0])
+    stem = _prior.stem if _prior is not None else _entity_card_stem(norm[0], etype)
     card = build_entity_card(norm[0], etype, idx=idx, sup=sup)
     if not stem or not card:
         return ""
