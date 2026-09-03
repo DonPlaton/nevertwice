@@ -33,6 +33,7 @@ def check(name, cond, detail=""):
 
 manifest = json.loads(sw.MANIFEST.read_text(encoding="utf-8"))
 claims = sw.withdrawn_claims(manifest)
+live = sw.live_forms(manifest)
 
 print("\n- the register still has something to protect against -")
 check("some claims are withdrawn", len(claims) > 0, str(len(claims)))
@@ -43,7 +44,7 @@ for rel, entry in sorted(manifest["documents"].items()):
     if entry.get("governance") == "exempt":
         continue
     p = ROOT / rel
-    if p.exists() and sw.needs_banner(p, claims):
+    if p.exists() and sw.needs_banner(p, claims, live):
         offenders.append(rel)
 check("every page that prints one carries a retraction", not offenders,
       ", ".join(offenders[:4]))
@@ -62,6 +63,20 @@ for md in list(ROOT.glob("docs/*.md")) + list(ROOT.glob("research/**/*.md")):
             missing.append(f"{md.relative_to(ROOT).as_posix()} -> {target}")
 check("every banner link resolves", not missing, "; ".join(missing[:3]))
 
+print("\n- a number a live claim prints is not a withdrawn citation -")
+_live_probe = ROOT / "tests" / "_tmp_live_probe.md"
+try:
+    # 0.428 is LoCoMo's lexical R@3, measured and live, and also a withdrawn head-to-head
+    # figure. Without the live-form rule this page earns a retraction banner for a number
+    # taken yesterday.
+    _live_probe.write_text("# Study\n\nlexical recall at three is 0.428.\n", encoding="utf-8")
+    check("a live form does not trigger a banner",
+          not sw.needs_banner(_live_probe, claims, live))
+    check("and it would have without the rule",
+          bool(sw.needs_banner(_live_probe, claims, set())))
+finally:
+    _live_probe.unlink(missing_ok=True)
+
 print("\n- a coincidence is not treated as a citation -")
 # 0.000 and 1.000 appear wherever a rate is perfect or a count is empty. Scoring them as
 # evidence stamped nine pages that had never cited the study they were matched against.
@@ -73,11 +88,15 @@ check("two decimals are not enough on their own", 0 < sw._strength("0.80") < sw.
 print("\n- a page that already says it is retracted is left alone -")
 tmp = ROOT / "tests" / "_tmp_withdrawn_probe.md"
 try:
-    body = "# Study\n\nsemantic recall reached 0.422 on the oracle set.\n"
+    # 0.788 is qa.oracle.answer_accuracy: withdrawn, with no live twin. 0.422 used
+    # to sit here and stopped working the day the pinned re-run reproduced it
+    # exactly - a value a live claim also prints is, correctly, no longer evidence
+    # of citing the withdrawn one.
+    body = "# Study\n\noracle answer accuracy reached 0.788 on that set.\n"
     tmp.write_text(body, encoding="utf-8")
-    check("an unmarked page is flagged", bool(sw.needs_banner(tmp, claims)))
+    check("an unmarked page is flagged", bool(sw.needs_banner(tmp, claims, live)))
     tmp.write_text(body + "\nThese figures were withdrawn in 2026-08.\n", encoding="utf-8")
-    check("a marked page is not flagged again", not sw.needs_banner(tmp, claims))
+    check("a marked page is not flagged again", not sw.needs_banner(tmp, claims, live))
 finally:
     tmp.unlink(missing_ok=True)
 
@@ -85,7 +104,8 @@ print("\n- stamping is idempotent -")
 sample = ROOT / "research" / "QA_ACCURACY.md"
 if sample.exists():
     before = sample.read_text(encoding="utf-8")
-    check("a stamped page needs no second stamp", not sw.needs_banner(sample, claims))
+    check("a stamped page needs no second stamp",
+          not sw.needs_banner(sample, claims, live))
     check("the page was not modified by the check",
           sample.read_text(encoding="utf-8") == before)
 

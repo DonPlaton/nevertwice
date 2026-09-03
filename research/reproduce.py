@@ -65,6 +65,21 @@ ARTIFACTS = [
              "cache needs the embedder. The corpus is verified against its committed hash "
              "before a byte is read, which is the property the 2026-07 run of this file lacked "
              "and was withdrawn for."},
+    {"file": "research/results/locomo.json",
+     "command": ["python", "research/locomo_eval.py", "--save",
+                 "--out=research/results/locomo.json"],
+     "kind": HARDWARE, "task": "external-retrieval",
+     "inputs": ["research/data/locomo10.json (third-party, CC-BY-NC-4.0, hash-pinned in "
+                "research/corpus_pin.py; 2.8 MB, fetch with `python research/corpus_pin.py "
+                "--fetch locomo10`)",
+                "a local Ollama serving bge-m3",
+                "research/data/locomo_embeds.json (built by --embed, about five minutes)"],
+     "note": "LoCoMo retrieval, per conversation, against the annotated evidence turn. "
+             "Deterministic given the embedding cache. The corpus is non-commercial and is not "
+             "redistributed here - only its hash. Every turn id in the cache is namespaced with "
+             "its conversation: LoCoMo restarts numbering at D1:1 in each of the ten, and a "
+             "cache keyed by the bare id collapses 5,882 turns into 1,033, which is a defect "
+             "this stand shipped with for exactly one run."},
     {"file": "research/results/longmem_s.json",
      "command": ["python", "research/longmem_eval.py", "--data=s", "--save",
                  "--out=research/results/longmem_s.json"],

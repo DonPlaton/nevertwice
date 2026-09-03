@@ -99,13 +99,32 @@ def withdrawn_claims(manifest: dict) -> list[dict]:
     return [c for c in manifest["claims"] if c.get("withdrawn_on") or c.get("stale")]
 
 
-def figures_on_page(text: str, claims: list[dict]) -> list[tuple[str, str]]:
+def live_forms(manifest: dict) -> set[str]:
+    """Every form a still-published claim prints.
+
+    A page printing one of these is printing a live number, whatever else happens to share the
+    value. `research/LOCOMO.md` prints 0.428 as its lexical R@3 and a withdrawn head-to-head
+    figure is also 0.428; without this the page earns a retraction banner for figures measured
+    the day before. The freshness guard has always worked this way and this one did not.
+    """
+    forms: set[str] = set()
+    for c in manifest["claims"]:
+        if c.get("withdrawn_on") or c.get("stale"):
+            continue
+        for printed in c.get("printed", []):
+            forms.add(str(printed).strip())
+    return forms
+
+
+def figures_on_page(text: str, claims: list[dict], live: set[str] | None = None
+                    ) -> list[tuple[str, str]]:
     body = FENCE.sub(" ", text)
+    live = live or set()
     found = []
     for c in claims:
         for printed in c.get("printed", []):
             p = str(printed)
-            if not _distinctive(p):
+            if p.strip() in live or not _distinctive(p):
                 continue
             if re.search(rf"(?<![\w.]){re.escape(p)}(?![\w])", body):
                 found.append((c["id"], p))
@@ -125,12 +144,13 @@ def figures_on_page(text: str, claims: list[dict]) -> list[tuple[str, str]]:
 STAMP_AT = 2
 
 
-def needs_banner(path: Path, claims: list[dict]) -> list[tuple[str, str]]:
+def needs_banner(path: Path, claims: list[dict], live: set[str] | None = None
+                 ) -> list[tuple[str, str]]:
     """The figures that oblige this page to carry a banner, or an empty list."""
     text = path.read_text(encoding="utf-8", errors="replace")
     if any(m in text for m in MARKERS):
         return []
-    figs = figures_on_page(text, claims)
+    figs = figures_on_page(text, claims, live)
     return figs if any(_strength(pr) >= STAMP_AT for _cid, pr in figs) else []
 
 
@@ -182,6 +202,7 @@ def main() -> int:
 
     manifest = json.loads(MANIFEST.read_text(encoding="utf-8"))
     claims = withdrawn_claims(manifest)
+    live = live_forms(manifest)
     todo = []
     for rel, entry in sorted(manifest["documents"].items()):
         if entry.get("governance") == "exempt":
@@ -189,7 +210,7 @@ def main() -> int:
         p = ROOT / rel
         if not p.exists():
             continue
-        figs = needs_banner(p, claims)
+        figs = needs_banner(p, claims, live)
         if figs:
             todo.append((rel, p, figs))
 
@@ -217,7 +238,7 @@ def main() -> int:
             text = f.read_text(encoding="utf-8", errors="replace")
             if BANNER_ID not in text:
                 continue
-            figs = figures_on_page(text, claims)
+            figs = figures_on_page(text, claims, live)
             if not any(_strength(pr) >= STAMP_AT for _cid, pr in figs):
                 f.write_text(remove(text), encoding="utf-8")
                 print(f"  unstamped {rel} - its only overlap was round numbers")

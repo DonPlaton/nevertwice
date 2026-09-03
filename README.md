@@ -90,14 +90,15 @@ What survived re-measurement at HEAD, and what it cost:
 | memory-poisoning acceptance attacks | **81%** blocked overall - **100%** of prompt injection, **25%** of plausible-false facts | [POISONING.md](research/POISONING.md) |
 | what being there costs | PreToolUse **89 ms** end to end - a tenth of a second, and it moves by a third between sessions - and zero context tokens until a guard fires | [BENCHMARKS.md](docs/BENCHMARKS.md) |
 
-The first two rows are the comparative ones. Retrieval runs on a corpus we did not build,
-pinned by content hash so the run can be named; supersession runs on one we did build, committed
+The first two rows are the comparative ones. Retrieval runs on corpora we did not build, pinned
+by content hash so a run can name its own input; supersession runs on one we did build, committed
 and hashed, where an append-only text file is the floor and Mem0 is statistically tied with it
-(p = 0.69) because its design says both facts survive on purpose. On supersession's *other*
-column - returning the replacement - Mem0 leads us 0.950 to 0.933, and that is in the table too.
-So is the third row's regression: against the withdrawn first-release artifact the current engine
-blocks *fewer* plausible false facts, not more. A project whose argument is reproducibility does
-not get to publish only the deltas that flatter it.
+(p = 0.69) because its design says both facts survive on purpose. The columns we lose are in the
+table too: Mem0 returns the replacement more often than we do, 0.950 to 0.933, and against our
+own withdrawn first release the current engine blocks *fewer* plausible false facts, not more.
+LoCoMo, excluded here on paper for a year, was run as well and narrows its own exclusion rather
+than lifting it ([LOCOMO.md](research/LOCOMO.md)). A project whose argument is reproducibility
+does not get to publish only the deltas that flatter it.
 
 The 2026-07 run of that retrieval stand stays withdrawn - its corpus could not be identified -
 and the re-run above is a separate claim family on a named one:

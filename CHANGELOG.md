@@ -51,6 +51,34 @@ empty.
   reads R@5 0.452 against 0.802 - and the shape holds, fusion still beating both signals it
   fuses. `research/EXTERNAL_RETRIEVAL.md`.
 
+- **LoCoMo, the benchmark this project had excluded on paper.** The roadmap carried one
+  sentence about it for months - not a candidate, because plain BM25 is reported to score about
+  94% - and a test pinned the wording. That is a claim about a benchmark, and the rule here is
+  that a claim needs a measurement. Refusing to run something because you believe it is
+  saturated, without showing that it is, is an argument from authority where the authority is
+  us.
+
+  Ten conversations, 5,882 turns, 1,977 of 1,986 questions scored, retrieving the annotated
+  evidence turn from the question's own conversation. Semantic 0.432 at R@5, lexical 0.499, the
+  shipped fusion **0.549**. The term-overlap floor reads 0.499, not 0.94, and the three methods
+  order exactly as they do on LongMemEval.
+
+  The exclusion is narrowed rather than lifted, and the distinction is the whole finding: the
+  94% figure describes judge-scored **answer accuracy**, which measures the reader as much as
+  the memory. This measures **retrieval**. They are different quantities on different scales and
+  the pages say, in as many words, that they must never appear in one table. LoCoMo is now "not
+  a candidate *as a headline*", and the guard that pinned the old phrasing asks for that
+  qualifier - a higher bar than the phrase it replaced, and both mutations of it fail.
+  `research/LOCOMO.md`.
+
+- **A second harness defect, and this one would have libelled our own ranker.** The first LoCoMo
+  run reported semantic recall of **0.037**, which reads as "the bi-encoder collapses on dialogue
+  turns". LoCoMo numbers turns per conversation - all ten start at `D1:1` - so `D1:3` names ten
+  different lines, and an embedding cache keyed by the bare id collapsed 5,882 turns into 1,033
+  entries. Eighty-three per cent of the semantic arm's vectors belonged to another dialogue. The
+  lexical arm was untouched because it reads per-conversation text, so one arm was broken while
+  the other vouched for the stand. Namespacing the ids moved it to 0.182.
+
 - **A safety check that had been passing for the wrong reason.** The retrieval harness ranks a
   `semantic+recur` arm to show that the production recurrence prior changes nothing when every
   note has recurrence 1, the boost being exactly 0.0. The two arms broke ties differently:

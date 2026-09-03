@@ -161,6 +161,18 @@ def render_longmem_s(c: Claims) -> str:
     return _apply_bold(rows, ["method", "R@1", "R@5", "R@10", "MRR"], 3)
 
 
+def render_locomo(c: Claims) -> str:
+    """LoCoMo retrieval. A different quantity from the LoCoMo accuracy figures vendors publish,
+    and the page around this table says so in as many words."""
+    rows = [[label,
+             c.value(f"locomo.{slug}.recall_at_1"),
+             c.value(f"locomo.{slug}.recall_at_5"),
+             c.value(f"locomo.{slug}.recall_at_10"),
+             round(c.value(f"locomo.{slug}.mrr"), 3)]
+            for label, slug in RETRIEVAL_ROWS if slug in ("semantic", "lexical", "hybrid")]
+    return _apply_bold(rows, ["method", "R@1", "R@5", "R@10", "MRR"], 3)
+
+
 def render_head_to_head_pinned(c: Claims) -> str:
     rows = [[label,
              c.value(f"h2h_pinned.{slug}.recall_at_1"),
@@ -357,6 +369,7 @@ RENDERERS = {
     "longmem-benchmarks": render_longmem_benchmarks,
     "longmem-pinned": render_longmem_pinned,
     "longmem-s": render_longmem_s,
+    "locomo": render_locomo,
     "head-to-head-pinned": render_head_to_head_pinned,
     "head-to-head": render_head_to_head,
     "latency": render_latency,

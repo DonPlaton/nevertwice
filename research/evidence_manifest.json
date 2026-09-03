@@ -8863,7 +8863,7 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "29ec5fe33108bf79e89bbdce5b112baac5736c31",
+      "commit": "f19fc9c2fd88c1871a9b76e91a5ce91eb9fbf36f",
       "note": "Re-measured 2026-09-02 on the corpus pinned in research/corpus_pin.py (sha256 821a2034..., verified before the run). The value is identical to three decimals to the one withdrawn in 2026-08. The withdrawn claim stays withdrawn: it was measured on a file that cannot be identified, and agreeing with a later run is not evidence about an unidentifiable one.",
       "produced_by": [
         "research/longmem_eval.py",
@@ -8909,7 +8909,7 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "29ec5fe33108bf79e89bbdce5b112baac5736c31",
+      "commit": "f19fc9c2fd88c1871a9b76e91a5ce91eb9fbf36f",
       "note": "Re-measured 2026-09-02 on the corpus pinned in research/corpus_pin.py (sha256 821a2034..., verified before the run). The value is identical to three decimals to the one withdrawn in 2026-08. The withdrawn claim stays withdrawn: it was measured on a file that cannot be identified, and agreeing with a later run is not evidence about an unidentifiable one.",
       "produced_by": [
         "research/longmem_eval.py",
@@ -8953,7 +8953,7 @@
         "high": 0.7652
       },
       "cited_in": [],
-      "commit": "29ec5fe33108bf79e89bbdce5b112baac5736c31",
+      "commit": "f19fc9c2fd88c1871a9b76e91a5ce91eb9fbf36f",
       "note": "Re-measured 2026-09-02 on the corpus pinned in research/corpus_pin.py (sha256 821a2034..., verified before the run). The value is identical to three decimals to the one withdrawn in 2026-08. The withdrawn claim stays withdrawn: it was measured on a file that cannot be identified, and agreeing with a later run is not evidence about an unidentifiable one.",
       "produced_by": [
         "research/longmem_eval.py",
@@ -8994,7 +8994,7 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "29ec5fe33108bf79e89bbdce5b112baac5736c31",
+      "commit": "f19fc9c2fd88c1871a9b76e91a5ce91eb9fbf36f",
       "note": "Re-measured 2026-09-02 on the corpus pinned in research/corpus_pin.py (sha256 821a2034..., verified before the run). The value is identical to three decimals to the one withdrawn in 2026-08. The withdrawn claim stays withdrawn: it was measured on a file that cannot be identified, and agreeing with a later run is not evidence about an unidentifiable one.",
       "produced_by": [
         "research/longmem_eval.py",
@@ -9040,7 +9040,7 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "29ec5fe33108bf79e89bbdce5b112baac5736c31",
+      "commit": "f19fc9c2fd88c1871a9b76e91a5ce91eb9fbf36f",
       "note": "Re-measured 2026-09-02 on the corpus pinned in research/corpus_pin.py (sha256 821a2034..., verified before the run). The value is identical to three decimals to the one withdrawn in 2026-08. The withdrawn claim stays withdrawn: it was measured on a file that cannot be identified, and agreeing with a later run is not evidence about an unidentifiable one.",
       "produced_by": [
         "research/longmem_eval.py",
@@ -9086,7 +9086,7 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "29ec5fe33108bf79e89bbdce5b112baac5736c31",
+      "commit": "f19fc9c2fd88c1871a9b76e91a5ce91eb9fbf36f",
       "note": "Re-measured 2026-09-02 on the corpus pinned in research/corpus_pin.py (sha256 821a2034..., verified before the run). The value is identical to three decimals to the one withdrawn in 2026-08. The withdrawn claim stays withdrawn: it was measured on a file that cannot be identified, and agreeing with a later run is not evidence about an unidentifiable one.",
       "produced_by": [
         "research/longmem_eval.py",
@@ -9130,7 +9130,7 @@
         "high": 0.864
       },
       "cited_in": [],
-      "commit": "29ec5fe33108bf79e89bbdce5b112baac5736c31",
+      "commit": "f19fc9c2fd88c1871a9b76e91a5ce91eb9fbf36f",
       "note": "Re-measured 2026-09-02 on the corpus pinned in research/corpus_pin.py (sha256 821a2034..., verified before the run). The value is identical to three decimals to the one withdrawn in 2026-08. The withdrawn claim stays withdrawn: it was measured on a file that cannot be identified, and agreeing with a later run is not evidence about an unidentifiable one.",
       "produced_by": [
         "research/longmem_eval.py",
@@ -9171,7 +9171,7 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "29ec5fe33108bf79e89bbdce5b112baac5736c31",
+      "commit": "f19fc9c2fd88c1871a9b76e91a5ce91eb9fbf36f",
       "note": "Re-measured 2026-09-02 on the corpus pinned in research/corpus_pin.py (sha256 821a2034..., verified before the run). The value is identical to three decimals to the one withdrawn in 2026-08. The withdrawn claim stays withdrawn: it was measured on a file that cannot be identified, and agreeing with a later run is not evidence about an unidentifiable one.",
       "produced_by": [
         "research/longmem_eval.py",
@@ -9217,7 +9217,7 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "29ec5fe33108bf79e89bbdce5b112baac5736c31",
+      "commit": "f19fc9c2fd88c1871a9b76e91a5ce91eb9fbf36f",
       "note": "Re-measured 2026-09-02 on the corpus pinned in research/corpus_pin.py (sha256 821a2034..., verified before the run). The value is identical to three decimals to the one withdrawn in 2026-08. The withdrawn claim stays withdrawn: it was measured on a file that cannot be identified, and agreeing with a later run is not evidence about an unidentifiable one.",
       "produced_by": [
         "research/longmem_eval.py",
@@ -9263,7 +9263,7 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "29ec5fe33108bf79e89bbdce5b112baac5736c31",
+      "commit": "f19fc9c2fd88c1871a9b76e91a5ce91eb9fbf36f",
       "note": "Re-measured 2026-09-02 on the corpus pinned in research/corpus_pin.py (sha256 821a2034..., verified before the run). The value is identical to three decimals to the one withdrawn in 2026-08. The withdrawn claim stays withdrawn: it was measured on a file that cannot be identified, and agreeing with a later run is not evidence about an unidentifiable one.",
       "produced_by": [
         "research/longmem_eval.py",
@@ -9307,7 +9307,7 @@
         "high": 0.8859
       },
       "cited_in": [],
-      "commit": "29ec5fe33108bf79e89bbdce5b112baac5736c31",
+      "commit": "f19fc9c2fd88c1871a9b76e91a5ce91eb9fbf36f",
       "note": "Re-measured 2026-09-02 on the corpus pinned in research/corpus_pin.py (sha256 821a2034..., verified before the run). The value is identical to three decimals to the one withdrawn in 2026-08. The withdrawn claim stays withdrawn: it was measured on a file that cannot be identified, and agreeing with a later run is not evidence about an unidentifiable one.",
       "produced_by": [
         "research/longmem_eval.py",
@@ -9348,7 +9348,7 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "29ec5fe33108bf79e89bbdce5b112baac5736c31",
+      "commit": "f19fc9c2fd88c1871a9b76e91a5ce91eb9fbf36f",
       "note": "Re-measured 2026-09-02 on the corpus pinned in research/corpus_pin.py (sha256 821a2034..., verified before the run). The value is identical to three decimals to the one withdrawn in 2026-08. The withdrawn claim stays withdrawn: it was measured on a file that cannot be identified, and agreeing with a later run is not evidence about an unidentifiable one.",
       "produced_by": [
         "research/longmem_eval.py",
@@ -9394,7 +9394,7 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "29ec5fe33108bf79e89bbdce5b112baac5736c31",
+      "commit": "f19fc9c2fd88c1871a9b76e91a5ce91eb9fbf36f",
       "note": "Re-measured 2026-09-02 on the corpus pinned in research/corpus_pin.py (sha256 821a2034..., verified before the run). The value is identical to three decimals to the one withdrawn in 2026-08. The withdrawn claim stays withdrawn: it was measured on a file that cannot be identified, and agreeing with a later run is not evidence about an unidentifiable one.",
       "produced_by": [
         "research/longmem_eval.py",
@@ -9440,7 +9440,7 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "29ec5fe33108bf79e89bbdce5b112baac5736c31",
+      "commit": "f19fc9c2fd88c1871a9b76e91a5ce91eb9fbf36f",
       "note": "Re-measured 2026-09-02 on the corpus pinned in research/corpus_pin.py (sha256 821a2034..., verified before the run). The value is identical to three decimals to the one withdrawn in 2026-08. The withdrawn claim stays withdrawn: it was measured on a file that cannot be identified, and agreeing with a later run is not evidence about an unidentifiable one.",
       "produced_by": [
         "research/longmem_eval.py",
@@ -9484,7 +9484,7 @@
         "high": 0.8859
       },
       "cited_in": [],
-      "commit": "29ec5fe33108bf79e89bbdce5b112baac5736c31",
+      "commit": "f19fc9c2fd88c1871a9b76e91a5ce91eb9fbf36f",
       "note": "Re-measured 2026-09-02 on the corpus pinned in research/corpus_pin.py (sha256 821a2034..., verified before the run). The value is identical to three decimals to the one withdrawn in 2026-08. The withdrawn claim stays withdrawn: it was measured on a file that cannot be identified, and agreeing with a later run is not evidence about an unidentifiable one.",
       "produced_by": [
         "research/longmem_eval.py",
@@ -9525,7 +9525,7 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "29ec5fe33108bf79e89bbdce5b112baac5736c31",
+      "commit": "f19fc9c2fd88c1871a9b76e91a5ce91eb9fbf36f",
       "note": "Re-measured 2026-09-02 on the corpus pinned in research/corpus_pin.py (sha256 821a2034..., verified before the run). The value is identical to three decimals to the one withdrawn in 2026-08. The withdrawn claim stays withdrawn: it was measured on a file that cannot be identified, and agreeing with a later run is not evidence about an unidentifiable one.",
       "produced_by": [
         "research/longmem_eval.py",
@@ -9571,7 +9571,7 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "29ec5fe33108bf79e89bbdce5b112baac5736c31",
+      "commit": "f19fc9c2fd88c1871a9b76e91a5ce91eb9fbf36f",
       "note": "Same 940-session pool, same 500 questions, same local bge-m3, same scoring function. Competitor versions are recorded in the artifact.",
       "produced_by": [
         "research/head_to_head.py",
@@ -9620,7 +9620,7 @@
         "docs/BENCHMARKS.md",
         "README.md"
       ],
-      "commit": "29ec5fe33108bf79e89bbdce5b112baac5736c31",
+      "commit": "f19fc9c2fd88c1871a9b76e91a5ce91eb9fbf36f",
       "note": "Same 940-session pool, same 500 questions, same local bge-m3, same scoring function. Competitor versions are recorded in the artifact.",
       "produced_by": [
         "research/head_to_head.py",
@@ -9666,7 +9666,7 @@
         "high": 0.8859
       },
       "cited_in": [],
-      "commit": "29ec5fe33108bf79e89bbdce5b112baac5736c31",
+      "commit": "f19fc9c2fd88c1871a9b76e91a5ce91eb9fbf36f",
       "note": "Same 940-session pool, same 500 questions, same local bge-m3, same scoring function. Competitor versions are recorded in the artifact.",
       "produced_by": [
         "research/head_to_head.py",
@@ -9709,7 +9709,7 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "29ec5fe33108bf79e89bbdce5b112baac5736c31",
+      "commit": "f19fc9c2fd88c1871a9b76e91a5ce91eb9fbf36f",
       "produced_by": [
         "research/head_to_head.py",
         "nevertwice/causal.py",
@@ -9756,7 +9756,7 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "29ec5fe33108bf79e89bbdce5b112baac5736c31",
+      "commit": "f19fc9c2fd88c1871a9b76e91a5ce91eb9fbf36f",
       "note": "Same 940-session pool, same 500 questions, same local bge-m3, same scoring function. Competitor versions are recorded in the artifact.",
       "produced_by": [
         "research/head_to_head.py",
@@ -9805,7 +9805,7 @@
         "docs/BENCHMARKS.md",
         "README.md"
       ],
-      "commit": "29ec5fe33108bf79e89bbdce5b112baac5736c31",
+      "commit": "f19fc9c2fd88c1871a9b76e91a5ce91eb9fbf36f",
       "note": "Same 940-session pool, same 500 questions, same local bge-m3, same scoring function. Competitor versions are recorded in the artifact.",
       "produced_by": [
         "research/head_to_head.py",
@@ -9851,7 +9851,7 @@
         "high": 0.875
       },
       "cited_in": [],
-      "commit": "29ec5fe33108bf79e89bbdce5b112baac5736c31",
+      "commit": "f19fc9c2fd88c1871a9b76e91a5ce91eb9fbf36f",
       "note": "Same 940-session pool, same 500 questions, same local bge-m3, same scoring function. Competitor versions are recorded in the artifact.",
       "produced_by": [
         "research/head_to_head.py",
@@ -9894,7 +9894,7 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "29ec5fe33108bf79e89bbdce5b112baac5736c31",
+      "commit": "f19fc9c2fd88c1871a9b76e91a5ce91eb9fbf36f",
       "produced_by": [
         "research/head_to_head.py",
         "nevertwice/causal.py",
@@ -9941,7 +9941,7 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "29ec5fe33108bf79e89bbdce5b112baac5736c31",
+      "commit": "f19fc9c2fd88c1871a9b76e91a5ce91eb9fbf36f",
       "note": "Same 940-session pool, same 500 questions, same local bge-m3, same scoring function. Competitor versions are recorded in the artifact.",
       "produced_by": [
         "research/head_to_head.py",
@@ -9990,7 +9990,7 @@
         "docs/BENCHMARKS.md",
         "README.md"
       ],
-      "commit": "29ec5fe33108bf79e89bbdce5b112baac5736c31",
+      "commit": "f19fc9c2fd88c1871a9b76e91a5ce91eb9fbf36f",
       "note": "Same 940-session pool, same 500 questions, same local bge-m3, same scoring function. Competitor versions are recorded in the artifact.",
       "produced_by": [
         "research/head_to_head.py",
@@ -10036,7 +10036,7 @@
         "high": 0.816
       },
       "cited_in": [],
-      "commit": "29ec5fe33108bf79e89bbdce5b112baac5736c31",
+      "commit": "f19fc9c2fd88c1871a9b76e91a5ce91eb9fbf36f",
       "note": "Same 940-session pool, same 500 questions, same local bge-m3, same scoring function. Competitor versions are recorded in the artifact.",
       "produced_by": [
         "research/head_to_head.py",
@@ -10079,7 +10079,7 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "29ec5fe33108bf79e89bbdce5b112baac5736c31",
+      "commit": "f19fc9c2fd88c1871a9b76e91a5ce91eb9fbf36f",
       "produced_by": [
         "research/head_to_head.py",
         "nevertwice/causal.py",
@@ -10126,7 +10126,7 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "29ec5fe33108bf79e89bbdce5b112baac5736c31",
+      "commit": "f19fc9c2fd88c1871a9b76e91a5ce91eb9fbf36f",
       "note": "Same 940-session pool, same 500 questions, same local bge-m3, same scoring function. Competitor versions are recorded in the artifact.",
       "produced_by": [
         "research/head_to_head.py",
@@ -10175,7 +10175,7 @@
         "docs/BENCHMARKS.md",
         "README.md"
       ],
-      "commit": "29ec5fe33108bf79e89bbdce5b112baac5736c31",
+      "commit": "f19fc9c2fd88c1871a9b76e91a5ce91eb9fbf36f",
       "note": "Same 940-session pool, same 500 questions, same local bge-m3, same scoring function. Competitor versions are recorded in the artifact.",
       "produced_by": [
         "research/head_to_head.py",
@@ -10221,7 +10221,7 @@
         "high": 0.816
       },
       "cited_in": [],
-      "commit": "29ec5fe33108bf79e89bbdce5b112baac5736c31",
+      "commit": "f19fc9c2fd88c1871a9b76e91a5ce91eb9fbf36f",
       "note": "Same 940-session pool, same 500 questions, same local bge-m3, same scoring function. Competitor versions are recorded in the artifact.",
       "produced_by": [
         "research/head_to_head.py",
@@ -10264,7 +10264,7 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "29ec5fe33108bf79e89bbdce5b112baac5736c31",
+      "commit": "f19fc9c2fd88c1871a9b76e91a5ce91eb9fbf36f",
       "produced_by": [
         "research/head_to_head.py",
         "nevertwice/causal.py",
@@ -10304,7 +10304,7 @@
       "pointer": null,
       "ci": null,
       "cited_in": [],
-      "commit": "29ec5fe33108bf79e89bbdce5b112baac5736c31",
+      "commit": "f19fc9c2fd88c1871a9b76e91a5ce91eb9fbf36f",
       "note": "Paired on the same questions and the same first-stage top-10, so this isolates the reranker rather than the retriever.",
       "produced_by": [
         "research/longmem_eval.py",
@@ -10346,7 +10346,7 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "29ec5fe33108bf79e89bbdce5b112baac5736c31",
+      "commit": "f19fc9c2fd88c1871a9b76e91a5ce91eb9fbf36f",
       "produced_by": [
         "research/longmem_eval.py",
         "nevertwice/causal.py",
@@ -10391,7 +10391,7 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "29ec5fe33108bf79e89bbdce5b112baac5736c31",
+      "commit": "f19fc9c2fd88c1871a9b76e91a5ce91eb9fbf36f",
       "note": "The standard non-oracle pool: 19,206 unique haystack sessions against the oracle variant's 940, so every question ranks a haystack twenty-one times larger. Same embedder, same scoring function, same human-annotated ground truth.",
       "produced_by": [
         "research/longmem_eval.py",
@@ -10437,7 +10437,7 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "29ec5fe33108bf79e89bbdce5b112baac5736c31",
+      "commit": "f19fc9c2fd88c1871a9b76e91a5ce91eb9fbf36f",
       "note": "The standard non-oracle pool: 19,206 unique haystack sessions against the oracle variant's 940, so every question ranks a haystack twenty-one times larger. Same embedder, same scoring function, same human-annotated ground truth.",
       "produced_by": [
         "research/longmem_eval.py",
@@ -10481,7 +10481,7 @@
         "high": 0.4697
       },
       "cited_in": [],
-      "commit": "29ec5fe33108bf79e89bbdce5b112baac5736c31",
+      "commit": "f19fc9c2fd88c1871a9b76e91a5ce91eb9fbf36f",
       "note": "The standard non-oracle pool: 19,206 unique haystack sessions against the oracle variant's 940, so every question ranks a haystack twenty-one times larger. Same embedder, same scoring function, same human-annotated ground truth.",
       "produced_by": [
         "research/longmem_eval.py",
@@ -10522,7 +10522,7 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "29ec5fe33108bf79e89bbdce5b112baac5736c31",
+      "commit": "f19fc9c2fd88c1871a9b76e91a5ce91eb9fbf36f",
       "note": "The standard non-oracle pool: 19,206 unique haystack sessions against the oracle variant's 940, so every question ranks a haystack twenty-one times larger. Same embedder, same scoring function, same human-annotated ground truth.",
       "produced_by": [
         "research/longmem_eval.py",
@@ -10568,7 +10568,7 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "29ec5fe33108bf79e89bbdce5b112baac5736c31",
+      "commit": "f19fc9c2fd88c1871a9b76e91a5ce91eb9fbf36f",
       "note": "The standard non-oracle pool: 19,206 unique haystack sessions against the oracle variant's 940, so every question ranks a haystack twenty-one times larger. Same embedder, same scoring function, same human-annotated ground truth.",
       "produced_by": [
         "research/longmem_eval.py",
@@ -10614,7 +10614,7 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "29ec5fe33108bf79e89bbdce5b112baac5736c31",
+      "commit": "f19fc9c2fd88c1871a9b76e91a5ce91eb9fbf36f",
       "note": "The standard non-oracle pool: 19,206 unique haystack sessions against the oracle variant's 940, so every question ranks a haystack twenty-one times larger. Same embedder, same scoring function, same human-annotated ground truth.",
       "produced_by": [
         "research/longmem_eval.py",
@@ -10658,7 +10658,7 @@
         "high": 0.5773
       },
       "cited_in": [],
-      "commit": "29ec5fe33108bf79e89bbdce5b112baac5736c31",
+      "commit": "f19fc9c2fd88c1871a9b76e91a5ce91eb9fbf36f",
       "note": "The standard non-oracle pool: 19,206 unique haystack sessions against the oracle variant's 940, so every question ranks a haystack twenty-one times larger. Same embedder, same scoring function, same human-annotated ground truth.",
       "produced_by": [
         "research/longmem_eval.py",
@@ -10699,7 +10699,7 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "29ec5fe33108bf79e89bbdce5b112baac5736c31",
+      "commit": "f19fc9c2fd88c1871a9b76e91a5ce91eb9fbf36f",
       "note": "The standard non-oracle pool: 19,206 unique haystack sessions against the oracle variant's 940, so every question ranks a haystack twenty-one times larger. Same embedder, same scoring function, same human-annotated ground truth.",
       "produced_by": [
         "research/longmem_eval.py",
@@ -10745,7 +10745,7 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "29ec5fe33108bf79e89bbdce5b112baac5736c31",
+      "commit": "f19fc9c2fd88c1871a9b76e91a5ce91eb9fbf36f",
       "note": "The standard non-oracle pool: 19,206 unique haystack sessions against the oracle variant's 940, so every question ranks a haystack twenty-one times larger. Same embedder, same scoring function, same human-annotated ground truth.",
       "produced_by": [
         "research/longmem_eval.py",
@@ -10791,7 +10791,7 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "29ec5fe33108bf79e89bbdce5b112baac5736c31",
+      "commit": "f19fc9c2fd88c1871a9b76e91a5ce91eb9fbf36f",
       "note": "The standard non-oracle pool: 19,206 unique haystack sessions against the oracle variant's 940, so every question ranks a haystack twenty-one times larger. Same embedder, same scoring function, same human-annotated ground truth.",
       "produced_by": [
         "research/longmem_eval.py",
@@ -10835,7 +10835,7 @@
         "high": 0.597
       },
       "cited_in": [],
-      "commit": "29ec5fe33108bf79e89bbdce5b112baac5736c31",
+      "commit": "f19fc9c2fd88c1871a9b76e91a5ce91eb9fbf36f",
       "note": "The standard non-oracle pool: 19,206 unique haystack sessions against the oracle variant's 940, so every question ranks a haystack twenty-one times larger. Same embedder, same scoring function, same human-annotated ground truth.",
       "produced_by": [
         "research/longmem_eval.py",
@@ -10876,7 +10876,7 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "29ec5fe33108bf79e89bbdce5b112baac5736c31",
+      "commit": "f19fc9c2fd88c1871a9b76e91a5ce91eb9fbf36f",
       "note": "The standard non-oracle pool: 19,206 unique haystack sessions against the oracle variant's 940, so every question ranks a haystack twenty-one times larger. Same embedder, same scoring function, same human-annotated ground truth.",
       "produced_by": [
         "research/longmem_eval.py",
@@ -10918,7 +10918,7 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "29ec5fe33108bf79e89bbdce5b112baac5736c31",
+      "commit": "f19fc9c2fd88c1871a9b76e91a5ce91eb9fbf36f",
       "produced_by": [
         "research/longmem_eval.py",
         "nevertwice/causal.py",
@@ -10958,7 +10958,7 @@
       "cited_in": [
         "docs/BENCHMARKS.md"
       ],
-      "commit": "29ec5fe33108bf79e89bbdce5b112baac5736c31",
+      "commit": "f19fc9c2fd88c1871a9b76e91a5ce91eb9fbf36f",
       "produced_by": [
         "research/longmem_eval.py",
         "nevertwice/causal.py",
@@ -11000,8 +11000,10 @@
         "low": 0.1657,
         "high": 0.1997
       },
-      "cited_in": [],
-      "commit": "b17836957e6f8f9d182619dde93a0f338ac0a7a5",
+      "cited_in": [
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "f19fc9c2fd88c1871a9b76e91a5ce91eb9fbf36f",
       "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
       "produced_by": [
         "research/locomo_eval.py",
@@ -11045,8 +11047,10 @@
         "low": 0.4108,
         "high": 0.4544
       },
-      "cited_in": [],
-      "commit": "b17836957e6f8f9d182619dde93a0f338ac0a7a5",
+      "cited_in": [
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "f19fc9c2fd88c1871a9b76e91a5ce91eb9fbf36f",
       "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
       "produced_by": [
         "research/locomo_eval.py",
@@ -11090,8 +11094,10 @@
         "low": 0.538,
         "high": 0.5817
       },
-      "cited_in": [],
-      "commit": "b17836957e6f8f9d182619dde93a0f338ac0a7a5",
+      "cited_in": [
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "f19fc9c2fd88c1871a9b76e91a5ce91eb9fbf36f",
       "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
       "produced_by": [
         "research/locomo_eval.py",
@@ -11130,8 +11136,10 @@
       "raw": "research/results/locomo.json",
       "pointer": "methods.semantic.mrr",
       "ci": null,
-      "cited_in": [],
-      "commit": "b17836957e6f8f9d182619dde93a0f338ac0a7a5",
+      "cited_in": [
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "f19fc9c2fd88c1871a9b76e91a5ce91eb9fbf36f",
       "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
       "produced_by": [
         "research/locomo_eval.py",
@@ -11175,8 +11183,10 @@
         "low": 0.2515,
         "high": 0.2906
       },
-      "cited_in": [],
-      "commit": "b17836957e6f8f9d182619dde93a0f338ac0a7a5",
+      "cited_in": [
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "f19fc9c2fd88c1871a9b76e91a5ce91eb9fbf36f",
       "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
       "produced_by": [
         "research/locomo_eval.py",
@@ -11220,8 +11230,10 @@
         "low": 0.4772,
         "high": 0.5213
       },
-      "cited_in": [],
-      "commit": "b17836957e6f8f9d182619dde93a0f338ac0a7a5",
+      "cited_in": [
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "f19fc9c2fd88c1871a9b76e91a5ce91eb9fbf36f",
       "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
       "produced_by": [
         "research/locomo_eval.py",
@@ -11265,8 +11277,10 @@
         "low": 0.5542,
         "high": 0.5977
       },
-      "cited_in": [],
-      "commit": "b17836957e6f8f9d182619dde93a0f338ac0a7a5",
+      "cited_in": [
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "f19fc9c2fd88c1871a9b76e91a5ce91eb9fbf36f",
       "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
       "produced_by": [
         "research/locomo_eval.py",
@@ -11305,8 +11319,10 @@
       "raw": "research/results/locomo.json",
       "pointer": "methods.lexical.mrr",
       "ci": null,
-      "cited_in": [],
-      "commit": "b17836957e6f8f9d182619dde93a0f338ac0a7a5",
+      "cited_in": [
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "f19fc9c2fd88c1871a9b76e91a5ce91eb9fbf36f",
       "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
       "produced_by": [
         "research/locomo_eval.py",
@@ -11350,8 +11366,10 @@
         "low": 0.2737,
         "high": 0.3138
       },
-      "cited_in": [],
-      "commit": "b17836957e6f8f9d182619dde93a0f338ac0a7a5",
+      "cited_in": [
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "f19fc9c2fd88c1871a9b76e91a5ce91eb9fbf36f",
       "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
       "produced_by": [
         "research/locomo_eval.py",
@@ -11395,8 +11413,10 @@
         "low": 0.5273,
         "high": 0.5711
       },
-      "cited_in": [],
-      "commit": "b17836957e6f8f9d182619dde93a0f338ac0a7a5",
+      "cited_in": [
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "f19fc9c2fd88c1871a9b76e91a5ce91eb9fbf36f",
       "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
       "produced_by": [
         "research/locomo_eval.py",
@@ -11440,8 +11460,10 @@
         "low": 0.6123,
         "high": 0.6547
       },
-      "cited_in": [],
-      "commit": "b17836957e6f8f9d182619dde93a0f338ac0a7a5",
+      "cited_in": [
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "f19fc9c2fd88c1871a9b76e91a5ce91eb9fbf36f",
       "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
       "produced_by": [
         "research/locomo_eval.py",
@@ -11480,8 +11502,10 @@
       "raw": "research/results/locomo.json",
       "pointer": "methods.hybrid.mrr",
       "ci": null,
-      "cited_in": [],
-      "commit": "b17836957e6f8f9d182619dde93a0f338ac0a7a5",
+      "cited_in": [
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "f19fc9c2fd88c1871a9b76e91a5ce91eb9fbf36f",
       "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
       "produced_by": [
         "research/locomo_eval.py",
@@ -11521,8 +11545,95 @@
       "raw": "research/results/locomo.json",
       "pointer": "questions",
       "ci": null,
-      "cited_in": [],
-      "commit": "b17836957e6f8f9d182619dde93a0f338ac0a7a5",
+      "cited_in": [
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "f19fc9c2fd88c1871a9b76e91a5ce91eb9fbf36f",
+      "produced_by": [
+        "research/locomo_eval.py",
+        "nevertwice/causal.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/outcomes.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "nevertwice/store_state.py",
+        "nevertwice/why_fired.py",
+        "research/_rerank.py",
+        "research/_xreranker.py",
+        "research/corpus_pin.py",
+        "research/longmem_eval.py",
+        "sandbox_guard.py"
+      ]
+    },
+    {
+      "id": "locomo.dataset.questions_total",
+      "statement": "LoCoMo ships 1,986 questions across its ten conversations",
+      "value": 1986,
+      "printed": [
+        "1,986",
+        "1986"
+      ],
+      "unit": "count",
+      "dataset": "locomo10_pinned",
+      "environment": "local_bge_m3_pinned",
+      "n": 1977,
+      "command": "python research/locomo_eval.py --save --out=research/results/locomo.json",
+      "raw": "research/results/locomo.json",
+      "pointer": null,
+      "ci": null,
+      "cited_in": [
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "f19fc9c2fd88c1871a9b76e91a5ce91eb9fbf36f",
+      "derivation": "the corpus record in research/corpus_pin.py; the result file carries only the scoreable subset",
+      "produced_by": [
+        "research/locomo_eval.py",
+        "nevertwice/causal.py",
+        "nevertwice/config.py",
+        "nevertwice/graph.py",
+        "nevertwice/guards.py",
+        "nevertwice/index_sqlite.py",
+        "nevertwice/memory_hook.py",
+        "nevertwice/outcomes.py",
+        "nevertwice/rankers.py",
+        "nevertwice/receipt.py",
+        "nevertwice/reranker_ce.py",
+        "nevertwice/stats.py",
+        "nevertwice/store_state.py",
+        "nevertwice/why_fired.py",
+        "research/_rerank.py",
+        "research/_xreranker.py",
+        "research/corpus_pin.py",
+        "research/longmem_eval.py",
+        "sandbox_guard.py"
+      ]
+    },
+    {
+      "id": "locomo.dataset.turns",
+      "statement": "the ten LoCoMo conversations hold 5,882 dialogue turns",
+      "value": 5882,
+      "printed": [
+        "5,882",
+        "5882"
+      ],
+      "unit": "count",
+      "dataset": "locomo10_pinned",
+      "environment": "local_bge_m3_pinned",
+      "n": 1977,
+      "command": "python research/locomo_eval.py --save --out=research/results/locomo.json",
+      "raw": "research/results/locomo.json",
+      "pointer": "turns",
+      "ci": null,
+      "cited_in": [
+        "docs/BENCHMARKS.md"
+      ],
+      "commit": "f19fc9c2fd88c1871a9b76e91a5ce91eb9fbf36f",
       "produced_by": [
         "research/locomo_eval.py",
         "nevertwice/causal.py",
@@ -11572,6 +11683,20 @@
       "owner": "Mem0 (third party)",
       "cited_in": [
         "README.md"
+      ]
+    },
+    {
+      "id": "locomo.bm25_saturation",
+      "printed": [
+        "94"
+      ],
+      "statement": "plain BM25 is reported to score about 94% on LoCoMo's answer-accuracy setting, which is the figure this project's exclusion was written around",
+      "source": "widely reported in the agent-memory literature and vendor write-ups; the exclusion in ROADMAP.md predates this register entry",
+      "owner": "third party",
+      "note": "Quoted, never measured here. It concerns judge-scored ANSWER ACCURACY. This repository measures LoCoMo retrieval instead, where the term-overlap floor reads 0.499 at R@5 - a different quantity on a different scale, and the two must never appear in one table.",
+      "cited_in": [
+        "docs/BENCHMARKS.md",
+        "research/LOCOMO.md"
       ]
     }
   ],

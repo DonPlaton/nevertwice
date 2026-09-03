@@ -153,10 +153,27 @@ Four systems on the oracle pool, same embedder, same scoring function, same 500 
 | A-MEM | 0.428 | 0.692 | 0.782 | 0.544 |
 <!-- /claims:head-to-head-pinned -->
 
-LoCoMo, the benchmark this project had excluded on paper, was also run and is on its own page:
-[`research/LOCOMO.md`](../research/LOCOMO.md). On the retrieval axis it separates systems fine,
-which narrows the exclusion rather than lifting it - the saturation concern that excluded it is
-about judge-scored answer accuracy, a different quantity that nothing here measures.
+### LoCoMo, the benchmark this project had excluded on paper
+
+Ten long conversations, 5,882 turns, 1,977 of 1,986 questions scored, retrieving the
+human-annotated evidence turn from the question's own conversation - LoCoMo's own setting. Full
+method and the defect running it found: [`research/LOCOMO.md`](../research/LOCOMO.md).
+
+<!-- claims:locomo -->
+| method | R@1 | R@5 | R@10 | MRR |
+|---|---|---|---|---|
+| semantic (bge-m3) | 0.182 | 0.432 | 0.560 | 0.301 |
+| lexical (BM25) | 0.271 | 0.499 | 0.576 | 0.377 |
+| **calibrated fusion (shipped default, 0 deps)** | **0.293** | **0.549** | **0.634** | **0.411** |
+<!-- /claims:locomo -->
+
+The exclusion was written around a reported 94% for plain BM25. The term-overlap floor here
+reads 0.499 at R@5, and the three methods order exactly as they do on LongMemEval, so on the
+**retrieval** axis LoCoMo separates systems perfectly well. The 94% figure is about judge-scored
+**answer accuracy**, which measures the reader as much as the memory and which nothing in this
+repository measures. So the exclusion is narrowed rather than lifted: not a candidate as a
+headline, on a named axis. **A number in this table must never be compared with a published
+LoCoMo accuracy figure** - they are different quantities.
 
 Reproduce:
 
