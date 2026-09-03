@@ -36,8 +36,11 @@ and are not started before the rest is done.
   because deleting a retracted result is how a project loses the memory of having been wrong.
 - **A second external dataset, and the non-oracle pool for every arm.** LongMemEval is pinned
   and re-run, and one benchmark is one benchmark. BEAM is the other candidate named here, on the
-  same open local stand. **LoCoMo is not a candidate** for the unchanged reason: plain BM25
-  scores about 94% on it, so it no longer separates memory systems.
+  same open local stand. **LoCoMo is not a candidate as a headline**, and the reason is now
+  narrower than it was: it was run (`research/LOCOMO.md`) and on the *retrieval* axis it
+  separates systems fine - the term-overlap floor scores 0.499 at R@5, not 0.94. The saturation
+  concern is about *answer accuracy* with a judge model, which is a different quantity and one
+  this project does not measure.
   **Today:** the retrieval head-to-head is closed and reproducible. `research/corpus_pin.py`
   holds the corpus sha256, both harnesses verify it before reading a byte and stamp it into the
   result, and the re-run reproduces every 2026-07 figure to three decimals across all four
@@ -95,10 +98,10 @@ and are not started before the rest is done.
 
 - **A number on a dataset we did not choose, that still separates systems.** Winning our own
   stand is the same circularity as scoring a detector against positives its author generated, and
-  this project has been burned by that shape twice. **LoCoMo is not a candidate** and the reason
-  is unchanged: plain BM25 scores about 94% on it, so it no longer separates memory systems, and
-  a vendor headline of 92.5 there says little about one. BEAM is the remaining candidate, on the
-  same open local stand.
+  this project has been burned by that shape twice. **LoCoMo is not a candidate as a headline**:
+  it has been run on the retrieval axis, where it does separate systems, but the 94%-for-BM25
+  concern that excluded it is about answer accuracy with a judge model, and nothing here measures
+  that. BEAM is the remaining candidate for a headline, on the same open local stand.
   **Today:** LongMemEval is done, on a corpus hash-pinned in `research/corpus_pin.py` that the
   harness verifies before reading a byte - the property whose absence took the 2026-07 figures
   down. Four systems, one pool, one embedder, one scoring function, and every figure reproduces
@@ -188,8 +191,10 @@ declared — which is precisely what the first item above builds.
 ## Exploring
 
 - **More benchmark protocols.** BEAM is a candidate, added only if it runs on the same open,
-  local, reproducible stand as everything else. LoCoMo is **not** a candidate: plain BM25
-  scores about 94% on it, so it no longer separates memory systems.
+  local, reproducible stand as everything else. LoCoMo is **not** a candidate as a headline:
+  measured on the retrieval axis it separates systems (`research/LOCOMO.md`), while the
+  saturation concern that excluded it is about judge-scored answer accuracy, which is a
+  different axis and one nothing here measures.
   **Today:** the LongMemEval-oracle retrieval figures and the head-to-head that stood on the same
   corpus were **withdrawn in 2026-08** - the dataset is third-party, uncommitted and unhashed, so
   the run cannot be reproduced or pinned. The live agent validation stands. Every figure, live or

@@ -82,6 +82,10 @@ def _args():
     ap.add_argument("--sessions", type=int, default=None, help="cap ingested sessions (testing only)")
     ap.add_argument("--save", action="store_true")
     ap.add_argument("--out", default="", help="write the result here instead of head_to_head.json")
+    # Consumed by longmem_eval at import (it reads sys.argv directly so an importer can select
+    # the corpus); declared here so argparse does not reject it.
+    ap.add_argument("--data", default="oracle", choices=["oracle", "s", "locomo"],
+                    help="which pinned corpus to run on: two LongMemEval variants or LoCoMo")
     return ap.parse_args()
 
 
@@ -144,6 +148,36 @@ def run_nevertwice(data, pool) -> dict:
     """Rank with the shipped production ranker (calibrated score fusion of semantic bge-m3 +
     BM25), scored by the SAME score() on the SAME subset as every competitor. Uses the embed
     cache; falls back to the committed result file only if the cache is absent."""
+    # LoCoMo keeps its own cache, keyed by dia_id and by question TEXT rather than by a
+    # question_id the dataset does not carry. Same vectors, same embedder, different keys.
+    locomo = getattr(ARGS, "data", "oracle") == "locomo"
+    if locomo:
+        import locomo_eval as lc                                 # noqa: PLC0415
+        emb = lc.EMB
+        if not emb.exists():
+            return {"blocked": "no LoCoMo embed cache - run `python research/locomo_eval.py --embed`"}
+        cache = json.loads(emb.read_text(encoding="utf-8"))
+        svec = cache["turns"]
+        qvec_by_text = cache["questions"]
+        pool_ids = [s for s in pool if s in svec]
+        toks_lists = {s: m._token_list(pool[s]) for s in pool_ids}
+        bm_tf, bm_dl, bm_df, bm_avgdl = le.build_bm25(pool_ids, toks_lists)
+        t0 = time.time()
+        ranked = {}
+        for e in data:
+            q = qvec_by_text.get(e["question"])
+            if q is None:
+                continue
+            qt = m._tokens(e["question"])
+            cos = {s: m.cosine(q, svec[s]) for s in pool_ids}
+            bm = le.bm25_scores(qt, pool_ids, bm_tf, bm_dl, bm_df, bm_avgdl)
+            cal = le.calibrated(cos, bm)
+            ranked[e["question_id"]] = sorted(cal, key=lambda s: (-cal[s], s))[:max(KS)]
+        sc = score(ranked, data, list(pool))
+        sc["query_s"] = round(time.time() - t0, 1)
+        sc["setup"] = "local bge-m3 via Ollama (calibrated fusion; 0 deps, no server, no DB)"
+        return sc
+
     emb = le._emb_path()
     if not emb.exists():
         res = HERE / "longmem_results.json"
@@ -339,24 +373,50 @@ ADAPTERS = {"nevertwice": run_nevertwice, "mem0": run_mem0, "langmem": run_langm
             "amem": run_amem, "cognee": run_cognee, "zep": run_zep}
 
 
+def _locomo():
+    """LoCoMo as (questions, pool), pooled globally over all ten conversations.
+
+    Global rather than per-conversation: the competitor stores hold one collection, and a
+    per-conversation setting would mean ten stores per system measuring ten easy tasks. The
+    global pool is the harder question and the one a user's real history looks like. Our own
+    per-conversation numbers are in `research/locomo_eval.py`, which is LoCoMo's own setting.
+    """
+    import locomo_eval as lc                                     # noqa: PLC0415
+
+    convs = lc.load()
+    pool, data = {}, []
+    for c in convs:
+        pool.update(c["pool"])
+        for i, q in enumerate(c["qa"]):
+            data.append({"question_id": f"{c['sample_id']}#{i}", "question": q["question"],
+                         "answer_session_ids": q["evidence"]})
+    return data, pool
+
+
 def main():
     # The corpus is verified against its committed hash before anything is ingested. The July
     # run of this stand was withdrawn because the file behind it could not be identified after
     # the fact; a run that cannot name its bytes is a run that produces nothing.
+    corpus = "locomo10" if ARGS.data == "locomo" else le.CORPUS
     try:
-        provenance = corpus_pin.record(le.CORPUS)
+        provenance = corpus_pin.record(corpus)
     except (corpus_pin.CorpusMismatch, KeyError) as e:
         print(e, file=sys.stderr)
         sys.exit(1)
-    data = json.loads(le.ORACLE.read_text(encoding="utf-8"))
-    if ARGS.limit:
-        data = data[:ARGS.limit]
-    pool = _pool_from(data)
+    if ARGS.data == "locomo":
+        data, pool = _locomo()
+        if ARGS.limit:
+            data = data[:ARGS.limit]
+    else:
+        data = json.loads(le.ORACLE.read_text(encoding="utf-8"))
+        if ARGS.limit:
+            data = data[:ARGS.limit]
+        pool = _pool_from(data)
     want = [s.strip() for s in ARGS.only.split(",") if s.strip()] or ["nevertwice", "mem0"]
 
     bar = "=" * 80
     print(bar)
-    print(f"  HEAD-TO-HEAD - {le.CORPUS}, {len(pool)} sessions / {len(data)} questions")
+    print(f"  HEAD-TO-HEAD - {corpus}, {len(pool)} items / {len(data)} questions")
     print(f"  corpus sha256 {provenance['sha256'][:16]}... ({provenance['licence']})")
     print(f"  same metric as longmem_eval.py · competitors on LOCAL Ollama ({EMBED_MODEL})")
     print(bar)

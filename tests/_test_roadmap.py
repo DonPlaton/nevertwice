@@ -134,14 +134,27 @@ def test_the_shipped_list_is_honest() -> None:
 
 def test_the_roadmap_does_not_contradict_the_project() -> None:
     """The one contradiction this document actually had: it listed LoCoMo as a candidate
-    protocol while the research pages call it discredited."""
+    protocol while the research pages call it discredited.
+
+    The bar rose in 2026-09 rather than falling. LoCoMo was measured
+    (`research/LOCOMO.md`) and on the *retrieval* axis it separates systems perfectly well - the
+    term-overlap floor reads 0.499 at R@5, nothing like the 94% the exclusion was written
+    around. That figure is about *answer accuracy under a judge model*, a different quantity.
+    So a bare "not a candidate" is now an overstatement of what is known, and the roadmap has to
+    say which axis it is excluding on. Asserting the qualifier is a stricter test than asserting
+    the phrase, and it fails the same way if someone quietly re-lists LoCoMo as a headline.
+    """
     print("\n- the roadmap agrees with the research it links to -")
     if "LoCoMo" in ROADMAP:
         window = ROADMAP[max(0, ROADMAP.find("LoCoMo") - 400):
                          ROADMAP.find("LoCoMo") + 400]
-        check("LoCoMo is named as excluded, not as a candidate",
-              "not** a candidate" in window or "not a candidate" in window,
+        excluded = "not** a candidate" in window or "not a candidate" in window
+        check("LoCoMo is named as excluded, not as a candidate", excluded,
               "LoCoMo is mentioned without saying it is excluded")
+        check("and the exclusion says which axis it applies to",
+              excluded and "as a headline" in window,
+              "a bare 'not a candidate' overstates it: LoCoMo was measured and separates "
+              "systems on retrieval; the exclusion is about judge-scored answer accuracy")
 
     check("the blocked item names what unblocks it",
           "Trusted Publishing" in ROADMAP and "maintainer" in ROADMAP.lower())

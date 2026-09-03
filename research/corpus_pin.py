@@ -49,6 +49,21 @@ CORPORA = {
                 "distractors. Pooled globally - every question retrieving from all 940 unique "
                 "sessions - it is a real retrieval task, but a small-haystack one.",
     },
+    "locomo10": {
+        "path": "research/data/locomo10.json",
+        "sha256": "79fa87e90f04081343b8c8debecb80a9a6842b76a7aa537dc9fdf651ea698ff4",
+        "bytes": 2805274,
+        "url": "https://raw.githubusercontent.com/snap-research/locomo/main/data/locomo10.json",
+        "licence": "CC-BY-NC-4.0 (dataset card); the repository's LICENSE.txt is the authority",
+        "citation": "Maharana et al., Evaluating Very Long-Term Conversational Memory of LLM "
+                    "Agents, ACL 2024",
+        "questions": 1986,
+        "pool_sessions": 10,
+        "note": "Ten long conversations with human-annotated evidence turns (`dia_id`) per "
+                "question, which is what makes a retrieval metric possible. Not redistributed "
+                "here - only its hash - and the licence is non-commercial, so anyone reusing it "
+                "should read the repository's LICENSE.txt rather than this line.",
+    },
     "longmemeval_s": {
         "path": "research/data/longmemeval_s.json",
         "sha256": "08d8dad4be43ee2049a22ff5674eb86725d0ce5ff434cde2627e5e8e7e117894",

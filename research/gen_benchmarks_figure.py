@@ -8,7 +8,7 @@ retraction on the page never reached anyone who saw only the image. It is exactl
 `research/_figstyle.py` exists to prevent, sitting in the same repository as the module that
 prevents it.
 
-So: four panels, every number pulled from the evidence register at draw time, and a hard stop
+So: six panels, every number pulled from the evidence register at draw time, and a hard stop
 if any of them is withdrawn. The provenance line is drawn into the figure by `_figstyle.save`.
 
     python research/gen_benchmarks_figure.py
@@ -33,12 +33,19 @@ OUT = ROOT / "docs" / "benchmarks"
 #: Panel -> the claim ids it draws. Every one is checked against the register before anything
 #: is plotted, so adding a bar to this figure means registering the number first.
 PANELS = {
+    "head_to_head": ["h2h_pinned.nevertwice.recall_at_5", "h2h_pinned.mem0.recall_at_5",
+                     "h2h_pinned.langmem.recall_at_5", "h2h_pinned.amem.recall_at_5",
+                     "h2h_locomo.nevertwice.recall_at_5", "h2h_locomo.mem0.recall_at_5",
+                     "h2h_locomo.langmem.recall_at_5", "h2h_locomo.amem.recall_at_5"],
+    "haystack": ["longmem_pinned.semantic.recall_at_5", "longmem_pinned.lexical.recall_at_5",
+                 "longmem_pinned.hybrid.recall_at_5", "longmem_s.semantic.recall_at_5",
+                 "longmem_s.lexical.recall_at_5", "longmem_s.hybrid.recall_at_5"],
     "supersession": ["supersession.nevertwice.stale_rate", "supersession.mem0.stale_rate",
                      "supersession.naive.stale_rate"],
-    "latency": ["latency.cold", "latency.sessionstart", "latency.userpromptsubmit",
-                "latency.pretooluse_end_to_end"],
     "poisoning": ["poisoning.injection_blocked", "poisoning.block_rate",
                   "poisoning.precision", "poisoning.false_fact_blocked"],
+    "latency": ["latency.cold", "latency.sessionstart", "latency.userpromptsubmit",
+                "latency.pretooluse_end_to_end"],
     "deleted": ["embed.hard_negatives.situation.delta_recall_at_5",
                 "embed.distillation.situation.delta_recall_at_5",
                 "embed.truncation.shipped.256d_recall_at_5_cost",
@@ -69,32 +76,84 @@ def draw(claims: dict[str, dict]):
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
+    import numpy as np
 
     _figstyle.apply()
-    fig, axes = plt.subplots(2, 2, figsize=(11.0, 6.6))
+    fig, axes = plt.subplots(2, 3, figsize=(16.0, 7.4))
     v = {cid: claims[cid]["value"] for ids in PANELS.values() for cid in ids}
+    w = 0.38
 
-    # ── the headline: who hands back a fact that was retracted ────────────────────────────
+    # ── 1. four systems, two external benchmarks, one stand each ──────────────────────────
     ax = axes[0][0]
-    names = ["Nevertwice", "Mem0 2.0.19", "append-only\n+ BM25"]
+    systems = ["Nevertwice", "Mem0\n2.0.19", "LangMem", "A-MEM"]
+    slugs = ["nevertwice", "mem0", "langmem", "amem"]
+    lme = [v[f"h2h_pinned.{s}.recall_at_5"] for s in slugs]
+    loc = [v[f"h2h_locomo.{s}.recall_at_5"] for s in slugs]
+    x = np.arange(len(systems))
+    ax.bar(x - w / 2, lme, w, label="LongMemEval", color=_figstyle.POSITIVE)
+    ax.bar(x + w / 2, loc, w, label="LoCoMo", color=_figstyle.PALETTE[1])
+    ax.set_xticks(x, systems)
+    ax.set_ylim(0, 1.0)
+    ax.set_ylabel("recall@5, annotated evidence")
+    ax.set_title("External retrieval: one pool, one embedder")
+    ax.legend(loc="upper right")
+    for i, (a, b) in enumerate(zip(lme, loc)):
+        ax.text(i - w / 2, a + 0.02, f"{a:.2f}", ha="center", fontsize=8)
+        ax.text(i + w / 2, b + 0.02, f"{b:.2f}", ha="center", fontsize=8)
+
+    # ── 2. the same benchmark at twenty-one times the haystack ────────────────────────────
+    ax = axes[0][1]
+    meths = ["semantic", "lexical", "hybrid"]
+    small = [v[f"longmem_pinned.{s}.recall_at_5"] for s in meths]
+    big = [v[f"longmem_s.{s}.recall_at_5"] for s in meths]
+    x = np.arange(len(meths))
+    ax.bar(x - w / 2, small, w, label="940 sessions", color=_figstyle.PALETTE[4])
+    ax.bar(x + w / 2, big, w, label="19,206 sessions", color=_figstyle.PALETTE[5])
+    ax.set_xticks(x, ["semantic", "lexical", "fusion\n(shipped)"])
+    ax.set_ylim(0, 1.0)
+    ax.set_ylabel("recall@5")
+    ax.set_title("Twenty-one times the haystack")
+    ax.legend(loc="upper right")
+    for i, (a, b) in enumerate(zip(small, big)):
+        ax.text(i - w / 2, a + 0.02, f"{a:.2f}", ha="center", fontsize=8)
+        ax.text(i + w / 2, b + 0.02, f"{b:.2f}", ha="center", fontsize=8)
+
+    # ── 3. the axis nobody else measures ──────────────────────────────────────────────────
+    ax = axes[0][2]
+    names = ["Nevertwice", "Mem0\n2.0.19", "append-only\n+ BM25"]
     vals = [v["supersession.nevertwice.stale_rate"], v["supersession.mem0.stale_rate"],
             v["supersession.naive.stale_rate"]]
     cis = [claims[c]["ci"] for c in PANELS["supersession"]]
     err = [[val - ci["low"] for val, ci in zip(vals, cis)],
            [ci["high"] - val for val, ci in zip(vals, cis)]]
-    bars = ax.bar(names, vals, color=[_figstyle.POSITIVE, _figstyle.NEUTRAL, _figstyle.NEUTRAL],
-                  width=0.62)
+    bars = ax.bar(names, vals, width=0.6,
+                  color=[_figstyle.POSITIVE, _figstyle.NEUTRAL, _figstyle.NEUTRAL])
     ax.errorbar(names, vals, yerr=err, fmt="none", ecolor=_figstyle.INK, capsize=4, lw=1.1)
-    ax.set_ylim(0, 1.08)
+    ax.set_ylim(0, 1.15)
     ax.set_ylabel("returns the retracted fact")
     ax.set_title("Supersession: lower is better")
-    # above the whisker, not above the bar: at 0.07 the label landed inside its own interval
     for bar, val, ci in zip(bars, vals, cis):
         ax.text(bar.get_x() + bar.get_width() / 2, ci["high"] + 0.035, f"{val:.2f}",
                 ha="center", fontsize=9, fontweight="bold")
 
-    # ── what it costs to run ──────────────────────────────────────────────────────────────
-    ax = axes[0][1]
+    # ── 4. what it refuses to store, including where it is weak ───────────────────────────
+    ax = axes[1][0]
+    labels = ["prompt\ninjection", "all acceptance\nattacks", "precision on\nbenign notes",
+              "plausible\nfalse fact"]
+    vals = [v["poisoning.injection_blocked"], v["poisoning.block_rate"],
+            v["poisoning.precision"], v["poisoning.false_fact_blocked"]]
+    colours = [_figstyle.POSITIVE] * 3 + [_figstyle.NEGATIVE]
+    bars = ax.bar(labels, vals, color=colours, width=0.62)
+    bars[-1].set_hatch(_figstyle.NEGATIVE_HATCH)
+    ax.set_ylim(0, 1.15)
+    ax.set_ylabel("blocked / precision")
+    ax.set_title("Poisoning defence, and where it is weak")
+    for bar, val in zip(bars, vals):
+        ax.text(bar.get_x() + bar.get_width() / 2, val + 0.04, f"{val:.2f}",
+                ha="center", fontsize=9)
+
+    # ── 5. what it costs to be there ──────────────────────────────────────────────────────
+    ax = axes[1][1]
     labels = ["cold import", "SessionStart", "UserPromptSubmit", "PreToolUse"]
     vals = [v["latency.cold"], v["latency.sessionstart"], v["latency.userpromptsubmit"],
             v["latency.pretooluse_end_to_end"]]
@@ -103,28 +162,10 @@ def draw(claims: dict[str, dict]):
     ax.set_title("Hot paths on a modest machine")
     for i, val in enumerate(vals[::-1]):
         ax.text(val + 2, i, f"{val} ms", va="center", fontsize=9)
-    ax.set_xlim(0, max(vals) * 1.28)
+    ax.set_xlim(0, max(vals) * 1.30)
 
-    # ── what it refuses to store ──────────────────────────────────────────────────────────
-    ax = axes[1][0]
-    labels = ["prompt\ninjection", "all acceptance\nattacks", "precision on\nbenign notes",
-              "plausible\nfalse fact"]
-    vals = [v["poisoning.injection_blocked"], v["poisoning.block_rate"],
-            v["poisoning.precision"], v["poisoning.false_fact_blocked"]]
-    # the weakest cell is drawn in the negative colour and hatched, because a chart that
-    # renders its own bad news quieter than its good news is arguing rather than reporting
-    colours = [_figstyle.POSITIVE] * 3 + [_figstyle.NEGATIVE]
-    bars = ax.bar(labels, vals, color=colours, width=0.62)
-    bars[-1].set_hatch(_figstyle.NEGATIVE_HATCH)
-    ax.set_ylim(0, 1.15)
-    ax.set_ylabel("blocked / precision")
-    ax.set_title("Poisoning defence, including where it is weak")
-    for bar, val in zip(bars, vals):
-        ax.text(bar.get_x() + bar.get_width() / 2, val + 0.04, f"{val:.2f}",
-                ha="center", fontsize=9)
-
-    # ── what was measured and thrown away ─────────────────────────────────────────────────
-    ax = axes[1][1]
+    # ── 6. what was measured and thrown away ──────────────────────────────────────────────
+    ax = axes[1][2]
     labels = ["hard-negative\nmining", "distillation", "256-d\ntruncation", "64x capacity"]
     vals = [v["embed.hard_negatives.situation.delta_recall_at_5"],
             v["embed.distillation.situation.delta_recall_at_5"],
@@ -134,25 +175,27 @@ def draw(claims: dict[str, dict]):
                   hatch=_figstyle.NEGATIVE_HATCH)
     ax.axhline(0, color=_figstyle.INK, lw=1.0)
     ax.set_ylabel("change in recall")
-    ax.set_title("Four ideas that were measured and deleted")
+    ax.set_title("Four ideas measured and deleted")
     for bar, val in zip(bars, vals):
         ax.text(bar.get_x() + bar.get_width() / 2, val - 0.008, f"{val:+.3f}",
                 ha="center", va="top", fontsize=9)
     ax.set_ylim(min(vals) * 1.5, 0.02)
 
     fig.suptitle("Nevertwice: what is measured, what it costs, and what was thrown away",
-                 fontsize=12.5, fontweight="bold", y=0.985)
+                 fontsize=13.5, fontweight="bold", y=0.985)
     fig.tight_layout(rect=(0, 0.055, 1, 0.955))
     return fig
 
 
-EVIDENCE = ("supersession n=60 (+20 controls), supersession_v1 sha256 0e3114ea, "
-            "bge-m3 + qwen3-coder:30b local, `python research/supersession_bench.py` | "
-            "latency: median of 7 runs, Windows 11 / Python 3.14 / Ryzen 7 7700, "
-            "`python research/latency_bench.py --save` | poisoning n=16 attacks + 10 benign, "
-            "`python research/poisoning.py --save` | deleted mechanisms: external held-out set, "
-            "`python research/embedder_ab.py`. Every value is registered live in "
-            "research/evidence_manifest.json; this figure refuses to draw a withdrawn one.")
+EVIDENCE = (
+    "external retrieval: LongMemEval-oracle 940 sessions / 500 questions (sha256 821a2034) and "
+    "LoCoMo 5,882 turns / 1,977 questions (sha256 79fa87e9), both hash-pinned in "
+    "research/corpus_pin.py and verified before each run; every system on one local stand with "
+    "bge-m3. The haystack panel adds LongMemEval-S, 19,206 sessions (sha256 08d8dad4). "
+    "Supersession: n=60 plus 20 controls, supersession_v1 (sha256 0e3114ea), Nevertwice pooled "
+    "over two runs. Poisoning: 16 attacks and 10 benign notes. Latency: minimum of five repeats "
+    "on an idle machine. Deleted mechanisms: external held-out set. Every value is registered "
+    "live in research/evidence_manifest.json; this figure refuses to draw a withdrawn one.")
 
 
 def main() -> int:

@@ -112,7 +112,10 @@ DATA = HERE / "data"
 import corpus_pin                                              # noqa: E402 - after sys.path setup
 
 _DATA_ARG = next((a.split("=", 1)[1] for a in sys.argv if a.startswith("--data=")), "oracle")
-CORPUS = {"oracle": "longmemeval_oracle", "s": "longmemeval_s"}.get(_DATA_ARG, _DATA_ARG)
+# This module only knows the two LongMemEval variants. `head_to_head.py` shares the flag and
+# accepts `--data=locomo`, which selects a corpus this file has nothing to say about; fall back
+# to the oracle path rather than raising at import for a value meant for a different loader.
+CORPUS = {"oracle": "longmemeval_oracle", "s": "longmemeval_s"}.get(_DATA_ARG, "longmemeval_oracle")
 ORACLE = corpus_pin.path_of(CORPUS)
 
 

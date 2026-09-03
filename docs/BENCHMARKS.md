@@ -153,6 +153,11 @@ Four systems on the oracle pool, same embedder, same scoring function, same 500 
 | A-MEM | 0.428 | 0.692 | 0.782 | 0.544 |
 <!-- /claims:head-to-head-pinned -->
 
+LoCoMo, the benchmark this project had excluded on paper, was also run and is on its own page:
+[`research/LOCOMO.md`](../research/LOCOMO.md). On the retrieval axis it separates systems fine,
+which narrows the exclusion rather than lifting it - the saturation concern that excluded it is
+about judge-scored answer accuracy, a different quantity that nothing here measures.
+
 Reproduce:
 
 ```bash

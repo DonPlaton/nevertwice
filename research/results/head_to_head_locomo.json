@@ -1,0 +1,26 @@
+{
+ "_provenance": {
+  "corpus": "locomo10",
+  "sha256": "79fa87e90f04081343b8c8debecb80a9a6842b76a7aa537dc9fdf651ea698ff4",
+  "bytes": 2805274,
+  "questions": 1986,
+  "pool_sessions": 10,
+  "url": "https://raw.githubusercontent.com/snap-research/locomo/main/data/locomo10.json",
+  "licence": "CC-BY-NC-4.0 (dataset card); the repository's LICENSE.txt is the authority",
+  "citation": "Maharana et al., Evaluating Very Long-Term Conversational Memory of LLM Agents, ACL 2024"
+ },
+ "_questions": 1977,
+ "_pool_sessions": 5882,
+ "nevertwice": {
+  "recall@1": 0.271,
+  "recall@3": 0.424,
+  "recall@5": 0.494,
+  "recall@10": 0.582,
+  "mrr": 0.3661,
+  "n": 1977,
+  "query_s": 1316.0,
+  "setup": "local bge-m3 via Ollama (calibrated fusion; 0 deps, no server, no DB)",
+  "_wall_s": 1316.9,
+  "version": "nevertwice==2.4.0"
+ }
+}

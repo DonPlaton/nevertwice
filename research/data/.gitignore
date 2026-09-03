@@ -7,3 +7,6 @@ _splade_sparse.json
 *_cache*.json
 qa_cache*.json
 _*.log
+locomo10.json
+locomo_embeds.json
+longmemeval_s.json

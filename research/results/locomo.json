@@ -1,0 +1,66 @@
+{
+ "conversations": 10,
+ "turns": 5882,
+ "questions": 1977,
+ "embedder": "bge-m3",
+ "methods": {
+  "semantic": {
+   "recall@1": 0.18209408194233687,
+   "recall@3": 0.3404147698533131,
+   "recall@5": 0.4324734446130501,
+   "recall@10": 0.5599393019726859,
+   "mrr": 0.3011588007496613
+  },
+  "lexical": {
+   "recall@1": 0.270612038442084,
+   "recall@3": 0.4279210925644917,
+   "recall@5": 0.4992412746585736,
+   "recall@10": 0.5761254425897825,
+   "mrr": 0.3774088120462245
+  },
+  "hybrid": {
+   "recall@1": 0.29337379868487606,
+   "recall@3": 0.47395042994436015,
+   "recall@5": 0.5493171471927162,
+   "recall@10": 0.6337885685381892,
+   "mrr": 0.4109072479379875
+  }
+ },
+ "by_category_recall_at_5": {
+  "1": {
+   "semantic": 0.3701067615658363,
+   "lexical": 0.31316725978647686,
+   "hybrid": 0.37722419928825623
+  },
+  "2": {
+   "semantic": 0.578125,
+   "lexical": 0.56875,
+   "hybrid": 0.634375
+  },
+  "3": {
+   "semantic": 0.30337078651685395,
+   "lexical": 0.2696629213483146,
+   "hybrid": 0.3146067415730337
+  },
+  "4": {
+   "semantic": 0.5017835909631391,
+   "lexical": 0.544589774078478,
+   "hybrid": 0.6004756242568371
+  },
+  "5": {
+   "semantic": 0.2623318385650224,
+   "lexical": 0.5269058295964125,
+   "hybrid": 0.547085201793722
+  }
+ },
+ "provenance": {
+  "corpus": "locomo10",
+  "sha256": "79fa87e90f04081343b8c8debecb80a9a6842b76a7aa537dc9fdf651ea698ff4",
+  "bytes": 2805274,
+  "questions": 1986,
+  "pool_sessions": 10,
+  "url": "https://raw.githubusercontent.com/snap-research/locomo/main/data/locomo10.json",
+  "licence": "CC-BY-NC-4.0 (dataset card); the repository's LICENSE.txt is the authority",
+  "citation": "Maharana et al., Evaluating Very Long-Term Conversational Memory of LLM Agents, ACL 2024"
+ }
+}
