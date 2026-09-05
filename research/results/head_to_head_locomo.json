@@ -18,9 +18,10 @@
   "recall@10": 0.582,
   "mrr": 0.3661,
   "n": 1977,
-  "query_s": 1316.0,
+  "query_s": 1446.3,
   "setup": "local bge-m3 via Ollama (calibrated fusion; 0 deps, no server, no DB)",
-  "_wall_s": 1316.9,
-  "version": "nevertwice==2.4.0"
+  "_wall_s": 1447.2,
+  "version": "nevertwice==2.4.0",
+  "label": "Nevertwice (calibrated fusion, the shipped ranker)"
  }
 }

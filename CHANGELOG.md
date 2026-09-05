@@ -162,9 +162,11 @@ empty.
   changed the engine, and the register's rule is that a number measured before a change
   describes a different engine. `tools/remeasure.py` withdraws by import closure and restores
   from artifacts re-run at HEAD, refusing a dirty tree and an artifact older than the code; the
-  families a CPU can re-measure come back the same day, retrieval and supersession after the GPU
-  re-run. The README's comparative rows say so in place of their numbers, and every study page
-  whose figures came down says so under its title.
+  families a CPU can re-measure came back the same day - twenty-seven claims (LoCoMo, poisoning,
+  the cheap baselines, forgetting, the guard pack), every one reproducing its value exactly -
+  and seventy-four wait for the GPU re-run: retrieval, supersession, abstention, and latency
+  until the machine is idle. The README's comparative rows say so in place of their numbers, and
+  every study page whose figures are still down says so under its title.
 - **Value-based abstention is off by default, on the measurement rather than on doubt.** It
   shipped at 0.35 on both the recall and injection paths with tests proving the mechanism
   works and nothing measuring whether it helps. Swept over the labelled corpus: at 0.35 the

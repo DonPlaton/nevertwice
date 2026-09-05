@@ -129,18 +129,22 @@ Four systems on the oracle pool, same embedder, same scoring function, the same 
 
 ### LoCoMo, the benchmark this project had excluded on paper
 
-Ten long conversations, every scoreable question retrieving the human-annotated evidence turn
-from its own conversation - LoCoMo's own setting. Full method, the nine questions dropped and
-why, and the defect running it found: [`research/LOCOMO.md`](../research/LOCOMO.md).
+Ten long conversations, 5,882 turns, 1,977 of 1,986 questions scored, retrieving the
+human-annotated evidence turn from the question's own conversation - LoCoMo's own setting. Full
+method and the defect running it found: [`research/LOCOMO.md`](../research/LOCOMO.md).
+Re-measured at the reviewed engine on the cached vectors: every figure reproduced exactly, and
+LoCoMo turns are short enough that the embedding-cap defect never touched them.
 
 <!-- claims:locomo -->
-> **Withdrawn 2026-09.** withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)
->
-> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/locomo_eval.py --save --out=research/results/locomo.json` is what re-measures this one.
+| method | R@1 | R@5 | R@10 | MRR |
+|---|---|---|---|---|
+| semantic (bge-m3) | 0.182 | 0.432 | 0.560 | 0.301 |
+| lexical (BM25) | 0.271 | 0.499 | 0.576 | 0.377 |
+| **calibrated fusion (shipped default, 0 deps)** | **0.293** | **0.549** | **0.634** | **0.411** |
 <!-- /claims:locomo -->
 
 The exclusion was written around a reported 94% for plain BM25. The term-overlap floor here
-reads about half at R@5, and the three methods order exactly as they do on LongMemEval, so on the
+reads 0.499 at R@5, and the three methods order exactly as they do on LongMemEval, so on the
 **retrieval** axis LoCoMo separates systems perfectly well. The 94% figure is about judge-scored
 **answer accuracy**, which measures the reader as much as the memory and which nothing in this
 repository measures. So the exclusion is narrowed rather than lifted: not a candidate as a

@@ -1,9 +1,5 @@
 # Memory poisoning: attacks & defenses (results & findings)
 
-<!-- review-2026-09-05 -->
-> **Withdrawn 2026-09-05, pending a re-run.** The engine changed after these figures were
-> measured; the harness is CPU-only and is re-run first. The attack taxonomy and the defence
-> design are unchanged.
 
 *Companion to `research/poisoning.py`. Reproduce: `python research/poisoning.py --save`
 (CPU, stdlib, instant). Threat model: the attacker controls **session content** the agent

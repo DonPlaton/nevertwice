@@ -87,7 +87,7 @@ What survived re-measurement at HEAD, and what it cost:
 | external retrieval, one pool and one embedder for everyone | **withdrawn 2026-09, re-run queued** - the stand had embedded a seventh of each session on our side and the whole session on the competitors' | [EXTERNAL_RETRIEVAL.md](research/EXTERNAL_RETRIEVAL.md) |
 | handing back a fact that has since been **retracted** | **withdrawn 2026-09, re-run queued** - the engine changed after the measurement | [SUPERSESSION.md](research/SUPERSESSION.md) |
 | acting vs *always-injecting* the same lesson | same error prevention for **31×** fewer memory tokens | [ACTIVE_MEMORY.md](research/ACTIVE_MEMORY.md) |
-| memory-poisoning acceptance attacks | withdrawn 2026-09, re-run queued first (it needs no model) | [POISONING.md](research/POISONING.md) |
+| memory-poisoning acceptance attacks | **81%** blocked overall - **100%** of prompt injection, **25%** of plausible-false facts; re-measured at the reviewed engine | [POISONING.md](research/POISONING.md) |
 | what being there costs | withdrawn 2026-09, re-run queued for an idle machine; zero context tokens until a guard fires, which is by construction | [BENCHMARKS.md](docs/BENCHMARKS.md) |
 
 The first two rows are the comparative ones, and both are withdrawn by the project's own rule:
@@ -160,7 +160,7 @@ With no backend at all, extraction pauses loudly (sessions are kept and retried,
 recall runs on lexical search until an embedder shows up. The five-minute walkthrough is in
 [QUICKSTART.md](QUICKSTART.md); every environment variable is in [CONFIG.md](docs/CONFIG.md).
 
-Contributing: `pip install -e ".[dev]"`, then `python -m pytest -q`. One hundred thirty-three hermetic suites -
+Contributing: `pip install -e ".[dev]"`, then `python -m pytest -q`. One hundred thirty-six hermetic suites -
 LLMs, embedders, the optional reranker, network and GPU execution are disabled or mocked, and a lint
 fails the build if a script reaches a memory store without declaring which store it means. CI runs
 them on Linux, Windows and macOS across four Python versions.
