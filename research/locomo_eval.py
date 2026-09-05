@@ -98,14 +98,17 @@ def embed_all(convs: list[dict]) -> dict:
     todo_q = [q["question"] for c in convs for q in c["qa"] if q["question"] not in cache["questions"]]
     t0 = time.time()
     for i, (did, text) in enumerate(todo_t, 1):
-        v = m.embed_text(text, kind="doc")
+        # `le.embed_full`: the engine's endpoint, model and prefix without the 2,000-char
+        # hot-path cap. No LoCoMo turn is longer than 462 characters, so the vectors are
+        # the same either way; the kinds are the engine's own ("doc" was not one of them).
+        v = le.embed_full(text, kind=m.doc_embed_kind())
         if v:
             cache["turns"][did] = v
         if i % 500 == 0:
             print(f"  turns {i}/{len(todo_t)}  ({time.time() - t0:.0f}s)", flush=True)
             EMB.write_text(json.dumps(cache), encoding="utf-8")
     for i, q in enumerate(dict.fromkeys(todo_q), 1):
-        v = m.embed_text(q, kind="query")
+        v = le.embed_full(q, kind=m.query_embed_kind())
         if v:
             cache["questions"][q] = v
         if i % 500 == 0:

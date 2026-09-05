@@ -220,7 +220,7 @@ def make_guard(pattern: str, message: str, *, project=None, path_glob=None, tool
         "born_from": list(born_from),
         "born_date": date or datetime.now().strftime("%Y-%m-%d"),
         "corroborations": 0, "fired": 0, "helped": 0, "false_positives": 0,
-        "seen_sessions": [], "last_fired": "",
+        "seen_sessions": [], "delivered_sessions": [], "last_fired": "",
         "overrides": [],            # learned exceptions: (reason) the agent gave when overriding
     }
 
@@ -450,19 +450,18 @@ def record_fired(guard_ids, guards=None, persist=True, session=None) -> None:
         if g.get("id") in ids:
             g["fired"] = g.get("fired", 0) + 1
             g["last_fired"] = stamp
-            # Record WHICH session saw it. Without this `seen_sessions` stays empty on
-            # every automatic path, so `corroborations` never grows, the advisory→blocking
-            # promotion gated on K distinct sessions can never fire, a noisy guard can
-            # never be retired on evidence, and - because nothing knows the guard was
-            # already delivered - the same advisory re-injects on every matching
-            # PreToolUse for the whole session (review 2026-09). Both hot-path callers
-            # had the id in scope and discarded it.
+            # Record WHICH session it was delivered to, so the same advisory is not
+            # re-injected on every matching PreToolUse for the rest of the session. This is
+            # delivery, not corroboration: a guard that merely MATCHED in K sessions has
+            # earned nothing, and writing these ids into `seen_sessions` (the support list
+            # `outcomes` seeds from) let the first feedback of any kind - a false positive
+            # included - promote such a guard to blocking (review 2026-09-05). Support
+            # sessions come only from feedback; `_mirror_legacy_counters` derives them.
             if session:
-                seen = g.get("seen_sessions") or []
+                seen = g.get("delivered_sessions") or []
                 if session not in seen:
                     seen.append(session)
-                    g["seen_sessions"] = seen[-SEEN_SESSIONS_CAP:]
-                    g["corroborations"] = len(g["seen_sessions"])
+                    g["delivered_sessions"] = seen[-SEEN_SESSIONS_CAP:]
             hit = True
     if hit and persist:
         # persist regardless of who loaded the list: every check surface hands us the
@@ -677,9 +676,14 @@ def main():
     if not argv:
         print("usage: guards check <text> [--why] [--json] [--deep] | list | "
               "feedback <id> <helped|false_positive> [--reason ..] | "
-              "generate [--project P] [--limit N] | pack")
+              "generate [--project P] [--limit N] | pack [--count]")
         return
     cmd = argv[0]
+    if cmd == "pack" and "--count" in argv:
+        # read-only: the size of the shipped pack, for the evidence register. `pack` alone
+        # installs it into the live ledger, which is not something a claim's command may do.
+        print(len(_UNIVERSAL_GUARDS))
+        return
     if cmd == "pack":
         guards = load_guards()
         n = ensure_universal_pack(guards)
@@ -737,8 +741,30 @@ def already_delivered(guard: dict, session: str | None) -> bool:
 
     Callers use it to stay silent on a repeat. A guard that has said its piece once has
     said it; repeating the same advisory on every matching tool call in a session is pure
-    token cost with no new information, and it is what an empty `seen_sessions` allowed.
+    token cost with no new information. Read from `delivered_sessions`, never from the
+    support list: the two mean different things (see `record_fired`).
     """
     if not session:
         return False
-    return session in (guard.get("seen_sessions") or ())
+    return session in (guard.get("delivered_sessions") or ())
+
+
+def forget_delivery(session: str | None, guards=None, persist=True) -> int:
+    """Drop `session` from every guard's delivery record; returns how many changed.
+
+    PreCompact calls this: compaction wipes an advisory out of the agent's context, so a
+    suppression keyed on the session id would keep the guard silent for the rest of the
+    session precisely when its warning is no longer in front of the agent.
+    """
+    if not session:
+        return 0
+    guards = load_guards() if guards is None else guards
+    changed = 0
+    for g in guards:
+        seen = g.get("delivered_sessions") or []
+        if session in seen:
+            g["delivered_sessions"] = [s for s in seen if s != session]
+            changed += 1
+    if changed and persist:
+        save_guards(guards)
+    return changed

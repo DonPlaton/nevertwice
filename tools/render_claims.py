@@ -438,7 +438,10 @@ def withdrawal_notice(c: Claims, claim_id: str, reason: str) -> str:
     # Month precision on purpose. A full ISO date puts a bare day-of-month into a governed
     # document, and the day would then need its own non-metric exemption - a hole in the
     # coverage check bought for nothing. The exact date stays on each claim's `withdrawn_on`.
-    date = c.manifest.get("withdrawal", {}).get("date", "")[:7]
+    # The month comes from the claim itself when it has one: the manifest-level date is the
+    # 2026-08 withdrawal, and a claim withdrawn later must not be stamped with it.
+    date = (str(c.get(claim_id).get("withdrawn_on") or "")
+            or c.manifest.get("withdrawal", {}).get("date", ""))[:7]
     return (f"> **Withdrawn{' ' + date if date else ''}.** {reason}\n"
             ">\n"
             "> The claim is kept in `research/evidence_manifest.json` marked `stale`, with "

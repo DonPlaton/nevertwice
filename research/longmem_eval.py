@@ -42,11 +42,14 @@ import memory_hook as m
 import _rerank as rr
 
 
-# ── Shared session-level BM25 + calibrated score fusion ───────────────────────
+# ── Shared session-level BM25 + the engine's own score fusion ─────────────────
 # The production ranker (memory_hook._calibrated_fusion) fuses NOTE signals; the
-# benchmark stand uses raw SESSIONS, so these mirror the same algorithm at session
-# level. head_to_head.py and token_ab.py import these so every harness ranks identically
-# to production (calibrated score fusion, not the old rank-fusion). See RETRIEVAL_FUSION.md.
+# benchmark stand uses raw SESSIONS. BM25 is built here at session level; the fusion is
+# NOT re-implemented - `calibrated` calls the engine's function, so the stand ranks with
+# the code that ships. It used to carry a copy that had drifted: the engine gives a
+# signal's sole candidate z = 1.0 and the copy gave it 0.0 (review 2026-09-05). Inert on
+# every question of the two corpora it was checked on, and still a lie in a docstring.
+# head_to_head.py, locomo_eval.py and token_ab.py import these. See RETRIEVAL_FUSION.md.
 
 def build_bm25(pool_ids, toks_lists):
     """tf / dl / df / avgdl over session token LISTS (counts) for BM25."""
@@ -78,25 +81,64 @@ def bm25_scores(qt, pool_ids, tf, dl, df, avgdl, k1=1.5, b=0.75):
 
 
 def _zmap(d):
-    if not d:
-        return {}
-    vals = list(d.values())
-    mu = statistics.fmean(vals)
-    sd = statistics.pstdev(vals) or 1.0
-    return {k: (v - mu) / sd for k, v in d.items()}
+    """The engine's z-normalisation, by call rather than by copy."""
+    return m._zscore_map(d)
 
 
 def calibrated(sem_scores, lex_scores, sem_w=None):
-    """Calibrated score fusion (z-normalise each signal, combine magnitudes, logistic →
-    (0,1)) - identical to memory_hook._calibrated_fusion. {sid: fused score}."""
-    if sem_w is None:
-        sem_w = getattr(m, "FUSION_SEM_WEIGHT", 0.5)
-    zs, zl = _zmap(sem_scores), _zmap(lex_scores)
-    out = {}
-    for s in set(zs) | set(zl):
-        z = sem_w * zs.get(s, -3.0) + 1.0 * zl.get(s, -3.0)
-        out[s] = 1.0 / (1.0 + math.exp(-max(-30.0, min(30.0, z))))
-    return out
+    """The shipped ranker itself - `memory_hook._calibrated_fusion` over session-level score
+    maps: z-normalise each signal, combine magnitudes, logistic to (0,1). {sid: fused score}."""
+    return m._calibrated_fusion(sem_scores, lex_scores, sem_w=sem_w)
+
+
+def embed_full(text: str, kind: str | None = None, timeout: int = 180):
+    """The engine's embedder without its hot-path cap.
+
+    `memory_hook.embed_text` cuts its input to 2,000 characters before the call - a latency
+    guard for the per-prompt query, and no loss for a note, which is shorter than that. A
+    LongMemEval session is 14,000 characters at the median and 936 of the 940 oracle sessions
+    are longer than the cap, so the semantic arm here was embedding the first seventh of every
+    session while every competitor on the same stand embedded the whole one, through the same
+    endpoint (review 2026-09-05). "Same embedder for everyone" has to mean the same text too.
+
+    Same endpoint, same model, same task prefix as `embed_text`; the only difference is that
+    the text is sent whole, up to MAXCHARS, which is the pool's own cap. The cloud providers
+    keep their own limits and go through `embed_text` unchanged.
+    """
+    import urllib.request
+    if getattr(m, "EMBED_PROVIDER", "ollama") != "ollama":
+        return m.embed_text(text, kind=kind, timeout=timeout)
+    raw = (text or "")[:MAXCHARS]
+    payload = json.dumps({"model": m.EMBED_MODEL, "input": m._embed_prefix(kind) + raw}).encode("utf-8")
+    req = urllib.request.Request(m.OLLAMA_EMBED_URL, data=payload,
+                                 headers={"Content-Type": "application/json"})
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as r:
+            data = json.loads(r.read())
+    except Exception as e:                                   # noqa: BLE001 - a stand reports, never hides
+        print(f"[embed] failed: {type(e).__name__}: {e}", file=sys.stderr)
+        return None
+    embs = data.get("embeddings")
+    if isinstance(embs, list) and embs and isinstance(embs[0], list):
+        return embs[0]
+    one = data.get("embedding")
+    return one if isinstance(one, list) else None
+
+
+def cache_meta() -> dict:
+    """What a vector cache must have been built with to be used by this stand."""
+    return {"embed_chars": MAXCHARS, "embedder": m.EMBED_MODEL}
+
+
+def cache_ok(cache: dict) -> bool:
+    """A cache built under a different cap or model is a different instrument, not a stale one.
+
+    The cache built before 2026-09-05 held 2,000-character vectors and would have loaded
+    silently; the file name now carries the cap and the file carries this stamp, so neither
+    the old cache nor a foreign one can pass for the current one.
+    """
+    meta = cache.get("meta") if isinstance(cache, dict) else None
+    return isinstance(meta, dict) and all(meta.get(k) == v for k, v in cache_meta().items())
 
 try:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -119,23 +161,26 @@ CORPUS = {"oracle": "longmemeval_oracle", "s": "longmemeval_s"}.get(_DATA_ARG, "
 ORACLE = corpus_pin.path_of(CORPUS)
 
 
+MAXCHARS = 28000        # bge-m3 ~8k tokens; keep the whole session, cap pathological outliers
+
+
 def _emb_path(model=None):
-    """Per-embedder cache path so embedder A/B runs never mix vectors from
-    different models in one file. bge-m3 keeps the original filename so the
-    first benchmark's cache still loads unchanged."""
+    """Per-embedder, per-corpus, per-cap cache path, so runs never mix vectors.
+
+    The cap is part of the identity: `longmem_embeds.json` (no suffix) holds the 2,000-char
+    vectors of the runs before 2026-09-05 and must never load here. A different model or
+    corpus gets its own file for the same reason - a run on the 19,829-session pool would
+    otherwise load and extend the 940-session cache, and the two would silently merge.
+    """
     model = model or m.EMBED_MODEL
-    # The corpus is part of the cache identity. Without it a run on the 19,829-session pool
-    # would load and extend the 940-session cache, and the two would silently merge.
     corpus = "" if CORPUS == "longmemeval_oracle" else f"__{CORPUS}"
-    if model == "bge-m3":
-        return DATA / f"longmem_embeds{corpus}.json"
-    slug = "".join(c if (c.isalnum() or c in "-.") else "_" for c in model)
-    return DATA / f"longmem_embeds{corpus}__{slug}.json"
+    slug = "" if model == "bge-m3" else "__" + "".join(
+        c if (c.isalnum() or c in "-.") else "_" for c in model)
+    return DATA / f"longmem_embeds{corpus}{slug}__c{MAXCHARS}.json"
 
 
 EMB = _emb_path()
 KS = (1, 3, 5, 10)
-MAXCHARS = 28000        # bge-m3 ~8k tokens; keep the whole session, cap pathological outliers
 # CLI flags are read only when run as a script - importing this module (e.g. from a test)
 # must NOT pick up the importer's sys.argv (audit 2026-06-18: a test runner passing --xrerank
 # would silently flip XRERANK at import time).
@@ -190,25 +235,30 @@ def load():
 
 def embed_all():
     data, pool = load()
-    cache = {"sessions": {}, "questions": {}}
+    cache = {"sessions": {}, "questions": {}, "meta": cache_meta()}
     if EMB.exists():
         cache = json.loads(EMB.read_text(encoding="utf-8"))
+        if not cache_ok(cache):
+            print(f"[embed] {EMB.name} was built under a different cap or model - refusing to "
+                  f"extend it; delete it to rebuild", file=sys.stderr)
+            sys.exit(2)
     cache.setdefault("sessions", {})
     cache.setdefault("questions", {})
+    cache["meta"] = cache_meta()
     sids = [s for s in pool if s not in cache["sessions"]]
     qs = [e for e in data if e["question_id"] not in cache["questions"]]
     print(f"[embed] {len(sids)} sessions + {len(qs)} questions to embed "
           f"(cached: {len(cache['sessions'])} / {len(cache['questions'])})", file=sys.stderr)
     t0 = time.time()
     for i, sid in enumerate(sids):
-        v = m.embed_text(pool[sid], kind=m.doc_embed_kind())
+        v = embed_full(pool[sid], kind=m.doc_embed_kind())
         if v:
             cache["sessions"][sid] = v
         if (i + 1) % 50 == 0:
             print(f"  sessions {i+1}/{len(sids)}  ({time.time()-t0:.0f}s)", file=sys.stderr)
             EMB.write_text(json.dumps(cache), encoding="utf-8")   # checkpoint
     for i, e in enumerate(qs):
-        v = m.embed_text(e["question"], kind=m.query_embed_kind())
+        v = embed_full(e["question"], kind=m.query_embed_kind())
         if v:
             cache["questions"][e["question_id"]] = v
         if (i + 1) % 100 == 0:
@@ -233,6 +283,10 @@ def evaluate():
         print("No embeddings - run: python research/longmem_eval.py --embed", file=sys.stderr)
         sys.exit(1)
     cache = json.loads(EMB.read_text(encoding="utf-8"))
+    if not cache_ok(cache):
+        print(f"{EMB.name} was built under a different cap or model than this stand - "
+              f"run: python research/longmem_eval.py --embed", file=sys.stderr)
+        sys.exit(2)
     svec = cache["sessions"]
     qvec = cache["questions"]
     pool_ids = [s for s in pool if s in svec]
@@ -375,7 +429,7 @@ def evaluate():
         print(f"    → {verdict}")
     if "--save" in sys.argv:
         res = {"sessions": len(pool_ids), "questions": n, "embedder": m.EMBED_MODEL,
-               "methods": out, "recur_inert": inert,
+               "embed_chars": MAXCHARS, "methods": out, "recur_inert": inert,
                "provenance": corpus_pin.record(CORPUS)}
         if rerank_cost:
             res["rerank"] = rerank_cost

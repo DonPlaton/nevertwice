@@ -84,21 +84,21 @@ What survived re-measurement at HEAD, and what it cost:
 
 | claim | result | evidence |
 |---|---|---|
-| external retrieval, one pool and one embedder for everyone | R@5 **0.802** against Mem0 2.0.19's **0.758**, LangMem's 0.692 and A-MEM's 0.692, on a hash-pinned LongMemEval corpus | [EXTERNAL_RETRIEVAL.md](research/EXTERNAL_RETRIEVAL.md) |
-| handing back a fact that has since been **retracted** | **0.042** of the time, against **0.917** for Mem0 and **0.950** for an append-only file with term matching | [SUPERSESSION.md](research/SUPERSESSION.md) |
+| external retrieval, one pool and one embedder for everyone | **withdrawn 2026-09, re-run queued** - the stand had embedded a seventh of each session on our side and the whole session on the competitors' | [EXTERNAL_RETRIEVAL.md](research/EXTERNAL_RETRIEVAL.md) |
+| handing back a fact that has since been **retracted** | **withdrawn 2026-09, re-run queued** - the engine changed after the measurement | [SUPERSESSION.md](research/SUPERSESSION.md) |
 | acting vs *always-injecting* the same lesson | same error prevention for **31×** fewer memory tokens | [ACTIVE_MEMORY.md](research/ACTIVE_MEMORY.md) |
-| memory-poisoning acceptance attacks | **81%** blocked overall - **100%** of prompt injection, **25%** of plausible-false facts | [POISONING.md](research/POISONING.md) |
-| what being there costs | PreToolUse **89 ms** end to end - a tenth of a second, and it moves by a third between sessions - and zero context tokens until a guard fires | [BENCHMARKS.md](docs/BENCHMARKS.md) |
+| memory-poisoning acceptance attacks | withdrawn 2026-09, re-run queued first (it needs no model) | [POISONING.md](research/POISONING.md) |
+| what being there costs | withdrawn 2026-09, re-run queued for an idle machine; zero context tokens until a guard fires, which is by construction | [BENCHMARKS.md](docs/BENCHMARKS.md) |
 
-The first two rows are the comparative ones. Retrieval runs on corpora we did not build, pinned
-by content hash so a run can name its own input; supersession runs on one we did build, committed
-and hashed, where an append-only text file is the floor and Mem0 is statistically tied with it
-(p = 0.69) because its design says both facts survive on purpose. The columns we lose are in the
-table too: Mem0 returns the replacement more often than we do, 0.950 to 0.933, and against our
-own withdrawn first release the current engine blocks *fewer* plausible false facts, not more.
-LoCoMo, excluded here on paper for a year, was run as well and narrows its own exclusion rather
-than lifting it ([LOCOMO.md](research/LOCOMO.md)). A project whose argument is reproducibility
-does not get to publish only the deltas that flatter it.
+The first two rows are the comparative ones, and both are withdrawn by the project's own rule:
+a review in 2026-09 changed the engine, so a number measured before it describes a different
+engine until it is measured again. The retrieval stand had also broken its own premise - our
+semantic arm embedded the first two thousand characters of each session while the competitors
+embedded the whole one, an error against us - and that is fixed before the re-run. For the
+record, not for quotation: the withdrawn runs had us ahead of the three competitors on retrieval,
+behind Mem0 on returning a replacement fact, and Mem0 tied with an append-only text file on
+returning the retracted one. LoCoMo, excluded on paper for a year, was run too and narrows its
+own exclusion rather than lifting it ([LOCOMO.md](research/LOCOMO.md)).
 
 The 2026-07 run of that retrieval stand stays withdrawn - its corpus could not be identified -
 and the re-run above is a separate claim family on a named one:

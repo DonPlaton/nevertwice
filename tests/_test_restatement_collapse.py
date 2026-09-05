@@ -44,6 +44,18 @@ recur = [note("2026-08-25-p-pattern-a-lesson", "s1"),
          note("2026-08-27-p-pattern-a-lesson", "s2")]
 check("a later re-learning is kept", len(m._collapse_restatements(recur)) == 2)
 
+print("\n- two projects learning the same lesson on the same day are two observations -")
+cross = [note("2026-08-25-p-mistake-output-token-limit-exceeded", "s1"),
+         note("2026-08-25-q-mistake-output-token-limit-exceeded", "s1")]
+check("the entity pool is cross-project, so the project is in the key",
+      len(m._collapse_restatements(cross)) == 2, str(len(m._collapse_restatements(cross))))
+
+print("\n- the session comes from the note itself -")
+sess = [{"stem": "2026-08-25-p-pattern-a-lesson", "session": "sA"},
+        {"stem": "2026-08-25-p-decision-a-lesson", "session": "sB"}]
+check("same slug and day in two sessions is a recurrence, not a restatement",
+      len(m._collapse_restatements(sess)) == 2)
+
 print("\n- distinct facts are never merged -")
 distinct = [note("2026-08-25-p-decision-first", "s1"),
             note("2026-08-25-p-decision-second", "s1")]

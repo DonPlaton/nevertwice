@@ -58,7 +58,9 @@ ARTIFACTS = [
                 "research/corpus_pin.py; fetch with `python research/corpus_pin.py --fetch "
                 "longmemeval_oracle`)",
                 "a local Ollama serving bge-m3",
-                "research/data/longmem_embeds.json (built by --embed, about a minute)"],
+                "research/data/longmem_embeds__c28000.json (built by --embed, a few minutes; "
+                "the suffix is the embedding cap - the older uncapped-looking file holds "
+                "2,000-character vectors and is refused)"],
      "note": "external retrieval recall@k on the global pool of the pinned LongMemEval-oracle "
              "corpus. Deterministic given the embedding cache: the ranking is arithmetic over "
              "stored vectors, so re-running the report reproduces exactly, while rebuilding the "
@@ -88,7 +90,7 @@ ARTIFACTS = [
                 "research/corpus_pin.py; 278 MB, fetch with `python research/corpus_pin.py "
                 "--fetch longmemeval_s`)",
                 "a local Ollama serving bge-m3",
-                "research/data/longmem_embeds__longmemeval_s.json (built by --data=s --embed, "
+                "research/data/longmem_embeds__longmemeval_s__c28000.json (built by --data=s --embed, "
                 "about half an hour, 272 MB)"],
      "note": "the same benchmark outside the oracle setting: 19,206 retrievable sessions of the "
              "19,829 unique ids, the other 623 carrying no text in the published corpus. "

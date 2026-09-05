@@ -68,6 +68,26 @@ def _tag_lines(text: str) -> list[str]:
     return re.findall(r"^tags:\s*\[(.*)\]\s*$", text, flags=re.M)
 
 
+#: A body hashtag, wherever it sits on the line: `render_body_tags` writes every tag of a
+#: note on ONE line, so anchoring at line start saw only the first of them.
+_BODY_TAG = re.compile(r"(?<![\w/#\-])#([\w/\-]+)")
+
+
+def _note_tags(text: str) -> list[str]:
+    """Every tag a note carries: the frontmatter list plus the body hashtags.
+
+    The engine's `collect_existing_tags` counts the BODY hashtags and never reads the
+    frontmatter list, so a repair that cleaned only the frontmatter left the vocabulary
+    exactly as polluted as it found it and then reported the store clean (review
+    2026-09-05).
+    """
+    tags = [t.strip().strip('"\'') for line in _tag_lines(text)
+            for t in line.split(",") if t.strip()]
+    body = text.split("---", 2)[2] if text.startswith("---") and text.count("---") >= 2 else text
+    tags += _BODY_TAG.findall(body)
+    return list(dict.fromkeys(tags))
+
+
 def find_foreign_tags(vault: Path) -> list[tuple[Path, str, str]]:
     """(note, tag, owning project) for tags that belong to another project."""
     per_project: dict[str, Counter] = {}
@@ -81,8 +101,7 @@ def find_foreign_tags(vault: Path) -> list[tuple[Path, str, str]]:
                 text = p.read_text(encoding="utf-8", errors="replace")
             except OSError:
                 continue
-            tags = [t.strip().strip('"\'') for line in _tag_lines(text)
-                    for t in line.split(",") if t.strip()]
+            tags = _note_tags(text)
             notes.append((p, proj, tags))
             per_project.setdefault(proj, Counter()).update(tags)
 
@@ -142,17 +161,24 @@ def main(argv: list[str] | None = None) -> int:
     print(f"\nbacked up {len(touched)} file(s) to {backup}")
     print(f"UNDO: copy every file from {backup} back to its folder")
 
-    # A twin is repaired by RENAMING the live note, never by deleting either: the retired
-    # copy is the record of what was replaced, and the live one is somebody's current
-    # truth. Which is which is a judgement this tool does not make.
-    for live, _retired in twins:
-        new = live.with_name(f"{live.stem}-live{live.suffix}")
+    # A twin is repaired by RENAMING the retired copy, never by deleting either: the
+    # retired copy is the record of what was replaced, and the live one is somebody's
+    # current truth. Which is which is a judgement this tool does not make.
+    #
+    # The RETIRED file takes the suffix, exactly as `supersede_note` does on a collision.
+    # The first version of this tool renamed the live note instead, which changed its
+    # slug: every `[[wikilink]]` to it then resolved to the Superseded copy, the slug-keyed
+    # absorb no longer found it and minted a fresh twin on the next re-learning, and the
+    # index row still named the old stem so `_live_note_exists` hid the lesson from recall
+    # until a rebuild (review 2026-09-05).
+    for _live, retired in twins:
         i = 2
+        new = retired.with_name(f"{retired.stem}-{i}{retired.suffix}")
         while new.exists():
-            new = live.with_name(f"{live.stem}-live{i}{live.suffix}")
             i += 1
-        live.rename(new)
-        print(f"  renamed   {live.name} -> {new.name}")
+            new = retired.with_name(f"{retired.stem}-{i}{retired.suffix}")
+        retired.rename(new)
+        print(f"  renamed   Superseded/{retired.name} -> Superseded/{new.name}")
 
     by_note: dict[Path, set[str]] = {}
     for p, tag, _owner in foreign:
@@ -169,7 +195,9 @@ def main(argv: list[str] | None = None) -> int:
             return "tags: [" + ", ".join(kept) + "]"
         text = re.sub(r"^tags:\s*\[(.*)\]\s*$", _drop, text, flags=re.M)
         for tag in tags:
-            text = re.sub(rf"^#{re.escape(tag)}\b\s*", "", text, flags=re.M)
+            text = re.sub(rf"(?<![\w/#\-])#{re.escape(tag)}(?![\w/\-])[ \t]*", "", text)
+        text = re.sub(r"[ \t]+$", "", text, flags=re.M)      # no trailing blanks left behind
+        p.write_text(text, encoding="utf-8")
         print(f"  untagged  {p.name}  ({', '.join(sorted(tags))})")
 
     print("\nRe-run without --apply to confirm the store is clean, then rebuild the index:")

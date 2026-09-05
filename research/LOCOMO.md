@@ -1,5 +1,11 @@
 # LoCoMo, the benchmark this project excluded, measured
 
+<!-- review-2026-09-05 -->
+> **Withdrawn 2026-09-05, pending a re-run.** The engine changed after these figures were
+> measured. LoCoMo turns are at most 462 characters, so the embedding-cap defect the same review
+> found on the LongMemEval stand does not touch them, and the re-run is a CPU pass over the
+> cached vectors; it is queued first, and this notice comes off with it.
+
 For months the roadmap has carried one sentence about LoCoMo: **not a candidate**, because plain
 BM25 is reported to score about 94% on it, so it no longer separates memory systems and a vendor
 headline there says little about one. A test even pinned the wording, so the exclusion could not

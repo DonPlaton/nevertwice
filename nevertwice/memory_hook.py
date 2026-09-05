@@ -347,10 +347,14 @@ def local_routing_desc() -> str:
     return "all tracked projects use cloud"
 
 MAX_TRANSCRIPT_CHARS = env_int("NEVERTWICE_MAX_TRANSCRIPT", 12000)
-# Minimum transcript growth before a processed session is mined again. Defaults to one
-# extractor window: less than that cannot contain a window of genuinely new material,
-# and re-mining on less is what forked note sets in the 2026-09 vault review.
-REMINE_MIN_GROWTH_BYTES = env_int("NEVERTWICE_REMINE_MIN_GROWTH", MAX_TRANSCRIPT_CHARS)
+# Minimum transcript growth, in JSONL bytes, before a processed session is mined again.
+# The default is one byte: any growth. It was one extractor window for two days, which
+# lost the end of every session that finished within 12 kB of its PreCompact mark - the
+# SessionEnd hook, both sweeps and process_now gate on the same predicate, so nothing
+# ever came back for that tail (review 2026-09-05). The fork the window was meant to
+# prevent is closed at its source instead: a re-mine reads only the new region and keeps
+# the session's own start date. Raise this only to trade completeness for extractor calls.
+REMINE_MIN_GROWTH_BYTES = env_int("NEVERTWICE_REMINE_MIN_GROWTH", 1)
 # Head share of the budget when a long transcript is split head+tail (audit M3:
 # a fixed 2000-char head lost the project setup on long sessions). 0-override via
 # NEVERTWICE_TRUNCATE_HEAD_CHARS; else derived from the fraction.
@@ -2015,12 +2019,10 @@ def _transcript_grew(entry, path) -> bool:
         return False                         # legacy entry: no watermark, never re-trigger
     try:
         rec = int(entry.get("bytes") or 0)
-        # A sliver of growth is not a second half of a session. Without a floor, an
-        # 18 MB transcript re-triggers on +35 kB (0.19%) and the re-mine re-reads a
-        # window that has slid, forking the session's notes. The floor is expressed
-        # against the extractor's own window: below it there cannot be a window's
-        # worth of new material to extract.
-        return (os.path.getsize(path) - rec) >= REMINE_MIN_GROWTH_BYTES
+        # Any growth counts (REMINE_MIN_GROWTH_BYTES defaults to 1). The re-mine reads
+        # only the appended region, so a small tail costs one small extraction, and an
+        # empty body is caught before any model call. Skipping it lost the tail for good.
+        return (os.path.getsize(path) - rec) >= max(1, REMINE_MIN_GROWTH_BYTES)
     except (OSError, ValueError, TypeError):
         return False
 
@@ -2239,6 +2241,15 @@ def read_transcript(path: str, from_byte: int = 0) -> dict:
         cwd = cwd or ec
         ts = ts or et
         lines.extend(_format_event(evt, cap))
+    if from_byte > 0:
+        # A re-mine reads the tail, but the session started where the FILE starts. Taking
+        # the timestamp from the first event after the watermark re-dated a session that
+        # crossed midnight: a new date, a new session stem, typed notes filed under the
+        # wrong day, and the same-session absorb missing its own earlier notes - the fork
+        # the delta read exists to prevent, reintroduced one level up (review 2026-09-05).
+        head = read_session_meta(path)
+        cwd = head.get("cwd") or cwd
+        ts = head.get("timestamp") or ts
     return {"body": "\n".join(lines), "cwd": cwd, "timestamp": ts}
 
 
@@ -2837,7 +2848,8 @@ def load_embed_cache() -> dict:
 
 def save_embed_cache(cache: dict):
     try:
-        _save_json_generations(EMBED_CACHE, json.dumps(cache, ensure_ascii=False))
+        # prev=False: a 90 MB rebuildable cache earns no rollback copy (store_state).
+        _save_json_generations(EMBED_CACHE, json.dumps(cache, ensure_ascii=False), prev=False)
         _EMBED_CACHE_MEMO["sig"], _EMBED_CACHE_MEMO["data"] = _embed_cache_sig(), cache
     except OSError as e:
         log(f"Embed cache save failed: {e}")
@@ -4204,6 +4216,9 @@ def _note_meta(p: Path, ntype: str, parsed: dict) -> dict | None:
             # metadata (digest, dashboard, graph, lenses) was blind to how sure the memory is
             # of what it knows. None = unstated, which callers treat as fully confident.
             "confidence": _coerce_confidence(fm.get("confidence")),
+            # the writing session, so a restatement can be told from a recurrence
+            # (`_collapse_restatements`); "" on notes written before the field existed
+            "session": str(fm.get("session") or ""),
             "superseded_by": str(fm.get("superseded_by") or "")}    # "" for live notes (F3 timeline)
 
 
@@ -4526,17 +4541,23 @@ def _collapse_restatements(notes: list[dict]) -> list[dict]:
     load-bearing, duplication inflated into corroboration is the more dangerous direction
     of error, and this vault already holds a mistake note about exactly that.
 
-    Collapse on (slug, date, session): those three together identify one observation
+    Collapse on (project, slug, date, session): together they identify one observation
     written more than once. Notes that merely share a slug across different sessions are
     genuine recurrences and are left alone -- that signal is what recurrence exists for.
+    The project is in the key because the entity pool is cross-project: two projects that
+    hit the same lesson on the same day are two observations, and a key without the
+    project silently dropped one of them from the card (review 2026-09-05). The session
+    comes from the note's own frontmatter, which `_note_meta` now reads; without it the
+    third element was always "" and the discriminator the docstring promised never existed.
     """
     seen: set[tuple] = set()
     out: list[dict] = []
     for n in notes:
         stem = n.get("stem") or ""
         parsed = parse_typed_stem(stem) or {}
-        key = (parsed.get("slug") or stem, parsed.get("date") or "", n.get("session") or "")
-        if key[0] and key in seen:
+        key = (parsed.get("project") or n.get("project") or "",
+               parsed.get("slug") or stem, parsed.get("date") or "", n.get("session") or "")
+        if key[1] and key in seen:
             continue
         seen.add(key)
         out.append(n)
@@ -6367,7 +6388,7 @@ def regen_graph_for_project(cwd: str) -> None:
 # never touched by install.py) must not commit the embeddings cache, the SQLite index,
 # or .logs/ (which can hold third-party error bodies / key fragments). audit 2026-06-18.
 _VAULT_GITIGNORE = (
-    ".lock", "*.tmp", "*.bak", "__pycache__/", "*.pyc",
+    ".lock", "*.tmp", "*.bak", "*.prev", "__pycache__/", "*.pyc",
     ".prompt_recall/", ".logs/",
     ".embeddings_cache.json", ".embeddings_meta.json",
     ".index.sqlite", ".index.sqlite-wal", ".index.sqlite-shm",
@@ -6673,6 +6694,13 @@ def main():
             _prompt_recall_state_path(session_id).unlink(missing_ok=True)
         except OSError:
             pass
+        # The same reasoning applies to guards: an advisory delivered before the compaction
+        # is gone from the agent's context with it, and the per-session suppression keyed
+        # on the session id would otherwise keep it silent for the rest of the session.
+        try:
+            _sibling("guards").forget_delivery(session_id)
+        except Exception as e:                     # noqa: BLE001 - a hook never fails on telemetry
+            log(f"guard delivery reset skipped: {type(e).__name__}: {e}")
 
     # The vault lock (single-writer) is held only across extraction + the fast
     # file writes. Recall (SessionStart / UserPromptSubmit) already returned above

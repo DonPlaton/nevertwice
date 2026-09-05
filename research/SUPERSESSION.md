@@ -1,5 +1,13 @@
 # Does the memory hand back a fact that has since been retracted?
 
+<!-- review-2026-09-05 -->
+> **Withdrawn 2026-09-05, pending a re-run.** The engine changed after these figures were
+> measured (guard delivery, the re-mine date and floor, the rollback generation of state
+> files - none of them the supersession path, and the register does not distinguish), so
+> every claim on this page is marked `stale` until the bench is re-run at the new HEAD. The
+> method, the dataset and the caveats stand; quote the numbers only once
+> `python tools/check_freshness.py --list-stale` no longer lists them.
+
 Every public benchmark for agent memory asks whether a system **recalls** a fact. LoCoMo,
 LongMemEval and BEAM all measure retrieval against a set of questions whose answers were true
 when the corpus was written and stayed true. None of them asks what happens when a fact is

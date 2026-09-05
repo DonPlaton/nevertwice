@@ -270,9 +270,9 @@ def guards_check(action_text: str, *, project: str | None = None,
     hits = _guards.check(action_text, project=project, path=path, tool=tool, guards=ledger)
     if hits:
         try:
-            # `session` closes the feedback loop: without it seen_sessions stays empty,
-            # corroborations never grow, and the advisory→blocking promotion gated on K
-            # distinct sessions can never fire. Optional, so existing callers are unchanged.
+            # `session` records the delivery so the same advisory stays silent on a repeat
+            # within the session. It is not corroboration: promotion needs feedback
+            # (`guards.feedback`). Optional, so existing callers are unchanged.
             _guards.record_fired([h["id"] for h in hits], guards=ledger, session=session)
         except Exception:
             pass

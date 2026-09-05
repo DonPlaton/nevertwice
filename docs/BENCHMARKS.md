@@ -1,8 +1,8 @@
 # Benchmarks & real-task evaluation
 
-<p align="center"><img src="benchmarks.png" alt="Four panels of live measurements. Supersession: how often each system hands back a fact that has since been retracted - Nevertwice 0.04, Mem0 2.0.19 0.92, an append-only store with BM25 0.95, each with a confidence interval. Hot-path latency in milliseconds for the cold import and the three hooks. Poisoning defence, with the weakest cell - a plausible false fact, blocked one time in four - drawn in the negative colour and hatched rather than left out. And four embedding ideas that were measured against a pre-declared threshold, missed it, and were deleted." width="880"></p>
+<p align="center"><img src="benchmarks.png" alt="Four panels from the last run before the review of 2026-09, every figure on them now withdrawn pending re-measurement. Supersession: how often each system hands back a fact that has since been retracted - Nevertwice far below Mem0 and an append-only store, each with a confidence interval. Hot-path latency for the cold import and the three hooks. Poisoning defence, with the weakest cell - a plausible false fact - drawn in the negative colour and hatched rather than left out. And four embedding ideas that were measured against a pre-declared threshold, missed it, and were deleted." width="880"></p>
 
-Regenerate it with `python research/gen_benchmarks_figure.py`, which reads every value from the evidence register and refuses to draw a withdrawn one. The figure it replaced was drawn by hand in July, had no generator, and rendered four numbers that were retracted a month later - a chart travels further than the page it sits on, so the retraction never reached anyone who saw only the image.
+**The figure is from the run before the review of 2026-09.** Every number it draws is withdrawn until the re-run; it stays because a chart travels further than the page it sits on and a blank would travel nowhere. Regenerate it with `python research/gen_benchmarks_figure.py`, which reads every value from the evidence register and refuses to draw a withdrawn one - which is why it cannot be regenerated today. The figure it replaced was drawn by hand in July, had no generator, and rendered four numbers that were retracted a month later - a chart travels further than the page it sits on, so the retraction never reached anyone who saw only the image.
 
 Two kinds of number here, and the difference matters:
 - **External retrieval (LongMemEval-oracle):** the headline, independent ground truth.
@@ -25,16 +25,14 @@ gate that blocks re-measuring it.
 
 A memory that hooks every tool call has to be fast on modest hardware, so the costs are
 measured end to end (real subprocess, stdin event to exit) with no model and no network,
-the exact profile of a weak machine driving a cloud agent. Ryzen 7 7700, Windows 11,
+the exact profile of a weak machine driving a cloud agent. Ryzen 7 7700, Windows,
 Python 3.14; reproduce anywhere with `python research/latency_bench.py`:
 
 <!-- claims:latency -->
 | hot path | cost | when it is paid |
 |---|---|---|
-| PreToolUse end-to-end | **89 ms** | every tool call (interpreter start included) |
-| UserPromptSubmit end-to-end | 83 ms | per prompt (task-aware recall) |
-| SessionStart end-to-end, idle | 82 ms | per session start with no backlog |
-| cold import of the engine | 28 ms | once per hook process (inside the numbers above) |
+
+<sub>**Withdrawn** - PreToolUse end-to-end, UserPromptSubmit end-to-end, SessionStart end-to-end, idle, cold import of the engine: withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)</sub>
 
 <sub>**Withdrawn** - `guards.check()` over a seeded ledger, lexical recall, no embedder: the bench's seed lands in the subprocess store while the in-process half reads the store pinned at import, so this row now measures an empty store (0 guards, 0 notes) instead of the seeded one the published number describes - the measurement, not just the value, is broken</sub>
 <!-- /claims:latency -->
@@ -62,50 +60,34 @@ get measured end to end, because module-level convenience is a per-tool-call tax
 The one comparison here that runs on a corpus this repository ships. Full method, per-shape
 breakdown and what it costs us: [`research/SUPERSESSION.md`](../research/SUPERSESSION.md).
 
-| arm | returns the retracted fact | returns the replacement | retires a still-true fact |
-|---|---|---|---|
-| **Nevertwice** | **0.042** [0.018, 0.094] | 0.933 [0.874, 0.966] | 0.05 |
-| Mem0 2.0.19 | 0.917 [0.819, 0.964] | 0.950 [0.863, 0.983] | 0.00 |
-| append-only markdown + BM25 | 0.950 [0.863, 0.983] | 0.950 [0.863, 0.983] | 0.05 |
-
-Nevertwice's row is pooled over two runs of the same commit, which read 0.017 and 0.067 -
-the extraction model is not deterministic at temperature 0 and one run of this stand is not a
-result. n = 60 supersession cases and 20 controls per run, Wilson intervals, one local stand, the same
-embedder and same extraction model for every arm. Paired, on the same cases: Nevertwice
-against Mem0 gives **54** discordant pairs on the first run and 51 on the second, and not one
-in the other direction in either. Mem0 and the
-append-only file are tied with each other at **McNemar p = 0.69** - tied at the bad end of the
-column, both returning the retracted fact almost every time. Being indistinguishable from a
-text file is the finding, not a compliment to the text file.
-
-The floor is why the table is worth printing. A benchmark only one vendor's architecture fails
-is a benchmark about that vendor; this one is failed by an append-only text file too, which is
-what supersession costs when nothing implements it. The floor also rules out the cheap
-explanation for our own number: a system that returned nothing would score 0.000 stale and
-0.000 current, and ours returns the wanted fact 0.933 of the time while retiring a still-true
-one exactly as rarely as the floor does.
-
-Two things it does not show. The dataset is written here rather than scraped, which is a
-weaker instrument than an external corpus - the floor's 0.950 is the guard against the task
-being trivially easy. And Mem0 still edges us on returning the replacement, 0.950
-against 0.933; this page does not dispute it.
-
-Payload per query on the same corpus: Nevertwice **277** characters, Mem0 **457**.
+**Withdrawn 2026-09, re-run queued.** The engine changed after the bench ran, so every figure
+of this study is marked `stale` in the register and comes back only from a run at the new HEAD.
+What the withdrawn run showed, for the record and not for quotation: Nevertwice returned the
+retracted fact in a small minority of cases; Mem0 and an append-only markdown file with term
+matching returned it almost every time and were statistically tied with each other, which is the
+finding rather than a compliment to the text file; Mem0 returned the replacement slightly more
+often than we did, and this page does not dispute it; our payload per query was the smaller.
+Each of those is a claim in the register with its value, its interval and the command that
+re-measures it. The floor is why the table is worth printing at all: a benchmark only one
+vendor's architecture fails is a benchmark about that vendor, and this one is failed by an
+append-only text file too, which is what supersession costs when nothing implements it.
 
 ## Abstention: does refusing a weak hit pay for itself?
 
 No, on the only labelled store this project has, and the defaults were turned off because of
 it. Full sweep: [`research/ABSTENTION_AB.md`](../research/ABSTENTION_AB.md).
 
-Both retrieval paths shipped with a value threshold at 0.35 - a hit scoring below that
-fraction of the batch's best hit is refused even when there is room for it, which is the
-distinction between *does it fit* and *is it worth it*. Swept over a curve rather than
-compared to off: at the shipped threshold the payload is 26.6% smaller and the wanted fact
-comes back 8.7 points less often, against a gate written before the run of 20% for at most 2
-points. Nothing on the curve clears both, so both defaults are 0 and the switches stay opt-in.
+Both retrieval paths shipped with a value threshold - a hit scoring below a fraction of the
+batch's best hit is refused even when there is room for it, which is the distinction between
+*does it fit* and *is it worth it*. Swept over a curve rather than compared to off: at the
+shipped threshold the payload shrank by about a quarter and the wanted fact came back several
+points less often, against a gate written before the run that allowed a fraction of that loss.
+Nothing on the curve cleared both, so both defaults are 0 and the switches stay opt-in. The
+figures are withdrawn in 2026-09 with the rest of the engine's measurements; the decision does
+not depend on them and stands.
 
 The one that did pay: re-mining a grown transcript from its recorded watermark instead of from
-byte zero reads **77.8% fewer bytes** at identical coverage of the appended material.
+byte zero reads well under half the bytes at identical coverage of the appended material.
 
 ## External retrieval: LongMemEval, on a hash-pinned corpus
 
@@ -119,56 +101,46 @@ before reading a byte, and the fingerprint is stamped into every result file. Fu
 the re-run found: [`research/EXTERNAL_RETRIEVAL.md`](../research/EXTERNAL_RETRIEVAL.md).
 
 <!-- claims:longmem-pinned -->
-| method | R@1 | R@5 | R@10 | MRR |
-|---|---|---|---|---|
-| semantic (bge-m3) | 0.422 | 0.652 | 0.728 | 0.528 |
-| lexical (BM25) | 0.522 | 0.752 | 0.834 | 0.623 |
-| **calibrated fusion (shipped default, 0 deps)** | 0.550 | 0.802 | **0.858** | 0.657 |
-| **+ trained cross-encoder (opt-in)** | **0.614** | **0.826** | **0.858** | **0.712** |
+> **Withdrawn 2026-09.** withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)
+>
+> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/longmem_eval.py --save --out=research/results/longmem_oracle.json` is what re-measures this one.
 <!-- /claims:longmem-pinned -->
 
-The same methods on the **non-oracle** pool - 19,206 retrievable sessions against the oracle
-variant's 940, the same questions and the same annotated evidence:
+The same methods on the **non-oracle** pool - twenty-one times the haystack, the same questions
+and the same annotated evidence:
 
 <!-- claims:longmem-s -->
-| method | R@1 | R@5 | R@10 | MRR |
-|---|---|---|---|---|
-| semantic (bge-m3) | 0.188 | 0.344 | 0.426 | 0.266 |
-| lexical (BM25) | 0.242 | 0.442 | 0.534 | 0.338 |
-| **calibrated fusion (shipped default, 0 deps)** | **0.264** | **0.452** | **0.554** | **0.362** |
+> **Withdrawn 2026-09.** withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)
+>
+> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/longmem_eval.py --data=s --save --out=research/results/longmem_s.json` is what re-measures this one.
 <!-- /claims:longmem-s -->
 
 Everything falls, which is what twenty-one times the haystack does, and the shape holds: fusion
 still beats both signals it fuses. Running it also found that the harness's own inertness check
 had been passing for the wrong reason; that story is on the study page.
 
-Four systems on the oracle pool, same embedder, same scoring function, same 500 questions:
+Four systems on the oracle pool, same embedder, same scoring function, the same questions:
 
 <!-- claims:head-to-head-pinned -->
-| system | R@1 | R@5 | R@10 | MRR |
-|---|---|---|---|---|
-| **Nevertwice (calibrated fusion)** | **0.550** | **0.802** | **0.858** | **0.651** |
-| Mem0 | 0.478 | 0.758 | 0.846 | 0.603 |
-| LangMem | 0.426 | 0.692 | 0.782 | 0.543 |
-| A-MEM | 0.428 | 0.692 | 0.782 | 0.544 |
+> **Withdrawn 2026-09.** withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)
+>
+> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/head_to_head.py --only=nevertwice,mem0,langmem,amem --save --out=research/results/head_to_head_v2.json` is what re-measures this one.
 <!-- /claims:head-to-head-pinned -->
 
 ### LoCoMo, the benchmark this project had excluded on paper
 
-Ten long conversations, 5,882 turns, 1,977 of 1,986 questions scored, retrieving the
-human-annotated evidence turn from the question's own conversation - LoCoMo's own setting. Full
-method and the defect running it found: [`research/LOCOMO.md`](../research/LOCOMO.md).
+Ten long conversations, every scoreable question retrieving the human-annotated evidence turn
+from its own conversation - LoCoMo's own setting. Full method, the nine questions dropped and
+why, and the defect running it found: [`research/LOCOMO.md`](../research/LOCOMO.md).
 
 <!-- claims:locomo -->
-| method | R@1 | R@5 | R@10 | MRR |
-|---|---|---|---|---|
-| semantic (bge-m3) | 0.182 | 0.432 | 0.560 | 0.301 |
-| lexical (BM25) | 0.271 | 0.499 | 0.576 | 0.377 |
-| **calibrated fusion (shipped default, 0 deps)** | **0.293** | **0.549** | **0.634** | **0.411** |
+> **Withdrawn 2026-09.** withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)
+>
+> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/locomo_eval.py --save --out=research/results/locomo.json` is what re-measures this one.
 <!-- /claims:locomo -->
 
 The exclusion was written around a reported 94% for plain BM25. The term-overlap floor here
-reads 0.499 at R@5, and the three methods order exactly as they do on LongMemEval, so on the
+reads about half at R@5, and the three methods order exactly as they do on LongMemEval, so on the
 **retrieval** axis LoCoMo separates systems perfectly well. The 94% figure is about judge-scored
 **answer accuracy**, which measures the reader as much as the memory and which nothing in this
 repository measures. So the exclusion is narrowed rather than lifted: not a candidate as a

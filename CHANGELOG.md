@@ -158,6 +158,13 @@ empty.
 
 ### Changed
 
+- **One hundred and one claims withdrawn on 2026-09-05, pending re-measurement.** The review
+  changed the engine, and the register's rule is that a number measured before a change
+  describes a different engine. `tools/remeasure.py` withdraws by import closure and restores
+  from artifacts re-run at HEAD, refusing a dirty tree and an artifact older than the code; the
+  families a CPU can re-measure come back the same day, retrieval and supersession after the GPU
+  re-run. The README's comparative rows say so in place of their numbers, and every study page
+  whose figures came down says so under its title.
 - **Value-based abstention is off by default, on the measurement rather than on doubt.** It
   shipped at 0.35 on both the recall and injection paths with tests proving the mechanism
   works and nothing measuring whether it helps. Swept over the labelled corpus: at 0.35 the
@@ -193,7 +200,54 @@ empty.
 
 ### Fixed
 
-Fifteen defects in the engine, each with a test that fails without the fix.
+Fifteen defects in the engine, each with a test that fails without the fix - and, from the
+review of 2026-09-05, eleven more, listed first.
+
+- **The rollback generation of the embeddings cache was tracked by the vault's git.**
+  `store_state` writes `<file>.prev` beside every JSON state file; `*.prev` was in no ignore
+  list, so the live vault committed a 97 MB copy of the cache on every change, six commits
+  deep, one commit short of GitHub's hard limit. `*.prev` is ignored everywhere now and the
+  embeddings cache keeps no rollback copy at all - it is rebuildable, and each save was
+  reading the primary and writing a third 97 MB file under the vault lock for nothing.
+- **A guard that merely matched in three sessions could be promoted to blocking by a false
+  positive.** `record_fired` wrote the delivering session into `seen_sessions`, which is the
+  support list the outcome verdict seeds from. Delivery and support are two fields now;
+  promotion needs feedback, as the design said.
+- **After a compaction the same advisory stayed silent for the rest of the session.** The
+  per-session suppression is keyed on the session id, which survives compaction; PreCompact
+  now forgets the deliveries as it already forgets the injected notes.
+- **A re-mine that crossed midnight forked the session.** The delta read took its timestamp
+  from the first event after the watermark, so the date, the session stem and the typed-note
+  dates all moved and the same-session absorb missed its own notes. A re-mine keeps the
+  session's own start.
+- **The re-mine floor lost the end of a session for good.** Growth under one extractor window
+  (12 kB of JSONL) never re-triggered, and the SessionEnd hook, both sweeps and `process_now`
+  gate on the same predicate. The floor is one byte; the fork it guarded against is closed by
+  the delta read and the stable timestamp instead.
+- **An entity card dropped one project's note when two projects hit the same lesson on the
+  same day.** The restatement collapse keyed on (slug, date, session) with a session field no
+  producer ever set; the key carries the project and the session is read from the note.
+- **`tools/repair_vault.py` renamed the wrong twin and never wrote the untagged note back.**
+  Renaming the live note changed its slug and broke every link to it; the retired copy takes
+  the suffix now, as the engine does on a collision. The foreign-tag repair stripped a tag
+  only at the start of a line, detected it only in the frontmatter while the engine counts
+  body hashtags, and computed the cleaned text without saving it.
+- **The external-retrieval stand embedded the first 2,000 characters of each session on our
+  side and the whole session on the competitors'.** `embed_text` caps its input for the
+  per-prompt hot path; a LongMemEval session is 14,000 characters at the median. The stand
+  now embeds whole sessions through the same endpoint, the vector cache carries the cap in
+  its name and refuses a file built under another, and every retrieval figure measured under
+  the cap is withdrawn until the re-run.
+- **The stand's copy of the ranker had drifted from the engine's.** A signal's sole candidate
+  scored z = 0.0 in the copy and 1.0 in the engine, under a docstring that said "identical".
+  Inert on every question of both corpora; the stand calls the engine's function now.
+- **The head-to-head stand fell back to a July result file when the vector cache was missing**
+  and reported it as the current arm. It blocks instead.
+- **Competitor arms were labelled as products they only partly were.** "LangMem" was
+  LangGraph's store search without its memory manager; "A-MEM" was chromadb cosine without
+  its LLM notes or link evolution; Mem0 ran with extraction off, undisclosed. The store arms
+  are labelled as store arms, Mem0's mode is an arm of its own (`mem0_infer`), and
+  `langmem_full` and `amem_full` run the products' own pipelines.
 
 - **The extractor was grounded on the wrong project's vocabulary.** `collect_existing_tags`
   scanned the whole store, so a batch run handed one project the signature tags of whichever

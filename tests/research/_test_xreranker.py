@@ -44,8 +44,11 @@ def test_model_env_override(monkeypatch=None):
 
 # ── longmem_eval: per-embedder cache routing (the clean-A/B guarantee) ─────────
 
-def test_emb_path_bge_keeps_legacy_name():
-    assert le._emb_path("bge-m3").name == "longmem_embeds.json"
+def test_emb_path_carries_the_embedding_cap():
+    # `longmem_embeds.json` holds the 2,000-character vectors of the runs before 2026-09-05 and
+    # must never load again; the cap is part of the file's identity (review 2026-09-05)
+    assert le._emb_path("bge-m3").name == f"longmem_embeds__c{le.MAXCHARS}.json"
+    assert le._emb_path("bge-m3").name != "longmem_embeds.json"
 
 
 def test_emb_path_is_per_model():

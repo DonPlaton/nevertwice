@@ -66,12 +66,13 @@ check("every banner link resolves", not missing, "; ".join(missing[:3]))
 print("\n- a number a live claim prints is not a withdrawn citation -")
 _live_probe = ROOT / "tests" / "_tmp_live_probe.md"
 try:
-    # 0.428 is LoCoMo's lexical R@3, measured and live, and also a withdrawn head-to-head
-    # figure. Without the live-form rule this page earns a retraction banner for a number
-    # taken yesterday.
-    _live_probe.write_text("# Study\n\nlexical recall at three is 0.428.\n", encoding="utf-8")
+    # 0.788 is a withdrawn figure. Told that a live claim prints the same form (as LoCoMo's
+    # lexical R@3 once shared 0.428 with a withdrawn head-to-head row), the page must not earn
+    # a retraction banner for a number taken yesterday. Synthetic on purpose: which live and
+    # withdrawn claims happen to coincide changes with every re-measurement.
+    _live_probe.write_text("# Study\n\nlexical recall at three is 0.788.\n", encoding="utf-8")
     check("a live form does not trigger a banner",
-          not sw.needs_banner(_live_probe, claims, live))
+          not sw.needs_banner(_live_probe, claims, {"0.788"}))
     check("and it would have without the rule",
           bool(sw.needs_banner(_live_probe, claims, set())))
 finally:
@@ -82,6 +83,19 @@ print("\n- a coincidence is not treated as a citation -")
 # evidence stamped nine pages that had never cited the study they were matched against.
 check("an all-zero mantissa carries no weight", sw._strength("0.000") == 0)
 check("an all-one mantissa carries no weight", sw._strength("1.000") == 0)
+# 100% is what every held defence prints and 0% what every empty count prints; treating either
+# as a citation stamped two embedding studies on 2026-09-05 for a poisoning figure they never cited.
+check("an all-or-nothing rate carries no weight", sw._strength("100%") == 0 and sw._strength("0%") == 0)
+check("a real percentage still does", sw._strength("81%") >= sw.STAMP_AT)
+
+print("\n- a page that qualifies its numbers in its own words is left alone, whatever the case -")
+_own = ROOT / "tests" / "_tmp_own_notice.md"
+try:
+    _own.write_text("# Study\n\n> **Withdrawn 2026-09-05, pending a re-run.**\n\nR@5 0.788.\n",
+                    encoding="utf-8")
+    check("a capitalised notice counts as a marker", not sw.needs_banner(_own, claims, live))
+finally:
+    _own.unlink(missing_ok=True)
 check("three decimals are enough on their own", sw._strength("0.788") >= sw.STAMP_AT)
 check("two decimals are not enough on their own", 0 < sw._strength("0.80") < sw.STAMP_AT)
 

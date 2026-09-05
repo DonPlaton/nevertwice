@@ -1,5 +1,15 @@
 # External retrieval, on a corpus we did not choose and can now prove we ran
 
+<!-- review-2026-09-05 -->
+> **Withdrawn 2026-09-05, pending a re-run.** Every figure below was measured with our
+> semantic arm embedding only the first 2,000 characters of each session - the engine's hot-path
+> cap, applied by the stand without anyone noticing - while the competitors on the same stand
+> embedded the whole session through the same endpoint. The premise "same embedder for
+> everyone" was therefore false in our own disfavour. The stand now embeds whole sessions and
+> refuses the old vector cache; the numbers return when the re-run has been done on the GPU.
+> The figures stay on the page as the record of what was measured, not as results to quote.
+> Details: the review section at the end of this page.
+
 Sixteen retrieval figures were withdrawn in 2026-08. The reason was never that they were wrong.
 It was that the file behind them could not be identified: the LongMemEval corpus is third-party
 and was not committed, and **no content hash was recorded when the numbers were produced**. A
@@ -134,3 +144,40 @@ headline came from.
   needs an adapter nobody has written. A blocker is recorded instead of an estimate.
 - **Competitor versions move.** The result file records the installed version of every package it
   compared against, so a citation can be pinned to the versions that produced it.
+
+## What the review of 2026-09-05 found on this stand
+
+Three things, all of them in the harness rather than in the engine, and all of them fixed
+before the re-run rather than after it.
+
+**Our arm embedded a seventh of each session.** `memory_hook.embed_text` cuts its input to
+2,000 characters before calling the embedder. That is a latency guard for the per-prompt
+query and costs nothing on a note, which is shorter than that. A LongMemEval session is not:
+the oracle pool's median is 14,386 characters, 936 of its 940 sessions are longer than the
+cap, and the annotated answer turn begins past the cap in 34.9% of the evidence sessions.
+The competitors embedded the whole session through the same Ollama endpoint. So the
+sentence this page used to carry - *all of them use the same local embedder, so this isolates
+the memory pipeline* - was false, and false against us: the semantic arm above was working
+from less text than any competitor's. The stand now sends the whole session (up to the
+pool's own cap of 28,000 characters) through the same endpoint, the vector cache carries the
+cap in its file name and a stamp inside, and a cache built under another cap is refused
+rather than loaded. Whether our semantic figure rises is the re-run's business; nothing here
+predicts it.
+
+**The stand's ranker was a copy, not a call.** `longmem_eval.calibrated` re-implemented the
+engine's calibrated fusion and had drifted from it in one case (a signal's sole candidate).
+It is inert on every question of both corpora - checked - and it is gone: the stand calls
+`memory_hook._calibrated_fusion`.
+
+**The competitor rows were labelled as more than they were.** Mem0 ran with its LLM
+extraction off, which this page did not say; its search is its default hybrid of dense cosine
+and fastembed BM25 when fastembed is installed, which it was. "LangMem" was LangGraph's
+InMemoryStore search, the product's storage layer without its memory manager. "A-MEM" was
+chromadb cosine over the same vectors, the product's store without its LLM note construction
+or link evolution. The store arms are kept, labelled as store arms, because they isolate the
+retrieval layer the way our arm does; the products' own pipelines are new arms
+(`mem0_infer`, `langmem_full`, `amem_full`), and each blocks itself when more than a tenth of
+its LLM calls fail silently, which A-MEM's controller otherwise hides.
+
+The re-run replaces every figure on this page. Until then they are the record of a
+measurement whose premise did not hold.

@@ -140,7 +140,7 @@ def _load_json_generations(path: Path, label: str, expect: type = dict):
     return None
 
 
-def _save_json_generations(path: Path, text: str) -> None:
+def _save_json_generations(path: Path, text: str, prev: bool = True) -> None:
     """Both copies from the same KNOWN-GOOD in-memory text (never a copy of the
     possibly-corrupt on-disk primary) so a good generation always survives a crash
     mid-save (audit D1). Primary FIRST, then .bak: each write is atomic, and on a
@@ -152,8 +152,14 @@ def _save_json_generations(path: Path, text: str) -> None:
     # 2026-09 review found while looking for a way to undo a destructive re-mine and
     # discovering there was none. Keeping `.bak` unchanged preserves the crash property
     # audit D1 chose it for; `.prev` adds the one it never had.
+    #
+    # `prev=False` is for the embeddings cache: 90 MB that a rebuild regenerates, so a
+    # rollback copy protects nothing, and writing one read the primary and wrote a third
+    # 97 MB file under the vault lock on every save. The review that found that also found
+    # the copy tracked by the vault's git (`*.prev` was in no ignore list), one commit away
+    # from GitHub's 100 MB refusal - see `memory_hook._VAULT_GITIGNORE`.
     try:
-        if path.exists():
+        if prev and path.exists():
             old_text = path.read_text(encoding="utf-8")
             if old_text != text:                       # an unchanged write keeps the older prev
                 write_atomic(path.with_name(path.name + ".prev"), old_text)

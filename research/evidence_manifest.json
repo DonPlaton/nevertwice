@@ -808,14 +808,14 @@
   },
   "research/EXTERNAL_RETRIEVAL.md": {
    "governance": "backlog",
-   "budget": 70,
+   "budget": 78,
    "note": "Every figure on this page is registered under `longmem_pinned.*` and `h2h_pinned.*`; the budget counts them because study pages are backlog rather than governed, the same rule as the rest of the archive.",
    "budget_metric": "evidence-bearing numeric tokens: numbers outside fenced blocks, excluding years, months, Python versions and bare single digits",
    "generator": "research/longmem_eval.py + research/head_to_head.py"
   },
   "research/LOCOMO.md": {
    "governance": "backlog",
-   "budget": 40,
+   "budget": 41,
    "note": "Every retrieval figure here is registered under `locomo.*`. The vendor accuracy figure this page names is an external citation, not a measurement of ours.",
    "budget_metric": "evidence-bearing numeric tokens: numbers outside fenced blocks, excluding years, months, Python versions and bare single digits",
    "generator": "research/locomo_eval.py"
@@ -2468,9 +2468,7 @@
    "caveat": "Per-attack-instance the rate is 9/12 = 0.75 (raw `recall`). The two aggregates differ; the doc cites the per-family mean. Both fell against the v1.0.0 artifact this replaces - see CHANGELOG.",
    "ci": null,
    "ci_note": "12 hand-written attacks - a proof of taxonomy, not a benchmark.",
-   "cited_in": [
-    "README.md"
-   ],
+   "cited_in": [],
    "commit": "021a00a863b0c06e7d990cbf0833bec7edea1018",
    "produced_by": [
     "research/poisoning.py",
@@ -2488,7 +2486,13 @@
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "README.md"
+   ],
+   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
+   "withdrawn_on": "2026-09-05",
+   "pending_remeasure": true
   },
   {
    "id": "poisoning.precision",
@@ -2523,7 +2527,11 @@
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
+   "withdrawn_on": "2026-09-05",
+   "pending_remeasure": true
   },
   {
    "id": "poisoning.injection_blocked",
@@ -2542,9 +2550,7 @@
    "derivation": "1 - attacks.injection.after = 1 - 0.0",
    "ci": null,
    "ci_note": "n=4.",
-   "cited_in": [
-    "README.md"
-   ],
+   "cited_in": [],
    "commit": "021a00a863b0c06e7d990cbf0833bec7edea1018",
    "produced_by": [
     "research/poisoning.py",
@@ -2562,7 +2568,13 @@
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "README.md"
+   ],
+   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
+   "withdrawn_on": "2026-09-05",
+   "pending_remeasure": true
   },
   {
    "id": "poisoning.false_fact_blocked",
@@ -2581,9 +2593,7 @@
    "derivation": "1 - attacks.false-fact.after = 1 - 0.75",
    "ci": null,
    "ci_note": "n=4; the honest open problem, published as such.",
-   "cited_in": [
-    "README.md"
-   ],
+   "cited_in": [],
    "commit": "021a00a863b0c06e7d990cbf0833bec7edea1018",
    "produced_by": [
     "research/poisoning.py",
@@ -2602,7 +2612,13 @@
     "nevertwice/why_fired.py",
     "sandbox_guard.py"
    ],
-   "caveat": "n=4; the honest open problem, published as such - and it got worse, not better: the v1.0.0 artifact recorded 50%."
+   "caveat": "n=4; the honest open problem, published as such - and it got worse, not better: the v1.0.0 artifact recorded 50%.",
+   "cited_in_pending": [
+    "README.md"
+   ],
+   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
+   "withdrawn_on": "2026-09-05",
+   "pending_remeasure": true
   },
   {
    "id": "forgetting.coverage_gain_at_20pct",
@@ -2647,7 +2663,11 @@
     "research/longitudinal_bench.py",
     "sandbox_guard.py",
     "tools/render_claims.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
+   "withdrawn_on": "2026-09-05",
+   "pending_remeasure": true
   },
   {
    "id": "consolidation.recall_drop",
@@ -4613,10 +4633,7 @@
     "low": 89,
     "high": 95
    },
-   "cited_in": [
-    "README.md",
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "021a00a863b0c06e7d990cbf0833bec7edea1018",
    "produced_by": [
     "research/latency_bench.py",
@@ -4637,7 +4654,14 @@
     "sandbox_guard.py"
    ],
    "caveat": "Cross-SESSION variance on this machine is large: the same minimum-of-5 statistic gave 142 ms (2026-08-25), 114 ms and 98 ms for PreToolUse within a day, on an otherwise unchanged tree. `--repeat` stabilises the number WITHIN a session and does not across them, so read this as ~0.1 s of end-to-end cost including interpreter start, not as a figure precise to the millisecond. The drop from the previously published 142 ms is machine state, not an optimisation.",
-   "note": "Minimum over five repeats, each the best of three invocations, on an idle machine at this commit. An earlier stamp today came from a run taken while a 30B model was resident and read 31 / 98 / 95 / 91; it was published as a regression against the 2026-08 values and it was not one. The same statistic on the same tree moves by roughly fifteen per cent with ambient load, so no single run of this bench supports a claim about a change."
+   "note": "Minimum over five repeats, each the best of three invocations, on an idle machine at this commit. An earlier stamp today came from a run taken while a 30B model was resident and read 31 / 98 / 95 / 91; it was published as a regression against the 2026-08 values and it was not one. The same statistic on the same tree moves by roughly fifteen per cent with ambient load, so no single run of this bench supports a claim about a change.",
+   "cited_in_pending": [
+    "README.md",
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
+   "withdrawn_on": "2026-09-05",
+   "pending_remeasure": true
   },
   {
    "id": "latency.userpromptsubmit",
@@ -4660,9 +4684,7 @@
     "low": 83,
     "high": 86
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "021a00a863b0c06e7d990cbf0833bec7edea1018",
    "produced_by": [
     "research/latency_bench.py",
@@ -4683,7 +4705,13 @@
     "sandbox_guard.py"
    ],
    "caveat": "Cross-SESSION variance on this machine is large: the same minimum-of-5 statistic gave 142 ms (2026-08-25), 114 ms and 98 ms for PreToolUse within a day, on an otherwise unchanged tree. `--repeat` stabilises the number WITHIN a session and does not across them, so read this as ~0.1 s of end-to-end cost including interpreter start, not as a figure precise to the millisecond. The drop from the previously published 142 ms is machine state, not an optimisation.",
-   "note": "Minimum over five repeats, each the best of three invocations, on an idle machine at this commit. An earlier stamp today came from a run taken while a 30B model was resident and read 31 / 98 / 95 / 91; it was published as a regression against the 2026-08 values and it was not one. The same statistic on the same tree moves by roughly fifteen per cent with ambient load, so no single run of this bench supports a claim about a change."
+   "note": "Minimum over five repeats, each the best of three invocations, on an idle machine at this commit. An earlier stamp today came from a run taken while a 30B model was resident and read 31 / 98 / 95 / 91; it was published as a regression against the 2026-08 values and it was not one. The same statistic on the same tree moves by roughly fifteen per cent with ambient load, so no single run of this bench supports a claim about a change.",
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
+   "withdrawn_on": "2026-09-05",
+   "pending_remeasure": true
   },
   {
    "id": "latency.sessionstart",
@@ -4706,9 +4734,7 @@
     "low": 82,
     "high": 86
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "021a00a863b0c06e7d990cbf0833bec7edea1018",
    "produced_by": [
     "research/latency_bench.py",
@@ -4729,7 +4755,13 @@
     "sandbox_guard.py"
    ],
    "caveat": "Cross-SESSION variance on this machine is large: the same minimum-of-5 statistic gave 142 ms (2026-08-25), 114 ms and 98 ms for PreToolUse within a day, on an otherwise unchanged tree. `--repeat` stabilises the number WITHIN a session and does not across them, so read this as ~0.1 s of end-to-end cost including interpreter start, not as a figure precise to the millisecond. The drop from the previously published 142 ms is machine state, not an optimisation.",
-   "note": "Minimum over five repeats, each the best of three invocations, on an idle machine at this commit. An earlier stamp today came from a run taken while a 30B model was resident and read 31 / 98 / 95 / 91; it was published as a regression against the 2026-08 values and it was not one. The same statistic on the same tree moves by roughly fifteen per cent with ambient load, so no single run of this bench supports a claim about a change."
+   "note": "Minimum over five repeats, each the best of three invocations, on an idle machine at this commit. An earlier stamp today came from a run taken while a 30B model was resident and read 31 / 98 / 95 / 91; it was published as a regression against the 2026-08 values and it was not one. The same statistic on the same tree moves by roughly fifteen per cent with ambient load, so no single run of this bench supports a claim about a change.",
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
+   "withdrawn_on": "2026-09-05",
+   "pending_remeasure": true
   },
   {
    "id": "latency.cold",
@@ -4752,9 +4784,7 @@
     "low": 28,
     "high": 30
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "021a00a863b0c06e7d990cbf0833bec7edea1018",
    "produced_by": [
     "research/latency_bench.py",
@@ -4775,7 +4805,13 @@
     "sandbox_guard.py"
    ],
    "caveat": "Cross-SESSION variance on this machine is large: the same minimum-of-5 statistic gave 142 ms (2026-08-25), 114 ms and 98 ms for PreToolUse within a day, on an otherwise unchanged tree. `--repeat` stabilises the number WITHIN a session and does not across them, so read this as ~0.1 s of end-to-end cost including interpreter start, not as a figure precise to the millisecond. The drop from the previously published 142 ms is machine state, not an optimisation.",
-   "note": "Minimum over five repeats, each the best of three invocations, on an idle machine at this commit. An earlier stamp today came from a run taken while a 30B model was resident and read 31 / 98 / 95 / 91; it was published as a regression against the 2026-08 values and it was not one. The same statistic on the same tree moves by roughly fifteen per cent with ambient load, so no single run of this bench supports a claim about a change."
+   "note": "Minimum over five repeats, each the best of three invocations, on an idle machine at this commit. An earlier stamp today came from a run taken while a 30B model was resident and read 31 / 98 / 95 / 91; it was published as a regression against the 2026-08 values and it was not one. The same statistic on the same tree moves by roughly fifteen per cent with ambient load, so no single run of this bench supports a claim about a change.",
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
+   "withdrawn_on": "2026-09-05",
+   "pending_remeasure": true
   },
   {
    "id": "latency.perf_audit_range",
@@ -6378,7 +6414,7 @@
    "dataset": null,
    "environment": "stdlib_only",
    "n": null,
-   "command": "python -m nevertwice.guards --list",
+   "command": "python -m nevertwice.guards pack --count",
    "raw": null,
    "pointer": null,
    "raw_gap": "A property of the shipped pack; a test should assert it (task D1).",
@@ -6399,7 +6435,12 @@
     "nevertwice/stats.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
+   "withdrawn_on": "2026-09-05",
+   "pending_remeasure": true,
+   "note": " The former command (`--list`) was not a subcommand the CLI accepts; `pack --count` is read-only and prints the number (review 2026-09-05)."
   },
   {
    "id": "head_to_head.nevertwice.recall_at_10",
@@ -7395,10 +7436,7 @@
     "low": 0.0179,
     "high": 0.0938
    },
-   "cited_in": [
-    "README.md",
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "021a00a863b0c06e7d990cbf0833bec7edea1018",
    "produced_by": [
     "research/supersession_bench.py",
@@ -7433,7 +7471,14 @@
     "research/uncertainty.py",
     "sandbox_guard.py"
    ],
-   "note": "Pooled over two runs of the same commit: the extraction model is not deterministic at temperature 0 and the two runs read 0.0167 and 0.0667. One run of this stand is not a result, so the published figure is the pooled rate over 120 case-runs with the per-run values recorded beside it in the artifact."
+   "note": "Pooled over two runs of the same commit: the extraction model is not deterministic at temperature 0 and the two runs read 0.0167 and 0.0667. One run of this stand is not a result, so the published figure is the pooled rate over 120 case-runs with the per-run values recorded beside it in the artifact.",
+   "cited_in_pending": [
+    "README.md",
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
+   "withdrawn_on": "2026-09-05",
+   "pending_remeasure": true
   },
   {
    "id": "supersession.nevertwice.current_rate",
@@ -7457,10 +7502,7 @@
     "low": 0.8739,
     "high": 0.9658
    },
-   "cited_in": [
-    "README.md",
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "021a00a863b0c06e7d990cbf0833bec7edea1018",
    "produced_by": [
     "research/supersession_bench.py",
@@ -7495,7 +7537,14 @@
     "research/uncertainty.py",
     "sandbox_guard.py"
    ],
-   "note": "Pooled over two runs of the same commit: the extraction model is not deterministic at temperature 0 and the two runs read 0.9333 and 0.9333. One run of this stand is not a result, so the published figure is the pooled rate over 120 case-runs with the per-run values recorded beside it in the artifact."
+   "note": "Pooled over two runs of the same commit: the extraction model is not deterministic at temperature 0 and the two runs read 0.9333 and 0.9333. One run of this stand is not a result, so the published figure is the pooled rate over 120 case-runs with the per-run values recorded beside it in the artifact.",
+   "cited_in_pending": [
+    "README.md",
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
+   "withdrawn_on": "2026-09-05",
+   "pending_remeasure": true
   },
   {
    "id": "supersession.nevertwice.over_retraction_rate",
@@ -7519,9 +7568,7 @@
     "low": 0.0138,
     "high": 0.165
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "021a00a863b0c06e7d990cbf0833bec7edea1018",
    "produced_by": [
     "research/supersession_bench.py",
@@ -7556,7 +7603,13 @@
     "research/uncertainty.py",
     "sandbox_guard.py"
    ],
-   "note": "2 of 40 controls over two runs. At n=40 an observed 0.05 is bounded above at 0.165; about 130 controls would put that under 0.10. This is the design's own worst failure mode and it remains the least measured column here."
+   "note": "2 of 40 controls over two runs. At n=40 an observed 0.05 is bounded above at 0.165; about 130 controls would put that under 0.10. This is the design's own worst failure mode and it remains the least measured column here.",
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
+   "withdrawn_on": "2026-09-05",
+   "pending_remeasure": true
   },
   {
    "id": "supersession.mem0.stale_rate",
@@ -7583,10 +7636,7 @@
     "low": 0.8193,
     "high": 0.9639
    },
-   "cited_in": [
-    "README.md",
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "021a00a863b0c06e7d990cbf0833bec7edea1018",
    "produced_by": [
     "research/supersession_bench.py",
@@ -7620,7 +7670,14 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "README.md",
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
+   "withdrawn_on": "2026-09-05",
+   "pending_remeasure": true
   },
   {
    "id": "supersession.mem0.current_rate",
@@ -7645,10 +7702,7 @@
     "low": 0.863,
     "high": 0.9829
    },
-   "cited_in": [
-    "README.md",
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "021a00a863b0c06e7d990cbf0833bec7edea1018",
    "produced_by": [
     "research/supersession_bench.py",
@@ -7682,7 +7736,14 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "README.md",
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
+   "withdrawn_on": "2026-09-05",
+   "pending_remeasure": true
   },
   {
    "id": "supersession.mem0.over_retraction_rate",
@@ -7706,9 +7767,7 @@
     "low": 0.0,
     "high": 0.1611
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "021a00a863b0c06e7d990cbf0833bec7edea1018",
    "produced_by": [
     "research/supersession_bench.py",
@@ -7743,7 +7802,13 @@
     "research/uncertainty.py",
     "sandbox_guard.py"
    ],
-   "note": "0 of 20 controls. The interval is wide because the control arm is small: at n=20 an observed 0.05 is bounded above at 0.1611. Reading this column as 'about one in twenty' is reading more than 20 cases can support. Narrowing the upper bound below 0.10 needs roughly 120 controls."
+   "note": "0 of 20 controls. The interval is wide because the control arm is small: at n=20 an observed 0.05 is bounded above at 0.1611. Reading this column as 'about one in twenty' is reading more than 20 cases can support. Narrowing the upper bound below 0.10 needs roughly 120 controls.",
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
+   "withdrawn_on": "2026-09-05",
+   "pending_remeasure": true
   },
   {
    "id": "supersession.naive.stale_rate",
@@ -7769,10 +7834,7 @@
     "low": 0.863,
     "high": 0.9829
    },
-   "cited_in": [
-    "README.md",
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "021a00a863b0c06e7d990cbf0833bec7edea1018",
    "produced_by": [
     "research/supersession_bench.py",
@@ -7806,7 +7868,14 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "README.md",
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
+   "withdrawn_on": "2026-09-05",
+   "pending_remeasure": true
   },
   {
    "id": "supersession.naive.current_rate",
@@ -7831,9 +7900,7 @@
     "low": 0.863,
     "high": 0.9829
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "021a00a863b0c06e7d990cbf0833bec7edea1018",
    "produced_by": [
     "research/supersession_bench.py",
@@ -7867,7 +7934,13 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
+   "withdrawn_on": "2026-09-05",
+   "pending_remeasure": true
   },
   {
    "id": "supersession.naive.over_retraction_rate",
@@ -7891,9 +7964,7 @@
     "low": 0.0089,
     "high": 0.2361
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "021a00a863b0c06e7d990cbf0833bec7edea1018",
    "produced_by": [
     "research/supersession_bench.py",
@@ -7928,7 +7999,13 @@
     "research/uncertainty.py",
     "sandbox_guard.py"
    ],
-   "note": "1 of 20 controls. The interval is wide because the control arm is small: at n=20 an observed 0.05 is bounded above at 0.2361. Reading this column as 'about one in twenty' is reading more than 20 cases can support. Narrowing the upper bound below 0.10 needs roughly 120 controls."
+   "note": "1 of 20 controls. The interval is wide because the control arm is small: at n=20 an observed 0.05 is bounded above at 0.2361. Reading this column as 'about one in twenty' is reading more than 20 cases can support. Narrowing the upper bound below 0.10 needs roughly 120 controls.",
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
+   "withdrawn_on": "2026-09-05",
+   "pending_remeasure": true
   },
   {
    "id": "supersession.nevertwice_vs_mem0.p_mcnemar",
@@ -7979,7 +8056,11 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
+   "withdrawn_on": "2026-09-05",
+   "pending_remeasure": true
   },
   {
    "id": "supersession.mem0_vs_naive.p_mcnemar",
@@ -7996,10 +8077,7 @@
    "raw": "research/results/supersession_v1.json",
    "pointer": "pairs[0].p_mcnemar",
    "ci": null,
-   "cited_in": [
-    "README.md",
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "021a00a863b0c06e7d990cbf0833bec7edea1018",
    "produced_by": [
     "research/supersession_bench.py",
@@ -8033,7 +8111,14 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "README.md",
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
+   "withdrawn_on": "2026-09-05",
+   "pending_remeasure": true
   },
   {
    "id": "supersession.nevertwice.chars_per_query",
@@ -8050,9 +8135,7 @@
    "raw": "research/results/supersession_v1.json",
    "pointer": "pooled_nevertwice.mean_chars_returned",
    "ci": null,
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "021a00a863b0c06e7d990cbf0833bec7edea1018",
    "produced_by": [
     "research/supersession_bench.py",
@@ -8086,7 +8169,13 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
+   "withdrawn_on": "2026-09-05",
+   "pending_remeasure": true
   },
   {
    "id": "supersession.mem0.chars_per_query",
@@ -8103,9 +8192,7 @@
    "raw": "research/results/supersession_v1.json",
    "pointer": "arms.mem0.mean_chars_returned",
    "ci": null,
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "021a00a863b0c06e7d990cbf0833bec7edea1018",
    "produced_by": [
     "research/supersession_bench.py",
@@ -8139,7 +8226,13 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
+   "withdrawn_on": "2026-09-05",
+   "pending_remeasure": true
   },
   {
    "id": "supersession.extraction.language_drift",
@@ -8192,7 +8285,11 @@
     "sandbox_guard.py"
    ],
    "note": "Measured before the fix. Re-measured at this commit with the language named in the prompt: 0 of 128 notes in Cyrillic. The fix moved the benchmark too - stale 0.067 to 0.017, current 0.867 to 0.933 - because an English marker cannot match a Russian paraphrase, so the drift was depressing both columns while being a real user-facing defect.",
-   "raw_gap": "the artifact in research/results/ is the post-fix run at HEAD, which measures 0 of 128; the pre-fix figure is quoted from the run recorded in .loop/GOAL-CLOSE.md and deliberately kept, because a fixed defect that leaves no number behind is one nobody can check was fixed"
+   "raw_gap": "the artifact in research/results/ is the post-fix run at HEAD, which measures 0 of 128; the pre-fix figure is quoted from the run recorded in .loop/GOAL-CLOSE.md and deliberately kept, because a fixed defect that leaves no number behind is one nobody can check was fixed",
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
+   "withdrawn_on": "2026-09-05",
+   "pending_remeasure": true
   },
   {
    "id": "supersession.dataset.supersession_cases",
@@ -8209,9 +8306,7 @@
    "raw": "research/results/supersession_v1.json",
    "pointer": "dataset.supersession_cases",
    "ci": null,
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "021a00a863b0c06e7d990cbf0833bec7edea1018",
    "produced_by": [
     "research/supersession_bench.py",
@@ -8245,7 +8340,13 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
+   "withdrawn_on": "2026-09-05",
+   "pending_remeasure": true
   },
   {
    "id": "supersession.dataset.control_cases",
@@ -8262,9 +8363,7 @@
    "raw": "research/results/supersession_v1.json",
    "pointer": "dataset.control_cases",
    "ci": null,
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "021a00a863b0c06e7d990cbf0833bec7edea1018",
    "produced_by": [
     "research/supersession_bench.py",
@@ -8298,7 +8397,13 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
+   "withdrawn_on": "2026-09-05",
+   "pending_remeasure": true
   },
   {
    "id": "supersession.nevertwice_vs_mem0.discordant",
@@ -8316,9 +8421,7 @@
    "raw": "research/results/supersession_v1.json",
    "pointer": "pairs_per_engine_run[0].mem0_only",
    "ci": null,
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "021a00a863b0c06e7d990cbf0833bec7edea1018",
    "produced_by": [
     "research/supersession_bench.py",
@@ -8352,7 +8455,13 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
+   "withdrawn_on": "2026-09-05",
+   "pending_remeasure": true
   },
   {
    "id": "abstention.recall.shipped_threshold",
@@ -8369,9 +8478,7 @@
    "raw": "research/results/abstention_ab.json",
    "pointer": "recall_sweep[4].threshold",
    "ci": null,
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "021a00a863b0c06e7d990cbf0833bec7edea1018",
    "produced_by": [
     "research/abstention_ab.py",
@@ -8401,7 +8508,13 @@
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
+   "withdrawn_on": "2026-09-05",
+   "pending_remeasure": true
   },
   {
    "id": "abstention.recall.char_reduction_at_shipped",
@@ -8418,9 +8531,7 @@
    "raw": "research/results/abstention_ab.json",
    "pointer": "recall_sweep[4].char_reduction_vs_off",
    "ci": null,
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "021a00a863b0c06e7d990cbf0833bec7edea1018",
    "produced_by": [
     "research/abstention_ab.py",
@@ -8450,7 +8561,13 @@
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
+   "withdrawn_on": "2026-09-05",
+   "pending_remeasure": true
   },
   {
    "id": "abstention.recall.current_loss_at_shipped",
@@ -8467,9 +8584,7 @@
    "raw": "research/results/abstention_ab.json",
    "pointer": "recall_sweep[4].current_delta_vs_off",
    "ci": null,
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "021a00a863b0c06e7d990cbf0833bec7edea1018",
    "produced_by": [
     "research/abstention_ab.py",
@@ -8499,7 +8614,13 @@
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
+   "withdrawn_on": "2026-09-05",
+   "pending_remeasure": true
   },
   {
    "id": "abstention.remine.byte_reduction",
@@ -8516,9 +8637,7 @@
    "raw": "research/results/abstention_ab.json",
    "pointer": "remine.byte_reduction",
    "ci": null,
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "021a00a863b0c06e7d990cbf0833bec7edea1018",
    "produced_by": [
     "research/abstention_ab.py",
@@ -8548,7 +8667,13 @@
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
+   "withdrawn_on": "2026-09-05",
+   "pending_remeasure": true
   },
   {
    "id": "abstention.remine.coverage",
@@ -8595,7 +8720,11 @@
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
+   "withdrawn_on": "2026-09-05",
+   "pending_remeasure": true
   },
   {
    "id": "baselines.f2.matched_fpr",
@@ -8633,7 +8762,11 @@
     "research/_frontier.py",
     "research/matched_conditions.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
+   "withdrawn_on": "2026-09-05",
+   "pending_remeasure": true
   },
   {
    "id": "baselines.f2.nevertwice.recall",
@@ -8676,7 +8809,11 @@
     "research/_frontier.py",
     "research/matched_conditions.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
+   "withdrawn_on": "2026-09-05",
+   "pending_remeasure": true
   },
   {
    "id": "baselines.f2.curated_agents_md.recall",
@@ -8719,7 +8856,11 @@
     "research/_frontier.py",
     "research/matched_conditions.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
+   "withdrawn_on": "2026-09-05",
+   "pending_remeasure": true
   },
   {
    "id": "baselines.f2.linter_or_test.recall",
@@ -8762,7 +8903,11 @@
     "research/_frontier.py",
     "research/matched_conditions.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
+   "withdrawn_on": "2026-09-05",
+   "pending_remeasure": true
   },
   {
    "id": "baselines.f2.nevertwice.tokens_per_episode",
@@ -8800,7 +8945,11 @@
     "research/_frontier.py",
     "research/matched_conditions.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
+   "withdrawn_on": "2026-09-05",
+   "pending_remeasure": true
   },
   {
    "id": "baselines.f2.curated_agents_md.tokens_per_episode",
@@ -8838,7 +8987,11 @@
     "research/_frontier.py",
     "research/matched_conditions.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
+   "withdrawn_on": "2026-09-05",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_pinned.semantic.recall_at_1",
@@ -8860,9 +9013,7 @@
     "low": 0.3795,
     "high": 0.4657
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "2b0715f320aa7d6ff6ebabf3f84117d4aab844f1",
    "note": "Re-measured 2026-09-02 on the corpus pinned in research/corpus_pin.py (sha256 821a2034..., verified before the run). The value is identical to three decimals to the one withdrawn in 2026-08. The withdrawn claim stays withdrawn: it was measured on a file that cannot be identified, and agreeing with a later run is not evidence about an unidentifiable one.",
    "produced_by": [
@@ -8884,7 +9035,13 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
+   "withdrawn_on": "2026-09-05",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_pinned.semantic.recall_at_5",
@@ -8906,9 +9063,7 @@
     "low": 0.6092,
     "high": 0.6925
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "2b0715f320aa7d6ff6ebabf3f84117d4aab844f1",
    "note": "Re-measured 2026-09-02 on the corpus pinned in research/corpus_pin.py (sha256 821a2034..., verified before the run). The value is identical to three decimals to the one withdrawn in 2026-08. The withdrawn claim stays withdrawn: it was measured on a file that cannot be identified, and agreeing with a later run is not evidence about an unidentifiable one.",
    "produced_by": [
@@ -8930,7 +9085,13 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
+   "withdrawn_on": "2026-09-05",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_pinned.semantic.recall_at_10",
@@ -8974,7 +9135,11 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
+   "withdrawn_on": "2026-09-05",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_pinned.semantic.mrr",
@@ -8991,9 +9156,7 @@
    "raw": "research/results/longmem_oracle.json",
    "pointer": "methods.semantic.mrr",
    "ci": null,
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "2b0715f320aa7d6ff6ebabf3f84117d4aab844f1",
    "note": "Re-measured 2026-09-02 on the corpus pinned in research/corpus_pin.py (sha256 821a2034..., verified before the run). The value is identical to three decimals to the one withdrawn in 2026-08. The withdrawn claim stays withdrawn: it was measured on a file that cannot be identified, and agreeing with a later run is not evidence about an unidentifiable one.",
    "produced_by": [
@@ -9015,7 +9178,13 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
+   "withdrawn_on": "2026-09-05",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_pinned.lexical.recall_at_1",
@@ -9037,9 +9206,7 @@
     "low": 0.4782,
     "high": 0.5654
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "2b0715f320aa7d6ff6ebabf3f84117d4aab844f1",
    "note": "Re-measured 2026-09-02 on the corpus pinned in research/corpus_pin.py (sha256 821a2034..., verified before the run). The value is identical to three decimals to the one withdrawn in 2026-08. The withdrawn claim stays withdrawn: it was measured on a file that cannot be identified, and agreeing with a later run is not evidence about an unidentifiable one.",
    "produced_by": [
@@ -9061,7 +9228,13 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
+   "withdrawn_on": "2026-09-05",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_pinned.lexical.recall_at_5",
@@ -9083,9 +9256,7 @@
     "low": 0.7123,
     "high": 0.7878
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "2b0715f320aa7d6ff6ebabf3f84117d4aab844f1",
    "note": "Re-measured 2026-09-02 on the corpus pinned in research/corpus_pin.py (sha256 821a2034..., verified before the run). The value is identical to three decimals to the one withdrawn in 2026-08. The withdrawn claim stays withdrawn: it was measured on a file that cannot be identified, and agreeing with a later run is not evidence about an unidentifiable one.",
    "produced_by": [
@@ -9107,7 +9278,13 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
+   "withdrawn_on": "2026-09-05",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_pinned.lexical.recall_at_10",
@@ -9151,7 +9328,11 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
+   "withdrawn_on": "2026-09-05",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_pinned.lexical.mrr",
@@ -9168,9 +9349,7 @@
    "raw": "research/results/longmem_oracle.json",
    "pointer": "methods.lexical.mrr",
    "ci": null,
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "2b0715f320aa7d6ff6ebabf3f84117d4aab844f1",
    "note": "Re-measured 2026-09-02 on the corpus pinned in research/corpus_pin.py (sha256 821a2034..., verified before the run). The value is identical to three decimals to the one withdrawn in 2026-08. The withdrawn claim stays withdrawn: it was measured on a file that cannot be identified, and agreeing with a later run is not evidence about an unidentifiable one.",
    "produced_by": [
@@ -9192,7 +9371,13 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
+   "withdrawn_on": "2026-09-05",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_pinned.hybrid.recall_at_1",
@@ -9214,9 +9399,7 @@
     "low": 0.5062,
     "high": 0.5931
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "2b0715f320aa7d6ff6ebabf3f84117d4aab844f1",
    "note": "Re-measured 2026-09-02 on the corpus pinned in research/corpus_pin.py (sha256 821a2034..., verified before the run). The value is identical to three decimals to the one withdrawn in 2026-08. The withdrawn claim stays withdrawn: it was measured on a file that cannot be identified, and agreeing with a later run is not evidence about an unidentifiable one.",
    "produced_by": [
@@ -9238,7 +9421,13 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
+   "withdrawn_on": "2026-09-05",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_pinned.hybrid.recall_at_5",
@@ -9260,9 +9449,7 @@
     "low": 0.7648,
     "high": 0.8346
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "2b0715f320aa7d6ff6ebabf3f84117d4aab844f1",
    "note": "Re-measured 2026-09-02 on the corpus pinned in research/corpus_pin.py (sha256 821a2034..., verified before the run). The value is identical to three decimals to the one withdrawn in 2026-08. The withdrawn claim stays withdrawn: it was measured on a file that cannot be identified, and agreeing with a later run is not evidence about an unidentifiable one.",
    "produced_by": [
@@ -9284,7 +9471,13 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
+   "withdrawn_on": "2026-09-05",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_pinned.hybrid.recall_at_10",
@@ -9328,7 +9521,11 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
+   "withdrawn_on": "2026-09-05",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_pinned.hybrid.mrr",
@@ -9345,9 +9542,7 @@
    "raw": "research/results/longmem_oracle.json",
    "pointer": "methods.hybrid.mrr",
    "ci": null,
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "2b0715f320aa7d6ff6ebabf3f84117d4aab844f1",
    "note": "Re-measured 2026-09-02 on the corpus pinned in research/corpus_pin.py (sha256 821a2034..., verified before the run). The value is identical to three decimals to the one withdrawn in 2026-08. The withdrawn claim stays withdrawn: it was measured on a file that cannot be identified, and agreeing with a later run is not evidence about an unidentifiable one.",
    "produced_by": [
@@ -9369,7 +9564,13 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
+   "withdrawn_on": "2026-09-05",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_pinned.hybrid_xrerank.recall_at_1",
@@ -9391,9 +9592,7 @@
     "low": 0.5706,
     "high": 0.6556
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "2b0715f320aa7d6ff6ebabf3f84117d4aab844f1",
    "note": "Re-measured 2026-09-02 on the corpus pinned in research/corpus_pin.py (sha256 821a2034..., verified before the run). The value is identical to three decimals to the one withdrawn in 2026-08. The withdrawn claim stays withdrawn: it was measured on a file that cannot be identified, and agreeing with a later run is not evidence about an unidentifiable one.",
    "produced_by": [
@@ -9415,7 +9614,13 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
+   "withdrawn_on": "2026-09-05",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_pinned.hybrid_xrerank.recall_at_5",
@@ -9437,9 +9642,7 @@
     "low": 0.7903,
     "high": 0.8567
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "2b0715f320aa7d6ff6ebabf3f84117d4aab844f1",
    "note": "Re-measured 2026-09-02 on the corpus pinned in research/corpus_pin.py (sha256 821a2034..., verified before the run). The value is identical to three decimals to the one withdrawn in 2026-08. The withdrawn claim stays withdrawn: it was measured on a file that cannot be identified, and agreeing with a later run is not evidence about an unidentifiable one.",
    "produced_by": [
@@ -9461,7 +9664,13 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
+   "withdrawn_on": "2026-09-05",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_pinned.hybrid_xrerank.recall_at_10",
@@ -9505,7 +9714,11 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
+   "withdrawn_on": "2026-09-05",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_pinned.hybrid_xrerank.mrr",
@@ -9522,9 +9735,7 @@
    "raw": "research/results/longmem_oracle.json",
    "pointer": "methods.hybrid+xrerank.mrr",
    "ci": null,
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "2b0715f320aa7d6ff6ebabf3f84117d4aab844f1",
    "note": "Re-measured 2026-09-02 on the corpus pinned in research/corpus_pin.py (sha256 821a2034..., verified before the run). The value is identical to three decimals to the one withdrawn in 2026-08. The withdrawn claim stays withdrawn: it was measured on a file that cannot be identified, and agreeing with a later run is not evidence about an unidentifiable one.",
    "produced_by": [
@@ -9546,7 +9757,13 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
+   "withdrawn_on": "2026-09-05",
+   "pending_remeasure": true
   },
   {
    "id": "h2h_pinned.nevertwice.recall_at_1",
@@ -9568,9 +9785,7 @@
     "low": 0.5062,
     "high": 0.5931
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "2b0715f320aa7d6ff6ebabf3f84117d4aab844f1",
    "note": "Same 940-session pool, same 500 questions, same local bge-m3, same scoring function. Competitor versions are recorded in the artifact.",
    "produced_by": [
@@ -9594,7 +9809,13 @@
     "research/locomo_eval.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
+   "withdrawn_on": "2026-09-05",
+   "pending_remeasure": true
   },
   {
    "id": "h2h_pinned.nevertwice.recall_at_5",
@@ -9616,10 +9837,7 @@
     "low": 0.7648,
     "high": 0.8346
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md",
-    "README.md"
-   ],
+   "cited_in": [],
    "commit": "2b0715f320aa7d6ff6ebabf3f84117d4aab844f1",
    "note": "Same 940-session pool, same 500 questions, same local bge-m3, same scoring function. Competitor versions are recorded in the artifact.",
    "produced_by": [
@@ -9643,7 +9861,14 @@
     "research/locomo_eval.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md",
+    "README.md"
+   ],
+   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
+   "withdrawn_on": "2026-09-05",
+   "pending_remeasure": true
   },
   {
    "id": "h2h_pinned.nevertwice.recall_at_10",
@@ -9689,7 +9914,11 @@
     "research/locomo_eval.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
+   "withdrawn_on": "2026-09-05",
+   "pending_remeasure": true
   },
   {
    "id": "h2h_pinned.nevertwice.mrr",
@@ -9706,9 +9935,7 @@
    "raw": "research/results/head_to_head_v2.json",
    "pointer": "nevertwice.mrr",
    "ci": null,
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "2b0715f320aa7d6ff6ebabf3f84117d4aab844f1",
    "produced_by": [
     "research/head_to_head.py",
@@ -9731,7 +9958,13 @@
     "research/locomo_eval.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
+   "withdrawn_on": "2026-09-05",
+   "pending_remeasure": true
   },
   {
    "id": "h2h_pinned.mem0.recall_at_1",
@@ -9753,9 +9986,7 @@
     "low": 0.4346,
     "high": 0.5218
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "2b0715f320aa7d6ff6ebabf3f84117d4aab844f1",
    "note": "Same 940-session pool, same 500 questions, same local bge-m3, same scoring function. Competitor versions are recorded in the artifact.",
    "produced_by": [
@@ -9779,7 +10010,13 @@
     "research/locomo_eval.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
+   "withdrawn_on": "2026-09-05",
+   "pending_remeasure": true
   },
   {
    "id": "h2h_pinned.mem0.recall_at_5",
@@ -9801,10 +10038,7 @@
     "low": 0.7186,
     "high": 0.7935
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md",
-    "README.md"
-   ],
+   "cited_in": [],
    "commit": "2b0715f320aa7d6ff6ebabf3f84117d4aab844f1",
    "note": "Same 940-session pool, same 500 questions, same local bge-m3, same scoring function. Competitor versions are recorded in the artifact.",
    "produced_by": [
@@ -9828,7 +10062,14 @@
     "research/locomo_eval.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md",
+    "README.md"
+   ],
+   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
+   "withdrawn_on": "2026-09-05",
+   "pending_remeasure": true
   },
   {
    "id": "h2h_pinned.mem0.recall_at_10",
@@ -9874,7 +10115,11 @@
     "research/locomo_eval.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
+   "withdrawn_on": "2026-09-05",
+   "pending_remeasure": true
   },
   {
    "id": "h2h_pinned.mem0.mrr",
@@ -9891,9 +10136,7 @@
    "raw": "research/results/head_to_head_v2.json",
    "pointer": "mem0.mrr",
    "ci": null,
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "2b0715f320aa7d6ff6ebabf3f84117d4aab844f1",
    "produced_by": [
     "research/head_to_head.py",
@@ -9916,7 +10159,13 @@
     "research/locomo_eval.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
+   "withdrawn_on": "2026-09-05",
+   "pending_remeasure": true
   },
   {
    "id": "h2h_pinned.langmem.recall_at_1",
@@ -9938,9 +10187,7 @@
     "low": 0.3834,
     "high": 0.4697
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "2b0715f320aa7d6ff6ebabf3f84117d4aab844f1",
    "note": "Same 940-session pool, same 500 questions, same local bge-m3, same scoring function. Competitor versions are recorded in the artifact.",
    "produced_by": [
@@ -9964,7 +10211,13 @@
     "research/locomo_eval.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
+   "withdrawn_on": "2026-09-05",
+   "pending_remeasure": true
   },
   {
    "id": "h2h_pinned.langmem.recall_at_5",
@@ -9986,10 +10239,7 @@
     "low": 0.6502,
     "high": 0.7309
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md",
-    "README.md"
-   ],
+   "cited_in": [],
    "commit": "2b0715f320aa7d6ff6ebabf3f84117d4aab844f1",
    "note": "Same 940-session pool, same 500 questions, same local bge-m3, same scoring function. Competitor versions are recorded in the artifact.",
    "produced_by": [
@@ -10013,7 +10263,14 @@
     "research/locomo_eval.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md",
+    "README.md"
+   ],
+   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
+   "withdrawn_on": "2026-09-05",
+   "pending_remeasure": true
   },
   {
    "id": "h2h_pinned.langmem.recall_at_10",
@@ -10059,7 +10316,11 @@
     "research/locomo_eval.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
+   "withdrawn_on": "2026-09-05",
+   "pending_remeasure": true
   },
   {
    "id": "h2h_pinned.langmem.mrr",
@@ -10076,9 +10337,7 @@
    "raw": "research/results/head_to_head_v2.json",
    "pointer": "langmem.mrr",
    "ci": null,
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "2b0715f320aa7d6ff6ebabf3f84117d4aab844f1",
    "produced_by": [
     "research/head_to_head.py",
@@ -10101,7 +10360,13 @@
     "research/locomo_eval.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
+   "withdrawn_on": "2026-09-05",
+   "pending_remeasure": true
   },
   {
    "id": "h2h_pinned.amem.recall_at_1",
@@ -10123,9 +10388,7 @@
     "low": 0.3853,
     "high": 0.4718
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "2b0715f320aa7d6ff6ebabf3f84117d4aab844f1",
    "note": "Same 940-session pool, same 500 questions, same local bge-m3, same scoring function. Competitor versions are recorded in the artifact.",
    "produced_by": [
@@ -10149,7 +10412,13 @@
     "research/locomo_eval.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
+   "withdrawn_on": "2026-09-05",
+   "pending_remeasure": true
   },
   {
    "id": "h2h_pinned.amem.recall_at_5",
@@ -10171,10 +10440,7 @@
     "low": 0.6502,
     "high": 0.7309
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md",
-    "README.md"
-   ],
+   "cited_in": [],
    "commit": "2b0715f320aa7d6ff6ebabf3f84117d4aab844f1",
    "note": "Same 940-session pool, same 500 questions, same local bge-m3, same scoring function. Competitor versions are recorded in the artifact.",
    "produced_by": [
@@ -10198,7 +10464,14 @@
     "research/locomo_eval.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md",
+    "README.md"
+   ],
+   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
+   "withdrawn_on": "2026-09-05",
+   "pending_remeasure": true
   },
   {
    "id": "h2h_pinned.amem.recall_at_10",
@@ -10244,7 +10517,11 @@
     "research/locomo_eval.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
+   "withdrawn_on": "2026-09-05",
+   "pending_remeasure": true
   },
   {
    "id": "h2h_pinned.amem.mrr",
@@ -10261,9 +10538,7 @@
    "raw": "research/results/head_to_head_v2.json",
    "pointer": "amem.mrr",
    "ci": null,
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "2b0715f320aa7d6ff6ebabf3f84117d4aab844f1",
    "produced_by": [
     "research/head_to_head.py",
@@ -10286,7 +10561,13 @@
     "research/locomo_eval.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
+   "withdrawn_on": "2026-09-05",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_pinned.xrerank.delta_recall_at_1",
@@ -10326,7 +10607,11 @@
     "research/corpus_pin.py",
     "sandbox_guard.py"
    ],
-   "derivation": "methods['hybrid+xrerank'].recall@1 minus methods.hybrid.recall@1 in the same result file: a paired difference on the same questions and the same first-stage top-10, so it isolates the reranker"
+   "derivation": "methods['hybrid+xrerank'].recall@1 minus methods.hybrid.recall@1 in the same result file: a paired difference on the same questions and the same first-stage top-10, so it isolates the reranker",
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
+   "withdrawn_on": "2026-09-05",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_pinned.dataset.questions",
@@ -10343,9 +10628,7 @@
    "raw": "research/results/longmem_oracle.json",
    "pointer": "questions",
    "ci": null,
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "2b0715f320aa7d6ff6ebabf3f84117d4aab844f1",
    "produced_by": [
     "research/longmem_eval.py",
@@ -10366,7 +10649,13 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
+   "withdrawn_on": "2026-09-05",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_s.semantic.recall_at_1",
@@ -10388,9 +10677,7 @@
     "low": 0.1562,
     "high": 0.2246
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "2b0715f320aa7d6ff6ebabf3f84117d4aab844f1",
    "note": "The standard non-oracle pool: 19,206 unique haystack sessions against the oracle variant's 940, so every question ranks a haystack twenty-one times larger. Same embedder, same scoring function, same human-annotated ground truth.",
    "produced_by": [
@@ -10412,7 +10699,13 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
+   "withdrawn_on": "2026-09-05",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_s.semantic.recall_at_5",
@@ -10434,9 +10727,7 @@
     "low": 0.3037,
     "high": 0.3867
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "2b0715f320aa7d6ff6ebabf3f84117d4aab844f1",
    "note": "The standard non-oracle pool: 19,206 unique haystack sessions against the oracle variant's 940, so every question ranks a haystack twenty-one times larger. Same embedder, same scoring function, same human-annotated ground truth.",
    "produced_by": [
@@ -10458,7 +10749,13 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
+   "withdrawn_on": "2026-09-05",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_s.semantic.recall_at_10",
@@ -10502,7 +10799,11 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
+   "withdrawn_on": "2026-09-05",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_s.semantic.mrr",
@@ -10519,9 +10820,7 @@
    "raw": "research/results/longmem_s.json",
    "pointer": "methods.semantic.mrr",
    "ci": null,
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "2b0715f320aa7d6ff6ebabf3f84117d4aab844f1",
    "note": "The standard non-oracle pool: 19,206 unique haystack sessions against the oracle variant's 940, so every question ranks a haystack twenty-one times larger. Same embedder, same scoring function, same human-annotated ground truth.",
    "produced_by": [
@@ -10543,7 +10842,13 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
+   "withdrawn_on": "2026-09-05",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_s.lexical.recall_at_1",
@@ -10565,9 +10870,7 @@
     "low": 0.2065,
     "high": 0.2814
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "2b0715f320aa7d6ff6ebabf3f84117d4aab844f1",
    "note": "The standard non-oracle pool: 19,206 unique haystack sessions against the oracle variant's 940, so every question ranks a haystack twenty-one times larger. Same embedder, same scoring function, same human-annotated ground truth.",
    "produced_by": [
@@ -10589,7 +10892,13 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
+   "withdrawn_on": "2026-09-05",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_s.lexical.recall_at_5",
@@ -10611,9 +10920,7 @@
     "low": 0.3991,
     "high": 0.4858
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "2b0715f320aa7d6ff6ebabf3f84117d4aab844f1",
    "note": "The standard non-oracle pool: 19,206 unique haystack sessions against the oracle variant's 940, so every question ranks a haystack twenty-one times larger. Same embedder, same scoring function, same human-annotated ground truth.",
    "produced_by": [
@@ -10635,7 +10942,13 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
+   "withdrawn_on": "2026-09-05",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_s.lexical.recall_at_10",
@@ -10679,7 +10992,11 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
+   "withdrawn_on": "2026-09-05",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_s.lexical.mrr",
@@ -10696,9 +11013,7 @@
    "raw": "research/results/longmem_s.json",
    "pointer": "methods.lexical.mrr",
    "ci": null,
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "2b0715f320aa7d6ff6ebabf3f84117d4aab844f1",
    "note": "The standard non-oracle pool: 19,206 unique haystack sessions against the oracle variant's 940, so every question ranks a haystack twenty-one times larger. Same embedder, same scoring function, same human-annotated ground truth.",
    "produced_by": [
@@ -10720,7 +11035,13 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
+   "withdrawn_on": "2026-09-05",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_s.hybrid.recall_at_1",
@@ -10742,9 +11063,7 @@
     "low": 0.2273,
     "high": 0.3043
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "2b0715f320aa7d6ff6ebabf3f84117d4aab844f1",
    "note": "The standard non-oracle pool: 19,206 unique haystack sessions against the oracle variant's 940, so every question ranks a haystack twenty-one times larger. Same embedder, same scoring function, same human-annotated ground truth.",
    "produced_by": [
@@ -10766,7 +11085,13 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
+   "withdrawn_on": "2026-09-05",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_s.hybrid.recall_at_5",
@@ -10788,9 +11113,7 @@
     "low": 0.4089,
     "high": 0.4958
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "2b0715f320aa7d6ff6ebabf3f84117d4aab844f1",
    "note": "The standard non-oracle pool: 19,206 unique haystack sessions against the oracle variant's 940, so every question ranks a haystack twenty-one times larger. Same embedder, same scoring function, same human-annotated ground truth.",
    "produced_by": [
@@ -10812,7 +11135,13 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
+   "withdrawn_on": "2026-09-05",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_s.hybrid.recall_at_10",
@@ -10856,7 +11185,11 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
+   "withdrawn_on": "2026-09-05",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_s.hybrid.mrr",
@@ -10873,9 +11206,7 @@
    "raw": "research/results/longmem_s.json",
    "pointer": "methods.hybrid.mrr",
    "ci": null,
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "2b0715f320aa7d6ff6ebabf3f84117d4aab844f1",
    "note": "The standard non-oracle pool: 19,206 unique haystack sessions against the oracle variant's 940, so every question ranks a haystack twenty-one times larger. Same embedder, same scoring function, same human-annotated ground truth.",
    "produced_by": [
@@ -10897,7 +11228,13 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
+   "withdrawn_on": "2026-09-05",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_s.dataset.pool_sessions",
@@ -10915,9 +11252,7 @@
    "raw": "research/results/longmem_s.json",
    "pointer": "sessions",
    "ci": null,
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "2b0715f320aa7d6ff6ebabf3f84117d4aab844f1",
    "produced_by": [
     "research/longmem_eval.py",
@@ -10938,7 +11273,13 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
+   "withdrawn_on": "2026-09-05",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_pinned.dataset.pool_sessions",
@@ -10955,9 +11296,7 @@
    "raw": "research/results/longmem_oracle.json",
    "pointer": "sessions",
    "ci": null,
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "2b0715f320aa7d6ff6ebabf3f84117d4aab844f1",
    "produced_by": [
     "research/longmem_eval.py",
@@ -10978,7 +11317,13 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
+   "withdrawn_on": "2026-09-05",
+   "pending_remeasure": true
   },
   {
    "id": "locomo.semantic.recall_at_1",
@@ -11000,9 +11345,7 @@
     "low": 0.1657,
     "high": 0.1997
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "2b0715f320aa7d6ff6ebabf3f84117d4aab844f1",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
@@ -11025,7 +11368,13 @@
     "research/corpus_pin.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
+   "withdrawn_on": "2026-09-05",
+   "pending_remeasure": true
   },
   {
    "id": "locomo.semantic.recall_at_5",
@@ -11047,9 +11396,7 @@
     "low": 0.4108,
     "high": 0.4544
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "2b0715f320aa7d6ff6ebabf3f84117d4aab844f1",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
@@ -11072,7 +11419,13 @@
     "research/corpus_pin.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
+   "withdrawn_on": "2026-09-05",
+   "pending_remeasure": true
   },
   {
    "id": "locomo.semantic.recall_at_10",
@@ -11094,9 +11447,7 @@
     "low": 0.538,
     "high": 0.5817
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "2b0715f320aa7d6ff6ebabf3f84117d4aab844f1",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
@@ -11119,7 +11470,13 @@
     "research/corpus_pin.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
+   "withdrawn_on": "2026-09-05",
+   "pending_remeasure": true
   },
   {
    "id": "locomo.semantic.mrr",
@@ -11136,9 +11493,7 @@
    "raw": "research/results/locomo.json",
    "pointer": "methods.semantic.mrr",
    "ci": null,
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "2b0715f320aa7d6ff6ebabf3f84117d4aab844f1",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
@@ -11161,7 +11516,13 @@
     "research/corpus_pin.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
+   "withdrawn_on": "2026-09-05",
+   "pending_remeasure": true
   },
   {
    "id": "locomo.lexical.recall_at_1",
@@ -11183,9 +11544,7 @@
     "low": 0.2515,
     "high": 0.2906
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "2b0715f320aa7d6ff6ebabf3f84117d4aab844f1",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
@@ -11208,7 +11567,13 @@
     "research/corpus_pin.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
+   "withdrawn_on": "2026-09-05",
+   "pending_remeasure": true
   },
   {
    "id": "locomo.lexical.recall_at_5",
@@ -11230,9 +11595,7 @@
     "low": 0.4772,
     "high": 0.5213
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "2b0715f320aa7d6ff6ebabf3f84117d4aab844f1",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
@@ -11255,7 +11618,13 @@
     "research/corpus_pin.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
+   "withdrawn_on": "2026-09-05",
+   "pending_remeasure": true
   },
   {
    "id": "locomo.lexical.recall_at_10",
@@ -11277,9 +11646,7 @@
     "low": 0.5542,
     "high": 0.5977
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "2b0715f320aa7d6ff6ebabf3f84117d4aab844f1",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
@@ -11302,7 +11669,13 @@
     "research/corpus_pin.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
+   "withdrawn_on": "2026-09-05",
+   "pending_remeasure": true
   },
   {
    "id": "locomo.lexical.mrr",
@@ -11319,9 +11692,7 @@
    "raw": "research/results/locomo.json",
    "pointer": "methods.lexical.mrr",
    "ci": null,
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "2b0715f320aa7d6ff6ebabf3f84117d4aab844f1",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
@@ -11344,7 +11715,13 @@
     "research/corpus_pin.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
+   "withdrawn_on": "2026-09-05",
+   "pending_remeasure": true
   },
   {
    "id": "locomo.hybrid.recall_at_1",
@@ -11366,9 +11743,7 @@
     "low": 0.2737,
     "high": 0.3138
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "2b0715f320aa7d6ff6ebabf3f84117d4aab844f1",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
@@ -11391,7 +11766,13 @@
     "research/corpus_pin.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
+   "withdrawn_on": "2026-09-05",
+   "pending_remeasure": true
   },
   {
    "id": "locomo.hybrid.recall_at_5",
@@ -11413,9 +11794,7 @@
     "low": 0.5273,
     "high": 0.5711
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "2b0715f320aa7d6ff6ebabf3f84117d4aab844f1",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
@@ -11438,7 +11817,13 @@
     "research/corpus_pin.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
+   "withdrawn_on": "2026-09-05",
+   "pending_remeasure": true
   },
   {
    "id": "locomo.hybrid.recall_at_10",
@@ -11460,9 +11845,7 @@
     "low": 0.6123,
     "high": 0.6547
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "2b0715f320aa7d6ff6ebabf3f84117d4aab844f1",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
@@ -11485,7 +11868,13 @@
     "research/corpus_pin.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
+   "withdrawn_on": "2026-09-05",
+   "pending_remeasure": true
   },
   {
    "id": "locomo.hybrid.mrr",
@@ -11502,9 +11891,7 @@
    "raw": "research/results/locomo.json",
    "pointer": "methods.hybrid.mrr",
    "ci": null,
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "2b0715f320aa7d6ff6ebabf3f84117d4aab844f1",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
@@ -11527,7 +11914,13 @@
     "research/corpus_pin.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
+   "withdrawn_on": "2026-09-05",
+   "pending_remeasure": true
   },
   {
    "id": "locomo.dataset.questions_scored",
@@ -11545,9 +11938,7 @@
    "raw": "research/results/locomo.json",
    "pointer": "questions",
    "ci": null,
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "2b0715f320aa7d6ff6ebabf3f84117d4aab844f1",
    "produced_by": [
     "research/locomo_eval.py",
@@ -11569,7 +11960,13 @@
     "research/corpus_pin.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
+   "withdrawn_on": "2026-09-05",
+   "pending_remeasure": true
   },
   {
    "id": "locomo.dataset.questions_total",
@@ -11587,9 +11984,7 @@
    "raw": "research/results/locomo.json",
    "pointer": null,
    "ci": null,
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "2b0715f320aa7d6ff6ebabf3f84117d4aab844f1",
    "derivation": "the corpus record in research/corpus_pin.py; the result file carries only the scoreable subset",
    "produced_by": [
@@ -11612,7 +12007,13 @@
     "research/corpus_pin.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
+   "withdrawn_on": "2026-09-05",
+   "pending_remeasure": true
   },
   {
    "id": "locomo.dataset.turns",
@@ -11630,9 +12031,7 @@
    "raw": "research/results/locomo.json",
    "pointer": "turns",
    "ci": null,
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "2b0715f320aa7d6ff6ebabf3f84117d4aab844f1",
    "produced_by": [
     "research/locomo_eval.py",
@@ -11654,7 +12053,13 @@
     "research/corpus_pin.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
+   "withdrawn_on": "2026-09-05",
+   "pending_remeasure": true
   }
  ],
  "external_citations": [
@@ -11761,6 +12166,16 @@
    "pattern": "^(2\\.0|19)$",
    "context": "Mem0 2\\.0\\.19",
    "reason": "the Mem0 release under test - a version string, tokenised as 2.0 and 19"
+  },
+  {
+   "pattern": "^25$",
+   "context": "BM25",
+   "reason": "the digits of BM25, the name of a ranking function; covered until 2026-09 by a live claim that happened to print 25%"
+  },
+  {
+   "pattern": "^25$",
+   "context": "\\d+-second",
+   "reason": "the length of the recall demo in seconds - a description of a script, not a measurement"
   }
  ],
  "drift_note": "A drift entry records a number a document prints that the stored raw result contradicts. All five entries opened by task B1 were closed by task B2: the tables are generated from this manifest now, and the prose around them was corrected to the stored values. Open a new entry when a published figure is found to disagree and cannot be corrected in the same change; the test fails once the document no longer prints it, so an entry cannot outlive its fix.",

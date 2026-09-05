@@ -173,6 +173,7 @@ After setting `NEVERTWICE_EMBED_QUANT`, rebuild the index once the same way.
 | `NEVERTWICE_AGENT` | `claude-code` | Agent label stamped on captured notes. |
 | `NEVERTWICE_TRACK_ANY_PROJECT` | `1` | Track any git repo you work in, beyond the configured roots. |
 | `NEVERTWICE_MAX_TRANSCRIPT` | `12000` | Max transcript chars sent to extraction. |
+| `NEVERTWICE_REMINE_MIN_GROWTH` | `1` | JSONL bytes a processed transcript must grow by before it is mined again. Any growth by default: a re-mine reads only the new region, and a floor of one extractor window lost the tail of every session that ended within it. |
 | `NEVERTWICE_MAX_SWEEP_BYTES` | `10485760` | Per-file cap for the `--dir` sweep / `watch` (DoS guard). |
 | `NEVERTWICE_SWEEP_DAYS` | `30` | Only sweep transcripts modified in the last N days. |
 | `NEVERTWICE_SWEEP_CAP` | `8` | Max transcripts processed per SessionStart catch-up. |
@@ -198,7 +199,8 @@ machine and against a cloud coding agent.
 | Variable | Default | Notes |
 |---|---|---|
 | `NEVERTWICE_GUARD_PACK` | `0` | `1` installs the **universal guard pack** at consolidation: high-precision, almost-always-a-smell pitfalls (eval, `shell=True`, `verify=False`, `pickle.loads`, `== None`, bare `except`, `yaml.load`, weak hashes, …) that fire from the first session with no history and no model. Advisory-only and never promotes to blocking. Add anytime with `python -m nevertwice.guards pack`. |
-| `NEVERTWICE_GUARD_PROMOTE` | `3` | Distinct-session corroborations before an advisory guard earns `blocking` (pack guards never promote). |
+| `NEVERTWICE_GUARD_PROMOTE` | `3` | Distinct-session corroborations before an advisory guard earns `blocking` (pack guards never promote). Corroboration is feedback (`guards feedback <id> accepted`), never the guard merely matching. |
+| `NEVERTWICE_GUARD_SEEN_CAP` | `50` | How many session ids a guard remembers, for both its support list and its delivery list (a guard stays silent on a repeat within a session it was already delivered to). |
 | `NEVERTWICE_GUARD_RETIRE` | `3` | False positives before a guard demotes / self-retires. |
 | `NEVERTWICE_GUARD_ENFORCE` | `0` | `1` lets a `blocking` guard actually deny the PreToolUse edit; default only warns (advisory). |
 | `NEVERTWICE_ANTICIPATE_TAU` | `0.22` | Min trajectory-resemblance risk before anticipation surfaces one warning (silent below). |

@@ -34,8 +34,10 @@ MANIFEST = ROOT / "research" / "evidence_manifest.json"
 #: command, not a claim the page is making.
 FENCE = re.compile(r"```.*?```", re.S)
 
-#: Any of these anywhere on the page means the page already qualifies its own numbers.
-MARKERS = ("withdrawn", "WITHDRAWN", "retracted", "RETRACTED")
+#: Either of these anywhere on the page, in any case, means the page already qualifies its own
+#: numbers. The first version matched only all-lower and all-upper forms, so a page that opened
+#: with "**Withdrawn 2026-09-05, pending a re-run.**" was stamped a second time.
+MARKERS = ("withdrawn", "retracted")
 
 BANNER_ID = "<!-- withdrawn-banner -->"
 #: No count in the banner, for two reasons. A count is itself a number on the page, and four
@@ -43,10 +45,10 @@ BANNER_ID = "<!-- withdrawn-banner -->"
 #: stale the moment the register changes - a correction that needs correcting.
 BANNER = (
     BANNER_ID + "\n"
-    "> **Withdrawn: figures on this page must not be quoted.** They were retracted in 2026-08\n"
-    "> and remain here because deleting a result one was wrong about destroys the record of\n"
-    "> having been wrong. The design, the method and the caveats stand; the numbers do not.\n"
-    "> Each figure's own reason is in\n"
+    "> **Withdrawn: figures on this page must not be quoted.** They were retracted and remain\n"
+    "> here because deleting a result one was wrong about destroys the record of having been\n"
+    "> wrong. The design, the method and the caveats stand; the numbers do not. Each figure's\n"
+    "> own reason and date are in\n"
     "> [`research/evidence_manifest.json`]({link}), and\n"
     "> `python tools/check_freshness.py --list-stale` lists every one.\n"
 )
@@ -68,8 +70,9 @@ def _link_from(rel: str) -> str:
 _PRECISE = re.compile(r"^\d+\.\d{3,}$|^\d{2,}(\.\d+)?%$")
 #: Two decimals: weak on its own, usable in company.
 _COARSE = re.compile(r"^\d+\.\d{2}$|^\d+(\.\d+)?%$")
-#: A mantissa of nothing but zeros identifies no study.
-_ROUND = re.compile(r"^[01]\.0+$")
+#: A mantissa of nothing but zeros identifies no study, and neither does an all-or-nothing rate:
+#: `100%` and `0%` appear wherever a defence held or a count was empty.
+_ROUND = re.compile(r"^[01]\.0+$|^(0|100)(\.0+)?%$")
 
 
 def _strength(printed: str) -> int:
@@ -148,7 +151,7 @@ def needs_banner(path: Path, claims: list[dict], live: set[str] | None = None
                  ) -> list[tuple[str, str]]:
     """The figures that oblige this page to carry a banner, or an empty list."""
     text = path.read_text(encoding="utf-8", errors="replace")
-    if any(m in text for m in MARKERS):
+    if any(m in text.lower() for m in MARKERS):
         return []
     figs = figures_on_page(text, claims, live)
     return figs if any(_strength(pr) >= STAMP_AT for _cid, pr in figs) else []

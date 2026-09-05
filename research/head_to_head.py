@@ -51,12 +51,32 @@ MAXCHARS = le.MAXCHARS
 OLLAMA_BASE = os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434")
 EMBED_MODEL = os.environ.get("NEVERTWICE_EMBED_MODEL", "bge-m3")    # same embedder for all → fair
 COMP_LLM = os.environ.get("H2H_LLM", "qwen2.5:3b")                 # competitor extraction LLM
+COMP_NUM_CTX = int(os.environ.get("H2H_NUM_CTX", "16384"))         # where the client can set it
 
 # The pip package each adapter actually imports, so the run records the versions it compared
 # against - "same stand, reproducible" is only credible if the competitor versions are pinned in
 # the output rather than left to whatever happened to be installed (critic 2026-07).
-_PKG = {"mem0": "mem0ai", "langmem": "langmem", "amem": "chromadb",
+_PKG = {"mem0": "mem0ai", "mem0_infer": "mem0ai", "langmem": "langmem",
+        "langmem_full": "langmem", "amem": "chromadb", "amem_full": "a-mem",
         "cognee": "cognee", "zep": "graphiti-core", "nevertwice": "nevertwice"}
+
+# What each competitor arm actually exercises. The first version of this stand called the
+# store arms "LangMem" and "A-MEM": LangGraph's InMemoryStore search is LangMem's storage
+# layer with none of its memory manager, and chromadb cosine over the same vectors is
+# A-MEM's vector store with none of its LLM note construction or link evolution. A reader
+# took those rows as the products (review 2026-09-05). The `*_full` arms run the products'
+# own pipelines, LLM included; the store arms stay, labelled as what they are, because they
+# isolate the retrieval layer the way the Nevertwice arm does.
+ARM_LABEL = {
+    "nevertwice": "Nevertwice (calibrated fusion, the shipped ranker)",
+    "mem0": "Mem0 store search (infer=False: no LLM extraction, one memory per item; "
+            "its default hybrid of dense cosine + fastembed BM25 when fastembed is installed)",
+    "mem0_infer": "Mem0 full pipeline (infer=True: its LLM fact extraction, then its search)",
+    "langmem": "LangGraph InMemoryStore semantic search (LangMem's store layer, no memory manager)",
+    "langmem_full": "LangMem full pipeline (create_memory_store_manager: LLM extraction into the store)",
+    "amem": "chromadb cosine over the same vectors (A-MEM's vector store, no LLM notes, no links)",
+    "amem_full": "A-MEM full pipeline (agentic_memory: LLM note construction, link evolution)",
+}
 
 
 def _pkg_ver(system: str) -> str:
@@ -76,7 +96,8 @@ def _pkg_ver(system: str) -> str:
 
 def _args():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--only", default="", help="comma list: nevertwice,mem0,langmem,amem,cognee,zep")
+    ap.add_argument("--only", default="", help="comma list: nevertwice,mem0,mem0_infer,langmem,"
+                    "langmem_full,amem,amem_full,cognee,zep")
     ap.add_argument("--limit", type=int, default=None, help="first N questions (fast smoke)")
     ap.add_argument("--mem0-infer", action="store_true", help="Mem0 with its LLM fact-extraction (slow)")
     ap.add_argument("--sessions", type=int, default=None, help="cap ingested sessions (testing only)")
@@ -180,15 +201,14 @@ def run_nevertwice(data, pool) -> dict:
 
     emb = le._emb_path()
     if not emb.exists():
-        res = HERE / "longmem_results.json"
-        if not res.exists():
-            return {"blocked": "no embed cache and no longmem_results.json - run longmem_eval.py --embed --save"}
-        d = json.loads(res.read_text(encoding="utf-8")).get("methods", {}).get("hybrid", {})
-        return {"recall@1": d.get("recall@1"), "recall@5": d.get("recall@5"),
-                "recall@10": d.get("recall@10"), "mrr": d.get("mrr"),
-                "note": "from committed file (embed cache absent - not re-scored on this subset)",
-                "setup": "local bge-m3 via Ollama (0 deps, no server)"}
+        # No fallback to an older result file: that path once answered with the withdrawn
+        # July numbers under a fresh timestamp. A stand measures or it blocks.
+        return {"blocked": f"no embed cache at {emb.name} - run `python research/longmem_eval.py "
+                           f"--embed` (add --data=s for the standard pool)"}
     cache = json.loads(emb.read_text(encoding="utf-8"))
+    if not le.cache_ok(cache):
+        return {"blocked": f"{emb.name} was built under a different embedding cap or model - "
+                           f"run `python research/longmem_eval.py --embed`"}
     svec, qvec = cache["sessions"], cache["questions"]
     pool_ids = [s for s in pool if s in svec]
     toks_lists = {s: m._token_list(pool[s]) for s in pool_ids}
@@ -207,20 +227,25 @@ def run_nevertwice(data, pool) -> dict:
         ranked[qid] = sorted(cal, key=lambda s: (-cal[s], s))[:max(KS)]
     sc = score(ranked, data, list(pool))
     sc["query_s"] = round(time.time() - t0, 1)
+    sc["embed_chars"] = le.MAXCHARS
     sc["setup"] = "local bge-m3 via Ollama (calibrated fusion; 0 deps, no server, no DB)"
     return sc
 
 
+def _bench_dir() -> Path:
+    return Path(os.environ.get("H2H_DATA") or (Path(tempfile.gettempdir()) / "nevertwice_h2h"))
+
+
 # ── Mem0 (LOCAL: Ollama LLM + bge-m3 embedder + embedded qdrant) ──────────────
 
-def run_mem0(data, pool) -> dict:
+def run_mem0(data, pool, infer=None) -> dict:
     try:
         from mem0 import Memory
     except ImportError:
         return {"blocked": "mem0 not installed - `pip install mem0ai ollama`"}
-    infer = ARGS.mem0_infer
-    bench_dir = Path(os.environ.get("H2H_DATA") or (Path(tempfile.gettempdir()) / "nevertwice_h2h"))
-    store = bench_dir / "qdrant_mem0"
+    infer = ARGS.mem0_infer if infer is None else infer
+    bench_dir = _bench_dir()
+    store = bench_dir / ("qdrant_mem0_infer" if infer else "qdrant_mem0")
     try:
         import shutil
         shutil.rmtree(store, ignore_errors=True)
@@ -257,8 +282,21 @@ def run_mem0(data, pool) -> dict:
     sc["query_s"] = round(query_s, 1)
     sc["mode"] = f"infer={infer} ({'LLM ' + COMP_LLM if infer else 'retrieval-only, 1 memory/session'})"
     sc["embedder"] = f"ollama {EMBED_MODEL}"
+    # Mem0's search is hybrid by default once fastembed is present: dense cosine plus its
+    # BM25 sparse vector (Qdrant/bm25), scored additively; the spaCy entity boost is off
+    # because spaCy is not installed. Recorded so the row is read as what it is.
+    try:
+        import fastembed                                       # noqa: F401
+        sc["search"] = "dense cosine + fastembed BM25 (Mem0 default hybrid); entity boost off"
+    except ImportError:
+        sc["search"] = "dense cosine only (fastembed absent)"
     sc["setup"] = "pip install mem0ai ollama fastembed; embedded qdrant (no server)"
     return sc
+
+
+def run_mem0_infer(data, pool) -> dict:
+    """Mem0 with its LLM extraction on - the product as shipped, not only its store."""
+    return run_mem0(data, pool, infer=True)
 
 
 # ── LangMem (LangGraph InMemoryStore semantic search + Ollama embeddings) ──────
@@ -294,6 +332,68 @@ def run_langmem(data, pool) -> dict:
     sc["ingest_s"] = round(ingest_s, 1)
     sc["query_s"] = round(query_s, 1)
     sc["embedder"] = f"ollama {EMBED_MODEL}"
+    sc["mode"] = "store search only: LangGraph InMemoryStore, no memory manager, no LLM"
+    sc["setup"] = "pip install langgraph langmem langchain-ollama (no server)"
+    return sc
+
+
+def run_langmem_full(data, pool) -> dict:
+    """LangMem's own pipeline: `create_memory_store_manager` extracts memories with an LLM
+    into a LangGraph store, one namespace per item, and the store is searched with the
+    same embedder as everyone else. The namespace maps a hit back to its session."""
+    try:
+        from langmem import create_memory_store_manager
+        from langgraph.store.memory import InMemoryStore
+        from langchain_ollama import ChatOllama, OllamaEmbeddings
+    except ImportError as e:
+        return {"blocked": f"langmem pipeline needs langmem, langgraph, langchain-ollama ({e})"}
+    try:
+        emb = OllamaEmbeddings(model=EMBED_MODEL, base_url=OLLAMA_BASE)
+        store = InMemoryStore(index={"embed": emb, "dims": 1024, "fields": ["$"]})
+        llm = ChatOllama(model=COMP_LLM, base_url=OLLAMA_BASE, temperature=0.0,
+                         num_ctx=COMP_NUM_CTX)
+        manager = create_memory_store_manager(llm, store=store, enable_inserts=True,
+                                              enable_deletes=False,
+                                              namespace=("memories", "{langgraph_user_id}"))
+        items = list(pool.items())
+        if ARGS.sessions:
+            items = items[:ARGS.sessions]
+        errors = 0
+        t0 = time.time()
+        for sid, txt in items:
+            try:
+                manager.invoke({"messages": [{"role": "user", "content": txt}]},
+                               config={"configurable": {"langgraph_user_id": sid}})
+            except Exception as e:                            # noqa: BLE001 - counted, reported
+                errors += 1
+                if errors <= 3:
+                    print(f"  langmem_full: {sid[:12]} {type(e).__name__}: {str(e)[:120]}")
+        ingest_s = time.time() - t0
+        n_mem = sum(1 for _ in store.search(("memories",), limit=10 ** 6))
+        t1 = time.time()
+        ranked = {}
+        for e in data:
+            res = store.search(("memories",), query=e["question"], limit=max(KS) * 4)
+            sids = []
+            for it in res:
+                ns = tuple(it.namespace)
+                if len(ns) >= 2 and ns[1] not in sids:
+                    sids.append(ns[1])
+            ranked[e["question_id"]] = sids[:max(KS)]
+        query_s = time.time() - t1
+    except Exception as e:
+        return {"blocked": f"LangMem pipeline failed ({type(e).__name__}: {e})"}
+    if items and errors > 0.1 * len(items):
+        return {"blocked": f"LangMem pipeline: {errors} of {len(items)} items failed extraction",
+                "errors": errors}
+    sc = score(ranked, data, list(pool))
+    sc["ingest_s"] = round(ingest_s, 1)
+    sc["query_s"] = round(query_s, 1)
+    sc["embedder"] = f"ollama {EMBED_MODEL}"
+    sc["extraction_errors"] = errors
+    sc["memories_written"] = n_mem
+    sc["mode"] = (f"full pipeline: create_memory_store_manager with {COMP_LLM} "
+                  f"(num_ctx {COMP_NUM_CTX}); store search over the extracted memories")
     sc["setup"] = "pip install langgraph langmem langchain-ollama (no server)"
     return sc
 
@@ -341,7 +441,120 @@ def run_amem(data, pool) -> dict:
     sc["ingest_s"] = round(ingest_s, 1)
     sc["query_s"] = round(query_s, 1)
     sc["embedder"] = f"ollama {EMBED_MODEL}"
+    sc["mode"] = "store search only: chromadb cosine, no LLM note construction, no link evolution"
     sc["setup"] = "pip install chromadb (A-MEM's vector store) + Ollama embeddings"
+    return sc
+
+
+class _OllamaChromaEF:
+    """A chromadb embedding function over the same Ollama endpoint every other arm uses.
+
+    A-MEM constructs its retriever with `SentenceTransformerEmbeddingFunction(model_name)`,
+    which would load bge-m3 through sentence-transformers - the same weights on a different
+    runtime. The stand's fairness premise is one embedder for everyone, so the retriever is
+    handed this instead. It implements the pieces of chroma's EmbeddingFunction protocol a
+    persistent collection asks for.
+    """
+
+    def __init__(self, model_name: str = ""):
+        self.model_name = model_name or EMBED_MODEL
+
+    def __call__(self, input):                                 # noqa: A002 - chroma's name
+        import urllib.request
+        out = []
+        for text in input:
+            req = urllib.request.Request(
+                f"{OLLAMA_BASE}/api/embed",
+                data=json.dumps({"model": EMBED_MODEL, "input": str(text)[:MAXCHARS]}).encode(),
+                headers={"Content-Type": "application/json"})
+            with urllib.request.urlopen(req, timeout=180) as r:
+                out.append(json.loads(r.read())["embeddings"][0])
+        return out
+
+    @staticmethod
+    def name() -> str:
+        return "nevertwice_ollama_ef"
+
+    def get_config(self) -> dict:
+        return {"model_name": self.model_name}
+
+    @staticmethod
+    def build_from_config(config: dict):
+        return _OllamaChromaEF(config.get("model_name", ""))
+
+    def default_space(self) -> str:
+        return "cosine"
+
+    def supported_spaces(self) -> list:
+        return ["cosine", "l2", "ip"]
+
+    @staticmethod
+    def validate_config(config: dict) -> None:
+        return None
+
+    def validate_config_update(self, old_config: dict, new_config: dict) -> None:
+        return None
+
+
+def run_amem_full(data, pool) -> dict:
+    """A-MEM's own pipeline (`agentic_memory`, the authors' package): every item becomes a
+    note through its LLM analysis (keywords, context, tags), is linked and possibly evolved
+    against its nearest neighbours by a second LLM call, and is searched through its own
+    `search_agentic`. The embedder is swapped for the stand's shared Ollama one; the LLM is
+    the same local model the other full-pipeline arms use."""
+    try:
+        import agentic_memory.retrievers as amr
+        from agentic_memory import AgenticMemorySystem
+    except ImportError:
+        return {"blocked": "a-mem not installed - `pip install a-mem` (its own venv is safer: "
+                           "it pins litellm, sentence-transformers, nltk)"}
+    import shutil
+    store = _bench_dir() / "chroma_amem_full"
+    shutil.rmtree(store, ignore_errors=True)
+    try:
+        amr.SentenceTransformerEmbeddingFunction = _OllamaChromaEF   # same embedder for everyone
+        sysm = AgenticMemorySystem(model_name=EMBED_MODEL, llm_backend="ollama",
+                                   llm_model=COMP_LLM, storage_path=str(store),
+                                   evo_threshold=100)
+        items = list(pool.items())
+        if ARGS.sessions:
+            items = items[:ARGS.sessions]
+        note_to_sid, silent = {}, 0
+        t0 = time.time()
+        for sid, txt in items:
+            nid = sysm.add_note(txt[:MAXCHARS])
+            note_to_sid[nid] = sid
+            note = sysm.read(nid)
+            # A-MEM's Ollama controller swallows a failed LLM call and returns an empty
+            # analysis, which would quietly turn this arm into the store arm. Count it.
+            if note is not None and not note.keywords and note.context == "General":
+                silent += 1
+        ingest_s = time.time() - t0
+        t1 = time.time()
+        ranked = {}
+        for e in data:
+            hits = sysm.search_agentic(e["question"], k=max(KS) * 2)
+            sids = []
+            for h in hits:
+                sid = note_to_sid.get(h.get("id"))
+                if sid and sid not in sids:
+                    sids.append(sid)
+            ranked[e["question_id"]] = sids[:max(KS)]
+        query_s = time.time() - t1
+    except Exception as e:
+        return {"blocked": f"A-MEM pipeline failed ({type(e).__name__}: {e})"}
+    if items and silent > 0.1 * len(items):
+        return {"blocked": f"A-MEM pipeline: {silent} of {len(items)} notes got no LLM analysis "
+                           f"(the controller hides failures) - not a measurement of A-MEM",
+                "silent_analyses": silent}
+    sc = score(ranked, data, list(pool))
+    sc["ingest_s"] = round(ingest_s, 1)
+    sc["query_s"] = round(query_s, 1)
+    sc["embedder"] = f"ollama {EMBED_MODEL} (chroma embedding function over the shared endpoint)"
+    sc["silent_analyses"] = silent
+    sc["mode"] = (f"full pipeline: agentic_memory with {COMP_LLM} via litellm (Ollama's own "
+                  f"context default); search_agentic over its notes")
+    sc["setup"] = "pip install a-mem (litellm, chromadb, sentence-transformers); Ollama LLM + embeddings"
     return sc
 
 
@@ -369,8 +582,9 @@ def run_cognee(data, pool) -> dict:
             "the heavy path (entity/relation extraction per session); run deliberately, not in a loop"}
 
 
-ADAPTERS = {"nevertwice": run_nevertwice, "mem0": run_mem0, "langmem": run_langmem,
-            "amem": run_amem, "cognee": run_cognee, "zep": run_zep}
+ADAPTERS = {"nevertwice": run_nevertwice, "mem0": run_mem0, "mem0_infer": run_mem0_infer,
+            "langmem": run_langmem, "langmem_full": run_langmem_full,
+            "amem": run_amem, "amem_full": run_amem_full, "cognee": run_cognee, "zep": run_zep}
 
 
 def _locomo():
@@ -443,6 +657,7 @@ def main():
         r = fn(data, pool)
         r["_wall_s"] = round(time.time() - t0, 1)
         r["version"] = _pkg_ver(name)          # record what we actually compared against
+        r["label"] = ARM_LABEL.get(name, name)
         results[name] = r
         if "blocked" in r:
             print(f"  BLOCKED: {r['blocked']}")
@@ -467,9 +682,11 @@ def main():
             print(f"  Nevertwice (hybrid) R@5 {a:.3f} - {verb} {k} ({v['recall@5']:.3f}, Δ{d:+.3f})")
     else:
         print("  Run ≥2 systems (e.g. --only=nevertwice,mem0) for a head-to-head verdict.")
-    print("  NB: same embedder (bge-m3) for everyone → this isolates the MEMORY pipeline, not the")
-    print("  embedder. Nevertwice uses calibrated score fusion (not rank-fusion); its opt-in trained")
-    print("  cross-encoder stacks further on top of this first stage.")
+    print(f"  NB: same embedder ({EMBED_MODEL}) and the same endpoint for everyone, every arm")
+    print(f"  embedding each item whole (cap {le.MAXCHARS:,} chars) → this isolates the MEMORY")
+    print("  pipeline, not the embedder. Store arms are labelled as store arms; the *_full arms")
+    print("  run each product's own LLM pipeline. Nevertwice uses calibrated score fusion; its")
+    print("  opt-in trained cross-encoder stacks further on top of this first stage.")
     print(bar)
 
     if ARGS.save:

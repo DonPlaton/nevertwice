@@ -74,7 +74,7 @@ def store_dir() -> Path:
 # Sessions), never these (audit H4). Index.md and User/profile.md are rebuilt each
 # session; .processed_sessions.json is per-machine processing state.
 _GITIGNORE_LINES = [
-    ".lock", "*.tmp", "*.bak", "__pycache__/", "*.pyc",
+    ".lock", "*.tmp", "*.bak", "*.prev", "__pycache__/", "*.pyc",
     ".prompt_recall/", ".logs/",
     ".embeddings_cache.json", ".embeddings_meta.json",
     ".index.sqlite", ".index.sqlite-wal", ".index.sqlite-shm",

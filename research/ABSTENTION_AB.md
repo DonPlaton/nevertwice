@@ -1,5 +1,10 @@
 # Three switches that shipped with tests and no measurement
 
+<!-- review-2026-09-05 -->
+> **Withdrawn 2026-09-05, pending a re-run.** The engine changed after this sweep ran; the
+> re-run is on CPU and is queued first. The decision on this page - both defaults at 0 - does
+> not depend on the exact figures and stands.
+
 Three abstention mechanisms went into the engine in one sitting. Each had a test proving it
 *works*: the filter filters, the threshold thresholds, the reader reads only the new region.
 None had a measurement of whether it *helps*. That is the exact fault this project keeps
