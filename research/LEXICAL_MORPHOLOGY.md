@@ -27,14 +27,9 @@ Dialogue turns the length of a real note, each question retrieving its human-ann
 turn from its own conversation. Same cached vectors for both arms; only the tokenizer differs.
 
 <!-- claims:lexical-morphology-locomo -->
-| method | R@1 | R@5 | R@10 | MRR |
-|---|---|---|---|---|
-| semantic (bge-m3), raw tokens | 0.182 | 0.432 | 0.560 | 0.301 |
-| semantic (bge-m3), stop words + stems | 0.182 | 0.432 | 0.560 | 0.301 |
-| lexical (BM25), raw tokens | 0.271 | 0.499 | 0.576 | 0.377 |
-| lexical (BM25), stop words + stems | 0.339 | 0.601 | 0.681 | 0.459 |
-| **calibrated fusion (shipped)**, raw tokens | 0.293 | 0.549 | 0.634 | 0.411 |
-| **calibrated fusion (shipped)**, stop words + stems | **0.353** | **0.626** | **0.707** | **0.478** |
+> **Withdrawn 2026-09.** withdrawn 2026-09-06: the dense weight of the calibrated fusion moved from a half to one after the sweep on whole-session vectors and the stemmed lexical arm; the re-measurement needs the GPU (cross-encoder, embedder) and lands in the next commit
+>
+> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/locomo_eval.py --no-morphology --save --out=research/results/locomo_raw.json` is what re-measures this one.
 <!-- /claims:lexical-morphology-locomo -->
 
 ## LongMemEval-oracle, global pool
@@ -44,14 +39,9 @@ document already contains most inflections of its own words, so morphology has l
 and a stem can cost the exact-form match at rank one.
 
 <!-- claims:lexical-morphology-oracle -->
-| method | R@1 | R@5 | R@10 | MRR |
-|---|---|---|---|---|
-| semantic (bge-m3), raw tokens | 0.428 | 0.692 | 0.782 | 0.552 |
-| semantic (bge-m3), stop words + stems | 0.428 | 0.692 | 0.782 | 0.552 |
-| lexical (BM25), raw tokens | 0.522 | 0.752 | 0.834 | 0.623 |
-| lexical (BM25), stop words + stems | 0.470 | 0.738 | 0.830 | 0.596 |
-| **calibrated fusion (shipped)**, raw tokens | **0.534** | **0.794** | 0.848 | **0.650** |
-| **calibrated fusion (shipped)**, stop words + stems | 0.510 | 0.788 | **0.868** | 0.634 |
+> **Withdrawn 2026-09.** withdrawn 2026-09-06: the dense weight of the calibrated fusion moved from a half to one after the sweep on whole-session vectors and the stemmed lexical arm; the re-measurement needs the GPU (cross-encoder, embedder) and lands in the next commit
+>
+> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/longmem_eval.py --no-morphology --save --out=research/results/longmem_oracle_raw.json` is what re-measures this one.
 <!-- /claims:lexical-morphology-oracle -->
 
 ## The owner's store, by language half

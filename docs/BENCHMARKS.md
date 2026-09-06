@@ -91,8 +91,8 @@ byte zero reads well under half the bytes at identical coverage of the appended 
 
 ## External retrieval: LongMemEval, on a hash-pinned corpus
 
-Real agent sessions in one shared store - 940 of them, 500 questions - each question carrying
-**human-annotated** evidence sessions (`answer_session_ids`). Relevance is independent of our embeddings, so this is a real
+Real agent sessions in one shared store, each question carrying **human-annotated**
+evidence sessions (`answer_session_ids`). Relevance is independent of our embeddings, so this is a real
 recall number rather than a self-grade.
 
 The 2026-07 run of this benchmark was withdrawn because the corpus behind it could not be
@@ -101,23 +101,18 @@ before reading a byte, and the fingerprint is stamped into every result file. Fu
 the re-run found: [`research/EXTERNAL_RETRIEVAL.md`](../research/EXTERNAL_RETRIEVAL.md).
 
 <!-- claims:longmem-pinned -->
-| method | R@1 | R@5 | R@10 | MRR |
-|---|---|---|---|---|
-| semantic (bge-m3) | 0.428 | 0.692 | 0.782 | 0.552 |
-| lexical (BM25) | 0.470 | 0.738 | 0.830 | 0.596 |
-| **calibrated fusion (shipped default, 0 deps)** | 0.510 | 0.788 | **0.868** | 0.634 |
-| **+ trained cross-encoder (opt-in)** | **0.616** | **0.836** | **0.868** | **0.716** |
+> **Withdrawn 2026-09.** withdrawn 2026-09-06: the dense weight of the calibrated fusion moved from a half to one after the sweep on whole-session vectors and the stemmed lexical arm; the re-measurement needs the GPU (cross-encoder, embedder) and lands in the next commit
+>
+> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/longmem_eval.py --save --out=research/results/longmem_oracle.json` is what re-measures this one.
 <!-- /claims:longmem-pinned -->
 
-The same methods on the **non-oracle** pool - 19,206 retrievable sessions, twenty-one times the
-haystack, the same questions and the same annotated evidence:
+The same methods on the **non-oracle** pool - twenty-one times the haystack, the same questions
+and the same annotated evidence:
 
 <!-- claims:longmem-s -->
-| method | R@1 | R@5 | R@10 | MRR |
-|---|---|---|---|---|
-| semantic (bge-m3) | 0.184 | 0.354 | 0.440 | 0.267 |
-| lexical (BM25) | 0.218 | 0.416 | 0.510 | 0.313 |
-| **calibrated fusion (shipped default, 0 deps)** | **0.228** | **0.426** | **0.520** | **0.331** |
+> **Withdrawn 2026-09.** withdrawn 2026-09-06: the dense weight of the calibrated fusion moved from a half to one after the sweep on whole-session vectors and the stemmed lexical arm; the re-measurement needs the GPU (cross-encoder, embedder) and lands in the next commit
+>
+> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/longmem_eval.py --data=s --save --out=research/results/longmem_s.json` is what re-measures this one.
 <!-- /claims:longmem-s -->
 
 Everything falls, which is what twenty-one times the haystack does, and the shape holds: fusion
@@ -139,23 +134,21 @@ Four systems on the oracle pool, same embedder, same scoring function, the same 
 
 ### LoCoMo, the benchmark this project had excluded on paper
 
-Ten long conversations, 5,882 turns, 1,977 of 1,986 questions scored, retrieving the
-human-annotated evidence turn from the question's own conversation - LoCoMo's own setting. Full
+Ten long conversations, every scorable question retrieving the human-annotated evidence turn
+from the question's own conversation - LoCoMo's own setting. Full
 method and the defect running it found: [`research/LOCOMO.md`](../research/LOCOMO.md).
 Re-measured at the reviewed engine on the cached vectors: every figure reproduced exactly, and
 LoCoMo turns are short enough that the embedding-cap defect never touched them.
 
 <!-- claims:locomo -->
-| method | R@1 | R@5 | R@10 | MRR |
-|---|---|---|---|---|
-| semantic (bge-m3) | 0.182 | 0.432 | 0.560 | 0.301 |
-| lexical (BM25) | 0.339 | 0.601 | 0.681 | 0.459 |
-| **calibrated fusion (shipped default, 0 deps)** | **0.353** | **0.626** | **0.707** | **0.478** |
+> **Withdrawn 2026-09.** withdrawn 2026-09-06: the dense weight of the calibrated fusion moved from a half to one after the sweep on whole-session vectors and the stemmed lexical arm; the re-measurement needs the GPU (cross-encoder, embedder) and lands in the next commit
+>
+> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/locomo_eval.py --save --out=research/results/locomo.json` is what re-measures this one.
 <!-- /claims:locomo -->
 
 The exclusion was written around a reported 94% for plain BM25. The term-overlap floor here
-reads 0.601 at R@5, and the three methods order exactly as they do on LongMemEval, so on the
-**retrieval** axis LoCoMo separates systems perfectly well. The 94% figure is about judge-scored
+reads one question in two at R@5, and the three methods order exactly as they do on LongMemEval,
+so on the **retrieval** axis LoCoMo separates systems perfectly well. The 94% figure is about judge-scored
 **answer accuracy**, which measures the reader as much as the memory and which nothing in this
 repository measures. So the exclusion is narrowed rather than lifted: not a candidate as a
 headline, on a named axis. **A number in this table must never be compared with a published

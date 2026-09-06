@@ -156,6 +156,14 @@ def _shrinking(call, text: str, stats: dict):
             raise
 
 
+def _ingestable(items):
+    """The (sid, text) pairs with any text. 623 of the S pool's 19,829 sessions are empty in
+    the published corpus; our arm never embeds them (no vector, so they cannot be retrieved,
+    and the count is on the page), and an embedder handed an empty string raises - Mem0's did,
+    and blocked its whole S run an hour in (2026-09-06). Same rule for every arm."""
+    return [(sid, txt) for sid, txt in items if txt and txt.strip()]
+
+
 def _pool_from(data) -> dict:
     """session_id -> joined transcript text, exactly as longmem_eval builds it."""
     pool = {}
@@ -300,15 +308,20 @@ def run_mem0(data, pool, infer=None) -> dict:
         mem = Memory.from_config(cfg)
     except Exception as e:
         return {"blocked": f"Mem0 init failed ({type(e).__name__}: {e})"}
-    items = list(pool.items())
+    items = _ingestable(pool.items())
     if ARGS.sessions:
         items = items[:ARGS.sessions]
     stats: dict = {}
+    silent = 0
     try:
         t0 = time.time()
         for sid, txt in items:
-            _shrinking(lambda t, sid=sid: mem.add(t, user_id="lme", metadata={"session_id": sid},
-                                                  infer=infer), txt, stats)
+            res = _shrinking(lambda t, sid=sid: mem.add(t, user_id="lme",
+                                                        metadata={"session_id": sid}, infer=infer),
+                             txt, stats)
+            written = res.get("results", res) if isinstance(res, dict) else res
+            if infer and not written:
+                silent += 1            # its extractor failed or extracted nothing: no memory
         ingest_s = time.time() - t0
         t1 = time.time()
         ranked = {}
@@ -319,7 +332,13 @@ def run_mem0(data, pool, infer=None) -> dict:
         query_s = time.time() - t1
     except Exception as e:
         return {"blocked": f"Mem0 run failed ({type(e).__name__}: {e})"}
+    if infer and items and silent > 0.1 * len(items):
+        return {"blocked": f"Mem0 pipeline: {silent} of {len(items)} sessions yielded no memory "
+                           f"(its extractor's response could not be parsed, or it extracted "
+                           f"nothing) - not a measurement of Mem0", "silent_extractions": silent}
     sc = score(ranked, data, list(pool))
+    if infer:
+        sc["silent_extractions"] = silent
     sc["ingest_s"] = round(ingest_s, 1)
     sc["query_s"] = round(query_s, 1)
     sc["mode"] = f"infer={infer} ({'LLM ' + COMP_LLM if infer else 'retrieval-only, 1 memory/session'})"
@@ -356,7 +375,7 @@ def run_langmem(data, pool) -> dict:
     try:
         emb = OllamaEmbeddings(model=EMBED_MODEL, base_url=OLLAMA_BASE)
         store = InMemoryStore(index={"embed": emb, "dims": 1024, "fields": ["text"]})
-        items = list(pool.items())
+        items = _ingestable(pool.items())
         if ARGS.sessions:
             items = items[:ARGS.sessions]
         stats: dict = {}
@@ -463,7 +482,7 @@ def run_amem(data, pool) -> dict:
 
         client = chromadb.Client()
         col = client.create_collection("amem_lme", metadata={"hnsw:space": "cosine"})
-        items = list(pool.items())
+        items = _ingestable(pool.items())
         if ARGS.sessions:
             items = items[:ARGS.sessions]
         stats: dict = {}
@@ -691,18 +710,8 @@ def main():
     print(f"  same metric as longmem_eval.py · competitors on LOCAL Ollama ({EMBED_MODEL})")
     print(bar)
 
-    # load existing results so a single-system re-run doesn't drop the others
     out_path = Path(ARGS.out) if getattr(ARGS, "out", "") else (HERE / "head_to_head.json")
-    results = {}
-    if out_path.exists():
-        try:
-            results = json.loads(out_path.read_text(encoding="utf-8"))
-        except (json.JSONDecodeError, OSError):
-            results = {}
-
-    results["_provenance"] = provenance
-    results["_questions"] = len(data)
-    results["_pool_sessions"] = len(pool)
+    results = {"_provenance": provenance, "_questions": len(data), "_pool_sessions": len(pool)}
     for name in want:
         fn = ADAPTERS.get(name)
         if not fn:
@@ -749,7 +758,16 @@ def main():
     print(bar)
 
     if ARGS.save:
-        out_path.write_text(json.dumps(results, ensure_ascii=False, indent=1), encoding="utf-8")
+        # Merge into whatever the file holds NOW: only the arms this process ran are replaced,
+        # so a run that started hours ago cannot overwrite a row another process wrote since.
+        merged = {}
+        if out_path.exists():
+            try:
+                merged = json.loads(out_path.read_text(encoding="utf-8"))
+            except (json.JSONDecodeError, OSError):
+                merged = {}
+        merged.update(results)
+        out_path.write_text(json.dumps(merged, ensure_ascii=False, indent=1), encoding="utf-8")
         print(f"  saved → {out_path}")
 
 

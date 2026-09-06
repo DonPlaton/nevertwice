@@ -487,8 +487,13 @@ RETRIEVAL_SEM_WEIGHT = env_float("NEVERTWICE_SEM_WEIGHT", 2.0)
 # legacy reciprocal-rank fusion as a fallback. See research/RETRIEVAL_FUSION.md.
 RETRIEVAL_FUSION = os.environ.get("NEVERTWICE_FUSION", "calibrated").strip().lower()
 # Dense (semantic) weight in calibrated fusion; the lexical (BM25) weight is fixed at 1.0.
-# Robust across 0.4-1.0 (every setting beat Mem0 in the sweep); 0.5 is the near-optimum.
-FUSION_SEM_WEIGHT = env_float("NEVERTWICE_FUSION_SEM_WEIGHT", 0.5)
+# 0.5 was tuned when the stand embedded the first 2,000 characters of a session and the lexical
+# arm scored raw tokens. With whole-session vectors and stemmed, stop-word-free BM25 the sweep
+# moved (research/fusion_sweep.py, 2026-09-06): 1.0 beat 0.5 by 0.012 R@5 on the oracle pool
+# and by 0.014 on LoCoMo, clearing the gate written first (ledger I1: >= 0.01 on one corpus,
+# no more than 0.005 lost on the other); 0.75 cleared it on one corpus only, 1.5 lost on the
+# oracle. The whole curve is on research/RETRIEVAL_FUSION.md.
+FUSION_SEM_WEIGHT = env_float("NEVERTWICE_FUSION_SEM_WEIGHT", 1.0)
 # Ranker selector (research/posterior_model.py, 1A). "hybrid" (default) = the shipped
 # additive-recurrence + multiplicative-salience tail. "posterior" = the same signals as
 # an explicit log-linear posterior: w_rel·log(rrf) + w_freq·log(n) + w_sal·log(salience),
@@ -5408,8 +5413,9 @@ _TOKEN_RE = re.compile(r"[^\W\d_]{3,}|\d{3,}", re.UNICODE)
 # SQLite index). Measured 2026-09-06 before it shipped (research/LEXICAL_MORPHOLOGY.md): on
 # LoCoMo, dialogue turns the length of a note, lexical R@5 0.499 -> 0.601 and the fused
 # ranker 0.549 -> 0.626; on the owner's store, a session's summary finding the notes written
-# from it, RU R@1 0.583 -> 0.685 and EN 0.761 -> 0.783; on LongMemEval's 14k-character
-# sessions a 0.014 loss on the lexical arm, within the gate. English is Porter (1980), what
+# from it, RU R@1 0.622 -> 0.681 and EN 0.791 -> 0.811 (research/lexical_morphology_probe.py);
+# on LongMemEval's 14k-character sessions a 0.014 loss on the lexical arm, within the gate.
+# English is Porter (1980), what
 # SQLite's own `porter` tokenizer implements; Russian is Snowball. `0` turns it off - a store
 # indexed either way is rebuilt once, the index carries which.
 LEXICAL_MORPHOLOGY = os.environ.get("NEVERTWICE_LEXICAL_MORPHOLOGY", "1").strip() != "0"

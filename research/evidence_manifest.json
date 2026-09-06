@@ -611,7 +611,7 @@
   },
   "research/RETRIEVAL_FUSION.md": {
    "governance": "backlog",
-   "budget": 81,
+   "budget": 75,
    "target": null,
    "note": "evidence-bearing numbers not yet registered; the budget is a ceiling that may only be lowered",
    "budget_metric": "evidence-bearing numeric tokens: numbers outside fenced blocks, excluding years, months, Python versions and bare single digits"
@@ -2507,9 +2507,7 @@
    "caveat": "Per-attack-instance the rate is 9/12 = 0.75 (raw `recall`). The two aggregates differ; the doc cites the per-family mean. Both fell against the v1.0.0 artifact this replaces - see CHANGELOG.",
    "ci": null,
    "ci_note": "12 hand-written attacks - a proof of taxonomy, not a benchmark.",
-   "cited_in": [
-    "README.md"
-   ],
+   "cited_in": [],
    "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "produced_by": [
     "research/poisoning.py",
@@ -2528,7 +2526,13 @@
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "README.md"
+   ],
+   "stale": "withdrawn 2026-09-06: the dense weight of the calibrated fusion moved from a half to one after the sweep on whole-session vectors and the stemmed lexical arm; the re-measurement needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "poisoning.precision",
@@ -2564,7 +2568,11 @@
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-06: the dense weight of the calibrated fusion moved from a half to one after the sweep on whole-session vectors and the stemmed lexical arm; the re-measurement needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "poisoning.injection_blocked",
@@ -2583,9 +2591,7 @@
    "derivation": "1 - attacks.injection.after = 1 - 0.0",
    "ci": null,
    "ci_note": "n=4.",
-   "cited_in": [
-    "README.md"
-   ],
+   "cited_in": [],
    "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "produced_by": [
     "research/poisoning.py",
@@ -2604,7 +2610,13 @@
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "README.md"
+   ],
+   "stale": "withdrawn 2026-09-06: the dense weight of the calibrated fusion moved from a half to one after the sweep on whole-session vectors and the stemmed lexical arm; the re-measurement needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "poisoning.false_fact_blocked",
@@ -2623,9 +2635,7 @@
    "derivation": "1 - attacks.false-fact.after = 1 - 0.75",
    "ci": null,
    "ci_note": "n=4; the honest open problem, published as such.",
-   "cited_in": [
-    "README.md"
-   ],
+   "cited_in": [],
    "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "produced_by": [
     "research/poisoning.py",
@@ -2645,7 +2655,13 @@
     "nevertwice/why_fired.py",
     "sandbox_guard.py"
    ],
-   "caveat": "n=4; the honest open problem, published as such - and it got worse, not better: the v1.0.0 artifact recorded 50%."
+   "caveat": "n=4; the honest open problem, published as such - and it got worse, not better: the v1.0.0 artifact recorded 50%.",
+   "cited_in_pending": [
+    "README.md"
+   ],
+   "stale": "withdrawn 2026-09-06: the dense weight of the calibrated fusion moved from a half to one after the sweep on whole-session vectors and the stemmed lexical arm; the re-measurement needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "forgetting.coverage_gain_at_20pct",
@@ -2691,7 +2707,11 @@
     "research/longitudinal_bench.py",
     "sandbox_guard.py",
     "tools/render_claims.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-06: the dense weight of the calibrated fusion moved from a half to one after the sweep on whole-session vectors and the stemmed lexical arm; the re-measurement needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "consolidation.recall_drop",
@@ -6544,7 +6564,11 @@
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py"
    ],
-   "note": " The former command (`--list`) was not a subcommand the CLI accepts; `pack --count` is read-only and prints the number (review 2026-09-05)."
+   "note": " The former command (`--list`) was not a subcommand the CLI accepts; `pack --count` is read-only and prints the number (review 2026-09-05).",
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-06: the dense weight of the calibrated fusion moved from a half to one after the sweep on whole-session vectors and the stemmed lexical arm; the re-measurement needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "head_to_head.nevertwice.recall_at_10",
@@ -8897,7 +8921,11 @@
     "research/_frontier.py",
     "research/matched_conditions.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-06: the dense weight of the calibrated fusion moved from a half to one after the sweep on whole-session vectors and the stemmed lexical arm; the re-measurement needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "baselines.f2.nevertwice.recall",
@@ -8941,7 +8969,11 @@
     "research/_frontier.py",
     "research/matched_conditions.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-06: the dense weight of the calibrated fusion moved from a half to one after the sweep on whole-session vectors and the stemmed lexical arm; the re-measurement needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "baselines.f2.curated_agents_md.recall",
@@ -8985,7 +9017,11 @@
     "research/_frontier.py",
     "research/matched_conditions.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-06: the dense weight of the calibrated fusion moved from a half to one after the sweep on whole-session vectors and the stemmed lexical arm; the re-measurement needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "baselines.f2.linter_or_test.recall",
@@ -9029,7 +9065,11 @@
     "research/_frontier.py",
     "research/matched_conditions.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-06: the dense weight of the calibrated fusion moved from a half to one after the sweep on whole-session vectors and the stemmed lexical arm; the re-measurement needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "baselines.f2.nevertwice.tokens_per_episode",
@@ -9068,7 +9108,11 @@
     "research/_frontier.py",
     "research/matched_conditions.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-06: the dense weight of the calibrated fusion moved from a half to one after the sweep on whole-session vectors and the stemmed lexical arm; the re-measurement needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "baselines.f2.curated_agents_md.tokens_per_episode",
@@ -9107,7 +9151,11 @@
     "research/_frontier.py",
     "research/matched_conditions.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-06: the dense weight of the calibrated fusion moved from a half to one after the sweep on whole-session vectors and the stemmed lexical arm; the re-measurement needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_pinned.semantic.recall_at_1",
@@ -9129,9 +9177,7 @@
     "low": 0.3853,
     "high": 0.4718
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "note": "Re-measured 2026-09-02 on the corpus pinned in research/corpus_pin.py (sha256 821a2034..., verified before the run). The value is identical to three decimals to the one withdrawn in 2026-08. The withdrawn claim stays withdrawn: it was measured on a file that cannot be identified, and agreeing with a later run is not evidence about an unidentifiable one.",
    "produced_by": [
@@ -9154,7 +9200,13 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-06: the dense weight of the calibrated fusion moved from a half to one after the sweep on whole-session vectors and the stemmed lexical arm; the re-measurement needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_pinned.semantic.recall_at_5",
@@ -9176,9 +9228,7 @@
     "low": 0.6502,
     "high": 0.7309
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "note": "Re-measured 2026-09-02 on the corpus pinned in research/corpus_pin.py (sha256 821a2034..., verified before the run). The value is identical to three decimals to the one withdrawn in 2026-08. The withdrawn claim stays withdrawn: it was measured on a file that cannot be identified, and agreeing with a later run is not evidence about an unidentifiable one.",
    "produced_by": [
@@ -9201,7 +9251,13 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-06: the dense weight of the calibrated fusion moved from a half to one after the sweep on whole-session vectors and the stemmed lexical arm; the re-measurement needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_pinned.semantic.recall_at_10",
@@ -9246,7 +9302,11 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-06: the dense weight of the calibrated fusion moved from a half to one after the sweep on whole-session vectors and the stemmed lexical arm; the re-measurement needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_pinned.semantic.mrr",
@@ -9263,9 +9323,7 @@
    "raw": "research/results/longmem_oracle.json",
    "pointer": "methods.semantic.mrr",
    "ci": null,
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "note": "Re-measured 2026-09-02 on the corpus pinned in research/corpus_pin.py (sha256 821a2034..., verified before the run). The value is identical to three decimals to the one withdrawn in 2026-08. The withdrawn claim stays withdrawn: it was measured on a file that cannot be identified, and agreeing with a later run is not evidence about an unidentifiable one.",
    "produced_by": [
@@ -9288,7 +9346,13 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-06: the dense weight of the calibrated fusion moved from a half to one after the sweep on whole-session vectors and the stemmed lexical arm; the re-measurement needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_pinned.lexical.recall_at_1",
@@ -9310,9 +9374,7 @@
     "low": 0.4266,
     "high": 0.5138
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "note": "Re-measured 2026-09-02 on the corpus pinned in research/corpus_pin.py (sha256 821a2034..., verified before the run). The value is identical to three decimals to the one withdrawn in 2026-08. The withdrawn claim stays withdrawn: it was measured on a file that cannot be identified, and agreeing with a later run is not evidence about an unidentifiable one.",
    "produced_by": [
@@ -9335,7 +9397,13 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-06: the dense weight of the calibrated fusion moved from a half to one after the sweep on whole-session vectors and the stemmed lexical arm; the re-measurement needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_pinned.lexical.recall_at_5",
@@ -9357,9 +9425,7 @@
     "low": 0.6977,
     "high": 0.7746
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "note": "Re-measured 2026-09-02 on the corpus pinned in research/corpus_pin.py (sha256 821a2034..., verified before the run). The value is identical to three decimals to the one withdrawn in 2026-08. The withdrawn claim stays withdrawn: it was measured on a file that cannot be identified, and agreeing with a later run is not evidence about an unidentifiable one.",
    "produced_by": [
@@ -9382,7 +9448,13 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-06: the dense weight of the calibrated fusion moved from a half to one after the sweep on whole-session vectors and the stemmed lexical arm; the re-measurement needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_pinned.lexical.recall_at_10",
@@ -9427,7 +9499,11 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-06: the dense weight of the calibrated fusion moved from a half to one after the sweep on whole-session vectors and the stemmed lexical arm; the re-measurement needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_pinned.lexical.mrr",
@@ -9444,9 +9520,7 @@
    "raw": "research/results/longmem_oracle.json",
    "pointer": "methods.lexical.mrr",
    "ci": null,
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "note": "Re-measured 2026-09-02 on the corpus pinned in research/corpus_pin.py (sha256 821a2034..., verified before the run). The value is identical to three decimals to the one withdrawn in 2026-08. The withdrawn claim stays withdrawn: it was measured on a file that cannot be identified, and agreeing with a later run is not evidence about an unidentifiable one.",
    "produced_by": [
@@ -9469,7 +9543,13 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-06: the dense weight of the calibrated fusion moved from a half to one after the sweep on whole-session vectors and the stemmed lexical arm; the re-measurement needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_pinned.hybrid.recall_at_1",
@@ -9491,9 +9571,7 @@
     "low": 0.4663,
     "high": 0.5536
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "note": "Re-measured 2026-09-02 on the corpus pinned in research/corpus_pin.py (sha256 821a2034..., verified before the run). The value is identical to three decimals to the one withdrawn in 2026-08. The withdrawn claim stays withdrawn: it was measured on a file that cannot be identified, and agreeing with a later run is not evidence about an unidentifiable one.",
    "produced_by": [
@@ -9516,7 +9594,13 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-06: the dense weight of the calibrated fusion moved from a half to one after the sweep on whole-session vectors and the stemmed lexical arm; the re-measurement needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_pinned.hybrid.recall_at_5",
@@ -9538,10 +9622,7 @@
     "low": 0.75,
     "high": 0.8216
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md",
-    "README.md"
-   ],
+   "cited_in": [],
    "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "note": "Re-measured 2026-09-02 on the corpus pinned in research/corpus_pin.py (sha256 821a2034..., verified before the run). The value is identical to three decimals to the one withdrawn in 2026-08. The withdrawn claim stays withdrawn: it was measured on a file that cannot be identified, and agreeing with a later run is not evidence about an unidentifiable one.",
    "produced_by": [
@@ -9564,7 +9645,14 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md",
+    "README.md"
+   ],
+   "stale": "withdrawn 2026-09-06: the dense weight of the calibrated fusion moved from a half to one after the sweep on whole-session vectors and the stemmed lexical arm; the re-measurement needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_pinned.hybrid.recall_at_10",
@@ -9609,7 +9697,11 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-06: the dense weight of the calibrated fusion moved from a half to one after the sweep on whole-session vectors and the stemmed lexical arm; the re-measurement needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_pinned.hybrid.mrr",
@@ -9626,9 +9718,7 @@
    "raw": "research/results/longmem_oracle.json",
    "pointer": "methods.hybrid.mrr",
    "ci": null,
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "note": "Re-measured 2026-09-02 on the corpus pinned in research/corpus_pin.py (sha256 821a2034..., verified before the run). The value is identical to three decimals to the one withdrawn in 2026-08. The withdrawn claim stays withdrawn: it was measured on a file that cannot be identified, and agreeing with a later run is not evidence about an unidentifiable one.",
    "produced_by": [
@@ -9651,7 +9741,13 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-06: the dense weight of the calibrated fusion moved from a half to one after the sweep on whole-session vectors and the stemmed lexical arm; the re-measurement needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_pinned.hybrid_xrerank.recall_at_1",
@@ -9673,9 +9769,7 @@
     "low": 0.5726,
     "high": 0.6576
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "note": "Re-measured 2026-09-02 on the corpus pinned in research/corpus_pin.py (sha256 821a2034..., verified before the run). The value is identical to three decimals to the one withdrawn in 2026-08. The withdrawn claim stays withdrawn: it was measured on a file that cannot be identified, and agreeing with a later run is not evidence about an unidentifiable one.",
    "produced_by": [
@@ -9698,7 +9792,13 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-06: the dense weight of the calibrated fusion moved from a half to one after the sweep on whole-session vectors and the stemmed lexical arm; the re-measurement needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_pinned.hybrid_xrerank.recall_at_5",
@@ -9720,9 +9820,7 @@
     "low": 0.801,
     "high": 0.8659
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "note": "Re-measured 2026-09-02 on the corpus pinned in research/corpus_pin.py (sha256 821a2034..., verified before the run). The value is identical to three decimals to the one withdrawn in 2026-08. The withdrawn claim stays withdrawn: it was measured on a file that cannot be identified, and agreeing with a later run is not evidence about an unidentifiable one.",
    "produced_by": [
@@ -9745,7 +9843,13 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-06: the dense weight of the calibrated fusion moved from a half to one after the sweep on whole-session vectors and the stemmed lexical arm; the re-measurement needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_pinned.hybrid_xrerank.recall_at_10",
@@ -9790,7 +9894,11 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-06: the dense weight of the calibrated fusion moved from a half to one after the sweep on whole-session vectors and the stemmed lexical arm; the re-measurement needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_pinned.hybrid_xrerank.mrr",
@@ -9807,9 +9915,7 @@
    "raw": "research/results/longmem_oracle.json",
    "pointer": "methods.hybrid+xrerank.mrr",
    "ci": null,
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "note": "Re-measured 2026-09-02 on the corpus pinned in research/corpus_pin.py (sha256 821a2034..., verified before the run). The value is identical to three decimals to the one withdrawn in 2026-08. The withdrawn claim stays withdrawn: it was measured on a file that cannot be identified, and agreeing with a later run is not evidence about an unidentifiable one.",
    "produced_by": [
@@ -9832,7 +9938,13 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-06: the dense weight of the calibrated fusion moved from a half to one after the sweep on whole-session vectors and the stemmed lexical arm; the re-measurement needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "h2h_pinned.nevertwice.recall_at_1",
@@ -10079,7 +10191,11 @@
     "research/locomo_eval.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-06: the dense weight of the calibrated fusion moved from a half to one after the sweep on whole-session vectors and the stemmed lexical arm; the re-measurement needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "h2h_pinned.mem0.recall_at_5",
@@ -10126,7 +10242,11 @@
     "research/locomo_eval.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-06: the dense weight of the calibrated fusion moved from a half to one after the sweep on whole-session vectors and the stemmed lexical arm; the re-measurement needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "h2h_pinned.mem0.recall_at_10",
@@ -10173,7 +10293,11 @@
     "research/locomo_eval.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-06: the dense weight of the calibrated fusion moved from a half to one after the sweep on whole-session vectors and the stemmed lexical arm; the re-measurement needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "h2h_pinned.mem0.mrr",
@@ -10214,7 +10338,11 @@
     "research/locomo_eval.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-06: the dense weight of the calibrated fusion moved from a half to one after the sweep on whole-session vectors and the stemmed lexical arm; the re-measurement needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "h2h_pinned.langmem.recall_at_1",
@@ -10261,7 +10389,11 @@
     "research/locomo_eval.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-06: the dense weight of the calibrated fusion moved from a half to one after the sweep on whole-session vectors and the stemmed lexical arm; the re-measurement needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "h2h_pinned.langmem.recall_at_5",
@@ -10308,7 +10440,11 @@
     "research/locomo_eval.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-06: the dense weight of the calibrated fusion moved from a half to one after the sweep on whole-session vectors and the stemmed lexical arm; the re-measurement needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "h2h_pinned.langmem.recall_at_10",
@@ -10355,7 +10491,11 @@
     "research/locomo_eval.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-06: the dense weight of the calibrated fusion moved from a half to one after the sweep on whole-session vectors and the stemmed lexical arm; the re-measurement needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "h2h_pinned.langmem.mrr",
@@ -10396,7 +10536,11 @@
     "research/locomo_eval.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-06: the dense weight of the calibrated fusion moved from a half to one after the sweep on whole-session vectors and the stemmed lexical arm; the re-measurement needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "h2h_pinned.amem.recall_at_1",
@@ -10443,7 +10587,11 @@
     "research/locomo_eval.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-06: the dense weight of the calibrated fusion moved from a half to one after the sweep on whole-session vectors and the stemmed lexical arm; the re-measurement needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "h2h_pinned.amem.recall_at_5",
@@ -10490,7 +10638,11 @@
     "research/locomo_eval.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-06: the dense weight of the calibrated fusion moved from a half to one after the sweep on whole-session vectors and the stemmed lexical arm; the re-measurement needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "h2h_pinned.amem.recall_at_10",
@@ -10537,7 +10689,11 @@
     "research/locomo_eval.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-06: the dense weight of the calibrated fusion moved from a half to one after the sweep on whole-session vectors and the stemmed lexical arm; the re-measurement needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "h2h_pinned.amem.mrr",
@@ -10578,7 +10734,11 @@
     "research/locomo_eval.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-06: the dense weight of the calibrated fusion moved from a half to one after the sweep on whole-session vectors and the stemmed lexical arm; the re-measurement needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_pinned.xrerank.delta_recall_at_1",
@@ -10619,7 +10779,11 @@
     "research/corpus_pin.py",
     "sandbox_guard.py"
    ],
-   "derivation": "methods['hybrid+xrerank'].recall@1 - methods['hybrid'].recall@1, written by the stand into xrerank.delta_recall@1"
+   "derivation": "methods['hybrid+xrerank'].recall@1 - methods['hybrid'].recall@1, written by the stand into xrerank.delta_recall@1",
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-06: the dense weight of the calibrated fusion moved from a half to one after the sweep on whole-session vectors and the stemmed lexical arm; the re-measurement needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_pinned.dataset.questions",
@@ -10636,9 +10800,7 @@
    "raw": "research/results/longmem_oracle.json",
    "pointer": "questions",
    "ci": null,
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "produced_by": [
     "research/longmem_eval.py",
@@ -10660,7 +10822,13 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-06: the dense weight of the calibrated fusion moved from a half to one after the sweep on whole-session vectors and the stemmed lexical arm; the re-measurement needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_s.semantic.recall_at_1",
@@ -10682,9 +10850,7 @@
     "low": 0.1525,
     "high": 0.2203
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "note": "The standard non-oracle pool: 19,206 unique haystack sessions against the oracle variant's 940, so every question ranks a haystack twenty-one times larger. Same embedder, same scoring function, same human-annotated ground truth.",
    "produced_by": [
@@ -10707,7 +10873,13 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-06: the dense weight of the calibrated fusion moved from a half to one after the sweep on whole-session vectors and the stemmed lexical arm; the re-measurement needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_s.semantic.recall_at_5",
@@ -10729,9 +10901,7 @@
     "low": 0.3133,
     "high": 0.3969
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "note": "The standard non-oracle pool: 19,206 unique haystack sessions against the oracle variant's 940, so every question ranks a haystack twenty-one times larger. Same embedder, same scoring function, same human-annotated ground truth.",
    "produced_by": [
@@ -10754,7 +10924,13 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-06: the dense weight of the calibrated fusion moved from a half to one after the sweep on whole-session vectors and the stemmed lexical arm; the re-measurement needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_s.semantic.recall_at_10",
@@ -10799,7 +10975,11 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-06: the dense weight of the calibrated fusion moved from a half to one after the sweep on whole-session vectors and the stemmed lexical arm; the re-measurement needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_s.semantic.mrr",
@@ -10816,9 +10996,7 @@
    "raw": "research/results/longmem_s.json",
    "pointer": "methods.semantic.mrr",
    "ci": null,
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "note": "The standard non-oracle pool: 19,206 unique haystack sessions against the oracle variant's 940, so every question ranks a haystack twenty-one times larger. Same embedder, same scoring function, same human-annotated ground truth.",
    "produced_by": [
@@ -10841,7 +11019,13 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-06: the dense weight of the calibrated fusion moved from a half to one after the sweep on whole-session vectors and the stemmed lexical arm; the re-measurement needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_s.lexical.recall_at_1",
@@ -10863,9 +11047,7 @@
     "low": 0.184,
     "high": 0.2563
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "note": "The standard non-oracle pool: 19,206 unique haystack sessions against the oracle variant's 940, so every question ranks a haystack twenty-one times larger. Same embedder, same scoring function, same human-annotated ground truth.",
    "produced_by": [
@@ -10888,7 +11070,13 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-06: the dense weight of the calibrated fusion moved from a half to one after the sweep on whole-session vectors and the stemmed lexical arm; the re-measurement needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_s.lexical.recall_at_5",
@@ -10910,9 +11098,7 @@
     "low": 0.3736,
     "high": 0.4597
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "note": "The standard non-oracle pool: 19,206 unique haystack sessions against the oracle variant's 940, so every question ranks a haystack twenty-one times larger. Same embedder, same scoring function, same human-annotated ground truth.",
    "produced_by": [
@@ -10935,7 +11121,13 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-06: the dense weight of the calibrated fusion moved from a half to one after the sweep on whole-session vectors and the stemmed lexical arm; the re-measurement needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_s.lexical.recall_at_10",
@@ -10980,7 +11172,11 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-06: the dense weight of the calibrated fusion moved from a half to one after the sweep on whole-session vectors and the stemmed lexical arm; the re-measurement needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_s.lexical.mrr",
@@ -10997,9 +11193,7 @@
    "raw": "research/results/longmem_s.json",
    "pointer": "methods.lexical.mrr",
    "ci": null,
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "note": "The standard non-oracle pool: 19,206 unique haystack sessions against the oracle variant's 940, so every question ranks a haystack twenty-one times larger. Same embedder, same scoring function, same human-annotated ground truth.",
    "produced_by": [
@@ -11022,7 +11216,13 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-06: the dense weight of the calibrated fusion moved from a half to one after the sweep on whole-session vectors and the stemmed lexical arm; the re-measurement needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_s.hybrid.recall_at_1",
@@ -11044,9 +11244,7 @@
     "low": 0.1934,
     "high": 0.2668
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "note": "The standard non-oracle pool: 19,206 unique haystack sessions against the oracle variant's 940, so every question ranks a haystack twenty-one times larger. Same embedder, same scoring function, same human-annotated ground truth.",
    "produced_by": [
@@ -11069,7 +11267,13 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-06: the dense weight of the calibrated fusion moved from a half to one after the sweep on whole-session vectors and the stemmed lexical arm; the re-measurement needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_s.hybrid.recall_at_5",
@@ -11091,9 +11295,7 @@
     "low": 0.3834,
     "high": 0.4697
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "note": "The standard non-oracle pool: 19,206 unique haystack sessions against the oracle variant's 940, so every question ranks a haystack twenty-one times larger. Same embedder, same scoring function, same human-annotated ground truth.",
    "produced_by": [
@@ -11116,7 +11318,13 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-06: the dense weight of the calibrated fusion moved from a half to one after the sweep on whole-session vectors and the stemmed lexical arm; the re-measurement needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_s.hybrid.recall_at_10",
@@ -11161,7 +11369,11 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-06: the dense weight of the calibrated fusion moved from a half to one after the sweep on whole-session vectors and the stemmed lexical arm; the re-measurement needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_s.hybrid.mrr",
@@ -11178,9 +11390,7 @@
    "raw": "research/results/longmem_s.json",
    "pointer": "methods.hybrid.mrr",
    "ci": null,
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "note": "The standard non-oracle pool: 19,206 unique haystack sessions against the oracle variant's 940, so every question ranks a haystack twenty-one times larger. Same embedder, same scoring function, same human-annotated ground truth.",
    "produced_by": [
@@ -11203,7 +11413,13 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-06: the dense weight of the calibrated fusion moved from a half to one after the sweep on whole-session vectors and the stemmed lexical arm; the re-measurement needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_s.dataset.pool_sessions",
@@ -11221,9 +11437,7 @@
    "raw": "research/results/longmem_s.json",
    "pointer": "sessions",
    "ci": null,
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "produced_by": [
     "research/longmem_eval.py",
@@ -11245,7 +11459,13 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-06: the dense weight of the calibrated fusion moved from a half to one after the sweep on whole-session vectors and the stemmed lexical arm; the re-measurement needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_pinned.dataset.pool_sessions",
@@ -11262,9 +11482,7 @@
    "raw": "research/results/longmem_oracle.json",
    "pointer": "sessions",
    "ci": null,
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "produced_by": [
     "research/longmem_eval.py",
@@ -11286,7 +11504,13 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-06: the dense weight of the calibrated fusion moved from a half to one after the sweep on whole-session vectors and the stemmed lexical arm; the re-measurement needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "locomo.semantic.recall_at_1",
@@ -11308,9 +11532,7 @@
     "low": 0.1657,
     "high": 0.1997
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
@@ -11334,7 +11556,13 @@
     "research/corpus_pin.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-06: the dense weight of the calibrated fusion moved from a half to one after the sweep on whole-session vectors and the stemmed lexical arm; the re-measurement needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "locomo.semantic.recall_at_5",
@@ -11356,9 +11584,7 @@
     "low": 0.4108,
     "high": 0.4544
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
@@ -11382,7 +11608,13 @@
     "research/corpus_pin.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-06: the dense weight of the calibrated fusion moved from a half to one after the sweep on whole-session vectors and the stemmed lexical arm; the re-measurement needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "locomo.semantic.recall_at_10",
@@ -11404,9 +11636,7 @@
     "low": 0.538,
     "high": 0.5817
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
@@ -11430,7 +11660,13 @@
     "research/corpus_pin.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-06: the dense weight of the calibrated fusion moved from a half to one after the sweep on whole-session vectors and the stemmed lexical arm; the re-measurement needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "locomo.semantic.mrr",
@@ -11447,9 +11683,7 @@
    "raw": "research/results/locomo.json",
    "pointer": "methods.semantic.mrr",
    "ci": null,
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
@@ -11473,7 +11707,13 @@
     "research/corpus_pin.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-06: the dense weight of the calibrated fusion moved from a half to one after the sweep on whole-session vectors and the stemmed lexical arm; the re-measurement needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "locomo.lexical.recall_at_1",
@@ -11495,9 +11735,7 @@
     "low": 0.3189,
     "high": 0.3606
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
@@ -11521,7 +11759,13 @@
     "research/corpus_pin.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-06: the dense weight of the calibrated fusion moved from a half to one after the sweep on whole-session vectors and the stemmed lexical arm; the re-measurement needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "locomo.lexical.recall_at_5",
@@ -11543,9 +11787,7 @@
     "low": 0.5797,
     "high": 0.6228
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
@@ -11569,7 +11811,13 @@
     "research/corpus_pin.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-06: the dense weight of the calibrated fusion moved from a half to one after the sweep on whole-session vectors and the stemmed lexical arm; the re-measurement needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "locomo.lexical.recall_at_10",
@@ -11591,9 +11839,7 @@
     "low": 0.6599,
     "high": 0.701
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
@@ -11617,7 +11863,13 @@
     "research/corpus_pin.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-06: the dense weight of the calibrated fusion moved from a half to one after the sweep on whole-session vectors and the stemmed lexical arm; the re-measurement needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "locomo.lexical.mrr",
@@ -11634,9 +11886,7 @@
    "raw": "research/results/locomo.json",
    "pointer": "methods.lexical.mrr",
    "ci": null,
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
@@ -11660,7 +11910,13 @@
     "research/corpus_pin.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-06: the dense weight of the calibrated fusion moved from a half to one after the sweep on whole-session vectors and the stemmed lexical arm; the re-measurement needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "locomo.hybrid.recall_at_1",
@@ -11682,9 +11938,7 @@
     "low": 0.3323,
     "high": 0.3744
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
@@ -11708,7 +11962,13 @@
     "research/corpus_pin.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-06: the dense weight of the calibrated fusion moved from a half to one after the sweep on whole-session vectors and the stemmed lexical arm; the re-measurement needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "locomo.hybrid.recall_at_5",
@@ -11730,9 +11990,7 @@
     "low": 0.6046,
     "high": 0.6473
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
@@ -11756,7 +12014,13 @@
     "research/corpus_pin.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-06: the dense weight of the calibrated fusion moved from a half to one after the sweep on whole-session vectors and the stemmed lexical arm; the re-measurement needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "locomo.hybrid.recall_at_10",
@@ -11778,9 +12042,7 @@
     "low": 0.6867,
     "high": 0.7268
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
@@ -11804,7 +12066,13 @@
     "research/corpus_pin.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-06: the dense weight of the calibrated fusion moved from a half to one after the sweep on whole-session vectors and the stemmed lexical arm; the re-measurement needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "locomo.hybrid.mrr",
@@ -11821,9 +12089,7 @@
    "raw": "research/results/locomo.json",
    "pointer": "methods.hybrid.mrr",
    "ci": null,
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
@@ -11847,7 +12113,13 @@
     "research/corpus_pin.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-06: the dense weight of the calibrated fusion moved from a half to one after the sweep on whole-session vectors and the stemmed lexical arm; the re-measurement needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "locomo.dataset.questions_scored",
@@ -11865,9 +12137,7 @@
    "raw": "research/results/locomo.json",
    "pointer": "questions",
    "ci": null,
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "produced_by": [
     "research/locomo_eval.py",
@@ -11890,7 +12160,13 @@
     "research/corpus_pin.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-06: the dense weight of the calibrated fusion moved from a half to one after the sweep on whole-session vectors and the stemmed lexical arm; the re-measurement needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "locomo.dataset.questions_total",
@@ -11908,9 +12184,7 @@
    "raw": "research/results/locomo.json",
    "pointer": null,
    "ci": null,
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "derivation": "the corpus record in research/corpus_pin.py; the result file carries only the scoreable subset",
    "produced_by": [
@@ -11934,7 +12208,13 @@
     "research/corpus_pin.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-06: the dense weight of the calibrated fusion moved from a half to one after the sweep on whole-session vectors and the stemmed lexical arm; the re-measurement needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "locomo.dataset.turns",
@@ -11952,9 +12232,7 @@
    "raw": "research/results/locomo.json",
    "pointer": "turns",
    "ci": null,
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "produced_by": [
     "research/locomo_eval.py",
@@ -11977,7 +12255,13 @@
     "research/corpus_pin.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-06: the dense weight of the calibrated fusion moved from a half to one after the sweep on whole-session vectors and the stemmed lexical arm; the re-measurement needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "locomo.semantic.recall_at_3",
@@ -12023,7 +12307,11 @@
     "research/corpus_pin.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-06: the dense weight of the calibrated fusion moved from a half to one after the sweep on whole-session vectors and the stemmed lexical arm; the re-measurement needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "locomo.lexical.recall_at_3",
@@ -12069,7 +12357,11 @@
     "research/corpus_pin.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-06: the dense weight of the calibrated fusion moved from a half to one after the sweep on whole-session vectors and the stemmed lexical arm; the re-measurement needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "locomo.hybrid.recall_at_3",
@@ -12115,7 +12407,11 @@
     "research/corpus_pin.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-06: the dense weight of the calibrated fusion moved from a half to one after the sweep on whole-session vectors and the stemmed lexical arm; the re-measurement needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "locomo_raw.semantic.recall_at_1",
@@ -12161,7 +12457,11 @@
     "level": 0.95,
     "low": 0.1657,
     "high": 0.1997
-   }
+   },
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-06: the dense weight of the calibrated fusion moved from a half to one after the sweep on whole-session vectors and the stemmed lexical arm; the re-measurement needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "locomo_raw.semantic.recall_at_5",
@@ -12207,7 +12507,11 @@
     "level": 0.95,
     "low": 0.4108,
     "high": 0.4544
-   }
+   },
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-06: the dense weight of the calibrated fusion moved from a half to one after the sweep on whole-session vectors and the stemmed lexical arm; the re-measurement needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "locomo_raw.semantic.recall_at_10",
@@ -12253,7 +12557,11 @@
     "level": 0.95,
     "low": 0.538,
     "high": 0.5817
-   }
+   },
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-06: the dense weight of the calibrated fusion moved from a half to one after the sweep on whole-session vectors and the stemmed lexical arm; the re-measurement needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "locomo_raw.semantic.mrr",
@@ -12294,7 +12602,11 @@
     "sandbox_guard.py"
    ],
    "pointer": "methods.semantic.mrr",
-   "ci": null
+   "ci": null,
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-06: the dense weight of the calibrated fusion moved from a half to one after the sweep on whole-session vectors and the stemmed lexical arm; the re-measurement needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "locomo_raw.lexical.recall_at_1",
@@ -12340,7 +12652,11 @@
     "level": 0.95,
     "low": 0.2515,
     "high": 0.2906
-   }
+   },
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-06: the dense weight of the calibrated fusion moved from a half to one after the sweep on whole-session vectors and the stemmed lexical arm; the re-measurement needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "locomo_raw.lexical.recall_at_5",
@@ -12386,7 +12702,11 @@
     "level": 0.95,
     "low": 0.4772,
     "high": 0.5213
-   }
+   },
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-06: the dense weight of the calibrated fusion moved from a half to one after the sweep on whole-session vectors and the stemmed lexical arm; the re-measurement needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "locomo_raw.lexical.recall_at_10",
@@ -12432,7 +12752,11 @@
     "level": 0.95,
     "low": 0.5542,
     "high": 0.5977
-   }
+   },
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-06: the dense weight of the calibrated fusion moved from a half to one after the sweep on whole-session vectors and the stemmed lexical arm; the re-measurement needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "locomo_raw.lexical.mrr",
@@ -12473,7 +12797,11 @@
     "sandbox_guard.py"
    ],
    "pointer": "methods.lexical.mrr",
-   "ci": null
+   "ci": null,
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-06: the dense weight of the calibrated fusion moved from a half to one after the sweep on whole-session vectors and the stemmed lexical arm; the re-measurement needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "locomo_raw.hybrid.recall_at_1",
@@ -12519,7 +12847,11 @@
     "level": 0.95,
     "low": 0.2737,
     "high": 0.3138
-   }
+   },
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-06: the dense weight of the calibrated fusion moved from a half to one after the sweep on whole-session vectors and the stemmed lexical arm; the re-measurement needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "locomo_raw.hybrid.recall_at_5",
@@ -12565,7 +12897,11 @@
     "level": 0.95,
     "low": 0.5273,
     "high": 0.5711
-   }
+   },
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-06: the dense weight of the calibrated fusion moved from a half to one after the sweep on whole-session vectors and the stemmed lexical arm; the re-measurement needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "locomo_raw.hybrid.recall_at_10",
@@ -12611,7 +12947,11 @@
     "level": 0.95,
     "low": 0.6123,
     "high": 0.6547
-   }
+   },
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-06: the dense weight of the calibrated fusion moved from a half to one after the sweep on whole-session vectors and the stemmed lexical arm; the re-measurement needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "locomo_raw.hybrid.mrr",
@@ -12652,7 +12992,11 @@
     "sandbox_guard.py"
    ],
    "pointer": "methods.hybrid.mrr",
-   "ci": null
+   "ci": null,
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-06: the dense weight of the calibrated fusion moved from a half to one after the sweep on whole-session vectors and the stemmed lexical arm; the re-measurement needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_raw.semantic.recall_at_1",
@@ -12697,7 +13041,11 @@
     "level": 0.95,
     "low": 0.3853,
     "high": 0.4718
-   }
+   },
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-06: the dense weight of the calibrated fusion moved from a half to one after the sweep on whole-session vectors and the stemmed lexical arm; the re-measurement needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_raw.semantic.recall_at_5",
@@ -12742,7 +13090,11 @@
     "level": 0.95,
     "low": 0.6502,
     "high": 0.7309
-   }
+   },
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-06: the dense weight of the calibrated fusion moved from a half to one after the sweep on whole-session vectors and the stemmed lexical arm; the re-measurement needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_raw.semantic.recall_at_10",
@@ -12787,7 +13139,11 @@
     "level": 0.95,
     "low": 0.7437,
     "high": 0.816
-   }
+   },
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-06: the dense weight of the calibrated fusion moved from a half to one after the sweep on whole-session vectors and the stemmed lexical arm; the re-measurement needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_raw.semantic.mrr",
@@ -12827,7 +13183,11 @@
     "sandbox_guard.py"
    ],
    "pointer": "methods.semantic.mrr",
-   "ci": null
+   "ci": null,
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-06: the dense weight of the calibrated fusion moved from a half to one after the sweep on whole-session vectors and the stemmed lexical arm; the re-measurement needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_raw.lexical.recall_at_1",
@@ -12872,7 +13232,11 @@
     "level": 0.95,
     "low": 0.4782,
     "high": 0.5654
-   }
+   },
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-06: the dense weight of the calibrated fusion moved from a half to one after the sweep on whole-session vectors and the stemmed lexical arm; the re-measurement needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_raw.lexical.recall_at_5",
@@ -12917,7 +13281,11 @@
     "level": 0.95,
     "low": 0.7123,
     "high": 0.7878
-   }
+   },
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-06: the dense weight of the calibrated fusion moved from a half to one after the sweep on whole-session vectors and the stemmed lexical arm; the re-measurement needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_raw.lexical.recall_at_10",
@@ -12962,7 +13330,11 @@
     "level": 0.95,
     "low": 0.7989,
     "high": 0.864
-   }
+   },
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-06: the dense weight of the calibrated fusion moved from a half to one after the sweep on whole-session vectors and the stemmed lexical arm; the re-measurement needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_raw.lexical.mrr",
@@ -13002,7 +13374,11 @@
     "sandbox_guard.py"
    ],
    "pointer": "methods.lexical.mrr",
-   "ci": null
+   "ci": null,
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-06: the dense weight of the calibrated fusion moved from a half to one after the sweep on whole-session vectors and the stemmed lexical arm; the re-measurement needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_raw.hybrid.recall_at_1",
@@ -13047,7 +13423,11 @@
     "level": 0.95,
     "low": 0.4902,
     "high": 0.5773
-   }
+   },
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-06: the dense weight of the calibrated fusion moved from a half to one after the sweep on whole-session vectors and the stemmed lexical arm; the re-measurement needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_raw.hybrid.recall_at_5",
@@ -13092,7 +13472,11 @@
     "level": 0.95,
     "low": 0.7564,
     "high": 0.8271
-   }
+   },
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-06: the dense weight of the calibrated fusion moved from a half to one after the sweep on whole-session vectors and the stemmed lexical arm; the re-measurement needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_raw.hybrid.recall_at_10",
@@ -13137,7 +13521,11 @@
     "level": 0.95,
     "low": 0.8139,
     "high": 0.8768
-   }
+   },
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-06: the dense weight of the calibrated fusion moved from a half to one after the sweep on whole-session vectors and the stemmed lexical arm; the re-measurement needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_raw.hybrid.mrr",
@@ -13177,7 +13565,11 @@
     "sandbox_guard.py"
    ],
    "pointer": "methods.hybrid.mrr",
-   "ci": null
+   "ci": null,
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-06: the dense weight of the calibrated fusion moved from a half to one after the sweep on whole-session vectors and the stemmed lexical arm; the re-measurement needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   }
  ],
  "external_citations": [

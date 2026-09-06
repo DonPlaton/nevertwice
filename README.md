@@ -84,10 +84,10 @@ What survived re-measurement at HEAD, and what it cost:
 
 | claim | result | evidence |
 |---|---|---|
-| external retrieval, one pool and one embedder for everyone | R@5 **0.788** on a hash-pinned LongMemEval corpus, whole sessions embedded on our side as on the competitors' | [EXTERNAL_RETRIEVAL.md](research/EXTERNAL_RETRIEVAL.md) |
+| external retrieval, one pool and one embedder for everyone | **withdrawn 2026-09, re-run in progress** - the lexical arm changed (stop words, stems) after the last run; whole sessions are embedded on every side | [EXTERNAL_RETRIEVAL.md](research/EXTERNAL_RETRIEVAL.md) |
 | handing back a fact that has since been **retracted** | **withdrawn 2026-09, re-run queued** - the engine changed after the measurement | [SUPERSESSION.md](research/SUPERSESSION.md) |
 | acting vs *always-injecting* the same lesson | same error prevention for **31×** fewer memory tokens | [ACTIVE_MEMORY.md](research/ACTIVE_MEMORY.md) |
-| memory-poisoning acceptance attacks | **81%** blocked overall - **100%** of prompt injection, **25%** of plausible-false facts | [POISONING.md](research/POISONING.md) |
+| memory-poisoning acceptance attacks | **withdrawn 2026-09, re-run in progress** - the last run blocked all prompt injection and one plausible-false fact in four | [POISONING.md](research/POISONING.md) |
 | what being there costs | withdrawn 2026-09, re-run queued for an idle machine; a tenth of a second per hook and zero context tokens until a guard fires, which is by construction | [BENCHMARKS.md](docs/BENCHMARKS.md) |
 
 The first two rows are the comparative ones. A review in 2026-09 changed the engine, so every

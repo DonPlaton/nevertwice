@@ -51,15 +51,22 @@ library only.
 fused(d) = logistic( w * z(cosine)[d] + z(bm25)[d] )
 ```
 
-It is robust, not a tuned knife-edge. Across a dense-weight sweep from 0.4 to 1.0 every
-setting beat the strongest local competitor on this stand:
+It is robust, not a tuned knife-edge, and the weight is re-swept whenever either signal
+changes. The first sweep, on vectors of the first 2,000 characters of each session and on
+raw lexical tokens, put the near-optimum at 0.5. Both signals changed on 2026-09-06 - whole
+sessions embedded, stop words out and stems in on the lexical side - and the sweep moved with
+them, on both pinned corpora, from the same cached vectors (`research/fusion_sweep.py`; gate
+written first in the working ledger, item I1: the new weight beats 0.5 by at least 0.01 R@5 on
+one corpus and loses no more than 0.005 on the other):
 
-| dense weight | R@5 |
-|---|---|
-| 0.4 | 0.804 |
-| 0.5 (default) | 0.802 |
-| 0.6 | 0.800 |
-| 1.0 | 0.788 |
+<!-- claims:fusion-sweep -->
+> **Not measured yet.** No `fusion_sweep.*` claim is registered; `python research/fusion_sweep.py --save` is the run that produces them.
+<!-- /claims:fusion-sweep -->
+
+The shipped weight is the one that clears the gate on both corpora. The oracle curve is flat
+between 0.75 and 1.0 and falls at 1.5; LoCoMo keeps rising to 1.5 by less than the gate's
+margin over 1.0. One weight for both pools, chosen by the written rule, not by the better
+corpus.
 
 Calibrated linear score fusion is itself classic information retrieval (CombSUM, Fox and
 Shaw, 1994). The contribution here is the measurement: on agent-memory recall, with a
@@ -113,18 +120,19 @@ session, and its term expansion adds noise on specific recall queries. The resul
 kind of negative: the stdlib BM25 is both better here and free of a torch dependency.
 
 **Online-learned fusion weights had no headroom.** A weight sweep is the oracle a bandit can
-only approach, and it shows the fixed 0.5 is already Pareto-optimal: 0.4 buys two questions at
-R@1 (0.554) but gives them back at R@5 and R@10, while 0.5 leads on R@5, R@10, and MRR
-together. With no fixed weight beating 0.5 across the board, an adaptive learner has nothing to
-win, so the weight stays fixed.
+only approach, and on the capped, raw-token stand it showed the fixed weight of the time to be
+Pareto-optimal: the neighbour below it bought two questions at R@1 and gave them back at R@5 and
+R@10. With no fixed weight beating the default across the board, an adaptive learner had nothing
+to win, so the weight stayed fixed - and when the signals changed, the fixed weight was re-swept
+rather than learned (the table above).
 
 **A cross-signal agreement bonus, robust normalisation, and per-query adaptive weighting all
 lost.** Adding a `z(cos)·z(bm25)` interaction term (reward candidates both signals rank high)
 cost three to four points of R@1 at every strength tried. Swapping the z-score for a
 median/MAD robust normalisation dropped R@5 to 0.754, the score pools are not heavy-tailed
 enough to need it. Setting the dense weight per query from the lexical peakedness matched R@1
-but lost R@5 (0.782). On this stand, plain z-score CombSUM at a fixed 0.5 is the ceiling, and
-we say so rather than ship a more complicated ranker that does not pay.
+but lost R@5 (0.782). On this stand, plain z-score CombSUM at one fixed weight is the ceiling,
+and we say so rather than ship a more complicated ranker that does not pay.
 
 **Binary quantization was the one win, and it is about scale, not recall.** One sign bit per
 dimension shrinks the index 32x against the float cache at a four-question R@5 cost, and turns

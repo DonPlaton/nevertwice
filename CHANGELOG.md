@@ -168,6 +168,16 @@ empty.
 
 ### Changed
 
+- **The dense weight of the calibrated fusion is 1.0, from 0.5.** The weight was tuned when
+  the stand embedded the first 2,000 characters of a session and the lexical arm scored raw
+  tokens; with whole-session vectors and the stemmed lexical arm the shipped 0.5 gave back
+  eight thousandths at R@5 on the oracle pool while the semantic arm alone rose four points.
+  `research/fusion_sweep.py` re-sweeps both pinned corpora from cached vectors; 1.0 beat 0.5 by
+  0.012 R@5 on the oracle pool and 0.014 on LoCoMo, clearing the gate written in the ledger
+  before the run (at least 0.01 on one corpus, no more than 0.005 lost on the other). The whole
+  curve is a generated table on `research/RETRIEVAL_FUSION.md`, and the two passages that
+  called 0.5 Pareto-optimal now say on which stand that was true.
+
 - **Re-measured with the shipped tokenizer; sixty-eight claims restored, twenty-four
   registered for the ablation.** LoCoMo, per conversation: lexical R@5 0.499
   raw to 0.601 stemmed, the fused ranker 0.549 to

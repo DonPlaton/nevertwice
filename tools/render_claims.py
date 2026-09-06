@@ -486,6 +486,30 @@ def render_lexical_morphology_vault(c: Claims) -> str:
     return _apply_bold(rows, ["half", "R@1", "R@5", "R@10", "MRR"], 3)
 
 
+SWEEP_WEIGHTS = ("0.25", "0.5", "0.75", "1.0", "1.5")
+
+
+def render_fusion_sweep(c: Claims) -> str:
+    """The dense-weight sweep on both pinned corpora: R@1 / R@5 / MRR per weight, the shipped
+    weight marked, the best value per column in bold."""
+    if not c.has("fusion_sweep.shipped_weight"):
+        return _not_yet("fusion_sweep", "python research/fusion_sweep.py --save")
+    shipped = str(c.value("fusion_sweep.shipped_weight"))
+    rows = []
+    for w in SWEEP_WEIGHTS:
+        key = w.replace(".", "_")
+        label = f"**{w} (shipped)**" if w == shipped or float(w) == float(shipped) else w
+        rows.append([label,
+                     c.value(f"fusion_sweep.oracle.w{key}.recall_at_1"),
+                     c.value(f"fusion_sweep.oracle.w{key}.recall_at_5"),
+                     round(c.value(f"fusion_sweep.oracle.w{key}.mrr"), 3),
+                     c.value(f"fusion_sweep.locomo.w{key}.recall_at_1"),
+                     c.value(f"fusion_sweep.locomo.w{key}.recall_at_5"),
+                     round(c.value(f"fusion_sweep.locomo.w{key}.mrr"), 3)])
+    return _apply_bold(rows, ["dense weight", "oracle R@1", "oracle R@5", "oracle MRR",
+                              "LoCoMo R@1", "LoCoMo R@5", "LoCoMo MRR"], 3)
+
+
 RENDERERS = {
     "longmem-benchmarks": render_longmem_benchmarks,
     "longmem-pinned": render_longmem_pinned,
@@ -497,6 +521,7 @@ RENDERERS = {
     "lexical-morphology-locomo": render_lexical_morphology_locomo,
     "lexical-morphology-oracle": render_lexical_morphology_oracle,
     "lexical-morphology-vault": render_lexical_morphology_vault,
+    "fusion-sweep": render_fusion_sweep,
     "head-to-head": render_head_to_head,
     "latency": render_latency,
     "task-a": render_task_a,
