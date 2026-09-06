@@ -84,21 +84,21 @@ What survived re-measurement at HEAD, and what it cost:
 
 | claim | result | evidence |
 |---|---|---|
-| external retrieval, one pool and one embedder for everyone | **withdrawn 2026-09, re-run queued** - the stand had embedded a seventh of each session on our side and the whole session on the competitors' | [EXTERNAL_RETRIEVAL.md](research/EXTERNAL_RETRIEVAL.md) |
+| external retrieval, one pool and one embedder for everyone | R@5 **0.794** on a hash-pinned LongMemEval corpus, whole sessions embedded on our side as on the competitors'; the three competitor rows come back with their re-run | [EXTERNAL_RETRIEVAL.md](research/EXTERNAL_RETRIEVAL.md) |
 | handing back a fact that has since been **retracted** | **withdrawn 2026-09, re-run queued** - the engine changed after the measurement | [SUPERSESSION.md](research/SUPERSESSION.md) |
 | acting vs *always-injecting* the same lesson | same error prevention for **31×** fewer memory tokens | [ACTIVE_MEMORY.md](research/ACTIVE_MEMORY.md) |
 | memory-poisoning acceptance attacks | **81%** blocked overall - **100%** of prompt injection, **25%** of plausible-false facts; re-measured at the reviewed engine | [POISONING.md](research/POISONING.md) |
-| what being there costs | withdrawn 2026-09, re-run queued for an idle machine; zero context tokens until a guard fires, which is by construction | [BENCHMARKS.md](docs/BENCHMARKS.md) |
+| what being there costs | PreToolUse **85 ms** end to end - a tenth of a second, and it moves by a third between sessions - and zero context tokens until a guard fires | [BENCHMARKS.md](docs/BENCHMARKS.md) |
 
-The first two rows are the comparative ones, and both are withdrawn by the project's own rule:
-a review in 2026-09 changed the engine, so a number measured before it describes a different
-engine until it is measured again. The retrieval stand had also broken its own premise - our
-semantic arm embedded the first two thousand characters of each session while the competitors
-embedded the whole one, an error against us - and that is fixed before the re-run. For the
-record, not for quotation: the withdrawn runs had us ahead of the three competitors on retrieval,
-behind Mem0 on returning a replacement fact, and Mem0 tied with an append-only text file on
-returning the retracted one. LoCoMo, excluded on paper for a year, was run too and narrows its
-own exclusion rather than lifting it ([LOCOMO.md](research/LOCOMO.md)).
+The first two rows are the comparative ones. A review in 2026-09 changed the engine, so every
+number measured before it was withdrawn until measured again; the retrieval stand had also
+broken its own premise - our semantic arm embedded the first two thousand characters of each
+session while the competitors embedded the whole one, an error against us. Re-run with whole
+sessions on every side, our semantic arm alone rose four points at R@5 and the fused ranker
+gave back eight thousandths: its dense weight was tuned on the capped vectors, and re-tuning it
+is a separate measurement with a threshold written first. The competitor rows and the
+supersession row return as their re-runs finish. LoCoMo, excluded on paper for a year, was run
+too and narrows its own exclusion rather than lifting it ([LOCOMO.md](research/LOCOMO.md)).
 
 The 2026-07 run of that retrieval stand stays withdrawn - its corpus could not be identified -
 and the re-run above is a separate claim family on a named one:

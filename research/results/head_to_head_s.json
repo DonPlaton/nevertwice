@@ -12,15 +12,17 @@
  "_questions": 500,
  "_pool_sessions": 19829,
  "nevertwice": {
-  "recall@1": 0.264,
+  "recall@1": 0.252,
   "recall@3": 0.392,
-  "recall@5": 0.452,
-  "recall@10": 0.554,
-  "mrr": 0.3501,
+  "recall@5": 0.438,
+  "recall@10": 0.548,
+  "mrr": 0.341,
   "n": 500,
-  "query_s": 1187.4,
+  "query_s": 1100.1,
+  "embed_chars": 28000,
   "setup": "local bge-m3 via Ollama (calibrated fusion; 0 deps, no server, no DB)",
-  "_wall_s": 1198.8,
-  "version": "nevertwice==2.4.0"
+  "_wall_s": 1111.2,
+  "version": "nevertwice==2.4.0",
+  "label": "Nevertwice (calibrated fusion, the shipped ranker)"
  }
 }

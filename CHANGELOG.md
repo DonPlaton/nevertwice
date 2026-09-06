@@ -158,6 +158,39 @@ empty.
 
 ### Changed
 
+- **Tier 1 of the re-measurement, at the reviewed engine, with whole sessions embedded.** The
+  review of 2026-09-05 found our semantic arm embedding the first 2,000 characters of every
+  LongMemEval session while the competitors embedded the whole one; the stand now embeds whole
+  sessions (cap 28,000, the pool's own) for everyone, and the vector caches carry the cap in
+  their name and a stamp inside. Re-run on the GPU: forty claims restored at this commit.
+
+  | oracle pool | R@1 | R@5 | R@10 | MRR |
+  |---|---|---|---|---|
+  | semantic (bge-m3) | 0.428 | 0.692 | 0.782 | 0.552 |
+  | lexical (BM25) | 0.522 | 0.752 | 0.834 | 0.623 |
+  | calibrated fusion (shipped) | 0.534 | 0.794 | 0.848 | 0.650 |
+  | + trained cross-encoder (opt-in) | 0.610 | 0.814 | 0.848 | 0.705 |
+
+  The semantic arm rose from 0.652 to 0.692 at R@5 - the answer turn
+  begins past the old cap in a third of the evidence sessions. The fused ranker did not follow:
+  0.802 to 0.794, because its dense weight was tuned on the capped vectors;
+  re-tuning it is a separate measurement with its own threshold (ledger I1). The cross-encoder
+  lifts R@1 by +0.076 over the fusion.
+  On the non-oracle pool (19,203 sessions) the fusion reads
+  0.252 / 0.438 / 0.548
+  against 0.184 / 0.354 / 0.440
+  semantic and 0.242 / 0.442 / 0.534
+  lexical. Three of that pool's non-empty sessions exceed the embedder's context even under the
+  character cap and have no vector at this commit; the next commit gives every arm the same
+  fallback (halve and retry) and counts them.
+
+  Latency re-measured on the idle machine before anything else ran: PreToolUse
+  85 ms, UserPromptSubmit 78 ms, SessionStart
+  78 ms, cold import 28 ms - within the
+  cross-session spread the caveat on each claim records. The head-to-head table carries our row
+  (0.794 at R@5); the competitor rows return with their re-run at the next engine
+  commit, so that the store arms are measured once rather than twice.
+
 - **One hundred and one claims withdrawn on 2026-09-05, pending re-measurement.** The review
   changed the engine, and the register's rule is that a number measured before a change
   describes a different engine. `tools/remeasure.py` withdraws by import closure and restores

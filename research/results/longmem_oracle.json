@@ -2,13 +2,14 @@
  "sessions": 940,
  "questions": 500,
  "embedder": "bge-m3",
+ "embed_chars": 28000,
  "methods": {
   "semantic": {
-   "recall@1": 0.422,
-   "recall@3": 0.58,
-   "recall@5": 0.652,
-   "recall@10": 0.728,
-   "mrr": 0.5281852224668283
+   "recall@1": 0.428,
+   "recall@3": 0.624,
+   "recall@5": 0.692,
+   "recall@10": 0.782,
+   "mrr": 0.552113821339757
   },
   "lexical": {
    "recall@1": 0.522,
@@ -18,25 +19,25 @@
    "mrr": 0.6231697064835308
   },
   "hybrid": {
-   "recall@1": 0.55,
-   "recall@3": 0.722,
-   "recall@5": 0.802,
-   "recall@10": 0.858,
-   "mrr": 0.6565628988084086
+   "recall@1": 0.534,
+   "recall@3": 0.718,
+   "recall@5": 0.794,
+   "recall@10": 0.848,
+   "mrr": 0.6495111774157232
   },
   "semantic+recur": {
-   "recall@1": 0.422,
-   "recall@3": 0.58,
-   "recall@5": 0.652,
-   "recall@10": 0.728,
-   "mrr": 0.5281852224668283
+   "recall@1": 0.428,
+   "recall@3": 0.624,
+   "recall@5": 0.692,
+   "recall@10": 0.782,
+   "mrr": 0.552113821339757
   },
   "hybrid+xrerank": {
-   "recall@1": 0.614,
-   "recall@3": 0.796,
-   "recall@5": 0.826,
-   "recall@10": 0.858,
-   "mrr": 0.7117716289671387
+   "recall@1": 0.61,
+   "recall@3": 0.784,
+   "recall@5": 0.814,
+   "recall@10": 0.848,
+   "mrr": 0.704642923447469
   }
  },
  "recur_inert": true,
@@ -54,8 +55,8 @@
   "model": "BAAI/bge-reranker-v2-m3",
   "n": 10,
   "snippet_chars": 1200,
-  "delta_recall@1": 0.06399999999999995,
-  "delta_recall@5": 0.02399999999999991,
+  "delta_recall@1": 0.07599999999999996,
+  "delta_recall@5": 0.019999999999999907,
   "delta_recall@10": 0.0
  }
 }

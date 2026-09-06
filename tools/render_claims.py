@@ -76,6 +76,9 @@ class Claims:
     def is_withdrawn(self, claim_id: str) -> bool:
         return bool(self.get(claim_id).get("stale"))
 
+    def has(self, claim_id: str) -> bool:
+        return claim_id in self._by_id
+
     def get(self, claim_id: str) -> dict:
         try:
             return self._by_id[claim_id]
@@ -128,6 +131,76 @@ def _retrieval_table(c: Claims, places: int) -> str:
 
 HEAD_TO_HEAD_ROWS = [("**Nevertwice (calibrated fusion)**", "nevertwice"),
                      ("Mem0", "mem0"), ("LangMem", "langmem"), ("A-MEM", "amem")]
+H2H_HEADER = ["system", "R@1", "R@5", "R@10", "MRR"]
+
+#: The products' own pipelines (LLM extraction included) as opposed to the store arms above,
+#: which isolate the retrieval layer. Review 2026-09-05: a reader took the store rows for the
+#: products, so the two kinds now sit in separate tables that say which they are.
+PIPELINE_ROWS = [
+    ("Mem0, full pipeline (`infer=True`: its LLM extraction, then its search)", "mem0_infer"),
+    ("LangMem, full pipeline (`create_memory_store_manager`)", "langmem_full"),
+    ("A-MEM, full pipeline (`agentic_memory`: LLM notes and link evolution)", "amem_full"),
+]
+
+
+def _h2h_rows(c: Claims, family: str, spec, required: bool = True) -> list[list]:
+    """One row per arm of `family`. With `required=False` an arm without claims is left out,
+    which is what a blocked pipeline arm looks like in the register."""
+    rows = []
+    for label, slug in spec:
+        base = f"{family}.{slug}"
+        if not required and not c.has(f"{base}.recall_at_1"):
+            continue
+        rows.append([label,
+                     c.value(f"{base}.recall_at_1"),
+                     c.value(f"{base}.recall_at_5"),
+                     c.value(f"{base}.recall_at_10"),
+                     round(c.value(f"{base}.mrr"), 3)])
+    return rows
+
+
+def _not_yet(family: str, command: str) -> str | None:
+    """A family that has never been registered renders as a dated gap, not a crash: the page
+    can carry its region before the run. A family that is only partly registered is an
+    inconsistency and is left to raise."""
+    return (f"> **Not measured yet.** No `{family}.*` claim is registered; "
+            f"`{command}` is the run that produces them.")
+
+
+def render_head_to_head_locomo(c: Claims) -> str:
+    """Four systems on LoCoMo pooled globally - one store, all ten conversations."""
+    if not any(c.has(f"h2h_locomo.{slug}.recall_at_1") for _, slug in HEAD_TO_HEAD_ROWS):
+        return _not_yet("h2h_locomo", "python research/head_to_head.py --data=locomo "
+                        "--only=nevertwice,mem0,langmem,amem --save "
+                        "--out=research/results/head_to_head_locomo.json")
+    return _apply_bold(_h2h_rows(c, "h2h_locomo", HEAD_TO_HEAD_ROWS), H2H_HEADER, 3)
+
+
+def render_head_to_head_s(c: Claims) -> str:
+    """The same four systems on the non-oracle LongMemEval pool."""
+    if not any(c.has(f"h2h_s.{slug}.recall_at_1") for _, slug in HEAD_TO_HEAD_ROWS):
+        return _not_yet("h2h_s", "python research/head_to_head.py --data=s "
+                        "--only=nevertwice,mem0,langmem,amem --save "
+                        "--out=research/results/head_to_head_s.json")
+    return _apply_bold(_h2h_rows(c, "h2h_s", HEAD_TO_HEAD_ROWS), H2H_HEADER, 3)
+
+
+def render_head_to_head_full(c: Claims) -> str:
+    """Our shipped ranker beside the products' full pipelines on the oracle pool.
+
+    A pipeline arm that blocked itself - more than a tenth of its LLM calls failed silently,
+    or the package would not run - has no claim, so it has no row; the note under the table
+    names it rather than letting the table read as if it had never been tried.
+    """
+    rows = (_h2h_rows(c, "h2h_pinned", HEAD_TO_HEAD_ROWS[:1])
+            + _h2h_rows(c, "h2h_pinned", PIPELINE_ROWS, required=False))
+    out = _apply_bold(rows, H2H_HEADER, 3)
+    missing = [label.split(",")[0] for label, slug in PIPELINE_ROWS
+               if not c.has(f"h2h_pinned.{slug}.recall_at_1")]
+    if missing:
+        out += ("\n\n<sub>No row for " + ", ".join(missing) + ": the arm recorded a blocker "
+                "instead of a number, and the artifact carries the reason.</sub>")
+    return out
 
 
 def render_longmem_benchmarks(c: Claims) -> str:
@@ -371,6 +444,8 @@ RENDERERS = {
     "longmem-s": render_longmem_s,
     "locomo": render_locomo,
     "head-to-head-pinned": render_head_to_head_pinned,
+    "head-to-head-locomo": render_head_to_head_locomo,
+    "head-to-head-s": render_head_to_head_s,
     "head-to-head": render_head_to_head,
     "latency": render_latency,
     "task-a": render_task_a,
@@ -472,8 +547,66 @@ def apply_regions(text: str, c: Claims) -> tuple[str, list[str]]:
     return text, changed
 
 
+MORPHOLOGY_METHODS = [("semantic (bge-m3)", "semantic"), ("lexical (BM25)", "lexical"),
+                      ("**calibrated fusion (shipped)**", "hybrid")]
+
+
+def _morphology_pair_table(c: Claims, raw_family: str, morph_family: str) -> str:
+    """Each method twice: on raw tokens (the ablation family) and with stop words + stems (the
+    live family), the best value of each column in bold across both. A family missing a method
+    is an error - both arms are measured by the same stand on the same run."""
+    rows = []
+    for label, slug in MORPHOLOGY_METHODS:
+        for tokens, fam in (("raw tokens", raw_family), ("stop words + stems", morph_family)):
+            rows.append([f"{label}, {tokens}",
+                         c.value(f"{fam}.{slug}.recall_at_1"),
+                         c.value(f"{fam}.{slug}.recall_at_5"),
+                         c.value(f"{fam}.{slug}.recall_at_10"),
+                         round(c.value(f"{fam}.{slug}.mrr"), 3)])
+    return _apply_bold(rows, ["method", "R@1", "R@5", "R@10", "MRR"], 3)
+
+
+def render_lexical_morphology_locomo(c: Claims) -> str:
+    """LoCoMo per conversation: the ablation family `locomo_raw` beside the live `locomo`."""
+    return _morphology_pair_table(c, "locomo_raw", "locomo")
+
+
+def render_lexical_morphology_oracle(c: Claims) -> str:
+    """LongMemEval-oracle: `longmem_raw` beside the live `longmem_pinned`."""
+    return _morphology_pair_table(c, "longmem_raw", "longmem_pinned")
+
+
+def render_lexical_morphology_vault(c: Claims) -> str:
+    """The owner's store, session summary -> the notes extracted from it, by language half.
+    Lexical only (no embedder); the rows come from `research/lexical_morphology_probe.py`."""
+    rows = []
+    for lang, name in (("ru", "Russian half"), ("en", "English half")):
+        for tokens, arm in (("raw tokens", "raw"), ("stop words + stems", "morph")):
+            base = f"morphology.vault.session.{lang}.{arm}"
+            rows.append([f"{name}, {tokens}",
+                         c.value(f"{base}.recall_at_1"),
+                         c.value(f"{base}.recall_at_5"),
+                         c.value(f"{base}.recall_at_10"),
+                         round(c.value(f"{base}.mrr"), 3)])
+    return _apply_bold(rows, ["half", "R@1", "R@5", "R@10", "MRR"], 3)
+
+
 def docs_with_regions(manifest: dict) -> list[Path]:
-    return [ROOT / d for d in manifest["scope"]["docs"]]
+    """The governed documents, plus any registered document that carries a region.
+
+    Study pages are backlog, not governed, and their tables used to be typed by hand from the
+    same artifacts the governed tables are generated from - two copies of one number, one of
+    them unchecked. A region on a study page is rendered from the register like any other,
+    and its figures do not count against the page's budget, because they are not unregistered.
+    """
+    docs = [ROOT / d for d in manifest["scope"]["docs"]]
+    for d in manifest.get("documents", {}):
+        path = ROOT / d
+        if path in docs or not path.is_file():
+            continue
+        if REGION.split("{")[0] in path.read_text(encoding="utf-8", errors="replace"):
+            docs.append(path)
+    return docs
 
 
 def main(argv: list[str] | None = None) -> int:

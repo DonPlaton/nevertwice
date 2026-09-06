@@ -57,6 +57,18 @@ Lexical beating semantic is the same pattern LongMemEval shows, and more pronoun
 dialogue turn is one short line, which gives a bi-encoder very little to work with and a term
 match quite a lot.
 
+## Head to head on the global pool
+
+A competitor store holds one collection, so the fair comparison pools the turns of all ten
+conversations into one store for every system and asks each question against all of it. That is
+harder than LoCoMo's own setting above, and it is what a user's whole history looks like. Same
+embedder, same scoring function, same evidence ids; the competitor rows are their store layers,
+labelled as such (`research/EXTERNAL_RETRIEVAL.md` says what each is).
+
+<!-- claims:head-to-head-locomo -->
+> **Not measured yet.** No `h2h_locomo.*` claim is registered; `python research/head_to_head.py --data=locomo --only=nevertwice,mem0,langmem,amem --save --out=research/results/head_to_head_locomo.json` is the run that produces them.
+<!-- /claims:head-to-head-locomo -->
+
 ## What running it found first
 
 The first run of this file reported semantic recall of **0.037** - near enough to noise that it
