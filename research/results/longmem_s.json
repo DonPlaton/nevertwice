@@ -1,36 +1,38 @@
 {
- "sessions": 19203,
+ "sessions": 19206,
  "questions": 500,
  "embedder": "bge-m3",
+ "sessions_shrunk": 3,
  "embed_chars": 28000,
+ "morphology": true,
  "methods": {
   "semantic": {
    "recall@1": 0.184,
    "recall@3": 0.286,
    "recall@5": 0.354,
    "recall@10": 0.44,
-   "mrr": 0.26702788598825217
+   "mrr": 0.26702788389899756
   },
   "lexical": {
-   "recall@1": 0.242,
-   "recall@3": 0.37,
-   "recall@5": 0.442,
-   "recall@10": 0.534,
-   "mrr": 0.3383885149444315
+   "recall@1": 0.218,
+   "recall@3": 0.346,
+   "recall@5": 0.416,
+   "recall@10": 0.51,
+   "mrr": 0.31341532053640236
   },
   "hybrid": {
-   "recall@1": 0.252,
-   "recall@3": 0.392,
-   "recall@5": 0.438,
-   "recall@10": 0.548,
-   "mrr": 0.35298745606951215
+   "recall@1": 0.228,
+   "recall@3": 0.378,
+   "recall@5": 0.426,
+   "recall@10": 0.52,
+   "mrr": 0.3312385382466309
   },
   "semantic+recur": {
    "recall@1": 0.184,
    "recall@3": 0.286,
    "recall@5": 0.354,
    "recall@10": 0.44,
-   "mrr": 0.26702788598825217
+   "mrr": 0.26702788389899756
   }
  },
  "recur_inert": true,

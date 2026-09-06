@@ -4,7 +4,7 @@
  "embedder": "bge-m3",
  "sessions_shrunk": 0,
  "embed_chars": 28000,
- "morphology": true,
+ "morphology": false,
  "methods": {
   "semantic": {
    "recall@1": 0.428,
@@ -14,18 +14,18 @@
    "mrr": 0.552113821339757
   },
   "lexical": {
-   "recall@1": 0.47,
-   "recall@3": 0.682,
-   "recall@5": 0.738,
-   "recall@10": 0.83,
-   "mrr": 0.5956663939692122
+   "recall@1": 0.522,
+   "recall@3": 0.678,
+   "recall@5": 0.752,
+   "recall@10": 0.834,
+   "mrr": 0.6231697064835308
   },
   "hybrid": {
-   "recall@1": 0.51,
+   "recall@1": 0.534,
    "recall@3": 0.718,
-   "recall@5": 0.788,
-   "recall@10": 0.868,
-   "mrr": 0.6337568486201592
+   "recall@5": 0.794,
+   "recall@10": 0.848,
+   "mrr": 0.6495111774157232
   },
   "semantic+recur": {
    "recall@1": 0.428,
@@ -33,13 +33,6 @@
    "recall@5": 0.692,
    "recall@10": 0.782,
    "mrr": 0.552113821339757
-  },
-  "hybrid+xrerank": {
-   "recall@1": 0.616,
-   "recall@3": 0.79,
-   "recall@5": 0.836,
-   "recall@10": 0.868,
-   "mrr": 0.7158878010011115
   }
  },
  "recur_inert": true,
@@ -52,13 +45,5 @@
   "url": "https://huggingface.co/datasets/xiaowu0162/longmemeval/resolve/main/longmemeval_oracle",
   "licence": "MIT",
   "citation": "Wu et al., LongMemEval: Benchmarking Chat Assistants on Long-Term Interactive Memory, ICLR 2025"
- },
- "xrerank": {
-  "model": "BAAI/bge-reranker-v2-m3",
-  "n": 10,
-  "snippet_chars": 1200,
-  "delta_recall@1": 0.10599999999999998,
-  "delta_recall@5": 0.04799999999999993,
-  "delta_recall@10": 0.0
  }
 }

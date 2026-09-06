@@ -82,6 +82,21 @@ ARTIFACTS = [
              "its conversation: LoCoMo restarts numbering at D1:1 in each of the ten, and a "
              "cache keyed by the bare id collapses 5,882 turns into 1,033, which is a defect "
              "this stand shipped with for exactly one run."},
+    {"file": "research/results/longmem_oracle_raw.json",
+     "command": ["python", "research/longmem_eval.py", "--no-morphology", "--save",
+                 "--out=research/results/longmem_oracle_raw.json"],
+     "kind": HARDWARE, "task": "external-retrieval",
+     "inputs": ["the same corpus and vector cache as research/results/longmem_oracle.json"],
+     "note": "the ablation arm of research/LEXICAL_MORPHOLOGY.md: the same stand with the lexical "
+             "signal on raw tokens (no stop words, no stems), as it ran before 2026-09-06. "
+             "Deterministic given the embedding cache."},
+    {"file": "research/results/locomo_raw.json",
+     "command": ["python", "research/locomo_eval.py", "--no-morphology", "--save",
+                 "--out=research/results/locomo_raw.json"],
+     "kind": HARDWARE, "task": "external-retrieval",
+     "inputs": ["the same corpus and vector cache as research/results/locomo.json"],
+     "note": "the LoCoMo ablation arm of research/LEXICAL_MORPHOLOGY.md, raw tokens. "
+             "Deterministic given the embedding cache."},
     {"file": "research/results/longmem_s.json",
      "command": ["python", "research/longmem_eval.py", "--data=s", "--save",
                  "--out=research/results/longmem_s.json"],

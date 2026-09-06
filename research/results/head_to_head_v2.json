@@ -32,13 +32,20 @@
   "recall@10": 0.846,
   "mrr": 0.6026,
   "n": 500,
-  "ingest_s": 70.8,
-  "query_s": 95.5,
+  "ingest_s": 91.2,
+  "query_s": 103.9,
   "mode": "infer=False (retrieval-only, 1 memory/session)",
+  "sessions_shrunk": 0,
   "embedder": "ollama bge-m3",
+  "search": "dense cosine + fastembed BM25 (Mem0 default hybrid); entity boost off",
   "setup": "pip install mem0ai ollama fastembed; embedded qdrant (no server)",
-  "_wall_s": 170.1,
-  "version": "mem0ai==2.0.19"
+  "_wall_s": 198.3,
+  "version": "mem0ai==2.0.19",
+  "label": "Mem0 store search (infer=False: no LLM extraction, one memory per item; its default hybrid of dense cosine + fastembed BM25 when fastembed is installed)",
+  "measured_at": {
+   "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
+   "utc": "2026-09-06T09:22:23Z"
+  }
  },
  "langmem": {
   "recall@1": 0.426,
@@ -47,12 +54,19 @@
   "recall@10": 0.782,
   "mrr": 0.5427,
   "n": 500,
-  "ingest_s": 62.8,
-  "query_s": 37.4,
+  "ingest_s": 64.7,
+  "query_s": 37.2,
   "embedder": "ollama bge-m3",
+  "mode": "store search only: LangGraph InMemoryStore, no memory manager, no LLM",
+  "sessions_shrunk": 0,
   "setup": "pip install langgraph langmem langchain-ollama (no server)",
-  "_wall_s": 101.5,
-  "version": "langmem==0.0.30"
+  "_wall_s": 103.5,
+  "version": "langmem==0.0.30",
+  "label": "LangGraph InMemoryStore semantic search (LangMem's store layer, no memory manager)",
+  "measured_at": {
+   "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
+   "utc": "2026-09-06T09:24:07Z"
+  }
  },
  "amem": {
   "recall@1": 0.428,
@@ -61,11 +75,18 @@
   "recall@10": 0.782,
   "mrr": 0.5437,
   "n": 500,
-  "ingest_s": 81.4,
-  "query_s": 25.3,
+  "ingest_s": 81.2,
+  "query_s": 24.9,
   "embedder": "ollama bge-m3",
+  "mode": "store search only: chromadb cosine, no LLM note construction, no link evolution",
+  "sessions_shrunk": 0,
   "setup": "pip install chromadb (A-MEM's vector store) + Ollama embeddings",
-  "_wall_s": 107.4,
-  "version": "chromadb==1.5.9"
+  "_wall_s": 106.8,
+  "version": "chromadb==1.5.9",
+  "label": "chromadb cosine over the same vectors (A-MEM's vector store, no LLM notes, no links)",
+  "measured_at": {
+   "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
+   "utc": "2026-09-06T09:25:54Z"
+  }
  }
 }

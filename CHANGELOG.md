@@ -168,6 +168,32 @@ empty.
 
 ### Changed
 
+- **Re-measured with the shipped tokenizer; sixty-eight claims restored, twenty-four
+  registered for the ablation.** LoCoMo, per conversation: lexical R@5 0.499
+  raw to 0.601 stemmed, the fused ranker 0.549 to
+  0.626 (R@1 0.293 to 0.353).
+  LongMemEval-oracle, whole-session vectors: lexical 0.752 to
+  0.738, the fused ranker 0.794 to
+  0.788 at the shipped dense weight - the loss the gate allowed - while
+  the opt-in cross-encoder over the stemmed first stage rose to 0.836
+  at R@5 and 0.616 at R@1 (from 0.814 and 0.610 on raw tokens):
+  the candidate set it reranks got better even where the fusion's own top five did not. The
+  non-oracle pool reads 0.228 / 0.426 /
+  0.520 fused over 19,206 sessions, the three that exceeded
+  the embedder's context now embedded from a shorter prefix and counted. Both ablation arms are
+  claim families of their own (`locomo_raw.*`, `longmem_raw.*`), so the page that argues the
+  change (`research/LEXICAL_MORPHOLOGY.md`, governed, three generated tables) cannot quote a
+  before-number the register does not hold.
+
+  The competitor store arms came back on the oracle pool to three decimals (Mem0 2.0.19
+  0.758,
+  LangMem and A-MEM's stores 0.692),
+  and ran on LoCoMo's global pool for the first time (Mem0 0.575, LangMem
+  0.441, A-MEM 0.436 at R@5); our rows of those
+  tables, and the non-oracle competitor rows, wait for the next engine commit so that they are
+  measured once. Still withdrawn: supersession (17), abstention (5), latency (4, an idle machine),
+  our head-to-head rows (4).
+
 - **Stop words out and stems in on the lexical signal** (`NEVERTWICE_LEXICAL_MORPHOLOGY`, default
   on). The lexical arm scored raw tokens: `running` and `run` were different words, and so were
   `ошибка` and `ошибки`. Now English goes through Porter's 1980 stemmer - the algorithm SQLite's

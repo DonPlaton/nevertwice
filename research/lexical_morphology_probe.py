@@ -15,8 +15,10 @@ read-only, and prints recall by language half:
   phrasing fingerprint - even a thirty-word stop list cost it three points - which no user
   prompt will ever share; kept so the number is on the record rather than in a scratchpad.
 
-Both variants use the engine's own tokenizer with the morphology switch forced off and on, so
-what is measured is the shipped code path, not a copy of it.
+Both variants use the engine's own tokenizer and its own BM25 (`memory_hook._bm25_scores`) with
+the morphology switch forced off and on, so what is measured is the shipped code path, not a
+copy of it. Nothing from `research/` that isolates the store is imported: the store here is the
+one named on the command line, read and never written.
 
     NEVERTWICE_VAULT=/path/to/store python research/lexical_morphology_probe.py
     NEVERTWICE_VAULT=... python research/lexical_morphology_probe.py --protocol sibling
@@ -44,7 +46,6 @@ sandbox_guard.allow_live("reads the notes of a real store to score lexical recal
 sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(ROOT / "nevertwice"))
 import memory_hook as m  # noqa: E402
-import longmem_eval as le  # noqa: E402
 
 KS = (1, 3, 5, 10)
 FM = re.compile(r"^---\r?\n.*?\r?\n---\r?\n", re.S)
@@ -96,11 +97,13 @@ def load_store(vault: Path):
     return notes, sessions
 
 
-def _toks(text: str, morph: bool) -> list:
+def _score(qtext: str, cands: list, morph: bool) -> dict:
+    """The engine's BM25 over the candidate notes, tokenizer switched as asked for both sides."""
     saved = m.LEXICAL_MORPHOLOGY
     m.LEXICAL_MORPHOLOGY = morph
     try:
-        return m._token_list(text)
+        qt = m._tokens(qtext)
+        return m._bm25_scores(qt, cands) if qt else {}
     finally:
         m.LEXICAL_MORPHOLOGY = saved
 
@@ -126,19 +129,17 @@ def run(protocol: str, notes: dict, sessions: list) -> dict:
             if rel and len(pool) >= 3:
                 queries.append((n["project"], slug, n["prose"], rel, n["lang"]))
     variants = {"raw": False, "morph": True}
-    idx: dict = {}
+    cands_of: dict = {}
     agg = {lang: {v: {k: 0.0 for k in KS} for v in variants} for lang in ("ru", "en")}
     mrr = {lang: {v: 0.0 for v in variants} for lang in ("ru", "en")}
     nq: collections.Counter = collections.Counter()
     for proj, self_slug, qtext, rel, lang in queries:
-        slugs = by_proj[proj]
-        if proj not in idx:
-            idx[proj] = {v: le.build_bm25(slugs, {x: _toks(notes[x]["prose"], on) for x in slugs})
-                         for v, on in variants.items()}
-        pool = [x for x in slugs if x != self_slug]
+        if proj not in cands_of:
+            cands_of[proj] = [(x, {"desc": notes[x]["prose"]}) for x in by_proj[proj]]
+        cands = [c for c in cands_of[proj] if c[0] != self_slug]
         nq[lang] += 1
         for v, on in variants.items():
-            bm = le.bm25_scores(set(_toks(qtext, on)), pool, *idx[proj][v])
+            bm = _score(qtext, cands, on)
             ranked = sorted(bm, key=lambda d: (-bm[d], d))
             for k, r in _recall(ranked, rel).items():
                 agg[lang][v][k] += r

@@ -438,6 +438,54 @@ def render_baselines_summary(c: Claims) -> str:
             f"{len(c.manifest['baselines'])} baselines = {total} pairs.\n\n{head}")
 
 
+MORPHOLOGY_METHODS = [("semantic (bge-m3)", "semantic"), ("lexical (BM25)", "lexical"),
+                      ("**calibrated fusion (shipped)**", "hybrid")]
+
+
+def _morphology_pair_table(c: Claims, raw_family: str, morph_family: str) -> str:
+    """Each method twice: on raw tokens (the ablation family) and with stop words + stems (the
+    live family), the best value of each column in bold across both. A family missing a method
+    is an error - both arms are measured by the same stand on the same run."""
+    if not c.has(f"{raw_family}.lexical.recall_at_1"):
+        return _not_yet(raw_family, "the --no-morphology run of the same stand (research/LEXICAL_MORPHOLOGY.md, Reproducing)")
+    rows = []
+    for label, slug in MORPHOLOGY_METHODS:
+        for tokens, fam in (("raw tokens", raw_family), ("stop words + stems", morph_family)):
+            rows.append([f"{label}, {tokens}",
+                         c.value(f"{fam}.{slug}.recall_at_1"),
+                         c.value(f"{fam}.{slug}.recall_at_5"),
+                         c.value(f"{fam}.{slug}.recall_at_10"),
+                         round(c.value(f"{fam}.{slug}.mrr"), 3)])
+    return _apply_bold(rows, ["method", "R@1", "R@5", "R@10", "MRR"], 3)
+
+
+def render_lexical_morphology_locomo(c: Claims) -> str:
+    """LoCoMo per conversation: the ablation family `locomo_raw` beside the live `locomo`."""
+    return _morphology_pair_table(c, "locomo_raw", "locomo")
+
+
+def render_lexical_morphology_oracle(c: Claims) -> str:
+    """LongMemEval-oracle: `longmem_raw` beside the live `longmem_pinned`."""
+    return _morphology_pair_table(c, "longmem_raw", "longmem_pinned")
+
+
+def render_lexical_morphology_vault(c: Claims) -> str:
+    """The owner's store, session summary -> the notes extracted from it, by language half.
+    Lexical only (no embedder); the rows come from `research/lexical_morphology_probe.py`."""
+    if not c.has("morphology.vault.session.ru.raw.recall_at_1"):
+        return _not_yet("morphology.vault.session", "NEVERTWICE_VAULT=<store> python research/lexical_morphology_probe.py --protocol both --out research/results/lexical_morphology_vault.json")
+    rows = []
+    for lang, name in (("ru", "Russian half"), ("en", "English half")):
+        for tokens, arm in (("raw tokens", "raw"), ("stop words + stems", "morph")):
+            base = f"morphology.vault.session.{lang}.{arm}"
+            rows.append([f"{name}, {tokens}",
+                         c.value(f"{base}.recall_at_1"),
+                         c.value(f"{base}.recall_at_5"),
+                         c.value(f"{base}.recall_at_10"),
+                         round(c.value(f"{base}.mrr"), 3)])
+    return _apply_bold(rows, ["half", "R@1", "R@5", "R@10", "MRR"], 3)
+
+
 RENDERERS = {
     "longmem-benchmarks": render_longmem_benchmarks,
     "longmem-pinned": render_longmem_pinned,
@@ -446,6 +494,9 @@ RENDERERS = {
     "head-to-head-pinned": render_head_to_head_pinned,
     "head-to-head-locomo": render_head_to_head_locomo,
     "head-to-head-s": render_head_to_head_s,
+    "lexical-morphology-locomo": render_lexical_morphology_locomo,
+    "lexical-morphology-oracle": render_lexical_morphology_oracle,
+    "lexical-morphology-vault": render_lexical_morphology_vault,
     "head-to-head": render_head_to_head,
     "latency": render_latency,
     "task-a": render_task_a,
@@ -545,50 +596,6 @@ def apply_regions(text: str, c: Claims) -> tuple[str, list[str]]:
             changed.append(region_id)
             text = text[:body_start] + fresh + text[end:]
     return text, changed
-
-
-MORPHOLOGY_METHODS = [("semantic (bge-m3)", "semantic"), ("lexical (BM25)", "lexical"),
-                      ("**calibrated fusion (shipped)**", "hybrid")]
-
-
-def _morphology_pair_table(c: Claims, raw_family: str, morph_family: str) -> str:
-    """Each method twice: on raw tokens (the ablation family) and with stop words + stems (the
-    live family), the best value of each column in bold across both. A family missing a method
-    is an error - both arms are measured by the same stand on the same run."""
-    rows = []
-    for label, slug in MORPHOLOGY_METHODS:
-        for tokens, fam in (("raw tokens", raw_family), ("stop words + stems", morph_family)):
-            rows.append([f"{label}, {tokens}",
-                         c.value(f"{fam}.{slug}.recall_at_1"),
-                         c.value(f"{fam}.{slug}.recall_at_5"),
-                         c.value(f"{fam}.{slug}.recall_at_10"),
-                         round(c.value(f"{fam}.{slug}.mrr"), 3)])
-    return _apply_bold(rows, ["method", "R@1", "R@5", "R@10", "MRR"], 3)
-
-
-def render_lexical_morphology_locomo(c: Claims) -> str:
-    """LoCoMo per conversation: the ablation family `locomo_raw` beside the live `locomo`."""
-    return _morphology_pair_table(c, "locomo_raw", "locomo")
-
-
-def render_lexical_morphology_oracle(c: Claims) -> str:
-    """LongMemEval-oracle: `longmem_raw` beside the live `longmem_pinned`."""
-    return _morphology_pair_table(c, "longmem_raw", "longmem_pinned")
-
-
-def render_lexical_morphology_vault(c: Claims) -> str:
-    """The owner's store, session summary -> the notes extracted from it, by language half.
-    Lexical only (no embedder); the rows come from `research/lexical_morphology_probe.py`."""
-    rows = []
-    for lang, name in (("ru", "Russian half"), ("en", "English half")):
-        for tokens, arm in (("raw tokens", "raw"), ("stop words + stems", "morph")):
-            base = f"morphology.vault.session.{lang}.{arm}"
-            rows.append([f"{name}, {tokens}",
-                         c.value(f"{base}.recall_at_1"),
-                         c.value(f"{base}.recall_at_5"),
-                         c.value(f"{base}.recall_at_10"),
-                         round(c.value(f"{base}.mrr"), 3)])
-    return _apply_bold(rows, ["half", "R@1", "R@5", "R@10", "MRR"], 3)
 
 
 def docs_with_regions(manifest: dict) -> list[Path]:

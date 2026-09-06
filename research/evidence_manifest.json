@@ -5,7 +5,8 @@
   "docs": [
    "README.md",
    "docs/BENCHMARKS.md",
-   "research/BASELINES.md"
+   "research/BASELINES.md",
+   "research/LEXICAL_MORPHOLOGY.md"
   ],
   "excludes": [
    "fenced code blocks - shell commands and illustrative terminal output, not measurements",
@@ -819,6 +820,10 @@
    "note": "Every retrieval figure here is registered under `locomo.*`. The vendor accuracy figure this page names is an external citation, not a measurement of ours.",
    "budget_metric": "evidence-bearing numeric tokens: numbers outside fenced blocks, excluding years, months, Python versions and bare single digits",
    "generator": "research/locomo_eval.py"
+  },
+  "research/LEXICAL_MORPHOLOGY.md": {
+   "governance": "governed",
+   "note": "every printed number must resolve to a claim, and the three tables are generated regions (`lexical-morphology-locomo`, `-oracle`, `-vault`) rendered by tools/render_claims.py from the live and ablation families"
   }
  },
  "claims": [
@@ -2502,8 +2507,10 @@
    "caveat": "Per-attack-instance the rate is 9/12 = 0.75 (raw `recall`). The two aggregates differ; the doc cites the per-family mean. Both fell against the v1.0.0 artifact this replaces - see CHANGELOG.",
    "ci": null,
    "ci_note": "12 hand-written attacks - a proof of taxonomy, not a benchmark.",
-   "cited_in": [],
-   "commit": "f384512bb49fc20d46c4eec874ec889147c0d85a",
+   "cited_in": [
+    "README.md"
+   ],
+   "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "produced_by": [
     "research/poisoning.py",
     "nevertwice/causal.py",
@@ -2521,13 +2528,7 @@
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [
-    "README.md"
-   ],
-   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
-   "withdrawn_on": "2026-09-06",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "poisoning.precision",
@@ -2545,7 +2546,7 @@
    "pointer": "precision",
    "ci": null,
    "cited_in": [],
-   "commit": "f384512bb49fc20d46c4eec874ec889147c0d85a",
+   "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "produced_by": [
     "research/poisoning.py",
     "nevertwice/causal.py",
@@ -2563,11 +2564,7 @@
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [],
-   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
-   "withdrawn_on": "2026-09-06",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "poisoning.injection_blocked",
@@ -2586,8 +2583,10 @@
    "derivation": "1 - attacks.injection.after = 1 - 0.0",
    "ci": null,
    "ci_note": "n=4.",
-   "cited_in": [],
-   "commit": "f384512bb49fc20d46c4eec874ec889147c0d85a",
+   "cited_in": [
+    "README.md"
+   ],
+   "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "produced_by": [
     "research/poisoning.py",
     "nevertwice/causal.py",
@@ -2605,13 +2604,7 @@
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [
-    "README.md"
-   ],
-   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
-   "withdrawn_on": "2026-09-06",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "poisoning.false_fact_blocked",
@@ -2630,8 +2623,10 @@
    "derivation": "1 - attacks.false-fact.after = 1 - 0.75",
    "ci": null,
    "ci_note": "n=4; the honest open problem, published as such.",
-   "cited_in": [],
-   "commit": "f384512bb49fc20d46c4eec874ec889147c0d85a",
+   "cited_in": [
+    "README.md"
+   ],
+   "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "produced_by": [
     "research/poisoning.py",
     "nevertwice/causal.py",
@@ -2650,13 +2645,7 @@
     "nevertwice/why_fired.py",
     "sandbox_guard.py"
    ],
-   "caveat": "n=4; the honest open problem, published as such - and it got worse, not better: the v1.0.0 artifact recorded 50%.",
-   "cited_in_pending": [
-    "README.md"
-   ],
-   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
-   "withdrawn_on": "2026-09-06",
-   "pending_remeasure": true
+   "caveat": "n=4; the honest open problem, published as such - and it got worse, not better: the v1.0.0 artifact recorded 50%."
   },
   {
    "id": "forgetting.coverage_gain_at_20pct",
@@ -2678,7 +2667,7 @@
    "ci": null,
    "ci_note": "6 seeds on a synthetic world; report the spread, not a CI.",
    "cited_in": [],
-   "commit": "f384512bb49fc20d46c4eec874ec889147c0d85a",
+   "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "produced_by": [
     "research/forgetting.py",
     "nevertwice/build_user_model.py",
@@ -2702,11 +2691,7 @@
     "research/longitudinal_bench.py",
     "sandbox_guard.py",
     "tools/render_claims.py"
-   ],
-   "cited_in_pending": [],
-   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
-   "withdrawn_on": "2026-09-06",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "consolidation.recall_drop",
@@ -6542,7 +6527,7 @@
    "raw_gap": "A property of the shipped pack; a test should assert it (task D1).",
    "ci": null,
    "cited_in": [],
-   "commit": "f384512bb49fc20d46c4eec874ec889147c0d85a",
+   "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "produced_by": [
     "nevertwice/guards.py",
     "nevertwice/causal.py",
@@ -6559,11 +6544,7 @@
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py"
    ],
-   "note": " The former command (`--list`) was not a subcommand the CLI accepts; `pack --count` is read-only and prints the number (review 2026-09-05).",
-   "cited_in_pending": [],
-   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
-   "withdrawn_on": "2026-09-06",
-   "pending_remeasure": true
+   "note": " The former command (`--list`) was not a subcommand the CLI accepts; `pack --count` is read-only and prints the number (review 2026-09-05)."
   },
   {
    "id": "head_to_head.nevertwice.recall_at_10",
@@ -8895,7 +8876,7 @@
    "pointer": "matched_false_positive_rate",
    "ci": null,
    "cited_in": [],
-   "commit": "f384512bb49fc20d46c4eec874ec889147c0d85a",
+   "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "produced_by": [
     "research/cheap_baselines.py",
     "nevertwice/anticipate.py",
@@ -8916,11 +8897,7 @@
     "research/_frontier.py",
     "research/matched_conditions.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [],
-   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
-   "withdrawn_on": "2026-09-06",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "baselines.f2.nevertwice.recall",
@@ -8943,7 +8920,7 @@
     "high": 0.7263
    },
    "cited_in": [],
-   "commit": "f384512bb49fc20d46c4eec874ec889147c0d85a",
+   "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "produced_by": [
     "research/cheap_baselines.py",
     "nevertwice/anticipate.py",
@@ -8964,11 +8941,7 @@
     "research/_frontier.py",
     "research/matched_conditions.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [],
-   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
-   "withdrawn_on": "2026-09-06",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "baselines.f2.curated_agents_md.recall",
@@ -8991,7 +8964,7 @@
     "high": 0.3731
    },
    "cited_in": [],
-   "commit": "f384512bb49fc20d46c4eec874ec889147c0d85a",
+   "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "produced_by": [
     "research/cheap_baselines.py",
     "nevertwice/anticipate.py",
@@ -9012,11 +8985,7 @@
     "research/_frontier.py",
     "research/matched_conditions.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [],
-   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
-   "withdrawn_on": "2026-09-06",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "baselines.f2.linter_or_test.recall",
@@ -9039,7 +9008,7 @@
     "high": 0.6386
    },
    "cited_in": [],
-   "commit": "f384512bb49fc20d46c4eec874ec889147c0d85a",
+   "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "produced_by": [
     "research/cheap_baselines.py",
     "nevertwice/anticipate.py",
@@ -9060,11 +9029,7 @@
     "research/_frontier.py",
     "research/matched_conditions.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [],
-   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
-   "withdrawn_on": "2026-09-06",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "baselines.f2.nevertwice.tokens_per_episode",
@@ -9082,7 +9047,7 @@
    "pointer": "arms.nevertwice.tokens_per_episode",
    "ci": null,
    "cited_in": [],
-   "commit": "f384512bb49fc20d46c4eec874ec889147c0d85a",
+   "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "produced_by": [
     "research/cheap_baselines.py",
     "nevertwice/anticipate.py",
@@ -9103,11 +9068,7 @@
     "research/_frontier.py",
     "research/matched_conditions.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [],
-   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
-   "withdrawn_on": "2026-09-06",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "baselines.f2.curated_agents_md.tokens_per_episode",
@@ -9125,7 +9086,7 @@
    "pointer": "arms.curated_agents_md.tokens_per_episode",
    "ci": null,
    "cited_in": [],
-   "commit": "f384512bb49fc20d46c4eec874ec889147c0d85a",
+   "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "produced_by": [
     "research/cheap_baselines.py",
     "nevertwice/anticipate.py",
@@ -9146,11 +9107,7 @@
     "research/_frontier.py",
     "research/matched_conditions.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [],
-   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
-   "withdrawn_on": "2026-09-06",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "longmem_pinned.semantic.recall_at_1",
@@ -9172,8 +9129,10 @@
     "low": 0.3853,
     "high": 0.4718
    },
-   "cited_in": [],
-   "commit": "9c6921657f661a8b80d19bc688c15df38008e0e8",
+   "cited_in": [
+    "docs/BENCHMARKS.md"
+   ],
+   "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "note": "Re-measured 2026-09-02 on the corpus pinned in research/corpus_pin.py (sha256 821a2034..., verified before the run). The value is identical to three decimals to the one withdrawn in 2026-08. The withdrawn claim stays withdrawn: it was measured on a file that cannot be identified, and agreeing with a later run is not evidence about an unidentifiable one.",
    "produced_by": [
     "research/longmem_eval.py",
@@ -9195,13 +9154,7 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [
-    "docs/BENCHMARKS.md"
-   ],
-   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
-   "withdrawn_on": "2026-09-06",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "longmem_pinned.semantic.recall_at_5",
@@ -9223,8 +9176,10 @@
     "low": 0.6502,
     "high": 0.7309
    },
-   "cited_in": [],
-   "commit": "9c6921657f661a8b80d19bc688c15df38008e0e8",
+   "cited_in": [
+    "docs/BENCHMARKS.md"
+   ],
+   "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "note": "Re-measured 2026-09-02 on the corpus pinned in research/corpus_pin.py (sha256 821a2034..., verified before the run). The value is identical to three decimals to the one withdrawn in 2026-08. The withdrawn claim stays withdrawn: it was measured on a file that cannot be identified, and agreeing with a later run is not evidence about an unidentifiable one.",
    "produced_by": [
     "research/longmem_eval.py",
@@ -9246,13 +9201,7 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [
-    "docs/BENCHMARKS.md"
-   ],
-   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
-   "withdrawn_on": "2026-09-06",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "longmem_pinned.semantic.recall_at_10",
@@ -9275,7 +9224,7 @@
     "high": 0.816
    },
    "cited_in": [],
-   "commit": "9c6921657f661a8b80d19bc688c15df38008e0e8",
+   "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "note": "Re-measured 2026-09-02 on the corpus pinned in research/corpus_pin.py (sha256 821a2034..., verified before the run). The value is identical to three decimals to the one withdrawn in 2026-08. The withdrawn claim stays withdrawn: it was measured on a file that cannot be identified, and agreeing with a later run is not evidence about an unidentifiable one.",
    "produced_by": [
     "research/longmem_eval.py",
@@ -9297,11 +9246,7 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [],
-   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
-   "withdrawn_on": "2026-09-06",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "longmem_pinned.semantic.mrr",
@@ -9318,8 +9263,10 @@
    "raw": "research/results/longmem_oracle.json",
    "pointer": "methods.semantic.mrr",
    "ci": null,
-   "cited_in": [],
-   "commit": "9c6921657f661a8b80d19bc688c15df38008e0e8",
+   "cited_in": [
+    "docs/BENCHMARKS.md"
+   ],
+   "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "note": "Re-measured 2026-09-02 on the corpus pinned in research/corpus_pin.py (sha256 821a2034..., verified before the run). The value is identical to three decimals to the one withdrawn in 2026-08. The withdrawn claim stays withdrawn: it was measured on a file that cannot be identified, and agreeing with a later run is not evidence about an unidentifiable one.",
    "produced_by": [
     "research/longmem_eval.py",
@@ -9341,20 +9288,14 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [
-    "docs/BENCHMARKS.md"
-   ],
-   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
-   "withdrawn_on": "2026-09-06",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "longmem_pinned.lexical.recall_at_1",
-   "statement": "lexical recall (BM25-style term overlap, no embedder) reaches RECALL@1 0.522 on the pinned LongMemEval-oracle global pool",
-   "value": 0.522,
+   "statement": "lexical recall (BM25-style term overlap, no embedder) reaches RECALL@1 0.470 on the pinned LongMemEval-oracle global pool",
+   "value": 0.47,
    "printed": [
-    "0.522"
+    "0.470"
    ],
    "unit": "recall@1",
    "dataset": "longmemeval_oracle_pinned",
@@ -9366,11 +9307,13 @@
    "ci": {
     "method": "wilson",
     "level": 0.95,
-    "low": 0.4782,
-    "high": 0.5654
+    "low": 0.4266,
+    "high": 0.5138
    },
-   "cited_in": [],
-   "commit": "9c6921657f661a8b80d19bc688c15df38008e0e8",
+   "cited_in": [
+    "docs/BENCHMARKS.md"
+   ],
+   "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "note": "Re-measured 2026-09-02 on the corpus pinned in research/corpus_pin.py (sha256 821a2034..., verified before the run). The value is identical to three decimals to the one withdrawn in 2026-08. The withdrawn claim stays withdrawn: it was measured on a file that cannot be identified, and agreeing with a later run is not evidence about an unidentifiable one.",
    "produced_by": [
     "research/longmem_eval.py",
@@ -9392,20 +9335,14 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [
-    "docs/BENCHMARKS.md"
-   ],
-   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
-   "withdrawn_on": "2026-09-06",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "longmem_pinned.lexical.recall_at_5",
-   "statement": "lexical recall (BM25-style term overlap, no embedder) reaches RECALL@5 0.752 on the pinned LongMemEval-oracle global pool",
-   "value": 0.752,
+   "statement": "lexical recall (BM25-style term overlap, no embedder) reaches RECALL@5 0.738 on the pinned LongMemEval-oracle global pool",
+   "value": 0.738,
    "printed": [
-    "0.752"
+    "0.738"
    ],
    "unit": "recall@5",
    "dataset": "longmemeval_oracle_pinned",
@@ -9417,11 +9354,13 @@
    "ci": {
     "method": "wilson",
     "level": 0.95,
-    "low": 0.7123,
-    "high": 0.7878
+    "low": 0.6977,
+    "high": 0.7746
    },
-   "cited_in": [],
-   "commit": "9c6921657f661a8b80d19bc688c15df38008e0e8",
+   "cited_in": [
+    "docs/BENCHMARKS.md"
+   ],
+   "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "note": "Re-measured 2026-09-02 on the corpus pinned in research/corpus_pin.py (sha256 821a2034..., verified before the run). The value is identical to three decimals to the one withdrawn in 2026-08. The withdrawn claim stays withdrawn: it was measured on a file that cannot be identified, and agreeing with a later run is not evidence about an unidentifiable one.",
    "produced_by": [
     "research/longmem_eval.py",
@@ -9443,20 +9382,14 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [
-    "docs/BENCHMARKS.md"
-   ],
-   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
-   "withdrawn_on": "2026-09-06",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "longmem_pinned.lexical.recall_at_10",
-   "statement": "lexical recall (BM25-style term overlap, no embedder) reaches RECALL@10 0.834 on the pinned LongMemEval-oracle global pool",
-   "value": 0.834,
+   "statement": "lexical recall (BM25-style term overlap, no embedder) reaches RECALL@10 0.830 on the pinned LongMemEval-oracle global pool",
+   "value": 0.83,
    "printed": [
-    "0.834"
+    "0.830"
    ],
    "unit": "recall@10",
    "dataset": "longmemeval_oracle_pinned",
@@ -9468,11 +9401,11 @@
    "ci": {
     "method": "wilson",
     "level": 0.95,
-    "low": 0.7989,
-    "high": 0.864
+    "low": 0.7946,
+    "high": 0.8604
    },
    "cited_in": [],
-   "commit": "9c6921657f661a8b80d19bc688c15df38008e0e8",
+   "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "note": "Re-measured 2026-09-02 on the corpus pinned in research/corpus_pin.py (sha256 821a2034..., verified before the run). The value is identical to three decimals to the one withdrawn in 2026-08. The withdrawn claim stays withdrawn: it was measured on a file that cannot be identified, and agreeing with a later run is not evidence about an unidentifiable one.",
    "produced_by": [
     "research/longmem_eval.py",
@@ -9494,18 +9427,14 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [],
-   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
-   "withdrawn_on": "2026-09-06",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "longmem_pinned.lexical.mrr",
-   "statement": "lexical recall (BM25-style term overlap, no embedder) reaches MRR 0.623 on the same pool",
-   "value": 0.6231697064835308,
+   "statement": "lexical recall (BM25-style term overlap, no embedder) reaches MRR 0.596 on the same pool",
+   "value": 0.5956663939692122,
    "printed": [
-    "0.623"
+    "0.596"
    ],
    "unit": "mrr",
    "dataset": "longmemeval_oracle_pinned",
@@ -9515,8 +9444,10 @@
    "raw": "research/results/longmem_oracle.json",
    "pointer": "methods.lexical.mrr",
    "ci": null,
-   "cited_in": [],
-   "commit": "9c6921657f661a8b80d19bc688c15df38008e0e8",
+   "cited_in": [
+    "docs/BENCHMARKS.md"
+   ],
+   "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "note": "Re-measured 2026-09-02 on the corpus pinned in research/corpus_pin.py (sha256 821a2034..., verified before the run). The value is identical to three decimals to the one withdrawn in 2026-08. The withdrawn claim stays withdrawn: it was measured on a file that cannot be identified, and agreeing with a later run is not evidence about an unidentifiable one.",
    "produced_by": [
     "research/longmem_eval.py",
@@ -9538,20 +9469,14 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [
-    "docs/BENCHMARKS.md"
-   ],
-   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
-   "withdrawn_on": "2026-09-06",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "longmem_pinned.hybrid.recall_at_1",
-   "statement": "the shipped ranker (calibrated score fusion) reaches RECALL@1 0.534 on the pinned LongMemEval-oracle global pool",
-   "value": 0.534,
+   "statement": "the shipped ranker (calibrated score fusion) reaches RECALL@1 0.510 on the pinned LongMemEval-oracle global pool",
+   "value": 0.51,
    "printed": [
-    "0.534"
+    "0.510"
    ],
    "unit": "recall@1",
    "dataset": "longmemeval_oracle_pinned",
@@ -9563,11 +9488,13 @@
    "ci": {
     "method": "wilson",
     "level": 0.95,
-    "low": 0.4902,
-    "high": 0.5773
+    "low": 0.4663,
+    "high": 0.5536
    },
-   "cited_in": [],
-   "commit": "9c6921657f661a8b80d19bc688c15df38008e0e8",
+   "cited_in": [
+    "docs/BENCHMARKS.md"
+   ],
+   "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "note": "Re-measured 2026-09-02 on the corpus pinned in research/corpus_pin.py (sha256 821a2034..., verified before the run). The value is identical to three decimals to the one withdrawn in 2026-08. The withdrawn claim stays withdrawn: it was measured on a file that cannot be identified, and agreeing with a later run is not evidence about an unidentifiable one.",
    "produced_by": [
     "research/longmem_eval.py",
@@ -9589,20 +9516,14 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [
-    "docs/BENCHMARKS.md"
-   ],
-   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
-   "withdrawn_on": "2026-09-06",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "longmem_pinned.hybrid.recall_at_5",
-   "statement": "the shipped ranker (calibrated score fusion) reaches RECALL@5 0.794 on the pinned LongMemEval-oracle global pool",
-   "value": 0.794,
+   "statement": "the shipped ranker (calibrated score fusion) reaches RECALL@5 0.788 on the pinned LongMemEval-oracle global pool",
+   "value": 0.788,
    "printed": [
-    "0.794"
+    "0.788"
    ],
    "unit": "recall@5",
    "dataset": "longmemeval_oracle_pinned",
@@ -9614,11 +9535,14 @@
    "ci": {
     "method": "wilson",
     "level": 0.95,
-    "low": 0.7564,
-    "high": 0.8271
+    "low": 0.75,
+    "high": 0.8216
    },
-   "cited_in": [],
-   "commit": "9c6921657f661a8b80d19bc688c15df38008e0e8",
+   "cited_in": [
+    "docs/BENCHMARKS.md",
+    "README.md"
+   ],
+   "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "note": "Re-measured 2026-09-02 on the corpus pinned in research/corpus_pin.py (sha256 821a2034..., verified before the run). The value is identical to three decimals to the one withdrawn in 2026-08. The withdrawn claim stays withdrawn: it was measured on a file that cannot be identified, and agreeing with a later run is not evidence about an unidentifiable one.",
    "produced_by": [
     "research/longmem_eval.py",
@@ -9640,20 +9564,14 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [
-    "docs/BENCHMARKS.md"
-   ],
-   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
-   "withdrawn_on": "2026-09-06",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "longmem_pinned.hybrid.recall_at_10",
-   "statement": "the shipped ranker (calibrated score fusion) reaches RECALL@10 0.848 on the pinned LongMemEval-oracle global pool",
-   "value": 0.848,
+   "statement": "the shipped ranker (calibrated score fusion) reaches RECALL@10 0.868 on the pinned LongMemEval-oracle global pool",
+   "value": 0.868,
    "printed": [
-    "0.848"
+    "0.868"
    ],
    "unit": "recall@10",
    "dataset": "longmemeval_oracle_pinned",
@@ -9665,11 +9583,11 @@
    "ci": {
     "method": "wilson",
     "level": 0.95,
-    "low": 0.8139,
-    "high": 0.8768
+    "low": 0.8355,
+    "high": 0.8949
    },
    "cited_in": [],
-   "commit": "9c6921657f661a8b80d19bc688c15df38008e0e8",
+   "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "note": "Re-measured 2026-09-02 on the corpus pinned in research/corpus_pin.py (sha256 821a2034..., verified before the run). The value is identical to three decimals to the one withdrawn in 2026-08. The withdrawn claim stays withdrawn: it was measured on a file that cannot be identified, and agreeing with a later run is not evidence about an unidentifiable one.",
    "produced_by": [
     "research/longmem_eval.py",
@@ -9691,18 +9609,14 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [],
-   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
-   "withdrawn_on": "2026-09-06",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "longmem_pinned.hybrid.mrr",
-   "statement": "the shipped ranker (calibrated score fusion) reaches MRR 0.650 on the same pool",
-   "value": 0.6495111774157232,
+   "statement": "the shipped ranker (calibrated score fusion) reaches MRR 0.634 on the same pool",
+   "value": 0.6337568486201592,
    "printed": [
-    "0.650"
+    "0.634"
    ],
    "unit": "mrr",
    "dataset": "longmemeval_oracle_pinned",
@@ -9712,8 +9626,10 @@
    "raw": "research/results/longmem_oracle.json",
    "pointer": "methods.hybrid.mrr",
    "ci": null,
-   "cited_in": [],
-   "commit": "9c6921657f661a8b80d19bc688c15df38008e0e8",
+   "cited_in": [
+    "docs/BENCHMARKS.md"
+   ],
+   "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "note": "Re-measured 2026-09-02 on the corpus pinned in research/corpus_pin.py (sha256 821a2034..., verified before the run). The value is identical to three decimals to the one withdrawn in 2026-08. The withdrawn claim stays withdrawn: it was measured on a file that cannot be identified, and agreeing with a later run is not evidence about an unidentifiable one.",
    "produced_by": [
     "research/longmem_eval.py",
@@ -9735,20 +9651,14 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [
-    "docs/BENCHMARKS.md"
-   ],
-   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
-   "withdrawn_on": "2026-09-06",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "longmem_pinned.hybrid_xrerank.recall_at_1",
-   "statement": "the shipped ranker plus the opt-in trained cross-encoder reaches RECALL@1 0.610 on the pinned LongMemEval-oracle global pool",
-   "value": 0.61,
+   "statement": "the shipped ranker plus the opt-in trained cross-encoder reaches RECALL@1 0.616 on the pinned LongMemEval-oracle global pool",
+   "value": 0.616,
    "printed": [
-    "0.610"
+    "0.616"
    ],
    "unit": "recall@1",
    "dataset": "longmemeval_oracle_pinned",
@@ -9760,11 +9670,13 @@
    "ci": {
     "method": "wilson",
     "level": 0.95,
-    "low": 0.5666,
-    "high": 0.6518
+    "low": 0.5726,
+    "high": 0.6576
    },
-   "cited_in": [],
-   "commit": "9c6921657f661a8b80d19bc688c15df38008e0e8",
+   "cited_in": [
+    "docs/BENCHMARKS.md"
+   ],
+   "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "note": "Re-measured 2026-09-02 on the corpus pinned in research/corpus_pin.py (sha256 821a2034..., verified before the run). The value is identical to three decimals to the one withdrawn in 2026-08. The withdrawn claim stays withdrawn: it was measured on a file that cannot be identified, and agreeing with a later run is not evidence about an unidentifiable one.",
    "produced_by": [
     "research/longmem_eval.py",
@@ -9786,20 +9698,14 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [
-    "docs/BENCHMARKS.md"
-   ],
-   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
-   "withdrawn_on": "2026-09-06",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "longmem_pinned.hybrid_xrerank.recall_at_5",
-   "statement": "the shipped ranker plus the opt-in trained cross-encoder reaches RECALL@5 0.814 on the pinned LongMemEval-oracle global pool",
-   "value": 0.814,
+   "statement": "the shipped ranker plus the opt-in trained cross-encoder reaches RECALL@5 0.836 on the pinned LongMemEval-oracle global pool",
+   "value": 0.836,
    "printed": [
-    "0.814"
+    "0.836"
    ],
    "unit": "recall@5",
    "dataset": "longmemeval_oracle_pinned",
@@ -9811,11 +9717,13 @@
    "ci": {
     "method": "wilson",
     "level": 0.95,
-    "low": 0.7775,
-    "high": 0.8457
+    "low": 0.801,
+    "high": 0.8659
    },
-   "cited_in": [],
-   "commit": "9c6921657f661a8b80d19bc688c15df38008e0e8",
+   "cited_in": [
+    "docs/BENCHMARKS.md"
+   ],
+   "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "note": "Re-measured 2026-09-02 on the corpus pinned in research/corpus_pin.py (sha256 821a2034..., verified before the run). The value is identical to three decimals to the one withdrawn in 2026-08. The withdrawn claim stays withdrawn: it was measured on a file that cannot be identified, and agreeing with a later run is not evidence about an unidentifiable one.",
    "produced_by": [
     "research/longmem_eval.py",
@@ -9837,20 +9745,14 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [
-    "docs/BENCHMARKS.md"
-   ],
-   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
-   "withdrawn_on": "2026-09-06",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "longmem_pinned.hybrid_xrerank.recall_at_10",
-   "statement": "the shipped ranker plus the opt-in trained cross-encoder reaches RECALL@10 0.848 on the pinned LongMemEval-oracle global pool",
-   "value": 0.848,
+   "statement": "the shipped ranker plus the opt-in trained cross-encoder reaches RECALL@10 0.868 on the pinned LongMemEval-oracle global pool",
+   "value": 0.868,
    "printed": [
-    "0.848"
+    "0.868"
    ],
    "unit": "recall@10",
    "dataset": "longmemeval_oracle_pinned",
@@ -9862,11 +9764,11 @@
    "ci": {
     "method": "wilson",
     "level": 0.95,
-    "low": 0.8139,
-    "high": 0.8768
+    "low": 0.8355,
+    "high": 0.8949
    },
    "cited_in": [],
-   "commit": "9c6921657f661a8b80d19bc688c15df38008e0e8",
+   "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "note": "Re-measured 2026-09-02 on the corpus pinned in research/corpus_pin.py (sha256 821a2034..., verified before the run). The value is identical to three decimals to the one withdrawn in 2026-08. The withdrawn claim stays withdrawn: it was measured on a file that cannot be identified, and agreeing with a later run is not evidence about an unidentifiable one.",
    "produced_by": [
     "research/longmem_eval.py",
@@ -9888,18 +9790,14 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [],
-   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
-   "withdrawn_on": "2026-09-06",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "longmem_pinned.hybrid_xrerank.mrr",
-   "statement": "the shipped ranker plus the opt-in trained cross-encoder reaches MRR 0.705 on the same pool",
-   "value": 0.704642923447469,
+   "statement": "the shipped ranker plus the opt-in trained cross-encoder reaches MRR 0.716 on the same pool",
+   "value": 0.7158878010011115,
    "printed": [
-    "0.705"
+    "0.716"
    ],
    "unit": "mrr",
    "dataset": "longmemeval_oracle_pinned",
@@ -9909,8 +9807,10 @@
    "raw": "research/results/longmem_oracle.json",
    "pointer": "methods.hybrid+xrerank.mrr",
    "ci": null,
-   "cited_in": [],
-   "commit": "9c6921657f661a8b80d19bc688c15df38008e0e8",
+   "cited_in": [
+    "docs/BENCHMARKS.md"
+   ],
+   "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "note": "Re-measured 2026-09-02 on the corpus pinned in research/corpus_pin.py (sha256 821a2034..., verified before the run). The value is identical to three decimals to the one withdrawn in 2026-08. The withdrawn claim stays withdrawn: it was measured on a file that cannot be identified, and agreeing with a later run is not evidence about an unidentifiable one.",
    "produced_by": [
     "research/longmem_eval.py",
@@ -9932,13 +9832,7 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [
-    "docs/BENCHMARKS.md"
-   ],
-   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
-   "withdrawn_on": "2026-09-06",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "h2h_pinned.nevertwice.recall_at_1",
@@ -10161,7 +10055,7 @@
     "high": 0.5218
    },
    "cited_in": [],
-   "commit": "2b0715f320aa7d6ff6ebabf3f84117d4aab844f1",
+   "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "note": "Same 940-session pool, same 500 questions, same local bge-m3, same scoring function. Competitor versions are recorded in the artifact.",
    "produced_by": [
     "research/head_to_head.py",
@@ -10185,13 +10079,7 @@
     "research/locomo_eval.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [
-    "docs/BENCHMARKS.md"
-   ],
-   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
-   "withdrawn_on": "2026-09-05",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "h2h_pinned.mem0.recall_at_5",
@@ -10214,7 +10102,7 @@
     "high": 0.7935
    },
    "cited_in": [],
-   "commit": "2b0715f320aa7d6ff6ebabf3f84117d4aab844f1",
+   "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "note": "Same 940-session pool, same 500 questions, same local bge-m3, same scoring function. Competitor versions are recorded in the artifact.",
    "produced_by": [
     "research/head_to_head.py",
@@ -10238,14 +10126,7 @@
     "research/locomo_eval.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [
-    "docs/BENCHMARKS.md",
-    "README.md"
-   ],
-   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
-   "withdrawn_on": "2026-09-05",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "h2h_pinned.mem0.recall_at_10",
@@ -10268,7 +10149,7 @@
     "high": 0.875
    },
    "cited_in": [],
-   "commit": "2b0715f320aa7d6ff6ebabf3f84117d4aab844f1",
+   "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "note": "Same 940-session pool, same 500 questions, same local bge-m3, same scoring function. Competitor versions are recorded in the artifact.",
    "produced_by": [
     "research/head_to_head.py",
@@ -10292,11 +10173,7 @@
     "research/locomo_eval.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [],
-   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
-   "withdrawn_on": "2026-09-05",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "h2h_pinned.mem0.mrr",
@@ -10314,7 +10191,7 @@
    "pointer": "mem0.mrr",
    "ci": null,
    "cited_in": [],
-   "commit": "2b0715f320aa7d6ff6ebabf3f84117d4aab844f1",
+   "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "produced_by": [
     "research/head_to_head.py",
     "nevertwice/causal.py",
@@ -10337,13 +10214,7 @@
     "research/locomo_eval.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [
-    "docs/BENCHMARKS.md"
-   ],
-   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
-   "withdrawn_on": "2026-09-05",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "h2h_pinned.langmem.recall_at_1",
@@ -10366,7 +10237,7 @@
     "high": 0.4697
    },
    "cited_in": [],
-   "commit": "2b0715f320aa7d6ff6ebabf3f84117d4aab844f1",
+   "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "note": "Same 940-session pool, same 500 questions, same local bge-m3, same scoring function. Competitor versions are recorded in the artifact.",
    "produced_by": [
     "research/head_to_head.py",
@@ -10390,13 +10261,7 @@
     "research/locomo_eval.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [
-    "docs/BENCHMARKS.md"
-   ],
-   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
-   "withdrawn_on": "2026-09-05",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "h2h_pinned.langmem.recall_at_5",
@@ -10419,7 +10284,7 @@
     "high": 0.7309
    },
    "cited_in": [],
-   "commit": "2b0715f320aa7d6ff6ebabf3f84117d4aab844f1",
+   "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "note": "Same 940-session pool, same 500 questions, same local bge-m3, same scoring function. Competitor versions are recorded in the artifact.",
    "produced_by": [
     "research/head_to_head.py",
@@ -10443,14 +10308,7 @@
     "research/locomo_eval.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [
-    "docs/BENCHMARKS.md",
-    "README.md"
-   ],
-   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
-   "withdrawn_on": "2026-09-05",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "h2h_pinned.langmem.recall_at_10",
@@ -10473,7 +10331,7 @@
     "high": 0.816
    },
    "cited_in": [],
-   "commit": "2b0715f320aa7d6ff6ebabf3f84117d4aab844f1",
+   "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "note": "Same 940-session pool, same 500 questions, same local bge-m3, same scoring function. Competitor versions are recorded in the artifact.",
    "produced_by": [
     "research/head_to_head.py",
@@ -10497,11 +10355,7 @@
     "research/locomo_eval.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [],
-   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
-   "withdrawn_on": "2026-09-05",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "h2h_pinned.langmem.mrr",
@@ -10519,7 +10373,7 @@
    "pointer": "langmem.mrr",
    "ci": null,
    "cited_in": [],
-   "commit": "2b0715f320aa7d6ff6ebabf3f84117d4aab844f1",
+   "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "produced_by": [
     "research/head_to_head.py",
     "nevertwice/causal.py",
@@ -10542,13 +10396,7 @@
     "research/locomo_eval.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [
-    "docs/BENCHMARKS.md"
-   ],
-   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
-   "withdrawn_on": "2026-09-05",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "h2h_pinned.amem.recall_at_1",
@@ -10571,7 +10419,7 @@
     "high": 0.4718
    },
    "cited_in": [],
-   "commit": "2b0715f320aa7d6ff6ebabf3f84117d4aab844f1",
+   "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "note": "Same 940-session pool, same 500 questions, same local bge-m3, same scoring function. Competitor versions are recorded in the artifact.",
    "produced_by": [
     "research/head_to_head.py",
@@ -10595,13 +10443,7 @@
     "research/locomo_eval.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [
-    "docs/BENCHMARKS.md"
-   ],
-   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
-   "withdrawn_on": "2026-09-05",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "h2h_pinned.amem.recall_at_5",
@@ -10624,7 +10466,7 @@
     "high": 0.7309
    },
    "cited_in": [],
-   "commit": "2b0715f320aa7d6ff6ebabf3f84117d4aab844f1",
+   "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "note": "Same 940-session pool, same 500 questions, same local bge-m3, same scoring function. Competitor versions are recorded in the artifact.",
    "produced_by": [
     "research/head_to_head.py",
@@ -10648,14 +10490,7 @@
     "research/locomo_eval.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [
-    "docs/BENCHMARKS.md",
-    "README.md"
-   ],
-   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
-   "withdrawn_on": "2026-09-05",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "h2h_pinned.amem.recall_at_10",
@@ -10678,7 +10513,7 @@
     "high": 0.816
    },
    "cited_in": [],
-   "commit": "2b0715f320aa7d6ff6ebabf3f84117d4aab844f1",
+   "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "note": "Same 940-session pool, same 500 questions, same local bge-m3, same scoring function. Competitor versions are recorded in the artifact.",
    "produced_by": [
     "research/head_to_head.py",
@@ -10702,11 +10537,7 @@
     "research/locomo_eval.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [],
-   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
-   "withdrawn_on": "2026-09-05",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "h2h_pinned.amem.mrr",
@@ -10724,7 +10555,7 @@
    "pointer": "amem.mrr",
    "ci": null,
    "cited_in": [],
-   "commit": "2b0715f320aa7d6ff6ebabf3f84117d4aab844f1",
+   "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "produced_by": [
     "research/head_to_head.py",
     "nevertwice/causal.py",
@@ -10747,20 +10578,14 @@
     "research/locomo_eval.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [
-    "docs/BENCHMARKS.md"
-   ],
-   "stale": "withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)",
-   "withdrawn_on": "2026-09-05",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "longmem_pinned.xrerank.delta_recall_at_1",
-   "statement": "the trained cross-encoder lifts top-1 recall by 0.076 over the shipped fusion",
-   "value": 0.07599999999999996,
+   "statement": "the trained cross-encoder lifts top-1 recall by 0.106 over the shipped fusion",
+   "value": 0.10599999999999998,
    "printed": [
-    "0.076"
+    "0.106"
    ],
    "unit": "delta recall@1",
    "dataset": "longmemeval_oracle_pinned",
@@ -10771,7 +10596,7 @@
    "pointer": "xrerank.delta_recall@1",
    "ci": null,
    "cited_in": [],
-   "commit": "9c6921657f661a8b80d19bc688c15df38008e0e8",
+   "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "note": "Paired on the same questions and the same first-stage top-10, so this isolates the reranker rather than the retriever.",
    "produced_by": [
     "research/longmem_eval.py",
@@ -10794,11 +10619,7 @@
     "research/corpus_pin.py",
     "sandbox_guard.py"
    ],
-   "derivation": "methods['hybrid+xrerank'].recall@1 - methods['hybrid'].recall@1, written by the stand into xrerank.delta_recall@1",
-   "cited_in_pending": [],
-   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
-   "withdrawn_on": "2026-09-06",
-   "pending_remeasure": true
+   "derivation": "methods['hybrid+xrerank'].recall@1 - methods['hybrid'].recall@1, written by the stand into xrerank.delta_recall@1"
   },
   {
    "id": "longmem_pinned.dataset.questions",
@@ -10815,8 +10636,10 @@
    "raw": "research/results/longmem_oracle.json",
    "pointer": "questions",
    "ci": null,
-   "cited_in": [],
-   "commit": "9c6921657f661a8b80d19bc688c15df38008e0e8",
+   "cited_in": [
+    "docs/BENCHMARKS.md"
+   ],
+   "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "produced_by": [
     "research/longmem_eval.py",
     "nevertwice/causal.py",
@@ -10837,13 +10660,7 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [
-    "docs/BENCHMARKS.md"
-   ],
-   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
-   "withdrawn_on": "2026-09-06",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "longmem_s.semantic.recall_at_1",
@@ -10865,8 +10682,10 @@
     "low": 0.1525,
     "high": 0.2203
    },
-   "cited_in": [],
-   "commit": "9c6921657f661a8b80d19bc688c15df38008e0e8",
+   "cited_in": [
+    "docs/BENCHMARKS.md"
+   ],
+   "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "note": "The standard non-oracle pool: 19,206 unique haystack sessions against the oracle variant's 940, so every question ranks a haystack twenty-one times larger. Same embedder, same scoring function, same human-annotated ground truth.",
    "produced_by": [
     "research/longmem_eval.py",
@@ -10888,13 +10707,7 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [
-    "docs/BENCHMARKS.md"
-   ],
-   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
-   "withdrawn_on": "2026-09-06",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "longmem_s.semantic.recall_at_5",
@@ -10916,8 +10729,10 @@
     "low": 0.3133,
     "high": 0.3969
    },
-   "cited_in": [],
-   "commit": "9c6921657f661a8b80d19bc688c15df38008e0e8",
+   "cited_in": [
+    "docs/BENCHMARKS.md"
+   ],
+   "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "note": "The standard non-oracle pool: 19,206 unique haystack sessions against the oracle variant's 940, so every question ranks a haystack twenty-one times larger. Same embedder, same scoring function, same human-annotated ground truth.",
    "produced_by": [
     "research/longmem_eval.py",
@@ -10939,13 +10754,7 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [
-    "docs/BENCHMARKS.md"
-   ],
-   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
-   "withdrawn_on": "2026-09-06",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "longmem_s.semantic.recall_at_10",
@@ -10968,7 +10777,7 @@
     "high": 0.4838
    },
    "cited_in": [],
-   "commit": "9c6921657f661a8b80d19bc688c15df38008e0e8",
+   "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "note": "The standard non-oracle pool: 19,206 unique haystack sessions against the oracle variant's 940, so every question ranks a haystack twenty-one times larger. Same embedder, same scoring function, same human-annotated ground truth.",
    "produced_by": [
     "research/longmem_eval.py",
@@ -10990,16 +10799,12 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [],
-   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
-   "withdrawn_on": "2026-09-06",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "longmem_s.semantic.mrr",
    "statement": "semantic recall (bge-m3 bi-encoder) reaches MRR 0.267 on the same pool",
-   "value": 0.26702788598825217,
+   "value": 0.26702788389899756,
    "printed": [
     "0.267"
    ],
@@ -11011,8 +10816,10 @@
    "raw": "research/results/longmem_s.json",
    "pointer": "methods.semantic.mrr",
    "ci": null,
-   "cited_in": [],
-   "commit": "9c6921657f661a8b80d19bc688c15df38008e0e8",
+   "cited_in": [
+    "docs/BENCHMARKS.md"
+   ],
+   "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "note": "The standard non-oracle pool: 19,206 unique haystack sessions against the oracle variant's 940, so every question ranks a haystack twenty-one times larger. Same embedder, same scoring function, same human-annotated ground truth.",
    "produced_by": [
     "research/longmem_eval.py",
@@ -11034,20 +10841,14 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [
-    "docs/BENCHMARKS.md"
-   ],
-   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
-   "withdrawn_on": "2026-09-06",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "longmem_s.lexical.recall_at_1",
-   "statement": "lexical recall (term overlap, no embedder) reaches RECALL@1 0.242 on the 19,206-session non-oracle LongMemEval pool",
-   "value": 0.242,
+   "statement": "lexical recall (term overlap, no embedder) reaches RECALL@1 0.218 on the 19,206-session non-oracle LongMemEval pool",
+   "value": 0.218,
    "printed": [
-    "0.242"
+    "0.218"
    ],
    "unit": "recall@1",
    "dataset": "longmemeval_s_pinned",
@@ -11059,11 +10860,13 @@
    "ci": {
     "method": "wilson",
     "level": 0.95,
-    "low": 0.2065,
-    "high": 0.2814
+    "low": 0.184,
+    "high": 0.2563
    },
-   "cited_in": [],
-   "commit": "9c6921657f661a8b80d19bc688c15df38008e0e8",
+   "cited_in": [
+    "docs/BENCHMARKS.md"
+   ],
+   "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "note": "The standard non-oracle pool: 19,206 unique haystack sessions against the oracle variant's 940, so every question ranks a haystack twenty-one times larger. Same embedder, same scoring function, same human-annotated ground truth.",
    "produced_by": [
     "research/longmem_eval.py",
@@ -11085,20 +10888,14 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [
-    "docs/BENCHMARKS.md"
-   ],
-   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
-   "withdrawn_on": "2026-09-06",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "longmem_s.lexical.recall_at_5",
-   "statement": "lexical recall (term overlap, no embedder) reaches RECALL@5 0.442 on the 19,206-session non-oracle LongMemEval pool",
-   "value": 0.442,
+   "statement": "lexical recall (term overlap, no embedder) reaches RECALL@5 0.416 on the 19,206-session non-oracle LongMemEval pool",
+   "value": 0.416,
    "printed": [
-    "0.442"
+    "0.416"
    ],
    "unit": "recall@5",
    "dataset": "longmemeval_s_pinned",
@@ -11110,11 +10907,13 @@
    "ci": {
     "method": "wilson",
     "level": 0.95,
-    "low": 0.3991,
-    "high": 0.4858
+    "low": 0.3736,
+    "high": 0.4597
    },
-   "cited_in": [],
-   "commit": "9c6921657f661a8b80d19bc688c15df38008e0e8",
+   "cited_in": [
+    "docs/BENCHMARKS.md"
+   ],
+   "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "note": "The standard non-oracle pool: 19,206 unique haystack sessions against the oracle variant's 940, so every question ranks a haystack twenty-one times larger. Same embedder, same scoring function, same human-annotated ground truth.",
    "produced_by": [
     "research/longmem_eval.py",
@@ -11136,20 +10935,14 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [
-    "docs/BENCHMARKS.md"
-   ],
-   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
-   "withdrawn_on": "2026-09-06",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "longmem_s.lexical.recall_at_10",
-   "statement": "lexical recall (term overlap, no embedder) reaches RECALL@10 0.534 on the 19,206-session non-oracle LongMemEval pool",
-   "value": 0.534,
+   "statement": "lexical recall (term overlap, no embedder) reaches RECALL@10 0.510 on the 19,206-session non-oracle LongMemEval pool",
+   "value": 0.51,
    "printed": [
-    "0.534"
+    "0.510"
    ],
    "unit": "recall@10",
    "dataset": "longmemeval_s_pinned",
@@ -11161,11 +10954,11 @@
    "ci": {
     "method": "wilson",
     "level": 0.95,
-    "low": 0.4902,
-    "high": 0.5773
+    "low": 0.4663,
+    "high": 0.5536
    },
    "cited_in": [],
-   "commit": "9c6921657f661a8b80d19bc688c15df38008e0e8",
+   "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "note": "The standard non-oracle pool: 19,206 unique haystack sessions against the oracle variant's 940, so every question ranks a haystack twenty-one times larger. Same embedder, same scoring function, same human-annotated ground truth.",
    "produced_by": [
     "research/longmem_eval.py",
@@ -11187,18 +10980,14 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [],
-   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
-   "withdrawn_on": "2026-09-06",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "longmem_s.lexical.mrr",
-   "statement": "lexical recall (term overlap, no embedder) reaches MRR 0.338 on the same pool",
-   "value": 0.3383885149444315,
+   "statement": "lexical recall (term overlap, no embedder) reaches MRR 0.313 on the same pool",
+   "value": 0.31341532053640236,
    "printed": [
-    "0.338"
+    "0.313"
    ],
    "unit": "mrr",
    "dataset": "longmemeval_s_pinned",
@@ -11208,8 +10997,10 @@
    "raw": "research/results/longmem_s.json",
    "pointer": "methods.lexical.mrr",
    "ci": null,
-   "cited_in": [],
-   "commit": "9c6921657f661a8b80d19bc688c15df38008e0e8",
+   "cited_in": [
+    "docs/BENCHMARKS.md"
+   ],
+   "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "note": "The standard non-oracle pool: 19,206 unique haystack sessions against the oracle variant's 940, so every question ranks a haystack twenty-one times larger. Same embedder, same scoring function, same human-annotated ground truth.",
    "produced_by": [
     "research/longmem_eval.py",
@@ -11231,20 +11022,14 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [
-    "docs/BENCHMARKS.md"
-   ],
-   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
-   "withdrawn_on": "2026-09-06",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "longmem_s.hybrid.recall_at_1",
-   "statement": "the shipped ranker (calibrated score fusion) reaches RECALL@1 0.252 on the 19,206-session non-oracle LongMemEval pool",
-   "value": 0.252,
+   "statement": "the shipped ranker (calibrated score fusion) reaches RECALL@1 0.228 on the 19,206-session non-oracle LongMemEval pool",
+   "value": 0.228,
    "printed": [
-    "0.252"
+    "0.228"
    ],
    "unit": "recall@1",
    "dataset": "longmemeval_s_pinned",
@@ -11256,11 +11041,13 @@
    "ci": {
     "method": "wilson",
     "level": 0.95,
-    "low": 0.2159,
-    "high": 0.2918
+    "low": 0.1934,
+    "high": 0.2668
    },
-   "cited_in": [],
-   "commit": "9c6921657f661a8b80d19bc688c15df38008e0e8",
+   "cited_in": [
+    "docs/BENCHMARKS.md"
+   ],
+   "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "note": "The standard non-oracle pool: 19,206 unique haystack sessions against the oracle variant's 940, so every question ranks a haystack twenty-one times larger. Same embedder, same scoring function, same human-annotated ground truth.",
    "produced_by": [
     "research/longmem_eval.py",
@@ -11282,20 +11069,14 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [
-    "docs/BENCHMARKS.md"
-   ],
-   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
-   "withdrawn_on": "2026-09-06",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "longmem_s.hybrid.recall_at_5",
-   "statement": "the shipped ranker (calibrated score fusion) reaches RECALL@5 0.438 on the 19,206-session non-oracle LongMemEval pool",
-   "value": 0.438,
+   "statement": "the shipped ranker (calibrated score fusion) reaches RECALL@5 0.426 on the 19,206-session non-oracle LongMemEval pool",
+   "value": 0.426,
    "printed": [
-    "0.438"
+    "0.426"
    ],
    "unit": "recall@5",
    "dataset": "longmemeval_s_pinned",
@@ -11307,11 +11088,13 @@
    "ci": {
     "method": "wilson",
     "level": 0.95,
-    "low": 0.3951,
-    "high": 0.4818
+    "low": 0.3834,
+    "high": 0.4697
    },
-   "cited_in": [],
-   "commit": "9c6921657f661a8b80d19bc688c15df38008e0e8",
+   "cited_in": [
+    "docs/BENCHMARKS.md"
+   ],
+   "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "note": "The standard non-oracle pool: 19,206 unique haystack sessions against the oracle variant's 940, so every question ranks a haystack twenty-one times larger. Same embedder, same scoring function, same human-annotated ground truth.",
    "produced_by": [
     "research/longmem_eval.py",
@@ -11333,20 +11116,14 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [
-    "docs/BENCHMARKS.md"
-   ],
-   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
-   "withdrawn_on": "2026-09-06",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "longmem_s.hybrid.recall_at_10",
-   "statement": "the shipped ranker (calibrated score fusion) reaches RECALL@10 0.548 on the 19,206-session non-oracle LongMemEval pool",
-   "value": 0.548,
+   "statement": "the shipped ranker (calibrated score fusion) reaches RECALL@10 0.520 on the 19,206-session non-oracle LongMemEval pool",
+   "value": 0.52,
    "printed": [
-    "0.548"
+    "0.520"
    ],
    "unit": "recall@10",
    "dataset": "longmemeval_s_pinned",
@@ -11358,11 +11135,11 @@
    "ci": {
     "method": "wilson",
     "level": 0.95,
-    "low": 0.5042,
-    "high": 0.5911
+    "low": 0.4762,
+    "high": 0.5635
    },
    "cited_in": [],
-   "commit": "9c6921657f661a8b80d19bc688c15df38008e0e8",
+   "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "note": "The standard non-oracle pool: 19,206 unique haystack sessions against the oracle variant's 940, so every question ranks a haystack twenty-one times larger. Same embedder, same scoring function, same human-annotated ground truth.",
    "produced_by": [
     "research/longmem_eval.py",
@@ -11384,18 +11161,14 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [],
-   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
-   "withdrawn_on": "2026-09-06",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "longmem_s.hybrid.mrr",
-   "statement": "the shipped ranker (calibrated score fusion) reaches MRR 0.353 on the same pool",
-   "value": 0.35298745606951215,
+   "statement": "the shipped ranker (calibrated score fusion) reaches MRR 0.331 on the same pool",
+   "value": 0.3312385382466309,
    "printed": [
-    "0.353"
+    "0.331"
    ],
    "unit": "mrr",
    "dataset": "longmemeval_s_pinned",
@@ -11405,8 +11178,10 @@
    "raw": "research/results/longmem_s.json",
    "pointer": "methods.hybrid.mrr",
    "ci": null,
-   "cited_in": [],
-   "commit": "9c6921657f661a8b80d19bc688c15df38008e0e8",
+   "cited_in": [
+    "docs/BENCHMARKS.md"
+   ],
+   "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "note": "The standard non-oracle pool: 19,206 unique haystack sessions against the oracle variant's 940, so every question ranks a haystack twenty-one times larger. Same embedder, same scoring function, same human-annotated ground truth.",
    "produced_by": [
     "research/longmem_eval.py",
@@ -11428,21 +11203,15 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [
-    "docs/BENCHMARKS.md"
-   ],
-   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
-   "withdrawn_on": "2026-09-06",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "longmem_s.dataset.pool_sessions",
-   "statement": "the non-oracle LongMemEval pool holds 19,203 retrievable sessions",
-   "value": 19203,
+   "statement": "the non-oracle LongMemEval pool holds 19,206 retrievable sessions",
+   "value": 19206,
    "printed": [
-    "19,203",
-    "19203"
+    "19,206",
+    "19206"
    ],
    "unit": "sessions",
    "dataset": "longmemeval_s_pinned",
@@ -11452,8 +11221,10 @@
    "raw": "research/results/longmem_s.json",
    "pointer": "sessions",
    "ci": null,
-   "cited_in": [],
-   "commit": "9c6921657f661a8b80d19bc688c15df38008e0e8",
+   "cited_in": [
+    "docs/BENCHMARKS.md"
+   ],
+   "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "produced_by": [
     "research/longmem_eval.py",
     "nevertwice/causal.py",
@@ -11474,13 +11245,7 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [
-    "docs/BENCHMARKS.md"
-   ],
-   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
-   "withdrawn_on": "2026-09-06",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "longmem_pinned.dataset.pool_sessions",
@@ -11497,8 +11262,10 @@
    "raw": "research/results/longmem_oracle.json",
    "pointer": "sessions",
    "ci": null,
-   "cited_in": [],
-   "commit": "9c6921657f661a8b80d19bc688c15df38008e0e8",
+   "cited_in": [
+    "docs/BENCHMARKS.md"
+   ],
+   "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "produced_by": [
     "research/longmem_eval.py",
     "nevertwice/causal.py",
@@ -11519,13 +11286,7 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [
-    "docs/BENCHMARKS.md"
-   ],
-   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
-   "withdrawn_on": "2026-09-06",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "locomo.semantic.recall_at_1",
@@ -11547,8 +11308,10 @@
     "low": 0.1657,
     "high": 0.1997
    },
-   "cited_in": [],
-   "commit": "f384512bb49fc20d46c4eec874ec889147c0d85a",
+   "cited_in": [
+    "docs/BENCHMARKS.md"
+   ],
+   "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
     "research/locomo_eval.py",
@@ -11571,13 +11334,7 @@
     "research/corpus_pin.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [
-    "docs/BENCHMARKS.md"
-   ],
-   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
-   "withdrawn_on": "2026-09-06",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "locomo.semantic.recall_at_5",
@@ -11599,8 +11356,10 @@
     "low": 0.4108,
     "high": 0.4544
    },
-   "cited_in": [],
-   "commit": "f384512bb49fc20d46c4eec874ec889147c0d85a",
+   "cited_in": [
+    "docs/BENCHMARKS.md"
+   ],
+   "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
     "research/locomo_eval.py",
@@ -11623,13 +11382,7 @@
     "research/corpus_pin.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [
-    "docs/BENCHMARKS.md"
-   ],
-   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
-   "withdrawn_on": "2026-09-06",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "locomo.semantic.recall_at_10",
@@ -11651,8 +11404,10 @@
     "low": 0.538,
     "high": 0.5817
    },
-   "cited_in": [],
-   "commit": "f384512bb49fc20d46c4eec874ec889147c0d85a",
+   "cited_in": [
+    "docs/BENCHMARKS.md"
+   ],
+   "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
     "research/locomo_eval.py",
@@ -11675,13 +11430,7 @@
     "research/corpus_pin.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [
-    "docs/BENCHMARKS.md"
-   ],
-   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
-   "withdrawn_on": "2026-09-06",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "locomo.semantic.mrr",
@@ -11698,8 +11447,10 @@
    "raw": "research/results/locomo.json",
    "pointer": "methods.semantic.mrr",
    "ci": null,
-   "cited_in": [],
-   "commit": "f384512bb49fc20d46c4eec874ec889147c0d85a",
+   "cited_in": [
+    "docs/BENCHMARKS.md"
+   ],
+   "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
     "research/locomo_eval.py",
@@ -11722,20 +11473,14 @@
     "research/corpus_pin.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [
-    "docs/BENCHMARKS.md"
-   ],
-   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
-   "withdrawn_on": "2026-09-06",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "locomo.lexical.recall_at_1",
-   "statement": "lexical recall (term overlap, no embedder) reaches RECALL@1 0.271 on LoCoMo, retrieving the annotated evidence turn from its own conversation",
-   "value": 0.270612038442084,
+   "statement": "lexical recall (term overlap, no embedder) reaches RECALL@1 0.339 on LoCoMo, retrieving the annotated evidence turn from its own conversation",
+   "value": 0.33940313606474454,
    "printed": [
-    "0.271"
+    "0.339"
    ],
    "unit": "recall@1",
    "dataset": "locomo10_pinned",
@@ -11747,11 +11492,13 @@
    "ci": {
     "method": "wilson",
     "level": 0.95,
-    "low": 0.2515,
-    "high": 0.2906
+    "low": 0.3189,
+    "high": 0.3606
    },
-   "cited_in": [],
-   "commit": "f384512bb49fc20d46c4eec874ec889147c0d85a",
+   "cited_in": [
+    "docs/BENCHMARKS.md"
+   ],
+   "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
     "research/locomo_eval.py",
@@ -11774,20 +11521,14 @@
     "research/corpus_pin.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [
-    "docs/BENCHMARKS.md"
-   ],
-   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
-   "withdrawn_on": "2026-09-06",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "locomo.lexical.recall_at_5",
-   "statement": "lexical recall (term overlap, no embedder) reaches RECALL@5 0.499 on LoCoMo, retrieving the annotated evidence turn from its own conversation",
-   "value": 0.4992412746585736,
+   "statement": "lexical recall (term overlap, no embedder) reaches RECALL@5 0.601 on LoCoMo, retrieving the annotated evidence turn from its own conversation",
+   "value": 0.601416287303996,
    "printed": [
-    "0.499"
+    "0.601"
    ],
    "unit": "recall@5",
    "dataset": "locomo10_pinned",
@@ -11799,11 +11540,13 @@
    "ci": {
     "method": "wilson",
     "level": 0.95,
-    "low": 0.4772,
-    "high": 0.5213
+    "low": 0.5797,
+    "high": 0.6228
    },
-   "cited_in": [],
-   "commit": "f384512bb49fc20d46c4eec874ec889147c0d85a",
+   "cited_in": [
+    "docs/BENCHMARKS.md"
+   ],
+   "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
     "research/locomo_eval.py",
@@ -11826,20 +11569,14 @@
     "research/corpus_pin.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [
-    "docs/BENCHMARKS.md"
-   ],
-   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
-   "withdrawn_on": "2026-09-06",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "locomo.lexical.recall_at_10",
-   "statement": "lexical recall (term overlap, no embedder) reaches RECALL@10 0.576 on LoCoMo, retrieving the annotated evidence turn from its own conversation",
-   "value": 0.5761254425897825,
+   "statement": "lexical recall (term overlap, no embedder) reaches RECALL@10 0.681 on LoCoMo, retrieving the annotated evidence turn from its own conversation",
+   "value": 0.6808295397066262,
    "printed": [
-    "0.576"
+    "0.681"
    ],
    "unit": "recall@10",
    "dataset": "locomo10_pinned",
@@ -11851,11 +11588,13 @@
    "ci": {
     "method": "wilson",
     "level": 0.95,
-    "low": 0.5542,
-    "high": 0.5977
+    "low": 0.6599,
+    "high": 0.701
    },
-   "cited_in": [],
-   "commit": "f384512bb49fc20d46c4eec874ec889147c0d85a",
+   "cited_in": [
+    "docs/BENCHMARKS.md"
+   ],
+   "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
     "research/locomo_eval.py",
@@ -11878,20 +11617,14 @@
     "research/corpus_pin.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [
-    "docs/BENCHMARKS.md"
-   ],
-   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
-   "withdrawn_on": "2026-09-06",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "locomo.lexical.mrr",
-   "statement": "lexical recall (term overlap, no embedder) reaches MRR 0.377 on LoCoMo",
-   "value": 0.3774088120462245,
+   "statement": "lexical recall (term overlap, no embedder) reaches MRR 0.459 on LoCoMo",
+   "value": 0.45889847274401196,
    "printed": [
-    "0.377"
+    "0.459"
    ],
    "unit": "mrr",
    "dataset": "locomo10_pinned",
@@ -11901,8 +11634,10 @@
    "raw": "research/results/locomo.json",
    "pointer": "methods.lexical.mrr",
    "ci": null,
-   "cited_in": [],
-   "commit": "f384512bb49fc20d46c4eec874ec889147c0d85a",
+   "cited_in": [
+    "docs/BENCHMARKS.md"
+   ],
+   "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
     "research/locomo_eval.py",
@@ -11925,20 +11660,14 @@
     "research/corpus_pin.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [
-    "docs/BENCHMARKS.md"
-   ],
-   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
-   "withdrawn_on": "2026-09-06",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "locomo.hybrid.recall_at_1",
-   "statement": "the shipped ranker (calibrated score fusion) reaches RECALL@1 0.293 on LoCoMo, retrieving the annotated evidence turn from its own conversation",
-   "value": 0.29337379868487606,
+   "statement": "the shipped ranker (calibrated score fusion) reaches RECALL@1 0.353 on LoCoMo, retrieving the annotated evidence turn from its own conversation",
+   "value": 0.35306019221041984,
    "printed": [
-    "0.293"
+    "0.353"
    ],
    "unit": "recall@1",
    "dataset": "locomo10_pinned",
@@ -11950,11 +11679,13 @@
    "ci": {
     "method": "wilson",
     "level": 0.95,
-    "low": 0.2737,
-    "high": 0.3138
+    "low": 0.3323,
+    "high": 0.3744
    },
-   "cited_in": [],
-   "commit": "f384512bb49fc20d46c4eec874ec889147c0d85a",
+   "cited_in": [
+    "docs/BENCHMARKS.md"
+   ],
+   "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
     "research/locomo_eval.py",
@@ -11977,20 +11708,14 @@
     "research/corpus_pin.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [
-    "docs/BENCHMARKS.md"
-   ],
-   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
-   "withdrawn_on": "2026-09-06",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "locomo.hybrid.recall_at_5",
-   "statement": "the shipped ranker (calibrated score fusion) reaches RECALL@5 0.549 on LoCoMo, retrieving the annotated evidence turn from its own conversation",
-   "value": 0.5493171471927162,
+   "statement": "the shipped ranker (calibrated score fusion) reaches RECALL@5 0.626 on LoCoMo, retrieving the annotated evidence turn from its own conversation",
+   "value": 0.6262013151239252,
    "printed": [
-    "0.549"
+    "0.626"
    ],
    "unit": "recall@5",
    "dataset": "locomo10_pinned",
@@ -12002,11 +11727,13 @@
    "ci": {
     "method": "wilson",
     "level": 0.95,
-    "low": 0.5273,
-    "high": 0.5711
+    "low": 0.6046,
+    "high": 0.6473
    },
-   "cited_in": [],
-   "commit": "f384512bb49fc20d46c4eec874ec889147c0d85a",
+   "cited_in": [
+    "docs/BENCHMARKS.md"
+   ],
+   "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
     "research/locomo_eval.py",
@@ -12029,20 +11756,14 @@
     "research/corpus_pin.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [
-    "docs/BENCHMARKS.md"
-   ],
-   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
-   "withdrawn_on": "2026-09-06",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "locomo.hybrid.recall_at_10",
-   "statement": "the shipped ranker (calibrated score fusion) reaches RECALL@10 0.634 on LoCoMo, retrieving the annotated evidence turn from its own conversation",
-   "value": 0.6337885685381892,
+   "statement": "the shipped ranker (calibrated score fusion) reaches RECALL@10 0.707 on LoCoMo, retrieving the annotated evidence turn from its own conversation",
+   "value": 0.7071320182094082,
    "printed": [
-    "0.634"
+    "0.707"
    ],
    "unit": "recall@10",
    "dataset": "locomo10_pinned",
@@ -12054,11 +11775,13 @@
    "ci": {
     "method": "wilson",
     "level": 0.95,
-    "low": 0.6123,
-    "high": 0.6547
+    "low": 0.6867,
+    "high": 0.7268
    },
-   "cited_in": [],
-   "commit": "f384512bb49fc20d46c4eec874ec889147c0d85a",
+   "cited_in": [
+    "docs/BENCHMARKS.md"
+   ],
+   "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
     "research/locomo_eval.py",
@@ -12081,20 +11804,14 @@
     "research/corpus_pin.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [
-    "docs/BENCHMARKS.md"
-   ],
-   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
-   "withdrawn_on": "2026-09-06",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "locomo.hybrid.mrr",
-   "statement": "the shipped ranker (calibrated score fusion) reaches MRR 0.411 on LoCoMo",
-   "value": 0.4109072479379875,
+   "statement": "the shipped ranker (calibrated score fusion) reaches MRR 0.478 on LoCoMo",
+   "value": 0.4783312872761034,
    "printed": [
-    "0.411"
+    "0.478"
    ],
    "unit": "mrr",
    "dataset": "locomo10_pinned",
@@ -12104,8 +11821,10 @@
    "raw": "research/results/locomo.json",
    "pointer": "methods.hybrid.mrr",
    "ci": null,
-   "cited_in": [],
-   "commit": "f384512bb49fc20d46c4eec874ec889147c0d85a",
+   "cited_in": [
+    "docs/BENCHMARKS.md"
+   ],
+   "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
     "research/locomo_eval.py",
@@ -12128,13 +11847,7 @@
     "research/corpus_pin.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [
-    "docs/BENCHMARKS.md"
-   ],
-   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
-   "withdrawn_on": "2026-09-06",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "locomo.dataset.questions_scored",
@@ -12152,8 +11865,10 @@
    "raw": "research/results/locomo.json",
    "pointer": "questions",
    "ci": null,
-   "cited_in": [],
-   "commit": "f384512bb49fc20d46c4eec874ec889147c0d85a",
+   "cited_in": [
+    "docs/BENCHMARKS.md"
+   ],
+   "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "produced_by": [
     "research/locomo_eval.py",
     "nevertwice/causal.py",
@@ -12175,13 +11890,7 @@
     "research/corpus_pin.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [
-    "docs/BENCHMARKS.md"
-   ],
-   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
-   "withdrawn_on": "2026-09-06",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "locomo.dataset.questions_total",
@@ -12199,8 +11908,10 @@
    "raw": "research/results/locomo.json",
    "pointer": null,
    "ci": null,
-   "cited_in": [],
-   "commit": "f384512bb49fc20d46c4eec874ec889147c0d85a",
+   "cited_in": [
+    "docs/BENCHMARKS.md"
+   ],
+   "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "derivation": "the corpus record in research/corpus_pin.py; the result file carries only the scoreable subset",
    "produced_by": [
     "research/locomo_eval.py",
@@ -12223,13 +11934,7 @@
     "research/corpus_pin.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [
-    "docs/BENCHMARKS.md"
-   ],
-   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
-   "withdrawn_on": "2026-09-06",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "locomo.dataset.turns",
@@ -12247,8 +11952,10 @@
    "raw": "research/results/locomo.json",
    "pointer": "turns",
    "ci": null,
-   "cited_in": [],
-   "commit": "f384512bb49fc20d46c4eec874ec889147c0d85a",
+   "cited_in": [
+    "docs/BENCHMARKS.md"
+   ],
+   "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "produced_by": [
     "research/locomo_eval.py",
     "nevertwice/causal.py",
@@ -12270,13 +11977,7 @@
     "research/corpus_pin.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [
-    "docs/BENCHMARKS.md"
-   ],
-   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
-   "withdrawn_on": "2026-09-06",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "locomo.semantic.recall_at_3",
@@ -12299,7 +12000,7 @@
     "high": 0.3616
    },
    "cited_in": [],
-   "commit": "f384512bb49fc20d46c4eec874ec889147c0d85a",
+   "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
     "research/locomo_eval.py",
@@ -12322,18 +12023,14 @@
     "research/corpus_pin.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [],
-   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
-   "withdrawn_on": "2026-09-06",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "locomo.lexical.recall_at_3",
-   "statement": "lexical recall (term overlap, no embedder) reaches RECALL@3 0.428 on LoCoMo, retrieving the annotated evidence turn from its own conversation",
-   "value": 0.4279210925644917,
+   "statement": "lexical recall (term overlap, no embedder) reaches RECALL@3 0.527 on LoCoMo, retrieving the annotated evidence turn from its own conversation",
+   "value": 0.5265553869499241,
    "printed": [
-    "0.428"
+    "0.527"
    ],
    "unit": "recall@3",
    "dataset": "locomo10_pinned",
@@ -12345,11 +12042,11 @@
    "ci": {
     "method": "wilson",
     "level": 0.95,
-    "low": 0.4063,
-    "high": 0.4499
+    "low": 0.5045,
+    "high": 0.5485
    },
    "cited_in": [],
-   "commit": "f384512bb49fc20d46c4eec874ec889147c0d85a",
+   "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
     "research/locomo_eval.py",
@@ -12372,18 +12069,14 @@
     "research/corpus_pin.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [],
-   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
-   "withdrawn_on": "2026-09-06",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "locomo.hybrid.recall_at_3",
-   "statement": "the shipped ranker (calibrated score fusion) reaches RECALL@3 0.474 on LoCoMo, retrieving the annotated evidence turn from its own conversation",
-   "value": 0.47395042994436015,
+   "statement": "the shipped ranker (calibrated score fusion) reaches RECALL@3 0.548 on LoCoMo, retrieving the annotated evidence turn from its own conversation",
+   "value": 0.5483055134041477,
    "printed": [
-    "0.474"
+    "0.548"
    ],
    "unit": "recall@3",
    "dataset": "locomo10_pinned",
@@ -12395,11 +12088,11 @@
    "ci": {
     "method": "wilson",
     "level": 0.95,
-    "low": 0.452,
-    "high": 0.496
+    "low": 0.5263,
+    "high": 0.5701
    },
    "cited_in": [],
-   "commit": "f384512bb49fc20d46c4eec874ec889147c0d85a",
+   "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
     "research/locomo_eval.py",
@@ -12422,11 +12115,1069 @@
     "research/corpus_pin.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
+   ]
+  },
+  {
+   "id": "locomo_raw.semantic.recall_at_1",
+   "statement": "semantic recall (bge-m3 bi-encoder) (raw tokens) reaches RECALL@1 0.182 on LoCoMo, per conversation, with the morphology switch off",
+   "value": 0.18209408194233687,
+   "printed": [
+    "0.182"
    ],
-   "cited_in_pending": [],
-   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
-   "withdrawn_on": "2026-09-06",
-   "pending_remeasure": true
+   "unit": "recall@1",
+   "dataset": "locomo10_pinned",
+   "environment": "local_bge_m3_pinned",
+   "n": 1977,
+   "command": "python research/locomo_eval.py --no-morphology --save --out=research/results/locomo_raw.json",
+   "raw": "research/results/locomo_raw.json",
+   "cited_in": [],
+   "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
+   "note": "The ablation arm of research/LEXICAL_MORPHOLOGY.md: the same stand, the same cached vectors, the lexical signal on raw tokens as it was before 2026-09-06.",
+   "produced_by": [
+    "research/locomo_eval.py",
+    "nevertwice/causal.py",
+    "nevertwice/config.py",
+    "nevertwice/graph.py",
+    "nevertwice/guards.py",
+    "nevertwice/index_sqlite.py",
+    "nevertwice/memory_hook.py",
+    "nevertwice/outcomes.py",
+    "nevertwice/rankers.py",
+    "nevertwice/receipt.py",
+    "nevertwice/reranker_ce.py",
+    "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
+    "nevertwice/store_state.py",
+    "nevertwice/why_fired.py",
+    "research/_rerank.py",
+    "research/_xreranker.py",
+    "research/corpus_pin.py",
+    "research/longmem_eval.py",
+    "sandbox_guard.py"
+   ],
+   "pointer": "methods.semantic.recall@1",
+   "ci": {
+    "method": "wilson",
+    "level": 0.95,
+    "low": 0.1657,
+    "high": 0.1997
+   }
+  },
+  {
+   "id": "locomo_raw.semantic.recall_at_5",
+   "statement": "semantic recall (bge-m3 bi-encoder) (raw tokens) reaches RECALL@5 0.432 on LoCoMo, per conversation, with the morphology switch off",
+   "value": 0.4324734446130501,
+   "printed": [
+    "0.432"
+   ],
+   "unit": "recall@5",
+   "dataset": "locomo10_pinned",
+   "environment": "local_bge_m3_pinned",
+   "n": 1977,
+   "command": "python research/locomo_eval.py --no-morphology --save --out=research/results/locomo_raw.json",
+   "raw": "research/results/locomo_raw.json",
+   "cited_in": [],
+   "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
+   "note": "The ablation arm of research/LEXICAL_MORPHOLOGY.md: the same stand, the same cached vectors, the lexical signal on raw tokens as it was before 2026-09-06.",
+   "produced_by": [
+    "research/locomo_eval.py",
+    "nevertwice/causal.py",
+    "nevertwice/config.py",
+    "nevertwice/graph.py",
+    "nevertwice/guards.py",
+    "nevertwice/index_sqlite.py",
+    "nevertwice/memory_hook.py",
+    "nevertwice/outcomes.py",
+    "nevertwice/rankers.py",
+    "nevertwice/receipt.py",
+    "nevertwice/reranker_ce.py",
+    "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
+    "nevertwice/store_state.py",
+    "nevertwice/why_fired.py",
+    "research/_rerank.py",
+    "research/_xreranker.py",
+    "research/corpus_pin.py",
+    "research/longmem_eval.py",
+    "sandbox_guard.py"
+   ],
+   "pointer": "methods.semantic.recall@5",
+   "ci": {
+    "method": "wilson",
+    "level": 0.95,
+    "low": 0.4108,
+    "high": 0.4544
+   }
+  },
+  {
+   "id": "locomo_raw.semantic.recall_at_10",
+   "statement": "semantic recall (bge-m3 bi-encoder) (raw tokens) reaches RECALL@10 0.560 on LoCoMo, per conversation, with the morphology switch off",
+   "value": 0.5599393019726859,
+   "printed": [
+    "0.560"
+   ],
+   "unit": "recall@10",
+   "dataset": "locomo10_pinned",
+   "environment": "local_bge_m3_pinned",
+   "n": 1977,
+   "command": "python research/locomo_eval.py --no-morphology --save --out=research/results/locomo_raw.json",
+   "raw": "research/results/locomo_raw.json",
+   "cited_in": [],
+   "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
+   "note": "The ablation arm of research/LEXICAL_MORPHOLOGY.md: the same stand, the same cached vectors, the lexical signal on raw tokens as it was before 2026-09-06.",
+   "produced_by": [
+    "research/locomo_eval.py",
+    "nevertwice/causal.py",
+    "nevertwice/config.py",
+    "nevertwice/graph.py",
+    "nevertwice/guards.py",
+    "nevertwice/index_sqlite.py",
+    "nevertwice/memory_hook.py",
+    "nevertwice/outcomes.py",
+    "nevertwice/rankers.py",
+    "nevertwice/receipt.py",
+    "nevertwice/reranker_ce.py",
+    "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
+    "nevertwice/store_state.py",
+    "nevertwice/why_fired.py",
+    "research/_rerank.py",
+    "research/_xreranker.py",
+    "research/corpus_pin.py",
+    "research/longmem_eval.py",
+    "sandbox_guard.py"
+   ],
+   "pointer": "methods.semantic.recall@10",
+   "ci": {
+    "method": "wilson",
+    "level": 0.95,
+    "low": 0.538,
+    "high": 0.5817
+   }
+  },
+  {
+   "id": "locomo_raw.semantic.mrr",
+   "statement": "semantic recall (bge-m3 bi-encoder) (raw tokens) reaches MRR 0.301 on LoCoMo, per conversation, with the morphology switch off",
+   "value": 0.3011588007496613,
+   "printed": [
+    "0.301"
+   ],
+   "unit": "mrr",
+   "dataset": "locomo10_pinned",
+   "environment": "local_bge_m3_pinned",
+   "n": 1977,
+   "command": "python research/locomo_eval.py --no-morphology --save --out=research/results/locomo_raw.json",
+   "raw": "research/results/locomo_raw.json",
+   "cited_in": [],
+   "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
+   "note": "The ablation arm of research/LEXICAL_MORPHOLOGY.md: the same stand, the same cached vectors, the lexical signal on raw tokens as it was before 2026-09-06.",
+   "produced_by": [
+    "research/locomo_eval.py",
+    "nevertwice/causal.py",
+    "nevertwice/config.py",
+    "nevertwice/graph.py",
+    "nevertwice/guards.py",
+    "nevertwice/index_sqlite.py",
+    "nevertwice/memory_hook.py",
+    "nevertwice/outcomes.py",
+    "nevertwice/rankers.py",
+    "nevertwice/receipt.py",
+    "nevertwice/reranker_ce.py",
+    "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
+    "nevertwice/store_state.py",
+    "nevertwice/why_fired.py",
+    "research/_rerank.py",
+    "research/_xreranker.py",
+    "research/corpus_pin.py",
+    "research/longmem_eval.py",
+    "sandbox_guard.py"
+   ],
+   "pointer": "methods.semantic.mrr",
+   "ci": null
+  },
+  {
+   "id": "locomo_raw.lexical.recall_at_1",
+   "statement": "lexical recall (BM25, no embedder) (raw tokens) reaches RECALL@1 0.271 on LoCoMo, per conversation, with the morphology switch off",
+   "value": 0.270612038442084,
+   "printed": [
+    "0.271"
+   ],
+   "unit": "recall@1",
+   "dataset": "locomo10_pinned",
+   "environment": "local_bge_m3_pinned",
+   "n": 1977,
+   "command": "python research/locomo_eval.py --no-morphology --save --out=research/results/locomo_raw.json",
+   "raw": "research/results/locomo_raw.json",
+   "cited_in": [],
+   "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
+   "note": "The ablation arm of research/LEXICAL_MORPHOLOGY.md: the same stand, the same cached vectors, the lexical signal on raw tokens as it was before 2026-09-06.",
+   "produced_by": [
+    "research/locomo_eval.py",
+    "nevertwice/causal.py",
+    "nevertwice/config.py",
+    "nevertwice/graph.py",
+    "nevertwice/guards.py",
+    "nevertwice/index_sqlite.py",
+    "nevertwice/memory_hook.py",
+    "nevertwice/outcomes.py",
+    "nevertwice/rankers.py",
+    "nevertwice/receipt.py",
+    "nevertwice/reranker_ce.py",
+    "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
+    "nevertwice/store_state.py",
+    "nevertwice/why_fired.py",
+    "research/_rerank.py",
+    "research/_xreranker.py",
+    "research/corpus_pin.py",
+    "research/longmem_eval.py",
+    "sandbox_guard.py"
+   ],
+   "pointer": "methods.lexical.recall@1",
+   "ci": {
+    "method": "wilson",
+    "level": 0.95,
+    "low": 0.2515,
+    "high": 0.2906
+   }
+  },
+  {
+   "id": "locomo_raw.lexical.recall_at_5",
+   "statement": "lexical recall (BM25, no embedder) (raw tokens) reaches RECALL@5 0.499 on LoCoMo, per conversation, with the morphology switch off",
+   "value": 0.4992412746585736,
+   "printed": [
+    "0.499"
+   ],
+   "unit": "recall@5",
+   "dataset": "locomo10_pinned",
+   "environment": "local_bge_m3_pinned",
+   "n": 1977,
+   "command": "python research/locomo_eval.py --no-morphology --save --out=research/results/locomo_raw.json",
+   "raw": "research/results/locomo_raw.json",
+   "cited_in": [],
+   "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
+   "note": "The ablation arm of research/LEXICAL_MORPHOLOGY.md: the same stand, the same cached vectors, the lexical signal on raw tokens as it was before 2026-09-06.",
+   "produced_by": [
+    "research/locomo_eval.py",
+    "nevertwice/causal.py",
+    "nevertwice/config.py",
+    "nevertwice/graph.py",
+    "nevertwice/guards.py",
+    "nevertwice/index_sqlite.py",
+    "nevertwice/memory_hook.py",
+    "nevertwice/outcomes.py",
+    "nevertwice/rankers.py",
+    "nevertwice/receipt.py",
+    "nevertwice/reranker_ce.py",
+    "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
+    "nevertwice/store_state.py",
+    "nevertwice/why_fired.py",
+    "research/_rerank.py",
+    "research/_xreranker.py",
+    "research/corpus_pin.py",
+    "research/longmem_eval.py",
+    "sandbox_guard.py"
+   ],
+   "pointer": "methods.lexical.recall@5",
+   "ci": {
+    "method": "wilson",
+    "level": 0.95,
+    "low": 0.4772,
+    "high": 0.5213
+   }
+  },
+  {
+   "id": "locomo_raw.lexical.recall_at_10",
+   "statement": "lexical recall (BM25, no embedder) (raw tokens) reaches RECALL@10 0.576 on LoCoMo, per conversation, with the morphology switch off",
+   "value": 0.5761254425897825,
+   "printed": [
+    "0.576"
+   ],
+   "unit": "recall@10",
+   "dataset": "locomo10_pinned",
+   "environment": "local_bge_m3_pinned",
+   "n": 1977,
+   "command": "python research/locomo_eval.py --no-morphology --save --out=research/results/locomo_raw.json",
+   "raw": "research/results/locomo_raw.json",
+   "cited_in": [],
+   "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
+   "note": "The ablation arm of research/LEXICAL_MORPHOLOGY.md: the same stand, the same cached vectors, the lexical signal on raw tokens as it was before 2026-09-06.",
+   "produced_by": [
+    "research/locomo_eval.py",
+    "nevertwice/causal.py",
+    "nevertwice/config.py",
+    "nevertwice/graph.py",
+    "nevertwice/guards.py",
+    "nevertwice/index_sqlite.py",
+    "nevertwice/memory_hook.py",
+    "nevertwice/outcomes.py",
+    "nevertwice/rankers.py",
+    "nevertwice/receipt.py",
+    "nevertwice/reranker_ce.py",
+    "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
+    "nevertwice/store_state.py",
+    "nevertwice/why_fired.py",
+    "research/_rerank.py",
+    "research/_xreranker.py",
+    "research/corpus_pin.py",
+    "research/longmem_eval.py",
+    "sandbox_guard.py"
+   ],
+   "pointer": "methods.lexical.recall@10",
+   "ci": {
+    "method": "wilson",
+    "level": 0.95,
+    "low": 0.5542,
+    "high": 0.5977
+   }
+  },
+  {
+   "id": "locomo_raw.lexical.mrr",
+   "statement": "lexical recall (BM25, no embedder) (raw tokens) reaches MRR 0.377 on LoCoMo, per conversation, with the morphology switch off",
+   "value": 0.3774088120462245,
+   "printed": [
+    "0.377"
+   ],
+   "unit": "mrr",
+   "dataset": "locomo10_pinned",
+   "environment": "local_bge_m3_pinned",
+   "n": 1977,
+   "command": "python research/locomo_eval.py --no-morphology --save --out=research/results/locomo_raw.json",
+   "raw": "research/results/locomo_raw.json",
+   "cited_in": [],
+   "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
+   "note": "The ablation arm of research/LEXICAL_MORPHOLOGY.md: the same stand, the same cached vectors, the lexical signal on raw tokens as it was before 2026-09-06.",
+   "produced_by": [
+    "research/locomo_eval.py",
+    "nevertwice/causal.py",
+    "nevertwice/config.py",
+    "nevertwice/graph.py",
+    "nevertwice/guards.py",
+    "nevertwice/index_sqlite.py",
+    "nevertwice/memory_hook.py",
+    "nevertwice/outcomes.py",
+    "nevertwice/rankers.py",
+    "nevertwice/receipt.py",
+    "nevertwice/reranker_ce.py",
+    "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
+    "nevertwice/store_state.py",
+    "nevertwice/why_fired.py",
+    "research/_rerank.py",
+    "research/_xreranker.py",
+    "research/corpus_pin.py",
+    "research/longmem_eval.py",
+    "sandbox_guard.py"
+   ],
+   "pointer": "methods.lexical.mrr",
+   "ci": null
+  },
+  {
+   "id": "locomo_raw.hybrid.recall_at_1",
+   "statement": "the shipped ranker (calibrated score fusion) (raw tokens) reaches RECALL@1 0.293 on LoCoMo, per conversation, with the morphology switch off",
+   "value": 0.29337379868487606,
+   "printed": [
+    "0.293"
+   ],
+   "unit": "recall@1",
+   "dataset": "locomo10_pinned",
+   "environment": "local_bge_m3_pinned",
+   "n": 1977,
+   "command": "python research/locomo_eval.py --no-morphology --save --out=research/results/locomo_raw.json",
+   "raw": "research/results/locomo_raw.json",
+   "cited_in": [],
+   "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
+   "note": "The ablation arm of research/LEXICAL_MORPHOLOGY.md: the same stand, the same cached vectors, the lexical signal on raw tokens as it was before 2026-09-06.",
+   "produced_by": [
+    "research/locomo_eval.py",
+    "nevertwice/causal.py",
+    "nevertwice/config.py",
+    "nevertwice/graph.py",
+    "nevertwice/guards.py",
+    "nevertwice/index_sqlite.py",
+    "nevertwice/memory_hook.py",
+    "nevertwice/outcomes.py",
+    "nevertwice/rankers.py",
+    "nevertwice/receipt.py",
+    "nevertwice/reranker_ce.py",
+    "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
+    "nevertwice/store_state.py",
+    "nevertwice/why_fired.py",
+    "research/_rerank.py",
+    "research/_xreranker.py",
+    "research/corpus_pin.py",
+    "research/longmem_eval.py",
+    "sandbox_guard.py"
+   ],
+   "pointer": "methods.hybrid.recall@1",
+   "ci": {
+    "method": "wilson",
+    "level": 0.95,
+    "low": 0.2737,
+    "high": 0.3138
+   }
+  },
+  {
+   "id": "locomo_raw.hybrid.recall_at_5",
+   "statement": "the shipped ranker (calibrated score fusion) (raw tokens) reaches RECALL@5 0.549 on LoCoMo, per conversation, with the morphology switch off",
+   "value": 0.5493171471927162,
+   "printed": [
+    "0.549"
+   ],
+   "unit": "recall@5",
+   "dataset": "locomo10_pinned",
+   "environment": "local_bge_m3_pinned",
+   "n": 1977,
+   "command": "python research/locomo_eval.py --no-morphology --save --out=research/results/locomo_raw.json",
+   "raw": "research/results/locomo_raw.json",
+   "cited_in": [],
+   "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
+   "note": "The ablation arm of research/LEXICAL_MORPHOLOGY.md: the same stand, the same cached vectors, the lexical signal on raw tokens as it was before 2026-09-06.",
+   "produced_by": [
+    "research/locomo_eval.py",
+    "nevertwice/causal.py",
+    "nevertwice/config.py",
+    "nevertwice/graph.py",
+    "nevertwice/guards.py",
+    "nevertwice/index_sqlite.py",
+    "nevertwice/memory_hook.py",
+    "nevertwice/outcomes.py",
+    "nevertwice/rankers.py",
+    "nevertwice/receipt.py",
+    "nevertwice/reranker_ce.py",
+    "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
+    "nevertwice/store_state.py",
+    "nevertwice/why_fired.py",
+    "research/_rerank.py",
+    "research/_xreranker.py",
+    "research/corpus_pin.py",
+    "research/longmem_eval.py",
+    "sandbox_guard.py"
+   ],
+   "pointer": "methods.hybrid.recall@5",
+   "ci": {
+    "method": "wilson",
+    "level": 0.95,
+    "low": 0.5273,
+    "high": 0.5711
+   }
+  },
+  {
+   "id": "locomo_raw.hybrid.recall_at_10",
+   "statement": "the shipped ranker (calibrated score fusion) (raw tokens) reaches RECALL@10 0.634 on LoCoMo, per conversation, with the morphology switch off",
+   "value": 0.6337885685381892,
+   "printed": [
+    "0.634"
+   ],
+   "unit": "recall@10",
+   "dataset": "locomo10_pinned",
+   "environment": "local_bge_m3_pinned",
+   "n": 1977,
+   "command": "python research/locomo_eval.py --no-morphology --save --out=research/results/locomo_raw.json",
+   "raw": "research/results/locomo_raw.json",
+   "cited_in": [],
+   "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
+   "note": "The ablation arm of research/LEXICAL_MORPHOLOGY.md: the same stand, the same cached vectors, the lexical signal on raw tokens as it was before 2026-09-06.",
+   "produced_by": [
+    "research/locomo_eval.py",
+    "nevertwice/causal.py",
+    "nevertwice/config.py",
+    "nevertwice/graph.py",
+    "nevertwice/guards.py",
+    "nevertwice/index_sqlite.py",
+    "nevertwice/memory_hook.py",
+    "nevertwice/outcomes.py",
+    "nevertwice/rankers.py",
+    "nevertwice/receipt.py",
+    "nevertwice/reranker_ce.py",
+    "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
+    "nevertwice/store_state.py",
+    "nevertwice/why_fired.py",
+    "research/_rerank.py",
+    "research/_xreranker.py",
+    "research/corpus_pin.py",
+    "research/longmem_eval.py",
+    "sandbox_guard.py"
+   ],
+   "pointer": "methods.hybrid.recall@10",
+   "ci": {
+    "method": "wilson",
+    "level": 0.95,
+    "low": 0.6123,
+    "high": 0.6547
+   }
+  },
+  {
+   "id": "locomo_raw.hybrid.mrr",
+   "statement": "the shipped ranker (calibrated score fusion) (raw tokens) reaches MRR 0.411 on LoCoMo, per conversation, with the morphology switch off",
+   "value": 0.4109072479379875,
+   "printed": [
+    "0.411"
+   ],
+   "unit": "mrr",
+   "dataset": "locomo10_pinned",
+   "environment": "local_bge_m3_pinned",
+   "n": 1977,
+   "command": "python research/locomo_eval.py --no-morphology --save --out=research/results/locomo_raw.json",
+   "raw": "research/results/locomo_raw.json",
+   "cited_in": [],
+   "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
+   "note": "The ablation arm of research/LEXICAL_MORPHOLOGY.md: the same stand, the same cached vectors, the lexical signal on raw tokens as it was before 2026-09-06.",
+   "produced_by": [
+    "research/locomo_eval.py",
+    "nevertwice/causal.py",
+    "nevertwice/config.py",
+    "nevertwice/graph.py",
+    "nevertwice/guards.py",
+    "nevertwice/index_sqlite.py",
+    "nevertwice/memory_hook.py",
+    "nevertwice/outcomes.py",
+    "nevertwice/rankers.py",
+    "nevertwice/receipt.py",
+    "nevertwice/reranker_ce.py",
+    "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
+    "nevertwice/store_state.py",
+    "nevertwice/why_fired.py",
+    "research/_rerank.py",
+    "research/_xreranker.py",
+    "research/corpus_pin.py",
+    "research/longmem_eval.py",
+    "sandbox_guard.py"
+   ],
+   "pointer": "methods.hybrid.mrr",
+   "ci": null
+  },
+  {
+   "id": "longmem_raw.semantic.recall_at_1",
+   "statement": "semantic recall (bge-m3 bi-encoder) (raw tokens) reaches RECALL@1 0.428 on the pinned LongMemEval-oracle pool with the morphology switch off",
+   "value": 0.428,
+   "printed": [
+    "0.428"
+   ],
+   "unit": "recall@1",
+   "dataset": "longmemeval_oracle_pinned",
+   "environment": "local_bge_m3_pinned",
+   "n": 500,
+   "command": "python research/longmem_eval.py --no-morphology --save --out=research/results/longmem_oracle_raw.json",
+   "raw": "research/results/longmem_oracle_raw.json",
+   "cited_in": [],
+   "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
+   "note": "The ablation arm of research/LEXICAL_MORPHOLOGY.md: whole-session vectors, the lexical signal on raw tokens as it was before 2026-09-06.",
+   "produced_by": [
+    "research/longmem_eval.py",
+    "nevertwice/causal.py",
+    "nevertwice/config.py",
+    "nevertwice/graph.py",
+    "nevertwice/guards.py",
+    "nevertwice/index_sqlite.py",
+    "nevertwice/memory_hook.py",
+    "nevertwice/outcomes.py",
+    "nevertwice/rankers.py",
+    "nevertwice/receipt.py",
+    "nevertwice/reranker_ce.py",
+    "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
+    "nevertwice/store_state.py",
+    "nevertwice/why_fired.py",
+    "research/_rerank.py",
+    "research/_xreranker.py",
+    "research/corpus_pin.py",
+    "sandbox_guard.py"
+   ],
+   "pointer": "methods.semantic.recall@1",
+   "ci": {
+    "method": "wilson",
+    "level": 0.95,
+    "low": 0.3853,
+    "high": 0.4718
+   }
+  },
+  {
+   "id": "longmem_raw.semantic.recall_at_5",
+   "statement": "semantic recall (bge-m3 bi-encoder) (raw tokens) reaches RECALL@5 0.692 on the pinned LongMemEval-oracle pool with the morphology switch off",
+   "value": 0.692,
+   "printed": [
+    "0.692"
+   ],
+   "unit": "recall@5",
+   "dataset": "longmemeval_oracle_pinned",
+   "environment": "local_bge_m3_pinned",
+   "n": 500,
+   "command": "python research/longmem_eval.py --no-morphology --save --out=research/results/longmem_oracle_raw.json",
+   "raw": "research/results/longmem_oracle_raw.json",
+   "cited_in": [],
+   "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
+   "note": "The ablation arm of research/LEXICAL_MORPHOLOGY.md: whole-session vectors, the lexical signal on raw tokens as it was before 2026-09-06.",
+   "produced_by": [
+    "research/longmem_eval.py",
+    "nevertwice/causal.py",
+    "nevertwice/config.py",
+    "nevertwice/graph.py",
+    "nevertwice/guards.py",
+    "nevertwice/index_sqlite.py",
+    "nevertwice/memory_hook.py",
+    "nevertwice/outcomes.py",
+    "nevertwice/rankers.py",
+    "nevertwice/receipt.py",
+    "nevertwice/reranker_ce.py",
+    "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
+    "nevertwice/store_state.py",
+    "nevertwice/why_fired.py",
+    "research/_rerank.py",
+    "research/_xreranker.py",
+    "research/corpus_pin.py",
+    "sandbox_guard.py"
+   ],
+   "pointer": "methods.semantic.recall@5",
+   "ci": {
+    "method": "wilson",
+    "level": 0.95,
+    "low": 0.6502,
+    "high": 0.7309
+   }
+  },
+  {
+   "id": "longmem_raw.semantic.recall_at_10",
+   "statement": "semantic recall (bge-m3 bi-encoder) (raw tokens) reaches RECALL@10 0.782 on the pinned LongMemEval-oracle pool with the morphology switch off",
+   "value": 0.782,
+   "printed": [
+    "0.782"
+   ],
+   "unit": "recall@10",
+   "dataset": "longmemeval_oracle_pinned",
+   "environment": "local_bge_m3_pinned",
+   "n": 500,
+   "command": "python research/longmem_eval.py --no-morphology --save --out=research/results/longmem_oracle_raw.json",
+   "raw": "research/results/longmem_oracle_raw.json",
+   "cited_in": [],
+   "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
+   "note": "The ablation arm of research/LEXICAL_MORPHOLOGY.md: whole-session vectors, the lexical signal on raw tokens as it was before 2026-09-06.",
+   "produced_by": [
+    "research/longmem_eval.py",
+    "nevertwice/causal.py",
+    "nevertwice/config.py",
+    "nevertwice/graph.py",
+    "nevertwice/guards.py",
+    "nevertwice/index_sqlite.py",
+    "nevertwice/memory_hook.py",
+    "nevertwice/outcomes.py",
+    "nevertwice/rankers.py",
+    "nevertwice/receipt.py",
+    "nevertwice/reranker_ce.py",
+    "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
+    "nevertwice/store_state.py",
+    "nevertwice/why_fired.py",
+    "research/_rerank.py",
+    "research/_xreranker.py",
+    "research/corpus_pin.py",
+    "sandbox_guard.py"
+   ],
+   "pointer": "methods.semantic.recall@10",
+   "ci": {
+    "method": "wilson",
+    "level": 0.95,
+    "low": 0.7437,
+    "high": 0.816
+   }
+  },
+  {
+   "id": "longmem_raw.semantic.mrr",
+   "statement": "semantic recall (bge-m3 bi-encoder) (raw tokens) reaches MRR 0.552 on the pinned LongMemEval-oracle pool with the morphology switch off",
+   "value": 0.552113821339757,
+   "printed": [
+    "0.552"
+   ],
+   "unit": "mrr",
+   "dataset": "longmemeval_oracle_pinned",
+   "environment": "local_bge_m3_pinned",
+   "n": 500,
+   "command": "python research/longmem_eval.py --no-morphology --save --out=research/results/longmem_oracle_raw.json",
+   "raw": "research/results/longmem_oracle_raw.json",
+   "cited_in": [],
+   "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
+   "note": "The ablation arm of research/LEXICAL_MORPHOLOGY.md: whole-session vectors, the lexical signal on raw tokens as it was before 2026-09-06.",
+   "produced_by": [
+    "research/longmem_eval.py",
+    "nevertwice/causal.py",
+    "nevertwice/config.py",
+    "nevertwice/graph.py",
+    "nevertwice/guards.py",
+    "nevertwice/index_sqlite.py",
+    "nevertwice/memory_hook.py",
+    "nevertwice/outcomes.py",
+    "nevertwice/rankers.py",
+    "nevertwice/receipt.py",
+    "nevertwice/reranker_ce.py",
+    "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
+    "nevertwice/store_state.py",
+    "nevertwice/why_fired.py",
+    "research/_rerank.py",
+    "research/_xreranker.py",
+    "research/corpus_pin.py",
+    "sandbox_guard.py"
+   ],
+   "pointer": "methods.semantic.mrr",
+   "ci": null
+  },
+  {
+   "id": "longmem_raw.lexical.recall_at_1",
+   "statement": "lexical recall (BM25, no embedder) (raw tokens) reaches RECALL@1 0.522 on the pinned LongMemEval-oracle pool with the morphology switch off",
+   "value": 0.522,
+   "printed": [
+    "0.522"
+   ],
+   "unit": "recall@1",
+   "dataset": "longmemeval_oracle_pinned",
+   "environment": "local_bge_m3_pinned",
+   "n": 500,
+   "command": "python research/longmem_eval.py --no-morphology --save --out=research/results/longmem_oracle_raw.json",
+   "raw": "research/results/longmem_oracle_raw.json",
+   "cited_in": [],
+   "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
+   "note": "The ablation arm of research/LEXICAL_MORPHOLOGY.md: whole-session vectors, the lexical signal on raw tokens as it was before 2026-09-06.",
+   "produced_by": [
+    "research/longmem_eval.py",
+    "nevertwice/causal.py",
+    "nevertwice/config.py",
+    "nevertwice/graph.py",
+    "nevertwice/guards.py",
+    "nevertwice/index_sqlite.py",
+    "nevertwice/memory_hook.py",
+    "nevertwice/outcomes.py",
+    "nevertwice/rankers.py",
+    "nevertwice/receipt.py",
+    "nevertwice/reranker_ce.py",
+    "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
+    "nevertwice/store_state.py",
+    "nevertwice/why_fired.py",
+    "research/_rerank.py",
+    "research/_xreranker.py",
+    "research/corpus_pin.py",
+    "sandbox_guard.py"
+   ],
+   "pointer": "methods.lexical.recall@1",
+   "ci": {
+    "method": "wilson",
+    "level": 0.95,
+    "low": 0.4782,
+    "high": 0.5654
+   }
+  },
+  {
+   "id": "longmem_raw.lexical.recall_at_5",
+   "statement": "lexical recall (BM25, no embedder) (raw tokens) reaches RECALL@5 0.752 on the pinned LongMemEval-oracle pool with the morphology switch off",
+   "value": 0.752,
+   "printed": [
+    "0.752"
+   ],
+   "unit": "recall@5",
+   "dataset": "longmemeval_oracle_pinned",
+   "environment": "local_bge_m3_pinned",
+   "n": 500,
+   "command": "python research/longmem_eval.py --no-morphology --save --out=research/results/longmem_oracle_raw.json",
+   "raw": "research/results/longmem_oracle_raw.json",
+   "cited_in": [],
+   "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
+   "note": "The ablation arm of research/LEXICAL_MORPHOLOGY.md: whole-session vectors, the lexical signal on raw tokens as it was before 2026-09-06.",
+   "produced_by": [
+    "research/longmem_eval.py",
+    "nevertwice/causal.py",
+    "nevertwice/config.py",
+    "nevertwice/graph.py",
+    "nevertwice/guards.py",
+    "nevertwice/index_sqlite.py",
+    "nevertwice/memory_hook.py",
+    "nevertwice/outcomes.py",
+    "nevertwice/rankers.py",
+    "nevertwice/receipt.py",
+    "nevertwice/reranker_ce.py",
+    "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
+    "nevertwice/store_state.py",
+    "nevertwice/why_fired.py",
+    "research/_rerank.py",
+    "research/_xreranker.py",
+    "research/corpus_pin.py",
+    "sandbox_guard.py"
+   ],
+   "pointer": "methods.lexical.recall@5",
+   "ci": {
+    "method": "wilson",
+    "level": 0.95,
+    "low": 0.7123,
+    "high": 0.7878
+   }
+  },
+  {
+   "id": "longmem_raw.lexical.recall_at_10",
+   "statement": "lexical recall (BM25, no embedder) (raw tokens) reaches RECALL@10 0.834 on the pinned LongMemEval-oracle pool with the morphology switch off",
+   "value": 0.834,
+   "printed": [
+    "0.834"
+   ],
+   "unit": "recall@10",
+   "dataset": "longmemeval_oracle_pinned",
+   "environment": "local_bge_m3_pinned",
+   "n": 500,
+   "command": "python research/longmem_eval.py --no-morphology --save --out=research/results/longmem_oracle_raw.json",
+   "raw": "research/results/longmem_oracle_raw.json",
+   "cited_in": [],
+   "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
+   "note": "The ablation arm of research/LEXICAL_MORPHOLOGY.md: whole-session vectors, the lexical signal on raw tokens as it was before 2026-09-06.",
+   "produced_by": [
+    "research/longmem_eval.py",
+    "nevertwice/causal.py",
+    "nevertwice/config.py",
+    "nevertwice/graph.py",
+    "nevertwice/guards.py",
+    "nevertwice/index_sqlite.py",
+    "nevertwice/memory_hook.py",
+    "nevertwice/outcomes.py",
+    "nevertwice/rankers.py",
+    "nevertwice/receipt.py",
+    "nevertwice/reranker_ce.py",
+    "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
+    "nevertwice/store_state.py",
+    "nevertwice/why_fired.py",
+    "research/_rerank.py",
+    "research/_xreranker.py",
+    "research/corpus_pin.py",
+    "sandbox_guard.py"
+   ],
+   "pointer": "methods.lexical.recall@10",
+   "ci": {
+    "method": "wilson",
+    "level": 0.95,
+    "low": 0.7989,
+    "high": 0.864
+   }
+  },
+  {
+   "id": "longmem_raw.lexical.mrr",
+   "statement": "lexical recall (BM25, no embedder) (raw tokens) reaches MRR 0.623 on the pinned LongMemEval-oracle pool with the morphology switch off",
+   "value": 0.6231697064835308,
+   "printed": [
+    "0.623"
+   ],
+   "unit": "mrr",
+   "dataset": "longmemeval_oracle_pinned",
+   "environment": "local_bge_m3_pinned",
+   "n": 500,
+   "command": "python research/longmem_eval.py --no-morphology --save --out=research/results/longmem_oracle_raw.json",
+   "raw": "research/results/longmem_oracle_raw.json",
+   "cited_in": [],
+   "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
+   "note": "The ablation arm of research/LEXICAL_MORPHOLOGY.md: whole-session vectors, the lexical signal on raw tokens as it was before 2026-09-06.",
+   "produced_by": [
+    "research/longmem_eval.py",
+    "nevertwice/causal.py",
+    "nevertwice/config.py",
+    "nevertwice/graph.py",
+    "nevertwice/guards.py",
+    "nevertwice/index_sqlite.py",
+    "nevertwice/memory_hook.py",
+    "nevertwice/outcomes.py",
+    "nevertwice/rankers.py",
+    "nevertwice/receipt.py",
+    "nevertwice/reranker_ce.py",
+    "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
+    "nevertwice/store_state.py",
+    "nevertwice/why_fired.py",
+    "research/_rerank.py",
+    "research/_xreranker.py",
+    "research/corpus_pin.py",
+    "sandbox_guard.py"
+   ],
+   "pointer": "methods.lexical.mrr",
+   "ci": null
+  },
+  {
+   "id": "longmem_raw.hybrid.recall_at_1",
+   "statement": "the shipped ranker (calibrated score fusion) (raw tokens) reaches RECALL@1 0.534 on the pinned LongMemEval-oracle pool with the morphology switch off",
+   "value": 0.534,
+   "printed": [
+    "0.534"
+   ],
+   "unit": "recall@1",
+   "dataset": "longmemeval_oracle_pinned",
+   "environment": "local_bge_m3_pinned",
+   "n": 500,
+   "command": "python research/longmem_eval.py --no-morphology --save --out=research/results/longmem_oracle_raw.json",
+   "raw": "research/results/longmem_oracle_raw.json",
+   "cited_in": [],
+   "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
+   "note": "The ablation arm of research/LEXICAL_MORPHOLOGY.md: whole-session vectors, the lexical signal on raw tokens as it was before 2026-09-06.",
+   "produced_by": [
+    "research/longmem_eval.py",
+    "nevertwice/causal.py",
+    "nevertwice/config.py",
+    "nevertwice/graph.py",
+    "nevertwice/guards.py",
+    "nevertwice/index_sqlite.py",
+    "nevertwice/memory_hook.py",
+    "nevertwice/outcomes.py",
+    "nevertwice/rankers.py",
+    "nevertwice/receipt.py",
+    "nevertwice/reranker_ce.py",
+    "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
+    "nevertwice/store_state.py",
+    "nevertwice/why_fired.py",
+    "research/_rerank.py",
+    "research/_xreranker.py",
+    "research/corpus_pin.py",
+    "sandbox_guard.py"
+   ],
+   "pointer": "methods.hybrid.recall@1",
+   "ci": {
+    "method": "wilson",
+    "level": 0.95,
+    "low": 0.4902,
+    "high": 0.5773
+   }
+  },
+  {
+   "id": "longmem_raw.hybrid.recall_at_5",
+   "statement": "the shipped ranker (calibrated score fusion) (raw tokens) reaches RECALL@5 0.794 on the pinned LongMemEval-oracle pool with the morphology switch off",
+   "value": 0.794,
+   "printed": [
+    "0.794"
+   ],
+   "unit": "recall@5",
+   "dataset": "longmemeval_oracle_pinned",
+   "environment": "local_bge_m3_pinned",
+   "n": 500,
+   "command": "python research/longmem_eval.py --no-morphology --save --out=research/results/longmem_oracle_raw.json",
+   "raw": "research/results/longmem_oracle_raw.json",
+   "cited_in": [],
+   "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
+   "note": "The ablation arm of research/LEXICAL_MORPHOLOGY.md: whole-session vectors, the lexical signal on raw tokens as it was before 2026-09-06.",
+   "produced_by": [
+    "research/longmem_eval.py",
+    "nevertwice/causal.py",
+    "nevertwice/config.py",
+    "nevertwice/graph.py",
+    "nevertwice/guards.py",
+    "nevertwice/index_sqlite.py",
+    "nevertwice/memory_hook.py",
+    "nevertwice/outcomes.py",
+    "nevertwice/rankers.py",
+    "nevertwice/receipt.py",
+    "nevertwice/reranker_ce.py",
+    "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
+    "nevertwice/store_state.py",
+    "nevertwice/why_fired.py",
+    "research/_rerank.py",
+    "research/_xreranker.py",
+    "research/corpus_pin.py",
+    "sandbox_guard.py"
+   ],
+   "pointer": "methods.hybrid.recall@5",
+   "ci": {
+    "method": "wilson",
+    "level": 0.95,
+    "low": 0.7564,
+    "high": 0.8271
+   }
+  },
+  {
+   "id": "longmem_raw.hybrid.recall_at_10",
+   "statement": "the shipped ranker (calibrated score fusion) (raw tokens) reaches RECALL@10 0.848 on the pinned LongMemEval-oracle pool with the morphology switch off",
+   "value": 0.848,
+   "printed": [
+    "0.848"
+   ],
+   "unit": "recall@10",
+   "dataset": "longmemeval_oracle_pinned",
+   "environment": "local_bge_m3_pinned",
+   "n": 500,
+   "command": "python research/longmem_eval.py --no-morphology --save --out=research/results/longmem_oracle_raw.json",
+   "raw": "research/results/longmem_oracle_raw.json",
+   "cited_in": [],
+   "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
+   "note": "The ablation arm of research/LEXICAL_MORPHOLOGY.md: whole-session vectors, the lexical signal on raw tokens as it was before 2026-09-06.",
+   "produced_by": [
+    "research/longmem_eval.py",
+    "nevertwice/causal.py",
+    "nevertwice/config.py",
+    "nevertwice/graph.py",
+    "nevertwice/guards.py",
+    "nevertwice/index_sqlite.py",
+    "nevertwice/memory_hook.py",
+    "nevertwice/outcomes.py",
+    "nevertwice/rankers.py",
+    "nevertwice/receipt.py",
+    "nevertwice/reranker_ce.py",
+    "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
+    "nevertwice/store_state.py",
+    "nevertwice/why_fired.py",
+    "research/_rerank.py",
+    "research/_xreranker.py",
+    "research/corpus_pin.py",
+    "sandbox_guard.py"
+   ],
+   "pointer": "methods.hybrid.recall@10",
+   "ci": {
+    "method": "wilson",
+    "level": 0.95,
+    "low": 0.8139,
+    "high": 0.8768
+   }
+  },
+  {
+   "id": "longmem_raw.hybrid.mrr",
+   "statement": "the shipped ranker (calibrated score fusion) (raw tokens) reaches MRR 0.650 on the pinned LongMemEval-oracle pool with the morphology switch off",
+   "value": 0.6495111774157232,
+   "printed": [
+    "0.650"
+   ],
+   "unit": "mrr",
+   "dataset": "longmemeval_oracle_pinned",
+   "environment": "local_bge_m3_pinned",
+   "n": 500,
+   "command": "python research/longmem_eval.py --no-morphology --save --out=research/results/longmem_oracle_raw.json",
+   "raw": "research/results/longmem_oracle_raw.json",
+   "cited_in": [],
+   "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
+   "note": "The ablation arm of research/LEXICAL_MORPHOLOGY.md: whole-session vectors, the lexical signal on raw tokens as it was before 2026-09-06.",
+   "produced_by": [
+    "research/longmem_eval.py",
+    "nevertwice/causal.py",
+    "nevertwice/config.py",
+    "nevertwice/graph.py",
+    "nevertwice/guards.py",
+    "nevertwice/index_sqlite.py",
+    "nevertwice/memory_hook.py",
+    "nevertwice/outcomes.py",
+    "nevertwice/rankers.py",
+    "nevertwice/receipt.py",
+    "nevertwice/reranker_ce.py",
+    "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
+    "nevertwice/store_state.py",
+    "nevertwice/why_fired.py",
+    "research/_rerank.py",
+    "research/_xreranker.py",
+    "research/corpus_pin.py",
+    "sandbox_guard.py"
+   ],
+   "pointer": "methods.hybrid.mrr",
+   "ci": null
   }
  ],
  "external_citations": [

@@ -102,11 +102,14 @@ check("two decimals are not enough on their own", 0 < sw._strength("0.80") < sw.
 print("\n- a page that already says it is retracted is left alone -")
 tmp = ROOT / "tests" / "_tmp_withdrawn_probe.md"
 try:
-    # 0.788 is qa.oracle.answer_accuracy: withdrawn, with no live twin. 0.422 used
-    # to sit here and stopped working the day the pinned re-run reproduced it
-    # exactly - a value a live claim also prints is, correctly, no longer evidence
-    # of citing the withdrawn one.
-    body = "# Study\n\noracle answer accuracy reached 0.788 on that set.\n"
+    # The probe value is chosen at run time: a withdrawn claim's three-decimal printed form
+    # that no live claim prints. A fixed value stopped working twice - 0.422 the day the
+    # pinned re-run reproduced it exactly, 0.788 the day the morphology re-run landed on it -
+    # because a value a live claim also prints is, correctly, no longer evidence of citing
+    # the withdrawn one.
+    probe = next(f for c in claims for f in c.get("printed", [])
+                 if f.count(".") == 1 and len(f.split(".")[1]) == 3 and f not in live)
+    body = f"# Study\n\noracle answer accuracy reached {probe} on that set.\n"
     tmp.write_text(body, encoding="utf-8")
     check("an unmarked page is flagged", bool(sw.needs_banner(tmp, claims, live)))
     tmp.write_text(body + "\nThese figures were withdrawn in 2026-08.\n", encoding="utf-8")
