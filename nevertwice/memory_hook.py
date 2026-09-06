@@ -2922,6 +2922,8 @@ def scale_index_ready() -> bool:
         meta = idx.index_meta()
         if not meta or meta.get("vec_format") != idx.VEC_FORMAT:
             return False        # absent/legacy/stale-format → ensure() rebuilds; cache meanwhile
+        if meta.get("lex_format", "raw") != idx.LEX_FORMAT:
+            return False        # FTS text tokenised the other way → ensure() rebuilds it
         return _embed_sig_current(meta.get("model"))
     except Exception:
         return False
@@ -2942,7 +2944,8 @@ def ensure_scale_index() -> None:
         # deliberately NOT rebuilt here (it needs a re-embed, not a rebuild - that
         # would loop every session); only absence or a format change triggers a
         # build, and a format change is always fixable from the float32 cache (P3).
-        if meta and meta.get("vec_format") == idx.VEC_FORMAT:
+        if meta and meta.get("vec_format") == idx.VEC_FORMAT \
+                and meta.get("lex_format", "raw") == idx.LEX_FORMAT:
             return
         if not load_embed_cache():
             return
@@ -5401,9 +5404,30 @@ def _salience_mult(stem: str, rec: dict) -> float:
 # CVE / error codes, years) are recallable - bare digits were dropped before (round 4)
 _TOKEN_RE = re.compile(r"[^\W\d_]{3,}|\d{3,}", re.UNICODE)
 
+# Stop words out and stems in, on both sides of the lexical signal (BM25 here, FTS5 in the
+# SQLite index). Measured 2026-09-06 before it shipped (research/LEXICAL_MORPHOLOGY.md): on
+# LoCoMo, dialogue turns the length of a note, lexical R@5 0.499 -> 0.601 and the fused
+# ranker 0.549 -> 0.626; on the owner's store, a session's summary finding the notes written
+# from it, RU R@1 0.583 -> 0.685 and EN 0.761 -> 0.783; on LongMemEval's 14k-character
+# sessions a 0.014 loss on the lexical arm, within the gate. English is Porter (1980), what
+# SQLite's own `porter` tokenizer implements; Russian is Snowball. `0` turns it off - a store
+# indexed either way is rebuilt once, the index carries which.
+LEXICAL_MORPHOLOGY = os.environ.get("NEVERTWICE_LEXICAL_MORPHOLOGY", "1").strip() != "0"
+_stemmer_mod = None
+
+
+def _morph(tokens: list) -> list:
+    """`stemmer.normalise` when the switch is on; the raw tokens otherwise."""
+    global _stemmer_mod
+    if not LEXICAL_MORPHOLOGY:
+        return tokens
+    if _stemmer_mod is None:
+        _stemmer_mod = _sibling("stemmer")
+    return _stemmer_mod.normalise(tokens)
+
 
 def _tokens(s: str) -> set:
-    return set(_TOKEN_RE.findall((s or "").lower()))
+    return set(_token_list(s))
 
 
 _PATH_REF_RE = re.compile(r"`([^`\n]+?\.[A-Za-z0-9]{1,8})`")
@@ -5487,9 +5511,10 @@ def _rrf_scores(rankings: list, k0: int = 60, weights: list | None = None) -> di
 
 
 def _token_list(s: str) -> list:
-    """Same tokenisation as `_tokens` but keeps term frequencies (a list, not a set) -
-    BM25 needs counts. Unicode-aware, so RU/EN both tokenise."""
-    return _TOKEN_RE.findall((s or "").lower())
+    """The lexical tokens of a text, in order, with counts - BM25 needs them - after the
+    morphology step (`_morph`: stop words out, stems in). Unicode-aware, so RU/EN both
+    tokenise; a digit run of three or more is a token of its own and is never stemmed."""
+    return _morph(_TOKEN_RE.findall((s or "").lower()))
 
 
 def _bm25_scores(qtokens: set, cands: list, k1: float = 1.5, b: float = 0.75) -> dict:

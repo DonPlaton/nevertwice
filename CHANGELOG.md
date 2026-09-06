@@ -168,6 +168,24 @@ empty.
 
 ### Changed
 
+- **Stop words out and stems in on the lexical signal** (`NEVERTWICE_LEXICAL_MORPHOLOGY`, default
+  on). The lexical arm scored raw tokens: `running` and `run` were different words, and so were
+  `ошибка` and `ошибки`. Now English goes through Porter's 1980 stemmer - the algorithm SQLite's
+  own `porter` tokenizer implements, so the in-process BM25 and the FTS5 index agree on every
+  token - and Russian through Snowball, both pure Python, both checked against reference
+  implementations in a hermetic suite with the expected values frozen in it (NLTK's original
+  mode, 100% of 23,268 tokens; `py_rust_stemmers`, every non-`ё` token of the vault vocabulary).
+  Measured before it shipped, against thresholds written first, on four stands
+  (`research/LEXICAL_MORPHOLOGY.md`): LoCoMo lexical R@5 0.499 to 0.601 and the fused ranker
+  0.549 to 0.626; the owner's store, a session's summary finding the notes written from it,
+  Russian R@1 0.583 to 0.685 and English 0.761 to 0.783; LongMemEval's 14k-character sessions
+  0.014 down on the lexical arm, inside the gate. The protocol that lost - a note finding its
+  wikilinked siblings - turned out to score the session's phrasing fingerprint, which no prompt
+  shares, and is recorded rather than obeyed. The SQLite index stamps the tokenisation it was
+  built with and is rebuilt once when the switch changes. Every retrieval claim is withdrawn by
+  this commit and re-measured with the shipped tokenizer in the next, with a `--no-morphology`
+  ablation arm beside it.
+
 - **Tier 1 of the re-measurement, at the reviewed engine, with whole sessions embedded.** The
   review of 2026-09-05 found our semantic arm embedding the first 2,000 characters of every
   LongMemEval session while the competitors embedded the whole one; the stand now embeds whole
@@ -244,6 +262,21 @@ empty.
   including a claim against ourselves.
 
 ### Fixed
+
+- **The retrieval stand's embed fallback, the same on every arm.** Three of the non-oracle
+  pool's 19,206 non-empty sessions exceed bge-m3's context even under the 28,000-character cap
+  (Ollama answers HTTP 400, "the input length exceeds the context length"). Our arm skipped them
+  silently - no vector, never retrievable - and each competitor store arm would have aborted
+  its whole run on the first one, an hour into its ingest, because their loops caught nothing
+  per item. Now every arm halves the text and retries, up to three times, and the artifact
+  counts how many sessions that touched (`sessions_shrunk`).
+- **The A-MEM full-pipeline arm could not import the package it was written for.**
+  `agentic_memory`'s `__init__` exports nothing; the class lives in `memory_system`. The arm
+  reported "not installed" on a machine where it was. Its venv also needs the `ollama` client the
+  package imports at construction. Found by a five-session smoke run before the real one.
+- **Each head-to-head row now says when and at which commit it was produced** (`measured_at`),
+  because rows are merged into one artifact across runs and a competitor arm is not re-run when
+  only our engine changed; and our row says which way the tokenizer ran (`morphology`).
 
 Fifteen defects in the engine, each with a test that fails without the fix - and, from the
 review of 2026-09-05, eleven more, listed first.

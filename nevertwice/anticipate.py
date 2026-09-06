@@ -64,7 +64,12 @@ def save_state(state: dict) -> None:
 def _content_tokens(text: str) -> set:
     """Contentful tokens (length ≥ _MIN_TOKLEN) - drops short noise so similarity keys on the
     distinctive terms of a failure, not on 'the'/'a'/'is'."""
-    return {t for t in m._tokens(text or "") if len(t) >= _MIN_TOKLEN}
+    # Raw tokens on purpose: the risk score saturates at 1.0 through a x3 gain, and its firing
+    # threshold was calibrated on raw-token coverage (research/matched_conditions.py). The
+    # retrieval ranker's stop words and stems (memory_hook._morph, 2026-09-06) were measured
+    # for retrieval only; letting them into this channel would change what fires on every tool
+    # call without a measurement - ledger I8 owns that, with a dataset first.
+    return {t for t in m._TOKEN_RE.findall((text or "").lower()) if len(t) >= _MIN_TOKLEN}
 
 
 def build_signatures(project=None) -> list[dict]:

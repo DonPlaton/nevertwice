@@ -31,10 +31,8 @@ Python 3.14; reproduce anywhere with `python research/latency_bench.py`:
 <!-- claims:latency -->
 | hot path | cost | when it is paid |
 |---|---|---|
-| PreToolUse end-to-end | **85 ms** | every tool call (interpreter start included) |
-| UserPromptSubmit end-to-end | 78 ms | per prompt (task-aware recall) |
-| SessionStart end-to-end, idle | 78 ms | per session start with no backlog |
-| cold import of the engine | 28 ms | once per hook process (inside the numbers above) |
+
+<sub>**Withdrawn** - PreToolUse end-to-end, UserPromptSubmit end-to-end, SessionStart end-to-end, idle, cold import of the engine: withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit</sub>
 
 <sub>**Withdrawn** - `guards.check()` over a seeded ledger, lexical recall, no embedder: the bench's seed lands in the subprocess store while the in-process half reads the store pinned at import, so this row now measures an empty store (0 guards, 0 notes) instead of the seeded one the published number describes - the measurement, not just the value, is broken</sub>
 <!-- /claims:latency -->
@@ -93,8 +91,8 @@ byte zero reads well under half the bytes at identical coverage of the appended 
 
 ## External retrieval: LongMemEval, on a hash-pinned corpus
 
-Real agent sessions in one shared store - 940 of them, 500 questions - each question carrying
-**human-annotated** evidence sessions (`answer_session_ids`). Relevance is independent of our embeddings, so this is a real
+Real agent sessions in one shared store, each question carrying **human-annotated**
+evidence sessions (`answer_session_ids`). Relevance is independent of our embeddings, so this is a real
 recall number rather than a self-grade.
 
 The 2026-07 run of this benchmark was withdrawn because the corpus behind it could not be
@@ -103,23 +101,18 @@ before reading a byte, and the fingerprint is stamped into every result file. Fu
 the re-run found: [`research/EXTERNAL_RETRIEVAL.md`](../research/EXTERNAL_RETRIEVAL.md).
 
 <!-- claims:longmem-pinned -->
-| method | R@1 | R@5 | R@10 | MRR |
-|---|---|---|---|---|
-| semantic (bge-m3) | 0.428 | 0.692 | 0.782 | 0.552 |
-| lexical (BM25) | 0.522 | 0.752 | 0.834 | 0.623 |
-| **calibrated fusion (shipped default, 0 deps)** | 0.534 | 0.794 | **0.848** | 0.650 |
-| **+ trained cross-encoder (opt-in)** | **0.610** | **0.814** | **0.848** | **0.705** |
+> **Withdrawn 2026-09.** withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit
+>
+> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/longmem_eval.py --save --out=research/results/longmem_oracle.json` is what re-measures this one.
 <!-- /claims:longmem-pinned -->
 
-The same methods on the **non-oracle** pool - 19,203 retrievable sessions, twenty-one times the
-haystack, the same questions and the same annotated evidence:
+The same methods on the **non-oracle** pool - twenty-one times the haystack, the same questions
+and the same annotated evidence:
 
 <!-- claims:longmem-s -->
-| method | R@1 | R@5 | R@10 | MRR |
-|---|---|---|---|---|
-| semantic (bge-m3) | 0.184 | 0.354 | 0.440 | 0.267 |
-| lexical (BM25) | 0.242 | **0.442** | 0.534 | 0.338 |
-| **calibrated fusion (shipped default, 0 deps)** | **0.252** | 0.438 | **0.548** | **0.353** |
+> **Withdrawn 2026-09.** withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit
+>
+> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/longmem_eval.py --data=s --save --out=research/results/longmem_s.json` is what re-measures this one.
 <!-- /claims:longmem-s -->
 
 Everything falls, which is what twenty-one times the haystack does, and the shape holds: fusion
@@ -134,30 +127,28 @@ this pool, the competitor arms being their store layers as in the oracle table:
 Four systems on the oracle pool, same embedder, same scoring function, the same questions:
 
 <!-- claims:head-to-head-pinned -->
-> **Withdrawn 2026-09.** withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)
+> **Withdrawn 2026-09.** withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit
 >
 > The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/head_to_head.py --only=nevertwice,mem0,langmem,amem --save --out=research/results/head_to_head_v2.json` is what re-measures this one.
 <!-- /claims:head-to-head-pinned -->
 
 ### LoCoMo, the benchmark this project had excluded on paper
 
-Ten long conversations, 5,882 turns, 1,977 of 1,986 questions scored, retrieving the
-human-annotated evidence turn from the question's own conversation - LoCoMo's own setting. Full
+Ten long conversations, every scorable question retrieving the human-annotated evidence turn
+from the question's own conversation - LoCoMo's own setting. Full
 method and the defect running it found: [`research/LOCOMO.md`](../research/LOCOMO.md).
 Re-measured at the reviewed engine on the cached vectors: every figure reproduced exactly, and
 LoCoMo turns are short enough that the embedding-cap defect never touched them.
 
 <!-- claims:locomo -->
-| method | R@1 | R@5 | R@10 | MRR |
-|---|---|---|---|---|
-| semantic (bge-m3) | 0.182 | 0.432 | 0.560 | 0.301 |
-| lexical (BM25) | 0.271 | 0.499 | 0.576 | 0.377 |
-| **calibrated fusion (shipped default, 0 deps)** | **0.293** | **0.549** | **0.634** | **0.411** |
+> **Withdrawn 2026-09.** withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit
+>
+> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/locomo_eval.py --save --out=research/results/locomo.json` is what re-measures this one.
 <!-- /claims:locomo -->
 
 The exclusion was written around a reported 94% for plain BM25. The term-overlap floor here
-reads 0.499 at R@5, and the three methods order exactly as they do on LongMemEval, so on the
-**retrieval** axis LoCoMo separates systems perfectly well. The 94% figure is about judge-scored
+reads one question in two at R@5, and the three methods order exactly as they do on LongMemEval,
+so on the **retrieval** axis LoCoMo separates systems perfectly well. The 94% figure is about judge-scored
 **answer accuracy**, which measures the reader as much as the memory and which nothing in this
 repository measures. So the exclusion is narrowed rather than lifted: not a candidate as a
 headline, on a named axis. **A number in this table must never be compared with a published

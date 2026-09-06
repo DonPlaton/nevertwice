@@ -858,6 +858,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -904,6 +905,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -950,6 +952,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -992,6 +995,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -1038,6 +1042,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -1084,6 +1089,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -1130,6 +1136,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -1172,6 +1179,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -1218,6 +1226,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -1296,6 +1305,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -1342,6 +1352,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -1384,6 +1395,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -1430,6 +1442,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -1476,6 +1489,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -1522,6 +1536,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -1564,6 +1579,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -1604,6 +1620,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -1644,6 +1661,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -1691,6 +1709,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -1738,6 +1757,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -1787,6 +1807,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -1836,6 +1857,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -1885,6 +1907,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -1934,6 +1957,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -1983,6 +2007,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -2032,6 +2057,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -2081,6 +2107,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -2130,6 +2157,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/longitudinal_improvement.py",
@@ -2174,6 +2202,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/longitudinal_improvement.py",
@@ -2248,6 +2277,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/longitudinal_improvement.py",
@@ -2288,6 +2318,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/longitudinal_improvement.py",
@@ -2327,6 +2358,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/longitudinal_improvement.py",
@@ -2365,6 +2397,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/longitudinal_improvement.py",
@@ -2439,6 +2472,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -2468,9 +2502,7 @@
    "caveat": "Per-attack-instance the rate is 9/12 = 0.75 (raw `recall`). The two aggregates differ; the doc cites the per-family mean. Both fell against the v1.0.0 artifact this replaces - see CHANGELOG.",
    "ci": null,
    "ci_note": "12 hand-written attacks - a proof of taxonomy, not a benchmark.",
-   "cited_in": [
-    "README.md"
-   ],
+   "cited_in": [],
    "commit": "f384512bb49fc20d46c4eec874ec889147c0d85a",
    "produced_by": [
     "research/poisoning.py",
@@ -2485,10 +2517,17 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "README.md"
+   ],
+   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "poisoning.precision",
@@ -2520,10 +2559,15 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "poisoning.injection_blocked",
@@ -2542,9 +2586,7 @@
    "derivation": "1 - attacks.injection.after = 1 - 0.0",
    "ci": null,
    "ci_note": "n=4.",
-   "cited_in": [
-    "README.md"
-   ],
+   "cited_in": [],
    "commit": "f384512bb49fc20d46c4eec874ec889147c0d85a",
    "produced_by": [
     "research/poisoning.py",
@@ -2559,10 +2601,17 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "README.md"
+   ],
+   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "poisoning.false_fact_blocked",
@@ -2581,9 +2630,7 @@
    "derivation": "1 - attacks.false-fact.after = 1 - 0.75",
    "ci": null,
    "ci_note": "n=4; the honest open problem, published as such.",
-   "cited_in": [
-    "README.md"
-   ],
+   "cited_in": [],
    "commit": "f384512bb49fc20d46c4eec874ec889147c0d85a",
    "produced_by": [
     "research/poisoning.py",
@@ -2598,11 +2645,18 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "sandbox_guard.py"
    ],
-   "caveat": "n=4; the honest open problem, published as such - and it got worse, not better: the v1.0.0 artifact recorded 50%."
+   "caveat": "n=4; the honest open problem, published as such - and it got worse, not better: the v1.0.0 artifact recorded 50%.",
+   "cited_in_pending": [
+    "README.md"
+   ],
+   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "forgetting.coverage_gain_at_20pct",
@@ -2640,6 +2694,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_common.py",
@@ -2647,7 +2702,11 @@
     "research/longitudinal_bench.py",
     "sandbox_guard.py",
     "tools/render_claims.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "consolidation.recall_drop",
@@ -2682,6 +2741,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "sandbox_guard.py"
@@ -2721,6 +2781,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -2768,6 +2829,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -2811,6 +2873,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -2855,6 +2918,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -2898,6 +2962,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -2945,6 +3010,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -2988,6 +3054,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -3032,6 +3099,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -3075,6 +3143,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -3122,6 +3191,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -3165,6 +3235,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -3209,6 +3280,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -3252,6 +3324,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -3327,6 +3400,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -3369,6 +3443,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -3411,6 +3486,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -3452,6 +3528,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -3493,6 +3570,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -3535,6 +3613,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -3582,6 +3661,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -3625,6 +3705,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -3667,6 +3748,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -3711,6 +3793,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -3754,6 +3837,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -3801,6 +3885,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -3844,6 +3929,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -3886,6 +3972,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -3930,6 +4017,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -3973,6 +4061,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -4020,6 +4109,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -4063,6 +4153,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -4106,6 +4197,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -4150,6 +4242,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -4193,6 +4286,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -4236,6 +4330,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -4278,6 +4373,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -4354,6 +4450,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -4398,6 +4495,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -4442,6 +4540,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -4484,6 +4583,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -4586,6 +4686,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py"
    ],
@@ -4613,10 +4714,7 @@
     "low": 85,
     "high": 87
    },
-   "cited_in": [
-    "README.md",
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "9c6921657f661a8b80d19bc688c15df38008e0e8",
    "produced_by": [
     "research/latency_bench.py",
@@ -4632,12 +4730,20 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "sandbox_guard.py"
    ],
    "caveat": "Cross-SESSION variance on this machine is large: the same minimum-of-5 statistic gave 142 ms (2026-08-25), 114 ms and 98 ms for PreToolUse within a day, on an otherwise unchanged tree. `--repeat` stabilises the number WITHIN a session and does not across them, so read this as ~0.1 s of end-to-end cost including interpreter start, not as a figure precise to the millisecond. The drop from the previously published 142 ms is machine state, not an optimisation.",
-   "note": "Minimum over five repeats, each the best of three invocations, on an idle machine at this commit. An earlier stamp today came from a run taken while a 30B model was resident and read 31 / 98 / 95 / 91; it was published as a regression against the 2026-08 values and it was not one. The same statistic on the same tree moves by roughly fifteen per cent with ambient load, so no single run of this bench supports a claim about a change."
+   "note": "Minimum over five repeats, each the best of three invocations, on an idle machine at this commit. An earlier stamp today came from a run taken while a 30B model was resident and read 31 / 98 / 95 / 91; it was published as a regression against the 2026-08 values and it was not one. The same statistic on the same tree moves by roughly fifteen per cent with ambient load, so no single run of this bench supports a claim about a change.",
+   "cited_in_pending": [
+    "README.md",
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "latency.userpromptsubmit",
@@ -4660,9 +4766,7 @@
     "low": 78,
     "high": 82
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "9c6921657f661a8b80d19bc688c15df38008e0e8",
    "produced_by": [
     "research/latency_bench.py",
@@ -4678,12 +4782,19 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "sandbox_guard.py"
    ],
    "caveat": "Cross-SESSION variance on this machine is large: the same minimum-of-5 statistic gave 142 ms (2026-08-25), 114 ms and 98 ms for PreToolUse within a day, on an otherwise unchanged tree. `--repeat` stabilises the number WITHIN a session and does not across them, so read this as ~0.1 s of end-to-end cost including interpreter start, not as a figure precise to the millisecond. The drop from the previously published 142 ms is machine state, not an optimisation.",
-   "note": "Minimum over five repeats, each the best of three invocations, on an idle machine at this commit. An earlier stamp today came from a run taken while a 30B model was resident and read 31 / 98 / 95 / 91; it was published as a regression against the 2026-08 values and it was not one. The same statistic on the same tree moves by roughly fifteen per cent with ambient load, so no single run of this bench supports a claim about a change."
+   "note": "Minimum over five repeats, each the best of three invocations, on an idle machine at this commit. An earlier stamp today came from a run taken while a 30B model was resident and read 31 / 98 / 95 / 91; it was published as a regression against the 2026-08 values and it was not one. The same statistic on the same tree moves by roughly fifteen per cent with ambient load, so no single run of this bench supports a claim about a change.",
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "latency.sessionstart",
@@ -4706,9 +4817,7 @@
     "low": 78,
     "high": 82
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "9c6921657f661a8b80d19bc688c15df38008e0e8",
    "produced_by": [
     "research/latency_bench.py",
@@ -4724,12 +4833,19 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "sandbox_guard.py"
    ],
    "caveat": "Cross-SESSION variance on this machine is large: the same minimum-of-5 statistic gave 142 ms (2026-08-25), 114 ms and 98 ms for PreToolUse within a day, on an otherwise unchanged tree. `--repeat` stabilises the number WITHIN a session and does not across them, so read this as ~0.1 s of end-to-end cost including interpreter start, not as a figure precise to the millisecond. The drop from the previously published 142 ms is machine state, not an optimisation.",
-   "note": "Minimum over five repeats, each the best of three invocations, on an idle machine at this commit. An earlier stamp today came from a run taken while a 30B model was resident and read 31 / 98 / 95 / 91; it was published as a regression against the 2026-08 values and it was not one. The same statistic on the same tree moves by roughly fifteen per cent with ambient load, so no single run of this bench supports a claim about a change."
+   "note": "Minimum over five repeats, each the best of three invocations, on an idle machine at this commit. An earlier stamp today came from a run taken while a 30B model was resident and read 31 / 98 / 95 / 91; it was published as a regression against the 2026-08 values and it was not one. The same statistic on the same tree moves by roughly fifteen per cent with ambient load, so no single run of this bench supports a claim about a change.",
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "latency.cold",
@@ -4752,9 +4868,7 @@
     "low": 28,
     "high": 30
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "9c6921657f661a8b80d19bc688c15df38008e0e8",
    "produced_by": [
     "research/latency_bench.py",
@@ -4770,12 +4884,19 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "sandbox_guard.py"
    ],
    "caveat": "Cross-SESSION variance on this machine is large: the same minimum-of-5 statistic gave 142 ms (2026-08-25), 114 ms and 98 ms for PreToolUse within a day, on an otherwise unchanged tree. `--repeat` stabilises the number WITHIN a session and does not across them, so read this as ~0.1 s of end-to-end cost including interpreter start, not as a figure precise to the millisecond. The drop from the previously published 142 ms is machine state, not an optimisation.",
-   "note": "Minimum over five repeats, each the best of three invocations, on an idle machine at this commit. An earlier stamp today came from a run taken while a 30B model was resident and read 31 / 98 / 95 / 91; it was published as a regression against the 2026-08 values and it was not one. The same statistic on the same tree moves by roughly fifteen per cent with ambient load, so no single run of this bench supports a claim about a change."
+   "note": "Minimum over five repeats, each the best of three invocations, on an idle machine at this commit. An earlier stamp today came from a run taken while a 30B model was resident and read 31 / 98 / 95 / 91; it was published as a regression against the 2026-08 values and it was not one. The same statistic on the same tree moves by roughly fifteen per cent with ambient load, so no single run of this bench supports a claim about a change.",
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "latency.perf_audit_range",
@@ -4811,6 +4932,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "sandbox_guard.py"
@@ -4852,6 +4974,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "sandbox_guard.py"
@@ -4892,6 +5015,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "sandbox_guard.py"
@@ -4933,6 +5057,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "sandbox_guard.py"
@@ -4974,6 +5099,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "sandbox_guard.py"
@@ -5019,6 +5145,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/temporal_graph.py",
@@ -5065,6 +5192,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/temporal_graph.py",
@@ -5111,6 +5239,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/temporal_graph.py",
@@ -5152,6 +5281,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/temporal_graph.py",
@@ -5198,6 +5328,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/temporal_graph.py",
@@ -5244,6 +5375,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/temporal_graph.py",
@@ -5290,6 +5422,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/temporal_graph.py",
@@ -5331,6 +5464,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/temporal_graph.py",
@@ -5377,6 +5511,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/temporal_graph.py",
@@ -5423,6 +5558,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/temporal_graph.py",
@@ -5469,6 +5605,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/temporal_graph.py",
@@ -5510,6 +5647,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/temporal_graph.py",
@@ -5550,6 +5688,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/temporal_graph.py",
@@ -5589,6 +5728,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/temporal_graph.py",
@@ -5628,6 +5768,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/temporal_graph.py",
@@ -5667,6 +5808,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/temporal_graph.py",
@@ -5706,6 +5848,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/temporal_graph.py",
@@ -5746,6 +5889,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/temporal_graph.py",
@@ -5787,6 +5931,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/temporal_graph.py",
@@ -5826,6 +5971,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/temporal_graph.py",
@@ -5866,6 +6012,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/temporal_graph.py",
@@ -5907,6 +6054,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/temporal_graph.py",
@@ -5946,6 +6094,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/temporal_graph.py",
@@ -5986,6 +6135,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/temporal_graph.py",
@@ -6027,6 +6177,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/temporal_graph.py",
@@ -6067,6 +6218,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/temporal_graph.py",
@@ -6106,6 +6258,7 @@
     "nevertwice/rankers.py",
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py"
    ],
@@ -6143,6 +6296,7 @@
     "nevertwice/rankers.py",
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py"
    ],
@@ -6182,6 +6336,7 @@
     "nevertwice/rankers.py",
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py"
    ],
@@ -6232,6 +6387,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "sandbox_guard.py"
@@ -6283,6 +6439,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "sandbox_guard.py"
@@ -6335,6 +6492,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "sandbox_guard.py"
@@ -6397,10 +6555,15 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py"
    ],
-   "note": " The former command (`--list`) was not a subcommand the CLI accepts; `pack --count` is read-only and prints the number (review 2026-09-05)."
+   "note": " The former command (`--list`) was not a subcommand the CLI accepts; `pack --count` is read-only and prints the number (review 2026-09-05).",
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "head_to_head.nevertwice.recall_at_10",
@@ -6439,6 +6602,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -6483,6 +6647,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -6532,6 +6697,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -6576,6 +6742,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -6625,6 +6792,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -6669,6 +6837,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -6718,6 +6887,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -6762,6 +6932,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -7423,6 +7594,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_frontier.py",
@@ -7489,6 +7661,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_frontier.py",
@@ -7555,6 +7728,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_frontier.py",
@@ -7623,6 +7797,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_frontier.py",
@@ -7689,6 +7864,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_frontier.py",
@@ -7754,6 +7930,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_frontier.py",
@@ -7821,6 +7998,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_frontier.py",
@@ -7887,6 +8065,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_frontier.py",
@@ -7951,6 +8130,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_frontier.py",
@@ -8009,6 +8189,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_frontier.py",
@@ -8064,6 +8245,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_frontier.py",
@@ -8122,6 +8304,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_frontier.py",
@@ -8179,6 +8362,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_frontier.py",
@@ -8236,6 +8420,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_frontier.py",
@@ -8293,6 +8478,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_frontier.py",
@@ -8350,6 +8536,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_frontier.py",
@@ -8408,6 +8595,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_frontier.py",
@@ -8465,6 +8653,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "sandbox_guard.py"
@@ -8518,6 +8707,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "sandbox_guard.py"
@@ -8571,6 +8761,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "sandbox_guard.py"
@@ -8624,6 +8815,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "sandbox_guard.py"
@@ -8677,6 +8869,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "sandbox_guard.py"
@@ -8717,12 +8910,17 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_frontier.py",
     "research/matched_conditions.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "baselines.f2.nevertwice.recall",
@@ -8760,12 +8958,17 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_frontier.py",
     "research/matched_conditions.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "baselines.f2.curated_agents_md.recall",
@@ -8803,12 +9006,17 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_frontier.py",
     "research/matched_conditions.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "baselines.f2.linter_or_test.recall",
@@ -8846,12 +9054,17 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_frontier.py",
     "research/matched_conditions.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "baselines.f2.nevertwice.tokens_per_episode",
@@ -8884,12 +9097,17 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_frontier.py",
     "research/matched_conditions.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "baselines.f2.curated_agents_md.tokens_per_episode",
@@ -8922,12 +9140,17 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_frontier.py",
     "research/matched_conditions.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_pinned.semantic.recall_at_1",
@@ -8949,9 +9172,7 @@
     "low": 0.3853,
     "high": 0.4718
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "9c6921657f661a8b80d19bc688c15df38008e0e8",
    "note": "Re-measured 2026-09-02 on the corpus pinned in research/corpus_pin.py (sha256 821a2034..., verified before the run). The value is identical to three decimals to the one withdrawn in 2026-08. The withdrawn claim stays withdrawn: it was measured on a file that cannot be identified, and agreeing with a later run is not evidence about an unidentifiable one.",
    "produced_by": [
@@ -8967,13 +9188,20 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_pinned.semantic.recall_at_5",
@@ -8995,9 +9223,7 @@
     "low": 0.6502,
     "high": 0.7309
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "9c6921657f661a8b80d19bc688c15df38008e0e8",
    "note": "Re-measured 2026-09-02 on the corpus pinned in research/corpus_pin.py (sha256 821a2034..., verified before the run). The value is identical to three decimals to the one withdrawn in 2026-08. The withdrawn claim stays withdrawn: it was measured on a file that cannot be identified, and agreeing with a later run is not evidence about an unidentifiable one.",
    "produced_by": [
@@ -9013,13 +9239,20 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_pinned.semantic.recall_at_10",
@@ -9057,13 +9290,18 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_pinned.semantic.mrr",
@@ -9080,9 +9318,7 @@
    "raw": "research/results/longmem_oracle.json",
    "pointer": "methods.semantic.mrr",
    "ci": null,
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "9c6921657f661a8b80d19bc688c15df38008e0e8",
    "note": "Re-measured 2026-09-02 on the corpus pinned in research/corpus_pin.py (sha256 821a2034..., verified before the run). The value is identical to three decimals to the one withdrawn in 2026-08. The withdrawn claim stays withdrawn: it was measured on a file that cannot be identified, and agreeing with a later run is not evidence about an unidentifiable one.",
    "produced_by": [
@@ -9098,13 +9334,20 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_pinned.lexical.recall_at_1",
@@ -9126,9 +9369,7 @@
     "low": 0.4782,
     "high": 0.5654
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "9c6921657f661a8b80d19bc688c15df38008e0e8",
    "note": "Re-measured 2026-09-02 on the corpus pinned in research/corpus_pin.py (sha256 821a2034..., verified before the run). The value is identical to three decimals to the one withdrawn in 2026-08. The withdrawn claim stays withdrawn: it was measured on a file that cannot be identified, and agreeing with a later run is not evidence about an unidentifiable one.",
    "produced_by": [
@@ -9144,13 +9385,20 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_pinned.lexical.recall_at_5",
@@ -9172,9 +9420,7 @@
     "low": 0.7123,
     "high": 0.7878
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "9c6921657f661a8b80d19bc688c15df38008e0e8",
    "note": "Re-measured 2026-09-02 on the corpus pinned in research/corpus_pin.py (sha256 821a2034..., verified before the run). The value is identical to three decimals to the one withdrawn in 2026-08. The withdrawn claim stays withdrawn: it was measured on a file that cannot be identified, and agreeing with a later run is not evidence about an unidentifiable one.",
    "produced_by": [
@@ -9190,13 +9436,20 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_pinned.lexical.recall_at_10",
@@ -9234,13 +9487,18 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_pinned.lexical.mrr",
@@ -9257,9 +9515,7 @@
    "raw": "research/results/longmem_oracle.json",
    "pointer": "methods.lexical.mrr",
    "ci": null,
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "9c6921657f661a8b80d19bc688c15df38008e0e8",
    "note": "Re-measured 2026-09-02 on the corpus pinned in research/corpus_pin.py (sha256 821a2034..., verified before the run). The value is identical to three decimals to the one withdrawn in 2026-08. The withdrawn claim stays withdrawn: it was measured on a file that cannot be identified, and agreeing with a later run is not evidence about an unidentifiable one.",
    "produced_by": [
@@ -9275,13 +9531,20 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_pinned.hybrid.recall_at_1",
@@ -9303,9 +9566,7 @@
     "low": 0.4902,
     "high": 0.5773
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "9c6921657f661a8b80d19bc688c15df38008e0e8",
    "note": "Re-measured 2026-09-02 on the corpus pinned in research/corpus_pin.py (sha256 821a2034..., verified before the run). The value is identical to three decimals to the one withdrawn in 2026-08. The withdrawn claim stays withdrawn: it was measured on a file that cannot be identified, and agreeing with a later run is not evidence about an unidentifiable one.",
    "produced_by": [
@@ -9321,13 +9582,20 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_pinned.hybrid.recall_at_5",
@@ -9349,9 +9617,7 @@
     "low": 0.7564,
     "high": 0.8271
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "9c6921657f661a8b80d19bc688c15df38008e0e8",
    "note": "Re-measured 2026-09-02 on the corpus pinned in research/corpus_pin.py (sha256 821a2034..., verified before the run). The value is identical to three decimals to the one withdrawn in 2026-08. The withdrawn claim stays withdrawn: it was measured on a file that cannot be identified, and agreeing with a later run is not evidence about an unidentifiable one.",
    "produced_by": [
@@ -9367,13 +9633,20 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_pinned.hybrid.recall_at_10",
@@ -9411,13 +9684,18 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_pinned.hybrid.mrr",
@@ -9434,9 +9712,7 @@
    "raw": "research/results/longmem_oracle.json",
    "pointer": "methods.hybrid.mrr",
    "ci": null,
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "9c6921657f661a8b80d19bc688c15df38008e0e8",
    "note": "Re-measured 2026-09-02 on the corpus pinned in research/corpus_pin.py (sha256 821a2034..., verified before the run). The value is identical to three decimals to the one withdrawn in 2026-08. The withdrawn claim stays withdrawn: it was measured on a file that cannot be identified, and agreeing with a later run is not evidence about an unidentifiable one.",
    "produced_by": [
@@ -9452,13 +9728,20 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_pinned.hybrid_xrerank.recall_at_1",
@@ -9480,9 +9763,7 @@
     "low": 0.5666,
     "high": 0.6518
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "9c6921657f661a8b80d19bc688c15df38008e0e8",
    "note": "Re-measured 2026-09-02 on the corpus pinned in research/corpus_pin.py (sha256 821a2034..., verified before the run). The value is identical to three decimals to the one withdrawn in 2026-08. The withdrawn claim stays withdrawn: it was measured on a file that cannot be identified, and agreeing with a later run is not evidence about an unidentifiable one.",
    "produced_by": [
@@ -9498,13 +9779,20 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_pinned.hybrid_xrerank.recall_at_5",
@@ -9526,9 +9814,7 @@
     "low": 0.7775,
     "high": 0.8457
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "9c6921657f661a8b80d19bc688c15df38008e0e8",
    "note": "Re-measured 2026-09-02 on the corpus pinned in research/corpus_pin.py (sha256 821a2034..., verified before the run). The value is identical to three decimals to the one withdrawn in 2026-08. The withdrawn claim stays withdrawn: it was measured on a file that cannot be identified, and agreeing with a later run is not evidence about an unidentifiable one.",
    "produced_by": [
@@ -9544,13 +9830,20 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_pinned.hybrid_xrerank.recall_at_10",
@@ -9588,13 +9881,18 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_pinned.hybrid_xrerank.mrr",
@@ -9611,9 +9909,7 @@
    "raw": "research/results/longmem_oracle.json",
    "pointer": "methods.hybrid+xrerank.mrr",
    "ci": null,
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "9c6921657f661a8b80d19bc688c15df38008e0e8",
    "note": "Re-measured 2026-09-02 on the corpus pinned in research/corpus_pin.py (sha256 821a2034..., verified before the run). The value is identical to three decimals to the one withdrawn in 2026-08. The withdrawn claim stays withdrawn: it was measured on a file that cannot be identified, and agreeing with a later run is not evidence about an unidentifiable one.",
    "produced_by": [
@@ -9629,13 +9925,20 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "h2h_pinned.nevertwice.recall_at_1",
@@ -9673,6 +9976,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -9681,7 +9985,11 @@
     "research/locomo_eval.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "h2h_pinned.nevertwice.recall_at_5",
@@ -9703,9 +10011,7 @@
     "low": 0.7564,
     "high": 0.8271
    },
-   "cited_in": [
-    "README.md"
-   ],
+   "cited_in": [],
    "commit": "9c6921657f661a8b80d19bc688c15df38008e0e8",
    "note": "Same 940-session pool, same 500 questions, same local bge-m3, same scoring function. Competitor versions are recorded in the artifact.",
    "produced_by": [
@@ -9721,6 +10027,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -9729,7 +10036,13 @@
     "research/locomo_eval.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "README.md"
+   ],
+   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "h2h_pinned.nevertwice.recall_at_10",
@@ -9767,6 +10080,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -9775,7 +10089,11 @@
     "research/locomo_eval.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "h2h_pinned.nevertwice.mrr",
@@ -9807,6 +10125,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -9815,7 +10134,11 @@
     "research/locomo_eval.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "h2h_pinned.mem0.recall_at_1",
@@ -9853,6 +10176,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -9905,6 +10229,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -9958,6 +10283,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -10002,6 +10328,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -10054,6 +10381,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -10106,6 +10434,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -10159,6 +10488,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -10203,6 +10533,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -10255,6 +10586,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -10307,6 +10639,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -10360,6 +10693,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -10404,6 +10738,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -10451,6 +10786,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -10458,7 +10794,11 @@
     "research/corpus_pin.py",
     "sandbox_guard.py"
    ],
-   "derivation": "methods['hybrid+xrerank'].recall@1 - methods['hybrid'].recall@1, written by the stand into xrerank.delta_recall@1"
+   "derivation": "methods['hybrid+xrerank'].recall@1 - methods['hybrid'].recall@1, written by the stand into xrerank.delta_recall@1",
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_pinned.dataset.questions",
@@ -10475,9 +10815,7 @@
    "raw": "research/results/longmem_oracle.json",
    "pointer": "questions",
    "ci": null,
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "9c6921657f661a8b80d19bc688c15df38008e0e8",
    "produced_by": [
     "research/longmem_eval.py",
@@ -10492,13 +10830,20 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_s.semantic.recall_at_1",
@@ -10520,9 +10865,7 @@
     "low": 0.1525,
     "high": 0.2203
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "9c6921657f661a8b80d19bc688c15df38008e0e8",
    "note": "The standard non-oracle pool: 19,206 unique haystack sessions against the oracle variant's 940, so every question ranks a haystack twenty-one times larger. Same embedder, same scoring function, same human-annotated ground truth.",
    "produced_by": [
@@ -10538,13 +10881,20 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_s.semantic.recall_at_5",
@@ -10566,9 +10916,7 @@
     "low": 0.3133,
     "high": 0.3969
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "9c6921657f661a8b80d19bc688c15df38008e0e8",
    "note": "The standard non-oracle pool: 19,206 unique haystack sessions against the oracle variant's 940, so every question ranks a haystack twenty-one times larger. Same embedder, same scoring function, same human-annotated ground truth.",
    "produced_by": [
@@ -10584,13 +10932,20 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_s.semantic.recall_at_10",
@@ -10628,13 +10983,18 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_s.semantic.mrr",
@@ -10651,9 +11011,7 @@
    "raw": "research/results/longmem_s.json",
    "pointer": "methods.semantic.mrr",
    "ci": null,
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "9c6921657f661a8b80d19bc688c15df38008e0e8",
    "note": "The standard non-oracle pool: 19,206 unique haystack sessions against the oracle variant's 940, so every question ranks a haystack twenty-one times larger. Same embedder, same scoring function, same human-annotated ground truth.",
    "produced_by": [
@@ -10669,13 +11027,20 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_s.lexical.recall_at_1",
@@ -10697,9 +11062,7 @@
     "low": 0.2065,
     "high": 0.2814
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "9c6921657f661a8b80d19bc688c15df38008e0e8",
    "note": "The standard non-oracle pool: 19,206 unique haystack sessions against the oracle variant's 940, so every question ranks a haystack twenty-one times larger. Same embedder, same scoring function, same human-annotated ground truth.",
    "produced_by": [
@@ -10715,13 +11078,20 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_s.lexical.recall_at_5",
@@ -10743,9 +11113,7 @@
     "low": 0.3991,
     "high": 0.4858
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "9c6921657f661a8b80d19bc688c15df38008e0e8",
    "note": "The standard non-oracle pool: 19,206 unique haystack sessions against the oracle variant's 940, so every question ranks a haystack twenty-one times larger. Same embedder, same scoring function, same human-annotated ground truth.",
    "produced_by": [
@@ -10761,13 +11129,20 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_s.lexical.recall_at_10",
@@ -10805,13 +11180,18 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_s.lexical.mrr",
@@ -10828,9 +11208,7 @@
    "raw": "research/results/longmem_s.json",
    "pointer": "methods.lexical.mrr",
    "ci": null,
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "9c6921657f661a8b80d19bc688c15df38008e0e8",
    "note": "The standard non-oracle pool: 19,206 unique haystack sessions against the oracle variant's 940, so every question ranks a haystack twenty-one times larger. Same embedder, same scoring function, same human-annotated ground truth.",
    "produced_by": [
@@ -10846,13 +11224,20 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_s.hybrid.recall_at_1",
@@ -10874,9 +11259,7 @@
     "low": 0.2159,
     "high": 0.2918
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "9c6921657f661a8b80d19bc688c15df38008e0e8",
    "note": "The standard non-oracle pool: 19,206 unique haystack sessions against the oracle variant's 940, so every question ranks a haystack twenty-one times larger. Same embedder, same scoring function, same human-annotated ground truth.",
    "produced_by": [
@@ -10892,13 +11275,20 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_s.hybrid.recall_at_5",
@@ -10920,9 +11310,7 @@
     "low": 0.3951,
     "high": 0.4818
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "9c6921657f661a8b80d19bc688c15df38008e0e8",
    "note": "The standard non-oracle pool: 19,206 unique haystack sessions against the oracle variant's 940, so every question ranks a haystack twenty-one times larger. Same embedder, same scoring function, same human-annotated ground truth.",
    "produced_by": [
@@ -10938,13 +11326,20 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_s.hybrid.recall_at_10",
@@ -10982,13 +11377,18 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_s.hybrid.mrr",
@@ -11005,9 +11405,7 @@
    "raw": "research/results/longmem_s.json",
    "pointer": "methods.hybrid.mrr",
    "ci": null,
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "9c6921657f661a8b80d19bc688c15df38008e0e8",
    "note": "The standard non-oracle pool: 19,206 unique haystack sessions against the oracle variant's 940, so every question ranks a haystack twenty-one times larger. Same embedder, same scoring function, same human-annotated ground truth.",
    "produced_by": [
@@ -11023,13 +11421,20 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_s.dataset.pool_sessions",
@@ -11047,9 +11452,7 @@
    "raw": "research/results/longmem_s.json",
    "pointer": "sessions",
    "ci": null,
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "9c6921657f661a8b80d19bc688c15df38008e0e8",
    "produced_by": [
     "research/longmem_eval.py",
@@ -11064,13 +11467,20 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_pinned.dataset.pool_sessions",
@@ -11087,9 +11497,7 @@
    "raw": "research/results/longmem_oracle.json",
    "pointer": "sessions",
    "ci": null,
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "9c6921657f661a8b80d19bc688c15df38008e0e8",
    "produced_by": [
     "research/longmem_eval.py",
@@ -11104,13 +11512,20 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "locomo.semantic.recall_at_1",
@@ -11132,9 +11547,7 @@
     "low": 0.1657,
     "high": 0.1997
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "f384512bb49fc20d46c4eec874ec889147c0d85a",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
@@ -11150,6 +11563,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -11157,7 +11571,13 @@
     "research/corpus_pin.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "locomo.semantic.recall_at_5",
@@ -11179,9 +11599,7 @@
     "low": 0.4108,
     "high": 0.4544
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "f384512bb49fc20d46c4eec874ec889147c0d85a",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
@@ -11197,6 +11615,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -11204,7 +11623,13 @@
     "research/corpus_pin.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "locomo.semantic.recall_at_10",
@@ -11226,9 +11651,7 @@
     "low": 0.538,
     "high": 0.5817
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "f384512bb49fc20d46c4eec874ec889147c0d85a",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
@@ -11244,6 +11667,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -11251,7 +11675,13 @@
     "research/corpus_pin.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "locomo.semantic.mrr",
@@ -11268,9 +11698,7 @@
    "raw": "research/results/locomo.json",
    "pointer": "methods.semantic.mrr",
    "ci": null,
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "f384512bb49fc20d46c4eec874ec889147c0d85a",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
@@ -11286,6 +11714,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -11293,7 +11722,13 @@
     "research/corpus_pin.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "locomo.lexical.recall_at_1",
@@ -11315,9 +11750,7 @@
     "low": 0.2515,
     "high": 0.2906
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "f384512bb49fc20d46c4eec874ec889147c0d85a",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
@@ -11333,6 +11766,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -11340,7 +11774,13 @@
     "research/corpus_pin.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "locomo.lexical.recall_at_5",
@@ -11362,9 +11802,7 @@
     "low": 0.4772,
     "high": 0.5213
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "f384512bb49fc20d46c4eec874ec889147c0d85a",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
@@ -11380,6 +11818,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -11387,7 +11826,13 @@
     "research/corpus_pin.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "locomo.lexical.recall_at_10",
@@ -11409,9 +11854,7 @@
     "low": 0.5542,
     "high": 0.5977
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "f384512bb49fc20d46c4eec874ec889147c0d85a",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
@@ -11427,6 +11870,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -11434,7 +11878,13 @@
     "research/corpus_pin.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "locomo.lexical.mrr",
@@ -11451,9 +11901,7 @@
    "raw": "research/results/locomo.json",
    "pointer": "methods.lexical.mrr",
    "ci": null,
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "f384512bb49fc20d46c4eec874ec889147c0d85a",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
@@ -11469,6 +11917,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -11476,7 +11925,13 @@
     "research/corpus_pin.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "locomo.hybrid.recall_at_1",
@@ -11498,9 +11953,7 @@
     "low": 0.2737,
     "high": 0.3138
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "f384512bb49fc20d46c4eec874ec889147c0d85a",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
@@ -11516,6 +11969,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -11523,7 +11977,13 @@
     "research/corpus_pin.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "locomo.hybrid.recall_at_5",
@@ -11545,9 +12005,7 @@
     "low": 0.5273,
     "high": 0.5711
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "f384512bb49fc20d46c4eec874ec889147c0d85a",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
@@ -11563,6 +12021,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -11570,7 +12029,13 @@
     "research/corpus_pin.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "locomo.hybrid.recall_at_10",
@@ -11592,9 +12057,7 @@
     "low": 0.6123,
     "high": 0.6547
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "f384512bb49fc20d46c4eec874ec889147c0d85a",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
@@ -11610,6 +12073,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -11617,7 +12081,13 @@
     "research/corpus_pin.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "locomo.hybrid.mrr",
@@ -11634,9 +12104,7 @@
    "raw": "research/results/locomo.json",
    "pointer": "methods.hybrid.mrr",
    "ci": null,
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "f384512bb49fc20d46c4eec874ec889147c0d85a",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
@@ -11652,6 +12120,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -11659,7 +12128,13 @@
     "research/corpus_pin.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "locomo.dataset.questions_scored",
@@ -11677,9 +12152,7 @@
    "raw": "research/results/locomo.json",
    "pointer": "questions",
    "ci": null,
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "f384512bb49fc20d46c4eec874ec889147c0d85a",
    "produced_by": [
     "research/locomo_eval.py",
@@ -11694,6 +12167,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -11701,7 +12175,13 @@
     "research/corpus_pin.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "locomo.dataset.questions_total",
@@ -11719,9 +12199,7 @@
    "raw": "research/results/locomo.json",
    "pointer": null,
    "ci": null,
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "f384512bb49fc20d46c4eec874ec889147c0d85a",
    "derivation": "the corpus record in research/corpus_pin.py; the result file carries only the scoreable subset",
    "produced_by": [
@@ -11737,6 +12215,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -11744,7 +12223,13 @@
     "research/corpus_pin.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "locomo.dataset.turns",
@@ -11762,9 +12247,7 @@
    "raw": "research/results/locomo.json",
    "pointer": "turns",
    "ci": null,
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "f384512bb49fc20d46c4eec874ec889147c0d85a",
    "produced_by": [
     "research/locomo_eval.py",
@@ -11779,6 +12262,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -11786,7 +12270,13 @@
     "research/corpus_pin.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "locomo.semantic.recall_at_3",
@@ -11824,6 +12314,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -11831,7 +12322,11 @@
     "research/corpus_pin.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "locomo.lexical.recall_at_3",
@@ -11869,6 +12364,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -11876,7 +12372,11 @@
     "research/corpus_pin.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   },
   {
    "id": "locomo.hybrid.recall_at_3",
@@ -11914,6 +12414,7 @@
     "nevertwice/receipt.py",
     "nevertwice/reranker_ce.py",
     "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "research/_rerank.py",
@@ -11921,7 +12422,11 @@
     "research/corpus_pin.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit",
+   "withdrawn_on": "2026-09-06",
+   "pending_remeasure": true
   }
  ],
  "external_citations": [

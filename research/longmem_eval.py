@@ -105,24 +105,47 @@ def embed_full(text: str, kind: str | None = None, timeout: int = 180):
     the text is sent whole, up to MAXCHARS, which is the pool's own cap. The cloud providers
     keep their own limits and go through `embed_text` unchanged.
     """
+    import urllib.error
     import urllib.request
+    global LAST_EMBED_CHARS
     if getattr(m, "EMBED_PROVIDER", "ollama") != "ollama":
         return m.embed_text(text, kind=kind, timeout=timeout)
     raw = (text or "")[:MAXCHARS]
-    payload = json.dumps({"model": m.EMBED_MODEL, "input": m._embed_prefix(kind) + raw}).encode("utf-8")
-    req = urllib.request.Request(m.OLLAMA_EMBED_URL, data=payload,
-                                 headers={"Content-Type": "application/json"})
-    try:
-        with urllib.request.urlopen(req, timeout=timeout) as r:
-            data = json.loads(r.read())
-    except Exception as e:                                   # noqa: BLE001 - a stand reports, never hides
-        print(f"[embed] failed: {type(e).__name__}: {e}", file=sys.stderr)
+    LAST_EMBED_CHARS = len(raw)
+    for attempt in range(4):
+        payload = json.dumps({"model": m.EMBED_MODEL,
+                              "input": m._embed_prefix(kind) + raw}).encode("utf-8")
+        req = urllib.request.Request(m.OLLAMA_EMBED_URL, data=payload,
+                                     headers={"Content-Type": "application/json"})
+        try:
+            with urllib.request.urlopen(req, timeout=timeout) as r:
+                data = json.loads(r.read())
+            break
+        except urllib.error.HTTPError as e:
+            body = e.read()[:200].decode("utf-8", "replace") if e.fp else ""
+            # bge-m3 takes 8,192 tokens; a dense session can exceed that under the character
+            # cap. Three of the 19,206 S-pool sessions did (2026-09-06). Half the text and
+            # retry, like every other arm on this stand, and say how much went in.
+            if e.code == 400 and "context length" in body and attempt < 3 and len(raw) > 1000:
+                raw = raw[:len(raw) // 2]
+                LAST_EMBED_CHARS = len(raw)
+                continue
+            print(f"[embed] failed: HTTP {e.code}: {body}", file=sys.stderr)
+            return None
+        except Exception as e:                               # noqa: BLE001 - a stand reports, never hides
+            print(f"[embed] failed: {type(e).__name__}: {e}", file=sys.stderr)
+            return None
+    else:
         return None
     embs = data.get("embeddings")
     if isinstance(embs, list) and embs and isinstance(embs[0], list):
         return embs[0]
     one = data.get("embedding")
     return one if isinstance(one, list) else None
+
+
+#: Characters the last `embed_full` call actually sent (after any context-length retries).
+LAST_EMBED_CHARS = 0
 
 
 def cache_meta() -> dict:
@@ -192,6 +215,10 @@ RERANK = "--rerank" in _ARGV
 # W2 reranker (trained): re-order the top-N with a purpose-trained cross-encoder
 # (bge-reranker-v2-m3), the standard precision tool - distinct from the LLM reranker above.
 XRERANK = "--xrerank" in _ARGV
+# Ablation arm: the lexical signal on raw tokens, as it was before 2026-09-06. The artifact
+# records which way the tokenizer ran (`morphology`), so a number cannot be read as the other.
+if "--no-morphology" in _ARGV:
+    m.LEXICAL_MORPHOLOGY = False
 RERANK_N = int(os.environ.get("NEVERTWICE_RERANK_N", "10"))      # matches the R@10 pool ceiling
 RERANK_SNIP = int(os.environ.get("NEVERTWICE_RERANK_SNIP", "700"))   # per-session passage budget
 RERANK_MODEL = os.environ.get("NEVERTWICE_RERANK_MODEL", m.OLLAMA_MODEL)
@@ -244,6 +271,7 @@ def embed_all():
             sys.exit(2)
     cache.setdefault("sessions", {})
     cache.setdefault("questions", {})
+    cache.setdefault("shrunk", {})          # sid -> characters that fit, when the whole did not
     cache["meta"] = cache_meta()
     sids = [s for s in pool if s not in cache["sessions"]]
     qs = [e for e in data if e["question_id"] not in cache["questions"]]
@@ -254,6 +282,8 @@ def embed_all():
         v = embed_full(pool[sid], kind=m.doc_embed_kind())
         if v:
             cache["sessions"][sid] = v
+            if LAST_EMBED_CHARS < len(pool[sid][:MAXCHARS]):
+                cache["shrunk"][sid] = LAST_EMBED_CHARS
         if (i + 1) % 50 == 0:
             print(f"  sessions {i+1}/{len(sids)}  ({time.time()-t0:.0f}s)", file=sys.stderr)
             EMB.write_text(json.dumps(cache), encoding="utf-8")   # checkpoint
@@ -429,7 +459,9 @@ def evaluate():
         print(f"    → {verdict}")
     if "--save" in sys.argv:
         res = {"sessions": len(pool_ids), "questions": n, "embedder": m.EMBED_MODEL,
-               "embed_chars": MAXCHARS, "methods": out, "recur_inert": inert,
+               "sessions_shrunk": len(cache.get("shrunk") or {}),
+               "embed_chars": MAXCHARS, "morphology": bool(m.LEXICAL_MORPHOLOGY),
+               "methods": out, "recur_inert": inert,
                "provenance": corpus_pin.record(CORPUS)}
         if rerank_cost:
             res["rerank"] = rerank_cost

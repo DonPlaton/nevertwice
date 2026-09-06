@@ -1,5 +1,12 @@
 # LoCoMo, the benchmark this project excluded, measured
 
+<!-- withdrawn-banner -->
+> **Withdrawn: figures on this page must not be quoted.** They were retracted and remain
+> here because deleting a result one was wrong about destroys the record of having been
+> wrong. The design, the method and the caveats stand; the numbers do not. Each figure's
+> own reason and date are in
+> [`research/evidence_manifest.json`](evidence_manifest.json), and
+> `python tools/check_freshness.py --list-stale` lists every one.
 
 For months the roadmap has carried one sentence about LoCoMo: **not a candidate**, because plain
 BM25 is reported to score about 94% on it, so it no longer separates memory systems and a vendor

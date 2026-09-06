@@ -134,7 +134,11 @@ def main() -> int:
     ap.add_argument("--save", action="store_true")
     ap.add_argument("--out", default="")
     ap.add_argument("--limit", type=int, default=None, help="first N conversations (smoke)")
+    ap.add_argument("--no-morphology", action="store_true",
+                    help="ablation: raw tokens, no stop words, no stems (NEVERTWICE_LEXICAL_MORPHOLOGY=0)")
     args = ap.parse_args()
+    if args.no_morphology:
+        m.LEXICAL_MORPHOLOGY = False
 
     convs = load()
     if args.limit:
@@ -213,6 +217,7 @@ def main() -> int:
 
     if args.save:
         res = {"conversations": len(convs), "turns": n_turns, "questions": n,
+               "morphology": bool(m.LEXICAL_MORPHOLOGY),
                "embedder": m.EMBED_MODEL, "methods": out,
                "by_category_recall_at_5": {c: {k: (v[0] / v[1] if v[1] else 0.0)
                                                for k, v in s.items()}

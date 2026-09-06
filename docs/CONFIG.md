@@ -87,6 +87,7 @@ After setting `NEVERTWICE_EMBED_QUANT`, rebuild the index once the same way.
 |---|---|---|
 | `NEVERTWICE_FUSION` | `calibrated` | The shipped ranker: calibrated score fusion (z-normalise each signal, combine magnitudes). `rrf` falls back to reciprocal rank fusion. See `research/RETRIEVAL_FUSION.md`. |
 | `NEVERTWICE_FUSION_SEM_WEIGHT` | `0.5` | Dense (semantic) weight in calibrated fusion. Measured Pareto-optimal on LongMemEval. |
+| `NEVERTWICE_LEXICAL_MORPHOLOGY` | `1` | Stop words out and stems in on the lexical signal (BM25 and the FTS5 index): Porter for English, Snowball for Russian, pure Python. `0` restores raw tokens; the SQLite index is rebuilt once either way. Measured in `research/LEXICAL_MORPHOLOGY.md`. |
 | `NEVERTWICE_RECUR_FUSION_BOOST` | `0.02` | Recurrence tiebreak scaled to the calibrated (0,1) score range (inert on a no-recurrence corpus). |
 | `NEVERTWICE_RANKER` | `hybrid` | Legacy RRF path / signal selector: `hybrid` (RRF) / `semantic` / `lexical`. Only active when `NEVERTWICE_FUSION=rrf` or `posterior`. |
 | `NEVERTWICE_SEM_WEIGHT` | `2.0` | Semantic weight in the **RRF** fusion (distinct from `NEVERTWICE_FUSION_SEM_WEIGHT`). |

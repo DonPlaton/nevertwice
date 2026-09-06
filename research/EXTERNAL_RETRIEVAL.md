@@ -45,12 +45,9 @@ Whole sessions embedded, up to the pool's own cap of 28,000 characters, through 
 endpoint the competitor arms use:
 
 <!-- claims:longmem-pinned -->
-| method | R@1 | R@5 | R@10 | MRR |
-|---|---|---|---|---|
-| semantic (bge-m3) | 0.428 | 0.692 | 0.782 | 0.552 |
-| lexical (BM25) | 0.522 | 0.752 | 0.834 | 0.623 |
-| **calibrated fusion (shipped default, 0 deps)** | 0.534 | 0.794 | **0.848** | 0.650 |
-| **+ trained cross-encoder (opt-in)** | **0.610** | **0.814** | **0.848** | **0.705** |
+> **Withdrawn 2026-09.** withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit
+>
+> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/longmem_eval.py --save --out=research/results/longmem_oracle.json` is what re-measures this one.
 <!-- /claims:longmem-pinned -->
 
 Against the run that embedded only the first 2,000 characters of each session, the semantic arm
@@ -67,7 +64,7 @@ numbers above are claims on a named corpus, with the hash in the artifact.
 ## Head to head, same stand
 
 <!-- claims:head-to-head-pinned -->
-> **Withdrawn 2026-09.** withdrawn 2026-09-05: the review changed the engine after this was measured (embedding-length parity on the stand, guard delivery, re-mine date and floor, .prev generations), and the re-run needs the GPU (queued)
+> **Withdrawn 2026-09.** withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit
 >
 > The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/head_to_head.py --only=nevertwice,mem0,langmem,amem --save --out=research/results/head_to_head_v2.json` is what re-measures this one.
 <!-- /claims:head-to-head-pinned -->
@@ -97,11 +94,9 @@ This is the setting the roadmap meant when it asked for a number "outside the or
 and it is where a retrieval claim earns its keep.
 
 <!-- claims:longmem-s -->
-| method | R@1 | R@5 | R@10 | MRR |
-|---|---|---|---|---|
-| semantic (bge-m3) | 0.184 | 0.354 | 0.440 | 0.267 |
-| lexical (BM25) | 0.242 | **0.442** | 0.534 | 0.338 |
-| **calibrated fusion (shipped default, 0 deps)** | **0.252** | 0.438 | **0.548** | **0.353** |
+> **Withdrawn 2026-09.** withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit
+>
+> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/longmem_eval.py --data=s --save --out=research/results/longmem_s.json` is what re-measures this one.
 <!-- /claims:longmem-s -->
 
 Everything falls, which is what a twenty-one-fold haystack does, and one thing about the shape does not hold any more: fusion beats the bi-encoder by +0.084 at R@5 but reads -0.004 against the lexical arm alone - on whole-session vectors the dense weight tuned for the capped ones costs the pair its edge here. That is the measurement ledger item I1 exists for; this page does not move the weight by hand. Lexical retrieval beats the bi-encoder on this pool, as it did on the smaller one.

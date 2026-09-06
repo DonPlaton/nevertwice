@@ -136,8 +136,17 @@ def _row(stem: str, r: dict, salience: float = 0.0) -> tuple:
             len(vec), _pack(vec))
 
 
+#: How the FTS text and the MATCH terms are tokenised. Stamped into `meta` at build, checked
+#: by `memory_hook.scale_index_ready()`: an index built under the other setting is rebuilt
+#: once rather than searched with stems against raw text (or the reverse).
+LEX_FORMAT = "morph1" if getattr(m, "LEXICAL_MORPHOLOGY", False) else "raw"
+
+
 def _fts_text(r: dict, stem: str) -> str:
-    return f"{r.get('title','')} {r.get('desc','')} {r.get('prevention','')} {stem}"
+    """The searchable text of a note, passed through the engine tokenizer so the FTS5 side
+    carries the same stems and stop-word policy as the in-process BM25."""
+    raw = f"{r.get('title','')} {r.get('desc','')} {r.get('prevention','')} {stem}"
+    return " ".join(m._token_list(raw))
 
 
 def _create_schema(con: sqlite3.Connection) -> bool:
@@ -249,6 +258,7 @@ def build(verbose: bool = False) -> int:
         model = (m.load_embed_meta() or {}).get("model") or m.embed_signature()
         cur.execute("INSERT OR REPLACE INTO meta VALUES ('model', ?)", (str(model),))
         cur.execute("INSERT OR REPLACE INTO meta VALUES ('dim', ?)", (str(dim),))
+        cur.execute("INSERT OR REPLACE INTO meta VALUES ('lex_format', ?)", (LEX_FORMAT,))
         cur.execute("INSERT OR REPLACE INTO meta VALUES ('vec_format', ?)", (VEC_FORMAT,))
         cur.execute("COMMIT")
         g = reindex_graph(all_notes, full=True)   # F4: graph tables from the SAME scan (no 2nd read)
@@ -705,7 +715,7 @@ def _safe_terms(query: str):
     set's iteration order made which 24 tokens survive depend on the per-process
     hash seed - identical queries returned different lexical hits run to run
     (review 2026-08 P5)."""
-    return list(dict.fromkeys(m._TOKEN_RE.findall((query or "").lower())))[:24]
+    return list(dict.fromkeys(m._token_list(query)))[:24]
 
 
 def main() -> int:

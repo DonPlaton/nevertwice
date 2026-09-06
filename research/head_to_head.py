@@ -107,14 +107,54 @@ def _args():
     # the corpus); declared here so argparse does not reject it.
     ap.add_argument("--data", default="oracle", choices=["oracle", "s", "locomo"],
                     help="which pinned corpus to run on: two LongMemEval variants or LoCoMo")
+    ap.add_argument("--no-morphology", action="store_true",
+                    help="ablation for our arm: raw tokens, no stop words, no stems")
     return ap.parse_args()
 
 
 ARGS = _args() if __name__ == "__main__" else argparse.Namespace(out="",
-    only="", limit=None, mem0_infer=False, sessions=None, save=False)
+    only="", limit=None, mem0_infer=False, sessions=None, save=False, no_morphology=False)
+if getattr(ARGS, "no_morphology", False):
+    m.LEXICAL_MORPHOLOGY = False
+
+
+def _measured_at() -> dict:
+    """The commit and the moment an arm's row was produced. Rows are merged into one artifact
+    across runs (a competitor arm is not re-run when only our engine changed), so each row
+    carries its own stamp rather than inheriting the file's."""
+    import datetime                                              # noqa: PLC0415
+    import subprocess                                            # noqa: PLC0415
+    try:
+        head = subprocess.run(["git", "rev-parse", "HEAD"], cwd=HERE.parent, capture_output=True,
+                              text=True, check=True).stdout.strip()
+    except (OSError, subprocess.CalledProcessError):
+        head = "?"
+    return {"commit": head, "utc": datetime.datetime.now(datetime.timezone.utc)
+            .strftime("%Y-%m-%dT%H:%M:%SZ")}
 
 
 # ── shared stand + metric ─────────────────────────────────────────────────────
+
+def _too_long(exc: BaseException) -> bool:
+    """The embedder refused the text for its length (Ollama: 'exceeds the context length')."""
+    return "context length" in str(exc)
+
+
+def _shrinking(call, text: str, stats: dict):
+    """Run `call(text)`; on the embedder's length refusal retry with half the text, up to three
+    times, and count it in `stats`. Our own arm does the same in `longmem_eval.embed_full`,
+    so a session that is too dense for the embedder is treated alike on every arm instead
+    of aborting a competitor's whole run an hour into its ingest (S pool, 2026-09-06)."""
+    for attempt in range(4):
+        try:
+            return call(text)
+        except Exception as e:                                # noqa: BLE001 - counted below
+            if _too_long(e) and attempt < 3 and len(text) > 1000:
+                text = text[:len(text) // 2]
+                stats["shrunk"] = stats.get("shrunk", 0) + 1 if attempt == 0 else stats["shrunk"]
+                continue
+            raise
+
 
 def _pool_from(data) -> dict:
     """session_id -> joined transcript text, exactly as longmem_eval builds it."""
@@ -263,10 +303,12 @@ def run_mem0(data, pool, infer=None) -> dict:
     items = list(pool.items())
     if ARGS.sessions:
         items = items[:ARGS.sessions]
+    stats: dict = {}
     try:
         t0 = time.time()
         for sid, txt in items:
-            mem.add(txt, user_id="lme", metadata={"session_id": sid}, infer=infer)
+            _shrinking(lambda t, sid=sid: mem.add(t, user_id="lme", metadata={"session_id": sid},
+                                                  infer=infer), txt, stats)
         ingest_s = time.time() - t0
         t1 = time.time()
         ranked = {}
@@ -281,6 +323,7 @@ def run_mem0(data, pool, infer=None) -> dict:
     sc["ingest_s"] = round(ingest_s, 1)
     sc["query_s"] = round(query_s, 1)
     sc["mode"] = f"infer={infer} ({'LLM ' + COMP_LLM if infer else 'retrieval-only, 1 memory/session'})"
+    sc["sessions_shrunk"] = stats.get("shrunk", 0)
     sc["embedder"] = f"ollama {EMBED_MODEL}"
     # Mem0's search is hybrid by default once fastembed is present: dense cosine plus its
     # BM25 sparse vector (Qdrant/bm25), scored additively; the spaCy entity boost is off
@@ -316,9 +359,10 @@ def run_langmem(data, pool) -> dict:
         items = list(pool.items())
         if ARGS.sessions:
             items = items[:ARGS.sessions]
+        stats: dict = {}
         t0 = time.time()
         for sid, txt in items:
-            store.put(("lme",), sid, {"text": txt})          # key=session_id → trivial mapping back
+            _shrinking(lambda t, sid=sid: store.put(("lme",), sid, {"text": t}), txt, stats)
         ingest_s = time.time() - t0
         t1 = time.time()
         ranked = {}
@@ -333,6 +377,7 @@ def run_langmem(data, pool) -> dict:
     sc["query_s"] = round(query_s, 1)
     sc["embedder"] = f"ollama {EMBED_MODEL}"
     sc["mode"] = "store search only: LangGraph InMemoryStore, no memory manager, no LLM"
+    sc["sessions_shrunk"] = stats.get("shrunk", 0)
     sc["setup"] = "pip install langgraph langmem langchain-ollama (no server)"
     return sc
 
@@ -421,11 +466,13 @@ def run_amem(data, pool) -> dict:
         items = list(pool.items())
         if ARGS.sessions:
             items = items[:ARGS.sessions]
+        stats: dict = {}
         t0 = time.time()
         B = 64
         for i in range(0, len(items), B):
             chunk = items[i:i + B]
-            col.add(ids=[s for s, _ in chunk], embeddings=[embed(t) for _, t in chunk],
+            col.add(ids=[s for s, _ in chunk],
+                    embeddings=[_shrinking(embed, t, stats) for _, t in chunk],
                     metadatas=[{"session_id": s} for s, _ in chunk])
         ingest_s = time.time() - t0
         t1 = time.time()
@@ -442,6 +489,7 @@ def run_amem(data, pool) -> dict:
     sc["query_s"] = round(query_s, 1)
     sc["embedder"] = f"ollama {EMBED_MODEL}"
     sc["mode"] = "store search only: chromadb cosine, no LLM note construction, no link evolution"
+    sc["sessions_shrunk"] = stats.get("shrunk", 0)
     sc["setup"] = "pip install chromadb (A-MEM's vector store) + Ollama embeddings"
     return sc
 
@@ -459,16 +507,24 @@ class _OllamaChromaEF:
     def __init__(self, model_name: str = ""):
         self.model_name = model_name or EMBED_MODEL
 
+    shrunk = 0
+
     def __call__(self, input):                                 # noqa: A002 - chroma's name
         import urllib.request
-        out = []
-        for text in input:
+
+        def one(text):
             req = urllib.request.Request(
                 f"{OLLAMA_BASE}/api/embed",
-                data=json.dumps({"model": EMBED_MODEL, "input": str(text)[:MAXCHARS]}).encode(),
+                data=json.dumps({"model": EMBED_MODEL, "input": text}).encode(),
                 headers={"Content-Type": "application/json"})
             with urllib.request.urlopen(req, timeout=180) as r:
-                out.append(json.loads(r.read())["embeddings"][0])
+                return json.loads(r.read())["embeddings"][0]
+
+        out = []
+        stats: dict = {}
+        for text in input:
+            out.append(_shrinking(one, str(text)[:MAXCHARS], stats))
+        _OllamaChromaEF.shrunk += stats.get("shrunk", 0)
         return out
 
     @staticmethod
@@ -504,10 +560,10 @@ def run_amem_full(data, pool) -> dict:
     the same local model the other full-pipeline arms use."""
     try:
         import agentic_memory.retrievers as amr
-        from agentic_memory import AgenticMemorySystem
-    except ImportError:
-        return {"blocked": "a-mem not installed - `pip install a-mem` (its own venv is safer: "
-                           "it pins litellm, sentence-transformers, nltk)"}
+        from agentic_memory.memory_system import AgenticMemorySystem   # __init__ exports nothing
+    except ImportError as e:
+        return {"blocked": f"a-mem not importable ({e}) - `pip install a-mem` in its own venv "
+                           "(it pins litellm, sentence-transformers, nltk)"}
     import shutil
     store = _bench_dir() / "chroma_amem_full"
     shutil.rmtree(store, ignore_errors=True)
@@ -658,6 +714,9 @@ def main():
         r["_wall_s"] = round(time.time() - t0, 1)
         r["version"] = _pkg_ver(name)          # record what we actually compared against
         r["label"] = ARM_LABEL.get(name, name)
+        r["measured_at"] = _measured_at()
+        if name == "nevertwice":
+            r["morphology"] = bool(m.LEXICAL_MORPHOLOGY)
         results[name] = r
         if "blocked" in r:
             print(f"  BLOCKED: {r['blocked']}")
