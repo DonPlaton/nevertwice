@@ -32,6 +32,7 @@ machine.
     python research/supersession_bench.py --probe                # the five-fact Mem0 probe
     python research/supersession_bench.py --arms nevertwice,naive
     python research/supersession_bench.py --arms nevertwice,mem0,naive --out results.json
+    python research/supersession_bench.py --pool run1.json run2.json --with mem0.json --out pooled.json
 """
 from __future__ import annotations
 
@@ -389,6 +390,36 @@ def _row(case: dict, items: list[str]) -> dict:
 ARMS = {"nevertwice": run_nevertwice, "mem0": run_mem0, "naive": run_naive}
 
 
+def compare_arms(loaded: dict[str, dict[str, dict]]) -> list[dict]:
+    """Pair every arm against every other on the SAME supersession cases (exact McNemar).
+
+    `loaded` maps an arm name to its rows keyed by case id. Arms are paired in name order, so
+    a pointer such as `pairs[1].p_mcnemar` in the evidence register names the same pair on
+    every rebuild.
+    """
+    sys.path.insert(0, str(HERE))
+    from uncertainty import mcnemar_exact                       # noqa: PLC0415
+
+    names = sorted(loaded)
+    pairs = []
+    for i, a in enumerate(names):
+        for b in names[i + 1:]:
+            shared = [cid for cid in loaded[a] if cid in loaded[b]
+                      and loaded[a][cid]["shape"] != "control"]
+            # discordant pairs only: cases where exactly one arm returned a stale assertion
+            a_only = sum(1 for cid in shared
+                         if loaded[a][cid]["stale_returned"] and not loaded[b][cid]["stale_returned"])
+            b_only = sum(1 for cid in shared
+                         if loaded[b][cid]["stale_returned"] and not loaded[a][cid]["stale_returned"])
+            pairs.append({
+                "a": a, "b": b, "n": len(shared),
+                f"stale_only_{a}": a_only, f"stale_only_{b}": b_only,
+                "discordant": a_only + b_only,
+                "p_mcnemar": mcnemar_exact(a_only, b_only),
+            })
+    return pairs
+
+
 def compare(files: list[Path]) -> dict:
     """Pair every arm against every other on the SAME cases, and test the difference.
 
@@ -397,9 +428,6 @@ def compare(files: list[Path]) -> dict:
     repository uses. Arms run in separate processes - Mem0 lives in its own environment - so
     the comparison reads result files rather than running the arms itself.
     """
-    sys.path.insert(0, str(HERE))
-    from uncertainty import mcnemar_exact                       # noqa: PLC0415
-
     loaded: dict[str, dict[str, dict]] = {}
     datasets = set()
     for f in files:
@@ -411,25 +439,123 @@ def compare(files: list[Path]) -> dict:
             loaded[name] = {r["id"]: r for r in res["rows"]}
     if len(datasets) > 1:
         return {"error": f"result files come from different datasets: {sorted(datasets)}"}
+    return {"dataset_sha256": datasets.pop() if datasets else None, "arms": sorted(loaded),
+            "pairs": compare_arms(loaded)}
 
-    names = sorted(loaded)
-    out = {"dataset_sha256": datasets.pop() if datasets else None, "arms": names, "pairs": []}
-    for i, a in enumerate(names):
-        for b in names[i + 1:]:
-            shared = [cid for cid in loaded[a] if cid in loaded[b]
-                      and loaded[a][cid]["shape"] != "control"]
-            # discordant pairs only: cases where exactly one arm returned a stale assertion
-            a_only = sum(1 for cid in shared
-                         if loaded[a][cid]["stale_returned"] and not loaded[b][cid]["stale_returned"])
-            b_only = sum(1 for cid in shared
-                         if loaded[b][cid]["stale_returned"] and not loaded[a][cid]["stale_returned"])
-            out["pairs"].append({
-                "a": a, "b": b, "n": len(shared),
-                f"stale_only_{a}": a_only, f"stale_only_{b}": b_only,
-                "discordant": a_only + b_only,
-                "p_mcnemar": mcnemar_exact(a_only, b_only),
+
+ENGINE_ARM = "nevertwice"
+
+
+def _r4(pair) -> list[float]:
+    return [round(x, 4) for x in pair]
+
+
+def pool(engine_files: list[Path], other_files: list[Path] | None = None) -> dict:
+    """Pool several runs of the engine arm into one artifact, the other arms beside them.
+
+    Two runs of the same commit on the same corpus read stale 0.017 and 0.067 (2026-09-02):
+    the extraction model is not deterministic at temperature 0, so one run of this stand is not
+    a result. The published rate is pooled over case-runs with the per-run values kept beside
+    it; the paired tests are computed on the first run, where the arms saw identical cases, and
+    repeated per run against Mem0. Until 2026-09-06 this lived in a session scratchpad, which
+    meant the committed artifact could not be rebuilt by anyone else.
+
+    Every file must come from the same dataset (content hash). Engine files contribute their
+    `nevertwice` arm to the pool and any other unblocked arm to the artifact; `other_files`
+    contribute their unblocked arms. An arm that appears in two files is an error rather than
+    a silent choice.
+    """
+    runs: list[dict] = []
+    others: dict[str, dict] = {}
+    meta: dict | None = None
+    shas: set[str] = set()
+    for f in [Path(p) for p in engine_files]:
+        blob = json.loads(f.read_text(encoding="utf-8"))
+        shas.add(blob["dataset"]["sha256"])
+        arm = blob["arms"].get(ENGINE_ARM)
+        if not arm or arm.get("blocked"):
+            raise ValueError(f"{f}: no {ENGINE_ARM} arm to pool")
+        runs.append(arm)
+        if meta is None:
+            meta = blob
+        for name, res in blob["arms"].items():
+            if name != ENGINE_ARM and not res.get("blocked") and name not in others:
+                others[name] = res
+    for f in [Path(p) for p in (other_files or [])]:
+        blob = json.loads(f.read_text(encoding="utf-8"))
+        shas.add(blob["dataset"]["sha256"])
+        for name, res in blob["arms"].items():
+            if name == ENGINE_ARM or res.get("blocked"):
+                continue
+            if name in others:
+                raise ValueError(f"arm {name!r} appears in two result files - which one?")
+            others[name] = res
+    if len(shas) != 1:
+        raise ValueError(f"result files come from different datasets: {sorted(shas)}")
+    assert meta is not None
+
+    def sup(a: dict) -> list[dict]:
+        return [r for r in a["rows"] if r["shape"] != "control"]
+
+    def ctl(a: dict) -> list[dict]:
+        return [r for r in a["rows"] if r["shape"] == "control"]
+
+    stale_k = sum(1 for a in runs for r in sup(a) if r["stale_returned"])
+    cur_k = sum(1 for a in runs for r in sup(a) if r["current_returned"])
+    sup_n = sum(len(sup(a)) for a in runs)
+    # true over-retraction only: the memory retired a still-true fact (not "ranked below k",
+    # not "never written"), which is what `_store_state` records per control row
+    over_k = sum(1 for a in runs for r in ctl(a)
+                 if not r["current_returned"] and r.get("current_retired"))
+    ctl_n = sum(len(ctl(a)) for a in runs)
+    per_run_stale = [round(sum(1 for r in sup(a) if r["stale_returned"]) / len(sup(a)), 4)
+                     for a in runs]
+    per_run_cur = [round(sum(1 for r in sup(a) if r["current_returned"]) / len(sup(a)), 4)
+                   for a in runs]
+    pooled = {
+        "runs": len(runs),
+        "stale": {"k": stale_k, "n": sup_n, "rate": round(stale_k / sup_n, 4),
+                  "ci": _r4(wilson(stale_k, sup_n)), "per_run": per_run_stale},
+        "current": {"k": cur_k, "n": sup_n, "rate": round(cur_k / sup_n, 4),
+                    "ci": _r4(wilson(cur_k, sup_n)), "per_run": per_run_cur},
+        "over_retraction": {"k": over_k, "n": ctl_n,
+                            "rate": round(over_k / ctl_n, 4) if ctl_n else None,
+                            "ci": _r4(wilson(over_k, ctl_n))},
+        "mean_chars_returned": round(sum(a["mean_chars_returned"] for a in runs) / len(runs), 1),
+    }
+
+    arms: dict[str, dict] = {ENGINE_ARM: runs[0]}
+    for i, a in enumerate(runs[1:], start=2):
+        arms[f"{ENGINE_ARM}_run{i}"] = a
+    arms.update(others)
+
+    first = {ENGINE_ARM: {r["id"]: r for r in runs[0]["rows"]}}
+    first.update({n: {r["id"]: r for r in res["rows"]} for n, res in others.items()})
+
+    per_run_pairs = []
+    if "mem0" in others:
+        m0 = {r["id"]: r for r in others["mem0"]["rows"]}
+        for a in runs:
+            rows = {r["id"]: r for r in a["rows"]}
+            ids = [i for i, r in rows.items() if r["shape"] != "control" and i in m0]
+            per_run_pairs.append({
+                "nevertwice_only": sum(1 for i in ids
+                                       if rows[i]["stale_returned"] and not m0[i]["stale_returned"]),
+                "mem0_only": sum(1 for i in ids
+                                 if m0[i]["stale_returned"] and not rows[i]["stale_returned"]),
             })
-    return out
+
+    n_sup, n_ctl = len(sup(runs[0])), len(ctl(runs[0]))
+    ds = dict(meta["dataset"])
+    ds.update({"cases": n_sup + n_ctl, "supersession_cases": n_sup, "control_cases": n_ctl})
+    spread = " and ".join(f"{v:.4f}" for v in per_run_stale)
+    note = (f"{len(runs)} runs of the same commit on the same corpus with the same models read "
+            f"stale {spread}. The extraction model is not deterministic at temperature 0, so the "
+            "published rate is pooled over case-runs and the per-run values are kept beside it. "
+            "One run of this stand is not a result.")
+    return {"arms": arms, "k": meta["k"], "llm": meta["llm"], "embedder": meta["embedder"],
+            "dataset": ds, "pooled_nevertwice": pooled, "pooled_note": note,
+            "pairs": compare_arms(first), "pairs_per_engine_run": per_run_pairs}
 
 
 def load_dataset(path: Path) -> dict:
@@ -451,7 +577,36 @@ def main() -> int:
     ap.add_argument("--out", default="")
     ap.add_argument("--compare", nargs="*", default=None,
                     help="result files to pair against each other instead of running an arm")
+    ap.add_argument("--pool", nargs="+", default=None, metavar="RUN",
+                    help="engine result files to pool into one artifact (each must carry the "
+                         "nevertwice arm); the other arms in them are carried along")
+    ap.add_argument("--with", dest="others", nargs="*", default=[], metavar="FILE",
+                    help="result files whose other arms (mem0, naive) go into the pooled artifact")
     args = ap.parse_args()
+
+    if args.pool:
+        try:
+            res = pool([Path(f) for f in args.pool], [Path(f) for f in args.others])
+        except (ValueError, OSError, KeyError) as e:
+            print(f"pool: {e}")
+            return 2
+        p = res["pooled_nevertwice"]
+        print(f"pooled {p['runs']} engine runs on {res['dataset']['name']}: "
+              f"stale {p['stale']['rate']} {p['stale']['ci']} per run {p['stale']['per_run']} | "
+              f"current {p['current']['rate']} {p['current']['ci']} | "
+              f"over-retraction {p['over_retraction']['rate']} | "
+              f"{p['mean_chars_returned']} chars/query")
+        for pr in res["pairs"]:
+            print(f"  {pr['a']} vs {pr['b']}: n={pr['n']} discordant {pr['discordant']} "
+                  f"p={pr['p_mcnemar']:.3g}")
+        for i, pr in enumerate(res["pairs_per_engine_run"], start=1):
+            print(f"  run {i} vs mem0: nevertwice-only {pr['nevertwice_only']}, "
+                  f"mem0-only {pr['mem0_only']}")
+        if args.out:
+            Path(args.out).write_text(json.dumps(res, indent=1, ensure_ascii=False),
+                                      encoding="utf-8")
+            print("wrote", args.out)
+        return 0
 
     if args.compare:
         res = compare([Path(f) for f in args.compare])

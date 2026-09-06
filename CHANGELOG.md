@@ -16,6 +16,16 @@ empty.
 
 ### Added
 
+- **The evidence tooling that the re-measurement needed.** `research/supersession_bench.py --pool`
+  rebuilds the committed supersession artifact from the run files - two engine runs pooled, the
+  other arms carried beside them, the paired tests per run - which until now lived in a session
+  scratchpad, so nobody but the author could rebuild the file the claims point at.
+  `tools/register_h2h.py` and `tools/register_retrieval.py` register a head-to-head or a
+  retrieval family from its artifact (Wilson interval per recall, the package version in the
+  label, the command's import closure stamped), instead of a fresh one-off script per family;
+  both refuse an artifact older than HEAD and a dirty closure, the two conditions a restore
+  demands. Each has a hermetic suite.
+
 - **The external retrieval benchmark, on a corpus pinned by content hash.** Sixteen figures came
   down in 2026-08 for one reason: the LongMemEval corpus is third-party and uncommitted, and no
   content hash was recorded when the numbers were produced, so the run could not be pinned to a
