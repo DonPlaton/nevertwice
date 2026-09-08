@@ -22,8 +22,8 @@ def check(name, cond, detail=""):
         FAILS += 1
 
 
-def note(folder, stem, body, valid_from, valid_to=None, retired=False):
-    d = m.VAULT / folder / ("Superseded" if retired else "")
+def note(folder, stem, body, valid_from, valid_to=None, retired=False, sub=""):
+    d = m.VAULT / folder / sub / ("Superseded" if retired else "")
     d.mkdir(parents=True, exist_ok=True)
     fm = [f"date: {stem[:10]}", "project: proj", "type: decision", f"valid_from: {valid_from}"]
     if valid_to:
@@ -58,11 +58,32 @@ check("ranked by the query, not by date: the cache note is not first for a timeo
       not mid[0]["stem"].endswith("cache-ttl") and any(h["stem"].endswith("cache-ttl") for h in api.as_of("cache ttl", "2026-04-01", "proj")))
 check("k caps the list", len(api.as_of("http timeout cache", "2026-06-01", "proj", k=1)) == 1)
 
+print("\n- a note that was filed away is still part of the history -")
+# Ninety days on, `archive_old_typed` moves a note into <folder>/Archive/, and a retired one
+# ends up under Archive/Superseded/. Asking for an old day is exactly when that has happened -
+# an importer of old transcripts archives its notes on the way in - so the scan must be of the
+# whole subtree. Before this, the as-of bench read an empty history on every case.
+note("Decisions", "2026-02-01-proj-decision-worker-count", "The worker count is four.",
+     "2026-02-01", sub="Archive")
+note("Decisions", "2026-02-10-proj-decision-worker-count-eight", "The worker count is eight now.",
+     "2026-02-10", valid_to="2026-03-20", retired=True, sub="Archive")
+arch = api.as_of("worker count", "2026-02-15", "proj")
+check("an archived note answers for a day inside its interval",
+      any(h["stem"].endswith("worker-count-eight") for h in arch), str([h["stem"] for h in arch]))
+check("an archived note that was also retired keeps its interval",
+      [h["valid_to"] for h in arch if h["stem"].endswith("eight")] == ["2026-03-20"])
+check("and it is gone once the interval closed",
+      not any(h["stem"].endswith("eight") for h in api.as_of("worker count", "2026-04-01", "proj")))
+check("the older archived note is still there for its own day",
+      any(h["stem"].endswith("worker-count") for h in api.as_of("worker count", "2026-04-01", "proj")))
+
 print("\n- scope and refusals -")
 allp = api.as_of("http client timeout", "2026-04-15", None)
 check("project=None walks every project and names each hit's project",
       {h["project"] for h in allp} >= {"proj", "other"}, str([(h["stem"], h["project"]) for h in allp]))
-check("the project name is normalised like everywhere else", api.as_of("http client timeout", "2026-04-01", "Proj") == mid)
+check("the project name is normalised like everywhere else",
+      api.as_of("http client timeout", "2026-04-01", "Proj")
+      == api.as_of("http client timeout", "2026-04-01", "proj"))
 check("a malformed date is an empty answer, not an exception", api.as_of("x", "yesterday", "proj") == []
       and api.as_of("x", "", "proj") == [])
 check("an empty query is an empty answer", api.as_of("   ", "2026-04-01", "proj") == [])

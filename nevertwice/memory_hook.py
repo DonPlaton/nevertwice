@@ -5810,16 +5810,21 @@ def retrieve_relevant(project: str, query: str, k: int,
 def as_of(project: str | None, date: str) -> list[dict]:
     """Point-in-time recall (M-5 bi-temporal): every note whose belief interval
     [valid_from, valid_to) contains `date` - what the project's memory held on
-    that day, INCLUDING facts later superseded. Scans live + Superseded/. ISO
-    date strings compare lexicographically, so no parsing needed. `project=None`
-    walks every project (the public `api.as_of` ranks the result by a query)."""
+    that day, INCLUDING facts later superseded. ISO date strings compare
+    lexicographically, so no parsing needed. `project=None` walks every project
+    (the public `api.as_of` ranks the result by a query).
+
+    The whole subtree of each type folder is scanned, not only its top level: a
+    note leaves that level for two reasons that have nothing to do with what was
+    believed - `Superseded/` when a later fact replaced it, `Archive/` when it
+    turned ninety days old. Asking for an old day is exactly when both have
+    happened, and an importer of old transcripts archives its notes on the way
+    in, which is how the as-of bench read an empty history on 2026-09-08."""
     out = []
     for ntype, folder in TYPE_FOLDER.items():
         base = VAULT / folder
-        for d in (base, base / "Superseded"):
-            if not d.exists():
-                continue
-            for p in d.glob("*.md"):
+        if base.exists():
+            for p in base.rglob("*.md"):
                 parsed = parse_typed_stem(p.stem)
                 if not parsed or (project and parsed["project"] != project):
                     continue
