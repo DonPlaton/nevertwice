@@ -34,6 +34,7 @@ from __future__ import annotations
 
 import argparse
 import collections
+import hashlib
 import json
 import math
 import os
@@ -80,6 +81,27 @@ def _ctx_path(arm: str) -> Path:
 
 def _cache_path(stage: str) -> Path:
     return DATA / f"frontier_{stage}_cache.json"
+
+
+def _akey(reader: str, arm: str, k: int, qid: str, context: str) -> str:
+    """The cache key of one answer, ending in a digest of the context it was answered from.
+
+    Without the digest, a cached answer outlives the ranker that produced its context: change
+    the fusion weight, re-run the contexts stage, and every answer is served from the cache as
+    if nothing had moved. The stage that changed is the stage that must re-run, and the only
+    way the cache can know is to key on the bytes the reader actually saw."""
+    return f"{reader}|{arm}|{k}|{qid}|{hashlib.blake2s(context.encode('utf-8'), digest_size=6).hexdigest()}"
+
+
+def _find_akey(answers: dict, reader: str, arm: str, k: int, qid: str) -> str | None:
+    """The one answer key for this (reader, arm, k, question), whatever context produced it.
+    `answer_stage` drops the previous digest when it writes a new one, so at most one survives;
+    a key from before the digest existed has four fields and is deliberately not found."""
+    prefix = f"{reader}|{arm}|{k}|{qid}|"
+    for key in answers:
+        if key.startswith(prefix):
+            return key
+    return None
 
 
 def _load(p: Path) -> dict:
@@ -306,9 +328,6 @@ def answer_stage(arms: list[str], data: list, pool: dict, reader: str, budget: i
             n_done = 0
             for e in data:
                 qid = e["question_id"]
-                key = f"{reader}|{arm}|{k}|{qid}"
-                if key in cache:
-                    continue
                 if arm == "none":
                     context = "(no memory available)"
                 elif arm == "oracle":
@@ -316,6 +335,9 @@ def answer_stage(arms: list[str], data: list, pool: dict, reader: str, budget: i
                                             99, budget)
                 else:
                     context = _context_text(ctx.get(qid, []), k, budget)
+                key = _akey(reader, arm, k, qid, context)
+                if key in cache:
+                    continue
                 r = ollama_chat(reader, qa.ANSWER_PROMPT.format(context=context, question=e["question"]))
                 if not r:
                     continue
@@ -323,6 +345,9 @@ def answer_stage(arms: list[str], data: list, pool: dict, reader: str, budget: i
                     ans = json.loads(m._strip_json_fence(r["content"])).get("answer", "")
                 except (ValueError, AttributeError):
                     ans = r["content"][:400]
+                stale = _find_akey(cache, reader, arm, k, qid)
+                if stale:                # the context moved; its answer is not this run's answer
+                    del cache[stale]
                 cache[key] = {"answer": str(ans)[:600], "prompt_tokens": r["prompt_tokens"],
                               "context_chars": len(context)}
                 changed += 1
@@ -357,9 +382,9 @@ def judge_stage(arms: list[str], data: list, reader: str, judge: str, judge2: st
         ks = (0,) if arm == "none" else ((99,) if arm == "oracle" else KS)
         for k in ks:
             for e in data:
-                akey = f"{reader}|{arm}|{k}|{e['question_id']}"
+                akey = _find_akey(answers, reader, arm, k, e["question_id"])
                 vkey = f"{judge}|{akey}"
-                if akey not in answers or vkey in verdicts:
+                if akey is None or vkey in verdicts:
                     continue
                 v = judge_one(judge, e, answers[akey]["answer"])
                 if v is None:
@@ -373,9 +398,9 @@ def judge_stage(arms: list[str], data: list, reader: str, judge: str, judge2: st
     for vkey, v in pairs:
         akey = vkey.split("|", 1)[1]
         v2key = f"{judge2}|{akey}"
-        if v2key in verdicts:
+        if v2key in verdicts or akey not in answers:   # its answer was re-read from a new context
             continue
-        qid = akey.rsplit("|", 1)[1]
+        qid = akey.split("|")[3]                       # reader|arm|k|qid|context-digest
         v2 = judge_one(judge2, by_qid[qid], answers[akey]["answer"])
         if v2 is not None:
             verdicts[v2key] = v2
@@ -394,9 +419,9 @@ def summarise(arms: list[str], data: list, reader: str, judge: str, judge2: str)
     def point(arm: str, k: int) -> dict | None:
         vs, toks = [], []
         for qid in qids:
-            akey = f"{reader}|{arm}|{k}|{qid}"
+            akey = _find_akey(answers, reader, arm, k, qid)
             vkey = f"{judge}|{akey}"
-            if vkey in verdicts and akey in answers:
+            if akey is not None and vkey in verdicts:
                 vs.append(1 if verdicts[vkey] else 0)
                 toks.append(answers[akey]["prompt_tokens"])
         if not vs:
@@ -419,7 +444,9 @@ def summarise(arms: list[str], data: list, reader: str, judge: str, judge2: str)
     # agreement between the two judges on the shipped arm's k=5 answers
     agree = tot = 0
     for qid in qids:
-        akey = f"{reader}|nevertwice_whole|5|{qid}"
+        akey = _find_akey(answers, reader, "nevertwice_whole", 5, qid)
+        if akey is None:
+            continue
         v1, v2 = verdicts.get(f"{judge}|{akey}"), verdicts.get(f"{judge2}|{akey}")
         if v1 is not None and v2 is not None:
             tot += 1

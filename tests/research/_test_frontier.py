@@ -51,18 +51,22 @@ backup = {p: (p.read_text(encoding="utf-8") if p.exists() else None) for p in sa
 try:
     qids = [e["question_id"] for e in data]
     answers, verdicts = {}, {}
+
+    def put(arm, k, qid, tokens, verdict, ctx="some context", judge="j"):
+        akey = fe._akey("r", arm, k, qid, ctx)
+        answers[akey] = {"answer": "a", "prompt_tokens": tokens, "context_chars": len(ctx)}
+        verdicts[f"{judge}|{akey}"] = verdict
+        return akey
+
     for arm in ("nevertwice_whole", "mem0"):
         for k in fe.KS:
             for i, qid in enumerate(qids):
-                answers[f"r|{arm}|{k}|{qid}"] = {"answer": "a", "prompt_tokens": 100 * k + i, "context_chars": 10}
-                verdicts[f"j|r|{arm}|{k}|{qid}"] = (i % 2 == 0) if arm == "mem0" else (i != 5)
+                put(arm, k, qid, 100 * k + i, (i % 2 == 0) if arm == "mem0" else (i != 5))
     for qid in qids:
-        answers[f"r|none|0|{qid}"] = {"answer": "a", "prompt_tokens": 20, "context_chars": 0}
-        verdicts[f"j|r|none|0|{qid}"] = False
-        answers[f"r|oracle|99|{qid}"] = {"answer": "a", "prompt_tokens": 900, "context_chars": 0}
-        verdicts[f"j|r|oracle|99|{qid}"] = True
+        put("none", 0, qid, 20, False)
+        put("oracle", 99, qid, 900, True)
     for i, qid in enumerate(qids[:4]):
-        verdicts[f"j2|r|nevertwice_whole|5|{qid}"] = (i != 0) if i != 5 else False   # one disagreement
+        verdicts[f"j2|{fe._akey('r', 'nevertwice_whole', 5, qid, 'some context')}"] = (i != 0)  # one disagreement
     fe._save(fe._cache_path("answers"), answers)
     fe._save(fe._cache_path("verdicts"), verdicts)
     res = fe.summarise(["nevertwice_whole", "mem0"], data, "r", "j", "j2")
@@ -76,6 +80,23 @@ try:
     check("judge agreement over the doubly judged answers", ja["n"] == 4 and ja["rate"] == 0.75, str(ja))
     check("the artifact names reader, judge and second judge",
           res["judge"] == "j" and res["second_judge"] == "j2" and "reader" in res)
+
+    print("\n- an answer belongs to the context it was read from -")
+    # The ranker moving is exactly what must invalidate an answer, and the only thing the cache
+    # can see of the ranker is the bytes it produced. Before the digest was part of the key, a
+    # re-run after a weight change served every answer from this file.
+    k1 = fe._akey("r", "nevertwice_whole", 5, qids[0], "context A")
+    k2 = fe._akey("r", "nevertwice_whole", 5, qids[0], "context B")
+    check("a different context is a different key", k1 != k2)
+    check("...and the same context is the same key",
+          k1 == fe._akey("r", "nevertwice_whole", 5, qids[0], "context A"))
+    check("the key still names reader, arm, k and question",
+          k1.split("|")[:4] == ["r", "nevertwice_whole", "5", qids[0]])
+    found = fe._find_akey({k1: {}}, "r", "nevertwice_whole", 5, qids[0])
+    check("the summary finds an answer whatever context produced it", found == k1)
+    check("a key from before the digest is not found (it is re-read, not reused)",
+          fe._find_akey({f"r|nevertwice_whole|5|{qids[0]}": {}}, "r", "nevertwice_whole", 5, qids[0]) is None)
+    check("another question is not found", fe._find_akey({k1: {}}, "r", "nevertwice_whole", 5, "other") is None)
 finally:
     for p, text in backup.items():
         if text is None:
