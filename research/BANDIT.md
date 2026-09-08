@@ -1,13 +1,5 @@
 # Learned salience from feedback (results & findings)
 
-<!-- withdrawn-banner -->
-> **Withdrawn: figures on this page must not be quoted.** They were retracted and remain
-> here because deleting a result one was wrong about destroys the record of having been
-> wrong. The design, the method and the caveats stand; the numbers do not. Each figure's
-> own reason and date are in
-> [`research/evidence_manifest.json`](evidence_manifest.json), and
-> `python tools/check_freshness.py --list-stale` lists every one.
-
 *Companion to `research/bandit.py` (the flagship). Reproduce: `python research/bandit.py --save`
 (CPU, seeded, ~1.5 s). LinUCB over the longitudinal benchmark stream (`LONGITUDINAL_BENCH.md`),
 6 streams × ~1530 queries; features reuse the posterior model's extraction (`POSTERIOR_MODEL.md`);

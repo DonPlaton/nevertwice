@@ -16,6 +16,29 @@ empty.
 
 ### Added
 
+- **A second supersession corpus, where nothing announces the replacement.** Every case of the
+  first corpus says so when it revises a fact - *actually, we moved off Postgres 15*. A real
+  transcript often does not: the new fact simply arrives, framed like any first assertion.
+  `research/gen_supersession_dataset.py --variant implicit` writes that corpus - same facts,
+  same markers, same queries, the second session reframed and rotated so the two sessions never
+  share a frame - and the explicit corpus is unchanged byte for byte (`--check` proves it).
+
+  The gate was written before the run (ledger I5): our stale rate below the floor's with an
+  interval that excludes it. We hand back the retracted fact **0.100** of the time without the
+  cue against **0.058** with it; Mem0 reads **0.967** on both corpora and an append-only file
+  **0.950** on both. Removing the cue costs us four points and costs them nothing, because
+  neither supersedes with the cue either.
+
+- **As-of recall missed its gate, and the number is published.** The threshold written in the
+  ledger before the bench ran was 0.80 of cases correct on both days; the measurement is
+  **0.625** [0.536, 0.707] over 120 case-runs. The floor - an append-only file with no notion of
+  a date - scores 0.000, and Mem0 records a blocker rather than a number, because its memories
+  carry the wall-clock time of the `add()` call and its search has no as-of filter. The loss is
+  on the old day (0.683) rather than the day after (0.833): the scan of belief intervals is
+  exact, and what bounds the number is whether the write path recognised the replacement at all.
+  Per the ledger's own rule for a missed gate, the feature is not claimed in the README and the
+  study page prints the figure beside the threshold it missed.
+
 - **As-of recall** (`nevertwice.api.as_of(query, date)`, MCP `memory_as_of`): what the memory
   believed on a date about a query - every note whose belief interval contains the date, live
   and retired alike, ranked by the query with no LLM and no embedder. The engine has kept

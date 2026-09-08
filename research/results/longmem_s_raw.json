@@ -1,0 +1,49 @@
+{
+ "sessions": 19206,
+ "questions": 500,
+ "embedder": "bge-m3",
+ "sessions_shrunk": 3,
+ "embed_chars": 28000,
+ "morphology": false,
+ "methods": {
+  "semantic": {
+   "recall@1": 0.184,
+   "recall@3": 0.286,
+   "recall@5": 0.354,
+   "recall@10": 0.44,
+   "mrr": 0.26702788389899756
+  },
+  "lexical": {
+   "recall@1": 0.242,
+   "recall@3": 0.37,
+   "recall@5": 0.442,
+   "recall@10": 0.534,
+   "mrr": 0.338388571585247
+  },
+  "hybrid": {
+   "recall@1": 0.244,
+   "recall@3": 0.392,
+   "recall@5": 0.45,
+   "recall@10": 0.548,
+   "mrr": 0.3490645727250875
+  },
+  "semantic+recur": {
+   "recall@1": 0.184,
+   "recall@3": 0.286,
+   "recall@5": 0.354,
+   "recall@10": 0.44,
+   "mrr": 0.26702788389899756
+  }
+ },
+ "recur_inert": true,
+ "provenance": {
+  "corpus": "longmemeval_s",
+  "sha256": "08d8dad4be43ee2049a22ff5674eb86725d0ce5ff434cde2627e5e8e7e117894",
+  "bytes": 278025796,
+  "questions": 500,
+  "pool_sessions": 19829,
+  "url": "https://huggingface.co/datasets/xiaowu0162/longmemeval/resolve/main/longmemeval_s",
+  "licence": "MIT",
+  "citation": "Wu et al., LongMemEval: Benchmarking Chat Assistants on Long-Term Interactive Memory, ICLR 2025"
+ }
+}

@@ -18,15 +18,15 @@
   "recall@10": 0.866,
   "mrr": 0.6301,
   "n": 500,
-  "query_s": 71.2,
+  "query_s": 54.8,
   "embed_chars": 28000,
   "setup": "local bge-m3 via Ollama (calibrated fusion; 0 deps, no server, no DB)",
-  "_wall_s": 72.4,
+  "_wall_s": 56.0,
   "version": "nevertwice==2.4.0",
   "label": "Nevertwice (calibrated fusion, the shipped ranker)",
   "measured_at": {
-   "commit": "34f165e8890f204d43f89a206cab56439baf46fe",
-   "utc": "2026-09-06T11:11:34Z"
+   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "utc": "2026-09-08T10:02:44Z"
   },
   "morphology": true
  },
@@ -37,19 +37,19 @@
   "recall@10": 0.846,
   "mrr": 0.6026,
   "n": 500,
-  "ingest_s": 91.2,
-  "query_s": 103.9,
+  "ingest_s": 73.8,
+  "query_s": 92.3,
   "mode": "infer=False (retrieval-only, 1 memory/session)",
   "sessions_shrunk": 0,
   "embedder": "ollama bge-m3",
   "search": "dense cosine + fastembed BM25 (Mem0 default hybrid); entity boost off",
   "setup": "pip install mem0ai ollama fastembed; embedded qdrant (no server)",
-  "_wall_s": 198.3,
+  "_wall_s": 169.0,
   "version": "mem0ai==2.0.19",
   "label": "Mem0 store search (infer=False: no LLM extraction, one memory per item; its default hybrid of dense cosine + fastembed BM25 when fastembed is installed)",
   "measured_at": {
-   "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
-   "utc": "2026-09-06T09:22:23Z"
+   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "utc": "2026-09-08T11:26:57Z"
   }
  },
  "langmem": {
@@ -59,18 +59,18 @@
   "recall@10": 0.782,
   "mrr": 0.5427,
   "n": 500,
-  "ingest_s": 64.7,
-  "query_s": 37.2,
+  "ingest_s": 63.1,
+  "query_s": 35.1,
   "embedder": "ollama bge-m3",
   "mode": "store search only: LangGraph InMemoryStore, no memory manager, no LLM",
   "sessions_shrunk": 0,
   "setup": "pip install langgraph langmem langchain-ollama (no server)",
-  "_wall_s": 103.5,
+  "_wall_s": 99.5,
   "version": "langmem==0.0.30",
   "label": "LangGraph InMemoryStore semantic search (LangMem's store layer, no memory manager)",
   "measured_at": {
-   "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
-   "utc": "2026-09-06T09:24:07Z"
+   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "utc": "2026-09-08T11:28:36Z"
   }
  },
  "amem": {
@@ -80,83 +80,84 @@
   "recall@10": 0.782,
   "mrr": 0.5437,
   "n": 500,
-  "ingest_s": 81.2,
-  "query_s": 24.9,
+  "ingest_s": 83.8,
+  "query_s": 29.4,
   "embedder": "ollama bge-m3",
   "mode": "store search only: chromadb cosine, no LLM note construction, no link evolution",
   "sessions_shrunk": 0,
   "setup": "pip install chromadb (A-MEM's vector store) + Ollama embeddings",
-  "_wall_s": 106.8,
+  "_wall_s": 113.9,
   "version": "chromadb==1.5.9",
   "label": "chromadb cosine over the same vectors (A-MEM's vector store, no LLM notes, no links)",
   "measured_at": {
-   "commit": "fb176b70523fc19fdd0fe46cdb1f55c893d7cc9d",
-   "utc": "2026-09-06T09:25:54Z"
+   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "utc": "2026-09-08T11:30:30Z"
   }
  },
  "mem0_infer": {
-  "recall@1": 0.388,
-  "recall@3": 0.584,
-  "recall@5": 0.674,
-  "recall@10": 0.768,
-  "mrr": 0.5112,
+  "recall@1": 0.394,
+  "recall@3": 0.6,
+  "recall@5": 0.694,
+  "recall@10": 0.796,
+  "mrr": 0.5231,
   "n": 500,
-  "ingest_s": 3777.8,
-  "query_s": 154.6,
+  "silent_extractions": 15,
+  "ingest_s": 2630.9,
+  "query_s": 123.3,
   "mode": "infer=True (LLM qwen2.5-7b-64k:latest)",
   "sessions_shrunk": 0,
   "embedder": "ollama bge-m3",
   "search": "dense cosine + fastembed BM25 (Mem0 default hybrid); entity boost off",
   "setup": "pip install mem0ai ollama fastembed; embedded qdrant (no server)",
-  "_wall_s": 3934.8,
+  "_wall_s": 2756.4,
   "version": "mem0ai==2.0.19",
   "label": "Mem0 full pipeline (infer=True: its LLM fact extraction, then its search)",
   "measured_at": {
-   "commit": "?",
-   "utc": "2026-09-06T11:07:57Z"
+   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "utc": "2026-09-08T12:16:27Z"
   }
  },
  "langmem_full": {
-  "recall@1": 0.456,
-  "recall@3": 0.63,
-  "recall@5": 0.71,
-  "recall@10": 0.8,
-  "mrr": 0.5633,
+  "recall@1": 0.434,
+  "recall@3": 0.644,
+  "recall@5": 0.728,
+  "recall@10": 0.82,
+  "mrr": 0.5579,
   "n": 500,
-  "ingest_s": 1088.5,
-  "query_s": 41.6,
+  "ingest_s": 953.8,
+  "query_s": 36.2,
   "embedder": "ollama bge-m3",
   "extraction_errors": 0,
-  "memories_written": 1212,
+  "memories_written": 1043,
   "mode": "full pipeline: create_memory_store_manager with qwen2.5-7b-64k:latest (num_ctx 16384); store search over the extracted memories",
   "setup": "pip install langgraph langmem langchain-ollama (no server)",
-  "_wall_s": 1133.7,
+  "_wall_s": 992.8,
   "version": "langmem==0.0.30",
   "label": "LangMem full pipeline (create_memory_store_manager: LLM extraction into the store)",
   "measured_at": {
-   "commit": "34f165e8890f204d43f89a206cab56439baf46fe",
-   "utc": "2026-09-06T11:26:52Z"
+   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "utc": "2026-09-08T12:33:01Z"
   }
  },
  "amem_full": {
-  "recall@1": 0.0,
-  "recall@3": 0.0,
-  "recall@5": 0.0,
-  "recall@10": 0.0,
-  "mrr": 0.0,
+  "recall@1": 0.426,
+  "recall@3": 0.626,
+  "recall@5": 0.694,
+  "recall@10": 0.782,
+  "mrr": 0.5436,
   "n": 500,
-  "ingest_s": 1136.4,
-  "query_s": 0.2,
+  "ingest_s": 10826.5,
+  "query_s": 29.1,
   "embedder": "ollama bge-m3 (chroma embedding function over the shared endpoint)",
   "silent_analyses": 0,
   "mode": "full pipeline: agentic_memory with qwen2.5-7b-64k:latest via litellm (Ollama's own context default); search_agentic over its notes",
   "setup": "pip install a-mem (litellm, chromadb, sentence-transformers); Ollama LLM + embeddings",
-  "_wall_s": 1175.2,
+  "_wall_s": 10878.4,
   "version": "a-mem==0.2.6",
   "label": "A-MEM full pipeline (agentic_memory: LLM note construction, link evolution)",
   "measured_at": {
-   "commit": "34f165e8890f204d43f89a206cab56439baf46fe",
-   "utc": "2026-09-06T11:46:28Z"
+   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "utc": "2026-09-08T15:34:19Z"
   }
  }
 }

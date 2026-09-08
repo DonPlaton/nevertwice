@@ -235,6 +235,16 @@ def _accounted_forms() -> tuple[set[str], list[tuple]]:
             p = p.strip()
             forms |= {p, p.lstrip("+−-"), p.replace(",", ""),
                       p.rstrip("%x×").rstrip(" ms").strip()}
+        # A published claim's interval is part of the same measurement and resolves to the same
+        # artifact, so a table may print `0.058 [0.029, 0.116]` without registering the bounds
+        # as claims of their own. It is not a free pass: the bounds come from the claim's own
+        # `ci`, so a document can only print the interval this run actually produced.
+        ci = entry.get("ci")
+        bounds = ((ci.get("low"), ci.get("high")) if isinstance(ci, dict)
+                  else tuple(ci[:2]) if isinstance(ci, list) and len(ci) >= 2 else ())
+        for b in bounds:
+            if isinstance(b, (int, float)):
+                forms |= {f"{b:.3f}", f"{b:.2f}", f"{b:g}"}
     for d in MANIFEST["drift"]:
         for p in d["printed"]:
             forms |= {p.strip(), p.replace(",", "")}

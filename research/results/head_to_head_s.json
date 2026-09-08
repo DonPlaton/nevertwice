@@ -18,15 +18,15 @@
   "recall@10": 0.514,
   "mrr": 0.3139,
   "n": 500,
-  "query_s": 1123.9,
+  "query_s": 1013.7,
   "embed_chars": 28000,
   "setup": "local bge-m3 via Ollama (calibrated fusion; 0 deps, no server, no DB)",
-  "_wall_s": 1140.8,
+  "_wall_s": 1028.8,
   "version": "nevertwice==2.4.0",
   "label": "Nevertwice (calibrated fusion, the shipped ranker)",
   "measured_at": {
-   "commit": "34f165e8890f204d43f89a206cab56439baf46fe",
-   "utc": "2026-09-06T11:58:54Z"
+   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "utc": "2026-09-08T11:23:43Z"
   },
   "morphology": true
  },
@@ -37,50 +37,61 @@
   "recall@10": 0.464,
   "mrr": 0.281,
   "n": 500,
-  "ingest_s": 1811.4,
-  "query_s": 1464.5,
+  "ingest_s": 1308.7,
+  "query_s": 1123.5,
   "mode": "infer=False (retrieval-only, 1 memory/session)",
   "sessions_shrunk": 3,
   "embedder": "ollama bge-m3",
   "search": "dense cosine + fastembed BM25 (Mem0 default hybrid); entity boost off",
   "setup": "pip install mem0ai ollama fastembed; embedded qdrant (no server)",
-  "_wall_s": 3279.2,
+  "_wall_s": 2434.8,
   "version": "mem0ai==2.0.19",
   "label": "Mem0 store search (infer=False: no LLM extraction, one memory per item; its default hybrid of dense cosine + fastembed BM25 when fastembed is installed)",
   "measured_at": {
-   "commit": "?",
-   "utc": "2026-09-06T11:25:39Z"
+   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "utc": "2026-09-08T16:43:56Z"
   }
  },
  "langmem": {
-  "recall@1": 0.152,
-  "recall@3": 0.276,
-  "recall@5": 0.338,
-  "recall@10": 0.406,
-  "mrr": 0.2303,
+  "recall@1": 0.15,
+  "recall@3": 0.282,
+  "recall@5": 0.354,
+  "recall@10": 0.442,
+  "mrr": 0.237,
   "n": 500,
-  "ingest_s": 1671.1,
-  "query_s": 403.1,
+  "ingest_s": 1162.6,
+  "query_s": 293.3,
   "embedder": "ollama bge-m3",
   "mode": "store search only: LangGraph InMemoryStore, no memory manager, no LLM",
   "sessions_shrunk": 3,
   "setup": "pip install langgraph langmem langchain-ollama (no server)",
-  "_wall_s": 2075.4,
+  "_wall_s": 1458.0,
   "version": "langmem==0.0.30",
   "label": "LangGraph InMemoryStore semantic search (LangMem's store layer, no memory manager)",
   "measured_at": {
-   "commit": "34f165e8890f204d43f89a206cab56439baf46fe",
-   "utc": "2026-09-06T10:30:00Z"
+   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "utc": "2026-09-08T17:08:15Z"
   }
  },
  "amem": {
-  "blocked": "A-MEM/Chroma run failed (HTTPError: HTTP Error 400: Bad Request)",
-  "_wall_s": 728.1,
+  "recall@1": 0.148,
+  "recall@3": 0.276,
+  "recall@5": 0.346,
+  "recall@10": 0.43,
+  "mrr": 0.2321,
+  "n": 500,
+  "ingest_s": 1617.7,
+  "query_s": 31.1,
+  "embedder": "ollama bge-m3",
+  "mode": "store search only: chromadb cosine, no LLM note construction, no link evolution",
+  "sessions_shrunk": 3,
+  "setup": "pip install chromadb (A-MEM's vector store) + Ollama embeddings",
+  "_wall_s": 1649.6,
   "version": "chromadb==1.5.9",
   "label": "chromadb cosine over the same vectors (A-MEM's vector store, no LLM notes, no links)",
   "measured_at": {
-   "commit": "?",
-   "utc": "2026-09-06T11:37:47Z"
+   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "utc": "2026-09-08T17:35:46Z"
   }
  }
 }

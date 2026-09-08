@@ -160,6 +160,47 @@ showing up per shape rather than only in the total.
 failures there. They went away for a reason worth recording rather than celebrating - see
 below.
 
+## The same corpus, with the cue removed
+
+Every case above says so when it replaces a fact: *actually, we moved off Postgres 15*. A real
+transcript often does not - the new fact simply arrives, framed like any first assertion, and
+whether it replaces anything is something the reader works out. `research/gen_supersession_dataset.py
+--variant implicit` writes exactly that corpus: same facts, same markers, same queries, the
+second session reframed and rotated so the two sessions never share a frame. The explicit
+corpus is unchanged byte for byte, and `--check` proves it.
+
+<!-- claims:supersession-variants -->
+| system | stale, explicit | stale, implicit | current, explicit | current, implicit |
+|---|---|---|---|---|
+| **Nevertwice** | 0.058 | 0.100 | 0.900 | 0.950 |
+| Mem0 | 0.967 | 0.967 | 0.983 | 0.983 |
+| an append-only markdown file | 0.950 | 0.950 | 0.950 | 0.950 |
+
+<sub>Stale = the retracted fact came back, lower is better. Current = the fact that replaced it was returned, higher is better. *Explicit* names the retraction in the second session; *implicit* frames the replacement like any first assertion.</sub>
+<!-- /claims:supersession-variants -->
+
+The gate for this variant was written in the ledger before the run (item I5): our stale rate
+below the floor's, with a Wilson interval that excludes it. If it had missed, the README's
+supersession row would have been narrowed to "explicit retractions only".
+
+## As of a day
+
+A memory that knows when a fact stopped being true can answer a second question: what did we
+believe on some day in the past? `api.as_of(query, date)` walks every note whose belief
+interval contains that date - live and retired alike - and ranks them by the query, with no
+LLM and no embedder on the path. `research/asof_bench.py` ingests the same sixty cases with
+dates two months apart and asks each one twice: for a day between the two sessions, and for a
+day after the second. A case counts only when both answers are right.
+
+<!-- claims:asof -->
+| arm | both days | the old day | the day after |
+|---|---|---|---|
+| **Nevertwice** (`api.as_of`) | 0.625 | 0.683 | 0.833 |
+| an append-only markdown file, no dates | 0.000 | 0.000 | 1.000 |
+
+<sub>The gate written before the run was 0.80 on both days, and this is below it. The loss is on the old day: the scan of belief intervals is exact, but an interval only closes when the write path recognised the replacement, so the number is bounded by supersession recognition rather than by the scan. Mem0 has no row - it stamps a memory with the wall-clock time of the `add()` call and its search has no as-of filter, so facts cannot be placed in the past without patching the product.</sub>
+<!-- /claims:asof -->
+
 ## What it costs us
 
 The stale rate is not free, and the honest accounting is on the other two columns.

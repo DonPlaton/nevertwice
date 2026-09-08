@@ -167,6 +167,34 @@ ARTIFACTS = [
      "note": "the same four systems on the non-oracle pool: 19,206 retrievable sessions instead "
              "of 940. One store arm has a blocker rather than a number in the committed artifact; "
              "the table names it. Ingest is hours per competitor arm, one process at a time."},
+    {"file": "research/results/longmem_s_raw.json",
+     "command": ["python", "research/longmem_eval.py", "--data=s", "--no-morphology", "--save",
+                 "--out=research/results/longmem_s_raw.json"],
+     "kind": HARDWARE, "task": "retrieval",
+     "inputs": ["research/data/longmemeval_s.json (hash-pinned, see above)",
+                "the embedding cache built by --data=s --embed"],
+     "note": "the morphology ablation on the non-oracle pool: the same sessions and questions as "
+             "longmem_s.json with the lexical arm tokenised without stop words or stems. "
+             "Deterministic given the cache."},
+    {"file": "research/results/asof_v1.json",
+     "command": ["python", "research/asof_bench.py", "--arms", "nevertwice,naive", "--runs", "2",
+                 "--out", "research/results/asof_v1.json"],
+     "kind": HARDWARE, "task": "supersession",
+     "inputs": ["research/data/supersession_v1.json",
+                "a local Ollama serving bge-m3 and the extraction model"],
+     "note": "as-of recall: the same corpus ingested with dates two months apart and asked for a "
+             "day between the sessions and a day after. Two ingest runs pooled; the extractor is "
+             "not deterministic, so a fresh run is a new measurement of the same design."},
+    {"file": "research/results/supersession_v1_implicit.json",
+     "command": ["python", "research/supersession_bench.py", "--dataset",
+                 "research/data/supersession_v1_implicit.json", "--arms", "nevertwice,naive"],
+     "kind": HARDWARE, "task": "supersession",
+     "inputs": ["research/data/supersession_v1_implicit.json",
+                "a local Ollama serving bge-m3 and the extraction model",
+                "mem0ai in its own environment for the Mem0 arm"],
+     "note": "the implicit-replacement variant: the committed artifact pools two engine runs with "
+             "the Mem0 and naive arms carried beside them (--pool ... --with ...); the extractor "
+             "is not deterministic."},
     {"file": "research/results/supersession_v1.json",
      "command": ["python", "research/supersession_bench.py",
                  "--arms", "nevertwice,naive", "--out",

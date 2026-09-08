@@ -531,7 +531,93 @@ def render_fusion_sweep(c: Claims) -> str:
                               "LoCoMo R@1", "LoCoMo R@5", "LoCoMo MRR"], 3)
 
 
+SUPERSESSION_ARMS = (("**Nevertwice**", "nevertwice"), ("Mem0", "mem0"),
+                     ("an append-only markdown file", "naive"))
+
+
+def _cell(c: Claims, cid: str) -> str:
+    """A three-decimal figure, or a dash when that arm has no claim yet."""
+    return f"{c.value(cid):.3f}" if c.has(cid) else "-"
+
+
+def _with_ci(c: Claims, cid: str) -> str:
+    """`0.058 [0.029, 0.116]` - the interval is not decoration: three of these rates come from
+    sixty cases, and a bare figure invites a comparison the sample does not support."""
+    v = c.value(cid)
+    ci = c.get(cid).get("ci") or {}
+    if "low" not in ci:
+        return f"{v:.3f}"
+    return f"{v:.3f} [{ci['low']:.3f}, {ci['high']:.3f}]"
+
+
+def render_supersession_pinned(c: Claims) -> str:
+    """The three-sided table: the retracted fact, the fact that replaced it, and a still-true
+    fact retired by mistake. All three are needed - a memory that returned nothing would score
+    perfectly on the first column alone."""
+    if not c.has("supersession.nevertwice.stale_rate"):
+        return _not_yet("supersession",
+                        "python research/supersession_bench.py --arms nevertwice,naive")
+    rows = [[label,
+             _with_ci(c, f"supersession.{slug}.stale_rate"),
+             _with_ci(c, f"supersession.{slug}.current_rate"),
+             _with_ci(c, f"supersession.{slug}.over_retraction_rate")]
+            for label, slug in SUPERSESSION_ARMS]
+    return _table(["arm", "returns the retracted fact", "returns the replacement",
+                   "retires a still-true fact"], rows)
+
+
+def render_supersession_variants(c: Claims) -> str:
+    """How often each system hands back the fact that was retracted - on the corpus that says so
+    and on the one that does not. Nothing is bolded: bold reads as a win, and the win in the
+    first two columns is the small number, which is the opposite convention from every other
+    table on these pages."""
+    if not c.has("supersession.nevertwice.stale_rate"):
+        return _not_yet("supersession",
+                        "python research/supersession_bench.py --arms nevertwice,naive")
+    rows = [[label,
+             _cell(c, f"supersession.{slug}.stale_rate"),
+             _cell(c, f"supersession_implicit.{slug}.stale_rate"),
+             _cell(c, f"supersession.{slug}.current_rate"),
+             _cell(c, f"supersession_implicit.{slug}.current_rate")]
+            for label, slug in SUPERSESSION_ARMS]
+    out = _table(["system", "stale, explicit", "stale, implicit",
+                  "current, explicit", "current, implicit"], rows)
+    out += ("\n\n<sub>Stale = the retracted fact came back, lower is better. Current = the fact "
+            "that replaced it was returned, higher is better. *Explicit* names the retraction in "
+            "the second session; *implicit* frames the replacement like any first assertion.</sub>")
+    if not c.has("supersession_implicit.nevertwice.stale_rate"):
+        out += ("\n\n<sub>The implicit columns are empty until `python "
+                "research/supersession_bench.py --dataset "
+                "research/data/supersession_v1_implicit.json` has run.</sub>")
+    return out
+
+
+def render_asof(c: Claims) -> str:
+    """As-of recall beside the gate written before it ran. The gate was missed; the table is
+    here because ledger I6 says a missed gate is published rather than buried."""
+    if not c.has("asof.nevertwice.both_correct"):
+        return _not_yet("asof", "python research/asof_bench.py --arms nevertwice,naive --runs 2")
+    rows = [[label, _cell(c, f"asof.{slug}.both_correct"), _cell(c, f"asof.{slug}.old_day"),
+             _cell(c, f"asof.{slug}.new_day")]
+            for label, slug in (("**Nevertwice** (`api.as_of`)", "nevertwice"),
+                                ("an append-only markdown file, no dates", "naive"))
+            if c.has(f"asof.{slug}.both_correct")]
+    out = _table(["arm", "both days", "the old day", "the day after"], rows)
+    if c.has("asof.gate.threshold"):
+        out += (f"\n\n<sub>The gate written before the run was {c.value('asof.gate.threshold'):.2f} "
+                "on both days, and this is below it. The loss is on the old day: the scan of "
+                "belief intervals is exact, but an interval only closes when the write path "
+                "recognised the replacement, so the number is bounded by supersession "
+                "recognition rather than by the scan. Mem0 has no row - it stamps a memory with "
+                "the wall-clock time of the `add()` call and its search has no as-of filter, so "
+                "facts cannot be placed in the past without patching the product.</sub>")
+    return out
+
+
 RENDERERS = {
+    "supersession-pinned": render_supersession_pinned,
+    "supersession-variants": render_supersession_variants,
+    "asof": render_asof,
     "longmem-benchmarks": render_longmem_benchmarks,
     "longmem-pinned": render_longmem_pinned,
     "longmem-s": render_longmem_s,

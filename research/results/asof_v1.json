@@ -1,0 +1,1797 @@
+{
+ "dataset": {
+  "name": "supersession_v1",
+  "sha256": "0e3114ea9175f8bb832522bdf0b182e11432da0603dc2571e3890f94d7b586f9",
+  "path": "research\\data\\supersession_v1.json",
+  "supersession_cases": 60
+ },
+ "days": {
+  "first": "2026-03-01",
+  "between": "2026-04-01",
+  "second": "2026-05-01",
+  "after": "2026-06-01"
+ },
+ "k": 5,
+ "llm": "qwen3-coder:30b",
+ "embedder": "bge-m3",
+ "arms": {
+  "nevertwice": {
+   "rows": [
+    {
+     "id": "val-http-timeout",
+     "shape": "value_replaced",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 2,
+     "run": 0
+    },
+    {
+     "id": "val-pg-version",
+     "shape": "value_replaced",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 2,
+     "run": 0
+    },
+    {
+     "id": "val-batch-size",
+     "shape": "value_replaced",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 2,
+     "run": 0
+    },
+    {
+     "id": "val-node-version",
+     "shape": "value_replaced",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 2,
+     "run": 0
+    },
+    {
+     "id": "val-retry-count",
+     "shape": "value_replaced",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 2,
+     "run": 0
+    },
+    {
+     "id": "val-cache-ttl",
+     "shape": "value_replaced",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 2,
+     "new_items": 4,
+     "run": 0
+    },
+    {
+     "id": "val-port",
+     "shape": "value_replaced",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 2,
+     "run": 0
+    },
+    {
+     "id": "val-region",
+     "shape": "value_replaced",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 2,
+     "run": 0
+    },
+    {
+     "id": "val-py-version",
+     "shape": "value_replaced",
+     "old_day_correct": false,
+     "new_day_correct": true,
+     "both_correct": false,
+     "old_items": 0,
+     "new_items": 2,
+     "run": 0
+    },
+    {
+     "id": "val-replicas",
+     "shape": "value_replaced",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 2,
+     "run": 0
+    },
+    {
+     "id": "val-lr",
+     "shape": "value_replaced",
+     "old_day_correct": false,
+     "new_day_correct": false,
+     "both_correct": false,
+     "old_items": 0,
+     "new_items": 0,
+     "run": 0
+    },
+    {
+     "id": "val-chunk",
+     "shape": "value_replaced",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 2,
+     "new_items": 4,
+     "run": 0
+    },
+    {
+     "id": "val-quorum",
+     "shape": "value_replaced",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 3,
+     "run": 0
+    },
+    {
+     "id": "val-license",
+     "shape": "value_replaced",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 2,
+     "run": 0
+    },
+    {
+     "id": "val-branch",
+     "shape": "value_replaced",
+     "old_day_correct": false,
+     "new_day_correct": false,
+     "both_correct": false,
+     "old_items": 0,
+     "new_items": 1,
+     "run": 0
+    },
+    {
+     "id": "app-cache-store",
+     "shape": "approach_abandoned",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 2,
+     "run": 0
+    },
+    {
+     "id": "app-auth",
+     "shape": "approach_abandoned",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 3,
+     "run": 0
+    },
+    {
+     "id": "app-bundler",
+     "shape": "approach_abandoned",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 2,
+     "new_items": 3,
+     "run": 0
+    },
+    {
+     "id": "app-orm",
+     "shape": "approach_abandoned",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 2,
+     "new_items": 4,
+     "run": 0
+    },
+    {
+     "id": "app-queue",
+     "shape": "approach_abandoned",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 2,
+     "run": 0
+    },
+    {
+     "id": "app-ci",
+     "shape": "approach_abandoned",
+     "old_day_correct": false,
+     "new_day_correct": false,
+     "both_correct": false,
+     "old_items": 0,
+     "new_items": 0,
+     "run": 0
+    },
+    {
+     "id": "app-search",
+     "shape": "approach_abandoned",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 2,
+     "run": 0
+    },
+    {
+     "id": "app-styling",
+     "shape": "approach_abandoned",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 2,
+     "run": 0
+    },
+    {
+     "id": "app-packaging",
+     "shape": "approach_abandoned",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 2,
+     "new_items": 4,
+     "run": 0
+    },
+    {
+     "id": "app-state",
+     "shape": "approach_abandoned",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 2,
+     "run": 0
+    },
+    {
+     "id": "app-infra",
+     "shape": "approach_abandoned",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 2,
+     "run": 0
+    },
+    {
+     "id": "app-migrations",
+     "shape": "approach_abandoned",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 2,
+     "run": 0
+    },
+    {
+     "id": "app-serialisation",
+     "shape": "approach_abandoned",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 3,
+     "run": 0
+    },
+    {
+     "id": "app-secrets",
+     "shape": "approach_abandoned",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 2,
+     "new_items": 4,
+     "run": 0
+    },
+    {
+     "id": "app-e2e",
+     "shape": "approach_abandoned",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 3,
+     "run": 0
+    },
+    {
+     "id": "ret-beta-flag",
+     "shape": "retracted_no_replacement",
+     "old_day_correct": false,
+     "new_day_correct": true,
+     "both_correct": false,
+     "old_items": 2,
+     "new_items": 4,
+     "run": 0
+    },
+    {
+     "id": "ret-legacy-endpoint",
+     "shape": "retracted_no_replacement",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 2,
+     "run": 0
+    },
+    {
+     "id": "ret-telemetry",
+     "shape": "retracted_no_replacement",
+     "old_day_correct": true,
+     "new_day_correct": false,
+     "both_correct": false,
+     "old_items": 1,
+     "new_items": 2,
+     "run": 0
+    },
+    {
+     "id": "ret-mirror",
+     "shape": "retracted_no_replacement",
+     "old_day_correct": false,
+     "new_day_correct": true,
+     "both_correct": false,
+     "old_items": 1,
+     "new_items": 2,
+     "run": 0
+    },
+    {
+     "id": "ret-plugin-api",
+     "shape": "retracted_no_replacement",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 3,
+     "run": 0
+    },
+    {
+     "id": "ret-mobile",
+     "shape": "retracted_no_replacement",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 2,
+     "new_items": 4,
+     "run": 0
+    },
+    {
+     "id": "ret-cron",
+     "shape": "retracted_no_replacement",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 3,
+     "run": 0
+    },
+    {
+     "id": "ret-grpc",
+     "shape": "retracted_no_replacement",
+     "old_day_correct": true,
+     "new_day_correct": false,
+     "both_correct": false,
+     "old_items": 1,
+     "new_items": 1,
+     "run": 0
+    },
+    {
+     "id": "ret-sso",
+     "shape": "retracted_no_replacement",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 2,
+     "run": 0
+    },
+    {
+     "id": "ret-webhook",
+     "shape": "retracted_no_replacement",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 2,
+     "run": 0
+    },
+    {
+     "id": "ret-gpu-node",
+     "shape": "retracted_no_replacement",
+     "old_day_correct": false,
+     "new_day_correct": false,
+     "both_correct": false,
+     "old_items": 0,
+     "new_items": 0,
+     "run": 0
+    },
+    {
+     "id": "ret-cli-flag",
+     "shape": "retracted_no_replacement",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 2,
+     "new_items": 4,
+     "run": 0
+    },
+    {
+     "id": "ret-audit-ui",
+     "shape": "retracted_no_replacement",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 2,
+     "run": 0
+    },
+    {
+     "id": "ret-i18n",
+     "shape": "retracted_no_replacement",
+     "old_day_correct": false,
+     "new_day_correct": true,
+     "both_correct": false,
+     "old_items": 0,
+     "new_items": 1,
+     "run": 0
+    },
+    {
+     "id": "ret-sandbox",
+     "shape": "retracted_no_replacement",
+     "old_day_correct": false,
+     "new_day_correct": true,
+     "both_correct": false,
+     "old_items": 2,
+     "new_items": 4,
+     "run": 0
+    },
+    {
+     "id": "nar-retry-scope",
+     "shape": "narrowed",
+     "old_day_correct": false,
+     "new_day_correct": true,
+     "both_correct": false,
+     "old_items": 1,
+     "new_items": 2,
+     "run": 0
+    },
+    {
+     "id": "nar-cache-scope",
+     "shape": "narrowed",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 2,
+     "new_items": 4,
+     "run": 0
+    },
+    {
+     "id": "nar-audit-scope",
+     "shape": "narrowed",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 2,
+     "new_items": 4,
+     "run": 0
+    },
+    {
+     "id": "nar-gpu-scope",
+     "shape": "narrowed",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 2,
+     "run": 0
+    },
+    {
+     "id": "nar-lint-scope",
+     "shape": "narrowed",
+     "old_day_correct": false,
+     "new_day_correct": true,
+     "both_correct": false,
+     "old_items": 1,
+     "new_items": 2,
+     "run": 0
+    },
+    {
+     "id": "nar-notify-scope",
+     "shape": "narrowed",
+     "old_day_correct": false,
+     "new_day_correct": true,
+     "both_correct": false,
+     "old_items": 1,
+     "new_items": 2,
+     "run": 0
+    },
+    {
+     "id": "nar-encrypt-scope",
+     "shape": "narrowed",
+     "old_day_correct": false,
+     "new_day_correct": true,
+     "both_correct": false,
+     "old_items": 0,
+     "new_items": 1,
+     "run": 0
+    },
+    {
+     "id": "nar-index-scope",
+     "shape": "narrowed",
+     "old_day_correct": false,
+     "new_day_correct": true,
+     "both_correct": false,
+     "old_items": 0,
+     "new_items": 1,
+     "run": 0
+    },
+    {
+     "id": "nar-backup-scope",
+     "shape": "narrowed",
+     "old_day_correct": true,
+     "new_day_correct": false,
+     "both_correct": false,
+     "old_items": 2,
+     "new_items": 4,
+     "run": 0
+    },
+    {
+     "id": "nar-ratelimit-scope",
+     "shape": "narrowed",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 2,
+     "new_items": 4,
+     "run": 0
+    },
+    {
+     "id": "nar-compress-scope",
+     "shape": "narrowed",
+     "old_day_correct": false,
+     "new_day_correct": true,
+     "both_correct": false,
+     "old_items": 1,
+     "new_items": 2,
+     "run": 0
+    },
+    {
+     "id": "nar-mfa-scope",
+     "shape": "narrowed",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 2,
+     "run": 0
+    },
+    {
+     "id": "nar-replay-scope",
+     "shape": "narrowed",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 2,
+     "run": 0
+    },
+    {
+     "id": "nar-shard-scope",
+     "shape": "narrowed",
+     "old_day_correct": true,
+     "new_day_correct": false,
+     "both_correct": false,
+     "old_items": 2,
+     "new_items": 4,
+     "run": 0
+    },
+    {
+     "id": "nar-trace-scope",
+     "shape": "narrowed",
+     "old_day_correct": false,
+     "new_day_correct": true,
+     "both_correct": false,
+     "old_items": 2,
+     "new_items": 4,
+     "run": 0
+    },
+    {
+     "id": "val-http-timeout",
+     "shape": "value_replaced",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 2,
+     "new_items": 4,
+     "run": 1
+    },
+    {
+     "id": "val-pg-version",
+     "shape": "value_replaced",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 2,
+     "run": 1
+    },
+    {
+     "id": "val-batch-size",
+     "shape": "value_replaced",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 2,
+     "run": 1
+    },
+    {
+     "id": "val-node-version",
+     "shape": "value_replaced",
+     "old_day_correct": false,
+     "new_day_correct": false,
+     "both_correct": false,
+     "old_items": 0,
+     "new_items": 0,
+     "run": 1
+    },
+    {
+     "id": "val-retry-count",
+     "shape": "value_replaced",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 2,
+     "run": 1
+    },
+    {
+     "id": "val-cache-ttl",
+     "shape": "value_replaced",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 2,
+     "new_items": 4,
+     "run": 1
+    },
+    {
+     "id": "val-port",
+     "shape": "value_replaced",
+     "old_day_correct": false,
+     "new_day_correct": true,
+     "both_correct": false,
+     "old_items": 0,
+     "new_items": 3,
+     "run": 1
+    },
+    {
+     "id": "val-region",
+     "shape": "value_replaced",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 2,
+     "run": 1
+    },
+    {
+     "id": "val-py-version",
+     "shape": "value_replaced",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 3,
+     "run": 1
+    },
+    {
+     "id": "val-replicas",
+     "shape": "value_replaced",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 2,
+     "run": 1
+    },
+    {
+     "id": "val-lr",
+     "shape": "value_replaced",
+     "old_day_correct": false,
+     "new_day_correct": false,
+     "both_correct": false,
+     "old_items": 0,
+     "new_items": 0,
+     "run": 1
+    },
+    {
+     "id": "val-chunk",
+     "shape": "value_replaced",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 2,
+     "new_items": 4,
+     "run": 1
+    },
+    {
+     "id": "val-quorum",
+     "shape": "value_replaced",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 2,
+     "new_items": 4,
+     "run": 1
+    },
+    {
+     "id": "val-license",
+     "shape": "value_replaced",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 2,
+     "run": 1
+    },
+    {
+     "id": "val-branch",
+     "shape": "value_replaced",
+     "old_day_correct": false,
+     "new_day_correct": false,
+     "both_correct": false,
+     "old_items": 0,
+     "new_items": 0,
+     "run": 1
+    },
+    {
+     "id": "app-cache-store",
+     "shape": "approach_abandoned",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 2,
+     "run": 1
+    },
+    {
+     "id": "app-auth",
+     "shape": "approach_abandoned",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 3,
+     "run": 1
+    },
+    {
+     "id": "app-bundler",
+     "shape": "approach_abandoned",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 2,
+     "run": 1
+    },
+    {
+     "id": "app-orm",
+     "shape": "approach_abandoned",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 2,
+     "new_items": 4,
+     "run": 1
+    },
+    {
+     "id": "app-queue",
+     "shape": "approach_abandoned",
+     "old_day_correct": false,
+     "new_day_correct": true,
+     "both_correct": false,
+     "old_items": 0,
+     "new_items": 2,
+     "run": 1
+    },
+    {
+     "id": "app-ci",
+     "shape": "approach_abandoned",
+     "old_day_correct": false,
+     "new_day_correct": false,
+     "both_correct": false,
+     "old_items": 0,
+     "new_items": 0,
+     "run": 1
+    },
+    {
+     "id": "app-search",
+     "shape": "approach_abandoned",
+     "old_day_correct": false,
+     "new_day_correct": true,
+     "both_correct": false,
+     "old_items": 0,
+     "new_items": 1,
+     "run": 1
+    },
+    {
+     "id": "app-styling",
+     "shape": "approach_abandoned",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 2,
+     "run": 1
+    },
+    {
+     "id": "app-packaging",
+     "shape": "approach_abandoned",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 2,
+     "new_items": 3,
+     "run": 1
+    },
+    {
+     "id": "app-state",
+     "shape": "approach_abandoned",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 2,
+     "run": 1
+    },
+    {
+     "id": "app-infra",
+     "shape": "approach_abandoned",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 3,
+     "run": 1
+    },
+    {
+     "id": "app-migrations",
+     "shape": "approach_abandoned",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 2,
+     "run": 1
+    },
+    {
+     "id": "app-serialisation",
+     "shape": "approach_abandoned",
+     "old_day_correct": false,
+     "new_day_correct": true,
+     "both_correct": false,
+     "old_items": 0,
+     "new_items": 2,
+     "run": 1
+    },
+    {
+     "id": "app-secrets",
+     "shape": "approach_abandoned",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 3,
+     "run": 1
+    },
+    {
+     "id": "app-e2e",
+     "shape": "approach_abandoned",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 3,
+     "run": 1
+    },
+    {
+     "id": "ret-beta-flag",
+     "shape": "retracted_no_replacement",
+     "old_day_correct": false,
+     "new_day_correct": true,
+     "both_correct": false,
+     "old_items": 2,
+     "new_items": 4,
+     "run": 1
+    },
+    {
+     "id": "ret-legacy-endpoint",
+     "shape": "retracted_no_replacement",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 2,
+     "run": 1
+    },
+    {
+     "id": "ret-telemetry",
+     "shape": "retracted_no_replacement",
+     "old_day_correct": false,
+     "new_day_correct": false,
+     "both_correct": false,
+     "old_items": 0,
+     "new_items": 0,
+     "run": 1
+    },
+    {
+     "id": "ret-mirror",
+     "shape": "retracted_no_replacement",
+     "old_day_correct": false,
+     "new_day_correct": true,
+     "both_correct": false,
+     "old_items": 0,
+     "new_items": 1,
+     "run": 1
+    },
+    {
+     "id": "ret-plugin-api",
+     "shape": "retracted_no_replacement",
+     "old_day_correct": true,
+     "new_day_correct": false,
+     "both_correct": false,
+     "old_items": 1,
+     "new_items": 1,
+     "run": 1
+    },
+    {
+     "id": "ret-mobile",
+     "shape": "retracted_no_replacement",
+     "old_day_correct": false,
+     "new_day_correct": true,
+     "both_correct": false,
+     "old_items": 2,
+     "new_items": 4,
+     "run": 1
+    },
+    {
+     "id": "ret-cron",
+     "shape": "retracted_no_replacement",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 3,
+     "run": 1
+    },
+    {
+     "id": "ret-grpc",
+     "shape": "retracted_no_replacement",
+     "old_day_correct": true,
+     "new_day_correct": false,
+     "both_correct": false,
+     "old_items": 1,
+     "new_items": 1,
+     "run": 1
+    },
+    {
+     "id": "ret-sso",
+     "shape": "retracted_no_replacement",
+     "old_day_correct": false,
+     "new_day_correct": false,
+     "both_correct": false,
+     "old_items": 0,
+     "new_items": 0,
+     "run": 1
+    },
+    {
+     "id": "ret-webhook",
+     "shape": "retracted_no_replacement",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 2,
+     "run": 1
+    },
+    {
+     "id": "ret-gpu-node",
+     "shape": "retracted_no_replacement",
+     "old_day_correct": false,
+     "new_day_correct": false,
+     "both_correct": false,
+     "old_items": 0,
+     "new_items": 0,
+     "run": 1
+    },
+    {
+     "id": "ret-cli-flag",
+     "shape": "retracted_no_replacement",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 2,
+     "new_items": 4,
+     "run": 1
+    },
+    {
+     "id": "ret-audit-ui",
+     "shape": "retracted_no_replacement",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 2,
+     "run": 1
+    },
+    {
+     "id": "ret-i18n",
+     "shape": "retracted_no_replacement",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 3,
+     "run": 1
+    },
+    {
+     "id": "ret-sandbox",
+     "shape": "retracted_no_replacement",
+     "old_day_correct": false,
+     "new_day_correct": true,
+     "both_correct": false,
+     "old_items": 1,
+     "new_items": 2,
+     "run": 1
+    },
+    {
+     "id": "nar-retry-scope",
+     "shape": "narrowed",
+     "old_day_correct": false,
+     "new_day_correct": true,
+     "both_correct": false,
+     "old_items": 1,
+     "new_items": 2,
+     "run": 1
+    },
+    {
+     "id": "nar-cache-scope",
+     "shape": "narrowed",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 2,
+     "run": 1
+    },
+    {
+     "id": "nar-audit-scope",
+     "shape": "narrowed",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 2,
+     "new_items": 4,
+     "run": 1
+    },
+    {
+     "id": "nar-gpu-scope",
+     "shape": "narrowed",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 2,
+     "run": 1
+    },
+    {
+     "id": "nar-lint-scope",
+     "shape": "narrowed",
+     "old_day_correct": false,
+     "new_day_correct": true,
+     "both_correct": false,
+     "old_items": 1,
+     "new_items": 2,
+     "run": 1
+    },
+    {
+     "id": "nar-notify-scope",
+     "shape": "narrowed",
+     "old_day_correct": false,
+     "new_day_correct": true,
+     "both_correct": false,
+     "old_items": 1,
+     "new_items": 2,
+     "run": 1
+    },
+    {
+     "id": "nar-encrypt-scope",
+     "shape": "narrowed",
+     "old_day_correct": false,
+     "new_day_correct": true,
+     "both_correct": false,
+     "old_items": 0,
+     "new_items": 1,
+     "run": 1
+    },
+    {
+     "id": "nar-index-scope",
+     "shape": "narrowed",
+     "old_day_correct": false,
+     "new_day_correct": false,
+     "both_correct": false,
+     "old_items": 0,
+     "new_items": 1,
+     "run": 1
+    },
+    {
+     "id": "nar-backup-scope",
+     "shape": "narrowed",
+     "old_day_correct": true,
+     "new_day_correct": false,
+     "both_correct": false,
+     "old_items": 1,
+     "new_items": 3,
+     "run": 1
+    },
+    {
+     "id": "nar-ratelimit-scope",
+     "shape": "narrowed",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 2,
+     "new_items": 4,
+     "run": 1
+    },
+    {
+     "id": "nar-compress-scope",
+     "shape": "narrowed",
+     "old_day_correct": false,
+     "new_day_correct": true,
+     "both_correct": false,
+     "old_items": 1,
+     "new_items": 2,
+     "run": 1
+    },
+    {
+     "id": "nar-mfa-scope",
+     "shape": "narrowed",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 2,
+     "run": 1
+    },
+    {
+     "id": "nar-replay-scope",
+     "shape": "narrowed",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 2,
+     "run": 1
+    },
+    {
+     "id": "nar-shard-scope",
+     "shape": "narrowed",
+     "old_day_correct": false,
+     "new_day_correct": false,
+     "both_correct": false,
+     "old_items": 2,
+     "new_items": 4,
+     "run": 1
+    },
+    {
+     "id": "nar-trace-scope",
+     "shape": "narrowed",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 2,
+     "new_items": 4,
+     "run": 1
+    }
+   ],
+   "n_cases": 120,
+   "both_correct_rate": 0.625,
+   "both_correct_ci": [
+    0.5358,
+    0.7065
+   ],
+   "old_day_rate": 0.6833,
+   "new_day_rate": 0.8333,
+   "errors": 0,
+   "runs": 2,
+   "seconds": 392.0,
+   "config": "ollama qwen3-coder:30b + bge-m3, k=5, days 2026-03-01/2026-05-01",
+   "per_run": [
+    0.6667,
+    0.5833
+   ]
+  },
+  "naive": {
+   "rows": [
+    {
+     "id": "val-http-timeout",
+     "shape": "value_replaced",
+     "old_day_correct": false,
+     "new_day_correct": true,
+     "both_correct": false,
+     "old_items": 4,
+     "new_items": 4
+    },
+    {
+     "id": "val-pg-version",
+     "shape": "value_replaced",
+     "old_day_correct": false,
+     "new_day_correct": true,
+     "both_correct": false,
+     "old_items": 4,
+     "new_items": 4
+    },
+    {
+     "id": "val-batch-size",
+     "shape": "value_replaced",
+     "old_day_correct": false,
+     "new_day_correct": true,
+     "both_correct": false,
+     "old_items": 4,
+     "new_items": 4
+    },
+    {
+     "id": "val-node-version",
+     "shape": "value_replaced",
+     "old_day_correct": false,
+     "new_day_correct": true,
+     "both_correct": false,
+     "old_items": 4,
+     "new_items": 4
+    },
+    {
+     "id": "val-retry-count",
+     "shape": "value_replaced",
+     "old_day_correct": false,
+     "new_day_correct": true,
+     "both_correct": false,
+     "old_items": 4,
+     "new_items": 4
+    },
+    {
+     "id": "val-cache-ttl",
+     "shape": "value_replaced",
+     "old_day_correct": false,
+     "new_day_correct": true,
+     "both_correct": false,
+     "old_items": 4,
+     "new_items": 4
+    },
+    {
+     "id": "val-port",
+     "shape": "value_replaced",
+     "old_day_correct": false,
+     "new_day_correct": true,
+     "both_correct": false,
+     "old_items": 4,
+     "new_items": 4
+    },
+    {
+     "id": "val-region",
+     "shape": "value_replaced",
+     "old_day_correct": false,
+     "new_day_correct": true,
+     "both_correct": false,
+     "old_items": 4,
+     "new_items": 4
+    },
+    {
+     "id": "val-py-version",
+     "shape": "value_replaced",
+     "old_day_correct": false,
+     "new_day_correct": true,
+     "both_correct": false,
+     "old_items": 4,
+     "new_items": 4
+    },
+    {
+     "id": "val-replicas",
+     "shape": "value_replaced",
+     "old_day_correct": false,
+     "new_day_correct": true,
+     "both_correct": false,
+     "old_items": 4,
+     "new_items": 4
+    },
+    {
+     "id": "val-lr",
+     "shape": "value_replaced",
+     "old_day_correct": false,
+     "new_day_correct": true,
+     "both_correct": false,
+     "old_items": 4,
+     "new_items": 4
+    },
+    {
+     "id": "val-chunk",
+     "shape": "value_replaced",
+     "old_day_correct": false,
+     "new_day_correct": true,
+     "both_correct": false,
+     "old_items": 4,
+     "new_items": 4
+    },
+    {
+     "id": "val-quorum",
+     "shape": "value_replaced",
+     "old_day_correct": false,
+     "new_day_correct": true,
+     "both_correct": false,
+     "old_items": 4,
+     "new_items": 4
+    },
+    {
+     "id": "val-license",
+     "shape": "value_replaced",
+     "old_day_correct": false,
+     "new_day_correct": true,
+     "both_correct": false,
+     "old_items": 4,
+     "new_items": 4
+    },
+    {
+     "id": "val-branch",
+     "shape": "value_replaced",
+     "old_day_correct": false,
+     "new_day_correct": true,
+     "both_correct": false,
+     "old_items": 4,
+     "new_items": 4
+    },
+    {
+     "id": "app-cache-store",
+     "shape": "approach_abandoned",
+     "old_day_correct": false,
+     "new_day_correct": true,
+     "both_correct": false,
+     "old_items": 4,
+     "new_items": 4
+    },
+    {
+     "id": "app-auth",
+     "shape": "approach_abandoned",
+     "old_day_correct": false,
+     "new_day_correct": true,
+     "both_correct": false,
+     "old_items": 4,
+     "new_items": 4
+    },
+    {
+     "id": "app-bundler",
+     "shape": "approach_abandoned",
+     "old_day_correct": false,
+     "new_day_correct": true,
+     "both_correct": false,
+     "old_items": 4,
+     "new_items": 4
+    },
+    {
+     "id": "app-orm",
+     "shape": "approach_abandoned",
+     "old_day_correct": false,
+     "new_day_correct": true,
+     "both_correct": false,
+     "old_items": 4,
+     "new_items": 4
+    },
+    {
+     "id": "app-queue",
+     "shape": "approach_abandoned",
+     "old_day_correct": false,
+     "new_day_correct": true,
+     "both_correct": false,
+     "old_items": 4,
+     "new_items": 4
+    },
+    {
+     "id": "app-ci",
+     "shape": "approach_abandoned",
+     "old_day_correct": false,
+     "new_day_correct": true,
+     "both_correct": false,
+     "old_items": 4,
+     "new_items": 4
+    },
+    {
+     "id": "app-search",
+     "shape": "approach_abandoned",
+     "old_day_correct": false,
+     "new_day_correct": true,
+     "both_correct": false,
+     "old_items": 4,
+     "new_items": 4
+    },
+    {
+     "id": "app-styling",
+     "shape": "approach_abandoned",
+     "old_day_correct": false,
+     "new_day_correct": true,
+     "both_correct": false,
+     "old_items": 4,
+     "new_items": 4
+    },
+    {
+     "id": "app-packaging",
+     "shape": "approach_abandoned",
+     "old_day_correct": false,
+     "new_day_correct": true,
+     "both_correct": false,
+     "old_items": 4,
+     "new_items": 4
+    },
+    {
+     "id": "app-state",
+     "shape": "approach_abandoned",
+     "old_day_correct": false,
+     "new_day_correct": true,
+     "both_correct": false,
+     "old_items": 4,
+     "new_items": 4
+    },
+    {
+     "id": "app-infra",
+     "shape": "approach_abandoned",
+     "old_day_correct": false,
+     "new_day_correct": true,
+     "both_correct": false,
+     "old_items": 4,
+     "new_items": 4
+    },
+    {
+     "id": "app-migrations",
+     "shape": "approach_abandoned",
+     "old_day_correct": false,
+     "new_day_correct": true,
+     "both_correct": false,
+     "old_items": 4,
+     "new_items": 4
+    },
+    {
+     "id": "app-serialisation",
+     "shape": "approach_abandoned",
+     "old_day_correct": false,
+     "new_day_correct": true,
+     "both_correct": false,
+     "old_items": 4,
+     "new_items": 4
+    },
+    {
+     "id": "app-secrets",
+     "shape": "approach_abandoned",
+     "old_day_correct": false,
+     "new_day_correct": true,
+     "both_correct": false,
+     "old_items": 4,
+     "new_items": 4
+    },
+    {
+     "id": "app-e2e",
+     "shape": "approach_abandoned",
+     "old_day_correct": false,
+     "new_day_correct": true,
+     "both_correct": false,
+     "old_items": 4,
+     "new_items": 4
+    },
+    {
+     "id": "ret-beta-flag",
+     "shape": "retracted_no_replacement",
+     "old_day_correct": false,
+     "new_day_correct": true,
+     "both_correct": false,
+     "old_items": 4,
+     "new_items": 4
+    },
+    {
+     "id": "ret-legacy-endpoint",
+     "shape": "retracted_no_replacement",
+     "old_day_correct": false,
+     "new_day_correct": true,
+     "both_correct": false,
+     "old_items": 4,
+     "new_items": 4
+    },
+    {
+     "id": "ret-telemetry",
+     "shape": "retracted_no_replacement",
+     "old_day_correct": false,
+     "new_day_correct": true,
+     "both_correct": false,
+     "old_items": 4,
+     "new_items": 4
+    },
+    {
+     "id": "ret-mirror",
+     "shape": "retracted_no_replacement",
+     "old_day_correct": false,
+     "new_day_correct": true,
+     "both_correct": false,
+     "old_items": 4,
+     "new_items": 4
+    },
+    {
+     "id": "ret-plugin-api",
+     "shape": "retracted_no_replacement",
+     "old_day_correct": false,
+     "new_day_correct": true,
+     "both_correct": false,
+     "old_items": 4,
+     "new_items": 4
+    },
+    {
+     "id": "ret-mobile",
+     "shape": "retracted_no_replacement",
+     "old_day_correct": false,
+     "new_day_correct": true,
+     "both_correct": false,
+     "old_items": 4,
+     "new_items": 4
+    },
+    {
+     "id": "ret-cron",
+     "shape": "retracted_no_replacement",
+     "old_day_correct": false,
+     "new_day_correct": true,
+     "both_correct": false,
+     "old_items": 4,
+     "new_items": 4
+    },
+    {
+     "id": "ret-grpc",
+     "shape": "retracted_no_replacement",
+     "old_day_correct": false,
+     "new_day_correct": true,
+     "both_correct": false,
+     "old_items": 4,
+     "new_items": 4
+    },
+    {
+     "id": "ret-sso",
+     "shape": "retracted_no_replacement",
+     "old_day_correct": false,
+     "new_day_correct": true,
+     "both_correct": false,
+     "old_items": 4,
+     "new_items": 4
+    },
+    {
+     "id": "ret-webhook",
+     "shape": "retracted_no_replacement",
+     "old_day_correct": false,
+     "new_day_correct": true,
+     "both_correct": false,
+     "old_items": 4,
+     "new_items": 4
+    },
+    {
+     "id": "ret-gpu-node",
+     "shape": "retracted_no_replacement",
+     "old_day_correct": false,
+     "new_day_correct": true,
+     "both_correct": false,
+     "old_items": 4,
+     "new_items": 4
+    },
+    {
+     "id": "ret-cli-flag",
+     "shape": "retracted_no_replacement",
+     "old_day_correct": false,
+     "new_day_correct": true,
+     "both_correct": false,
+     "old_items": 4,
+     "new_items": 4
+    },
+    {
+     "id": "ret-audit-ui",
+     "shape": "retracted_no_replacement",
+     "old_day_correct": false,
+     "new_day_correct": true,
+     "both_correct": false,
+     "old_items": 4,
+     "new_items": 4
+    },
+    {
+     "id": "ret-i18n",
+     "shape": "retracted_no_replacement",
+     "old_day_correct": false,
+     "new_day_correct": true,
+     "both_correct": false,
+     "old_items": 4,
+     "new_items": 4
+    },
+    {
+     "id": "ret-sandbox",
+     "shape": "retracted_no_replacement",
+     "old_day_correct": false,
+     "new_day_correct": true,
+     "both_correct": false,
+     "old_items": 4,
+     "new_items": 4
+    },
+    {
+     "id": "nar-retry-scope",
+     "shape": "narrowed",
+     "old_day_correct": false,
+     "new_day_correct": true,
+     "both_correct": false,
+     "old_items": 4,
+     "new_items": 4
+    },
+    {
+     "id": "nar-cache-scope",
+     "shape": "narrowed",
+     "old_day_correct": false,
+     "new_day_correct": true,
+     "both_correct": false,
+     "old_items": 4,
+     "new_items": 4
+    },
+    {
+     "id": "nar-audit-scope",
+     "shape": "narrowed",
+     "old_day_correct": false,
+     "new_day_correct": true,
+     "both_correct": false,
+     "old_items": 4,
+     "new_items": 4
+    },
+    {
+     "id": "nar-gpu-scope",
+     "shape": "narrowed",
+     "old_day_correct": false,
+     "new_day_correct": true,
+     "both_correct": false,
+     "old_items": 4,
+     "new_items": 4
+    },
+    {
+     "id": "nar-lint-scope",
+     "shape": "narrowed",
+     "old_day_correct": false,
+     "new_day_correct": true,
+     "both_correct": false,
+     "old_items": 4,
+     "new_items": 4
+    },
+    {
+     "id": "nar-notify-scope",
+     "shape": "narrowed",
+     "old_day_correct": false,
+     "new_day_correct": true,
+     "both_correct": false,
+     "old_items": 4,
+     "new_items": 4
+    },
+    {
+     "id": "nar-encrypt-scope",
+     "shape": "narrowed",
+     "old_day_correct": false,
+     "new_day_correct": true,
+     "both_correct": false,
+     "old_items": 4,
+     "new_items": 4
+    },
+    {
+     "id": "nar-index-scope",
+     "shape": "narrowed",
+     "old_day_correct": false,
+     "new_day_correct": true,
+     "both_correct": false,
+     "old_items": 4,
+     "new_items": 4
+    },
+    {
+     "id": "nar-backup-scope",
+     "shape": "narrowed",
+     "old_day_correct": false,
+     "new_day_correct": true,
+     "both_correct": false,
+     "old_items": 4,
+     "new_items": 4
+    },
+    {
+     "id": "nar-ratelimit-scope",
+     "shape": "narrowed",
+     "old_day_correct": false,
+     "new_day_correct": true,
+     "both_correct": false,
+     "old_items": 4,
+     "new_items": 4
+    },
+    {
+     "id": "nar-compress-scope",
+     "shape": "narrowed",
+     "old_day_correct": false,
+     "new_day_correct": true,
+     "both_correct": false,
+     "old_items": 4,
+     "new_items": 4
+    },
+    {
+     "id": "nar-mfa-scope",
+     "shape": "narrowed",
+     "old_day_correct": false,
+     "new_day_correct": true,
+     "both_correct": false,
+     "old_items": 4,
+     "new_items": 4
+    },
+    {
+     "id": "nar-replay-scope",
+     "shape": "narrowed",
+     "old_day_correct": false,
+     "new_day_correct": true,
+     "both_correct": false,
+     "old_items": 4,
+     "new_items": 4
+    },
+    {
+     "id": "nar-shard-scope",
+     "shape": "narrowed",
+     "old_day_correct": false,
+     "new_day_correct": true,
+     "both_correct": false,
+     "old_items": 4,
+     "new_items": 4
+    },
+    {
+     "id": "nar-trace-scope",
+     "shape": "narrowed",
+     "old_day_correct": false,
+     "new_day_correct": true,
+     "both_correct": false,
+     "old_items": 4,
+     "new_items": 4
+    }
+   ],
+   "n_cases": 60,
+   "both_correct_rate": 0.0,
+   "both_correct_ci": [
+    0.0,
+    0.0602
+   ],
+   "old_day_rate": 0.0,
+   "new_day_rate": 1.0,
+   "errors": 0,
+   "seconds": 0.0,
+   "config": "append-only markdown + BM25-style IDF overlap, no dates, k=5"
+  },
+  "mem0": {
+   "blocked": "Mem0 stamps a memory with the wall-clock time of the add() call and its search has no as-of filter; facts cannot be placed in the past without patching the product"
+  }
+ }
+}
