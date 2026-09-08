@@ -1,13 +1,5 @@
 # Nevertwice - weaknesses & limitations (hostile self-audit, 2026-06-17; launch update 2026-06-20)
 
-<!-- withdrawn-banner -->
-> **Withdrawn: figures on this page must not be quoted.** They were retracted and remain
-> here because deleting a result one was wrong about destroys the record of having been
-> wrong. The design, the method and the caveats stand; the numbers do not. Each figure's
-> own reason and date are in
-> [`research/evidence_manifest.json`](../research/evidence_manifest.json), and
-> `python tools/check_freshness.py --list-stale` lists every one.
-
 *Written in the role of a harsh critic: dogfooded on a real 328-note / 12-project vault,
 ran all 10 test suites, probed the new research features for dead code, token bloat, and
 clutter. Findings are graded **[FIXED]** (closed this pass), **[OPEN]** (real, unsolved),

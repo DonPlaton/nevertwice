@@ -97,6 +97,23 @@ ARTIFACTS = [
      "inputs": ["the same corpus and vector cache as research/results/locomo.json"],
      "note": "the LoCoMo ablation arm of research/LEXICAL_MORPHOLOGY.md, raw tokens. "
              "Deterministic given the embedding cache."},
+    {"file": "research/results/fusion_weight_sweep.json",
+     "command": ["python", "research/fusion_sweep.py", "--save"],
+     "kind": HARDWARE, "task": "external-retrieval",
+     "inputs": ["the oracle and LoCoMo corpora and their vector caches, as for the two stands "
+                "it runs (research/longmem_eval.py, research/locomo_eval.py)"],
+     "note": "the dense weight of the calibrated fusion swept on both pinned corpora, one "
+             "harness run per weight, everything else fixed. Deterministic given the caches; "
+             "about twenty minutes of CPU."},
+    {"file": "research/results/lexical_morphology_vault.json",
+     "command": ["python", "research/lexical_morphology_probe.py", "--protocol", "both",
+                 "--out", "research/results/lexical_morphology_vault.json"],
+     "kind": ABSENT_INPUT, "task": "external-retrieval",
+     "inputs": ["a populated Nevertwice store (NEVERTWICE_VAULT); the committed artifact was "
+                "produced on the owner's, which is private"],
+     "note": "lexical recall on a real store with the tokenizer's morphology off and on, by "
+             "language half; rates and counts only, no note text. Anyone with a populated "
+             "store reproduces the shape, nobody reproduces the owner's numbers."},
     {"file": "research/results/longmem_s.json",
      "command": ["python", "research/longmem_eval.py", "--data=s", "--save",
                  "--out=research/results/longmem_s.json"],
@@ -124,6 +141,32 @@ ARTIFACTS = [
              "scoring function. Zep and Cognee record a blocker rather than a number: the first "
              "needs Neo4j or FalkorDB, the second an unwritten adapter. The timings move with "
              "the machine and are marked volatile; the recall columns do not."},
+    {"file": "research/results/head_to_head_locomo.json",
+     "command": ["python", "research/head_to_head.py", "--data=locomo",
+                 "--only=nevertwice,mem0,langmem,amem", "--save",
+                 "--out=research/results/head_to_head_locomo.json"],
+     "kind": HARDWARE, "task": "external-retrieval",
+     "inputs": ["research/data/locomo10.json (hash-pinned, see above)",
+                "a local Ollama serving bge-m3",
+                "for the competitor arms: an environment with mem0ai, langgraph + langmem + "
+                "langchain-ollama, and chromadb"],
+     "volatile": ["ingest_s", "query_s", "_wall_s"],
+     "note": "LoCoMo pooled globally - one store for all ten conversations, which is what a whole "
+             "history looks like to a competitor store - scored on retrieval of the annotated "
+             "evidence turn. Same embedder and scoring for every arm."},
+    {"file": "research/results/head_to_head_s.json",
+     "command": ["python", "research/head_to_head.py", "--data=s",
+                 "--only=nevertwice,mem0,langmem,amem", "--save",
+                 "--out=research/results/head_to_head_s.json"],
+     "kind": HARDWARE, "task": "external-retrieval",
+     "inputs": ["research/data/longmemeval_s.json (hash-pinned, see above)",
+                "a local Ollama serving bge-m3",
+                "for the competitor arms: an environment with mem0ai, langgraph + langmem + "
+                "langchain-ollama, and chromadb"],
+     "volatile": ["ingest_s", "query_s", "_wall_s"],
+     "note": "the same four systems on the non-oracle pool: 19,206 retrievable sessions instead "
+             "of 940. One store arm has a blocker rather than a number in the committed artifact; "
+             "the table names it. Ingest is hours per competitor arm, one process at a time."},
     {"file": "research/results/supersession_v1.json",
      "command": ["python", "research/supersession_bench.py",
                  "--arms", "nevertwice,naive", "--out",

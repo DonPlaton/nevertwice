@@ -45,9 +45,12 @@ Whole sessions embedded, up to the pool's own cap of 28,000 characters, through 
 endpoint the competitor arms use:
 
 <!-- claims:longmem-pinned -->
-> **Withdrawn 2026-09.** withdrawn 2026-09-06: the dense weight of the calibrated fusion moved from a half to one after the sweep on whole-session vectors and the stemmed lexical arm; the re-measurement needs the GPU (cross-encoder, embedder) and lands in the next commit
->
-> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/longmem_eval.py --save --out=research/results/longmem_oracle.json` is what re-measures this one.
+| method | R@1 | R@5 | R@10 | MRR |
+|---|---|---|---|---|
+| semantic (bge-m3) | 0.428 | 0.692 | 0.782 | 0.552 |
+| lexical (BM25) | 0.470 | 0.738 | 0.830 | 0.596 |
+| **calibrated fusion (shipped default, 0 deps)** | 0.512 | 0.800 | **0.866** | 0.636 |
+| **+ trained cross-encoder (opt-in)** | **0.626** | **0.834** | **0.866** | **0.723** |
 <!-- /claims:longmem-pinned -->
 
 Against the run that embedded only the first 2,000 characters of each session, the semantic arm
@@ -64,9 +67,12 @@ numbers above are claims on a named corpus, with the hash in the artifact.
 ## Head to head, same stand
 
 <!-- claims:head-to-head-pinned -->
-> **Withdrawn 2026-09.** withdrawn 2026-09-06: the lexical signal now drops stop words and stems (Porter/Snowball), the stand embeds with a context fallback, and the anticipation channel is pinned to raw tokens; the re-measurement with the shipped tokenizer needs the GPU (cross-encoder, embedder) and lands in the next commit
->
-> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/head_to_head.py --only=nevertwice,mem0,langmem,amem --save --out=research/results/head_to_head_v2.json` is what re-measures this one.
+| system | R@1 | R@5 | R@10 | MRR |
+|---|---|---|---|---|
+| **Nevertwice (calibrated fusion)** | **0.512** | **0.800** | **0.866** | **0.630** |
+| Mem0 | 0.478 | 0.758 | 0.846 | 0.603 |
+| LangMem | 0.426 | 0.692 | 0.782 | 0.543 |
+| A-MEM | 0.428 | 0.692 | 0.782 | 0.544 |
 <!-- /claims:head-to-head-pinned -->
 
 The competitor rows are their **store** arms: Mem0 with its LLM extraction off (`infer=False`),
@@ -94,12 +100,14 @@ This is the setting the roadmap meant when it asked for a number "outside the or
 and it is where a retrieval claim earns its keep.
 
 <!-- claims:longmem-s -->
-> **Withdrawn 2026-09.** withdrawn 2026-09-06: the dense weight of the calibrated fusion moved from a half to one after the sweep on whole-session vectors and the stemmed lexical arm; the re-measurement needs the GPU (cross-encoder, embedder) and lands in the next commit
->
-> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/longmem_eval.py --data=s --save --out=research/results/longmem_s.json` is what re-measures this one.
+| method | R@1 | R@5 | R@10 | MRR |
+|---|---|---|---|---|
+| semantic (bge-m3) | 0.184 | 0.354 | 0.440 | 0.267 |
+| lexical (BM25) | 0.218 | 0.416 | 0.510 | 0.313 |
+| **calibrated fusion (shipped default, 0 deps)** | **0.228** | **0.422** | **0.514** | **0.329** |
 <!-- /claims:longmem-s -->
 
-Everything falls, which is what a twenty-one-fold haystack does, and one thing about the shape does not hold any more: fusion beats the bi-encoder by +0.084 at R@5 but reads -0.004 against the lexical arm alone - on whole-session vectors the dense weight tuned for the capped ones costs the pair its edge here. That is the measurement ledger item I1 exists for; this page does not move the weight by hand. Lexical retrieval beats the bi-encoder on this pool, as it did on the smaller one.
+Everything falls, which is what a twenty-one-fold haystack does, and the shape holds: fusion beats both signals it fuses, by +0.068 at R@5 over semantic alone and +0.006 over lexical. Lexical retrieval beats the bi-encoder on this pool, as it did on the smaller one. This is also the pool where the two changes of 2026-09-06 - stop words and stems on the lexical arm, the dense weight moved to one - cost rather than gained: the fused R@5 is below the raw-token, half-weight run that preceded them. Both gates were written on the oracle pool and LoCoMo, and this pool was outside them; `research/LEXICAL_MORPHOLOGY.md` says so and carries the figure.
 
 **623 of the 19,829 sessions carry no text at all** in the published corpus and are skipped,
 which is where the pool size comes from. That is a property of the dataset, stated here so the
@@ -110,7 +118,13 @@ and the count in the table says so.
 The four-system table on this pool:
 
 <!-- claims:head-to-head-s -->
-> **Not measured yet.** No `h2h_s.*` claim is registered; `python research/head_to_head.py --data=s --only=nevertwice,mem0,langmem,amem --save --out=research/results/head_to_head_s.json` is the run that produces them.
+| system | R@1 | R@5 | R@10 | MRR |
+|---|---|---|---|---|
+| **Nevertwice (calibrated fusion)** | **0.228** | **0.422** | **0.514** | **0.314** |
+| Mem0 | 0.194 | 0.380 | 0.464 | 0.281 |
+| LangMem | 0.152 | 0.338 | 0.406 | 0.230 |
+
+<sub>No row for A-MEM: the arm has no number this stand would publish - a blocker it recorded, or a run the prose above rejects as measuring the stand rather than the product.</sub>
 <!-- /claims:head-to-head-s -->
 
 ### What running it found

@@ -61,18 +61,16 @@ GENERATED_REGION = re.compile(
     r"<!-- (claims|comparison):([\w-]+) -->.*?<!-- /\1:\2 -->", re.S)
 
 
+#: One segment of a pointer: a quoted key - the way to address a key that itself contains a dot,
+#: as a weight sweep's `"0.25"` does - a list index, or a bare key.
+SEGMENT = re.compile(r'\["([^"]*)"\]|\[(\d+)\]|([^.\[\]]+)')
+
+
 def resolve(data, pointer: str):
-    """Walk a dotted pointer with [index] segments, e.g. `a.b[2].c`."""
+    """Walk a pointer: `a.b[2].c`, and `a["0.25"].c` for a key with a dot in it."""
     node = data
-    for part in pointer.split("."):
-        while part.endswith("]"):
-            part, _, idx = part[:-1].rpartition("[")
-            if part:
-                node = node[part]
-            node = node[int(idx)]
-            part = ""
-        if part:
-            node = node[part]
+    for quoted, index, key in SEGMENT.findall(pointer):
+        node = node[int(index)] if index else node[quoted or key]
     return node
 
 

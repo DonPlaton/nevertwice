@@ -144,12 +144,15 @@ PIPELINE_ROWS = [
 
 
 def _h2h_rows(c: Claims, family: str, spec, required: bool = True) -> list[list]:
-    """One row per arm of `family`. With `required=False` an arm without claims is left out,
-    which is what a blocked pipeline arm looks like in the register."""
+    """One row per arm of `family`. An arm without claims is left out - a blocked arm has no
+    number in the register - and the caller names it under the table; `required` is kept
+    for callers that want a partial family to raise."""
     rows = []
     for label, slug in spec:
         base = f"{family}.{slug}"
-        if not required and not c.has(f"{base}.recall_at_1"):
+        if not c.has(f"{base}.recall_at_1"):
+            if required:
+                raise KeyError(f"no claim {base}.recall_at_1 in the manifest")
             continue
         rows.append([label,
                      c.value(f"{base}.recall_at_1"),
@@ -167,22 +170,33 @@ def _not_yet(family: str, command: str) -> str | None:
             f"`{command}` is the run that produces them.")
 
 
+def _h2h_family_table(c: Claims, family: str, command: str) -> str:
+    """A four-system table that tolerates a blocked arm: the arm has no claim, so it has no
+    row, and the note under the table names it - the artifact carries the blocker."""
+    if not any(c.has(f"{family}.{slug}.recall_at_1") for _, slug in HEAD_TO_HEAD_ROWS):
+        return _not_yet(family, command)
+    out = _apply_bold(_h2h_rows(c, family, HEAD_TO_HEAD_ROWS, required=False), H2H_HEADER, 3)
+    missing = [label.strip("*") for label, slug in HEAD_TO_HEAD_ROWS
+               if not c.has(f"{family}.{slug}.recall_at_1")]
+    if missing:
+        out += ("\n\n<sub>No row for " + ", ".join(missing) + ": the arm has no number this "
+                "stand would publish - a blocker it recorded, or a run the prose above rejects "
+                "as measuring the stand rather than the product.</sub>")
+    return out
+
+
 def render_head_to_head_locomo(c: Claims) -> str:
     """Four systems on LoCoMo pooled globally - one store, all ten conversations."""
-    if not any(c.has(f"h2h_locomo.{slug}.recall_at_1") for _, slug in HEAD_TO_HEAD_ROWS):
-        return _not_yet("h2h_locomo", "python research/head_to_head.py --data=locomo "
-                        "--only=nevertwice,mem0,langmem,amem --save "
-                        "--out=research/results/head_to_head_locomo.json")
-    return _apply_bold(_h2h_rows(c, "h2h_locomo", HEAD_TO_HEAD_ROWS), H2H_HEADER, 3)
+    return _h2h_family_table(c, "h2h_locomo", "python research/head_to_head.py --data=locomo "
+                             "--only=nevertwice,mem0,langmem,amem --save "
+                             "--out=research/results/head_to_head_locomo.json")
 
 
 def render_head_to_head_s(c: Claims) -> str:
     """The same four systems on the non-oracle LongMemEval pool."""
-    if not any(c.has(f"h2h_s.{slug}.recall_at_1") for _, slug in HEAD_TO_HEAD_ROWS):
-        return _not_yet("h2h_s", "python research/head_to_head.py --data=s "
-                        "--only=nevertwice,mem0,langmem,amem --save "
-                        "--out=research/results/head_to_head_s.json")
-    return _apply_bold(_h2h_rows(c, "h2h_s", HEAD_TO_HEAD_ROWS), H2H_HEADER, 3)
+    return _h2h_family_table(c, "h2h_s", "python research/head_to_head.py --data=s "
+                             "--only=nevertwice,mem0,langmem,amem --save "
+                             "--out=research/results/head_to_head_s.json")
 
 
 def render_head_to_head_full(c: Claims) -> str:
@@ -198,8 +212,9 @@ def render_head_to_head_full(c: Claims) -> str:
     missing = [label.split(",")[0] for label, slug in PIPELINE_ROWS
                if not c.has(f"h2h_pinned.{slug}.recall_at_1")]
     if missing:
-        out += ("\n\n<sub>No row for " + ", ".join(missing) + ": the arm recorded a blocker "
-                "instead of a number, and the artifact carries the reason.</sub>")
+        out += ("\n\n<sub>No row for " + ", ".join(missing) + ": the arm has no number this "
+                "stand would publish - a blocker it recorded, or a run the prose above rejects "
+                "as measuring the stand rather than the product.</sub>")
     return out
 
 
@@ -518,6 +533,7 @@ RENDERERS = {
     "head-to-head-pinned": render_head_to_head_pinned,
     "head-to-head-locomo": render_head_to_head_locomo,
     "head-to-head-s": render_head_to_head_s,
+    "head-to-head-full": render_head_to_head_full,
     "lexical-morphology-locomo": render_lexical_morphology_locomo,
     "lexical-morphology-oracle": render_lexical_morphology_oracle,
     "lexical-morphology-vault": render_lexical_morphology_vault,

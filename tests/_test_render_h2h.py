@@ -57,14 +57,17 @@ check("the best value in each column is bold, and it is A-MEM's here (synthetic)
 check("three decimals everywhere", all(len(x.strip().strip("*").split(".")[1]) == 3
                                         for ln in lines[2:] for x in ln.split("|")[2:-1]))
 
-print("\n- a missing arm in a required family is an error, not a silent gap -")
+print("\n- a blocked arm has no row and is named under the table -")
 short = {"claims": family("h2h_s", ["nevertwice", "mem0", "langmem"]), "scope": {"docs": []},
          "documents": {}}
+out = rc.render_head_to_head_s(rc.Claims(short))
+check("three rows for the three registered arms", out.count("\n| ") == 3 and "| A-MEM |" not in out, out)
+check("the missing arm is named as a blocker", "<sub>No row for A-MEM:" in out)
 try:
-    rc.render_head_to_head_s(rc.Claims(short))
-    check("h2h_s without the A-MEM claims raises", False)
+    rc._h2h_rows(rc.Claims(short), "h2h_s", rc.HEAD_TO_HEAD_ROWS, required=True)
+    check("a strict caller still gets an error for a partial family", False)
 except KeyError as e:
-    check("h2h_s without the A-MEM claims raises", "h2h_s.amem" in str(e), str(e))
+    check("a strict caller still gets an error for a partial family", "h2h_s.amem" in str(e), str(e))
 
 print("\n- a family that was never registered renders as a dated gap -")
 none = {"claims": [], "scope": {"docs": []}, "documents": {}}

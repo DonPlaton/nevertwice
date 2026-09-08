@@ -1,0 +1,85 @@
+{
+ "store_notes": 4926,
+ "store_sessions": 933,
+ "embedder": "none (lexical only)",
+ "protocols": {
+  "session": {
+   "protocol": "session",
+   "halves": {
+    "ru": {
+     "n": 254,
+     "raw": {
+      "recall@1": 0.622,
+      "recall@3": 0.7913,
+      "recall@5": 0.8189,
+      "recall@10": 0.8701,
+      "mrr": 0.7109
+     },
+     "morph": {
+      "recall@1": 0.6811,
+      "recall@3": 0.811,
+      "recall@5": 0.8425,
+      "recall@10": 0.9055,
+      "mrr": 0.754
+     }
+    },
+    "en": {
+     "n": 678,
+     "raw": {
+      "recall@1": 0.7906,
+      "recall@3": 0.8938,
+      "recall@5": 0.9277,
+      "recall@10": 0.9499,
+      "mrr": 0.8482
+     },
+     "morph": {
+      "recall@1": 0.8112,
+      "recall@3": 0.8953,
+      "recall@5": 0.9233,
+      "recall@10": 0.9528,
+      "mrr": 0.8606
+     }
+    }
+   }
+  },
+  "sibling": {
+   "protocol": "sibling",
+   "halves": {
+    "ru": {
+     "n": 968,
+     "raw": {
+      "recall@1": 0.8182,
+      "recall@3": 0.9287,
+      "recall@5": 0.9535,
+      "recall@10": 0.9752,
+      "mrr": 0.8782
+     },
+     "morph": {
+      "recall@1": 0.7304,
+      "recall@3": 0.875,
+      "recall@5": 0.9153,
+      "recall@10": 0.9432,
+      "mrr": 0.8092
+     }
+    },
+    "en": {
+     "n": 3950,
+     "raw": {
+      "recall@1": 0.8033,
+      "recall@3": 0.919,
+      "recall@5": 0.9552,
+      "recall@10": 0.9803,
+      "mrr": 0.8679
+     },
+     "morph": {
+      "recall@1": 0.7567,
+      "recall@3": 0.8729,
+      "recall@5": 0.9154,
+      "recall@10": 0.9549,
+      "mrr": 0.8256
+     }
+    }
+   }
+  }
+ }
+}

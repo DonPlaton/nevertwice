@@ -27,9 +27,14 @@ Dialogue turns the length of a real note, each question retrieving its human-ann
 turn from its own conversation. Same cached vectors for both arms; only the tokenizer differs.
 
 <!-- claims:lexical-morphology-locomo -->
-> **Withdrawn 2026-09.** withdrawn 2026-09-06: the dense weight of the calibrated fusion moved from a half to one after the sweep on whole-session vectors and the stemmed lexical arm; the re-measurement needs the GPU (cross-encoder, embedder) and lands in the next commit
->
-> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/locomo_eval.py --no-morphology --save --out=research/results/locomo_raw.json` is what re-measures this one.
+| method | R@1 | R@5 | R@10 | MRR |
+|---|---|---|---|---|
+| semantic (bge-m3), raw tokens | 0.182 | 0.432 | 0.560 | 0.301 |
+| semantic (bge-m3), stop words + stems | 0.182 | 0.432 | 0.560 | 0.301 |
+| lexical (BM25), raw tokens | 0.271 | 0.499 | 0.576 | 0.377 |
+| lexical (BM25), stop words + stems | 0.339 | 0.601 | 0.681 | 0.459 |
+| **calibrated fusion (shipped)**, raw tokens | 0.306 | 0.576 | 0.662 | 0.428 |
+| **calibrated fusion (shipped)**, stop words + stems | **0.350** | **0.640** | **0.727** | **0.481** |
 <!-- /claims:lexical-morphology-locomo -->
 
 ## LongMemEval-oracle, global pool
@@ -39,10 +44,19 @@ document already contains most inflections of its own words, so morphology has l
 and a stem can cost the exact-form match at rank one.
 
 <!-- claims:lexical-morphology-oracle -->
-> **Withdrawn 2026-09.** withdrawn 2026-09-06: the dense weight of the calibrated fusion moved from a half to one after the sweep on whole-session vectors and the stemmed lexical arm; the re-measurement needs the GPU (cross-encoder, embedder) and lands in the next commit
->
-> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/longmem_eval.py --no-morphology --save --out=research/results/longmem_oracle_raw.json` is what re-measures this one.
+| method | R@1 | R@5 | R@10 | MRR |
+|---|---|---|---|---|
+| semantic (bge-m3), raw tokens | 0.428 | 0.692 | 0.782 | 0.552 |
+| semantic (bge-m3), stop words + stems | 0.428 | 0.692 | 0.782 | 0.552 |
+| lexical (BM25), raw tokens | 0.522 | 0.752 | 0.834 | 0.623 |
+| lexical (BM25), stop words + stems | 0.470 | 0.738 | 0.830 | 0.596 |
+| **calibrated fusion (shipped)**, raw tokens | **0.536** | 0.794 | 0.860 | **0.652** |
+| **calibrated fusion (shipped)**, stop words + stems | 0.512 | **0.800** | **0.866** | 0.636 |
 <!-- /claims:lexical-morphology-oracle -->
+
+## The non-oracle pool, outside the gate
+
+The gate was written on the oracle pool and LoCoMo. The non-oracle pool - the same questions over twenty-one times the haystack, sessions longer still - was not in it, and it moved the other way: with stop words and stems the lexical arm and the fused ranker both lose there, by a point or two at R@5 (`docs/BENCHMARKS.md` prints the live figures; the ablation family for this pool is registered at the next re-measure). A long session already carries most inflections of its own words, and what a stem adds in recall it takes from the exact-form match at the top of a very large candidate set. The decision stands on the production shape - a note is the length of a LoCoMo turn, not of a session - and this pool is the price, published rather than argued away.
 
 ## The owner's store, by language half
 
@@ -55,7 +69,12 @@ notes extracted from that session are the relevant set, and the pool is the proj
 notes. That is the direction production runs in - a situation, then the lessons about it.
 
 <!-- claims:lexical-morphology-vault -->
-> **Not measured yet.** No `morphology.vault.session.*` claim is registered; `NEVERTWICE_VAULT=<store> python research/lexical_morphology_probe.py --protocol both --out research/results/lexical_morphology_vault.json` is the run that produces them.
+| half | R@1 | R@5 | R@10 | MRR |
+|---|---|---|---|---|
+| Russian half, raw tokens | 0.622 | 0.819 | 0.870 | 0.711 |
+| Russian half, stop words + stems | 0.681 | 0.843 | 0.905 | 0.754 |
+| English half, raw tokens | 0.791 | **0.928** | 0.950 | 0.848 |
+| English half, stop words + stems | **0.811** | 0.923 | **0.953** | **0.861** |
 <!-- /claims:lexical-morphology-vault -->
 
 The store is private and the numbers are published from the committed artifact

@@ -22,10 +22,10 @@
   },
   "hybrid": {
    "recall@1": 0.228,
-   "recall@3": 0.378,
-   "recall@5": 0.426,
-   "recall@10": 0.52,
-   "mrr": 0.3312385382466309
+   "recall@3": 0.366,
+   "recall@5": 0.422,
+   "recall@10": 0.514,
+   "mrr": 0.3285643050631952
   },
   "semantic+recur": {
    "recall@1": 0.184,

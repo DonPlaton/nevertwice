@@ -21,11 +21,11 @@
    "mrr": 0.5956663939692122
   },
   "hybrid": {
-   "recall@1": 0.51,
-   "recall@3": 0.718,
-   "recall@5": 0.788,
-   "recall@10": 0.868,
-   "mrr": 0.6337568486201592
+   "recall@1": 0.512,
+   "recall@3": 0.714,
+   "recall@5": 0.8,
+   "recall@10": 0.866,
+   "mrr": 0.6361181037061142
   },
   "semantic+recur": {
    "recall@1": 0.428,
@@ -35,11 +35,11 @@
    "mrr": 0.552113821339757
   },
   "hybrid+xrerank": {
-   "recall@1": 0.616,
-   "recall@3": 0.79,
-   "recall@5": 0.836,
-   "recall@10": 0.868,
-   "mrr": 0.7158878010011115
+   "recall@1": 0.626,
+   "recall@3": 0.794,
+   "recall@5": 0.834,
+   "recall@10": 0.866,
+   "mrr": 0.7231022306902412
   }
  },
  "recur_inert": true,
@@ -57,8 +57,8 @@
   "model": "BAAI/bge-reranker-v2-m3",
   "n": 10,
   "snippet_chars": 1200,
-  "delta_recall@1": 0.10599999999999998,
-  "delta_recall@5": 0.04799999999999993,
+  "delta_recall@1": 0.11399999999999999,
+  "delta_recall@5": 0.03399999999999992,
   "delta_recall@10": 0.0
  }
 }
