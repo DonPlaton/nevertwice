@@ -484,6 +484,12 @@ def render_lexical_morphology_oracle(c: Claims) -> str:
     return _morphology_pair_table(c, "longmem_raw", "longmem_pinned")
 
 
+def render_lexical_morphology_s(c: Claims) -> str:
+    """The non-oracle pool: `longmem_s_raw` beside the live `longmem_s` - the pool that was
+    outside the gate and moved the other way."""
+    return _morphology_pair_table(c, "longmem_s_raw", "longmem_s")
+
+
 def render_lexical_morphology_vault(c: Claims) -> str:
     """The owner's store, session summary -> the notes extracted from it, by language half.
     Lexical only (no embedder); the rows come from `research/lexical_morphology_probe.py`."""
@@ -537,6 +543,7 @@ RENDERERS = {
     "lexical-morphology-locomo": render_lexical_morphology_locomo,
     "lexical-morphology-oracle": render_lexical_morphology_oracle,
     "lexical-morphology-vault": render_lexical_morphology_vault,
+    "lexical-morphology-s": render_lexical_morphology_s,
     "fusion-sweep": render_fusion_sweep,
     "head-to-head": render_head_to_head,
     "latency": render_latency,

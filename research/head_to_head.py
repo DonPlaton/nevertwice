@@ -118,17 +118,41 @@ if getattr(ARGS, "no_morphology", False):
     m.LEXICAL_MORPHOLOGY = False
 
 
+def _git_head() -> str:
+    """HEAD from the repository files, no subprocess: spawning git failed under memory pressure
+    on 2026-09-06 and stamped two rows with '?'. Falls back to `git rev-parse` only when the
+    files do not resolve (a packed ref, a worktree)."""
+    import subprocess                                            # noqa: PLC0415
+    git = HERE.parent / ".git"
+    try:
+        head = (git / "HEAD").read_text(encoding="utf-8").strip()
+        if head.startswith("ref: "):
+            ref = git / head[5:]
+            if ref.exists():
+                return ref.read_text(encoding="utf-8").strip()
+            packed = git / "packed-refs"
+            if packed.exists():
+                for line in packed.read_text(encoding="utf-8").splitlines():
+                    parts = line.split()
+                    if len(parts) == 2 and parts[1] == head[5:]:
+                        return parts[0]
+        elif len(head) >= 7:
+            return head
+    except OSError:
+        pass
+    try:
+        return subprocess.run(["git", "rev-parse", "HEAD"], cwd=HERE.parent, capture_output=True,
+                              text=True, check=True).stdout.strip()
+    except (OSError, subprocess.CalledProcessError):
+        return "?"
+
+
 def _measured_at() -> dict:
     """The commit and the moment an arm's row was produced. Rows are merged into one artifact
     across runs (a competitor arm is not re-run when only our engine changed), so each row
     carries its own stamp rather than inheriting the file's."""
     import datetime                                              # noqa: PLC0415
-    import subprocess                                            # noqa: PLC0415
-    try:
-        head = subprocess.run(["git", "rev-parse", "HEAD"], cwd=HERE.parent, capture_output=True,
-                              text=True, check=True).stdout.strip()
-    except (OSError, subprocess.CalledProcessError):
-        head = "?"
+    head = _git_head()
     return {"commit": head, "utc": datetime.datetime.now(datetime.timezone.utc)
             .strftime("%Y-%m-%dT%H:%M:%SZ")}
 
@@ -136,8 +160,24 @@ def _measured_at() -> dict:
 # ── shared stand + metric ─────────────────────────────────────────────────────
 
 def _too_long(exc: BaseException) -> bool:
-    """The embedder refused the text for its length (Ollama: 'exceeds the context length')."""
-    return "context length" in str(exc)
+    """The embedder refused the text for its length (Ollama: 'exceeds the context length').
+
+    A raw `urllib` HTTPError says only "HTTP Error 400: Bad Request"; the reason is in its body,
+    which is read once here (A-MEM's S run blocked on exactly this, 2026-09-06, while the Mem0
+    and LangChain clients had surfaced the text in the exception)."""
+    if "context length" in str(exc):
+        return True
+    body = getattr(exc, "_nevertwice_body", None)
+    if body is None and hasattr(exc, "read"):
+        try:
+            body = exc.read().decode("utf-8", "replace")
+        except Exception:                                        # noqa: BLE001
+            body = ""
+        try:
+            exc._nevertwice_body = body                          # a body can be read only once
+        except Exception:                                        # noqa: BLE001
+            pass
+    return bool(body) and "context length" in body
 
 
 def _shrinking(call, text: str, stats: dict):
@@ -182,6 +222,38 @@ def _dedup(seq):
             seen.add(s)
             out.append(s)
     return out
+
+
+def accept(name: str, row: dict) -> dict:
+    """A scored row, or a blocker when the run cannot be a product's number.
+
+    Zero recall at every k over a pool that contains the answers means no query retrieved
+    anything at all - an adapter or endpoint failure, not a ranking. The A-MEM pipeline arm
+    read exactly that on 2026-09-06 (the shim above), and the row would have been published as
+    the product's score. The numbers are kept under `refused` so the artifact still records
+    what happened."""
+    if "blocked" in row or not row.get("n") or row.get(f"recall@{max(KS)}"):
+        return row
+    keep = {k: row[k] for k in ("version", "label", "measured_at", "_wall_s") if k in row}
+    return {**keep, "blocked": f"{name}: every query returned nothing over {row['n']} questions "
+                               "- the stand refuses to score a run that retrieved nothing",
+            "refused": {k: v for k, v in row.items() if k not in keep}}
+
+
+def accept(name: str, row: dict) -> dict:
+    """A scored row, or a blocker when the run cannot be a product's number.
+
+    Zero recall at every k over a pool that contains the answers means no query retrieved
+    anything at all - an adapter or endpoint failure, not a ranking. The A-MEM pipeline arm
+    read exactly that on 2026-09-06 (the shim above), and the row would have been published as
+    the product's score. The numbers are kept under `refused` so the artifact still records
+    what happened."""
+    if "blocked" in row or not row.get("n") or row.get(f"recall@{max(KS)}"):
+        return row
+    keep = {k: row[k] for k in ("version", "label", "measured_at", "_wall_s") if k in row}
+    return {**keep, "blocked": f"{name}: every query returned nothing over {row['n']} questions "
+                               "- the stand refuses to score a run that retrieved nothing",
+            "refused": {k: v for k, v in row.items() if k not in keep}}
 
 
 def score(ranked_by_q: dict, data, pool_ids) -> dict:
@@ -546,6 +618,20 @@ class _OllamaChromaEF:
         _OllamaChromaEF.shrunk += stats.get("shrunk", 0)
         return out
 
+    def embed_query(self, input):                              # noqa: A002 - chroma's name
+        """chroma embeds a search differently from a document when the function says so; this
+        one does not, but the method must exist. A-MEM's full-pipeline arm scored zero on
+        2026-09-06 because it did not: chroma's own base class defaults `embed_query` to
+        `__call__`, and this shim is a protocol implementation rather than a subclass."""
+        return self(input)
+
+    def embed_query(self, input):                              # noqa: A002 - chroma's name
+        """chroma embeds a search differently from a document when the function says so; this
+        one does not, but the method must exist. A-MEM's full-pipeline arm scored zero on
+        2026-09-06 because it did not: chroma's own base class defaults `embed_query` to
+        `__call__`, and this shim is a protocol implementation rather than a subclass."""
+        return self(input)
+
     @staticmethod
     def name() -> str:
         return "nevertwice_ollama_ef"
@@ -726,6 +812,8 @@ def main():
         r["measured_at"] = _measured_at()
         if name == "nevertwice":
             r["morphology"] = bool(m.LEXICAL_MORPHOLOGY)
+        r = accept(name, r)
+        r = accept(name, r)
         results[name] = r
         if "blocked" in r:
             print(f"  BLOCKED: {r['blocked']}")

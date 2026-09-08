@@ -34,6 +34,12 @@ sys.path.insert(0, str(ROOT))
 import sandbox_guard  # noqa: E402
 
 sandbox_guard.isolate(prefix="nevertwice_fusion_sweep_")
+# Imported for the register's closure, not for use: each point below is produced by running
+# these two harnesses as subprocesses, and a claim from this artifact must go stale when either
+# of them changes. The freshness tool follows imports; a subprocess it cannot see.
+sys.path.insert(0, str(HERE))
+import locomo_eval  # noqa: E402,F401
+import longmem_eval  # noqa: E402,F401
 
 OUT = ROOT / "research" / "results" / "fusion_weight_sweep.json"
 DEFAULT_WEIGHTS = (0.25, 0.5, 0.75, 1.0, 1.5)

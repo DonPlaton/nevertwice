@@ -25,6 +25,7 @@ Tools:
   memory_ingest    (project, text, agent?)                   - extract+store a chat
   memory_entities  (entity?, relations?, project?, k?)       - entity / relation graph, read-only
   memory_conflicts (project?, limit?)                        - supersession ledger, read-only
+  memory_as_of     (query, date, project?, k?)               - what was believed on a date, read-only
   memory_digest    (project?, days?)                         - what's new rollup, read-only
   memory_guard_check   (action_text, project?, path?)        - active memory A: guard a proposed action
   memory_anticipate    (trajectory, project?)                - active memory B: predict the failure ahead
@@ -158,6 +159,23 @@ TOOLS = [
                 "project": {"type": "string", "description": "Limit to one project (optional)."},
                 "k": {"type": "integer", "description": "Max results (default 12)."},
             },
+        },
+    },
+    {
+        "name": "memory_as_of",
+        "description": ("What the memory believed on a DATE about a query: the notes whose "
+                        "belief interval contains the date, live and retired alike, ranked by "
+                        "the query - so a fact later superseded is found for the day it held. "
+                        "Read-only, no LLM, no embedder."),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "query": {"type": "string", "description": "What to look for."},
+                "date": {"type": "string", "description": "ISO day, YYYY-MM-DD."},
+                "project": {"type": "string", "description": "Limit to one project (optional)."},
+                "k": {"type": "integer", "description": "Max hits (default 5)."},
+            },
+            "required": ["query", "date"],
         },
     },
     {
@@ -448,6 +466,30 @@ def _tool_memory_entities(args: dict) -> tuple[str, bool]:
         return f"error: {type(exc).__name__}", True
 
 
+def _tool_memory_as_of(args: dict) -> tuple[str, bool]:
+    query = (args.get("query") or "").strip()
+    date = (args.get("date") or "").strip()
+    project = (args.get("project") or "").strip() or None
+    try:
+        k = int(args.get("k") or 5)
+    except (TypeError, ValueError):
+        k = 5
+    if not query or not date:
+        return "error: query and date (YYYY-MM-DD) are required", True
+    try:
+        rows = _api.as_of(query, date, project, k=max(1, min(k, 20)))
+    except Exception as exc:
+        return f"error: {type(exc).__name__}", True
+    if not rows:
+        return f"Nothing believed about that on {date}.", False
+    lines = [f"{len(rows)} note(s) believed on {date}, best first:"]
+    for r in rows:
+        until = f" until {r['valid_to']}" if r.get("valid_to") else ""
+        lines.append(f"- [{r['project']}/{r['ntype']}] {r['title']} (from {r['valid_from']}{until}): "
+                     f"{(r.get('description') or '')[:200]}")
+    return "\n".join(lines), False
+
+
 def _tool_memory_conflicts(args: dict) -> tuple[str, bool]:
     project = (args.get("project") or "").strip() or None
     try:
@@ -608,6 +650,7 @@ _DISPATCH = {
     "memory_remember": _tool_memory_remember,
     "memory_ingest": _tool_memory_ingest,
     "memory_entities": _tool_memory_entities,
+    "memory_as_of": _tool_memory_as_of,
     "memory_conflicts": _tool_memory_conflicts,
     "memory_digest": _tool_memory_digest,
     "memory_guard_check": _tool_memory_guard_check,

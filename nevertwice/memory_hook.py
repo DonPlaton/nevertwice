@@ -4853,7 +4853,8 @@ def process_session(session_id: str, cwd: str, transcript_path: str,
                     trigger: str, processed_db: dict,
                     run_log: list | None = None, agent: str = DEFAULT_AGENT,
                     transcript_text: str | None = None,
-                    project_override: str | None = None) -> bool:
+                    project_override: str | None = None,
+                    timestamp: str | None = None) -> bool:
     refresh_lock()      # every long lock holder runs per-transcript through here:
     #                     keep the mtime fresh so a live sweep is never "stale-stolen"
     prior = processed_db.get(session_id)
@@ -4885,7 +4886,9 @@ def process_session(session_id: str, cwd: str, transcript_path: str,
         return False
 
     if transcript_text is not None:        # generic ingestion path (raw text)
-        parsed = {"body": transcript_text.strip(), "cwd": cwd, "timestamp": None}
+        # `timestamp` lets an importer of old transcripts - or a bench placing facts in time -
+        # say when the session happened; without it the ingest is dated today (ledger I6).
+        parsed = {"body": transcript_text.strip(), "cwd": cwd, "timestamp": timestamp}
         t_size = 0                         # sid is a content hash - growth cannot occur
     else:
         # Size BEFORE reading: if the transcript grows during extraction, the smaller
@@ -5804,11 +5807,12 @@ def retrieve_relevant(project: str, query: str, k: int,
     return hits
 
 
-def as_of(project: str, date: str) -> list[dict]:
+def as_of(project: str | None, date: str) -> list[dict]:
     """Point-in-time recall (M-5 bi-temporal): every note whose belief interval
     [valid_from, valid_to) contains `date` - what the project's memory held on
     that day, INCLUDING facts later superseded. Scans live + Superseded/. ISO
-    date strings compare lexicographically, so no parsing needed."""
+    date strings compare lexicographically, so no parsing needed. `project=None`
+    walks every project (the public `api.as_of` ranks the result by a query)."""
     out = []
     for ntype, folder in TYPE_FOLDER.items():
         base = VAULT / folder
@@ -5817,13 +5821,14 @@ def as_of(project: str, date: str) -> list[dict]:
                 continue
             for p in d.glob("*.md"):
                 parsed = parse_typed_stem(p.stem)
-                if not parsed or parsed["project"] != project:
+                if not parsed or (project and parsed["project"] != project):
                     continue
                 fm = _read_frontmatter_file(p)   # header only - O(N) scan (audit M-a)
                 vf = str(fm.get("valid_from") or parsed["date"])
                 vt = str(fm.get("valid_to") or "")
                 if vf <= date and (not vt or date < vt):
-                    out.append({"stem": p.stem, "ntype": ntype,
+                    out.append({"stem": p.stem, "ntype": ntype, "project": parsed["project"],
+                                "path": str(p),
                                 "title": parsed["slug"].replace("-", " "),
                                 "valid_from": vf, "valid_to": vt or None})
     return sorted(out, key=lambda r: (r["ntype"], r["stem"]))

@@ -18,6 +18,7 @@ or this API) a call came from.
     capture_session(transcript_text, project="myproj", agent="my-bot")
 """
 import os
+import re
 import sys
 import uuid
 from datetime import datetime
@@ -151,6 +152,51 @@ def entity_timeline(entity: str, project: str | None = None) -> dict:
     where an earlier take was superseded - how the understanding of the entity changed over time.
     Pull-only - surfaced in the entity card and here, never injected. `{}` for an unknown entity."""
     return m.entity_timeline(entity, project)
+
+
+def _note_description(path: str, limit: int = 700) -> str:
+    """The prose of a note for lexical ranking: frontmatter and the heading dropped, the
+    first `limit` characters of what follows. A retired note has no vector, so the
+    as-of ranking is lexical and this is what it reads."""
+    try:
+        text = Path(path).read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return ""
+    if text.startswith("---"):
+        end = text.find("\n---", 3)
+        if end > 0:
+            text = text[end + 4:]
+    lines = [ln for ln in text.splitlines() if not ln.startswith("# ")]
+    return "\n".join(lines).strip()[:limit]
+
+
+def as_of(query: str, date: str, project: str | None = None, k: int = 5) -> list[dict]:
+    """What the memory believed on `date` about `query` (ledger I6, bi-temporal recall).
+
+    Every note whose belief interval `[valid_from, valid_to)` contains the date is a
+    candidate - live and retired alike - so a fact that was later superseded is found when
+    asked for a day on which it held, and the fact that replaced it is not. Ranked lexically
+    by the query (a retired note has no vector, and one project's history is small enough for
+    BM25). Returns `[{stem, ntype, project, title, description, valid_from, valid_to,
+    score}]`, best first; `[]` for a malformed date or nothing believed on that day.
+    `project=None` walks every project. Read-only: nothing is written or embedded."""
+    if not query or not query.strip() or not re.fullmatch(r"\d{4}-\d{2}-\d{2}", date or ""):
+        return []
+    proj = m.slug_project(project) if project else None
+    held = m.as_of(proj, date)
+    if not held:
+        return []
+    cands = [(h["stem"], {"title": h["title"], "desc": _note_description(h["path"])}) for h in held]
+    scores = m._bm25_scores(m._tokens(query), cands)
+    by_stem = {h["stem"]: h for h in held}
+    out = []
+    for stem in sorted(scores, key=lambda s: (-scores[s], s))[:k]:
+        h = by_stem[stem]
+        out.append({"stem": stem, "ntype": h["ntype"], "project": h["project"],
+                    "title": h["title"], "description": _note_description(h["path"]),
+                    "valid_from": h["valid_from"], "valid_to": h["valid_to"],
+                    "score": round(scores[stem], 4)})
+    return out
 
 
 def conflicts(project: str | None = None, limit: int = 50) -> list[dict]:
@@ -530,17 +576,22 @@ def remember_lessons(lessons, *, project: str, embed: bool = True) -> list[str]:
 
 def capture_session(text: str, *, project: str | None = None,
                     agent: str | None = None, session_id: str | None = None,
-                    cwd: str | None = None, trigger: str = "ingest") -> dict:
+                    cwd: str | None = None, trigger: str = "ingest",
+                    date: str | None = None) -> dict:
     """Extract memory from a finished agent session: the same extraction →
     Patterns/Mistakes/Decisions → Context → embeddings pipeline the live hook and
     `ingest.py` run, tagged with `agent`. Returns a summary dict:
     `{stored, project, agent, patterns, mistakes, decisions, session_id}`.
 
-    A stable `session_id` makes re-ingestion idempotent. Needs an LLM backend
-    (cloud key or local Ollama); raises RuntimeError if none is reachable or the
-    vault lock is busy, ValueError on empty text."""
+    A stable `session_id` makes re-ingestion idempotent. `date` (ISO `YYYY-MM-DD`, or a
+    full ISO timestamp) says when the session happened - an importer of old transcripts
+    places its facts in time, and `as_of` can then answer for that time; default today.
+    Needs an LLM backend (cloud key or local Ollama); raises RuntimeError if none is
+    reachable or the vault lock is busy, ValueError on empty text or a malformed date."""
     if not text or not text.strip():
         raise ValueError("empty transcript text")
+    if date is not None and not re.fullmatch(r"\d{4}-\d{2}-\d{2}(T\S+)?", date):
+        raise ValueError(f"date must be ISO YYYY-MM-DD or a full ISO timestamp, got {date!r}")
     agent = (agent or m.DEFAULT_AGENT).strip() or m.DEFAULT_AGENT
     cwd = cwd or os.getcwd()
     sid = session_id or f"ingest-{uuid.uuid4().hex[:16]}"
@@ -554,7 +605,7 @@ def capture_session(text: str, *, project: str | None = None,
         run_log: list[dict] = []
         ok = m.process_session(sid, cwd, "", trigger, db, run_log=run_log,
                                agent=agent, transcript_text=text,
-                               project_override=project)
+                               project_override=project, timestamp=date)
         if ok:
             m.rebuild_index()
             m.archive_old_sessions()

@@ -65,12 +65,9 @@ embedder, same scoring function, same evidence ids; the competitor rows are thei
 labelled as such (`research/EXTERNAL_RETRIEVAL.md` says what each is).
 
 <!-- claims:head-to-head-locomo -->
-| system | R@1 | R@5 | R@10 | MRR |
-|---|---|---|---|---|
-| **Nevertwice (calibrated fusion)** | **0.311** | 0.571 | 0.667 | **0.421** |
-| Mem0 | 0.271 | **0.575** | **0.674** | 0.404 |
-| LangMem | 0.189 | 0.441 | 0.549 | 0.295 |
-| A-MEM | 0.188 | 0.436 | 0.542 | 0.292 |
+> **Withdrawn 2026-09.** withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit
+>
+> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/head_to_head.py --data=locomo --only=nevertwice,mem0,langmem,amem --save --out=research/results/head_to_head_locomo.json` is what re-measures this one.
 <!-- /claims:head-to-head-locomo -->
 
 ## What running it found first

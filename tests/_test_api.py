@@ -225,7 +225,7 @@ def test_capture_session_no_llm_raises():
 
 def test_capture_session_happy_path_summary():
     def fake_ps(sid, cwd, _t, trig, db, run_log=None, agent=None,
-                transcript_text=None, project_override=None):
+                transcript_text=None, project_override=None, timestamp=None):
         run_log.append({"project": project_override or "p", "patterns": 1,
                         "mistakes": 0, "decisions": 2})
         return True

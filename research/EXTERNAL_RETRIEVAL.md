@@ -45,12 +45,9 @@ Whole sessions embedded, up to the pool's own cap of 28,000 characters, through 
 endpoint the competitor arms use:
 
 <!-- claims:longmem-pinned -->
-| method | R@1 | R@5 | R@10 | MRR |
-|---|---|---|---|---|
-| semantic (bge-m3) | 0.428 | 0.692 | 0.782 | 0.552 |
-| lexical (BM25) | 0.470 | 0.738 | 0.830 | 0.596 |
-| **calibrated fusion (shipped default, 0 deps)** | 0.512 | 0.800 | **0.866** | 0.636 |
-| **+ trained cross-encoder (opt-in)** | **0.626** | **0.834** | **0.866** | **0.723** |
+> **Withdrawn 2026-09.** withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit
+>
+> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/longmem_eval.py --save --out=research/results/longmem_oracle.json` is what re-measures this one.
 <!-- /claims:longmem-pinned -->
 
 Against the run that embedded only the first 2,000 characters of each session, the semantic arm
@@ -67,12 +64,9 @@ numbers above are claims on a named corpus, with the hash in the artifact.
 ## Head to head, same stand
 
 <!-- claims:head-to-head-pinned -->
-| system | R@1 | R@5 | R@10 | MRR |
-|---|---|---|---|---|
-| **Nevertwice (calibrated fusion)** | **0.512** | **0.800** | **0.866** | **0.630** |
-| Mem0 | 0.478 | 0.758 | 0.846 | 0.603 |
-| LangMem | 0.426 | 0.692 | 0.782 | 0.543 |
-| A-MEM | 0.428 | 0.692 | 0.782 | 0.544 |
+> **Withdrawn 2026-09.** withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit
+>
+> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/head_to_head.py --only=nevertwice,mem0,langmem,amem --save --out=research/results/head_to_head_v2.json` is what re-measures this one.
 <!-- /claims:head-to-head-pinned -->
 
 The competitor rows are their **store** arms: Mem0 with its LLM extraction off (`infer=False`),
@@ -100,11 +94,9 @@ This is the setting the roadmap meant when it asked for a number "outside the or
 and it is where a retrieval claim earns its keep.
 
 <!-- claims:longmem-s -->
-| method | R@1 | R@5 | R@10 | MRR |
-|---|---|---|---|---|
-| semantic (bge-m3) | 0.184 | 0.354 | 0.440 | 0.267 |
-| lexical (BM25) | 0.218 | 0.416 | 0.510 | 0.313 |
-| **calibrated fusion (shipped default, 0 deps)** | **0.228** | **0.422** | **0.514** | **0.329** |
+> **Withdrawn 2026-09.** withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit
+>
+> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/longmem_eval.py --data=s --save --out=research/results/longmem_s.json` is what re-measures this one.
 <!-- /claims:longmem-s -->
 
 Everything falls, which is what a twenty-one-fold haystack does, and the shape holds: fusion beats both signals it fuses, by +0.068 at R@5 over semantic alone and +0.006 over lexical. Lexical retrieval beats the bi-encoder on this pool, as it did on the smaller one. This is also the pool where the two changes of 2026-09-06 - stop words and stems on the lexical arm, the dense weight moved to one - cost rather than gained: the fused R@5 is below the raw-token, half-weight run that preceded them. Both gates were written on the oracle pool and LoCoMo, and this pool was outside them; `research/LEXICAL_MORPHOLOGY.md` says so and carries the figure.
@@ -118,13 +110,9 @@ and the count in the table says so.
 The four-system table on this pool:
 
 <!-- claims:head-to-head-s -->
-| system | R@1 | R@5 | R@10 | MRR |
-|---|---|---|---|---|
-| **Nevertwice (calibrated fusion)** | **0.228** | **0.422** | **0.514** | **0.314** |
-| Mem0 | 0.194 | 0.380 | 0.464 | 0.281 |
-| LangMem | 0.152 | 0.338 | 0.406 | 0.230 |
-
-<sub>No row for A-MEM: the arm has no number this stand would publish - a blocker it recorded, or a run the prose above rejects as measuring the stand rather than the product.</sub>
+> **Withdrawn 2026-09.** withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit
+>
+> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/head_to_head.py --data=s --only=nevertwice,mem0,langmem,amem --save --out=research/results/head_to_head_s.json` is what re-measures this one.
 <!-- /claims:head-to-head-s -->
 
 ### What running it found

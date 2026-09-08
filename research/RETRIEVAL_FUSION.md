@@ -60,13 +60,9 @@ written first in the working ledger, item I1: the new weight beats 0.5 by at lea
 one corpus and loses no more than 0.005 on the other):
 
 <!-- claims:fusion-sweep -->
-| dense weight | oracle R@1 | oracle R@5 | oracle MRR | LoCoMo R@1 | LoCoMo R@5 | LoCoMo MRR |
-|---|---|---|---|---|---|---|
-| 0.25 | 0.490 | 0.778 | 0.618 | 0.345 | 0.615 | 0.469 |
-| 0.5 | 0.510 | 0.788 | 0.634 | **0.353** | 0.626 | 0.478 |
-| 0.75 | 0.510 | **0.800** | 0.635 | 0.350 | 0.631 | 0.479 |
-| **1.0 (shipped)** | 0.512 | **0.800** | **0.636** | 0.350 | 0.640 | 0.481 |
-| 1.5 | **0.516** | 0.784 | 0.635 | 0.352 | **0.641** | **0.483** |
+> **Withdrawn 2026-09.** withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit
+>
+> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/fusion_sweep.py --save` is what re-measures this one.
 <!-- /claims:fusion-sweep -->
 
 The shipped weight is the one that clears the gate on both corpora. The oracle curve is flat

@@ -22,7 +22,11 @@ python -m nevertwice.digest --conflicts   # the supersession ledger: every fact 
 `digest` is the daily or weekly "what's new". `--conflicts` is the audit trail behind
 *"contradictions don't pile up"*, pairing each retired note with the one that superseded it. Both
 are also `nevertwice.api.digest()` / `nevertwice.api.conflicts()` and MCP tools (`memory_digest`,
-`memory_conflicts`), so an agent can ask too.
+`memory_conflicts`), so an agent can ask too. The third temporal question - *what did we believe
+on that day?* - is `nevertwice.api.as_of(query, date)` and the `memory_as_of` tool: the notes
+whose belief interval contains the date, retired ones included, ranked by the query. An importer
+of old transcripts places its sessions in time with `capture_session(text, date=...)`, and the
+bench behind the feature is `research/asof_bench.py`.
 
 When something feels wrong, one command says what and how to fix it:
 

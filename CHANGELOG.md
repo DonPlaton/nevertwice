@@ -16,6 +16,16 @@ empty.
 
 ### Added
 
+- **As-of recall** (`nevertwice.api.as_of(query, date)`, MCP `memory_as_of`): what the memory
+  believed on a date about a query - every note whose belief interval contains the date, live
+  and retired alike, ranked by the query with no LLM and no embedder. The engine has kept
+  `valid_from` / `valid_to` on every note and a point-in-time scan since M-5; this puts a query
+  in front of it and exposes it. `capture_session(text, date=...)` lets an importer of old
+  transcripts, or a bench, place a session in time instead of today. Measured by
+  `research/asof_bench.py` on the supersession corpus, sixty cases ingested two months apart and
+  asked twice - for a day between the two sessions and for a day after - against a dateless
+  floor; the gate (ledger I6) is both answers right on at least four cases in five.
+
 - **The evidence tooling that the re-measurement needed.** `research/supersession_bench.py --pool`
   rebuilds the committed supersession artifact from the run files - two engine runs pooled, the
   other arms carried beside them, the paired tests per run - which until now lived in a session
@@ -306,6 +316,17 @@ empty.
   its whole run on the first one, an hour into its ingest, because their loops caught nothing
   per item. Now every arm halves the text and retries, up to three times, and the artifact
   counts how many sessions that touched (`sessions_shrunk`).
+- **A head-to-head run that retrieved nothing was published as a product's score.** A-MEM's
+  full-pipeline arm read 0.000 at every k on the oracle pool (2026-09-06), and the row went into
+  the artifact as A-MEM's number. The cause was ours: chroma asks an embedding function for
+  `embed_query` at search time - its own base class defaults that to `__call__` - and the shim
+  this stand substitutes so that every arm embeds with the same bge-m3 is a protocol
+  implementation rather than a subclass, so the attribute was missing and A-MEM's
+  `search_agentic` swallowed the error per query. The shim answers `embed_query` now, and
+  `accept()` refuses to score any arm whose recall is zero at every k over a pool that contains
+  the answers: the row becomes a blocker, the numbers are kept under `refused`, and the table
+  says there is no row rather than printing a zero. No claim was ever registered from that run.
+
 - **The A-MEM full-pipeline arm could not import the package it was written for.**
   `agentic_memory`'s `__init__` exports nothing; the class lives in `memory_system`. The arm
   reported "not installed" on a machine where it was. Its venv also needs the `ollama` client the

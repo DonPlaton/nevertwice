@@ -388,16 +388,29 @@ def _sessions(i: int, domain: str, first: str, second: str,
             [_frame(frames, i, domain, second), FILLER[(i + 3) % len(FILLER)]]]
 
 
-def build() -> dict:
+#: The implicit variant (ledger H7 / I5, 2026-09-06). The replacement arrives with no
+#: retraction cue at all - framed exactly like a first assertion, rotated so the two sessions
+#: never share a frame - which is how a real transcript usually delivers it: nobody writes
+#: "that earlier decision is off", they just state the new value. Same facts, same markers,
+#: same query; only the second session's frame differs.
+VARIANTS = {"explicit": REPLACE_FRAMES, "implicit": ASSERT_FRAMES}
+
+
+def build(variant: str = "explicit") -> dict:
     cases = []
     groups = [("value_replaced", VALUE_REPLACED), ("approach_abandoned", APPROACH_ABANDONED),
               ("retracted_no_replacement", RETRACTED), ("narrowed", NARROWED)]
+    replace_frames = VARIANTS[variant]
+    offset = 2 if variant == "implicit" else 0        # never the first session's own frame
     i = 0
     for shape, table in groups:
         for cid, domain, old, new, query, current, superseded in table:
+            sessions = _sessions(i, domain, old, new, replace_frames)
+            if offset:
+                sessions[1][0] = _frame(replace_frames, i + offset, domain, new)
             cases.append({
                 "id": f"{shape[:3]}-{cid}", "shape": shape, "domain": domain,
-                "sessions": _sessions(i, domain, old, new, REPLACE_FRAMES),
+                "sessions": sessions,
                 "query": query, "current": current, "superseded": superseded,
             })
             i += 1
@@ -408,9 +421,14 @@ def build() -> dict:
             "query": query, "current": current, "superseded": [],
         })
         i += 1
+    # The explicit variant is the committed, content-hashed v1: its bytes must not move, so
+    # only the other variants carry the extra keys.
+    extra = {} if variant == "explicit" else {"variant": variant}
     return {
-        "name": "supersession_v1",
-        "generated_by": "research/gen_supersession_dataset.py",
+        "name": "supersession_v1" if variant == "explicit" else f"supersession_v1_{variant}",
+        **extra,
+        "generated_by": "research/gen_supersession_dataset.py"
+                        + ("" if variant == "explicit" else f" --variant {variant}"),
         "license": "same as this repository - the cases are written here, not scraped",
         "shapes": {s: sum(1 for c in cases if c["shape"] == s)
                    for s in sorted({c["shape"] for c in cases})},
@@ -458,9 +476,13 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--check", action="store_true",
                     help="fail if the committed file differs from what this script builds")
+    ap.add_argument("--variant", default="explicit", choices=sorted(VARIANTS),
+                    help="explicit: the replacement carries a retraction frame (the committed "
+                         "v1); implicit: it arrives framed like any first assertion")
     args = ap.parse_args()
 
-    data = build()
+    out = OUT if args.variant == "explicit" else OUT.with_name(f"supersession_v1_{args.variant}.json")
+    data = build(args.variant)
     problems = validate(data)
     if problems:
         print("dataset is not writable - fix the table:")
@@ -471,17 +493,17 @@ def main() -> int:
     digest = hashlib.sha256(blob).hexdigest()
 
     if args.check:
-        if not OUT.exists():
-            print(f"missing: {OUT}")
+        if not out.exists():
+            print(f"missing: {out}")
             return 1
-        have = hashlib.sha256(OUT.read_bytes()).hexdigest()
+        have = hashlib.sha256(out.read_bytes()).hexdigest()
         ok = have == digest
         print(f"{'ok' if ok else 'DRIFT'}  committed {have[:16]}  rebuilt {digest[:16]}")
         return 0 if ok else 1
 
-    OUT.parent.mkdir(parents=True, exist_ok=True)
-    OUT.write_bytes(blob)
-    print(f"wrote {OUT.relative_to(HERE.parent)}  n={data['n']}  sha256={digest}")
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_bytes(blob)
+    print(f"wrote {out.relative_to(HERE.parent)}  n={data['n']}  sha256={digest}")
     for shape, n in data["shapes"].items():
         print(f"  {shape:26s} {n}")
     return 0

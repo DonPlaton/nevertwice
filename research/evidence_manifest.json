@@ -2507,9 +2507,7 @@
    "caveat": "Per-attack-instance the rate is 9/12 = 0.75 (raw `recall`). The two aggregates differ; the doc cites the per-family mean. Both fell against the v1.0.0 artifact this replaces - see CHANGELOG.",
    "ci": null,
    "ci_note": "12 hand-written attacks - a proof of taxonomy, not a benchmark.",
-   "cited_in": [
-    "README.md"
-   ],
+   "cited_in": [],
    "commit": "34f165e8890f204d43f89a206cab56439baf46fe",
    "produced_by": [
     "research/poisoning.py",
@@ -2528,7 +2526,13 @@
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "README.md"
+   ],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "poisoning.precision",
@@ -2587,9 +2591,7 @@
    "derivation": "1 - attacks.injection.after = 1 - 0.0",
    "ci": null,
    "ci_note": "n=4.",
-   "cited_in": [
-    "README.md"
-   ],
+   "cited_in": [],
    "commit": "34f165e8890f204d43f89a206cab56439baf46fe",
    "produced_by": [
     "research/poisoning.py",
@@ -2608,7 +2610,13 @@
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "README.md"
+   ],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "poisoning.false_fact_blocked",
@@ -2627,9 +2635,7 @@
    "derivation": "1 - attacks.false-fact.after = 1 - 0.75",
    "ci": null,
    "ci_note": "n=4; the honest open problem, published as such.",
-   "cited_in": [
-    "README.md"
-   ],
+   "cited_in": [],
    "commit": "34f165e8890f204d43f89a206cab56439baf46fe",
    "produced_by": [
     "research/poisoning.py",
@@ -2649,7 +2655,13 @@
     "nevertwice/why_fired.py",
     "sandbox_guard.py"
    ],
-   "caveat": "n=4; the honest open problem, published as such - and it got worse, not better: the v1.0.0 artifact recorded 50%."
+   "caveat": "n=4; the honest open problem, published as such - and it got worse, not better: the v1.0.0 artifact recorded 50%.",
+   "cited_in_pending": [
+    "README.md"
+   ],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "forgetting.coverage_gain_at_20pct",
@@ -2695,7 +2707,11 @@
     "research/longitudinal_bench.py",
     "sandbox_guard.py",
     "tools/render_claims.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "consolidation.recall_drop",
@@ -6548,7 +6564,11 @@
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py"
    ],
-   "note": " The former command (`--list`) was not a subcommand the CLI accepts; `pack --count` is read-only and prints the number (review 2026-09-05)."
+   "note": " The former command (`--list`) was not a subcommand the CLI accepts; `pack --count` is read-only and prints the number (review 2026-09-05).",
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "head_to_head.nevertwice.recall_at_10",
@@ -8901,7 +8921,11 @@
     "research/_frontier.py",
     "research/matched_conditions.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "baselines.f2.nevertwice.recall",
@@ -8945,7 +8969,11 @@
     "research/_frontier.py",
     "research/matched_conditions.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "baselines.f2.curated_agents_md.recall",
@@ -8989,7 +9017,11 @@
     "research/_frontier.py",
     "research/matched_conditions.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "baselines.f2.linter_or_test.recall",
@@ -9033,7 +9065,11 @@
     "research/_frontier.py",
     "research/matched_conditions.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "baselines.f2.nevertwice.tokens_per_episode",
@@ -9072,7 +9108,11 @@
     "research/_frontier.py",
     "research/matched_conditions.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "baselines.f2.curated_agents_md.tokens_per_episode",
@@ -9111,7 +9151,11 @@
     "research/_frontier.py",
     "research/matched_conditions.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_pinned.semantic.recall_at_1",
@@ -9133,9 +9177,7 @@
     "low": 0.3853,
     "high": 0.4718
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "34f165e8890f204d43f89a206cab56439baf46fe",
    "note": "Re-measured 2026-09-02 on the corpus pinned in research/corpus_pin.py (sha256 821a2034..., verified before the run). The value is identical to three decimals to the one withdrawn in 2026-08. The withdrawn claim stays withdrawn: it was measured on a file that cannot be identified, and agreeing with a later run is not evidence about an unidentifiable one.",
    "produced_by": [
@@ -9158,7 +9200,13 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_pinned.semantic.recall_at_5",
@@ -9180,9 +9228,7 @@
     "low": 0.6502,
     "high": 0.7309
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "34f165e8890f204d43f89a206cab56439baf46fe",
    "note": "Re-measured 2026-09-02 on the corpus pinned in research/corpus_pin.py (sha256 821a2034..., verified before the run). The value is identical to three decimals to the one withdrawn in 2026-08. The withdrawn claim stays withdrawn: it was measured on a file that cannot be identified, and agreeing with a later run is not evidence about an unidentifiable one.",
    "produced_by": [
@@ -9205,7 +9251,13 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_pinned.semantic.recall_at_10",
@@ -9250,7 +9302,11 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_pinned.semantic.mrr",
@@ -9267,9 +9323,7 @@
    "raw": "research/results/longmem_oracle.json",
    "pointer": "methods.semantic.mrr",
    "ci": null,
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "34f165e8890f204d43f89a206cab56439baf46fe",
    "note": "Re-measured 2026-09-02 on the corpus pinned in research/corpus_pin.py (sha256 821a2034..., verified before the run). The value is identical to three decimals to the one withdrawn in 2026-08. The withdrawn claim stays withdrawn: it was measured on a file that cannot be identified, and agreeing with a later run is not evidence about an unidentifiable one.",
    "produced_by": [
@@ -9292,7 +9346,13 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_pinned.lexical.recall_at_1",
@@ -9314,9 +9374,7 @@
     "low": 0.4266,
     "high": 0.5138
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "34f165e8890f204d43f89a206cab56439baf46fe",
    "note": "Re-measured 2026-09-02 on the corpus pinned in research/corpus_pin.py (sha256 821a2034..., verified before the run). The value is identical to three decimals to the one withdrawn in 2026-08. The withdrawn claim stays withdrawn: it was measured on a file that cannot be identified, and agreeing with a later run is not evidence about an unidentifiable one.",
    "produced_by": [
@@ -9339,7 +9397,13 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_pinned.lexical.recall_at_5",
@@ -9361,9 +9425,7 @@
     "low": 0.6977,
     "high": 0.7746
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "34f165e8890f204d43f89a206cab56439baf46fe",
    "note": "Re-measured 2026-09-02 on the corpus pinned in research/corpus_pin.py (sha256 821a2034..., verified before the run). The value is identical to three decimals to the one withdrawn in 2026-08. The withdrawn claim stays withdrawn: it was measured on a file that cannot be identified, and agreeing with a later run is not evidence about an unidentifiable one.",
    "produced_by": [
@@ -9386,7 +9448,13 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_pinned.lexical.recall_at_10",
@@ -9431,7 +9499,11 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_pinned.lexical.mrr",
@@ -9448,9 +9520,7 @@
    "raw": "research/results/longmem_oracle.json",
    "pointer": "methods.lexical.mrr",
    "ci": null,
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "34f165e8890f204d43f89a206cab56439baf46fe",
    "note": "Re-measured 2026-09-02 on the corpus pinned in research/corpus_pin.py (sha256 821a2034..., verified before the run). The value is identical to three decimals to the one withdrawn in 2026-08. The withdrawn claim stays withdrawn: it was measured on a file that cannot be identified, and agreeing with a later run is not evidence about an unidentifiable one.",
    "produced_by": [
@@ -9473,7 +9543,13 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_pinned.hybrid.recall_at_1",
@@ -9495,9 +9571,7 @@
     "low": 0.4683,
     "high": 0.5556
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "34f165e8890f204d43f89a206cab56439baf46fe",
    "note": "Re-measured 2026-09-02 on the corpus pinned in research/corpus_pin.py (sha256 821a2034..., verified before the run). The value is identical to three decimals to the one withdrawn in 2026-08. The withdrawn claim stays withdrawn: it was measured on a file that cannot be identified, and agreeing with a later run is not evidence about an unidentifiable one.",
    "produced_by": [
@@ -9520,7 +9594,13 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_pinned.hybrid.recall_at_5",
@@ -9542,10 +9622,7 @@
     "low": 0.7627,
     "high": 0.8327
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md",
-    "README.md"
-   ],
+   "cited_in": [],
    "commit": "34f165e8890f204d43f89a206cab56439baf46fe",
    "note": "Re-measured 2026-09-02 on the corpus pinned in research/corpus_pin.py (sha256 821a2034..., verified before the run). The value is identical to three decimals to the one withdrawn in 2026-08. The withdrawn claim stays withdrawn: it was measured on a file that cannot be identified, and agreeing with a later run is not evidence about an unidentifiable one.",
    "produced_by": [
@@ -9568,7 +9645,14 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md",
+    "README.md"
+   ],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_pinned.hybrid.recall_at_10",
@@ -9613,7 +9697,11 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_pinned.hybrid.mrr",
@@ -9630,9 +9718,7 @@
    "raw": "research/results/longmem_oracle.json",
    "pointer": "methods.hybrid.mrr",
    "ci": null,
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "34f165e8890f204d43f89a206cab56439baf46fe",
    "note": "Re-measured 2026-09-02 on the corpus pinned in research/corpus_pin.py (sha256 821a2034..., verified before the run). The value is identical to three decimals to the one withdrawn in 2026-08. The withdrawn claim stays withdrawn: it was measured on a file that cannot be identified, and agreeing with a later run is not evidence about an unidentifiable one.",
    "produced_by": [
@@ -9655,7 +9741,13 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_pinned.hybrid_xrerank.recall_at_1",
@@ -9677,9 +9769,7 @@
     "low": 0.5828,
     "high": 0.6673
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "34f165e8890f204d43f89a206cab56439baf46fe",
    "note": "Re-measured 2026-09-02 on the corpus pinned in research/corpus_pin.py (sha256 821a2034..., verified before the run). The value is identical to three decimals to the one withdrawn in 2026-08. The withdrawn claim stays withdrawn: it was measured on a file that cannot be identified, and agreeing with a later run is not evidence about an unidentifiable one.",
    "produced_by": [
@@ -9702,7 +9792,13 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_pinned.hybrid_xrerank.recall_at_5",
@@ -9724,9 +9820,7 @@
     "low": 0.7989,
     "high": 0.864
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "34f165e8890f204d43f89a206cab56439baf46fe",
    "note": "Re-measured 2026-09-02 on the corpus pinned in research/corpus_pin.py (sha256 821a2034..., verified before the run). The value is identical to three decimals to the one withdrawn in 2026-08. The withdrawn claim stays withdrawn: it was measured on a file that cannot be identified, and agreeing with a later run is not evidence about an unidentifiable one.",
    "produced_by": [
@@ -9749,7 +9843,13 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_pinned.hybrid_xrerank.recall_at_10",
@@ -9794,7 +9894,11 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_pinned.hybrid_xrerank.mrr",
@@ -9811,9 +9915,7 @@
    "raw": "research/results/longmem_oracle.json",
    "pointer": "methods.hybrid+xrerank.mrr",
    "ci": null,
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "34f165e8890f204d43f89a206cab56439baf46fe",
    "note": "Re-measured 2026-09-02 on the corpus pinned in research/corpus_pin.py (sha256 821a2034..., verified before the run). The value is identical to three decimals to the one withdrawn in 2026-08. The withdrawn claim stays withdrawn: it was measured on a file that cannot be identified, and agreeing with a later run is not evidence about an unidentifiable one.",
    "produced_by": [
@@ -9836,7 +9938,13 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "h2h_pinned.nevertwice.recall_at_1",
@@ -9883,7 +9991,11 @@
     "research/locomo_eval.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "h2h_pinned.nevertwice.recall_at_5",
@@ -9905,9 +10017,7 @@
     "low": 0.7627,
     "high": 0.8327
    },
-   "cited_in": [
-    "README.md"
-   ],
+   "cited_in": [],
    "commit": "34f165e8890f204d43f89a206cab56439baf46fe",
    "note": "Same 940-session pool, same 500 questions, same local bge-m3, same scoring function. Competitor versions are recorded in the artifact.",
    "produced_by": [
@@ -9932,7 +10042,13 @@
     "research/locomo_eval.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "README.md"
+   ],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "h2h_pinned.nevertwice.recall_at_10",
@@ -9979,7 +10095,11 @@
     "research/locomo_eval.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "h2h_pinned.nevertwice.mrr",
@@ -10020,7 +10140,11 @@
     "research/locomo_eval.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "h2h_pinned.mem0.recall_at_1",
@@ -10067,7 +10191,11 @@
     "research/locomo_eval.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "h2h_pinned.mem0.recall_at_5",
@@ -10114,7 +10242,11 @@
     "research/locomo_eval.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "h2h_pinned.mem0.recall_at_10",
@@ -10161,7 +10293,11 @@
     "research/locomo_eval.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "h2h_pinned.mem0.mrr",
@@ -10202,7 +10338,11 @@
     "research/locomo_eval.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "h2h_pinned.langmem.recall_at_1",
@@ -10249,7 +10389,11 @@
     "research/locomo_eval.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "h2h_pinned.langmem.recall_at_5",
@@ -10296,7 +10440,11 @@
     "research/locomo_eval.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "h2h_pinned.langmem.recall_at_10",
@@ -10343,7 +10491,11 @@
     "research/locomo_eval.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "h2h_pinned.langmem.mrr",
@@ -10384,7 +10536,11 @@
     "research/locomo_eval.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "h2h_pinned.amem.recall_at_1",
@@ -10431,7 +10587,11 @@
     "research/locomo_eval.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "h2h_pinned.amem.recall_at_5",
@@ -10478,7 +10638,11 @@
     "research/locomo_eval.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "h2h_pinned.amem.recall_at_10",
@@ -10525,7 +10689,11 @@
     "research/locomo_eval.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "h2h_pinned.amem.mrr",
@@ -10566,7 +10734,11 @@
     "research/locomo_eval.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_pinned.xrerank.delta_recall_at_1",
@@ -10607,7 +10779,11 @@
     "research/corpus_pin.py",
     "sandbox_guard.py"
    ],
-   "derivation": "methods['hybrid+xrerank'].recall@1 - methods['hybrid'].recall@1, written by the stand into xrerank.delta_recall@1"
+   "derivation": "methods['hybrid+xrerank'].recall@1 - methods['hybrid'].recall@1, written by the stand into xrerank.delta_recall@1",
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_pinned.dataset.questions",
@@ -10624,9 +10800,7 @@
    "raw": "research/results/longmem_oracle.json",
    "pointer": "questions",
    "ci": null,
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "34f165e8890f204d43f89a206cab56439baf46fe",
    "produced_by": [
     "research/longmem_eval.py",
@@ -10648,7 +10822,13 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_s.semantic.recall_at_1",
@@ -10670,9 +10850,7 @@
     "low": 0.1525,
     "high": 0.2203
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "34f165e8890f204d43f89a206cab56439baf46fe",
    "note": "The standard non-oracle pool: 19,206 unique haystack sessions against the oracle variant's 940, so every question ranks a haystack twenty-one times larger. Same embedder, same scoring function, same human-annotated ground truth.",
    "produced_by": [
@@ -10695,7 +10873,13 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_s.semantic.recall_at_5",
@@ -10717,9 +10901,7 @@
     "low": 0.3133,
     "high": 0.3969
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "34f165e8890f204d43f89a206cab56439baf46fe",
    "note": "The standard non-oracle pool: 19,206 unique haystack sessions against the oracle variant's 940, so every question ranks a haystack twenty-one times larger. Same embedder, same scoring function, same human-annotated ground truth.",
    "produced_by": [
@@ -10742,7 +10924,13 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_s.semantic.recall_at_10",
@@ -10787,7 +10975,11 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_s.semantic.mrr",
@@ -10804,9 +10996,7 @@
    "raw": "research/results/longmem_s.json",
    "pointer": "methods.semantic.mrr",
    "ci": null,
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "34f165e8890f204d43f89a206cab56439baf46fe",
    "note": "The standard non-oracle pool: 19,206 unique haystack sessions against the oracle variant's 940, so every question ranks a haystack twenty-one times larger. Same embedder, same scoring function, same human-annotated ground truth.",
    "produced_by": [
@@ -10829,7 +11019,13 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_s.lexical.recall_at_1",
@@ -10851,9 +11047,7 @@
     "low": 0.184,
     "high": 0.2563
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "34f165e8890f204d43f89a206cab56439baf46fe",
    "note": "The standard non-oracle pool: 19,206 unique haystack sessions against the oracle variant's 940, so every question ranks a haystack twenty-one times larger. Same embedder, same scoring function, same human-annotated ground truth.",
    "produced_by": [
@@ -10876,7 +11070,13 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_s.lexical.recall_at_5",
@@ -10898,9 +11098,7 @@
     "low": 0.3736,
     "high": 0.4597
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "34f165e8890f204d43f89a206cab56439baf46fe",
    "note": "The standard non-oracle pool: 19,206 unique haystack sessions against the oracle variant's 940, so every question ranks a haystack twenty-one times larger. Same embedder, same scoring function, same human-annotated ground truth.",
    "produced_by": [
@@ -10923,7 +11121,13 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_s.lexical.recall_at_10",
@@ -10968,7 +11172,11 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_s.lexical.mrr",
@@ -10985,9 +11193,7 @@
    "raw": "research/results/longmem_s.json",
    "pointer": "methods.lexical.mrr",
    "ci": null,
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "34f165e8890f204d43f89a206cab56439baf46fe",
    "note": "The standard non-oracle pool: 19,206 unique haystack sessions against the oracle variant's 940, so every question ranks a haystack twenty-one times larger. Same embedder, same scoring function, same human-annotated ground truth.",
    "produced_by": [
@@ -11010,7 +11216,13 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_s.hybrid.recall_at_1",
@@ -11032,9 +11244,7 @@
     "low": 0.1934,
     "high": 0.2668
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "34f165e8890f204d43f89a206cab56439baf46fe",
    "note": "The standard non-oracle pool: 19,206 unique haystack sessions against the oracle variant's 940, so every question ranks a haystack twenty-one times larger. Same embedder, same scoring function, same human-annotated ground truth.",
    "produced_by": [
@@ -11057,7 +11267,13 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_s.hybrid.recall_at_5",
@@ -11079,9 +11295,7 @@
     "low": 0.3795,
     "high": 0.4657
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "34f165e8890f204d43f89a206cab56439baf46fe",
    "note": "The standard non-oracle pool: 19,206 unique haystack sessions against the oracle variant's 940, so every question ranks a haystack twenty-one times larger. Same embedder, same scoring function, same human-annotated ground truth.",
    "produced_by": [
@@ -11104,7 +11318,13 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_s.hybrid.recall_at_10",
@@ -11149,7 +11369,11 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_s.hybrid.mrr",
@@ -11166,9 +11390,7 @@
    "raw": "research/results/longmem_s.json",
    "pointer": "methods.hybrid.mrr",
    "ci": null,
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "34f165e8890f204d43f89a206cab56439baf46fe",
    "note": "The standard non-oracle pool: 19,206 unique haystack sessions against the oracle variant's 940, so every question ranks a haystack twenty-one times larger. Same embedder, same scoring function, same human-annotated ground truth.",
    "produced_by": [
@@ -11191,7 +11413,13 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_s.dataset.pool_sessions",
@@ -11209,9 +11437,7 @@
    "raw": "research/results/longmem_s.json",
    "pointer": "sessions",
    "ci": null,
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "34f165e8890f204d43f89a206cab56439baf46fe",
    "produced_by": [
     "research/longmem_eval.py",
@@ -11233,7 +11459,13 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_pinned.dataset.pool_sessions",
@@ -11250,9 +11482,7 @@
    "raw": "research/results/longmem_oracle.json",
    "pointer": "sessions",
    "ci": null,
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "34f165e8890f204d43f89a206cab56439baf46fe",
    "produced_by": [
     "research/longmem_eval.py",
@@ -11274,7 +11504,13 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "locomo.semantic.recall_at_1",
@@ -11296,9 +11532,7 @@
     "low": 0.1657,
     "high": 0.1997
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "34f165e8890f204d43f89a206cab56439baf46fe",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
@@ -11322,7 +11556,13 @@
     "research/corpus_pin.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "locomo.semantic.recall_at_5",
@@ -11344,9 +11584,7 @@
     "low": 0.4108,
     "high": 0.4544
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "34f165e8890f204d43f89a206cab56439baf46fe",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
@@ -11370,7 +11608,13 @@
     "research/corpus_pin.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "locomo.semantic.recall_at_10",
@@ -11392,9 +11636,7 @@
     "low": 0.538,
     "high": 0.5817
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "34f165e8890f204d43f89a206cab56439baf46fe",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
@@ -11418,7 +11660,13 @@
     "research/corpus_pin.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "locomo.semantic.mrr",
@@ -11435,9 +11683,7 @@
    "raw": "research/results/locomo.json",
    "pointer": "methods.semantic.mrr",
    "ci": null,
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "34f165e8890f204d43f89a206cab56439baf46fe",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
@@ -11461,7 +11707,13 @@
     "research/corpus_pin.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "locomo.lexical.recall_at_1",
@@ -11483,9 +11735,7 @@
     "low": 0.3189,
     "high": 0.3606
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "34f165e8890f204d43f89a206cab56439baf46fe",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
@@ -11509,7 +11759,13 @@
     "research/corpus_pin.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "locomo.lexical.recall_at_5",
@@ -11531,9 +11787,7 @@
     "low": 0.5797,
     "high": 0.6228
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "34f165e8890f204d43f89a206cab56439baf46fe",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
@@ -11557,7 +11811,13 @@
     "research/corpus_pin.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "locomo.lexical.recall_at_10",
@@ -11579,9 +11839,7 @@
     "low": 0.6599,
     "high": 0.701
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "34f165e8890f204d43f89a206cab56439baf46fe",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
@@ -11605,7 +11863,13 @@
     "research/corpus_pin.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "locomo.lexical.mrr",
@@ -11622,9 +11886,7 @@
    "raw": "research/results/locomo.json",
    "pointer": "methods.lexical.mrr",
    "ci": null,
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "34f165e8890f204d43f89a206cab56439baf46fe",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
@@ -11648,7 +11910,13 @@
     "research/corpus_pin.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "locomo.hybrid.recall_at_1",
@@ -11670,9 +11938,7 @@
     "low": 0.3293,
     "high": 0.3713
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "34f165e8890f204d43f89a206cab56439baf46fe",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
@@ -11696,7 +11962,13 @@
     "research/corpus_pin.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "locomo.hybrid.recall_at_5",
@@ -11718,9 +11990,7 @@
     "low": 0.619,
     "high": 0.6612
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "34f165e8890f204d43f89a206cab56439baf46fe",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
@@ -11744,7 +12014,13 @@
     "research/corpus_pin.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "locomo.hybrid.recall_at_10",
@@ -11766,9 +12042,7 @@
     "low": 0.7068,
     "high": 0.746
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "34f165e8890f204d43f89a206cab56439baf46fe",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
@@ -11792,7 +12066,13 @@
     "research/corpus_pin.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "locomo.hybrid.mrr",
@@ -11809,9 +12089,7 @@
    "raw": "research/results/locomo.json",
    "pointer": "methods.hybrid.mrr",
    "ci": null,
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "34f165e8890f204d43f89a206cab56439baf46fe",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
@@ -11835,7 +12113,13 @@
     "research/corpus_pin.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "locomo.dataset.questions_scored",
@@ -11853,9 +12137,7 @@
    "raw": "research/results/locomo.json",
    "pointer": "questions",
    "ci": null,
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "34f165e8890f204d43f89a206cab56439baf46fe",
    "produced_by": [
     "research/locomo_eval.py",
@@ -11878,7 +12160,13 @@
     "research/corpus_pin.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "locomo.dataset.questions_total",
@@ -11896,9 +12184,7 @@
    "raw": "research/results/locomo.json",
    "pointer": null,
    "ci": null,
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "34f165e8890f204d43f89a206cab56439baf46fe",
    "derivation": "the corpus record in research/corpus_pin.py; the result file carries only the scoreable subset",
    "produced_by": [
@@ -11922,7 +12208,13 @@
     "research/corpus_pin.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "locomo.dataset.turns",
@@ -11940,9 +12232,7 @@
    "raw": "research/results/locomo.json",
    "pointer": "turns",
    "ci": null,
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "34f165e8890f204d43f89a206cab56439baf46fe",
    "produced_by": [
     "research/locomo_eval.py",
@@ -11965,7 +12255,13 @@
     "research/corpus_pin.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "locomo.semantic.recall_at_3",
@@ -12011,7 +12307,11 @@
     "research/corpus_pin.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "locomo.lexical.recall_at_3",
@@ -12057,7 +12357,11 @@
     "research/corpus_pin.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "locomo.hybrid.recall_at_3",
@@ -12103,7 +12407,11 @@
     "research/corpus_pin.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "locomo_raw.semantic.recall_at_1",
@@ -12149,7 +12457,11 @@
     "level": 0.95,
     "low": 0.1657,
     "high": 0.1997
-   }
+   },
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "locomo_raw.semantic.recall_at_5",
@@ -12195,7 +12507,11 @@
     "level": 0.95,
     "low": 0.4108,
     "high": 0.4544
-   }
+   },
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "locomo_raw.semantic.recall_at_10",
@@ -12241,7 +12557,11 @@
     "level": 0.95,
     "low": 0.538,
     "high": 0.5817
-   }
+   },
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "locomo_raw.semantic.mrr",
@@ -12282,7 +12602,11 @@
     "sandbox_guard.py"
    ],
    "pointer": "methods.semantic.mrr",
-   "ci": null
+   "ci": null,
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "locomo_raw.lexical.recall_at_1",
@@ -12328,7 +12652,11 @@
     "level": 0.95,
     "low": 0.2515,
     "high": 0.2906
-   }
+   },
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "locomo_raw.lexical.recall_at_5",
@@ -12374,7 +12702,11 @@
     "level": 0.95,
     "low": 0.4772,
     "high": 0.5213
-   }
+   },
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "locomo_raw.lexical.recall_at_10",
@@ -12420,7 +12752,11 @@
     "level": 0.95,
     "low": 0.5542,
     "high": 0.5977
-   }
+   },
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "locomo_raw.lexical.mrr",
@@ -12461,7 +12797,11 @@
     "sandbox_guard.py"
    ],
    "pointer": "methods.lexical.mrr",
-   "ci": null
+   "ci": null,
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "locomo_raw.hybrid.recall_at_1",
@@ -12507,7 +12847,11 @@
     "level": 0.95,
     "low": 0.2856,
     "high": 0.3262
-   }
+   },
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "locomo_raw.hybrid.recall_at_5",
@@ -12553,7 +12897,11 @@
     "level": 0.95,
     "low": 0.5542,
     "high": 0.5977
-   }
+   },
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "locomo_raw.hybrid.recall_at_10",
@@ -12599,7 +12947,11 @@
     "level": 0.95,
     "low": 0.6405,
     "high": 0.6821
-   }
+   },
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "locomo_raw.hybrid.mrr",
@@ -12640,7 +12992,11 @@
     "sandbox_guard.py"
    ],
    "pointer": "methods.hybrid.mrr",
-   "ci": null
+   "ci": null,
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_raw.semantic.recall_at_1",
@@ -12685,7 +13041,11 @@
     "level": 0.95,
     "low": 0.3853,
     "high": 0.4718
-   }
+   },
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_raw.semantic.recall_at_5",
@@ -12730,7 +13090,11 @@
     "level": 0.95,
     "low": 0.6502,
     "high": 0.7309
-   }
+   },
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_raw.semantic.recall_at_10",
@@ -12775,7 +13139,11 @@
     "level": 0.95,
     "low": 0.7437,
     "high": 0.816
-   }
+   },
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_raw.semantic.mrr",
@@ -12815,7 +13183,11 @@
     "sandbox_guard.py"
    ],
    "pointer": "methods.semantic.mrr",
-   "ci": null
+   "ci": null,
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_raw.lexical.recall_at_1",
@@ -12860,7 +13232,11 @@
     "level": 0.95,
     "low": 0.4782,
     "high": 0.5654
-   }
+   },
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_raw.lexical.recall_at_5",
@@ -12905,7 +13281,11 @@
     "level": 0.95,
     "low": 0.7123,
     "high": 0.7878
-   }
+   },
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_raw.lexical.recall_at_10",
@@ -12950,7 +13330,11 @@
     "level": 0.95,
     "low": 0.7989,
     "high": 0.864
-   }
+   },
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_raw.lexical.mrr",
@@ -12990,7 +13374,11 @@
     "sandbox_guard.py"
    ],
    "pointer": "methods.lexical.mrr",
-   "ci": null
+   "ci": null,
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_raw.hybrid.recall_at_1",
@@ -13035,7 +13423,11 @@
     "level": 0.95,
     "low": 0.4922,
     "high": 0.5793
-   }
+   },
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_raw.hybrid.recall_at_5",
@@ -13080,7 +13472,11 @@
     "level": 0.95,
     "low": 0.7564,
     "high": 0.8271
-   }
+   },
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_raw.hybrid.recall_at_10",
@@ -13125,7 +13521,11 @@
     "level": 0.95,
     "low": 0.8268,
     "high": 0.8877
-   }
+   },
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "longmem_raw.hybrid.mrr",
@@ -13165,7 +13565,11 @@
     "sandbox_guard.py"
    ],
    "pointer": "methods.hybrid.mrr",
-   "ci": null
+   "ci": null,
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "fusion_sweep.shipped_weight",
@@ -13201,8 +13605,17 @@
     "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
+    "research/_rerank.py",
+    "research/_xreranker.py",
+    "research/corpus_pin.py",
+    "research/locomo_eval.py",
+    "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "fusion_sweep.oracle.w0_25.recall_at_1",
@@ -13243,8 +13656,17 @@
     "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
+    "research/_rerank.py",
+    "research/_xreranker.py",
+    "research/corpus_pin.py",
+    "research/locomo_eval.py",
+    "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "fusion_sweep.oracle.w0_25.recall_at_5",
@@ -13285,8 +13707,17 @@
     "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
+    "research/_rerank.py",
+    "research/_xreranker.py",
+    "research/corpus_pin.py",
+    "research/locomo_eval.py",
+    "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "fusion_sweep.oracle.w0_25.recall_at_10",
@@ -13327,8 +13758,17 @@
     "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
+    "research/_rerank.py",
+    "research/_xreranker.py",
+    "research/corpus_pin.py",
+    "research/locomo_eval.py",
+    "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "fusion_sweep.oracle.w0_25.mrr",
@@ -13364,8 +13804,17 @@
     "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
+    "research/_rerank.py",
+    "research/_xreranker.py",
+    "research/corpus_pin.py",
+    "research/locomo_eval.py",
+    "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "fusion_sweep.oracle.w0_5.recall_at_1",
@@ -13406,8 +13855,17 @@
     "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
+    "research/_rerank.py",
+    "research/_xreranker.py",
+    "research/corpus_pin.py",
+    "research/locomo_eval.py",
+    "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "fusion_sweep.oracle.w0_5.recall_at_5",
@@ -13448,8 +13906,17 @@
     "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
+    "research/_rerank.py",
+    "research/_xreranker.py",
+    "research/corpus_pin.py",
+    "research/locomo_eval.py",
+    "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "fusion_sweep.oracle.w0_5.recall_at_10",
@@ -13490,8 +13957,17 @@
     "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
+    "research/_rerank.py",
+    "research/_xreranker.py",
+    "research/corpus_pin.py",
+    "research/locomo_eval.py",
+    "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "fusion_sweep.oracle.w0_5.mrr",
@@ -13527,8 +14003,17 @@
     "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
+    "research/_rerank.py",
+    "research/_xreranker.py",
+    "research/corpus_pin.py",
+    "research/locomo_eval.py",
+    "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "fusion_sweep.oracle.w0_75.recall_at_1",
@@ -13569,8 +14054,17 @@
     "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
+    "research/_rerank.py",
+    "research/_xreranker.py",
+    "research/corpus_pin.py",
+    "research/locomo_eval.py",
+    "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "fusion_sweep.oracle.w0_75.recall_at_5",
@@ -13611,8 +14105,17 @@
     "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
+    "research/_rerank.py",
+    "research/_xreranker.py",
+    "research/corpus_pin.py",
+    "research/locomo_eval.py",
+    "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "fusion_sweep.oracle.w0_75.recall_at_10",
@@ -13653,8 +14156,17 @@
     "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
+    "research/_rerank.py",
+    "research/_xreranker.py",
+    "research/corpus_pin.py",
+    "research/locomo_eval.py",
+    "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "fusion_sweep.oracle.w0_75.mrr",
@@ -13690,8 +14202,17 @@
     "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
+    "research/_rerank.py",
+    "research/_xreranker.py",
+    "research/corpus_pin.py",
+    "research/locomo_eval.py",
+    "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "fusion_sweep.oracle.w1_0.recall_at_1",
@@ -13732,8 +14253,17 @@
     "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
+    "research/_rerank.py",
+    "research/_xreranker.py",
+    "research/corpus_pin.py",
+    "research/locomo_eval.py",
+    "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "fusion_sweep.oracle.w1_0.recall_at_5",
@@ -13774,8 +14304,17 @@
     "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
+    "research/_rerank.py",
+    "research/_xreranker.py",
+    "research/corpus_pin.py",
+    "research/locomo_eval.py",
+    "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "fusion_sweep.oracle.w1_0.recall_at_10",
@@ -13816,8 +14355,17 @@
     "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
+    "research/_rerank.py",
+    "research/_xreranker.py",
+    "research/corpus_pin.py",
+    "research/locomo_eval.py",
+    "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "fusion_sweep.oracle.w1_0.mrr",
@@ -13853,8 +14401,17 @@
     "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
+    "research/_rerank.py",
+    "research/_xreranker.py",
+    "research/corpus_pin.py",
+    "research/locomo_eval.py",
+    "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "fusion_sweep.oracle.w1_5.recall_at_1",
@@ -13895,8 +14452,17 @@
     "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
+    "research/_rerank.py",
+    "research/_xreranker.py",
+    "research/corpus_pin.py",
+    "research/locomo_eval.py",
+    "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "fusion_sweep.oracle.w1_5.recall_at_5",
@@ -13937,8 +14503,17 @@
     "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
+    "research/_rerank.py",
+    "research/_xreranker.py",
+    "research/corpus_pin.py",
+    "research/locomo_eval.py",
+    "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "fusion_sweep.oracle.w1_5.recall_at_10",
@@ -13979,8 +14554,17 @@
     "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
+    "research/_rerank.py",
+    "research/_xreranker.py",
+    "research/corpus_pin.py",
+    "research/locomo_eval.py",
+    "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "fusion_sweep.oracle.w1_5.mrr",
@@ -14016,8 +14600,17 @@
     "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
+    "research/_rerank.py",
+    "research/_xreranker.py",
+    "research/corpus_pin.py",
+    "research/locomo_eval.py",
+    "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "fusion_sweep.locomo.w0_25.recall_at_1",
@@ -14058,8 +14651,17 @@
     "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
+    "research/_rerank.py",
+    "research/_xreranker.py",
+    "research/corpus_pin.py",
+    "research/locomo_eval.py",
+    "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "fusion_sweep.locomo.w0_25.recall_at_5",
@@ -14100,8 +14702,17 @@
     "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
+    "research/_rerank.py",
+    "research/_xreranker.py",
+    "research/corpus_pin.py",
+    "research/locomo_eval.py",
+    "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "fusion_sweep.locomo.w0_25.recall_at_10",
@@ -14142,8 +14753,17 @@
     "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
+    "research/_rerank.py",
+    "research/_xreranker.py",
+    "research/corpus_pin.py",
+    "research/locomo_eval.py",
+    "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "fusion_sweep.locomo.w0_25.mrr",
@@ -14179,8 +14799,17 @@
     "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
+    "research/_rerank.py",
+    "research/_xreranker.py",
+    "research/corpus_pin.py",
+    "research/locomo_eval.py",
+    "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "fusion_sweep.locomo.w0_5.recall_at_1",
@@ -14221,8 +14850,17 @@
     "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
+    "research/_rerank.py",
+    "research/_xreranker.py",
+    "research/corpus_pin.py",
+    "research/locomo_eval.py",
+    "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "fusion_sweep.locomo.w0_5.recall_at_5",
@@ -14263,8 +14901,17 @@
     "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
+    "research/_rerank.py",
+    "research/_xreranker.py",
+    "research/corpus_pin.py",
+    "research/locomo_eval.py",
+    "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "fusion_sweep.locomo.w0_5.recall_at_10",
@@ -14305,8 +14952,17 @@
     "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
+    "research/_rerank.py",
+    "research/_xreranker.py",
+    "research/corpus_pin.py",
+    "research/locomo_eval.py",
+    "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "fusion_sweep.locomo.w0_5.mrr",
@@ -14342,8 +14998,17 @@
     "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
+    "research/_rerank.py",
+    "research/_xreranker.py",
+    "research/corpus_pin.py",
+    "research/locomo_eval.py",
+    "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "fusion_sweep.locomo.w0_75.recall_at_1",
@@ -14384,8 +15049,17 @@
     "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
+    "research/_rerank.py",
+    "research/_xreranker.py",
+    "research/corpus_pin.py",
+    "research/locomo_eval.py",
+    "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "fusion_sweep.locomo.w0_75.recall_at_5",
@@ -14426,8 +15100,17 @@
     "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
+    "research/_rerank.py",
+    "research/_xreranker.py",
+    "research/corpus_pin.py",
+    "research/locomo_eval.py",
+    "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "fusion_sweep.locomo.w0_75.recall_at_10",
@@ -14468,8 +15151,17 @@
     "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
+    "research/_rerank.py",
+    "research/_xreranker.py",
+    "research/corpus_pin.py",
+    "research/locomo_eval.py",
+    "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "fusion_sweep.locomo.w0_75.mrr",
@@ -14505,8 +15197,17 @@
     "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
+    "research/_rerank.py",
+    "research/_xreranker.py",
+    "research/corpus_pin.py",
+    "research/locomo_eval.py",
+    "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "fusion_sweep.locomo.w1_0.recall_at_1",
@@ -14547,8 +15248,17 @@
     "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
+    "research/_rerank.py",
+    "research/_xreranker.py",
+    "research/corpus_pin.py",
+    "research/locomo_eval.py",
+    "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "fusion_sweep.locomo.w1_0.recall_at_5",
@@ -14589,8 +15299,17 @@
     "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
+    "research/_rerank.py",
+    "research/_xreranker.py",
+    "research/corpus_pin.py",
+    "research/locomo_eval.py",
+    "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "fusion_sweep.locomo.w1_0.recall_at_10",
@@ -14631,8 +15350,17 @@
     "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
+    "research/_rerank.py",
+    "research/_xreranker.py",
+    "research/corpus_pin.py",
+    "research/locomo_eval.py",
+    "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "fusion_sweep.locomo.w1_0.mrr",
@@ -14668,8 +15396,17 @@
     "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
+    "research/_rerank.py",
+    "research/_xreranker.py",
+    "research/corpus_pin.py",
+    "research/locomo_eval.py",
+    "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "fusion_sweep.locomo.w1_5.recall_at_1",
@@ -14710,8 +15447,17 @@
     "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
+    "research/_rerank.py",
+    "research/_xreranker.py",
+    "research/corpus_pin.py",
+    "research/locomo_eval.py",
+    "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "fusion_sweep.locomo.w1_5.recall_at_5",
@@ -14752,8 +15498,17 @@
     "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
+    "research/_rerank.py",
+    "research/_xreranker.py",
+    "research/corpus_pin.py",
+    "research/locomo_eval.py",
+    "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "fusion_sweep.locomo.w1_5.recall_at_10",
@@ -14794,8 +15549,17 @@
     "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
+    "research/_rerank.py",
+    "research/_xreranker.py",
+    "research/corpus_pin.py",
+    "research/locomo_eval.py",
+    "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "fusion_sweep.locomo.w1_5.mrr",
@@ -14831,8 +15595,17 @@
     "nevertwice/stemmer.py",
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
+    "research/_rerank.py",
+    "research/_xreranker.py",
+    "research/corpus_pin.py",
+    "research/locomo_eval.py",
+    "research/longmem_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "morphology.vault.session.ru.raw.recall_at_1",
@@ -14874,7 +15647,11 @@
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "morphology.vault.session.ru.raw.recall_at_5",
@@ -14916,7 +15693,11 @@
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "morphology.vault.session.ru.raw.recall_at_10",
@@ -14958,7 +15739,11 @@
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "morphology.vault.session.ru.raw.mrr",
@@ -14995,7 +15780,11 @@
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "morphology.vault.session.ru.morph.recall_at_1",
@@ -15037,7 +15826,11 @@
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "morphology.vault.session.ru.morph.recall_at_5",
@@ -15079,7 +15872,11 @@
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "morphology.vault.session.ru.morph.recall_at_10",
@@ -15121,7 +15918,11 @@
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "morphology.vault.session.ru.morph.mrr",
@@ -15158,7 +15959,11 @@
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "morphology.vault.session.en.raw.recall_at_1",
@@ -15200,7 +16005,11 @@
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "morphology.vault.session.en.raw.recall_at_5",
@@ -15242,7 +16051,11 @@
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "morphology.vault.session.en.raw.recall_at_10",
@@ -15284,7 +16097,11 @@
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "morphology.vault.session.en.raw.mrr",
@@ -15321,7 +16138,11 @@
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "morphology.vault.session.en.morph.recall_at_1",
@@ -15363,7 +16184,11 @@
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "morphology.vault.session.en.morph.recall_at_5",
@@ -15405,7 +16230,11 @@
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "morphology.vault.session.en.morph.recall_at_10",
@@ -15447,7 +16276,11 @@
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "morphology.vault.session.en.morph.mrr",
@@ -15484,7 +16317,11 @@
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "h2h_locomo.nevertwice.recall_at_1",
@@ -15499,9 +16336,7 @@
    "n": 1977,
    "command": "python research/head_to_head.py --data=locomo --only=nevertwice,mem0,langmem,amem --save --out=research/results/head_to_head_locomo.json",
    "raw": "research/results/head_to_head_locomo.json",
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "34f165e8890f204d43f89a206cab56439baf46fe",
    "note": "LoCoMo pooled globally: one store holds the turns of all ten conversations, which is what a user's whole history looks like to a competitor store and is harder than LoCoMo's own per-conversation setting (`locomo.*`). Retrieval of the annotated evidence turn, never judge-scored answer accuracy. Competitor versions are recorded in the artifact.",
    "produced_by": [
@@ -15533,7 +16368,13 @@
     "level": 0.95,
     "low": 0.291,
     "high": 0.3318
-   }
+   },
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "h2h_locomo.nevertwice.recall_at_5",
@@ -15548,9 +16389,7 @@
    "n": 1977,
    "command": "python research/head_to_head.py --data=locomo --only=nevertwice,mem0,langmem,amem --save --out=research/results/head_to_head_locomo.json",
    "raw": "research/results/head_to_head_locomo.json",
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "34f165e8890f204d43f89a206cab56439baf46fe",
    "note": "LoCoMo pooled globally: one store holds the turns of all ten conversations, which is what a user's whole history looks like to a competitor store and is harder than LoCoMo's own per-conversation setting (`locomo.*`). Retrieval of the annotated evidence turn, never judge-scored answer accuracy. Competitor versions are recorded in the artifact.",
    "produced_by": [
@@ -15582,7 +16421,13 @@
     "level": 0.95,
     "low": 0.5491,
     "high": 0.5927
-   }
+   },
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "h2h_locomo.nevertwice.recall_at_10",
@@ -15597,9 +16442,7 @@
    "n": 1977,
    "command": "python research/head_to_head.py --data=locomo --only=nevertwice,mem0,langmem,amem --save --out=research/results/head_to_head_locomo.json",
    "raw": "research/results/head_to_head_locomo.json",
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "34f165e8890f204d43f89a206cab56439baf46fe",
    "note": "LoCoMo pooled globally: one store holds the turns of all ten conversations, which is what a user's whole history looks like to a competitor store and is harder than LoCoMo's own per-conversation setting (`locomo.*`). Retrieval of the annotated evidence turn, never judge-scored answer accuracy. Competitor versions are recorded in the artifact.",
    "produced_by": [
@@ -15631,7 +16474,13 @@
     "level": 0.95,
     "low": 0.6459,
     "high": 0.6874
-   }
+   },
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "h2h_locomo.nevertwice.mrr",
@@ -15646,9 +16495,7 @@
    "n": 1977,
    "command": "python research/head_to_head.py --data=locomo --only=nevertwice,mem0,langmem,amem --save --out=research/results/head_to_head_locomo.json",
    "raw": "research/results/head_to_head_locomo.json",
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "34f165e8890f204d43f89a206cab56439baf46fe",
    "note": "LoCoMo pooled globally: one store holds the turns of all ten conversations, which is what a user's whole history looks like to a competitor store and is harder than LoCoMo's own per-conversation setting (`locomo.*`). Retrieval of the annotated evidence turn, never judge-scored answer accuracy. Competitor versions are recorded in the artifact.",
    "produced_by": [
@@ -15675,7 +16522,13 @@
     "sandbox_guard.py"
    ],
    "pointer": "nevertwice.mrr",
-   "ci": null
+   "ci": null,
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "h2h_locomo.mem0.recall_at_1",
@@ -15690,9 +16543,7 @@
    "n": 1977,
    "command": "python research/head_to_head.py --data=locomo --only=nevertwice,mem0,langmem,amem --save --out=research/results/head_to_head_locomo.json",
    "raw": "research/results/head_to_head_locomo.json",
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "34f165e8890f204d43f89a206cab56439baf46fe",
    "note": "LoCoMo pooled globally: one store holds the turns of all ten conversations, which is what a user's whole history looks like to a competitor store and is harder than LoCoMo's own per-conversation setting (`locomo.*`). Retrieval of the annotated evidence turn, never judge-scored answer accuracy. Competitor versions are recorded in the artifact.",
    "produced_by": [
@@ -15724,7 +16575,13 @@
     "level": 0.95,
     "low": 0.2519,
     "high": 0.291
-   }
+   },
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "h2h_locomo.mem0.recall_at_5",
@@ -15739,9 +16596,7 @@
    "n": 1977,
    "command": "python research/head_to_head.py --data=locomo --only=nevertwice,mem0,langmem,amem --save --out=research/results/head_to_head_locomo.json",
    "raw": "research/results/head_to_head_locomo.json",
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "34f165e8890f204d43f89a206cab56439baf46fe",
    "note": "LoCoMo pooled globally: one store holds the turns of all ten conversations, which is what a user's whole history looks like to a competitor store and is harder than LoCoMo's own per-conversation setting (`locomo.*`). Retrieval of the annotated evidence turn, never judge-scored answer accuracy. Competitor versions are recorded in the artifact.",
    "produced_by": [
@@ -15773,7 +16628,13 @@
     "level": 0.95,
     "low": 0.5531,
     "high": 0.5966
-   }
+   },
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "h2h_locomo.mem0.recall_at_10",
@@ -15788,9 +16649,7 @@
    "n": 1977,
    "command": "python research/head_to_head.py --data=locomo --only=nevertwice,mem0,langmem,amem --save --out=research/results/head_to_head_locomo.json",
    "raw": "research/results/head_to_head_locomo.json",
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "34f165e8890f204d43f89a206cab56439baf46fe",
    "note": "LoCoMo pooled globally: one store holds the turns of all ten conversations, which is what a user's whole history looks like to a competitor store and is harder than LoCoMo's own per-conversation setting (`locomo.*`). Retrieval of the annotated evidence turn, never judge-scored answer accuracy. Competitor versions are recorded in the artifact.",
    "produced_by": [
@@ -15822,7 +16681,13 @@
     "level": 0.95,
     "low": 0.653,
     "high": 0.6943
-   }
+   },
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "h2h_locomo.mem0.mrr",
@@ -15837,9 +16702,7 @@
    "n": 1977,
    "command": "python research/head_to_head.py --data=locomo --only=nevertwice,mem0,langmem,amem --save --out=research/results/head_to_head_locomo.json",
    "raw": "research/results/head_to_head_locomo.json",
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "34f165e8890f204d43f89a206cab56439baf46fe",
    "note": "LoCoMo pooled globally: one store holds the turns of all ten conversations, which is what a user's whole history looks like to a competitor store and is harder than LoCoMo's own per-conversation setting (`locomo.*`). Retrieval of the annotated evidence turn, never judge-scored answer accuracy. Competitor versions are recorded in the artifact.",
    "produced_by": [
@@ -15866,7 +16729,13 @@
     "sandbox_guard.py"
    ],
    "pointer": "mem0.mrr",
-   "ci": null
+   "ci": null,
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "h2h_locomo.langmem.recall_at_1",
@@ -15881,9 +16750,7 @@
    "n": 1977,
    "command": "python research/head_to_head.py --data=locomo --only=nevertwice,mem0,langmem,amem --save --out=research/results/head_to_head_locomo.json",
    "raw": "research/results/head_to_head_locomo.json",
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "34f165e8890f204d43f89a206cab56439baf46fe",
    "note": "LoCoMo pooled globally: one store holds the turns of all ten conversations, which is what a user's whole history looks like to a competitor store and is harder than LoCoMo's own per-conversation setting (`locomo.*`). Retrieval of the annotated evidence turn, never judge-scored answer accuracy. Competitor versions are recorded in the artifact.",
    "produced_by": [
@@ -15915,7 +16782,13 @@
     "level": 0.95,
     "low": 0.1724,
     "high": 0.2069
-   }
+   },
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "h2h_locomo.langmem.recall_at_5",
@@ -15930,9 +16803,7 @@
    "n": 1977,
    "command": "python research/head_to_head.py --data=locomo --only=nevertwice,mem0,langmem,amem --save --out=research/results/head_to_head_locomo.json",
    "raw": "research/results/head_to_head_locomo.json",
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "34f165e8890f204d43f89a206cab56439baf46fe",
    "note": "LoCoMo pooled globally: one store holds the turns of all ten conversations, which is what a user's whole history looks like to a competitor store and is harder than LoCoMo's own per-conversation setting (`locomo.*`). Retrieval of the annotated evidence turn, never judge-scored answer accuracy. Competitor versions are recorded in the artifact.",
    "produced_by": [
@@ -15964,7 +16835,13 @@
     "level": 0.95,
     "low": 0.4192,
     "high": 0.463
-   }
+   },
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "h2h_locomo.langmem.recall_at_10",
@@ -15979,9 +16856,7 @@
    "n": 1977,
    "command": "python research/head_to_head.py --data=locomo --only=nevertwice,mem0,langmem,amem --save --out=research/results/head_to_head_locomo.json",
    "raw": "research/results/head_to_head_locomo.json",
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "34f165e8890f204d43f89a206cab56439baf46fe",
    "note": "LoCoMo pooled globally: one store holds the turns of all ten conversations, which is what a user's whole history looks like to a competitor store and is harder than LoCoMo's own per-conversation setting (`locomo.*`). Retrieval of the annotated evidence turn, never judge-scored answer accuracy. Competitor versions are recorded in the artifact.",
    "produced_by": [
@@ -16013,7 +16888,13 @@
     "level": 0.95,
     "low": 0.527,
     "high": 0.5708
-   }
+   },
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "h2h_locomo.langmem.mrr",
@@ -16028,9 +16909,7 @@
    "n": 1977,
    "command": "python research/head_to_head.py --data=locomo --only=nevertwice,mem0,langmem,amem --save --out=research/results/head_to_head_locomo.json",
    "raw": "research/results/head_to_head_locomo.json",
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "34f165e8890f204d43f89a206cab56439baf46fe",
    "note": "LoCoMo pooled globally: one store holds the turns of all ten conversations, which is what a user's whole history looks like to a competitor store and is harder than LoCoMo's own per-conversation setting (`locomo.*`). Retrieval of the annotated evidence turn, never judge-scored answer accuracy. Competitor versions are recorded in the artifact.",
    "produced_by": [
@@ -16057,7 +16936,13 @@
     "sandbox_guard.py"
    ],
    "pointer": "langmem.mrr",
-   "ci": null
+   "ci": null,
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "h2h_locomo.amem.recall_at_1",
@@ -16072,9 +16957,7 @@
    "n": 1977,
    "command": "python research/head_to_head.py --data=locomo --only=nevertwice,mem0,langmem,amem --save --out=research/results/head_to_head_locomo.json",
    "raw": "research/results/head_to_head_locomo.json",
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "34f165e8890f204d43f89a206cab56439baf46fe",
    "note": "LoCoMo pooled globally: one store holds the turns of all ten conversations, which is what a user's whole history looks like to a competitor store and is harder than LoCoMo's own per-conversation setting (`locomo.*`). Retrieval of the annotated evidence turn, never judge-scored answer accuracy. Competitor versions are recorded in the artifact.",
    "produced_by": [
@@ -16106,7 +16989,13 @@
     "level": 0.95,
     "low": 0.1714,
     "high": 0.2058
-   }
+   },
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "h2h_locomo.amem.recall_at_5",
@@ -16121,9 +17010,7 @@
    "n": 1977,
    "command": "python research/head_to_head.py --data=locomo --only=nevertwice,mem0,langmem,amem --save --out=research/results/head_to_head_locomo.json",
    "raw": "research/results/head_to_head_locomo.json",
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "34f165e8890f204d43f89a206cab56439baf46fe",
    "note": "LoCoMo pooled globally: one store holds the turns of all ten conversations, which is what a user's whole history looks like to a competitor store and is harder than LoCoMo's own per-conversation setting (`locomo.*`). Retrieval of the annotated evidence turn, never judge-scored answer accuracy. Competitor versions are recorded in the artifact.",
    "produced_by": [
@@ -16155,7 +17042,13 @@
     "level": 0.95,
     "low": 0.4143,
     "high": 0.458
-   }
+   },
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "h2h_locomo.amem.recall_at_10",
@@ -16170,9 +17063,7 @@
    "n": 1977,
    "command": "python research/head_to_head.py --data=locomo --only=nevertwice,mem0,langmem,amem --save --out=research/results/head_to_head_locomo.json",
    "raw": "research/results/head_to_head_locomo.json",
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "34f165e8890f204d43f89a206cab56439baf46fe",
    "note": "LoCoMo pooled globally: one store holds the turns of all ten conversations, which is what a user's whole history looks like to a competitor store and is harder than LoCoMo's own per-conversation setting (`locomo.*`). Retrieval of the annotated evidence turn, never judge-scored answer accuracy. Competitor versions are recorded in the artifact.",
    "produced_by": [
@@ -16204,7 +17095,13 @@
     "level": 0.95,
     "low": 0.52,
     "high": 0.5639
-   }
+   },
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "h2h_locomo.amem.mrr",
@@ -16219,9 +17116,7 @@
    "n": 1977,
    "command": "python research/head_to_head.py --data=locomo --only=nevertwice,mem0,langmem,amem --save --out=research/results/head_to_head_locomo.json",
    "raw": "research/results/head_to_head_locomo.json",
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "34f165e8890f204d43f89a206cab56439baf46fe",
    "note": "LoCoMo pooled globally: one store holds the turns of all ten conversations, which is what a user's whole history looks like to a competitor store and is harder than LoCoMo's own per-conversation setting (`locomo.*`). Retrieval of the annotated evidence turn, never judge-scored answer accuracy. Competitor versions are recorded in the artifact.",
    "produced_by": [
@@ -16248,7 +17143,13 @@
     "sandbox_guard.py"
    ],
    "pointer": "amem.mrr",
-   "ci": null
+   "ci": null,
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "h2h_s.nevertwice.recall_at_1",
@@ -16263,9 +17164,7 @@
    "n": 500,
    "command": "python research/head_to_head.py --data=s --only=nevertwice,mem0,langmem,amem --save --out=research/results/head_to_head_s.json",
    "raw": "research/results/head_to_head_s.json",
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "34f165e8890f204d43f89a206cab56439baf46fe",
    "note": "The standard non-oracle pool: 19,206 retrievable sessions against the oracle variant's 940, the same 500 questions and annotated evidence, twenty-one times the haystack. Same local bge-m3 and scoring function for every system. Competitor versions are recorded in the artifact.",
    "produced_by": [
@@ -16297,7 +17196,13 @@
     "level": 0.95,
     "low": 0.1934,
     "high": 0.2668
-   }
+   },
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "h2h_s.nevertwice.recall_at_5",
@@ -16312,9 +17217,7 @@
    "n": 500,
    "command": "python research/head_to_head.py --data=s --only=nevertwice,mem0,langmem,amem --save --out=research/results/head_to_head_s.json",
    "raw": "research/results/head_to_head_s.json",
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "34f165e8890f204d43f89a206cab56439baf46fe",
    "note": "The standard non-oracle pool: 19,206 retrievable sessions against the oracle variant's 940, the same 500 questions and annotated evidence, twenty-one times the haystack. Same local bge-m3 and scoring function for every system. Competitor versions are recorded in the artifact.",
    "produced_by": [
@@ -16346,7 +17249,13 @@
     "level": 0.95,
     "low": 0.3795,
     "high": 0.4657
-   }
+   },
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "h2h_s.nevertwice.recall_at_10",
@@ -16361,9 +17270,7 @@
    "n": 500,
    "command": "python research/head_to_head.py --data=s --only=nevertwice,mem0,langmem,amem --save --out=research/results/head_to_head_s.json",
    "raw": "research/results/head_to_head_s.json",
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "34f165e8890f204d43f89a206cab56439baf46fe",
    "note": "The standard non-oracle pool: 19,206 retrievable sessions against the oracle variant's 940, the same 500 questions and annotated evidence, twenty-one times the haystack. Same local bge-m3 and scoring function for every system. Competitor versions are recorded in the artifact.",
    "produced_by": [
@@ -16395,7 +17302,13 @@
     "level": 0.95,
     "low": 0.4703,
     "high": 0.5575
-   }
+   },
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "h2h_s.nevertwice.mrr",
@@ -16410,9 +17323,7 @@
    "n": 500,
    "command": "python research/head_to_head.py --data=s --only=nevertwice,mem0,langmem,amem --save --out=research/results/head_to_head_s.json",
    "raw": "research/results/head_to_head_s.json",
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "34f165e8890f204d43f89a206cab56439baf46fe",
    "note": "The standard non-oracle pool: 19,206 retrievable sessions against the oracle variant's 940, the same 500 questions and annotated evidence, twenty-one times the haystack. Same local bge-m3 and scoring function for every system. Competitor versions are recorded in the artifact.",
    "produced_by": [
@@ -16439,7 +17350,13 @@
     "sandbox_guard.py"
    ],
    "pointer": "nevertwice.mrr",
-   "ci": null
+   "ci": null,
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "h2h_s.mem0.recall_at_1",
@@ -16454,9 +17371,7 @@
    "n": 500,
    "command": "python research/head_to_head.py --data=s --only=nevertwice,mem0,langmem,amem --save --out=research/results/head_to_head_s.json",
    "raw": "research/results/head_to_head_s.json",
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "34f165e8890f204d43f89a206cab56439baf46fe",
    "note": "The standard non-oracle pool: 19,206 retrievable sessions against the oracle variant's 940, the same 500 questions and annotated evidence, twenty-one times the haystack. Same local bge-m3 and scoring function for every system. Competitor versions are recorded in the artifact.",
    "produced_by": [
@@ -16488,7 +17403,13 @@
     "level": 0.95,
     "low": 0.1617,
     "high": 0.2309
-   }
+   },
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "h2h_s.mem0.recall_at_5",
@@ -16503,9 +17424,7 @@
    "n": 500,
    "command": "python research/head_to_head.py --data=s --only=nevertwice,mem0,langmem,amem --save --out=research/results/head_to_head_s.json",
    "raw": "research/results/head_to_head_s.json",
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "34f165e8890f204d43f89a206cab56439baf46fe",
    "note": "The standard non-oracle pool: 19,206 retrievable sessions against the oracle variant's 940, the same 500 questions and annotated evidence, twenty-one times the haystack. Same local bge-m3 and scoring function for every system. Competitor versions are recorded in the artifact.",
    "produced_by": [
@@ -16537,7 +17456,13 @@
     "level": 0.95,
     "low": 0.3385,
     "high": 0.4233
-   }
+   },
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "h2h_s.mem0.recall_at_10",
@@ -16552,9 +17477,7 @@
    "n": 500,
    "command": "python research/head_to_head.py --data=s --only=nevertwice,mem0,langmem,amem --save --out=research/results/head_to_head_s.json",
    "raw": "research/results/head_to_head_s.json",
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "34f165e8890f204d43f89a206cab56439baf46fe",
    "note": "The standard non-oracle pool: 19,206 retrievable sessions against the oracle variant's 940, the same 500 questions and annotated evidence, twenty-one times the haystack. Same local bge-m3 and scoring function for every system. Competitor versions are recorded in the artifact.",
    "produced_by": [
@@ -16586,7 +17509,13 @@
     "level": 0.95,
     "low": 0.4207,
     "high": 0.5078
-   }
+   },
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "h2h_s.mem0.mrr",
@@ -16601,9 +17530,7 @@
    "n": 500,
    "command": "python research/head_to_head.py --data=s --only=nevertwice,mem0,langmem,amem --save --out=research/results/head_to_head_s.json",
    "raw": "research/results/head_to_head_s.json",
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "34f165e8890f204d43f89a206cab56439baf46fe",
    "note": "The standard non-oracle pool: 19,206 retrievable sessions against the oracle variant's 940, the same 500 questions and annotated evidence, twenty-one times the haystack. Same local bge-m3 and scoring function for every system. Competitor versions are recorded in the artifact.",
    "produced_by": [
@@ -16630,7 +17557,13 @@
     "sandbox_guard.py"
    ],
    "pointer": "mem0.mrr",
-   "ci": null
+   "ci": null,
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "h2h_s.langmem.recall_at_1",
@@ -16645,9 +17578,7 @@
    "n": 500,
    "command": "python research/head_to_head.py --data=s --only=nevertwice,mem0,langmem,amem --save --out=research/results/head_to_head_s.json",
    "raw": "research/results/head_to_head_s.json",
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "34f165e8890f204d43f89a206cab56439baf46fe",
    "note": "The standard non-oracle pool: 19,206 retrievable sessions against the oracle variant's 940, the same 500 questions and annotated evidence, twenty-one times the haystack. Same local bge-m3 and scoring function for every system. Competitor versions are recorded in the artifact.",
    "produced_by": [
@@ -16679,7 +17610,13 @@
     "level": 0.95,
     "low": 0.1232,
     "high": 0.1861
-   }
+   },
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "h2h_s.langmem.recall_at_5",
@@ -16694,9 +17631,7 @@
    "n": 500,
    "command": "python research/head_to_head.py --data=s --only=nevertwice,mem0,langmem,amem --save --out=research/results/head_to_head_s.json",
    "raw": "research/results/head_to_head_s.json",
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "34f165e8890f204d43f89a206cab56439baf46fe",
    "note": "The standard non-oracle pool: 19,206 retrievable sessions against the oracle variant's 940, the same 500 questions and annotated evidence, twenty-one times the haystack. Same local bge-m3 and scoring function for every system. Competitor versions are recorded in the artifact.",
    "produced_by": [
@@ -16728,7 +17663,13 @@
     "level": 0.95,
     "low": 0.2979,
     "high": 0.3806
-   }
+   },
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "h2h_s.langmem.recall_at_10",
@@ -16743,9 +17684,7 @@
    "n": 500,
    "command": "python research/head_to_head.py --data=s --only=nevertwice,mem0,langmem,amem --save --out=research/results/head_to_head_s.json",
    "raw": "research/results/head_to_head_s.json",
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "34f165e8890f204d43f89a206cab56439baf46fe",
    "note": "The standard non-oracle pool: 19,206 retrievable sessions against the oracle variant's 940, the same 500 questions and annotated evidence, twenty-one times the haystack. Same local bge-m3 and scoring function for every system. Competitor versions are recorded in the artifact.",
    "produced_by": [
@@ -16777,7 +17716,13 @@
     "level": 0.95,
     "low": 0.3638,
     "high": 0.4496
-   }
+   },
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "h2h_s.langmem.mrr",
@@ -16792,9 +17737,7 @@
    "n": 500,
    "command": "python research/head_to_head.py --data=s --only=nevertwice,mem0,langmem,amem --save --out=research/results/head_to_head_s.json",
    "raw": "research/results/head_to_head_s.json",
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "34f165e8890f204d43f89a206cab56439baf46fe",
    "note": "The standard non-oracle pool: 19,206 retrievable sessions against the oracle variant's 940, the same 500 questions and annotated evidence, twenty-one times the haystack. Same local bge-m3 and scoring function for every system. Competitor versions are recorded in the artifact.",
    "produced_by": [
@@ -16821,7 +17764,13 @@
     "sandbox_guard.py"
    ],
    "pointer": "langmem.mrr",
-   "ci": null
+   "ci": null,
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "h2h_pinned.mem0_infer.recall_at_1",
@@ -16836,9 +17785,7 @@
    "n": 500,
    "command": "python research/head_to_head.py --only=mem0_infer,langmem_full,amem_full --save --out=research/results/head_to_head_v2.json",
    "raw": "research/results/head_to_head_v2.json",
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "34f165e8890f204d43f89a206cab56439baf46fe",
    "note": "Mem0 2.0.19 as shipped: infer=True, its LLM extraction (qwen2.5-7b-64k, local) on every session, then its default hybrid search over the memories. The row was produced by the run of 2026-09-06 on the oracle pool; its log shows 13 of 940 extractions the product could not parse (1.4%, below the tenth at which the arm blocks itself) - the counter that records this in the artifact was added to the stand after that run began. Same pool, questions, embedder and scoring as the store arms.",
    "produced_by": [
@@ -16870,7 +17817,13 @@
     "level": 0.95,
     "low": 0.3463,
     "high": 0.4314
-   }
+   },
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "h2h_pinned.mem0_infer.recall_at_5",
@@ -16885,9 +17838,7 @@
    "n": 500,
    "command": "python research/head_to_head.py --only=mem0_infer,langmem_full,amem_full --save --out=research/results/head_to_head_v2.json",
    "raw": "research/results/head_to_head_v2.json",
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "34f165e8890f204d43f89a206cab56439baf46fe",
    "note": "Mem0 2.0.19 as shipped: infer=True, its LLM extraction (qwen2.5-7b-64k, local) on every session, then its default hybrid search over the memories. The row was produced by the run of 2026-09-06 on the oracle pool; its log shows 13 of 940 extractions the product could not parse (1.4%, below the tenth at which the arm blocks itself) - the counter that records this in the artifact was added to the stand after that run began. Same pool, questions, embedder and scoring as the store arms.",
    "produced_by": [
@@ -16919,7 +17870,13 @@
     "level": 0.95,
     "low": 0.6317,
     "high": 0.7136
-   }
+   },
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "h2h_pinned.mem0_infer.recall_at_10",
@@ -16934,9 +17891,7 @@
    "n": 500,
    "command": "python research/head_to_head.py --only=mem0_infer,langmem_full,amem_full --save --out=research/results/head_to_head_v2.json",
    "raw": "research/results/head_to_head_v2.json",
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "34f165e8890f204d43f89a206cab56439baf46fe",
    "note": "Mem0 2.0.19 as shipped: infer=True, its LLM extraction (qwen2.5-7b-64k, local) on every session, then its default hybrid search over the memories. The row was produced by the run of 2026-09-06 on the oracle pool; its log shows 13 of 940 extractions the product could not parse (1.4%, below the tenth at which the arm blocks itself) - the counter that records this in the artifact was added to the stand after that run began. Same pool, questions, embedder and scoring as the store arms.",
    "produced_by": [
@@ -16968,7 +17923,13 @@
     "level": 0.95,
     "low": 0.729,
     "high": 0.8029
-   }
+   },
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "h2h_pinned.mem0_infer.mrr",
@@ -16983,9 +17944,7 @@
    "n": 500,
    "command": "python research/head_to_head.py --only=mem0_infer,langmem_full,amem_full --save --out=research/results/head_to_head_v2.json",
    "raw": "research/results/head_to_head_v2.json",
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "34f165e8890f204d43f89a206cab56439baf46fe",
    "note": "Mem0 2.0.19 as shipped: infer=True, its LLM extraction (qwen2.5-7b-64k, local) on every session, then its default hybrid search over the memories. The row was produced by the run of 2026-09-06 on the oracle pool; its log shows 13 of 940 extractions the product could not parse (1.4%, below the tenth at which the arm blocks itself) - the counter that records this in the artifact was added to the stand after that run began. Same pool, questions, embedder and scoring as the store arms.",
    "produced_by": [
@@ -17012,7 +17971,13 @@
     "sandbox_guard.py"
    ],
    "pointer": "mem0_infer.mrr",
-   "ci": null
+   "ci": null,
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "h2h_pinned.langmem_full.recall_at_1",
@@ -17027,9 +17992,7 @@
    "n": 500,
    "command": "python research/head_to_head.py --only=mem0_infer,langmem_full,amem_full --save --out=research/results/head_to_head_v2.json",
    "raw": "research/results/head_to_head_v2.json",
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "34f165e8890f204d43f89a206cab56439baf46fe",
    "note": "LangMem 0.0.30 as shipped: its own extraction prompt over each session with a local qwen2.5-7b-64k, then its own search over the memories it wrote. The row was produced by the run of 2026-09-06 on the oracle pool, in the same environment as the store arms - same pool, questions, embedder and scoring.",
    "produced_by": [
@@ -17061,7 +18024,13 @@
     "level": 0.95,
     "low": 0.4128,
     "high": 0.4998
-   }
+   },
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "h2h_pinned.langmem_full.recall_at_5",
@@ -17076,9 +18045,7 @@
    "n": 500,
    "command": "python research/head_to_head.py --only=mem0_infer,langmem_full,amem_full --save --out=research/results/head_to_head_v2.json",
    "raw": "research/results/head_to_head_v2.json",
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "34f165e8890f204d43f89a206cab56439baf46fe",
    "note": "LangMem 0.0.30 as shipped: its own extraction prompt over each session with a local qwen2.5-7b-64k, then its own search over the memories it wrote. The row was produced by the run of 2026-09-06 on the oracle pool, in the same environment as the store arms - same pool, questions, embedder and scoring.",
    "produced_by": [
@@ -17110,7 +18077,13 @@
     "level": 0.95,
     "low": 0.6687,
     "high": 0.7481
-   }
+   },
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "h2h_pinned.langmem_full.recall_at_10",
@@ -17125,9 +18098,7 @@
    "n": 500,
    "command": "python research/head_to_head.py --only=mem0_infer,langmem_full,amem_full --save --out=research/results/head_to_head_v2.json",
    "raw": "research/results/head_to_head_v2.json",
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "34f165e8890f204d43f89a206cab56439baf46fe",
    "note": "LangMem 0.0.30 as shipped: its own extraction prompt over each session with a local qwen2.5-7b-64k, then its own search over the memories it wrote. The row was produced by the run of 2026-09-06 on the oracle pool, in the same environment as the store arms - same pool, questions, embedder and scoring.",
    "produced_by": [
@@ -17159,7 +18130,13 @@
     "level": 0.95,
     "low": 0.7627,
     "high": 0.8327
-   }
+   },
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   },
   {
    "id": "h2h_pinned.langmem_full.mrr",
@@ -17174,9 +18151,7 @@
    "n": 500,
    "command": "python research/head_to_head.py --only=mem0_infer,langmem_full,amem_full --save --out=research/results/head_to_head_v2.json",
    "raw": "research/results/head_to_head_v2.json",
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "34f165e8890f204d43f89a206cab56439baf46fe",
    "note": "LangMem 0.0.30 as shipped: its own extraction prompt over each session with a local qwen2.5-7b-64k, then its own search over the memories it wrote. The row was produced by the run of 2026-09-06 on the oracle pool, in the same environment as the store arms - same pool, questions, embedder and scoring.",
    "produced_by": [
@@ -17203,7 +18178,13 @@
     "sandbox_guard.py"
    ],
    "pointer": "langmem_full.mrr",
-   "ci": null
+   "ci": null,
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "withdrawn 2026-09-08: as-of recall entered the engine and the API (capture_session dates, api.as_of), the poisoning bench measured the provenance gate, and the head-to-head stand stopped scoring a run that retrieved nothing (chroma's embed_query on the shared embedder shim); the re-measurement needs the GPU (qwen3-coder extractor, bge-m3, the cross-encoder) and the competitor stores, and lands in the next commit",
+   "withdrawn_on": "2026-09-08",
+   "pending_remeasure": true
   }
  ],
  "external_citations": [
