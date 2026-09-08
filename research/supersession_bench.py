@@ -559,10 +559,22 @@ def pool(engine_files: list[Path], other_files: list[Path] | None = None) -> dic
 
 
 def load_dataset(path: Path) -> dict:
+    """The corpus, with the hash the artifact is pinned by.
+
+    `--dataset` may be given relative to the repository root, which is how `research/reproduce.py`
+    prints every command, or absolute. The recorded path is repository-relative with forward
+    slashes so an artifact produced on Windows reads the same everywhere; a corpus outside the
+    repository keeps its own path, and the hash is what pins it either way."""
+    path = Path(path)
+    if not path.is_absolute():
+        path = ROOT / path
     raw = path.read_bytes()
     data = json.loads(raw.decode("utf-8"))
     data["sha256"] = hashlib.sha256(raw).hexdigest()
-    data["path"] = str(path.relative_to(ROOT))
+    try:
+        data["path"] = path.resolve().relative_to(ROOT).as_posix()
+    except ValueError:
+        data["path"] = path.as_posix()
     return data
 
 

@@ -159,5 +159,14 @@ with tempfile.TemporaryDirectory() as tmp:
           [(p["a"], p["b"]) for p in art["pairs"]]
           == [("mem0", "naive"), ("mem0", "nevertwice"), ("naive", "nevertwice")])
 
+print("\n- the corpus is addressable the way reproduce.py prints it -")
+rel = "research/data/supersession_v1.json"
+by_rel = sb.load_dataset(Path(rel))
+by_abs = sb.load_dataset(ROOT / rel)
+check("a repository-relative path loads (a run from any cwd, and every printed command)",
+      by_rel["sha256"] == by_abs["sha256"])
+check("the recorded path is repository-relative with forward slashes",
+      by_rel["path"] == rel and by_abs["path"] == rel, f"{by_rel['path']!r} {by_abs['path']!r}")
+
 print(f"\n{'ALL OK' if not FAILS else f'{FAILS} FAILED'}")
 sys.exit(1 if FAILS else 0)
