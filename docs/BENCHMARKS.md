@@ -63,22 +63,19 @@ The one comparison here that runs on a corpus this repository ships. Full method
 breakdown and what it costs us: [`research/SUPERSESSION.md`](../research/SUPERSESSION.md).
 
 <!-- claims:supersession-pinned -->
-| arm | returns the retracted fact | returns the replacement | retires a still-true fact |
-|---|---|---|---|
-| **Nevertwice** | 0.058 [0.029, 0.116] | 0.900 [0.833, 0.942] | 0.050 [0.014, 0.165] |
-| Mem0 | 0.967 [0.886, 0.991] | 0.983 [0.911, 0.997] | 0.000 [0.000, 0.161] |
-| an append-only markdown file | 0.950 [0.863, 0.983] | 0.950 [0.863, 0.983] | 0.050 [0.009, 0.236] |
+> **Withdrawn 2026-09.** J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences
+>
+> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/supersession_bench.py` is what re-measures this one.
 <!-- /claims:supersession-pinned -->
 
 Nevertwice's row is pooled over two runs of the same commit; the other two arms are one run each.
-60 supersession cases and 20 controls per run, Wilson intervals, one local stand,
-the same embedder and the same extraction model for every arm. Paired on the same cases,
-Nevertwice against Mem0 gives 54 discordant pairs and not one in the
-other direction; Mem0 and the append-only file are tied with each other at McNemar p = 1.00,
-tied at the bad end of the column. Our payload per query is 288 characters
-against Mem0's 388. The floor is why the table is worth printing at
-all: a benchmark only one vendor's architecture fails is a benchmark about that vendor, and this one
-is failed by an append-only text file too, which is what supersession costs when nothing implements it.
+Sixty supersession cases and twenty controls per run, Wilson intervals, one local stand,
+the same embedder and the same extraction model for every arm. The paired counts, the payload
+per query and the floor's own number are withdrawn with the table above until the re-run at this
+HEAD finishes; the stand now scores the text a caller actually receives, evidence spans included.
+The floor is why the table is worth printing at all: a benchmark only one vendor's architecture
+fails is a benchmark about that vendor, and this one is failed by an append-only text file too,
+which is what supersession costs when nothing implements it.
 
 ## Abstention: does refusing a weak hit pay for itself?
 
@@ -91,8 +88,8 @@ batch's best hit is refused even when there is room for it, which is the distinc
 shipped threshold the payload shrank by about a quarter and the wanted fact came back several
 points less often, against a gate written before the run that allowed a fraction of that loss.
 Nothing on the curve cleared both, so both defaults are 0 and the switches stay opt-in. The
-figures are withdrawn in 2026-09 with the rest of the engine's measurements; the decision does
-not depend on them and stands.
+sweep was re-run after the engine review of 2026-09 and read a larger loss than the first run;
+the decision did not depend on the exact figure and stands.
 
 The one that did pay: re-mining a grown transcript from its recorded watermark instead of from
 byte zero reads well under half the bytes at identical coverage of the appended material.

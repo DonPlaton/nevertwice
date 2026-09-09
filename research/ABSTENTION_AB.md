@@ -1,9 +1,10 @@
 # Three switches that shipped with tests and no measurement
 
-<!-- review-2026-09-05 -->
-> **Withdrawn 2026-09-05, pending a re-run.** The engine changed after this sweep ran; the
-> re-run is on CPU and is queued first. The decision on this page - both defaults at 0 - does
-> not depend on the exact figures and stands.
+> **Re-measured 2026-09-09** at the reviewed engine (commit 042d52c); the table below is read
+> from [`research/results/abstention_ab.json`](results/abstention_ab.json). The first run of this
+> sweep, made before the engine review, printed a smaller loss (eight and a half points at the
+> shipped threshold); the re-run reads a larger one. The decision - both defaults at 0 - was
+> made on the first run and is only firmer on the second.
 
 Three abstention mechanisms went into the engine in one sitting. Each had a test proving it
 *works*: the filter filters, the threshold thresholds, the reader reads only the new region.
@@ -36,17 +37,21 @@ returned no more than 2 points less often. On a miss the default returns to 0.
 
 | threshold | chars/query | hits | wanted fact returned | chars saved | recall lost |
 |---|---|---|---|---|---|
-| 0.00 (off) | 229.2 | 1.41 | 0.870 | - | - |
-| 0.10 | 216.7 | 1.33 | 0.855 | 5.4% | 1.5 pts |
-| 0.20 | 200.1 | 1.28 | 0.841 | 12.7% | 2.9 pts |
-| **0.35 (shipped)** | **168.3** | **1.12** | **0.783** | **26.6%** | **8.7 pts** |
-| 0.50 | 159.4 | 1.07 | 0.768 | 30.4% | 10.2 pts |
-| 0.75 | 149.5 | 1.01 | 0.754 | 34.8% | 11.6 pts |
-| 0.90 | 145.0 | 1.00 | 0.754 | 36.7% | 11.6 pts |
+| 0.00 (off) | 201.4 | 1.30 | 0.871 | - | - |
+| 0.10 | 193.6 | 1.26 | 0.871 | 3.9% | -0.0 pts |
+| 0.20 | 158.1 | 1.07 | 0.771 | 21.5% | 10.0 pts |
+| **0.35 (shipped)** | **155.0** | **1.06** | **0.757** | **23.0%** | **11.4 pts** |
+| 0.50 | 153.0 | 1.04 | 0.757 | 24.0% | 11.4 pts |
+| 0.75 | 148.4 | 1.03 | 0.743 | 26.3% | 12.8 pts |
 
-**Missed, and not narrowly.** At the shipped default the trade is sixty characters against
-eight and a half points of finding the right lesson. No threshold on the curve clears both
-gates: the only one inside the recall budget, 0.10, saves 5.4% - a quarter of what was asked.
+Thresholds above 0.75 read the same as 0.75: one hit is all that is left to refuse.
+
+**Missed, and not narrowly.** At the shipped default the trade is about forty-six characters
+against eleven points of finding the right lesson. No threshold on the curve clears both gates:
+the only ones inside the recall budget, 0.00 and 0.10, save nothing and a twentieth - the
+gate asked for a fifth - and the first threshold that saves a fifth (0.20) already costs ten
+points. The seventy cases are the eighty of the corpus minus the ten where retrieval returned
+no hit at all, on which no threshold can act.
 
 **Default is now 0.** The mechanism stays as an opt-in switch rather than being deleted,
 because the trade plausibly reverses on a store where recall returns ten hits instead of one
@@ -57,7 +62,7 @@ and a half. That is a hypothesis, and it is written here as one.
 `NEVERTWICE_INJECT_MIN_VALUE`, on the path capped at 2200 characters.
 
 The sweep is identical to C1's, and that is the result: **the mean payload on this corpus is
-229 characters, so the cap never binds and the two paths differ in nothing the measurement can
+201 characters, so the cap never binds and the two paths differ in nothing the measurement can
 see.** The gate written for it - 15% smaller with no loss of the top-ranked lesson - is
 **vacuous as written**: the top item scores 1.0 by construction and cannot be dropped at any
 threshold below 1.0, so the second half is satisfied by arithmetic rather than by evidence.
@@ -103,7 +108,7 @@ no stand at all.
 
 ## What this does not show
 
-- **One corpus, and a small one.** Mean recall depth is 1.41 hits. The abstention mechanisms
+- **One corpus, and a small one.** Mean recall depth is 1.3 hits. The abstention mechanisms
   are built for the case where recall returns many hits of uneven quality, and that case is
   not in this corpus. The result is honest about the store it was measured on and says nothing
   about a larger one.

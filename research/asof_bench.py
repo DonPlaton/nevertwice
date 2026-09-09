@@ -25,12 +25,21 @@ Gate, written first (ledger I6): both-correct >= 0.80 on the 60 cases; over-retr
 supersession bench unchanged (this bench writes no new mechanism into the write path). The
 extraction model is the supersession stand's; two runs are pooled the same way.
 
+Since J2 every engine row also records what the store holds for the case's first session
+(notes written, live or retired, their `valid_to`) and classifies an old-day failure into one
+of four kinds - `never_written` (the extractor wrote nothing for session one), `unranked` (a
+note exists but nothing came back for the old day), `paraphrase` (the old note came back but
+no marker survived its wording), `leak` (the new fact came back for the old day) - so a miss
+says which half of the system missed. The engine's returned text includes the evidence spans
+(J1), exactly as `api.as_of` hands them to a caller.
+
     python research/asof_bench.py --arms nevertwice,naive --out run1.json
     python research/asof_bench.py --limit 5            # smoke
 """
 from __future__ import annotations
 
 import argparse
+import collections
 import hashlib
 import json
 import os
@@ -49,10 +58,19 @@ import supersession_bench as sb  # noqa: E402 - the cases, the markers, the naiv
 
 DATASET = HERE / "data" / "supersession_v1.json"
 DAY_FIRST, DAY_BETWEEN, DAY_SECOND, DAY_AFTER = "2026-03-01", "2026-04-01", "2026-05-01", "2026-06-01"
+FAIL_KINDS = ("never_written", "unranked", "paraphrase", "leak")
 
 
 def _items(hits: list[dict]) -> list[str]:
-    return [" ".join(str(h.get(f) or "") for f in ("title", "description")) for h in hits]
+    """One string per returned note: title, description (which since J1 carries the quoted
+    evidence lines in the body) and the `evidence` list itself, so a marker the note's own
+    wording paraphrased can still be found in the verbatim line."""
+    out = []
+    for h in hits:
+        parts = [str(h.get(f) or "") for f in ("title", "description")]
+        parts += [str(s) for s in (h.get("evidence") or [])]
+        out.append(" ".join(p for p in parts if p))
+    return out
 
 
 def _row(case: dict, old_items: list[str], new_items: list[str]) -> dict:
@@ -61,6 +79,62 @@ def _row(case: dict, old_items: list[str], new_items: list[str]) -> dict:
     return {"id": case["id"], "shape": case["shape"], "old_day_correct": bool(old_ok),
             "new_day_correct": bool(new_ok), "both_correct": bool(old_ok and new_ok),
             "old_items": len(old_items), "new_items": len(new_items)}
+
+
+def _session_state(project: str, case: dict) -> dict:
+    """What the store holds for the case's two sessions, read from disk (J2 instrumentation).
+
+    Each typed note carries its writing session in frontmatter; the session note's stem ends in
+    the engine's 8-character identity hash of the ingest id, which is how a note is attributed
+    to session one or two here without touching the write path. Per session: notes written,
+    live, retired, their `valid_to` values, and whether any note's text carries the superseded
+    marker (for session one) or the current marker (for session two)."""
+    import sandbox_guard as sg                                  # noqa: PLC0415
+    from nevertwice import memory_hook as m                     # noqa: PLC0415
+    root = Path(sg.store())
+    sid8 = {f"-session-{m._sid8(f'{project}-s{j}')}": j for j in (0, 1)}
+    per = {j: {"written": 0, "live": 0, "retired": 0, "valid_to": [], "marker_in_text": False,
+               "titles": [], "supersedes": []}
+           for j in (0, 1)}
+    for folder in ("Patterns", "Mistakes", "Decisions"):
+        d = root / folder
+        if not d.exists():
+            continue
+        for md in d.rglob(f"*-{project}-*.md"):
+            fm = m._read_frontmatter_file(md)
+            sess = str(fm.get("session") or "")
+            j = next((jj for tag, jj in sid8.items() if tag in sess), None)
+            if j is None:
+                continue
+            body = md.read_text(encoding="utf-8", errors="replace")
+            st = per[j]
+            st["written"] += 1
+            if md.parent.name == "Superseded" or str(fm.get("status") or "") == "superseded":
+                st["retired"] += 1
+            else:
+                st["live"] += 1
+            if fm.get("valid_to"):
+                st["valid_to"].append(str(fm["valid_to"]))
+            st["titles"].append(md.stem)               # the slug is in the stem: did the two sessions agree on it?
+            sup = fm.get("supersedes")
+            if isinstance(sup, list) and sup:
+                st["supersedes"].extend(str(x) for x in sup)
+            markers = case["superseded"] if j == 0 else case["current"]
+            if markers and sb._hit(markers, body):
+                st["marker_in_text"] = True
+    return {"s0": per[0], "s1": per[1]}
+
+
+def old_fail_kind(row: dict, state: dict | None) -> str | None:
+    """Why the old day failed, from the row and the store state; None when it did not fail."""
+    if row.get("old_day_correct"):
+        return None
+    s0 = (state or {}).get("s0") or {}
+    if state is not None and s0.get("written", 0) == 0:
+        return "never_written"
+    if row.get("old_items", 0) == 0:
+        return "unranked"
+    return "leak" if row.get("leak") else "paraphrase"
 
 
 def run_nevertwice(cases: list[dict], k: int, runs: int = 1) -> dict:
@@ -86,13 +160,25 @@ def run_nevertwice(cases: list[dict], k: int, runs: int = 1) -> dict:
                          "new_day_correct": False, "both_correct": False,
                          "error": f"{type(e).__name__}: {e}"})
             continue
-        old = _items(api.as_of(case["query"], DAY_BETWEEN, project, k=k))
-        new = _items(api.as_of(case["query"], DAY_AFTER, project, k=k))
-        rows.append({**_row(case, old, new), "run": run})
-        print(f"  [run {run + 1}/{runs} {i + 1}/{len(cases)}] {case['id']}  old {rows[-1]['old_day_correct']}  "
-              f"new {rows[-1]['new_day_correct']}", flush=True)
+        old_hits = api.as_of(case["query"], DAY_BETWEEN, project, k=k)
+        new_hits = api.as_of(case["query"], DAY_AFTER, project, k=k)
+        old, new = _items(old_hits), _items(new_hits)
+        row = _row(case, old, new)
+        row["leak"] = bool(sb._hit(case["current"], " ".join(old)))
+        try:
+            state = _session_state(project, case)
+        except Exception as e:                                    # noqa: BLE001 - diagnostics only
+            state = {"error": f"{type(e).__name__}: {e}"}
+        row["store"] = state
+        row["old_fail_kind"] = old_fail_kind(row, state if "s0" in state else None)
+        row["evidence_spans_returned"] = sum(len(h.get("evidence") or []) for h in old_hits + new_hits)
+        rows.append({**row, "run": run})
+        print(f"  [run {run + 1}/{runs} {i + 1}/{len(cases)}] {case['id']}  old {row['old_day_correct']}  "
+              f"new {row['new_day_correct']}"
+              + (f"  ({row['old_fail_kind']})" if row["old_fail_kind"] else ""), flush=True)
     out = {"rows": rows, **score(rows), "runs": runs, "seconds": round(time.time() - t0, 1),
-           "config": f"ollama {sb.LLM} + {sb.EMBED_MODEL}, k={k}, days {DAY_FIRST}/{DAY_SECOND}"}
+           "config": f"ollama {sb.LLM} + {sb.EMBED_MODEL}, k={k}, days {DAY_FIRST}/{DAY_SECOND}",
+           "store_bytes": sb.store_bytes(), **sb.evidence_cost()}
     if runs > 1:
         out["per_run"] = [score([r for r in rows if r.get("run") == run])["both_correct_rate"] for run in range(runs)]
     return out
@@ -121,10 +207,21 @@ def score(rows: list[dict]) -> dict:
     both = sum(1 for r in sup if r["both_correct"])
     old = sum(1 for r in sup if r["old_day_correct"])
     new = sum(1 for r in sup if r["new_day_correct"])
-    return {"n_cases": len(sup), "both_correct_rate": round(both / n, 4),
-            "both_correct_ci": [round(x, 4) for x in sb.wilson(both, n)],
-            "old_day_rate": round(old / n, 4), "new_day_rate": round(new / n, 4),
-            "errors": sum(1 for r in sup if r.get("error"))}
+    out = {"n_cases": len(sup), "both_correct_rate": round(both / n, 4),
+           "both_correct_ci": [round(x, 4) for x in sb.wilson(both, n)],
+           "old_day_rate": round(old / n, 4), "new_day_rate": round(new / n, 4),
+           "errors": sum(1 for r in sup if r.get("error"))}
+    if any("old_fail_kind" in r for r in sup):
+        kinds = collections.Counter(r.get("old_fail_kind") for r in sup if r.get("old_fail_kind"))
+        out["old_day_failures_by_kind"] = {k: kinds.get(k, 0) for k in FAIL_KINDS}
+        out["s0_never_written"] = sum(1 for r in sup
+                                      if ((r.get("store") or {}).get("s0") or {}).get("written") == 0)
+        # how often the replacing session actually closed the first fact's interval - the
+        # write path's cross-day recognition, which the same-day supersession stand cannot see
+        written = [r for r in sup if ((r.get("store") or {}).get("s0") or {}).get("written")]
+        out["s0_retired_rate"] = round(sum(1 for r in written
+                                           if r["store"]["s0"].get("retired")) / len(written), 4) if written else None
+    return out
 
 
 ARMS = {"nevertwice": run_nevertwice, "naive": run_naive}
@@ -161,7 +258,11 @@ def main() -> int:
         res = fn(cases, args.k, args.runs) if name == "nevertwice" else fn(cases, args.k)
         out["arms"][name] = res
         print(f"  both-correct {res['both_correct_rate']} {res['both_correct_ci']} | old day {res['old_day_rate']} "
-              f"| new day {res['new_day_rate']} | errors {res['errors']} | {res['seconds']}s\n")
+              f"| new day {res['new_day_rate']} | errors {res['errors']} | {res['seconds']}s")
+        if res.get("old_day_failures_by_kind"):
+            print(f"  old-day failures by kind: {res['old_day_failures_by_kind']}  "
+                  f"(session one never written: {res.get('s0_never_written')})")
+        print()
     out["arms"]["mem0"] = {"blocked": "Mem0 stamps a memory with the wall-clock time of the add() call and its "
                                       "search has no as-of filter; facts cannot be placed in the past without "
                                       "patching the product"}

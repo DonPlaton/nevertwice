@@ -241,34 +241,61 @@ def contexts_amem_full(data, pool) -> dict:
 
 
 def contexts_nevertwice_full(data, pool) -> dict:
-    """Our extractor over every session with the pipeline arms' model, then `api.recall`."""
+    """Our extractor over every session with the pipeline arms' model, then `api.recall`.
+
+    The context of a hit is what `api.recall` hands a caller: title, description, prevention
+    and - since J1 - the verbatim evidence lines the note was aligned to. The ingest cache is
+    keyed to the sandbox store it was built in: the store is a fresh temporary directory per
+    process, so a cache that outlived its store would mark every session done and rank over
+    nothing. Each session's entry is the number of notes it produced, which is what lets the
+    stand publish the extractor's silence - the questions whose gold sessions yielded no note."""
     os.environ["NEVERTWICE_CLOUD"] = "none"
     os.environ["NEVERTWICE_MODEL"] = EXTRACTOR
     from nevertwice import api                                   # noqa: PLC0415
     project = "lme"
-    done = _load(DATA / "frontier_full_ingest_cache.json")
+    cache_p = DATA / "frontier_full_ingest_cache.json"
+    done = _load(cache_p)
+    store = str(sandbox_guard.store())
+    if done.get("_store") != store:
+        if done:
+            print(f"  ingest cache belongs to another store ({done.get('_store')}); starting over", flush=True)
+        done = {"_store": store}
     t0 = time.time()
     for i, (sid, txt) in enumerate(pool.items()):
         if not txt.strip() or sid in done:
             continue
         try:
-            api.capture_session(txt, project=project, session_id=sid, trigger="ingest")
-            done[sid] = 1
+            r = api.capture_session(txt, project=project, session_id=sid, trigger="ingest")
+            done[sid] = int(r.get("patterns", 0)) + int(r.get("mistakes", 0)) + int(r.get("decisions", 0))
         except Exception as e:                                   # noqa: BLE001 - counted
             done[sid] = f"error: {type(e).__name__}"
         if (i + 1) % 25 == 0:
-            _save(DATA / "frontier_full_ingest_cache.json", done)
+            _save(cache_p, done)
             print(f"  ingested {i + 1}/{len(pool)}  ({time.time() - t0:.0f}s)", flush=True)
-    _save(DATA / "frontier_full_ingest_cache.json", done)
-    errors = sum(1 for v in done.values() if isinstance(v, str))
+    _save(cache_p, done)
+    sessions = {k: v for k, v in done.items() if not k.startswith("_")}
+    errors = sum(1 for v in sessions.values() if isinstance(v, str))
+    silent = sum(1 for v in sessions.values() if v == 0)
+    gold_silent = sum(1 for e in data
+                      if all(sessions.get(s, 0) == 0 or isinstance(sessions.get(s), str)
+                             for s in e["answer_session_ids"]))
+    ev = getattr(api, "_evidence", None)
     out = {"_ingest": {"sessions": len(pool), "errors": errors, "llm": EXTRACTOR,
-                       "llm_calls_per_session": 1}}
+                       "llm_calls_per_session": 1, "sessions_with_zero_notes": silent,
+                       "questions_gold_without_notes": gold_silent, "questions": len(data),
+                       "evidence": dict(ev.STATS) if ev is not None else None,
+                       "evidence_enabled": bool(ev.enabled()) if ev is not None else False}}
     for e in data:
         hits = api.recall(e["question"], project=project, k=10)
-        out[e["question_id"]] = [{"id": h.get("stem"),
-                                  "text": " ".join(str(h.get(f) or "") for f in ("title", "description", "prevention"))}
-                                 for h in hits]
+        out[e["question_id"]] = [{"id": h.get("stem"), "text": _hit_text(h)} for h in hits]
     return out
+
+
+def _hit_text(h: dict) -> str:
+    """A recall hit as the agent would read it: the lesson, then the quoted evidence lines."""
+    parts = [str(h.get(f) or "") for f in ("title", "description", "prevention")]
+    parts += [str(s) for s in (h.get("evidence") or [])]
+    return " ".join(p for p in parts if p)
 
 
 CONTEXT_FNS = {
@@ -453,6 +480,20 @@ def summarise(arms: list[str], data: list, reader: str, judge: str, judge2: str)
             agree += int(v1 == v2)
     out["judge_agreement"] = {"n": tot, "rate": round(agree / tot, 4) if tot else None,
                               "disagreement": round(1 - agree / tot, 4) if tot else None}
+    # the extractor's silence ceiling (J1): questions whose gold sessions produced no note at
+    # all - no span can lift those, and the number is published beside the arm's accuracy
+    ingest = (_load(_ctx_path("nevertwice_full")) or {}).get("_ingest") or {}
+    if ingest.get("questions"):
+        q = int(ingest["questions"])
+        out["extractor_silence"] = {
+            "questions_gold_without_notes": int(ingest.get("questions_gold_without_notes", 0)),
+            "questions": q,
+            "fraction": round(int(ingest.get("questions_gold_without_notes", 0)) / q, 4),
+            "sessions_with_zero_notes": int(ingest.get("sessions_with_zero_notes", 0)),
+            "sessions": int(ingest.get("sessions", 0)),
+            "evidence_enabled": bool(ingest.get("evidence_enabled")),
+            "evidence": ingest.get("evidence"),
+        }
     return out
 
 
@@ -472,6 +513,10 @@ def main() -> int:
         data = stratified(data, args.stratify)
     if args.limit:
         data = data[:args.limit]
+        # a smoke run ingests and ranks only the sessions its questions can ask about; the full
+        # run keeps the whole pool, the same store composition the competitor pipelines saw
+        wanted = {s for e in data for s in e.get("haystack_session_ids", [])}
+        pool = {sid: txt for sid, txt in pool.items() if sid in wanted}
     arms = [a for a in args.arms.split(",") if a]
     print(f"frontier: {len(data)} questions, reader {READER}, judge {JUDGE}, stage {args.stage}")
 

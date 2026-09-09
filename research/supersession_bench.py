@@ -263,13 +263,54 @@ def run_nevertwice(cases: list[dict], k: int) -> dict:
             rows.append({**_blank(case), "error": f"{type(e).__name__}: {e}"})
             continue
         hits = api.recall(case["query"], project=project, k=k)
-        items = [" ".join(str(h.get(f) or "") for f in ("title", "description", "prevention"))
-                 for h in hits]
-        rows.append({**_row(case, items), **_store_state(project, case)})
+        items = [hit_text(h) for h in hits]
+        rows.append({**_row(case, items), **_store_state(project, case),
+                     "evidence_spans_returned": sum(len(h.get("evidence") or []) for h in hits)})
         print(f"  [{i + 1}/{len(cases)}] {case['id']}  hits={len(hits)}"
               f"  stale={rows[-1]['stale_returned']}@{rows[-1]['stale_rank']}", flush=True)
-    return {"rows": rows, **score(rows), "seconds": round(time.time() - t0, 1),
-            "config": f"ollama {LLM} + {EMBED_MODEL}, k={k}"}
+    out = {"rows": rows, **score(rows), "seconds": round(time.time() - t0, 1),
+           "config": f"ollama {LLM} + {EMBED_MODEL}, k={k}",
+           "store_bytes": store_bytes(), **evidence_cost()}
+    return out
+
+
+def hit_text(h: dict) -> str:
+    """What a recall hit hands the agent, as one string the markers are matched against:
+    title, description, prevention and - since J1 - the verbatim evidence lines. The stale
+    and current markers see exactly the text a user's agent would see; characters per query
+    are counted on the same string."""
+    parts = [str(h.get(f) or "") for f in ("title", "description", "prevention")]
+    parts += [str(s) for s in (h.get("evidence") or [])]
+    return " ".join(p for p in parts if p)
+
+
+def store_bytes() -> int:
+    """Bytes of typed notes in the sandbox store, live and retired - the size cost cap of J1
+    is read from this number against a run without spans."""
+    import sandbox_guard as sg                                  # noqa: PLC0415
+    root = Path(sg.store())
+    total = 0
+    for folder in ("Patterns", "Mistakes", "Decisions"):
+        d = root / folder
+        if d.exists():
+            total += sum(p.stat().st_size for p in d.rglob("*.md"))
+    return total
+
+
+def evidence_cost() -> dict:
+    """The alignment layer's own running cost in this process (ms, notes, spans), for the
+    latency cap; zeros when the layer is off or the module is absent."""
+    try:
+        from nevertwice import api                              # noqa: PLC0415
+        ev = api._evidence          # the same module object the write path counted into
+    except Exception:                                           # noqa: BLE001
+        return {"evidence": {"enabled": False}}
+    st = dict(ev.STATS)
+    st["enabled"] = ev.enabled()
+    st["spans_per_note_max"] = ev.MAX_SPANS
+    st["span_chars_max"] = ev.SPAN_CHARS
+    st["ms_per_session"] = round(st["ms"] / st["sessions"], 3) if st.get("sessions") else 0.0
+    return {"evidence": st}
 
 
 # ── arm: mem0 ─────────────────────────────────────────────────────────────────────────────

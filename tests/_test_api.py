@@ -54,7 +54,9 @@ def test_recall_passes_args_and_returns_results():
     fake = mock.Mock(return_value=([{"title": "X", "score": 0.9}], "semantic"))
     with mock.patch.object(ms, "search_core", fake):
         out = api.recall("hello", "proj", 3, rerank=True)
-    assert out == [{"title": "X", "score": 0.9}]
+    # every hit carries `evidence` (J1): the spans read from the note's header, [] for a
+    # note that has none - the mocked hit has no file behind it, so the list is empty
+    assert out == [{"title": "X", "score": 0.9, "evidence": []}]
     fake.assert_called_once_with("hello", "proj", 3, rerank=True)
 
 

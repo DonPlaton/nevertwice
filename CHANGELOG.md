@@ -16,6 +16,26 @@ empty.
 
 ### Added
 
+- **Evidence spans: a note carries the fact, not only the lesson** (`nevertwice/evidence.py`,
+  ledger J1). After a session's notes are written, each is aligned against the transcript by
+  stemmed-token overlap and stamped with the verbatim lines it came from - frontmatter
+  `evidence`, a `## Evidence` block - with no second model call, so a span cannot be
+  hallucinated. `api.recall`, `api.as_of` and `api.format_note` hand the spans on; the
+  supersession, as-of and frontier stands score the text a caller actually receives. The
+  spans are not embedded and not indexed: the ranker is untouched by construction, and the
+  cost caps written before the run measure that anyway. The layer runs as a post-step of
+  `api.capture_session`, so the engine module is unchanged and the register's blast radius is
+  the stands that re-measure it. Gates, baseline and the decision on a miss are in
+  `.loop/GOAL-CLOSE.md`; the numbers arrive with the campaign, not with this entry.
+
+- **The as-of stand says why an old day failed** (`research/asof_bench.py`, ledger J2). Every
+  engine row records what the store holds for the case's first session - notes written, live
+  or retired, their `valid_to` - and classifies a miss as *never written*, *unranked*,
+  *paraphrase* or *leak*. Reading the existing artifact this way showed the proposal the
+  session opened with (retiring a fact without a replacement) was aimed at the wrong half:
+  most misses were a paraphrased marker or a session the extractor left empty, not a
+  retirement the write path failed to make. That proposal is recorded as dropped.
+
 - **Accuracy per token: every system's context, one reader, one judge**
   (`research/frontier_eval.py`, `research/FRONTIER.md`). The axis every vendor publishes and
   this repository had not, because recall is what a memory controls and answer accuracy is

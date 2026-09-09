@@ -835,7 +835,7 @@
   },
   "research/ABSTENTION_AB.md": {
    "governance": "backlog",
-   "budget": 63,
+   "budget": 61,
    "note": "The sweep tables restate one curve per mechanism. The decision they drove - both abstention defaults reverted to 0 - is pinned by tests rather than by this page.",
    "budget_metric": "evidence-bearing numeric tokens: numbers outside fenced blocks, excluding years, months, Python versions and bare single digits",
    "generator": "research/abstention_ab.py"
@@ -6387,6 +6387,7 @@
     "nevertwice/dashboard.py",
     "nevertwice/digest.py",
     "nevertwice/emit.py",
+    "nevertwice/evidence.py",
     "nevertwice/graph.py",
     "nevertwice/guards.py",
     "nevertwice/inbox.py",
@@ -6439,6 +6440,7 @@
     "nevertwice/dashboard.py",
     "nevertwice/digest.py",
     "nevertwice/emit.py",
+    "nevertwice/evidence.py",
     "nevertwice/graph.py",
     "nevertwice/guards.py",
     "nevertwice/inbox.py",
@@ -6492,6 +6494,7 @@
     "nevertwice/dashboard.py",
     "nevertwice/digest.py",
     "nevertwice/emit.py",
+    "nevertwice/evidence.py",
     "nevertwice/graph.py",
     "nevertwice/guards.py",
     "nevertwice/inbox.py",
@@ -7577,10 +7580,7 @@
     "low": 0.0285,
     "high": 0.1155
    },
-   "cited_in": [
-    "README.md",
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "produced_by": [
     "research/supersession_bench.py",
@@ -7593,6 +7593,7 @@
     "nevertwice/dashboard.py",
     "nevertwice/digest.py",
     "nevertwice/emit.py",
+    "nevertwice/evidence.py",
     "nevertwice/graph.py",
     "nevertwice/guards.py",
     "nevertwice/inbox.py",
@@ -7616,7 +7617,14 @@
     "research/uncertainty.py",
     "sandbox_guard.py"
    ],
-   "note": "Pooled over two runs of the same commit: the extraction model is not deterministic at temperature 0 and the two runs read 0.0167 and 0.0667. One run of this stand is not a result, so the published figure is the pooled rate over 120 case-runs with the per-run values recorded beside it in the artifact."
+   "note": "Pooled over two runs of the same commit: the extraction model is not deterministic at temperature 0 and the two runs read 0.0167 and 0.0667. One run of this stand is not a result, so the published figure is the pooled rate over 120 case-runs with the per-run values recorded beside it in the artifact.",
+   "cited_in_pending": [
+    "README.md",
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
+   "withdrawn_on": "2026-09-10",
+   "pending_remeasure": true
   },
   {
    "id": "supersession.nevertwice.current_rate",
@@ -7640,9 +7648,7 @@
     "low": 0.8333,
     "high": 0.9419
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "produced_by": [
     "research/supersession_bench.py",
@@ -7655,6 +7661,7 @@
     "nevertwice/dashboard.py",
     "nevertwice/digest.py",
     "nevertwice/emit.py",
+    "nevertwice/evidence.py",
     "nevertwice/graph.py",
     "nevertwice/guards.py",
     "nevertwice/inbox.py",
@@ -7678,7 +7685,13 @@
     "research/uncertainty.py",
     "sandbox_guard.py"
    ],
-   "note": "Pooled over two runs of the same commit: the extraction model is not deterministic at temperature 0 and the two runs read 0.9333 and 0.9333. One run of this stand is not a result, so the published figure is the pooled rate over 120 case-runs with the per-run values recorded beside it in the artifact."
+   "note": "Pooled over two runs of the same commit: the extraction model is not deterministic at temperature 0 and the two runs read 0.9333 and 0.9333. One run of this stand is not a result, so the published figure is the pooled rate over 120 case-runs with the per-run values recorded beside it in the artifact.",
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
+   "withdrawn_on": "2026-09-10",
+   "pending_remeasure": true
   },
   {
    "id": "supersession.nevertwice.over_retraction_rate",
@@ -7702,9 +7715,7 @@
     "low": 0.0138,
     "high": 0.165
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "produced_by": [
     "research/supersession_bench.py",
@@ -7717,6 +7728,7 @@
     "nevertwice/dashboard.py",
     "nevertwice/digest.py",
     "nevertwice/emit.py",
+    "nevertwice/evidence.py",
     "nevertwice/graph.py",
     "nevertwice/guards.py",
     "nevertwice/inbox.py",
@@ -7740,7 +7752,13 @@
     "research/uncertainty.py",
     "sandbox_guard.py"
    ],
-   "note": "2 of 40 controls over two runs. At n=40 an observed 0.05 is bounded above at 0.165; about 130 controls would put that under 0.10. This is the design's own worst failure mode and it remains the least measured column here."
+   "note": "2 of 40 controls over two runs. At n=40 an observed 0.05 is bounded above at 0.165; about 130 controls would put that under 0.10. This is the design's own worst failure mode and it remains the least measured column here.",
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
+   "withdrawn_on": "2026-09-10",
+   "pending_remeasure": true
   },
   {
    "id": "supersession.mem0.stale_rate",
@@ -7767,10 +7785,7 @@
     "low": 0.8864,
     "high": 0.9908
    },
-   "cited_in": [
-    "README.md",
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "produced_by": [
     "research/supersession_bench.py",
@@ -7783,6 +7798,7 @@
     "nevertwice/dashboard.py",
     "nevertwice/digest.py",
     "nevertwice/emit.py",
+    "nevertwice/evidence.py",
     "nevertwice/graph.py",
     "nevertwice/guards.py",
     "nevertwice/inbox.py",
@@ -7805,7 +7821,14 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "README.md",
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
+   "withdrawn_on": "2026-09-10",
+   "pending_remeasure": true
   },
   {
    "id": "supersession.mem0.current_rate",
@@ -7830,9 +7853,7 @@
     "low": 0.9114,
     "high": 0.997
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "produced_by": [
     "research/supersession_bench.py",
@@ -7845,6 +7866,7 @@
     "nevertwice/dashboard.py",
     "nevertwice/digest.py",
     "nevertwice/emit.py",
+    "nevertwice/evidence.py",
     "nevertwice/graph.py",
     "nevertwice/guards.py",
     "nevertwice/inbox.py",
@@ -7867,7 +7889,13 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
+   "withdrawn_on": "2026-09-10",
+   "pending_remeasure": true
   },
   {
    "id": "supersession.mem0.over_retraction_rate",
@@ -7891,9 +7919,7 @@
     "low": 0.0,
     "high": 0.1611
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "produced_by": [
     "research/supersession_bench.py",
@@ -7906,6 +7932,7 @@
     "nevertwice/dashboard.py",
     "nevertwice/digest.py",
     "nevertwice/emit.py",
+    "nevertwice/evidence.py",
     "nevertwice/graph.py",
     "nevertwice/guards.py",
     "nevertwice/inbox.py",
@@ -7929,7 +7956,13 @@
     "research/uncertainty.py",
     "sandbox_guard.py"
    ],
-   "note": "0 of 20 controls. The interval is wide because the control arm is small: at n=20 an observed 0.05 is bounded above at 0.1611. Reading this column as 'about one in twenty' is reading more than 20 cases can support. Narrowing the upper bound below 0.10 needs roughly 120 controls."
+   "note": "0 of 20 controls. The interval is wide because the control arm is small: at n=20 an observed 0.05 is bounded above at 0.1611. Reading this column as 'about one in twenty' is reading more than 20 cases can support. Narrowing the upper bound below 0.10 needs roughly 120 controls.",
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
+   "withdrawn_on": "2026-09-10",
+   "pending_remeasure": true
   },
   {
    "id": "supersession.naive.stale_rate",
@@ -7955,10 +7988,7 @@
     "low": 0.863,
     "high": 0.9829
    },
-   "cited_in": [
-    "README.md",
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "produced_by": [
     "research/supersession_bench.py",
@@ -7971,6 +8001,7 @@
     "nevertwice/dashboard.py",
     "nevertwice/digest.py",
     "nevertwice/emit.py",
+    "nevertwice/evidence.py",
     "nevertwice/graph.py",
     "nevertwice/guards.py",
     "nevertwice/inbox.py",
@@ -7993,7 +8024,14 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "README.md",
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
+   "withdrawn_on": "2026-09-10",
+   "pending_remeasure": true
   },
   {
    "id": "supersession.naive.current_rate",
@@ -8018,9 +8056,7 @@
     "low": 0.863,
     "high": 0.9829
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "produced_by": [
     "research/supersession_bench.py",
@@ -8033,6 +8069,7 @@
     "nevertwice/dashboard.py",
     "nevertwice/digest.py",
     "nevertwice/emit.py",
+    "nevertwice/evidence.py",
     "nevertwice/graph.py",
     "nevertwice/guards.py",
     "nevertwice/inbox.py",
@@ -8055,7 +8092,13 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
+   "withdrawn_on": "2026-09-10",
+   "pending_remeasure": true
   },
   {
    "id": "supersession.naive.over_retraction_rate",
@@ -8079,9 +8122,7 @@
     "low": 0.0089,
     "high": 0.2361
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "produced_by": [
     "research/supersession_bench.py",
@@ -8094,6 +8135,7 @@
     "nevertwice/dashboard.py",
     "nevertwice/digest.py",
     "nevertwice/emit.py",
+    "nevertwice/evidence.py",
     "nevertwice/graph.py",
     "nevertwice/guards.py",
     "nevertwice/inbox.py",
@@ -8117,7 +8159,13 @@
     "research/uncertainty.py",
     "sandbox_guard.py"
    ],
-   "note": "1 of 20 controls. The interval is wide because the control arm is small: at n=20 an observed 0.05 is bounded above at 0.2361. Reading this column as 'about one in twenty' is reading more than 20 cases can support. Narrowing the upper bound below 0.10 needs roughly 120 controls."
+   "note": "1 of 20 controls. The interval is wide because the control arm is small: at n=20 an observed 0.05 is bounded above at 0.2361. Reading this column as 'about one in twenty' is reading more than 20 cases can support. Narrowing the upper bound below 0.10 needs roughly 120 controls.",
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
+   "withdrawn_on": "2026-09-10",
+   "pending_remeasure": true
   },
   {
    "id": "supersession.nevertwice_vs_mem0.p_mcnemar",
@@ -8147,6 +8195,7 @@
     "nevertwice/dashboard.py",
     "nevertwice/digest.py",
     "nevertwice/emit.py",
+    "nevertwice/evidence.py",
     "nevertwice/graph.py",
     "nevertwice/guards.py",
     "nevertwice/inbox.py",
@@ -8169,7 +8218,11 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
+   "withdrawn_on": "2026-09-10",
+   "pending_remeasure": true
   },
   {
    "id": "supersession.mem0_vs_naive.p_mcnemar",
@@ -8186,9 +8239,7 @@
    "raw": "research/results/supersession_v1.json",
    "pointer": "pairs[0].p_mcnemar",
    "ci": null,
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "produced_by": [
     "research/supersession_bench.py",
@@ -8201,6 +8252,7 @@
     "nevertwice/dashboard.py",
     "nevertwice/digest.py",
     "nevertwice/emit.py",
+    "nevertwice/evidence.py",
     "nevertwice/graph.py",
     "nevertwice/guards.py",
     "nevertwice/inbox.py",
@@ -8223,7 +8275,13 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
+   "withdrawn_on": "2026-09-10",
+   "pending_remeasure": true
   },
   {
    "id": "supersession.nevertwice.chars_per_query",
@@ -8240,9 +8298,7 @@
    "raw": "research/results/supersession_v1.json",
    "pointer": "pooled_nevertwice.mean_chars_returned",
    "ci": null,
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "produced_by": [
     "research/supersession_bench.py",
@@ -8255,6 +8311,7 @@
     "nevertwice/dashboard.py",
     "nevertwice/digest.py",
     "nevertwice/emit.py",
+    "nevertwice/evidence.py",
     "nevertwice/graph.py",
     "nevertwice/guards.py",
     "nevertwice/inbox.py",
@@ -8277,7 +8334,13 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
+   "withdrawn_on": "2026-09-10",
+   "pending_remeasure": true
   },
   {
    "id": "supersession.mem0.chars_per_query",
@@ -8294,9 +8357,7 @@
    "raw": "research/results/supersession_v1.json",
    "pointer": "arms.mem0.mean_chars_returned",
    "ci": null,
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "produced_by": [
     "research/supersession_bench.py",
@@ -8309,6 +8370,7 @@
     "nevertwice/dashboard.py",
     "nevertwice/digest.py",
     "nevertwice/emit.py",
+    "nevertwice/evidence.py",
     "nevertwice/graph.py",
     "nevertwice/guards.py",
     "nevertwice/inbox.py",
@@ -8331,7 +8393,13 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
+   "withdrawn_on": "2026-09-10",
+   "pending_remeasure": true
   },
   {
    "id": "supersession.extraction.language_drift",
@@ -8361,6 +8429,7 @@
     "nevertwice/dashboard.py",
     "nevertwice/digest.py",
     "nevertwice/emit.py",
+    "nevertwice/evidence.py",
     "nevertwice/graph.py",
     "nevertwice/guards.py",
     "nevertwice/inbox.py",
@@ -8405,9 +8474,7 @@
    "raw": "research/results/supersession_v1.json",
    "pointer": "dataset.supersession_cases",
    "ci": null,
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "produced_by": [
     "research/supersession_bench.py",
@@ -8420,6 +8487,7 @@
     "nevertwice/dashboard.py",
     "nevertwice/digest.py",
     "nevertwice/emit.py",
+    "nevertwice/evidence.py",
     "nevertwice/graph.py",
     "nevertwice/guards.py",
     "nevertwice/inbox.py",
@@ -8442,7 +8510,13 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
+   "withdrawn_on": "2026-09-10",
+   "pending_remeasure": true
   },
   {
    "id": "supersession.dataset.control_cases",
@@ -8459,9 +8533,7 @@
    "raw": "research/results/supersession_v1.json",
    "pointer": "dataset.control_cases",
    "ci": null,
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "produced_by": [
     "research/supersession_bench.py",
@@ -8474,6 +8546,7 @@
     "nevertwice/dashboard.py",
     "nevertwice/digest.py",
     "nevertwice/emit.py",
+    "nevertwice/evidence.py",
     "nevertwice/graph.py",
     "nevertwice/guards.py",
     "nevertwice/inbox.py",
@@ -8496,7 +8569,13 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
+   "withdrawn_on": "2026-09-10",
+   "pending_remeasure": true
   },
   {
    "id": "supersession.nevertwice_vs_mem0.discordant",
@@ -8514,9 +8593,7 @@
    "raw": "research/results/supersession_v1.json",
    "pointer": "pairs_per_engine_run[0].mem0_only",
    "ci": null,
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "produced_by": [
     "research/supersession_bench.py",
@@ -8529,6 +8606,7 @@
     "nevertwice/dashboard.py",
     "nevertwice/digest.py",
     "nevertwice/emit.py",
+    "nevertwice/evidence.py",
     "nevertwice/graph.py",
     "nevertwice/guards.py",
     "nevertwice/inbox.py",
@@ -8551,7 +8629,13 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
+   "withdrawn_on": "2026-09-10",
+   "pending_remeasure": true
   },
   {
    "id": "abstention.recall.shipped_threshold",
@@ -8568,9 +8652,7 @@
    "raw": "research/results/abstention_ab.json",
    "pointer": "recall_sweep[4].threshold",
    "ci": null,
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "042d52c80802c9c3e8b387dee8226f1327cb8526",
    "produced_by": [
     "research/abstention_ab.py",
@@ -8583,6 +8665,7 @@
     "nevertwice/dashboard.py",
     "nevertwice/digest.py",
     "nevertwice/emit.py",
+    "nevertwice/evidence.py",
     "nevertwice/graph.py",
     "nevertwice/guards.py",
     "nevertwice/inbox.py",
@@ -8601,16 +8684,23 @@
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
+   "withdrawn_on": "2026-09-10",
+   "pending_remeasure": true
   },
   {
    "id": "abstention.recall.char_reduction_at_shipped",
-   "statement": "at the shipped threshold the recall payload is 0.2% smaller",
+   "statement": "at the shipped threshold the recall payload is 23.0% smaller",
    "value": 0.2304,
    "printed": [
-    "0.2"
+    "23.0",
+    "0.2304"
    ],
-   "unit": "percent",
+   "unit": "fraction of the payload with the threshold off",
    "dataset": "supersession_v1",
    "environment": "local_supersession_stand",
    "n": 80,
@@ -8618,9 +8708,7 @@
    "raw": "research/results/abstention_ab.json",
    "pointer": "recall_sweep[4].char_reduction_vs_off",
    "ci": null,
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "042d52c80802c9c3e8b387dee8226f1327cb8526",
    "produced_by": [
     "research/abstention_ab.py",
@@ -8633,6 +8721,7 @@
     "nevertwice/dashboard.py",
     "nevertwice/digest.py",
     "nevertwice/emit.py",
+    "nevertwice/evidence.py",
     "nevertwice/graph.py",
     "nevertwice/guards.py",
     "nevertwice/inbox.py",
@@ -8651,16 +8740,22 @@
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "note": "Statement corrected 2026-09-10 (ledger J0): the restore had reformatted a fraction in the percent shape of the withdrawn claim.",
+   "cited_in_pending": [],
+   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
+   "withdrawn_on": "2026-09-10",
+   "pending_remeasure": true
   },
   {
    "id": "abstention.recall.current_loss_at_shipped",
-   "statement": "and the wanted fact comes back -0.1 points less often",
+   "statement": "and the wanted fact comes back 11.4 points less often (0.871 to 0.757)",
    "value": -0.1143,
    "printed": [
-    "-0.1"
+    "11.4",
+    "-0.1143"
    ],
-   "unit": "percentage points",
+   "unit": "fraction of cases, delta against the threshold off",
    "dataset": "supersession_v1",
    "environment": "local_supersession_stand",
    "n": 80,
@@ -8681,6 +8776,7 @@
     "nevertwice/dashboard.py",
     "nevertwice/digest.py",
     "nevertwice/emit.py",
+    "nevertwice/evidence.py",
     "nevertwice/graph.py",
     "nevertwice/guards.py",
     "nevertwice/inbox.py",
@@ -8699,16 +8795,22 @@
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "note": "Statement corrected 2026-09-10 (ledger J0): the restore had reformatted a fraction in the percent shape of the withdrawn claim.",
+   "cited_in_pending": [],
+   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
+   "withdrawn_on": "2026-09-10",
+   "pending_remeasure": true
   },
   {
    "id": "abstention.remine.byte_reduction",
-   "statement": "re-mining from the recorded watermark reads 0.8% fewer bytes than re-reading from zero",
+   "statement": "re-mining from the recorded watermark reads 77.8% fewer bytes than re-reading from zero",
    "value": 0.7778,
    "printed": [
-    "0.8"
+    "77.8",
+    "0.7778"
    ],
-   "unit": "percent",
+   "unit": "fraction of the bytes a full re-read costs",
    "dataset": "supersession_v1",
    "environment": "local_supersession_stand",
    "n": 8,
@@ -8716,9 +8818,7 @@
    "raw": "research/results/abstention_ab.json",
    "pointer": "remine.byte_reduction",
    "ci": null,
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "042d52c80802c9c3e8b387dee8226f1327cb8526",
    "produced_by": [
     "research/abstention_ab.py",
@@ -8731,6 +8831,7 @@
     "nevertwice/dashboard.py",
     "nevertwice/digest.py",
     "nevertwice/emit.py",
+    "nevertwice/evidence.py",
     "nevertwice/graph.py",
     "nevertwice/guards.py",
     "nevertwice/inbox.py",
@@ -8749,7 +8850,12 @@
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "note": "Statement corrected 2026-09-10 (ledger J0): the restore had reformatted a fraction in the percent shape of the withdrawn claim.",
+   "cited_in_pending": [],
+   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
+   "withdrawn_on": "2026-09-10",
+   "pending_remeasure": true
   },
   {
    "id": "abstention.remine.coverage",
@@ -8779,6 +8885,7 @@
     "nevertwice/dashboard.py",
     "nevertwice/digest.py",
     "nevertwice/emit.py",
+    "nevertwice/evidence.py",
     "nevertwice/graph.py",
     "nevertwice/guards.py",
     "nevertwice/inbox.py",
@@ -8797,7 +8904,11 @@
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
+   "withdrawn_on": "2026-09-10",
+   "pending_remeasure": true
   },
   {
    "id": "baselines.f2.matched_fpr",
@@ -17927,6 +18038,7 @@
     "nevertwice/dashboard.py",
     "nevertwice/digest.py",
     "nevertwice/emit.py",
+    "nevertwice/evidence.py",
     "nevertwice/graph.py",
     "nevertwice/guards.py",
     "nevertwice/inbox.py",
@@ -17950,7 +18062,11 @@
     "research/uncertainty.py",
     "sandbox_guard.py"
    ],
-   "note": "Pooled over 2 runs of the same commit: the extraction model is not deterministic at temperature 0 and the runs read 0.1167 and 0.0833. One run of this stand is not a result, so the published figure is the pooled rate over 120 case-runs with the per-run values beside it in the artifact."
+   "note": "Pooled over 2 runs of the same commit: the extraction model is not deterministic at temperature 0 and the runs read 0.1167 and 0.0833. One run of this stand is not a result, so the published figure is the pooled rate over 120 case-runs with the per-run values beside it in the artifact.",
+   "cited_in_pending": [],
+   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
+   "withdrawn_on": "2026-09-10",
+   "pending_remeasure": true
   },
   {
    "id": "supersession_implicit.nevertwice.current_rate",
@@ -17985,6 +18101,7 @@
     "nevertwice/dashboard.py",
     "nevertwice/digest.py",
     "nevertwice/emit.py",
+    "nevertwice/evidence.py",
     "nevertwice/graph.py",
     "nevertwice/guards.py",
     "nevertwice/inbox.py",
@@ -18008,7 +18125,11 @@
     "research/uncertainty.py",
     "sandbox_guard.py"
    ],
-   "note": "Pooled over 2 runs of the same commit: the extraction model is not deterministic at temperature 0 and the runs read 0.1167 and 0.0833. One run of this stand is not a result, so the published figure is the pooled rate over 120 case-runs with the per-run values beside it in the artifact."
+   "note": "Pooled over 2 runs of the same commit: the extraction model is not deterministic at temperature 0 and the runs read 0.1167 and 0.0833. One run of this stand is not a result, so the published figure is the pooled rate over 120 case-runs with the per-run values beside it in the artifact.",
+   "cited_in_pending": [],
+   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
+   "withdrawn_on": "2026-09-10",
+   "pending_remeasure": true
   },
   {
    "id": "supersession_implicit.nevertwice.over_retraction_rate",
@@ -18043,6 +18164,7 @@
     "nevertwice/dashboard.py",
     "nevertwice/digest.py",
     "nevertwice/emit.py",
+    "nevertwice/evidence.py",
     "nevertwice/graph.py",
     "nevertwice/guards.py",
     "nevertwice/inbox.py",
@@ -18065,7 +18187,11 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
+   "withdrawn_on": "2026-09-10",
+   "pending_remeasure": true
   },
   {
    "id": "supersession_implicit.nevertwice.chars_per_query",
@@ -18095,6 +18221,7 @@
     "nevertwice/dashboard.py",
     "nevertwice/digest.py",
     "nevertwice/emit.py",
+    "nevertwice/evidence.py",
     "nevertwice/graph.py",
     "nevertwice/guards.py",
     "nevertwice/inbox.py",
@@ -18117,7 +18244,11 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
+   "withdrawn_on": "2026-09-10",
+   "pending_remeasure": true
   },
   {
    "id": "supersession_implicit.naive.stale_rate",
@@ -18152,6 +18283,7 @@
     "nevertwice/dashboard.py",
     "nevertwice/digest.py",
     "nevertwice/emit.py",
+    "nevertwice/evidence.py",
     "nevertwice/graph.py",
     "nevertwice/guards.py",
     "nevertwice/inbox.py",
@@ -18174,7 +18306,11 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
+   "withdrawn_on": "2026-09-10",
+   "pending_remeasure": true
   },
   {
    "id": "supersession_implicit.naive.current_rate",
@@ -18209,6 +18345,7 @@
     "nevertwice/dashboard.py",
     "nevertwice/digest.py",
     "nevertwice/emit.py",
+    "nevertwice/evidence.py",
     "nevertwice/graph.py",
     "nevertwice/guards.py",
     "nevertwice/inbox.py",
@@ -18231,7 +18368,11 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
+   "withdrawn_on": "2026-09-10",
+   "pending_remeasure": true
   },
   {
    "id": "supersession_implicit.naive.over_retraction_rate",
@@ -18266,6 +18407,7 @@
     "nevertwice/dashboard.py",
     "nevertwice/digest.py",
     "nevertwice/emit.py",
+    "nevertwice/evidence.py",
     "nevertwice/graph.py",
     "nevertwice/guards.py",
     "nevertwice/inbox.py",
@@ -18288,7 +18430,11 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
+   "withdrawn_on": "2026-09-10",
+   "pending_remeasure": true
   },
   {
    "id": "supersession_implicit.naive.chars_per_query",
@@ -18318,6 +18464,7 @@
     "nevertwice/dashboard.py",
     "nevertwice/digest.py",
     "nevertwice/emit.py",
+    "nevertwice/evidence.py",
     "nevertwice/graph.py",
     "nevertwice/guards.py",
     "nevertwice/inbox.py",
@@ -18340,7 +18487,11 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
+   "withdrawn_on": "2026-09-10",
+   "pending_remeasure": true
   },
   {
    "id": "supersession_implicit.mem0.stale_rate",
@@ -18375,6 +18526,7 @@
     "nevertwice/dashboard.py",
     "nevertwice/digest.py",
     "nevertwice/emit.py",
+    "nevertwice/evidence.py",
     "nevertwice/graph.py",
     "nevertwice/guards.py",
     "nevertwice/inbox.py",
@@ -18397,7 +18549,11 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
+   "withdrawn_on": "2026-09-10",
+   "pending_remeasure": true
   },
   {
    "id": "supersession_implicit.mem0.current_rate",
@@ -18432,6 +18588,7 @@
     "nevertwice/dashboard.py",
     "nevertwice/digest.py",
     "nevertwice/emit.py",
+    "nevertwice/evidence.py",
     "nevertwice/graph.py",
     "nevertwice/guards.py",
     "nevertwice/inbox.py",
@@ -18454,7 +18611,11 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
+   "withdrawn_on": "2026-09-10",
+   "pending_remeasure": true
   },
   {
    "id": "supersession_implicit.mem0.over_retraction_rate",
@@ -18489,6 +18650,7 @@
     "nevertwice/dashboard.py",
     "nevertwice/digest.py",
     "nevertwice/emit.py",
+    "nevertwice/evidence.py",
     "nevertwice/graph.py",
     "nevertwice/guards.py",
     "nevertwice/inbox.py",
@@ -18511,7 +18673,11 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
+   "withdrawn_on": "2026-09-10",
+   "pending_remeasure": true
   },
   {
    "id": "supersession_implicit.mem0.chars_per_query",
@@ -18541,6 +18707,7 @@
     "nevertwice/dashboard.py",
     "nevertwice/digest.py",
     "nevertwice/emit.py",
+    "nevertwice/evidence.py",
     "nevertwice/graph.py",
     "nevertwice/guards.py",
     "nevertwice/inbox.py",
@@ -18563,7 +18730,11 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
+   "withdrawn_on": "2026-09-10",
+   "pending_remeasure": true
   },
   {
    "id": "supersession_implicit.mem0_vs_naive.p_mcnemar",
@@ -18593,6 +18764,7 @@
     "nevertwice/dashboard.py",
     "nevertwice/digest.py",
     "nevertwice/emit.py",
+    "nevertwice/evidence.py",
     "nevertwice/graph.py",
     "nevertwice/guards.py",
     "nevertwice/inbox.py",
@@ -18615,7 +18787,11 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
+   "withdrawn_on": "2026-09-10",
+   "pending_remeasure": true
   },
   {
    "id": "supersession_implicit.mem0_vs_nevertwice.p_mcnemar",
@@ -18645,6 +18821,7 @@
     "nevertwice/dashboard.py",
     "nevertwice/digest.py",
     "nevertwice/emit.py",
+    "nevertwice/evidence.py",
     "nevertwice/graph.py",
     "nevertwice/guards.py",
     "nevertwice/inbox.py",
@@ -18667,7 +18844,11 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
+   "withdrawn_on": "2026-09-10",
+   "pending_remeasure": true
   },
   {
    "id": "supersession_implicit.naive_vs_nevertwice.p_mcnemar",
@@ -18697,6 +18878,7 @@
     "nevertwice/dashboard.py",
     "nevertwice/digest.py",
     "nevertwice/emit.py",
+    "nevertwice/evidence.py",
     "nevertwice/graph.py",
     "nevertwice/guards.py",
     "nevertwice/inbox.py",
@@ -18719,7 +18901,11 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
+   "withdrawn_on": "2026-09-10",
+   "pending_remeasure": true
   },
   {
    "id": "supersession_implicit.dataset.supersession_cases",
@@ -18749,6 +18935,7 @@
     "nevertwice/dashboard.py",
     "nevertwice/digest.py",
     "nevertwice/emit.py",
+    "nevertwice/evidence.py",
     "nevertwice/graph.py",
     "nevertwice/guards.py",
     "nevertwice/inbox.py",
@@ -18771,7 +18958,11 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
+   "withdrawn_on": "2026-09-10",
+   "pending_remeasure": true
   },
   {
    "id": "supersession_implicit.dataset.control_cases",
@@ -18801,6 +18992,7 @@
     "nevertwice/dashboard.py",
     "nevertwice/digest.py",
     "nevertwice/emit.py",
+    "nevertwice/evidence.py",
     "nevertwice/graph.py",
     "nevertwice/guards.py",
     "nevertwice/inbox.py",
@@ -18823,7 +19015,11 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
+   "withdrawn_on": "2026-09-10",
+   "pending_remeasure": true
   },
   {
    "id": "asof.nevertwice.both_correct",
@@ -18859,6 +19055,7 @@
     "nevertwice/dashboard.py",
     "nevertwice/digest.py",
     "nevertwice/emit.py",
+    "nevertwice/evidence.py",
     "nevertwice/graph.py",
     "nevertwice/guards.py",
     "nevertwice/inbox.py",
@@ -18882,7 +19079,11 @@
     "research/supersession_bench.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
+   "withdrawn_on": "2026-09-10",
+   "pending_remeasure": true
   },
   {
    "id": "asof.nevertwice.old_day",
@@ -18918,6 +19119,7 @@
     "nevertwice/dashboard.py",
     "nevertwice/digest.py",
     "nevertwice/emit.py",
+    "nevertwice/evidence.py",
     "nevertwice/graph.py",
     "nevertwice/guards.py",
     "nevertwice/inbox.py",
@@ -18941,7 +19143,11 @@
     "research/supersession_bench.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
+   "withdrawn_on": "2026-09-10",
+   "pending_remeasure": true
   },
   {
    "id": "asof.nevertwice.new_day",
@@ -18977,6 +19183,7 @@
     "nevertwice/dashboard.py",
     "nevertwice/digest.py",
     "nevertwice/emit.py",
+    "nevertwice/evidence.py",
     "nevertwice/graph.py",
     "nevertwice/guards.py",
     "nevertwice/inbox.py",
@@ -19000,7 +19207,11 @@
     "research/supersession_bench.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
+   "withdrawn_on": "2026-09-10",
+   "pending_remeasure": true
   },
   {
    "id": "asof.naive.both_correct",
@@ -19036,6 +19247,7 @@
     "nevertwice/dashboard.py",
     "nevertwice/digest.py",
     "nevertwice/emit.py",
+    "nevertwice/evidence.py",
     "nevertwice/graph.py",
     "nevertwice/guards.py",
     "nevertwice/inbox.py",
@@ -19059,7 +19271,11 @@
     "research/supersession_bench.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
+   "withdrawn_on": "2026-09-10",
+   "pending_remeasure": true
   },
   {
    "id": "asof.naive.old_day",
@@ -19095,6 +19311,7 @@
     "nevertwice/dashboard.py",
     "nevertwice/digest.py",
     "nevertwice/emit.py",
+    "nevertwice/evidence.py",
     "nevertwice/graph.py",
     "nevertwice/guards.py",
     "nevertwice/inbox.py",
@@ -19118,7 +19335,11 @@
     "research/supersession_bench.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
+   "withdrawn_on": "2026-09-10",
+   "pending_remeasure": true
   },
   {
    "id": "asof.naive.new_day",
@@ -19154,6 +19375,7 @@
     "nevertwice/dashboard.py",
     "nevertwice/digest.py",
     "nevertwice/emit.py",
+    "nevertwice/evidence.py",
     "nevertwice/graph.py",
     "nevertwice/guards.py",
     "nevertwice/inbox.py",
@@ -19177,7 +19399,11 @@
     "research/supersession_bench.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
+   "withdrawn_on": "2026-09-10",
+   "pending_remeasure": true
   },
   {
    "id": "asof.gate.threshold",
@@ -19209,6 +19435,7 @@
     "nevertwice/dashboard.py",
     "nevertwice/digest.py",
     "nevertwice/emit.py",
+    "nevertwice/evidence.py",
     "nevertwice/graph.py",
     "nevertwice/guards.py",
     "nevertwice/inbox.py",
@@ -19232,7 +19459,11 @@
     "research/supersession_bench.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
+   "withdrawn_on": "2026-09-10",
+   "pending_remeasure": true
   },
   {
    "id": "h2h_s.amem.recall_at_1",
@@ -19650,6 +19881,7 @@
     "nevertwice/dashboard.py",
     "nevertwice/digest.py",
     "nevertwice/emit.py",
+    "nevertwice/evidence.py",
     "nevertwice/graph.py",
     "nevertwice/guards.py",
     "nevertwice/inbox.py",
@@ -19675,7 +19907,11 @@
     "research/longmem_eval.py",
     "research/qa_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
+   "withdrawn_on": "2026-09-10",
+   "pending_remeasure": true
   },
   {
    "id": "frontier.nevertwice_whole.k1.prompt_tokens",
@@ -19706,6 +19942,7 @@
     "nevertwice/dashboard.py",
     "nevertwice/digest.py",
     "nevertwice/emit.py",
+    "nevertwice/evidence.py",
     "nevertwice/graph.py",
     "nevertwice/guards.py",
     "nevertwice/inbox.py",
@@ -19731,7 +19968,11 @@
     "research/longmem_eval.py",
     "research/qa_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
+   "withdrawn_on": "2026-09-10",
+   "pending_remeasure": true
   },
   {
    "id": "frontier.nevertwice_whole.k3.accuracy",
@@ -19767,6 +20008,7 @@
     "nevertwice/dashboard.py",
     "nevertwice/digest.py",
     "nevertwice/emit.py",
+    "nevertwice/evidence.py",
     "nevertwice/graph.py",
     "nevertwice/guards.py",
     "nevertwice/inbox.py",
@@ -19792,7 +20034,11 @@
     "research/longmem_eval.py",
     "research/qa_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
+   "withdrawn_on": "2026-09-10",
+   "pending_remeasure": true
   },
   {
    "id": "frontier.nevertwice_whole.k3.prompt_tokens",
@@ -19823,6 +20069,7 @@
     "nevertwice/dashboard.py",
     "nevertwice/digest.py",
     "nevertwice/emit.py",
+    "nevertwice/evidence.py",
     "nevertwice/graph.py",
     "nevertwice/guards.py",
     "nevertwice/inbox.py",
@@ -19848,7 +20095,11 @@
     "research/longmem_eval.py",
     "research/qa_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
+   "withdrawn_on": "2026-09-10",
+   "pending_remeasure": true
   },
   {
    "id": "frontier.nevertwice_whole.k5.accuracy",
@@ -19884,6 +20135,7 @@
     "nevertwice/dashboard.py",
     "nevertwice/digest.py",
     "nevertwice/emit.py",
+    "nevertwice/evidence.py",
     "nevertwice/graph.py",
     "nevertwice/guards.py",
     "nevertwice/inbox.py",
@@ -19909,7 +20161,11 @@
     "research/longmem_eval.py",
     "research/qa_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
+   "withdrawn_on": "2026-09-10",
+   "pending_remeasure": true
   },
   {
    "id": "frontier.nevertwice_whole.k5.prompt_tokens",
@@ -19940,6 +20196,7 @@
     "nevertwice/dashboard.py",
     "nevertwice/digest.py",
     "nevertwice/emit.py",
+    "nevertwice/evidence.py",
     "nevertwice/graph.py",
     "nevertwice/guards.py",
     "nevertwice/inbox.py",
@@ -19965,7 +20222,11 @@
     "research/longmem_eval.py",
     "research/qa_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
+   "withdrawn_on": "2026-09-10",
+   "pending_remeasure": true
   },
   {
    "id": "frontier.nevertwice_snippet.k1.accuracy",
@@ -20001,6 +20262,7 @@
     "nevertwice/dashboard.py",
     "nevertwice/digest.py",
     "nevertwice/emit.py",
+    "nevertwice/evidence.py",
     "nevertwice/graph.py",
     "nevertwice/guards.py",
     "nevertwice/inbox.py",
@@ -20026,7 +20288,11 @@
     "research/longmem_eval.py",
     "research/qa_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
+   "withdrawn_on": "2026-09-10",
+   "pending_remeasure": true
   },
   {
    "id": "frontier.nevertwice_snippet.k1.prompt_tokens",
@@ -20057,6 +20323,7 @@
     "nevertwice/dashboard.py",
     "nevertwice/digest.py",
     "nevertwice/emit.py",
+    "nevertwice/evidence.py",
     "nevertwice/graph.py",
     "nevertwice/guards.py",
     "nevertwice/inbox.py",
@@ -20082,7 +20349,11 @@
     "research/longmem_eval.py",
     "research/qa_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
+   "withdrawn_on": "2026-09-10",
+   "pending_remeasure": true
   },
   {
    "id": "frontier.nevertwice_snippet.k3.accuracy",
@@ -20118,6 +20389,7 @@
     "nevertwice/dashboard.py",
     "nevertwice/digest.py",
     "nevertwice/emit.py",
+    "nevertwice/evidence.py",
     "nevertwice/graph.py",
     "nevertwice/guards.py",
     "nevertwice/inbox.py",
@@ -20143,7 +20415,11 @@
     "research/longmem_eval.py",
     "research/qa_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
+   "withdrawn_on": "2026-09-10",
+   "pending_remeasure": true
   },
   {
    "id": "frontier.nevertwice_snippet.k3.prompt_tokens",
@@ -20174,6 +20450,7 @@
     "nevertwice/dashboard.py",
     "nevertwice/digest.py",
     "nevertwice/emit.py",
+    "nevertwice/evidence.py",
     "nevertwice/graph.py",
     "nevertwice/guards.py",
     "nevertwice/inbox.py",
@@ -20199,7 +20476,11 @@
     "research/longmem_eval.py",
     "research/qa_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
+   "withdrawn_on": "2026-09-10",
+   "pending_remeasure": true
   },
   {
    "id": "frontier.nevertwice_snippet.k5.accuracy",
@@ -20235,6 +20516,7 @@
     "nevertwice/dashboard.py",
     "nevertwice/digest.py",
     "nevertwice/emit.py",
+    "nevertwice/evidence.py",
     "nevertwice/graph.py",
     "nevertwice/guards.py",
     "nevertwice/inbox.py",
@@ -20260,7 +20542,11 @@
     "research/longmem_eval.py",
     "research/qa_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
+   "withdrawn_on": "2026-09-10",
+   "pending_remeasure": true
   },
   {
    "id": "frontier.nevertwice_snippet.k5.prompt_tokens",
@@ -20291,6 +20577,7 @@
     "nevertwice/dashboard.py",
     "nevertwice/digest.py",
     "nevertwice/emit.py",
+    "nevertwice/evidence.py",
     "nevertwice/graph.py",
     "nevertwice/guards.py",
     "nevertwice/inbox.py",
@@ -20316,7 +20603,11 @@
     "research/longmem_eval.py",
     "research/qa_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
+   "withdrawn_on": "2026-09-10",
+   "pending_remeasure": true
   },
   {
    "id": "frontier.nevertwice_full.k1.accuracy",
@@ -20352,6 +20643,7 @@
     "nevertwice/dashboard.py",
     "nevertwice/digest.py",
     "nevertwice/emit.py",
+    "nevertwice/evidence.py",
     "nevertwice/graph.py",
     "nevertwice/guards.py",
     "nevertwice/inbox.py",
@@ -20377,7 +20669,11 @@
     "research/longmem_eval.py",
     "research/qa_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
+   "withdrawn_on": "2026-09-10",
+   "pending_remeasure": true
   },
   {
    "id": "frontier.nevertwice_full.k1.prompt_tokens",
@@ -20408,6 +20704,7 @@
     "nevertwice/dashboard.py",
     "nevertwice/digest.py",
     "nevertwice/emit.py",
+    "nevertwice/evidence.py",
     "nevertwice/graph.py",
     "nevertwice/guards.py",
     "nevertwice/inbox.py",
@@ -20433,7 +20730,11 @@
     "research/longmem_eval.py",
     "research/qa_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
+   "withdrawn_on": "2026-09-10",
+   "pending_remeasure": true
   },
   {
    "id": "frontier.nevertwice_full.k3.accuracy",
@@ -20469,6 +20770,7 @@
     "nevertwice/dashboard.py",
     "nevertwice/digest.py",
     "nevertwice/emit.py",
+    "nevertwice/evidence.py",
     "nevertwice/graph.py",
     "nevertwice/guards.py",
     "nevertwice/inbox.py",
@@ -20494,7 +20796,11 @@
     "research/longmem_eval.py",
     "research/qa_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
+   "withdrawn_on": "2026-09-10",
+   "pending_remeasure": true
   },
   {
    "id": "frontier.nevertwice_full.k3.prompt_tokens",
@@ -20525,6 +20831,7 @@
     "nevertwice/dashboard.py",
     "nevertwice/digest.py",
     "nevertwice/emit.py",
+    "nevertwice/evidence.py",
     "nevertwice/graph.py",
     "nevertwice/guards.py",
     "nevertwice/inbox.py",
@@ -20550,7 +20857,11 @@
     "research/longmem_eval.py",
     "research/qa_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
+   "withdrawn_on": "2026-09-10",
+   "pending_remeasure": true
   },
   {
    "id": "frontier.nevertwice_full.k5.accuracy",
@@ -20586,6 +20897,7 @@
     "nevertwice/dashboard.py",
     "nevertwice/digest.py",
     "nevertwice/emit.py",
+    "nevertwice/evidence.py",
     "nevertwice/graph.py",
     "nevertwice/guards.py",
     "nevertwice/inbox.py",
@@ -20611,7 +20923,11 @@
     "research/longmem_eval.py",
     "research/qa_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
+   "withdrawn_on": "2026-09-10",
+   "pending_remeasure": true
   },
   {
    "id": "frontier.nevertwice_full.k5.prompt_tokens",
@@ -20642,6 +20958,7 @@
     "nevertwice/dashboard.py",
     "nevertwice/digest.py",
     "nevertwice/emit.py",
+    "nevertwice/evidence.py",
     "nevertwice/graph.py",
     "nevertwice/guards.py",
     "nevertwice/inbox.py",
@@ -20667,7 +20984,11 @@
     "research/longmem_eval.py",
     "research/qa_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
+   "withdrawn_on": "2026-09-10",
+   "pending_remeasure": true
   },
   {
    "id": "frontier.mem0.k1.accuracy",
@@ -20703,6 +21024,7 @@
     "nevertwice/dashboard.py",
     "nevertwice/digest.py",
     "nevertwice/emit.py",
+    "nevertwice/evidence.py",
     "nevertwice/graph.py",
     "nevertwice/guards.py",
     "nevertwice/inbox.py",
@@ -20728,7 +21050,11 @@
     "research/longmem_eval.py",
     "research/qa_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
+   "withdrawn_on": "2026-09-10",
+   "pending_remeasure": true
   },
   {
    "id": "frontier.mem0.k1.prompt_tokens",
@@ -20759,6 +21085,7 @@
     "nevertwice/dashboard.py",
     "nevertwice/digest.py",
     "nevertwice/emit.py",
+    "nevertwice/evidence.py",
     "nevertwice/graph.py",
     "nevertwice/guards.py",
     "nevertwice/inbox.py",
@@ -20784,7 +21111,11 @@
     "research/longmem_eval.py",
     "research/qa_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
+   "withdrawn_on": "2026-09-10",
+   "pending_remeasure": true
   },
   {
    "id": "frontier.mem0.k3.accuracy",
@@ -20820,6 +21151,7 @@
     "nevertwice/dashboard.py",
     "nevertwice/digest.py",
     "nevertwice/emit.py",
+    "nevertwice/evidence.py",
     "nevertwice/graph.py",
     "nevertwice/guards.py",
     "nevertwice/inbox.py",
@@ -20845,7 +21177,11 @@
     "research/longmem_eval.py",
     "research/qa_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
+   "withdrawn_on": "2026-09-10",
+   "pending_remeasure": true
   },
   {
    "id": "frontier.mem0.k3.prompt_tokens",
@@ -20876,6 +21212,7 @@
     "nevertwice/dashboard.py",
     "nevertwice/digest.py",
     "nevertwice/emit.py",
+    "nevertwice/evidence.py",
     "nevertwice/graph.py",
     "nevertwice/guards.py",
     "nevertwice/inbox.py",
@@ -20901,7 +21238,11 @@
     "research/longmem_eval.py",
     "research/qa_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
+   "withdrawn_on": "2026-09-10",
+   "pending_remeasure": true
   },
   {
    "id": "frontier.mem0.k5.accuracy",
@@ -20937,6 +21278,7 @@
     "nevertwice/dashboard.py",
     "nevertwice/digest.py",
     "nevertwice/emit.py",
+    "nevertwice/evidence.py",
     "nevertwice/graph.py",
     "nevertwice/guards.py",
     "nevertwice/inbox.py",
@@ -20962,7 +21304,11 @@
     "research/longmem_eval.py",
     "research/qa_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
+   "withdrawn_on": "2026-09-10",
+   "pending_remeasure": true
   },
   {
    "id": "frontier.mem0.k5.prompt_tokens",
@@ -20993,6 +21339,7 @@
     "nevertwice/dashboard.py",
     "nevertwice/digest.py",
     "nevertwice/emit.py",
+    "nevertwice/evidence.py",
     "nevertwice/graph.py",
     "nevertwice/guards.py",
     "nevertwice/inbox.py",
@@ -21018,7 +21365,11 @@
     "research/longmem_eval.py",
     "research/qa_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
+   "withdrawn_on": "2026-09-10",
+   "pending_remeasure": true
   },
   {
    "id": "frontier.mem0_infer.k1.accuracy",
@@ -21054,6 +21405,7 @@
     "nevertwice/dashboard.py",
     "nevertwice/digest.py",
     "nevertwice/emit.py",
+    "nevertwice/evidence.py",
     "nevertwice/graph.py",
     "nevertwice/guards.py",
     "nevertwice/inbox.py",
@@ -21079,7 +21431,11 @@
     "research/longmem_eval.py",
     "research/qa_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
+   "withdrawn_on": "2026-09-10",
+   "pending_remeasure": true
   },
   {
    "id": "frontier.mem0_infer.k1.prompt_tokens",
@@ -21110,6 +21466,7 @@
     "nevertwice/dashboard.py",
     "nevertwice/digest.py",
     "nevertwice/emit.py",
+    "nevertwice/evidence.py",
     "nevertwice/graph.py",
     "nevertwice/guards.py",
     "nevertwice/inbox.py",
@@ -21135,7 +21492,11 @@
     "research/longmem_eval.py",
     "research/qa_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
+   "withdrawn_on": "2026-09-10",
+   "pending_remeasure": true
   },
   {
    "id": "frontier.mem0_infer.k3.accuracy",
@@ -21171,6 +21532,7 @@
     "nevertwice/dashboard.py",
     "nevertwice/digest.py",
     "nevertwice/emit.py",
+    "nevertwice/evidence.py",
     "nevertwice/graph.py",
     "nevertwice/guards.py",
     "nevertwice/inbox.py",
@@ -21196,7 +21558,11 @@
     "research/longmem_eval.py",
     "research/qa_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
+   "withdrawn_on": "2026-09-10",
+   "pending_remeasure": true
   },
   {
    "id": "frontier.mem0_infer.k3.prompt_tokens",
@@ -21227,6 +21593,7 @@
     "nevertwice/dashboard.py",
     "nevertwice/digest.py",
     "nevertwice/emit.py",
+    "nevertwice/evidence.py",
     "nevertwice/graph.py",
     "nevertwice/guards.py",
     "nevertwice/inbox.py",
@@ -21252,7 +21619,11 @@
     "research/longmem_eval.py",
     "research/qa_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
+   "withdrawn_on": "2026-09-10",
+   "pending_remeasure": true
   },
   {
    "id": "frontier.mem0_infer.k5.accuracy",
@@ -21288,6 +21659,7 @@
     "nevertwice/dashboard.py",
     "nevertwice/digest.py",
     "nevertwice/emit.py",
+    "nevertwice/evidence.py",
     "nevertwice/graph.py",
     "nevertwice/guards.py",
     "nevertwice/inbox.py",
@@ -21313,7 +21685,11 @@
     "research/longmem_eval.py",
     "research/qa_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
+   "withdrawn_on": "2026-09-10",
+   "pending_remeasure": true
   },
   {
    "id": "frontier.mem0_infer.k5.prompt_tokens",
@@ -21344,6 +21720,7 @@
     "nevertwice/dashboard.py",
     "nevertwice/digest.py",
     "nevertwice/emit.py",
+    "nevertwice/evidence.py",
     "nevertwice/graph.py",
     "nevertwice/guards.py",
     "nevertwice/inbox.py",
@@ -21369,7 +21746,11 @@
     "research/longmem_eval.py",
     "research/qa_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
+   "withdrawn_on": "2026-09-10",
+   "pending_remeasure": true
   },
   {
    "id": "frontier.amem_full.k1.accuracy",
@@ -21405,6 +21786,7 @@
     "nevertwice/dashboard.py",
     "nevertwice/digest.py",
     "nevertwice/emit.py",
+    "nevertwice/evidence.py",
     "nevertwice/graph.py",
     "nevertwice/guards.py",
     "nevertwice/inbox.py",
@@ -21430,7 +21812,11 @@
     "research/longmem_eval.py",
     "research/qa_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
+   "withdrawn_on": "2026-09-10",
+   "pending_remeasure": true
   },
   {
    "id": "frontier.amem_full.k1.prompt_tokens",
@@ -21461,6 +21847,7 @@
     "nevertwice/dashboard.py",
     "nevertwice/digest.py",
     "nevertwice/emit.py",
+    "nevertwice/evidence.py",
     "nevertwice/graph.py",
     "nevertwice/guards.py",
     "nevertwice/inbox.py",
@@ -21486,7 +21873,11 @@
     "research/longmem_eval.py",
     "research/qa_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
+   "withdrawn_on": "2026-09-10",
+   "pending_remeasure": true
   },
   {
    "id": "frontier.amem_full.k3.accuracy",
@@ -21522,6 +21913,7 @@
     "nevertwice/dashboard.py",
     "nevertwice/digest.py",
     "nevertwice/emit.py",
+    "nevertwice/evidence.py",
     "nevertwice/graph.py",
     "nevertwice/guards.py",
     "nevertwice/inbox.py",
@@ -21547,7 +21939,11 @@
     "research/longmem_eval.py",
     "research/qa_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
+   "withdrawn_on": "2026-09-10",
+   "pending_remeasure": true
   },
   {
    "id": "frontier.amem_full.k3.prompt_tokens",
@@ -21578,6 +21974,7 @@
     "nevertwice/dashboard.py",
     "nevertwice/digest.py",
     "nevertwice/emit.py",
+    "nevertwice/evidence.py",
     "nevertwice/graph.py",
     "nevertwice/guards.py",
     "nevertwice/inbox.py",
@@ -21603,7 +22000,11 @@
     "research/longmem_eval.py",
     "research/qa_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
+   "withdrawn_on": "2026-09-10",
+   "pending_remeasure": true
   },
   {
    "id": "frontier.amem_full.k5.accuracy",
@@ -21639,6 +22040,7 @@
     "nevertwice/dashboard.py",
     "nevertwice/digest.py",
     "nevertwice/emit.py",
+    "nevertwice/evidence.py",
     "nevertwice/graph.py",
     "nevertwice/guards.py",
     "nevertwice/inbox.py",
@@ -21664,7 +22066,11 @@
     "research/longmem_eval.py",
     "research/qa_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
+   "withdrawn_on": "2026-09-10",
+   "pending_remeasure": true
   },
   {
    "id": "frontier.amem_full.k5.prompt_tokens",
@@ -21695,6 +22101,7 @@
     "nevertwice/dashboard.py",
     "nevertwice/digest.py",
     "nevertwice/emit.py",
+    "nevertwice/evidence.py",
     "nevertwice/graph.py",
     "nevertwice/guards.py",
     "nevertwice/inbox.py",
@@ -21720,7 +22127,11 @@
     "research/longmem_eval.py",
     "research/qa_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
+   "withdrawn_on": "2026-09-10",
+   "pending_remeasure": true
   },
   {
    "id": "frontier.none.accuracy",
@@ -21756,6 +22167,7 @@
     "nevertwice/dashboard.py",
     "nevertwice/digest.py",
     "nevertwice/emit.py",
+    "nevertwice/evidence.py",
     "nevertwice/graph.py",
     "nevertwice/guards.py",
     "nevertwice/inbox.py",
@@ -21781,7 +22193,11 @@
     "research/longmem_eval.py",
     "research/qa_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
+   "withdrawn_on": "2026-09-10",
+   "pending_remeasure": true
   },
   {
    "id": "frontier.none.prompt_tokens",
@@ -21812,6 +22228,7 @@
     "nevertwice/dashboard.py",
     "nevertwice/digest.py",
     "nevertwice/emit.py",
+    "nevertwice/evidence.py",
     "nevertwice/graph.py",
     "nevertwice/guards.py",
     "nevertwice/inbox.py",
@@ -21837,7 +22254,11 @@
     "research/longmem_eval.py",
     "research/qa_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
+   "withdrawn_on": "2026-09-10",
+   "pending_remeasure": true
   },
   {
    "id": "frontier.oracle.accuracy",
@@ -21873,6 +22294,7 @@
     "nevertwice/dashboard.py",
     "nevertwice/digest.py",
     "nevertwice/emit.py",
+    "nevertwice/evidence.py",
     "nevertwice/graph.py",
     "nevertwice/guards.py",
     "nevertwice/inbox.py",
@@ -21898,7 +22320,11 @@
     "research/longmem_eval.py",
     "research/qa_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
+   "withdrawn_on": "2026-09-10",
+   "pending_remeasure": true
   },
   {
    "id": "frontier.oracle.prompt_tokens",
@@ -21929,6 +22355,7 @@
     "nevertwice/dashboard.py",
     "nevertwice/digest.py",
     "nevertwice/emit.py",
+    "nevertwice/evidence.py",
     "nevertwice/graph.py",
     "nevertwice/guards.py",
     "nevertwice/inbox.py",
@@ -21954,7 +22381,11 @@
     "research/longmem_eval.py",
     "research/qa_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
+   "withdrawn_on": "2026-09-10",
+   "pending_remeasure": true
   },
   {
    "id": "frontier.judge_disagreement",
@@ -21985,6 +22416,7 @@
     "nevertwice/dashboard.py",
     "nevertwice/digest.py",
     "nevertwice/emit.py",
+    "nevertwice/evidence.py",
     "nevertwice/graph.py",
     "nevertwice/guards.py",
     "nevertwice/inbox.py",
@@ -22010,7 +22442,11 @@
     "research/longmem_eval.py",
     "research/qa_eval.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
+   "withdrawn_on": "2026-09-10",
+   "pending_remeasure": true
   }
  ],
  "external_citations": [

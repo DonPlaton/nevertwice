@@ -61,5 +61,39 @@ check("errors counted", ab.score(rows + [{"shape": "value_replaced", "both_corre
 print("\n- the days are fixed and ordered -")
 check("first < between < second < after", ab.DAY_FIRST < ab.DAY_BETWEEN < ab.DAY_SECOND < ab.DAY_AFTER)
 
+print("\n- J1/J2: evidence in the returned text, and why an old day failed -")
+hits = [{"title": "beta dashboard flag gates new ui", "description": "The flag gates the new UI.",
+         "evidence": ["Settled it: the beta_dashboard feature flag gates the new UI."]}]
+items = ab._items(hits)
+check("the evidence lines are part of the item text", len(items) == 1 and "gates the new UI" in items[0], str(items))
+check("a hit without the field still renders", ab._items([{"title": "t", "description": "d"}]) == ["t d"])
+ret_case = {"id": "ret-beta-flag", "shape": "retracted_no_replacement", "sessions": [[], []],
+            "query": "what does the beta_dashboard flag control",
+            "current": ["delet", "remov", "unconditional"], "superseded": ["gates the new ui"]}
+r_para = ab._row(ret_case, ["beta dashboard flag gates new ui The flag gates new UI for beta users."], ["the flag was deleted"])
+check("the paraphrased title alone misses the marker (the failure J1 exists for)", not r_para["old_day_correct"])
+r_span = ab._row(ret_case, ab._items(hits), ["the flag was deleted"])
+check("with the verbatim line the same case is right on the old day", r_span["old_day_correct"] and r_span["both_correct"])
+ok_row = {"old_day_correct": True}
+check("no failure, no kind", ab.old_fail_kind(ok_row, {"s0": {"written": 1}}) is None)
+check("nothing written for session one -> never_written",
+      ab.old_fail_kind({"old_day_correct": False, "old_items": 0}, {"s0": {"written": 0}}) == "never_written")
+check("written but nothing returned -> unranked",
+      ab.old_fail_kind({"old_day_correct": False, "old_items": 0}, {"s0": {"written": 2}}) == "unranked")
+check("returned, marker missed -> paraphrase",
+      ab.old_fail_kind({"old_day_correct": False, "old_items": 1, "leak": False}, {"s0": {"written": 1}}) == "paraphrase")
+check("returned with the new fact -> leak",
+      ab.old_fail_kind({"old_day_correct": False, "old_items": 1, "leak": True}, {"s0": {"written": 1}}) == "leak")
+check("no store state: the zero-item case cannot be told apart and reads as unranked",
+      ab.old_fail_kind({"old_day_correct": False, "old_items": 0}, None) == "unranked")
+sc = ab.score([{"shape": "narrowed", "both_correct": False, "old_day_correct": False, "new_day_correct": True,
+                "old_fail_kind": "paraphrase", "store": {"s0": {"written": 1}}},
+               {"shape": "narrowed", "both_correct": False, "old_day_correct": False, "new_day_correct": False,
+                "old_fail_kind": "never_written", "store": {"s0": {"written": 0}}},
+               {"shape": "narrowed", "both_correct": True, "old_day_correct": True, "new_day_correct": True,
+                "old_fail_kind": None, "store": {"s0": {"written": 1}}}])
+check("the score folds the kinds and counts session-one silence",
+      sc["old_day_failures_by_kind"] == {"never_written": 1, "unranked": 0, "paraphrase": 1, "leak": 0} and sc["s0_never_written"] == 1, str(sc))
+
 print(f"\n{'ALL OK' if not FAILS else f'{FAILS} FAILED'}")
 sys.exit(1 if FAILS else 0)

@@ -170,13 +170,9 @@ second session reframed and rotated so the two sessions never share a frame. The
 corpus is unchanged byte for byte, and `--check` proves it.
 
 <!-- claims:supersession-variants -->
-| system | stale, explicit | stale, implicit | current, explicit | current, implicit |
-|---|---|---|---|---|
-| **Nevertwice** | 0.058 | 0.100 | 0.900 | 0.950 |
-| Mem0 | 0.967 | 0.967 | 0.983 | 0.983 |
-| an append-only markdown file | 0.950 | 0.950 | 0.950 | 0.950 |
-
-<sub>Stale = the retracted fact came back, lower is better. Current = the fact that replaced it was returned, higher is better. *Explicit* names the retraction in the second session; *implicit* frames the replacement like any first assertion.</sub>
+> **Withdrawn 2026-09.** J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences
+>
+> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/supersession_bench.py` is what re-measures this one.
 <!-- /claims:supersession-variants -->
 
 The gate for this variant was written in the ledger before the run (item I5): our stale rate
@@ -193,12 +189,9 @@ dates two months apart and asks each one twice: for a day between the two sessio
 day after the second. A case counts only when both answers are right.
 
 <!-- claims:asof -->
-| arm | both days | the old day | the day after |
-|---|---|---|---|
-| **Nevertwice** (`api.as_of`) | 0.625 | 0.683 | 0.833 |
-| an append-only markdown file, no dates | 0.000 | 0.000 | 1.000 |
-
-<sub>The gate written before the run was 0.80 on both days, and this is below it. The loss is on the old day: the scan of belief intervals is exact, but an interval only closes when the write path recognised the replacement, so the number is bounded by supersession recognition rather than by the scan. Mem0 has no row - it stamps a memory with the wall-clock time of the `add()` call and its search has no as-of filter, so facts cannot be placed in the past without patching the product.</sub>
+> **Withdrawn 2026-09.** J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences
+>
+> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/asof_bench.py --arms nevertwice,naive --runs 2 --out research/results/asof_v1.json` is what re-measures this one.
 <!-- /claims:asof -->
 
 ## What it costs us
