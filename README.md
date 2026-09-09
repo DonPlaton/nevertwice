@@ -88,7 +88,7 @@ What survived re-measurement at HEAD, and what it cost:
 | handing back a fact that has since been **retracted** | **0.058** of the time, against **0.967** for Mem0 and **0.950** for an append-only file with term matching | [SUPERSESSION.md](research/SUPERSESSION.md) |
 | acting vs *always-injecting* the same lesson | same error prevention for **31×** fewer memory tokens | [ACTIVE_MEMORY.md](research/ACTIVE_MEMORY.md) |
 | memory-poisoning acceptance attacks | **81%** blocked overall - **100%** of prompt injection, **25%** of plausible-false facts | [POISONING.md](research/POISONING.md) |
-| what being there costs | withdrawn 2026-09, re-run queued for an idle machine; a tenth of a second per hook and zero context tokens until a guard fires, which is by construction | [BENCHMARKS.md](docs/BENCHMARKS.md) |
+| what being there costs | PreToolUse **84 ms** end to end - a tenth of a second, and it moves by a third between sessions - and zero context tokens until a guard fires | [BENCHMARKS.md](docs/BENCHMARKS.md) |
 
 The first two rows are the comparative ones. A review in 2026-09 changed the engine, so every
 number measured before it was withdrawn until measured again; the retrieval stand had also

@@ -114,6 +114,15 @@ ARTIFACTS = [
      "note": "lexical recall on a real store with the tokenizer's morphology off and on, by "
              "language half; rates and counts only, no note text. Anyone with a populated "
              "store reproduces the shape, nobody reproduces the owner's numbers."},
+    {"file": "research/results/frontier.json",
+     "command": ["python", "research/frontier_eval.py", "judge", "--save"],
+     "kind": HARDWARE, "task": "answer-accuracy",
+     "inputs": ["the oracle corpus and vector cache", "a local Ollama serving the reader, the two judges "
+                "and bge-m3", "the contexts of every arm (frontier_eval.py contexts, some in the "
+                "competitor venvs, two of them reading the stores head_to_head.py left on disk)"],
+     "note": "judge-scored answer accuracy per system and k with the reader's own prompt-token count; "
+             "not deterministic (local models at temperature 0 still drift), so the summary is "
+             "reproduced from the committed caches and a fresh run is a new measurement."},
     {"file": "research/results/longmem_s.json",
      "command": ["python", "research/longmem_eval.py", "--data=s", "--save",
                  "--out=research/results/longmem_s.json"],

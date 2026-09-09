@@ -16,6 +16,26 @@ empty.
 
 ### Added
 
+- **Accuracy per token: every system's context, one reader, one judge**
+  (`research/frontier_eval.py`, `research/FRONTIER.md`). The axis every vendor publishes and
+  this repository had not, because recall is what a memory controls and answer accuracy is
+  mostly the reader's. Now both are measured on the same 150 stratified questions: each
+  system's context at one, three and five hits goes to the same local reader, a local judge
+  grades against the gold answer, and the tokens are the count the reader itself reports.
+  Two brackets frame it - the reader with no memory, and the gold evidence sessions whole -
+  and a second judge re-grades the shipped arm so the judges' own disagreement is printed
+  beside the accuracies.
+
+  Three findings, one of them against us. Cutting each session to the passage the
+  cross-encoder reads holds the accuracy of whole sessions for a tenth of the tokens - the
+  drop is inside the judges' disagreement - which is the strongest thing this project can say
+  about cost. Mem0's own pipeline answers for fewer tokens still and pays in accuracy;
+  neither arm dominates, and both columns are printed. And our own extractor is the worst arm
+  on the stand: not a retrieval failure - every question gets its notes, on the right topics -
+  but a domain one. The prompt is built for coding sessions and writes patterns, mistakes and
+  decisions, while this benchmark asks for the literal fact the user stated. Mem0's extractor
+  keeps the sentence; ours keeps the lesson.
+
 - **A second supersession corpus, where nothing announces the replacement.** Every case of the
   first corpus says so when it revises a fact - *actually, we moved off Postgres 15*. A real
   transcript often does not: the new fact simply arrives, framed like any first assertion.

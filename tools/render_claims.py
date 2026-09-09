@@ -614,6 +614,52 @@ def render_asof(c: Claims) -> str:
     return out
 
 
+FRONTIER_ROWS = [
+    ("**Nevertwice, shipped ranker, sessions whole**", "nevertwice_whole"),
+    ("Nevertwice, shipped ranker, query passages", "nevertwice_snippet"),
+    ("Nevertwice, our extractor's notes", "nevertwice_full"),
+    ("Mem0 store search, sessions whole", "mem0"),
+    ("Mem0 full pipeline, its memories", "mem0_infer"),
+    ("A-MEM full pipeline, its notes", "amem_full"),
+]
+
+
+def render_frontier(c: Claims) -> str:
+    """Accuracy per token: for each arm that ran, judge-scored accuracy and the reader's own
+    prompt-token count at k = 1, 3, 5; the two brackets below. Arms without claims are left
+    out and named under the table."""
+    if not c.has("frontier.none.accuracy"):
+        return _not_yet("frontier", "python research/frontier_eval.py judge --save")
+    header = ["system", "k=1 acc", "k=1 tokens", "k=3 acc", "k=3 tokens", "k=5 acc", "k=5 tokens"]
+    rows, missing = [], []
+    for label, slug in FRONTIER_ROWS:
+        if not c.has(f"frontier.{slug}.k1.accuracy"):
+            missing.append(label.strip("*").split(",")[0])
+            continue
+        row = [label]
+        for k in (1, 3, 5):
+            if c.has(f"frontier.{slug}.k{k}.accuracy"):
+                row += [f"{c.value(f'frontier.{slug}.k{k}.accuracy'):.3f}",
+                        f"{c.value(f'frontier.{slug}.k{k}.prompt_tokens'):,.0f}"]
+            else:
+                row += ["-", "-"]
+        rows.append(row)
+    out = _table(header, rows)
+    brackets = []
+    for b, label in (("none", "no memory, the question alone"), ("oracle", "the oracle ceiling, gold sessions whole")):
+        if c.has(f"frontier.{b}.accuracy"):
+            brackets.append(f"{label}: accuracy {c.value(f'frontier.{b}.accuracy'):.3f} at "
+                            f"{c.value(f'frontier.{b}.prompt_tokens'):,.0f} tokens")
+    if brackets:
+        out += "\n\nBrackets - " + "; ".join(brackets) + "."
+    if c.has("frontier.judge_disagreement"):
+        out += (f" The two judges disagree on {c.value('frontier.judge_disagreement'):.3f} of the shipped "
+                f"arm's answers; a gap between two rows smaller than that is not a gap.")
+    if missing:
+        out += "\n\n<sub>Not on this table: " + ", ".join(missing) + " - no run yet, or a blocker recorded in the artifact.</sub>"
+    return out
+
+
 RENDERERS = {
     "supersession-pinned": render_supersession_pinned,
     "supersession-variants": render_supersession_variants,
@@ -631,6 +677,7 @@ RENDERERS = {
     "lexical-morphology-vault": render_lexical_morphology_vault,
     "lexical-morphology-s": render_lexical_morphology_s,
     "fusion-sweep": render_fusion_sweep,
+    "frontier": render_frontier,
     "head-to-head": render_head_to_head,
     "latency": render_latency,
     "task-a": render_task_a,
