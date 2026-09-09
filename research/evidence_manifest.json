@@ -2547,7 +2547,7 @@
    "cited_in": [
     "README.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "produced_by": [
     "research/poisoning.py",
     "nevertwice/causal.py",
@@ -2583,7 +2583,7 @@
    "pointer": "precision",
    "ci": null,
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "produced_by": [
     "research/poisoning.py",
     "nevertwice/causal.py",
@@ -2623,7 +2623,7 @@
    "cited_in": [
     "README.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "produced_by": [
     "research/poisoning.py",
     "nevertwice/causal.py",
@@ -2663,7 +2663,7 @@
    "cited_in": [
     "README.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "produced_by": [
     "research/poisoning.py",
     "nevertwice/causal.py",
@@ -2704,7 +2704,7 @@
    "ci": null,
    "ci_note": "6 seeds on a synthetic world; report the spread, not a CI.",
    "cited_in": [],
-   "commit": "c47c2721025be975230ef4ded77407df226c8241",
+   "commit": "39b7998d66b5dca8ae0e0451cbf0b566c93cfb8b",
    "produced_by": [
     "research/forgetting.py",
     "nevertwice/build_user_model.py",
@@ -4742,7 +4742,7 @@
     "README.md",
     "docs/BENCHMARKS.md"
    ],
-   "commit": "89f1301fdb253b1ce76a02ca0e56ebb803d82928",
+   "commit": "042d52c80802c9c3e8b387dee8226f1327cb8526",
    "produced_by": [
     "research/latency_bench.py",
     "nevertwice/causal.py",
@@ -4791,7 +4791,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "89f1301fdb253b1ce76a02ca0e56ebb803d82928",
+   "commit": "042d52c80802c9c3e8b387dee8226f1327cb8526",
    "produced_by": [
     "research/latency_bench.py",
     "nevertwice/causal.py",
@@ -4840,7 +4840,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "89f1301fdb253b1ce76a02ca0e56ebb803d82928",
+   "commit": "042d52c80802c9c3e8b387dee8226f1327cb8526",
    "produced_by": [
     "research/latency_bench.py",
     "nevertwice/causal.py",
@@ -4889,7 +4889,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "89f1301fdb253b1ce76a02ca0e56ebb803d82928",
+   "commit": "042d52c80802c9c3e8b387dee8226f1327cb8526",
    "produced_by": [
     "research/latency_bench.py",
     "nevertwice/causal.py",
@@ -6556,7 +6556,7 @@
    "raw_gap": "A property of the shipped pack; a test should assert it (task D1).",
    "ci": null,
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "produced_by": [
     "nevertwice/guards.py",
     "nevertwice/causal.py",
@@ -7581,7 +7581,7 @@
     "README.md",
     "docs/BENCHMARKS.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "produced_by": [
     "research/supersession_bench.py",
     "nevertwice/__init__.py",
@@ -7643,7 +7643,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "produced_by": [
     "research/supersession_bench.py",
     "nevertwice/__init__.py",
@@ -7705,7 +7705,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "produced_by": [
     "research/supersession_bench.py",
     "nevertwice/__init__.py",
@@ -7771,7 +7771,7 @@
     "README.md",
     "docs/BENCHMARKS.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "produced_by": [
     "research/supersession_bench.py",
     "nevertwice/__init__.py",
@@ -7833,7 +7833,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "produced_by": [
     "research/supersession_bench.py",
     "nevertwice/__init__.py",
@@ -7894,7 +7894,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "produced_by": [
     "research/supersession_bench.py",
     "nevertwice/__init__.py",
@@ -7959,7 +7959,7 @@
     "README.md",
     "docs/BENCHMARKS.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "produced_by": [
     "research/supersession_bench.py",
     "nevertwice/__init__.py",
@@ -8021,7 +8021,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "produced_by": [
     "research/supersession_bench.py",
     "nevertwice/__init__.py",
@@ -8082,7 +8082,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "produced_by": [
     "research/supersession_bench.py",
     "nevertwice/__init__.py",
@@ -8135,7 +8135,7 @@
    "pointer": "pairs[1].p_mcnemar",
    "ci": null,
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "produced_by": [
     "research/supersession_bench.py",
     "nevertwice/__init__.py",
@@ -8189,7 +8189,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "produced_by": [
     "research/supersession_bench.py",
     "nevertwice/__init__.py",
@@ -8243,7 +8243,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "produced_by": [
     "research/supersession_bench.py",
     "nevertwice/__init__.py",
@@ -8297,7 +8297,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "produced_by": [
     "research/supersession_bench.py",
     "nevertwice/__init__.py",
@@ -8408,7 +8408,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "produced_by": [
     "research/supersession_bench.py",
     "nevertwice/__init__.py",
@@ -8462,7 +8462,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "produced_by": [
     "research/supersession_bench.py",
     "nevertwice/__init__.py",
@@ -8517,7 +8517,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "produced_by": [
     "research/supersession_bench.py",
     "nevertwice/__init__.py",
@@ -8571,7 +8571,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "89f1301fdb253b1ce76a02ca0e56ebb803d82928",
+   "commit": "042d52c80802c9c3e8b387dee8226f1327cb8526",
    "produced_by": [
     "research/abstention_ab.py",
     "nevertwice/__init__.py",
@@ -8621,7 +8621,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "89f1301fdb253b1ce76a02ca0e56ebb803d82928",
+   "commit": "042d52c80802c9c3e8b387dee8226f1327cb8526",
    "produced_by": [
     "research/abstention_ab.py",
     "nevertwice/__init__.py",
@@ -8669,7 +8669,7 @@
    "pointer": "recall_sweep[4].current_delta_vs_off",
    "ci": null,
    "cited_in": [],
-   "commit": "89f1301fdb253b1ce76a02ca0e56ebb803d82928",
+   "commit": "042d52c80802c9c3e8b387dee8226f1327cb8526",
    "produced_by": [
     "research/abstention_ab.py",
     "nevertwice/__init__.py",
@@ -8719,7 +8719,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "89f1301fdb253b1ce76a02ca0e56ebb803d82928",
+   "commit": "042d52c80802c9c3e8b387dee8226f1327cb8526",
    "produced_by": [
     "research/abstention_ab.py",
     "nevertwice/__init__.py",
@@ -8767,7 +8767,7 @@
    "pointer": "remine.delta_read_coverage",
    "ci": null,
    "cited_in": [],
-   "commit": "89f1301fdb253b1ce76a02ca0e56ebb803d82928",
+   "commit": "042d52c80802c9c3e8b387dee8226f1327cb8526",
    "produced_by": [
     "research/abstention_ab.py",
     "nevertwice/__init__.py",
@@ -8815,7 +8815,7 @@
    "pointer": "matched_false_positive_rate",
    "ci": null,
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "produced_by": [
     "research/cheap_baselines.py",
     "nevertwice/anticipate.py",
@@ -8859,7 +8859,7 @@
     "high": 0.7263
    },
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "produced_by": [
     "research/cheap_baselines.py",
     "nevertwice/anticipate.py",
@@ -8903,7 +8903,7 @@
     "high": 0.3731
    },
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "produced_by": [
     "research/cheap_baselines.py",
     "nevertwice/anticipate.py",
@@ -8947,7 +8947,7 @@
     "high": 0.6386
    },
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "produced_by": [
     "research/cheap_baselines.py",
     "nevertwice/anticipate.py",
@@ -8986,7 +8986,7 @@
    "pointer": "arms.nevertwice.tokens_per_episode",
    "ci": null,
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "produced_by": [
     "research/cheap_baselines.py",
     "nevertwice/anticipate.py",
@@ -9025,7 +9025,7 @@
    "pointer": "arms.curated_agents_md.tokens_per_episode",
    "ci": null,
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "produced_by": [
     "research/cheap_baselines.py",
     "nevertwice/anticipate.py",
@@ -9071,7 +9071,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "Re-measured 2026-09-02 on the corpus pinned in research/corpus_pin.py (sha256 821a2034..., verified before the run). The value is identical to three decimals to the one withdrawn in 2026-08. The withdrawn claim stays withdrawn: it was measured on a file that cannot be identified, and agreeing with a later run is not evidence about an unidentifiable one.",
    "produced_by": [
     "research/longmem_eval.py",
@@ -9118,7 +9118,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "Re-measured 2026-09-02 on the corpus pinned in research/corpus_pin.py (sha256 821a2034..., verified before the run). The value is identical to three decimals to the one withdrawn in 2026-08. The withdrawn claim stays withdrawn: it was measured on a file that cannot be identified, and agreeing with a later run is not evidence about an unidentifiable one.",
    "produced_by": [
     "research/longmem_eval.py",
@@ -9163,7 +9163,7 @@
     "high": 0.816
    },
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "Re-measured 2026-09-02 on the corpus pinned in research/corpus_pin.py (sha256 821a2034..., verified before the run). The value is identical to three decimals to the one withdrawn in 2026-08. The withdrawn claim stays withdrawn: it was measured on a file that cannot be identified, and agreeing with a later run is not evidence about an unidentifiable one.",
    "produced_by": [
     "research/longmem_eval.py",
@@ -9205,7 +9205,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "Re-measured 2026-09-02 on the corpus pinned in research/corpus_pin.py (sha256 821a2034..., verified before the run). The value is identical to three decimals to the one withdrawn in 2026-08. The withdrawn claim stays withdrawn: it was measured on a file that cannot be identified, and agreeing with a later run is not evidence about an unidentifiable one.",
    "produced_by": [
     "research/longmem_eval.py",
@@ -9252,7 +9252,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "Re-measured 2026-09-02 on the corpus pinned in research/corpus_pin.py (sha256 821a2034..., verified before the run). The value is identical to three decimals to the one withdrawn in 2026-08. The withdrawn claim stays withdrawn: it was measured on a file that cannot be identified, and agreeing with a later run is not evidence about an unidentifiable one.",
    "produced_by": [
     "research/longmem_eval.py",
@@ -9299,7 +9299,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "Re-measured 2026-09-02 on the corpus pinned in research/corpus_pin.py (sha256 821a2034..., verified before the run). The value is identical to three decimals to the one withdrawn in 2026-08. The withdrawn claim stays withdrawn: it was measured on a file that cannot be identified, and agreeing with a later run is not evidence about an unidentifiable one.",
    "produced_by": [
     "research/longmem_eval.py",
@@ -9344,7 +9344,7 @@
     "high": 0.8604
    },
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "Re-measured 2026-09-02 on the corpus pinned in research/corpus_pin.py (sha256 821a2034..., verified before the run). The value is identical to three decimals to the one withdrawn in 2026-08. The withdrawn claim stays withdrawn: it was measured on a file that cannot be identified, and agreeing with a later run is not evidence about an unidentifiable one.",
    "produced_by": [
     "research/longmem_eval.py",
@@ -9386,7 +9386,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "Re-measured 2026-09-02 on the corpus pinned in research/corpus_pin.py (sha256 821a2034..., verified before the run). The value is identical to three decimals to the one withdrawn in 2026-08. The withdrawn claim stays withdrawn: it was measured on a file that cannot be identified, and agreeing with a later run is not evidence about an unidentifiable one.",
    "produced_by": [
     "research/longmem_eval.py",
@@ -9433,7 +9433,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "Re-measured 2026-09-02 on the corpus pinned in research/corpus_pin.py (sha256 821a2034..., verified before the run). The value is identical to three decimals to the one withdrawn in 2026-08. The withdrawn claim stays withdrawn: it was measured on a file that cannot be identified, and agreeing with a later run is not evidence about an unidentifiable one.",
    "produced_by": [
     "research/longmem_eval.py",
@@ -9481,7 +9481,7 @@
     "docs/BENCHMARKS.md",
     "README.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "Re-measured 2026-09-02 on the corpus pinned in research/corpus_pin.py (sha256 821a2034..., verified before the run). The value is identical to three decimals to the one withdrawn in 2026-08. The withdrawn claim stays withdrawn: it was measured on a file that cannot be identified, and agreeing with a later run is not evidence about an unidentifiable one.",
    "produced_by": [
     "research/longmem_eval.py",
@@ -9526,7 +9526,7 @@
     "high": 0.8931
    },
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "Re-measured 2026-09-02 on the corpus pinned in research/corpus_pin.py (sha256 821a2034..., verified before the run). The value is identical to three decimals to the one withdrawn in 2026-08. The withdrawn claim stays withdrawn: it was measured on a file that cannot be identified, and agreeing with a later run is not evidence about an unidentifiable one.",
    "produced_by": [
     "research/longmem_eval.py",
@@ -9568,7 +9568,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "Re-measured 2026-09-02 on the corpus pinned in research/corpus_pin.py (sha256 821a2034..., verified before the run). The value is identical to three decimals to the one withdrawn in 2026-08. The withdrawn claim stays withdrawn: it was measured on a file that cannot be identified, and agreeing with a later run is not evidence about an unidentifiable one.",
    "produced_by": [
     "research/longmem_eval.py",
@@ -9615,7 +9615,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "Re-measured 2026-09-02 on the corpus pinned in research/corpus_pin.py (sha256 821a2034..., verified before the run). The value is identical to three decimals to the one withdrawn in 2026-08. The withdrawn claim stays withdrawn: it was measured on a file that cannot be identified, and agreeing with a later run is not evidence about an unidentifiable one.",
    "produced_by": [
     "research/longmem_eval.py",
@@ -9662,7 +9662,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "Re-measured 2026-09-02 on the corpus pinned in research/corpus_pin.py (sha256 821a2034..., verified before the run). The value is identical to three decimals to the one withdrawn in 2026-08. The withdrawn claim stays withdrawn: it was measured on a file that cannot be identified, and agreeing with a later run is not evidence about an unidentifiable one.",
    "produced_by": [
     "research/longmem_eval.py",
@@ -9707,7 +9707,7 @@
     "high": 0.8931
    },
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "Re-measured 2026-09-02 on the corpus pinned in research/corpus_pin.py (sha256 821a2034..., verified before the run). The value is identical to three decimals to the one withdrawn in 2026-08. The withdrawn claim stays withdrawn: it was measured on a file that cannot be identified, and agreeing with a later run is not evidence about an unidentifiable one.",
    "produced_by": [
     "research/longmem_eval.py",
@@ -9749,7 +9749,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "Re-measured 2026-09-02 on the corpus pinned in research/corpus_pin.py (sha256 821a2034..., verified before the run). The value is identical to three decimals to the one withdrawn in 2026-08. The withdrawn claim stays withdrawn: it was measured on a file that cannot be identified, and agreeing with a later run is not evidence about an unidentifiable one.",
    "produced_by": [
     "research/longmem_eval.py",
@@ -9794,7 +9794,7 @@
     "high": 0.5556
    },
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "Same 940-session pool, same 500 questions, same local bge-m3, same scoring function. Competitor versions are recorded in the artifact.",
    "produced_by": [
     "research/head_to_head.py",
@@ -9843,7 +9843,7 @@
    "cited_in": [
     "README.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "Same 940-session pool, same 500 questions, same local bge-m3, same scoring function. Competitor versions are recorded in the artifact.",
    "produced_by": [
     "research/head_to_head.py",
@@ -9890,7 +9890,7 @@
     "high": 0.8931
    },
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "Same 940-session pool, same 500 questions, same local bge-m3, same scoring function. Competitor versions are recorded in the artifact.",
    "produced_by": [
     "research/head_to_head.py",
@@ -9932,7 +9932,7 @@
    "pointer": "nevertwice.mrr",
    "ci": null,
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "produced_by": [
     "research/head_to_head.py",
     "nevertwice/causal.py",
@@ -9978,7 +9978,7 @@
     "high": 0.5218
    },
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "Same 940-session pool, same 500 questions, same local bge-m3, same scoring function. Competitor versions are recorded in the artifact.",
    "produced_by": [
     "research/head_to_head.py",
@@ -10025,7 +10025,7 @@
     "high": 0.7935
    },
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "Same 940-session pool, same 500 questions, same local bge-m3, same scoring function. Competitor versions are recorded in the artifact.",
    "produced_by": [
     "research/head_to_head.py",
@@ -10072,7 +10072,7 @@
     "high": 0.875
    },
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "Same 940-session pool, same 500 questions, same local bge-m3, same scoring function. Competitor versions are recorded in the artifact.",
    "produced_by": [
     "research/head_to_head.py",
@@ -10114,7 +10114,7 @@
    "pointer": "mem0.mrr",
    "ci": null,
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "produced_by": [
     "research/head_to_head.py",
     "nevertwice/causal.py",
@@ -10160,7 +10160,7 @@
     "high": 0.4697
    },
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "Same 940-session pool, same 500 questions, same local bge-m3, same scoring function. Competitor versions are recorded in the artifact.",
    "produced_by": [
     "research/head_to_head.py",
@@ -10207,7 +10207,7 @@
     "high": 0.7309
    },
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "Same 940-session pool, same 500 questions, same local bge-m3, same scoring function. Competitor versions are recorded in the artifact.",
    "produced_by": [
     "research/head_to_head.py",
@@ -10254,7 +10254,7 @@
     "high": 0.816
    },
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "Same 940-session pool, same 500 questions, same local bge-m3, same scoring function. Competitor versions are recorded in the artifact.",
    "produced_by": [
     "research/head_to_head.py",
@@ -10296,7 +10296,7 @@
    "pointer": "langmem.mrr",
    "ci": null,
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "produced_by": [
     "research/head_to_head.py",
     "nevertwice/causal.py",
@@ -10342,7 +10342,7 @@
     "high": 0.4718
    },
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "Same 940-session pool, same 500 questions, same local bge-m3, same scoring function. Competitor versions are recorded in the artifact.",
    "produced_by": [
     "research/head_to_head.py",
@@ -10389,7 +10389,7 @@
     "high": 0.7309
    },
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "Same 940-session pool, same 500 questions, same local bge-m3, same scoring function. Competitor versions are recorded in the artifact.",
    "produced_by": [
     "research/head_to_head.py",
@@ -10436,7 +10436,7 @@
     "high": 0.816
    },
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "Same 940-session pool, same 500 questions, same local bge-m3, same scoring function. Competitor versions are recorded in the artifact.",
    "produced_by": [
     "research/head_to_head.py",
@@ -10478,7 +10478,7 @@
    "pointer": "amem.mrr",
    "ci": null,
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "produced_by": [
     "research/head_to_head.py",
     "nevertwice/causal.py",
@@ -10519,7 +10519,7 @@
    "pointer": "xrerank.delta_recall@1",
    "ci": null,
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "Paired on the same questions and the same first-stage top-10, so this isolates the reranker rather than the retriever.",
    "produced_by": [
     "research/longmem_eval.py",
@@ -10562,7 +10562,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "produced_by": [
     "research/longmem_eval.py",
     "nevertwice/causal.py",
@@ -10608,7 +10608,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "The standard non-oracle pool: 19,206 unique haystack sessions against the oracle variant's 940, so every question ranks a haystack twenty-one times larger. Same embedder, same scoring function, same human-annotated ground truth.",
    "produced_by": [
     "research/longmem_eval.py",
@@ -10655,7 +10655,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "The standard non-oracle pool: 19,206 unique haystack sessions against the oracle variant's 940, so every question ranks a haystack twenty-one times larger. Same embedder, same scoring function, same human-annotated ground truth.",
    "produced_by": [
     "research/longmem_eval.py",
@@ -10700,7 +10700,7 @@
     "high": 0.4838
    },
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "The standard non-oracle pool: 19,206 unique haystack sessions against the oracle variant's 940, so every question ranks a haystack twenty-one times larger. Same embedder, same scoring function, same human-annotated ground truth.",
    "produced_by": [
     "research/longmem_eval.py",
@@ -10742,7 +10742,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "The standard non-oracle pool: 19,206 unique haystack sessions against the oracle variant's 940, so every question ranks a haystack twenty-one times larger. Same embedder, same scoring function, same human-annotated ground truth.",
    "produced_by": [
     "research/longmem_eval.py",
@@ -10789,7 +10789,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "The standard non-oracle pool: 19,206 unique haystack sessions against the oracle variant's 940, so every question ranks a haystack twenty-one times larger. Same embedder, same scoring function, same human-annotated ground truth.",
    "produced_by": [
     "research/longmem_eval.py",
@@ -10836,7 +10836,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "The standard non-oracle pool: 19,206 unique haystack sessions against the oracle variant's 940, so every question ranks a haystack twenty-one times larger. Same embedder, same scoring function, same human-annotated ground truth.",
    "produced_by": [
     "research/longmem_eval.py",
@@ -10881,7 +10881,7 @@
     "high": 0.5536
    },
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "The standard non-oracle pool: 19,206 unique haystack sessions against the oracle variant's 940, so every question ranks a haystack twenty-one times larger. Same embedder, same scoring function, same human-annotated ground truth.",
    "produced_by": [
     "research/longmem_eval.py",
@@ -10923,7 +10923,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "The standard non-oracle pool: 19,206 unique haystack sessions against the oracle variant's 940, so every question ranks a haystack twenty-one times larger. Same embedder, same scoring function, same human-annotated ground truth.",
    "produced_by": [
     "research/longmem_eval.py",
@@ -10970,7 +10970,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "The standard non-oracle pool: 19,206 unique haystack sessions against the oracle variant's 940, so every question ranks a haystack twenty-one times larger. Same embedder, same scoring function, same human-annotated ground truth.",
    "produced_by": [
     "research/longmem_eval.py",
@@ -11017,7 +11017,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "The standard non-oracle pool: 19,206 unique haystack sessions against the oracle variant's 940, so every question ranks a haystack twenty-one times larger. Same embedder, same scoring function, same human-annotated ground truth.",
    "produced_by": [
     "research/longmem_eval.py",
@@ -11062,7 +11062,7 @@
     "high": 0.5575
    },
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "The standard non-oracle pool: 19,206 unique haystack sessions against the oracle variant's 940, so every question ranks a haystack twenty-one times larger. Same embedder, same scoring function, same human-annotated ground truth.",
    "produced_by": [
     "research/longmem_eval.py",
@@ -11104,7 +11104,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "The standard non-oracle pool: 19,206 unique haystack sessions against the oracle variant's 940, so every question ranks a haystack twenty-one times larger. Same embedder, same scoring function, same human-annotated ground truth.",
    "produced_by": [
     "research/longmem_eval.py",
@@ -11147,7 +11147,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "produced_by": [
     "research/longmem_eval.py",
     "nevertwice/causal.py",
@@ -11188,7 +11188,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "produced_by": [
     "research/longmem_eval.py",
     "nevertwice/causal.py",
@@ -11234,7 +11234,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
     "research/locomo_eval.py",
@@ -11282,7 +11282,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
     "research/locomo_eval.py",
@@ -11330,7 +11330,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
     "research/locomo_eval.py",
@@ -11373,7 +11373,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
     "research/locomo_eval.py",
@@ -11421,7 +11421,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
     "research/locomo_eval.py",
@@ -11469,7 +11469,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
     "research/locomo_eval.py",
@@ -11517,7 +11517,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
     "research/locomo_eval.py",
@@ -11560,7 +11560,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
     "research/locomo_eval.py",
@@ -11608,7 +11608,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
     "research/locomo_eval.py",
@@ -11656,7 +11656,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
     "research/locomo_eval.py",
@@ -11704,7 +11704,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
     "research/locomo_eval.py",
@@ -11747,7 +11747,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
     "research/locomo_eval.py",
@@ -11791,7 +11791,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "produced_by": [
     "research/locomo_eval.py",
     "nevertwice/causal.py",
@@ -11834,7 +11834,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "derivation": "the corpus record in research/corpus_pin.py; the result file carries only the scoreable subset",
    "produced_by": [
     "research/locomo_eval.py",
@@ -11878,7 +11878,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "produced_by": [
     "research/locomo_eval.py",
     "nevertwice/causal.py",
@@ -11923,7 +11923,7 @@
     "high": 0.3616
    },
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
     "research/locomo_eval.py",
@@ -11969,7 +11969,7 @@
     "high": 0.5485
    },
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
     "research/locomo_eval.py",
@@ -12015,7 +12015,7 @@
     "high": 0.5777
    },
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
     "research/locomo_eval.py",
@@ -12054,7 +12054,7 @@
    "command": "python research/locomo_eval.py --no-morphology --save --out=research/results/locomo_raw.json",
    "raw": "research/results/locomo_raw.json",
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "The ablation arm of research/LEXICAL_MORPHOLOGY.md: the same stand, the same cached vectors, the lexical signal on raw tokens as it was before 2026-09-06.",
    "produced_by": [
     "research/locomo_eval.py",
@@ -12100,7 +12100,7 @@
    "command": "python research/locomo_eval.py --no-morphology --save --out=research/results/locomo_raw.json",
    "raw": "research/results/locomo_raw.json",
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "The ablation arm of research/LEXICAL_MORPHOLOGY.md: the same stand, the same cached vectors, the lexical signal on raw tokens as it was before 2026-09-06.",
    "produced_by": [
     "research/locomo_eval.py",
@@ -12146,7 +12146,7 @@
    "command": "python research/locomo_eval.py --no-morphology --save --out=research/results/locomo_raw.json",
    "raw": "research/results/locomo_raw.json",
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "The ablation arm of research/LEXICAL_MORPHOLOGY.md: the same stand, the same cached vectors, the lexical signal on raw tokens as it was before 2026-09-06.",
    "produced_by": [
     "research/locomo_eval.py",
@@ -12192,7 +12192,7 @@
    "command": "python research/locomo_eval.py --no-morphology --save --out=research/results/locomo_raw.json",
    "raw": "research/results/locomo_raw.json",
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "The ablation arm of research/LEXICAL_MORPHOLOGY.md: the same stand, the same cached vectors, the lexical signal on raw tokens as it was before 2026-09-06.",
    "produced_by": [
     "research/locomo_eval.py",
@@ -12233,7 +12233,7 @@
    "command": "python research/locomo_eval.py --no-morphology --save --out=research/results/locomo_raw.json",
    "raw": "research/results/locomo_raw.json",
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "The ablation arm of research/LEXICAL_MORPHOLOGY.md: the same stand, the same cached vectors, the lexical signal on raw tokens as it was before 2026-09-06.",
    "produced_by": [
     "research/locomo_eval.py",
@@ -12279,7 +12279,7 @@
    "command": "python research/locomo_eval.py --no-morphology --save --out=research/results/locomo_raw.json",
    "raw": "research/results/locomo_raw.json",
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "The ablation arm of research/LEXICAL_MORPHOLOGY.md: the same stand, the same cached vectors, the lexical signal on raw tokens as it was before 2026-09-06.",
    "produced_by": [
     "research/locomo_eval.py",
@@ -12325,7 +12325,7 @@
    "command": "python research/locomo_eval.py --no-morphology --save --out=research/results/locomo_raw.json",
    "raw": "research/results/locomo_raw.json",
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "The ablation arm of research/LEXICAL_MORPHOLOGY.md: the same stand, the same cached vectors, the lexical signal on raw tokens as it was before 2026-09-06.",
    "produced_by": [
     "research/locomo_eval.py",
@@ -12371,7 +12371,7 @@
    "command": "python research/locomo_eval.py --no-morphology --save --out=research/results/locomo_raw.json",
    "raw": "research/results/locomo_raw.json",
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "The ablation arm of research/LEXICAL_MORPHOLOGY.md: the same stand, the same cached vectors, the lexical signal on raw tokens as it was before 2026-09-06.",
    "produced_by": [
     "research/locomo_eval.py",
@@ -12412,7 +12412,7 @@
    "command": "python research/locomo_eval.py --no-morphology --save --out=research/results/locomo_raw.json",
    "raw": "research/results/locomo_raw.json",
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "The ablation arm of research/LEXICAL_MORPHOLOGY.md: the same stand, the same cached vectors, the lexical signal on raw tokens as it was before 2026-09-06.",
    "produced_by": [
     "research/locomo_eval.py",
@@ -12458,7 +12458,7 @@
    "command": "python research/locomo_eval.py --no-morphology --save --out=research/results/locomo_raw.json",
    "raw": "research/results/locomo_raw.json",
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "The ablation arm of research/LEXICAL_MORPHOLOGY.md: the same stand, the same cached vectors, the lexical signal on raw tokens as it was before 2026-09-06.",
    "produced_by": [
     "research/locomo_eval.py",
@@ -12504,7 +12504,7 @@
    "command": "python research/locomo_eval.py --no-morphology --save --out=research/results/locomo_raw.json",
    "raw": "research/results/locomo_raw.json",
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "The ablation arm of research/LEXICAL_MORPHOLOGY.md: the same stand, the same cached vectors, the lexical signal on raw tokens as it was before 2026-09-06.",
    "produced_by": [
     "research/locomo_eval.py",
@@ -12550,7 +12550,7 @@
    "command": "python research/locomo_eval.py --no-morphology --save --out=research/results/locomo_raw.json",
    "raw": "research/results/locomo_raw.json",
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "The ablation arm of research/LEXICAL_MORPHOLOGY.md: the same stand, the same cached vectors, the lexical signal on raw tokens as it was before 2026-09-06.",
    "produced_by": [
     "research/locomo_eval.py",
@@ -12591,7 +12591,7 @@
    "command": "python research/longmem_eval.py --no-morphology --save --out=research/results/longmem_oracle_raw.json",
    "raw": "research/results/longmem_oracle_raw.json",
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "The ablation arm of research/LEXICAL_MORPHOLOGY.md: whole-session vectors, the lexical signal on raw tokens as it was before 2026-09-06.",
    "produced_by": [
     "research/longmem_eval.py",
@@ -12636,7 +12636,7 @@
    "command": "python research/longmem_eval.py --no-morphology --save --out=research/results/longmem_oracle_raw.json",
    "raw": "research/results/longmem_oracle_raw.json",
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "The ablation arm of research/LEXICAL_MORPHOLOGY.md: whole-session vectors, the lexical signal on raw tokens as it was before 2026-09-06.",
    "produced_by": [
     "research/longmem_eval.py",
@@ -12681,7 +12681,7 @@
    "command": "python research/longmem_eval.py --no-morphology --save --out=research/results/longmem_oracle_raw.json",
    "raw": "research/results/longmem_oracle_raw.json",
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "The ablation arm of research/LEXICAL_MORPHOLOGY.md: whole-session vectors, the lexical signal on raw tokens as it was before 2026-09-06.",
    "produced_by": [
     "research/longmem_eval.py",
@@ -12726,7 +12726,7 @@
    "command": "python research/longmem_eval.py --no-morphology --save --out=research/results/longmem_oracle_raw.json",
    "raw": "research/results/longmem_oracle_raw.json",
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "The ablation arm of research/LEXICAL_MORPHOLOGY.md: whole-session vectors, the lexical signal on raw tokens as it was before 2026-09-06.",
    "produced_by": [
     "research/longmem_eval.py",
@@ -12766,7 +12766,7 @@
    "command": "python research/longmem_eval.py --no-morphology --save --out=research/results/longmem_oracle_raw.json",
    "raw": "research/results/longmem_oracle_raw.json",
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "The ablation arm of research/LEXICAL_MORPHOLOGY.md: whole-session vectors, the lexical signal on raw tokens as it was before 2026-09-06.",
    "produced_by": [
     "research/longmem_eval.py",
@@ -12811,7 +12811,7 @@
    "command": "python research/longmem_eval.py --no-morphology --save --out=research/results/longmem_oracle_raw.json",
    "raw": "research/results/longmem_oracle_raw.json",
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "The ablation arm of research/LEXICAL_MORPHOLOGY.md: whole-session vectors, the lexical signal on raw tokens as it was before 2026-09-06.",
    "produced_by": [
     "research/longmem_eval.py",
@@ -12856,7 +12856,7 @@
    "command": "python research/longmem_eval.py --no-morphology --save --out=research/results/longmem_oracle_raw.json",
    "raw": "research/results/longmem_oracle_raw.json",
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "The ablation arm of research/LEXICAL_MORPHOLOGY.md: whole-session vectors, the lexical signal on raw tokens as it was before 2026-09-06.",
    "produced_by": [
     "research/longmem_eval.py",
@@ -12901,7 +12901,7 @@
    "command": "python research/longmem_eval.py --no-morphology --save --out=research/results/longmem_oracle_raw.json",
    "raw": "research/results/longmem_oracle_raw.json",
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "The ablation arm of research/LEXICAL_MORPHOLOGY.md: whole-session vectors, the lexical signal on raw tokens as it was before 2026-09-06.",
    "produced_by": [
     "research/longmem_eval.py",
@@ -12941,7 +12941,7 @@
    "command": "python research/longmem_eval.py --no-morphology --save --out=research/results/longmem_oracle_raw.json",
    "raw": "research/results/longmem_oracle_raw.json",
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "The ablation arm of research/LEXICAL_MORPHOLOGY.md: whole-session vectors, the lexical signal on raw tokens as it was before 2026-09-06.",
    "produced_by": [
     "research/longmem_eval.py",
@@ -12986,7 +12986,7 @@
    "command": "python research/longmem_eval.py --no-morphology --save --out=research/results/longmem_oracle_raw.json",
    "raw": "research/results/longmem_oracle_raw.json",
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "The ablation arm of research/LEXICAL_MORPHOLOGY.md: whole-session vectors, the lexical signal on raw tokens as it was before 2026-09-06.",
    "produced_by": [
     "research/longmem_eval.py",
@@ -13031,7 +13031,7 @@
    "command": "python research/longmem_eval.py --no-morphology --save --out=research/results/longmem_oracle_raw.json",
    "raw": "research/results/longmem_oracle_raw.json",
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "The ablation arm of research/LEXICAL_MORPHOLOGY.md: whole-session vectors, the lexical signal on raw tokens as it was before 2026-09-06.",
    "produced_by": [
     "research/longmem_eval.py",
@@ -13076,7 +13076,7 @@
    "command": "python research/longmem_eval.py --no-morphology --save --out=research/results/longmem_oracle_raw.json",
    "raw": "research/results/longmem_oracle_raw.json",
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "The ablation arm of research/LEXICAL_MORPHOLOGY.md: whole-session vectors, the lexical signal on raw tokens as it was before 2026-09-06.",
    "produced_by": [
     "research/longmem_eval.py",
@@ -13118,7 +13118,7 @@
    "pointer": "shipped",
    "ci": null,
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "One point of the dense-weight sweep (research/fusion_sweep.py): the fused ranker with the dense weight fixed at this value, everything else as shipped, from the same cached vectors. The gate that chose the shipped weight is ledger item I1.",
    "produced_by": [
     "research/fusion_sweep.py",
@@ -13165,7 +13165,7 @@
     "high": 0.5337
    },
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "One point of the dense-weight sweep (research/fusion_sweep.py): the fused ranker with the dense weight fixed at this value, everything else as shipped, from the same cached vectors. The gate that chose the shipped weight is ledger item I1.",
    "produced_by": [
     "research/fusion_sweep.py",
@@ -13212,7 +13212,7 @@
     "high": 0.8122
    },
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "One point of the dense-weight sweep (research/fusion_sweep.py): the fused ranker with the dense weight fixed at this value, everything else as shipped, from the same cached vectors. The gate that chose the shipped weight is ledger item I1.",
    "produced_by": [
     "research/fusion_sweep.py",
@@ -13259,7 +13259,7 @@
     "high": 0.8841
    },
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "One point of the dense-weight sweep (research/fusion_sweep.py): the fused ranker with the dense weight fixed at this value, everything else as shipped, from the same cached vectors. The gate that chose the shipped weight is ledger item I1.",
    "produced_by": [
     "research/fusion_sweep.py",
@@ -13301,7 +13301,7 @@
    "pointer": "points.oracle[\"0.25\"].mrr",
    "ci": null,
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "One point of the dense-weight sweep (research/fusion_sweep.py): the fused ranker with the dense weight fixed at this value, everything else as shipped, from the same cached vectors. The gate that chose the shipped weight is ledger item I1.",
    "produced_by": [
     "research/fusion_sweep.py",
@@ -13348,7 +13348,7 @@
     "high": 0.5536
    },
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "One point of the dense-weight sweep (research/fusion_sweep.py): the fused ranker with the dense weight fixed at this value, everything else as shipped, from the same cached vectors. The gate that chose the shipped weight is ledger item I1.",
    "produced_by": [
     "research/fusion_sweep.py",
@@ -13395,7 +13395,7 @@
     "high": 0.8216
    },
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "One point of the dense-weight sweep (research/fusion_sweep.py): the fused ranker with the dense weight fixed at this value, everything else as shipped, from the same cached vectors. The gate that chose the shipped weight is ledger item I1.",
    "produced_by": [
     "research/fusion_sweep.py",
@@ -13442,7 +13442,7 @@
     "high": 0.8949
    },
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "One point of the dense-weight sweep (research/fusion_sweep.py): the fused ranker with the dense weight fixed at this value, everything else as shipped, from the same cached vectors. The gate that chose the shipped weight is ledger item I1.",
    "produced_by": [
     "research/fusion_sweep.py",
@@ -13484,7 +13484,7 @@
    "pointer": "points.oracle[\"0.5\"].mrr",
    "ci": null,
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "One point of the dense-weight sweep (research/fusion_sweep.py): the fused ranker with the dense weight fixed at this value, everything else as shipped, from the same cached vectors. The gate that chose the shipped weight is ledger item I1.",
    "produced_by": [
     "research/fusion_sweep.py",
@@ -13531,7 +13531,7 @@
     "high": 0.5536
    },
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "One point of the dense-weight sweep (research/fusion_sweep.py): the fused ranker with the dense weight fixed at this value, everything else as shipped, from the same cached vectors. The gate that chose the shipped weight is ledger item I1.",
    "produced_by": [
     "research/fusion_sweep.py",
@@ -13578,7 +13578,7 @@
     "high": 0.8327
    },
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "One point of the dense-weight sweep (research/fusion_sweep.py): the fused ranker with the dense weight fixed at this value, everything else as shipped, from the same cached vectors. The gate that chose the shipped weight is ledger item I1.",
    "produced_by": [
     "research/fusion_sweep.py",
@@ -13625,7 +13625,7 @@
     "high": 0.8949
    },
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "One point of the dense-weight sweep (research/fusion_sweep.py): the fused ranker with the dense weight fixed at this value, everything else as shipped, from the same cached vectors. The gate that chose the shipped weight is ledger item I1.",
    "produced_by": [
     "research/fusion_sweep.py",
@@ -13667,7 +13667,7 @@
    "pointer": "points.oracle[\"0.75\"].mrr",
    "ci": null,
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "One point of the dense-weight sweep (research/fusion_sweep.py): the fused ranker with the dense weight fixed at this value, everything else as shipped, from the same cached vectors. The gate that chose the shipped weight is ledger item I1.",
    "produced_by": [
     "research/fusion_sweep.py",
@@ -13714,7 +13714,7 @@
     "high": 0.5556
    },
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "One point of the dense-weight sweep (research/fusion_sweep.py): the fused ranker with the dense weight fixed at this value, everything else as shipped, from the same cached vectors. The gate that chose the shipped weight is ledger item I1.",
    "produced_by": [
     "research/fusion_sweep.py",
@@ -13761,7 +13761,7 @@
     "high": 0.8327
    },
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "One point of the dense-weight sweep (research/fusion_sweep.py): the fused ranker with the dense weight fixed at this value, everything else as shipped, from the same cached vectors. The gate that chose the shipped weight is ledger item I1.",
    "produced_by": [
     "research/fusion_sweep.py",
@@ -13808,7 +13808,7 @@
     "high": 0.8931
    },
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "One point of the dense-weight sweep (research/fusion_sweep.py): the fused ranker with the dense weight fixed at this value, everything else as shipped, from the same cached vectors. The gate that chose the shipped weight is ledger item I1.",
    "produced_by": [
     "research/fusion_sweep.py",
@@ -13850,7 +13850,7 @@
    "pointer": "points.oracle[\"1.0\"].mrr",
    "ci": null,
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "One point of the dense-weight sweep (research/fusion_sweep.py): the fused ranker with the dense weight fixed at this value, everything else as shipped, from the same cached vectors. The gate that chose the shipped weight is ledger item I1.",
    "produced_by": [
     "research/fusion_sweep.py",
@@ -13897,7 +13897,7 @@
     "high": 0.5595
    },
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "One point of the dense-weight sweep (research/fusion_sweep.py): the fused ranker with the dense weight fixed at this value, everything else as shipped, from the same cached vectors. The gate that chose the shipped weight is ledger item I1.",
    "produced_by": [
     "research/fusion_sweep.py",
@@ -13944,7 +13944,7 @@
     "high": 0.8178
    },
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "One point of the dense-weight sweep (research/fusion_sweep.py): the fused ranker with the dense weight fixed at this value, everything else as shipped, from the same cached vectors. The gate that chose the shipped weight is ledger item I1.",
    "produced_by": [
     "research/fusion_sweep.py",
@@ -13991,7 +13991,7 @@
     "high": 0.8931
    },
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "One point of the dense-weight sweep (research/fusion_sweep.py): the fused ranker with the dense weight fixed at this value, everything else as shipped, from the same cached vectors. The gate that chose the shipped weight is ledger item I1.",
    "produced_by": [
     "research/fusion_sweep.py",
@@ -14033,7 +14033,7 @@
    "pointer": "points.oracle[\"1.5\"].mrr",
    "ci": null,
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "One point of the dense-weight sweep (research/fusion_sweep.py): the fused ranker with the dense weight fixed at this value, everything else as shipped, from the same cached vectors. The gate that chose the shipped weight is ledger item I1.",
    "produced_by": [
     "research/fusion_sweep.py",
@@ -14080,7 +14080,7 @@
     "high": 0.3662
    },
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "One point of the dense-weight sweep (research/fusion_sweep.py): the fused ranker with the dense weight fixed at this value, everything else as shipped, from the same cached vectors. The gate that chose the shipped weight is ledger item I1.",
    "produced_by": [
     "research/fusion_sweep.py",
@@ -14127,7 +14127,7 @@
     "high": 0.6363
    },
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "One point of the dense-weight sweep (research/fusion_sweep.py): the fused ranker with the dense weight fixed at this value, everything else as shipped, from the same cached vectors. The gate that chose the shipped weight is ledger item I1.",
    "produced_by": [
     "research/fusion_sweep.py",
@@ -14174,7 +14174,7 @@
     "high": 0.7154
    },
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "One point of the dense-weight sweep (research/fusion_sweep.py): the fused ranker with the dense weight fixed at this value, everything else as shipped, from the same cached vectors. The gate that chose the shipped weight is ledger item I1.",
    "produced_by": [
     "research/fusion_sweep.py",
@@ -14216,7 +14216,7 @@
    "pointer": "points.locomo[\"0.25\"].mrr",
    "ci": null,
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "One point of the dense-weight sweep (research/fusion_sweep.py): the fused ranker with the dense weight fixed at this value, everything else as shipped, from the same cached vectors. The gate that chose the shipped weight is ledger item I1.",
    "produced_by": [
     "research/fusion_sweep.py",
@@ -14263,7 +14263,7 @@
     "high": 0.3744
    },
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "One point of the dense-weight sweep (research/fusion_sweep.py): the fused ranker with the dense weight fixed at this value, everything else as shipped, from the same cached vectors. The gate that chose the shipped weight is ledger item I1.",
    "produced_by": [
     "research/fusion_sweep.py",
@@ -14310,7 +14310,7 @@
     "high": 0.6473
    },
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "One point of the dense-weight sweep (research/fusion_sweep.py): the fused ranker with the dense weight fixed at this value, everything else as shipped, from the same cached vectors. The gate that chose the shipped weight is ledger item I1.",
    "produced_by": [
     "research/fusion_sweep.py",
@@ -14357,7 +14357,7 @@
     "high": 0.7268
    },
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "One point of the dense-weight sweep (research/fusion_sweep.py): the fused ranker with the dense weight fixed at this value, everything else as shipped, from the same cached vectors. The gate that chose the shipped weight is ledger item I1.",
    "produced_by": [
     "research/fusion_sweep.py",
@@ -14399,7 +14399,7 @@
    "pointer": "points.locomo[\"0.5\"].mrr",
    "ci": null,
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "One point of the dense-weight sweep (research/fusion_sweep.py): the fused ranker with the dense weight fixed at this value, everything else as shipped, from the same cached vectors. The gate that chose the shipped weight is ledger item I1.",
    "produced_by": [
     "research/fusion_sweep.py",
@@ -14446,7 +14446,7 @@
     "high": 0.3708
    },
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "One point of the dense-weight sweep (research/fusion_sweep.py): the fused ranker with the dense weight fixed at this value, everything else as shipped, from the same cached vectors. The gate that chose the shipped weight is ledger item I1.",
    "produced_by": [
     "research/fusion_sweep.py",
@@ -14493,7 +14493,7 @@
     "high": 0.6523
    },
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "One point of the dense-weight sweep (research/fusion_sweep.py): the fused ranker with the dense weight fixed at this value, everything else as shipped, from the same cached vectors. The gate that chose the shipped weight is ledger item I1.",
    "produced_by": [
     "research/fusion_sweep.py",
@@ -14540,7 +14540,7 @@
     "high": 0.7372
    },
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "One point of the dense-weight sweep (research/fusion_sweep.py): the fused ranker with the dense weight fixed at this value, everything else as shipped, from the same cached vectors. The gate that chose the shipped weight is ledger item I1.",
    "produced_by": [
     "research/fusion_sweep.py",
@@ -14582,7 +14582,7 @@
    "pointer": "points.locomo[\"0.75\"].mrr",
    "ci": null,
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "One point of the dense-weight sweep (research/fusion_sweep.py): the fused ranker with the dense weight fixed at this value, everything else as shipped, from the same cached vectors. The gate that chose the shipped weight is ledger item I1.",
    "produced_by": [
     "research/fusion_sweep.py",
@@ -14629,7 +14629,7 @@
     "high": 0.3713
    },
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "One point of the dense-weight sweep (research/fusion_sweep.py): the fused ranker with the dense weight fixed at this value, everything else as shipped, from the same cached vectors. The gate that chose the shipped weight is ledger item I1.",
    "produced_by": [
     "research/fusion_sweep.py",
@@ -14676,7 +14676,7 @@
     "high": 0.6612
    },
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "One point of the dense-weight sweep (research/fusion_sweep.py): the fused ranker with the dense weight fixed at this value, everything else as shipped, from the same cached vectors. The gate that chose the shipped weight is ledger item I1.",
    "produced_by": [
     "research/fusion_sweep.py",
@@ -14723,7 +14723,7 @@
     "high": 0.746
    },
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "One point of the dense-weight sweep (research/fusion_sweep.py): the fused ranker with the dense weight fixed at this value, everything else as shipped, from the same cached vectors. The gate that chose the shipped weight is ledger item I1.",
    "produced_by": [
     "research/fusion_sweep.py",
@@ -14765,7 +14765,7 @@
    "pointer": "points.locomo[\"1.0\"].mrr",
    "ci": null,
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "One point of the dense-weight sweep (research/fusion_sweep.py): the fused ranker with the dense weight fixed at this value, everything else as shipped, from the same cached vectors. The gate that chose the shipped weight is ledger item I1.",
    "produced_by": [
     "research/fusion_sweep.py",
@@ -14812,7 +14812,7 @@
     "high": 0.3729
    },
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "One point of the dense-weight sweep (research/fusion_sweep.py): the fused ranker with the dense weight fixed at this value, everything else as shipped, from the same cached vectors. The gate that chose the shipped weight is ledger item I1.",
    "produced_by": [
     "research/fusion_sweep.py",
@@ -14859,7 +14859,7 @@
     "high": 0.6622
    },
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "One point of the dense-weight sweep (research/fusion_sweep.py): the fused ranker with the dense weight fixed at this value, everything else as shipped, from the same cached vectors. The gate that chose the shipped weight is ledger item I1.",
    "produced_by": [
     "research/fusion_sweep.py",
@@ -14906,7 +14906,7 @@
     "high": 0.7539
    },
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "One point of the dense-weight sweep (research/fusion_sweep.py): the fused ranker with the dense weight fixed at this value, everything else as shipped, from the same cached vectors. The gate that chose the shipped weight is ledger item I1.",
    "produced_by": [
     "research/fusion_sweep.py",
@@ -14948,7 +14948,7 @@
    "pointer": "points.locomo[\"1.5\"].mrr",
    "ci": null,
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "One point of the dense-weight sweep (research/fusion_sweep.py): the fused ranker with the dense weight fixed at this value, everything else as shipped, from the same cached vectors. The gate that chose the shipped weight is ledger item I1.",
    "produced_by": [
     "research/fusion_sweep.py",
@@ -14995,7 +14995,7 @@
     "high": 0.6794
    },
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "The owner's store, read-only: the summary of a Session note is the query, the typed notes extracted from that session are the relevant set, the pool is the project's typed notes; lexical BM25 only, the engine's own tokenizer switched off (raw) and on (morph). The store is private; the artifact holds rates and counts only, and anyone with a populated store reproduces the shape with one command.",
    "produced_by": [
     "research/lexical_morphology_probe.py",
@@ -15037,7 +15037,7 @@
     "high": 0.8614
    },
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "The owner's store, read-only: the summary of a Session note is the query, the typed notes extracted from that session are the relevant set, the pool is the project's typed notes; lexical BM25 only, the engine's own tokenizer switched off (raw) and on (morph). The store is private; the artifact holds rates and counts only, and anyone with a populated store reproduces the shape with one command.",
    "produced_by": [
     "research/lexical_morphology_probe.py",
@@ -15079,7 +15079,7 @@
     "high": 0.906
    },
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "The owner's store, read-only: the summary of a Session note is the query, the typed notes extracted from that session are the relevant set, the pool is the project's typed notes; lexical BM25 only, the engine's own tokenizer switched off (raw) and on (morph). The store is private; the artifact holds rates and counts only, and anyone with a populated store reproduces the shape with one command.",
    "produced_by": [
     "research/lexical_morphology_probe.py",
@@ -15116,7 +15116,7 @@
    "pointer": "protocols.session.halves.ru.raw.mrr",
    "ci": null,
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "The owner's store, read-only: the summary of a Session note is the query, the typed notes extracted from that session are the relevant set, the pool is the project's typed notes; lexical BM25 only, the engine's own tokenizer switched off (raw) and on (morph). The store is private; the artifact holds rates and counts only, and anyone with a populated store reproduces the shape with one command.",
    "produced_by": [
     "research/lexical_morphology_probe.py",
@@ -15158,7 +15158,7 @@
     "high": 0.7354
    },
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "The owner's store, read-only: the summary of a Session note is the query, the typed notes extracted from that session are the relevant set, the pool is the project's typed notes; lexical BM25 only, the engine's own tokenizer switched off (raw) and on (morph). The store is private; the artifact holds rates and counts only, and anyone with a populated store reproduces the shape with one command.",
    "produced_by": [
     "research/lexical_morphology_probe.py",
@@ -15200,7 +15200,7 @@
     "high": 0.8822
    },
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "The owner's store, read-only: the summary of a Session note is the query, the typed notes extracted from that session are the relevant set, the pool is the project's typed notes; lexical BM25 only, the engine's own tokenizer switched off (raw) and on (morph). The store is private; the artifact holds rates and counts only, and anyone with a populated store reproduces the shape with one command.",
    "produced_by": [
     "research/lexical_morphology_probe.py",
@@ -15242,7 +15242,7 @@
     "high": 0.9357
    },
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "The owner's store, read-only: the summary of a Session note is the query, the typed notes extracted from that session are the relevant set, the pool is the project's typed notes; lexical BM25 only, the engine's own tokenizer switched off (raw) and on (morph). The store is private; the artifact holds rates and counts only, and anyone with a populated store reproduces the shape with one command.",
    "produced_by": [
     "research/lexical_morphology_probe.py",
@@ -15279,7 +15279,7 @@
    "pointer": "protocols.session.halves.ru.morph.mrr",
    "ci": null,
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "The owner's store, read-only: the summary of a Session note is the query, the typed notes extracted from that session are the relevant set, the pool is the project's typed notes; lexical BM25 only, the engine's own tokenizer switched off (raw) and on (morph). The store is private; the artifact holds rates and counts only, and anyone with a populated store reproduces the shape with one command.",
    "produced_by": [
     "research/lexical_morphology_probe.py",
@@ -15321,7 +15321,7 @@
     "high": 0.8195
    },
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "The owner's store, read-only: the summary of a Session note is the query, the typed notes extracted from that session are the relevant set, the pool is the project's typed notes; lexical BM25 only, the engine's own tokenizer switched off (raw) and on (morph). The store is private; the artifact holds rates and counts only, and anyone with a populated store reproduces the shape with one command.",
    "produced_by": [
     "research/lexical_morphology_probe.py",
@@ -15363,7 +15363,7 @@
     "high": 0.9449
    },
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "The owner's store, read-only: the summary of a Session note is the query, the typed notes extracted from that session are the relevant set, the pool is the project's typed notes; lexical BM25 only, the engine's own tokenizer switched off (raw) and on (morph). The store is private; the artifact holds rates and counts only, and anyone with a populated store reproduces the shape with one command.",
    "produced_by": [
     "research/lexical_morphology_probe.py",
@@ -15405,7 +15405,7 @@
     "high": 0.9639
    },
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "The owner's store, read-only: the summary of a Session note is the query, the typed notes extracted from that session are the relevant set, the pool is the project's typed notes; lexical BM25 only, the engine's own tokenizer switched off (raw) and on (morph). The store is private; the artifact holds rates and counts only, and anyone with a populated store reproduces the shape with one command.",
    "produced_by": [
     "research/lexical_morphology_probe.py",
@@ -15442,7 +15442,7 @@
    "pointer": "protocols.session.halves.en.raw.mrr",
    "ci": null,
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "The owner's store, read-only: the summary of a Session note is the query, the typed notes extracted from that session are the relevant set, the pool is the project's typed notes; lexical BM25 only, the engine's own tokenizer switched off (raw) and on (morph). The store is private; the artifact holds rates and counts only, and anyone with a populated store reproduces the shape with one command.",
    "produced_by": [
     "research/lexical_morphology_probe.py",
@@ -15484,7 +15484,7 @@
     "high": 0.8389
    },
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "The owner's store, read-only: the summary of a Session note is the query, the typed notes extracted from that session are the relevant set, the pool is the project's typed notes; lexical BM25 only, the engine's own tokenizer switched off (raw) and on (morph). The store is private; the artifact holds rates and counts only, and anyone with a populated store reproduces the shape with one command.",
    "produced_by": [
     "research/lexical_morphology_probe.py",
@@ -15526,7 +15526,7 @@
     "high": 0.941
    },
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "The owner's store, read-only: the summary of a Session note is the query, the typed notes extracted from that session are the relevant set, the pool is the project's typed notes; lexical BM25 only, the engine's own tokenizer switched off (raw) and on (morph). The store is private; the artifact holds rates and counts only, and anyone with a populated store reproduces the shape with one command.",
    "produced_by": [
     "research/lexical_morphology_probe.py",
@@ -15568,7 +15568,7 @@
     "high": 0.9664
    },
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "The owner's store, read-only: the summary of a Session note is the query, the typed notes extracted from that session are the relevant set, the pool is the project's typed notes; lexical BM25 only, the engine's own tokenizer switched off (raw) and on (morph). The store is private; the artifact holds rates and counts only, and anyone with a populated store reproduces the shape with one command.",
    "produced_by": [
     "research/lexical_morphology_probe.py",
@@ -15605,7 +15605,7 @@
    "pointer": "protocols.session.halves.en.morph.mrr",
    "ci": null,
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "The owner's store, read-only: the summary of a Session note is the query, the typed notes extracted from that session are the relevant set, the pool is the project's typed notes; lexical BM25 only, the engine's own tokenizer switched off (raw) and on (morph). The store is private; the artifact holds rates and counts only, and anyone with a populated store reproduces the shape with one command.",
    "produced_by": [
     "research/lexical_morphology_probe.py",
@@ -15642,7 +15642,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "LoCoMo pooled globally: one store holds the turns of all ten conversations, which is what a user's whole history looks like to a competitor store and is harder than LoCoMo's own per-conversation setting (`locomo.*`). Retrieval of the annotated evidence turn, never judge-scored answer accuracy. Competitor versions are recorded in the artifact.",
    "produced_by": [
     "research/head_to_head.py",
@@ -15691,7 +15691,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "LoCoMo pooled globally: one store holds the turns of all ten conversations, which is what a user's whole history looks like to a competitor store and is harder than LoCoMo's own per-conversation setting (`locomo.*`). Retrieval of the annotated evidence turn, never judge-scored answer accuracy. Competitor versions are recorded in the artifact.",
    "produced_by": [
     "research/head_to_head.py",
@@ -15740,7 +15740,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "LoCoMo pooled globally: one store holds the turns of all ten conversations, which is what a user's whole history looks like to a competitor store and is harder than LoCoMo's own per-conversation setting (`locomo.*`). Retrieval of the annotated evidence turn, never judge-scored answer accuracy. Competitor versions are recorded in the artifact.",
    "produced_by": [
     "research/head_to_head.py",
@@ -15789,7 +15789,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "LoCoMo pooled globally: one store holds the turns of all ten conversations, which is what a user's whole history looks like to a competitor store and is harder than LoCoMo's own per-conversation setting (`locomo.*`). Retrieval of the annotated evidence turn, never judge-scored answer accuracy. Competitor versions are recorded in the artifact.",
    "produced_by": [
     "research/head_to_head.py",
@@ -15833,7 +15833,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "LoCoMo pooled globally: one store holds the turns of all ten conversations, which is what a user's whole history looks like to a competitor store and is harder than LoCoMo's own per-conversation setting (`locomo.*`). Retrieval of the annotated evidence turn, never judge-scored answer accuracy. Competitor versions are recorded in the artifact.",
    "produced_by": [
     "research/head_to_head.py",
@@ -15882,7 +15882,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "LoCoMo pooled globally: one store holds the turns of all ten conversations, which is what a user's whole history looks like to a competitor store and is harder than LoCoMo's own per-conversation setting (`locomo.*`). Retrieval of the annotated evidence turn, never judge-scored answer accuracy. Competitor versions are recorded in the artifact.",
    "produced_by": [
     "research/head_to_head.py",
@@ -15931,7 +15931,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "LoCoMo pooled globally: one store holds the turns of all ten conversations, which is what a user's whole history looks like to a competitor store and is harder than LoCoMo's own per-conversation setting (`locomo.*`). Retrieval of the annotated evidence turn, never judge-scored answer accuracy. Competitor versions are recorded in the artifact.",
    "produced_by": [
     "research/head_to_head.py",
@@ -15980,7 +15980,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "LoCoMo pooled globally: one store holds the turns of all ten conversations, which is what a user's whole history looks like to a competitor store and is harder than LoCoMo's own per-conversation setting (`locomo.*`). Retrieval of the annotated evidence turn, never judge-scored answer accuracy. Competitor versions are recorded in the artifact.",
    "produced_by": [
     "research/head_to_head.py",
@@ -16024,7 +16024,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "LoCoMo pooled globally: one store holds the turns of all ten conversations, which is what a user's whole history looks like to a competitor store and is harder than LoCoMo's own per-conversation setting (`locomo.*`). Retrieval of the annotated evidence turn, never judge-scored answer accuracy. Competitor versions are recorded in the artifact.",
    "produced_by": [
     "research/head_to_head.py",
@@ -16073,7 +16073,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "LoCoMo pooled globally: one store holds the turns of all ten conversations, which is what a user's whole history looks like to a competitor store and is harder than LoCoMo's own per-conversation setting (`locomo.*`). Retrieval of the annotated evidence turn, never judge-scored answer accuracy. Competitor versions are recorded in the artifact.",
    "produced_by": [
     "research/head_to_head.py",
@@ -16122,7 +16122,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "LoCoMo pooled globally: one store holds the turns of all ten conversations, which is what a user's whole history looks like to a competitor store and is harder than LoCoMo's own per-conversation setting (`locomo.*`). Retrieval of the annotated evidence turn, never judge-scored answer accuracy. Competitor versions are recorded in the artifact.",
    "produced_by": [
     "research/head_to_head.py",
@@ -16171,7 +16171,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "LoCoMo pooled globally: one store holds the turns of all ten conversations, which is what a user's whole history looks like to a competitor store and is harder than LoCoMo's own per-conversation setting (`locomo.*`). Retrieval of the annotated evidence turn, never judge-scored answer accuracy. Competitor versions are recorded in the artifact.",
    "produced_by": [
     "research/head_to_head.py",
@@ -16215,7 +16215,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "LoCoMo pooled globally: one store holds the turns of all ten conversations, which is what a user's whole history looks like to a competitor store and is harder than LoCoMo's own per-conversation setting (`locomo.*`). Retrieval of the annotated evidence turn, never judge-scored answer accuracy. Competitor versions are recorded in the artifact.",
    "produced_by": [
     "research/head_to_head.py",
@@ -16264,7 +16264,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "LoCoMo pooled globally: one store holds the turns of all ten conversations, which is what a user's whole history looks like to a competitor store and is harder than LoCoMo's own per-conversation setting (`locomo.*`). Retrieval of the annotated evidence turn, never judge-scored answer accuracy. Competitor versions are recorded in the artifact.",
    "produced_by": [
     "research/head_to_head.py",
@@ -16313,7 +16313,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "LoCoMo pooled globally: one store holds the turns of all ten conversations, which is what a user's whole history looks like to a competitor store and is harder than LoCoMo's own per-conversation setting (`locomo.*`). Retrieval of the annotated evidence turn, never judge-scored answer accuracy. Competitor versions are recorded in the artifact.",
    "produced_by": [
     "research/head_to_head.py",
@@ -16362,7 +16362,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "LoCoMo pooled globally: one store holds the turns of all ten conversations, which is what a user's whole history looks like to a competitor store and is harder than LoCoMo's own per-conversation setting (`locomo.*`). Retrieval of the annotated evidence turn, never judge-scored answer accuracy. Competitor versions are recorded in the artifact.",
    "produced_by": [
     "research/head_to_head.py",
@@ -16406,7 +16406,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "The standard non-oracle pool: 19,206 retrievable sessions against the oracle variant's 940, the same 500 questions and annotated evidence, twenty-one times the haystack. Same local bge-m3 and scoring function for every system. Competitor versions are recorded in the artifact.",
    "produced_by": [
     "research/head_to_head.py",
@@ -16455,7 +16455,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "The standard non-oracle pool: 19,206 retrievable sessions against the oracle variant's 940, the same 500 questions and annotated evidence, twenty-one times the haystack. Same local bge-m3 and scoring function for every system. Competitor versions are recorded in the artifact.",
    "produced_by": [
     "research/head_to_head.py",
@@ -16504,7 +16504,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "The standard non-oracle pool: 19,206 retrievable sessions against the oracle variant's 940, the same 500 questions and annotated evidence, twenty-one times the haystack. Same local bge-m3 and scoring function for every system. Competitor versions are recorded in the artifact.",
    "produced_by": [
     "research/head_to_head.py",
@@ -16553,7 +16553,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "The standard non-oracle pool: 19,206 retrievable sessions against the oracle variant's 940, the same 500 questions and annotated evidence, twenty-one times the haystack. Same local bge-m3 and scoring function for every system. Competitor versions are recorded in the artifact.",
    "produced_by": [
     "research/head_to_head.py",
@@ -16597,7 +16597,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "The standard non-oracle pool: 19,206 retrievable sessions against the oracle variant's 940, the same 500 questions and annotated evidence, twenty-one times the haystack. Same local bge-m3 and scoring function for every system. Competitor versions are recorded in the artifact.",
    "produced_by": [
     "research/head_to_head.py",
@@ -16646,7 +16646,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "The standard non-oracle pool: 19,206 retrievable sessions against the oracle variant's 940, the same 500 questions and annotated evidence, twenty-one times the haystack. Same local bge-m3 and scoring function for every system. Competitor versions are recorded in the artifact.",
    "produced_by": [
     "research/head_to_head.py",
@@ -16695,7 +16695,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "The standard non-oracle pool: 19,206 retrievable sessions against the oracle variant's 940, the same 500 questions and annotated evidence, twenty-one times the haystack. Same local bge-m3 and scoring function for every system. Competitor versions are recorded in the artifact.",
    "produced_by": [
     "research/head_to_head.py",
@@ -16744,7 +16744,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "The standard non-oracle pool: 19,206 retrievable sessions against the oracle variant's 940, the same 500 questions and annotated evidence, twenty-one times the haystack. Same local bge-m3 and scoring function for every system. Competitor versions are recorded in the artifact.",
    "produced_by": [
     "research/head_to_head.py",
@@ -16788,7 +16788,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "The standard non-oracle pool: 19,206 retrievable sessions against the oracle variant's 940, the same 500 questions and annotated evidence, twenty-one times the haystack. Same local bge-m3 and scoring function for every system. Competitor versions are recorded in the artifact.",
    "produced_by": [
     "research/head_to_head.py",
@@ -16837,7 +16837,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "The standard non-oracle pool: 19,206 retrievable sessions against the oracle variant's 940, the same 500 questions and annotated evidence, twenty-one times the haystack. Same local bge-m3 and scoring function for every system. Competitor versions are recorded in the artifact.",
    "produced_by": [
     "research/head_to_head.py",
@@ -16886,7 +16886,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "The standard non-oracle pool: 19,206 retrievable sessions against the oracle variant's 940, the same 500 questions and annotated evidence, twenty-one times the haystack. Same local bge-m3 and scoring function for every system. Competitor versions are recorded in the artifact.",
    "produced_by": [
     "research/head_to_head.py",
@@ -16935,7 +16935,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "The standard non-oracle pool: 19,206 retrievable sessions against the oracle variant's 940, the same 500 questions and annotated evidence, twenty-one times the haystack. Same local bge-m3 and scoring function for every system. Competitor versions are recorded in the artifact.",
    "produced_by": [
     "research/head_to_head.py",
@@ -16979,7 +16979,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "Mem0 2.0.19 as shipped: infer=True, its LLM extraction (qwen2.5-7b-64k, local) on every session, then its default hybrid search over the memories. The row was produced by the run of 2026-09-06 on the oracle pool; its log shows 13 of 940 extractions the product could not parse (1.4%, below the tenth at which the arm blocks itself) - the counter that records this in the artifact was added to the stand after that run began. Same pool, questions, embedder and scoring as the store arms.",
    "produced_by": [
     "research/head_to_head.py",
@@ -17028,7 +17028,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "Mem0 2.0.19 as shipped: infer=True, its LLM extraction (qwen2.5-7b-64k, local) on every session, then its default hybrid search over the memories. The row was produced by the run of 2026-09-06 on the oracle pool; its log shows 13 of 940 extractions the product could not parse (1.4%, below the tenth at which the arm blocks itself) - the counter that records this in the artifact was added to the stand after that run began. Same pool, questions, embedder and scoring as the store arms.",
    "produced_by": [
     "research/head_to_head.py",
@@ -17077,7 +17077,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "Mem0 2.0.19 as shipped: infer=True, its LLM extraction (qwen2.5-7b-64k, local) on every session, then its default hybrid search over the memories. The row was produced by the run of 2026-09-06 on the oracle pool; its log shows 13 of 940 extractions the product could not parse (1.4%, below the tenth at which the arm blocks itself) - the counter that records this in the artifact was added to the stand after that run began. Same pool, questions, embedder and scoring as the store arms.",
    "produced_by": [
     "research/head_to_head.py",
@@ -17126,7 +17126,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "Mem0 2.0.19 as shipped: infer=True, its LLM extraction (qwen2.5-7b-64k, local) on every session, then its default hybrid search over the memories. The row was produced by the run of 2026-09-06 on the oracle pool; its log shows 13 of 940 extractions the product could not parse (1.4%, below the tenth at which the arm blocks itself) - the counter that records this in the artifact was added to the stand after that run began. Same pool, questions, embedder and scoring as the store arms.",
    "produced_by": [
     "research/head_to_head.py",
@@ -17170,7 +17170,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "LangMem 0.0.30 as shipped: its own extraction prompt over each session with a local qwen2.5-7b-64k, then its own search over the memories it wrote. The row was produced by the run of 2026-09-06 on the oracle pool, in the same environment as the store arms - same pool, questions, embedder and scoring.",
    "produced_by": [
     "research/head_to_head.py",
@@ -17219,7 +17219,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "LangMem 0.0.30 as shipped: its own extraction prompt over each session with a local qwen2.5-7b-64k, then its own search over the memories it wrote. The row was produced by the run of 2026-09-06 on the oracle pool, in the same environment as the store arms - same pool, questions, embedder and scoring.",
    "produced_by": [
     "research/head_to_head.py",
@@ -17268,7 +17268,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "LangMem 0.0.30 as shipped: its own extraction prompt over each session with a local qwen2.5-7b-64k, then its own search over the memories it wrote. The row was produced by the run of 2026-09-06 on the oracle pool, in the same environment as the store arms - same pool, questions, embedder and scoring.",
    "produced_by": [
     "research/head_to_head.py",
@@ -17317,7 +17317,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "LangMem 0.0.30 as shipped: its own extraction prompt over each session with a local qwen2.5-7b-64k, then its own search over the memories it wrote. The row was produced by the run of 2026-09-06 on the oracle pool, in the same environment as the store arms - same pool, questions, embedder and scoring.",
    "produced_by": [
     "research/head_to_head.py",
@@ -17361,7 +17361,7 @@
    "cited_in": [
     "research/LEXICAL_MORPHOLOGY.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "The morphology ablation on the pool that was outside the gate: the same 19,206 sessions and 500 questions as longmem_s.*, the lexical signal tokenised without stop words or stems. The pair table on research/LEXICAL_MORPHOLOGY.md is generated from the two families.",
    "produced_by": [
     "research/longmem_eval.py",
@@ -17408,7 +17408,7 @@
    "cited_in": [
     "research/LEXICAL_MORPHOLOGY.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "The morphology ablation on the pool that was outside the gate: the same 19,206 sessions and 500 questions as longmem_s.*, the lexical signal tokenised without stop words or stems. The pair table on research/LEXICAL_MORPHOLOGY.md is generated from the two families.",
    "produced_by": [
     "research/longmem_eval.py",
@@ -17455,7 +17455,7 @@
    "cited_in": [
     "research/LEXICAL_MORPHOLOGY.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "The morphology ablation on the pool that was outside the gate: the same 19,206 sessions and 500 questions as longmem_s.*, the lexical signal tokenised without stop words or stems. The pair table on research/LEXICAL_MORPHOLOGY.md is generated from the two families.",
    "produced_by": [
     "research/longmem_eval.py",
@@ -17502,7 +17502,7 @@
    "cited_in": [
     "research/LEXICAL_MORPHOLOGY.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "The morphology ablation on the pool that was outside the gate: the same 19,206 sessions and 500 questions as longmem_s.*, the lexical signal tokenised without stop words or stems. The pair table on research/LEXICAL_MORPHOLOGY.md is generated from the two families.",
    "produced_by": [
     "research/longmem_eval.py",
@@ -17544,7 +17544,7 @@
    "cited_in": [
     "research/LEXICAL_MORPHOLOGY.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "The morphology ablation on the pool that was outside the gate: the same 19,206 sessions and 500 questions as longmem_s.*, the lexical signal tokenised without stop words or stems. The pair table on research/LEXICAL_MORPHOLOGY.md is generated from the two families.",
    "produced_by": [
     "research/longmem_eval.py",
@@ -17591,7 +17591,7 @@
    "cited_in": [
     "research/LEXICAL_MORPHOLOGY.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "The morphology ablation on the pool that was outside the gate: the same 19,206 sessions and 500 questions as longmem_s.*, the lexical signal tokenised without stop words or stems. The pair table on research/LEXICAL_MORPHOLOGY.md is generated from the two families.",
    "produced_by": [
     "research/longmem_eval.py",
@@ -17638,7 +17638,7 @@
    "cited_in": [
     "research/LEXICAL_MORPHOLOGY.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "The morphology ablation on the pool that was outside the gate: the same 19,206 sessions and 500 questions as longmem_s.*, the lexical signal tokenised without stop words or stems. The pair table on research/LEXICAL_MORPHOLOGY.md is generated from the two families.",
    "produced_by": [
     "research/longmem_eval.py",
@@ -17685,7 +17685,7 @@
    "cited_in": [
     "research/LEXICAL_MORPHOLOGY.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "The morphology ablation on the pool that was outside the gate: the same 19,206 sessions and 500 questions as longmem_s.*, the lexical signal tokenised without stop words or stems. The pair table on research/LEXICAL_MORPHOLOGY.md is generated from the two families.",
    "produced_by": [
     "research/longmem_eval.py",
@@ -17727,7 +17727,7 @@
    "cited_in": [
     "research/LEXICAL_MORPHOLOGY.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "The morphology ablation on the pool that was outside the gate: the same 19,206 sessions and 500 questions as longmem_s.*, the lexical signal tokenised without stop words or stems. The pair table on research/LEXICAL_MORPHOLOGY.md is generated from the two families.",
    "produced_by": [
     "research/longmem_eval.py",
@@ -17774,7 +17774,7 @@
    "cited_in": [
     "research/LEXICAL_MORPHOLOGY.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "The morphology ablation on the pool that was outside the gate: the same 19,206 sessions and 500 questions as longmem_s.*, the lexical signal tokenised without stop words or stems. The pair table on research/LEXICAL_MORPHOLOGY.md is generated from the two families.",
    "produced_by": [
     "research/longmem_eval.py",
@@ -17821,7 +17821,7 @@
    "cited_in": [
     "research/LEXICAL_MORPHOLOGY.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "The morphology ablation on the pool that was outside the gate: the same 19,206 sessions and 500 questions as longmem_s.*, the lexical signal tokenised without stop words or stems. The pair table on research/LEXICAL_MORPHOLOGY.md is generated from the two families.",
    "produced_by": [
     "research/longmem_eval.py",
@@ -17868,7 +17868,7 @@
    "cited_in": [
     "research/LEXICAL_MORPHOLOGY.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "The morphology ablation on the pool that was outside the gate: the same 19,206 sessions and 500 questions as longmem_s.*, the lexical signal tokenised without stop words or stems. The pair table on research/LEXICAL_MORPHOLOGY.md is generated from the two families.",
    "produced_by": [
     "research/longmem_eval.py",
@@ -17915,7 +17915,7 @@
    "command": "python research/supersession_bench.py --dataset research/data/supersession_v1_implicit.json --arms nevertwice,naive",
    "raw": "research/results/supersession_v1_implicit.json",
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "produced_by": [
     "research/supersession_bench.py",
     "nevertwice/__init__.py",
@@ -17973,7 +17973,7 @@
    "command": "python research/supersession_bench.py --dataset research/data/supersession_v1_implicit.json --arms nevertwice,naive",
    "raw": "research/results/supersession_v1_implicit.json",
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "produced_by": [
     "research/supersession_bench.py",
     "nevertwice/__init__.py",
@@ -18031,7 +18031,7 @@
    "command": "python research/supersession_bench.py --dataset research/data/supersession_v1_implicit.json --arms nevertwice,naive",
    "raw": "research/results/supersession_v1_implicit.json",
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "produced_by": [
     "research/supersession_bench.py",
     "nevertwice/__init__.py",
@@ -18083,7 +18083,7 @@
    "command": "python research/supersession_bench.py --dataset research/data/supersession_v1_implicit.json --arms nevertwice,naive",
    "raw": "research/results/supersession_v1_implicit.json",
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "produced_by": [
     "research/supersession_bench.py",
     "nevertwice/__init__.py",
@@ -18140,7 +18140,7 @@
    "command": "python research/supersession_bench.py --dataset research/data/supersession_v1_implicit.json --arms nevertwice,naive",
    "raw": "research/results/supersession_v1_implicit.json",
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "produced_by": [
     "research/supersession_bench.py",
     "nevertwice/__init__.py",
@@ -18197,7 +18197,7 @@
    "command": "python research/supersession_bench.py --dataset research/data/supersession_v1_implicit.json --arms nevertwice,naive",
    "raw": "research/results/supersession_v1_implicit.json",
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "produced_by": [
     "research/supersession_bench.py",
     "nevertwice/__init__.py",
@@ -18254,7 +18254,7 @@
    "command": "python research/supersession_bench.py --dataset research/data/supersession_v1_implicit.json --arms nevertwice,naive",
    "raw": "research/results/supersession_v1_implicit.json",
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "produced_by": [
     "research/supersession_bench.py",
     "nevertwice/__init__.py",
@@ -18306,7 +18306,7 @@
    "command": "python research/supersession_bench.py --dataset research/data/supersession_v1_implicit.json --arms nevertwice,naive",
    "raw": "research/results/supersession_v1_implicit.json",
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "produced_by": [
     "research/supersession_bench.py",
     "nevertwice/__init__.py",
@@ -18363,7 +18363,7 @@
    "command": "python research/supersession_bench.py --dataset research/data/supersession_v1_implicit.json --arms nevertwice,naive",
    "raw": "research/results/supersession_v1_implicit.json",
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "produced_by": [
     "research/supersession_bench.py",
     "nevertwice/__init__.py",
@@ -18420,7 +18420,7 @@
    "command": "python research/supersession_bench.py --dataset research/data/supersession_v1_implicit.json --arms nevertwice,naive",
    "raw": "research/results/supersession_v1_implicit.json",
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "produced_by": [
     "research/supersession_bench.py",
     "nevertwice/__init__.py",
@@ -18477,7 +18477,7 @@
    "command": "python research/supersession_bench.py --dataset research/data/supersession_v1_implicit.json --arms nevertwice,naive",
    "raw": "research/results/supersession_v1_implicit.json",
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "produced_by": [
     "research/supersession_bench.py",
     "nevertwice/__init__.py",
@@ -18529,7 +18529,7 @@
    "command": "python research/supersession_bench.py --dataset research/data/supersession_v1_implicit.json --arms nevertwice,naive",
    "raw": "research/results/supersession_v1_implicit.json",
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "produced_by": [
     "research/supersession_bench.py",
     "nevertwice/__init__.py",
@@ -18581,7 +18581,7 @@
    "command": "python research/supersession_bench.py --dataset research/data/supersession_v1_implicit.json --arms nevertwice,naive",
    "raw": "research/results/supersession_v1_implicit.json",
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "produced_by": [
     "research/supersession_bench.py",
     "nevertwice/__init__.py",
@@ -18633,7 +18633,7 @@
    "command": "python research/supersession_bench.py --dataset research/data/supersession_v1_implicit.json --arms nevertwice,naive",
    "raw": "research/results/supersession_v1_implicit.json",
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "produced_by": [
     "research/supersession_bench.py",
     "nevertwice/__init__.py",
@@ -18685,7 +18685,7 @@
    "command": "python research/supersession_bench.py --dataset research/data/supersession_v1_implicit.json --arms nevertwice,naive",
    "raw": "research/results/supersession_v1_implicit.json",
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "produced_by": [
     "research/supersession_bench.py",
     "nevertwice/__init__.py",
@@ -18737,7 +18737,7 @@
    "command": "python research/supersession_bench.py --dataset research/data/supersession_v1_implicit.json --arms nevertwice,naive",
    "raw": "research/results/supersession_v1_implicit.json",
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "produced_by": [
     "research/supersession_bench.py",
     "nevertwice/__init__.py",
@@ -18789,7 +18789,7 @@
    "command": "python research/supersession_bench.py --dataset research/data/supersession_v1_implicit.json --arms nevertwice,naive",
    "raw": "research/results/supersession_v1_implicit.json",
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "produced_by": [
     "research/supersession_bench.py",
     "nevertwice/__init__.py",
@@ -18846,7 +18846,7 @@
     "high": 0.7065
    },
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "As-of recall (ledger I6): the sixty supersession cases ingested with dates two months apart through the public API, then asked twice - for a day between the two sessions and for a day after the second. A case counts only when BOTH answers are right: the superseded fact for the old day, with the replacement absent, and the replacement for the new day. Our arm pools two ingest runs (the extractor is not deterministic); the naive floor has no notion of a date, so one ranking answers both days. Mem0 records a blocker: its memories carry the wall-clock time of the add() call and its search has no as-of filter. The gate written before the run was 0.80; this family is below it and is published for that reason.",
    "produced_by": [
     "research/asof_bench.py",
@@ -18905,7 +18905,7 @@
     "high": 0.7597
    },
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "As-of recall (ledger I6): the sixty supersession cases ingested with dates two months apart through the public API, then asked twice - for a day between the two sessions and for a day after the second. A case counts only when BOTH answers are right: the superseded fact for the old day, with the replacement absent, and the replacement for the new day. Our arm pools two ingest runs (the extractor is not deterministic); the naive floor has no notion of a date, so one ranking answers both days. Mem0 records a blocker: its memories carry the wall-clock time of the add() call and its search has no as-of filter. The gate written before the run was 0.80; this family is below it and is published for that reason.",
    "produced_by": [
     "research/asof_bench.py",
@@ -18964,7 +18964,7 @@
     "high": 0.8894
    },
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "As-of recall (ledger I6): the sixty supersession cases ingested with dates two months apart through the public API, then asked twice - for a day between the two sessions and for a day after the second. A case counts only when BOTH answers are right: the superseded fact for the old day, with the replacement absent, and the replacement for the new day. Our arm pools two ingest runs (the extractor is not deterministic); the naive floor has no notion of a date, so one ranking answers both days. Mem0 records a blocker: its memories carry the wall-clock time of the add() call and its search has no as-of filter. The gate written before the run was 0.80; this family is below it and is published for that reason.",
    "produced_by": [
     "research/asof_bench.py",
@@ -19023,7 +19023,7 @@
     "high": 0.0602
    },
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "As-of recall (ledger I6): the sixty supersession cases ingested with dates two months apart through the public API, then asked twice - for a day between the two sessions and for a day after the second. A case counts only when BOTH answers are right: the superseded fact for the old day, with the replacement absent, and the replacement for the new day. Our arm pools two ingest runs (the extractor is not deterministic); the naive floor has no notion of a date, so one ranking answers both days. Mem0 records a blocker: its memories carry the wall-clock time of the add() call and its search has no as-of filter. The gate written before the run was 0.80; this family is below it and is published for that reason.",
    "produced_by": [
     "research/asof_bench.py",
@@ -19082,7 +19082,7 @@
     "high": 0.0602
    },
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "As-of recall (ledger I6): the sixty supersession cases ingested with dates two months apart through the public API, then asked twice - for a day between the two sessions and for a day after the second. A case counts only when BOTH answers are right: the superseded fact for the old day, with the replacement absent, and the replacement for the new day. Our arm pools two ingest runs (the extractor is not deterministic); the naive floor has no notion of a date, so one ranking answers both days. Mem0 records a blocker: its memories carry the wall-clock time of the add() call and its search has no as-of filter. The gate written before the run was 0.80; this family is below it and is published for that reason.",
    "produced_by": [
     "research/asof_bench.py",
@@ -19141,7 +19141,7 @@
     "high": 1.0
    },
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "As-of recall (ledger I6): the sixty supersession cases ingested with dates two months apart through the public API, then asked twice - for a day between the two sessions and for a day after the second. A case counts only when BOTH answers are right: the superseded fact for the old day, with the replacement absent, and the replacement for the new day. Our arm pools two ingest runs (the extractor is not deterministic); the naive floor has no notion of a date, so one ranking answers both days. Mem0 records a blocker: its memories carry the wall-clock time of the add() call and its search has no as-of filter. The gate written before the run was 0.80; this family is below it and is published for that reason.",
    "produced_by": [
     "research/asof_bench.py",
@@ -19196,7 +19196,7 @@
    "pointer": null,
    "ci": null,
    "cited_in": [],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "As-of recall (ledger I6): the sixty supersession cases ingested with dates two months apart through the public API, then asked twice - for a day between the two sessions and for a day after the second. A case counts only when BOTH answers are right: the superseded fact for the old day, with the replacement absent, and the replacement for the new day. Our arm pools two ingest runs (the extractor is not deterministic); the naive floor has no notion of a date, so one ranking answers both days. Mem0 records a blocker: its memories carry the wall-clock time of the add() call and its search has no as-of filter. The gate written before the run was 0.80; this family is below it and is published for that reason.",
    "produced_by": [
     "research/asof_bench.py",
@@ -19250,7 +19250,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "The standard non-oracle pool: 19,206 retrievable sessions against the oracle variant's 940, the same 500 questions and annotated evidence, twenty-one times the haystack. Same local bge-m3 and scoring function for every system. Competitor versions are recorded in the artifact.",
    "produced_by": [
     "research/head_to_head.py",
@@ -19299,7 +19299,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "The standard non-oracle pool: 19,206 retrievable sessions against the oracle variant's 940, the same 500 questions and annotated evidence, twenty-one times the haystack. Same local bge-m3 and scoring function for every system. Competitor versions are recorded in the artifact.",
    "produced_by": [
     "research/head_to_head.py",
@@ -19348,7 +19348,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "The standard non-oracle pool: 19,206 retrievable sessions against the oracle variant's 940, the same 500 questions and annotated evidence, twenty-one times the haystack. Same local bge-m3 and scoring function for every system. Competitor versions are recorded in the artifact.",
    "produced_by": [
     "research/head_to_head.py",
@@ -19397,7 +19397,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "The standard non-oracle pool: 19,206 retrievable sessions against the oracle variant's 940, the same 500 questions and annotated evidence, twenty-one times the haystack. Same local bge-m3 and scoring function for every system. Competitor versions are recorded in the artifact.",
    "produced_by": [
     "research/head_to_head.py",
@@ -19441,7 +19441,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "A-MEM 0.2.6 as shipped: every session becomes a note through its LLM analysis (keywords, context, tags), linked and possibly evolved against its neighbours, and searched with its own search_agentic. Same pool, questions, embedder and scoring as the store arms; the local model is the one every full-pipeline arm uses.",
    "produced_by": [
     "research/head_to_head.py",
@@ -19490,7 +19490,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "A-MEM 0.2.6 as shipped: every session becomes a note through its LLM analysis (keywords, context, tags), linked and possibly evolved against its neighbours, and searched with its own search_agentic. Same pool, questions, embedder and scoring as the store arms; the local model is the one every full-pipeline arm uses.",
    "produced_by": [
     "research/head_to_head.py",
@@ -19539,7 +19539,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "A-MEM 0.2.6 as shipped: every session becomes a note through its LLM analysis (keywords, context, tags), linked and possibly evolved against its neighbours, and searched with its own search_agentic. Same pool, questions, embedder and scoring as the store arms; the local model is the one every full-pipeline arm uses.",
    "produced_by": [
     "research/head_to_head.py",
@@ -19588,7 +19588,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
+   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
    "note": "A-MEM 0.2.6 as shipped: every session becomes a note through its LLM analysis (keywords, context, tags), linked and possibly evolved against its neighbours, and searched with its own search_agentic. Same pool, questions, embedder and scoring as the store arms; the local model is the one every full-pipeline arm uses.",
    "produced_by": [
     "research/head_to_head.py",
@@ -19637,7 +19637,7 @@
     "high": 0.4326
    },
    "cited_in": [],
-   "commit": "89f1301fdb253b1ce76a02ca0e56ebb803d82928",
+   "commit": "042d52c80802c9c3e8b387dee8226f1327cb8526",
    "note": "Reader qwen2.5:7b, judge qwen3.6:27b (second judge qwen3.5:27b on the shipped arm for the disagreement rate), num_ctx 32768, 150 LongMemEval-oracle questions stratified by type, tokens counted by the reader (prompt_eval_count). A difference between two arms smaller than the judges' disagreement is not a difference.",
    "produced_by": [
     "research/frontier_eval.py",
@@ -19693,7 +19693,7 @@
    "pointer": "arms.nevertwice_whole.1.mean_prompt_tokens",
    "ci": null,
    "cited_in": [],
-   "commit": "89f1301fdb253b1ce76a02ca0e56ebb803d82928",
+   "commit": "042d52c80802c9c3e8b387dee8226f1327cb8526",
    "note": "Reader qwen2.5:7b, judge qwen3.6:27b (second judge qwen3.5:27b on the shipped arm for the disagreement rate), num_ctx 32768, 150 LongMemEval-oracle questions stratified by type, tokens counted by the reader (prompt_eval_count). A difference between two arms smaller than the judges' disagreement is not a difference.",
    "produced_by": [
     "research/frontier_eval.py",
@@ -19754,7 +19754,7 @@
     "high": 0.5266
    },
    "cited_in": [],
-   "commit": "89f1301fdb253b1ce76a02ca0e56ebb803d82928",
+   "commit": "042d52c80802c9c3e8b387dee8226f1327cb8526",
    "note": "Reader qwen2.5:7b, judge qwen3.6:27b (second judge qwen3.5:27b on the shipped arm for the disagreement rate), num_ctx 32768, 150 LongMemEval-oracle questions stratified by type, tokens counted by the reader (prompt_eval_count). A difference between two arms smaller than the judges' disagreement is not a difference.",
    "produced_by": [
     "research/frontier_eval.py",
@@ -19810,7 +19810,7 @@
    "pointer": "arms.nevertwice_whole.3.mean_prompt_tokens",
    "ci": null,
    "cited_in": [],
-   "commit": "89f1301fdb253b1ce76a02ca0e56ebb803d82928",
+   "commit": "042d52c80802c9c3e8b387dee8226f1327cb8526",
    "note": "Reader qwen2.5:7b, judge qwen3.6:27b (second judge qwen3.5:27b on the shipped arm for the disagreement rate), num_ctx 32768, 150 LongMemEval-oracle questions stratified by type, tokens counted by the reader (prompt_eval_count). A difference between two arms smaller than the judges' disagreement is not a difference.",
    "produced_by": [
     "research/frontier_eval.py",
@@ -19871,7 +19871,7 @@
     "high": 0.5266
    },
    "cited_in": [],
-   "commit": "89f1301fdb253b1ce76a02ca0e56ebb803d82928",
+   "commit": "042d52c80802c9c3e8b387dee8226f1327cb8526",
    "note": "Reader qwen2.5:7b, judge qwen3.6:27b (second judge qwen3.5:27b on the shipped arm for the disagreement rate), num_ctx 32768, 150 LongMemEval-oracle questions stratified by type, tokens counted by the reader (prompt_eval_count). A difference between two arms smaller than the judges' disagreement is not a difference.",
    "produced_by": [
     "research/frontier_eval.py",
@@ -19927,7 +19927,7 @@
    "pointer": "arms.nevertwice_whole.5.mean_prompt_tokens",
    "ci": null,
    "cited_in": [],
-   "commit": "89f1301fdb253b1ce76a02ca0e56ebb803d82928",
+   "commit": "042d52c80802c9c3e8b387dee8226f1327cb8526",
    "note": "Reader qwen2.5:7b, judge qwen3.6:27b (second judge qwen3.5:27b on the shipped arm for the disagreement rate), num_ctx 32768, 150 LongMemEval-oracle questions stratified by type, tokens counted by the reader (prompt_eval_count). A difference between two arms smaller than the judges' disagreement is not a difference.",
    "produced_by": [
     "research/frontier_eval.py",
@@ -19988,7 +19988,7 @@
     "high": 0.3706
    },
    "cited_in": [],
-   "commit": "89f1301fdb253b1ce76a02ca0e56ebb803d82928",
+   "commit": "042d52c80802c9c3e8b387dee8226f1327cb8526",
    "note": "Reader qwen2.5:7b, judge qwen3.6:27b (second judge qwen3.5:27b on the shipped arm for the disagreement rate), num_ctx 32768, 150 LongMemEval-oracle questions stratified by type, tokens counted by the reader (prompt_eval_count). A difference between two arms smaller than the judges' disagreement is not a difference.",
    "produced_by": [
     "research/frontier_eval.py",
@@ -20044,7 +20044,7 @@
    "pointer": "arms.nevertwice_snippet.1.mean_prompt_tokens",
    "ci": null,
    "cited_in": [],
-   "commit": "89f1301fdb253b1ce76a02ca0e56ebb803d82928",
+   "commit": "042d52c80802c9c3e8b387dee8226f1327cb8526",
    "note": "Reader qwen2.5:7b, judge qwen3.6:27b (second judge qwen3.5:27b on the shipped arm for the disagreement rate), num_ctx 32768, 150 LongMemEval-oracle questions stratified by type, tokens counted by the reader (prompt_eval_count). A difference between two arms smaller than the judges' disagreement is not a difference.",
    "produced_by": [
     "research/frontier_eval.py",
@@ -20105,7 +20105,7 @@
     "high": 0.5067
    },
    "cited_in": [],
-   "commit": "89f1301fdb253b1ce76a02ca0e56ebb803d82928",
+   "commit": "042d52c80802c9c3e8b387dee8226f1327cb8526",
    "note": "Reader qwen2.5:7b, judge qwen3.6:27b (second judge qwen3.5:27b on the shipped arm for the disagreement rate), num_ctx 32768, 150 LongMemEval-oracle questions stratified by type, tokens counted by the reader (prompt_eval_count). A difference between two arms smaller than the judges' disagreement is not a difference.",
    "produced_by": [
     "research/frontier_eval.py",
@@ -20161,7 +20161,7 @@
    "pointer": "arms.nevertwice_snippet.3.mean_prompt_tokens",
    "ci": null,
    "cited_in": [],
-   "commit": "89f1301fdb253b1ce76a02ca0e56ebb803d82928",
+   "commit": "042d52c80802c9c3e8b387dee8226f1327cb8526",
    "note": "Reader qwen2.5:7b, judge qwen3.6:27b (second judge qwen3.5:27b on the shipped arm for the disagreement rate), num_ctx 32768, 150 LongMemEval-oracle questions stratified by type, tokens counted by the reader (prompt_eval_count). A difference between two arms smaller than the judges' disagreement is not a difference.",
    "produced_by": [
     "research/frontier_eval.py",
@@ -20222,7 +20222,7 @@
     "high": 0.5133
    },
    "cited_in": [],
-   "commit": "89f1301fdb253b1ce76a02ca0e56ebb803d82928",
+   "commit": "042d52c80802c9c3e8b387dee8226f1327cb8526",
    "note": "Reader qwen2.5:7b, judge qwen3.6:27b (second judge qwen3.5:27b on the shipped arm for the disagreement rate), num_ctx 32768, 150 LongMemEval-oracle questions stratified by type, tokens counted by the reader (prompt_eval_count). A difference between two arms smaller than the judges' disagreement is not a difference.",
    "produced_by": [
     "research/frontier_eval.py",
@@ -20278,7 +20278,7 @@
    "pointer": "arms.nevertwice_snippet.5.mean_prompt_tokens",
    "ci": null,
    "cited_in": [],
-   "commit": "89f1301fdb253b1ce76a02ca0e56ebb803d82928",
+   "commit": "042d52c80802c9c3e8b387dee8226f1327cb8526",
    "note": "Reader qwen2.5:7b, judge qwen3.6:27b (second judge qwen3.5:27b on the shipped arm for the disagreement rate), num_ctx 32768, 150 LongMemEval-oracle questions stratified by type, tokens counted by the reader (prompt_eval_count). A difference between two arms smaller than the judges' disagreement is not a difference.",
    "produced_by": [
     "research/frontier_eval.py",
@@ -20339,7 +20339,7 @@
     "high": 0.0368
    },
    "cited_in": [],
-   "commit": "89f1301fdb253b1ce76a02ca0e56ebb803d82928",
+   "commit": "042d52c80802c9c3e8b387dee8226f1327cb8526",
    "note": "Reader qwen2.5:7b, judge qwen3.6:27b (second judge qwen3.5:27b on the shipped arm for the disagreement rate), num_ctx 32768, 150 LongMemEval-oracle questions stratified by type, tokens counted by the reader (prompt_eval_count). A difference between two arms smaller than the judges' disagreement is not a difference.",
    "produced_by": [
     "research/frontier_eval.py",
@@ -20395,7 +20395,7 @@
    "pointer": "arms.nevertwice_full.1.mean_prompt_tokens",
    "ci": null,
    "cited_in": [],
-   "commit": "89f1301fdb253b1ce76a02ca0e56ebb803d82928",
+   "commit": "042d52c80802c9c3e8b387dee8226f1327cb8526",
    "note": "Reader qwen2.5:7b, judge qwen3.6:27b (second judge qwen3.5:27b on the shipped arm for the disagreement rate), num_ctx 32768, 150 LongMemEval-oracle questions stratified by type, tokens counted by the reader (prompt_eval_count). A difference between two arms smaller than the judges' disagreement is not a difference.",
    "produced_by": [
     "research/frontier_eval.py",
@@ -20456,7 +20456,7 @@
     "high": 0.0368
    },
    "cited_in": [],
-   "commit": "89f1301fdb253b1ce76a02ca0e56ebb803d82928",
+   "commit": "042d52c80802c9c3e8b387dee8226f1327cb8526",
    "note": "Reader qwen2.5:7b, judge qwen3.6:27b (second judge qwen3.5:27b on the shipped arm for the disagreement rate), num_ctx 32768, 150 LongMemEval-oracle questions stratified by type, tokens counted by the reader (prompt_eval_count). A difference between two arms smaller than the judges' disagreement is not a difference.",
    "produced_by": [
     "research/frontier_eval.py",
@@ -20512,7 +20512,7 @@
    "pointer": "arms.nevertwice_full.3.mean_prompt_tokens",
    "ci": null,
    "cited_in": [],
-   "commit": "89f1301fdb253b1ce76a02ca0e56ebb803d82928",
+   "commit": "042d52c80802c9c3e8b387dee8226f1327cb8526",
    "note": "Reader qwen2.5:7b, judge qwen3.6:27b (second judge qwen3.5:27b on the shipped arm for the disagreement rate), num_ctx 32768, 150 LongMemEval-oracle questions stratified by type, tokens counted by the reader (prompt_eval_count). A difference between two arms smaller than the judges' disagreement is not a difference.",
    "produced_by": [
     "research/frontier_eval.py",
@@ -20573,7 +20573,7 @@
     "high": 0.0473
    },
    "cited_in": [],
-   "commit": "89f1301fdb253b1ce76a02ca0e56ebb803d82928",
+   "commit": "042d52c80802c9c3e8b387dee8226f1327cb8526",
    "note": "Reader qwen2.5:7b, judge qwen3.6:27b (second judge qwen3.5:27b on the shipped arm for the disagreement rate), num_ctx 32768, 150 LongMemEval-oracle questions stratified by type, tokens counted by the reader (prompt_eval_count). A difference between two arms smaller than the judges' disagreement is not a difference.",
    "produced_by": [
     "research/frontier_eval.py",
@@ -20629,7 +20629,7 @@
    "pointer": "arms.nevertwice_full.5.mean_prompt_tokens",
    "ci": null,
    "cited_in": [],
-   "commit": "89f1301fdb253b1ce76a02ca0e56ebb803d82928",
+   "commit": "042d52c80802c9c3e8b387dee8226f1327cb8526",
    "note": "Reader qwen2.5:7b, judge qwen3.6:27b (second judge qwen3.5:27b on the shipped arm for the disagreement rate), num_ctx 32768, 150 LongMemEval-oracle questions stratified by type, tokens counted by the reader (prompt_eval_count). A difference between two arms smaller than the judges' disagreement is not a difference.",
    "produced_by": [
     "research/frontier_eval.py",
@@ -20690,7 +20690,7 @@
     "high": 0.4326
    },
    "cited_in": [],
-   "commit": "89f1301fdb253b1ce76a02ca0e56ebb803d82928",
+   "commit": "042d52c80802c9c3e8b387dee8226f1327cb8526",
    "note": "Reader qwen2.5:7b, judge qwen3.6:27b (second judge qwen3.5:27b on the shipped arm for the disagreement rate), num_ctx 32768, 150 LongMemEval-oracle questions stratified by type, tokens counted by the reader (prompt_eval_count). A difference between two arms smaller than the judges' disagreement is not a difference.",
    "produced_by": [
     "research/frontier_eval.py",
@@ -20746,7 +20746,7 @@
    "pointer": "arms.mem0.1.mean_prompt_tokens",
    "ci": null,
    "cited_in": [],
-   "commit": "89f1301fdb253b1ce76a02ca0e56ebb803d82928",
+   "commit": "042d52c80802c9c3e8b387dee8226f1327cb8526",
    "note": "Reader qwen2.5:7b, judge qwen3.6:27b (second judge qwen3.5:27b on the shipped arm for the disagreement rate), num_ctx 32768, 150 LongMemEval-oracle questions stratified by type, tokens counted by the reader (prompt_eval_count). A difference between two arms smaller than the judges' disagreement is not a difference.",
    "produced_by": [
     "research/frontier_eval.py",
@@ -20807,7 +20807,7 @@
     "high": 0.5133
    },
    "cited_in": [],
-   "commit": "89f1301fdb253b1ce76a02ca0e56ebb803d82928",
+   "commit": "042d52c80802c9c3e8b387dee8226f1327cb8526",
    "note": "Reader qwen2.5:7b, judge qwen3.6:27b (second judge qwen3.5:27b on the shipped arm for the disagreement rate), num_ctx 32768, 150 LongMemEval-oracle questions stratified by type, tokens counted by the reader (prompt_eval_count). A difference between two arms smaller than the judges' disagreement is not a difference.",
    "produced_by": [
     "research/frontier_eval.py",
@@ -20863,7 +20863,7 @@
    "pointer": "arms.mem0.3.mean_prompt_tokens",
    "ci": null,
    "cited_in": [],
-   "commit": "89f1301fdb253b1ce76a02ca0e56ebb803d82928",
+   "commit": "042d52c80802c9c3e8b387dee8226f1327cb8526",
    "note": "Reader qwen2.5:7b, judge qwen3.6:27b (second judge qwen3.5:27b on the shipped arm for the disagreement rate), num_ctx 32768, 150 LongMemEval-oracle questions stratified by type, tokens counted by the reader (prompt_eval_count). A difference between two arms smaller than the judges' disagreement is not a difference.",
    "produced_by": [
     "research/frontier_eval.py",
@@ -20924,7 +20924,7 @@
     "high": 0.48
    },
    "cited_in": [],
-   "commit": "89f1301fdb253b1ce76a02ca0e56ebb803d82928",
+   "commit": "042d52c80802c9c3e8b387dee8226f1327cb8526",
    "note": "Reader qwen2.5:7b, judge qwen3.6:27b (second judge qwen3.5:27b on the shipped arm for the disagreement rate), num_ctx 32768, 150 LongMemEval-oracle questions stratified by type, tokens counted by the reader (prompt_eval_count). A difference between two arms smaller than the judges' disagreement is not a difference.",
    "produced_by": [
     "research/frontier_eval.py",
@@ -20980,7 +20980,7 @@
    "pointer": "arms.mem0.5.mean_prompt_tokens",
    "ci": null,
    "cited_in": [],
-   "commit": "89f1301fdb253b1ce76a02ca0e56ebb803d82928",
+   "commit": "042d52c80802c9c3e8b387dee8226f1327cb8526",
    "note": "Reader qwen2.5:7b, judge qwen3.6:27b (second judge qwen3.5:27b on the shipped arm for the disagreement rate), num_ctx 32768, 150 LongMemEval-oracle questions stratified by type, tokens counted by the reader (prompt_eval_count). A difference between two arms smaller than the judges' disagreement is not a difference.",
    "produced_by": [
     "research/frontier_eval.py",
@@ -21041,7 +21041,7 @@
     "high": 0.2784
    },
    "cited_in": [],
-   "commit": "89f1301fdb253b1ce76a02ca0e56ebb803d82928",
+   "commit": "042d52c80802c9c3e8b387dee8226f1327cb8526",
    "note": "Reader qwen2.5:7b, judge qwen3.6:27b (second judge qwen3.5:27b on the shipped arm for the disagreement rate), num_ctx 32768, 150 LongMemEval-oracle questions stratified by type, tokens counted by the reader (prompt_eval_count). A difference between two arms smaller than the judges' disagreement is not a difference.",
    "produced_by": [
     "research/frontier_eval.py",
@@ -21097,7 +21097,7 @@
    "pointer": "arms.mem0_infer.1.mean_prompt_tokens",
    "ci": null,
    "cited_in": [],
-   "commit": "89f1301fdb253b1ce76a02ca0e56ebb803d82928",
+   "commit": "042d52c80802c9c3e8b387dee8226f1327cb8526",
    "note": "Reader qwen2.5:7b, judge qwen3.6:27b (second judge qwen3.5:27b on the shipped arm for the disagreement rate), num_ctx 32768, 150 LongMemEval-oracle questions stratified by type, tokens counted by the reader (prompt_eval_count). A difference between two arms smaller than the judges' disagreement is not a difference.",
    "produced_by": [
     "research/frontier_eval.py",
@@ -21158,7 +21158,7 @@
     "high": 0.3496
    },
    "cited_in": [],
-   "commit": "89f1301fdb253b1ce76a02ca0e56ebb803d82928",
+   "commit": "042d52c80802c9c3e8b387dee8226f1327cb8526",
    "note": "Reader qwen2.5:7b, judge qwen3.6:27b (second judge qwen3.5:27b on the shipped arm for the disagreement rate), num_ctx 32768, 150 LongMemEval-oracle questions stratified by type, tokens counted by the reader (prompt_eval_count). A difference between two arms smaller than the judges' disagreement is not a difference.",
    "produced_by": [
     "research/frontier_eval.py",
@@ -21214,7 +21214,7 @@
    "pointer": "arms.mem0_infer.3.mean_prompt_tokens",
    "ci": null,
    "cited_in": [],
-   "commit": "89f1301fdb253b1ce76a02ca0e56ebb803d82928",
+   "commit": "042d52c80802c9c3e8b387dee8226f1327cb8526",
    "note": "Reader qwen2.5:7b, judge qwen3.6:27b (second judge qwen3.5:27b on the shipped arm for the disagreement rate), num_ctx 32768, 150 LongMemEval-oracle questions stratified by type, tokens counted by the reader (prompt_eval_count). A difference between two arms smaller than the judges' disagreement is not a difference.",
    "produced_by": [
     "research/frontier_eval.py",
@@ -21275,7 +21275,7 @@
     "high": 0.4121
    },
    "cited_in": [],
-   "commit": "89f1301fdb253b1ce76a02ca0e56ebb803d82928",
+   "commit": "042d52c80802c9c3e8b387dee8226f1327cb8526",
    "note": "Reader qwen2.5:7b, judge qwen3.6:27b (second judge qwen3.5:27b on the shipped arm for the disagreement rate), num_ctx 32768, 150 LongMemEval-oracle questions stratified by type, tokens counted by the reader (prompt_eval_count). A difference between two arms smaller than the judges' disagreement is not a difference.",
    "produced_by": [
     "research/frontier_eval.py",
@@ -21331,7 +21331,7 @@
    "pointer": "arms.mem0_infer.5.mean_prompt_tokens",
    "ci": null,
    "cited_in": [],
-   "commit": "89f1301fdb253b1ce76a02ca0e56ebb803d82928",
+   "commit": "042d52c80802c9c3e8b387dee8226f1327cb8526",
    "note": "Reader qwen2.5:7b, judge qwen3.6:27b (second judge qwen3.5:27b on the shipped arm for the disagreement rate), num_ctx 32768, 150 LongMemEval-oracle questions stratified by type, tokens counted by the reader (prompt_eval_count). A difference between two arms smaller than the judges' disagreement is not a difference.",
    "produced_by": [
     "research/frontier_eval.py",
@@ -21392,7 +21392,7 @@
     "high": 0.0666
    },
    "cited_in": [],
-   "commit": "89f1301fdb253b1ce76a02ca0e56ebb803d82928",
+   "commit": "042d52c80802c9c3e8b387dee8226f1327cb8526",
    "note": "Reader qwen2.5:7b, judge qwen3.6:27b (second judge qwen3.5:27b on the shipped arm for the disagreement rate), num_ctx 32768, 150 LongMemEval-oracle questions stratified by type, tokens counted by the reader (prompt_eval_count). A difference between two arms smaller than the judges' disagreement is not a difference.",
    "produced_by": [
     "research/frontier_eval.py",
@@ -21448,7 +21448,7 @@
    "pointer": "arms.amem_full.1.mean_prompt_tokens",
    "ci": null,
    "cited_in": [],
-   "commit": "89f1301fdb253b1ce76a02ca0e56ebb803d82928",
+   "commit": "042d52c80802c9c3e8b387dee8226f1327cb8526",
    "note": "Reader qwen2.5:7b, judge qwen3.6:27b (second judge qwen3.5:27b on the shipped arm for the disagreement rate), num_ctx 32768, 150 LongMemEval-oracle questions stratified by type, tokens counted by the reader (prompt_eval_count). A difference between two arms smaller than the judges' disagreement is not a difference.",
    "produced_by": [
     "research/frontier_eval.py",
@@ -21509,7 +21509,7 @@
     "high": 0.0666
    },
    "cited_in": [],
-   "commit": "89f1301fdb253b1ce76a02ca0e56ebb803d82928",
+   "commit": "042d52c80802c9c3e8b387dee8226f1327cb8526",
    "note": "Reader qwen2.5:7b, judge qwen3.6:27b (second judge qwen3.5:27b on the shipped arm for the disagreement rate), num_ctx 32768, 150 LongMemEval-oracle questions stratified by type, tokens counted by the reader (prompt_eval_count). A difference between two arms smaller than the judges' disagreement is not a difference.",
    "produced_by": [
     "research/frontier_eval.py",
@@ -21565,7 +21565,7 @@
    "pointer": "arms.amem_full.3.mean_prompt_tokens",
    "ci": null,
    "cited_in": [],
-   "commit": "89f1301fdb253b1ce76a02ca0e56ebb803d82928",
+   "commit": "042d52c80802c9c3e8b387dee8226f1327cb8526",
    "note": "Reader qwen2.5:7b, judge qwen3.6:27b (second judge qwen3.5:27b on the shipped arm for the disagreement rate), num_ctx 32768, 150 LongMemEval-oracle questions stratified by type, tokens counted by the reader (prompt_eval_count). A difference between two arms smaller than the judges' disagreement is not a difference.",
    "produced_by": [
     "research/frontier_eval.py",
@@ -21626,7 +21626,7 @@
     "high": 0.0666
    },
    "cited_in": [],
-   "commit": "89f1301fdb253b1ce76a02ca0e56ebb803d82928",
+   "commit": "042d52c80802c9c3e8b387dee8226f1327cb8526",
    "note": "Reader qwen2.5:7b, judge qwen3.6:27b (second judge qwen3.5:27b on the shipped arm for the disagreement rate), num_ctx 32768, 150 LongMemEval-oracle questions stratified by type, tokens counted by the reader (prompt_eval_count). A difference between two arms smaller than the judges' disagreement is not a difference.",
    "produced_by": [
     "research/frontier_eval.py",
@@ -21682,7 +21682,7 @@
    "pointer": "arms.amem_full.5.mean_prompt_tokens",
    "ci": null,
    "cited_in": [],
-   "commit": "89f1301fdb253b1ce76a02ca0e56ebb803d82928",
+   "commit": "042d52c80802c9c3e8b387dee8226f1327cb8526",
    "note": "Reader qwen2.5:7b, judge qwen3.6:27b (second judge qwen3.5:27b on the shipped arm for the disagreement rate), num_ctx 32768, 150 LongMemEval-oracle questions stratified by type, tokens counted by the reader (prompt_eval_count). A difference between two arms smaller than the judges' disagreement is not a difference.",
    "produced_by": [
     "research/frontier_eval.py",
@@ -21743,7 +21743,7 @@
     "high": 0.0571
    },
    "cited_in": [],
-   "commit": "89f1301fdb253b1ce76a02ca0e56ebb803d82928",
+   "commit": "042d52c80802c9c3e8b387dee8226f1327cb8526",
    "note": "Reader qwen2.5:7b, judge qwen3.6:27b (second judge qwen3.5:27b on the shipped arm for the disagreement rate), num_ctx 32768, 150 LongMemEval-oracle questions stratified by type, tokens counted by the reader (prompt_eval_count). A difference between two arms smaller than the judges' disagreement is not a difference.",
    "produced_by": [
     "research/frontier_eval.py",
@@ -21799,7 +21799,7 @@
    "pointer": "brackets.none.mean_prompt_tokens",
    "ci": null,
    "cited_in": [],
-   "commit": "89f1301fdb253b1ce76a02ca0e56ebb803d82928",
+   "commit": "042d52c80802c9c3e8b387dee8226f1327cb8526",
    "note": "Reader qwen2.5:7b, judge qwen3.6:27b (second judge qwen3.5:27b on the shipped arm for the disagreement rate), num_ctx 32768, 150 LongMemEval-oracle questions stratified by type, tokens counted by the reader (prompt_eval_count). A difference between two arms smaller than the judges' disagreement is not a difference.",
    "produced_by": [
     "research/frontier_eval.py",
@@ -21860,7 +21860,7 @@
     "high": 0.6496
    },
    "cited_in": [],
-   "commit": "89f1301fdb253b1ce76a02ca0e56ebb803d82928",
+   "commit": "042d52c80802c9c3e8b387dee8226f1327cb8526",
    "note": "Reader qwen2.5:7b, judge qwen3.6:27b (second judge qwen3.5:27b on the shipped arm for the disagreement rate), num_ctx 32768, 150 LongMemEval-oracle questions stratified by type, tokens counted by the reader (prompt_eval_count). A difference between two arms smaller than the judges' disagreement is not a difference.",
    "produced_by": [
     "research/frontier_eval.py",
@@ -21916,7 +21916,7 @@
    "pointer": "brackets.oracle.mean_prompt_tokens",
    "ci": null,
    "cited_in": [],
-   "commit": "89f1301fdb253b1ce76a02ca0e56ebb803d82928",
+   "commit": "042d52c80802c9c3e8b387dee8226f1327cb8526",
    "note": "Reader qwen2.5:7b, judge qwen3.6:27b (second judge qwen3.5:27b on the shipped arm for the disagreement rate), num_ctx 32768, 150 LongMemEval-oracle questions stratified by type, tokens counted by the reader (prompt_eval_count). A difference between two arms smaller than the judges' disagreement is not a difference.",
    "produced_by": [
     "research/frontier_eval.py",
@@ -21972,7 +21972,7 @@
    "pointer": "judge_agreement.disagreement",
    "ci": null,
    "cited_in": [],
-   "commit": "89f1301fdb253b1ce76a02ca0e56ebb803d82928",
+   "commit": "042d52c80802c9c3e8b387dee8226f1327cb8526",
    "note": "Reader qwen2.5:7b, judge qwen3.6:27b (second judge qwen3.5:27b on the shipped arm for the disagreement rate), num_ctx 32768, 150 LongMemEval-oracle questions stratified by type, tokens counted by the reader (prompt_eval_count). A difference between two arms smaller than the judges' disagreement is not a difference.",
    "produced_by": [
     "research/frontier_eval.py",
