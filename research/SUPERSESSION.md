@@ -95,6 +95,13 @@ nothing leaves the machine.
   decision rather than a design.
 - **naive** - an append-only markdown store with IDF term-overlap retrieval and no
   supersession mechanism whatsoever.
+- **Zep/Graphiti** (`graphiti-core`, since 2026-09-10) - the one competitor built for this axis:
+  bitemporal edges with an LLM invalidation step. One episode per session, the stand's extractor
+  and embedder through Ollama's OpenAI-compatible endpoint, a local FalkorDB (the embedded
+  drivers do not run on this machine), structured output in `json_schema` mode (the only mode the
+  local model fills its schemas in), hybrid edge search fused by reciprocal rank. What it hands
+  back is the facts of its top edges with the ones it invalidated or expired hidden, as its own
+  `search()` hides them. Three and a third model calls per episode, measured, against our one.
 
 The naive arm is the point rather than a courtesy. A benchmark that only one vendor's
 architecture fails is a benchmark about that vendor; if the floor also scores well, this one
@@ -102,15 +109,13 @@ does not separate systems and has to be thrown away.
 
 ## Result
 
-Run of 2026-09-10 at commit e225d9c. The text each arm is scored on is what a caller receives:
-for Nevertwice, the lesson and - since the evidence layer - the verbatim transcript line it was
-aligned to; for Mem0, its memory text; for the floor, the stored sentence.
-
-| arm | stale ↓ | current ↑ | over-retraction ↓ | chars returned per query |
-|---|---|---|---|---|
-| **Nevertwice** | **0.075** [0.040, 0.136] | 0.967 | **0.05** | 400 |
-| Mem0 2.0.19 | 0.883 [0.778, 0.942] | 0.967 | 0.00 | 444 |
-| naive append-only + BM25 | 0.950 [0.863, 0.983] | 0.950 | 0.05 | 223 |
+Run of 2026-09-10 at commit e225d9c (the Zep arm at dc523f1). The text each arm is scored on is
+what a caller receives: for Nevertwice, the lesson and - since the evidence layer - the verbatim
+transcript line it was aligned to; for Mem0 and Graphiti, their memory or fact text; for the
+floor, the stored sentence. The table is the generated one in the section *The same corpus, with
+the cue removed* below, which carries both corpora; on the explicit corpus the stale column reads
+ours 0.075, Mem0 0.883, Graphiti 0.317, the floor 0.950, and the current column 0.967, 0.967, 0.550,
+0.950. Over-retraction and characters per query are in the same table and in the register.
 
 Nevertwice's row is pooled over **two runs of the same commit**, so n = 120 case-runs for
 stale and current and n = 40 for over-retraction; the other two arms are one run each, n = 60
@@ -139,6 +144,7 @@ Paired, on the same cases, McNemar exact:
 |---|---|---|
 | Nevertwice vs Mem0 | 49 - 1 | 9.1 x 10^-14 |
 | Nevertwice vs naive | 52 - 0 | 4.4 x 10^-16 |
+| Nevertwice vs Graphiti | 19 - 5 | 0.01 |
 | **Mem0 vs naive** | 2 - 6 | **0.29** |
 
 **The third row is the finding, and it is easy to misread.** Mem0 and the append-only file
@@ -152,14 +158,24 @@ the axis where that design has nothing to offer, and the number says exactly tha
 Its retrieval, meanwhile, is as good as ours on this run - the same current rate - with zero
 over-retraction. Mem0 loses this benchmark and leads on the one everyone else runs.
 
+**Graphiti is the row that tests the claim.** It is the one system on the stand designed for
+retraction - an edge carries `valid_at` and `invalid_at`, and a model decides what an episode
+contradicts - and it does retract: a third of the retracted facts come back where Mem0 and the
+file return nine in ten. It pays on the other two columns, which is the whole reason they are
+printed: it returns the replacement barely more often than not, and it retires a still-true
+fact three times in twenty. Paired with us on the same cases the discordant pairs run nineteen
+to five - five cases where its invalidation caught a replacement ours did not - and on the
+implicit corpus, with the retraction cue removed, its stale rate reads 0.217 to our 0.092. The
+lead over the ADD-only stores was never the finding; this row is.
+
 ### By shape
 
-| shape | Nevertwice (2 runs) | Mem0 | naive |
-|---|---|---|---|
-| `value_replaced` | 1/30 | 15/15 | 15/15 |
-| `approach_abandoned` | **7/30** | 13/15 | 15/15 |
-| `retracted_no_replacement` | 1/30 | 13/15 | 15/15 |
-| `narrowed` | 0/30 | 12/15 | 12/15 |
+| shape | Nevertwice (2 runs) | Mem0 | Graphiti | naive |
+|---|---|---|---|---|
+| `value_replaced` | 1/30 | 15/15 | 5/15 | 15/15 |
+| `approach_abandoned` | **7/30** | 13/15 | 2/15 | 15/15 |
+| `retracted_no_replacement` | 1/30 | 13/15 | 7/15 | 15/15 |
+| `narrowed` | 0/30 | 12/15 | 5/15 | 12/15 |
 
 Stale count, lower is better. `narrowed` is clean across both runs and `value_replaced` nearly
 so. `approach_abandoned` carries most of what remains: an abandoned approach is stated in
@@ -181,9 +197,14 @@ second session reframed and rotated so the two sessions never share a frame. The
 corpus is unchanged byte for byte, and `--check` proves it.
 
 <!-- claims:supersession-variants -->
-> **Withdrawn 2026-09.** J4 step 2 (2026-09-10): the zep arm entered both temporal stands; the pooled artifacts are re-made at this HEAD by the third pass, which needs the GPU
->
-> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/supersession_bench.py` is what re-measures this one.
+| system | stale, explicit | stale, implicit | current, explicit | current, implicit |
+|---|---|---|---|---|
+| **Nevertwice** | 0.075 | 0.092 | 0.967 | 0.983 |
+| Mem0 | 0.883 | 0.933 | 0.967 | 0.983 |
+| Zep/Graphiti (`graphiti-core`, FalkorDB) | 0.317 | 0.217 | 0.550 | 0.783 |
+| an append-only markdown file | 0.950 | 0.950 | 0.950 | 0.950 |
+
+<sub>Stale = the retracted fact came back, lower is better. Current = the fact that replaced it was returned, higher is better. *Explicit* names the retraction in the second session; *implicit* frames the replacement like any first assertion.</sub>
 <!-- /claims:supersession-variants -->
 
 The gate for this variant was written in the ledger before the run (item I5): our stale rate
@@ -200,10 +221,20 @@ dates two months apart and asks each one twice: for a day between the two sessio
 day after the second. A case counts only when both answers are right.
 
 <!-- claims:asof -->
-> **Withdrawn 2026-09.** J4 step 2 (2026-09-10): the zep arm entered both temporal stands; the pooled artifacts are re-made at this HEAD by the third pass, which needs the GPU
->
-> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/asof_bench.py --arms nevertwice,naive --runs 2 --out research/results/asof_v1.json` is what re-measures this one.
+| arm | both days | the old day | the day after |
+|---|---|---|---|
+| **Nevertwice** (`api.as_of`) | 0.783 | 0.825 | 0.917 |
+| Zep/Graphiti (`graphiti-core`, its own bitemporal edges) | 0.433 | 0.667 | 0.550 |
+| an append-only markdown file, no dates | 0.000 | 0.000 | 1.000 |
+
+<sub>The gate written before the run was 0.80 on both days, and this is below it. The loss is on the old day, and the stand now says why per case: a first session the extractor left without a note, a note whose wording lost the marker, or the new fact leaking into the old day; the artifact carries the split. Mem0 has no row - it stamps a memory with the wall-clock time of the `add()` call and its search has no as-of filter, so facts cannot be placed in the past without patching the product.</sub>
 <!-- /claims:asof -->
+
+Graphiti's row is the first competitor number on this stand: its bitemporal edges answer both
+days for fewer than half the cases, and lose mostly on the day after - the replacement it did not
+extract or invalidated late - where we lose on the day before. Its as-of is read from its own
+`valid_at` / `invalid_at` / `expired_at` fields, filtered on our side, because its server-side
+date filter admitted edges from after the day asked for in the probe.
 
 ## What it costs us
 

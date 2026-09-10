@@ -105,6 +105,22 @@ def main(argv: list[str] | None = None) -> int:
             note=("Read from the store per case (J2 instrumentation). 0.0 at the campaign of 2026-09-10: the stand dates "
                   "the first session 193 days back, `archive_old_typed` moves a note older than 90 days out of the live "
                   "folder on every capture, and the write path reconciles only against live notes."), **base)
+    zep = ((art or {}).get("arms") or {}).get("zep") or {}
+    if zep and not zep.get("blocked") and zep.get("n_cases"):
+        nz = int(zep["n_cases"])
+        for key, what in (("both_correct_rate", "answers BOTH days correctly"), ("old_day_rate", "answers the day the superseded fact still held"),
+                          ("new_day_rate", "answers the day after the replacement")):
+            v = zep[key]
+            add(f"asof.zep.{key.replace('_rate', '')}",
+                f"Zep/Graphiti (graphiti-core, FalkorDB, edges filtered by their own valid_at/invalid_at/expired_at) {what} on "
+                f"{v * 100:.1f}% of the supersession cases asked as of a day",
+                v, [f"{v:.3f}"], "rate", nz, list(wilson(int(round(v * nz)), nz)), f'arms["zep"].{key}', **base)
+        g = zep.get("graphiti") or {}
+        if g.get("llm_calls_per_episode") is not None:
+            add("asof.zep.llm_calls_per_episode",
+                f"Graphiti spends {g['llm_calls_per_episode']} LLM calls per episode on the as-of stand, measured",
+                g["llm_calls_per_episode"], [f"{g['llm_calls_per_episode']:.2f}", f"{g['llm_calls_per_episode']:.1f}"], "calls",
+                int(g.get("episodes", 0)), None, 'arms["zep"].graphiti.llm_calls_per_episode', **base)
     ev = a.get("evidence") or {}
     if ev.get("ms_per_session") is not None:
         add("asof.evidence.ms_per_session",

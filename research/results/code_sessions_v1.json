@@ -1,0 +1,306 @@
+{
+ "corpus": {
+  "name": "code_sessions_v1",
+  "sha256": "807bed1c9d6610df370919e56db2aa68ed49aaa85baf7619db410c32e80ca0fc",
+  "generator_model": "glm-4.7-flash:q4_K_M",
+  "counts": {
+   "projects": 30,
+   "sessions": 150,
+   "questions": 420,
+   "by_type": {
+    "fact": 180,
+    "current": 60,
+    "lesson": 90,
+    "situation": 90
+   },
+   "sessions_with_fallback": 0,
+   "retries": 18
+  }
+ },
+ "reader": "qwen2.5:7b",
+ "judge": "qwen3.6:27b",
+ "extractor": "qwen2.5-7b-64k:latest",
+ "k": 5,
+ "top_situation": 3,
+ "arms": {
+  "nevertwice_full": {
+   "fact": {
+    "n": 180,
+    "accuracy": 0.0833,
+    "ci": [
+     0.0511,
+     0.1329
+    ],
+    "mean_prompt_tokens": 113.2
+   },
+   "current": {
+    "n": 60,
+    "accuracy": 0.0333,
+    "ci": [
+     0.0092,
+     0.1136
+    ],
+    "mean_prompt_tokens": 114.3,
+    "stale_rate": 0.0167,
+    "stale_ci": [
+     0.0029,
+     0.0886
+    ]
+   },
+   "lesson": {
+    "n": 90,
+    "accuracy": 0.6,
+    "ci": [
+     0.4967,
+     0.6951
+    ],
+    "mean_prompt_tokens": 126.2
+   },
+   "situation": {
+    "n": 90,
+    "accuracy": 0.0,
+    "ci": [
+     0.0,
+     0.0409
+    ]
+   },
+   "core": {
+    "n": 330,
+    "accuracy": 0.2152,
+    "ci": [
+     0.1742,
+     0.2626
+    ]
+   }
+  },
+  "naive": {
+   "fact": {
+    "n": 180,
+    "accuracy": 0.9667,
+    "ci": [
+     0.9292,
+     0.9846
+    ],
+    "mean_prompt_tokens": 2936.7
+   },
+   "current": {
+    "n": 60,
+    "accuracy": 0.85,
+    "ci": [
+     0.7389,
+     0.919
+    ],
+    "mean_prompt_tokens": 2937.8,
+    "stale_rate": 0.0833,
+    "stale_ci": [
+     0.0361,
+     0.1807
+    ]
+   },
+   "lesson": {
+    "n": 90,
+    "accuracy": 0.9556,
+    "ci": [
+     0.8912,
+     0.9826
+    ],
+    "mean_prompt_tokens": 2949.7
+   },
+   "situation": {
+    "n": 90,
+    "accuracy": 0.9222,
+    "ci": [
+     0.8481,
+     0.9618
+    ]
+   },
+   "core": {
+    "n": 330,
+    "accuracy": 0.9424,
+    "ci": [
+     0.9118,
+     0.9628
+    ]
+   }
+  },
+  "mem0_infer": {
+   "fact": {
+    "n": 180,
+    "accuracy": 0.7056,
+    "ci": [
+     0.6352,
+     0.7673
+    ],
+    "mean_prompt_tokens": 187.2
+   },
+   "current": {
+    "n": 60,
+    "accuracy": 0.7,
+    "ci": [
+     0.5749,
+     0.801
+    ],
+    "mean_prompt_tokens": 194.3,
+    "stale_rate": 0.2167,
+    "stale_ci": [
+     0.1312,
+     0.3362
+    ]
+   },
+   "lesson": {
+    "n": 90,
+    "accuracy": 0.7222,
+    "ci": [
+     0.622,
+     0.8042
+    ],
+    "mean_prompt_tokens": 203.8
+   },
+   "situation": {
+    "n": 90,
+    "accuracy": 0.0333,
+    "ci": [
+     0.0114,
+     0.0935
+    ]
+   },
+   "core": {
+    "n": 330,
+    "accuracy": 0.7091,
+    "ci": [
+     0.6579,
+     0.7555
+    ]
+   }
+  }
+ },
+ "brackets": {
+  "none": {
+   "fact": {
+    "n": 180,
+    "accuracy": 0.0667,
+    "ci": [
+     0.0385,
+     0.1129
+    ],
+    "mean_prompt_tokens": 117.2
+   },
+   "current": {
+    "n": 60,
+    "accuracy": 0.0167,
+    "ci": [
+     0.0029,
+     0.0886
+    ],
+    "mean_prompt_tokens": 118.3,
+    "stale_rate": 0.05,
+    "stale_ci": [
+     0.0171,
+     0.137
+    ]
+   },
+   "lesson": {
+    "n": 90,
+    "accuracy": 0.4778,
+    "ci": [
+     0.3776,
+     0.5798
+    ],
+    "mean_prompt_tokens": 130.2
+   },
+   "situation": {
+    "n": 90,
+    "accuracy": 0.0,
+    "ci": [
+     0.0,
+     0.0409
+    ]
+   },
+   "core": {
+    "n": 330,
+    "accuracy": 0.1697,
+    "ci": [
+     0.1331,
+     0.2139
+    ]
+   }
+  },
+  "oracle": {
+   "fact": {
+    "n": 180,
+    "accuracy": 0.9778,
+    "ci": [
+     0.9443,
+     0.9913
+    ],
+    "mean_prompt_tokens": 727.4
+   },
+   "current": {
+    "n": 60,
+    "accuracy": 0.9667,
+    "ci": [
+     0.8864,
+     0.9908
+    ],
+    "mean_prompt_tokens": 631.4,
+    "stale_rate": 0.0,
+    "stale_ci": [
+     0.0,
+     0.0602
+    ]
+   },
+   "lesson": {
+    "n": 90,
+    "accuracy": 1.0,
+    "ci": [
+     0.9591,
+     1.0
+    ],
+    "mean_prompt_tokens": 743.2
+   },
+   "situation": {
+    "n": 90,
+    "accuracy": 1.0,
+    "ci": [
+     0.9591,
+     1.0
+    ]
+   },
+   "core": {
+    "n": 330,
+    "accuracy": 0.9818,
+    "ci": [
+     0.9609,
+     0.9916
+    ]
+   }
+  }
+ },
+ "ingest": {
+  "nevertwice_full": {
+   "llm": "qwen2.5-7b-64k:latest",
+   "llm_calls_per_session": 1,
+   "sessions": 150,
+   "errors": 0,
+   "sessions_with_zero_notes": 0,
+   "evidence": {
+    "sessions": 150,
+    "notes": 412,
+    "spans": 392,
+    "ms": 1186.3700000000001
+   }
+  },
+  "mem0_infer": {
+   "llm": "qwen2.5-7b-64k:latest",
+   "llm_calls_per_session": 2,
+   "sessions": 150,
+   "errors": 0
+  }
+ },
+ "corpus_gates": {
+  "none_le_0.10": false,
+  "oracle_ge_0.60": true,
+  "naive_le_oracle_minus_0.20": false,
+  "corpus_separates": false
+ }
+}

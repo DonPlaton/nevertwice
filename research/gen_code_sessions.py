@@ -246,9 +246,12 @@ def _prompt(p: dict, j: int) -> str:
 
 
 def ollama_json(prompt: str, seed: int, timeout: int = 600, num_ctx: int = 8192, temperature: float = 0.7) -> dict:
-    body = json.dumps({"model": MODEL, "stream": False, "format": "json",
+    # `think: False` - GLM and Qwen 3 are thinking models; left on, the reasoning consumed the token
+    # budget and the JSON came back with an empty transcript (every required sentence then failed
+    # verification and the first 17 projects of the 2026-09-10 run were fallbacks; found and fixed).
+    body = json.dumps({"model": MODEL, "stream": False, "format": "json", "think": False,
                        "messages": [{"role": "user", "content": prompt}],
-                       "options": {"temperature": temperature, "seed": seed, "num_ctx": num_ctx, "num_predict": 1800}}).encode("utf-8")
+                       "options": {"temperature": temperature, "seed": seed, "num_ctx": num_ctx, "num_predict": 3000}}).encode("utf-8")
     req = urllib.request.Request(f"{OLLAMA}/api/chat", data=body, headers={"Content-Type": "application/json"})
     with urllib.request.urlopen(req, timeout=timeout) as r:
         d = json.loads(r.read())
@@ -294,7 +297,10 @@ def generate_session(p: dict, j: int, cache: dict, call=ollama_json) -> dict:
     for attempt in range(RETRIES):
         attempts = attempt + 1
         try:
-            text = str(call(prompt, SEED + attempt).get("transcript") or "")
+            got = call(prompt, SEED + attempt)
+            text = str(got.get("transcript") or "")
+            if not text.strip():
+                text = f"assistant: (empty transcript from the model; keys {sorted(got)[:5]})"
         except Exception as e:                               # noqa: BLE001 - recorded, retried
             text = f"assistant: (generation error {type(e).__name__})"
         # a leaked forbidden value is removed rather than regenerated: it is the model's

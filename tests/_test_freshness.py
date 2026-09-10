@@ -167,6 +167,18 @@ def test_withdrawal_costs_something() -> None:
     texts = {d.name: d.read_text(encoding="utf-8") for d in docs if d.exists()}
     published_forms = {p for c in MANIFEST["claims"] if not c.get("stale")
                        for p in c["printed"]}
+    # A live claim's interval is part of the same measurement and is rendered beside it in the
+    # governed tables (the manifest suite accounts for those bounds the same way), so a withdrawn
+    # form that coincides with a live bound - `0.052` as the Zep arm's over-retraction lower
+    # bound against a retracted live-validation rate, 2026-09-10 - is not a retracted number
+    # still printed.
+    for c in MANIFEST["claims"]:
+        ci = c.get("ci")
+        if c.get("stale") or not isinstance(ci, dict):
+            continue
+        for b in (ci.get("low"), ci.get("high")):
+            if isinstance(b, (int, float)):
+                published_forms |= {f"{b:.3f}", f"{b:.2f}", f"{b:g}"}
 
     def distinctive(form: str) -> bool:
         """Is this printed form specific enough for a substring search to mean anything?

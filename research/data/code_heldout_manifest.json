@@ -1,0 +1,100 @@
+{
+ "name": "code_heldout_v1",
+ "built": "2026-09-10",
+ "generator_model": "glm-4.7-flash:q4_K_M",
+ "generator_runtime": {
+  "ollama_version": "0.33.3",
+  "model_family": "glm4moelite",
+  "model_parameters": "29.9B",
+  "model_quantization": "Q4_K_M",
+  "model_digest": "8059ffca0b107064"
+ },
+ "seed": 20260910,
+ "transcripts_available": 37,
+ "slices_scanned": 93,
+ "questions_kept": 14,
+ "drops": {
+  "quote not verbatim in transcript": 43,
+  "second pass disagrees": 25,
+  "answer not inside the quote": 8,
+  "incomplete": 1,
+  "too short or unreadable": 1,
+  "answer too long": 1
+ },
+ "min_chars": 6000,
+ "max_chars_read": 40000,
+ "items": [
+  {
+   "id": "hod4539c63",
+   "transcript_sha256": "d4539c6358f3c1e53b75d71b01efad9b45aa48bb7ad1342bad345f72c5a83a61",
+   "question_sha256": "dee0b790d81435ab7ecdd6a8ffaee6a46b327fd670a568c638dfd3a117ff7a74"
+  },
+  {
+   "id": "ho3f5f743b",
+   "transcript_sha256": "3f5f743b44a2dee366f5ebe5f09208760ed85ff518a1375953ae6052e5660816",
+   "question_sha256": "18439d856003867791522d23219e9ef31de619bc50c306eda69c2eac226618dc"
+  },
+  {
+   "id": "hoacd62200",
+   "transcript_sha256": "acd62200e29de7ce98a314a09b79232a70565254d3f9d8bd4011809c11835ffd",
+   "question_sha256": "658287f3508989c08e473eff646d28d72780660caf962ebf5a42a5f1c55a2060"
+  },
+  {
+   "id": "ho70a4e434",
+   "transcript_sha256": "70a4e434de5ba8e9d756dc4338eba76a2578d9940f01af07181688169d101b23",
+   "question_sha256": "3678592fdb006ba826ef9389200f58bef065c205f968cbe0471d2b9a8b386744"
+  },
+  {
+   "id": "ho6eefeb44",
+   "transcript_sha256": "6eefeb4470902bbf34b87d94f988555a56eb8bfcceb0fec7eeeeb9ce6ba37087",
+   "question_sha256": "9cd11c441bbe62af027dd67d4f8bad3fa7d211593b475cb728a7762fe8e81fdf"
+  },
+  {
+   "id": "hob93bdacc",
+   "transcript_sha256": "b93bdacc2c84d4be28619a493553a87bfedd874c1ebcfd07b772b0a3e9cd941c",
+   "question_sha256": "6a660471e1fc300053400979a6598e54b696cfcdffa884de01f6e658a4ece9e6"
+  },
+  {
+   "id": "ho2b2ce4d9",
+   "transcript_sha256": "2b2ce4d9843695727e0f32f8510ddfd55536bbdbc983f0a7d7323f47217011b5",
+   "question_sha256": "4cfedff31a085842846ecf9704e9cf98b422a9d36467b2d492634159ec1330a9"
+  },
+  {
+   "id": "hocf63e287",
+   "transcript_sha256": "cf63e287d1c3bc1988fbaa5c836b16230f0cce864a56c0541771f19e264d239c",
+   "question_sha256": "44b71410af4f86432f3d2d5311db1378a9a9da587c770e5c1af51a95b623dfce"
+  },
+  {
+   "id": "ho2650a85d",
+   "transcript_sha256": "2650a85d873539a19a9d37b796c830657c42f078218f3d625e8a5db4b949fa14",
+   "question_sha256": "d5c7933a3a121117ceb7b66e381b42ce7682dabe950451b739c9fab099a6eee6"
+  },
+  {
+   "id": "ho70a8ca07",
+   "transcript_sha256": "70a8ca07e2e6e46bd4a1ae13e233833c355cd8227fb06285aa7a61f506887141",
+   "question_sha256": "80ea66800bd1404fd21d3586d941a235a0abbf45361d369d48569441bd3c37a4"
+  },
+  {
+   "id": "ho37562723",
+   "transcript_sha256": "375627238408d80fc63e17e14049b27dac8d2173a30f0859444bdbaabd193574",
+   "question_sha256": "08566413584bede2c55fedf16c0b3d08d4ade61701ba3d076b5ce56e93f54d32"
+  },
+  {
+   "id": "hoe57ce48c",
+   "transcript_sha256": "e57ce48ccad26e6533062756b6e63af95fbc7f94b6272e16fa971a9a99377beb",
+   "question_sha256": "14363c9331daa0b3e87c22cf78fe23fd44b7ddeb9bb9ba20fdc81d08a8e173d5"
+  },
+  {
+   "id": "ho83cd479c",
+   "transcript_sha256": "83cd479cd1432d4741670567609b9e46199a093349c73f743ef66d4b2170c08f",
+   "question_sha256": "f905f560e60c38f8e90b1d2c2d05f2e8018b4ad7cc52c332882270169815d05b"
+  },
+  {
+   "id": "ho52358024",
+   "transcript_sha256": "52358024adbf0a6eb8b1fd1fcf61904784afb7eaba3915e85e7e92726ddb6555",
+   "question_sha256": "100af388a62a160a837507c3f1593032d4d76b2f4abd32db611787a4b7a6f038"
+  }
+ ],
+ "note": "No transcript text, question or answer is in this repository. The private file's SHA-256 is recorded so a number published against it can be checked on the machine that holds it.",
+ "private_file_sha256": "806942592aadbb0d07ec29fdd16d47d026f2ba721a5518e0f31997d82c8fd16c"
+}

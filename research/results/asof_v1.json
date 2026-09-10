@@ -5112,6 +5112,573 @@
   },
   "mem0": {
    "blocked": "Mem0 stamps a memory with the wall-clock time of the add() call and its search has no as-of filter; facts cannot be placed in the past without patching the product"
+  },
+  "zep": {
+   "rows": [
+    {
+     "id": "val-http-timeout",
+     "shape": "value_replaced",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 2,
+     "new_items": 2
+    },
+    {
+     "id": "val-pg-version",
+     "shape": "value_replaced",
+     "old_day_correct": false,
+     "new_day_correct": false,
+     "both_correct": false,
+     "old_items": 0,
+     "new_items": 0
+    },
+    {
+     "id": "val-batch-size",
+     "shape": "value_replaced",
+     "old_day_correct": true,
+     "new_day_correct": false,
+     "both_correct": false,
+     "old_items": 2,
+     "new_items": 3
+    },
+    {
+     "id": "val-node-version",
+     "shape": "value_replaced",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 1
+    },
+    {
+     "id": "val-retry-count",
+     "shape": "value_replaced",
+     "old_day_correct": true,
+     "new_day_correct": false,
+     "both_correct": false,
+     "old_items": 1,
+     "new_items": 2
+    },
+    {
+     "id": "val-cache-ttl",
+     "shape": "value_replaced",
+     "old_day_correct": false,
+     "new_day_correct": true,
+     "both_correct": false,
+     "old_items": 1,
+     "new_items": 2
+    },
+    {
+     "id": "val-port",
+     "shape": "value_replaced",
+     "old_day_correct": true,
+     "new_day_correct": false,
+     "both_correct": false,
+     "old_items": 2,
+     "new_items": 2
+    },
+    {
+     "id": "val-region",
+     "shape": "value_replaced",
+     "old_day_correct": true,
+     "new_day_correct": false,
+     "both_correct": false,
+     "old_items": 1,
+     "new_items": 1
+    },
+    {
+     "id": "val-py-version",
+     "shape": "value_replaced",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 3,
+     "new_items": 4
+    },
+    {
+     "id": "val-replicas",
+     "shape": "value_replaced",
+     "old_day_correct": false,
+     "new_day_correct": true,
+     "both_correct": false,
+     "old_items": 1,
+     "new_items": 2
+    },
+    {
+     "id": "val-lr",
+     "shape": "value_replaced",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 3
+    },
+    {
+     "id": "val-chunk",
+     "shape": "value_replaced",
+     "old_day_correct": true,
+     "new_day_correct": false,
+     "both_correct": false,
+     "old_items": 4,
+     "new_items": 4
+    },
+    {
+     "id": "val-quorum",
+     "shape": "value_replaced",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 2,
+     "new_items": 3
+    },
+    {
+     "id": "val-license",
+     "shape": "value_replaced",
+     "old_day_correct": false,
+     "new_day_correct": false,
+     "both_correct": false,
+     "old_items": 0,
+     "new_items": 0
+    },
+    {
+     "id": "val-branch",
+     "shape": "value_replaced",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 2,
+     "new_items": 4
+    },
+    {
+     "id": "app-cache-store",
+     "shape": "approach_abandoned",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 2
+    },
+    {
+     "id": "app-auth",
+     "shape": "approach_abandoned",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 3,
+     "new_items": 4
+    },
+    {
+     "id": "app-bundler",
+     "shape": "approach_abandoned",
+     "old_day_correct": false,
+     "new_day_correct": false,
+     "both_correct": false,
+     "old_items": 0,
+     "new_items": 0
+    },
+    {
+     "id": "app-orm",
+     "shape": "approach_abandoned",
+     "old_day_correct": false,
+     "new_day_correct": true,
+     "both_correct": false,
+     "old_items": 0,
+     "new_items": 2
+    },
+    {
+     "id": "app-queue",
+     "shape": "approach_abandoned",
+     "old_day_correct": true,
+     "new_day_correct": false,
+     "both_correct": false,
+     "old_items": 2,
+     "new_items": 2
+    },
+    {
+     "id": "app-ci",
+     "shape": "approach_abandoned",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 2
+    },
+    {
+     "id": "app-search",
+     "shape": "approach_abandoned",
+     "old_day_correct": false,
+     "new_day_correct": false,
+     "both_correct": false,
+     "old_items": 0,
+     "new_items": 0
+    },
+    {
+     "id": "app-styling",
+     "shape": "approach_abandoned",
+     "old_day_correct": false,
+     "new_day_correct": true,
+     "both_correct": false,
+     "old_items": 0,
+     "new_items": 1
+    },
+    {
+     "id": "app-packaging",
+     "shape": "approach_abandoned",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 2,
+     "new_items": 2
+    },
+    {
+     "id": "app-state",
+     "shape": "approach_abandoned",
+     "old_day_correct": false,
+     "new_day_correct": false,
+     "both_correct": false,
+     "old_items": 0,
+     "new_items": 0
+    },
+    {
+     "id": "app-infra",
+     "shape": "approach_abandoned",
+     "old_day_correct": false,
+     "new_day_correct": true,
+     "both_correct": false,
+     "old_items": 0,
+     "new_items": 1
+    },
+    {
+     "id": "app-migrations",
+     "shape": "approach_abandoned",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 2,
+     "new_items": 2
+    },
+    {
+     "id": "app-serialisation",
+     "shape": "approach_abandoned",
+     "old_day_correct": false,
+     "new_day_correct": false,
+     "both_correct": false,
+     "old_items": 0,
+     "new_items": 0
+    },
+    {
+     "id": "app-secrets",
+     "shape": "approach_abandoned",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 2
+    },
+    {
+     "id": "app-e2e",
+     "shape": "approach_abandoned",
+     "old_day_correct": true,
+     "new_day_correct": false,
+     "both_correct": false,
+     "old_items": 1,
+     "new_items": 1
+    },
+    {
+     "id": "ret-beta-flag",
+     "shape": "retracted_no_replacement",
+     "old_day_correct": false,
+     "new_day_correct": false,
+     "both_correct": false,
+     "old_items": 0,
+     "new_items": 1
+    },
+    {
+     "id": "ret-legacy-endpoint",
+     "shape": "retracted_no_replacement",
+     "old_day_correct": false,
+     "new_day_correct": false,
+     "both_correct": false,
+     "old_items": 1,
+     "new_items": 1
+    },
+    {
+     "id": "ret-telemetry",
+     "shape": "retracted_no_replacement",
+     "old_day_correct": false,
+     "new_day_correct": false,
+     "both_correct": false,
+     "old_items": 2,
+     "new_items": 2
+    },
+    {
+     "id": "ret-mirror",
+     "shape": "retracted_no_replacement",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 3
+    },
+    {
+     "id": "ret-plugin-api",
+     "shape": "retracted_no_replacement",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 2,
+     "new_items": 2
+    },
+    {
+     "id": "ret-mobile",
+     "shape": "retracted_no_replacement",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 2,
+     "new_items": 3
+    },
+    {
+     "id": "ret-cron",
+     "shape": "retracted_no_replacement",
+     "old_day_correct": true,
+     "new_day_correct": false,
+     "both_correct": false,
+     "old_items": 1,
+     "new_items": 2
+    },
+    {
+     "id": "ret-grpc",
+     "shape": "retracted_no_replacement",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 3,
+     "new_items": 1
+    },
+    {
+     "id": "ret-sso",
+     "shape": "retracted_no_replacement",
+     "old_day_correct": false,
+     "new_day_correct": false,
+     "both_correct": false,
+     "old_items": 0,
+     "new_items": 0
+    },
+    {
+     "id": "ret-webhook",
+     "shape": "retracted_no_replacement",
+     "old_day_correct": true,
+     "new_day_correct": false,
+     "both_correct": false,
+     "old_items": 2,
+     "new_items": 0
+    },
+    {
+     "id": "ret-gpu-node",
+     "shape": "retracted_no_replacement",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 2,
+     "new_items": 4
+    },
+    {
+     "id": "ret-cli-flag",
+     "shape": "retracted_no_replacement",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 2,
+     "new_items": 3
+    },
+    {
+     "id": "ret-audit-ui",
+     "shape": "retracted_no_replacement",
+     "old_day_correct": true,
+     "new_day_correct": false,
+     "both_correct": false,
+     "old_items": 3,
+     "new_items": 4
+    },
+    {
+     "id": "ret-i18n",
+     "shape": "retracted_no_replacement",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 3,
+     "new_items": 3
+    },
+    {
+     "id": "ret-sandbox",
+     "shape": "retracted_no_replacement",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 2,
+     "new_items": 3
+    },
+    {
+     "id": "nar-retry-scope",
+     "shape": "narrowed",
+     "old_day_correct": false,
+     "new_day_correct": false,
+     "both_correct": false,
+     "old_items": 0,
+     "new_items": 1
+    },
+    {
+     "id": "nar-cache-scope",
+     "shape": "narrowed",
+     "old_day_correct": true,
+     "new_day_correct": false,
+     "both_correct": false,
+     "old_items": 3,
+     "new_items": 3
+    },
+    {
+     "id": "nar-audit-scope",
+     "shape": "narrowed",
+     "old_day_correct": true,
+     "new_day_correct": false,
+     "both_correct": false,
+     "old_items": 2,
+     "new_items": 2
+    },
+    {
+     "id": "nar-gpu-scope",
+     "shape": "narrowed",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 2,
+     "new_items": 4
+    },
+    {
+     "id": "nar-lint-scope",
+     "shape": "narrowed",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 2
+    },
+    {
+     "id": "nar-notify-scope",
+     "shape": "narrowed",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 2,
+     "new_items": 2
+    },
+    {
+     "id": "nar-encrypt-scope",
+     "shape": "narrowed",
+     "old_day_correct": true,
+     "new_day_correct": false,
+     "both_correct": false,
+     "old_items": 2,
+     "new_items": 2
+    },
+    {
+     "id": "nar-index-scope",
+     "shape": "narrowed",
+     "old_day_correct": true,
+     "new_day_correct": false,
+     "both_correct": false,
+     "old_items": 1,
+     "new_items": 1
+    },
+    {
+     "id": "nar-backup-scope",
+     "shape": "narrowed",
+     "old_day_correct": false,
+     "new_day_correct": true,
+     "both_correct": false,
+     "old_items": 0,
+     "new_items": 1
+    },
+    {
+     "id": "nar-ratelimit-scope",
+     "shape": "narrowed",
+     "old_day_correct": false,
+     "new_day_correct": false,
+     "both_correct": false,
+     "old_items": 2,
+     "new_items": 2
+    },
+    {
+     "id": "nar-compress-scope",
+     "shape": "narrowed",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 3
+    },
+    {
+     "id": "nar-mfa-scope",
+     "shape": "narrowed",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 2,
+     "new_items": 3
+    },
+    {
+     "id": "nar-replay-scope",
+     "shape": "narrowed",
+     "old_day_correct": false,
+     "new_day_correct": true,
+     "both_correct": false,
+     "old_items": 0,
+     "new_items": 3
+    },
+    {
+     "id": "nar-shard-scope",
+     "shape": "narrowed",
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 1
+    },
+    {
+     "id": "nar-trace-scope",
+     "shape": "narrowed",
+     "old_day_correct": false,
+     "new_day_correct": false,
+     "both_correct": false,
+     "old_items": 1,
+     "new_items": 1
+    }
+   ],
+   "n_cases": 60,
+   "both_correct_rate": 0.4333,
+   "both_correct_ci": [
+    0.3157,
+    0.559
+   ],
+   "old_day_rate": 0.6667,
+   "new_day_rate": 0.55,
+   "errors": 0,
+   "seconds": 206.7,
+   "config": "graphiti-core via FalkorDB, qwen3-coder:30b + bge-m3, edges filtered by valid_at/invalid_at/expired_at, k=5",
+   "graphiti": {
+    "llm": "qwen3-coder:30b",
+    "embedder": "bge-m3",
+    "json_mode": "json_schema",
+    "driver": "falkordb localhost:6380",
+    "database": "nw_1789017843",
+    "episodes": 120,
+    "episode_errors": 0,
+    "llm_calls": 396,
+    "llm_failures": 0,
+    "llm_calls_per_episode": 3.3
+   }
   }
  }
 }

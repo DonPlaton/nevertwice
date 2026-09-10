@@ -532,6 +532,7 @@ def render_fusion_sweep(c: Claims) -> str:
 
 
 SUPERSESSION_ARMS = (("**Nevertwice**", "nevertwice"), ("Mem0", "mem0"),
+                     ("Zep/Graphiti (`graphiti-core`, FalkorDB)", "zep"),
                      ("an append-only markdown file", "naive"))
 
 
@@ -600,6 +601,7 @@ def render_asof(c: Claims) -> str:
     rows = [[label, _cell(c, f"asof.{slug}.both_correct"), _cell(c, f"asof.{slug}.old_day"),
              _cell(c, f"asof.{slug}.new_day")]
             for label, slug in (("**Nevertwice** (`api.as_of`)", "nevertwice"),
+                                ("Zep/Graphiti (`graphiti-core`, its own bitemporal edges)", "zep"),
                                 ("an append-only markdown file, no dates", "naive"))
             if c.has(f"asof.{slug}.both_correct")]
     out = _table(["arm", "both days", "the old day", "the day after"], rows)
@@ -718,10 +720,10 @@ CODE_SESSION_ROWS = [
 ]
 
 
-def render_code_sessions(c: Claims) -> str:
+def render_code_sessions(c: Claims, fam: str = "code_sessions") -> str:
     """The code-session stand: accuracy by question type per arm; the `current` column carries
-    the stale rate beside it, the situation column is retrieval only."""
-    fam = "code_sessions"
+    the stale rate beside it, the situation column is retrieval only. `fam` selects the synthetic
+    corpus (`code_sessions`) or the private held-out (`code_heldout`)."""
     if not any(c.has(f"{fam}.{slug}.fact") for _, slug in CODE_SESSION_ROWS):
         return _not_yet(fam, "python research/code_sessions_eval.py judge --arms nevertwice_full,naive,mem0_infer --save")
     header = ["system", "fact", "current", "stale", "lesson", "situation (top three)", "tokens"]
@@ -730,8 +732,10 @@ def render_code_sessions(c: Claims) -> str:
         if not c.has(f"{fam}.{slug}.fact"):
             missing.append(label.strip("*"))
             continue
-        rows.append([label] + [(_cell(c, f"{fam}.{slug}.{k}") if c.has(f"{fam}.{slug}.{k}") else "-")
-                               for k in ("fact", "current", "stale", "lesson", "situation", "tokens")])
+        cells = [(_cell(c, f"{fam}.{slug}.{k}") if c.has(f"{fam}.{slug}.{k}") else "-")
+                 for k in ("fact", "current", "stale", "lesson", "situation")]
+        cells.append(f"{c.value(f'{fam}.{slug}.tokens'):,.0f}" if c.has(f"{fam}.{slug}.tokens") else "-")
+        rows.append([label] + cells)
     out = _table(header, rows)
     if missing:
         out += "\n\n<sub>No row for " + ", ".join(missing) + ": no registered number for the arm.</sub>"
@@ -770,6 +774,7 @@ RENDERERS = {
     "baselines-summary": render_baselines_summary,
     "guard-bench": render_guard_bench,
     "code-sessions": render_code_sessions,
+    "code-heldout": lambda c: render_code_sessions(c, "code_heldout"),
 }
 
 

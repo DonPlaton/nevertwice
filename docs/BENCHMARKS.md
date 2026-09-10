@@ -63,19 +63,24 @@ The one comparison here that runs on a corpus this repository ships. Full method
 breakdown and what it costs us: [`research/SUPERSESSION.md`](../research/SUPERSESSION.md).
 
 <!-- claims:supersession-pinned -->
-> **Withdrawn 2026-09.** J4 step 2 (2026-09-10): the zep arm entered both temporal stands; the pooled artifacts are re-made at this HEAD by the third pass, which needs the GPU
->
-> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/supersession_bench.py` is what re-measures this one.
+| arm | returns the retracted fact | returns the replacement | retires a still-true fact |
+|---|---|---|---|
+| **Nevertwice** | 0.075 [0.040, 0.136] | 0.967 [0.917, 0.987] | 0.050 [0.014, 0.165] |
+| Mem0 | 0.883 [0.778, 0.942] | 0.967 [0.886, 0.991] | 0.000 [0.000, 0.161] |
+| Zep/Graphiti (`graphiti-core`, FalkorDB) | 0.317 [0.213, 0.442] | 0.550 [0.425, 0.669] | 0.150 [0.052, 0.360] |
+| an append-only markdown file | 0.950 [0.863, 0.983] | 0.950 [0.863, 0.983] | 0.050 [0.009, 0.236] |
 <!-- /claims:supersession-pinned -->
 
 Nevertwice's row is pooled over two runs of the same commit; the other arms are one run each.
 Sixty supersession cases and twenty controls per run, Wilson intervals, one local stand, the same
 embedder and the same extraction model for every arm, and since the evidence layer the text scored
-is the text a caller receives - the lesson and the verbatim line it came from. The paired counts and
-the payload per query are withdrawn with the table above while the Zep/Graphiti arm joins the stand;
-they return with that run. The floor is why the table is worth printing at all: a benchmark only one
-vendor's architecture fails is a benchmark about that vendor, and this one is failed by an append-only
-text file too, which is what supersession costs when nothing implements it.
+is the text a caller receives - the lesson and the verbatim line it came from. Paired on the same
+cases, the discordant pairs between Nevertwice and Mem0 run almost entirely in Mem0's disfavour - one
+case the other way; Mem0 and the append-only file are tied with each other at McNemar p = 0.29, tied
+at the bad end of the column. Our payload per query is 400 characters against Mem0's 444. The floor is
+why the table is worth printing at all: a benchmark only one vendor's architecture fails is a benchmark
+about that vendor, and this one is failed by an append-only text file too, which is what supersession
+costs when nothing implements it.
 
 ## Abstention: does refusing a weak hit pay for itself?
 

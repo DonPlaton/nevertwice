@@ -155,9 +155,12 @@ with tempfile.TemporaryDirectory() as tmp:
     for key in ("arms", "k", "llm", "embedder", "dataset", "pooled_nevertwice", "pooled_note",
                 "pairs", "pairs_per_engine_run"):
         check(f"artifact carries `{key}`", key in art)
-    check("artifact pairs are in name order",
-          [(p["a"], p["b"]) for p in art["pairs"]]
-          == [("mem0", "naive"), ("mem0", "nevertwice"), ("naive", "nevertwice")])
+    got = [(p["a"], p["b"]) for p in art["pairs"]]
+    names = sorted({n for pr in got for n in pr})
+    check("artifact pairs are in name order, every pair of arms once",
+          got == [(a, b) for i, a in enumerate(names) for b in names[i + 1:]], str(got))
+    check("the three original pairs are among them (a fourth arm, zep, joined on 2026-09-10)",
+          {("mem0", "naive"), ("mem0", "nevertwice"), ("naive", "nevertwice")} <= set(got))
 
 print("\n- the corpus is addressable the way reproduce.py prints it -")
 rel = "research/data/supersession_v1.json"
