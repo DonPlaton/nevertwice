@@ -1,18 +1,11 @@
 # Three switches that shipped with tests and no measurement
 
-<!-- withdrawn-banner -->
-> **Withdrawn: figures on this page must not be quoted.** They were retracted and remain
-> here because deleting a result one was wrong about destroys the record of having been
-> wrong. The design, the method and the caveats stand; the numbers do not. Each figure's
-> own reason and date are in
-> [`research/evidence_manifest.json`](evidence_manifest.json), and
-> `python tools/check_freshness.py --list-stale` lists every one.
-
-> **Re-measured 2026-09-10** at commit e225d9c (the third run of this sweep); the table below is read
-> from [`research/results/abstention_ab.json`](results/abstention_ab.json). The three runs read the
-> shipped threshold's loss as eight and a half, eleven and a half, and seven points, because the
-> extractor that builds the store is not deterministic; the decision - both defaults at 0 - was
-> made on the first run and holds on every one since.
+> **Re-measured 2026-09-10** at commit 2e9e79e, the first run of this sweep whose extractor is the one
+> the register names (the supersession stand's extractor; the artifact now records it). The three runs before it built
+> the store with whatever model the shell exported and read the shipped threshold's loss as eight and
+> a half, eleven and a half and seven points; this one reads five. The decision - both defaults at 0 -
+> was made on the first run and holds on every one since; the table below is read from
+> [`research/results/abstention_ab.json`](results/abstention_ab.json).
 
 Three abstention mechanisms went into the engine in one sitting. Each had a test proving it
 *works*: the filter filters, the threshold thresholds, the reader reads only the new region.
@@ -45,20 +38,20 @@ returned no more than 2 points less often. On a miss the default returns to 0.
 
 | threshold | chars/query | hits | wanted fact returned | chars saved | recall lost |
 |---|---|---|---|---|---|
-| 0.00 (off) | 192.0 | 1.27 | 0.900 | - | - |
-| 0.10 | 181.9 | 1.21 | 0.900 | 5.3% | -0.0 pts |
-| 0.20 | 152.9 | 1.06 | 0.829 | 20.4% | 7.1 pts |
-| **0.35 (shipped)** | **152.9** | **1.06** | **0.829** | **20.4%** | **7.1 pts** |
-| 0.50 | 150.4 | 1.04 | 0.814 | 21.7% | 8.6 pts |
-| 0.75 | 150.4 | 1.04 | 0.814 | 21.7% | 8.6 pts |
+| 0.00 (off) | 310.1 | 1.58 | 0.922 | - | - |
+| 0.10 | 292.1 | 1.49 | 0.922 | 5.8% | -0.0 pts |
+| 0.20 | 235.3 | 1.19 | 0.870 | 24.1% | 5.2 pts |
+| **0.35 (shipped)** | **232.9** | **1.18** | **0.870** | **24.9%** | **5.2 pts** |
+| 0.50 | 224.7 | 1.14 | 0.857 | 27.5% | 6.5 pts |
+| 0.75 | 222.2 | 1.13 | 0.844 | 28.3% | 7.8 pts |
 
 Thresholds above 0.75 read the same as 0.75: one hit is all that is left to refuse.
 
-**Missed, and not narrowly.** At the shipped default the trade is about forty characters against
-seven points of finding the right lesson. No threshold on the curve clears both gates: the only
-ones inside the recall budget, 0.00 and 0.10, save nothing and a twentieth - the gate asked for a
-fifth - and the first threshold that saves a fifth (0.20) already costs seven points. The seventy
-cases are the eighty of the corpus minus the ten where retrieval returned no hit at all, on which no
+**Missed, and not narrowly.** At the shipped default the trade is about eighty characters against
+five points of finding the right lesson. No threshold on the curve clears both gates: the only
+ones inside the recall budget, 0.00 and 0.10, save nothing and a seventeenth - the gate asked for a
+fifth - and the first threshold that saves a fifth (0.20) already costs five points. The seventy-seven
+cases are the eighty of the corpus minus the three where retrieval returned no hit at all, on which no
 threshold can act.
 
 **Default is now 0.** The mechanism stays as an opt-in switch rather than being deleted,
@@ -70,7 +63,7 @@ and a half. That is a hypothesis, and it is written here as one.
 `NEVERTWICE_INJECT_MIN_VALUE`, on the path capped at 2200 characters.
 
 The sweep is identical to C1's, and that is the result: **the mean payload on this corpus is
-192 characters, so the cap never binds and the two paths differ in nothing the measurement can
+310 characters, so the cap never binds and the two paths differ in nothing the measurement can
 see.** The gate written for it - 15% smaller with no loss of the top-ranked lesson - is
 **vacuous as written**: the top item scores 1.0 by construction and cannot be dropped at any
 threshold below 1.0, so the second half is satisfied by arithmetic rather than by evidence.
@@ -116,7 +109,7 @@ no stand at all.
 
 ## What this does not show
 
-- **One corpus, and a small one.** Mean recall depth is 1.27 hits. The abstention mechanisms
+- **One corpus, and a small one.** Mean recall depth is 1.58 hits. The abstention mechanisms
   are built for the case where recall returns many hits of uneven quality, and that case is
   not in this corpus. The result is honest about the store it was measured on and says nothing
   about a larger one.

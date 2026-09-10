@@ -81,16 +81,17 @@ def main(argv: list[str] | None = None) -> int:
     raw = "research/results/asof_v1.json"
     art = json.loads((ROOT / raw).read_text(encoding="utf-8"))
     if (ROOT / raw).stat().st_mtime < code_time:
-        raise SystemExit(f"{raw} predates HEAD")
-    a = art["arms"]["nevertwice"]
-    n = int(a["n_cases"])
+        print(f"  {raw} predates HEAD - its diagnostics were registered at an earlier commit or wait for a re-run")
+        art = None
+    a = (art or {}).get("arms", {}).get("nevertwice") or {}
+    n = int(a.get("n_cases") or 0)
     kinds = a.get("old_day_failures_by_kind") or {}
     base = dict(dataset="supersession_v1", env="local_supersession_stand", command=ASOF_CMD, raw=raw)
     what = {"never_written": "the extractor wrote no note for the first session",
             "unranked": "a first-session note existed but nothing came back for the old day",
             "paraphrase": "the old note came back but its wording carried no marker",
             "leak": "the new fact came back for the old day"}
-    for kind, desc in what.items():
+    for kind, desc in (what.items() if art else []):
         k = int(kinds.get(kind, 0))
         add(f"asof.nevertwice.old_day_miss.{kind}",
             f"of the as-of case-runs that missed the old day, {k} missed because {desc}",
@@ -115,9 +116,10 @@ def main(argv: list[str] | None = None) -> int:
     raw = "research/results/supersession_v1.json"
     art = json.loads((ROOT / raw).read_text(encoding="utf-8"))
     if (ROOT / raw).stat().st_mtime < code_time:
-        raise SystemExit(f"{raw} predates HEAD")
+        print(f"  {raw} predates HEAD - its diagnostics were registered at an earlier commit or wait for a re-run")
+        art = None
     base = dict(dataset="supersession_v1", env="local_supersession_stand", command=SUP_CMD, raw=raw)
-    for arm_key, run_label in (("nevertwice", "run one"), ("nevertwice_run2", "run two")):
+    for arm_key, run_label in ((("nevertwice", "run one"), ("nevertwice_run2", "run two")) if art else ()):
         a = art["arms"].get(arm_key) or {}
         if a.get("store_bytes") is not None:
             add(f"supersession.{arm_key}.store_bytes",
@@ -147,6 +149,18 @@ def main(argv: list[str] | None = None) -> int:
             sil["fraction"], [f"{sil['fraction']:.3f}", f"{sil['fraction'] * 100:.1f}"], "fraction of questions", q,
             wilson(k, q), "extractor_silence.fraction", dataset="longmemeval_oracle_pinned", env="local_frontier_stand",
             command=FRONTIER_CMD, raw=raw)
+        evs = sil.get("evidence") or {}
+        if evs.get("notes") is not None:
+            add("frontier.nevertwice_full.notes_written",
+                f"our extractor wrote {evs['notes']:,} notes from the {sil['sessions']} pool sessions",
+                int(evs["notes"]), [f"{evs['notes']:,}", str(evs["notes"])], "notes", int(sil["sessions"]), None,
+                "extractor_silence.evidence.notes", dataset="longmemeval_oracle_pinned", env="local_frontier_stand",
+                command=FRONTIER_CMD, raw=raw)
+            add("frontier.nevertwice_full.spans_attached",
+                f"{evs['spans']:,} of them carry a verbatim transcript line chosen by alignment",
+                int(evs["spans"]), [f"{evs['spans']:,}", str(evs["spans"])], "notes with a span", int(evs["notes"]), None,
+                "extractor_silence.evidence.spans", dataset="longmemeval_oracle_pinned", env="local_frontier_stand",
+                command=FRONTIER_CMD, raw=raw)
         add("frontier.nevertwice_full.sessions_with_zero_notes",
             f"{sil['sessions_with_zero_notes']} of the {sil['sessions']} pool sessions produced no note at all",
             int(sil["sessions_with_zero_notes"]), [str(sil["sessions_with_zero_notes"])], "sessions", int(sil["sessions"]),

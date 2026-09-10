@@ -224,7 +224,43 @@ def score(rows: list[dict]) -> dict:
     return out
 
 
-ARMS = {"nevertwice": run_nevertwice, "naive": run_naive}
+def run_zep(cases: list[dict], k: int) -> dict:
+    """Graphiti's bitemporal edges asked for a day (ledger J4): episodes carry the stand's dates
+    as `reference_time`; a fact is believed on a day when it was stated by then and neither
+    invalidated nor expired by then - filtered over Graphiti's own fields in
+    `research/_graphiti_arm.py`, because the server-side date filter misbehaved in the probe."""
+    sys.path.insert(0, str(HERE))
+    import _graphiti_arm as ga                                  # noqa: PLC0415
+    why = ga.available()
+    if why:
+        return {"blocked": why}
+    try:
+        arm = ga.GraphitiArm(sb.LLM, sb.EMBED_MODEL)
+    except Exception as e:                                      # noqa: BLE001
+        return {"blocked": f"Graphiti init failed ({type(e).__name__}: {e})"}
+    rows, t0 = [], time.time()
+    for i, case in enumerate(cases):
+        group = f"asof{i:03d}"
+        r = arm.ingest(group, [("\n".join(case["sessions"][0]), DAY_FIRST), ("\n".join(case["sessions"][1]), DAY_SECOND)])
+        if r["errors"]:
+            rows.append({"id": case["id"], "shape": case["shape"], "old_day_correct": False, "new_day_correct": False,
+                         "both_correct": False, "error": getattr(arm, "last_error", "episode error")})
+            continue
+        old = arm.search_asof(group, case["query"], DAY_BETWEEN, k)
+        new = arm.search_asof(group, case["query"], DAY_AFTER, k)
+        rows.append(_row(case, old, new))
+        print(f"  [{i + 1}/{len(cases)}] {case['id']}  old {rows[-1]['old_day_correct']}  new {rows[-1]['new_day_correct']}", flush=True)
+    stats = arm.stats()
+    arm.close()
+    failed = sum(1 for r in rows if r.get("error"))
+    if failed > len(rows) * 0.1:
+        return {"blocked": f"{failed} of {len(rows)} cases errored", "rows": rows, "graphiti": stats}
+    return {"rows": rows, **score(rows), "seconds": round(time.time() - t0, 1),
+            "config": f"graphiti-core via FalkorDB, {sb.LLM} + {sb.EMBED_MODEL}, edges filtered by valid_at/invalid_at/expired_at, k={k}",
+            "graphiti": stats}
+
+
+ARMS = {"nevertwice": run_nevertwice, "naive": run_naive, "zep": run_zep}
 RUNS = 1
 
 

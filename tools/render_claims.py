@@ -675,31 +675,33 @@ def render_guard_bench(c: Claims) -> str:
     operating point under the budget has no recall cell and says so; an arm whose claims are
     absent is left out and named."""
     fam = "guards"
-    if not any(c.has(f"{fam}.{slug}.recall_at_fpr") or c.has(f"{fam}.{slug}.no_operating_point")
+    if not any(c.has(f"{fam}.{slug}.recall_at_fpr") or c.has(f"{fam}.{slug}.recall_all_fire")
                for _, slug in GUARD_ROWS):
         return _not_yet(fam, "python research/guard_bench.py --llm --save")
     header = ["arm", "recall of the right guard", "precision", "hard-negative false alarms",
               "project-only recall", "tokens / call", "ms / check"]
     rows, missing, none = [], [], []
     for label, slug in GUARD_ROWS:
-        if c.has(f"{fam}.{slug}.no_operating_point"):
+        if c.has(f"{fam}.{slug}.recall_all_fire"):
             none.append(label.strip("*"))
-            rows.append([label, "no point under the budget", "-", "-", "-",
+            rows.append([label, f"{_cell(c, f'{fam}.{slug}.recall_all_fire')} at FPR {_cell(c, f'{fam}.{slug}.fpr_all_fire')} (over budget)",
+                         "-", "-", "-",
                          _cell(c, f"{fam}.{slug}.tokens_per_call") if c.has(f"{fam}.{slug}.tokens_per_call") else "-",
                          _cell(c, f"{fam}.{slug}.ms_per_call") if c.has(f"{fam}.{slug}.ms_per_call") else "-"])
             continue
         if not c.has(f"{fam}.{slug}.recall_at_fpr"):
             missing.append(label.strip("*"))
             continue
-        rows.append([label, _cell(c, f"{fam}.{slug}.recall_at_fpr"), _cell(c, f"{fam}.{slug}.precision_at_fpr"),
+        rows.append([label, _cell(c, f"{fam}.{slug}.recall_at_fpr"),
+                     _cell(c, f"{fam}.{slug}.precision_at_fpr") if c.has(f"{fam}.{slug}.precision_at_fpr") else "-",
                      _cell(c, f"{fam}.{slug}.hard_negative_fpr") if c.has(f"{fam}.{slug}.hard_negative_fpr") else "-",
                      _cell(c, f"{fam}.{slug}.project_recall") if c.has(f"{fam}.{slug}.project_recall") else "-",
                      _cell(c, f"{fam}.{slug}.tokens_per_call"), _cell(c, f"{fam}.{slug}.ms_per_call")])
     out = _table(header, rows)
     notes = []
     if none:
-        notes.append("no operating point at a false-positive rate of 0.05 or below for " + ", ".join(none)
-                     + " - every threshold that fires on a repeat also fires on more than one negative in twenty")
+        notes.append("no operating point under the false-alarm budget for " + ", ".join(none)
+                     + " - a guard fires or it does not, and firing catches the repeats shown at the false-alarm rate shown")
     if missing:
         notes.append("no row for " + ", ".join(missing) + ": the arm has no registered number (not run, or blocked)")
     if notes:

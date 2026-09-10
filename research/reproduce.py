@@ -204,6 +204,18 @@ ARTIFACTS = [
      "note": "the implicit-replacement variant: the committed artifact pools two engine runs with "
              "the Mem0 and naive arms carried beside them (--pool ... --with ...); the extractor "
              "is not deterministic."},
+    {"file": "research/data/guard_bench_v1.json",
+     "command": ["python", "research/gen_guard_bench.py", "--out", "research/data/guard_bench_v1.json"],
+     "kind": DETERMINISTIC, "task": "active-memory",
+     "inputs": [],
+     "note": "the guard corpus: labelled tool calls written from an audited table (ledger J6)"},
+    {"file": "research/results/guard_bench_v1.json",
+     "command": ["python", "research/guard_bench.py", "--llm", "--save"],
+     "kind": HARDWARE, "task": "active-memory",
+     "inputs": ["research/data/guard_bench_v1.json",
+                "a local Ollama serving bge-m3 (the prompt_recall arm) and qwen3-coder:30b (the model-written patterns)"],
+     "volatile": ["ms_per_call", "seconds", "latency"],
+     "note": "every arm read at a matched false-alarm rate; the deterministic arms reproduce on CPU, the model arm needs the GPU"},
     {"file": "research/results/supersession_v1.json",
      "command": ["python", "research/supersession_bench.py",
                  "--arms", "nevertwice,naive", "--out",

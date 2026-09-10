@@ -1,7 +1,7 @@
 {
  "reader": "qwen2.5:7b",
  "judge": "qwen3.6:27b",
- "second_judge": "qwen3.5:27b",
+ "second_judge": "qwen3:32b",
  "num_ctx": 32768,
  "char_budget": 90000,
  "questions": 150,
@@ -75,33 +75,33 @@
   "nevertwice_full": {
    "1": {
     "n": 150,
-    "accuracy": 0.0067,
+    "accuracy": 0.02,
     "ci": [
-     0.0012,
-     0.0368
+     0.0068,
+     0.0571
     ],
-    "mean_prompt_tokens": 170.3,
-    "median_prompt_tokens": 171
+    "mean_prompt_tokens": 193.0,
+    "median_prompt_tokens": 193
    },
    "3": {
     "n": 150,
-    "accuracy": 0.0067,
+    "accuracy": 0.0467,
     "ci": [
-     0.0012,
-     0.0368
+     0.0228,
+     0.0932
     ],
-    "mean_prompt_tokens": 268.1,
-    "median_prompt_tokens": 268
+    "mean_prompt_tokens": 333.4,
+    "median_prompt_tokens": 335
    },
    "5": {
     "n": 150,
-    "accuracy": 0.0133,
+    "accuracy": 0.0667,
     "ci": [
-     0.0037,
-     0.0473
+     0.0366,
+     0.1184
     ],
-    "mean_prompt_tokens": 363.5,
-    "median_prompt_tokens": 364
+    "mean_prompt_tokens": 471.9,
+    "median_prompt_tokens": 475
    }
   },
   "mem0": {
@@ -225,7 +225,21 @@
  },
  "judge_agreement": {
   "n": 100,
-  "rate": 0.97,
-  "disagreement": 0.03
+  "rate": 0.95,
+  "disagreement": 0.05
+ },
+ "extractor_silence": {
+  "questions_gold_without_notes": 0,
+  "questions": 150,
+  "fraction": 0.0,
+  "sessions_with_zero_notes": 0,
+  "sessions": 940,
+  "evidence_enabled": true,
+  "evidence": {
+   "sessions": 940,
+   "notes": 2015,
+   "spans": 1883,
+   "ms": 12957.820000000003
+  }
  }
 }

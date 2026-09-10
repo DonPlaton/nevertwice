@@ -33,7 +33,8 @@ except Exception:                      # noqa: BLE001
     pass
 
 ENVIRONMENT = "local_supersession_stand"
-ARM_LABEL = {"mem0": "Mem0 2.0.19", "naive": "the append-only floor (markdown + term overlap)"}
+ARM_LABEL = {"mem0": "Mem0 2.0.19", "naive": "the append-only floor (markdown + term overlap)",
+             "zep": "Zep/Graphiti (graphiti-core 0.30.2, FalkorDB)"}
 
 
 def wilson(k: int, n: int, z: float = 1.96) -> tuple[float, float]:

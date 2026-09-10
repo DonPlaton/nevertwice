@@ -428,7 +428,49 @@ def _row(case: dict, items: list[str]) -> dict:
             "returned": items}
 
 
-ARMS = {"nevertwice": run_nevertwice, "mem0": run_mem0, "naive": run_naive}
+# ── arm: Zep / Graphiti ───────────────────────────────────────────────────────────────────
+
+def run_zep(cases: list[dict], k: int) -> dict:
+    """Zep's engine, graphiti-core, through `research/_graphiti_arm.py` (ledger J4): one episode
+    per session with the stand's extractor and embedder behind Ollama's OpenAI-compatible
+    endpoint, one graph group per case, hybrid edge search fused by reciprocal rank. The facts
+    of the top edges are what it hands back; edges it invalidated or expired itself are hidden,
+    as its own `search()` hides them. Blocked - never a number - when graphiti-core or the
+    FalkorDB it needs is absent here, and when more than a tenth of the cases error."""
+    sys.path.insert(0, str(HERE))
+    import _graphiti_arm as ga                                  # noqa: PLC0415
+    why = ga.available()
+    if why:
+        return {"blocked": why}
+    try:
+        arm = ga.GraphitiArm(LLM, EMBED_MODEL)
+    except Exception as e:                                      # noqa: BLE001
+        return {"blocked": f"Graphiti init failed ({type(e).__name__}: {e})"}
+    rows, t0 = [], time.time()
+    for i, case in enumerate(cases):
+        group = f"sup{i:03d}"
+        r = arm.ingest(group, [("\n".join(session), None) for session in case["sessions"]])
+        if r["errors"]:
+            rows.append({**_blank(case), "error": getattr(arm, "last_error", "episode error")})
+            print(f"  [{i + 1}/{len(cases)}] {case['id']}  ERROR {rows[-1]['error'][:60]}", flush=True)
+            continue
+        texts = arm.search_now(group, case["query"], k)
+        rows.append(_row(case, texts))
+        print(f"  [{i + 1}/{len(cases)}] {case['id']}  hits={len(texts)}"
+              f"  stale={rows[-1]['stale_returned']}@{rows[-1]['stale_rank']}", flush=True)
+    stats = arm.stats()
+    arm.close()
+    failed = sum(1 for r in rows if r.get("error"))
+    if failed > len(rows) * 0.1:
+        return {"blocked": f"{failed} of {len(rows)} cases errored - "
+                           f"first: {next(r['error'] for r in rows if r.get('error'))}",
+                "rows": rows, "graphiti": stats}
+    return {"rows": rows, **score(rows), "errors": failed, "seconds": round(time.time() - t0, 1),
+            "config": f"graphiti-core via FalkorDB, {LLM} + {EMBED_MODEL}, edge hybrid RRF, limit={k}",
+            "graphiti": stats}
+
+
+ARMS = {"nevertwice": run_nevertwice, "mem0": run_mem0, "naive": run_naive, "zep": run_zep}
 
 
 def compare_arms(loaded: dict[str, dict[str, dict]]) -> list[dict]:

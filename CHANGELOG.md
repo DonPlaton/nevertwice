@@ -26,7 +26,12 @@ empty.
   cost caps written before the run measure that anyway. The layer runs as a post-step of
   `api.capture_session`, so the engine module is unchanged and the register's blast radius is
   the stands that re-measure it. Gates, baseline and the decision on a miss are in
-  `.loop/GOAL-CLOSE.md`; the numbers arrive with the campaign, not with this entry.
+  `.loop/GOAL-CLOSE.md`. Measured the same day: on the chat frontier the layer misses its gate by a
+  wide margin - the aligned line restates the lesson, and the question wants a different line - while
+  on the temporal stands it lifts as-of both-days accuracy by a sixth and the supersession current rate
+  by several points, inside every cost cap. Whether the written rule (delete on the frontier miss) or a
+  re-gating on the temporal stands applies is put to the owner on the ledger; the layer stays as committed
+  until then.
 
 - **The as-of stand says why an old day failed** (`research/asof_bench.py`, ledger J2). Every
   engine row records what the store holds for the case's first session - notes written, live
@@ -34,7 +39,26 @@ empty.
   *paraphrase* or *leak*. Reading the existing artifact this way showed the proposal the
   session opened with (retiring a fact without a replacement) was aimed at the wrong half:
   most misses were a paraphrased marker or a session the extractor left empty, not a
-  retirement the write path failed to make. That proposal is recorded as dropped.
+  retirement the write path failed to make. That proposal is recorded as dropped. The re-run with
+  evidence spans closed most of the paraphrase misses and left the gate short by under two points;
+  the instrumentation also showed that a replacement arriving after the ninety-day archive never
+  closes the old fact's interval, an engine change proposed with its own gate.
+
+- **The extractor is bound by name on every pipeline stand.** The engine reads its model name at
+  import; four stands set it afterwards and ran on whatever the shell exported. Found when the
+  frontier full arm produced two notes from nine hundred and forty sessions; fixed, recorded in
+  every artifact, and both affected stands re-run.
+
+- **The active-memory stand** (`research/guard_bench.py`, `research/GUARD_BENCH.md`): guards written
+  by rule or by model against the linter, the cold-start pack, prompt recall and silence, every arm at
+  a matched false-alarm rate on a deterministic labelled corpus. Guards miss their gate: a regex is
+  binary, and firing catches a third of the repeats at a false-alarm rate no operator accepts. The
+  README's guard sentence now says so.
+
+- **A code-session corpus with gold answers** (`research/gen_code_sessions.py`,
+  `research/code_sessions_eval.py`, `research/code_heldout.py`, `research/CODE_SESSIONS.md`): facts
+  and gold chosen by the program, prose by a model from a foreign family, a real held-out over the
+  owner's own sessions kept outside the repository. Built and tested; the runs follow.
 
 - **Accuracy per token: every system's context, one reader, one judge**
   (`research/frontier_eval.py`, `research/FRONTIER.md`). The axis every vendor publishes and

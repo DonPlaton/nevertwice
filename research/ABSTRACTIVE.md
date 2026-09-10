@@ -1,13 +1,5 @@
 # Abstractive consolidation: the other half of memory's value (results & findings)
 
-<!-- withdrawn-banner -->
-> **Withdrawn: figures on this page must not be quoted.** They were retracted and remain
-> here because deleting a result one was wrong about destroys the record of having been
-> wrong. The design, the method and the caveats stand; the numbers do not. Each figure's
-> own reason and date are in
-> [`research/evidence_manifest.json`](evidence_manifest.json), and
-> `python tools/check_freshness.py --list-stale` lists every one.
-
 *Companion to `research/abstractive.py`. Reproduce: `python research/abstractive.py --save`
 (CPU, seeded, ~5 s; `--real` adds the live-vault candidate count). A **mechanism** benchmark on
 controlled latent vectors - it isolates *when and why* turning episodes into a principle helps; it

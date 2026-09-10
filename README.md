@@ -53,10 +53,10 @@ retrieve, inject, tax every turn. We measured that axis to its end and found it
 [reader-bound and commoditizing](research/QA_ACCURACY.md): the LLM, not the memory, is the variable.
 So the interventions are the product, and each one is token-budgeted:
 
-- **Guards** - a pattern distilled from a past mistake, checked against the edit before your agent
-  writes it. One line fires on a match, at **zero context tokens until it does**. A guard is
-  advisory until corroborated across sessions, retires itself after false positives, and is always
-  overridable: memory proposes, reality disposes.
+- **Guards** - a pattern distilled from a past mistake, checked against the edit before your agent writes
+  it; one line fires on a match, at **zero context tokens until it does**. Measured ([GUARD_BENCH.md](research/GUARD_BENCH.md)):
+  about a third of repeats caught, false alarms on a sixth of clean edits, a linter catches more of the generic
+  ones. Advisory until corroborated, self-retiring on false positives, always overridable: memory proposes, reality disposes.
 - **Anticipation** - predicts the failure the current plan is heading toward by resemblance to past
   ones, and surfaces *one* precise warning. Spend is proportional to risk, not paid per turn.
 - **Counterfactual** - *"what breaks if I change X?"*, answered from an induced causal graph
@@ -85,7 +85,7 @@ What survived re-measurement at HEAD, and what it cost:
 | claim | result | evidence |
 |---|---|---|
 | external retrieval, one pool and one embedder for everyone | R@5 **0.800** on a hash-pinned LongMemEval corpus, whole sessions embedded on our side as on the competitors' | [EXTERNAL_RETRIEVAL.md](research/EXTERNAL_RETRIEVAL.md) |
-| handing back a fact that has since been **retracted** | **0.075** of the time, against **0.883** for Mem0 and **0.950** for an append-only file with term matching - scored on the text a caller receives, evidence spans included | [SUPERSESSION.md](research/SUPERSESSION.md) |
+| handing back a fact that has since been **retracted** | withdrawn while the Zep/Graphiti arm joins the stand (third pass of 2026-09-10); the row returns with that run, scored on the text a caller receives, evidence spans included | [SUPERSESSION.md](research/SUPERSESSION.md) |
 | acting vs *always-injecting* the same lesson | same error prevention for **31×** fewer memory tokens | [ACTIVE_MEMORY.md](research/ACTIVE_MEMORY.md) |
 | memory-poisoning acceptance attacks | **81%** blocked overall - **100%** of prompt injection, **25%** of plausible-false facts | [POISONING.md](research/POISONING.md) |
 | what being there costs | PreToolUse **84 ms** end to end - a tenth of a second, and it moves by a third between sessions - and zero context tokens until a guard fires | [BENCHMARKS.md](docs/BENCHMARKS.md) |

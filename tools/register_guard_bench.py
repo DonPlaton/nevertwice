@@ -41,6 +41,17 @@ ARM_LABEL = {
 }
 
 
+def wilson(k: int, n: int, z: float = 1.96) -> tuple[float, float]:
+    import math
+    if n == 0:
+        return (0.0, 0.0)
+    p = k / n
+    d = 1 + z * z / n
+    c = p + z * z / (2 * n)
+    r = z * math.sqrt(p * (1 - p) / n + z * z / (4 * n * n))
+    return round(max(0.0, (c - r) / d), 4), round(min(1.0, (c + r) / d), 4)
+
+
 def _git(*args: str) -> str:
     return subprocess.run(["git", *args], cwd=ROOT, capture_output=True, text=True, check=True).stdout.strip()
 
@@ -88,21 +99,38 @@ def build_claims(art: dict, *, command: str, raw: str, head: str, produced_by: l
         if sc.get("blocked"):
             continue
         mt = sc.get(key)
-        if mt is None:
-            add(f"{FAMILY}.{arm}.no_operating_point",
-                f"{label} has no operating point with a false-positive rate at or below {fpr} on the guard corpus",
-                0, ["0"], "operating points", counts["negatives"], None, f'arms.{arm}.{key}',
-                note="The value is 0 because the artifact records null for the matched point; the claim is the absence.")
-            continue
         n_pos = counts["positives"]
+        if mt is None:
+            # a binary arm has one operating point - fire on every match - and it is over the budget;
+            # publish that point, because "no row" would read as "not measured"
+            z = next((r for r in sc.get("curve", []) if r["threshold"] == 0.0), None)
+            if z is not None:
+                add(f"{FAMILY}.{arm}.recall_all_fire",
+                    f"{label} catches {z['recall'] * 100:.1f}% of the repeats when it fires on every match - its only operating "
+                    f"point, and it lies above the false-alarm budget of {fpr}",
+                    z["recall"], [f"{z['recall']:.3f}"], "rate", n_pos, list(wilson(z["tp"], n_pos)), f'arms.{arm}.curve[0].recall',
+                    note="No operating point at or below the budget: the arm fires or it does not, and firing costs more than one negative in twenty.")
+                add(f"{FAMILY}.{arm}.fpr_all_fire",
+                    f"and fires on {z['false_positive_rate'] * 100:.1f}% of the calls that repeat nothing",
+                    z["false_positive_rate"], [f"{z['false_positive_rate']:.3f}"], "rate", counts["negatives"], None,
+                    f'arms.{arm}.curve[0].false_positive_rate')
+            add(f"{FAMILY}.{arm}.tokens_per_call",
+                f"{label} spends {sc['tokens_per_call']} context tokens per tool call, silence included",
+                sc["tokens_per_call"], [f"{sc['tokens_per_call']:.3f}", f"{sc['tokens_per_call']:.2f}", f"{sc['tokens_per_call']:.1f}"], "tokens", sc["n_calls"], None,
+                f'arms.{arm}.tokens_per_call')
+            add(f"{FAMILY}.{arm}.ms_per_call",
+                f"and {sc['ms_per_call']} ms per check", sc["ms_per_call"], [f"{sc['ms_per_call']:.3f}", f"{sc['ms_per_call']:.4f}", f"{sc['ms_per_call']:.2f}"],
+                "milliseconds", sc["n_calls"], None, f'arms.{arm}.ms_per_call')
+            continue
         add(f"{FAMILY}.{arm}.recall_at_fpr",
             f"{label} catches {mt['recall'] * 100:.1f}% of the tool calls that repeat a recorded mistake, at a "
             f"false-positive rate of {mt['false_positive_rate']} on the calls that do not (the best operating point "
             f"with a false-positive rate at or below {fpr})",
-            mt["recall"], [f"{mt['recall']:.3f}"], "rate", n_pos, sc.get("recall_ci"), f'arms.{arm}.{key}.recall')
-        add(f"{FAMILY}.{arm}.precision_at_fpr",
-            f"with precision {mt['precision']}", mt["precision"], [f"{mt['precision']:.3f}" if mt["precision"] is not None else "n/a"],
-            "rate", mt["tp"] + mt["fp"], None, f'arms.{arm}.{key}.precision')
+            mt["recall"], [f"{mt['recall']:.3f}"], "rate", n_pos, sc.get("recall_ci"), f'arms.{arm}["{key}"].recall')
+        if mt.get("precision") is not None:
+            add(f"{FAMILY}.{arm}.precision_at_fpr",
+                f"with precision {mt['precision']}", mt["precision"], [f"{mt['precision']:.3f}"],
+                "rate", mt["tp"] + mt["fp"], None, f'arms.{arm}["{key}"].precision')
         hn = sc.get("hard_negatives") or {}
         if hn.get("false_positive_rate") is not None:
             add(f"{FAMILY}.{arm}.hard_negative_fpr",
@@ -116,10 +144,10 @@ def build_claims(art: dict, *, command: str, raw: str, head: str, produced_by: l
                 pr["recall"], [f"{pr['recall']:.3f}"], "rate", pr["tp"] + pr["fn"], None, f'arms.{arm}.project.recall')
         add(f"{FAMILY}.{arm}.tokens_per_call",
             f"{label} spends {sc['tokens_per_call']} context tokens per tool call, silence included",
-            sc["tokens_per_call"], [f"{sc['tokens_per_call']:.2f}", f"{sc['tokens_per_call']:.1f}"], "tokens", sc["n_calls"], None,
+            sc["tokens_per_call"], [f"{sc['tokens_per_call']:.3f}", f"{sc['tokens_per_call']:.2f}", f"{sc['tokens_per_call']:.1f}"], "tokens", sc["n_calls"], None,
             f'arms.{arm}.tokens_per_call')
         add(f"{FAMILY}.{arm}.ms_per_call",
-            f"and {sc['ms_per_call']} ms per check", sc["ms_per_call"], [f"{sc['ms_per_call']:.4f}", f"{sc['ms_per_call']:.2f}"],
+            f"and {sc['ms_per_call']} ms per check", sc["ms_per_call"], [f"{sc['ms_per_call']:.3f}", f"{sc['ms_per_call']:.4f}", f"{sc['ms_per_call']:.2f}"],
             "milliseconds", sc["n_calls"], None, f'arms.{arm}.ms_per_call')
     for k_, what in (("mistakes", "mistake notes"), ("positives", "tool calls that repeat one"),
                      ("negatives", "tool calls that do not"), ("hard_negatives", "hard negatives")):

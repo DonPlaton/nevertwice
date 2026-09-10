@@ -42,13 +42,30 @@ tokens per call and latency per check. A guard that fires on the right risk but 
 mistake is a false alarm, not partial credit.
 
 <!-- claims:guard-bench -->
-> **Not measured yet.** No `guards.*` claim is registered; `python research/guard_bench.py --llm --save` is the run that produces them.
+| arm | recall of the right guard | precision | hard-negative false alarms | project-only recall | tokens / call | ms / check |
+|---|---|---|---|---|---|---|
+| **guards, engine's no-model patterns** | 0.380 at FPR 0.179 (over budget) | - | - | - | 3.320 | 0.019 |
+| **guards, model-written patterns** | 0.370 at FPR 0.155 (over budget) | - | - | - | 5.510 | 0.025 |
+| cold-start pack (no history) | 0.196 | 0.818 | 0.000 | 0.000 | 1.150 | 0.008 |
+| linter or scanner (scored in its favour) | 0.457 | 1.000 | 0.000 | 0.154 | 0.000 | 0.000 |
+| prompt recall over the notes (top three) | 0.000 | 0.000 | 0.014 | 0.000 | 103.560 | 52.677 |
+| silence (floor) | 0.000 | - | 0.000 | 0.000 | 0.000 | 0.000 |
+
+<sub>no operating point under the false-alarm budget for guards, engine's no-model patterns, guards, model-written patterns - a guard fires or it does not, and firing catches the repeats shown at the false-alarm rate shown.</sub>
 <!-- /claims:guard-bench -->
 
 The gate written before the run (`.loop/GOAL-CLOSE.md`, J6): a guard arm keeps the README's
 sentence if it catches at least half the repeats at the budget, beats the linter on the project
-family, and spends at most a tenth of prompt recall's tokens. A miss reduces the sentence to
-what was measured.
+family, and spends at most a tenth of prompt recall's tokens. **Missed on every clause.** Neither
+guard arm has an operating point under the budget: a guard is binary, so the threshold a matched
+comparison would sweep lives inside the regex, and the regex either fires or does not. Firing, the
+engine's patterns catch a little over a third of the repeats and false-alarm on a sixth of the calls
+that repeat nothing; the model-written patterns do the same. The deterministic generator lifts the
+most distinctive token from the note, and that token is exactly what a hard negative shares with
+the repeat. The linter catches most generic repeats and few project ones at no false alarms; prompt
+recall over the notes catches nothing at any threshold and spends the most tokens. The README's
+sentence now says what this table says. The next mechanism, if there is one, needs its gate
+written first: a guard that reads the surrounding lines or the file's role, not a longer regex.
 
 ## What this does not show
 
