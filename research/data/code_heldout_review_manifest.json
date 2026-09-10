@@ -1,0 +1,18 @@
+{
+ "corpus": {
+  "name": "code_heldout_v2",
+  "path_outside_repo": "D:\\Coding\\_nevertwice_polygon\\code_heldout\\code_heldout_v2.json",
+  "sha256": "c6b5ea361a563aa0c666d8f0a888c0395a49c48c3a80b2b977e730c8c3a96b64",
+  "questions": 52,
+  "edited_by_hand": 4
+ },
+ "review": {
+  "candidates": 200,
+  "marked": 73,
+  "verdicts": {
+   "yes": 52,
+   "no": 21
+  }
+ },
+ "note": "Questions over the owner's own transcripts, every one accepted by a person. The automatic checks are reported per candidate but do not decide: the model rephrasing a sentence it read correctly is a drop the reviewer repairs. Neither the questions nor the transcripts are in the repository."
+}

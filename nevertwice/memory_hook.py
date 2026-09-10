@@ -606,6 +606,7 @@ Schema:
   "patterns": [
     {{"title": "short title (3-7 words, kebab-case or a phrase)",
       "description": "what worked and why (1-3 sentences)",
+      "facts": ["literal token copied VERBATIM from the session, [] if none"],
       "supersedes": "", "contradicts": "", "resolves": "",
       "entities": ["key-entity", "another-one"],
       "relations": [{{"rel": "fixes", "target": "entity"}}], "confidence": 0.9}}
@@ -613,6 +614,7 @@ Schema:
   "mistakes": [
     {{"title": "short title of the mistake",
       "description": "what went wrong",
+      "facts": ["literal token copied VERBATIM from the session, [] if none"],
       "prevention": "one line: the concrete action/check that avoids a repeat",
       "supersedes": "", "contradicts": "",
       "entities": ["key-entity", "another-one"],
@@ -621,6 +623,7 @@ Schema:
   "decisions": [
     {{"title": "short title of the decision",
       "description": "what was decided and the reasoning",
+      "facts": ["literal token copied VERBATIM from the session, [] if none"],
       "supersedes": "", "contradicts": "", "resolves": "",
       "entities": ["key-entity", "another-one"],
       "relations": [{{"rel": "alternative-to", "target": "entity"}}], "confidence": 0.9}}
@@ -659,6 +662,14 @@ FIELD contradicts - contradiction detection:
 
 FIELD confidence (0.0-1.0) - how durable this knowledge is, versus a one-off detail.
   High (0.8-1.0) for verified facts; low (<0.5) for guesses.
+
+FIELD facts (on every item) - the LITERAL tokens a future question will ask for:
+  Copy VERBATIM from the session, character for character - a command, a file path, a git hash,
+  a flag, an exact number or list, a version, an identifier, an error string. Do NOT paraphrase,
+  normalise, translate or summarise them, and do NOT invent. If the session says
+  `nvcc -arch=sm_120`, write "nvcc -arch=sm_120", never "sm_120 support". Only strings that
+  appear in the session verbatim; [] when the item has no such literal. Any value that is not an
+  exact substring of the session is dropped automatically, so a paraphrase simply vanishes.
 
 FIELDS entities/relations (optional) - the knowledge graph:
   entities - 2-5 key entities of the lesson (tools/concepts/files), lowercase kebab-case,
@@ -2361,7 +2372,9 @@ def call_ollama(prompt: str) -> dict:
         "format": "json",
         "stream": False,
         "think": False,  # qwen3.x "thinking" mode leaks structured output
-        "options": {"temperature": 0.2, "num_ctx": 16384},
+        # temperature overridable so a benchmark can pin extraction deterministically (seeds/repro):
+        # default 0.2 keeps the live hook's behaviour unchanged; a stand sets NEVERTWICE_EXTRACT_TEMP=0.
+        "options": {"temperature": float(os.environ.get("NEVERTWICE_EXTRACT_TEMP", "0.2")), "num_ctx": 16384},
     }).encode("utf-8")
 
     def _extract(data, last):
@@ -3426,6 +3439,138 @@ def _note_resolved(stem: str, ntype: str) -> bool:
     # `status: Resolved` was de-weighted by the batch path but kept full salience on
     # this live path (review 2026-08 R2)
     return str(fm.get("status", "")).lower() == "resolved" or bool(fm.get("resolved_by"))
+
+
+# ── write-path literal-fact preservation (ledger J3 held-out; fact_survival) ──────────
+# The extractor summarises, and summarising drops the one token a future question asks for:
+# `nvcc -arch=sm_120` becomes "sm_120 support", `87c8b17` vanishes into "reproducibility". On the
+# owner's own hand-marked held-out the answer survived into the returned notes for 5 of 52 questions
+# - lost at write, not at retrieval. Two channels put the literal back, both verified against THIS
+# session so a paraphrase or an invention (never an exact substring) cannot enter:
+#   1. the extractor names the literal per item (prompt FIELD facts), verified verbatim;
+#   2. a deterministic harvester salvages literals from the session text near the note's own topic,
+#      for the facts the summary omitted entirely (the note exists, the value was never written).
+# The survivors are appended to the note's description, so recall, the embedding and every reader
+# carry them with no read-path change. Bounded per note so the store-bytes cost gate holds.
+_FACTS_MARK = "  [facts] "
+_FACTS_MAX_N = 10                # at most this many literals per note (LLM-named first, then harvested)
+_FACTS_MAX_CHARS = 360           # and at most this many characters of them together
+_FACTS_MIN_LEN = 2               # a one-char "fact" carries nothing and matches everything
+
+# High-value literal shapes a coding question asks for: commands, hashes, image tags, flags, paths,
+# versions, numbers with units, bracketed lists, hyphen-camel identifiers, host:port, backtick spans.
+_LIT_PATTERNS = [re.compile(p) for p in (
+    r"`[^`\n]{2,60}`",
+    r"\b[0-9a-f]{7,40}\b",
+    r"[A-Za-z0-9_./-]+/[A-Za-z0-9_.-]+:[A-Za-z0-9_.-]+",
+    r"\bpython [\w./-]+\.py[\w\s./=-]{0,40}",
+    r"\b(?:nvcc|docker|git|pip|npm|cargo|make|cmake|gcc|claude|ollama|kubectl|curl|wget)\b[^\n]{0,50}",
+    r"--?[A-Za-z][\w-]*=[^\s]+",
+    r"\bseed=\d+\b",
+    r"\b\d{1,3}(?:\.\d{1,3}){3}:\d+\b",
+    r"\b\w+(?:\.\w+)+:\w+\b",
+    r"[A-Za-z]:\\[\w\\.-]+",
+    r"[~+\-]?\b\d+(?:\.\d+)?\s?(?:MB|GB|KB|TB|ms|GHz|MHz|px|%)",
+    r"\b\d+\.\d+\b",
+    r"\[[^\]\n]{1,40}\]",
+    r"\b[A-Z][A-Za-z0-9]*(?:-[A-Za-z0-9]+)+\b",
+    r"[A-Za-z0-9_./-]+\.[A-Za-z]{1,5}\b",
+    r"\bv\d+(?:\.\d+)*\b",
+    r"\b\d+\.\d+(?:\.\d+)+\b",
+    r"\bsm_\d+\b",
+)]
+_FACT_STOP = frozenset(
+    "the a an of to in on for and or is are was were be been this that with from into your their "
+    "which what when where value used using set new one two run runs code file note session".split())
+
+
+def _norm_ws(t: str) -> str:
+    return re.sub(r"\s+", " ", (t or "")).strip().lower()
+
+
+def _content_words(t: str) -> set:
+    return {w for w in re.findall(r"[a-z0-9]+", (t or "").lower()) if len(w) >= 4 and w not in _FACT_STOP}
+
+
+def _verbatim_facts(raw, source: str) -> list[str]:
+    """The extractor-named literals that appear VERBATIM in `source` (whitespace-normalised, case
+    insensitive). Paraphrase and invention are not substrings and vanish. Deduped, len-bounded and
+    secret-redacted - they land in the .md and the plaintext embedding cache like any description."""
+    if not isinstance(raw, list):
+        return []
+    src = _norm_ws(source)
+    out, seen = [], set()
+    for f in raw:
+        if not isinstance(f, str):
+            continue
+        f = redact_secrets(f.strip())
+        if not (_FACTS_MIN_LEN <= len(f) <= 120):
+            continue
+        key = _norm_ws(f)
+        if key and key not in seen and key in src:
+            seen.add(key)
+            out.append(f)
+    return out
+
+
+def _harvest_literals(source: str, near: str, want: int, exclude: set) -> list[str]:
+    """Deterministic salvage: literal tokens in `source` whose local context shares a content word
+    with `near` (the note's title + description). Tying each literal to the note's own topic keeps a
+    CUDA-build note carrying `nvcc -arch=sm_120` and not an unrelated seed. Bounded by `want`."""
+    nw = _content_words(near)
+    if not nw or want <= 0:
+        return []
+    out, seen = [], set(exclude)
+    for rx in _LIT_PATTERNS:
+        for mo in rx.finditer(source):
+            lit = redact_secrets(mo.group(0).strip("`\"' ").strip())
+            if not (_FACTS_MIN_LEN <= len(lit) <= 80):
+                continue
+            key = _norm_ws(lit)
+            if not key or key in seen:
+                continue
+            ctx = source[max(0, mo.start() - 80): mo.start() + len(lit) + 80]
+            if nw & _content_words(ctx):
+                seen.add(key)
+                out.append(lit)
+                if len(out) >= want:
+                    return out
+    return out
+
+
+def _note_facts(item: dict, source: str) -> list[str]:
+    """The literals to preserve for one note: the extractor's named facts first (semantic pick),
+    then harvested ones to fill up to the per-note cap. Deduped against each other and against the
+    description, bounded by count and characters so the store-bytes gate holds."""
+    desc = item.get("description", "") or ""
+    dl = _norm_ws(desc)
+    named = _verbatim_facts(item.get("facts"), source)
+    excl = {_norm_ws(f) for f in named}
+    harvested = _harvest_literals(source, f"{item.get('title', '')} {desc}",
+                                  want=_FACTS_MAX_N, exclude=excl)
+    out, seen, used = [], set(), 0
+    for f in named + harvested:
+        key = _norm_ws(f)
+        if not key or key in seen or key in dl:
+            continue
+        if used + len(f) > _FACTS_MAX_CHARS:
+            break
+        seen.add(key)
+        out.append(f)
+        used += len(f)
+        if len(out) >= _FACTS_MAX_N:
+            break
+    return out
+
+
+def _append_facts(desc: str, facts: list[str]) -> str:
+    """Append verified literals to the one-line description, replacing any prior facts block so a
+    re-mine never stacks them. Kept on the single description line so `_parse_note_body` reads it
+    back as the description - which is what puts the literals into recall and the embedding."""
+    base = re.sub(r"\s*\[facts\].*$", "", desc or "", flags=re.DOTALL).rstrip()
+    if not facts:
+        return base
+    return f"{base}{_FACTS_MARK}" + " \u00b7 ".join(facts)
 
 
 def write_typed_note(folder: str, item, project: str, date: str,
@@ -5050,6 +5195,13 @@ def process_session(session_id: str, cwd: str, transcript_path: str,
     brain = _cfg.brain_enabled()
     for nt in TYPED_TYPES:
         for item in items_of(nt):
+            # J3 (held-out fact_survival): carry the literal the summary drops. Verified as a
+            # verbatim substring of THIS session, then appended to the description so the note,
+            # the embedding and every reader keep it - a paraphrase is not a substring and vanishes.
+            if isinstance(item, dict):
+                _vf = _note_facts(item, transcript_full)
+                if _vf:
+                    item["description"] = _append_facts(item.get("description", ""), _vf)
             stem = write_typed_note(TYPE_FOLDER[nt], item, project, date, tags, nt,
                                     session_stem_=sess_stem, siblings=all_siblings)
             if not stem:                 # rejected (injection-shaped, M-10) - skip

@@ -120,6 +120,7 @@ def contexts_nevertwice_full(corpus: dict) -> dict:
     """Our extractor, one project per synthetic project, sessions dated as the corpus says."""
     os.environ["NEVERTWICE_CLOUD"] = "none"
     os.environ["NEVERTWICE_MODEL"] = EXTRACTOR
+    os.environ["NEVERTWICE_EXTRACT_TEMP"] = "0"   # deterministic extraction: a benchmark pins the seed
     m.OLLAMA_MODEL = EXTRACTOR         # bound explicitly: the engine read the name at import
     from nevertwice import api                                   # noqa: PLC0415
     out = {"_ingest": {"llm": api.m.OLLAMA_MODEL, "llm_calls_per_session": 1, "sessions": 0, "errors": 0,
@@ -316,6 +317,28 @@ def score_answers(qs: list[dict], answers: dict, verdicts: dict, ctx: dict, read
     return out
 
 
+def fact_survival(qs: list[dict], ctx: dict, arm: str) -> dict:
+    """Model-free write-path metric: the share of literal-fact questions whose answer is present,
+    verbatim (under the reader's own normalisation), in the notes the arm returned for that question.
+    Uses the whole recall result, not the reader's top-k window, so it measures whether the fact
+    reached memory at all - independent of the reader and of the context budget. Deterministic and
+    fast, so the extraction prompt can be iterated dozens of times an hour (ledger J3, held-out)."""
+    fq = [q for q in qs if q.get("type") == "fact"]
+    survived, misses = 0, []
+    for q in fq:
+        items = ctx.get(q["id"], []) or []
+        text = _norm(" ".join((it.get("text") or "") for it in items))
+        ok = _norm(q["answer"]) in text
+        survived += int(ok)
+        if not ok:
+            misses.append(q["answer"][:60])
+    n = len(fq)
+    return {"n": n, "survived": survived,
+            "fact_survival": round(survived / n, 4) if n else None,
+            "ci": fe.wilson(survived, n) if n else None,
+            "misses": misses[:20]}
+
+
 def summarise(arms: list[str], qs: list[dict], corpus: dict, reader: str, judge: str) -> dict:
     answers = fe._load(_cache_path("answers"))
     verdicts = fe._load(_cache_path("verdicts"))
@@ -326,6 +349,10 @@ def summarise(arms: list[str], qs: list[dict], corpus: dict, reader: str, judge:
     for arm in list(arms) + list(BRACKETS):
         ctx = {} if arm in BRACKETS else fe._load(_ctx_path(arm))
         sc = score_answers(qs, answers, verdicts, ctx, reader, arm, judge)
+        if sc and arm not in BRACKETS:
+            fs = fact_survival(qs, ctx, arm)
+            if fs["n"]:
+                sc["fact_survival"] = fs
         if sc:
             (out["brackets"] if arm in BRACKETS else out["arms"])[arm] = sc
         if ctx.get("_ingest"):
@@ -344,7 +371,7 @@ def summarise(arms: list[str], qs: list[dict], corpus: dict, reader: str, judge:
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
-    ap.add_argument("stage", choices=["contexts", "answer", "judge", "summary"])
+    ap.add_argument("stage", choices=["contexts", "answer", "judge", "summary", "fact-survival"])
     ap.add_argument("--corpus", default=str(CORPUS))
     ap.add_argument("--arm", default="")
     ap.add_argument("--arms", default="nevertwice_full,naive")
@@ -368,6 +395,23 @@ def main() -> int:
         ctx = fn(corpus)
         fe._save(_ctx_path(args.arm), ctx)
         print(f"  {args.arm}: contexts for {len([k for k in ctx if not k.startswith('_')])} questions -> {_ctx_path(args.arm).name}")
+        return 0
+    if args.stage == "fact-survival":
+        # model-free, seconds: read each arm's cached contexts and score literal survival
+        rows = {}
+        for arm in arms:
+            ctx = fe._load(_ctx_path(arm))
+            fs = fact_survival(qs, ctx, arm)
+            rows[arm] = fs
+            ci = fs["ci"] or (0, 0)
+            print(f"  {arm:16s} fact_survival {fs['fact_survival']}  ({fs['survived']}/{fs['n']}, ci [{ci[0]:.3f},{ci[1]:.3f}])")
+            if fs["misses"]:
+                print(f"      misses: {fs['misses'][:6]}")
+        if args.save:
+            out = Path(args.out) if args.out else ROOT / "research" / "results" / f"{CORPUS_NAME}_fact_survival.json"
+            out.write_text(json.dumps({"corpus": corpus["name"], "sha256": corpus["sha256"],
+                                       "extractor": EXTRACTOR, "arms": rows}, indent=1, ensure_ascii=False), encoding="utf-8")
+            print(f"  saved -> {out}")
         return 0
     if args.stage == "answer":
         answer_stage(arms, qs, pool, READER)
