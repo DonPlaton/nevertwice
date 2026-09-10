@@ -1,5 +1,13 @@
 # H2 — the held-out repositories, chosen and predicted before a single clone ran
 
+<!-- withdrawn-banner -->
+> **Withdrawn: figures on this page must not be quoted.** They were retracted and remain
+> here because deleting a result one was wrong about destroys the record of having been
+> wrong. The design, the method and the caveats stand; the numbers do not. Each figure's
+> own reason and date are in
+> [`research/evidence_manifest.json`](../evidence_manifest.json), and
+> `python tools/check_freshness.py --list-stale` lists every one.
+
 **Task H2.** `corpora.py`'s seal is closed while this page is written. Nothing below was chosen by
 looking at what a repository contains, because nothing here has been cloned.
 

@@ -243,8 +243,8 @@ def contexts_amem_full(data, pool) -> dict:
 def contexts_nevertwice_full(data, pool) -> dict:
     """Our extractor over every session with the pipeline arms' model, then `api.recall`.
 
-    The context of a hit is what `api.recall` hands a caller: title, description, prevention
-    and - since J1 - the verbatim evidence lines the note was aligned to. The ingest cache is
+    The context of a hit is what `api.recall` hands a caller: title, description and
+    prevention. The ingest cache is
     keyed to the sandbox store it was built in: the store is a fresh temporary directory per
     process, so a cache that outlived its store would mark every session done and rank over
     nothing. Each session's entry is the number of notes it produced, which is what lets the
@@ -286,12 +286,9 @@ def contexts_nevertwice_full(data, pool) -> dict:
     gold_silent = sum(1 for e in data
                       if all(sessions.get(s, 0) == 0 or isinstance(sessions.get(s), str)
                              for s in e["answer_session_ids"]))
-    ev = getattr(api, "_evidence", None)
     out = {"_ingest": {"sessions": len(pool), "errors": errors, "llm": api.m.OLLAMA_MODEL,
                        "llm_calls_per_session": 1, "sessions_with_zero_notes": silent,
-                       "questions_gold_without_notes": gold_silent, "questions": len(data),
-                       "evidence": dict(ev.STATS) if ev is not None else None,
-                       "evidence_enabled": bool(ev.enabled()) if ev is not None else False}}
+                       "questions_gold_without_notes": gold_silent, "questions": len(data)}}
     for e in data:
         hits = api.recall(e["question"], project=project, k=10)
         out[e["question_id"]] = [{"id": h.get("stem"), "text": _hit_text(h)} for h in hits]
@@ -299,9 +296,8 @@ def contexts_nevertwice_full(data, pool) -> dict:
 
 
 def _hit_text(h: dict) -> str:
-    """A recall hit as the agent would read it: the lesson, then the quoted evidence lines."""
+    """A recall hit as the agent would read it: title, description, prevention."""
     parts = [str(h.get(f) or "") for f in ("title", "description", "prevention")]
-    parts += [str(s) for s in (h.get("evidence") or [])]
     return " ".join(p for p in parts if p)
 
 
@@ -498,8 +494,6 @@ def summarise(arms: list[str], data: list, reader: str, judge: str, judge2: str)
             "fraction": round(int(ingest.get("questions_gold_without_notes", 0)) / q, 4),
             "sessions_with_zero_notes": int(ingest.get("sessions_with_zero_notes", 0)),
             "sessions": int(ingest.get("sessions", 0)),
-            "evidence_enabled": bool(ingest.get("evidence_enabled")),
-            "evidence": ingest.get("evidence"),
         }
     return out
 

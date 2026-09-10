@@ -121,14 +121,8 @@ def main(argv: list[str] | None = None) -> int:
                 f"Graphiti spends {g['llm_calls_per_episode']} LLM calls per episode on the as-of stand, measured",
                 g["llm_calls_per_episode"], [f"{g['llm_calls_per_episode']:.2f}", f"{g['llm_calls_per_episode']:.1f}"], "calls",
                 int(g.get("episodes", 0)), None, 'arms["zep"].graphiti.llm_calls_per_episode', **base)
-    ev = a.get("evidence") or {}
-    if ev.get("ms_per_session") is not None:
-        add("asof.evidence.ms_per_session",
-            f"aligning a session's notes to its transcript costs {ev['ms_per_session']} ms per session on the as-of stand",
-            ev["ms_per_session"], [f"{ev['ms_per_session']:.1f}", f"{ev['ms_per_session']:.2f}"], "milliseconds",
-            int(ev.get("sessions", 0)), None, 'arms["nevertwice"].evidence.ms_per_session', **base)
 
-    # ── supersession (pooled artifact; the per-run arms carry the layer's fields) ────────
+    # ── supersession (pooled artifact) ──────────────────────────────────────────────────
     raw = "research/results/supersession_v1.json"
     art = json.loads((ROOT / raw).read_text(encoding="utf-8"))
     if (ROOT / raw).stat().st_mtime < code_time:
@@ -139,15 +133,9 @@ def main(argv: list[str] | None = None) -> int:
         a = art["arms"].get(arm_key) or {}
         if a.get("store_bytes") is not None:
             add(f"supersession.{arm_key}.store_bytes",
-                f"the typed notes of {run_label} occupy {a['store_bytes']:,} bytes on disk, evidence spans included",
+                f"the typed notes of {run_label} occupy {a['store_bytes']:,} bytes on disk",
                 a["store_bytes"], [f"{a['store_bytes']:,}", str(a["store_bytes"])], "bytes", int(a.get("notes_written", 0)),
                 None, f'arms["{arm_key}"].store_bytes', **base)
-        ev = a.get("evidence") or {}
-        if ev.get("ms_per_session") is not None:
-            add(f"supersession.{arm_key}.evidence_ms_per_session",
-                f"aligning a session's notes to its transcript costs {ev['ms_per_session']} ms per session ({run_label})",
-                ev["ms_per_session"], [f"{ev['ms_per_session']:.1f}", f"{ev['ms_per_session']:.2f}"], "milliseconds",
-                int(ev.get("sessions", 0)), None, f'arms["{arm_key}"].evidence.ms_per_session', **base)
 
     # ── frontier: the extractor's silence ceiling ───────────────────────────
     raw = "research/results/frontier.json"
@@ -161,22 +149,10 @@ def main(argv: list[str] | None = None) -> int:
         k = int(sil["questions_gold_without_notes"])
         add("frontier.nevertwice_full.extractor_silence",
             f"for {sil['fraction'] * 100:.1f}% of the frontier questions the extractor wrote no note from any gold evidence "
-            f"session - the ceiling no evidence span can lift",
+            f"session - the extractor's silence ceiling, which no retrieval layer can lift",
             sil["fraction"], [f"{sil['fraction']:.3f}", f"{sil['fraction'] * 100:.1f}"], "fraction of questions", q,
             wilson(k, q), "extractor_silence.fraction", dataset="longmemeval_oracle_pinned", env="local_frontier_stand",
             command=FRONTIER_CMD, raw=raw)
-        evs = sil.get("evidence") or {}
-        if evs.get("notes") is not None:
-            add("frontier.nevertwice_full.notes_written",
-                f"our extractor wrote {evs['notes']:,} notes from the {sil['sessions']} pool sessions",
-                int(evs["notes"]), [f"{evs['notes']:,}", str(evs["notes"])], "notes", int(sil["sessions"]), None,
-                "extractor_silence.evidence.notes", dataset="longmemeval_oracle_pinned", env="local_frontier_stand",
-                command=FRONTIER_CMD, raw=raw)
-            add("frontier.nevertwice_full.spans_attached",
-                f"{evs['spans']:,} of them carry a verbatim transcript line chosen by alignment",
-                int(evs["spans"]), [f"{evs['spans']:,}", str(evs["spans"])], "notes with a span", int(evs["notes"]), None,
-                "extractor_silence.evidence.spans", dataset="longmemeval_oracle_pinned", env="local_frontier_stand",
-                command=FRONTIER_CMD, raw=raw)
         add("frontier.nevertwice_full.sessions_with_zero_notes",
             f"{sil['sessions_with_zero_notes']} of the {sil['sessions']} pool sessions produced no note at all",
             int(sil["sessions_with_zero_notes"]), [str(sil["sessions_with_zero_notes"])], "sessions", int(sil["sessions"]),

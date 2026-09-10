@@ -61,19 +61,18 @@ check("errors counted", ab.score(rows + [{"shape": "value_replaced", "both_corre
 print("\n- the days are fixed and ordered -")
 check("first < between < second < after", ab.DAY_FIRST < ab.DAY_BETWEEN < ab.DAY_SECOND < ab.DAY_AFTER)
 
-print("\n- J1/J2: evidence in the returned text, and why an old day failed -")
-hits = [{"title": "beta dashboard flag gates new ui", "description": "The flag gates the new UI.",
-         "evidence": ["Settled it: the beta_dashboard feature flag gates the new UI."]}]
+print("\n- J2: the item text is title + description, and why an old day failed -")
+hits = [{"title": "beta dashboard flag gates new ui", "description": "The flag gates the new UI."}]
 items = ab._items(hits)
-check("the evidence lines are part of the item text", len(items) == 1 and "gates the new UI" in items[0], str(items))
-check("a hit without the field still renders", ab._items([{"title": "t", "description": "d"}]) == ["t d"])
+check("the item text is title and description joined", items == ["beta dashboard flag gates new ui The flag gates the new UI."], str(items))
+check("a hit with only a title still renders", ab._items([{"title": "t"}]) == ["t"])
 ret_case = {"id": "ret-beta-flag", "shape": "retracted_no_replacement", "sessions": [[], []],
             "query": "what does the beta_dashboard flag control",
             "current": ["delet", "remov", "unconditional"], "superseded": ["gates the new ui"]}
-r_para = ab._row(ret_case, ["beta dashboard flag gates new ui The flag gates new UI for beta users."], ["the flag was deleted"])
-check("the paraphrased title alone misses the marker (the failure J1 exists for)", not r_para["old_day_correct"])
-r_span = ab._row(ret_case, ab._items(hits), ["the flag was deleted"])
-check("with the verbatim line the same case is right on the old day", r_span["old_day_correct"] and r_span["both_correct"])
+r_hit = ab._row(ret_case, ["beta dashboard flag gates new ui The flag gates the new UI for beta users."], ["the flag was deleted"])
+check("the marker is found in the description on the old day", r_hit["old_day_correct"] and r_hit["both_correct"])
+r_para = ab._row(ret_case, ["a paraphrase that never says the marker phrase"], ["the flag was deleted"])
+check("a paraphrase that drops the marker misses the old day", not r_para["old_day_correct"])
 ok_row = {"old_day_correct": True}
 check("no failure, no kind", ab.old_fail_kind(ok_row, {"s0": {"written": 1}}) is None)
 check("nothing written for session one -> never_written",

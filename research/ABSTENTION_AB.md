@@ -1,5 +1,13 @@
 # Three switches that shipped with tests and no measurement
 
+<!-- withdrawn-banner -->
+> **Withdrawn: figures on this page must not be quoted.** They were retracted and remain
+> here because deleting a result one was wrong about destroys the record of having been
+> wrong. The design, the method and the caveats stand; the numbers do not. Each figure's
+> own reason and date are in
+> [`research/evidence_manifest.json`](evidence_manifest.json), and
+> `python tools/check_freshness.py --list-stale` lists every one.
+
 > **Re-measured 2026-09-10** at commit 2e9e79e, the first run of this sweep whose extractor is the one
 > the register names (the supersession stand's extractor; the artifact now records it). The three runs before it built
 > the store with whatever model the shell exported and read the shipped threshold's loss as eight and

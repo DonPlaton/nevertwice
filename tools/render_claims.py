@@ -712,7 +712,7 @@ def render_guard_bench(c: Claims) -> str:
 
 
 CODE_SESSION_ROWS = [
-    ("**Nevertwice, our extractor's notes with evidence spans**", "nevertwice_full"),
+    ("**Nevertwice, our extractor's notes**", "nevertwice_full"),
     ("append-only sessions, term overlap (floor)", "naive"),
     ("Mem0 full pipeline, its memories", "mem0_infer"),
     ("no memory (bracket)", "none"),

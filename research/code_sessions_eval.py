@@ -8,7 +8,7 @@ model). One project at a time, the way an agent works: every arm ingests a proje
 into their own store and answers that project's questions from it.
 
 Arms (contexts): `nevertwice_full` - our extractor on every session with `capture_session(date=...)`,
-then `api.recall` (title, description, prevention, evidence spans); `naive` - the append-only
+then `api.recall` (title, description, prevention); `naive` - the append-only
 floor: whole sessions ranked by term overlap; `mem0_infer` - Mem0's own pipeline (its venv);
 `none` and `oracle` are the brackets. The reader and the judge are the frontier's.
 
@@ -139,8 +139,6 @@ def contexts_nevertwice_full(corpus: dict) -> dict:
             hits = api.recall(query, project=p["id"], k=10)
             out[q["id"]] = [{"id": h.get("stem"), "text": fe._hit_text(h)} for h in hits]
         print(f"  [{i + 1}/{len(corpus['projects'])}] {p['slug']}  ({time.time() - t0:.0f}s)", flush=True)
-    ev = getattr(api, "_evidence", None)
-    out["_ingest"]["evidence"] = dict(ev.STATS) if ev is not None else None
     return out
 
 

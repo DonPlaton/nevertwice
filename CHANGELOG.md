@@ -16,22 +16,19 @@ empty.
 
 ### Added
 
-- **Evidence spans: a note carries the fact, not only the lesson** (`nevertwice/evidence.py`,
-  ledger J1). After a session's notes are written, each is aligned against the transcript by
-  stemmed-token overlap and stamped with the verbatim lines it came from - frontmatter
-  `evidence`, a `## Evidence` block - with no second model call, so a span cannot be
-  hallucinated. `api.recall`, `api.as_of` and `api.format_note` hand the spans on; the
-  supersession, as-of and frontier stands score the text a caller actually receives. The
-  spans are not embedded and not indexed: the ranker is untouched by construction, and the
-  cost caps written before the run measure that anyway. The layer runs as a post-step of
-  `api.capture_session`, so the engine module is unchanged and the register's blast radius is
-  the stands that re-measure it. Gates, baseline and the decision on a miss are in
-  `.loop/GOAL-CLOSE.md`. Measured the same day: on the chat frontier the layer misses its gate by a
-  wide margin - the aligned line restates the lesson, and the question wants a different line - while
-  on the temporal stands it lifts as-of both-days accuracy by a sixth and the supersession current rate
-  by several points, inside every cost cap. Whether the written rule (delete on the frontier miss) or a
-  re-gating on the temporal stands applies is put to the owner on the ledger; the layer stays as committed
-  until then.
+- **Archive-aware reconcile closes an interval past the archive window**
+  (`nevertwice/memory_hook.py`, ledger J2b). A fact older than the 90-day window is in
+  `Archive/` when its replacement arrives; the reconcile globbed only the live folder, so
+  `valid_to` was never stamped and `as_of` kept showing the stale fact as current - on the
+  owner store that is a quarter of the knowledge (`s0_retired_rate = 0.0` on 107 as-of
+  case-runs). The same-slug and explicit-supersedes passes now also walk `Archive/`
+  (`_reconcilable_typed_paths`), and every retirement records how it was decided
+  (`superseded_via`: `slug` | `explicit` | `twin`). The near-duplicate twin pass stays
+  live-only, because an archived note has left the embedding cache the classifier ranks on.
+  The as-of stand gains a `--recent` control that dates the replaced note inside the window,
+  so the archived-closure rate is read against the write path's own rate. Gate, baseline and
+  the decision on a miss are in `.loop/GOAL-CLOSE.md`; the whole register is withdrawn and
+  re-measured on the changed engine in one campaign.
 
 - **The as-of stand says why an old day failed** (`research/asof_bench.py`, ledger J2). Every
   engine row records what the store holds for the case's first session - notes written, live
@@ -262,6 +259,16 @@ empty.
 
 - **`tools/repair_vault.py`** - puts accumulated store damage one reviewed command away.
   Renames, never deletes.
+
+### Removed
+
+- **The evidence-span layer (`nevertwice/evidence.py`, ledger J1) is deleted.** It missed its
+  frontier gate by a wide margin (accuracy 0.067 against 0.37), and the rule written before the
+  run was to delete on that miss. The incidental gain it showed on the temporal stands is a new
+  hypothesis, not a defence of the old one: it is re-proposed as "a span only on the as-of path"
+  with a gate to be written before the layer-free baseline is measured. `api.recall`,
+  `api.as_of`, `api.format_note` and `api.capture_session` no longer read or attach spans, and
+  the temporal, frontier and code-session stands score the note text alone again.
 
 ### Changed
 

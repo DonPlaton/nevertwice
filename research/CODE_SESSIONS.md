@@ -1,5 +1,13 @@
 # Coding sessions with gold answers: the fact, the change, the lesson, the situation
 
+<!-- withdrawn-banner -->
+> **Withdrawn: figures on this page must not be quoted.** They were retracted and remain
+> here because deleting a result one was wrong about destroys the record of having been
+> wrong. The design, the method and the caveats stand; the numbers do not. Each figure's
+> own reason and date are in
+> [`research/evidence_manifest.json`](evidence_manifest.json), and
+> `python tools/check_freshness.py --list-stale` lists every one.
+
 Every memory benchmark this repository has run asks chat questions. A coding agent asks four
 other things: the literal value stated weeks ago, the value after it changed, the lesson learned
 the hard way, and - at the moment of a tool call - which note should fire. This page is the stand
@@ -34,24 +42,21 @@ accuracy not below the floor and not below Mem0's pipeline minus the judges' dis
 lesson accuracy above Mem0's pipeline by the same margin.
 
 <!-- claims:code-sessions -->
-| system | fact | current | stale | lesson | situation (top three) | tokens |
-|---|---|---|---|---|---|---|
-| **Nevertwice, our extractor's notes with evidence spans** | 0.083 | 0.033 | 0.017 | 0.600 | 0.000 | 113 |
-| append-only sessions, term overlap (floor) | 0.967 | 0.850 | 0.083 | 0.956 | 0.922 | 2,937 |
-| Mem0 full pipeline, its memories | 0.706 | 0.700 | 0.217 | 0.722 | 0.033 | 187 |
-| no memory (bracket) | 0.067 | 0.017 | 0.050 | 0.478 | 0.000 | 117 |
-| the gold session whole (bracket) | 0.978 | 0.967 | 0.000 | 1.000 | 1.000 | 727 |
+> **Withdrawn 2026-09.** the J1 evidence layer removed and the archive-aware reconcile added in one package (ledger J2b); every temporal, frontier and code-session stand re-measures without spans on the GPU campaign, and the model is bound by name in each artifact
+>
+> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/code_sessions_eval.py judge --arms nevertwice_full,naive,mem0_infer --save` is what re-measures this one.
 <!-- /claims:code-sessions -->
 
 ## What the first run says
 
 **The synthetic corpus does not separate, and is not published as a benchmark.** Two of its three
-gates written before the run fail: the append-only floor reads 0.942 on fact, change and lesson
-questions together against the gold-session ceiling's 0.982 - not a fifth below it - and the
-reader with no memory reads 0.170, above the tenth allowed, because the lessons are generic
-programming advice a seven-billion-parameter reader already knows. Five short sessions per
-project are few enough that term overlap finds the right one nearly every time; a corpus that a
-text file passes is a corpus about text files. The table stands as a diagnostic, not as a result.
+gates written before the run fail: the append-only floor lands near the gold-session ceiling
+rather than a fifth below it, and the reader with no memory clears its cap, because the lessons
+are generic programming advice a seven-billion-parameter reader already knows. Five short
+sessions per project are few enough that term overlap finds the right one nearly every time; a
+corpus that a text file passes is a corpus about text files. **The exact rates are withdrawn
+pending the J2b campaign's re-measure on the layer-free engine;** the table returns with that
+run. The corpus stands as a diagnostic, not as a result.
 
 **What it diagnoses anyway.** On coding sessions with literal facts, our extractor's notes -
 evidence spans included - answer a twelfth of the fact questions where Mem0's sentence-keeping
@@ -70,14 +75,9 @@ project-specific facts phrased as lessons rather than the anti-patterns every mo
 ## The real held-out
 
 <!-- claims:code-heldout -->
-| system | fact | current | stale | lesson | situation (top three) | tokens |
-|---|---|---|---|---|---|---|
-| **Nevertwice, our extractor's notes with evidence spans** | 0.143 | - | - | - | - | 322 |
-| append-only sessions, term overlap (floor) | 0.714 | - | - | - | - | 7,038 |
-| no memory (bracket) | 0.000 | - | - | - | - | 124 |
-| the gold session whole (bracket) | 0.714 | - | - | - | - | 7,038 |
-
-<sub>No row for Mem0 full pipeline, its memories: no registered number for the arm.</sub>
+> **Withdrawn 2026-09.** the J1 evidence layer removed and the archive-aware reconcile added in one package (ledger J2b); every temporal, frontier and code-session stand re-measures without spans on the GPU campaign, and the model is bound by name in each artifact
+>
+> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/code_sessions_eval.py judge --arms nevertwice_full,naive --corpus D:/Coding/_nevertwice_polygon/code_heldout/code_heldout_v1.json --save` is what re-measures this one.
 <!-- /claims:code-heldout -->
 
 Fourteen questions survived the three checks out of ninety-three transcript slices - far short of

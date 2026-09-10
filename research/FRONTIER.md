@@ -18,16 +18,9 @@ gap between two systems smaller than that disagreement is not a gap.
 ## The stand
 
 <!-- claims:frontier -->
-| system | k=1 acc | k=1 tokens | k=3 acc | k=3 tokens | k=5 acc | k=5 tokens |
-|---|---|---|---|---|---|---|
-| **Nevertwice, shipped ranker, sessions whole** | 0.353 | 2,777 | 0.447 | 8,707 | 0.447 | 14,274 |
-| Nevertwice, shipped ranker, query passages | 0.293 | 379 | 0.427 | 897 | 0.433 | 1,417 |
-| Nevertwice, our extractor's notes | 0.020 | 193 | 0.047 | 333 | 0.067 | 472 |
-| Mem0 store search, sessions whole | 0.353 | 2,733 | 0.433 | 8,552 | 0.400 | 13,839 |
-| Mem0 full pipeline, its memories | 0.207 | 144 | 0.273 | 184 | 0.333 | 227 |
-| A-MEM full pipeline, its notes | 0.027 | 124 | 0.027 | 124 | 0.027 | 124 |
-
-Brackets - no memory, the question alone: accuracy 0.020 at 128 tokens; the oracle ceiling, gold sessions whole: accuracy 0.573 at 5,522 tokens. The two judges disagree on 0.050 of the shipped arm's answers; a gap between two rows smaller than that is not a gap.
+> **Withdrawn 2026-09.** the J1 evidence layer removed and the archive-aware reconcile added in one package (ledger J2b); every temporal, frontier and code-session stand re-measures without spans on the GPU campaign, and the model is bound by name in each artifact
+>
+> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/frontier_eval.py judge --save` is what re-measures this one.
 <!-- /claims:frontier -->
 
 What the table says, in words, since the numbers are above:
@@ -41,18 +34,16 @@ What the table says, in words, since the numbers are above:
   couple of hundred tokens, which is less than our passages cost, and it pays for that in
   accuracy. Neither of us is strictly better: it is cheaper, we are more accurate, and the
   page prints both columns rather than choosing the one that flatters us.
-- **Our own extractor's notes are the weakest memory on this stand, evidence spans included.**
-  Every session produced notes - 2,015 of them, 1,883 carrying the verbatim line they were
-  aligned to - and every question found notes from its gold sessions, so this is not the
-  extractor's silence. It is what a note is: the prompt is built for coding sessions and writes
-  patterns, mistakes and decisions - *"selected lentil bolognese as the primary protein
-  source"* - while LongMemEval asks for the literal fact the user stated, and the one line a
-  note is aligned to is the line that restates the lesson, not the line that holds the detail
-  the question wants. Mem0's extractor keeps the sentence; ours keeps the lesson and one
-  sentence of evidence. The gate written for the evidence layer on this stand (ledger J1,
-  accuracy at five hits at least Mem0's pipeline plus the judges' disagreement) is missed by a
-  wide margin, and the page says so; on a corpus of code sessions the trade looks different,
-  which is what `research/CODE_SESSIONS.md` is for.
+- **Our own extractor's notes are the weakest memory on this stand.** Every question found
+  notes from its gold sessions, so this is not the extractor's silence. It is what a note is:
+  the prompt is built for coding sessions and writes patterns, mistakes and decisions -
+  *"selected lentil bolognese as the primary protein source"* - while LongMemEval asks for the
+  literal fact the user stated. Mem0's extractor keeps the sentence; ours keeps the lesson.
+  **Withdrawn pending the J2b campaign:** the evidence-span layer this arm was re-measured with
+  (ledger J1) missed its gate by a wide margin and has been removed by the owner's rule; the
+  frontier accuracy is re-measured on the layer-free engine and the numbers return with that
+  run. On a corpus of code sessions the trade looks different, which is what
+  `research/CODE_SESSIONS.md` is for.
 - **The ceiling is the reader's.** The oracle bracket - the gold evidence sessions, whole -
   is where a small local reader tops out, and no arm can pass it. Read every row against that
   bracket rather than against one, and remember the judges' disagreement is printed with the

@@ -3237,18 +3237,57 @@ def _live_typed_paths(folder_path: Path, project: str, ntype: str,
     return sorted(hits, key=lambda p: p.stem, reverse=True)
 
 
-def supersede_note(p: Path, new_stem: str) -> bool:
+def _archived_typed_paths(folder_path: Path, project: str, ntype: str,
+                          slug: str) -> list[Path]:
+    """Archived notes matching project+ntype+slug, newest first (J2b). A note older
+    than the 90-day window has been moved to `Archive/` and dropped from the embed
+    cache and the index; the reconcile that closes a belief interval must still see
+    it, because a fact replaced more than ninety days after it was stated is exactly
+    the long-history case a memory exists for."""
+    arch = folder_path / "Archive"
+    if not arch.exists():
+        return []
+    hits = []
+    for p in arch.glob("*.md"):
+        parsed = parse_typed_stem(p.stem)
+        if parsed and parsed["project"] == project \
+                and parsed["ntype"] == ntype and parsed["slug"] == slug:
+            hits.append(p)
+    return sorted(hits, key=lambda p: p.stem, reverse=True)
+
+
+def _reconcilable_typed_paths(folder_path: Path, project: str, ntype: str,
+                              slug: str) -> list[Path]:
+    """Live notes plus archived ones, newest first (J2b). Used by the same-slug and
+    explicit-supersedes reconcile passes so retirement closes an interval whether the
+    old note is still live or has aged into `Archive/`. The idempotency/absorb pass
+    and the near-duplicate twin classifier stay live-only: an absorb rewrites a recent
+    same-session note in place (never an archived one), and the twin classifier ranks
+    on the embedding cache, which an archived note has left by construction."""
+    return sorted(_live_typed_paths(folder_path, project, ntype, slug)
+                  + _archived_typed_paths(folder_path, project, ntype, slug),
+                  key=lambda p: p.stem, reverse=True)
+
+
+def supersede_note(p: Path, new_stem: str, via: str = "slug") -> bool:
     """Retire a superseded note: stamp status, move into <folder>/Superseded/
     (Obsidian still resolves [[stem]]), drop it from the embedding cache so
     recall surfaces only current truth - contradictory facts no longer coexist
-    (audit H1)."""
+    (audit H1).
+
+    `via` records HOW the retirement was decided - `slug` (an older same-slug
+    re-statement), `explicit` (the LLM filled supersedes/contradicts) or `twin`
+    (the near-duplicate classifier). Stamped as `superseded_via` so the as-of
+    stand can split interval closures by mechanism (ledger J2b). An archived note
+    (`p` under `Archive/`) moves to `Archive/Superseded/` by the same
+    `p.parent / "Superseded"` rule below - the reconcile now reaches it (J2b)."""
     if p.stem == new_stem:
         return False
     try:
         text = p.read_text(encoding="utf-8", errors="replace")
     except OSError:
         return False
-    fields = {"status": "superseded", "superseded_by": new_stem}
+    fields = {"status": "superseded", "superseded_by": new_stem, "superseded_via": via}
     new_date = (parse_typed_stem(new_stem) or {}).get("date", "")
     if new_date:
         fields["valid_to"] = new_date    # M-5: belief held until the replacement
@@ -3495,8 +3534,9 @@ def write_typed_note(folder: str, item, project: str, date: str,
     prior_recur = absorb_recur          # the absorbed note's history carries forward
     prior_sources: set = set(absorb_sources)
     to_retire: list = []
+    retire_via: dict = {}               # J2b: how each retirement was decided (slug|explicit|twin)
     superseded_corroborated = False
-    for old in _live_typed_paths(p, project, ntype, slug):
+    for old in _reconcilable_typed_paths(p, project, ntype, slug):
         if absorb_into is not None and old == absorb_into:
             continue                    # the absorb target is refreshed in place, never retired
         if old.stem != base_stem:
@@ -3516,6 +3556,7 @@ def write_typed_note(folder: str, item, project: str, date: str,
                 # LLM reproduced the exact title or a variant (review 2026-08 G3)
                 superseded_corroborated = True
             to_retire.append(old)
+            retire_via[old] = "slug"
     _retire_slugs_seen: set = set()
     for other_title in (supersedes_title, contradicts_title):
         if not other_title:
@@ -3528,7 +3569,7 @@ def write_typed_note(folder: str, item, project: str, date: str,
         # stem twice in the frontmatter/body.
         if o_slug and o_slug != slug and o_slug not in _retire_slugs_seen:
             _retire_slugs_seen.add(o_slug)
-            for old in _live_typed_paths(p, project, ntype, o_slug):
+            for old in _reconcilable_typed_paths(p, project, ntype, o_slug):
                 # An explicit supersede/contradict (incl. the M-2 write-time semantic path) is ALSO a
                 # re-encounter of that lesson - carry its recurrence + sources forward, else
                 # recurrence only grows on the rare exact-slug re-statement (measured: 328/328 were 1).
@@ -3538,6 +3579,7 @@ def write_typed_note(folder: str, item, project: str, date: str,
                 if r_old >= 2:
                     superseded_corroborated = True         # W7: a lone note retiring corroborated truth
                 to_retire.append(old)
+                retire_via[old] = "explicit"
 
     # Near-duplicate reconcile (review 2026-08): catch the re-statements exact-slug matching
     # cannot see - the LLM re-mining the same work titles the lesson slightly differently
@@ -3555,6 +3597,7 @@ def write_typed_note(folder: str, item, project: str, date: str,
             if r_old >= 2:
                 superseded_corroborated = True
             to_retire.append(old)
+            retire_via[old] = "twin"
             log(f"Near-duplicate reconcile: {old.stem} retires in favor of {base_stem}")
 
     # W7 corroboration-gated quarantine (opt-in; see QUARANTINE_MODE). Divert a single-source note
@@ -3726,7 +3769,8 @@ def write_typed_note(folder: str, item, project: str, date: str,
     # A failure here leaves the old note live BESIDE the new one (recoverable by the
     # weekly consolidator), never a retired lesson with no live successor.
     failed_retire = [old.stem for old in to_retire
-                     if old.stem != base_stem and not supersede_note(old, stem)]
+                     if old.stem != base_stem
+                     and not supersede_note(old, stem, via=retire_via.get(old, "slug"))]
     if failed_retire:
         log(f"WARNING: supersede failed after write for {', '.join(failed_retire[:3])}"
             f"{'…' if len(failed_retire) > 3 else ''} - old note(s) still live beside {stem}")

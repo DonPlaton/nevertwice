@@ -84,15 +84,15 @@ What survived re-measurement at HEAD, and what it cost:
 
 | claim | result | evidence |
 |---|---|---|
-| external retrieval, one pool and one embedder for everyone | R@5 **0.800** on a hash-pinned LongMemEval corpus, whole sessions embedded on our side as on the competitors' | [EXTERNAL_RETRIEVAL.md](research/EXTERNAL_RETRIEVAL.md) |
-| handing back a fact that has since been **retracted** | **0.075** of the time, against **0.883** for Mem0, **0.317** for Zep/Graphiti - the one competitor built to retract - and **0.950** for an append-only file with term matching; scored on the text a caller receives, evidence spans included | [SUPERSESSION.md](research/SUPERSESSION.md) |
+| external retrieval, one pool and one embedder for everyone | withdrawn pending the J2b re-measure (2026-09-10); returns with that run | [EXTERNAL_RETRIEVAL.md](research/EXTERNAL_RETRIEVAL.md) |
+| handing back a fact that has since been **retracted** | withdrawn pending the J2b re-measure; the retraction rates against Mem0, Zep/Graphiti and an append-only file return with that run | [SUPERSESSION.md](research/SUPERSESSION.md) |
 | acting vs *always-injecting* the same lesson | same error prevention for **31×** fewer memory tokens | [ACTIVE_MEMORY.md](research/ACTIVE_MEMORY.md) |
-| memory-poisoning acceptance attacks | **81%** blocked overall - **100%** of prompt injection, **25%** of plausible-false facts | [POISONING.md](research/POISONING.md) |
-| what being there costs | PreToolUse **84 ms** end to end - a tenth of a second, and it moves by a third between sessions - and zero context tokens until a guard fires | [BENCHMARKS.md](docs/BENCHMARKS.md) |
+| memory-poisoning acceptance attacks | withdrawn pending the J2b re-measure; the block rates return with that run | [POISONING.md](research/POISONING.md) |
+| what being there costs | withdrawn pending the J2b re-measure; the PreToolUse latency returns with that run | [BENCHMARKS.md](docs/BENCHMARKS.md) |
 
-The first two rows are the comparative ones. A review in 2026-09 changed the engine, so every
-number measured before it was withdrawn until measured again; the retrieval stand had also
-broken its own premise - our semantic arm embedded the first two thousand characters of each
+Most rows are withdrawn as of 2026-09-10: the J1 evidence layer was removed and an archive-aware
+reconcile added to the engine (ledger J2b), so the freshness contract withdraws every number whose
+closure names the engine until the GPU campaign measures it again. Earlier, a 2026-09 review changed the engine and the retrieval stand had broken its own premise - our semantic arm embedded the first two thousand characters of each
 session while the competitors embedded the whole one, an error against us. Re-run with whole
 sessions on every side, our semantic arm alone rose four points at R@5 and the fused ranker
 gave back eight thousandths: its dense weight was tuned on the capped vectors, and re-tuning it

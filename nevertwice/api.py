@@ -39,21 +39,15 @@ import causal as _causal
 import integrity as _integrity
 import lenses as _lenses
 import emit as _emit
-import evidence as _evidence
 
 
 def recall(query: str, project: str | None = None, k: int = 5,
            *, rerank: bool = False, expand_relations: bool = False,
            max_expand: int = 5) -> list[dict]:
     """Rank memory notes for `query`. Returns a list of dicts with keys:
-    `score, ntype, project, title, stem, description, prevention, evidence`. Empty list
+    `score, ntype, project, title, stem, description, prevention`. Empty list
     when nothing is embedded or matches. Semantic (embedding cosine) with a GPU-free
     lexical fallback when Ollama is busy; `rerank=True` adds an opt-in cloud rerank.
-
-    `evidence` is the list of verbatim transcript lines the note was aligned to when it
-    was captured (ledger J1) - the fact beside the lesson; `[]` for a note written before
-    the layer existed or by a path with no transcript (`remember`). Read from the note's
-    header, never ranked on.
 
     `expand_relations=True` is relation-aware retrieval (Phase 2b): after the direct
     hits, it appends up to `max_expand` graph-connected lessons reached by the hits'
@@ -64,8 +58,6 @@ def recall(query: str, project: str | None = None, k: int = 5,
     results, _mode = _search.search_core(query, project, k, rerank=rerank)
     if expand_relations and results:
         results = results + m.relation_expand(results, project, max_add=max_expand)
-    for r in results:
-        r["evidence"] = _evidence.for_hit(r)
     return results
 
 
@@ -83,10 +75,6 @@ def format_note(result: dict) -> str:
         lines.append(desc)
     if prev:
         lines.append(f"Prevention: {prev}")
-    ev = result.get("evidence")
-    if isinstance(ev, list):
-        # the verbatim lines the lesson was aligned to (J1): the fact, quoted, not restated
-        lines += [f'Evidence: "{str(s).strip()}"' for s in ev[:3] if str(s).strip()]
     return "\n".join(ln for ln in lines if ln)
 
 
@@ -168,10 +156,8 @@ def entity_timeline(entity: str, project: str | None = None) -> dict:
 
 def _note_description(path: str, limit: int = 1200) -> str:
     """The prose of a note for lexical ranking: frontmatter and headings dropped, the
-    first `limit` characters of what follows - the lesson and, since J1, the quoted
-    evidence lines under it. A retired note has no vector, so the as-of ranking is
-    lexical and this is what it reads; a verbatim line carries the literal value the
-    lesson paraphrased, which is what an as-of question usually asks for."""
+    first `limit` characters of what follows - the lesson. A retired note has no vector,
+    so the as-of ranking is lexical and this is what it reads."""
     try:
         text = Path(path).read_text(encoding="utf-8", errors="replace")
     except OSError:
@@ -208,7 +194,6 @@ def as_of(query: str, date: str, project: str | None = None, k: int = 5) -> list
         h = by_stem[stem]
         out.append({"stem": stem, "ntype": h["ntype"], "project": h["project"],
                     "title": h["title"], "description": _note_description(h["path"]),
-                    "evidence": _evidence.read(h["path"]),
                     "valid_from": h["valid_from"], "valid_to": h["valid_to"],
                     "score": round(scores[stem], 4)})
     return out
@@ -596,16 +581,13 @@ def capture_session(text: str, *, project: str | None = None,
     """Extract memory from a finished agent session: the same extraction →
     Patterns/Mistakes/Decisions → Context → embeddings pipeline the live hook and
     `ingest.py` run, tagged with `agent`. Returns a summary dict:
-    `{stored, project, agent, patterns, mistakes, decisions, session_id, evidence_spans}`.
+    `{stored, project, agent, patterns, mistakes, decisions, session_id}`.
 
     A stable `session_id` makes re-ingestion idempotent. `date` (ISO `YYYY-MM-DD`, or a
     full ISO timestamp) says when the session happened - an importer of old transcripts
     places its facts in time, and `as_of` can then answer for that time; default today.
-    After the notes are written, each is aligned against the transcript and stamped with
-    the verbatim lines it came from (`evidence`, ledger J1) - no second LLM call;
-    `evidence_spans` counts what was attached. Needs an LLM backend (cloud key or local
-    Ollama); raises RuntimeError if none is reachable or the vault lock is busy,
-    ValueError on empty text or a malformed date."""
+    Needs an LLM backend (cloud key or local Ollama); raises RuntimeError if none is
+    reachable or the vault lock is busy, ValueError on empty text or a malformed date."""
     if not text or not text.strip():
         raise ValueError("empty transcript text")
     if date is not None and not re.fullmatch(r"\d{4}-\d{2}-\d{2}(T\S+)?", date):
@@ -624,16 +606,7 @@ def capture_session(text: str, *, project: str | None = None,
         ok = m.process_session(sid, cwd, "", trigger, db, run_log=run_log,
                                agent=agent, transcript_text=text,
                                project_override=project, timestamp=date)
-        spans = 0
         if ok:
-            # J1: the notes are on disk and the session note links them - align each against
-            # the transcript and quote the lines it came from. Best-effort: the layer can
-            # never cost a capture, so a failure here is logged and the capture stands.
-            try:
-                ev = _evidence.attach_for_session(sid, text, project=project)
-                spans = int(ev.get("spans", 0))
-            except Exception as e:                         # noqa: BLE001 - never on the write path
-                m.log(f"evidence alignment skipped ({type(e).__name__}: {e})")
             m.rebuild_index()
             m.archive_old_sessions()
             m.archive_old_typed()
@@ -643,7 +616,7 @@ def capture_session(text: str, *, project: str | None = None,
         return {"stored": bool(ok), "project": r.get("project", project),
                 "agent": agent, "patterns": r.get("patterns", 0),
                 "mistakes": r.get("mistakes", 0), "decisions": r.get("decisions", 0),
-                "session_id": sid, "evidence_spans": spans}
+                "session_id": sid}
     finally:
         m.release_lock()
 

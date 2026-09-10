@@ -30,7 +30,7 @@ except Exception:                      # noqa: BLE001
     pass
 
 ENVIRONMENT = "local_code_session_stand"
-ARM_LABEL = {"nevertwice_full": "Nevertwice's extractor with evidence spans", "naive": "the append-only floor (whole sessions, term overlap)",
+ARM_LABEL = {"nevertwice_full": "Nevertwice's extractor", "naive": "the append-only floor (whole sessions, term overlap)",
              "mem0_infer": "Mem0 2.0.19's own pipeline", "none": "the reader with no memory", "oracle": "the reader with the gold session whole"}
 TYPES = ("fact", "current", "lesson", "situation", "core")
 

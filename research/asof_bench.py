@@ -30,10 +30,16 @@ Since J2 every engine row also records what the store holds for the case's first
 of four kinds - `never_written` (the extractor wrote nothing for session one), `unranked` (a
 note exists but nothing came back for the old day), `paraphrase` (the old note came back but
 no marker survived its wording), `leak` (the new fact came back for the old day) - so a miss
-says which half of the system missed. The engine's returned text includes the evidence spans
-(J1), exactly as `api.as_of` hands them to a caller.
+says which half of the system missed.
+
+`--recent` shifts all four dates inside the 90-day archive window (ledger J2b): the control
+that isolates "does the write path close an interval at all" from "does it close one after the
+old note has aged into `Archive/`". At the shipped dating session one is 193 days back and
+archived before session two arrives; the archive-aware reconcile must still close its interval,
+and `s0_retired_rate` is read against the `--recent` rate.
 
     python research/asof_bench.py --arms nevertwice,naive --out run1.json
+    python research/asof_bench.py --recent --arms nevertwice --out recent.json  # J2b control
     python research/asof_bench.py --limit 5            # smoke
 """
 from __future__ import annotations
@@ -57,20 +63,24 @@ sys.path.insert(0, str(HERE))
 import supersession_bench as sb  # noqa: E402 - the cases, the markers, the naive floor
 
 DATASET = HERE / "data" / "supersession_v1.json"
+# Shipped dating: session one 193 days before 2026-09-10, archived before session two arrives.
 DAY_FIRST, DAY_BETWEEN, DAY_SECOND, DAY_AFTER = "2026-03-01", "2026-04-01", "2026-05-01", "2026-06-01"
+# --recent (J2b control): the same span shifted inside the 90-day window so session one is never
+# archived, isolating write-path interval closure from archive-aware closure.
+RECENT_DAYS = ("2026-07-15", "2026-08-01", "2026-08-20", "2026-09-05")
 FAIL_KINDS = ("never_written", "unranked", "paraphrase", "leak")
 
 
+def _apply_recent() -> None:
+    """Move the four stand dates inside the archive window for the J2b control run."""
+    global DAY_FIRST, DAY_BETWEEN, DAY_SECOND, DAY_AFTER
+    DAY_FIRST, DAY_BETWEEN, DAY_SECOND, DAY_AFTER = RECENT_DAYS
+
+
 def _items(hits: list[dict]) -> list[str]:
-    """One string per returned note: title, description (which since J1 carries the quoted
-    evidence lines in the body) and the `evidence` list itself, so a marker the note's own
-    wording paraphrased can still be found in the verbatim line."""
-    out = []
-    for h in hits:
-        parts = [str(h.get(f) or "") for f in ("title", "description")]
-        parts += [str(s) for s in (h.get("evidence") or [])]
-        out.append(" ".join(p for p in parts if p))
-    return out
+    """One string per returned note: title and description."""
+    return [" ".join(p for p in (str(h.get("title") or ""), str(h.get("description") or "")) if p)
+            for h in hits]
 
 
 def _row(case: dict, old_items: list[str], new_items: list[str]) -> dict:
@@ -94,7 +104,7 @@ def _session_state(project: str, case: dict) -> dict:
     root = Path(sg.store())
     sid8 = {f"-session-{m._sid8(f'{project}-s{j}')}": j for j in (0, 1)}
     per = {j: {"written": 0, "live": 0, "retired": 0, "valid_to": [], "marker_in_text": False,
-               "titles": [], "supersedes": []}
+               "titles": [], "supersedes": [], "superseded_via": []}
            for j in (0, 1)}
     for folder in ("Patterns", "Mistakes", "Decisions"):
         d = root / folder
@@ -111,6 +121,8 @@ def _session_state(project: str, case: dict) -> dict:
             st["written"] += 1
             if md.parent.name == "Superseded" or str(fm.get("status") or "") == "superseded":
                 st["retired"] += 1
+                if fm.get("superseded_via"):
+                    st["superseded_via"].append(str(fm["superseded_via"]))   # J2b: slug|explicit|twin
             else:
                 st["live"] += 1
             if fm.get("valid_to"):
@@ -171,14 +183,13 @@ def run_nevertwice(cases: list[dict], k: int, runs: int = 1) -> dict:
             state = {"error": f"{type(e).__name__}: {e}"}
         row["store"] = state
         row["old_fail_kind"] = old_fail_kind(row, state if "s0" in state else None)
-        row["evidence_spans_returned"] = sum(len(h.get("evidence") or []) for h in old_hits + new_hits)
         rows.append({**row, "run": run})
         print(f"  [run {run + 1}/{runs} {i + 1}/{len(cases)}] {case['id']}  old {row['old_day_correct']}  "
               f"new {row['new_day_correct']}"
               + (f"  ({row['old_fail_kind']})" if row["old_fail_kind"] else ""), flush=True)
     out = {"rows": rows, **score(rows), "runs": runs, "seconds": round(time.time() - t0, 1),
            "config": f"ollama {sb.LLM} + {sb.EMBED_MODEL}, k={k}, days {DAY_FIRST}/{DAY_SECOND}",
-           "store_bytes": sb.store_bytes(), **sb.evidence_cost()}
+           "store_bytes": sb.store_bytes()}
     if runs > 1:
         out["per_run"] = [score([r for r in rows if r.get("run") == run])["both_correct_rate"] for run in range(runs)]
     return out
@@ -221,6 +232,11 @@ def score(rows: list[dict]) -> dict:
         written = [r for r in sup if ((r.get("store") or {}).get("s0") or {}).get("written")]
         out["s0_retired_rate"] = round(sum(1 for r in written
                                            if r["store"]["s0"].get("retired")) / len(written), 4) if written else None
+        # J2b: which mechanism closed the interval, for the notes that were retired at all
+        via = collections.Counter(v for r in written
+                                  for v in (r["store"]["s0"].get("superseded_via") or []))
+        out["s0_retired_via"] = dict(via)
+        out["s0_written_pairs"] = len(written)
     return out
 
 
@@ -271,8 +287,12 @@ def main() -> int:
     ap.add_argument("--k", type=int, default=5)
     ap.add_argument("--limit", type=int, default=0)
     ap.add_argument("--runs", type=int, default=2, help="engine runs to pool (extraction is not deterministic)")
+    ap.add_argument("--recent", action="store_true",
+                    help="J2b control: date session one inside the 90-day archive window (never archived)")
     ap.add_argument("--out", default="")
     args = ap.parse_args()
+    if args.recent:
+        _apply_recent()
     raw = Path(args.dataset).read_bytes()
     data = json.loads(raw.decode("utf-8"))
     cases = [c for c in data["cases"] if c["shape"] != "control"]
@@ -284,6 +304,7 @@ def main() -> int:
                        "path": str(Path(args.dataset).resolve().relative_to(ROOT)) if Path(args.dataset).resolve().is_relative_to(ROOT) else args.dataset,
                        "supersession_cases": len(cases)},
            "days": {"first": DAY_FIRST, "between": DAY_BETWEEN, "second": DAY_SECOND, "after": DAY_AFTER},
+           "recent": bool(args.recent),
            "k": args.k, "llm": sb.LLM, "embedder": sb.EMBED_MODEL, "arms": {}}
     for name in [a.strip() for a in args.arms.split(",") if a.strip()]:
         fn = ARMS.get(name)
