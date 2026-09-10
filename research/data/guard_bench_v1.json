@@ -1,0 +1,2728 @@
+{
+ "name": "guard_bench_v1",
+ "schema_version": 1,
+ "purpose": "Labelled tool calls for the active-memory stand (ledger J6): past mistakes as notes, tool calls that repeat them (positives) and tool calls that do not (negatives, some sharing the identifiers) - so a guard's catch rate and false-alarm rate can be read at a matched false-positive rate against the cheap rivals: a linter, prompt recall, a cold-start pack.",
+ "provenance": "Written by hand in research/gen_guard_bench.py; generic pitfalls follow the engine's anti-pattern rules and the live-validation tasks, project pitfalls are this repository's own recorded mistakes, restated as a synthetic project's.",
+ "limitations": [
+  "Single-author, synthetic, and small: it supports a precision/recall reading at a matched false-positive rate, not a population estimate.",
+  "Positives are the author's idea of a repeat; a real agent's repeat may be phrased in a way no row here anticipates - the stand measures the rows, not the world.",
+  "The linter column is scored in the linter's favour, as research/cheap_baselines_rules.json does."
+ ],
+ "project": "svc",
+ "mistakes": [
+  {
+   "stem": "m-sql-fstring",
+   "family": "generic",
+   "project": "svc",
+   "title": "SQL built by f-string",
+   "desc": "the user id was interpolated into the query with an f-string and execute() ran it; a crafted id read another user's rows",
+   "prevention": "pass parameters to execute(), never build SQL text from variables",
+   "linter_or_test": {
+    "caught": true,
+    "by": "bandit S608 / ruff S608 (hardcoded SQL expression)"
+   }
+  },
+  {
+   "stem": "m-sql-format",
+   "family": "generic",
+   "project": "svc",
+   "title": "SQL built by percent formatting",
+   "desc": "a query string was built with % formatting before execute()",
+   "prevention": "use the driver's parameter binding; the query text must not contain the value",
+   "linter_or_test": {
+    "caught": true,
+    "by": "bandit S608"
+   }
+  },
+  {
+   "stem": "m-float-money",
+   "family": "generic",
+   "project": "svc",
+   "title": "money kept as float",
+   "desc": "prices were parsed with float() and a sum came out a cent short",
+   "prevention": "use Decimal for money; never float()",
+   "linter_or_test": {
+    "caught": false,
+    "by": "no standard linter models the domain of a float"
+   }
+  },
+  {
+   "stem": "m-json-status",
+   "family": "generic",
+   "project": "svc",
+   "title": "response.json() without checking the status",
+   "desc": "a 500 page was parsed as JSON and the traceback pointed at the parser, not the server",
+   "prevention": "check response.ok or raise_for_status() before .json()",
+   "linter_or_test": {
+    "caught": false,
+    "by": "no linter models the order of status check and parse"
+   }
+  },
+  {
+   "stem": "m-bare-except",
+   "family": "generic",
+   "project": "svc",
+   "title": "bare except swallowed a KeyboardInterrupt",
+   "desc": "a bare except: hid the real error and ate Ctrl-C",
+   "prevention": "catch the specific exception; never a bare except:",
+   "linter_or_test": {
+    "caught": true,
+    "by": "ruff E722"
+   }
+  },
+  {
+   "stem": "m-mutable-default",
+   "family": "generic",
+   "project": "svc",
+   "title": "mutable default argument shared across calls",
+   "desc": "a list default accumulated values between calls",
+   "prevention": "default to None and create the list inside the function",
+   "linter_or_test": {
+    "caught": true,
+    "by": "ruff B006"
+   }
+  },
+  {
+   "stem": "m-mutate-iter",
+   "family": "generic",
+   "project": "svc",
+   "title": "list mutated while iterating over it",
+   "desc": "items were removed from the list inside a for loop over the same list and every other one was skipped",
+   "prevention": "iterate over a copy or build a new list",
+   "linter_or_test": {
+    "caught": true,
+    "by": "ruff B909 (mutation during iteration)"
+   }
+  },
+  {
+   "stem": "m-eval",
+   "family": "generic",
+   "project": "svc",
+   "title": "eval() on user input",
+   "desc": "a filter expression from the request went through eval()",
+   "prevention": "never eval() dynamic input; parse it or use ast.literal_eval for literals",
+   "linter_or_test": {
+    "caught": true,
+    "by": "bandit S307"
+   }
+  },
+  {
+   "stem": "m-shell-true",
+   "family": "generic",
+   "project": "svc",
+   "title": "subprocess with shell=True and a string command",
+   "desc": "a filename with a semicolon ran a second command",
+   "prevention": "pass a list and never shell=True",
+   "linter_or_test": {
+    "caught": true,
+    "by": "bandit S602"
+   }
+  },
+  {
+   "stem": "m-eq-none",
+   "family": "generic",
+   "project": "svc",
+   "title": "== None instead of is None",
+   "desc": "an object with a custom __eq__ compared equal to None",
+   "prevention": "compare with is None / is not None",
+   "linter_or_test": {
+    "caught": true,
+    "by": "ruff E711"
+   }
+  },
+  {
+   "stem": "m-type-eq",
+   "family": "generic",
+   "project": "svc",
+   "title": "type(x) == comparison instead of isinstance",
+   "desc": "a subclass failed the type check",
+   "prevention": "use isinstance()",
+   "linter_or_test": {
+    "caught": true,
+    "by": "ruff E721"
+   }
+  },
+  {
+   "stem": "m-os-system",
+   "family": "generic",
+   "project": "svc",
+   "title": "os.system ran a shell string",
+   "desc": "an argument with spaces broke the command and a quote injection was possible",
+   "prevention": "subprocess.run with a list",
+   "linter_or_test": {
+    "caught": true,
+    "by": "bandit S605"
+   }
+  },
+  {
+   "stem": "m-pickle",
+   "family": "generic",
+   "project": "svc",
+   "title": "pickle.load on downloaded data",
+   "desc": "a cache file from a network share was unpickled",
+   "prevention": "json for data; pickle only for data you wrote yourself in the same process family",
+   "linter_or_test": {
+    "caught": true,
+    "by": "bandit S301"
+   }
+  },
+  {
+   "stem": "m-yaml-load",
+   "family": "generic",
+   "project": "svc",
+   "title": "yaml.load without a safe loader",
+   "desc": "a config file constructed arbitrary objects",
+   "prevention": "yaml.safe_load",
+   "linter_or_test": {
+    "caught": true,
+    "by": "bandit S506"
+   }
+  },
+  {
+   "stem": "m-verify-false",
+   "family": "generic",
+   "project": "svc",
+   "title": "TLS verification disabled",
+   "desc": "verify=False was left in a client after a local test",
+   "prevention": "never verify=False outside a marked test fixture",
+   "linter_or_test": {
+    "caught": true,
+    "by": "bandit S501"
+   }
+  },
+  {
+   "stem": "m-md5-password",
+   "family": "generic",
+   "project": "svc",
+   "title": "md5 for a password hash",
+   "desc": "passwords were hashed with md5",
+   "prevention": "a KDF (bcrypt/argon2/scrypt); md5 and sha1 only for non-security checksums",
+   "linter_or_test": {
+    "caught": true,
+    "by": "bandit S324"
+   }
+  },
+  {
+   "stem": "m-open-no-with",
+   "family": "generic",
+   "project": "svc",
+   "title": "open() without a context manager",
+   "desc": "a file handle leaked when an exception was raised before close()",
+   "prevention": "with open(...) as f",
+   "linter_or_test": {
+    "caught": true,
+    "by": "ruff SIM115"
+   }
+  },
+  {
+   "stem": "m-div-len",
+   "family": "generic",
+   "project": "svc",
+   "title": "division by len() with no empty guard",
+   "desc": "average() raised ZeroDivisionError on an empty list",
+   "prevention": "handle the empty case before dividing by len()",
+   "linter_or_test": {
+    "caught": false,
+    "by": "no linter models an unguarded divide by len()"
+   }
+  },
+  {
+   "stem": "m-requests-no-timeout",
+   "family": "generic",
+   "project": "svc",
+   "title": "requests call without a timeout",
+   "desc": "a hung upstream blocked the worker forever",
+   "prevention": "always pass timeout= to requests",
+   "linter_or_test": {
+    "caught": true,
+    "by": "bandit S113"
+   }
+  },
+  {
+   "stem": "m-exec",
+   "family": "generic",
+   "project": "svc",
+   "title": "exec() on a string from the outside",
+   "desc": "a plugin string was exec()'d",
+   "prevention": "never exec() dynamic input",
+   "linter_or_test": {
+    "caught": true,
+    "by": "bandit S102"
+   }
+  },
+  {
+   "stem": "m-live-store",
+   "family": "project",
+   "project": "svc",
+   "title": "test code wrote to the owner's live memory store",
+   "desc": "a test resolved the vault to D:/Obsidian/Claude_Memory and wrote fixtures into it",
+   "prevention": "tests and research scripts run inside sandbox_guard.isolate(); the live store path never appears in test code",
+   "linter_or_test": {
+    "caught": true,
+    "by": "tools/check_sandbox.py - a project-local lint that fails the build when a script reaches the store without a sandbox"
+   }
+  },
+  {
+   "stem": "m-render-empty",
+   "family": "project",
+   "project": "svc",
+   "title": "render_chart(rows) raised on an empty list",
+   "desc": "render_chart was called on an empty result set and crashed the report",
+   "prevention": "guard with `if rows:` before render_chart(rows)",
+   "linter_or_test": {
+    "caught": false,
+    "by": "a project API contract no linter knows"
+   }
+  },
+  {
+   "stem": "m-timeout-ms",
+   "family": "project",
+   "project": "svc",
+   "title": "set_timeout got seconds, not milliseconds",
+   "desc": "set_timeout(5) meant five milliseconds and every call timed out",
+   "prevention": "set_timeout takes milliseconds: pass seconds * 1000",
+   "linter_or_test": {
+    "caught": false,
+    "by": "a unit convention no linter knows"
+   }
+  },
+  {
+   "stem": "m-auth-order",
+   "family": "project",
+   "project": "svc",
+   "title": "connect() before authenticate() hangs",
+   "desc": "the client hung because connect() was called before authenticate()",
+   "prevention": "call client.authenticate() before client.connect()",
+   "linter_or_test": {
+    "caught": false,
+    "by": "a call-order contract no linter knows"
+   }
+  },
+  {
+   "stem": "m-lock-finally",
+   "family": "project",
+   "project": "svc",
+   "title": "acquire_lock without release in finally",
+   "desc": "an exception between acquire_lock() and release_lock() left the vault locked",
+   "prevention": "release_lock() in a finally block, or use the context manager",
+   "linter_or_test": {
+    "caught": false,
+    "by": "resource pairing across a try is not a linter rule"
+   }
+  },
+  {
+   "stem": "m-force-push",
+   "family": "project",
+   "project": "svc",
+   "title": "git push --force rewrote a shared branch",
+   "desc": "a force push dropped a collaborator's commits",
+   "prevention": "never git push --force; --force-with-lease only on your own branch, and never on master",
+   "linter_or_test": {
+    "caught": false,
+    "by": "no linter reads shell commands for git flags"
+   }
+  },
+  {
+   "stem": "m-global-pip",
+   "family": "project",
+   "project": "svc",
+   "title": "pip install into the global interpreter",
+   "desc": "a competitor package was installed into the system Python and broke the hook's imports",
+   "prevention": "install into the polygon venv: <venv>/Scripts/python.exe -m pip install",
+   "linter_or_test": {
+    "caught": false,
+    "by": "no linter reads shell commands"
+   }
+  },
+  {
+   "stem": "m-ollama-owner",
+   "family": "project",
+   "project": "svc",
+   "title": "ollama pull on the owner's daemon",
+   "desc": "a model was pulled without asking; the owner's Ollama is not the project's",
+   "prevention": "never ollama pull / rm / stop; use the models that are already listed",
+   "linter_or_test": {
+    "caught": false,
+    "by": "no linter reads shell commands"
+   }
+  },
+  {
+   "stem": "m-secrets-read",
+   "family": "project",
+   "project": "svc",
+   "title": "the secrets file was printed",
+   "desc": "cat .secrets.env put an API key into the transcript",
+   "prevention": "never read, print or commit .secrets.env or twin_calibration.json",
+   "linter_or_test": {
+    "caught": true,
+    "by": "a secret scanner on the transcript would flag the key; gitleaks on the commit"
+   }
+  },
+  {
+   "stem": "m-hook-print",
+   "family": "project",
+   "project": "svc",
+   "title": "a debug print on the hook's hot path",
+   "desc": "a print() in memory_hook.py landed in the hook's stdout, which the agent parses as JSON",
+   "prevention": "the hook prints only the payload JSON; log() goes to stderr and the log file",
+   "linter_or_test": {
+    "caught": false,
+    "by": "prints are legal Python; the constraint is this file's protocol"
+   }
+  },
+  {
+   "stem": "m-hook-sleep",
+   "family": "project",
+   "project": "svc",
+   "title": "time.sleep on the hook's hot path",
+   "desc": "a sleep in the PreToolUse path added a visible pause before every edit",
+   "prevention": "never block the hook; retry in the detached catch-up process",
+   "linter_or_test": {
+    "caught": false,
+    "by": "a sleep is legal Python"
+   }
+  },
+  {
+   "stem": "m-embed-cap",
+   "family": "project",
+   "project": "svc",
+   "title": "session text capped at 2000 chars before embedding",
+   "desc": "our arm embedded the first 2000 characters of each session while the competitors embedded the whole one",
+   "prevention": "embed whole sessions; the cap is the embedder's context, handled by halving on HTTP 400",
+   "linter_or_test": {
+    "caught": false,
+    "by": "a slice is legal Python"
+   }
+  },
+  {
+   "stem": "m-cuda-cpu",
+   "family": "project",
+   "project": "svc",
+   "title": "training left on the CPU",
+   "desc": "device was hard-coded to cpu and a run took twelve hours instead of twenty minutes",
+   "prevention": "torch.device('cuda') on this machine; fall back only behind torch.cuda.is_available()",
+   "linter_or_test": {
+    "caught": false,
+    "by": "no linter knows the machine has a GPU"
+   }
+  },
+  {
+   "stem": "m-naive-now",
+   "family": "project",
+   "project": "svc",
+   "title": "naive datetime.now() mixed with aware timestamps",
+   "desc": "arithmetic between a naive datetime.now() and an aware parsed timestamp raised TypeError",
+   "prevention": "datetime.now().astimezone() everywhere a timestamp may be compared",
+   "linter_or_test": {
+    "caught": false,
+    "by": "naivety of a datetime is not a linter rule"
+   }
+  },
+  {
+   "stem": "m-json-ascii",
+   "family": "project",
+   "project": "svc",
+   "title": "json.dumps escaped Cyrillic into \\u sequences",
+   "desc": "a Russian note was written as \\u041f... and Obsidian showed escapes",
+   "prevention": "json.dumps(..., ensure_ascii=False) for anything a person reads",
+   "linter_or_test": {
+    "caught": false,
+    "by": "a default argument is not a linter rule"
+   }
+  },
+  {
+   "stem": "m-git-add-all",
+   "family": "project",
+   "project": "svc",
+   "title": "git add -A swept a cache file into the commit",
+   "desc": "a generated cache landed in the repository with git add -A",
+   "prevention": "add files by name; never git add -A or git add . in this repository",
+   "linter_or_test": {
+    "caught": false,
+    "by": "no linter reads shell commands"
+   }
+  },
+  {
+   "stem": "m-rm-results",
+   "family": "project",
+   "project": "svc",
+   "title": "rm -rf on the results directory",
+   "desc": "committed artifacts were deleted to 'start clean' and the register lost its raw files",
+   "prevention": "never delete research/results; a re-measure overwrites one artifact at a time",
+   "linter_or_test": {
+    "caught": false,
+    "by": "no linter reads shell commands"
+   }
+  },
+  {
+   "stem": "m-hardcoded-key",
+   "family": "project",
+   "project": "svc",
+   "title": "an API key literal in source",
+   "desc": "a key was pasted into a script and committed",
+   "prevention": "read keys from the environment; never a literal",
+   "linter_or_test": {
+    "caught": true,
+    "by": "gitleaks / a secret scanner"
+   }
+  },
+  {
+   "stem": "m-print-secret",
+   "family": "project",
+   "project": "svc",
+   "title": "a token was printed to the console",
+   "desc": "print(token) put the token into the session transcript, which the memory then read",
+   "prevention": "never print a key or token; print its presence or length",
+   "linter_or_test": {
+    "caught": false,
+    "by": "what a variable holds is not a linter's business"
+   }
+  },
+  {
+   "stem": "m-open-encoding",
+   "family": "project",
+   "project": "svc",
+   "title": "open() without encoding on Windows",
+   "desc": "a UTF-8 note was read with the cp1251 default and every Cyrillic letter broke",
+   "prevention": "open(path, encoding='utf-8') for every text file",
+   "linter_or_test": {
+    "caught": false,
+    "by": "ruff has no default-encoding rule enabled here"
+   }
+  },
+  {
+   "stem": "m-taskkill-slash",
+   "family": "project",
+   "project": "svc",
+   "title": "taskkill /PID under Git Bash",
+   "desc": "Git Bash rewrote /PID into a path and taskkill printed usage instead of killing",
+   "prevention": "use PowerShell Stop-Process from Git Bash, or taskkill //PID",
+   "linter_or_test": {
+    "caught": false,
+    "by": "no linter reads shell commands"
+   }
+  },
+  {
+   "stem": "m-cd-compound",
+   "family": "project",
+   "project": "svc",
+   "title": "cd inside a compound command",
+   "desc": "a cd in a compound command triggered a permission prompt and the next command ran elsewhere",
+   "prevention": "use absolute paths or git -C; never cd && in the tool's shell",
+   "linter_or_test": {
+    "caught": false,
+    "by": "no linter reads shell commands"
+   }
+  },
+  {
+   "stem": "m-foreground-sleep",
+   "family": "project",
+   "project": "svc",
+   "title": "a long sleep in the foreground shell",
+   "desc": "sleep 300 blocked the tool call and hit the timeout",
+   "prevention": "never sleep in the foreground; poll with a background waiter or a Monitor",
+   "linter_or_test": {
+    "caught": false,
+    "by": "no linter reads shell commands"
+   }
+  },
+  {
+   "stem": "m-vault-env-test",
+   "family": "project",
+   "project": "svc",
+   "title": "a test pinned NEVERTWICE_HOME alone",
+   "desc": "the test pinned NEVERTWICE_HOME but an exported NEVERTWICE_VAULT still won and the live store was written",
+   "prevention": "pin both variables, or call sandbox_guard.isolate(), which does",
+   "linter_or_test": {
+    "caught": true,
+    "by": "tools/check_sandbox.py flags a file naming NEVERTWICE_HOME without NEVERTWICE_VAULT"
+   }
+  },
+  {
+   "stem": "m-commit-master",
+   "family": "project",
+   "project": "svc",
+   "title": "a commit landed on master",
+   "desc": "work was committed straight to master instead of the working branch",
+   "prevention": "never commit to master; work on invariants/v3 or a feature branch",
+   "linter_or_test": {
+    "caught": false,
+    "by": "no linter reads shell commands"
+   }
+  },
+  {
+   "stem": "m-sync-scripts",
+   "family": "project",
+   "project": "svc",
+   "title": "the installed hook copy was edited by hand",
+   "desc": "a file under ~/.claude/scripts was edited directly and the repository drifted from what runs",
+   "prevention": "edit the repository; sync with tools/sync_install.py --apply and only with permission",
+   "linter_or_test": {
+    "caught": false,
+    "by": "no linter knows which copy is canonical"
+   }
+  }
+ ],
+ "calls": [
+  {
+   "id": "m-sql-fstring-p1",
+   "label": "m-sql-fstring",
+   "family": "generic",
+   "tool": "Edit",
+   "path": "app/db.py",
+   "text": "cur.execute(f\"SELECT * FROM users WHERE id = {user_id}\")",
+   "hard": false
+  },
+  {
+   "id": "m-sql-fstring-p2",
+   "label": "m-sql-fstring",
+   "family": "generic",
+   "tool": "Write",
+   "path": "app/repo.py",
+   "text": "def get_user(cur, uid):\n    return cur.execute(f\"select name from users where id={uid}\").fetchone()",
+   "hard": false
+  },
+  {
+   "id": "m-sql-fstring-n1",
+   "label": null,
+   "family": "generic",
+   "near": "m-sql-fstring",
+   "tool": "Edit",
+   "path": "app/db.py",
+   "text": "cur.execute(\"SELECT * FROM users WHERE id = %s\", (user_id,))",
+   "hard": true
+  },
+  {
+   "id": "m-sql-fstring-n2",
+   "label": null,
+   "family": "generic",
+   "near": "m-sql-fstring",
+   "tool": "Edit",
+   "path": "app/db.py",
+   "text": "cur.execute(\"SELECT count(*) FROM users\")",
+   "hard": false
+  },
+  {
+   "id": "m-sql-fstring-n3",
+   "label": null,
+   "family": "generic",
+   "near": "m-sql-fstring",
+   "tool": "Edit",
+   "path": "app/log.py",
+   "text": "log.info(f\"loaded user {user_id}\")",
+   "hard": false
+  },
+  {
+   "id": "m-sql-format-p1",
+   "label": "m-sql-format",
+   "family": "generic",
+   "tool": "Edit",
+   "path": "app/db.py",
+   "text": "cur.execute(\"DELETE FROM sessions WHERE user = '%s'\" % name)",
+   "hard": false
+  },
+  {
+   "id": "m-sql-format-p2",
+   "label": "m-sql-format",
+   "family": "generic",
+   "tool": "Edit",
+   "path": "app/db.py",
+   "text": "q = \"UPDATE users SET name = '%s' WHERE id = %d\" % (name, uid)\ncur.execute(q)",
+   "hard": false
+  },
+  {
+   "id": "m-sql-format-n1",
+   "label": null,
+   "family": "generic",
+   "near": "m-sql-format",
+   "tool": "Edit",
+   "path": "app/db.py",
+   "text": "cur.execute(\"UPDATE users SET name = %s WHERE id = %s\", (name, uid))",
+   "hard": true
+  },
+  {
+   "id": "m-sql-format-n2",
+   "label": null,
+   "family": "generic",
+   "near": "m-sql-format",
+   "tool": "Edit",
+   "path": "app/fmt.py",
+   "text": "label = \"%s (%d)\" % (name, uid)",
+   "hard": false
+  },
+  {
+   "id": "m-sql-format-n3",
+   "label": null,
+   "family": "generic",
+   "near": "m-sql-format",
+   "tool": "Edit",
+   "path": "app/db.py",
+   "text": "cur.executemany(\"INSERT INTO t VALUES (%s)\", rows)",
+   "hard": false
+  },
+  {
+   "id": "m-float-money-p1",
+   "label": "m-float-money",
+   "family": "generic",
+   "tool": "Edit",
+   "path": "billing/cart.py",
+   "text": "total += float(item.price)",
+   "hard": false
+  },
+  {
+   "id": "m-float-money-p2",
+   "label": "m-float-money",
+   "family": "generic",
+   "tool": "Edit",
+   "path": "billing/invoice.py",
+   "text": "amount = float(row[\"price\"]) * qty",
+   "hard": false
+  },
+  {
+   "id": "m-float-money-n1",
+   "label": null,
+   "family": "generic",
+   "near": "m-float-money",
+   "tool": "Edit",
+   "path": "billing/cart.py",
+   "text": "total += Decimal(item.price)",
+   "hard": true
+  },
+  {
+   "id": "m-float-money-n2",
+   "label": null,
+   "family": "generic",
+   "near": "m-float-money",
+   "tool": "Edit",
+   "path": "physics/sim.py",
+   "text": "velocity = float(row[2])",
+   "hard": false
+  },
+  {
+   "id": "m-float-money-n3",
+   "label": null,
+   "family": "generic",
+   "near": "m-float-money",
+   "tool": "Edit",
+   "path": "billing/cart.py",
+   "text": "count = int(item.qty)",
+   "hard": false
+  },
+  {
+   "id": "m-json-status-p1",
+   "label": "m-json-status",
+   "family": "generic",
+   "tool": "Edit",
+   "path": "client/api.py",
+   "text": "data = requests.get(url, timeout=10).json()",
+   "hard": false
+  },
+  {
+   "id": "m-json-status-p2",
+   "label": "m-json-status",
+   "family": "generic",
+   "tool": "Edit",
+   "path": "client/api.py",
+   "text": "r = session.post(url, json=body)\npayload = r.json()",
+   "hard": false
+  },
+  {
+   "id": "m-json-status-n1",
+   "label": null,
+   "family": "generic",
+   "near": "m-json-status",
+   "tool": "Edit",
+   "path": "client/api.py",
+   "text": "r = requests.get(url, timeout=10)\nr.raise_for_status()\ndata = r.json()",
+   "hard": true
+  },
+  {
+   "id": "m-json-status-n2",
+   "label": null,
+   "family": "generic",
+   "near": "m-json-status",
+   "tool": "Edit",
+   "path": "client/api.py",
+   "text": "data = json.loads(text)",
+   "hard": false
+  },
+  {
+   "id": "m-json-status-n3",
+   "label": null,
+   "family": "generic",
+   "near": "m-json-status",
+   "tool": "Edit",
+   "path": "client/api.py",
+   "text": "if r.ok:\n    data = r.json()",
+   "hard": true
+  },
+  {
+   "id": "m-bare-except-p1",
+   "label": "m-bare-except",
+   "family": "generic",
+   "tool": "Edit",
+   "path": "app/parse.py",
+   "text": "try:\n    n = int(s)\nexcept:\n    n = 0",
+   "hard": false
+  },
+  {
+   "id": "m-bare-except-p2",
+   "label": "m-bare-except",
+   "family": "generic",
+   "tool": "Write",
+   "path": "app/util.py",
+   "text": "def safe(fn):\n    try:\n        return fn()\n    except:\n        return None",
+   "hard": false
+  },
+  {
+   "id": "m-bare-except-n1",
+   "label": null,
+   "family": "generic",
+   "near": "m-bare-except",
+   "tool": "Edit",
+   "path": "app/parse.py",
+   "text": "try:\n    n = int(s)\nexcept ValueError:\n    n = 0",
+   "hard": true
+  },
+  {
+   "id": "m-bare-except-n2",
+   "label": null,
+   "family": "generic",
+   "near": "m-bare-except",
+   "tool": "Edit",
+   "path": "app/parse.py",
+   "text": "except (TypeError, ValueError) as e:\n    log.warning(e)",
+   "hard": false
+  },
+  {
+   "id": "m-bare-except-n3",
+   "label": null,
+   "family": "generic",
+   "near": "m-bare-except",
+   "tool": "Edit",
+   "path": "docs/notes.md",
+   "text": "The parser must except nothing silently.",
+   "hard": false
+  },
+  {
+   "id": "m-mutable-default-p1",
+   "label": "m-mutable-default",
+   "family": "generic",
+   "tool": "Edit",
+   "path": "app/collect.py",
+   "text": "def add(x, acc=[]):\n    acc.append(x)\n    return acc",
+   "hard": false
+  },
+  {
+   "id": "m-mutable-default-p2",
+   "label": "m-mutable-default",
+   "family": "generic",
+   "tool": "Write",
+   "path": "app/opts.py",
+   "text": "def build(name, opts={}):\n    opts[name] = True\n    return opts",
+   "hard": false
+  },
+  {
+   "id": "m-mutable-default-n1",
+   "label": null,
+   "family": "generic",
+   "near": "m-mutable-default",
+   "tool": "Edit",
+   "path": "app/collect.py",
+   "text": "def add(x, acc=None):\n    acc = [] if acc is None else acc\n    acc.append(x)\n    return acc",
+   "hard": true
+  },
+  {
+   "id": "m-mutable-default-n2",
+   "label": null,
+   "family": "generic",
+   "near": "m-mutable-default",
+   "tool": "Edit",
+   "path": "app/collect.py",
+   "text": "def add(x, limit=10):\n    return [x] * limit",
+   "hard": false
+  },
+  {
+   "id": "m-mutable-default-n3",
+   "label": null,
+   "family": "generic",
+   "near": "m-mutable-default",
+   "tool": "Edit",
+   "path": "app/collect.py",
+   "text": "DEFAULTS = {}\n",
+   "hard": false
+  },
+  {
+   "id": "m-mutate-iter-p1",
+   "label": "m-mutate-iter",
+   "family": "generic",
+   "tool": "Edit",
+   "path": "app/clean.py",
+   "text": "for it in items:\n    if it.stale:\n        items.remove(it)",
+   "hard": false
+  },
+  {
+   "id": "m-mutate-iter-p2",
+   "label": "m-mutate-iter",
+   "family": "generic",
+   "tool": "Edit",
+   "path": "app/clean.py",
+   "text": "for k in cache:\n    if old(k):\n        cache.pop(k)",
+   "hard": false
+  },
+  {
+   "id": "m-mutate-iter-n1",
+   "label": null,
+   "family": "generic",
+   "near": "m-mutate-iter",
+   "tool": "Edit",
+   "path": "app/clean.py",
+   "text": "for it in list(items):\n    if it.stale:\n        items.remove(it)",
+   "hard": true
+  },
+  {
+   "id": "m-mutate-iter-n2",
+   "label": null,
+   "family": "generic",
+   "near": "m-mutate-iter",
+   "tool": "Edit",
+   "path": "app/clean.py",
+   "text": "items = [it for it in items if not it.stale]",
+   "hard": false
+  },
+  {
+   "id": "m-mutate-iter-n3",
+   "label": null,
+   "family": "generic",
+   "near": "m-mutate-iter",
+   "tool": "Edit",
+   "path": "app/clean.py",
+   "text": "stack.pop()\nqueue.remove(head)",
+   "hard": false
+  },
+  {
+   "id": "m-eval-p1",
+   "label": "m-eval",
+   "family": "generic",
+   "tool": "Edit",
+   "path": "app/filter.py",
+   "text": "result = eval(expr)",
+   "hard": false
+  },
+  {
+   "id": "m-eval-p2",
+   "label": "m-eval",
+   "family": "generic",
+   "tool": "Edit",
+   "path": "app/cfg.py",
+   "text": "value = eval(os.environ[\"FILTER\"])",
+   "hard": false
+  },
+  {
+   "id": "m-eval-n1",
+   "label": null,
+   "family": "generic",
+   "near": "m-eval",
+   "tool": "Edit",
+   "path": "app/filter.py",
+   "text": "result = ast.literal_eval(expr)",
+   "hard": true
+  },
+  {
+   "id": "m-eval-n2",
+   "label": null,
+   "family": "generic",
+   "near": "m-eval",
+   "tool": "Edit",
+   "path": "app/filter.py",
+   "text": "def evaluate(expr):\n    return parser.parse(expr)",
+   "hard": false
+  },
+  {
+   "id": "m-eval-n3",
+   "label": null,
+   "family": "generic",
+   "near": "m-eval",
+   "tool": "Edit",
+   "path": "docs/eval.md",
+   "text": "Evaluation of the model runs nightly.",
+   "hard": false
+  },
+  {
+   "id": "m-shell-true-p1",
+   "label": "m-shell-true",
+   "family": "generic",
+   "tool": "Edit",
+   "path": "app/run.py",
+   "text": "subprocess.run(f\"convert {name} out.png\", shell=True)",
+   "hard": false
+  },
+  {
+   "id": "m-shell-true-p2",
+   "label": "m-shell-true",
+   "family": "generic",
+   "tool": "Edit",
+   "path": "app/run.py",
+   "text": "out = subprocess.check_output(cmd, shell=True)",
+   "hard": false
+  },
+  {
+   "id": "m-shell-true-n1",
+   "label": null,
+   "family": "generic",
+   "near": "m-shell-true",
+   "tool": "Edit",
+   "path": "app/run.py",
+   "text": "subprocess.run([\"convert\", name, \"out.png\"], check=True)",
+   "hard": true
+  },
+  {
+   "id": "m-shell-true-n2",
+   "label": null,
+   "family": "generic",
+   "near": "m-shell-true",
+   "tool": "Edit",
+   "path": "app/run.py",
+   "text": "subprocess.run(cmd, shell=False)",
+   "hard": false
+  },
+  {
+   "id": "m-shell-true-n3",
+   "label": null,
+   "family": "generic",
+   "near": "m-shell-true",
+   "tool": "Bash",
+   "text": "bash -c 'echo hi'",
+   "hard": false
+  },
+  {
+   "id": "m-eq-none-p1",
+   "label": "m-eq-none",
+   "family": "generic",
+   "tool": "Edit",
+   "path": "app/x.py",
+   "text": "if value == None:\n    return",
+   "hard": false
+  },
+  {
+   "id": "m-eq-none-p2",
+   "label": "m-eq-none",
+   "family": "generic",
+   "tool": "Edit",
+   "path": "app/x.py",
+   "text": "assert result != None",
+   "hard": false
+  },
+  {
+   "id": "m-eq-none-n1",
+   "label": null,
+   "family": "generic",
+   "near": "m-eq-none",
+   "tool": "Edit",
+   "path": "app/x.py",
+   "text": "if value is None:\n    return",
+   "hard": true
+  },
+  {
+   "id": "m-eq-none-n2",
+   "label": null,
+   "family": "generic",
+   "near": "m-eq-none",
+   "tool": "Edit",
+   "path": "app/x.py",
+   "text": "if value == NONE_SENTINEL:\n    return",
+   "hard": false
+  },
+  {
+   "id": "m-eq-none-n3",
+   "label": null,
+   "family": "generic",
+   "near": "m-eq-none",
+   "tool": "Edit",
+   "path": "app/x.py",
+   "text": "none_count = sum(1 for v in vals if v is None)",
+   "hard": false
+  },
+  {
+   "id": "m-type-eq-p1",
+   "label": "m-type-eq",
+   "family": "generic",
+   "tool": "Edit",
+   "path": "app/t.py",
+   "text": "if type(x) == dict:\n    merge(x)",
+   "hard": false
+  },
+  {
+   "id": "m-type-eq-p2",
+   "label": "m-type-eq",
+   "family": "generic",
+   "tool": "Edit",
+   "path": "app/t.py",
+   "text": "ok = type(v) == str",
+   "hard": false
+  },
+  {
+   "id": "m-type-eq-n1",
+   "label": null,
+   "family": "generic",
+   "near": "m-type-eq",
+   "tool": "Edit",
+   "path": "app/t.py",
+   "text": "if isinstance(x, dict):\n    merge(x)",
+   "hard": true
+  },
+  {
+   "id": "m-type-eq-n2",
+   "label": null,
+   "family": "generic",
+   "near": "m-type-eq",
+   "tool": "Edit",
+   "path": "app/t.py",
+   "text": "kind = type(x).__name__",
+   "hard": false
+  },
+  {
+   "id": "m-type-eq-n3",
+   "label": null,
+   "family": "generic",
+   "near": "m-type-eq",
+   "tool": "Edit",
+   "path": "app/t.py",
+   "text": "if x.type == \"dict\":\n    merge(x)",
+   "hard": false
+  },
+  {
+   "id": "m-os-system-p1",
+   "label": "m-os-system",
+   "family": "generic",
+   "tool": "Edit",
+   "path": "app/sh.py",
+   "text": "os.system(f\"rm -rf {tmp}\")",
+   "hard": false
+  },
+  {
+   "id": "m-os-system-p2",
+   "label": "m-os-system",
+   "family": "generic",
+   "tool": "Edit",
+   "path": "app/sh.py",
+   "text": "os.system(\"git pull\")",
+   "hard": false
+  },
+  {
+   "id": "m-os-system-n1",
+   "label": null,
+   "family": "generic",
+   "near": "m-os-system",
+   "tool": "Edit",
+   "path": "app/sh.py",
+   "text": "subprocess.run([\"git\", \"pull\"], check=True)",
+   "hard": true
+  },
+  {
+   "id": "m-os-system-n2",
+   "label": null,
+   "family": "generic",
+   "near": "m-os-system",
+   "tool": "Edit",
+   "path": "app/sh.py",
+   "text": "platform = os.system_alias()",
+   "hard": false
+  },
+  {
+   "id": "m-os-system-n3",
+   "label": null,
+   "family": "generic",
+   "near": "m-os-system",
+   "tool": "Edit",
+   "path": "app/sh.py",
+   "text": "info = os.uname()",
+   "hard": false
+  },
+  {
+   "id": "m-pickle-p1",
+   "label": "m-pickle",
+   "family": "generic",
+   "tool": "Edit",
+   "path": "app/cache.py",
+   "text": "obj = pickle.load(open(path, 'rb'))",
+   "hard": false
+  },
+  {
+   "id": "m-pickle-p2",
+   "label": "m-pickle",
+   "family": "generic",
+   "tool": "Edit",
+   "path": "app/cache.py",
+   "text": "state = pickle.loads(blob)",
+   "hard": false
+  },
+  {
+   "id": "m-pickle-n1",
+   "label": null,
+   "family": "generic",
+   "near": "m-pickle",
+   "tool": "Edit",
+   "path": "app/cache.py",
+   "text": "obj = json.load(open(path, encoding='utf-8'))",
+   "hard": true
+  },
+  {
+   "id": "m-pickle-n2",
+   "label": null,
+   "family": "generic",
+   "near": "m-pickle",
+   "tool": "Edit",
+   "path": "app/cache.py",
+   "text": "pickle_path = base / 'cache.pkl'",
+   "hard": false
+  },
+  {
+   "id": "m-pickle-n3",
+   "label": null,
+   "family": "generic",
+   "near": "m-pickle",
+   "tool": "Edit",
+   "path": "app/cache.py",
+   "text": "torch.save(model.state_dict(), path)",
+   "hard": false
+  },
+  {
+   "id": "m-yaml-load-p1",
+   "label": "m-yaml-load",
+   "family": "generic",
+   "tool": "Edit",
+   "path": "app/cfg.py",
+   "text": "cfg = yaml.load(f)",
+   "hard": false
+  },
+  {
+   "id": "m-yaml-load-p2",
+   "label": "m-yaml-load",
+   "family": "generic",
+   "tool": "Edit",
+   "path": "app/cfg.py",
+   "text": "cfg = yaml.load(text, Loader=yaml.Loader)",
+   "hard": false
+  },
+  {
+   "id": "m-yaml-load-n1",
+   "label": null,
+   "family": "generic",
+   "near": "m-yaml-load",
+   "tool": "Edit",
+   "path": "app/cfg.py",
+   "text": "cfg = yaml.safe_load(f)",
+   "hard": true
+  },
+  {
+   "id": "m-yaml-load-n2",
+   "label": null,
+   "family": "generic",
+   "near": "m-yaml-load",
+   "tool": "Edit",
+   "path": "app/cfg.py",
+   "text": "yaml.dump(cfg, f)",
+   "hard": false
+  },
+  {
+   "id": "m-yaml-load-n3",
+   "label": null,
+   "family": "generic",
+   "near": "m-yaml-load",
+   "tool": "Edit",
+   "path": "app/cfg.py",
+   "text": "loader = ConfigLoader(path)",
+   "hard": false
+  },
+  {
+   "id": "m-verify-false-p1",
+   "label": "m-verify-false",
+   "family": "generic",
+   "tool": "Edit",
+   "path": "client/http.py",
+   "text": "requests.get(url, verify=False, timeout=10)",
+   "hard": false
+  },
+  {
+   "id": "m-verify-false-p2",
+   "label": "m-verify-false",
+   "family": "generic",
+   "tool": "Edit",
+   "path": "client/http.py",
+   "text": "session.verify = False",
+   "hard": false
+  },
+  {
+   "id": "m-verify-false-n1",
+   "label": null,
+   "family": "generic",
+   "near": "m-verify-false",
+   "tool": "Edit",
+   "path": "client/http.py",
+   "text": "requests.get(url, verify=CA_BUNDLE, timeout=10)",
+   "hard": true
+  },
+  {
+   "id": "m-verify-false-n2",
+   "label": null,
+   "family": "generic",
+   "near": "m-verify-false",
+   "tool": "Edit",
+   "path": "client/http.py",
+   "text": "verified = verify_signature(payload)",
+   "hard": false
+  },
+  {
+   "id": "m-verify-false-n3",
+   "label": null,
+   "family": "generic",
+   "near": "m-verify-false",
+   "tool": "Edit",
+   "path": "client/http.py",
+   "text": "assert resp.ok, 'verify failed'",
+   "hard": false
+  },
+  {
+   "id": "m-md5-password-p1",
+   "label": "m-md5-password",
+   "family": "generic",
+   "tool": "Edit",
+   "path": "auth/pw.py",
+   "text": "digest = hashlib.md5(password.encode()).hexdigest()",
+   "hard": false
+  },
+  {
+   "id": "m-md5-password-p2",
+   "label": "m-md5-password",
+   "family": "generic",
+   "tool": "Edit",
+   "path": "auth/pw.py",
+   "text": "h = hashlib.sha1(pw.encode()).hexdigest()",
+   "hard": false
+  },
+  {
+   "id": "m-md5-password-n1",
+   "label": null,
+   "family": "generic",
+   "near": "m-md5-password",
+   "tool": "Edit",
+   "path": "auth/pw.py",
+   "text": "h = bcrypt.hashpw(pw.encode(), bcrypt.gensalt())",
+   "hard": true
+  },
+  {
+   "id": "m-md5-password-n2",
+   "label": null,
+   "family": "generic",
+   "near": "m-md5-password",
+   "tool": "Edit",
+   "path": "auth/pw.py",
+   "text": "digest = hashlib.sha256(blob).hexdigest()",
+   "hard": false
+  },
+  {
+   "id": "m-md5-password-n3",
+   "label": null,
+   "family": "generic",
+   "near": "m-md5-password",
+   "tool": "Edit",
+   "path": "docs/auth.md",
+   "text": "md5 sums are published for the release archives",
+   "hard": false
+  },
+  {
+   "id": "m-open-no-with-p1",
+   "label": "m-open-no-with",
+   "family": "generic",
+   "tool": "Edit",
+   "path": "app/io.py",
+   "text": "f = open(path)\ndata = f.read()\nf.close()",
+   "hard": false
+  },
+  {
+   "id": "m-open-no-with-p2",
+   "label": "m-open-no-with",
+   "family": "generic",
+   "tool": "Edit",
+   "path": "app/io.py",
+   "text": "lines = open(path).readlines()",
+   "hard": false
+  },
+  {
+   "id": "m-open-no-with-n1",
+   "label": null,
+   "family": "generic",
+   "near": "m-open-no-with",
+   "tool": "Edit",
+   "path": "app/io.py",
+   "text": "with open(path, encoding='utf-8') as f:\n    data = f.read()",
+   "hard": true
+  },
+  {
+   "id": "m-open-no-with-n2",
+   "label": null,
+   "family": "generic",
+   "near": "m-open-no-with",
+   "tool": "Edit",
+   "path": "app/io.py",
+   "text": "is_open = door.open_state()",
+   "hard": false
+  },
+  {
+   "id": "m-open-no-with-n3",
+   "label": null,
+   "family": "generic",
+   "near": "m-open-no-with",
+   "tool": "Edit",
+   "path": "app/io.py",
+   "text": "data = path.read_text(encoding='utf-8')",
+   "hard": false
+  },
+  {
+   "id": "m-div-len-p1",
+   "label": "m-div-len",
+   "family": "generic",
+   "tool": "Edit",
+   "path": "stats/mean.py",
+   "text": "def average(nums):\n    return sum(nums) / len(nums)",
+   "hard": false
+  },
+  {
+   "id": "m-div-len-p2",
+   "label": "m-div-len",
+   "family": "generic",
+   "tool": "Edit",
+   "path": "stats/mean.py",
+   "text": "ratio = hits / len(rows)",
+   "hard": false
+  },
+  {
+   "id": "m-div-len-n1",
+   "label": null,
+   "family": "generic",
+   "near": "m-div-len",
+   "tool": "Edit",
+   "path": "stats/mean.py",
+   "text": "def average(nums):\n    return sum(nums) / len(nums) if nums else 0.0",
+   "hard": true
+  },
+  {
+   "id": "m-div-len-n2",
+   "label": null,
+   "family": "generic",
+   "near": "m-div-len",
+   "tool": "Edit",
+   "path": "stats/mean.py",
+   "text": "n = len(rows)",
+   "hard": false
+  },
+  {
+   "id": "m-div-len-n3",
+   "label": null,
+   "family": "generic",
+   "near": "m-div-len",
+   "tool": "Edit",
+   "path": "stats/mean.py",
+   "text": "ratio = hits / max(1, len(rows))",
+   "hard": true
+  },
+  {
+   "id": "m-requests-no-timeout-p1",
+   "label": "m-requests-no-timeout",
+   "family": "generic",
+   "tool": "Edit",
+   "path": "client/http.py",
+   "text": "r = requests.get(url)",
+   "hard": false
+  },
+  {
+   "id": "m-requests-no-timeout-p2",
+   "label": "m-requests-no-timeout",
+   "family": "generic",
+   "tool": "Edit",
+   "path": "client/http.py",
+   "text": "r = requests.post(url, json=body)",
+   "hard": false
+  },
+  {
+   "id": "m-requests-no-timeout-n1",
+   "label": null,
+   "family": "generic",
+   "near": "m-requests-no-timeout",
+   "tool": "Edit",
+   "path": "client/http.py",
+   "text": "r = requests.get(url, timeout=(3, 10))",
+   "hard": true
+  },
+  {
+   "id": "m-requests-no-timeout-n2",
+   "label": null,
+   "family": "generic",
+   "near": "m-requests-no-timeout",
+   "tool": "Edit",
+   "path": "client/http.py",
+   "text": "requests_total += 1",
+   "hard": false
+  },
+  {
+   "id": "m-requests-no-timeout-n3",
+   "label": null,
+   "family": "generic",
+   "near": "m-requests-no-timeout",
+   "tool": "Edit",
+   "path": "client/http.py",
+   "text": "r = session.get(url, timeout=5)",
+   "hard": false
+  },
+  {
+   "id": "m-exec-p1",
+   "label": "m-exec",
+   "family": "generic",
+   "tool": "Edit",
+   "path": "plugins/load.py",
+   "text": "exec(source)",
+   "hard": false
+  },
+  {
+   "id": "m-exec-p2",
+   "label": "m-exec",
+   "family": "generic",
+   "tool": "Edit",
+   "path": "plugins/load.py",
+   "text": "exec(compile(code, name, 'exec'))",
+   "hard": false
+  },
+  {
+   "id": "m-exec-n1",
+   "label": null,
+   "family": "generic",
+   "near": "m-exec",
+   "tool": "Edit",
+   "path": "plugins/load.py",
+   "text": "module = importlib.import_module(name)",
+   "hard": true
+  },
+  {
+   "id": "m-exec-n2",
+   "label": null,
+   "family": "generic",
+   "near": "m-exec",
+   "tool": "Edit",
+   "path": "plugins/load.py",
+   "text": "executor.submit(job)",
+   "hard": false
+  },
+  {
+   "id": "m-exec-n3",
+   "label": null,
+   "family": "generic",
+   "near": "m-exec",
+   "tool": "Edit",
+   "path": "plugins/load.py",
+   "text": "execution_time = t1 - t0",
+   "hard": false
+  },
+  {
+   "id": "m-live-store-p1",
+   "label": "m-live-store",
+   "family": "project",
+   "tool": "Write",
+   "path": "tests/_test_new.py",
+   "text": "VAULT = Path(\"D:/Obsidian/Claude_Memory\")\n(VAULT / \"Patterns\" / \"x.md\").write_text(\"fixture\")",
+   "hard": false
+  },
+  {
+   "id": "m-live-store-p2",
+   "label": "m-live-store",
+   "family": "project",
+   "tool": "Bash",
+   "text": "NEVERTWICE_VAULT=D:/Obsidian/Claude_Memory python tests/_test_memory_v3.py",
+   "hard": false
+  },
+  {
+   "id": "m-live-store-n1",
+   "label": null,
+   "family": "project",
+   "near": "m-live-store",
+   "tool": "Write",
+   "path": "tests/_test_new.py",
+   "text": "import _env_guard\nfrom _sandbox import make_sandbox\nd = make_sandbox(m, \"new_\")",
+   "hard": true
+  },
+  {
+   "id": "m-live-store-n2",
+   "label": null,
+   "family": "project",
+   "near": "m-live-store",
+   "tool": "Edit",
+   "path": "docs/CONFIG.md",
+   "text": "The owner's store lives at D:/Obsidian/Claude_Memory and is never touched by tests.",
+   "hard": true
+  },
+  {
+   "id": "m-live-store-n3",
+   "label": null,
+   "family": "project",
+   "near": "m-live-store",
+   "tool": "Bash",
+   "text": "python tests/_test_memory_v3.py",
+   "hard": false
+  },
+  {
+   "id": "m-render-empty-p1",
+   "label": "m-render-empty",
+   "family": "project",
+   "tool": "Edit",
+   "path": "report/build.py",
+   "text": "render_chart(rows)\nsave(out)",
+   "hard": false
+  },
+  {
+   "id": "m-render-empty-p2",
+   "label": "m-render-empty",
+   "family": "project",
+   "tool": "Edit",
+   "path": "report/build.py",
+   "text": "for grp in groups:\n    render_chart(grp.rows)",
+   "hard": false
+  },
+  {
+   "id": "m-render-empty-n1",
+   "label": null,
+   "family": "project",
+   "near": "m-render-empty",
+   "tool": "Edit",
+   "path": "report/build.py",
+   "text": "if rows:\n    render_chart(rows)",
+   "hard": true
+  },
+  {
+   "id": "m-render-empty-n2",
+   "label": null,
+   "family": "project",
+   "near": "m-render-empty",
+   "tool": "Edit",
+   "path": "report/build.py",
+   "text": "chart = render_table(rows)",
+   "hard": false
+  },
+  {
+   "id": "m-render-empty-n3",
+   "label": null,
+   "family": "project",
+   "near": "m-render-empty",
+   "tool": "Edit",
+   "path": "report/build.py",
+   "text": "rows = fetch(query)",
+   "hard": false
+  },
+  {
+   "id": "m-timeout-ms-p1",
+   "label": "m-timeout-ms",
+   "family": "project",
+   "tool": "Edit",
+   "path": "client/conn.py",
+   "text": "client.set_timeout(5)",
+   "hard": false
+  },
+  {
+   "id": "m-timeout-ms-p2",
+   "label": "m-timeout-ms",
+   "family": "project",
+   "tool": "Edit",
+   "path": "client/conn.py",
+   "text": "set_timeout(30)  # thirty seconds",
+   "hard": false
+  },
+  {
+   "id": "m-timeout-ms-n1",
+   "label": null,
+   "family": "project",
+   "near": "m-timeout-ms",
+   "tool": "Edit",
+   "path": "client/conn.py",
+   "text": "client.set_timeout(5 * 1000)",
+   "hard": true
+  },
+  {
+   "id": "m-timeout-ms-n2",
+   "label": null,
+   "family": "project",
+   "near": "m-timeout-ms",
+   "tool": "Edit",
+   "path": "client/conn.py",
+   "text": "client.set_timeout(TIMEOUT_MS)",
+   "hard": true
+  },
+  {
+   "id": "m-timeout-ms-n3",
+   "label": null,
+   "family": "project",
+   "near": "m-timeout-ms",
+   "tool": "Edit",
+   "path": "client/conn.py",
+   "text": "client.set_retries(5)",
+   "hard": false
+  },
+  {
+   "id": "m-auth-order-p1",
+   "label": "m-auth-order",
+   "family": "project",
+   "tool": "Edit",
+   "path": "client/conn.py",
+   "text": "c = Client()\nc.connect()\nc.authenticate(token)",
+   "hard": false
+  },
+  {
+   "id": "m-auth-order-p2",
+   "label": "m-auth-order",
+   "family": "project",
+   "tool": "Edit",
+   "path": "client/conn.py",
+   "text": "client.connect()\nclient.send(msg)",
+   "hard": false
+  },
+  {
+   "id": "m-auth-order-n1",
+   "label": null,
+   "family": "project",
+   "near": "m-auth-order",
+   "tool": "Edit",
+   "path": "client/conn.py",
+   "text": "c = Client()\nc.authenticate(token)\nc.connect()",
+   "hard": true
+  },
+  {
+   "id": "m-auth-order-n2",
+   "label": null,
+   "family": "project",
+   "near": "m-auth-order",
+   "tool": "Edit",
+   "path": "client/conn.py",
+   "text": "c.disconnect()",
+   "hard": false
+  },
+  {
+   "id": "m-auth-order-n3",
+   "label": null,
+   "family": "project",
+   "near": "m-auth-order",
+   "tool": "Edit",
+   "path": "docs/client.md",
+   "text": "connect() must follow authenticate().",
+   "hard": false
+  },
+  {
+   "id": "m-lock-finally-p1",
+   "label": "m-lock-finally",
+   "family": "project",
+   "tool": "Edit",
+   "path": "store/write.py",
+   "text": "acquire_lock()\nwrite(note)\nrelease_lock()",
+   "hard": false
+  },
+  {
+   "id": "m-lock-finally-p2",
+   "label": "m-lock-finally",
+   "family": "project",
+   "tool": "Edit",
+   "path": "store/write.py",
+   "text": "if acquire_lock(timeout_s=5):\n    do_work()\n    release_lock()",
+   "hard": false
+  },
+  {
+   "id": "m-lock-finally-n1",
+   "label": null,
+   "family": "project",
+   "near": "m-lock-finally",
+   "tool": "Edit",
+   "path": "store/write.py",
+   "text": "acquire_lock()\ntry:\n    write(note)\nfinally:\n    release_lock()",
+   "hard": true
+  },
+  {
+   "id": "m-lock-finally-n2",
+   "label": null,
+   "family": "project",
+   "near": "m-lock-finally",
+   "tool": "Edit",
+   "path": "store/write.py",
+   "text": "with vault_lock():\n    write(note)",
+   "hard": true
+  },
+  {
+   "id": "m-lock-finally-n3",
+   "label": null,
+   "family": "project",
+   "near": "m-lock-finally",
+   "tool": "Edit",
+   "path": "store/write.py",
+   "text": "release_notes = load()",
+   "hard": false
+  },
+  {
+   "id": "m-force-push-p1",
+   "label": "m-force-push",
+   "family": "project",
+   "tool": "Bash",
+   "text": "git push --force origin invariants/v3",
+   "hard": false
+  },
+  {
+   "id": "m-force-push-p2",
+   "label": "m-force-push",
+   "family": "project",
+   "tool": "Bash",
+   "text": "git push -f origin HEAD",
+   "hard": false
+  },
+  {
+   "id": "m-force-push-n1",
+   "label": null,
+   "family": "project",
+   "near": "m-force-push",
+   "tool": "Bash",
+   "text": "git push origin invariants/v3",
+   "hard": true
+  },
+  {
+   "id": "m-force-push-n2",
+   "label": null,
+   "family": "project",
+   "near": "m-force-push",
+   "tool": "Bash",
+   "text": "git push --force-with-lease origin feature/x",
+   "hard": true
+  },
+  {
+   "id": "m-force-push-n3",
+   "label": null,
+   "family": "project",
+   "near": "m-force-push",
+   "tool": "Bash",
+   "text": "git log --force-with-lease 2>/dev/null; git status",
+   "hard": false
+  },
+  {
+   "id": "m-global-pip-p1",
+   "label": "m-global-pip",
+   "family": "project",
+   "tool": "Bash",
+   "text": "pip install mem0ai",
+   "hard": false
+  },
+  {
+   "id": "m-global-pip-p2",
+   "label": "m-global-pip",
+   "family": "project",
+   "tool": "Bash",
+   "text": "python -m pip install graphiti-core kuzu",
+   "hard": false
+  },
+  {
+   "id": "m-global-pip-n1",
+   "label": null,
+   "family": "project",
+   "near": "m-global-pip",
+   "tool": "Bash",
+   "text": "D:/Coding/_nevertwice_polygon/mem0_eval/.venv/Scripts/python.exe -m pip install mem0ai",
+   "hard": true
+  },
+  {
+   "id": "m-global-pip-n2",
+   "label": null,
+   "family": "project",
+   "near": "m-global-pip",
+   "tool": "Bash",
+   "text": "pip list | grep mem0",
+   "hard": false
+  },
+  {
+   "id": "m-global-pip-n3",
+   "label": null,
+   "family": "project",
+   "near": "m-global-pip",
+   "tool": "Bash",
+   "text": "python -m pip download graphiti-core --no-deps -d meta",
+   "hard": false
+  },
+  {
+   "id": "m-ollama-owner-p1",
+   "label": "m-ollama-owner",
+   "family": "project",
+   "tool": "Bash",
+   "text": "ollama pull qwen3:8b",
+   "hard": false
+  },
+  {
+   "id": "m-ollama-owner-p2",
+   "label": "m-ollama-owner",
+   "family": "project",
+   "tool": "Bash",
+   "text": "ollama rm qwen2.5:3b && ollama pull qwen2.5:7b",
+   "hard": false
+  },
+  {
+   "id": "m-ollama-owner-n1",
+   "label": null,
+   "family": "project",
+   "near": "m-ollama-owner",
+   "tool": "Bash",
+   "text": "ollama list",
+   "hard": true
+  },
+  {
+   "id": "m-ollama-owner-n2",
+   "label": null,
+   "family": "project",
+   "near": "m-ollama-owner",
+   "tool": "Bash",
+   "text": "ollama show qwen3-coder:30b",
+   "hard": true
+  },
+  {
+   "id": "m-ollama-owner-n3",
+   "label": null,
+   "family": "project",
+   "near": "m-ollama-owner",
+   "tool": "Bash",
+   "text": "curl -s http://localhost:11434/api/tags",
+   "hard": false
+  },
+  {
+   "id": "m-secrets-read-p1",
+   "label": "m-secrets-read",
+   "family": "project",
+   "tool": "Bash",
+   "text": "cat nevertwice/.secrets.env",
+   "hard": false
+  },
+  {
+   "id": "m-secrets-read-p2",
+   "label": "m-secrets-read",
+   "family": "project",
+   "tool": "Bash",
+   "text": "git add nevertwice/.secrets.env && git commit -m 'env'",
+   "hard": false
+  },
+  {
+   "id": "m-secrets-read-n1",
+   "label": null,
+   "family": "project",
+   "near": "m-secrets-read",
+   "tool": "Bash",
+   "text": "echo \".secrets.env\" >> .gitignore",
+   "hard": true
+  },
+  {
+   "id": "m-secrets-read-n2",
+   "label": null,
+   "family": "project",
+   "near": "m-secrets-read",
+   "tool": "Bash",
+   "text": "ls -la nevertwice | grep -c env",
+   "hard": false
+  },
+  {
+   "id": "m-secrets-read-n3",
+   "label": null,
+   "family": "project",
+   "near": "m-secrets-read",
+   "tool": "Edit",
+   "path": "docs/CONFIG.md",
+   "text": "Keys live in `.secrets.env`, which is git-ignored.",
+   "hard": true
+  },
+  {
+   "id": "m-hook-print-p1",
+   "label": "m-hook-print",
+   "family": "project",
+   "tool": "Edit",
+   "path": "nevertwice/memory_hook.py",
+   "text": "print(\"debug: hits\", hits)",
+   "hard": false
+  },
+  {
+   "id": "m-hook-print-p2",
+   "label": "m-hook-print",
+   "family": "project",
+   "tool": "Edit",
+   "path": "nevertwice/memory_hook.py",
+   "text": "print(f\"recall took {dt:.1f}s\")",
+   "hard": false
+  },
+  {
+   "id": "m-hook-print-n1",
+   "label": null,
+   "family": "project",
+   "near": "m-hook-print",
+   "tool": "Edit",
+   "path": "nevertwice/memory_hook.py",
+   "text": "log(f\"recall took {dt:.1f}s\")",
+   "hard": true
+  },
+  {
+   "id": "m-hook-print-n2",
+   "label": null,
+   "family": "project",
+   "near": "m-hook-print",
+   "tool": "Edit",
+   "path": "research/asof_bench.py",
+   "text": "print(f\"  [{i}] {case['id']}\")",
+   "hard": true
+  },
+  {
+   "id": "m-hook-print-n3",
+   "label": null,
+   "family": "project",
+   "near": "m-hook-print",
+   "tool": "Edit",
+   "path": "nevertwice/memory_hook.py",
+   "text": "print(json.dumps(payload))",
+   "hard": true
+  },
+  {
+   "id": "m-hook-sleep-p1",
+   "label": "m-hook-sleep",
+   "family": "project",
+   "tool": "Edit",
+   "path": "nevertwice/memory_hook.py",
+   "text": "time.sleep(2)\nhits = retrieve()",
+   "hard": false
+  },
+  {
+   "id": "m-hook-sleep-p2",
+   "label": "m-hook-sleep",
+   "family": "project",
+   "tool": "Edit",
+   "path": "nevertwice/memory_hook.py",
+   "text": "while busy():\n    time.sleep(0.5)",
+   "hard": false
+  },
+  {
+   "id": "m-hook-sleep-n1",
+   "label": null,
+   "family": "project",
+   "near": "m-hook-sleep",
+   "tool": "Edit",
+   "path": "nevertwice/memory_hook.py",
+   "text": "deadline = time.time() + 2",
+   "hard": true
+  },
+  {
+   "id": "m-hook-sleep-n2",
+   "label": null,
+   "family": "project",
+   "near": "m-hook-sleep",
+   "tool": "Edit",
+   "path": "research/latency_bench.py",
+   "text": "time.sleep(1)  # let the daemon settle",
+   "hard": true
+  },
+  {
+   "id": "m-hook-sleep-n3",
+   "label": null,
+   "family": "project",
+   "near": "m-hook-sleep",
+   "tool": "Edit",
+   "path": "nevertwice/memory_hook.py",
+   "text": "sleep_hint = env_int('NEVERTWICE_SLEEP_HINT', 0)",
+   "hard": false
+  },
+  {
+   "id": "m-embed-cap-p1",
+   "label": "m-embed-cap",
+   "family": "project",
+   "tool": "Edit",
+   "path": "research/longmem_eval.py",
+   "text": "vec = embed(text[:2000])",
+   "hard": false
+  },
+  {
+   "id": "m-embed-cap-p2",
+   "label": "m-embed-cap",
+   "family": "project",
+   "tool": "Edit",
+   "path": "research/head_to_head.py",
+   "text": "docs = [s[:2000] for s in pool.values()]",
+   "hard": false
+  },
+  {
+   "id": "m-embed-cap-n1",
+   "label": null,
+   "family": "project",
+   "near": "m-embed-cap",
+   "tool": "Edit",
+   "path": "research/longmem_eval.py",
+   "text": "vec = embed(text)",
+   "hard": true
+  },
+  {
+   "id": "m-embed-cap-n2",
+   "label": null,
+   "family": "project",
+   "near": "m-embed-cap",
+   "tool": "Edit",
+   "path": "research/longmem_eval.py",
+   "text": "preview = text[:200]",
+   "hard": false
+  },
+  {
+   "id": "m-embed-cap-n3",
+   "label": null,
+   "family": "project",
+   "near": "m-embed-cap",
+   "tool": "Edit",
+   "path": "research/longmem_eval.py",
+   "text": "chunks = text[:20000]",
+   "hard": true
+  },
+  {
+   "id": "m-cuda-cpu-p1",
+   "label": "m-cuda-cpu",
+   "family": "project",
+   "tool": "Edit",
+   "path": "train/run.py",
+   "text": "device = torch.device(\"cpu\")",
+   "hard": false
+  },
+  {
+   "id": "m-cuda-cpu-p2",
+   "label": "m-cuda-cpu",
+   "family": "project",
+   "tool": "Edit",
+   "path": "train/run.py",
+   "text": "model.to('cpu')\nbatch = batch.to('cpu')",
+   "hard": false
+  },
+  {
+   "id": "m-cuda-cpu-n1",
+   "label": null,
+   "family": "project",
+   "near": "m-cuda-cpu",
+   "tool": "Edit",
+   "path": "train/run.py",
+   "text": "device = torch.device(\"cuda\" if torch.cuda.is_available() else \"cpu\")",
+   "hard": true
+  },
+  {
+   "id": "m-cuda-cpu-n2",
+   "label": null,
+   "family": "project",
+   "near": "m-cuda-cpu",
+   "tool": "Edit",
+   "path": "train/run.py",
+   "text": "device = torch.device(\"cuda\")",
+   "hard": false
+  },
+  {
+   "id": "m-cuda-cpu-n3",
+   "label": null,
+   "family": "project",
+   "near": "m-cuda-cpu",
+   "tool": "Edit",
+   "path": "train/eval.py",
+   "text": "cpu_count = os.cpu_count()",
+   "hard": false
+  },
+  {
+   "id": "m-naive-now-p1",
+   "label": "m-naive-now",
+   "family": "project",
+   "tool": "Edit",
+   "path": "nevertwice/memory_hook.py",
+   "text": "started = datetime.now()\nage = started - parsed",
+   "hard": false
+  },
+  {
+   "id": "m-naive-now-p2",
+   "label": "m-naive-now",
+   "family": "project",
+   "tool": "Edit",
+   "path": "nevertwice/emit.py",
+   "text": "stamp = datetime.now().isoformat()",
+   "hard": false
+  },
+  {
+   "id": "m-naive-now-n1",
+   "label": null,
+   "family": "project",
+   "near": "m-naive-now",
+   "tool": "Edit",
+   "path": "nevertwice/memory_hook.py",
+   "text": "started = datetime.now().astimezone()",
+   "hard": true
+  },
+  {
+   "id": "m-naive-now-n2",
+   "label": null,
+   "family": "project",
+   "near": "m-naive-now",
+   "tool": "Edit",
+   "path": "nevertwice/memory_hook.py",
+   "text": "today = datetime.now().strftime('%Y-%m-%d')",
+   "hard": true
+  },
+  {
+   "id": "m-naive-now-n3",
+   "label": null,
+   "family": "project",
+   "near": "m-naive-now",
+   "tool": "Edit",
+   "path": "nevertwice/memory_hook.py",
+   "text": "now_ms = time.time() * 1000",
+   "hard": false
+  },
+  {
+   "id": "m-json-ascii-p1",
+   "label": "m-json-ascii",
+   "family": "project",
+   "tool": "Edit",
+   "path": "nevertwice/digest.py",
+   "text": "out.write_text(json.dumps(data, indent=1))",
+   "hard": false
+  },
+  {
+   "id": "m-json-ascii-p2",
+   "label": "m-json-ascii",
+   "family": "project",
+   "tool": "Edit",
+   "path": "tools/render_claims.py",
+   "text": "text = json.dumps(rows)",
+   "hard": false
+  },
+  {
+   "id": "m-json-ascii-n1",
+   "label": null,
+   "family": "project",
+   "near": "m-json-ascii",
+   "tool": "Edit",
+   "path": "nevertwice/digest.py",
+   "text": "out.write_text(json.dumps(data, indent=1, ensure_ascii=False))",
+   "hard": true
+  },
+  {
+   "id": "m-json-ascii-n2",
+   "label": null,
+   "family": "project",
+   "near": "m-json-ascii",
+   "tool": "Edit",
+   "path": "nevertwice/digest.py",
+   "text": "data = json.loads(text)",
+   "hard": false
+  },
+  {
+   "id": "m-json-ascii-n3",
+   "label": null,
+   "family": "project",
+   "near": "m-json-ascii",
+   "tool": "Edit",
+   "path": "nevertwice/digest.py",
+   "text": "print(json.dumps(payload))  # hook payload: ASCII-safe by design",
+   "hard": true
+  },
+  {
+   "id": "m-git-add-all-p1",
+   "label": "m-git-add-all",
+   "family": "project",
+   "tool": "Bash",
+   "text": "git add -A && git commit -m 'wip'",
+   "hard": false
+  },
+  {
+   "id": "m-git-add-all-p2",
+   "label": "m-git-add-all",
+   "family": "project",
+   "tool": "Bash",
+   "text": "git add . ; git commit -m 'fix'",
+   "hard": false
+  },
+  {
+   "id": "m-git-add-all-n1",
+   "label": null,
+   "family": "project",
+   "near": "m-git-add-all",
+   "tool": "Bash",
+   "text": "git add research/asof_bench.py tests/research/_test_asof_bench.py",
+   "hard": true
+  },
+  {
+   "id": "m-git-add-all-n2",
+   "label": null,
+   "family": "project",
+   "near": "m-git-add-all",
+   "tool": "Bash",
+   "text": "git add -p nevertwice/api.py",
+   "hard": true
+  },
+  {
+   "id": "m-git-add-all-n3",
+   "label": null,
+   "family": "project",
+   "near": "m-git-add-all",
+   "tool": "Bash",
+   "text": "git status --short",
+   "hard": false
+  },
+  {
+   "id": "m-rm-results-p1",
+   "label": "m-rm-results",
+   "family": "project",
+   "tool": "Bash",
+   "text": "rm -rf research/results",
+   "hard": false
+  },
+  {
+   "id": "m-rm-results-p2",
+   "label": "m-rm-results",
+   "family": "project",
+   "tool": "Bash",
+   "text": "rm -rf research/results/*.json && python research/asof_bench.py",
+   "hard": false
+  },
+  {
+   "id": "m-rm-results-n1",
+   "label": null,
+   "family": "project",
+   "near": "m-rm-results",
+   "tool": "Bash",
+   "text": "rm -rf /tmp/nevertwice_asof_*",
+   "hard": true
+  },
+  {
+   "id": "m-rm-results-n2",
+   "label": null,
+   "family": "project",
+   "near": "m-rm-results",
+   "tool": "Bash",
+   "text": "ls research/results",
+   "hard": true
+  },
+  {
+   "id": "m-rm-results-n3",
+   "label": null,
+   "family": "project",
+   "near": "m-rm-results",
+   "tool": "Bash",
+   "text": "git checkout -- research/results/asof_v1.json",
+   "hard": false
+  },
+  {
+   "id": "m-hardcoded-key-p1",
+   "label": "m-hardcoded-key",
+   "family": "project",
+   "tool": "Edit",
+   "path": "research/gen.py",
+   "text": "api_key = \"sk-abcdefghijklmnopqrstuvwxyz0123456789\"",
+   "hard": false
+  },
+  {
+   "id": "m-hardcoded-key-p2",
+   "label": "m-hardcoded-key",
+   "family": "project",
+   "tool": "Edit",
+   "path": "research/gen.py",
+   "text": "headers = {\"Authorization\": \"Bearer csk-abcdefghijklmnopqrstuvwxyz\"}",
+   "hard": false
+  },
+  {
+   "id": "m-hardcoded-key-n1",
+   "label": null,
+   "family": "project",
+   "near": "m-hardcoded-key",
+   "tool": "Edit",
+   "path": "research/gen.py",
+   "text": "api_key = os.environ[\"CEREBRAS_API_KEY\"]",
+   "hard": true
+  },
+  {
+   "id": "m-hardcoded-key-n2",
+   "label": null,
+   "family": "project",
+   "near": "m-hardcoded-key",
+   "tool": "Edit",
+   "path": "research/gen.py",
+   "text": "api_key = \"ollama\"  # the OpenAI-compatible endpoint ignores it",
+   "hard": true
+  },
+  {
+   "id": "m-hardcoded-key-n3",
+   "label": null,
+   "family": "project",
+   "near": "m-hardcoded-key",
+   "tool": "Edit",
+   "path": "docs/CONFIG.md",
+   "text": "Set CEREBRAS_API_KEY in .secrets.env.",
+   "hard": false
+  },
+  {
+   "id": "m-print-secret-p1",
+   "label": "m-print-secret",
+   "family": "project",
+   "tool": "Edit",
+   "path": "research/gen.py",
+   "text": "print(api_key)",
+   "hard": false
+  },
+  {
+   "id": "m-print-secret-p2",
+   "label": "m-print-secret",
+   "family": "project",
+   "tool": "Edit",
+   "path": "research/gen.py",
+   "text": "print(\"using token\", token)",
+   "hard": false
+  },
+  {
+   "id": "m-print-secret-n1",
+   "label": null,
+   "family": "project",
+   "near": "m-print-secret",
+   "tool": "Edit",
+   "path": "research/gen.py",
+   "text": "print(bool(api_key))",
+   "hard": true
+  },
+  {
+   "id": "m-print-secret-n2",
+   "label": null,
+   "family": "project",
+   "near": "m-print-secret",
+   "tool": "Edit",
+   "path": "research/gen.py",
+   "text": "print(\"key present:\", bool(os.environ.get(\"API_KEY\")))",
+   "hard": true
+  },
+  {
+   "id": "m-print-secret-n3",
+   "label": null,
+   "family": "project",
+   "near": "m-print-secret",
+   "tool": "Edit",
+   "path": "research/gen.py",
+   "text": "print(\"tokens per call\", n_tokens)",
+   "hard": false
+  },
+  {
+   "id": "m-open-encoding-p1",
+   "label": "m-open-encoding",
+   "family": "project",
+   "tool": "Edit",
+   "path": "nevertwice/store_state.py",
+   "text": "with open(path) as f:\n    text = f.read()",
+   "hard": false
+  },
+  {
+   "id": "m-open-encoding-p2",
+   "label": "m-open-encoding",
+   "family": "project",
+   "tool": "Edit",
+   "path": "tools/render_claims.py",
+   "text": "lines = open(p).readlines()",
+   "hard": false
+  },
+  {
+   "id": "m-open-encoding-n1",
+   "label": null,
+   "family": "project",
+   "near": "m-open-encoding",
+   "tool": "Edit",
+   "path": "nevertwice/store_state.py",
+   "text": "with open(path, encoding='utf-8') as f:\n    text = f.read()",
+   "hard": true
+  },
+  {
+   "id": "m-open-encoding-n2",
+   "label": null,
+   "family": "project",
+   "near": "m-open-encoding",
+   "tool": "Edit",
+   "path": "nevertwice/store_state.py",
+   "text": "with open(path, 'rb') as f:\n    blob = f.read()",
+   "hard": true
+  },
+  {
+   "id": "m-open-encoding-n3",
+   "label": null,
+   "family": "project",
+   "near": "m-open-encoding",
+   "tool": "Edit",
+   "path": "nevertwice/store_state.py",
+   "text": "text = path.read_text(encoding='utf-8')",
+   "hard": false
+  },
+  {
+   "id": "m-taskkill-slash-p1",
+   "label": "m-taskkill-slash",
+   "family": "project",
+   "tool": "Bash",
+   "text": "taskkill /PID 10868 /F",
+   "hard": false
+  },
+  {
+   "id": "m-taskkill-slash-p2",
+   "label": "m-taskkill-slash",
+   "family": "project",
+   "tool": "Bash",
+   "text": "taskkill /IM python.exe /F",
+   "hard": false
+  },
+  {
+   "id": "m-taskkill-slash-n1",
+   "label": null,
+   "family": "project",
+   "near": "m-taskkill-slash",
+   "tool": "Bash",
+   "text": "powershell -NoProfile -Command \"Stop-Process -Id 10868 -Force\"",
+   "hard": true
+  },
+  {
+   "id": "m-taskkill-slash-n2",
+   "label": null,
+   "family": "project",
+   "near": "m-taskkill-slash",
+   "tool": "Bash",
+   "text": "taskkill //PID 10868 //F",
+   "hard": true
+  },
+  {
+   "id": "m-taskkill-slash-n3",
+   "label": null,
+   "family": "project",
+   "near": "m-taskkill-slash",
+   "tool": "Bash",
+   "text": "tasklist | grep python",
+   "hard": false
+  },
+  {
+   "id": "m-cd-compound-p1",
+   "label": "m-cd-compound",
+   "family": "project",
+   "tool": "Bash",
+   "text": "cd D:/Coding/nevertwice && python -m pytest -q",
+   "hard": false
+  },
+  {
+   "id": "m-cd-compound-p2",
+   "label": "m-cd-compound",
+   "family": "project",
+   "tool": "Bash",
+   "text": "cd research; python asof_bench.py --limit 3",
+   "hard": false
+  },
+  {
+   "id": "m-cd-compound-n1",
+   "label": null,
+   "family": "project",
+   "near": "m-cd-compound",
+   "tool": "Bash",
+   "text": "git -C D:/Coding/nevertwice status",
+   "hard": true
+  },
+  {
+   "id": "m-cd-compound-n2",
+   "label": null,
+   "family": "project",
+   "near": "m-cd-compound",
+   "tool": "Bash",
+   "text": "python D:/Coding/nevertwice/research/asof_bench.py --limit 3",
+   "hard": true
+  },
+  {
+   "id": "m-cd-compound-n3",
+   "label": null,
+   "family": "project",
+   "near": "m-cd-compound",
+   "tool": "Bash",
+   "text": "echo $PWD",
+   "hard": false
+  },
+  {
+   "id": "m-foreground-sleep-p1",
+   "label": "m-foreground-sleep",
+   "family": "project",
+   "tool": "Bash",
+   "text": "sleep 300; tail campaign.log",
+   "hard": false
+  },
+  {
+   "id": "m-foreground-sleep-p2",
+   "label": "m-foreground-sleep",
+   "family": "project",
+   "tool": "Bash",
+   "text": "while true; do sleep 60; done",
+   "hard": false
+  },
+  {
+   "id": "m-foreground-sleep-n1",
+   "label": null,
+   "family": "project",
+   "near": "m-foreground-sleep",
+   "tool": "Bash",
+   "text": "sleep 2; cat status.txt",
+   "hard": true
+  },
+  {
+   "id": "m-foreground-sleep-n2",
+   "label": null,
+   "family": "project",
+   "near": "m-foreground-sleep",
+   "tool": "Bash",
+   "text": "tail -f campaign.log &",
+   "hard": true
+  },
+  {
+   "id": "m-foreground-sleep-n3",
+   "label": null,
+   "family": "project",
+   "near": "m-foreground-sleep",
+   "tool": "Bash",
+   "text": "python research/asof_bench.py --limit 3",
+   "hard": false
+  },
+  {
+   "id": "m-vault-env-test-p1",
+   "label": "m-vault-env-test",
+   "family": "project",
+   "tool": "Write",
+   "path": "tests/_test_x.py",
+   "text": "os.environ[\"NEVERTWICE_HOME\"] = str(tmp)\nimport memory_hook as m",
+   "hard": false
+  },
+  {
+   "id": "m-vault-env-test-p2",
+   "label": "m-vault-env-test",
+   "family": "project",
+   "tool": "Bash",
+   "text": "NEVERTWICE_HOME=/tmp/x python tests/_test_x.py",
+   "hard": false
+  },
+  {
+   "id": "m-vault-env-test-n1",
+   "label": null,
+   "family": "project",
+   "near": "m-vault-env-test",
+   "tool": "Write",
+   "path": "tests/_test_x.py",
+   "text": "import _env_guard\nimport memory_hook as m",
+   "hard": true
+  },
+  {
+   "id": "m-vault-env-test-n2",
+   "label": null,
+   "family": "project",
+   "near": "m-vault-env-test",
+   "tool": "Write",
+   "path": "tests/_test_x.py",
+   "text": "os.environ[\"NEVERTWICE_HOME\"] = str(tmp)\nos.environ[\"NEVERTWICE_VAULT\"] = str(tmp)",
+   "hard": true
+  },
+  {
+   "id": "m-vault-env-test-n3",
+   "label": null,
+   "family": "project",
+   "near": "m-vault-env-test",
+   "tool": "Edit",
+   "path": "docs/CONFIG.md",
+   "text": "NEVERTWICE_HOME is the legacy name of NEVERTWICE_VAULT.",
+   "hard": false
+  },
+  {
+   "id": "m-commit-master-p1",
+   "label": "m-commit-master",
+   "family": "project",
+   "tool": "Bash",
+   "text": "git checkout master && git commit -am 'quick fix'",
+   "hard": false
+  },
+  {
+   "id": "m-commit-master-p2",
+   "label": "m-commit-master",
+   "family": "project",
+   "tool": "Bash",
+   "text": "git switch master; git merge invariants/v3; git push",
+   "hard": false
+  },
+  {
+   "id": "m-commit-master-n1",
+   "label": null,
+   "family": "project",
+   "near": "m-commit-master",
+   "tool": "Bash",
+   "text": "git checkout invariants/v3 && git commit -m 'feat: x'",
+   "hard": true
+  },
+  {
+   "id": "m-commit-master-n2",
+   "label": null,
+   "family": "project",
+   "near": "m-commit-master",
+   "tool": "Bash",
+   "text": "git log master..invariants/v3 --oneline",
+   "hard": true
+  },
+  {
+   "id": "m-commit-master-n3",
+   "label": null,
+   "family": "project",
+   "near": "m-commit-master",
+   "tool": "Bash",
+   "text": "git branch --show-current",
+   "hard": false
+  },
+  {
+   "id": "m-sync-scripts-p1",
+   "label": "m-sync-scripts",
+   "family": "project",
+   "tool": "Edit",
+   "path": "C:/Users/Platon/.claude/scripts/memory_hook.py",
+   "text": "INJECT_BUDGET_CHARS = 3000",
+   "hard": false
+  },
+  {
+   "id": "m-sync-scripts-p2",
+   "label": "m-sync-scripts",
+   "family": "project",
+   "tool": "Bash",
+   "text": "cp nevertwice/memory_hook.py C:/Users/Platon/.claude/scripts/memory_hook.py",
+   "hard": false
+  },
+  {
+   "id": "m-sync-scripts-n1",
+   "label": null,
+   "family": "project",
+   "near": "m-sync-scripts",
+   "tool": "Edit",
+   "path": "nevertwice/memory_hook.py",
+   "text": "INJECT_BUDGET_CHARS = env_int('NEVERTWICE_INJECT_BUDGET', 2200)",
+   "hard": true
+  },
+  {
+   "id": "m-sync-scripts-n2",
+   "label": null,
+   "family": "project",
+   "near": "m-sync-scripts",
+   "tool": "Bash",
+   "text": "python tools/sync_install.py --check",
+   "hard": true
+  },
+  {
+   "id": "m-sync-scripts-n3",
+   "label": null,
+   "family": "project",
+   "near": "m-sync-scripts",
+   "tool": "Bash",
+   "text": "ls C:/Users/Platon/.claude/scripts",
+   "hard": false
+  }
+ ],
+ "counts": {
+  "mistakes": 46,
+  "generic": 20,
+  "project": 26,
+  "positives": 92,
+  "negatives": 138,
+  "hard_negatives": 71
+ }
+}

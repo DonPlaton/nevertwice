@@ -251,7 +251,14 @@ def contexts_nevertwice_full(data, pool) -> dict:
     stand publish the extractor's silence - the questions whose gold sessions yielded no note."""
     os.environ["NEVERTWICE_CLOUD"] = "none"
     os.environ["NEVERTWICE_MODEL"] = EXTRACTOR
+    # The engine binds its model name at import, and this module imported it at the top - so the
+    # environment variable alone left the arm on whatever NEVERTWICE_MODEL the shell exported
+    # (the campaign of 2026-09-10 ran 940 sessions through qwen3.6:35b-a3b, which declared every
+    # chat session off-topic and wrote two notes). Bind it explicitly and record what ran.
+    m.OLLAMA_MODEL = EXTRACTOR
     from nevertwice import api                                   # noqa: PLC0415
+    if api.m.OLLAMA_MODEL != EXTRACTOR:
+        raise RuntimeError(f"extractor bound to {api.m.OLLAMA_MODEL!r}, wanted {EXTRACTOR!r}")
     project = "lme"
     cache_p = DATA / "frontier_full_ingest_cache.json"
     done = _load(cache_p)
@@ -280,7 +287,7 @@ def contexts_nevertwice_full(data, pool) -> dict:
                       if all(sessions.get(s, 0) == 0 or isinstance(sessions.get(s), str)
                              for s in e["answer_session_ids"]))
     ev = getattr(api, "_evidence", None)
-    out = {"_ingest": {"sessions": len(pool), "errors": errors, "llm": EXTRACTOR,
+    out = {"_ingest": {"sessions": len(pool), "errors": errors, "llm": api.m.OLLAMA_MODEL,
                        "llm_calls_per_session": 1, "sessions_with_zero_notes": silent,
                        "questions_gold_without_notes": gold_silent, "questions": len(data),
                        "evidence": dict(ev.STATS) if ev is not None else None,

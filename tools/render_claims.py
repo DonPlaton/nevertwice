@@ -605,10 +605,10 @@ def render_asof(c: Claims) -> str:
     out = _table(["arm", "both days", "the old day", "the day after"], rows)
     if c.has("asof.gate.threshold"):
         out += (f"\n\n<sub>The gate written before the run was {c.value('asof.gate.threshold'):.2f} "
-                "on both days, and this is below it. The loss is on the old day: the scan of "
-                "belief intervals is exact, but an interval only closes when the write path "
-                "recognised the replacement, so the number is bounded by supersession "
-                "recognition rather than by the scan. Mem0 has no row - it stamps a memory with "
+                "on both days, and this is below it. The loss is on the old day, and the stand now "
+                "says why per case: a first session the extractor left without a note, a note "
+                "whose wording lost the marker, or the new fact leaking into the old day; the "
+                "artifact carries the split. Mem0 has no row - it stamps a memory with "
                 "the wall-clock time of the `add()` call and its search has no as-of filter, so "
                 "facts cannot be placed in the past without patching the product.</sub>")
     return out
@@ -660,6 +660,82 @@ def render_frontier(c: Claims) -> str:
     return out
 
 
+GUARD_ROWS = [
+    ("**guards, engine's no-model patterns**", "guards_deterministic"),
+    ("**guards, model-written patterns**", "guards_llm"),
+    ("cold-start pack (no history)", "universal_pack"),
+    ("linter or scanner (scored in its favour)", "linter_or_test"),
+    ("prompt recall over the notes (top three)", "prompt_recall"),
+    ("silence (floor)", "never"),
+]
+
+
+def render_guard_bench(c: Claims) -> str:
+    """The active-memory stand: each arm read at the same false-alarm budget. An arm with no
+    operating point under the budget has no recall cell and says so; an arm whose claims are
+    absent is left out and named."""
+    fam = "guards"
+    if not any(c.has(f"{fam}.{slug}.recall_at_fpr") or c.has(f"{fam}.{slug}.no_operating_point")
+               for _, slug in GUARD_ROWS):
+        return _not_yet(fam, "python research/guard_bench.py --llm --save")
+    header = ["arm", "recall of the right guard", "precision", "hard-negative false alarms",
+              "project-only recall", "tokens / call", "ms / check"]
+    rows, missing, none = [], [], []
+    for label, slug in GUARD_ROWS:
+        if c.has(f"{fam}.{slug}.no_operating_point"):
+            none.append(label.strip("*"))
+            rows.append([label, "no point under the budget", "-", "-", "-",
+                         _cell(c, f"{fam}.{slug}.tokens_per_call") if c.has(f"{fam}.{slug}.tokens_per_call") else "-",
+                         _cell(c, f"{fam}.{slug}.ms_per_call") if c.has(f"{fam}.{slug}.ms_per_call") else "-"])
+            continue
+        if not c.has(f"{fam}.{slug}.recall_at_fpr"):
+            missing.append(label.strip("*"))
+            continue
+        rows.append([label, _cell(c, f"{fam}.{slug}.recall_at_fpr"), _cell(c, f"{fam}.{slug}.precision_at_fpr"),
+                     _cell(c, f"{fam}.{slug}.hard_negative_fpr") if c.has(f"{fam}.{slug}.hard_negative_fpr") else "-",
+                     _cell(c, f"{fam}.{slug}.project_recall") if c.has(f"{fam}.{slug}.project_recall") else "-",
+                     _cell(c, f"{fam}.{slug}.tokens_per_call"), _cell(c, f"{fam}.{slug}.ms_per_call")])
+    out = _table(header, rows)
+    notes = []
+    if none:
+        notes.append("no operating point at a false-positive rate of 0.05 or below for " + ", ".join(none)
+                     + " - every threshold that fires on a repeat also fires on more than one negative in twenty")
+    if missing:
+        notes.append("no row for " + ", ".join(missing) + ": the arm has no registered number (not run, or blocked)")
+    if notes:
+        out += "\n\n<sub>" + "; ".join(notes) + ".</sub>"
+    return out
+
+
+CODE_SESSION_ROWS = [
+    ("**Nevertwice, our extractor's notes with evidence spans**", "nevertwice_full"),
+    ("append-only sessions, term overlap (floor)", "naive"),
+    ("Mem0 full pipeline, its memories", "mem0_infer"),
+    ("no memory (bracket)", "none"),
+    ("the gold session whole (bracket)", "oracle"),
+]
+
+
+def render_code_sessions(c: Claims) -> str:
+    """The code-session stand: accuracy by question type per arm; the `current` column carries
+    the stale rate beside it, the situation column is retrieval only."""
+    fam = "code_sessions"
+    if not any(c.has(f"{fam}.{slug}.fact") for _, slug in CODE_SESSION_ROWS):
+        return _not_yet(fam, "python research/code_sessions_eval.py judge --arms nevertwice_full,naive,mem0_infer --save")
+    header = ["system", "fact", "current", "stale", "lesson", "situation (top three)", "tokens"]
+    rows, missing = [], []
+    for label, slug in CODE_SESSION_ROWS:
+        if not c.has(f"{fam}.{slug}.fact"):
+            missing.append(label.strip("*"))
+            continue
+        rows.append([label] + [(_cell(c, f"{fam}.{slug}.{k}") if c.has(f"{fam}.{slug}.{k}") else "-")
+                               for k in ("fact", "current", "stale", "lesson", "situation", "tokens")])
+    out = _table(header, rows)
+    if missing:
+        out += "\n\n<sub>No row for " + ", ".join(missing) + ": no registered number for the arm.</sub>"
+    return out
+
+
 RENDERERS = {
     "supersession-pinned": render_supersession_pinned,
     "supersession-variants": render_supersession_variants,
@@ -690,6 +766,8 @@ RENDERERS = {
     "baselines-registry": render_baselines_registry,
     "baselines-matrix": render_baselines_matrix,
     "baselines-summary": render_baselines_summary,
+    "guard-bench": render_guard_bench,
+    "code-sessions": render_code_sessions,
 }
 
 

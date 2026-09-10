@@ -148,9 +148,13 @@ def build_store(cases: list[dict]) -> None:
     prevent.
     """
     os.environ["NEVERTWICE_CLOUD"] = "none"
-    os.environ.setdefault("NEVERTWICE_MODEL", os.environ.get("SUPERSESSION_LLM",
-                                                             "qwen3-coder:30b"))
+    # Set, not defaulted: the shell on this machine exports NEVERTWICE_MODEL for the live hook,
+    # and `setdefault` let that model build the store while the register named another
+    # (found 2026-09-10). The engine binds the name at import, so it is also bound explicitly.
+    llm = os.environ.get("SUPERSESSION_LLM", "qwen3-coder:30b")
+    os.environ["NEVERTWICE_MODEL"] = llm
     from nevertwice import api                                  # noqa: PLC0415
+    api.m.OLLAMA_MODEL = llm
     t0 = time.time()
     for i, case in enumerate(cases):
         project = f"abs{i:03d}"
@@ -279,6 +283,8 @@ def main() -> int:
         print("- retrieving once, then sweeping the policy offline")
         captured = capture_hits(cases, args.k)
         out["captured_cases"] = len(captured)
+        out["llm"] = getattr(sys.modules.get("memory_hook"), "OLLAMA_MODEL", os.environ.get("NEVERTWICE_MODEL"))
+        out["embedder"] = os.environ.get("NEVERTWICE_EMBED_MODEL", "bge-m3")
         out["mean_hits_returned"] = round(
             sum(len(c["hits"]) for c in captured) / max(1, len(captured)), 2)
         if args.part in ("all", "recall"):

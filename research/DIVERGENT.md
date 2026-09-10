@@ -1,13 +1,5 @@
 # Serendipitous / divergent recall (results & findings)
 
-<!-- withdrawn-banner -->
-> **Withdrawn: figures on this page must not be quoted.** They were retracted and remain
-> here because deleting a result one was wrong about destroys the record of having been
-> wrong. The design, the method and the caveats stand; the numbers do not. Each figure's
-> own reason and date are in
-> [`research/evidence_manifest.json`](evidence_manifest.json), and
-> `python tools/check_freshness.py --list-stale` lists every one.
-
 *Companion to `research/divergent.py`. Reproduce: `python research/divergent.py --save`
 (CPU, seeded, ~3 s). 12 clusters × 10 notes + 18 planted bridge notes (each = a normalised
 sum of two cluster centroids), top-5 recall, swept over the divergence knob.*

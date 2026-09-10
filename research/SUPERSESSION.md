@@ -102,45 +102,54 @@ does not separate systems and has to be thrown away.
 
 ## Result
 
+Run of 2026-09-10 at commit e225d9c. The text each arm is scored on is what a caller receives:
+for Nevertwice, the lesson and - since the evidence layer - the verbatim transcript line it was
+aligned to; for Mem0, its memory text; for the floor, the stored sentence.
+
 | arm | stale ↓ | current ↑ | over-retraction ↓ | chars returned per query |
 |---|---|---|---|---|
-| **Nevertwice** | **0.042** [0.018, 0.094] | 0.933 [0.874, 0.966] | **0.05** | 277 |
-| Mem0 2.0.19 | 0.917 [0.819, 0.964] | 0.950 [0.863, 0.983] | 0.00 | 457 |
-| naive append-only + BM25 | 0.950 [0.863, 0.983] | 0.950 [0.863, 0.983] | 0.05 | 223 |
+| **Nevertwice** | **0.075** [0.040, 0.136] | 0.967 | **0.05** | 400 |
+| Mem0 2.0.19 | 0.883 [0.778, 0.942] | 0.967 | 0.00 | 444 |
+| naive append-only + BM25 | 0.950 [0.863, 0.983] | 0.950 | 0.05 | 223 |
 
 Nevertwice's row is pooled over **two runs of the same commit**, so n = 120 case-runs for
 stale and current and n = 40 for over-retraction; the other two arms are one run each, n = 60
 and n = 20. Intervals are Wilson at 95%.
 
-**Why two runs.** The first run of the fixed engine read stale 0.017 and the second read 0.067,
-on the same commit, the same corpus and the same models. The extraction model is not
-deterministic at temperature 0, so a single run of this stand is not a result, and publishing
-one would have been the same mistake as reading a regression out of one latency run. The pooled
-rate is 0.042 and both per-run values are kept in the artifact.
+**Why two runs.** The two runs read stale 0.083 and 0.067 on the same commit, the same corpus
+and the same models. The extraction model is not deterministic at temperature 0, so a single
+run of this stand is not a result, and publishing one would have been the same mistake as
+reading a regression out of one latency run. Both per-run values are kept in the artifact.
+
+**What the evidence layer changed here.** The scored text now carries the verbatim line, so a
+retracted value the note's own wording had paraphrased away is counted as stale when the line
+still says it - the metric got stricter, not the engine looser - and the replacement's literal
+value is found more often, which is where the current column's rise comes from. The stale
+column moved from the run before by less than its own interval.
 
 The other two columns are what make the first one mean anything. A memory that returned
 nothing at all would score 0.000 stale, which is the best possible number, and 0.000 current,
 which is the worst; a memory that deleted on any doubt would score well on both and be caught
-by over-retraction. Ours reads 0.017 / 0.933 / 0.05, and the third figure is the same as the
+by over-retraction. Ours reads 0.075 / 0.967 / 0.05, and the third figure is the same as the
 floor's, so the silence on the first is not bought by forgetting.
 
 Paired, on the same cases, McNemar exact:
 
 | pair | discordant | p |
 |---|---|---|
-| Nevertwice vs Mem0 | 54 - 0, and 51 - 0 on the second run | 1.1 x 10^-16 |
-| Nevertwice vs naive | 56 - 0 | 2.8 x 10^-17 |
-| **Mem0 vs naive** | 2 - 4 | **0.69** |
+| Nevertwice vs Mem0 | 49 - 1 | 9.1 x 10^-14 |
+| Nevertwice vs naive | 52 - 0 | 4.4 x 10^-16 |
+| **Mem0 vs naive** | 2 - 6 | **0.29** |
 
 **The third row is the finding, and it is easy to misread.** Mem0 and the append-only file
-are tied *with each other*, at the wrong end: both hand back the retracted fact on more than
-nine cases in ten. The tie says nothing good about either. On supersession, Mem0 is
+are tied *with each other*, at the wrong end: both hand back the retracted fact on the large
+majority of cases. The tie says nothing good about either. On supersession, Mem0 is
 statistically indistinguishable from a text file. That is not a defect report: Mem0 2.0 is
 single-pass and ADD-only by published design, and its note on the change says both facts
 survive on purpose. It is a good design for conversational history. This benchmark measures
 the axis where that design has nothing to offer, and the number says exactly that.
 
-Its retrieval, meanwhile, is excellent - a current rate of 0.950 against our 0.933, and zero
+Its retrieval, meanwhile, is as good as ours on this run - the same current rate - with zero
 over-retraction. Mem0 loses this benchmark and leads on the one everyone else runs.
 
 ### By shape
@@ -148,13 +157,15 @@ over-retraction. Mem0 loses this benchmark and leads on the one everyone else ru
 | shape | Nevertwice (2 runs) | Mem0 | naive |
 |---|---|---|---|
 | `value_replaced` | 1/30 | 15/15 | 15/15 |
-| `approach_abandoned` | **3/30** | 15/15 | 15/15 |
-| `retracted_no_replacement` | 1/30 | 12/15 | 15/15 |
-| `narrowed` | 0/30 | 13/15 | 12/15 |
+| `approach_abandoned` | **7/30** | 13/15 | 15/15 |
+| `retracted_no_replacement` | 1/30 | 13/15 | 15/15 |
+| `narrowed` | 0/30 | 12/15 | 12/15 |
 
-Stale count, lower is better. `narrowed` is clean across both runs. The rest are one or two
-cases each, and which cases they are moves between runs, which is the nondeterminism above
-showing up per shape rather than only in the total.
+Stale count, lower is better. `narrowed` is clean across both runs and `value_replaced` nearly
+so. `approach_abandoned` carries most of what remains: an abandoned approach is stated in
+different words from the one that replaced it, the two notes rarely share a slug, and the
+twin gate does not always join them - so the old note stays live, and its verbatim line now
+says exactly what it used to say.
 
 `approach_abandoned` is the weakest of the four, and a run before the language fix had four
 failures there. They went away for a reason worth recording rather than celebrating - see
@@ -170,9 +181,13 @@ second session reframed and rotated so the two sessions never share a frame. The
 corpus is unchanged byte for byte, and `--check` proves it.
 
 <!-- claims:supersession-variants -->
-> **Withdrawn 2026-09.** J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences
->
-> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/supersession_bench.py` is what re-measures this one.
+| system | stale, explicit | stale, implicit | current, explicit | current, implicit |
+|---|---|---|---|---|
+| **Nevertwice** | 0.075 | 0.092 | 0.967 | 0.983 |
+| Mem0 | 0.883 | 0.933 | 0.967 | 0.983 |
+| an append-only markdown file | 0.950 | 0.950 | 0.950 | 0.950 |
+
+<sub>Stale = the retracted fact came back, lower is better. Current = the fact that replaced it was returned, higher is better. *Explicit* names the retraction in the second session; *implicit* frames the replacement like any first assertion.</sub>
 <!-- /claims:supersession-variants -->
 
 The gate for this variant was written in the ledger before the run (item I5): our stale rate
@@ -189,20 +204,24 @@ dates two months apart and asks each one twice: for a day between the two sessio
 day after the second. A case counts only when both answers are right.
 
 <!-- claims:asof -->
-> **Withdrawn 2026-09.** J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences
->
-> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/asof_bench.py --arms nevertwice,naive --runs 2 --out research/results/asof_v1.json` is what re-measures this one.
+| arm | both days | the old day | the day after |
+|---|---|---|---|
+| **Nevertwice** (`api.as_of`) | 0.783 | 0.825 | 0.917 |
+| an append-only markdown file, no dates | 0.000 | 0.000 | 1.000 |
+
+<sub>The gate written before the run was 0.80 on both days, and this is below it. The loss is on the old day, and the stand now says why per case: a first session the extractor left without a note, a note whose wording lost the marker, or the new fact leaking into the old day; the artifact carries the split. Mem0 has no row - it stamps a memory with the wall-clock time of the `add()` call and its search has no as-of filter, so facts cannot be placed in the past without patching the product.</sub>
 <!-- /claims:asof -->
 
 ## What it costs us
 
 The stale rate is not free, and the honest accounting is on the other two columns.
 
-**Current rate 0.933 against 0.950 for both other arms.** Fewer than two points, and the store
-says where they went. Of the twenty control cases, seven returned nothing useful: **one** was
-retired by the memory - the only true over-retraction in the run - **two** were never written
-at all, and **four** were written and ranked below the top five. Only the first is the memory
-being too eager, which is why the raw 0.30 is reported as 0.05 here.
+**Current rate 0.967, level with Mem0 and above the floor's 0.950.** The store says where the
+remaining misses went. Of the twenty control cases in the first run, eight returned nothing
+useful: **one** was retired by the memory - the only true over-retraction in the run - **three**
+were never written at all, and **four** were written and ranked below the top five; the second
+run reads one, two and three. Only the first is the memory being too eager, which is why the raw
+control miss rate is reported as 0.05 here.
 
 **A defect this benchmark found in its own first run: the extractor answered in the wrong
 language.** On a corpus containing no Russian at all, the local model wrote **17 of 123 notes
@@ -272,8 +291,8 @@ the harness now counts per-case errors and refuses to score an arm that mostly f
   the comparison holds, but the absolute number does not support the reading "about one in
   twenty". Bringing the upper bound under 0.10 needs about **130 controls**, roughly ninety
   more than the dataset carries, and that is the first thing it should gain.
-- **n = 120 supersession case-runs.** Enough to separate 0.042 from 0.950 many times over; not
-  enough to distinguish 0.042 from 0.08, and the two runs behind it read 0.017 and 0.067.
+- **n = 120 supersession case-runs.** Enough to separate 0.075 from 0.950 many times over; not
+  enough to distinguish 0.075 from 0.04, and the two runs behind it read 0.083 and 0.067.
 - **The cases are written here, not scraped.** They are realistic in shape and were authored
   before any arm ran, but they are ours, and a corpus its author wrote is a weaker instrument
   than one they did not. The naive floor is the guard against the obvious failure mode - if
@@ -284,8 +303,9 @@ the harness now counts per-case errors and refuses to score an arm that mostly f
   wrong language, which is a property of one model on one host and not of the architecture. A
   second machine has not run this, so nothing here separates what the design does from what
   this installation does.
-- **Retrieval quality is not the subject, and on it we lose.** Mem0 and the append-only file
-  both return the wanted fact 0.950 of the time against our 0.933. On the axis a user meets
-  every day, did my fact come back, this design is slightly worse than both arms it beats on
-  staleness. That is the trade this architecture makes, and it is stated in the same table as
-  the win rather than a footnote below it.
+- **Retrieval quality is not the subject.** On this run the wanted fact comes back as often
+  from us as from Mem0, and more often than from the floor; a run earlier this year read us two
+  points behind both. Part of the rise is the scored text now carrying the verbatim line the
+  caller receives, which is the honest reading of what a caller gets, and part is the run. The
+  axis a user meets every day, did my fact come back, is stated in the same table as the win
+  rather than a footnote below it.

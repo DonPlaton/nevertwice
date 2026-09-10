@@ -1,0 +1,67 @@
+# Guards on the tool-call hook: catch rate, false alarms, and the cheap rivals
+
+The README says a guard distilled from a past mistake fires when the agent is about to repeat
+it, at zero context tokens until it does. That is a statement about a mechanism working. This
+page is the measurement the statement lacked: how often the guard catches the repeat, how often
+it cries wolf on code that merely looks like one, and whether anything cheaper does the same
+job. Every arm is read at the same false-alarm budget, with the machinery of
+[`matched_conditions.py`](matched_conditions.py), so no arm wins by firing more.
+
+## The corpus
+
+[`research/data/guard_bench_v1.json`](data/guard_bench_v1.json), written deterministically by
+[`gen_guard_bench.py`](gen_guard_bench.py) from a table anyone can audit. A case is one mistake
+note - title, what happened, prevention, the three fields the guard generator reads - with tool
+calls that repeat it (Edit, Write or Bash payloads, phrased differently) and tool calls that do
+not, at least one of them *hard*: the same identifiers, used correctly. Two families: **generic**
+pitfalls a standard linter models (a bare `except`, `shell=True`, a hard-coded key), where the
+table also says whether `ruff`, `bandit` or a scanner fires - scored in the rival's favour, as
+[`BASELINES.md`](BASELINES.md) does; and **project** pitfalls only this project's history holds
+(the store that must not be written, the argument that is milliseconds, the daemon that is not
+ours), which no linter knows. The counts are in the register.
+
+## Arms
+
+* **guards, engine's no-model patterns** - `propose_from_mistake(use_llm=False)`: an anti-pattern
+  rule where one applies, else the most distinctive code token lifted from the note.
+* **guards, model-written patterns** - the same generator with the local model writing the
+  regex, cached per note; the arm blocks itself above one empty pattern in ten.
+* **cold-start pack** - the eleven patterns every project gets with no history.
+* **linter or scanner** - reads the table: fires on every repeat the table says it catches and
+  never on a negative.
+* **prompt recall** - `api.recall` over the mistake notes with the tool call as the query; a
+  catch when the right note is in the top three; charged the three notes' tokens on every call,
+  because that is what injection costs whether or not the note was needed.
+* **silence** - the floor.
+
+## Reading
+
+Recall of the *right* guard at a false-alarm budget of one negative in twenty or fewer, its
+precision, the false-alarm rate on the hard negatives alone, recall on the project family alone,
+tokens per call and latency per check. A guard that fires on the right risk but names the wrong
+mistake is a false alarm, not partial credit.
+
+<!-- claims:guard-bench -->
+> **Not measured yet.** No `guards.*` claim is registered; `python research/guard_bench.py --llm --save` is the run that produces them.
+<!-- /claims:guard-bench -->
+
+The gate written before the run (`.loop/GOAL-CLOSE.md`, J6): a guard arm keeps the README's
+sentence if it catches at least half the repeats at the budget, beats the linter on the project
+family, and spends at most a tenth of prompt recall's tokens. A miss reduces the sentence to
+what was measured.
+
+## What this does not show
+
+- Single-author, synthetic, small. It supports a reading at a matched false-alarm rate, not a
+  population estimate.
+- A repeat is the author's idea of a repeat; a real agent may phrase one in a way no row here
+  anticipates. The stand measures the rows.
+- The linter column is generous by design: where it was arguable whether a rule would fire, the
+  answer recorded is yes.
+
+## Reproducing
+
+```
+python research/gen_guard_bench.py --check
+python research/guard_bench.py --llm --save
+```

@@ -7,7 +7,9 @@
    "docs/BENCHMARKS.md",
    "research/BASELINES.md",
    "research/LEXICAL_MORPHOLOGY.md",
-   "research/FRONTIER.md"
+   "research/FRONTIER.md",
+   "research/GUARD_BENCH.md",
+   "research/CODE_SESSIONS.md"
   ],
   "excludes": [
    "fenced code blocks - shell commands and illustrative terminal output, not measurements",
@@ -828,7 +830,7 @@
   },
   "research/SUPERSESSION.md": {
    "governance": "backlog",
-   "budget": 112,
+   "budget": 100,
    "note": "Every figure on this page is registered above; the budget covers the per-shape breakdown and the prose, which restate registered numbers in other shapes. The study pages are backlog by the same rule as the rest of the archive.",
    "budget_metric": "evidence-bearing numeric tokens: numbers outside fenced blocks and generated regions, excluding years, months, Python versions and bare single digits",
    "generator": "research/supersession_bench.py"
@@ -861,6 +863,14 @@
   "research/FRONTIER.md": {
    "governance": "governed",
    "note": "every printed number must resolve to a claim; the table is the generated region `frontier`, rendered from the frontier.* family"
+  },
+  "research/GUARD_BENCH.md": {
+   "governance": "governed",
+   "note": "every printed number must resolve to a claim; the table is the generated region `guard-bench`, rendered from the guards.* family"
+  },
+  "research/CODE_SESSIONS.md": {
+   "governance": "governed",
+   "note": "every printed number must resolve to a claim; the table is the generated region `code-sessions`, rendered from the code_sessions.* family"
   }
  },
  "claims": [
@@ -7557,15 +7567,15 @@
   },
   {
    "id": "supersession.nevertwice.stale_rate",
-   "statement": "Nevertwice returns a retracted fact as a current assertion on 4.2% of supersession case-runs, pooled over two runs of the same commit",
-   "value": 0.0583,
+   "statement": "Nevertwice returns a retracted fact as a current assertion on 7.5% of supersession case-runs, pooled over two runs of the same commit",
+   "value": 0.075,
    "printed": [
-    "0.058",
-    "0.058",
-    "0.058",
-    "0.06",
-    "0.058",
-    "0.058"
+    "0.075",
+    "0.075",
+    "0.075",
+    "0.07",
+    "0.075",
+    "0.075"
    ],
    "unit": "rate",
    "dataset": "supersession_v1",
@@ -7577,11 +7587,14 @@
    "ci": {
     "method": "wilson",
     "level": 0.95,
-    "low": 0.0285,
-    "high": 0.1155
+    "low": 0.04,
+    "high": 0.1364
    },
-   "cited_in": [],
-   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
+   "cited_in": [
+    "README.md",
+    "docs/BENCHMARKS.md"
+   ],
+   "commit": "e225d9c55213c5a6a8e9ff04d6931c1d14efbe85",
    "produced_by": [
     "research/supersession_bench.py",
     "nevertwice/__init__.py",
@@ -7617,23 +7630,16 @@
     "research/uncertainty.py",
     "sandbox_guard.py"
    ],
-   "note": "Pooled over two runs of the same commit: the extraction model is not deterministic at temperature 0 and the two runs read 0.0167 and 0.0667. One run of this stand is not a result, so the published figure is the pooled rate over 120 case-runs with the per-run values recorded beside it in the artifact.",
-   "cited_in_pending": [
-    "README.md",
-    "docs/BENCHMARKS.md"
-   ],
-   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
-   "withdrawn_on": "2026-09-10",
-   "pending_remeasure": true
+   "note": "Pooled over two runs of the same commit: the extraction model is not deterministic at temperature 0 and the two runs read 0.0167 and 0.0667. One run of this stand is not a result, so the published figure is the pooled rate over 120 case-runs with the per-run values recorded beside it in the artifact."
   },
   {
    "id": "supersession.nevertwice.current_rate",
-   "statement": "Nevertwice returns the replacement fact on 93.3% of supersession case-runs",
-   "value": 0.9,
+   "statement": "Nevertwice returns the replacement fact on 96.7% of supersession case-runs",
+   "value": 0.9667,
    "printed": [
-    "0.900",
-    "0.900",
-    "0.900"
+    "0.967",
+    "0.967",
+    "0.967"
    ],
    "unit": "rate",
    "dataset": "supersession_v1",
@@ -7645,11 +7651,13 @@
    "ci": {
     "method": "wilson",
     "level": 0.95,
-    "low": 0.8333,
-    "high": 0.9419
+    "low": 0.9175,
+    "high": 0.987
    },
-   "cited_in": [],
-   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
+   "cited_in": [
+    "docs/BENCHMARKS.md"
+   ],
+   "commit": "e225d9c55213c5a6a8e9ff04d6931c1d14efbe85",
    "produced_by": [
     "research/supersession_bench.py",
     "nevertwice/__init__.py",
@@ -7685,13 +7693,7 @@
     "research/uncertainty.py",
     "sandbox_guard.py"
    ],
-   "note": "Pooled over two runs of the same commit: the extraction model is not deterministic at temperature 0 and the two runs read 0.9333 and 0.9333. One run of this stand is not a result, so the published figure is the pooled rate over 120 case-runs with the per-run values recorded beside it in the artifact.",
-   "cited_in_pending": [
-    "docs/BENCHMARKS.md"
-   ],
-   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
-   "withdrawn_on": "2026-09-10",
-   "pending_remeasure": true
+   "note": "Pooled over two runs of the same commit: the extraction model is not deterministic at temperature 0 and the two runs read 0.9333 and 0.9333. One run of this stand is not a result, so the published figure is the pooled rate over 120 case-runs with the per-run values recorded beside it in the artifact."
   },
   {
    "id": "supersession.nevertwice.over_retraction_rate",
@@ -7715,8 +7717,10 @@
     "low": 0.0138,
     "high": 0.165
    },
-   "cited_in": [],
-   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
+   "cited_in": [
+    "docs/BENCHMARKS.md"
+   ],
+   "commit": "e225d9c55213c5a6a8e9ff04d6931c1d14efbe85",
    "produced_by": [
     "research/supersession_bench.py",
     "nevertwice/__init__.py",
@@ -7752,25 +7756,19 @@
     "research/uncertainty.py",
     "sandbox_guard.py"
    ],
-   "note": "2 of 40 controls over two runs. At n=40 an observed 0.05 is bounded above at 0.165; about 130 controls would put that under 0.10. This is the design's own worst failure mode and it remains the least measured column here.",
-   "cited_in_pending": [
-    "docs/BENCHMARKS.md"
-   ],
-   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
-   "withdrawn_on": "2026-09-10",
-   "pending_remeasure": true
+   "note": "2 of 40 controls over two runs. At n=40 an observed 0.05 is bounded above at 0.165; about 130 controls would put that under 0.10. This is the design's own worst failure mode and it remains the least measured column here."
   },
   {
    "id": "supersession.mem0.stale_rate",
-   "statement": "Mem0 2.0.19 returns a retracted fact as a current assertion on 91.7% of supersession cases",
-   "value": 0.9667,
+   "statement": "Mem0 2.0.19 returns a retracted fact as a current assertion on 88.3% of supersession cases",
+   "value": 0.8833,
    "printed": [
-    "0.967",
-    "0.967",
-    "0.967",
-    "0.9667",
-    "0.9667",
-    "0.97"
+    "0.883",
+    "0.883",
+    "0.883",
+    "0.8833",
+    "0.8833",
+    "0.88"
    ],
    "unit": "rate",
    "dataset": "supersession_v1",
@@ -7782,11 +7780,14 @@
    "ci": {
     "method": "wilson",
     "level": 0.95,
-    "low": 0.8864,
-    "high": 0.9908
+    "low": 0.7782,
+    "high": 0.9423
    },
-   "cited_in": [],
-   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
+   "cited_in": [
+    "README.md",
+    "docs/BENCHMARKS.md"
+   ],
+   "commit": "e225d9c55213c5a6a8e9ff04d6931c1d14efbe85",
    "produced_by": [
     "research/supersession_bench.py",
     "nevertwice/__init__.py",
@@ -7821,24 +7822,17 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [
-    "README.md",
-    "docs/BENCHMARKS.md"
-   ],
-   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
-   "withdrawn_on": "2026-09-10",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "supersession.mem0.current_rate",
-   "statement": "Mem0 2.0.19 returns the replacement fact on 95.0% of supersession cases",
-   "value": 0.9833,
+   "statement": "Mem0 2.0.19 returns the replacement fact on 96.7% of supersession cases",
+   "value": 0.9667,
    "printed": [
-    "0.983",
-    "0.983",
-    "0.983",
-    "0.9833"
+    "0.967",
+    "0.967",
+    "0.967",
+    "0.9667"
    ],
    "unit": "rate",
    "dataset": "supersession_v1",
@@ -7850,11 +7844,13 @@
    "ci": {
     "method": "wilson",
     "level": 0.95,
-    "low": 0.9114,
-    "high": 0.997
+    "low": 0.8864,
+    "high": 0.9908
    },
-   "cited_in": [],
-   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
+   "cited_in": [
+    "docs/BENCHMARKS.md"
+   ],
+   "commit": "e225d9c55213c5a6a8e9ff04d6931c1d14efbe85",
    "produced_by": [
     "research/supersession_bench.py",
     "nevertwice/__init__.py",
@@ -7889,13 +7885,7 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [
-    "docs/BENCHMARKS.md"
-   ],
-   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
-   "withdrawn_on": "2026-09-10",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "supersession.mem0.over_retraction_rate",
@@ -7919,8 +7909,10 @@
     "low": 0.0,
     "high": 0.1611
    },
-   "cited_in": [],
-   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
+   "cited_in": [
+    "docs/BENCHMARKS.md"
+   ],
+   "commit": "e225d9c55213c5a6a8e9ff04d6931c1d14efbe85",
    "produced_by": [
     "research/supersession_bench.py",
     "nevertwice/__init__.py",
@@ -7956,13 +7948,7 @@
     "research/uncertainty.py",
     "sandbox_guard.py"
    ],
-   "note": "0 of 20 controls. The interval is wide because the control arm is small: at n=20 an observed 0.05 is bounded above at 0.1611. Reading this column as 'about one in twenty' is reading more than 20 cases can support. Narrowing the upper bound below 0.10 needs roughly 120 controls.",
-   "cited_in_pending": [
-    "docs/BENCHMARKS.md"
-   ],
-   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
-   "withdrawn_on": "2026-09-10",
-   "pending_remeasure": true
+   "note": "0 of 20 controls. The interval is wide because the control arm is small: at n=20 an observed 0.05 is bounded above at 0.1611. Reading this column as 'about one in twenty' is reading more than 20 cases can support. Narrowing the upper bound below 0.10 needs roughly 120 controls."
   },
   {
    "id": "supersession.naive.stale_rate",
@@ -7988,8 +7974,11 @@
     "low": 0.863,
     "high": 0.9829
    },
-   "cited_in": [],
-   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
+   "cited_in": [
+    "README.md",
+    "docs/BENCHMARKS.md"
+   ],
+   "commit": "e225d9c55213c5a6a8e9ff04d6931c1d14efbe85",
    "produced_by": [
     "research/supersession_bench.py",
     "nevertwice/__init__.py",
@@ -8024,14 +8013,7 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [
-    "README.md",
-    "docs/BENCHMARKS.md"
-   ],
-   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
-   "withdrawn_on": "2026-09-10",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "supersession.naive.current_rate",
@@ -8056,8 +8038,10 @@
     "low": 0.863,
     "high": 0.9829
    },
-   "cited_in": [],
-   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
+   "cited_in": [
+    "docs/BENCHMARKS.md"
+   ],
+   "commit": "e225d9c55213c5a6a8e9ff04d6931c1d14efbe85",
    "produced_by": [
     "research/supersession_bench.py",
     "nevertwice/__init__.py",
@@ -8092,13 +8076,7 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [
-    "docs/BENCHMARKS.md"
-   ],
-   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
-   "withdrawn_on": "2026-09-10",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "supersession.naive.over_retraction_rate",
@@ -8122,8 +8100,10 @@
     "low": 0.0089,
     "high": 0.2361
    },
-   "cited_in": [],
-   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
+   "cited_in": [
+    "docs/BENCHMARKS.md"
+   ],
+   "commit": "e225d9c55213c5a6a8e9ff04d6931c1d14efbe85",
    "produced_by": [
     "research/supersession_bench.py",
     "nevertwice/__init__.py",
@@ -8159,20 +8139,14 @@
     "research/uncertainty.py",
     "sandbox_guard.py"
    ],
-   "note": "1 of 20 controls. The interval is wide because the control arm is small: at n=20 an observed 0.05 is bounded above at 0.2361. Reading this column as 'about one in twenty' is reading more than 20 cases can support. Narrowing the upper bound below 0.10 needs roughly 120 controls.",
-   "cited_in_pending": [
-    "docs/BENCHMARKS.md"
-   ],
-   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
-   "withdrawn_on": "2026-09-10",
-   "pending_remeasure": true
+   "note": "1 of 20 controls. The interval is wide because the control arm is small: at n=20 an observed 0.05 is bounded above at 0.2361. Reading this column as 'about one in twenty' is reading more than 20 cases can support. Narrowing the upper bound below 0.10 needs roughly 120 controls."
   },
   {
    "id": "supersession.nevertwice_vs_mem0.p_mcnemar",
-   "statement": "Nevertwice against Mem0 on the same 60 cases: 54 discordant pairs, all in Mem0's disfavour, McNemar exact",
-   "value": 1.1102230246251565e-16,
+   "statement": "Nevertwice against Mem0 on the same 60 cases: 50 discordant pairs, 49 in Mem0's disfavour and 1 in ours, McNemar exact",
+   "value": 9.059419880941277e-14,
    "printed": [
-    "1.1 x 10^-16"
+    "9.1 x 10^-14"
    ],
    "unit": "p-value",
    "dataset": "supersession_v1",
@@ -8183,7 +8157,7 @@
    "pointer": "pairs[1].p_mcnemar",
    "ci": null,
    "cited_in": [],
-   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
+   "commit": "e225d9c55213c5a6a8e9ff04d6931c1d14efbe85",
    "produced_by": [
     "research/supersession_bench.py",
     "nevertwice/__init__.py",
@@ -8218,18 +8192,14 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [],
-   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
-   "withdrawn_on": "2026-09-10",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "supersession.mem0_vs_naive.p_mcnemar",
    "statement": "Mem0 2.0.19 is statistically indistinguishable from an append-only text file on supersession: 2 against 4 discordant pairs, McNemar exact",
-   "value": 1.0,
+   "value": 0.2890625,
    "printed": [
-    "1.00"
+    "0.29"
    ],
    "unit": "p-value",
    "dataset": "supersession_v1",
@@ -8239,8 +8209,10 @@
    "raw": "research/results/supersession_v1.json",
    "pointer": "pairs[0].p_mcnemar",
    "ci": null,
-   "cited_in": [],
-   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
+   "cited_in": [
+    "docs/BENCHMARKS.md"
+   ],
+   "commit": "e225d9c55213c5a6a8e9ff04d6931c1d14efbe85",
    "produced_by": [
     "research/supersession_bench.py",
     "nevertwice/__init__.py",
@@ -8275,20 +8247,14 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [
-    "docs/BENCHMARKS.md"
-   ],
-   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
-   "withdrawn_on": "2026-09-10",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "supersession.nevertwice.chars_per_query",
-   "statement": "Nevertwice returns 288 characters per query on this corpus",
-   "value": 288.5,
+   "statement": "Nevertwice returns 400 characters per query on this corpus",
+   "value": 399.7,
    "printed": [
-    "288"
+    "400"
    ],
    "unit": "characters",
    "dataset": "supersession_v1",
@@ -8298,8 +8264,10 @@
    "raw": "research/results/supersession_v1.json",
    "pointer": "pooled_nevertwice.mean_chars_returned",
    "ci": null,
-   "cited_in": [],
-   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
+   "cited_in": [
+    "docs/BENCHMARKS.md"
+   ],
+   "commit": "e225d9c55213c5a6a8e9ff04d6931c1d14efbe85",
    "produced_by": [
     "research/supersession_bench.py",
     "nevertwice/__init__.py",
@@ -8334,20 +8302,14 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [
-    "docs/BENCHMARKS.md"
-   ],
-   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
-   "withdrawn_on": "2026-09-10",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "supersession.mem0.chars_per_query",
-   "statement": "Mem0 2.0.19 returns 388 characters per query on this corpus",
-   "value": 387.9,
+   "statement": "Mem0 2.0.19 returns 444 characters per query on this corpus",
+   "value": 443.6,
    "printed": [
-    "388"
+    "444"
    ],
    "unit": "characters",
    "dataset": "supersession_v1",
@@ -8357,8 +8319,10 @@
    "raw": "research/results/supersession_v1.json",
    "pointer": "arms.mem0.mean_chars_returned",
    "ci": null,
-   "cited_in": [],
-   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
+   "cited_in": [
+    "docs/BENCHMARKS.md"
+   ],
+   "commit": "e225d9c55213c5a6a8e9ff04d6931c1d14efbe85",
    "produced_by": [
     "research/supersession_bench.py",
     "nevertwice/__init__.py",
@@ -8393,13 +8357,7 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [
-    "docs/BENCHMARKS.md"
-   ],
-   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
-   "withdrawn_on": "2026-09-10",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "supersession.extraction.language_drift",
@@ -8474,8 +8432,10 @@
    "raw": "research/results/supersession_v1.json",
    "pointer": "dataset.supersession_cases",
    "ci": null,
-   "cited_in": [],
-   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
+   "cited_in": [
+    "docs/BENCHMARKS.md"
+   ],
+   "commit": "e225d9c55213c5a6a8e9ff04d6931c1d14efbe85",
    "produced_by": [
     "research/supersession_bench.py",
     "nevertwice/__init__.py",
@@ -8510,13 +8470,7 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [
-    "docs/BENCHMARKS.md"
-   ],
-   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
-   "withdrawn_on": "2026-09-10",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "supersession.dataset.control_cases",
@@ -8533,8 +8487,10 @@
    "raw": "research/results/supersession_v1.json",
    "pointer": "dataset.control_cases",
    "ci": null,
-   "cited_in": [],
-   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
+   "cited_in": [
+    "docs/BENCHMARKS.md"
+   ],
+   "commit": "e225d9c55213c5a6a8e9ff04d6931c1d14efbe85",
    "produced_by": [
     "research/supersession_bench.py",
     "nevertwice/__init__.py",
@@ -8569,21 +8525,15 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [
-    "docs/BENCHMARKS.md"
-   ],
-   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
-   "withdrawn_on": "2026-09-10",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "supersession.nevertwice_vs_mem0.discordant",
-   "statement": "Nevertwice against Mem0 on the same cases: 54 discordant pairs in the first engine run and 54 in the second, none in the other direction in either",
-   "value": 54,
+   "statement": "Nevertwice against Mem0 on the same cases: 49 discordant pairs in the first engine run and 49 in the second, none in the other direction in either",
+   "value": 49,
    "printed": [
-    "54",
-    "54"
+    "49",
+    "49"
    ],
    "unit": "pairs",
    "dataset": "supersession_v1",
@@ -8593,8 +8543,10 @@
    "raw": "research/results/supersession_v1.json",
    "pointer": "pairs_per_engine_run[0].mem0_only",
    "ci": null,
-   "cited_in": [],
-   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
+   "cited_in": [
+    "docs/BENCHMARKS.md"
+   ],
+   "commit": "e225d9c55213c5a6a8e9ff04d6931c1d14efbe85",
    "produced_by": [
     "research/supersession_bench.py",
     "nevertwice/__init__.py",
@@ -8629,13 +8581,7 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [
-    "docs/BENCHMARKS.md"
-   ],
-   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
-   "withdrawn_on": "2026-09-10",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "abstention.recall.shipped_threshold",
@@ -18007,10 +17953,10 @@
   },
   {
    "id": "supersession_implicit.nevertwice.stale_rate",
-   "statement": "Nevertwice returns a retracted fact as a current assertion on 10.0% of supersession case-runs on the implicit-replacement corpus, pooled over 2 runs of the same commit",
-   "value": 0.1,
+   "statement": "Nevertwice returns a retracted fact as a current assertion on 9.2% of supersession case-runs on the implicit-replacement corpus, pooled over 2 runs of the same commit",
+   "value": 0.0917,
    "printed": [
-    "0.100"
+    "0.092"
    ],
    "unit": "rate",
    "n": 120,
@@ -18018,15 +17964,15 @@
    "ci": {
     "method": "wilson",
     "level": 0.95,
-    "low": 0.0581,
-    "high": 0.1667
+    "low": 0.052,
+    "high": 0.1568
    },
    "dataset": "supersession_v1_implicit",
    "environment": "local_supersession_stand",
    "command": "python research/supersession_bench.py --dataset research/data/supersession_v1_implicit.json --arms nevertwice,naive",
    "raw": "research/results/supersession_v1_implicit.json",
    "cited_in": [],
-   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
+   "commit": "e225d9c55213c5a6a8e9ff04d6931c1d14efbe85",
    "produced_by": [
     "research/supersession_bench.py",
     "nevertwice/__init__.py",
@@ -18062,18 +18008,14 @@
     "research/uncertainty.py",
     "sandbox_guard.py"
    ],
-   "note": "Pooled over 2 runs of the same commit: the extraction model is not deterministic at temperature 0 and the runs read 0.1167 and 0.0833. One run of this stand is not a result, so the published figure is the pooled rate over 120 case-runs with the per-run values beside it in the artifact.",
-   "cited_in_pending": [],
-   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
-   "withdrawn_on": "2026-09-10",
-   "pending_remeasure": true
+   "note": "Pooled over 2 runs of the same commit: the extraction model is not deterministic at temperature 0 and the runs read 0.1167 and 0.0833. One run of this stand is not a result, so the published figure is the pooled rate over 120 case-runs with the per-run values beside it in the artifact."
   },
   {
    "id": "supersession_implicit.nevertwice.current_rate",
-   "statement": "Nevertwice returns the replacement fact on 95.0% of supersession case-runs on the implicit-replacement corpus",
-   "value": 0.95,
+   "statement": "Nevertwice returns the replacement fact on 98.3% of supersession case-runs on the implicit-replacement corpus",
+   "value": 0.9833,
    "printed": [
-    "0.950"
+    "0.983"
    ],
    "unit": "rate",
    "n": 120,
@@ -18081,15 +18023,15 @@
    "ci": {
     "method": "wilson",
     "level": 0.95,
-    "low": 0.8952,
-    "high": 0.9769
+    "low": 0.9412,
+    "high": 0.9954
    },
    "dataset": "supersession_v1_implicit",
    "environment": "local_supersession_stand",
    "command": "python research/supersession_bench.py --dataset research/data/supersession_v1_implicit.json --arms nevertwice,naive",
    "raw": "research/results/supersession_v1_implicit.json",
    "cited_in": [],
-   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
+   "commit": "e225d9c55213c5a6a8e9ff04d6931c1d14efbe85",
    "produced_by": [
     "research/supersession_bench.py",
     "nevertwice/__init__.py",
@@ -18125,18 +18067,14 @@
     "research/uncertainty.py",
     "sandbox_guard.py"
    ],
-   "note": "Pooled over 2 runs of the same commit: the extraction model is not deterministic at temperature 0 and the runs read 0.1167 and 0.0833. One run of this stand is not a result, so the published figure is the pooled rate over 120 case-runs with the per-run values beside it in the artifact.",
-   "cited_in_pending": [],
-   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
-   "withdrawn_on": "2026-09-10",
-   "pending_remeasure": true
+   "note": "Pooled over 2 runs of the same commit: the extraction model is not deterministic at temperature 0 and the runs read 0.1167 and 0.0833. One run of this stand is not a result, so the published figure is the pooled rate over 120 case-runs with the per-run values beside it in the artifact."
   },
   {
    "id": "supersession_implicit.nevertwice.over_retraction_rate",
    "statement": "Nevertwice retires a still-true fact on 1 of 40 control case-runs on the implicit-replacement corpus",
-   "value": 0.025,
+   "value": 0.05,
    "printed": [
-    "0.03"
+    "0.05"
    ],
    "unit": "rate",
    "n": 40,
@@ -18144,15 +18082,15 @@
    "ci": {
     "method": "wilson",
     "level": 0.95,
-    "low": 0.0044,
-    "high": 0.1288
+    "low": 0.0138,
+    "high": 0.165
    },
    "dataset": "supersession_v1_implicit",
    "environment": "local_supersession_stand",
    "command": "python research/supersession_bench.py --dataset research/data/supersession_v1_implicit.json --arms nevertwice,naive",
    "raw": "research/results/supersession_v1_implicit.json",
    "cited_in": [],
-   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
+   "commit": "e225d9c55213c5a6a8e9ff04d6931c1d14efbe85",
    "produced_by": [
     "research/supersession_bench.py",
     "nevertwice/__init__.py",
@@ -18187,18 +18125,14 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [],
-   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
-   "withdrawn_on": "2026-09-10",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "supersession_implicit.nevertwice.chars_per_query",
-   "statement": "Nevertwice returns 307 characters per query on the implicit-replacement corpus",
-   "value": 306.6,
+   "statement": "Nevertwice returns 413 characters per query on the implicit-replacement corpus",
+   "value": 413.4,
    "printed": [
-    "307"
+    "413"
    ],
    "unit": "characters",
    "n": 160,
@@ -18209,7 +18143,7 @@
    "command": "python research/supersession_bench.py --dataset research/data/supersession_v1_implicit.json --arms nevertwice,naive",
    "raw": "research/results/supersession_v1_implicit.json",
    "cited_in": [],
-   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
+   "commit": "e225d9c55213c5a6a8e9ff04d6931c1d14efbe85",
    "produced_by": [
     "research/supersession_bench.py",
     "nevertwice/__init__.py",
@@ -18244,11 +18178,7 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [],
-   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
-   "withdrawn_on": "2026-09-10",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "supersession_implicit.naive.stale_rate",
@@ -18271,7 +18201,7 @@
    "command": "python research/supersession_bench.py --dataset research/data/supersession_v1_implicit.json --arms nevertwice,naive",
    "raw": "research/results/supersession_v1_implicit.json",
    "cited_in": [],
-   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
+   "commit": "e225d9c55213c5a6a8e9ff04d6931c1d14efbe85",
    "produced_by": [
     "research/supersession_bench.py",
     "nevertwice/__init__.py",
@@ -18306,11 +18236,7 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [],
-   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
-   "withdrawn_on": "2026-09-10",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "supersession_implicit.naive.current_rate",
@@ -18333,7 +18259,7 @@
    "command": "python research/supersession_bench.py --dataset research/data/supersession_v1_implicit.json --arms nevertwice,naive",
    "raw": "research/results/supersession_v1_implicit.json",
    "cited_in": [],
-   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
+   "commit": "e225d9c55213c5a6a8e9ff04d6931c1d14efbe85",
    "produced_by": [
     "research/supersession_bench.py",
     "nevertwice/__init__.py",
@@ -18368,11 +18294,7 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [],
-   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
-   "withdrawn_on": "2026-09-10",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "supersession_implicit.naive.over_retraction_rate",
@@ -18395,7 +18317,7 @@
    "command": "python research/supersession_bench.py --dataset research/data/supersession_v1_implicit.json --arms nevertwice,naive",
    "raw": "research/results/supersession_v1_implicit.json",
    "cited_in": [],
-   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
+   "commit": "e225d9c55213c5a6a8e9ff04d6931c1d14efbe85",
    "produced_by": [
     "research/supersession_bench.py",
     "nevertwice/__init__.py",
@@ -18430,11 +18352,7 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [],
-   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
-   "withdrawn_on": "2026-09-10",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "supersession_implicit.naive.chars_per_query",
@@ -18452,7 +18370,7 @@
    "command": "python research/supersession_bench.py --dataset research/data/supersession_v1_implicit.json --arms nevertwice,naive",
    "raw": "research/results/supersession_v1_implicit.json",
    "cited_in": [],
-   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
+   "commit": "e225d9c55213c5a6a8e9ff04d6931c1d14efbe85",
    "produced_by": [
     "research/supersession_bench.py",
     "nevertwice/__init__.py",
@@ -18487,18 +18405,14 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [],
-   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
-   "withdrawn_on": "2026-09-10",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "supersession_implicit.mem0.stale_rate",
-   "statement": "Mem0 2.0.19 returns a retracted fact as a current assertion on 96.7% of supersession cases on the implicit-replacement corpus",
-   "value": 0.9667,
+   "statement": "Mem0 2.0.19 returns a retracted fact as a current assertion on 93.3% of supersession cases on the implicit-replacement corpus",
+   "value": 0.9333,
    "printed": [
-    "0.967"
+    "0.933"
    ],
    "unit": "rate",
    "n": 60,
@@ -18506,15 +18420,15 @@
    "ci": {
     "method": "wilson",
     "level": 0.95,
-    "low": 0.8864,
-    "high": 0.9908
+    "low": 0.8407,
+    "high": 0.9738
    },
    "dataset": "supersession_v1_implicit",
    "environment": "local_supersession_stand",
    "command": "python research/supersession_bench.py --dataset research/data/supersession_v1_implicit.json --arms nevertwice,naive",
    "raw": "research/results/supersession_v1_implicit.json",
    "cited_in": [],
-   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
+   "commit": "e225d9c55213c5a6a8e9ff04d6931c1d14efbe85",
    "produced_by": [
     "research/supersession_bench.py",
     "nevertwice/__init__.py",
@@ -18549,11 +18463,7 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [],
-   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
-   "withdrawn_on": "2026-09-10",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "supersession_implicit.mem0.current_rate",
@@ -18569,14 +18479,14 @@
     "method": "wilson",
     "level": 0.95,
     "low": 0.9114,
-    "high": 0.9971
+    "high": 0.997
    },
    "dataset": "supersession_v1_implicit",
    "environment": "local_supersession_stand",
    "command": "python research/supersession_bench.py --dataset research/data/supersession_v1_implicit.json --arms nevertwice,naive",
    "raw": "research/results/supersession_v1_implicit.json",
    "cited_in": [],
-   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
+   "commit": "e225d9c55213c5a6a8e9ff04d6931c1d14efbe85",
    "produced_by": [
     "research/supersession_bench.py",
     "nevertwice/__init__.py",
@@ -18611,11 +18521,7 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [],
-   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
-   "withdrawn_on": "2026-09-10",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "supersession_implicit.mem0.over_retraction_rate",
@@ -18638,7 +18544,7 @@
    "command": "python research/supersession_bench.py --dataset research/data/supersession_v1_implicit.json --arms nevertwice,naive",
    "raw": "research/results/supersession_v1_implicit.json",
    "cited_in": [],
-   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
+   "commit": "e225d9c55213c5a6a8e9ff04d6931c1d14efbe85",
    "produced_by": [
     "research/supersession_bench.py",
     "nevertwice/__init__.py",
@@ -18673,18 +18579,14 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [],
-   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
-   "withdrawn_on": "2026-09-10",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "supersession_implicit.mem0.chars_per_query",
-   "statement": "Mem0 2.0.19 returns 407 characters per query on the implicit-replacement corpus",
-   "value": 406.7,
+   "statement": "Mem0 2.0.19 returns 422 characters per query on the implicit-replacement corpus",
+   "value": 422.4,
    "printed": [
-    "407"
+    "422"
    ],
    "unit": "characters",
    "n": 80,
@@ -18695,7 +18597,7 @@
    "command": "python research/supersession_bench.py --dataset research/data/supersession_v1_implicit.json --arms nevertwice,naive",
    "raw": "research/results/supersession_v1_implicit.json",
    "cited_in": [],
-   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
+   "commit": "e225d9c55213c5a6a8e9ff04d6931c1d14efbe85",
    "produced_by": [
     "research/supersession_bench.py",
     "nevertwice/__init__.py",
@@ -18730,11 +18632,7 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [],
-   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
-   "withdrawn_on": "2026-09-10",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "supersession_implicit.mem0_vs_naive.p_mcnemar",
@@ -18752,7 +18650,7 @@
    "command": "python research/supersession_bench.py --dataset research/data/supersession_v1_implicit.json --arms nevertwice,naive",
    "raw": "research/results/supersession_v1_implicit.json",
    "cited_in": [],
-   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
+   "commit": "e225d9c55213c5a6a8e9ff04d6931c1d14efbe85",
    "produced_by": [
     "research/supersession_bench.py",
     "nevertwice/__init__.py",
@@ -18787,18 +18685,14 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [],
-   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
-   "withdrawn_on": "2026-09-10",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "supersession_implicit.mem0_vs_nevertwice.p_mcnemar",
    "statement": "mem0 against nevertwice on the same 60 supersession cases of the implicit-replacement corpus: 51 against 0 discordant pairs, McNemar exact",
-   "value": 8.881784197001252e-16,
+   "value": 1.7763568394002505e-15,
    "printed": [
-    "8.9 x 10^-16"
+    "1.8 x 10^-15"
    ],
    "unit": "p-value",
    "n": 60,
@@ -18809,7 +18703,7 @@
    "command": "python research/supersession_bench.py --dataset research/data/supersession_v1_implicit.json --arms nevertwice,naive",
    "raw": "research/results/supersession_v1_implicit.json",
    "cited_in": [],
-   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
+   "commit": "e225d9c55213c5a6a8e9ff04d6931c1d14efbe85",
    "produced_by": [
     "research/supersession_bench.py",
     "nevertwice/__init__.py",
@@ -18844,18 +18738,14 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [],
-   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
-   "withdrawn_on": "2026-09-10",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "supersession_implicit.naive_vs_nevertwice.p_mcnemar",
    "statement": "naive against nevertwice on the same 60 supersession cases of the implicit-replacement corpus: 50 against 0 discordant pairs, McNemar exact",
-   "value": 1.7763568394002505e-15,
+   "value": 8.881784197001252e-16,
    "printed": [
-    "1.8 x 10^-15"
+    "8.9 x 10^-16"
    ],
    "unit": "p-value",
    "n": 60,
@@ -18866,7 +18756,7 @@
    "command": "python research/supersession_bench.py --dataset research/data/supersession_v1_implicit.json --arms nevertwice,naive",
    "raw": "research/results/supersession_v1_implicit.json",
    "cited_in": [],
-   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
+   "commit": "e225d9c55213c5a6a8e9ff04d6931c1d14efbe85",
    "produced_by": [
     "research/supersession_bench.py",
     "nevertwice/__init__.py",
@@ -18901,11 +18791,7 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [],
-   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
-   "withdrawn_on": "2026-09-10",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "supersession_implicit.dataset.supersession_cases",
@@ -18923,7 +18809,7 @@
    "command": "python research/supersession_bench.py --dataset research/data/supersession_v1_implicit.json --arms nevertwice,naive",
    "raw": "research/results/supersession_v1_implicit.json",
    "cited_in": [],
-   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
+   "commit": "e225d9c55213c5a6a8e9ff04d6931c1d14efbe85",
    "produced_by": [
     "research/supersession_bench.py",
     "nevertwice/__init__.py",
@@ -18958,11 +18844,7 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [],
-   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
-   "withdrawn_on": "2026-09-10",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "supersession_implicit.dataset.control_cases",
@@ -18980,7 +18862,7 @@
    "command": "python research/supersession_bench.py --dataset research/data/supersession_v1_implicit.json --arms nevertwice,naive",
    "raw": "research/results/supersession_v1_implicit.json",
    "cited_in": [],
-   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
+   "commit": "e225d9c55213c5a6a8e9ff04d6931c1d14efbe85",
    "produced_by": [
     "research/supersession_bench.py",
     "nevertwice/__init__.py",
@@ -19015,18 +18897,14 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [],
-   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
-   "withdrawn_on": "2026-09-10",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "asof.nevertwice.both_correct",
-   "statement": "Nevertwice (api.as_of over belief intervals) answers BOTH days correctly on the supersession corpus asked as of a day in 0.625 of cases",
-   "value": 0.625,
+   "statement": "Nevertwice (api.as_of over belief intervals) answers BOTH days correctly on the supersession corpus asked as of a day in 0.783 of cases",
+   "value": 0.7833,
    "printed": [
-    "0.625"
+    "0.783"
    ],
    "unit": "rate",
    "dataset": "supersession_v1",
@@ -19038,11 +18916,11 @@
    "ci": {
     "method": "wilson",
     "level": 0.95,
-    "low": 0.5358,
-    "high": 0.7065
+    "low": 0.7014,
+    "high": 0.8476
    },
    "cited_in": [],
-   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
+   "commit": "e225d9c55213c5a6a8e9ff04d6931c1d14efbe85",
    "note": "As-of recall (ledger I6): the sixty supersession cases ingested with dates two months apart through the public API, then asked twice - for a day between the two sessions and for a day after the second. A case counts only when BOTH answers are right: the superseded fact for the old day, with the replacement absent, and the replacement for the new day. Our arm pools two ingest runs (the extractor is not deterministic); the naive floor has no notion of a date, so one ranking answers both days. Mem0 records a blocker: its memories carry the wall-clock time of the add() call and its search has no as-of filter. The gate written before the run was 0.80; this family is below it and is published for that reason.",
    "produced_by": [
     "research/asof_bench.py",
@@ -19079,18 +18957,14 @@
     "research/supersession_bench.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [],
-   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
-   "withdrawn_on": "2026-09-10",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "asof.nevertwice.old_day",
-   "statement": "Nevertwice (api.as_of over belief intervals) answers the day the superseded fact still held on the supersession corpus asked as of a day in 0.683 of cases",
-   "value": 0.6833,
+   "statement": "Nevertwice (api.as_of over belief intervals) answers the day the superseded fact still held on the supersession corpus asked as of a day in 0.825 of cases",
+   "value": 0.825,
    "printed": [
-    "0.683"
+    "0.825"
    ],
    "unit": "rate",
    "dataset": "supersession_v1",
@@ -19102,11 +18976,11 @@
    "ci": {
     "method": "wilson",
     "level": 0.95,
-    "low": 0.5955,
-    "high": 0.7597
+    "low": 0.7472,
+    "high": 0.8826
    },
    "cited_in": [],
-   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
+   "commit": "e225d9c55213c5a6a8e9ff04d6931c1d14efbe85",
    "note": "As-of recall (ledger I6): the sixty supersession cases ingested with dates two months apart through the public API, then asked twice - for a day between the two sessions and for a day after the second. A case counts only when BOTH answers are right: the superseded fact for the old day, with the replacement absent, and the replacement for the new day. Our arm pools two ingest runs (the extractor is not deterministic); the naive floor has no notion of a date, so one ranking answers both days. Mem0 records a blocker: its memories carry the wall-clock time of the add() call and its search has no as-of filter. The gate written before the run was 0.80; this family is below it and is published for that reason.",
    "produced_by": [
     "research/asof_bench.py",
@@ -19143,18 +19017,14 @@
     "research/supersession_bench.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [],
-   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
-   "withdrawn_on": "2026-09-10",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "asof.nevertwice.new_day",
-   "statement": "Nevertwice (api.as_of over belief intervals) answers the day after the replacement on the supersession corpus asked as of a day in 0.833 of cases",
-   "value": 0.8333,
+   "statement": "Nevertwice (api.as_of over belief intervals) answers the day after the replacement on the supersession corpus asked as of a day in 0.917 of cases",
+   "value": 0.9167,
    "printed": [
-    "0.833"
+    "0.917"
    ],
    "unit": "rate",
    "dataset": "supersession_v1",
@@ -19166,11 +19036,11 @@
    "ci": {
     "method": "wilson",
     "level": 0.95,
-    "low": 0.7565,
-    "high": 0.8894
+    "low": 0.8534,
+    "high": 0.9541
    },
    "cited_in": [],
-   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
+   "commit": "e225d9c55213c5a6a8e9ff04d6931c1d14efbe85",
    "note": "As-of recall (ledger I6): the sixty supersession cases ingested with dates two months apart through the public API, then asked twice - for a day between the two sessions and for a day after the second. A case counts only when BOTH answers are right: the superseded fact for the old day, with the replacement absent, and the replacement for the new day. Our arm pools two ingest runs (the extractor is not deterministic); the naive floor has no notion of a date, so one ranking answers both days. Mem0 records a blocker: its memories carry the wall-clock time of the add() call and its search has no as-of filter. The gate written before the run was 0.80; this family is below it and is published for that reason.",
    "produced_by": [
     "research/asof_bench.py",
@@ -19207,11 +19077,7 @@
     "research/supersession_bench.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [],
-   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
-   "withdrawn_on": "2026-09-10",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "asof.naive.both_correct",
@@ -19234,7 +19100,7 @@
     "high": 0.0602
    },
    "cited_in": [],
-   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
+   "commit": "e225d9c55213c5a6a8e9ff04d6931c1d14efbe85",
    "note": "As-of recall (ledger I6): the sixty supersession cases ingested with dates two months apart through the public API, then asked twice - for a day between the two sessions and for a day after the second. A case counts only when BOTH answers are right: the superseded fact for the old day, with the replacement absent, and the replacement for the new day. Our arm pools two ingest runs (the extractor is not deterministic); the naive floor has no notion of a date, so one ranking answers both days. Mem0 records a blocker: its memories carry the wall-clock time of the add() call and its search has no as-of filter. The gate written before the run was 0.80; this family is below it and is published for that reason.",
    "produced_by": [
     "research/asof_bench.py",
@@ -19271,11 +19137,7 @@
     "research/supersession_bench.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [],
-   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
-   "withdrawn_on": "2026-09-10",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "asof.naive.old_day",
@@ -19298,7 +19160,7 @@
     "high": 0.0602
    },
    "cited_in": [],
-   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
+   "commit": "e225d9c55213c5a6a8e9ff04d6931c1d14efbe85",
    "note": "As-of recall (ledger I6): the sixty supersession cases ingested with dates two months apart through the public API, then asked twice - for a day between the two sessions and for a day after the second. A case counts only when BOTH answers are right: the superseded fact for the old day, with the replacement absent, and the replacement for the new day. Our arm pools two ingest runs (the extractor is not deterministic); the naive floor has no notion of a date, so one ranking answers both days. Mem0 records a blocker: its memories carry the wall-clock time of the add() call and its search has no as-of filter. The gate written before the run was 0.80; this family is below it and is published for that reason.",
    "produced_by": [
     "research/asof_bench.py",
@@ -19335,11 +19197,7 @@
     "research/supersession_bench.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [],
-   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
-   "withdrawn_on": "2026-09-10",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "asof.naive.new_day",
@@ -19362,7 +19220,7 @@
     "high": 1.0
    },
    "cited_in": [],
-   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
+   "commit": "e225d9c55213c5a6a8e9ff04d6931c1d14efbe85",
    "note": "As-of recall (ledger I6): the sixty supersession cases ingested with dates two months apart through the public API, then asked twice - for a day between the two sessions and for a day after the second. A case counts only when BOTH answers are right: the superseded fact for the old day, with the replacement absent, and the replacement for the new day. Our arm pools two ingest runs (the extractor is not deterministic); the naive floor has no notion of a date, so one ranking answers both days. Mem0 records a blocker: its memories carry the wall-clock time of the add() call and its search has no as-of filter. The gate written before the run was 0.80; this family is below it and is published for that reason.",
    "produced_by": [
     "research/asof_bench.py",
@@ -19399,11 +19257,7 @@
     "research/supersession_bench.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [],
-   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
-   "withdrawn_on": "2026-09-10",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "asof.gate.threshold",
@@ -19422,8 +19276,8 @@
    "pointer": null,
    "ci": null,
    "cited_in": [],
-   "commit": "165d7a0317a2907605260b4ab03f9091d6bebcf7",
-   "note": "As-of recall (ledger I6): the sixty supersession cases ingested with dates two months apart through the public API, then asked twice - for a day between the two sessions and for a day after the second. A case counts only when BOTH answers are right: the superseded fact for the old day, with the replacement absent, and the replacement for the new day. Our arm pools two ingest runs (the extractor is not deterministic); the naive floor has no notion of a date, so one ranking answers both days. Mem0 records a blocker: its memories carry the wall-clock time of the add() call and its search has no as-of filter. The gate written before the run was 0.80; this family is below it and is published for that reason.",
+   "commit": "e225d9c55213c5a6a8e9ff04d6931c1d14efbe85",
+   "note": "As-of recall (ledger I6): the sixty supersession cases ingested with dates two months apart through the public API, then asked twice - for a day between the two sessions and for a day after the second. A case counts only when BOTH answers are right: the superseded fact for the old day, with the replacement absent, and the replacement for the new day. Our arm pools two ingest runs (the extractor is not deterministic); the naive floor has no notion of a date, so one ranking answers both days. Mem0 records a blocker: its memories carry the wall-clock time of the add() call and its search has no as-of filter. The gate written before the run was 0.80; this family is below it and is published for that reason. Un-withdrawn by hand 2026-09-10: a declared gate value (0.80), not a measurement; withdrawn with its family by `--touching auto` and restored with it.",
    "produced_by": [
     "research/asof_bench.py",
     "nevertwice/__init__.py",
@@ -19461,8 +19315,6 @@
     "sandbox_guard.py"
    ],
    "cited_in_pending": [],
-   "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
-   "withdrawn_on": "2026-09-10",
    "pending_remeasure": true
   },
   {
@@ -22447,6 +22299,549 @@
    "stale": "J1/J2 (2026-09-10): api.py gained the evidence-span layer and the temporal stands read it; re-measured at the next HEAD by the one campaign the ledger sequences",
    "withdrawn_on": "2026-09-10",
    "pending_remeasure": true
+  },
+  {
+   "id": "asof.nevertwice.old_day_miss.never_written",
+   "statement": "of the as-of case-runs that missed the old day, 13 missed because the extractor wrote no note for the first session",
+   "value": 13,
+   "printed": [
+    "13"
+   ],
+   "unit": "case-runs",
+   "n": 120,
+   "pointer": "arms[\"nevertwice\"].old_day_failures_by_kind.never_written",
+   "dataset": "supersession_v1",
+   "environment": "local_supersession_stand",
+   "command": "python research/asof_bench.py --arms nevertwice,naive --runs 2 --out research/results/asof_v1.json",
+   "raw": "research/results/asof_v1.json",
+   "cited_in": [],
+   "commit": "e225d9c55213c5a6a8e9ff04d6931c1d14efbe85",
+   "produced_by": [
+    "research/asof_bench.py",
+    "nevertwice/__init__.py",
+    "nevertwice/anticipate.py",
+    "nevertwice/api.py",
+    "nevertwice/budget.py",
+    "nevertwice/causal.py",
+    "nevertwice/config.py",
+    "nevertwice/dashboard.py",
+    "nevertwice/digest.py",
+    "nevertwice/emit.py",
+    "nevertwice/evidence.py",
+    "nevertwice/graph.py",
+    "nevertwice/guards.py",
+    "nevertwice/inbox.py",
+    "nevertwice/index_sqlite.py",
+    "nevertwice/integrity.py",
+    "nevertwice/interop.py",
+    "nevertwice/lenses.py",
+    "nevertwice/memory_hook.py",
+    "nevertwice/memory_search.py",
+    "nevertwice/outcomes.py",
+    "nevertwice/rankers.py",
+    "nevertwice/receipt.py",
+    "nevertwice/reranker_ce.py",
+    "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
+    "nevertwice/store_state.py",
+    "nevertwice/why_fired.py",
+    "research/_frontier.py",
+    "research/cheap_baselines.py",
+    "research/matched_conditions.py",
+    "research/supersession_bench.py",
+    "research/uncertainty.py",
+    "sandbox_guard.py"
+   ],
+   "ci": null
+  },
+  {
+   "id": "asof.nevertwice.old_day_miss.unranked",
+   "statement": "of the as-of case-runs that missed the old day, 0 missed because a first-session note existed but nothing came back for the old day",
+   "value": 0,
+   "printed": [
+    "0"
+   ],
+   "unit": "case-runs",
+   "n": 120,
+   "pointer": "arms[\"nevertwice\"].old_day_failures_by_kind.unranked",
+   "dataset": "supersession_v1",
+   "environment": "local_supersession_stand",
+   "command": "python research/asof_bench.py --arms nevertwice,naive --runs 2 --out research/results/asof_v1.json",
+   "raw": "research/results/asof_v1.json",
+   "cited_in": [],
+   "commit": "e225d9c55213c5a6a8e9ff04d6931c1d14efbe85",
+   "produced_by": [
+    "research/asof_bench.py",
+    "nevertwice/__init__.py",
+    "nevertwice/anticipate.py",
+    "nevertwice/api.py",
+    "nevertwice/budget.py",
+    "nevertwice/causal.py",
+    "nevertwice/config.py",
+    "nevertwice/dashboard.py",
+    "nevertwice/digest.py",
+    "nevertwice/emit.py",
+    "nevertwice/evidence.py",
+    "nevertwice/graph.py",
+    "nevertwice/guards.py",
+    "nevertwice/inbox.py",
+    "nevertwice/index_sqlite.py",
+    "nevertwice/integrity.py",
+    "nevertwice/interop.py",
+    "nevertwice/lenses.py",
+    "nevertwice/memory_hook.py",
+    "nevertwice/memory_search.py",
+    "nevertwice/outcomes.py",
+    "nevertwice/rankers.py",
+    "nevertwice/receipt.py",
+    "nevertwice/reranker_ce.py",
+    "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
+    "nevertwice/store_state.py",
+    "nevertwice/why_fired.py",
+    "research/_frontier.py",
+    "research/cheap_baselines.py",
+    "research/matched_conditions.py",
+    "research/supersession_bench.py",
+    "research/uncertainty.py",
+    "sandbox_guard.py"
+   ],
+   "ci": null
+  },
+  {
+   "id": "asof.nevertwice.old_day_miss.paraphrase",
+   "statement": "of the as-of case-runs that missed the old day, 5 missed because the old note came back but its wording carried no marker",
+   "value": 5,
+   "printed": [
+    "5"
+   ],
+   "unit": "case-runs",
+   "n": 120,
+   "pointer": "arms[\"nevertwice\"].old_day_failures_by_kind.paraphrase",
+   "dataset": "supersession_v1",
+   "environment": "local_supersession_stand",
+   "command": "python research/asof_bench.py --arms nevertwice,naive --runs 2 --out research/results/asof_v1.json",
+   "raw": "research/results/asof_v1.json",
+   "cited_in": [],
+   "commit": "e225d9c55213c5a6a8e9ff04d6931c1d14efbe85",
+   "produced_by": [
+    "research/asof_bench.py",
+    "nevertwice/__init__.py",
+    "nevertwice/anticipate.py",
+    "nevertwice/api.py",
+    "nevertwice/budget.py",
+    "nevertwice/causal.py",
+    "nevertwice/config.py",
+    "nevertwice/dashboard.py",
+    "nevertwice/digest.py",
+    "nevertwice/emit.py",
+    "nevertwice/evidence.py",
+    "nevertwice/graph.py",
+    "nevertwice/guards.py",
+    "nevertwice/inbox.py",
+    "nevertwice/index_sqlite.py",
+    "nevertwice/integrity.py",
+    "nevertwice/interop.py",
+    "nevertwice/lenses.py",
+    "nevertwice/memory_hook.py",
+    "nevertwice/memory_search.py",
+    "nevertwice/outcomes.py",
+    "nevertwice/rankers.py",
+    "nevertwice/receipt.py",
+    "nevertwice/reranker_ce.py",
+    "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
+    "nevertwice/store_state.py",
+    "nevertwice/why_fired.py",
+    "research/_frontier.py",
+    "research/cheap_baselines.py",
+    "research/matched_conditions.py",
+    "research/supersession_bench.py",
+    "research/uncertainty.py",
+    "sandbox_guard.py"
+   ],
+   "ci": null
+  },
+  {
+   "id": "asof.nevertwice.old_day_miss.leak",
+   "statement": "of the as-of case-runs that missed the old day, 3 missed because the new fact came back for the old day",
+   "value": 3,
+   "printed": [
+    "3"
+   ],
+   "unit": "case-runs",
+   "n": 120,
+   "pointer": "arms[\"nevertwice\"].old_day_failures_by_kind.leak",
+   "dataset": "supersession_v1",
+   "environment": "local_supersession_stand",
+   "command": "python research/asof_bench.py --arms nevertwice,naive --runs 2 --out research/results/asof_v1.json",
+   "raw": "research/results/asof_v1.json",
+   "cited_in": [],
+   "commit": "e225d9c55213c5a6a8e9ff04d6931c1d14efbe85",
+   "produced_by": [
+    "research/asof_bench.py",
+    "nevertwice/__init__.py",
+    "nevertwice/anticipate.py",
+    "nevertwice/api.py",
+    "nevertwice/budget.py",
+    "nevertwice/causal.py",
+    "nevertwice/config.py",
+    "nevertwice/dashboard.py",
+    "nevertwice/digest.py",
+    "nevertwice/emit.py",
+    "nevertwice/evidence.py",
+    "nevertwice/graph.py",
+    "nevertwice/guards.py",
+    "nevertwice/inbox.py",
+    "nevertwice/index_sqlite.py",
+    "nevertwice/integrity.py",
+    "nevertwice/interop.py",
+    "nevertwice/lenses.py",
+    "nevertwice/memory_hook.py",
+    "nevertwice/memory_search.py",
+    "nevertwice/outcomes.py",
+    "nevertwice/rankers.py",
+    "nevertwice/receipt.py",
+    "nevertwice/reranker_ce.py",
+    "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
+    "nevertwice/store_state.py",
+    "nevertwice/why_fired.py",
+    "research/_frontier.py",
+    "research/cheap_baselines.py",
+    "research/matched_conditions.py",
+    "research/supersession_bench.py",
+    "research/uncertainty.py",
+    "sandbox_guard.py"
+   ],
+   "ci": null
+  },
+  {
+   "id": "asof.nevertwice.s0_retired_rate",
+   "statement": "the replacing session closed the first session's belief interval in 0.0% of the case-runs where the first session had written a note",
+   "value": 0.0,
+   "printed": [
+    "0.000",
+    "0.00"
+   ],
+   "unit": "rate",
+   "n": 107,
+   "pointer": "arms[\"nevertwice\"].s0_retired_rate",
+   "dataset": "supersession_v1",
+   "environment": "local_supersession_stand",
+   "command": "python research/asof_bench.py --arms nevertwice,naive --runs 2 --out research/results/asof_v1.json",
+   "raw": "research/results/asof_v1.json",
+   "cited_in": [],
+   "commit": "e225d9c55213c5a6a8e9ff04d6931c1d14efbe85",
+   "produced_by": [
+    "research/asof_bench.py",
+    "nevertwice/__init__.py",
+    "nevertwice/anticipate.py",
+    "nevertwice/api.py",
+    "nevertwice/budget.py",
+    "nevertwice/causal.py",
+    "nevertwice/config.py",
+    "nevertwice/dashboard.py",
+    "nevertwice/digest.py",
+    "nevertwice/emit.py",
+    "nevertwice/evidence.py",
+    "nevertwice/graph.py",
+    "nevertwice/guards.py",
+    "nevertwice/inbox.py",
+    "nevertwice/index_sqlite.py",
+    "nevertwice/integrity.py",
+    "nevertwice/interop.py",
+    "nevertwice/lenses.py",
+    "nevertwice/memory_hook.py",
+    "nevertwice/memory_search.py",
+    "nevertwice/outcomes.py",
+    "nevertwice/rankers.py",
+    "nevertwice/receipt.py",
+    "nevertwice/reranker_ce.py",
+    "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
+    "nevertwice/store_state.py",
+    "nevertwice/why_fired.py",
+    "research/_frontier.py",
+    "research/cheap_baselines.py",
+    "research/matched_conditions.py",
+    "research/supersession_bench.py",
+    "research/uncertainty.py",
+    "sandbox_guard.py"
+   ],
+   "ci": null,
+   "note": "Read from the store per case (J2 instrumentation). 0.0 at the campaign of 2026-09-10: the stand dates the first session 193 days back, `archive_old_typed` moves a note older than 90 days out of the live folder on every capture, and the write path reconciles only against live notes."
+  },
+  {
+   "id": "asof.evidence.ms_per_session",
+   "statement": "aligning a session's notes to its transcript costs 5.9 ms per session on the as-of stand",
+   "value": 5.9,
+   "printed": [
+    "5.9",
+    "5.90"
+   ],
+   "unit": "milliseconds",
+   "n": 222,
+   "pointer": "arms[\"nevertwice\"].evidence.ms_per_session",
+   "dataset": "supersession_v1",
+   "environment": "local_supersession_stand",
+   "command": "python research/asof_bench.py --arms nevertwice,naive --runs 2 --out research/results/asof_v1.json",
+   "raw": "research/results/asof_v1.json",
+   "cited_in": [],
+   "commit": "e225d9c55213c5a6a8e9ff04d6931c1d14efbe85",
+   "produced_by": [
+    "research/asof_bench.py",
+    "nevertwice/__init__.py",
+    "nevertwice/anticipate.py",
+    "nevertwice/api.py",
+    "nevertwice/budget.py",
+    "nevertwice/causal.py",
+    "nevertwice/config.py",
+    "nevertwice/dashboard.py",
+    "nevertwice/digest.py",
+    "nevertwice/emit.py",
+    "nevertwice/evidence.py",
+    "nevertwice/graph.py",
+    "nevertwice/guards.py",
+    "nevertwice/inbox.py",
+    "nevertwice/index_sqlite.py",
+    "nevertwice/integrity.py",
+    "nevertwice/interop.py",
+    "nevertwice/lenses.py",
+    "nevertwice/memory_hook.py",
+    "nevertwice/memory_search.py",
+    "nevertwice/outcomes.py",
+    "nevertwice/rankers.py",
+    "nevertwice/receipt.py",
+    "nevertwice/reranker_ce.py",
+    "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
+    "nevertwice/store_state.py",
+    "nevertwice/why_fired.py",
+    "research/_frontier.py",
+    "research/cheap_baselines.py",
+    "research/matched_conditions.py",
+    "research/supersession_bench.py",
+    "research/uncertainty.py",
+    "sandbox_guard.py"
+   ],
+   "ci": null
+  },
+  {
+   "id": "supersession.nevertwice.store_bytes",
+   "statement": "the typed notes of run one occupy 145,037 bytes on disk, evidence spans included",
+   "value": 145037,
+   "printed": [
+    "145,037",
+    "145037"
+   ],
+   "unit": "bytes",
+   "n": 132,
+   "pointer": "arms[\"nevertwice\"].store_bytes",
+   "dataset": "supersession_v1",
+   "environment": "local_supersession_stand",
+   "command": "python research/supersession_bench.py",
+   "raw": "research/results/supersession_v1.json",
+   "cited_in": [],
+   "commit": "e225d9c55213c5a6a8e9ff04d6931c1d14efbe85",
+   "produced_by": [
+    "research/supersession_bench.py",
+    "nevertwice/__init__.py",
+    "nevertwice/anticipate.py",
+    "nevertwice/api.py",
+    "nevertwice/budget.py",
+    "nevertwice/causal.py",
+    "nevertwice/config.py",
+    "nevertwice/dashboard.py",
+    "nevertwice/digest.py",
+    "nevertwice/emit.py",
+    "nevertwice/evidence.py",
+    "nevertwice/graph.py",
+    "nevertwice/guards.py",
+    "nevertwice/inbox.py",
+    "nevertwice/index_sqlite.py",
+    "nevertwice/integrity.py",
+    "nevertwice/interop.py",
+    "nevertwice/lenses.py",
+    "nevertwice/memory_hook.py",
+    "nevertwice/memory_search.py",
+    "nevertwice/outcomes.py",
+    "nevertwice/rankers.py",
+    "nevertwice/receipt.py",
+    "nevertwice/reranker_ce.py",
+    "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
+    "nevertwice/store_state.py",
+    "nevertwice/why_fired.py",
+    "research/_frontier.py",
+    "research/cheap_baselines.py",
+    "research/matched_conditions.py",
+    "research/uncertainty.py",
+    "sandbox_guard.py"
+   ],
+   "ci": null
+  },
+  {
+   "id": "supersession.nevertwice.evidence_ms_per_session",
+   "statement": "aligning a session's notes to its transcript costs 7.45 ms per session (run one)",
+   "value": 7.45,
+   "printed": [
+    "7.5",
+    "7.45"
+   ],
+   "unit": "milliseconds",
+   "n": 144,
+   "pointer": "arms[\"nevertwice\"].evidence.ms_per_session",
+   "dataset": "supersession_v1",
+   "environment": "local_supersession_stand",
+   "command": "python research/supersession_bench.py",
+   "raw": "research/results/supersession_v1.json",
+   "cited_in": [],
+   "commit": "e225d9c55213c5a6a8e9ff04d6931c1d14efbe85",
+   "produced_by": [
+    "research/supersession_bench.py",
+    "nevertwice/__init__.py",
+    "nevertwice/anticipate.py",
+    "nevertwice/api.py",
+    "nevertwice/budget.py",
+    "nevertwice/causal.py",
+    "nevertwice/config.py",
+    "nevertwice/dashboard.py",
+    "nevertwice/digest.py",
+    "nevertwice/emit.py",
+    "nevertwice/evidence.py",
+    "nevertwice/graph.py",
+    "nevertwice/guards.py",
+    "nevertwice/inbox.py",
+    "nevertwice/index_sqlite.py",
+    "nevertwice/integrity.py",
+    "nevertwice/interop.py",
+    "nevertwice/lenses.py",
+    "nevertwice/memory_hook.py",
+    "nevertwice/memory_search.py",
+    "nevertwice/outcomes.py",
+    "nevertwice/rankers.py",
+    "nevertwice/receipt.py",
+    "nevertwice/reranker_ce.py",
+    "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
+    "nevertwice/store_state.py",
+    "nevertwice/why_fired.py",
+    "research/_frontier.py",
+    "research/cheap_baselines.py",
+    "research/matched_conditions.py",
+    "research/uncertainty.py",
+    "sandbox_guard.py"
+   ],
+   "ci": null
+  },
+  {
+   "id": "supersession.nevertwice_run2.store_bytes",
+   "statement": "the typed notes of run two occupy 143,790 bytes on disk, evidence spans included",
+   "value": 143790,
+   "printed": [
+    "143,790",
+    "143790"
+   ],
+   "unit": "bytes",
+   "n": 131,
+   "pointer": "arms[\"nevertwice_run2\"].store_bytes",
+   "dataset": "supersession_v1",
+   "environment": "local_supersession_stand",
+   "command": "python research/supersession_bench.py",
+   "raw": "research/results/supersession_v1.json",
+   "cited_in": [],
+   "commit": "e225d9c55213c5a6a8e9ff04d6931c1d14efbe85",
+   "produced_by": [
+    "research/supersession_bench.py",
+    "nevertwice/__init__.py",
+    "nevertwice/anticipate.py",
+    "nevertwice/api.py",
+    "nevertwice/budget.py",
+    "nevertwice/causal.py",
+    "nevertwice/config.py",
+    "nevertwice/dashboard.py",
+    "nevertwice/digest.py",
+    "nevertwice/emit.py",
+    "nevertwice/evidence.py",
+    "nevertwice/graph.py",
+    "nevertwice/guards.py",
+    "nevertwice/inbox.py",
+    "nevertwice/index_sqlite.py",
+    "nevertwice/integrity.py",
+    "nevertwice/interop.py",
+    "nevertwice/lenses.py",
+    "nevertwice/memory_hook.py",
+    "nevertwice/memory_search.py",
+    "nevertwice/outcomes.py",
+    "nevertwice/rankers.py",
+    "nevertwice/receipt.py",
+    "nevertwice/reranker_ce.py",
+    "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
+    "nevertwice/store_state.py",
+    "nevertwice/why_fired.py",
+    "research/_frontier.py",
+    "research/cheap_baselines.py",
+    "research/matched_conditions.py",
+    "research/uncertainty.py",
+    "sandbox_guard.py"
+   ],
+   "ci": null
+  },
+  {
+   "id": "supersession.nevertwice_run2.evidence_ms_per_session",
+   "statement": "aligning a session's notes to its transcript costs 7.951 ms per session (run two)",
+   "value": 7.951,
+   "printed": [
+    "8.0",
+    "7.95"
+   ],
+   "unit": "milliseconds",
+   "n": 146,
+   "pointer": "arms[\"nevertwice_run2\"].evidence.ms_per_session",
+   "dataset": "supersession_v1",
+   "environment": "local_supersession_stand",
+   "command": "python research/supersession_bench.py",
+   "raw": "research/results/supersession_v1.json",
+   "cited_in": [],
+   "commit": "e225d9c55213c5a6a8e9ff04d6931c1d14efbe85",
+   "produced_by": [
+    "research/supersession_bench.py",
+    "nevertwice/__init__.py",
+    "nevertwice/anticipate.py",
+    "nevertwice/api.py",
+    "nevertwice/budget.py",
+    "nevertwice/causal.py",
+    "nevertwice/config.py",
+    "nevertwice/dashboard.py",
+    "nevertwice/digest.py",
+    "nevertwice/emit.py",
+    "nevertwice/evidence.py",
+    "nevertwice/graph.py",
+    "nevertwice/guards.py",
+    "nevertwice/inbox.py",
+    "nevertwice/index_sqlite.py",
+    "nevertwice/integrity.py",
+    "nevertwice/interop.py",
+    "nevertwice/lenses.py",
+    "nevertwice/memory_hook.py",
+    "nevertwice/memory_search.py",
+    "nevertwice/outcomes.py",
+    "nevertwice/rankers.py",
+    "nevertwice/receipt.py",
+    "nevertwice/reranker_ce.py",
+    "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
+    "nevertwice/store_state.py",
+    "nevertwice/why_fired.py",
+    "research/_frontier.py",
+    "research/cheap_baselines.py",
+    "research/matched_conditions.py",
+    "research/uncertainty.py",
+    "sandbox_guard.py"
+   ],
+   "ci": null
   }
  ],
  "external_citations": [

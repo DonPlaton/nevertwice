@@ -23,8 +23,37 @@
      "old_day_correct": true,
      "new_day_correct": true,
      "both_correct": true,
-     "old_items": 1,
-     "new_items": 2,
+     "old_items": 2,
+     "new_items": 4,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0000-pattern-http-client-timeout-configured",
+        "2026-03-01-asof0000-decision-30-second-http-timeout-set"
+       ],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0000-pattern-http-client-timeout-configured",
+        "2026-05-01-asof0000-decision-30-second-http-timeout-set"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": null,
+     "evidence_spans_returned": 6,
      "run": 0
     },
     {
@@ -35,6 +64,33 @@
      "both_correct": true,
      "old_items": 1,
      "new_items": 2,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0001-pattern-postgresql-version-in-production"
+       ],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0001-pattern-postgresql-version-in-production"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": null,
+     "evidence_spans_returned": 3,
      "run": 0
     },
     {
@@ -45,16 +101,66 @@
      "both_correct": true,
      "old_items": 1,
      "new_items": 2,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0002-pattern-training-batch-size-confirmed"
+       ],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0002-pattern-training-batch-size-confirmed"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": null,
+     "evidence_spans_returned": 3,
      "run": 0
     },
     {
      "id": "val-node-version",
      "shape": "value_replaced",
-     "old_day_correct": true,
-     "new_day_correct": true,
-     "both_correct": true,
-     "old_items": 1,
-     "new_items": 2,
+     "old_day_correct": false,
+     "new_day_correct": false,
+     "both_correct": false,
+     "old_items": 0,
+     "new_items": 0,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 0,
+       "live": 0,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": false,
+       "titles": [],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 0,
+       "live": 0,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": false,
+       "titles": [],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": "never_written",
+     "evidence_spans_returned": 0,
      "run": 0
     },
     {
@@ -65,6 +171,33 @@
      "both_correct": true,
      "old_items": 1,
      "new_items": 2,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0004-pattern-queue-worker-retry-logic"
+       ],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0004-pattern-queue-worker-retry-logic"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": null,
+     "evidence_spans_returned": 3,
      "run": 0
     },
     {
@@ -75,6 +208,35 @@
      "both_correct": true,
      "old_items": 2,
      "new_items": 4,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0005-pattern-cache-layer-expiration",
+        "2026-03-01-asof0005-decision-cache-entry-timeout-set-to-60s"
+       ],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0005-pattern-cache-layer-expiration",
+        "2026-05-01-asof0005-decision-cache-entry-timeout-set-to-60s"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": null,
+     "evidence_spans_returned": 6,
      "run": 0
     },
     {
@@ -85,6 +247,33 @@
      "both_correct": true,
      "old_items": 1,
      "new_items": 2,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0006-pattern-dev-server-port-configuration"
+       ],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0006-pattern-dev-server-port-configuration"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": null,
+     "evidence_spans_returned": 3,
      "run": 0
     },
     {
@@ -95,16 +284,71 @@
      "both_correct": true,
      "old_items": 1,
      "new_items": 2,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0007-pattern-service-deployment-in-eu-west-1"
+       ],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0007-pattern-service-deployment-in-us-east-2"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": null,
+     "evidence_spans_returned": 3,
      "run": 0
     },
     {
      "id": "val-py-version",
      "shape": "value_replaced",
-     "old_day_correct": false,
+     "old_day_correct": true,
      "new_day_correct": true,
-     "both_correct": false,
-     "old_items": 0,
-     "new_items": 2,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 3,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0008-pattern-python-version-pinning"
+       ],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0008-pattern-python-version-pinning",
+        "2026-05-01-asof0008-decision-pin-python-version-to-3-13"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": null,
+     "evidence_spans_returned": 0,
      "run": 0
     },
     {
@@ -115,16 +359,71 @@
      "both_correct": true,
      "old_items": 1,
      "new_items": 2,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0009-pattern-api-capacity-configuration"
+       ],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0009-pattern-api-capacity-configuration"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": null,
+     "evidence_spans_returned": 3,
      "run": 0
     },
     {
      "id": "val-lr",
      "shape": "value_replaced",
-     "old_day_correct": false,
-     "new_day_correct": false,
-     "both_correct": false,
-     "old_items": 0,
-     "new_items": 0,
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 3,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0010-decision-learning-rate-set-to-3e-4"
+       ],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0010-pattern-learning-rate-tuning",
+        "2026-05-01-asof0010-decision-learning-rate-set-to-5e-5"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": null,
+     "evidence_spans_returned": 3,
      "run": 0
     },
     {
@@ -135,6 +434,35 @@
      "both_correct": true,
      "old_items": 2,
      "new_items": 4,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0011-pattern-document-ingestion-chunking",
+        "2026-03-01-asof0011-decision-ingestion-chunk-size"
+       ],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0011-pattern-document-ingestion-chunking",
+        "2026-05-01-asof0011-decision-ingestion-chunk-size"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": null,
+     "evidence_spans_returned": 6,
      "run": 0
     },
     {
@@ -143,8 +471,37 @@
      "old_day_correct": true,
      "new_day_correct": true,
      "both_correct": true,
-     "old_items": 1,
-     "new_items": 3,
+     "old_items": 2,
+     "new_items": 4,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0012-pattern-cluster-quorum-requirement",
+        "2026-03-01-asof0012-decision-staged-release-rollout"
+       ],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0012-pattern-cluster-quorum-requirement",
+        "2026-05-01-asof0012-decision-staged-release-rollout"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": null,
+     "evidence_spans_returned": 5,
      "run": 0
     },
     {
@@ -155,16 +512,72 @@
      "both_correct": true,
      "old_items": 1,
      "new_items": 2,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0013-decision-project-licensing-decided"
+       ],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0013-decision-project-licensing-decided"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": null,
+     "evidence_spans_returned": 3,
      "run": 0
     },
     {
      "id": "val-branch",
      "shape": "value_replaced",
-     "old_day_correct": false,
-     "new_day_correct": false,
-     "both_correct": false,
-     "old_items": 0,
-     "new_items": 1,
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 3,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0014-pattern-repository-thread-restart",
+        "2026-03-01-asof0014-decision-rename-approval"
+       ],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0014-pattern-repository-thread-restart",
+        "2026-05-01-asof0014-decision-rename-approval"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": null,
+     "evidence_spans_returned": 4,
      "run": 0
     },
     {
@@ -175,6 +588,33 @@
      "both_correct": true,
      "old_items": 1,
      "new_items": 2,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0015-pattern-redis-session-caching"
+       ],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0015-pattern-redis-session-caching"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": null,
+     "evidence_spans_returned": 3,
      "run": 0
     },
     {
@@ -185,6 +625,34 @@
      "both_correct": true,
      "old_items": 1,
      "new_items": 3,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0016-pattern-jwt-authentication-with-hs256"
+       ],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0016-pattern-jwt-authentication-with-hs256",
+        "2026-05-01-asof0016-decision-opaque-session-cookies"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": null,
+     "evidence_spans_returned": 4,
      "run": 0
     },
     {
@@ -194,7 +662,36 @@
      "new_day_correct": true,
      "both_correct": true,
      "old_items": 2,
-     "new_items": 3,
+     "new_items": 4,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0017-pattern-frontend-bundling-with-webpack",
+        "2026-03-01-asof0017-decision-use-webpack-for-frontend-bundling"
+       ],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0017-pattern-frontend-bundling-with-vite",
+        "2026-05-01-asof0017-decision-use-vite-for-frontend-bundling"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": null,
+     "evidence_spans_returned": 6,
      "run": 0
     },
     {
@@ -204,7 +701,37 @@
      "new_day_correct": true,
      "both_correct": true,
      "old_items": 2,
-     "new_items": 4,
+     "new_items": 5,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0018-pattern-sqlalchemy-orm-data-access",
+        "2026-03-01-asof0018-decision-use-sqlalchemy-orm-for-data-access"
+       ],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 3,
+       "live": 3,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0018-pattern-asyncpg-for-data-access",
+        "2026-05-01-asof0018-mistake-incorrect-assumption-about-data-access",
+        "2026-05-01-asof0018-decision-use-asyncpg-for-data-access"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": null,
+     "evidence_spans_returned": 2,
      "run": 0
     },
     {
@@ -214,7 +741,35 @@
      "new_day_correct": true,
      "both_correct": true,
      "old_items": 1,
-     "new_items": 2,
+     "new_items": 3,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0019-pattern-background-jobs-with-celery-and-rabbitmq"
+       ],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0019-pattern-background-jobs-with-postgres-queue",
+        "2026-05-01-asof0019-decision-use-postgres-for-background-job-queue"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": null,
+     "evidence_spans_returned": 2,
      "run": 0
     },
     {
@@ -225,16 +780,66 @@
      "both_correct": false,
      "old_items": 0,
      "new_items": 0,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 0,
+       "live": 0,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": false,
+       "titles": [],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0020-pattern-ci-migration-to-github-actions"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": "never_written",
+     "evidence_spans_returned": 0,
      "run": 0
     },
     {
      "id": "app-search",
      "shape": "approach_abandoned",
-     "old_day_correct": true,
+     "old_day_correct": false,
      "new_day_correct": true,
-     "both_correct": true,
-     "old_items": 1,
-     "new_items": 2,
+     "both_correct": false,
+     "old_items": 0,
+     "new_items": 1,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 0,
+       "live": 0,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": false,
+       "titles": [],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0021-pattern-postgres-fulltext-search"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": "never_written",
+     "evidence_spans_returned": 1,
      "run": 0
     },
     {
@@ -245,6 +850,33 @@
      "both_correct": true,
      "old_items": 1,
      "new_items": 2,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0022-pattern-styled-components-usage"
+       ],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0022-pattern-tailwind-styling-in-components"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": null,
+     "evidence_spans_returned": 1,
      "run": 0
     },
     {
@@ -255,6 +887,35 @@
      "both_correct": true,
      "old_items": 2,
      "new_items": 4,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0023-pattern-package-management-with-poetry",
+        "2026-03-01-asof0023-decision-use-poetry-for-packaging"
+       ],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0023-pattern-package-management-with-hatchling",
+        "2026-05-01-asof0023-decision-use-hatchling-for-packaging"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": null,
+     "evidence_spans_returned": 6,
      "run": 0
     },
     {
@@ -265,6 +926,33 @@
      "both_correct": true,
      "old_items": 1,
      "new_items": 2,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0024-pattern-frontend-state-management-with-redux"
+       ],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0024-pattern-frontend-state-management-with-zustand"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": null,
+     "evidence_spans_returned": 3,
      "run": 0
     },
     {
@@ -274,7 +962,35 @@
      "new_day_correct": true,
      "both_correct": true,
      "old_items": 1,
-     "new_items": 2,
+     "new_items": 3,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0025-pattern-infrastructure-provisioning-with-terraform"
+       ],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0025-pattern-infrastructure-provisioning-with-pulumi",
+        "2026-05-01-asof0025-decision-use-pulumi-for-infrastructure"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": null,
+     "evidence_spans_returned": 4,
      "run": 0
     },
     {
@@ -285,6 +1001,33 @@
      "both_correct": true,
      "old_items": 1,
      "new_items": 2,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0026-pattern-schema-migration-through-alembic"
+       ],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0026-pattern-schema-migration-through-alembic"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": null,
+     "evidence_spans_returned": 3,
      "run": 0
     },
     {
@@ -294,17 +1037,75 @@
      "new_day_correct": true,
      "both_correct": true,
      "old_items": 1,
-     "new_items": 3,
+     "new_items": 2,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0027-pattern-protobuf-message-serialization"
+       ],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0027-pattern-protobuf-message-serialization"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": null,
+     "evidence_spans_returned": 3,
      "run": 0
     },
     {
      "id": "app-secrets",
      "shape": "approach_abandoned",
-     "old_day_correct": true,
+     "old_day_correct": false,
      "new_day_correct": true,
-     "both_correct": true,
-     "old_items": 2,
-     "new_items": 4,
+     "both_correct": false,
+     "old_items": 3,
+     "new_items": 5,
+     "leak": true,
+     "store": {
+      "s0": {
+       "written": 3,
+       "live": 3,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0028-pattern-secrets-from-vault-at-boot",
+        "2026-03-01-asof0028-mistake-secrets-exposure-during-deployment",
+        "2026-03-01-asof0028-decision-vault-based-secret-loading"
+       ],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 3,
+       "live": 3,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0028-pattern-secrets-from-vault-at-boot",
+        "2026-05-01-asof0028-mistake-secrets-exposure-during-deployment",
+        "2026-05-01-asof0028-decision-vault-based-secret-loading"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": "leak",
+     "evidence_spans_returned": 7,
      "run": 0
     },
     {
@@ -313,18 +1114,76 @@
      "old_day_correct": true,
      "new_day_correct": true,
      "both_correct": true,
-     "old_items": 1,
-     "new_items": 3,
+     "old_items": 2,
+     "new_items": 4,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0029-pattern-selenium-end-to-end-testing",
+        "2026-03-01-asof0029-decision-testing-approach-decided"
+       ],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0029-pattern-playwright-end-to-end-testing",
+        "2026-05-01-asof0029-decision-testing-approach-decided"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": null,
+     "evidence_spans_returned": 6,
      "run": 0
     },
     {
      "id": "ret-beta-flag",
      "shape": "retracted_no_replacement",
-     "old_day_correct": false,
+     "old_day_correct": true,
      "new_day_correct": true,
-     "both_correct": false,
+     "both_correct": true,
      "old_items": 2,
      "new_items": 4,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0030-pattern-feature-flag-gating",
+        "2026-03-01-asof0030-decision-beta-dashboard-feature-flag"
+       ],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0030-pattern-feature-flag-gating",
+        "2026-05-01-asof0030-decision-beta-dashboard-feature-flag"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": null,
+     "evidence_spans_returned": 6,
      "run": 0
     },
     {
@@ -335,16 +1194,66 @@
      "both_correct": true,
      "old_items": 1,
      "new_items": 2,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0031-pattern-csv-export-endpoint"
+       ],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0031-pattern-csv-export-endpoint-removed"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": null,
+     "evidence_spans_returned": 3,
      "run": 0
     },
     {
      "id": "ret-telemetry",
      "shape": "retracted_no_replacement",
-     "old_day_correct": true,
+     "old_day_correct": false,
      "new_day_correct": false,
      "both_correct": false,
-     "old_items": 1,
-     "new_items": 2,
+     "old_items": 0,
+     "new_items": 0,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 0,
+       "live": 0,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": false,
+       "titles": [],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 0,
+       "live": 0,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": false,
+       "titles": [],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": "never_written",
+     "evidence_spans_returned": 0,
      "run": 0
     },
     {
@@ -355,6 +1264,33 @@
      "both_correct": false,
      "old_items": 1,
      "new_items": 2,
+     "leak": true,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0033-pattern-read-replica-for-analytics"
+       ],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0033-pattern-read-replica-for-analytics"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": "leak",
+     "evidence_spans_returned": 3,
      "run": 0
     },
     {
@@ -365,6 +1301,34 @@
      "both_correct": true,
      "old_items": 1,
      "new_items": 3,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0034-pattern-third-party-plugins-entry-points"
+       ],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0034-pattern-third-party-plugins-entry-points",
+        "2026-05-01-asof0034-decision-remove-plugin-system-before-release"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": null,
+     "evidence_spans_returned": 3,
      "run": 0
     },
     {
@@ -373,8 +1337,36 @@
      "old_day_correct": true,
      "new_day_correct": true,
      "both_correct": true,
-     "old_items": 2,
-     "new_items": 4,
+     "old_items": 1,
+     "new_items": 3,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0035-decision-ios-client-sync-engine"
+       ],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0035-pattern-ios-client-discontinuation",
+        "2026-05-01-asof0035-decision-ios-client-sync-engine"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": null,
+     "evidence_spans_returned": 4,
      "run": 0
     },
     {
@@ -385,6 +1377,34 @@
      "both_correct": true,
      "old_items": 1,
      "new_items": 3,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0036-pattern-nightly-cron-audit-log-compaction"
+       ],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0036-pattern-nightly-cron-audit-log-compaction",
+        "2026-05-01-asof0036-decision-audit-log-append-only"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": null,
+     "evidence_spans_returned": 4,
      "run": 0
     },
     {
@@ -395,6 +1415,34 @@
      "both_correct": false,
      "old_items": 1,
      "new_items": 1,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0037-pattern-grpc-communication-setup"
+       ],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0037-pattern-grpc-communication-setup",
+        "2026-05-01-asof0037-decision-plain-http-transport"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": null,
+     "evidence_spans_returned": 2,
      "run": 0
     },
     {
@@ -405,6 +1453,33 @@
      "both_correct": true,
      "old_items": 1,
      "new_items": 2,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0038-pattern-okta-saml-integration-sign-in"
+       ],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0038-pattern-okta-saml-integration-sign-in"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": null,
+     "evidence_spans_returned": 3,
      "run": 0
     },
     {
@@ -415,16 +1490,71 @@
      "both_correct": true,
      "old_items": 1,
      "new_items": 2,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0039-pattern-webhook-integration-documentation"
+       ],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0039-pattern-webhook-integration-termination"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": null,
+     "evidence_spans_returned": 3,
      "run": 0
     },
     {
      "id": "ret-gpu-node",
      "shape": "retracted_no_replacement",
-     "old_day_correct": false,
-     "new_day_correct": false,
-     "both_correct": false,
-     "old_items": 0,
-     "new_items": 0,
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 3,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0040-pattern-a100-node-reservation-for-training"
+       ],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0040-pattern-a100-node-reservation-for-training",
+        "2026-05-01-asof0040-decision-training-capacity-rental"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": null,
+     "evidence_spans_returned": 4,
      "run": 0
     },
     {
@@ -435,6 +1565,35 @@
      "both_correct": true,
      "old_items": 2,
      "new_items": 4,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0041-pattern-cli-flag-legacy-output-format",
+        "2026-03-01-asof0041-decision-retain-legacy-cli-output-for-compatibility"
+       ],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0041-pattern-cli-flag-legacy-output-format",
+        "2026-05-01-asof0041-decision-retain-legacy-cli-output-for-compatibility"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": null,
+     "evidence_spans_returned": 5,
      "run": 0
     },
     {
@@ -445,26 +1604,109 @@
      "both_correct": true,
      "old_items": 1,
      "new_items": 2,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0042-pattern-admin-panel-audit-filtering"
+       ],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0042-pattern-admin-panel-audit-filtering"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": null,
+     "evidence_spans_returned": 3,
      "run": 0
     },
     {
      "id": "ret-i18n",
      "shape": "retracted_no_replacement",
-     "old_day_correct": false,
+     "old_day_correct": true,
      "new_day_correct": true,
-     "both_correct": false,
-     "old_items": 0,
-     "new_items": 1,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 3,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0043-pattern-localization-pair-programming"
+       ],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0043-pattern-localization-pair-programming",
+        "2026-05-01-asof0043-decision-english-only-app"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": null,
+     "evidence_spans_returned": 4,
      "run": 0
     },
     {
      "id": "ret-sandbox",
      "shape": "retracted_no_replacement",
-     "old_day_correct": false,
+     "old_day_correct": true,
      "new_day_correct": true,
-     "both_correct": false,
+     "both_correct": true,
      "old_items": 2,
-     "new_items": 4,
+     "new_items": 3,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0044-pattern-sandbox-environment-mirroring",
+        "2026-03-01-asof0044-pattern-staged-release-rollout"
+       ],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0044-pattern-sandbox-environment-mirroring"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": null,
+     "evidence_spans_returned": 3,
      "run": 0
     },
     {
@@ -473,8 +1715,33 @@
      "old_day_correct": false,
      "new_day_correct": true,
      "both_correct": false,
-     "old_items": 1,
-     "new_items": 2,
+     "old_items": 0,
+     "new_items": 1,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 0,
+       "live": 0,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": false,
+       "titles": [],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0045-pattern-http-client-retry-logic"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": "never_written",
+     "evidence_spans_returned": 1,
      "run": 0
     },
     {
@@ -483,8 +1750,36 @@
      "old_day_correct": true,
      "new_day_correct": true,
      "both_correct": true,
-     "old_items": 2,
-     "new_items": 4,
+     "old_items": 1,
+     "new_items": 3,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0046-pattern-api-response-caching"
+       ],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0046-pattern-api-response-caching",
+        "2026-05-01-asof0046-decision-get-only-caching"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": null,
+     "evidence_spans_returned": 4,
      "run": 0
     },
     {
@@ -495,6 +1790,35 @@
      "both_correct": true,
      "old_items": 2,
      "new_items": 4,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0047-pattern-audit-log-table-changes",
+        "2026-03-01-asof0047-decision-log-all-table-changes"
+       ],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0047-pattern-audit-log-table-changes",
+        "2026-05-01-asof0047-decision-log-all-table-changes"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": null,
+     "evidence_spans_returned": 5,
      "run": 0
     },
     {
@@ -505,6 +1829,33 @@
      "both_correct": true,
      "old_items": 1,
      "new_items": 2,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0048-pattern-trainer-gpu-utilization"
+       ],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0048-pattern-trainer-gpu-utilization"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": null,
+     "evidence_spans_returned": 3,
      "run": 0
     },
     {
@@ -515,16 +1866,70 @@
      "both_correct": false,
      "old_items": 1,
      "new_items": 2,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": false,
+       "titles": [
+        "2026-03-01-asof0049-pattern-pre-commit-hook-lints-repository"
+       ],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0049-pattern-pre-commit-hook-lints-repository"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": "paraphrase",
+     "evidence_spans_returned": 1,
      "run": 0
     },
     {
      "id": "nar-notify-scope",
      "shape": "narrowed",
-     "old_day_correct": false,
+     "old_day_correct": true,
      "new_day_correct": true,
-     "both_correct": false,
+     "both_correct": true,
      "old_items": 1,
      "new_items": 2,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0050-pattern-deploy-failure-alerting"
+       ],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0050-pattern-deploy-failure-alerting"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": null,
+     "evidence_spans_returned": 3,
      "run": 0
     },
     {
@@ -535,6 +1940,31 @@
      "both_correct": false,
      "old_items": 0,
      "new_items": 1,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 0,
+       "live": 0,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": false,
+       "titles": [],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0051-pattern-encryption-at-rest-scope"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": "never_written",
+     "evidence_spans_returned": 1,
      "run": 0
     },
     {
@@ -543,18 +1973,74 @@
      "old_day_correct": false,
      "new_day_correct": true,
      "both_correct": false,
-     "old_items": 0,
-     "new_items": 1,
+     "old_items": 1,
+     "new_items": 2,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": false,
+       "titles": [
+        "2026-03-01-asof0052-pattern-search-index-rollout"
+       ],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0052-pattern-search-index-rollout"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": "paraphrase",
+     "evidence_spans_returned": 1,
      "run": 0
     },
     {
      "id": "nar-backup-scope",
      "shape": "narrowed",
      "old_day_correct": true,
-     "new_day_correct": false,
-     "both_correct": false,
+     "new_day_correct": true,
+     "both_correct": true,
      "old_items": 2,
      "new_items": 4,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0053-pattern-nightly-backup-database-dump",
+        "2026-03-01-asof0053-decision-backups-decision-confirmed"
+       ],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0053-pattern-nightly-backup-database-dump",
+        "2026-05-01-asof0053-decision-backups-decision-confirmed"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": null,
+     "evidence_spans_returned": 6,
      "run": 0
     },
     {
@@ -563,8 +2049,37 @@
      "old_day_correct": true,
      "new_day_correct": true,
      "both_correct": true,
-     "old_items": 2,
+     "old_items": 1,
      "new_items": 4,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0054-pattern-rate-limiting-handling"
+       ],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 3,
+       "live": 3,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0054-pattern-rate-limiting-handling",
+        "2026-05-01-asof0054-mistake-incorrect-rate-limit-application",
+        "2026-05-01-asof0054-decision-unauthenticated-only-rate-limiting"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": null,
+     "evidence_spans_returned": 5,
      "run": 0
     },
     {
@@ -575,6 +2090,33 @@
      "both_correct": false,
      "old_items": 1,
      "new_items": 2,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": false,
+       "titles": [
+        "2026-03-01-asof0055-pattern-response-compression"
+       ],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0055-pattern-response-compression"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": "paraphrase",
+     "evidence_spans_returned": 3,
      "run": 0
     },
     {
@@ -585,6 +2127,33 @@
      "both_correct": true,
      "old_items": 1,
      "new_items": 2,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0056-pattern-mfa-required-for-all-users"
+       ],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0056-pattern-mfa-required-for-admin-accounts"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": null,
+     "evidence_spans_returned": 3,
      "run": 0
     },
     {
@@ -595,26 +2164,111 @@
      "both_correct": true,
      "old_items": 1,
      "new_items": 2,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0057-pattern-event-log-replay-on-boot"
+       ],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0057-pattern-event-log-replay-on-boot"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": null,
+     "evidence_spans_returned": 3,
      "run": 0
     },
     {
      "id": "nar-shard-scope",
      "shape": "narrowed",
      "old_day_correct": true,
-     "new_day_correct": false,
-     "both_correct": false,
+     "new_day_correct": true,
+     "both_correct": true,
      "old_items": 2,
      "new_items": 4,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0058-pattern-tenant-sharding-approach",
+        "2026-03-01-asof0058-decision-tenant-per-database-shard"
+       ],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0058-pattern-tenant-sharding-approach",
+        "2026-05-01-asof0058-decision-tenant-per-database-shard"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": null,
+     "evidence_spans_returned": 6,
      "run": 0
     },
     {
      "id": "nar-trace-scope",
      "shape": "narrowed",
-     "old_day_correct": false,
+     "old_day_correct": true,
      "new_day_correct": true,
-     "both_correct": false,
+     "both_correct": true,
      "old_items": 2,
      "new_items": 4,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof0059-pattern-end-to-end-request-tracing",
+        "2026-03-01-asof0059-decision-trace-all-requests"
+       ],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof0059-pattern-end-to-end-request-tracing",
+        "2026-05-01-asof0059-decision-trace-all-requests"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": null,
+     "evidence_spans_returned": 4,
      "run": 0
     },
     {
@@ -625,16 +2279,72 @@
      "both_correct": true,
      "old_items": 2,
      "new_items": 4,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof1000-pattern-http-client-timeout-configuration",
+        "2026-03-01-asof1000-decision-api-client-timeout-set-to-thirty-seconds"
+       ],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof1000-pattern-http-client-timeout-configuration",
+        "2026-05-01-asof1000-decision-api-client-timeout-set-to-thirty-seconds"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": null,
+     "evidence_spans_returned": 6,
      "run": 1
     },
     {
      "id": "val-pg-version",
      "shape": "value_replaced",
      "old_day_correct": true,
-     "new_day_correct": true,
-     "both_correct": true,
+     "new_day_correct": false,
+     "both_correct": false,
      "old_items": 1,
      "new_items": 2,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof1001-pattern-postgresql-version-in-production"
+       ],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": false,
+       "titles": [
+        "2026-05-01-asof1001-pattern-postgresql-version-in-production"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": null,
+     "evidence_spans_returned": 3,
      "run": 1
     },
     {
@@ -645,6 +2355,33 @@
      "both_correct": true,
      "old_items": 1,
      "new_items": 2,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof1002-pattern-training-batch-size-confirmed"
+       ],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof1002-pattern-training-batch-size-confirmed"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": null,
+     "evidence_spans_returned": 3,
      "run": 1
     },
     {
@@ -655,6 +2392,29 @@
      "both_correct": false,
      "old_items": 0,
      "new_items": 0,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 0,
+       "live": 0,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": false,
+       "titles": [],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 0,
+       "live": 0,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": false,
+       "titles": [],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": "never_written",
+     "evidence_spans_returned": 0,
      "run": 1
     },
     {
@@ -665,6 +2425,33 @@
      "both_correct": true,
      "old_items": 1,
      "new_items": 2,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof1004-pattern-queue-worker-retry-logic"
+       ],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof1004-pattern-queue-worker-retry-logic"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": null,
+     "evidence_spans_returned": 3,
      "run": 1
     },
     {
@@ -675,16 +2462,74 @@
      "both_correct": true,
      "old_items": 2,
      "new_items": 4,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof1005-pattern-cache-layer-expiration",
+        "2026-03-01-asof1005-decision-60-second-cache-expiration"
+       ],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof1005-pattern-cache-layer-expiration",
+        "2026-05-01-asof1005-decision-60-second-cache-expiration"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": null,
+     "evidence_spans_returned": 6,
      "run": 1
     },
     {
      "id": "val-port",
      "shape": "value_replaced",
-     "old_day_correct": false,
+     "old_day_correct": true,
      "new_day_correct": true,
-     "both_correct": false,
-     "old_items": 0,
-     "new_items": 3,
+     "both_correct": true,
+     "old_items": 2,
+     "new_items": 4,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof1006-pattern-dev-server-port-configuration",
+        "2026-03-01-asof1006-decision-rename-approval"
+       ],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof1006-pattern-dev-server-port-configuration",
+        "2026-05-01-asof1006-decision-rename-approval"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": null,
+     "evidence_spans_returned": 6,
      "run": 1
     },
     {
@@ -695,6 +2540,33 @@
      "both_correct": true,
      "old_items": 1,
      "new_items": 2,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof1007-pattern-service-deployment-in-eu-west-1"
+       ],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof1007-pattern-service-deployment-in-us-east-2"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": null,
+     "evidence_spans_returned": 3,
      "run": 1
     },
     {
@@ -705,6 +2577,34 @@
      "both_correct": true,
      "old_items": 1,
      "new_items": 3,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof1008-pattern-python-version-pinning"
+       ],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof1008-pattern-python-version-pinning",
+        "2026-05-01-asof1008-decision-pin-python-version-to-3-13"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": null,
+     "evidence_spans_returned": 1,
      "run": 1
     },
     {
@@ -715,16 +2615,70 @@
      "both_correct": true,
      "old_items": 1,
      "new_items": 2,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof1009-pattern-api-capacity-configuration"
+       ],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof1009-pattern-api-capacity-configuration"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": null,
+     "evidence_spans_returned": 3,
      "run": 1
     },
     {
      "id": "val-lr",
      "shape": "value_replaced",
-     "old_day_correct": false,
-     "new_day_correct": false,
-     "both_correct": false,
-     "old_items": 0,
-     "new_items": 0,
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 2,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof1010-pattern-learning-rate-configuration"
+       ],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof1010-pattern-learning-rate-configuration"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": null,
+     "evidence_spans_returned": 2,
      "run": 1
     },
     {
@@ -735,6 +2689,35 @@
      "both_correct": true,
      "old_items": 2,
      "new_items": 4,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof1011-pattern-document-ingestion-strategy",
+        "2026-03-01-asof1011-decision-chunk-size-512-tokens"
+       ],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof1011-pattern-document-ingestion-strategy",
+        "2026-05-01-asof1011-decision-chunk-size-1024-tokens"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": null,
+     "evidence_spans_returned": 6,
      "run": 1
     },
     {
@@ -745,6 +2728,35 @@
      "both_correct": true,
      "old_items": 2,
      "new_items": 4,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof1012-pattern-cluster-quorum-requirement",
+        "2026-03-01-asof1012-decision-staged-release-rollout"
+       ],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof1012-pattern-cluster-quorum-requirement",
+        "2026-05-01-asof1012-decision-staged-release-rollout"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": null,
+     "evidence_spans_returned": 5,
      "run": 1
     },
     {
@@ -755,16 +2767,68 @@
      "both_correct": true,
      "old_items": 1,
      "new_items": 2,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof1013-decision-project-licensing-decided"
+       ],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof1013-decision-project-licensing-decided"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": null,
+     "evidence_spans_returned": 3,
      "run": 1
     },
     {
      "id": "val-branch",
      "shape": "value_replaced",
      "old_day_correct": false,
-     "new_day_correct": false,
+     "new_day_correct": true,
      "both_correct": false,
      "old_items": 0,
-     "new_items": 0,
+     "new_items": 1,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 0,
+       "live": 0,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": false,
+       "titles": [],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof1014-pattern-branch-renaming-protocol"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": "never_written",
+     "evidence_spans_returned": 1,
      "run": 1
     },
     {
@@ -775,6 +2839,33 @@
      "both_correct": true,
      "old_items": 1,
      "new_items": 2,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof1015-pattern-redis-session-caching"
+       ],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof1015-pattern-in-process-lru-cache-replacement"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": null,
+     "evidence_spans_returned": 3,
      "run": 1
     },
     {
@@ -785,6 +2876,34 @@
      "both_correct": true,
      "old_items": 1,
      "new_items": 3,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof1016-pattern-jwt-authentication-with-hs256"
+       ],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof1016-pattern-jwt-authentication-with-hs256",
+        "2026-05-01-asof1016-decision-opaque-session-cookies"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": null,
+     "evidence_spans_returned": 3,
      "run": 1
     },
     {
@@ -793,8 +2912,37 @@
      "old_day_correct": true,
      "new_day_correct": true,
      "both_correct": true,
-     "old_items": 1,
-     "new_items": 2,
+     "old_items": 2,
+     "new_items": 4,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof1017-pattern-frontend-bundling-with-webpack",
+        "2026-03-01-asof1017-decision-use-webpack-for-frontend-bundling"
+       ],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof1017-pattern-frontend-bundling-with-vite",
+        "2026-05-01-asof1017-decision-use-vite-for-frontend-bundling"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": null,
+     "evidence_spans_returned": 5,
      "run": 1
     },
     {
@@ -804,27 +2952,111 @@
      "new_day_correct": true,
      "both_correct": true,
      "old_items": 2,
-     "new_items": 4,
+     "new_items": 5,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof1018-pattern-sqlalchemy-orm-data-access",
+        "2026-03-01-asof1018-decision-use-sqlalchemy-orm-for-data-access"
+       ],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 3,
+       "live": 3,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof1018-pattern-asyncpg-for-data-access",
+        "2026-05-01-asof1018-mistake-incorrect-assumption-about-data-access",
+        "2026-05-01-asof1018-decision-use-asyncpg-for-data-access"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": null,
+     "evidence_spans_returned": 2,
      "run": 1
     },
     {
      "id": "app-queue",
      "shape": "approach_abandoned",
-     "old_day_correct": false,
+     "old_day_correct": true,
      "new_day_correct": true,
-     "both_correct": false,
-     "old_items": 0,
+     "both_correct": true,
+     "old_items": 1,
      "new_items": 2,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof1019-pattern-celery-background-jobs"
+       ],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof1019-pattern-celery-background-jobs"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": null,
+     "evidence_spans_returned": 3,
      "run": 1
     },
     {
      "id": "app-ci",
      "shape": "approach_abandoned",
-     "old_day_correct": false,
+     "old_day_correct": true,
      "new_day_correct": false,
      "both_correct": false,
-     "old_items": 0,
-     "new_items": 0,
+     "old_items": 1,
+     "new_items": 1,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof1020-pattern-ci-deployment-staging"
+       ],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof1020-pattern-ci-deployment-staging"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": null,
+     "evidence_spans_returned": 2,
      "run": 1
     },
     {
@@ -835,6 +3067,31 @@
      "both_correct": false,
      "old_items": 0,
      "new_items": 1,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 0,
+       "live": 0,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": false,
+       "titles": [],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof1021-pattern-postgres-fulltext-search"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": "never_written",
+     "evidence_spans_returned": 1,
      "run": 1
     },
     {
@@ -845,6 +3102,33 @@
      "both_correct": true,
      "old_items": 1,
      "new_items": 2,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof1022-pattern-styled-components-usage"
+       ],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof1022-pattern-tailwind-styling-in-components"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": null,
+     "evidence_spans_returned": 1,
      "run": 1
     },
     {
@@ -854,7 +3138,36 @@
      "new_day_correct": true,
      "both_correct": true,
      "old_items": 2,
-     "new_items": 3,
+     "new_items": 4,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof1023-pattern-package-management-with-poetry",
+        "2026-03-01-asof1023-decision-use-poetry-for-packaging"
+       ],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof1023-pattern-package-management-with-hatchling",
+        "2026-05-01-asof1023-decision-use-hatchling-for-packaging"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": null,
+     "evidence_spans_returned": 6,
      "run": 1
     },
     {
@@ -865,6 +3178,33 @@
      "both_correct": true,
      "old_items": 1,
      "new_items": 2,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof1024-pattern-frontend-state-management-with-redux"
+       ],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof1024-pattern-frontend-state-management-with-zustand"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": null,
+     "evidence_spans_returned": 3,
      "run": 1
     },
     {
@@ -875,6 +3215,34 @@
      "both_correct": true,
      "old_items": 1,
      "new_items": 3,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof1025-pattern-infrastructure-provisioning-with-terraform"
+       ],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof1025-pattern-infrastructure-provisioning-with-pulumi",
+        "2026-05-01-asof1025-decision-pulumi-for-infrastructure"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": null,
+     "evidence_spans_returned": 4,
      "run": 1
     },
     {
@@ -885,16 +3253,72 @@
      "both_correct": true,
      "old_items": 1,
      "new_items": 2,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof1026-pattern-schema-migration-through-alembic"
+       ],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof1026-pattern-schema-migration-through-alembic"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": null,
+     "evidence_spans_returned": 3,
      "run": 1
     },
     {
      "id": "app-serialisation",
      "shape": "approach_abandoned",
-     "old_day_correct": false,
+     "old_day_correct": true,
      "new_day_correct": true,
-     "both_correct": false,
-     "old_items": 0,
-     "new_items": 2,
+     "both_correct": true,
+     "old_items": 2,
+     "new_items": 4,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof1027-pattern-protobuf-message-serialization",
+        "2026-03-01-asof1027-decision-use-protobuf-for-message-serialization"
+       ],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof1027-pattern-newline-delimited-json-serialization",
+        "2026-05-01-asof1027-decision-use-newline-delimited-json-for-messages"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": null,
+     "evidence_spans_returned": 5,
      "run": 1
     },
     {
@@ -903,8 +3327,37 @@
      "old_day_correct": true,
      "new_day_correct": true,
      "both_correct": true,
-     "old_items": 1,
-     "new_items": 3,
+     "old_items": 2,
+     "new_items": 4,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof1028-pattern-secrets-from-vault-at-boot",
+        "2026-03-01-asof1028-decision-staged-release-rollout"
+       ],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof1028-pattern-secrets-from-vault-at-boot",
+        "2026-05-01-asof1028-decision-staged-release-rollout"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": null,
+     "evidence_spans_returned": 5,
      "run": 1
     },
     {
@@ -915,16 +3368,73 @@
      "both_correct": true,
      "old_items": 1,
      "new_items": 3,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof1029-decision-end-to-end-tests-driven-by-selenium"
+       ],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof1029-pattern-end-to-end-tests-driven-by-playwright",
+        "2026-05-01-asof1029-decision-end-to-end-tests-driven-by-playwright"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": null,
+     "evidence_spans_returned": 3,
      "run": 1
     },
     {
      "id": "ret-beta-flag",
      "shape": "retracted_no_replacement",
-     "old_day_correct": false,
+     "old_day_correct": true,
      "new_day_correct": true,
-     "both_correct": false,
+     "both_correct": true,
      "old_items": 2,
      "new_items": 4,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof1030-pattern-feature-flag-gating",
+        "2026-03-01-asof1030-decision-beta-dashboard-feature-flag"
+       ],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof1030-pattern-feature-flag-gating",
+        "2026-05-01-asof1030-decision-beta-dashboard-feature-flag"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": null,
+     "evidence_spans_returned": 6,
      "run": 1
     },
     {
@@ -935,16 +3445,70 @@
      "both_correct": true,
      "old_items": 1,
      "new_items": 2,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof1031-pattern-api-export-returns-csv"
+       ],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof1031-pattern-api-export-returns-csv"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": null,
+     "evidence_spans_returned": 3,
      "run": 1
     },
     {
      "id": "ret-telemetry",
      "shape": "retracted_no_replacement",
-     "old_day_correct": false,
-     "new_day_correct": false,
-     "both_correct": false,
-     "old_items": 0,
-     "new_items": 0,
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 2,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof1032-pattern-telemetry-thread-handling"
+       ],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof1032-pattern-telemetry-thread-handling"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": null,
+     "evidence_spans_returned": 3,
      "run": 1
     },
     {
@@ -953,8 +3517,35 @@
      "old_day_correct": false,
      "new_day_correct": true,
      "both_correct": false,
-     "old_items": 0,
-     "new_items": 1,
+     "old_items": 1,
+     "new_items": 2,
+     "leak": true,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof1033-pattern-read-replica-for-analytics"
+       ],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof1033-pattern-read-replica-for-analytics"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": "leak",
+     "evidence_spans_returned": 3,
      "run": 1
     },
     {
@@ -965,16 +3556,68 @@
      "both_correct": false,
      "old_items": 1,
      "new_items": 1,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof1034-pattern-third-party-plugins-entry-points"
+       ],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 0,
+       "live": 0,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": false,
+       "titles": [],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": null,
+     "evidence_spans_returned": 2,
      "run": 1
     },
     {
      "id": "ret-mobile",
      "shape": "retracted_no_replacement",
-     "old_day_correct": false,
+     "old_day_correct": true,
      "new_day_correct": true,
-     "both_correct": false,
-     "old_items": 2,
-     "new_items": 4,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 2,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof1035-decision-ios-client-sync-engine"
+       ],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof1035-decision-ios-client-sync-engine"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": null,
+     "evidence_spans_returned": 3,
      "run": 1
     },
     {
@@ -983,8 +3626,37 @@
      "old_day_correct": true,
      "new_day_correct": true,
      "both_correct": true,
-     "old_items": 1,
-     "new_items": 3,
+     "old_items": 2,
+     "new_items": 4,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof1036-pattern-nightly-cron-audit-log-compaction",
+        "2026-03-01-asof1036-decision-schedule-audit-log-compaction-nightly"
+       ],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof1036-pattern-nightly-cron-audit-log-compaction",
+        "2026-05-01-asof1036-decision-schedule-audit-log-compaction-nightly"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": null,
+     "evidence_spans_returned": 6,
      "run": 1
     },
     {
@@ -995,16 +3667,72 @@
      "both_correct": false,
      "old_items": 1,
      "new_items": 1,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof1037-pattern-grpc-communication-setup"
+       ],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof1037-pattern-grpc-communication-setup",
+        "2026-05-01-asof1037-decision-switch-to-plain-http"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": null,
+     "evidence_spans_returned": 2,
      "run": 1
     },
     {
      "id": "ret-sso",
      "shape": "retracted_no_replacement",
-     "old_day_correct": false,
-     "new_day_correct": false,
-     "both_correct": false,
-     "old_items": 0,
-     "new_items": 0,
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 1,
+     "new_items": 3,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof1038-pattern-okta-saml-sign-in-flow"
+       ],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof1038-pattern-okta-saml-sign-in-flow",
+        "2026-05-01-asof1038-decision-cancel-okta-integration"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": null,
+     "evidence_spans_returned": 4,
      "run": 1
     },
     {
@@ -1015,6 +3743,33 @@
      "both_correct": true,
      "old_items": 1,
      "new_items": 2,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof1039-pattern-webhook-order-integration"
+       ],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof1039-pattern-webhook-order-integration"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": null,
+     "evidence_spans_returned": 2,
      "run": 1
     },
     {
@@ -1025,6 +3780,29 @@
      "both_correct": false,
      "old_items": 0,
      "new_items": 0,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 0,
+       "live": 0,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": false,
+       "titles": [],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 0,
+       "live": 0,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": false,
+       "titles": [],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": "never_written",
+     "evidence_spans_returned": 0,
      "run": 1
     },
     {
@@ -1035,6 +3813,35 @@
      "both_correct": true,
      "old_items": 2,
      "new_items": 4,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof1041-pattern-cli-flag-legacy-restores-format",
+        "2026-03-01-asof1041-decision-use-legacy-flag-for-backward-compatibility"
+       ],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof1041-pattern-cli-flag-legacy-restores-format",
+        "2026-05-01-asof1041-decision-use-legacy-flag-for-backward-compatibility"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": null,
+     "evidence_spans_returned": 6,
      "run": 1
     },
     {
@@ -1045,6 +3852,33 @@
      "both_correct": true,
      "old_items": 1,
      "new_items": 2,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof1042-pattern-admin-panel-audit-filtering"
+       ],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof1042-pattern-admin-panel-audit-filtering"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": null,
+     "evidence_spans_returned": 3,
      "run": 1
     },
     {
@@ -1055,16 +3889,71 @@
      "both_correct": true,
      "old_items": 1,
      "new_items": 3,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof1043-pattern-localization-pair-programming"
+       ],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof1043-pattern-localization-pair-programming",
+        "2026-05-01-asof1043-decision-english-only-app"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": null,
+     "evidence_spans_returned": 3,
      "run": 1
     },
     {
      "id": "ret-sandbox",
      "shape": "retracted_no_replacement",
-     "old_day_correct": false,
+     "old_day_correct": true,
      "new_day_correct": true,
-     "both_correct": false,
+     "both_correct": true,
      "old_items": 1,
      "new_items": 2,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof1044-pattern-sandbox-environment-mirroring"
+       ],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof1044-pattern-sandbox-environment-mirroring"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": null,
+     "evidence_spans_returned": 3,
      "run": 1
     },
     {
@@ -1075,16 +3964,70 @@
      "both_correct": false,
      "old_items": 1,
      "new_items": 2,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": false,
+       "titles": [
+        "2026-03-01-asof1045-pattern-http-client-retry-logic"
+       ],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof1045-pattern-http-client-retry-logic"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": "paraphrase",
+     "evidence_spans_returned": 1,
      "run": 1
     },
     {
      "id": "nar-cache-scope",
      "shape": "narrowed",
-     "old_day_correct": true,
+     "old_day_correct": false,
      "new_day_correct": true,
-     "both_correct": true,
-     "old_items": 1,
-     "new_items": 2,
+     "both_correct": false,
+     "old_items": 0,
+     "new_items": 3,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 0,
+       "live": 0,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": false,
+       "titles": [],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 3,
+       "live": 3,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof1046-pattern-cache-gets-only",
+        "2026-05-01-asof1046-mistake-cache-write-stale-data",
+        "2026-05-01-asof1046-decision-reverse-cache-policy"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": "never_written",
+     "evidence_spans_returned": 3,
      "run": 1
     },
     {
@@ -1095,6 +4038,35 @@
      "both_correct": true,
      "old_items": 2,
      "new_items": 4,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof1047-pattern-audit-log-table-changes",
+        "2026-03-01-asof1047-decision-log-all-table-changes"
+       ],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof1047-pattern-audit-log-table-changes",
+        "2026-05-01-asof1047-decision-log-all-table-changes"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": null,
+     "evidence_spans_returned": 6,
      "run": 1
     },
     {
@@ -1105,6 +4077,33 @@
      "both_correct": true,
      "old_items": 1,
      "new_items": 2,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof1048-pattern-trainer-gpu-utilization"
+       ],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof1048-pattern-gpu-utilization-configuration"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": null,
+     "evidence_spans_returned": 3,
      "run": 1
     },
     {
@@ -1115,16 +4114,70 @@
      "both_correct": false,
      "old_items": 1,
      "new_items": 2,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": false,
+       "titles": [
+        "2026-03-01-asof1049-pattern-pre-commit-hook-lints-repository"
+       ],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof1049-pattern-pre-commit-hook-lints-repository"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": "paraphrase",
+     "evidence_spans_returned": 0,
      "run": 1
     },
     {
      "id": "nar-notify-scope",
      "shape": "narrowed",
-     "old_day_correct": false,
+     "old_day_correct": true,
      "new_day_correct": true,
-     "both_correct": false,
+     "both_correct": true,
      "old_items": 1,
      "new_items": 2,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof1050-pattern-deploy-failure-alerting"
+       ],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof1050-pattern-deploy-failure-alerting"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": null,
+     "evidence_spans_returned": 3,
      "run": 1
     },
     {
@@ -1135,26 +4188,105 @@
      "both_correct": false,
      "old_items": 0,
      "new_items": 1,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 0,
+       "live": 0,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": false,
+       "titles": [],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof1051-pattern-encryption-at-rest-scope"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": "never_written",
+     "evidence_spans_returned": 1,
      "run": 1
     },
     {
      "id": "nar-index-scope",
      "shape": "narrowed",
      "old_day_correct": false,
-     "new_day_correct": false,
+     "new_day_correct": true,
      "both_correct": false,
      "old_items": 0,
      "new_items": 1,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 0,
+       "live": 0,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": false,
+       "titles": [],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof1052-pattern-index-documentation-update"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": "never_written",
+     "evidence_spans_returned": 1,
      "run": 1
     },
     {
      "id": "nar-backup-scope",
      "shape": "narrowed",
      "old_day_correct": true,
-     "new_day_correct": false,
-     "both_correct": false,
-     "old_items": 1,
-     "new_items": 3,
+     "new_day_correct": true,
+     "both_correct": true,
+     "old_items": 2,
+     "new_items": 4,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof1053-pattern-nightly-backup-database-dump",
+        "2026-03-01-asof1053-decision-backups-decision-confirmed"
+       ],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof1053-pattern-nightly-backup-database-dump",
+        "2026-05-01-asof1053-decision-backups-decision-confirmed"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": null,
+     "evidence_spans_returned": 6,
      "run": 1
     },
     {
@@ -1164,17 +4296,74 @@
      "new_day_correct": true,
      "both_correct": true,
      "old_items": 2,
-     "new_items": 4,
+     "new_items": 5,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof1054-pattern-rate-limiting-handling",
+        "2026-03-01-asof1054-decision-global-rate-limit-enforcement"
+       ],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 3,
+       "live": 3,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof1054-pattern-rate-limiting-handling",
+        "2026-05-01-asof1054-mistake-incorrect-rate-limit-application",
+        "2026-05-01-asof1054-decision-global-rate-limit-enforcement"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": null,
+     "evidence_spans_returned": 5,
      "run": 1
     },
     {
      "id": "nar-compress-scope",
      "shape": "narrowed",
-     "old_day_correct": false,
+     "old_day_correct": true,
      "new_day_correct": true,
-     "both_correct": false,
+     "both_correct": true,
      "old_items": 1,
      "new_items": 2,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof1055-pattern-gzip-compression-response"
+       ],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof1055-pattern-gzip-compression-response"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": null,
+     "evidence_spans_returned": 3,
      "run": 1
     },
     {
@@ -1185,6 +4374,33 @@
      "both_correct": true,
      "old_items": 1,
      "new_items": 2,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof1056-pattern-mfa-required-for-all-users"
+       ],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof1056-pattern-mfa-required-for-admin-accounts"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": null,
+     "evidence_spans_returned": 3,
      "run": 1
     },
     {
@@ -1195,16 +4411,72 @@
      "both_correct": true,
      "old_items": 1,
      "new_items": 2,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof1057-pattern-event-log-replay-on-boot"
+       ],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 1,
+       "live": 1,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof1057-pattern-event-log-replay-on-boot"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": null,
+     "evidence_spans_returned": 3,
      "run": 1
     },
     {
      "id": "nar-shard-scope",
      "shape": "narrowed",
-     "old_day_correct": false,
-     "new_day_correct": false,
-     "both_correct": false,
+     "old_day_correct": true,
+     "new_day_correct": true,
+     "both_correct": true,
      "old_items": 2,
      "new_items": 4,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof1058-pattern-tenant-sharding-implementation",
+        "2026-03-01-asof1058-decision-tenant-per-database-shard"
+       ],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof1058-pattern-tenant-sharding-implementation",
+        "2026-05-01-asof1058-decision-tenant-per-database-shard"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": null,
+     "evidence_spans_returned": 5,
      "run": 1
     },
     {
@@ -1215,24 +4487,72 @@
      "both_correct": true,
      "old_items": 2,
      "new_items": 4,
+     "leak": false,
+     "store": {
+      "s0": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-03-01-asof1059-pattern-end-to-end-request-tracing",
+        "2026-03-01-asof1059-decision-trace-all-requests"
+       ],
+       "supersedes": []
+      },
+      "s1": {
+       "written": 2,
+       "live": 2,
+       "retired": 0,
+       "valid_to": [],
+       "marker_in_text": true,
+       "titles": [
+        "2026-05-01-asof1059-pattern-end-to-end-request-tracing",
+        "2026-05-01-asof1059-decision-trace-all-requests"
+       ],
+       "supersedes": []
+      }
+     },
+     "old_fail_kind": null,
+     "evidence_spans_returned": 2,
      "run": 1
     }
    ],
    "n_cases": 120,
-   "both_correct_rate": 0.625,
+   "both_correct_rate": 0.7833,
    "both_correct_ci": [
-    0.5358,
-    0.7065
+    0.7015,
+    0.8476
    ],
-   "old_day_rate": 0.6833,
-   "new_day_rate": 0.8333,
+   "old_day_rate": 0.825,
+   "new_day_rate": 0.9167,
    "errors": 0,
+   "old_day_failures_by_kind": {
+    "never_written": 13,
+    "unranked": 0,
+    "paraphrase": 5,
+    "leak": 3
+   },
+   "s0_never_written": 13,
+   "s0_retired_rate": 0.0,
    "runs": 2,
-   "seconds": 392.0,
+   "seconds": 432.0,
    "config": "ollama qwen3-coder:30b + bge-m3, k=5, days 2026-03-01/2026-05-01",
+   "store_bytes": 302373,
+   "evidence": {
+    "sessions": 222,
+    "notes": 319,
+    "spans": 277,
+    "ms": 1309.8000000000009,
+    "enabled": true,
+    "spans_per_note_max": 1,
+    "span_chars_max": 240,
+    "ms_per_session": 5.9
+   },
    "per_run": [
-    0.6667,
-    0.5833
+    0.8,
+    0.7667
    ]
   },
   "naive": {
