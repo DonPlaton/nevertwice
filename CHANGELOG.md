@@ -16,6 +16,14 @@ empty.
 
 ### Added
 
+- **`docs/WEAKNESSES.md` opens with what the campaigns since June measured.** The page was a June
+  audit read as the current picture. Its header now says the body is the June record, and a first
+  section states the ceiling measured since, each with its ledger gate and a table rendered from the
+  register: over-consolidation - a later fact on the same topic absorbed into an earlier note, the
+  note kept on disk and no longer handing that fact back (K1b/K7); the extractor's unstable output
+  on a bare two-sentence fact (K3/K5); the guard stand's missed false-positive ceiling (J6); and the
+  code-session corpus that does not separate retrieval systems (J3), with the held-out survival and
+  accuracy figures named as dev-set numbers until the marked cards arrive.
 - **A stand's page may not print a decimal the register lost** (`tests/_test_decimal_drift.py`).
   The governed front pages already resolve every number to a live claim; the study pages were only
   capped in how many unregistered numbers they print, and nothing asked whether those numbers were
@@ -320,6 +328,11 @@ empty.
 
 ### Changed
 
+- **The README's supersession row prints its price beside the advantage.** The row said we hand back
+  a retracted fact 0.033 of the time against 0.933 / 0.317 / 0.950 and said nothing about the next
+  column, where we are the worst arm of the stand: a fact that stayed true stops being served 0.125
+  of the time on the explicit corpus and 0.350 with the cue removed, against nothing for Mem0 and
+  Zep/Graphiti. Both figures are live claims cited on the page, with the cause table linked.
 - **The supersession bench names its two control metrics and reads every arm's store**
   (`research/supersession_bench.py`, `research/_graphiti_arm.py`; ledger K0/K2). `score()` reports
   `control_miss_rate` for every arm (the still-true fact did not come back, any cause) and keeps
@@ -464,6 +477,15 @@ empty.
 
 ### Fixed
 
+- **Two run-count sentences lagged the pooled Zep arm.** `docs/BENCHMARKS.md` said "the other arms are
+  one run each" and `README.md` counted Zep/Graphiti among the arms kept as last measured and
+  restamped, after that arm had been re-run twice on a flushed FalkorDB and pooled. Word claims
+  about runs and gates are what `_test_decimal_drift.py` cannot see; a sweep of the governed and
+  stand pages for the class found no other.
+- **The cause-table caption names the absorb in outside words.** "The old statement survives on disk,
+  unserved" read as a storage detail; the caption now says that the note stays on disk, that what it
+  hands back is the other fact, and that this one is no longer served - and its docstring no longer
+  says the competitor stores were read for ours alone.
 - **The as-of caption was a constant.** `tools/render_claims.py` printed "the gate written before the
   run was 0.80 on both days, and this is below it" under the as-of table - a sentence written when
   the gate was missed and never compared again, so it went on asserting a miss on the campaign of

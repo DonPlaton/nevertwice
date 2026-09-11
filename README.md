@@ -85,7 +85,7 @@ What survived re-measurement at HEAD, and what it cost:
 | claim | result | evidence |
 |---|---|---|
 | external retrieval, one pool and one embedder for everyone | R@5 **0.800** on a hash-pinned LongMemEval corpus, whole sessions embedded on our side as on the competitors' (Mem0 0.758, LangMem 0.692, A-MEM 0.692) | [EXTERNAL_RETRIEVAL.md](research/EXTERNAL_RETRIEVAL.md) |
-| handing back a fact that has since been **retracted** | **0.033** of the time, against **0.933** for Mem0, **0.317** for Zep/Graphiti and **0.950** for an append-only file with term matching | [SUPERSESSION.md](research/SUPERSESSION.md) |
+| handing back a fact that has since been **retracted** | **0.033** of the time, against **0.933** for Mem0, **0.317** for Zep/Graphiti and **0.950** for an append-only file with term matching. The price, ours alone on this stand: a fact that stayed true stops being served **0.125** of the time on the explicit corpus and **0.350** with the cue removed - a later fact on the same topic is absorbed into the note, which stays on disk and no longer hands this one back ([the causes](research/SUPERSESSION.md#what-it-costs-us)) | [SUPERSESSION.md](research/SUPERSESSION.md) |
 | acting vs *always-injecting* the same lesson | same error prevention for **31×** fewer memory tokens | [ACTIVE_MEMORY.md](research/ACTIVE_MEMORY.md) |
 | memory-poisoning acceptance attacks | **81%** blocked overall - **100%** of prompt injection, **25%** of plausible-false facts | [POISONING.md](research/POISONING.md) |
 | what being there costs | PreToolUse **85 ms** end to end - a tenth of a second, and it moves by a third between sessions - and zero context tokens until a guard fires | [BENCHMARKS.md](docs/BENCHMARKS.md) |

@@ -618,9 +618,10 @@ def render_supersession_causes(c: Claims, fam: str = "supersession") -> str:
     """Why a still-true fact did not come back, per arm: the memory retired it (over-retraction
     proper - the only cause that is the design's own failure), the write path never stored it,
     or it was stored and ranked below k. The counts are over the control case-runs the arm ran
-    (two runs for ours, one for each other arm). A cause the stand could not read for an arm
-    prints as such rather than as a zero: reading it needs the arm's store, which the
-    2026-09-11 run inspected only for ours."""
+    (two runs for ours and for Zep/Graphiti, one for Mem0 and the floor). A cause the stand
+    could not read for an arm prints as such rather than as a zero: reading it needs the arm's
+    store, which every arm's run has opened since the 2026-09-11 campaign; the cell stays for a
+    run that did not."""
     if not c.has(f"{fam}.nevertwice.control_miss_rate"):
         return _not_yet(fam, "python research/supersession_bench.py --arms nevertwice,naive")
     rows = []
@@ -635,8 +636,9 @@ def render_supersession_causes(c: Claims, fam: str = "supersession") -> str:
     out = _table(["arm", "a still-true fact did not come back"] + [name for _, name in CAUSES], rows)
     out += ("\n\n<sub>The first column is the rate in the table above; the four after it split its "
             "count by cause. The first two are the memory being too eager - it retired the note, or "
-            "it judged a different fact a twin of this one, absorbed it into the note and stopped "
-            "serving this fact (the old statement survives on disk, unserved) - the other two are "
+            "it judged a different fact a twin of this one and absorbed that fact into the note: the "
+            "note stays on disk, but what it now hands back is the other fact, and this one is no "
+            "longer served - the other two are "
             "the extractor's silence and the ranker's depth. A cause reads *not read* where the run "
             "did not inspect that arm's store: a retirement is visible only where the store records "
             "one (our `valid_to` and `## Previous statement`; Graphiti's `invalid_at`/`expired_at`; "

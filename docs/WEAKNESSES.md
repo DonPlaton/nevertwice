@@ -1,9 +1,108 @@
-# Nevertwice - weaknesses & limitations (hostile self-audit, 2026-06-17; launch update 2026-06-20)
+# Nevertwice - weaknesses & limitations (hostile self-audit, 2026-06-17; launch update 2026-06-20; September update first)
+
+> **The body of this page is the June audit.** It is kept as written, grades included, because it is
+> the record of what was believed and checked then. Everything measured since - the supersession and
+> as-of stands, the code-session corpus, the guard stand, the campaigns of August and September - lives
+> in the first section below, and that section is the current ceiling; W2 and W7 are no longer the
+> worst things about the system.
 
 *Written in the role of a harsh critic: dogfooded on a real 328-note / 12-project vault,
 ran all 10 test suites, probed the new research features for dead code, token bloat, and
 clutter. Findings are graded **[FIXED]** (closed this pass), **[OPEN]** (real, unsolved),
 **[design]** (a trade-off worth naming), **[info]** (known/by-design). Fairness section first.*
+
+## September update: what the campaigns since June measured
+
+Four weaknesses the June audit had no stand to see. Each has a page with the registered numbers and a
+ledger entry (`.loop/GOAL-CLOSE.md`) with its gate; the tables here are rendered from the register, so
+they cannot lag the artifact.
+
+- **[OPEN - measured; fix gated as K7] Over-consolidation: a later fact on the same topic is absorbed
+  into an earlier note.** When a second session states a *different* fact on a topic an earlier note
+  already covers - "logs are shipped to Loki" after "traces are exported to Tempo" - and the extractor
+  gives both the same title, the write path rewrites the earlier note in place: the new statement
+  becomes the served text and the earlier one survives only under `## Previous statement`. The note
+  stays on disk; what recall hands back is the other fact. On the supersession stand's controls -
+  facts that stayed true - this is what most of our misses are, and it makes ours the **worst row of
+  the stand on that column**: Mem0 and Zep/Graphiti lose nothing to over-retraction (their misses are
+  the extractor never writing the fact), the append-only file loses one to ranking depth. The bench
+  read these misses as "ranked below the top five" until the September campaign (ledger K1b); the cap the J2b
+  design registered for over-retraction is **missed on both corpora** on the corrected metric and is
+  published as missed. The engine is measured first at its pre-J2b commit under the same classifier
+  (ledger K2, item 2 of the September order), then the fix goes through its gate (K7).
+
+<!-- claims:supersession-causes -->
+| arm | a still-true fact did not come back | retired by the memory | absorbed into another note | never written | served, below the top five |
+|---|---|---|---|---|---|
+| **Nevertwice** | 0.225 [0.123, 0.375] | 0 of 40 | 5 of 40 | 4 of 40 | 0 of 40 |
+| Mem0 | 0.000 [0.000, 0.161] | 0 of 20 | 0 of 20 | 0 of 20 | 0 of 20 |
+| Zep/Graphiti (`graphiti-core`, FalkorDB) | 0.225 [0.123, 0.375] | 0 of 40 | 0 of 40 | 9 of 40 | 0 of 40 |
+| an append-only markdown file | 0.050 [0.009, 0.236] | 0 of 20 | 0 of 20 | 0 of 20 | 1 of 20 |
+
+<sub>The first column is the rate in the table above; the four after it split its count by cause. The first two are the memory being too eager - it retired the note, or it judged a different fact a twin of this one and absorbed that fact into the note: the note stays on disk, but what it now hands back is the other fact, and this one is no longer served - the other two are the extractor's silence and the ranker's depth. A cause reads *not read* where the run did not inspect that arm's store: a retirement is visible only where the store records one (our `valid_to` and `## Previous statement`; Graphiti's `invalid_at`/`expired_at`; Mem0's delete and update events).</sub>
+
+<sub>Over-retraction proper - the memory stopped serving a fact that was still true, by retiring the note or by absorbing another fact into it - is the first two cause columns as a rate: 0.125 [0.055, 0.261] for Nevertwice over its control case-runs.</sub>
+<!-- /claims:supersession-causes -->
+
+<!-- claims:supersession-causes-implicit -->
+| arm | a still-true fact did not come back | retired by the memory | absorbed into another note | never written | served, below the top five |
+|---|---|---|---|---|---|
+| **Nevertwice** | 0.350 [0.221, 0.505] | 0 of 40 | 14 of 40 | 0 of 40 | 0 of 40 |
+| Mem0 | 0.000 [0.000, 0.161] | 0 of 20 | 0 of 20 | 0 of 20 | 0 of 20 |
+| Zep/Graphiti (`graphiti-core`, FalkorDB) | 0.275 [0.161, 0.428] | 0 of 40 | 0 of 40 | 11 of 40 | 0 of 40 |
+| an append-only markdown file | 0.050 [0.009, 0.236] | 0 of 20 | 0 of 20 | 0 of 20 | 1 of 20 |
+
+<sub>The first column is the rate in the table above; the four after it split its count by cause. The first two are the memory being too eager - it retired the note, or it judged a different fact a twin of this one and absorbed that fact into the note: the note stays on disk, but what it now hands back is the other fact, and this one is no longer served - the other two are the extractor's silence and the ranker's depth. A cause reads *not read* where the run did not inspect that arm's store: a retirement is visible only where the store records one (our `valid_to` and `## Previous statement`; Graphiti's `invalid_at`/`expired_at`; Mem0's delete and update events).</sub>
+
+<sub>Over-retraction proper - the memory stopped serving a fact that was still true, by retiring the note or by absorbing another fact into it - is the first two cause columns as a rate: 0.350 [0.221, 0.505] for Nevertwice over its control case-runs.</sub>
+<!-- /claims:supersession-causes-implicit -->
+
+- **[OPEN - measured; fix gated as K5] The extractor's output on a bare two-sentence fact is
+  unstable.** The same text at temperature zero yields a note or nothing depending on incidental prompt
+  context - the project name was enough. Of the first sessions the as-of stand marked *never written*,
+  three were silent in both runs and five in one run only; captured alone, six of eight wrote the note
+  with the fact, one paraphrased it, one produced no item (ledger K3, `research/silence_probe.py`). Not
+  length, not the absorb above. The fix is a single retry on an empty extraction, not a prompt rewrite;
+  its gate is written (K5) and it is measured beside the other two in one campaign.
+
+- **[GATE MISSED - J6] No guard arm reaches the false-positive ceiling.** On the labelled guard corpus
+  (`research/GUARD_BENCH.md`) no arm - lexical, all-fire, the prompt-time guard - reaches the ceiling
+  of five percent false positives the design wrote; the all-fire arms recall under two fifths of the
+  labelled cases at three to four times that false-positive rate, the linter recalls under half at
+  zero, and the prompt-time guard recalls nothing. The README's sentence on guards was reduced to what
+  is measured. Live table:
+
+<!-- claims:guard-bench -->
+| arm | recall of the right guard | precision | hard-negative false alarms | project-only recall | tokens / call | ms / check |
+|---|---|---|---|---|---|---|
+| **guards, engine's no-model patterns** | 0.380 at FPR 0.179 (over budget) | - | - | - | 3.320 | 0.018 |
+| **guards, model-written patterns** | 0.370 at FPR 0.155 (over budget) | - | - | - | 5.510 | 0.032 |
+| cold-start pack (no history) | 0.196 | 0.818 | 0.000 | 0.000 | 1.150 | 0.008 |
+| linter or scanner (scored in its favour) | 0.457 | 1.000 | 0.000 | 0.154 | 0.000 | 0.000 |
+| prompt recall over the notes (top three) | 0.011 | 0.500 | 0.014 | 0.019 | 103.560 | 56.139 |
+| silence (floor) | 0.000 | - | 0.000 | 0.000 | 0.000 | 0.000 |
+
+<sub>no operating point under the false-alarm budget for guards, engine's no-model patterns, guards, model-written patterns - a guard fires or it does not, and firing catches the repeats shown at the false-alarm rate shown.</sub>
+<!-- /claims:guard-bench -->
+
+- **[CORPUS GATES FAILED - J3] The code-session corpus does not separate retrieval systems.** On the
+  synthetic corpus of coding sessions with gold answers (`research/CODE_SESSIONS.md`) the append-only
+  floor answers within a few points of the oracle context, so the stand cannot tell a memory from a
+  text file by retrieval; only the extraction clause separates the arms, and there our extractor
+  missed its gate on every clause against Mem0's pipeline. The hand-marked held-out over the owner's
+  own sessions is the clean read; its first slice is the owner's and small, and its fact-survival and
+  accuracy figures quoted elsewhere on this site are **dev-set numbers** until the marked cards arrive
+  and the stand is re-run on an unchanged engine. Live table:
+
+<!-- claims:code-sessions -->
+| system | fact | current | stale | lesson | situation (top three) | tokens |
+|---|---|---|---|---|---|---|
+| **Nevertwice, our extractor's notes** | 0.083 | 0.033 | 0.017 | 0.600 | 0.000 | 113 |
+| append-only sessions, term overlap (floor) | 0.967 | 0.850 | 0.083 | 0.956 | 0.922 | 2,937 |
+| Mem0 full pipeline, its memories | 0.683 | 0.750 | 0.117 | 0.700 | 0.033 | 187 |
+| no memory (bracket) | 0.067 | 0.017 | 0.050 | 0.478 | 0.000 | 117 |
+| the gold session whole (bracket) | 0.978 | 0.967 | 0.000 | 1.000 | 1.000 | 727 |
+<!-- /claims:code-sessions -->
 
 ## Launch-state update (2026-06-20)
 
@@ -362,3 +461,7 @@ isolated and off-by-default. But the dogfood found a **real, shipped-for-months 
 confidence gate - W3). The honest ceiling is **retrieval precision under embedding compression**
 (W2/W4) and **plausible-false-fact security** (W7) - neither solved by the work so far, both with
 clear next steps above.
+
+*September 2026:* that verdict is the June one. The ceiling measured since sits above both - the
+over-consolidation of a later fact into an earlier note, and the extractor's instability on a bare
+fact - and is stated with its numbers in the first section of this page.

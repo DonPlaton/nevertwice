@@ -28250,7 +28250,8 @@
    "command": "python research/supersession_bench.py",
    "raw": "research/results/supersession_v1.json",
    "cited_in": [
-    "docs/BENCHMARKS.md"
+    "docs/BENCHMARKS.md",
+    "README.md"
    ],
    "commit": "74cfcd490f0595f5d9ec4018172cb3a70de6ed75",
    "produced_by": [
@@ -31532,7 +31533,9 @@
    "environment": "local_supersession_stand",
    "command": "python research/supersession_bench.py --dataset research/data/supersession_v1_implicit.json --arms nevertwice,naive",
    "raw": "research/results/supersession_v1_implicit.json",
-   "cited_in": [],
+   "cited_in": [
+    "README.md"
+   ],
    "commit": "74cfcd490f0595f5d9ec4018172cb3a70de6ed75",
    "produced_by": [
     "research/supersession_bench.py",
