@@ -68,7 +68,7 @@ DAY_FIRST, DAY_BETWEEN, DAY_SECOND, DAY_AFTER = "2026-03-01", "2026-04-01", "202
 # --recent (J2b control): the same span shifted inside the 90-day window so session one is never
 # archived, isolating write-path interval closure from archive-aware closure.
 RECENT_DAYS = ("2026-07-15", "2026-08-01", "2026-08-20", "2026-09-05")
-FAIL_KINDS = ("never_written", "unranked", "paraphrase", "leak")
+FAIL_KINDS = ("never_written", "absorbed", "unranked", "paraphrase", "leak")
 
 
 def _apply_recent() -> None:
@@ -103,7 +103,7 @@ def _session_state(project: str, case: dict) -> dict:
     from nevertwice import memory_hook as m                     # noqa: PLC0415
     root = Path(sg.store())
     sid8 = {f"-session-{m._sid8(f'{project}-s{j}')}": j for j in (0, 1)}
-    per = {j: {"written": 0, "live": 0, "retired": 0, "valid_to": [], "marker_in_text": False,
+    per = {j: {"written": 0, "live": 0, "retired": 0, "absorbed": 0, "valid_to": [], "marker_in_text": False,
                "titles": [], "supersedes": [], "superseded_via": []}
            for j in (0, 1)}
     for folder in ("Patterns", "Mistakes", "Decisions"):
@@ -117,6 +117,17 @@ def _session_state(project: str, case: dict) -> dict:
             if j is None:
                 continue
             body = md.read_text(encoding="utf-8", errors="replace")
+            # A note the twin gate absorbed the other session's item into is rewritten in place:
+            # its `session` becomes the absorbing session and the earlier one survives only in
+            # `sources` (and its statement under `## Previous statement`). Until 2026-09-11 that
+            # read here as "session one wrote nothing" - K1b/K3: the old fact was written, then
+            # absorbed - so the earlier session is credited through `sources` and the absorb counted.
+            srcs = " ".join(str(s) for s in (fm.get("sources") or []) if s)
+            for tag, jj in sid8.items():
+                if jj != j and tag in srcs:
+                    per[jj]["written"] += 1
+                    per[jj]["absorbed"] += 1
+                    per[jj]["titles"].append(md.stem)
             st = per[j]
             st["written"] += 1
             if md.parent.name == "Superseded" or str(fm.get("status") or "") == "superseded":
@@ -144,6 +155,10 @@ def old_fail_kind(row: dict, state: dict | None) -> str | None:
     s0 = (state or {}).get("s0") or {}
     if state is not None and s0.get("written", 0) == 0:
         return "never_written"
+    if state is not None and s0.get("absorbed", 0) and s0.get("written", 0) == s0.get("absorbed", 0):
+        # every note session one wrote was absorbed into session two's: the old statement is on
+        # disk under "Previous statement" and no note serves it for the old day (K1b/K3)
+        return "absorbed"
     if row.get("old_items", 0) == 0:
         return "unranked"
     return "leak" if row.get("leak") else "paraphrase"
@@ -227,6 +242,9 @@ def score(rows: list[dict]) -> dict:
         out["old_day_failures_by_kind"] = {k: kinds.get(k, 0) for k in FAIL_KINDS}
         out["s0_never_written"] = sum(1 for r in sup
                                       if ((r.get("store") or {}).get("s0") or {}).get("written") == 0)
+        # K1b/K3: session one's note exists only as the note session two's item was absorbed into
+        out["s0_absorbed"] = sum(1 for r in sup
+                                 if ((r.get("store") or {}).get("s0") or {}).get("absorbed"))
         # how often the replacing session actually closed the first fact's interval - the
         # write path's cross-day recognition, which the same-day supersession stand cannot see
         written = [r for r in sup if ((r.get("store") or {}).get("s0") or {}).get("written")]

@@ -70,7 +70,8 @@ def main(argv: list[str] | None = None) -> int:
     dirty = _dirty_files()
     new: list[dict] = []
 
-    def add(cid, statement, value, printed, unit, n, ci, pointer, *, dataset, env, command, raw, note=None):
+    def add(cid, statement, value, printed, unit, n, ci, pointer, *, dataset, env, command, raw, note=None,
+            derivation=None):
         if cid in existing:
             return
         closure = pb.closure(command)
@@ -88,7 +89,7 @@ def main(argv: list[str] | None = None) -> int:
                     "n": n, "pointer": pointer, "dataset": dataset, "environment": env, "command": command,
                     "raw": raw, "cited_in": [], "commit": head, "produced_by": closure,
                     "ci": ({"method": "wilson", "level": 0.95, "low": ci[0], "high": ci[1]} if ci else None),
-                    **({"note": note} if note else {})})
+                    **({"note": note} if note else {}), **({"derivation": derivation} if derivation else {})})
 
     # ── as-of ────────────────────────────────────────────────────────────────
     raw = "research/results/asof_v1.json"
@@ -101,6 +102,8 @@ def main(argv: list[str] | None = None) -> int:
     kinds = a.get("old_day_failures_by_kind") or {}
     base = dict(dataset="supersession_v1", env="local_supersession_stand", command=ASOF_CMD, raw=raw)
     what = {"never_written": "the extractor wrote no note for the first session",
+            "absorbed": "the first session's note was absorbed into the second session's (the twin gate judged the "
+                        "different fact a twin; the old statement survives only under Previous statement)",
             "unranked": "a first-session note existed but nothing came back for the old day",
             "paraphrase": "the old note came back but its wording carried no marker",
             "leak": "the new fact came back for the old day"}
@@ -109,6 +112,12 @@ def main(argv: list[str] | None = None) -> int:
         add(f"asof.nevertwice.old_day_miss.{kind}",
             f"of the as-of case-runs that missed the old day, {k} missed because {desc}",
             k, [str(k)], "case-runs", n, None, f'arms["nevertwice"].old_day_failures_by_kind.{kind}', **base)
+    if a.get("s0_absorbed") is not None:
+        add("asof.nevertwice.s0_absorbed",
+            f"in {int(a['s0_absorbed'])} of the {n} as-of case-runs every note the first session wrote was absorbed "
+            f"into the second session's note - written, then rewritten to the new fact",
+            int(a["s0_absorbed"]), [str(int(a["s0_absorbed"]))], "case-runs", n, None,
+            'arms["nevertwice"].s0_absorbed', **base)
     r = a.get("s0_retired_rate")
     if r is not None:
         add("asof.nevertwice.s0_retired_rate",
@@ -172,19 +181,54 @@ def main(argv: list[str] | None = None) -> int:
     zep = ((art or {}).get("arms") or {}).get("zep") or {}
     if zep and not zep.get("blocked") and zep.get("n_cases"):
         nz = int(zep["n_cases"])
+        zruns = int(zep.get("runs") or 1)
+        unit = f"supersession case-runs (pooled over {zruns} runs of the arm)" if zruns > 1 else "supersession cases"
         for key, what in (("both_correct_rate", "answers BOTH days correctly"), ("old_day_rate", "answers the day the superseded fact still held"),
                           ("new_day_rate", "answers the day after the replacement")):
             v = zep[key]
             add(f"asof.zep.{key.replace('_rate', '')}",
                 f"Zep/Graphiti (graphiti-core, FalkorDB, edges filtered by their own valid_at/invalid_at/expired_at) {what} on "
-                f"{v * 100:.1f}% of the supersession cases asked as of a day",
+                f"{v * 100:.1f}% of the {unit} asked as of a day",
                 v, [f"{v:.3f}"], "rate", nz, list(wilson(int(round(v * nz)), nz)), f'arms["zep"].{key}', **base)
+        # K2 parity: the Zep arm pooled over its runs carries the per-run values like ours
+        for i, word in enumerate(("one", "two", "three")[:int(zep.get("runs") or 1)]):
+            pr = zep.get("per_run") or []
+            if len(pr) > i and pr[i] is not None:
+                add(f"asof.zep.per_run.{word}",
+                    f"run {word} of the Zep/Graphiti as-of arm read both-days-correct {pr[i]:.3f} on its "
+                    f"{nz // max(int(zep.get('runs') or 1), 1)} cases",
+                    pr[i], [f"{pr[i]:.3f}"], "rate", nz // max(int(zep.get("runs") or 1), 1), None,
+                    f'arms["zep"].per_run[{i}]', **base)
         g = zep.get("graphiti") or {}
         if g.get("llm_calls_per_episode") is not None:
             add("asof.zep.llm_calls_per_episode",
                 f"Graphiti spends {g['llm_calls_per_episode']} LLM calls per episode on the as-of stand, measured",
                 g["llm_calls_per_episode"], [f"{g['llm_calls_per_episode']:.2f}", f"{g['llm_calls_per_episode']:.1f}"], "calls",
                 int(g.get("episodes", 0)), None, 'arms["zep"].graphiti.llm_calls_per_episode', **base)
+
+    # ── K3: the extractor alone on the sessions the as-of stand had marked never written ──
+    raw_s = "research/results/silence_probe.json"
+    if (ROOT / raw_s).exists() and (ROOT / raw_s).stat().st_mtime >= code_time:
+        sp = json.loads((ROOT / raw_s).read_text(encoding="utf-8"))
+        n_s = int(sp.get("silent_cases") or 0)
+        kinds_s = sp.get("by_kind") or {}
+        sil_cmd = "python research/silence_probe.py --save --out research/results/silence_probe.json"
+        for kind, slug in (("written with the marker", "written_with_marker"),
+                           ("written without the marker", "written_without_marker"),
+                           ("no items returned", "no_items"),
+                           ("items returned, none written", "items_none_written"),
+                           ("extraction failed", "extraction_failed")):
+            v = int(kinds_s.get(kind, 0))
+            present = kind in kinds_s
+            add(f"silence.{slug}",
+                f"of the {n_s} first sessions the as-of stand had marked never written, captured alone the extractor "
+                f"{kind} for {v}",
+                v, [str(v)], "sessions", n_s, None, f'by_kind["{kind}"]' if present else None,
+                dataset="supersession_v1", env="local_supersession_stand", command=sil_cmd, raw=raw_s,
+                derivation=None if present else f"by_kind carries no entry for {kind!r}: the count is zero")
+        add("silence.cases", f"the as-of stand had marked {n_s} distinct first sessions as never written",
+            n_s, [str(n_s)], "sessions", n_s, None, "silent_cases",
+            dataset="supersession_v1", env="local_supersession_stand", command=sil_cmd, raw=raw_s)
 
     # ── supersession (pooled artifact) ──────────────────────────────────────────────────
     raw = "research/results/supersession_v1.json"

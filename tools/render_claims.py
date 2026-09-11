@@ -739,14 +739,16 @@ def asof_verdict(c: Claims) -> str:
     side = "the old day" if old <= new else "the day after"
     verdict += f". The larger loss is on {side}"
     kinds = {k: c.value(f"asof.nevertwice.old_day_miss.{k}")
-             for k in ("never_written", "unranked", "paraphrase", "leak")
+             for k in ("never_written", "absorbed", "unranked", "paraphrase", "leak")
              if c.has(f"asof.nevertwice.old_day_miss.{k}")}
     if kinds:
         verdict += ("; the old-day misses split by kind in the artifact: "
                     f"{int(kinds.get('never_written', 0))} where the extractor left the first session "
-                    f"without a note, {int(kinds.get('unranked', 0))} where its note existed and nothing "
-                    f"came back, {int(kinds.get('paraphrase', 0))} where the note came back without the "
-                    f"marker, {int(kinds.get('leak', 0))} where the new fact leaked into the old day")
+                    f"without a note, {int(kinds.get('absorbed', 0))} where its note was absorbed into the "
+                    f"second session's and no longer serves the old fact, {int(kinds.get('unranked', 0))} where "
+                    f"its note existed and nothing came back, {int(kinds.get('paraphrase', 0))} where the note "
+                    f"came back without the marker, {int(kinds.get('leak', 0))} where the new fact leaked into "
+                    f"the old day")
     return verdict
 
 

@@ -203,6 +203,26 @@ ARTIFACTS = [
      "note": "the J2b control: the same as-of design with the first session dated inside the 90-day "
              "archive window, so the archived-closure rate of asof_v1.json is read against the write "
              "path's own rate."},
+    {"file": "research/results/facts_dilution.json",
+     "command": ["python", "research/facts_dilution_probe.py", "--save",
+                 "--out", "research/results/facts_dilution.json"],
+     "kind": HARDWARE, "task": "supersession",
+     "inputs": ["research/data/supersession_v1_implicit.json",
+                "research/results/supersession_v1_implicit.json (names the seven control cases of finding 5a)",
+                "a local Ollama serving bge-m3 and the extraction model"],
+     "note": "ledger K1: the rank of the correct note for every implicit-corpus control case with the "
+             "[facts] block in the notes' cached text and with it stripped and re-embedded; the gate "
+             "(worse on at least six of the seven named cases, better on none) was written before the run."},
+    {"file": "research/results/silence_probe.json",
+     "command": ["python", "research/silence_probe.py", "--save",
+                 "--out", "research/results/silence_probe.json"],
+     "kind": HARDWARE, "task": "supersession",
+     "inputs": ["research/data/supersession_v1.json",
+                "research/results/asof_v1.json (names the first sessions the extractor left without a note)",
+                "a local Ollama serving the extraction model"],
+     "note": "ledger K3: for every first session the as-of artifact marks as never written, what the "
+             "extraction prompt returned (no items, items the writer rejected, a failure) beside what "
+             "the public path wrote - a diagnosis of the extractor's silence on a two-sentence session."},
     {"file": "research/results/supersession_v1_implicit.json",
      "command": ["python", "research/supersession_bench.py", "--dataset",
                  "research/data/supersession_v1_implicit.json", "--arms", "nevertwice,naive"],
