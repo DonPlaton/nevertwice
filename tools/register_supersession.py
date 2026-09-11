@@ -173,16 +173,25 @@ def build_claims(family: str, art: dict, *, dataset: str, command: str, raw: str
         f"Nevertwice returns {P['mean_chars_returned']:.0f} characters per query on {stand}",
         P["mean_chars_returned"], [f"{P['mean_chars_returned']:.0f}"], "characters", (n_sup + n_ctl) * runs,
         None, "pooled_nevertwice.mean_chars_returned")
+    n_sup_ds, n_ctl_ds = n_sup, n_ctl                     # the corpus counts, for the dataset claims below
     for arm, res in art["arms"].items():
         if arm.startswith("nevertwice") or res.get("blocked"):
             continue
         label = ARM_LABEL.get(arm, arm)
-        for key, unit_n, what in (("stale_rate", n_sup, "returns a retracted fact as a current assertion on"),
-                                  ("current_rate", n_sup, "returns the replacement fact on")):
+        # an arm pooled over several runs (K2 parity) carries case-runs, not cases, as its n
+        arm_runs = int(res.get("runs") or 1)
+        n_sup_arm = int(res.get("n_supersession") or n_sup)
+        n_ctl_arm = int(res.get("n_control") or n_ctl)
+        unit = "supersession case-runs, pooled over %d runs" % arm_runs if arm_runs > 1 else "supersession cases"
+        for key, what in (("stale_rate", "returns a retracted fact as a current assertion on"),
+                          ("current_rate", "returns the replacement fact on")):
             v = res[key]
-            k = round(v * unit_n)
-            add(f"{family}.{arm}.{key}", f"{label} {what} {_pct(v)} of supersession cases on {stand}",
-                v, [f"{v:.3f}"], "rate", unit_n, wilson(k, unit_n), f"arms.{arm}.{key}")
+            k = round(v * n_sup_arm)
+            add(f"{family}.{arm}.{key}", f"{label} {what} {_pct(v)} of {unit} on {stand}",
+                v, [f"{v:.3f}"], "rate", n_sup_arm, wilson(k, n_sup_arm), f"arms.{arm}.{key}",
+                note=(f"Pooled over {arm_runs} runs of the arm; per-run values in arms.{arm}.per_run_stale / "
+                      f"per_run_current." if arm_runs > 1 else None))
+        n_ctl = n_ctl_arm
         new_shape = "control_miss_rate" in res
         v = res["control_miss_rate"] if new_shape else res["over_retraction_rate"]
         k = round(v * n_ctl)
@@ -222,7 +231,7 @@ def build_claims(family: str, art: dict, *, dataset: str, command: str, raw: str
                                "every control miss is a ranking miss")
         add(f"{family}.{arm}.chars_per_query",
             f"{label} returns {res['mean_chars_returned']:.0f} characters per query on {stand}",
-            res["mean_chars_returned"], [f"{res['mean_chars_returned']:.0f}"], "characters", n_sup + n_ctl,
+            res["mean_chars_returned"], [f"{res['mean_chars_returned']:.0f}"], "characters", n_sup_arm + n_ctl_arm,
             None, f"arms.{arm}.mean_chars_returned")
     for i, pr in enumerate(art["pairs"]):
         a, b = pr["a"], pr["b"]
@@ -239,11 +248,11 @@ def build_claims(family: str, art: dict, *, dataset: str, command: str, raw: str
                 int(pr[f"stale_only_{side}"]), [str(pr[f"stale_only_{side}"])], "cases", pr["n"], None,
                 f"pairs[{i}].stale_only_{side}")
     add(f"{family}.dataset.supersession_cases",
-        f"the benchmark variant carries {n_sup} cases in which a fact is replaced", n_sup, [str(n_sup)],
-        "cases", n_sup, None, "dataset.supersession_cases")
+        f"the benchmark variant carries {n_sup_ds} cases in which a fact is replaced", n_sup_ds, [str(n_sup_ds)],
+        "cases", n_sup_ds, None, "dataset.supersession_cases")
     add(f"{family}.dataset.control_cases",
-        f"and {n_ctl} control cases in which two facts differ and both remain true", n_ctl, [str(n_ctl)],
-        "cases", n_ctl, None, "dataset.control_cases")
+        f"and {n_ctl_ds} control cases in which two facts differ and both remain true", n_ctl_ds, [str(n_ctl_ds)],
+        "cases", n_ctl_ds, None, "dataset.control_cases")
     return new, skipped
 
 

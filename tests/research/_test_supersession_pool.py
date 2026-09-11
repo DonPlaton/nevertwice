@@ -134,12 +134,17 @@ with tempfile.TemporaryDirectory() as tmp:
         check("a file from another dataset is refused", False)
     except ValueError as e:
         check("a file from another dataset is refused", "different datasets" in str(e))
+    # a second file carrying an arm the first already has is that arm's second run (K2 parity):
+    # pooled over case-runs with the per-run values kept, the pairs computed on its first run
     dup = _write(tmp, "dup.json", _blob({"naive": _arm(naive_rows())}))
-    try:
-        sb.pool([run1], [dup])
-        check("an arm present in two files is refused, not silently chosen", False)
-    except ValueError as e:
-        check("an arm present in two files is refused, not silently chosen", "two result files" in str(e))
+    pooled = sb.pool([run1], [dup])
+    nv = pooled["arms"]["naive"]
+    check("an arm present in two files is pooled over its runs, not silently chosen",
+          nv["runs"] == 2 and len(nv["rows"]) == 12 and nv["n_supersession"] == 8
+          and nv["per_run_stale"] == [0.75, 0.75] and {r["run"] for r in nv["rows"]} == {0, 1},
+          str({k: nv[k] for k in ("runs", "n_supersession", "per_run_stale")}))
+    check("the pairs still stand on the arm's first run",
+          next(p for p in pooled["pairs"] if {p["a"], p["b"]} == {"naive", "nevertwice"})["n"] == 4)
     try:
         sb.pool([mem0], [])
         check("a file without the engine arm cannot be pooled", False)

@@ -554,6 +554,27 @@ def _r4(pair) -> list[float]:
     return [round(x, 4) for x in pair]
 
 
+def pool_other_arm(results: list[dict]) -> dict:
+    """One non-engine arm from several result files: rows concatenated and tagged with their run,
+    the rates re-scored over the case-runs, per-run stale and current kept beside them, seconds
+    summed, the first run's config and Graphiti stats carried with the per-run stats beside them.
+    A single file is returned as it is."""
+    if len(results) == 1:
+        return results[0]
+    rows = [dict(r, run=i) for i, res in enumerate(results) for r in res["rows"]]
+    out = {"rows": rows, **score(rows), "runs": len(results),
+           "per_run_stale": [res.get("stale_rate") for res in results],
+           "per_run_current": [res.get("current_rate") for res in results],
+           "per_run_control_miss": [res.get("control_miss_rate") for res in results],
+           "errors": sum(int(res.get("errors") or 0) for res in results),
+           "seconds": round(sum(float(res.get("seconds") or 0) for res in results), 1),
+           "config": results[0].get("config", "")}
+    if any("graphiti" in res for res in results):
+        out["graphiti"] = results[0].get("graphiti")
+        out["graphiti_per_run"] = [res.get("graphiti") for res in results]
+    return out
+
+
 def pool(engine_files: list[Path], other_files: list[Path] | None = None) -> dict:
     """Pool several runs of the engine arm into one artifact, the other arms beside them.
 
@@ -570,7 +591,7 @@ def pool(engine_files: list[Path], other_files: list[Path] | None = None) -> dic
     a silent choice.
     """
     runs: list[dict] = []
-    others: dict[str, dict] = {}
+    other_runs: dict[str, list[dict]] = {}
     meta: dict | None = None
     shas: set[str] = set()
     for f in [Path(p) for p in engine_files]:
@@ -583,20 +604,22 @@ def pool(engine_files: list[Path], other_files: list[Path] | None = None) -> dic
         if meta is None:
             meta = blob
         for name, res in blob["arms"].items():
-            if name != ENGINE_ARM and not res.get("blocked") and name not in others:
-                others[name] = res
+            if name != ENGINE_ARM and not res.get("blocked") and name not in other_runs:
+                other_runs[name] = [res]
     for f in [Path(p) for p in (other_files or [])]:
         blob = json.loads(f.read_text(encoding="utf-8"))
         shas.add(blob["dataset"]["sha256"])
         for name, res in blob["arms"].items():
             if name == ENGINE_ARM or res.get("blocked"):
                 continue
-            if name in others:
-                raise ValueError(f"arm {name!r} appears in two result files - which one?")
-            others[name] = res
+            # Until 2026-09-11 a second file carrying the same arm was refused ("which one?"). It
+            # is now what the K2 parity run produces on purpose: the arm's runs are pooled over
+            # case-runs with the per-run values kept, exactly as the engine arm is.
+            other_runs.setdefault(name, []).append(res)
     if len(shas) != 1:
         raise ValueError(f"result files come from different datasets: {sorted(shas)}")
     assert meta is not None
+    others: dict[str, dict] = {name: pool_other_arm(rs) for name, rs in other_runs.items()}
 
     def sup(a: dict) -> list[dict]:
         return [r for r in a["rows"] if r["shape"] != "control"]
@@ -646,12 +669,13 @@ def pool(engine_files: list[Path], other_files: list[Path] | None = None) -> dic
         arms[f"{ENGINE_ARM}_run{i}"] = a
     arms.update(others)
 
+    # the paired tests are computed on each arm's FIRST run, where the arms saw identical cases
     first = {ENGINE_ARM: {r["id"]: r for r in runs[0]["rows"]}}
-    first.update({n: {r["id"]: r for r in res["rows"]} for n, res in others.items()})
+    first.update({n: {r["id"]: r for r in rs[0]["rows"]} for n, rs in other_runs.items()})
 
     per_run_pairs = []
-    if "mem0" in others:
-        m0 = {r["id"]: r for r in others["mem0"]["rows"]}
+    if "mem0" in other_runs:
+        m0 = {r["id"]: r for r in other_runs["mem0"][0]["rows"]}
         for a in runs:
             rows = {r["id"]: r for r in a["rows"]}
             ids = [i for i, r in rows.items() if r["shape"] != "control" and i in m0]
