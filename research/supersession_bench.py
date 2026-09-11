@@ -399,7 +399,9 @@ def run_mem0(cases: list[dict], k: int) -> dict:
             # what the store holds, for the cause of a control miss: every memory still stored is
             # live; a DELETE event's text, or an UPDATE whose previous text carried the marker and
             # whose new text does not, is a retirement Mem0 itself decided
-            held = mem.get_all(user_id=uid)
+            # Mem0 2.0.19's v2 API takes the scope as a filter; the keyword form raises
+            # "Top-level entity parameters ... not supported in get_all()" and blocked the arm
+            held = mem.get_all(filters={"user_id": uid})
             held = held.get("results", held) if isinstance(held, dict) else held
             live_texts = [r.get("memory", "") for r in held] if isinstance(held, list) else []
             retired_texts = [str(e.get("memory") or "") for e in events if e.get("event") == "DELETE"]
