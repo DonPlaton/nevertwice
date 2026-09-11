@@ -358,6 +358,14 @@ empty.
 
 ### Changed
 
+- **The K5 retry and the K7 same-fact gate ship off by default; their gates were read and missed**
+  (ledger K5, K7; 2026-09-12). At d07375e, two runs per corpus: the K7 judge took over-retraction proper
+  from 0.125 / 0.350 to 0.000 / 0.000 - not one still-true fact absorbed or retired on eighty control
+  case-runs, the cap of 0.05 met - and cost the stale column 0.033 / 0.067 to 0.117 / 0.167 against a
+  cap of +0.02: missed, so by its own rule the default is off (`NEVERTWICE_ABSORB_JUDGE=1` opts in). The
+  K5 retry took the as-of stand's never-written first sessions from 11 to 8 of 120 against a gate of 5:
+  missed, default off (`NEVERTWICE_EXTRACT_RETRY=1` opts in). K6 stays: the working directory is in no
+  served `[facts]` block. The engine the register describes is the one the gates left standing.
 - **The README's supersession row prints its price beside the advantage.** The row said we hand back
   a retracted fact 0.033 of the time against 0.933 / 0.317 / 0.950 and said nothing about the next
   column, where we are the worst arm of the stand: a fact that stayed true stops being served 0.125

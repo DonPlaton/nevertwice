@@ -1,5 +1,13 @@
 # Three switches that shipped with tests and no measurement
 
+<!-- withdrawn-banner -->
+> **Withdrawn: figures on this page must not be quoted.** They were retracted and remain
+> here because deleting a result one was wrong about destroys the record of having been
+> wrong. The design, the method and the caveats stand; the numbers do not. Each figure's
+> own reason and date are in
+> [`research/evidence_manifest.json`](evidence_manifest.json), and
+> `python tools/check_freshness.py --list-stale` lists every one.
+
 > **Re-measured 2026-09-11** at commit 9262543, in the campaign that re-measured the whole register with
 > the extractor pinned deterministic and bound to the one the register names. The four runs before it
 > read the shipped threshold's loss as eight and a half, eleven and a half, seven and five points; this
@@ -38,14 +46,9 @@ hit is refused, even when there is room for it - the distinction between *does i
 returned no more than 2 points less often. On a miss the default returns to 0.
 
 <!-- claims:abstention-sweep -->
-| threshold | chars/query | hits | wanted fact returned | chars saved | recall lost |
-|---|---|---|---|---|---|
-| 0.00 (off) | 408.7 | 1.48 | 0.962 | - | - |
-| 0.10 | 389.6 | 1.41 | 0.962 | 4.7% | 0.0 pts |
-| 0.20 | 298.5 | 1.09 | 0.937 | 27.0% | 2.5 pts |
-| **0.35 (shipped)** | 295.5 | 1.08 | 0.937 | 27.7% | 2.5 pts |
-| 0.50 | 295.5 | 1.08 | 0.937 | 27.7% | 2.5 pts |
-| 0.75 | 295.5 | 1.08 | 0.937 | 27.7% | 2.5 pts |
+> **Withdrawn 2026-09.** GPU stands must re-run on the engine the K5/K6/K7 gates left standing (K6 on, K5 and K7 reverted to off) - campaign B at the revert commit
+>
+> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/abstention_ab.py --part all` is what re-measures this one.
 <!-- /claims:abstention-sweep -->
 
 Every threshold from 0.30 upward reads the same as the shipped one: one hit is all that is left to

@@ -3592,7 +3592,13 @@ def _facts_in(desc: str) -> set:
 #: serving the earlier fact (ledger K1b/K7). Stage one is deterministic - literals that agree (the new
 #: block carries every old literal) or a side with no literals absorb as before. Stage two, only when
 #: the literals disagree, is one adjudication call; it fails open to the prior behaviour.
-ABSORB_JUDGE = env_int("NEVERTWICE_ABSORB_JUDGE", 1)
+#: Off by default since the campaign at d07375e (2026-09-12). Measured on: over-retraction proper fell
+#: from 0.125 / 0.350 to 0.000 / 0.000 on the two corpora (the cap of 0.05 met), the stale rate rose
+#: from 0.033 / 0.067 to 0.117 / 0.167 against a cap of +0.02 - missed, so K7's own rule reverts it.
+#: Most of the stale cost is the stand's cache confound and the accidental absorbs the gate exposed
+#: (ledger K7). Opt in with NEVERTWICE_ABSORB_JUDGE=1; the owner decides whether it is re-gated
+#: against a same-regime baseline.
+ABSORB_JUDGE = env_int("NEVERTWICE_ABSORB_JUDGE", 0)
 _JUDGE_PROMPT = (
     "Two statements were recorded for one project under the same title, by two different sessions.\n\n"
     "OLD (recorded first): {old}\n\nNEW (recorded later): {new}\n\n"
@@ -5149,7 +5155,10 @@ def rebuild_index():
 #: yields a note or nothing depending on incidental prompt context (ledger K3: of eight silent
 #: first sessions, three were silent in both runs and five in one; captured alone six of eight
 #: wrote the note). A retry with a differently seeded frame is one more call, only on silence.
-EXTRACT_RETRY = env_int("NEVERTWICE_EXTRACT_RETRY", 1)
+#: Off by default since the campaign at d07375e (2026-09-12): the retry took the as-of stand's never-
+#: written first sessions from 11 to 8 of 120 against a gate of 5 - a third of the silence, not the
+#: half the gate asked for - so K5's own rule reverts it. Opt in with NEVERTWICE_EXTRACT_RETRY=1.
+EXTRACT_RETRY = env_int("NEVERTWICE_EXTRACT_RETRY", 0)
 _RETRY_MIN_CHARS = 40            # a shorter body has nothing to extract; silence is the right answer
 _RETRY_FRAME = (
     "Second pass. The first pass over this session returned no pattern, mistake or decision. A short "

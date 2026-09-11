@@ -1,5 +1,13 @@
 # The served model is the measured model — the first thing in this track that passed
 
+<!-- withdrawn-banner -->
+> **Withdrawn: figures on this page must not be quoted.** They were retracted and remain
+> here because deleting a result one was wrong about destroys the record of having been
+> wrong. The design, the method and the caveats stand; the numbers do not. Each figure's
+> own reason and date are in
+> [`research/evidence_manifest.json`](evidence_manifest.json), and
+> `python tools/check_freshness.py --list-stale` lists every one.
+
 **Run 2026-08-27.** Thresholds fixed first in [`EMBED_M6_THRESHOLD.md`](EMBED_M6_THRESHOLD.md).
 Artifact: `research/embed_universal/heldout/serving_check.json`.
 

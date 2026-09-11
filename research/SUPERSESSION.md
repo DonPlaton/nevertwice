@@ -1,5 +1,10 @@
 # Does the memory hand back a fact that has since been retracted?
 
+> **Withdrawn while re-measured (campaign B, September).** The engine changed at the gate-reverted
+> commit (K6 on, K5 and K7 off), so every figure on this page whose claim names the engine is
+> withdrawn until that run restores it; the tables below say so per region. The numbers in the prose
+> are the last campaign's and are not to be quoted until the banner goes.
+
 Every public benchmark for agent memory asks whether a system **recalls** a fact. LoCoMo,
 LongMemEval and BEAM all measure retrieval against a set of questions whose answers were true
 when the corpus was written and stayed true. None of them asks what happens when a fact is
@@ -154,12 +159,9 @@ column is partly bought by that, and the split below says exactly how much.
 Paired, on the same cases, McNemar exact:
 
 <!-- claims:supersession-pairs -->
-| pair | discordant (first - second) | p, McNemar exact |
-|---|---|---|
-| Nevertwice vs Mem0 | 0 - 54 | 1.1 x 10^-16 |
-| Nevertwice vs naive | 0 - 55 | 5.6 x 10^-17 |
-| Nevertwice vs Zep/Graphiti | 2 - 19 | 2.2 x 10^-04 |
-| **Mem0 vs naive** | 3 - 4 | 1.00 |
+> **Withdrawn 2026-09.** GPU stands must re-run on the engine the K5/K6/K7 gates left standing (K6 on, K5 and K7 reverted to off) - campaign B at the revert commit
+>
+> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/supersession_bench.py` is what re-measures this one.
 <!-- /claims:supersession-pairs -->
 
 **The last row is the finding, and it is easy to misread.** Mem0 and the append-only file
@@ -215,25 +217,17 @@ second session reframed and rotated so the two sessions never share a frame. The
 corpus is unchanged byte for byte, and `--check` proves it.
 
 <!-- claims:supersession-variants -->
-| system | stale, explicit | stale, implicit | current, explicit | current, implicit |
-|---|---|---|---|---|
-| **Nevertwice** | 0.033 | 0.067 | 0.975 | 1.000 |
-| Mem0 | 0.933 | 0.933 | 0.983 | 0.983 |
-| Zep/Graphiti (`graphiti-core`, FalkorDB) | 0.317 | 0.242 | 0.575 | 0.633 |
-| an append-only markdown file | 0.950 | 0.950 | 0.950 | 0.950 |
-
-<sub>Stale = the retracted fact came back, lower is better. Current = the fact that replaced it was returned, higher is better. *Explicit* names the retraction in the second session; *implicit* frames the replacement like any first assertion.</sub>
+> **Withdrawn 2026-09.** GPU stands must re-run on the engine the K5/K6/K7 gates left standing (K6 on, K5 and K7 reverted to off) - campaign B at the revert commit
+>
+> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/supersession_bench.py` is what re-measures this one.
 <!-- /claims:supersession-variants -->
 
 Paired on the same cases of this corpus, McNemar exact:
 
 <!-- claims:supersession-pairs-implicit -->
-| pair | discordant (first - second) | p, McNemar exact |
-|---|---|---|
-| Nevertwice vs Mem0 | 0 - 52 | 4.4 x 10^-16 |
-| Nevertwice vs naive | 0 - 53 | 2.2 x 10^-16 |
-| Nevertwice vs Zep/Graphiti | 3 - 15 | 0.01 |
-| **Mem0 vs naive** | 3 - 4 | 1.00 |
+> **Withdrawn 2026-09.** GPU stands must re-run on the engine the K5/K6/K7 gates left standing (K6 on, K5 and K7 reverted to off) - campaign B at the revert commit
+>
+> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/supersession_bench.py --dataset research/data/supersession_v1_implicit.json --arms nevertwice,naive` is what re-measures this one.
 <!-- /claims:supersession-pairs-implicit -->
 
 The gate for this variant was written in the ledger before the run (item I5): our stale rate
@@ -250,13 +244,9 @@ dates two months apart and asks each one twice: for a day between the two sessio
 day after the second. A case counts only when both answers are right.
 
 <!-- claims:asof -->
-| arm | both days | the old day | the day after |
-|---|---|---|---|
-| **Nevertwice** (`api.as_of`) | 0.800 | 0.892 | 0.883 |
-| Zep/Graphiti (`graphiti-core`, its own bitemporal edges) | 0.367 | 0.600 | 0.533 |
-| an append-only markdown file, no dates | 0.000 | 0.000 | 1.000 |
-
-<sub>The gate written before the run was 0.80 on both days and 0.85 on the old day; this run meets it - exactly at the threshold, a boundary rather than a margin: both days 0.800, the old day 0.892; the two runs behind the pooled figure read 0.867 and 0.733, and the interval [0.720, 0.862] covers the threshold. The larger loss is on the day after; the old-day misses split by kind in the artifact: 11 where the extractor left the first session without a note, 0 where its note was absorbed into the second session's and no longer serves the old fact, 1 where its note existed and nothing came back, 1 where the note came back without the marker, 0 where the new fact leaked into the old day. Mem0 has no row - it stamps a memory with the wall-clock time of the `add()` call and its search has no as-of filter, so facts cannot be placed in the past without patching the product.</sub>
+> **Withdrawn 2026-09.** GPU stands must re-run on the engine the K5/K6/K7 gates left standing (K6 on, K5 and K7 reverted to off) - campaign B at the revert commit
+>
+> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/asof_bench.py --arms nevertwice,naive --runs 2 --out research/results/asof_v1.json` is what re-measures this one.
 <!-- /claims:asof -->
 
 The gate under the table was written in the ledger (I6) before the first run - 0.80 on both
@@ -304,32 +294,18 @@ five. The first two causes are the memory being too eager, and together they are
 proper: five in forty on this corpus. Both tables below say so per arm.
 
 <!-- claims:supersession-causes -->
-| arm | a still-true fact did not come back | retired by the memory | absorbed into another note | never written | served, below the top five |
-|---|---|---|---|---|---|
-| **Nevertwice** | 0.225 [0.123, 0.375] | 0 of 40 | 5 of 40 | 4 of 40 | 0 of 40 |
-| Mem0 | 0.000 [0.000, 0.161] | 0 of 20 | 0 of 20 | 0 of 20 | 0 of 20 |
-| Zep/Graphiti (`graphiti-core`, FalkorDB) | 0.225 [0.123, 0.375] | 0 of 40 | 0 of 40 | 9 of 40 | 0 of 40 |
-| an append-only markdown file | 0.050 [0.009, 0.236] | 0 of 20 | 0 of 20 | 0 of 20 | 1 of 20 |
-
-<sub>The first column is the rate in the table above; the four after it split its count by cause. The first two are the memory being too eager - it retired the note, or it judged a different fact a twin of this one and absorbed that fact into the note: the note stays on disk, but what it now hands back is the other fact, and this one is no longer served - the other two are the extractor's silence and the ranker's depth. A cause reads *not read* where the run did not inspect that arm's store: a retirement is visible only where the store records one (our `valid_to` and `## Previous statement`; Graphiti's `invalid_at`/`expired_at`; Mem0's delete and update events).</sub>
-
-<sub>Over-retraction proper - the memory stopped serving a fact that was still true, by retiring the note or by absorbing another fact into it - is the first two cause columns as a rate: 0.125 [0.055, 0.261] for Nevertwice over its control case-runs.</sub>
+> **Withdrawn 2026-09.** GPU stands must re-run on the engine the K5/K6/K7 gates left standing (K6 on, K5 and K7 reverted to off) - campaign B at the revert commit
+>
+> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/supersession_bench.py` is what re-measures this one.
 <!-- /claims:supersession-causes -->
 
 On the implicit corpus the same split is starker - every one of the fourteen misses is an absorb,
 over-retraction proper 0.35:
 
 <!-- claims:supersession-causes-implicit -->
-| arm | a still-true fact did not come back | retired by the memory | absorbed into another note | never written | served, below the top five |
-|---|---|---|---|---|---|
-| **Nevertwice** | 0.350 [0.221, 0.505] | 0 of 40 | 14 of 40 | 0 of 40 | 0 of 40 |
-| Mem0 | 0.000 [0.000, 0.161] | 0 of 20 | 0 of 20 | 0 of 20 | 0 of 20 |
-| Zep/Graphiti (`graphiti-core`, FalkorDB) | 0.275 [0.161, 0.428] | 0 of 40 | 0 of 40 | 11 of 40 | 0 of 40 |
-| an append-only markdown file | 0.050 [0.009, 0.236] | 0 of 20 | 0 of 20 | 0 of 20 | 1 of 20 |
-
-<sub>The first column is the rate in the table above; the four after it split its count by cause. The first two are the memory being too eager - it retired the note, or it judged a different fact a twin of this one and absorbed that fact into the note: the note stays on disk, but what it now hands back is the other fact, and this one is no longer served - the other two are the extractor's silence and the ranker's depth. A cause reads *not read* where the run did not inspect that arm's store: a retirement is visible only where the store records one (our `valid_to` and `## Previous statement`; Graphiti's `invalid_at`/`expired_at`; Mem0's delete and update events).</sub>
-
-<sub>Over-retraction proper - the memory stopped serving a fact that was still true, by retiring the note or by absorbing another fact into it - is the first two cause columns as a rate: 0.350 [0.221, 0.505] for Nevertwice over its control case-runs.</sub>
+> **Withdrawn 2026-09.** GPU stands must re-run on the engine the K5/K6/K7 gates left standing (K6 on, K5 and K7 reverted to off) - campaign B at the revert commit
+>
+> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/supersession_bench.py --dataset research/data/supersession_v1_implicit.json --arms nevertwice,naive` is what re-measures this one.
 <!-- /claims:supersession-causes-implicit -->
 
 **How the absorb was found, and what it is not.** The first reading of this run's artifact called

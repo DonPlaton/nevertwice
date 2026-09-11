@@ -255,6 +255,38 @@ ARTIFACTS = [
                 "a local Ollama serving bge-m3 and the extraction model"],
      "note": "the implicit-corpus half of the same historical baseline: the pre-J2b engine under today's "
              "classifier, two runs pooled; registered born withdrawn."},
+    {"file": "research/results/supersession_k7_d07375e.json",
+     "command": ["python", "research/supersession_bench.py", "--arms", "nevertwice,naive"],
+     "kind": HARDWARE, "task": "supersession",
+     "inputs": ["this repository at d07375e - the engine with the K7 same-fact absorb gate ON (its default before the "
+                "revert), the K5 retry and the K6 preamble strip",
+                "research/data/supersession_v1.json",
+                "a local Ollama serving bge-m3 and the extraction model",
+                "the carried Mem0 and Zep/Graphiti run files of campaign K (--with)"],
+     "note": "ledger K7: the artifact of record for the K7 mechanism as measured - two runs pooled at d07375e. The gate "
+             "was read by the letter: over-retraction proper 0.000 (met), stale 0.117 against a cap of 0.053 (missed), "
+             "so the default was reverted in the next commit and the mechanism kept as an opt-in switch. Registered as a "
+             "historical family that cites nothing."},
+    {"file": "research/results/supersession_k7_d07375e_implicit.json",
+     "command": ["python", "research/supersession_bench.py", "--dataset",
+                 "research/data/supersession_v1_implicit.json", "--arms", "nevertwice,naive"],
+     "kind": HARDWARE, "task": "supersession",
+     "inputs": ["this repository at d07375e (see supersession_k7_d07375e.json)",
+                "research/data/supersession_v1_implicit.json",
+                "a local Ollama serving bge-m3 and the extraction model",
+                "the carried Mem0 and Zep/Graphiti run files of campaign K (--with)"],
+     "note": "the implicit-corpus half of the K7 record: over-retraction proper 0.000 (met), stale 0.167 against a cap of "
+             "0.087 (missed); two runs pooled at d07375e; registered as a historical family."},
+    {"file": "research/results/asof_k7_d07375e.json",
+     "command": ["python", "research/asof_bench.py", "--arms", "nevertwice,naive", "--runs", "2",
+                 "--out", "research/results/asof_v1.json"],
+     "kind": HARDWARE, "task": "supersession",
+     "inputs": ["this repository at d07375e (the K5 retry and the K7 gate on)",
+                "research/data/supersession_v1.json",
+                "a local Ollama serving bge-m3 and the extraction model",
+                "the carried Zep/Graphiti as-of runs of campaign K (--with)"],
+     "note": "the as-of stand at d07375e, kept as the record the K5 gate (never-written first sessions) was read from; "
+             "the live as-of claims come from the re-run on the engine the gates left standing."},
     {"file": "research/results/code_sessions_v1.json",
      "command": ["python", "research/code_sessions_eval.py", "judge", "--arms", "nevertwice_full,naive,mem0_infer", "--save"],
      "kind": HARDWARE, "task": "code-sessions",

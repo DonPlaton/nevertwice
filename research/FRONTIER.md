@@ -18,16 +18,9 @@ gap between two systems smaller than that disagreement is not a gap.
 ## The stand
 
 <!-- claims:frontier -->
-| system | k=1 acc | k=1 tokens | k=3 acc | k=3 tokens | k=5 acc | k=5 tokens |
-|---|---|---|---|---|---|---|
-| **Nevertwice, shipped ranker, sessions whole** | 0.353 | 2,777 | 0.447 | 8,707 | 0.447 | 14,274 |
-| Nevertwice, shipped ranker, query passages | 0.293 | 379 | 0.427 | 897 | 0.433 | 1,417 |
-| Nevertwice, our extractor's notes | 0.020 | 195 | 0.053 | 353 | 0.067 | 509 |
-| Mem0 store search, sessions whole | 0.353 | 2,733 | 0.433 | 8,552 | 0.400 | 13,839 |
-| Mem0 full pipeline, its memories | 0.207 | 144 | 0.273 | 184 | 0.333 | 227 |
-| A-MEM full pipeline, its notes | 0.027 | 124 | 0.027 | 124 | 0.027 | 124 |
-
-Brackets - no memory, the question alone: accuracy 0.020 at 128 tokens; the oracle ceiling, gold sessions whole: accuracy 0.573 at 5,522 tokens. The two judges disagree on 0.050 of the shipped arm's answers; a gap between two rows smaller than that is not a gap.
+> **Withdrawn 2026-09.** GPU stands must re-run on the engine the K5/K6/K7 gates left standing (K6 on, K5 and K7 reverted to off) - campaign B at the revert commit
+>
+> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/frontier_eval.py judge --save` is what re-measures this one.
 <!-- /claims:frontier -->
 
 What the table says, in words, since the numbers are above:
@@ -48,7 +41,7 @@ What the table says, in words, since the numbers are above:
   literal fact the user stated. Mem0's extractor keeps the sentence; ours keeps the lesson.
   The evidence-span layer this arm was once re-measured with (ledger J1) missed its gate by a
   wide margin and was removed by the owner's rule; the numbers above are the layer-free engine's,
-  re-measured on 2026-09-11. On a corpus of code sessions the trade looks different, which is what
+  re-measured in the September campaign. On a corpus of code sessions the trade looks different, which is what
   `research/CODE_SESSIONS.md` is for.
 - **The ceiling is the reader's.** The oracle bracket - the gold evidence sessions, whole -
   is where a small local reader tops out, and no arm can pass it. Read every row against that
