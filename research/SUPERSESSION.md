@@ -1,14 +1,5 @@
 # Does the memory hand back a fact that has since been retracted?
 
-<!-- pending-k2 -->
-> **Withdrawn in September 2026, pending the K2 re-run.** The bench behind this page changed after these
-> figures were measured: it now names the two control metrics apart (`control_miss_rate` against
-> `over_retraction_rate`) and reads every arm's store for the cause of a control miss. Every claim
-> the bench produces - both supersession corpora and as-of - is marked `stale` until the stand
-> re-runs at the new HEAD (our arms twice on both corpora, Mem0, the floor, Zep twice, as-of). The
-> method, the dataset and the caveats stand; the figures below are the last measurement and are
-> not to be quoted until `python tools/check_freshness.py --list-stale` no longer lists them.
-
 Every public benchmark for agent memory asks whether a system **recalls** a fact. LoCoMo,
 LongMemEval and BEAM all measure retrieval against a set of questions whose answers were true
 when the corpus was written and stayed true. None of them asks what happens when a fact is
@@ -119,11 +110,11 @@ does not separate systems and has to be thrown away.
 
 ## Result
 
-Run of 2026-09-11 at commit 9262543 for our arms, Mem0 and the floor; the Zep/Graphiti arm is
-its run of 2026-09-10 on the unchanged stand, carried into the pooled artifact (one run, where
-ours are two - see *What this does not show*). The text each arm is scored on is what a caller
-receives: for Nevertwice, the note's
-title, description and prevention - the description carrying, since 2026-09-11, the literals the
+Run of this September (commit 74cfcd4) for every arm - ours twice, Mem0 once, the floor once, and
+Zep/Graphiti twice, on a FalkorDB flushed between corpora (the K2 parity run; see *What this does
+not show* for why its earlier figures were withdrawn). The text each arm is scored on is what a
+caller receives: for Nevertwice, the note's
+title, description and prevention - the description carrying, since this September, the literals the
 write path verified against the transcript (`[facts]`); for Mem0 and Graphiti, their memory or
 fact text; for the floor, the stored sentence. The table is the generated one in the section *The
 same corpus, with the cue removed* below, which carries the stale and current columns for both
@@ -131,8 +122,10 @@ corpora. Control miss and characters per query are in the register; the control 
 cause are the tables under *What it costs us*.
 
 Nevertwice's row is pooled over **two runs of the same commit**, so n = 120 case-runs for
-stale and current and n = 40 for the two control measures; the other arms are one run each,
-n = 60 and n = 20. Intervals are Wilson at 95%.
+stale and current and n = 40 for the two control measures; since the parity run Zep/Graphiti is
+pooled the same way (its two runs read the same stale rate on the explicit corpus and five points
+apart on the implicit one); Mem0 and the floor are one run each, n = 60 and n = 20. Intervals are
+Wilson at 95%.
 
 **Why two runs.** On this campaign the two runs read the same stale rate, 0.033 and 0.033,
 because the extractor was pinned to temperature zero for the whole re-measurement; earlier pairs
@@ -152,18 +145,21 @@ The other columns are what make the first one mean anything. A memory that retur
 all would score zero stale, which is the best possible number, and zero current, which is the
 worst; a memory that deleted on any doubt would score well on both and be caught on the
 controls. Ours reads 0.033 / 0.975 on the first two. On the controls the honest reading needs
-both measures, and *What it costs us* gives them: the memory retired **no** still-true fact in
-forty control case-runs, and a still-true fact failed to come back in nine of them - the worst
-control-miss rate on the stand, against one miss for the floor and none for Mem0. The silence on
-the first column is not bought by forgetting; it is paid for in the extractor's silence and the
-ranker's depth, and the split below says which.
+both measures, and *What it costs us* gives them: a still-true fact failed to come back in nine
+of forty control case-runs - level with Graphiti, against one miss for the floor and none for
+Mem0 - and in **five of the nine the memory itself was the cause**: not by retiring the note but
+by absorbing a different fact into it and serving only the new one. The silence on the first
+column is partly bought by that, and the split below says exactly how much.
 
 Paired, on the same cases, McNemar exact:
 
 <!-- claims:supersession-pairs -->
-> **Withdrawn 2026-09.** the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again
->
-> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/supersession_bench.py` is what re-measures this one.
+| pair | discordant (first - second) | p, McNemar exact |
+|---|---|---|
+| Nevertwice vs Mem0 | 0 - 54 | 1.1 x 10^-16 |
+| Nevertwice vs naive | 0 - 55 | 5.6 x 10^-17 |
+| Nevertwice vs Zep/Graphiti | 2 - 19 | 2.2 x 10^-04 |
+| **Mem0 vs naive** | 3 - 4 | 1.00 |
 <!-- /claims:supersession-pairs -->
 
 **The last row is the finding, and it is easy to misread.** Mem0 and the append-only file
@@ -183,20 +179,20 @@ retraction - an edge carries `valid_at` and `invalid_at`, and a model decides wh
 contradicts - and it does retract: three in ten of the retracted facts come back where Mem0 and
 the file return nine in ten. It pays on the other columns, which is the whole reason they are
 printed: it returns the replacement barely more often than not, and a still-true fact fails to
-come back four times in twenty - whether it retired them or never wrote them this run did not
-read from its store, and the next one will. Paired with us on the same cases the discordant
-pairs run eighteen to two - two cases where its invalidation caught a replacement ours did not -
-and on the implicit corpus, with the retraction cue removed, its stale rate reads 0.267 to our
-0.067. The lead over the ADD-only stores was never the finding; this row is.
+come back nine times in forty - and its graph says why: it never wrote them (no edge carried the
+fact), and it retired none. Paired with us on the same cases the discordant pairs run nineteen to
+two - two cases where its invalidation caught a replacement ours did not - and on the implicit
+corpus, with the retraction cue removed, its stale rate reads 0.242 to our 0.067 (its two runs sit five
+points apart). The lead over the ADD-only stores was never the finding; this row is.
 
 ### By shape
 
-| shape | Nevertwice (2 runs) | Mem0 | Graphiti | naive |
+| shape | Nevertwice (2 runs) | Mem0 | Graphiti (2 runs) | naive |
 |---|---|---|---|---|
-| `value_replaced` | 1/30 | 15/15 | 6/15 | 15/15 |
-| `approach_abandoned` | **3/30** | 14/15 | 2/15 | 15/15 |
-| `retracted_no_replacement` | 0/30 | 14/15 | 6/15 | 15/15 |
-| `narrowed` | 0/30 | 13/15 | 4/15 | 12/15 |
+| `value_replaced` | 1/30 | 15/15 | 9/30 | 15/15 |
+| `approach_abandoned` | **3/30** | 14/15 | 5/30 | 15/15 |
+| `retracted_no_replacement` | 0/30 | 14/15 | 16/30 | 15/15 |
+| `narrowed` | 0/30 | 13/15 | 8/30 | 12/15 |
 
 Stale count, lower is better, read from the rows of the pooled artifact. `narrowed` and
 `retracted_no_replacement` are clean across both runs and `value_replaced` nearly so.
@@ -219,17 +215,25 @@ second session reframed and rotated so the two sessions never share a frame. The
 corpus is unchanged byte for byte, and `--check` proves it.
 
 <!-- claims:supersession-variants -->
-> **Withdrawn 2026-09.** the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again
->
-> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/supersession_bench.py` is what re-measures this one.
+| system | stale, explicit | stale, implicit | current, explicit | current, implicit |
+|---|---|---|---|---|
+| **Nevertwice** | 0.033 | 0.067 | 0.975 | 1.000 |
+| Mem0 | 0.933 | 0.933 | 0.983 | 0.983 |
+| Zep/Graphiti (`graphiti-core`, FalkorDB) | 0.317 | 0.242 | 0.575 | 0.633 |
+| an append-only markdown file | 0.950 | 0.950 | 0.950 | 0.950 |
+
+<sub>Stale = the retracted fact came back, lower is better. Current = the fact that replaced it was returned, higher is better. *Explicit* names the retraction in the second session; *implicit* frames the replacement like any first assertion.</sub>
 <!-- /claims:supersession-variants -->
 
 Paired on the same cases of this corpus, McNemar exact:
 
 <!-- claims:supersession-pairs-implicit -->
-> **Withdrawn 2026-09.** the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again
->
-> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/supersession_bench.py --dataset research/data/supersession_v1_implicit.json --arms nevertwice,naive` is what re-measures this one.
+| pair | discordant (first - second) | p, McNemar exact |
+|---|---|---|
+| Nevertwice vs Mem0 | 0 - 52 | 4.4 x 10^-16 |
+| Nevertwice vs naive | 0 - 53 | 2.2 x 10^-16 |
+| Nevertwice vs Zep/Graphiti | 3 - 15 | 0.01 |
+| **Mem0 vs naive** | 3 - 4 | 1.00 |
 <!-- /claims:supersession-pairs-implicit -->
 
 The gate for this variant was written in the ledger before the run (item I5): our stale rate
@@ -246,28 +250,44 @@ dates two months apart and asks each one twice: for a day between the two sessio
 day after the second. A case counts only when both answers are right.
 
 <!-- claims:asof -->
-> **Withdrawn 2026-09.** the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again
->
-> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/asof_bench.py --arms nevertwice,naive --runs 2 --out research/results/asof_v1.json` is what re-measures this one.
+| arm | both days | the old day | the day after |
+|---|---|---|---|
+| **Nevertwice** (`api.as_of`) | 0.800 | 0.892 | 0.883 |
+| Zep/Graphiti (`graphiti-core`, its own bitemporal edges) | 0.367 | 0.600 | 0.533 |
+| an append-only markdown file, no dates | 0.000 | 0.000 | 1.000 |
+
+<sub>The gate written before the run was 0.80 on both days and 0.85 on the old day; this run meets it - exactly at the threshold, a boundary rather than a margin: both days 0.800, the old day 0.892; the two runs behind the pooled figure read 0.867 and 0.733, and the interval [0.720, 0.862] covers the threshold. The larger loss is on the day after; the old-day misses split by kind in the artifact: 11 where the extractor left the first session without a note, 0 where its note was absorbed into the second session's and no longer serves the old fact, 1 where its note existed and nothing came back, 1 where the note came back without the marker, 0 where the new fact leaked into the old day. Mem0 has no row - it stamps a memory with the wall-clock time of the `add()` call and its search has no as-of filter, so facts cannot be placed in the past without patching the product.</sub>
 <!-- /claims:asof -->
 
 The gate under the table was written in the ledger (I6) before the first run - 0.80 on both
 days, later joined by 0.85 on the old day (J2) - and was missed twice, by seventeen points and
-then by two. The campaign of 2026-09-11 meets it exactly at the threshold, and the caption
+then by two. This September's campaign meets it exactly at the threshold, and the caption
 says so in those words because it is computed from the claims rather than written once: a
 pooled 0.800 whose runs read 0.867 and 0.733 is a boundary, not a margin. What moved it was
 J2b, the archive-aware reconcile: the stand dates the first session past the ninety-day
-archive window, and until 2026-09-11 the replacing session never closed an archived note's
+archive window, and until this September the replacing session never closed an archived note's
 interval (`s0_retired_rate` 0.000); it now closes 0.908 of them against a `--recent` control of
-0.917, where the first session is never archived. Until 2026-09-11 the caption here read *and
+0.917, where the first session is never archived. Until this September the caption here read *and
 this is below it* on a run that had met the gate - a verdict typed when the gate was missed
 and never compared again, which is the defect that made it computed.
 
-Graphiti's row is the first competitor number on this stand: its bitemporal edges answer both
-days for fewer than half the cases, and lose mostly on the day after - the replacement it did not
-extract or invalidated late - where we lose on the day before. Its as-of is read from its own
-`valid_at` / `invalid_at` / `expired_at` fields, filtered on our side, because its server-side
-date filter admitted edges from after the day asked for in the probe.
+**The residual old-day misses are not the extractor's silence on a short session.** The caption
+names eleven case-runs where the first session left no note. They are eight distinct sessions -
+three silent in both runs, five in one run only - and captured alone, one by one
+([`silence_probe.py`](silence_probe.py)), six of the eight wrote a note carrying the fact, one
+paraphrased it and one produced no item. They are not shorter than the sessions that were
+written (their median length is the same), and the stand now looks for the twin absorb of
+*What it costs us* and finds none of it here. What is left is instability: the same two
+sentences at temperature zero yield a note or nothing depending on the project name in the
+prompt. The gate for the fix is in the ledger (K5); its mechanism is a retry on an empty
+extraction, not a prompt change, and it waits for the marked cards.
+
+Graphiti's row is pooled over two runs on a flushed FalkorDB (both read the same both-days rate):
+its bitemporal edges answer both days for fewer than half the cases, and lose mostly on the day
+after - the replacement it did not extract or invalidated late - where we lose on the day before.
+Its as-of is read from its own `valid_at` / `invalid_at` / `expired_at` fields, filtered on our
+side, because its server-side date filter admitted edges from after the day asked for in the
+probe.
 
 ## What it costs us
 
@@ -275,43 +295,63 @@ The stale rate is not free, and the honest accounting is on the other two column
 
 **Current rate 0.975, a shade under Mem0's 0.983 and above the floor's 0.950.** The store says
 where the control misses went. Of the forty control case-runs (two runs of twenty), nine returned
-nothing useful: **none** was retired by the memory, **four** were never written at all, and
-**five** were written, live, and ranked below the top five. Only the first is the memory being
-too eager, and it is zero; the control-miss rate - nine in forty, the worst on the stand - is the
-price of the other two, and both tables below say so per arm.
+nothing useful: **none** was retired to `Superseded/`, **five** were absorbed - the twin gate
+judged session two's *different* fact a twin of session one's note, rewrote the note to the new
+fact and kept the old statement only under `## Previous statement`, so no served text carries it
+any more - and **four** were never written. None was written, served and ranked below the top
+five. The first two causes are the memory being too eager, and together they are over-retraction
+proper: five in forty on this corpus. Both tables below say so per arm.
 
 <!-- claims:supersession-causes -->
-> **Withdrawn 2026-09.** the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again
->
-> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/supersession_bench.py` is what re-measures this one.
+| arm | a still-true fact did not come back | retired by the memory | absorbed into another note | never written | served, below the top five |
+|---|---|---|---|---|---|
+| **Nevertwice** | 0.225 [0.123, 0.375] | 0 of 40 | 5 of 40 | 4 of 40 | 0 of 40 |
+| Mem0 | 0.000 [0.000, 0.161] | 0 of 20 | 0 of 20 | 0 of 20 | 0 of 20 |
+| Zep/Graphiti (`graphiti-core`, FalkorDB) | 0.225 [0.123, 0.375] | 0 of 40 | 0 of 40 | 9 of 40 | 0 of 40 |
+| an append-only markdown file | 0.050 [0.009, 0.236] | 0 of 20 | 0 of 20 | 0 of 20 | 1 of 20 |
+
+<sub>The first column is the rate in the table above; the four after it split its count by cause. The first two are the memory being too eager - it retired the note, or it judged a different fact a twin of this one, absorbed it into the note and stopped serving this fact (the old statement survives on disk, unserved) - the other two are the extractor's silence and the ranker's depth. A cause reads *not read* where the run did not inspect that arm's store: a retirement is visible only where the store records one (our `valid_to` and `## Previous statement`; Graphiti's `invalid_at`/`expired_at`; Mem0's delete and update events).</sub>
+
+<sub>Over-retraction proper - the memory stopped serving a fact that was still true, by retiring the note or by absorbing another fact into it - is the first two cause columns as a rate: 0.125 [0.055, 0.261] for Nevertwice over its control case-runs.</sub>
 <!-- /claims:supersession-causes -->
 
-On the implicit corpus the same split is starker - every one of the fourteen misses is a ranking
-miss:
+On the implicit corpus the same split is starker - every one of the fourteen misses is an absorb,
+over-retraction proper 0.35:
 
 <!-- claims:supersession-causes-implicit -->
-> **Withdrawn 2026-09.** the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again
->
-> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/supersession_bench.py --dataset research/data/supersession_v1_implicit.json --arms nevertwice,naive` is what re-measures this one.
+| arm | a still-true fact did not come back | retired by the memory | absorbed into another note | never written | served, below the top five |
+|---|---|---|---|---|---|
+| **Nevertwice** | 0.350 [0.221, 0.505] | 0 of 40 | 14 of 40 | 0 of 40 | 0 of 40 |
+| Mem0 | 0.000 [0.000, 0.161] | 0 of 20 | 0 of 20 | 0 of 20 | 0 of 20 |
+| Zep/Graphiti (`graphiti-core`, FalkorDB) | 0.275 [0.161, 0.428] | 0 of 40 | 0 of 40 | 11 of 40 | 0 of 40 |
+| an append-only markdown file | 0.050 [0.009, 0.236] | 0 of 20 | 0 of 20 | 0 of 20 | 1 of 20 |
+
+<sub>The first column is the rate in the table above; the four after it split its count by cause. The first two are the memory being too eager - it retired the note, or it judged a different fact a twin of this one, absorbed it into the note and stopped serving this fact (the old statement survives on disk, unserved) - the other two are the extractor's silence and the ranker's depth. A cause reads *not read* where the run did not inspect that arm's store: a retirement is visible only where the store records one (our `valid_to` and `## Previous statement`; Graphiti's `invalid_at`/`expired_at`; Mem0's delete and update events).</sub>
+
+<sub>Over-retraction proper - the memory stopped serving a fact that was still true, by retiring the note or by absorbing another fact into it - is the first two cause columns as a rate: 0.350 [0.221, 0.505] for Nevertwice over its control case-runs.</sub>
 <!-- /claims:supersession-causes-implicit -->
 
-**A migration the sum hid.** Against the run before the literal-fact channel (commit ef8120d),
-per run of twenty controls on the implicit corpus, the misses read: retired by the memory 1
-then 0, never written 3 then 0, written but below the top five 3 then 7. The write path became
-strictly better on both of its own causes and every point of the sum's rise moved into ranking;
-both runs of the new engine read exactly seven, so this is a systematic set of cases rather
-than spread. On the explicit corpus the unranked count fell instead (four and three, then three
-and two), so the corpus that suffers is the one where the query overlaps the replacement least
-lexically. The campaign report had read the sum as a cap moving the wrong way and the cause as
-noise; it is the first measured sign that the `[facts]` block dilutes ranking on a query that
-does not share its literals, and the ledger writes the gate for measuring that (item K1)
-before anything is measured or changed.
+**How the absorb was found, and what it is not.** The first reading of this run's artifact called
+these misses "written, live, ranked below the top five", because the bench matched the marker
+anywhere in the note file - and the old statement is still in the file, under `## Previous
+statement`. The ledger's first hypothesis was dilution: the literal-fact block appended to every
+description pushing the right note down the ranking. A probe built for it
+([`facts_dilution_probe.py`](facts_dilution_probe.py), gate written first) ranked the correct
+note for every implicit control with the block in the notes' cached text and with it stripped and
+re-embedded: the rank was the same on every one of the twenty, and on all seven named cases
+(worse 0, better 0). Dilution is **not confirmed**. Re-ingesting two of the named cases and
+reading the note files showed the absorb instead, and the bench now classifies a control miss
+against the text recall serves. The channel's part in it is a hypothesis with its own gate in the
+ledger (K6): nearly every block on this stand ends in the same literal - the working directory the
+hook's preamble injects - and a literal shared by every note in a project moves every pair's
+cosine toward the twin prefilter's threshold.
 
-Reading the cause needs the arm's store. Ours records `valid_to`; the floor stores every
-sentence and never retires one, so its one miss is a ranking miss by construction; Mem0 missed
-nothing on this run, so there was nothing to split; Graphiti's four misses were not read from
-its graph on this run - its `invalid_at` and `expired_at` would say whether it retired them -
-and the next run reads them.
+Reading the cause needs the arm's store. Ours records `valid_to`, and the absorb leaves the
+`## Previous statement` block; Graphiti's edges carry `invalid_at`/`expired_at` and are read from
+the group's own graph; Mem0's `get_all` and its add-events (a DELETE, or an UPDATE that drops the
+marker) play the same roles; the floor stores every sentence and never retires one. On this run
+Graphiti's nine explicit and eleven implicit misses were all *never written* - no edge carried the
+fact - and Mem0 missed nothing.
 
 **A defect this benchmark found in its own first run: the extractor answered in the wrong
 language.** On a corpus containing no Russian at all, the local model wrote **17 of 123 notes
@@ -375,23 +415,22 @@ the harness now counts per-case errors and refuses to score an arm that mostly f
 
 ## What this does not show
 
-- **The column that matters most is the least measured.** Over-retraction is this design's own
-  worst failure mode: retiring a fact that is still true is silent data loss, and unlike a
-  stale answer nothing downstream can catch it. It rests on **40 control case-runs**, two per
-  control. No retirement in forty is zero, and the Wilson interval on that still runs to
-  **0.088** - a bound consistent with losing one still-true fact in eleven. The absolute number
-  does not support the reading "never". Bringing that upper bound under one in twenty needs
-  about seventy-five controls, more than three times what the dataset carries, and that is the
-  first thing it should gain. The broad measure beside it is not small: nine in forty control
-  case-runs did not return the still-true fact, and the split by cause is what keeps that from
-  being read as forgetting.
-- **Zep/Graphiti is one run; ours is two.** This page says one run of this stand is not a
-  result, and applied the rule to its own arm only. The Graphiti rows were re-run once on
-  2026-09-10 on an unchanged stand, and moved by their own variance - the supersession stale
-  rate by two points, the as-of both-days rate by five - while the paired p against us was
-  recomputed against our new arm, as a paired test must be. A second Graphiti run on both
-  corpora and on as-of, pooled and published with its spread like ours, is ledger item K2;
-  until it lands, read its rows as one run.
+- **The column that matters most is the one this page had wrong.** Over-retraction is this
+  design's own worst failure mode: a still-true fact the memory stops serving is silent data
+  loss, and unlike a stale answer nothing downstream can catch it. Until this September this page
+  printed it as zero, because the bench looked for a `Superseded/` copy and the twin absorb
+  leaves none. Read against the served text it is **five in forty** on the explicit corpus and
+  **fourteen in forty** on the implicit one - a third of the controls whose two facts share a
+  topic. It rests on forty control case-runs per corpus; the interval on the implicit figure
+  is wide. The engine is frozen until the next marked cards arrive; the gate for
+  the fix is written in the ledger (K6, K7), and until it runs this number is the price of the
+  stale column.
+- **Zep/Graphiti's earlier figures were measured on shared graphs.** Graphiti's FalkorDB driver
+  keeps one graph per group id, and the arm named its groups by the case index alone in every run and
+  in both corpora, so the implicit run of 2026-09-10 ingested case *i* into the graph already
+  holding the explicit run's case *i*. Those figures were withdrawn with the rest; this page's
+  Graphiti rows are two runs on a flushed FalkorDB with every group id prefixed by the run's own
+  name, pooled and published with their spread like ours.
 - **n = 120 supersession case-runs.** Enough to separate 0.033 from 0.950 many times over; not
   enough to distinguish 0.033 from half of it, and pinning the extractor made the two runs
   behind it identical, which says nothing about a third.

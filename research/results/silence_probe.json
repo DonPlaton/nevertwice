@@ -1,0 +1,217 @@
+{
+ "asof": "research/results/asof_v1.json",
+ "dataset": {
+  "name": "supersession_v1",
+  "sha256": "0e3114ea9175f8bb832522bdf0b182e11432da0603dc2571e3890f94d7b586f9"
+ },
+ "llm": "qwen3-coder:30b",
+ "extract_temperature": "0",
+ "silent_cases": 8,
+ "by_kind": {
+  "written with the marker": 6,
+  "no items returned": 1,
+  "written without the marker": 1
+ },
+ "rows": [
+  {
+   "id": "app-queue",
+   "shape": "approach_abandoned",
+   "chars": 154,
+   "sentences": 2,
+   "raw_items": {
+    "patterns": 1,
+    "mistakes": 0,
+    "decisions": 0
+   },
+   "raw_total": 1,
+   "notes_written": 1,
+   "marker_in_note": true,
+   "kind": "written with the marker",
+   "extraction_keys": [
+    "context_update",
+    "decisions",
+    "mistakes",
+    "patterns",
+    "project",
+    "project_relevant",
+    "session_summary",
+    "tags"
+   ]
+  },
+  {
+   "id": "app-search",
+   "shape": "approach_abandoned",
+   "chars": 139,
+   "sentences": 2,
+   "raw_items": {
+    "patterns": 1,
+    "mistakes": 0,
+    "decisions": 0
+   },
+   "raw_total": 1,
+   "notes_written": 1,
+   "marker_in_note": true,
+   "kind": "written with the marker",
+   "extraction_keys": [
+    "context_update",
+    "decisions",
+    "mistakes",
+    "patterns",
+    "project",
+    "project_relevant",
+    "session_summary",
+    "tags"
+   ]
+  },
+  {
+   "id": "app-secrets",
+   "shape": "approach_abandoned",
+   "chars": 131,
+   "sentences": 2,
+   "raw_items": {
+    "patterns": 1,
+    "mistakes": 0,
+    "decisions": 0
+   },
+   "raw_total": 1,
+   "notes_written": 1,
+   "marker_in_note": true,
+   "kind": "written with the marker",
+   "extraction_keys": [
+    "context_update",
+    "decisions",
+    "mistakes",
+    "patterns",
+    "project",
+    "project_relevant",
+    "session_summary",
+    "tags"
+   ]
+  },
+  {
+   "id": "app-serialisation",
+   "shape": "approach_abandoned",
+   "chars": 148,
+   "sentences": 2,
+   "raw_items": {
+    "patterns": 1,
+    "mistakes": 0,
+    "decisions": 0
+   },
+   "raw_total": 1,
+   "notes_written": 1,
+   "marker_in_note": true,
+   "kind": "written with the marker",
+   "extraction_keys": [
+    "context_update",
+    "decisions",
+    "mistakes",
+    "patterns",
+    "project",
+    "project_relevant",
+    "session_summary",
+    "tags"
+   ]
+  },
+  {
+   "id": "app-styling",
+   "shape": "approach_abandoned",
+   "chars": 143,
+   "sentences": 2,
+   "raw_items": {
+    "patterns": 1,
+    "mistakes": 0,
+    "decisions": 0
+   },
+   "raw_total": 1,
+   "notes_written": 1,
+   "marker_in_note": true,
+   "kind": "written with the marker",
+   "extraction_keys": [
+    "context_update",
+    "decisions",
+    "mistakes",
+    "patterns",
+    "project",
+    "project_relevant",
+    "session_summary",
+    "tags"
+   ]
+  },
+  {
+   "id": "nar-encrypt-scope",
+   "shape": "narrowed",
+   "chars": 145,
+   "sentences": 2,
+   "raw_items": {
+    "patterns": 0,
+    "mistakes": 0,
+    "decisions": 0
+   },
+   "raw_total": 0,
+   "notes_written": 0,
+   "marker_in_note": false,
+   "kind": "no items returned",
+   "extraction_keys": [
+    "context_update",
+    "decisions",
+    "mistakes",
+    "patterns",
+    "project",
+    "project_relevant",
+    "session_summary",
+    "tags"
+   ]
+  },
+  {
+   "id": "nar-index-scope",
+   "shape": "narrowed",
+   "chars": 139,
+   "sentences": 2,
+   "raw_items": {
+    "patterns": 1,
+    "mistakes": 0,
+    "decisions": 0
+   },
+   "raw_total": 1,
+   "notes_written": 1,
+   "marker_in_note": false,
+   "kind": "written without the marker",
+   "extraction_keys": [
+    "context_update",
+    "decisions",
+    "mistakes",
+    "patterns",
+    "project",
+    "project_relevant",
+    "session_summary",
+    "tags"
+   ]
+  },
+  {
+   "id": "ret-gpu-node",
+   "shape": "retracted_no_replacement",
+   "chars": 148,
+   "sentences": 2,
+   "raw_items": {
+    "patterns": 1,
+    "mistakes": 0,
+    "decisions": 0
+   },
+   "raw_total": 1,
+   "notes_written": 1,
+   "marker_in_note": true,
+   "kind": "written with the marker",
+   "extraction_keys": [
+    "context_update",
+    "decisions",
+    "mistakes",
+    "patterns",
+    "project",
+    "project_relevant",
+    "session_summary",
+    "tags"
+   ]
+  }
+ ]
+}

@@ -610,6 +610,23 @@ review of 2026-09-05, eleven more, listed first.
 
 ### Research
 
+- **The register re-measured on the two-metric bench (2026-09-11, ledger K2).** Every arm re-run
+  after the last bench commit, extraction pinned deterministic; Zep/Graphiti twice on a flushed
+  FalkorDB with per-run group namespaces (its earlier figures had been measured on graphs shared
+  between the two corpora - Graphiti keeps one graph per group id). Ours reproduced the previous
+  campaign to the digit: stale 0.033 / 0.067, current 0.975 / 1.000 on the explicit / implicit
+  corpus, as-of both-days 0.800 (runs 0.867 / 0.733), `s0_retired_rate` 0.908 against the
+  `--recent` control 0.917. Zep pooled over two runs: stale 0.317 (0.317 / 0.317) and 0.242
+  (0.267 / 0.217), current 0.575 / 0.633, as-of both-days 0.367 (0.367 / 0.367). **Over-retraction
+  proper, on the right metric, is not zero: 0.125 explicit and 0.350 implicit** - five and fourteen
+  of forty control case-runs where the twin gate absorbed a different fact into the note and stopped
+  serving the still-true one. The J2b cap (<= 0.07) is therefore missed and published; the fix is
+  gated (K7) and waits for the marked cards. Every Zep control miss is *never written* (9 and 11 of
+  40); Mem0 missed none. The `[facts]` block moved no rank on any control (K1, dilution not
+  confirmed). K3: the eight as-of first sessions marked never written are the extractor's
+  instability on a bare two-sentence fact, not its silence - captured alone six of eight write the
+  note; three were silent in both runs, five in one only.
+
 - **Phase V: the invariants track is NO-GO, on evidence rather than on a missing
   measurement.** Six mechanisms were built; one survived. `blast_radius` under
   `decidable-only` cleared all three of its out-of-sample gates on 27 repositories the frozen

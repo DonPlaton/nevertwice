@@ -193,6 +193,13 @@ def build_claims(family: str, art: dict, *, dataset: str, command: str, raw: str
                 v, [f"{v:.3f}"], "rate", n_sup_arm, wilson(k, n_sup_arm), f"arms.{arm}.{key}",
                 note=(f"Pooled over {arm_runs} runs of the arm; per-run values in arms.{arm}.per_run_stale / "
                       f"per_run_current." if arm_runs > 1 else None))
+        if arm_runs > 1:
+            for i, word in enumerate(("one", "two", "three")[:arm_runs]):
+                pr = (res.get("per_run_stale") or [])
+                if len(pr) > i and pr[i] is not None:
+                    add(f"{family}.{arm}.per_run_stale.{word}",
+                        f"run {word} of {label} on {stand} read stale {pr[i]:.3f} on its {n_sup_arm // arm_runs} cases",
+                        pr[i], [f"{pr[i]:.3f}"], "rate", n_sup_arm // arm_runs, None, f"arms.{arm}.per_run_stale[{i}]")
         n_ctl = n_ctl_arm
         new_shape = "control_miss_rate" in res
         v = res["control_miss_rate"] if new_shape else res["over_retraction_rate"]

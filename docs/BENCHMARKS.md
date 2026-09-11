@@ -64,9 +64,12 @@ The one comparison here that runs on a corpus this repository ships. Full method
 breakdown and what it costs us: [`research/SUPERSESSION.md`](../research/SUPERSESSION.md).
 
 <!-- claims:supersession-pinned -->
-> **Withdrawn 2026-09.** the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again
->
-> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/supersession_bench.py` is what re-measures this one.
+| arm | returns the retracted fact | returns the replacement | a still-true fact did not come back |
+|---|---|---|---|
+| **Nevertwice** | 0.033 [0.013, 0.083] | 0.975 [0.929, 0.992] | 0.225 [0.123, 0.375] |
+| Mem0 | 0.933 [0.841, 0.974] | 0.983 [0.911, 0.997] | 0.000 [0.000, 0.161] |
+| Zep/Graphiti (`graphiti-core`, FalkorDB) | 0.317 [0.240, 0.405] | 0.575 [0.486, 0.660] | 0.225 [0.123, 0.375] |
+| an append-only markdown file | 0.950 [0.863, 0.983] | 0.950 [0.863, 0.983] | 0.050 [0.009, 0.236] |
 <!-- /claims:supersession-pinned -->
 
 The third column counts every control case whose still-true fact did not come back, whatever the
@@ -77,9 +80,16 @@ cause is the design's own failure mode, and the stand reads it for every arm who
 retirement.
 
 <!-- claims:supersession-causes -->
-> **Withdrawn 2026-09.** the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again
->
-> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/supersession_bench.py` is what re-measures this one.
+| arm | a still-true fact did not come back | retired by the memory | absorbed into another note | never written | served, below the top five |
+|---|---|---|---|---|---|
+| **Nevertwice** | 0.225 [0.123, 0.375] | 0 of 40 | 5 of 40 | 4 of 40 | 0 of 40 |
+| Mem0 | 0.000 [0.000, 0.161] | 0 of 20 | 0 of 20 | 0 of 20 | 0 of 20 |
+| Zep/Graphiti (`graphiti-core`, FalkorDB) | 0.225 [0.123, 0.375] | 0 of 40 | 0 of 40 | 9 of 40 | 0 of 40 |
+| an append-only markdown file | 0.050 [0.009, 0.236] | 0 of 20 | 0 of 20 | 0 of 20 | 1 of 20 |
+
+<sub>The first column is the rate in the table above; the four after it split its count by cause. The first two are the memory being too eager - it retired the note, or it judged a different fact a twin of this one, absorbed it into the note and stopped serving this fact (the old statement survives on disk, unserved) - the other two are the extractor's silence and the ranker's depth. A cause reads *not read* where the run did not inspect that arm's store: a retirement is visible only where the store records one (our `valid_to` and `## Previous statement`; Graphiti's `invalid_at`/`expired_at`; Mem0's delete and update events).</sub>
+
+<sub>Over-retraction proper - the memory stopped serving a fact that was still true, by retiring the note or by absorbing another fact into it - is the first two cause columns as a rate: 0.125 [0.055, 0.261] for Nevertwice over its control case-runs.</sub>
 <!-- /claims:supersession-causes -->
 
 Nevertwice's row is pooled over two runs of the same commit; the other arms are one run each.
@@ -88,8 +98,8 @@ embedder and the same extraction model for every arm, and the text scored is the
 receives - for us the note with the literals the write path kept, for the others their memory or
 fact text. Paired on the same cases, the discordant pairs between Nevertwice and Mem0 run entirely
 in Mem0's disfavour; Mem0 and the append-only file are tied with each other at the bad end of the
-column - McNemar finds no difference between them. Our payload per query is registered beside
-Mem0's in the same artifact. The floor is
+column - McNemar finds no difference between them. Our payload per query is 393 characters
+against Mem0's 411. The floor is
 why the table is worth printing at all: a benchmark only one vendor's architecture fails is a benchmark
 about that vendor, and this one is failed by an append-only text file too, which is what supersession
 costs when nothing implements it.
