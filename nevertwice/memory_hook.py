@@ -3538,6 +3538,19 @@ def _harvest_literals(source: str, near: str, want: int, exclude: set) -> list[s
     return out
 
 
+_PREAMBLE_RE = re.compile(r"\A(?:(?:Working directory|Trigger):[^\n]*\n)+\n*")
+
+
+def _facts_source(transcript: str) -> str:
+    """The text the literal channel may quote from: the session body without the two lines the
+    hook prepends (`Working directory:`, `Trigger:`). Those are the frame around the session, not a
+    fact of it - and because the harvester read them, the working directory landed in nearly every
+    note's `[facts]` block as a "fact" (27 of 31 notes in the K1 store; ledger K6): noise in every
+    note, bytes in every store, one literal shared by every note of a project. A path the session
+    itself mentions is still in the body and still quotable."""
+    return _PREAMBLE_RE.sub("", transcript or "", count=1)
+
+
 def _note_facts(item: dict, source: str) -> list[str]:
     """The literals to preserve for one note: the extractor's named facts first (semantic pick),
     then harvested ones to fill up to the per-note cap. Deduped against each other and against the
@@ -3561,6 +3574,94 @@ def _note_facts(item: dict, source: str) -> list[str]:
         if len(out) >= _FACTS_MAX_N:
             break
     return out
+
+
+def _facts_in(desc: str) -> set:
+    """The literals a description's `[facts]` block carries, whitespace-normalised and lower-cased."""
+    if not desc or _FACTS_MARK.strip() not in desc:
+        return set()
+    tail = desc.split(_FACTS_MARK.strip(), 1)[1]
+    return {_norm_ws(f) for f in tail.split("\u00b7") if _norm_ws(f)}
+
+
+#: K7 - a same-day, same-title note from ANOTHER session is rewritten in place (absorbed) only when
+#: the new statement is the same fact restated, refined or replaced - not when it is a different fact
+#: on the same topic ("logs to Loki" after "traces to Tempo"). Before this gate the absorb was
+#: decided by the title alone, and on the supersession stand's controls it was most of what we lost:
+#: 5 of 40 explicit and 14 of 40 implicit control case-runs, the note kept on disk and no longer
+#: serving the earlier fact (ledger K1b/K7). Stage one is deterministic - literals that agree (the new
+#: block carries every old literal) or a side with no literals absorb as before. Stage two, only when
+#: the literals disagree, is one adjudication call; it fails open to the prior behaviour.
+ABSORB_JUDGE = env_int("NEVERTWICE_ABSORB_JUDGE", 1)
+_JUDGE_PROMPT = (
+    "Two statements were recorded for one project under the same title, by two different sessions.\n\n"
+    "OLD (recorded first): {old}\n\nNEW (recorded later): {new}\n\n"
+    "First name, in a few words, WHAT each statement settles - which parameter, component, destination, "
+    "tool or rule (for example: 'the upload size limit', 'where traces are exported', 'the HTTP client "
+    "timeout'). Then decide:\n"
+    '  "replaces" - both settle the SAME thing and NEW states it again, changes its value, narrows it or '
+    "retracts it (a timeout of 30 seconds then 5 seconds; PostgreSQL 14 then 16; a flag that gated the UI, "
+    "then deleted). OLD should no longer be served as current truth.\n"
+    '  "separate" - they settle DIFFERENT things, even on the same topic (an upload size limit and a '
+    "request rate limit; where traces go and where logs go; the embedder and the reranker; the CLI and the "
+    "desktop app). Both hold at once and OLD stays true.\n"
+    "A shared topic, title or week is not the same thing; a different parameter or component is separate.\n"
+    'Answer with ONE JSON object and nothing else: {{"old_settles": "...", "new_settles": "...", '
+    '"relation": "replaces" or "separate"}}\n'
+    "Return ONLY valid JSON.")
+
+
+def _same_fact_verdict(old_title: str, old_desc: str, new_desc: str, project: str):
+    """K7 stage two: `True` (the new statement replaces the old - absorb), `False` (a different fact -
+    keep both), `None` (no answer - the caller falls back to the prior behaviour)."""
+    prompt = _JUDGE_PROMPT.format(old=f"{old_title} - {(old_desc or '')[:600]}", new=(new_desc or "")[:600])
+    try:
+        res = generate_json(prompt, project=project)
+    except Exception as e:                                   # noqa: BLE001 - the judge must never break a write
+        log(f"absorb judge skipped ({type(e).__name__}: {e})")
+        return None
+    rel = str((res or {}).get("relation", "")).strip().lower() if isinstance(res, dict) else ""
+    if rel.startswith("replace"):
+        return True
+    if rel.startswith("separate") or rel.startswith("different"):
+        return False
+    return None
+
+
+#: How stage two decides when the literals do not: `llm` - one adjudication call on the extraction
+#: model; `shadow` - a stand control that makes the call, logs the verdict and absorbs regardless.
+#: Two alternatives were measured on 2026-09-12 and rejected: the calibrated twin classifier
+#: (cosine + word features) reads P(same lesson) 0.93-1.00 for every different-fact control pair,
+#: because a shared title saturates its title feature; a literal-only rule cannot see a corpus whose
+#: sentences carry no literal-shaped token ("the service is written in Rust").
+ABSORB_JUDGE_MODE = os.environ.get("NEVERTWICE_ABSORB_JUDGE_MODE", "llm").strip().lower()
+
+
+def _absorb_is_same_fact(old_path: Path, title: str, desc: str, project: str) -> bool:
+    """K7: may this same-stem note from another session be rewritten in place with `desc`?"""
+    if ABSORB_JUDGE <= 0:
+        return True
+    try:
+        _, d_old, _ = _parse_note_body(old_path.read_text(encoding="utf-8", errors="replace").split("\n"))
+    except Exception:                                    # noqa: BLE001 - an unreadable note absorbs as before
+        return True
+    old_f, new_f = _facts_in(d_old or ""), _facts_in(desc or "")
+    if old_f and new_f and old_f <= new_f:
+        return True                          # the new block carries every old literal: the same fact, refined
+    # Disagreeing literals, or a side with none: on the implicit corpus most control notes carry
+    # no literal at all (the sentences hold few literal-shaped tokens), so "no literal, absorb" let
+    # 11 of 20 different facts through on the smoke run. The judge decides.
+    _LLM_STATS["absorb_judge"] = _LLM_STATS.get("absorb_judge", 0) + 1
+    verdict = _same_fact_verdict(title, d_old or "", desc or "", project)
+    if ABSORB_JUDGE_MODE == "shadow":        # a stand control: the call is made, the verdict only logged
+        log(f"Same-stem shadow judge (K7): verdict {verdict} for {old_path.stem} - absorbing regardless")
+        return True
+    if verdict is None:
+        log(f"Same-stem absorb kept, judge unanswered (K7): {old_path.stem}")
+        return True                          # fail open: the behaviour before the gate
+    if verdict:
+        log(f"Same-stem absorb confirmed by the judge (K7, replaces): {old_path.stem}")
+    return verdict
 
 
 def _append_facts(desc: str, facts: list[str]) -> str:
@@ -3657,6 +3758,11 @@ def write_typed_note(folder: str, item, project: str, date: str,
             # the new text into cache/index (a split-brain no incremental path healed),
             # and session-less writers (api.remember retries, weekly distill re-runs)
             # bypassed absorb entirely, minting '-2' twins.
+            if not _absorb_is_same_fact(old, title, desc, project):
+                # K7: a different fact under the same title is a SIBLING, not a re-encounter - it
+                # gets its own note (`-2`) and the earlier statement keeps being served.
+                log(f"Same-stem sibling kept (K7): {old.stem} states a different fact")
+                continue
             r_old, s_old = _note_recur_sources(old)
             absorb_into = old
             absorb_recur, absorb_sources = r_old, set(s_old)
@@ -5038,6 +5144,46 @@ def rebuild_index():
 
 # ── Core pipeline ─────────────────────────────────────────────────────
 
+#: K5 - extra extraction calls when a non-empty, relevant session came back with zero items. The
+#: extractor's output on a bare two-sentence fact is unstable at temperature zero: the same text
+#: yields a note or nothing depending on incidental prompt context (ledger K3: of eight silent
+#: first sessions, three were silent in both runs and five in one; captured alone six of eight
+#: wrote the note). A retry with a differently seeded frame is one more call, only on silence.
+EXTRACT_RETRY = env_int("NEVERTWICE_EXTRACT_RETRY", 1)
+_RETRY_MIN_CHARS = 40            # a shorter body has nothing to extract; silence is the right answer
+_RETRY_FRAME = (
+    "Second pass. The first pass over this session returned no pattern, mistake or decision. A short "
+    "session that states one concrete fact, choice or lesson still yields ONE item: record it as a "
+    "decision (a fact or choice that now holds) or a pattern (a lesson), with its literal in `facts`. "
+    "Return the same JSON shape as specified below.\n\n")
+
+
+def _item_count(extraction) -> int:
+    if not isinstance(extraction, dict):
+        return 0
+    return sum(len(v) for nt in TYPED_TYPES if isinstance((v := extraction.get(f"{nt}s")), list))
+
+
+def _retry_if_silent(extraction: dict, prompt: str, body: str, project_hint: str) -> dict:
+    """K5: when a relevant, non-trivial session came back with zero items, ask once more with the
+    prompt framed as a second pass. Not a prompt rewrite - the first call is unchanged, and the frame
+    is only what makes the second call a different sample at temperature zero. An off-topic session
+    (`project_relevant` false) is not retried: empty beats wrong. The second answer replaces the
+    first only when it carries an item; otherwise the silence stands, counted."""
+    if EXTRACT_RETRY <= 0 or not isinstance(extraction, dict) or _item_count(extraction) > 0:
+        return extraction
+    if not _is_relevant(extraction.get("project_relevant", True)) or len((body or "").strip()) < _RETRY_MIN_CHARS:
+        return extraction
+    _LLM_STATS["retry"] = _LLM_STATS.get("retry", 0) + 1
+    second = generate_json(_RETRY_FRAME + prompt, project=project_hint)
+    if _item_count(second) > 0:
+        log(f"Extraction retry (empty first pass): {_item_count(second)} item(s) on the second pass")
+        _LLM_STATS["retry_hit"] = _LLM_STATS.get("retry_hit", 0) + 1
+        return second
+    log("Extraction retry (empty first pass): still no item - the silence stands")
+    return extraction
+
+
 def process_session(session_id: str, cwd: str, transcript_path: str,
                     trigger: str, processed_db: dict,
                     run_log: list | None = None, agent: str = DEFAULT_AGENT,
@@ -5102,6 +5248,7 @@ def process_session(session_id: str, cwd: str, transcript_path: str,
         redact_secrets(f"Working directory: {cwd}\nTrigger: {trigger}\n\n{body}"),
         MAX_TRANSCRIPT_CHARS,
     )
+    facts_source = _facts_source(transcript_full)     # K6: literals come from the session, not the frame
 
     # Scoped to THIS project: a batch run used to hand one project the signature tags of
     # whichever project had the most notes in the vault.
@@ -5127,6 +5274,7 @@ def process_session(session_id: str, cwd: str, transcript_path: str,
     if not extraction:
         log(f"Extraction failed for {session_id[:8]} - left for retry")
         return False
+    extraction = _retry_if_silent(extraction, prompt, body, project_hint)
 
     # The session is marked processed at the END, AFTER its notes are durably
     # written (audit C5): a crash mid-write then RETRIES instead of losing the
@@ -5199,7 +5347,7 @@ def process_session(session_id: str, cwd: str, transcript_path: str,
             # verbatim substring of THIS session, then appended to the description so the note,
             # the embedding and every reader keep it - a paraphrase is not a substring and vanishes.
             if isinstance(item, dict):
-                _vf = _note_facts(item, transcript_full)
+                _vf = _note_facts(item, facts_source)
                 if _vf:
                     item["description"] = _append_facts(item.get("description", ""), _vf)
             stem = write_typed_note(TYPE_FOLDER[nt], item, project, date, tags, nt,

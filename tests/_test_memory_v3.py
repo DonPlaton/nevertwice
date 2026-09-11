@@ -868,7 +868,10 @@ line = m._fact_line({"stem": "2025-01-01-proj-pattern-old", "ntype": "pattern",
                      "title": "T", "recurrence": 4})
 check("M-12 fact line shows recurrence ×N", "×4" in line)
 check("M-12 fact line shows age for old note", "mo" in line or "y" in line)
-fresh = m._fact_line({"stem": "2026-06-14-proj-pattern-fresh", "ntype": "pattern",
+# dated today: a fixed date here crossed the age threshold on 2026-09-12 (ninety days after 2026-06-14)
+# and turned a calendar into a failing test
+_today = __import__("datetime").date.today().isoformat()
+fresh = m._fact_line({"stem": f"{_today}-proj-pattern-fresh", "ntype": "pattern",
                       "title": "T", "recurrence": 1})
 check("M-12 fresh single note: no marker", "_(" not in fresh)
 

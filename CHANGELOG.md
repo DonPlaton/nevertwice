@@ -16,6 +16,36 @@ empty.
 
 ### Added
 
+- **A same-title note from another session is absorbed only when it is the same fact** (ledger K7;
+  `tests/_test_absorb_same_fact_only.py`). The same-day same-stem absorb rewrote an earlier note in place
+  whenever a later session produced the same title - decided by the title alone. On the supersession
+  stand's controls that was most of what we lost: a *different* fact on the same topic ("logs to Loki"
+  after "traces to Tempo") replaced the served text, the earlier statement survived only under
+  `## Previous statement`, and a still-true fact stopped being handed back on 5 of 40 explicit and 14 of
+  40 implicit control case-runs. Now: literals that agree (the new `[facts]` block carries every old
+  literal, both sides carrying some) absorb as before, with no call; anything else - literals that
+  disagree, or a side with none - goes to one adjudication call on the extraction model, which names
+  what each statement settles and rules `replaces` (absorb) or `separate` (keep both, the new note as a
+  `-2` sibling). The judge fails open to the prior behaviour; `NEVERTWICE_ABSORB_JUDGE=0` turns it off,
+  and `NEVERTWICE_ABSORB_JUDGE_MODE=shadow` makes the call without acting on it (a stand control).
+  The same-session refresh path is untouched. Gate: over-retraction proper <= 0.05 on both corpora.
+  Fast cycles before the campaign found the stand's own confound: an extra extraction-model call
+  between two sessions changes what the next session extracts (the server's prompt cache goes cold),
+  which moves the stale column by itself; the ledger (K7) carries the table and the measurement order.
+- **One retry, differently framed, when a relevant session yields no item** (ledger K5;
+  `tests/_test_extraction_retry.py`). Ledger K3 read the extractor's "silence" on a bare two-sentence
+  fact as instability - same text, temperature zero, a note or nothing depending on incidental prompt
+  context. `_retry_if_silent` makes one more call with the prompt framed as a second pass when a
+  non-empty, on-topic session came back with zero patterns, mistakes and decisions; the first call is
+  byte-identical to before, an off-topic session is never retried (empty beats wrong), a second silence
+  stands and is counted. `NEVERTWICE_EXTRACT_RETRY=0` turns it off. Gate: as-of never-written <= 5 of 120.
+- **The literal channel quotes the session, never the hook's preamble** (ledger K6;
+  `tests/_test_harvest_skips_preamble.py`). The harvester read the whole text handed to the extractor,
+  which begins with `Working directory:` and `Trigger:`, so the working directory landed in nearly every
+  note's `[facts]` block as a "fact" - 101 of 110 served blocks in an explicit-corpus run. `_facts_source`
+  strips the frame before `_note_facts`, so both the harvested literals and the verbatim check of
+  extractor-named ones read the session body only. Gate: the cwd literal in 0 notes, survival and the
+  demoted count not worse, store bytes down.
 - **`docs/WEAKNESSES.md` opens with what the campaigns since June measured.** The page was a June
   audit read as the current picture. Its header now says the body is the June record, and a first
   section states the ceiling measured since, each with its ledger gate and a table rendered from the
