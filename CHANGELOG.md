@@ -632,6 +632,19 @@ review of 2026-09-05, eleven more, listed first.
 
 ### Research
 
+- **The engine before J2b, measured under today's supersession bench (ledger K2, naryad B item 2).**
+  The over-retraction cap J2b registered had a baseline read by a classifier that could not see the
+  absorb, and the corrected classifier had none. The commit before J2b and the literal channel
+  (`ef8120d`) was checked out into a worktree and run under HEAD's bench, two runs per corpus
+  (`research/results/supersession_baseline_ef8120d{,_implicit}.json`; `tools/register_supersession.py
+  --historical` registers such a family born withdrawn, citing nothing, pointers kept). The absorb is
+  older than J2b - over-retraction proper 0.100 explicit / 0.175 implicit on the older engine against
+  0.125 / 0.350 now - but on the implicit corpus it doubled with the package while never-written fell
+  from eight to none and the stale rate halved: the cause of the control misses moved from the
+  extractor's silence to over-consolidation, the total barely moved. The cap is missed on both
+  engines once the metric is read correctly; whether the J2b mechanism stays now depends on the K7
+  gate. `SUPERSESSION.md` corrects its own account of the mechanism: the same-day same-title rewrite
+  in the write path, decided by the title alone, not the cosine twin gate.
 - **The register re-measured on the two-metric bench (2026-09-11, ledger K2).** Every arm re-run
   after the last bench commit, extraction pinned deterministic; Zep/Graphiti twice on a flushed
   FalkorDB with per-run group namespaces (its earlier figures had been measured on graphs shared

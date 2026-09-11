@@ -295,10 +295,11 @@ The stale rate is not free, and the honest accounting is on the other two column
 
 **Current rate 0.975, a shade under Mem0's 0.983 and above the floor's 0.950.** The store says
 where the control misses went. Of the forty control case-runs (two runs of twenty), nine returned
-nothing useful: **none** was retired to `Superseded/`, **five** were absorbed - the twin gate
-judged session two's *different* fact a twin of session one's note, rewrote the note to the new
-fact and kept the old statement only under `## Previous statement`, so no served text carries it
-any more - and **four** were never written. None was written, served and ranked below the top
+nothing useful: **none** was retired to `Superseded/`, **five** were absorbed - the extractor gave
+session two's *different* fact the same title as session one's note, the write path took the
+same-day same-title re-encounter for the same lesson restated, rewrote the note to the new fact
+and kept the old statement only under `## Previous statement`, so no served text carries it any
+more - and **four** were never written. None was written, served and ranked below the top
 five. The first two causes are the memory being too eager, and together they are over-retraction
 proper: five in forty on this corpus. Both tables below say so per arm.
 
@@ -341,10 +342,24 @@ note for every implicit control with the block in the notes' cached text and wit
 re-embedded: the rank was the same on every one of the twenty, and on all seven named cases
 (worse 0, better 0). Dilution is **not confirmed**. Re-ingesting two of the named cases and
 reading the note files showed the absorb instead, and the bench now classifies a control miss
-against the text recall serves. The channel's part in it is a hypothesis with its own gate in the
-ledger (K6): nearly every block on this stand ends in the same literal - the working directory the
-hook's preamble injects - and a literal shared by every note in a project moves every pair's
-cosine toward the twin prefilter's threshold.
+against the text recall serves. Re-reading the store settled which path absorbs: the case files
+hold *one* note for the two sessions, so it is the same-day same-title rewrite, decided by the
+title alone, not the cosine twin gate (which retires into `Superseded/`, and retired nothing here).
+The working directory the hook's preamble injects still ends nearly every `[facts]` block on this
+stand and has its own gate in the ledger (K6) as noise, not as the cause.
+
+**The engine before J2b, under the same classifier.** Was the absorb bought by J2b and the
+literal channel? The commit before both was checked out into a worktree and run under today's
+bench, two runs per corpus (`research/results/supersession_baseline_*.json`, registered as
+historical claims that cite nothing). The absorb was already there: on the explicit corpus the
+older engine lost a still-true fact to retirement or absorption on four of forty control case-runs
+against five now - the same within noise; on the implicit corpus seven of forty then against
+fourteen now, while its never-written misses fell from eight to none and its stale rate halved. The
+total control miss on that corpus barely moved; what moved is its cause - from the extractor's
+silence to over-consolidation - and that is a finding, not a confirmation: the J2b prompt made
+session two write more often, and every extra same-title note it wrote was absorbed. The cap J2b
+registered for over-retraction was missed on both engines once the metric is read correctly; the
+fix is gated as K7 and measured in the campaign that follows.
 
 Reading the cause needs the arm's store. Ours records `valid_to`, and the absorb leaves the
 `## Previous statement` block; Graphiti's edges carry `invalid_at`/`expired_at` and are read from

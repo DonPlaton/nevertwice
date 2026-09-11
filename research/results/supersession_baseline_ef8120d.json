@@ -1,0 +1,4568 @@
+{
+ "arms": {
+  "nevertwice": {
+   "rows": [
+    {
+     "id": "val-http-timeout",
+     "shape": "value_replaced",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 385,
+     "returned": [
+      "http-client-timeout-configuration The HTTP client timeout was configured to 5 seconds, which is a reasonable default for API interactions. This ensures requests do not hang indefinitely and allows for timely error handling.",
+      "api-client-timeout-set-to-five-seconds The decision was made to set the HTTP client timeout to 5 seconds, balancing responsiveness with reliability for API calls."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 2,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "val-pg-version",
+     "shape": "value_replaced",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 218,
+     "returned": [
+      "postgresql-version-in-production The production PostgreSQL version was upgraded from a previous version to PostgreSQL 16. This upgrade was rolled out using the usual staged release process, ensuring minimal disruption."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "val-batch-size",
+     "shape": "value_replaced",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 133,
+     "returned": [
+      "training-batch-size-confirmed The training job's batch size was updated to 128. This change was verified and confirmed in the system."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "val-node-version",
+     "shape": "value_replaced",
+     "n_hits": 0,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": false,
+     "chars_returned": 0,
+     "returned": [],
+     "current_live": false,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": true,
+     "notes_written": 0,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "val-retry-count",
+     "shape": "value_replaced",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 192,
+     "returned": [
+      "queue-worker-retry-logic The queue worker now retries failed jobs up to 10 times instead of failing immediately. This prevents job loss due to transient errors and improves system reliability."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "val-cache-ttl",
+     "shape": "value_replaced",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 361,
+     "returned": [
+      "60-second-cache-expiration The decision to use a 60-second cache expiration was superseded by the implementation of a 15-minute expiration for cache entries.",
+      "cache-layer-expiration The cache layer was removed and entries now expire after 15 minutes. This change was tested with the full test suite which remained green, indicating no regressions were introduced."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 2,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "val-port",
+     "shape": "value_replaced",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 190,
+     "returned": [
+      "dev-server-port-configuration The development server listens on port 8080, not the previously assumed port. This was confirmed by returning to the dev server and verifying the configuration."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "val-region",
+     "shape": "value_replaced",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 213,
+     "returned": [
+      "service-deployment-in-us-east-2 The service was moved from eu-west-1 to us-east-2. This change touched three files but none were config files, indicating a deployment location update without configuration changes."
+     ],
+     "current_live": true,
+     "current_retired": true,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 2,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "val-py-version",
+     "shape": "value_replaced",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 318,
+     "returned": [
+      "python-version-pinning The project now pins Python 3.13 due to changes in the toolchain. This ensures consistent development and avoids compatibility issues.",
+      "test-suite-validation Running the full test suite after making changes ensures that no regressions were introduced. The tests stayed green, confirming stability."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 2,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "val-replicas",
+     "shape": "value_replaced",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 164,
+     "returned": [
+      "api-capacity-replicas The API was scaled to 12 replicas after a load test to handle capacity requirements. This was deployed using the usual staged release process."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "val-lr",
+     "shape": "value_replaced",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 276,
+     "returned": [
+      "learning-rate-configuration Lowering the learning rate to 5e-5 did not result in any observable improvement after an hour of monitoring. This suggests that the model may require a different hyperparameter tuning approach or that other factors are dominating training dynamics."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "val-chunk",
+     "shape": "value_replaced",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 402,
+     "returned": [
+      "ingestion-chunk-size The ingestion process now uses a fixed chunk size of 1024 tokens to ensure consistency and improve processing reliability. This decision was made after review and approval.",
+      "document-chunking-consistency Documents are now consistently chunked at 1024 tokens, which improves ingestion reliability and processing uniformity. This change was approved by a reviewer after a minor rename."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 2,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "val-quorum",
+     "shape": "value_replaced",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 327,
+     "returned": [
+      "cluster-quorum-requirement After resizing the cluster, a quorum of 5 nodes is required for operation. This was previously misjudged and documented in the README.",
+      "staged-release-rollout The decision to use a staged rollout approach for releases was reaffirmed, as it provides better control and risk mitigation during deployment."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 2,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "val-license",
+     "shape": "value_replaced",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 82,
+     "returned": [
+      "project-licensing-decided The project was relicensed to Apache-2.0 after a review."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "val-branch",
+     "shape": "value_replaced",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 260,
+     "returned": [
+      "branch-renaming-protocol When a repository's default branch is renamed, it's important to update local configurations and inform team members to avoid redundant work. The agent noted that the default branch was renamed to 'main' and left a note in the tracker."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "app-cache-store",
+     "shape": "approach_abandoned",
+     "n_hits": 2,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": true,
+     "chars_returned": 331,
+     "returned": [
+      "redis-session-caching Session data is cached in Redis as of today. This was documented in the README which was previously stale.",
+      "in-process-lru-cache-replacement Redis was replaced with an in-process LRU cache to improve performance and reduce external dependencies. The change touched three files and none were configuration files."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 2,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "app-auth",
+     "shape": "approach_abandoned",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 492,
+     "returned": [
+      "jwt-authentication-with-hs256 JWT authentication using HS256 was initially considered but later replaced with opaque session cookies backed by the database. This change improves security by avoiding token storage on the client side and centralizing session management.",
+      "opaque-session-cookies The decision was made to use opaque session cookies backed by the database instead of JWT tokens for authentication. This approach reduces the risk of token leakage and simplifies session invalidation."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 2,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "app-bundler",
+     "shape": "approach_abandoned",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 389,
+     "returned": [
+      "use-vite-for-frontend-bundling The decision was made to use Vite for frontend bundling, replacing the previous Webpack setup. This aligns with modern tooling trends and improves development experience.",
+      "frontend-bundling-with-vite The frontend is now bundled with Vite instead of Webpack. This change was part of a staged release process and the previous build using Webpack did not survive."
+     ],
+     "current_live": true,
+     "current_retired": true,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 4,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "app-orm",
+     "shape": "approach_abandoned",
+     "n_hits": 3,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 679,
+     "returned": [
+      "asyncpg-for-data-access Hand-written SQL with asyncpg was implemented for data access, replacing earlier SQLAlchemy ORM approach. This change improves performance and control over database interactions.",
+      "incorrect-assumption-about-data-access The assumption that SQLAlchemy ORM would be used for data access was incorrect, as the implementation was rewritten to use hand-written SQL with asyncpg. Verify actual implementation in code before making assumptions about data access strategy.",
+      "use-asyncpg-for-data-access Decision to use asyncpg with hand-written SQL for data access was made due to performance and control requirements, superseding the previous choice of SQLAlchemy ORM."
+     ],
+     "current_live": true,
+     "current_retired": true,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 5,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "app-queue",
+     "shape": "approach_abandoned",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 393,
+     "returned": [
+      "background-jobs-with-celery Background jobs are now implemented using a Postgres-backed queue instead of the previous approach. This change improves reliability and consistency in job processing.",
+      "use-postgres-backed-queue The decision was made to use a Postgres-backed queue for background jobs, replacing the previous implementation. This ensures better persistence and handling of job states."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 2,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "app-ci",
+     "shape": "approach_abandoned",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 188,
+     "returned": [
+      "ci-migration-to-github-actions The continuous integration system was migrated from an old platform to GitHub Actions. This change was documented in the README file which was already stale."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "app-search",
+     "shape": "approach_abandoned",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 178,
+     "returned": [
+      "postgres-fulltext-search Search functionality in the project is powered by Postgres full-text search, which has been verified to work correctly after running the full test suite."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "app-styling",
+     "shape": "approach_abandoned",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 217,
+     "returned": [
+      "tailwind-styling-in-components Components are styled using Tailwind utility classes, which provides a consistent and maintainable approach to styling. This method allows for rapid development and easier collaboration."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "app-packaging",
+     "shape": "approach_abandoned",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 330,
+     "returned": [
+      "package-build-and-publish The package is built using hatchling and published via CI. This approach was confirmed to be the correct method after an earlier attempt to handle packaging locally did not survive.",
+      "use-poetry-for-packaging Poetry was considered for packaging but ultimately not used; hatchling and CI were chosen instead."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 2,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "app-state",
+     "shape": "approach_abandoned",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 247,
+     "returned": [
+      "frontend-global-state-in-zustand Global state management was moved from Redux to Zustand stores, which provides a more lightweight and flexible approach for managing application state. This change improves performance and reduces boilerplate code."
+     ],
+     "current_live": true,
+     "current_retired": true,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 2,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "app-infra",
+     "shape": "approach_abandoned",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 483,
+     "returned": [
+      "infrastructure-provisioning-with-pulumi Infrastructure is now provisioned with Pulumi in TypeScript, replacing previous methods. This approach allows for more declarative and code-based infrastructure management, improving consistency and version control.",
+      "use-pulumi-for-infrastructure The decision was made to use Pulumi for infrastructure provisioning in TypeScript, as it offers better integration with the existing codebase and improved developer experience compared to Terraform."
+     ],
+     "current_live": true,
+     "current_retired": true,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 3,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "app-migrations",
+     "shape": "approach_abandoned",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 239,
+     "returned": [
+      "schema-migration-through-alembic Schema migrations are handled through plain numbered SQL files applied by a shell script. This approach was confirmed to be the current method after checking dashboards for an hour following schema changes."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "app-serialisation",
+     "shape": "approach_abandoned",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 164,
+     "returned": [
+      "protobuf-message-serialization Messages are serialized as newline-delimited JSON. This format was confirmed after a review and one rename was requested and applied."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "app-secrets",
+     "shape": "approach_abandoned",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 400,
+     "returned": [
+      "vault-integration-for-secrets The decision was made to integrate with a vault for secrets, but it was later discovered that secrets are injected as environment variables by the orchestrator. This decision is now superseded.",
+      "secrets-injected-as-env-vars Secrets are injected as environment variables by the orchestrator, not loaded from a vault at boot. This was confirmed and documented in the README."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 3,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "app-e2e",
+     "shape": "approach_abandoned",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 442,
+     "returned": [
+      "end-to-end-tests-driven-by-playwright The decision was made to drive end-to-end tests using Playwright instead of Selenium, as it offers better performance and reliability for testing the application.",
+      "end-to-end-tests-driven-by-playwright End-to-end tests are driven by Playwright, which ensures reliable test execution and maintains a green test suite after full runs. This approach provides better coverage and stability for the application."
+     ],
+     "current_live": true,
+     "current_retired": true,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 3,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "ret-beta-flag",
+     "shape": "retracted_no_replacement",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 398,
+     "returned": [
+      "beta-dashboard-feature-flag The decision was made to remove the beta_dashboard feature flag, as the new UI is now unconditional and no longer gated by a flag.",
+      "feature-flag-gating Feature flags were used to gate the beta dashboard UI, but the flag was later removed and the new UI became unconditional. This shows a pattern of using feature flags for gradual rollouts that can be removed when stable."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 2,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "ret-legacy-endpoint",
+     "shape": "retracted_no_replacement",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 171,
+     "returned": [
+      "csv-export-via-api The /v1/export endpoint was removed with no replacement, affecting CSV export functionality. This change touched three files and none were config files."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "ret-telemetry",
+     "shape": "retracted_no_replacement",
+     "n_hits": 0,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": false,
+     "chars_returned": 0,
+     "returned": [],
+     "current_live": false,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": true,
+     "notes_written": 0,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "ret-mirror",
+     "shape": "retracted_no_replacement",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 186,
+     "returned": [
+      "read-replica-for-analytics The ap-south-1 replica was decommissioned and analytics reads now hit the primary database. This was rolled out behind a staged release to minimize disruption."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "ret-plugin-api",
+     "shape": "retracted_no_replacement",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 347,
+     "returned": [
+      "plugin-entry-points-loading The plugin system was removed before version 1.0 and never shipped. This decision was made after an hour of monitoring dashboards with no activity.",
+      "remove-plugin-system-before-1.0 The plugin system was removed before version 1.0 and never shipped, based on the lack of activity in dashboards after an hour of monitoring."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 2,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "ret-mobile",
+     "shape": "retracted_no_replacement",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 445,
+     "returned": [
+      "ios-client-discontinuation The iOS client was discontinued, leaving only the web app as the active platform. This decision was confirmed during a review process where the team decided to focus resources on the web app.",
+      "ios-client-sync-engine Decision made to discontinue the iOS client sync engine in favor of focusing on the web app's functionality. The decision was supported by a reviewer who requested only one rename and approved the change."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 2,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "ret-cron",
+     "shape": "retracted_no_replacement",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 361,
+     "returned": [
+      "schedule-audit-log-compaction-nightly Originally scheduled nightly compaction of audit logs, but this was dropped due to the decision that audit logs are append-only forever.",
+      "audit-log-append-only-design The audit log is designed to be append-only and never compacted. This decision was made after reviewing the system's requirements and data retention policies."
+     ],
+     "current_live": true,
+     "current_retired": true,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 3,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "ret-grpc",
+     "shape": "retracted_no_replacement",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 237,
+     "returned": [
+      "grpc-communication-setup The system was initially set up with gRPC communication but was later switched to plain HTTP. This change was made after a review and the full test suite remained green, indicating no regression in functionality."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "ret-sso",
+     "shape": "retracted_no_replacement",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 182,
+     "returned": [
+      "okta-saml-integration-sign-in The Okta SAML integration was cancelled, and staff now use ordinary accounts. A note was left in the tracker to prevent future work on this integration."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "ret-webhook",
+     "shape": "retracted_no_replacement",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 231,
+     "returned": [
+      "webhook-order-integration The partner integration was terminated and the webhook deleted, which required changes to three non-config files. This approach ensured that only relevant code was modified without affecting configuration."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "ret-gpu-node",
+     "shape": "retracted_no_replacement",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 377,
+     "returned": [
+      "gpu-capacity-rental Training capacity is now rented per run instead of reserving a GPU node. This approach provides more flexibility and cost efficiency for intermittent workloads.",
+      "revert-infrastructure-approach The decision was made to reverse the earlier infrastructure approach by giving up the reserved GPU node and switching to a per-run rental model for training capacity."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 2,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "ret-cli-flag",
+     "shape": "retracted_no_replacement",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 393,
+     "returned": [
+      "use-legacy-flag-for-backward-compatibility Although the --legacy flag was removed in version 3.0, a staged rollout approach was used to ensure backward compatibility during the transition.",
+      "cli-flag-legacy-output-format The --legacy flag was dropped in version 3.0 with no equivalent, and the CLI behavior changed accordingly. This required a staged rollout to avoid breaking existing workflows."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 2,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "ret-audit-ui",
+     "shape": "retracted_no_replacement",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 250,
+     "returned": [
+      "admin-panel-audit-filtering The audit tab was removed from the admin panel entirely, which required re-evaluating how audit data is accessed. This change necessitated checking dashboards for an hour without any movement, confirming the tab's removal."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "ret-i18n",
+     "shape": "retracted_no_replacement",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 344,
+     "returned": [
+      "english-only-app The decision was made to drop translations and make the app English-only, as requested by the reviewer after the last review.",
+      "localization-pairing-session The session involved reviewing and updating localization settings. The reviewer requested one rename and approved the changes, indicating a successful collaboration process."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 2,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "ret-sandbox",
+     "shape": "retracted_no_replacement",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 500,
+     "returned": [
+      "sandbox-environment-mirroring The sandbox environment was shut down and partners now test against their own stubs. This change required updating documentation in the README to reflect the new testing approach.",
+      "staged-release-deployment The API changed this week, and the sandbox was shut down. Partners now test against their own stubs instead of relying on the shared environment. This decision reflects a staged release deployment strategy to reduce dependency on centralized testing infrastructure."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 2,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "nar-retry-scope",
+     "shape": "narrowed",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 187,
+     "returned": [
+      "http-client-retry-logic The HTTP client retries only on 5xx responses; 4xx is never retried. This behavior was verified by running the full test suite which stayed green after the change."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "nar-cache-scope",
+     "shape": "narrowed",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 331,
+     "returned": [
+      "api-response-caching Only GET responses are cached, while write operations bypass the cache entirely. This prevents stale data in writes and ensures cache consistency.",
+      "cache-all-api-responses The decision was reversed to only cache GET responses, with writes bypassing the cache entirely. This avoids stale data in write operations."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 2,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "nar-audit-scope",
+     "shape": "narrowed",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 296,
+     "returned": [
+      "audit-logging-for-table-changes Decided to audit only changes to billing tables, not all table changes, as part of a focused auditing strategy.",
+      "audit-log-table-changes Only changes to billing tables are audited now, not all table changes. This pattern reflects a focused approach to audit logging."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 2,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "nar-gpu-scope",
+     "shape": "narrowed",
+     "n_hits": 2,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": true,
+     "chars_returned": 373,
+     "returned": [
+      "trainer-gpu-utilization The trainer runs on GPU for every job, which ensures consistent performance and resource allocation. This pattern was validated by running the full test suite after the setup.",
+      "gpu-utilization-logic The GPU is only used for jobs with more than 10M parameters, while smaller models run on CPU. This was confirmed during a ninety-minute pairing session."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 2,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "nar-lint-scope",
+     "shape": "narrowed",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 193,
+     "returned": [
+      "pre-commit-hook-lints-repository The pre-commit hook now lints only staged files, improving performance and focus during commits. This change was rolled out as part of a staged release process."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "nar-notify-scope",
+     "shape": "narrowed",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 169,
+     "returned": [
+      "deploy-alerting-works Production deploy failures trigger on-call alerts, while staging failures go to Slack. This setup was verified to work after an hour of monitoring."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "nar-encrypt-scope",
+     "shape": "narrowed",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 174,
+     "returned": [
+      "encrypted-at-rest-storage Encryption at rest applies only to files in the private bucket. This was confirmed after a review and a rename was requested but otherwise approved."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "nar-index-scope",
+     "shape": "narrowed",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 194,
+     "returned": [
+      "index-documentation-update Reversing an earlier call on the index revealed that it only covers documents from the last 90 days. This was documented in the README section which was already stale."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "nar-backup-scope",
+     "shape": "narrowed",
+     "n_hits": 2,
+     "stale_returned": true,
+     "stale_rank": 2,
+     "current_returned": false,
+     "chars_returned": 370,
+     "returned": [
+      "nightly-backup-misses-secondary-databases The nightly backup process only covers the primary database and not secondary ones, leading to incomplete backup coverage. Verify that all databases are included in the backup script before deployment.",
+      "nightly-backup-dumps-every-database It was decided that the nightly backup should dump all databases, not just the primary one."
+     ],
+     "current_live": false,
+     "current_retired": false,
+     "current_demoted": true,
+     "current_absent": false,
+     "notes_written": 2,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "nar-ratelimit-scope",
+     "shape": "narrowed",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 315,
+     "returned": [
+      "rate-limiting-applies-to-unauthenticated-calls Rate limiting should only apply to unauthenticated callers, not all API calls. This was confirmed after a review of the system behavior.",
+      "rename-according-to-reviewer-feedback Rename the system component according to reviewer feedback to improve clarity and consistency."
+     ],
+     "current_live": true,
+     "current_retired": true,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 3,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "nar-compress-scope",
+     "shape": "narrowed",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 181,
+     "returned": [
+      "gzip-compression-response Only responses above 8 KB are now compressed. This change was implemented by modifying three files in the codebase, none of which were configuration files."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "nar-mfa-scope",
+     "shape": "narrowed",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 192,
+     "returned": [
+      "mfa-required-for-admin-accounts MFA is now required only for accounts with admin scope, not all users. This reduces friction for regular users while maintaining security for privileged access."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 2,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "nar-replay-scope",
+     "shape": "narrowed",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 249,
+     "returned": [
+      "event-log-replay-on-boot The consumer replays only events since the last checkpoint during boot. This approach ensures that the system can resume processing from where it left off, maintaining consistency and avoiding duplicate processing of events."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "nar-shard-scope",
+     "shape": "narrowed",
+     "n_hits": 3,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": false,
+     "chars_returned": 533,
+     "returned": [
+      "sharding-per-tenant Only tenants with more than 50,000 records get a dedicated shard to optimize resource usage and performance.",
+      "sharding-per-tenant Tenants with more than 50,000 records are assigned a dedicated shard. This approach helps distribute load and improves performance for large tenants.",
+      "tenant-sharding-approach Each tenant gets its own database shard, which simplifies data isolation and improves performance. This approach was implemented by modifying three files in the codebase without touching any configuration files."
+     ],
+     "current_live": false,
+     "current_retired": false,
+     "current_demoted": true,
+     "current_absent": false,
+     "notes_written": 3,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "nar-trace-scope",
+     "shape": "narrowed",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 160,
+     "returned": [
+      "end-to-end-request-tracing One request in a hundred is sampled for tracing. The reviewer asked for one rename and otherwise approved the tracing implementation."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "ctl-db-cache",
+     "shape": "control",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 293,
+     "returned": [
+      "postgresql-16-as-primary PostgreSQL 16 was selected as the primary database for the project, with Redis 7 used for caching.",
+      "postgresql-16-primary-database PostgreSQL 16 was chosen as the primary database for the project, with Redis 7 used for caching. The decision was documented in the README."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 2,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "ctl-lang-test",
+     "shape": "control",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 202,
+     "returned": [
+      "service-written-in-rust The service is implemented in Rust, which provides memory safety and performance benefits. This choice aligns with the project's goals of building reliable and efficient systems."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "ctl-port-pair",
+     "shape": "control",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 369,
+     "returned": [
+      "api-listens-on-port-8443 The API was confirmed to listen on port 8443, which is a key configuration detail for networking. This was verified during the session and aligns with expected behavior.",
+      "metrics-endpoint-listens-on-port-9100 The metrics endpoint was found to listen on port 9100. This is a key networking detail that should be documented to avoid redundant work."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 2,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "ctl-env",
+     "shape": "control",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 347,
+     "returned": [
+      "production-deploys-on-tagged-release Production deployments are now triggered exclusively on tagged releases, improving control and traceability of production changes.",
+      "staging-deploy-on-merge Staging deployments are triggered on merge events, ensuring code stability before production. This pattern was confirmed as part of the deployment strategy."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 2,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "ctl-model",
+     "shape": "control",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 455,
+     "returned": [
+      "embedder-configuration-consistency The embedder was correctly configured as bge-m3, which ensured consistent performance across the test suite. This configuration choice was validated by running the full test suite and confirming it remained green.",
+      "reranker-configuration-consistency The reranker configuration must be consistent across all components that interact with it. This ensures predictable behavior and avoids subtle bugs in the ranking pipeline."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 2,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "ctl-storage",
+     "shape": "control",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 392,
+     "returned": [
+      "store-user-uploads-in-s3 It was decided to store user uploads in S3 rather than local storage, ensuring better scalability and durability of uploaded content.",
+      "s3-storage-for-uploads User uploads are stored in S3, which provides scalable and durable object storage. This pattern ensures that uploaded files are not tied to the application's local storage, improving reliability and scalability."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 2,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "ctl-auth-pair",
+     "shape": "control",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 400,
+     "returned": [
+      "admin-panel-mfa-requirement The admin panel requires hardware MFA for security. This change touched three files but none were config files. The implementation was focused on access control rather than configuration.",
+      "scoped-tokens-for-public-api The public API uses scoped tokens to manage access and security. This approach helps in isolating permissions and reducing the risk of unauthorized actions."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 2,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "ctl-fmt",
+     "shape": "control",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 356,
+     "returned": [
+      "ruff-formatted-python-code Python code is formatted using ruff, which ensures consistent style and improves readability. This approach was adopted as part of the project's formatting standards.",
+      "adopt-ruff-for-python-formatting The project decided to adopt ruff for Python code formatting to enforce consistent style and reduce manual effort in code reviews."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 2,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "ctl-obs",
+     "shape": "control",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 310,
+     "returned": [
+      "traces-exported-to-tempo Confirming that traces are exported to Tempo works as expected. The rollout was done behind a staged release, ensuring controlled deployment.",
+      "logs-exported-to-loki Logs are successfully shipped to Loki for observability. The README was updated to reflect this, even though it was stale."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 2,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "ctl-limits",
+     "shape": "control",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 350,
+     "returned": [
+      "upload-size-limit-25mb The system upload size limit is set to 25 MB. This was confirmed during the session by reviewing the limits configuration.",
+      "request-rate-limit-100-per-minute The system now enforces a request rate limit of 100 requests per minute. This was implemented to prevent overload and ensure stable performance under high load conditions."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 2,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "ctl-sched",
+     "shape": "control",
+     "n_hits": 0,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": false,
+     "chars_returned": 0,
+     "returned": [],
+     "current_live": false,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": true,
+     "notes_written": 0,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "ctl-clients",
+     "shape": "control",
+     "n_hits": 3,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 587,
+     "returned": [
+      "cli-distribution-method The CLI is distributed through Homebrew, which allows for easy installation and updates by users. This method leverages an existing package manager ecosystem.",
+      "cli-distribution-through-homebrew The CLI is distributed through Homebrew, which was confirmed by reviewing the client's decision and updating the README to reflect this distribution method.",
+      "desktop-app-signed-installer The desktop app ships as a signed installer, which ensures trust and security for end users. This approach provides a reliable distribution method that aligns with platform requirements."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 3,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "ctl-queue-pair",
+     "shape": "control",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 260,
+     "returned": [
+      "ingest-queue-nats-backend The ingest queue is implemented using NATS backend, which provides reliable message queuing and distribution. This pattern ensures that incoming data is buffered and processed asynchronously without blocking the main application flow."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "ctl-doc",
+     "shape": "control",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 150,
+     "returned": [
+      "api-reference-generation The API reference is generated from OpenAPI documentation. This process was documented and tracked to prevent redundant work."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "ctl-runtime",
+     "shape": "control",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": false,
+     "chars_returned": 208,
+     "returned": [
+      "dashboard monitoring delay After deploying the sidecar on Go 1.23, no activity was observed on dashboards for an hour. Implement immediate alerting or polling checks after deployment to detect early failures."
+     ],
+     "current_live": false,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": true,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "ctl-net",
+     "shape": "control",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 498,
+     "returned": [
+      "tls-termination-at-load-balancer Ingress terminates TLS at the load balancer, which is a standard and secure approach for handling encrypted traffic. This setup centralizes TLS termination and reduces the complexity of managing certificates on individual services.",
+      "egress-through-nat-gateway Egress traffic now goes through a NAT gateway, which was confirmed as the correct approach after a networking review. This setup allows for proper outbound connectivity while maintaining security boundaries."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 2,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "ctl-review",
+     "shape": "control",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": false,
+     "chars_returned": 321,
+     "returned": [
+      "pull-request-approval-policy Pull request approval policy was already documented and enforced, but the changelog entry requirement was not explicitly stated in the README.",
+      "signed-changelog-entry-for-release Every release requires a signed changelog entry. This was documented in the README section which was already stale."
+     ],
+     "current_live": false,
+     "current_retired": false,
+     "current_demoted": true,
+     "current_absent": false,
+     "notes_written": 2,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "ctl-metrics",
+     "shape": "control",
+     "n_hits": 3,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 570,
+     "returned": [
+      "track-request-latency-as-histogram Request latency is tracked as a histogram to capture distribution of latencies, enabling better understanding of performance characteristics.",
+      "request-latency-histogram Request latency is tracked as a histogram, which provides detailed insights into performance distribution. The code was updated to match this approach and verified through dashboard monitoring.",
+      "queue-depth-tracking Queue depth is tracked as a gauge for observability. This approach complements existing latency histogram tracking and maintains system health monitoring."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 3,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "ctl-store",
+     "shape": "control",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": false,
+     "chars_returned": 227,
+     "returned": [
+      "local-storage-session-persistence Session state is persisted in local storage, ensuring continuity across page reloads or temporary disconnections. This pattern prevents data loss and maintains user context during interactions."
+     ],
+     "current_live": false,
+     "current_retired": false,
+     "current_demoted": true,
+     "current_absent": false,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "ctl-alerting",
+     "shape": "control",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 172,
+     "returned": [
+      "alerting-pagerduty-integration Paging alerts are configured to go to PagerDuty. This was documented in the existing stale README section, ensuring clarity on alert routing."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    }
+   ],
+   "n_supersession": 60,
+   "n_control": 20,
+   "stale_rate": 0.05,
+   "stale_ci": [
+    0.0171,
+    0.137
+   ],
+   "current_rate": 0.9333,
+   "current_ci": [
+    0.8407,
+    0.9738
+   ],
+   "control_miss_rate": 0.2,
+   "control_miss_ci": [
+    0.0807,
+    0.416
+   ],
+   "over_retraction_rate": 0.1,
+   "over_retraction_ci": [
+    0.0279,
+    0.301
+   ],
+   "mean_chars_returned": 293.7,
+   "max_chars_returned": 679,
+   "stale_at_rank_1": 2,
+   "control_retired_by_memory": 0,
+   "control_demoted_by_merge": 2,
+   "control_never_written": 2,
+   "control_written_but_unranked": 0,
+   "notes_written": 134,
+   "notes_in_cyrillic": 0,
+   "language_drift_rate": 0.0,
+   "cases_touched_by_drift": 0,
+   "seconds": 283.5,
+   "config": "ollama qwen3-coder:30b + bge-m3, k=5",
+   "store_bytes": 146908
+  },
+  "nevertwice_run2": {
+   "rows": [
+    {
+     "id": "val-http-timeout",
+     "shape": "value_replaced",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 200,
+     "returned": [
+      "http-client-timeout-configuration The HTTP client timeout was incorrectly assumed to be different from 5 seconds. The actual timeout is 5 seconds, which was confirmed during a focused pairing session."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "val-pg-version",
+     "shape": "value_replaced",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 172,
+     "returned": [
+      "postgresql-version-in-production The production environment was upgraded to PostgreSQL 16 as part of a staged rollout. This update was successfully deployed without issues."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "val-batch-size",
+     "shape": "value_replaced",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 196,
+     "returned": [
+      "training-batch-size-confirmed The training batch size was confirmed to be 128 after a recent change. This was verified by checking dashboards for an hour post-change, but no movement was observed."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "val-node-version",
+     "shape": "value_replaced",
+     "n_hits": 0,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": false,
+     "chars_returned": 0,
+     "returned": [],
+     "current_live": false,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": true,
+     "notes_written": 0,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "val-retry-count",
+     "shape": "value_replaced",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 178,
+     "returned": [
+      "queue-worker-retry-logic The queue worker now retries failed jobs up to 10 times instead of a single attempt. This improves reliability by handling transient failures gracefully."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "val-cache-ttl",
+     "shape": "value_replaced",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 318,
+     "returned": [
+      "cache-expiration-time Cache entries are set to expire after 15 minutes, balancing performance with data freshness.",
+      "cache-layer-expiration The cache layer was removed and entries now expire after 15 minutes. This change was tested with the full test suite which remained green, indicating no regressions were introduced."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 2,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "val-port",
+     "shape": "value_replaced",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 190,
+     "returned": [
+      "dev-server-port-configuration The development server listens on port 8080, not the previously assumed port. This was confirmed by returning to the dev server and verifying the configuration."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "val-region",
+     "shape": "value_replaced",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 231,
+     "returned": [
+      "deployment-in-eu-west-1 The service was moved from its previous deployment location to us-east-2. This change touched three files but none were config files, indicating a deployment repositioning rather than a configuration update."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "val-py-version",
+     "shape": "value_replaced",
+     "n_hits": 0,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": false,
+     "chars_returned": 0,
+     "returned": [],
+     "current_live": false,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": true,
+     "notes_written": 0,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "val-replicas",
+     "shape": "value_replaced",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 205,
+     "returned": [
+      "api-capacity-replica-setup The API was successfully scaled to 12 replicas after a load test. The rollout was done using the usual staged release process, ensuring minimal disruption and stable performance."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "val-lr",
+     "shape": "value_replaced",
+     "n_hits": 0,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": false,
+     "chars_returned": 0,
+     "returned": [],
+     "current_live": false,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": true,
+     "notes_written": 0,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "val-chunk",
+     "shape": "value_replaced",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 326,
+     "returned": [
+      "ingestion-chunk-size-decided The ingestion chunk size was decided to be 1024 tokens after review, overriding the previous 512-token setting.",
+      "document-chunking-at-512-tokens Initial document chunking was set at 512 tokens, but this was updated to 1024 tokens after review. The change was approved with only one rename requested."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 2,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "val-quorum",
+     "shape": "value_replaced",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 302,
+     "returned": [
+      "cluster-quorum-requirement After resizing the cluster, a quorum of 5 nodes is required for operation. This was previously misjudged and documented in the README.",
+      "quorum-requirement-update The cluster's quorum requirement was updated from an earlier incorrect value to 5 nodes after the resize operation."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 2,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "val-license",
+     "shape": "value_replaced",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 82,
+     "returned": [
+      "project-licensing-decided The project was relicensed to Apache-2.0 after a review."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "val-branch",
+     "shape": "value_replaced",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": false,
+     "chars_returned": 247,
+     "returned": [
+      "branch-renaming-protocol When a repository's default branch is renamed, it's important to update local configurations and inform team members to avoid confusion. A note was left in the tracker to prevent future team members from redoing this work."
+     ],
+     "current_live": false,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": true,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "app-cache-store",
+     "shape": "approach_abandoned",
+     "n_hits": 2,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": true,
+     "chars_returned": 335,
+     "returned": [
+      "redis-session-caching Session data is cached in Redis as of today. This was documented in the README section which was already stale.",
+      "in-process-lru-cache-replacement Redis was replaced with an in-process LRU cache to improve performance and reduce external dependencies. The change touched three files and did not affect configuration."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 2,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "app-auth",
+     "shape": "approach_abandoned",
+     "n_hits": 2,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": true,
+     "chars_returned": 472,
+     "returned": [
+      "jwt-authentication-with-hs256 The system uses JWT tokens with HS256 signing for authentication. This approach provides a secure way to manage user sessions without relying on cookies, ensuring stateless authentication.",
+      "opaque-session-cookies-backed-by-database Authentication was changed from JWT to opaque session cookies stored in the database. This decision improves security by reducing exposure of sensitive tokens and allows for better control over session lifecycle."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 2,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "app-bundler",
+     "shape": "approach_abandoned",
+     "n_hits": 2,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": true,
+     "chars_returned": 348,
+     "returned": [
+      "use-webpack-for-frontend-bundling It was decided to use Webpack for bundling the frontend code, which aligns with current project standards and ensures compatibility.",
+      "frontend-bundling-with-vite The frontend is now bundled with Vite instead of Webpack. This change was part of a staged release process and the previous Webpack setup did not survive."
+     ],
+     "current_live": true,
+     "current_retired": true,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 3,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "app-orm",
+     "shape": "approach_abandoned",
+     "n_hits": 3,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 633,
+     "returned": [
+      "incorrect-assumption-about-data-access The earlier assumption that SQLAlchemy ORM would be used for data access was incorrect, as the implementation was rewritten to use hand-written SQL with asyncpg. Verify actual implementation before making assumptions about data access strategy.",
+      "asyncpg-for-data-access Hand-written SQL with asyncpg was chosen over SQLAlchemy ORM for data access. This approach provides more control and better performance for the specific use case.",
+      "use-asyncpg-for-data-access Decision to use asyncpg with hand-written SQL for data access instead of SQLAlchemy ORM, based on performance and control requirements."
+     ],
+     "current_live": true,
+     "current_retired": true,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 5,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "app-queue",
+     "shape": "approach_abandoned",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 188,
+     "returned": [
+      "background-jobs-with-celery Background jobs are implemented using Celery with a Postgres-backed queue. This approach ensures reliable job processing and persistence across system restarts."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "app-ci",
+     "shape": "approach_abandoned",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 191,
+     "returned": [
+      "ci-migration-to-github-actions The continuous integration system was migrated from an old platform to GitHub Actions. This change was documented in the README file which was previously stale."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "app-search",
+     "shape": "approach_abandoned",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 209,
+     "returned": [
+      "postgres-fulltext-search Search functionality is powered by Postgres full-text search, which was confirmed to work correctly after running the full test suite. The system remains stable with all tests passing."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "app-styling",
+     "shape": "approach_abandoned",
+     "n_hits": 2,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": true,
+     "chars_returned": 417,
+     "returned": [
+      "styled-components-usage Components are styled with styled-components, which provides a clean and maintainable way to write CSS-in-JS. This approach allows for better scoping of styles and easier component reuse.",
+      "tailwind-styling-in-components Components are styled using Tailwind utility classes instead of styled-components. This approach was chosen to improve consistency and reduce the complexity of CSS management."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 2,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "app-packaging",
+     "shape": "approach_abandoned",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 350,
+     "returned": [
+      "package-build-with-hatchling The package is built using hatchling and published by CI. This approach was confirmed as the correct method after a previous attempt with poetry failed to persist.",
+      "use-hatchling-for-packaging The decision was made to use hatchling for packaging instead of poetry, as the latter did not survive in the final implementation."
+     ],
+     "current_live": true,
+     "current_retired": true,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 4,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "app-state",
+     "shape": "approach_abandoned",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 263,
+     "returned": [
+      "frontend-global-state-in-zustand Global state management was moved from Redux to Zustand stores, which provides a more lightweight and flexible approach for managing application state in the frontend. This change improves performance and reduces boilerplate code."
+     ],
+     "current_live": true,
+     "current_retired": true,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 2,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "app-infra",
+     "shape": "approach_abandoned",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 455,
+     "returned": [
+      "infrastructure-provisioning-with-pulumi Infrastructure is provisioned with Pulumi in TypeScript, rolled out behind a staged release. This approach allows for better control and testing of infrastructure changes before full deployment.",
+      "pulumi-for-infrastructure The decision was made to use Pulumi for infrastructure provisioning in TypeScript, replacing the previous Terraform approach. This change allows for more dynamic and testable infrastructure code."
+     ],
+     "current_live": true,
+     "current_retired": true,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 3,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "app-migrations",
+     "shape": "approach_abandoned",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 220,
+     "returned": [
+      "schema-migration-through-alembic Schema migrations are handled via plain numbered SQL files applied by a shell script. This approach was confirmed to be working after checking dashboards for an hour following the change."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "app-serialisation",
+     "shape": "approach_abandoned",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 165,
+     "returned": [
+      "protobuf-message-serialization Messages are serialized as newline-delimited JSON. This format was confirmed after a review and one rename was requested but approved."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "app-secrets",
+     "shape": "approach_abandoned",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 316,
+     "returned": [
+      "secrets-from-vault-at-boot Secrets are injected as environment variables by the orchestrator, not loaded at runtime. This was documented in the README section that was already stale.",
+      "staged-release-rollout The rollout strategy for the release was decided to be staged, ensuring gradual deployment and risk mitigation."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 2,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "app-e2e",
+     "shape": "approach_abandoned",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 376,
+     "returned": [
+      "end-to-end-tests-with-playwright End-to-end tests are driven by Playwright and the full test suite was run successfully, remaining green. This confirms that the testing setup is stable and functional.",
+      "end-to-end-tests-with-selenium End-to-end tests were initially planned to use Selenium, but this approach did not survive further development and Playwright was chosen instead."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 2,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "ret-beta-flag",
+     "shape": "retracted_no_replacement",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 375,
+     "returned": [
+      "beta-dashboard-feature-flag The beta_dashboard feature flag was used to control access to a new UI component. After the new UI became unconditional, the flag was removed.",
+      "feature-flag-gating Using feature flags to gate new UI components allows for gradual rollout and rollback. However, once the feature is fully rolled out, the flag should be removed to avoid technical debt."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 2,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "ret-legacy-endpoint",
+     "shape": "retracted_no_replacement",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 222,
+     "returned": [
+      "csv-export-endpoint-removed The /v1/export endpoint was removed without replacement, affecting three files in the codebase. This change was made without a config file update, indicating a direct code modification approach."
+     ],
+     "current_live": true,
+     "current_retired": true,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 2,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "ret-telemetry",
+     "shape": "retracted_no_replacement",
+     "n_hits": 0,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": false,
+     "chars_returned": 0,
+     "returned": [],
+     "current_live": false,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": true,
+     "notes_written": 0,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "ret-mirror",
+     "shape": "retracted_no_replacement",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 230,
+     "returned": [
+      "read-replica-for-analytics Using a read replica for analytics queries reduces load on the primary database. However, when the replica was decommissioned, analytics reads had to hit the primary directly, causing performance issues."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "ret-plugin-api",
+     "shape": "retracted_no_replacement",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 398,
+     "returned": [
+      "third-party-plugins-loading The plugin system was removed before version 1.0 and never shipped, which led to a lack of extensibility in the system. This decision was reversed later but no progress was observed after an hour.",
+      "removal-of-plugin-system The plugin system was removed before the 1.0 release and never shipped, which was a decision made to simplify the architecture and reduce complexity."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 2,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "ret-mobile",
+     "shape": "retracted_no_replacement",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 188,
+     "returned": [
+      "ios-client-sync-engine The iOS client was discontinued, and only the web app remains. This decision was made to focus resources on the web app and avoid maintaining two separate codebases."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "ret-cron",
+     "shape": "retracted_no_replacement",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 412,
+     "returned": [
+      "nightly-cron-audit-log-compaction The system was initially configured to compact audit logs nightly, but this decision was reverted. The audit log is now append-only and persists forever. This pattern documents the change in approach for handling audit logs.",
+      "staged-release-rollout The staged rollout approach was decided upon for releasing updates, which allows gradual deployment and rollback in case of issues."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 2,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "ret-grpc",
+     "shape": "retracted_no_replacement",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 202,
+     "returned": [
+      "grpc-communication-setup The system was initially set up with gRPC communication, but it was later replaced with plain HTTP. This change was verified by running the full test suite which remained green."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "ret-sso",
+     "shape": "retracted_no_replacement",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 177,
+     "returned": [
+      "okta-integration-cancelled The Okta integration was cancelled, and staff now use ordinary accounts instead. Check the integration status before making changes to access control."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "ret-webhook",
+     "shape": "retracted_no_replacement",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 179,
+     "returned": [
+      "webhook-order-integration The partner integration was terminated and the webhook deleted, which required changes to three files. The change touched none of them were config files."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "ret-gpu-node",
+     "shape": "retracted_no_replacement",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 229,
+     "returned": [
+      "a100-node-reservation-for-training Reserved GPU nodes were initially considered for training but later abandoned in favor of per-run capacity renting. This approach proved more flexible and cost-effective for the project's needs."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "ret-cli-flag",
+     "shape": "retracted_no_replacement",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 388,
+     "returned": [
+      "retain-legacy-cli-output The decision was made to retain legacy CLI output behavior during the transition, even though the --legacy flag was removed in version 3.0.",
+      "cli-flag-legacy-output-format The --legacy flag was dropped in version 3.0 with no equivalent, and the CLI behavior was updated to remove legacy output formatting. This change was rolled out through a staged release process."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 2,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "ret-audit-ui",
+     "shape": "retracted_no_replacement",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 224,
+     "returned": [
+      "admin-panel-audit-filtering The audit tab was removed from the admin panel entirely, which required re-evaluating how audit data is accessed and filtered. This change necessitated a shift in approach to dashboard monitoring."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "ret-i18n",
+     "shape": "retracted_no_replacement",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 379,
+     "returned": [
+      "english-only-app The decision was made to drop all translations and make the app English-only, as requested by the reviewer after a review session.",
+      "localization-pair-programming The localization process was reviewed and updated in a pair programming session. The team decided to drop translations and make the app English-only, which was approved by the reviewer after one rename."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 2,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "ret-sandbox",
+     "shape": "retracted_no_replacement",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": false,
+     "chars_returned": 210,
+     "returned": [
+      "api-endpoint-changes-documentation When an API changes, it's crucial to update documentation immediately. The previous README was stale and needed updating after the sandbox shutdown and shift to partner stubs."
+     ],
+     "current_live": false,
+     "current_retired": false,
+     "current_demoted": true,
+     "current_absent": false,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "nar-retry-scope",
+     "shape": "narrowed",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 199,
+     "returned": [
+      "http-client-retry-logic The HTTP client retries only on 5xx responses and never retries 4xx responses. This behavior was verified by running the full test suite which remained green after the change."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "nar-cache-scope",
+     "shape": "narrowed",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 368,
+     "returned": [
+      "api-response-caching Only GET responses are cached, while writes bypass the cache entirely. This prevents cache pollution from write operations and ensures read consistency.",
+      "cache-all-api-responses The decision was reversed to only cache GET responses, with writes bypassing the cache entirely. This ensures that write operations do not interfere with cached read data."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 2,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "nar-audit-scope",
+     "shape": "narrowed",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 310,
+     "returned": [
+      "audit-log-table-changes Only changes to billing tables are audited now, as opposed to previous auditing that did not survive. This change touched three files and none were config.",
+      "document-audit-decision-in-readme The decision to audit only billing table changes was made and should be documented in the README."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 2,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "nar-gpu-scope",
+     "shape": "narrowed",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 180,
+     "returned": [
+      "gpu-utilization-threshold GPU is only used for jobs with more than 10M parameters; smaller models run on CPU. This was confirmed during the session and aligns with system behavior."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 2,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "nar-lint-scope",
+     "shape": "narrowed",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 257,
+     "returned": [
+      "pre-commit-hook-lints-repository The linting hook now only lints staged files, which improves performance and ensures that only intentional changes are validated. This approach aligns with standard Git workflows and reduces noise in the development process."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "nar-notify-scope",
+     "shape": "narrowed",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 215,
+     "returned": [
+      "deploy-failure-alerting Production deploy failures trigger on-call alerts, while staging failures go to Slack. This week's change was confirmed by monitoring dashboards for an hour after deployment with no movement."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "nar-encrypt-scope",
+     "shape": "narrowed",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 174,
+     "returned": [
+      "encryption-at-rest-bucket-scope Encryption at rest applies only to files in the private bucket, not globally. This was confirmed after a review and a rename request was made."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "nar-index-scope",
+     "shape": "narrowed",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 190,
+     "returned": [
+      "index-documentation-update Reversing an earlier call on the index to ensure it covers documents from the last 90 days only, and documenting this in the README section that was already stale."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "nar-backup-scope",
+     "shape": "narrowed",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 319,
+     "returned": [
+      "nightly-backup-database-dump The nightly backup process was updated to cover the primary database only. This change was verified by running the full test suite, which remained green.",
+      "backups-decision-confirmed The decision to limit the nightly backup to the primary database was confirmed after testing and verification."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 2,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "nar-ratelimit-scope",
+     "shape": "narrowed",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 426,
+     "returned": [
+      "rate-limits-apply-universally Previously, it was decided that rate limits apply universally to all callers. This decision is now corrected to reflect that rate limits only apply to unauthenticated callers.",
+      "rate-limiting-applies-to-unauthenticated-callers Rate limits are enforced only for unauthenticated callers, not all callers as previously believed. This pattern clarifies the scope of rate limiting behavior in the system."
+     ],
+     "current_live": true,
+     "current_retired": true,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 3,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "nar-compress-scope",
+     "shape": "narrowed",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 182,
+     "returned": [
+      "gzip-response-handling Only responses above 8 KB are compressed, which reduces unnecessary overhead for smaller responses. This change touched three files but none were config files."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "nar-mfa-scope",
+     "shape": "narrowed",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 219,
+     "returned": [
+      "mfa-required-for-admin-users-only MFA is now required only for accounts with admin scope, not all users. This change was implemented to reduce friction for regular users while maintaining security for privileged access."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 2,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "nar-replay-scope",
+     "shape": "narrowed",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 180,
+     "returned": [
+      "event-log-replay-on-boot The consumer replays only events since the last checkpoint during boot. This ensures efficient recovery and avoids redundant processing of historical data."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "nar-shard-scope",
+     "shape": "narrowed",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": false,
+     "chars_returned": 188,
+     "returned": [
+      "sharding-per-tenant Only tenants with more than 50,000 records are assigned a dedicated shard. This approach reduces overhead for smaller tenants while ensuring performance for large ones."
+     ],
+     "current_live": false,
+     "current_retired": false,
+     "current_demoted": true,
+     "current_absent": false,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "nar-trace-scope",
+     "shape": "narrowed",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 355,
+     "returned": [
+      "trace-all-requests Decided to trace all requests instead of sampling, but the current implementation only traces one in a hundred requests due to performance concerns.",
+      "end-to-end-request-tracing Implemented end-to-end request tracing with sampling, where one in a hundred requests is traced. This approach was approved by the reviewer after a minor rename."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 2,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "ctl-db-cache",
+     "shape": "control",
+     "n_hits": 5,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 861,
+     "returned": [
+      "postgresql-16-as-primary-database PostgreSQL 16 was chosen as the primary database for the project, likely due to its stability and feature set compared to previous versions.",
+      "postgresql-16-primary-database The primary database for the project was settled on PostgreSQL 16. This choice ensures compatibility with modern features and performance optimizations.",
+      "redis-cache-layer-documentation The Redis 7 cache layer was documented in the README, which was already stale. This ensures that the cache layer is properly represented in the project documentation.",
+      "staged-release-deployment The rollout was performed behind a staged release process, which allows for controlled deployment and reduces risk of system-wide failures.",
+      "staged-release-process A staged release approach was chosen to ensure a smooth and safe rollout of changes, minimizing potential disruptions."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 5,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "ctl-lang-test",
+     "shape": "control",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 273,
+     "returned": [
+      "rust-service-implementation The implementation of a Rust service was completed successfully, with integration tests written in Python and passing after the full test suite run. This confirms that the service can be built and tested reliably using the established toolchain."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "ctl-port-pair",
+     "shape": "control",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 419,
+     "returned": [
+      "api-listens-on-port-8443 The API was confirmed to listen on port 8443, which is a key configuration detail for networking setup. This was verified during a review process where the reviewer approved the change after one rename.",
+      "metrics-endpoint-listens-on-port-9100 The metrics endpoint was configured to listen on port 9100. This is a standard port for Prometheus metrics and aligns with common observability practices."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 2,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "ctl-env",
+     "shape": "control",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 400,
+     "returned": [
+      "production-deploys-on-tagged-release Production deployments are now triggered by tagged releases instead of merge events. This change affects the deployment pipeline and ensures that only stable, versioned releases are deployed to production.",
+      "staging-deploy-on-merge Staging environment deploys automatically on every merge to main branch. This was documented in the README which was previously stale."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 2,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "ctl-model",
+     "shape": "control",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 425,
+     "returned": [
+      "embedder-configuration-validation The embedder was confirmed to be bge-m3 after clearing the open question on models. Running the full test suite afterwards kept it green, confirming no regressions were introduced.",
+      "cross-encoder-reranker-configuration The reranker is a cross-encoder, which requires specific configuration to align with the embedding model. This was validated during ingestion and confirmed to work correctly."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 2,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "ctl-storage",
+     "shape": "control",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 356,
+     "returned": [
+      "storage-decision-finalized Finalized the decision to use Glacier for database backups, aligning with long-term archival requirements and cost efficiency.",
+      "s3-storage-configuration Configured S3 storage with Glacier for database backups, rolled out in a staged release. This ensures long-term archival of backups while maintaining performance for active data."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 2,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "ctl-auth-pair",
+     "shape": "control",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 117,
+     "returned": [
+      "admin-panel-mfa-requirement The admin panel requires MFA for security. This pattern was already noted and is not new."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "ctl-fmt",
+     "shape": "control",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 198,
+     "returned": [
+      "ruff-formatting-for-python Python code in the project is formatted using ruff, which ensures consistent style and improves readability. This tool was integrated into the workflow during the session."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "ctl-obs",
+     "shape": "control",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": false,
+     "chars_returned": 142,
+     "returned": [
+      "logs-exported-to-loki Logs are shipped to Loki for observability. The documentation was updated in the README section which was already stale."
+     ],
+     "current_live": false,
+     "current_retired": true,
+     "current_demoted": true,
+     "current_absent": false,
+     "notes_written": 2,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "ctl-limits",
+     "shape": "control",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 404,
+     "returned": [
+      "upload-size-limit-25mb The upload size limit is set to 25 MB as of today. This was confirmed by reviewing the current setup and checking dashboards for an hour afterward with no changes observed.",
+      "request-rate-limit-100-per-minute The system enforces a request rate limit of 100 requests per minute to prevent overload. This was confirmed by running the full test suite which stayed green after the change."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 2,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "ctl-sched",
+     "shape": "control",
+     "n_hits": 0,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": false,
+     "chars_returned": 0,
+     "returned": [],
+     "current_live": false,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": true,
+     "notes_written": 0,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "ctl-clients",
+     "shape": "control",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 391,
+     "returned": [
+      "cli-distribution-through-homebrew The CLI is distributed through Homebrew, which was confirmed by reviewing the code and documentation. This ensures a consistent and reliable distribution method for users.",
+      "desktop-app-signed-installer The desktop application ships as a signed installer, which is a key part of the distribution process. This approach ensures trust and security for end users."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 2,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "ctl-queue-pair",
+     "shape": "control",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 250,
+     "returned": [
+      "ingest-queue-nats-backend The ingest queue is backed by NATS, which provides reliable message delivery and supports horizontal scaling. This pattern ensures that ingestion tasks are processed asynchronously without blocking the main application flow."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "ctl-doc",
+     "shape": "control",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 187,
+     "returned": [
+      "api-reference-generation-from-openapi The API reference is generated from OpenAPI specifications. This approach ensures consistency and reduces manual effort in documentation maintenance."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "ctl-runtime",
+     "shape": "control",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 227,
+     "returned": [
+      "python-3.13-worker-runtime The worker runs successfully on Python 3.13, confirming compatibility with the latest runtime version. This ensures that future development and deployment can proceed without Python version conflicts."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "ctl-net",
+     "shape": "control",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": false,
+     "chars_returned": 223,
+     "returned": [
+      "nat-gateway-egress-configuration Egress traffic now goes through a NAT gateway, which was a settled networking detail during code review. This configuration change affects how outbound connections are handled in the system."
+     ],
+     "current_live": false,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": true,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "ctl-review",
+     "shape": "control",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": false,
+     "chars_returned": 325,
+     "returned": [
+      "pull-request-approval-policy The pull request approval policy was already documented and enforced, but the changelog entry requirement was not explicitly stated in the README.",
+      "signed-changelog-entry-for-release Every release requires a signed changelog entry. This was documented in the README section which was already stale."
+     ],
+     "current_live": false,
+     "current_retired": false,
+     "current_demoted": true,
+     "current_absent": false,
+     "notes_written": 2,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "ctl-metrics",
+     "shape": "control",
+     "n_hits": 3,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 499,
+     "returned": [
+      "request-latency-tracking Request latency is tracked as a histogram, which provides detailed insights into performance distribution. The implementation now matches the intended design.",
+      "queue-depth-tracking Queue depth is tracked as a gauge for observability. This pattern was added independently of request-latency-tracking and helps monitor system load.",
+      "observability-decision The decision was made to track request latency as a histogram for observability purposes, aligning with system design goals."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 3,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "ctl-store",
+     "shape": "control",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 279,
+     "returned": [
+      "session-state-in-localstorage Storing session state in localStorage allows persistence across page reloads and provides a reliable way to maintain user context during development. This approach is particularly useful for debugging and maintaining consistent application behavior."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    },
+    {
+     "id": "ctl-alerting",
+     "shape": "control",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 133,
+     "returned": [
+      "paging-alerts-to-pagerduty Paging alerts are configured to go to PagerDuty. This was documented in the existing stale README section."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false,
+     "notes_written": 1,
+     "notes_in_cyrillic": 0
+    }
+   ],
+   "n_supersession": 60,
+   "n_control": 20,
+   "stale_rate": 0.0667,
+   "stale_ci": [
+    0.0262,
+    0.1593
+   ],
+   "current_rate": 0.8833,
+   "current_ci": [
+    0.7782,
+    0.9423
+   ],
+   "control_miss_rate": 0.2,
+   "control_miss_ci": [
+    0.0807,
+    0.416
+   ],
+   "over_retraction_rate": 0.15,
+   "over_retraction_ci": [
+    0.0524,
+    0.3604
+   ],
+   "mean_chars_returned": 265.9,
+   "max_chars_returned": 861,
+   "stale_at_rank_1": 4,
+   "control_retired_by_memory": 1,
+   "control_demoted_by_merge": 2,
+   "control_never_written": 2,
+   "control_written_but_unranked": 0,
+   "notes_written": 123,
+   "notes_in_cyrillic": 0,
+   "language_drift_rate": 0.0,
+   "cases_touched_by_drift": 0,
+   "seconds": 259.8,
+   "config": "ollama qwen3-coder:30b + bge-m3, k=5",
+   "store_bytes": 137710
+  },
+  "naive": {
+   "rows": [
+    {
+     "id": "val-http-timeout",
+     "shape": "value_replaced",
+     "n_hits": 3,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": true,
+     "chars_returned": 238,
+     "returned": [
+      "Spent the session on the API client. Settled it: the HTTP client timeout is 30 seconds.",
+      "Came back to the API client. That earlier decision is off: the HTTP client timeout is 5 seconds.",
+      "Ran the full test suite afterwards and it stayed green."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "val-pg-version",
+     "shape": "value_replaced",
+     "n_hits": 3,
+     "stale_returned": true,
+     "stale_rank": 2,
+     "current_returned": true,
+     "chars_returned": 252,
+     "returned": [
+      "Reopened the database after the last review. The new position: production was upgraded to PostgreSQL 16.",
+      "Worked through the database today. The outcome: we run PostgreSQL 14 in production.",
+      "Left a note in the tracker so the next person does not redo this."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "val-batch-size",
+     "shape": "value_replaced",
+     "n_hits": 2,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": true,
+     "chars_returned": 161,
+     "returned": [
+      "Picked up the the training job thread again. Confirmed that the training batch size is 32.",
+      "the training job changed this week. The training batch size is now 128."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "val-node-version",
+     "shape": "value_replaced",
+     "n_hits": 3,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": true,
+     "chars_returned": 226,
+     "returned": [
+      "Reviewed how the frontend build is set up. As of today, the build targets Node 18.",
+      "Had to revisit the frontend build. What holds now is that the build targets Node 22.",
+      "The reviewer asked for one rename and otherwise approved it."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "val-retry-count",
+     "shape": "value_replaced",
+     "n_hits": 4,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": true,
+     "chars_returned": 284,
+     "returned": [
+      "Cleared the open question on the queue worker: the worker retries a failed job 3 times.",
+      "Reversed the earlier call on the queue worker: the worker now retries a failed job 10 times.",
+      "Rolled it out behind the usual staged release.",
+      "Documented it in the README section that was already stale."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "val-cache-ttl",
+     "shape": "value_replaced",
+     "n_hits": 2,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": true,
+     "chars_returned": 195,
+     "returned": [
+      "Wrote up the the cache layer decision. Cache entries expire after 60 seconds, and the code now matches.",
+      "Follow-up on the cache layer, and it did not survive. Cache entries expire after 15 minutes."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "val-port",
+     "shape": "value_replaced",
+     "n_hits": 4,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": true,
+     "chars_returned": 305,
+     "returned": [
+      "Spent the session on the dev server. Settled it: the dev server listens on port 3000.",
+      "Came back to the dev server. That earlier decision is off: the dev server listens on port 8080.",
+      "Left a note in the tracker so the next person does not redo this.",
+      "The reviewer asked for one rename and otherwise approved it."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "val-region",
+     "shape": "value_replaced",
+     "n_hits": 4,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": true,
+     "chars_returned": 306,
+     "returned": [
+      "Worked through the deployment today. The outcome: the service is deployed in eu-west-1.",
+      "Documented it in the README section that was already stale.",
+      "Reopened the deployment after the last review. The new position: the service was moved to us-east-2.",
+      "The change touched three files and none of them were config."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "val-py-version",
+     "shape": "value_replaced",
+     "n_hits": 2,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": true,
+     "chars_returned": 152,
+     "returned": [
+      "Picked up the the toolchain thread again. Confirmed that the project pins Python 3.11.",
+      "the toolchain changed this week. The project now pins Python 3.13."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "val-replicas",
+     "shape": "value_replaced",
+     "n_hits": 2,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": true,
+     "chars_returned": 173,
+     "returned": [
+      "Reviewed how capacity is set up. As of today, the API runs with 4 replicas.",
+      "Had to revisit capacity. What holds now is that the API runs with 12 replicas after the load test."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "val-lr",
+     "shape": "value_replaced",
+     "n_hits": 2,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": true,
+     "chars_returned": 142,
+     "returned": [
+      "Cleared the open question on training: the learning rate is 3e-4.",
+      "Reversed the earlier call on training: the learning rate was lowered to 5e-5."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "val-chunk",
+     "shape": "value_replaced",
+     "n_hits": 2,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": true,
+     "chars_returned": 184,
+     "returned": [
+      "Wrote up the ingestion decision. Documents are chunked at 512 tokens, and the code now matches.",
+      "Follow-up on ingestion, and it did not survive. Documents are chunked at 1024 tokens now."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "val-quorum",
+     "shape": "value_replaced",
+     "n_hits": 4,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": true,
+     "chars_returned": 300,
+     "returned": [
+      "Spent the session on the cluster. Settled it: the cluster needs a quorum of 3 nodes.",
+      "Came back to the cluster. That earlier decision is off: the cluster needs a quorum of 5 nodes after the resize.",
+      "Rolled it out behind the usual staged release.",
+      "Documented it in the README section that was already stale."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "val-license",
+     "shape": "value_replaced",
+     "n_hits": 4,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": true,
+     "chars_returned": 299,
+     "returned": [
+      "Worked through licensing today. The outcome: the project is released under AGPL-3.0.",
+      "Reopened licensing after the last review. The new position: the project was relicensed to Apache-2.0.",
+      "Checked the dashboards for an hour after and nothing moved.",
+      "Ran the full test suite afterwards and it stayed green."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "val-branch",
+     "shape": "value_replaced",
+     "n_hits": 4,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": true,
+     "chars_returned": 285,
+     "returned": [
+      "Picked up the the repository thread again. Confirmed that the default branch is master.",
+      "the repository changed this week. The default branch was renamed to main.",
+      "The reviewer asked for one rename and otherwise approved it.",
+      "Left a note in the tracker so the next person does not redo this."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "app-cache-store",
+     "shape": "approach_abandoned",
+     "n_hits": 2,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": true,
+     "chars_returned": 170,
+     "returned": [
+      "Reviewed how caching is set up. As of today, we cache session data in Redis.",
+      "Had to revisit caching. What holds now is that we replaced Redis with an in-process LRU cache."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "app-auth",
+     "shape": "approach_abandoned",
+     "n_hits": 2,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": true,
+     "chars_returned": 209,
+     "returned": [
+      "Cleared the open question on authentication: authentication uses JWT tokens signed with HS256.",
+      "Reversed the earlier call on authentication: authentication moved to opaque session cookies backed by the database."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "app-bundler",
+     "shape": "approach_abandoned",
+     "n_hits": 4,
+     "stale_returned": true,
+     "stale_rank": 2,
+     "current_returned": true,
+     "chars_returned": 293,
+     "returned": [
+      "Left a note in the tracker so the next person does not redo this.",
+      "Wrote up the the build decision. The frontend is bundled with Webpack, and the code now matches.",
+      "Follow-up on the build, and it did not survive. The frontend is bundled with Vite now.",
+      "Rolled it out behind the usual staged release."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "app-orm",
+     "shape": "approach_abandoned",
+     "n_hits": 4,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": true,
+     "chars_returned": 324,
+     "returned": [
+      "Spent the session on data access. Settled it: data access goes through the SQLAlchemy ORM.",
+      "Came back to data access. That earlier decision is off: data access was rewritten as hand-written SQL with asyncpg.",
+      "The change touched three files and none of them were config.",
+      "Checked the dashboards for an hour after and nothing moved."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "app-queue",
+     "shape": "approach_abandoned",
+     "n_hits": 2,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": true,
+     "chars_returned": 216,
+     "returned": [
+      "Worked through background work today. The outcome: background jobs run on Celery with RabbitMQ.",
+      "Reopened background work after the last review. The new position: background jobs run on a Postgres-backed queue instead."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "app-ci",
+     "shape": "approach_abandoned",
+     "n_hits": 2,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": true,
+     "chars_returned": 161,
+     "returned": [
+      "Picked up the continuous integration thread again. Confirmed that CI runs on Jenkins.",
+      "continuous integration changed this week. CI was migrated to GitHub Actions."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "app-search",
+     "shape": "approach_abandoned",
+     "n_hits": 2,
+     "stale_returned": true,
+     "stale_rank": 2,
+     "current_returned": true,
+     "chars_returned": 172,
+     "returned": [
+      "Had to revisit search. What holds now is that search is powered by Postgres full-text search.",
+      "Reviewed how search is set up. As of today, search is powered by Elasticsearch."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "app-styling",
+     "shape": "approach_abandoned",
+     "n_hits": 2,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": true,
+     "chars_returned": 171,
+     "returned": [
+      "Cleared the open question on the UI: components are styled with styled-components.",
+      "Reversed the earlier call on the UI: components are styled with Tailwind utility classes."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "app-packaging",
+     "shape": "approach_abandoned",
+     "n_hits": 4,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": true,
+     "chars_returned": 329,
+     "returned": [
+      "Wrote up the packaging decision. The package is built and published with Poetry, and the code now matches.",
+      "Follow-up on packaging, and it did not survive. The package is built with hatchling and published by CI.",
+      "Documented it in the README section that was already stale.",
+      "The change touched three files and none of them were config."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "app-state",
+     "shape": "approach_abandoned",
+     "n_hits": 2,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": true,
+     "chars_returned": 171,
+     "returned": [
+      "Spent the session on the frontend. Settled it: global state is held in Redux.",
+      "Came back to the frontend. That earlier decision is off: global state moved to Zustand stores."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "app-infra",
+     "shape": "approach_abandoned",
+     "n_hits": 2,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": true,
+     "chars_returned": 212,
+     "returned": [
+      "Worked through provisioning today. The outcome: infrastructure is provisioned with Terraform.",
+      "Reopened provisioning after the last review. The new position: infrastructure is provisioned with Pulumi in TypeScript."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "app-migrations",
+     "shape": "approach_abandoned",
+     "n_hits": 2,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": true,
+     "chars_returned": 195,
+     "returned": [
+      "Picked up the the schema thread again. Confirmed that schema migrations run through Alembic.",
+      "the schema changed this week. Schema migrations are plain numbered SQL files applied by a shell script."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "app-serialisation",
+     "shape": "approach_abandoned",
+     "n_hits": 2,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": true,
+     "chars_returned": 194,
+     "returned": [
+      "Reviewed how the wire format is set up. As of today, messages are serialised as Protobuf.",
+      "Had to revisit the wire format. What holds now is that messages are serialised as newline-delimited JSON."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "app-secrets",
+     "shape": "approach_abandoned",
+     "n_hits": 2,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": true,
+     "chars_returned": 188,
+     "returned": [
+      "Cleared the open question on secrets: secrets are read from HashiCorp Vault at boot.",
+      "Reversed the earlier call on secrets: secrets are injected as environment variables by the orchestrator."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "app-e2e",
+     "shape": "approach_abandoned",
+     "n_hits": 4,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": true,
+     "chars_returned": 299,
+     "returned": [
+      "Wrote up the testing decision. End-to-end tests are driven by Selenium, and the code now matches.",
+      "Follow-up on testing, and it did not survive. End-to-end tests are driven by Playwright.",
+      "Checked the dashboards for an hour after and nothing moved.",
+      "Ran the full test suite afterwards and it stayed green."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "ret-beta-flag",
+     "shape": "retracted_no_replacement",
+     "n_hits": 4,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": true,
+     "chars_returned": 349,
+     "returned": [
+      "Spent the session on feature flags. Settled it: the beta_dashboard feature flag gates the new UI.",
+      "Came back to feature flags. That earlier decision is off: the beta_dashboard flag was deleted; the new UI is now unconditional.",
+      "Left a note in the tracker so the next person does not redo this.",
+      "The reviewer asked for one rename and otherwise approved it."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "ret-legacy-endpoint",
+     "shape": "retracted_no_replacement",
+     "n_hits": 2,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": true,
+     "chars_returned": 210,
+     "returned": [
+      "Worked through the API today. The outcome: the /v1/export endpoint streams a CSV of all records.",
+      "Reopened the API after the last review. The new position: the /v1/export endpoint was removed with no replacement."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "ret-telemetry",
+     "shape": "retracted_no_replacement",
+     "n_hits": 3,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": true,
+     "chars_returned": 260,
+     "returned": [
+      "Picked up the telemetry thread again. Confirmed that the client reports anonymous usage counters on startup.",
+      "telemetry changed this week. Usage reporting was stripped out entirely; the client sends nothing.",
+      "Ran the full test suite afterwards and it stayed green."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "ret-mirror",
+     "shape": "retracted_no_replacement",
+     "n_hits": 2,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": true,
+     "chars_returned": 235,
+     "returned": [
+      "Reviewed how infrastructure is set up. As of today, a read replica in ap-south-1 serves analytics queries.",
+      "Had to revisit infrastructure. What holds now is that the ap-south-1 replica was decommissioned; analytics reads hit the primary."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "ret-plugin-api",
+     "shape": "retracted_no_replacement",
+     "n_hits": 1,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": false,
+     "chars_returned": 100,
+     "returned": [
+      "Cleared the open question on extensibility: third-party plugins load through the entry_points group."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "ret-mobile",
+     "shape": "retracted_no_replacement",
+     "n_hits": 3,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": true,
+     "chars_returned": 276,
+     "returned": [
+      "Wrote up the clients decision. The iOS client shares the sync engine with the web app, and the code now matches.",
+      "Follow-up on clients, and it did not survive. The iOS client was discontinued; only the web app remains.",
+      "The reviewer asked for one rename and otherwise approved it."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "ret-cron",
+     "shape": "retracted_no_replacement",
+     "n_hits": 4,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": true,
+     "chars_returned": 321,
+     "returned": [
+      "Spent the session on scheduling. Settled it: a nightly cron compacts the audit log at 03:00.",
+      "Came back to scheduling. That earlier decision is off: nightly compaction was dropped; the audit log is append-only forever.",
+      "Rolled it out behind the usual staged release.",
+      "Documented it in the README section that was already stale."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "ret-grpc",
+     "shape": "retracted_no_replacement",
+     "n_hits": 1,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": false,
+     "chars_returned": 91,
+     "returned": [
+      "Worked through transport today. The outcome: internal services talk over gRPC on port 9090."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "ret-sso",
+     "shape": "retracted_no_replacement",
+     "n_hits": 3,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": true,
+     "chars_returned": 256,
+     "returned": [
+      "Picked up the access thread again. Confirmed that staff sign in through the Okta SAML integration.",
+      "access changed this week. The Okta integration was cancelled and staff use ordinary accounts.",
+      "Left a note in the tracker so the next person does not redo this."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "ret-webhook",
+     "shape": "retracted_no_replacement",
+     "n_hits": 4,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": true,
+     "chars_returned": 336,
+     "returned": [
+      "Reviewed how integrations is set up. As of today, a webhook posts every order to the partner endpoint.",
+      "Had to revisit integrations. What holds now is that the partner integration was terminated and the webhook deleted.",
+      "Documented it in the README section that was already stale.",
+      "The change touched three files and none of them were config."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "ret-gpu-node",
+     "shape": "retracted_no_replacement",
+     "n_hits": 3,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": true,
+     "chars_returned": 260,
+     "returned": [
+      "Cleared the open question on infrastructure: one A100 node is reserved for nightly training.",
+      "Reversed the earlier call on infrastructure: the reserved GPU node was given up; training rents capacity per run.",
+      "Ran the full test suite afterwards and it stayed green."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "ret-cli-flag",
+     "shape": "retracted_no_replacement",
+     "n_hits": 4,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": true,
+     "chars_returned": 323,
+     "returned": [
+      "Wrote up the the CLI decision. The --legacy flag restores the pre-2.0 output format, and the code now matches.",
+      "Follow-up on the CLI, and it did not survive. The --legacy flag was dropped in 3.0 with no equivalent.",
+      "Left a note in the tracker so the next person does not redo this.",
+      "Rolled it out behind the usual staged release."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "ret-audit-ui",
+     "shape": "retracted_no_replacement",
+     "n_hits": 4,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": true,
+     "chars_returned": 332,
+     "returned": [
+      "Spent the session on the admin panel. Settled it: the audit tab shows a filterable event history.",
+      "Came back to the admin panel. That earlier decision is off: the audit tab was taken out of the admin panel entirely.",
+      "The change touched three files and none of them were config.",
+      "Checked the dashboards for an hour after and nothing moved."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "ret-i18n",
+     "shape": "retracted_no_replacement",
+     "n_hits": 3,
+     "stale_returned": true,
+     "stale_rank": 2,
+     "current_returned": true,
+     "chars_returned": 267,
+     "returned": [
+      "Reopened localisation after the last review. The new position: translations were dropped; the app is English-only.",
+      "Worked through localisation today. The outcome: the app ships German and French translations.",
+      "The reviewer asked for one rename and otherwise approved it."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "ret-sandbox",
+     "shape": "retracted_no_replacement",
+     "n_hits": 4,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": true,
+     "chars_returned": 305,
+     "returned": [
+      "Picked up the the API thread again. Confirmed that a sandbox environment mirrors production for partners.",
+      "the API changed this week. The sandbox was shut down and partners test against their own stubs.",
+      "Rolled it out behind the usual staged release.",
+      "Documented it in the README section that was already stale."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "nar-retry-scope",
+     "shape": "narrowed",
+     "n_hits": 4,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": true,
+     "chars_returned": 325,
+     "returned": [
+      "Reviewed how the HTTP client is set up. As of today, the client retries every failed request.",
+      "Had to revisit the HTTP client. What holds now is that the client retries only on 5xx responses; 4xx is never retried.",
+      "Checked the dashboards for an hour after and nothing moved.",
+      "Ran the full test suite afterwards and it stayed green."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "nar-cache-scope",
+     "shape": "narrowed",
+     "n_hits": 2,
+     "stale_returned": true,
+     "stale_rank": 2,
+     "current_returned": true,
+     "chars_returned": 169,
+     "returned": [
+      "Reversed the earlier call on caching: only GET responses are cached; writes bypass the cache entirely.",
+      "Cleared the open question on caching: all API responses are cached."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "nar-audit-scope",
+     "shape": "narrowed",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 94,
+     "returned": [
+      "Follow-up on auditing, and it did not survive. Only changes to billing tables are audited now."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "nar-gpu-scope",
+     "shape": "narrowed",
+     "n_hits": 3,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": true,
+     "chars_returned": 267,
+     "returned": [
+      "Spent the session on the trainer. Settled it: the trainer runs on GPU for every job.",
+      "Came back to the trainer. That earlier decision is off: GPU is used only for jobs above 10M parameters; smaller ones run on CPU.",
+      "Ran the full test suite afterwards and it stayed green."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "nar-lint-scope",
+     "shape": "narrowed",
+     "n_hits": 4,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": true,
+     "chars_returned": 296,
+     "returned": [
+      "Worked through linting today. The outcome: the pre-commit hook lints the whole repository.",
+      "Left a note in the tracker so the next person does not redo this.",
+      "Reopened linting after the last review. The new position: the hook lints only the staged files.",
+      "Rolled it out behind the usual staged release."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "nar-notify-scope",
+     "shape": "narrowed",
+     "n_hits": 2,
+     "stale_returned": true,
+     "stale_rank": 2,
+     "current_returned": true,
+     "chars_returned": 202,
+     "returned": [
+      "alerting changed this week. Only production deploy failures page on-call; staging failures go to Slack.",
+      "Picked up the alerting thread again. Confirmed that every failed deploy pages the on-call engineer."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "nar-encrypt-scope",
+     "shape": "narrowed",
+     "n_hits": 2,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": true,
+     "chars_returned": 196,
+     "returned": [
+      "Reviewed how storage is set up. As of today, all uploaded files are encrypted at rest.",
+      "Had to revisit storage. What holds now is that encryption at rest applies only to files in the private bucket."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "nar-index-scope",
+     "shape": "narrowed",
+     "n_hits": 4,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": true,
+     "chars_returned": 291,
+     "returned": [
+      "Cleared the open question on the index: the search index covers every document in the store.",
+      "Reversed the earlier call on the index: the index covers documents from the last 90 days only.",
+      "Rolled it out behind the usual staged release.",
+      "Documented it in the README section that was already stale."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "nar-backup-scope",
+     "shape": "narrowed",
+     "n_hits": 4,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": true,
+     "chars_returned": 309,
+     "returned": [
+      "Wrote up the backups decision. The nightly backup dumps every database, and the code now matches.",
+      "Follow-up on backups, and it did not survive. The nightly backup covers the primary database only.",
+      "Checked the dashboards for an hour after and nothing moved.",
+      "Ran the full test suite afterwards and it stayed green."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "nar-ratelimit-scope",
+     "shape": "narrowed",
+     "n_hits": 2,
+     "stale_returned": true,
+     "stale_rank": 2,
+     "current_returned": true,
+     "chars_returned": 190,
+     "returned": [
+      "Came back to rate limiting. That earlier decision is off: rate limits apply only to unauthenticated callers.",
+      "Spent the session on rate limiting. Settled it: rate limits apply to every caller."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "nar-compress-scope",
+     "shape": "narrowed",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 101,
+     "returned": [
+      "Reopened transport after the last review. The new position: only responses above 8 KB are compressed."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "nar-mfa-scope",
+     "shape": "narrowed",
+     "n_hits": 2,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": true,
+     "chars_returned": 161,
+     "returned": [
+      "Picked up the security thread again. Confirmed that MFA is required for all users.",
+      "security changed this week. MFA is required only for accounts with admin scope."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "nar-replay-scope",
+     "shape": "narrowed",
+     "n_hits": 4,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": true,
+     "chars_returned": 324,
+     "returned": [
+      "Reviewed how the event log is set up. As of today, the consumer replays the entire event log on boot.",
+      "Had to revisit the event log. What holds now is that the consumer replays only events since the last checkpoint.",
+      "Left a note in the tracker so the next person does not redo this.",
+      "Rolled it out behind the usual staged release."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "nar-shard-scope",
+     "shape": "narrowed",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 92,
+     "returned": [
+      "Reversed the earlier call on sharding: only tenants above 50k records get a dedicated shard."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "nar-trace-scope",
+     "shape": "narrowed",
+     "n_hits": 1,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": false,
+     "chars_returned": 92,
+     "returned": [
+      "Wrote up the tracing decision. Every request is traced end to end, and the code now matches."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "ctl-db-cache",
+     "shape": "control",
+     "n_hits": 4,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 258,
+     "returned": [
+      "Spent the session on the stack. Settled it: the primary database is PostgreSQL 16.",
+      "Rolled it out behind the usual staged release.",
+      "Separate thread on the stack the same week: the cache layer is Redis 7.",
+      "Documented it in the README section that was already stale."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "ctl-lang-test",
+     "shape": "control",
+     "n_hits": 4,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 271,
+     "returned": [
+      "Worked through the stack today. The outcome: the service is written in Rust.",
+      "Also landed, unrelated to the above: the integration tests are written in Python.",
+      "Checked the dashboards for an hour after and nothing moved.",
+      "Ran the full test suite afterwards and it stayed green."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "ctl-port-pair",
+     "shape": "control",
+     "n_hits": 4,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 289,
+     "returned": [
+      "Picked up the networking thread again. Confirmed that the API listens on port 8443.",
+      "Second item on networking this sprint. The metrics endpoint listens on port 9100.",
+      "Left a note in the tracker so the next person does not redo this.",
+      "The reviewer asked for one rename and otherwise approved it."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "ctl-env",
+     "shape": "control",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 112,
+     "returned": [
+      "While that was in review, a different piece of environments got settled: production deploys on a tagged release."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "ctl-model",
+     "shape": "control",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 125,
+     "returned": [
+      "Cleared the open question on models: the embedder is bge-m3.",
+      "Unrelated to the earlier change, the reranker is a cross-encoder."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "ctl-storage",
+     "shape": "control",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 159,
+     "returned": [
+      "Wrote up the storage decision. User uploads go to S3, and the code now matches.",
+      "One more storage item, independent of the first: database backups go to Glacier."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "ctl-auth-pair",
+     "shape": "control",
+     "n_hits": 4,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 277,
+     "returned": [
+      "Spent the session on security. Settled it: the admin panel requires hardware MFA.",
+      "The change touched three files and none of them were config.",
+      "Separate thread on security the same week: the public API uses scoped tokens.",
+      "Checked the dashboards for an hour after and nothing moved."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "ctl-fmt",
+     "shape": "control",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 78,
+     "returned": [
+      "Worked through tooling today. The outcome: Python code is formatted with ruff."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "ctl-obs",
+     "shape": "control",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 153,
+     "returned": [
+      "Picked up the observability thread again. Confirmed that traces are exported to Tempo.",
+      "Second item on observability this sprint. Logs are shipped to Loki."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "ctl-limits",
+     "shape": "control",
+     "n_hits": 4,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 297,
+     "returned": [
+      "Reviewed how limits is set up. As of today, the upload size limit is 25 MB.",
+      "While that was in review, a different piece of limits got settled: the request rate limit is 100 per minute.",
+      "Checked the dashboards for an hour after and nothing moved.",
+      "Ran the full test suite afterwards and it stayed green."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "ctl-sched",
+     "shape": "control",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 139,
+     "returned": [
+      "Cleared the open question on scheduling: reindexing runs weekly on Sunday.",
+      "Left a note in the tracker so the next person does not redo this."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "ctl-clients",
+     "shape": "control",
+     "n_hits": 4,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 309,
+     "returned": [
+      "Wrote up the clients decision. The CLI is distributed through Homebrew, and the code now matches.",
+      "Documented it in the README section that was already stale.",
+      "One more clients item, independent of the first: the desktop app ships as a signed installer.",
+      "The change touched three files and none of them were config."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "ctl-queue-pair",
+     "shape": "control",
+     "n_hits": 3,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 223,
+     "returned": [
+      "Spent the session on background work. Settled it: the ingest queue is backed by NATS.",
+      "Separate thread on background work the same week: the email queue is backed by SQS.",
+      "Ran the full test suite afterwards and it stayed green."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "ctl-doc",
+     "shape": "control",
+     "n_hits": 4,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 279,
+     "returned": [
+      "Worked through documentation today. The outcome: the API reference is generated from OpenAPI.",
+      "Left a note in the tracker so the next person does not redo this.",
+      "Also landed, unrelated to the above: the tutorials are hand-written in MDX.",
+      "Rolled it out behind the usual staged release."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "ctl-runtime",
+     "shape": "control",
+     "n_hits": 4,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 265,
+     "returned": [
+      "Picked up the runtime thread again. Confirmed that the worker runs on Python 3.13.",
+      "Second item on runtime this sprint. The sidecar runs on Go 1.23.",
+      "The change touched three files and none of them were config.",
+      "Checked the dashboards for an hour after and nothing moved."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "ctl-net",
+     "shape": "control",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 92,
+     "returned": [
+      "Reviewed how networking is set up. As of today, ingress terminates TLS at the load balancer."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "ctl-review",
+     "shape": "control",
+     "n_hits": 1,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": false,
+     "chars_returned": 78,
+     "returned": [
+      "Unrelated to the earlier change, every release needs a signed changelog entry."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "ctl-metrics",
+     "shape": "control",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 194,
+     "returned": [
+      "Wrote up the observability decision. Request latency is tracked as a histogram, and the code now matches.",
+      "One more observability item, independent of the first: queue depth is tracked as a gauge."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "ctl-store",
+     "shape": "control",
+     "n_hits": 3,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 236,
+     "returned": [
+      "Spent the session on storage. Settled it: session state lives in browser localStorage.",
+      "Separate thread on storage the same week: audit records live in an append-only table.",
+      "Left a note in the tracker so the next person does not redo this."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    },
+    {
+     "id": "ctl-alerting",
+     "shape": "control",
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
+     "current_returned": true,
+     "chars_returned": 138,
+     "returned": [
+      "Worked through alerting today. The outcome: paging alerts go to PagerDuty.",
+      "Also landed, unrelated to the above: weekly digests go to email."
+     ],
+     "current_live": true,
+     "current_retired": false,
+     "current_demoted": false,
+     "current_absent": false
+    }
+   ],
+   "n_supersession": 60,
+   "n_control": 20,
+   "stale_rate": 0.95,
+   "stale_ci": [
+    0.863,
+    0.9829
+   ],
+   "current_rate": 0.95,
+   "current_ci": [
+    0.863,
+    0.9829
+   ],
+   "control_miss_rate": 0.05,
+   "control_miss_ci": [
+    0.0089,
+    0.2361
+   ],
+   "over_retraction_rate": 0.0,
+   "over_retraction_ci": [
+    0.0,
+    0.1611
+   ],
+   "mean_chars_returned": 222.6,
+   "max_chars_returned": 349,
+   "stale_at_rank_1": 50,
+   "control_retired_by_memory": 0,
+   "control_demoted_by_merge": 0,
+   "control_never_written": 0,
+   "control_written_but_unranked": 1,
+   "seconds": 0.0,
+   "config": "append-only markdown + BM25-style IDF overlap, k=5"
+  }
+ },
+ "k": 5,
+ "llm": "qwen3-coder:30b",
+ "embedder": "bge-m3",
+ "dataset": {
+  "name": "supersession_v1",
+  "sha256": "0e3114ea9175f8bb832522bdf0b182e11432da0603dc2571e3890f94d7b586f9",
+  "path": "research/data/supersession_v1.json",
+  "cases": 80,
+  "supersession_cases": 60,
+  "control_cases": 20
+ },
+ "pooled_nevertwice": {
+  "runs": 2,
+  "stale": {
+   "k": 7,
+   "n": 120,
+   "rate": 0.0583,
+   "ci": [
+    0.0285,
+    0.1155
+   ],
+   "per_run": [
+    0.05,
+    0.0667
+   ]
+  },
+  "current": {
+   "k": 109,
+   "n": 120,
+   "rate": 0.9083,
+   "ci": [
+    0.8433,
+    0.948
+   ],
+   "per_run": [
+    0.9333,
+    0.8833
+   ]
+  },
+  "over_retraction": {
+   "k": 4,
+   "n": 40,
+   "rate": 0.1,
+   "ci": [
+    0.0396,
+    0.2305
+   ]
+  },
+  "control_miss": {
+   "k": 8,
+   "n": 40,
+   "rate": 0.2,
+   "ci": [
+    0.105,
+    0.3476
+   ],
+   "per_run": [
+    0.2,
+    0.2
+   ]
+  },
+  "control_causes": {
+   "retired": 1,
+   "demoted": 4,
+   "never_written": 4,
+   "unranked": 0
+  },
+  "mean_chars_returned": 279.8
+ },
+ "pooled_note": "2 runs of the same commit on the same corpus with the same models read stale 0.0500 and 0.0667. The extraction model is not deterministic at temperature 0, so the published rate is pooled over case-runs and the per-run values are kept beside it. One run of this stand is not a result.",
+ "pairs": [
+  {
+   "a": "naive",
+   "b": "nevertwice",
+   "n": 60,
+   "stale_only_naive": 54,
+   "stale_only_nevertwice": 0,
+   "discordant": 54,
+   "p_mcnemar": 1.1102230246251565e-16
+  }
+ ],
+ "pairs_per_engine_run": [],
+ "engine_commit": "ef8120d79a48eee1fb9b1efb4b0dee0005c92ea9",
+ "bench_commit": "36726ebf1e6655e71b8739e88e7e9af4fc3b9a1e",
+ "note": "historical baseline: the engine before J2b (archive-aware reconcile) and the write-path literal channel, run under the bench of bench_commit from a git worktree; the scoring is today's (served text, cause split, over-retraction proper = retired + demoted)"
+}

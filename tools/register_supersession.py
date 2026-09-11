@@ -278,6 +278,13 @@ def main(argv: list[str] | None = None) -> int:
                          "(the tool learned new fields after the run): the artifact may predate HEAD, but "
                          "COMMIT must be an ancestor of HEAD, a live claim on the same artifact must already "
                          "carry it, and no file in the command's closure may have changed after it")
+    ap.add_argument("--historical", metavar="REASON", default="",
+                    help="register a HISTORICAL family: the engine at --engine-commit measured under HEAD's "
+                         "bench from a git worktree (the form supersession.extraction.language_drift uses). "
+                         "Only the engine arm's claims are kept; they are born withdrawn (`stale: historical: "
+                         "REASON`), cite nothing, and keep their pointers so the artifact stays checkable. The "
+                         "mtime guard does not apply - the artifact describes a commit, not HEAD")
+    ap.add_argument("--engine-commit", default="", help="with --historical: the engine the artifact measured")
     ap.add_argument("--manifest", default=str(MANIFEST_PATH))
     ap.add_argument("--dry-run", action="store_true")
     args = ap.parse_args(argv)
@@ -292,7 +299,19 @@ def main(argv: list[str] | None = None) -> int:
         return 2
     import produced_by as pb                                     # noqa: PLC0415
     closure = pb.closure(args.command)
-    if args.at:
+    bench_head = _git("rev-parse", "HEAD")
+    if args.historical:
+        if not args.engine_commit:
+            print("--historical needs --engine-commit: the engine the artifact measured")
+            return 2
+        if len(args.historical.strip()) < 20:
+            print("--historical REASON must be a sentence: why this engine is measured and kept")
+            return 2
+        head = _git("rev-parse", args.engine_commit)
+        if subprocess.run(["git", "merge-base", "--is-ancestor", head, "HEAD"], cwd=ROOT).returncode != 0:
+            print(f"{args.engine_commit} is not an ancestor of HEAD")
+            return 2
+    elif args.at:
         head = _git("rev-parse", args.at)
         if subprocess.run(["git", "merge-base", "--is-ancestor", head, "HEAD"], cwd=ROOT).returncode != 0:
             print(f"{args.at} is not an ancestor of HEAD")
@@ -323,6 +342,24 @@ def main(argv: list[str] | None = None) -> int:
     new, skipped = build_claims(args.family, art, dataset=args.dataset, command=args.command,
                                 raw=args.artifact, head=head, produced_by=closure, existing=existing,
                                 stand=args.stand, cite=args.cite)
+    if args.historical:
+        import datetime as _dt                                    # noqa: PLC0415
+        today = _dt.date.today().isoformat()
+        new = [c for c in new if ".nevertwice." in c["id"]]
+        for c in new:
+            c["stale"] = f"historical: {args.historical.strip()}"
+            c["withdrawn_on"] = today
+            c["cited_in"] = []
+            # A born-withdrawn claim is printed nowhere, so its `printed` forms serve only the
+            # "withdrawn figure still printed" invariants - and the page-shaped forms (`0.10`,
+            # `0.375`) coincide with unrelated numbers on other pages and would stamp banners
+            # there. The artifact's own precision is distinctive and is what a reader checks.
+            v = c["value"]
+            if isinstance(v, float):
+                c["printed"] = [f"{v:.4f}" if abs(v) < 1 else f"{v:.1f}"]
+            c["note"] = (c.get("note", "") + f" Historical: the engine at {head[:7]} measured under the bench "
+                         f"at {bench_head[:7]} from a git worktree; born withdrawn, kept as the before of the "
+                         f"change it precedes.").strip()
     if skipped:
         print(f"  already registered ({len(skipped)})")
     for c in new:

@@ -233,6 +233,28 @@ ARTIFACTS = [
      "note": "the implicit-replacement variant: the committed artifact pools two engine runs with "
              "the Mem0 and naive arms carried beside them (--pool ... --with ...); the extractor "
              "is not deterministic."},
+    {"file": "research/results/supersession_baseline_ef8120d.json",
+     "command": ["python", "research/supersession_bench.py", "--arms", "nevertwice,naive"],
+     "kind": HARDWARE, "task": "supersession",
+     "inputs": ["a git worktree of this repository at ef8120d (the engine before J2b and the literal-fact "
+                "channel) with HEAD's research/supersession_bench.py copied into it, so the old engine is "
+                "scored by today's classifier",
+                "research/data/supersession_v1.json",
+                "a local Ollama serving bge-m3 and the extraction model"],
+     "note": "ledger K2 / naryad B item 2: the historical baseline for the corrected over-retraction metric - "
+             "two runs of the pre-J2b engine pooled with the same bench, so the J2b change has a before on the "
+             "metric the bench reads today. Its claims are registered born withdrawn (historical) and cite "
+             "nothing; the artifact records engine_commit and bench_commit."},
+    {"file": "research/results/supersession_baseline_ef8120d_implicit.json",
+     "command": ["python", "research/supersession_bench.py", "--dataset",
+                 "research/data/supersession_v1_implicit.json", "--arms", "nevertwice,naive"],
+     "kind": HARDWARE, "task": "supersession",
+     "inputs": ["a git worktree of this repository at ef8120d with HEAD's research/supersession_bench.py copied "
+                "into it (see supersession_baseline_ef8120d.json)",
+                "research/data/supersession_v1_implicit.json",
+                "a local Ollama serving bge-m3 and the extraction model"],
+     "note": "the implicit-corpus half of the same historical baseline: the pre-J2b engine under today's "
+             "classifier, two runs pooled; registered born withdrawn."},
     {"file": "research/results/code_sessions_v1.json",
      "command": ["python", "research/code_sessions_eval.py", "judge", "--arms", "nevertwice_full,naive,mem0_infer", "--save"],
      "kind": HARDWARE, "task": "code-sessions",
