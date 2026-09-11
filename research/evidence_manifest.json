@@ -551,7 +551,7 @@
   },
   "docs/COMPARISON.md": {
    "governance": "backlog",
-   "budget": 21,
+   "budget": 20,
    "target": "B4",
    "note": "The vendor matrix, repository activity, verified-run and retrieval tables are generated from docs/comparison_data.json, docs/comparison_snapshot.json and the evidence manifest; the budget covers only the prose that remains. A WITHDRAWN banner was added above the generated regions in 2026-09: the page renders the July head-to-head while the register marks all sixteen of those figures withdrawn, and the citation guard does not look at this page because it is backlog rather than governed, so the retraction never reached the reader. The budget rises for the banner's own figures.",
    "budget_metric": "evidence-bearing numeric tokens: numbers outside fenced blocks, excluding years, months, Python versions and bare single digits",
@@ -7637,10 +7637,7 @@
     "low": 0.013,
     "high": 0.0825
    },
-   "cited_in": [
-    "README.md",
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "9262543aad4382a91c3d42db34446ba794cf5813",
    "produced_by": [
     "research/supersession_bench.py",
@@ -7677,7 +7674,14 @@
     "research/uncertainty.py",
     "sandbox_guard.py"
    ],
-   "note": "Pooled over two runs of the same commit: the extraction model is not deterministic at temperature 0 and the two runs read 0.0167 and 0.0667. One run of this stand is not a result, so the published figure is the pooled rate over 120 case-runs with the per-run values recorded beside it in the artifact."
+   "note": "Pooled over two runs of the same commit: the extraction model is not deterministic at temperature 0 and the two runs read 0.0167 and 0.0667. One run of this stand is not a result, so the published figure is the pooled rate over 120 case-runs with the per-run values recorded beside it in the artifact.",
+   "cited_in_pending": [
+    "README.md",
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "supersession.nevertwice.current_rate",
@@ -7701,9 +7705,7 @@
     "low": 0.9291,
     "high": 0.9915
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "9262543aad4382a91c3d42db34446ba794cf5813",
    "produced_by": [
     "research/supersession_bench.py",
@@ -7740,7 +7742,13 @@
     "research/uncertainty.py",
     "sandbox_guard.py"
    ],
-   "note": "Pooled over two runs of the same commit: the extraction model is not deterministic at temperature 0 and the two runs read 0.9333 and 0.9333. One run of this stand is not a result, so the published figure is the pooled rate over 120 case-runs with the per-run values recorded beside it in the artifact."
+   "note": "Pooled over two runs of the same commit: the extraction model is not deterministic at temperature 0 and the two runs read 0.9333 and 0.9333. One run of this stand is not a result, so the published figure is the pooled rate over 120 case-runs with the per-run values recorded beside it in the artifact.",
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "supersession.nevertwice.over_retraction_rate",
@@ -7764,9 +7772,7 @@
     "low": 0.0,
     "high": 0.0876
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "9262543aad4382a91c3d42db34446ba794cf5813",
    "produced_by": [
     "research/supersession_bench.py",
@@ -7803,7 +7809,13 @@
     "research/uncertainty.py",
     "sandbox_guard.py"
    ],
-   "note": "2 of 40 controls over two runs. At n=40 an observed 0.05 is bounded above at 0.165; about 130 controls would put that under 0.10. This is the design's own worst failure mode and it remains the least measured column here."
+   "note": "2 of 40 controls over two runs. At n=40 an observed 0.05 is bounded above at 0.165; about 130 controls would put that under 0.10. This is the design's own worst failure mode and it remains the least measured column here.",
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "supersession.mem0.stale_rate",
@@ -7830,10 +7842,7 @@
     "low": 0.8407,
     "high": 0.9738
    },
-   "cited_in": [
-    "README.md",
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "9262543aad4382a91c3d42db34446ba794cf5813",
    "produced_by": [
     "research/supersession_bench.py",
@@ -7869,7 +7878,14 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "README.md",
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "supersession.mem0.current_rate",
@@ -7894,9 +7910,7 @@
     "low": 0.9114,
     "high": 0.997
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "9262543aad4382a91c3d42db34446ba794cf5813",
    "produced_by": [
     "research/supersession_bench.py",
@@ -7932,7 +7946,13 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "supersession.naive.stale_rate",
@@ -7958,10 +7978,7 @@
     "low": 0.863,
     "high": 0.9829
    },
-   "cited_in": [
-    "README.md",
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "9262543aad4382a91c3d42db34446ba794cf5813",
    "produced_by": [
     "research/supersession_bench.py",
@@ -7997,7 +8014,14 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "README.md",
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "supersession.naive.current_rate",
@@ -8022,9 +8046,7 @@
     "low": 0.863,
     "high": 0.9829
    },
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "9262543aad4382a91c3d42db34446ba794cf5813",
    "produced_by": [
     "research/supersession_bench.py",
@@ -8060,7 +8082,13 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "supersession.nevertwice_vs_mem0.p_mcnemar",
@@ -8113,7 +8141,11 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "supersession.mem0_vs_naive.p_mcnemar",
@@ -8130,9 +8162,7 @@
    "raw": "research/results/supersession_v1.json",
    "pointer": "pairs[0].p_mcnemar",
    "ci": null,
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "9262543aad4382a91c3d42db34446ba794cf5813",
    "produced_by": [
     "research/supersession_bench.py",
@@ -8168,7 +8198,13 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "supersession.nevertwice.chars_per_query",
@@ -8185,9 +8221,7 @@
    "raw": "research/results/supersession_v1.json",
    "pointer": "pooled_nevertwice.mean_chars_returned",
    "ci": null,
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "9262543aad4382a91c3d42db34446ba794cf5813",
    "produced_by": [
     "research/supersession_bench.py",
@@ -8223,7 +8257,13 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "supersession.mem0.chars_per_query",
@@ -8240,9 +8280,7 @@
    "raw": "research/results/supersession_v1.json",
    "pointer": "arms.mem0.mean_chars_returned",
    "ci": null,
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "9262543aad4382a91c3d42db34446ba794cf5813",
    "produced_by": [
     "research/supersession_bench.py",
@@ -8278,7 +8316,13 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "supersession.extraction.language_drift",
@@ -8353,9 +8397,7 @@
    "raw": "research/results/supersession_v1.json",
    "pointer": "dataset.supersession_cases",
    "ci": null,
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "9262543aad4382a91c3d42db34446ba794cf5813",
    "produced_by": [
     "research/supersession_bench.py",
@@ -8391,7 +8433,13 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "supersession.dataset.control_cases",
@@ -8408,9 +8456,7 @@
    "raw": "research/results/supersession_v1.json",
    "pointer": "dataset.control_cases",
    "ci": null,
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "9262543aad4382a91c3d42db34446ba794cf5813",
    "produced_by": [
     "research/supersession_bench.py",
@@ -8446,7 +8492,13 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "supersession.nevertwice_vs_mem0.discordant",
@@ -8464,9 +8516,7 @@
    "raw": "research/results/supersession_v1.json",
    "pointer": "pairs_per_engine_run[0].mem0_only",
    "ci": null,
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "9262543aad4382a91c3d42db34446ba794cf5813",
    "produced_by": [
     "research/supersession_bench.py",
@@ -8502,7 +8552,13 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "abstention.recall.shipped_threshold",
@@ -17904,7 +17960,11 @@
     "research/uncertainty.py",
     "sandbox_guard.py"
    ],
-   "note": "Pooled over 2 runs of the same commit: the extraction model is not deterministic at temperature 0 and the runs read 0.1167 and 0.0833. One run of this stand is not a result, so the published figure is the pooled rate over 120 case-runs with the per-run values beside it in the artifact."
+   "note": "Pooled over 2 runs of the same commit: the extraction model is not deterministic at temperature 0 and the runs read 0.1167 and 0.0833. One run of this stand is not a result, so the published figure is the pooled rate over 120 case-runs with the per-run values beside it in the artifact.",
+   "cited_in_pending": [],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "supersession_implicit.nevertwice.current_rate",
@@ -17963,7 +18023,11 @@
     "research/uncertainty.py",
     "sandbox_guard.py"
    ],
-   "note": "Pooled over 2 runs of the same commit: the extraction model is not deterministic at temperature 0 and the runs read 0.1167 and 0.0833. One run of this stand is not a result, so the published figure is the pooled rate over 120 case-runs with the per-run values beside it in the artifact."
+   "note": "Pooled over 2 runs of the same commit: the extraction model is not deterministic at temperature 0 and the runs read 0.1167 and 0.0833. One run of this stand is not a result, so the published figure is the pooled rate over 120 case-runs with the per-run values beside it in the artifact.",
+   "cited_in_pending": [],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "supersession_implicit.nevertwice.over_retraction_rate",
@@ -18021,7 +18085,11 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "supersession_implicit.nevertwice.chars_per_query",
@@ -18074,7 +18142,11 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "supersession_implicit.naive.stale_rate",
@@ -18132,7 +18204,11 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "supersession_implicit.naive.current_rate",
@@ -18190,7 +18266,11 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "supersession_implicit.naive.chars_per_query",
@@ -18243,7 +18323,11 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "supersession_implicit.mem0.stale_rate",
@@ -18301,7 +18385,11 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "supersession_implicit.mem0.current_rate",
@@ -18359,7 +18447,11 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "supersession_implicit.mem0.chars_per_query",
@@ -18412,7 +18504,11 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "supersession_implicit.mem0_vs_naive.p_mcnemar",
@@ -18465,7 +18561,11 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "supersession_implicit.mem0_vs_nevertwice.p_mcnemar",
@@ -18518,7 +18618,11 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "supersession_implicit.naive_vs_nevertwice.p_mcnemar",
@@ -18571,7 +18675,11 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "supersession_implicit.dataset.supersession_cases",
@@ -18624,7 +18732,11 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "supersession_implicit.dataset.control_cases",
@@ -18677,7 +18789,11 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "asof.nevertwice.both_correct",
@@ -18737,7 +18853,11 @@
     "research/supersession_bench.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "asof.nevertwice.old_day",
@@ -18797,7 +18917,11 @@
     "research/supersession_bench.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "asof.nevertwice.new_day",
@@ -18857,7 +18981,11 @@
     "research/supersession_bench.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "asof.naive.both_correct",
@@ -18917,7 +19045,11 @@
     "research/supersession_bench.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "asof.naive.old_day",
@@ -18977,7 +19109,11 @@
     "research/supersession_bench.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "asof.naive.new_day",
@@ -19037,7 +19173,11 @@
     "research/supersession_bench.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "asof.gate.threshold",
@@ -19093,7 +19233,11 @@
     "research/supersession_bench.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "h2h_s.amem.recall_at_1",
@@ -21925,7 +22069,11 @@
     "research/uncertainty.py",
     "sandbox_guard.py"
    ],
-   "ci": null
+   "ci": null,
+   "cited_in_pending": [],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "asof.nevertwice.old_day_miss.unranked",
@@ -21979,7 +22127,11 @@
     "research/uncertainty.py",
     "sandbox_guard.py"
    ],
-   "ci": null
+   "ci": null,
+   "cited_in_pending": [],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "asof.nevertwice.old_day_miss.paraphrase",
@@ -22033,7 +22185,11 @@
     "research/uncertainty.py",
     "sandbox_guard.py"
    ],
-   "ci": null
+   "ci": null,
+   "cited_in_pending": [],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "asof.nevertwice.old_day_miss.leak",
@@ -22087,7 +22243,11 @@
     "research/uncertainty.py",
     "sandbox_guard.py"
    ],
-   "ci": null
+   "ci": null,
+   "cited_in_pending": [],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "asof.nevertwice.s0_retired_rate",
@@ -22143,7 +22303,11 @@
     "sandbox_guard.py"
    ],
    "ci": null,
-   "note": "Read from the store per case (J2 instrumentation). It read 0.0 at the campaign of 2026-09-10: the stand dates the first session 193 days back, `archive_old_typed` had moved the note out of the live folder, and the write path reconciled only against live notes. J2b (commit 9262543) makes the same-slug and explicit reconcile passes walk Archive/ too; the --recent control (session one never archived) is the rate the gate compares against - shipped >= 0.80 x recent and >= 0.60."
+   "note": "Read from the store per case (J2 instrumentation). It read 0.0 at the campaign of 2026-09-10: the stand dates the first session 193 days back, `archive_old_typed` had moved the note out of the live folder, and the write path reconciled only against live notes. J2b (commit 9262543) makes the same-slug and explicit reconcile passes walk Archive/ too; the --recent control (session one never archived) is the rate the gate compares against - shipped >= 0.80 x recent and >= 0.60.",
+   "cited_in_pending": [],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "supersession.nevertwice.store_bytes",
@@ -22197,7 +22361,11 @@
     "research/uncertainty.py",
     "sandbox_guard.py"
    ],
-   "ci": null
+   "ci": null,
+   "cited_in_pending": [],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "supersession.nevertwice_run2.store_bytes",
@@ -22251,7 +22419,11 @@
     "research/uncertainty.py",
     "sandbox_guard.py"
    ],
-   "ci": null
+   "ci": null,
+   "cited_in_pending": [],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "frontier.nevertwice_full.extractor_silence",
@@ -26328,7 +26500,11 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "supersession.zep.stale_rate",
@@ -26386,7 +26562,11 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "supersession.zep.current_rate",
@@ -26444,7 +26624,11 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "supersession.zep.chars_per_query",
@@ -26497,7 +26681,11 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "supersession.mem0_vs_nevertwice.p_mcnemar",
@@ -26550,7 +26738,11 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "supersession.mem0_vs_zep.p_mcnemar",
@@ -26603,7 +26795,11 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "supersession.naive_vs_nevertwice.p_mcnemar",
@@ -26656,7 +26852,11 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "supersession.naive_vs_zep.p_mcnemar",
@@ -26709,7 +26909,11 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "supersession.nevertwice_vs_zep.p_mcnemar",
@@ -26762,7 +26966,11 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "supersession_implicit.zep.stale_rate",
@@ -26820,7 +27028,11 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "supersession_implicit.zep.current_rate",
@@ -26878,7 +27090,11 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "supersession_implicit.zep.chars_per_query",
@@ -26931,7 +27147,11 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "supersession_implicit.mem0_vs_zep.p_mcnemar",
@@ -26984,7 +27204,11 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "supersession_implicit.naive_vs_zep.p_mcnemar",
@@ -27037,7 +27261,11 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "supersession_implicit.nevertwice_vs_zep.p_mcnemar",
@@ -27090,7 +27318,11 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "asof.zep.both_correct",
@@ -27149,7 +27381,11 @@
     "level": 0.95,
     "low": 0.2709,
     "high": 0.5098
-   }
+   },
+   "cited_in_pending": [],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "asof.zep.old_day",
@@ -27208,7 +27444,11 @@
     "level": 0.95,
     "low": 0.5236,
     "high": 0.7583
-   }
+   },
+   "cited_in_pending": [],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "asof.zep.new_day",
@@ -27267,7 +27507,11 @@
     "level": 0.95,
     "low": 0.4089,
     "high": 0.6537
-   }
+   },
+   "cited_in_pending": [],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "asof.zep.llm_calls_per_episode",
@@ -27322,7 +27566,11 @@
     "research/uncertainty.py",
     "sandbox_guard.py"
    ],
-   "ci": null
+   "ci": null,
+   "cited_in_pending": [],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "asof.nevertwice.s0_retired_via.slug",
@@ -27376,7 +27624,11 @@
     "research/uncertainty.py",
     "sandbox_guard.py"
    ],
-   "ci": null
+   "ci": null,
+   "cited_in_pending": [],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "asof.nevertwice.s0_retired_via.explicit",
@@ -27430,7 +27682,11 @@
     "research/uncertainty.py",
     "sandbox_guard.py"
    ],
-   "ci": null
+   "ci": null,
+   "cited_in_pending": [],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "asof.nevertwice.recent.s0_retired_rate",
@@ -27486,7 +27742,11 @@
     "sandbox_guard.py"
    ],
    "ci": null,
-   "note": "The `--recent` control isolates 'does the write path close an interval at all' from 'does it close one after the note was archived'."
+   "note": "The `--recent` control isolates 'does the write path close an interval at all' from 'does it close one after the note was archived'.",
+   "cited_in_pending": [],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "code_heldout.nevertwice_full.fact",
@@ -28647,9 +28907,7 @@
    "environment": "local_supersession_stand",
    "command": "python research/supersession_bench.py",
    "raw": "research/results/supersession_v1.json",
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "9262543aad4382a91c3d42db34446ba794cf5813",
    "produced_by": [
     "research/supersession_bench.py",
@@ -28686,7 +28944,13 @@
     "research/uncertainty.py",
     "sandbox_guard.py"
    ],
-   "derivation": "9 control rows with current_returned false over the 40 control rows of the engine runs in arms.nevertwice*.rows; the pooled artifact predates the `pooled_nevertwice.control_miss` field"
+   "derivation": "9 control rows with current_returned false over the 40 control rows of the engine runs in arms.nevertwice*.rows; the pooled artifact predates the `pooled_nevertwice.control_miss` field",
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "supersession.nevertwice.control_miss.retired",
@@ -28703,9 +28967,7 @@
    "environment": "local_supersession_stand",
    "command": "python research/supersession_bench.py",
    "raw": "research/results/supersession_v1.json",
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "9262543aad4382a91c3d42db34446ba794cf5813",
    "produced_by": [
     "research/supersession_bench.py",
@@ -28742,7 +29004,13 @@
     "research/uncertainty.py",
     "sandbox_guard.py"
    ],
-   "derivation": "sum of arms.nevertwice*.control_retired_by_memory over the engine runs; the pooled artifact predates the `pooled_nevertwice.control_causes` field"
+   "derivation": "sum of arms.nevertwice*.control_retired_by_memory over the engine runs; the pooled artifact predates the `pooled_nevertwice.control_causes` field",
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "supersession.nevertwice.control_miss.never_written",
@@ -28759,9 +29027,7 @@
    "environment": "local_supersession_stand",
    "command": "python research/supersession_bench.py",
    "raw": "research/results/supersession_v1.json",
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "9262543aad4382a91c3d42db34446ba794cf5813",
    "produced_by": [
     "research/supersession_bench.py",
@@ -28798,7 +29064,13 @@
     "research/uncertainty.py",
     "sandbox_guard.py"
    ],
-   "derivation": "sum of arms.nevertwice*.control_never_written over the engine runs; the pooled artifact predates the `pooled_nevertwice.control_causes` field"
+   "derivation": "sum of arms.nevertwice*.control_never_written over the engine runs; the pooled artifact predates the `pooled_nevertwice.control_causes` field",
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "supersession.nevertwice.control_miss.unranked",
@@ -28815,9 +29087,7 @@
    "environment": "local_supersession_stand",
    "command": "python research/supersession_bench.py",
    "raw": "research/results/supersession_v1.json",
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "9262543aad4382a91c3d42db34446ba794cf5813",
    "produced_by": [
     "research/supersession_bench.py",
@@ -28854,7 +29124,13 @@
     "research/uncertainty.py",
     "sandbox_guard.py"
    ],
-   "derivation": "sum of arms.nevertwice*.control_written_but_unranked over the engine runs; the pooled artifact predates the `pooled_nevertwice.control_causes` field"
+   "derivation": "sum of arms.nevertwice*.control_written_but_unranked over the engine runs; the pooled artifact predates the `pooled_nevertwice.control_causes` field",
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "supersession.naive.control_miss_rate",
@@ -28877,9 +29153,7 @@
    "environment": "local_supersession_stand",
    "command": "python research/supersession_bench.py",
    "raw": "research/results/supersession_v1.json",
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "9262543aad4382a91c3d42db34446ba794cf5813",
    "produced_by": [
     "research/supersession_bench.py",
@@ -28916,7 +29190,13 @@
     "research/uncertainty.py",
     "sandbox_guard.py"
    ],
-   "note": "Read from the artifact's `over_retraction_rate`, which for an arm whose store the stand did not inspect is the broad control-miss rate: the still-true fact was not returned, for any cause."
+   "note": "Read from the artifact's `over_retraction_rate`, which for an arm whose store the stand did not inspect is the broad control-miss rate: the still-true fact was not returned, for any cause.",
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "supersession.naive.control_miss.retired",
@@ -28933,9 +29213,7 @@
    "environment": "local_supersession_stand",
    "command": "python research/supersession_bench.py",
    "raw": "research/results/supersession_v1.json",
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "9262543aad4382a91c3d42db34446ba794cf5813",
    "produced_by": [
     "research/supersession_bench.py",
@@ -28972,7 +29250,13 @@
     "research/uncertainty.py",
     "sandbox_guard.py"
    ],
-   "derivation": "by construction: the floor stores every sentence and never retires one, so every control miss is a ranking miss"
+   "derivation": "by construction: the floor stores every sentence and never retires one, so every control miss is a ranking miss",
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "supersession.naive.control_miss.never_written",
@@ -28989,9 +29273,7 @@
    "environment": "local_supersession_stand",
    "command": "python research/supersession_bench.py",
    "raw": "research/results/supersession_v1.json",
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "9262543aad4382a91c3d42db34446ba794cf5813",
    "produced_by": [
     "research/supersession_bench.py",
@@ -29028,7 +29310,13 @@
     "research/uncertainty.py",
     "sandbox_guard.py"
    ],
-   "derivation": "by construction: the floor stores every sentence and never retires one, so every control miss is a ranking miss"
+   "derivation": "by construction: the floor stores every sentence and never retires one, so every control miss is a ranking miss",
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "supersession.naive.control_miss.unranked",
@@ -29045,9 +29333,7 @@
    "environment": "local_supersession_stand",
    "command": "python research/supersession_bench.py",
    "raw": "research/results/supersession_v1.json",
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "9262543aad4382a91c3d42db34446ba794cf5813",
    "produced_by": [
     "research/supersession_bench.py",
@@ -29084,7 +29370,13 @@
     "research/uncertainty.py",
     "sandbox_guard.py"
    ],
-   "derivation": "by construction: the floor stores every sentence and never retires one, so every control miss is a ranking miss"
+   "derivation": "by construction: the floor stores every sentence and never retires one, so every control miss is a ranking miss",
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "supersession.mem0.control_miss_rate",
@@ -29107,9 +29399,7 @@
    "environment": "local_supersession_stand",
    "command": "python research/supersession_bench.py",
    "raw": "research/results/supersession_v1.json",
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "9262543aad4382a91c3d42db34446ba794cf5813",
    "produced_by": [
     "research/supersession_bench.py",
@@ -29146,7 +29436,13 @@
     "research/uncertainty.py",
     "sandbox_guard.py"
    ],
-   "note": "Read from the artifact's `over_retraction_rate`, which for an arm whose store the stand did not inspect is the broad control-miss rate: the still-true fact was not returned, for any cause."
+   "note": "Read from the artifact's `over_retraction_rate`, which for an arm whose store the stand did not inspect is the broad control-miss rate: the still-true fact was not returned, for any cause.",
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "supersession.mem0.control_miss.retired",
@@ -29163,9 +29459,7 @@
    "environment": "local_supersession_stand",
    "command": "python research/supersession_bench.py",
    "raw": "research/results/supersession_v1.json",
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "9262543aad4382a91c3d42db34446ba794cf5813",
    "produced_by": [
     "research/supersession_bench.py",
@@ -29202,7 +29496,13 @@
     "research/uncertainty.py",
     "sandbox_guard.py"
    ],
-   "derivation": "no control case was missed on this run, so every cause is zero"
+   "derivation": "no control case was missed on this run, so every cause is zero",
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "supersession.mem0.control_miss.never_written",
@@ -29219,9 +29519,7 @@
    "environment": "local_supersession_stand",
    "command": "python research/supersession_bench.py",
    "raw": "research/results/supersession_v1.json",
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "9262543aad4382a91c3d42db34446ba794cf5813",
    "produced_by": [
     "research/supersession_bench.py",
@@ -29258,7 +29556,13 @@
     "research/uncertainty.py",
     "sandbox_guard.py"
    ],
-   "derivation": "no control case was missed on this run, so every cause is zero"
+   "derivation": "no control case was missed on this run, so every cause is zero",
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "supersession.mem0.control_miss.unranked",
@@ -29275,9 +29579,7 @@
    "environment": "local_supersession_stand",
    "command": "python research/supersession_bench.py",
    "raw": "research/results/supersession_v1.json",
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "9262543aad4382a91c3d42db34446ba794cf5813",
    "produced_by": [
     "research/supersession_bench.py",
@@ -29314,7 +29616,13 @@
     "research/uncertainty.py",
     "sandbox_guard.py"
    ],
-   "derivation": "no control case was missed on this run, so every cause is zero"
+   "derivation": "no control case was missed on this run, so every cause is zero",
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "supersession.zep.control_miss_rate",
@@ -29337,9 +29645,7 @@
    "environment": "local_supersession_stand",
    "command": "python research/supersession_bench.py",
    "raw": "research/results/supersession_v1.json",
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "9262543aad4382a91c3d42db34446ba794cf5813",
    "produced_by": [
     "research/supersession_bench.py",
@@ -29376,7 +29682,13 @@
     "research/uncertainty.py",
     "sandbox_guard.py"
    ],
-   "note": "Read from the artifact's `over_retraction_rate`, which for an arm whose store the stand did not inspect is the broad control-miss rate: the still-true fact was not returned, for any cause."
+   "note": "Read from the artifact's `over_retraction_rate`, which for an arm whose store the stand did not inspect is the broad control-miss rate: the still-true fact was not returned, for any cause.",
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "supersession.mem0_vs_naive.discordant.mem0",
@@ -29429,7 +29741,11 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "supersession.mem0_vs_naive.discordant.naive",
@@ -29482,7 +29798,11 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "supersession.mem0_vs_nevertwice.discordant.mem0",
@@ -29535,7 +29855,11 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "supersession.mem0_vs_nevertwice.discordant.nevertwice",
@@ -29588,7 +29912,11 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "supersession.mem0_vs_zep.discordant.mem0",
@@ -29641,7 +29969,11 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "supersession.mem0_vs_zep.discordant.zep",
@@ -29694,7 +30026,11 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "supersession.naive_vs_nevertwice.discordant.naive",
@@ -29747,7 +30083,11 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "supersession.naive_vs_nevertwice.discordant.nevertwice",
@@ -29800,7 +30140,11 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "supersession.naive_vs_zep.discordant.naive",
@@ -29853,7 +30197,11 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "supersession.naive_vs_zep.discordant.zep",
@@ -29906,7 +30254,11 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "supersession.nevertwice_vs_zep.discordant.nevertwice",
@@ -29959,7 +30311,11 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "supersession.nevertwice_vs_zep.discordant.zep",
@@ -30012,7 +30368,11 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "supersession_implicit.nevertwice.control_miss_rate",
@@ -30072,7 +30432,11 @@
     "research/uncertainty.py",
     "sandbox_guard.py"
    ],
-   "derivation": "14 control rows with current_returned false over the 40 control rows of the engine runs in arms.nevertwice*.rows; the pooled artifact predates the `pooled_nevertwice.control_miss` field"
+   "derivation": "14 control rows with current_returned false over the 40 control rows of the engine runs in arms.nevertwice*.rows; the pooled artifact predates the `pooled_nevertwice.control_miss` field",
+   "cited_in_pending": [],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "supersession_implicit.nevertwice.control_miss.retired",
@@ -30126,7 +30490,11 @@
     "research/uncertainty.py",
     "sandbox_guard.py"
    ],
-   "derivation": "sum of arms.nevertwice*.control_retired_by_memory over the engine runs; the pooled artifact predates the `pooled_nevertwice.control_causes` field"
+   "derivation": "sum of arms.nevertwice*.control_retired_by_memory over the engine runs; the pooled artifact predates the `pooled_nevertwice.control_causes` field",
+   "cited_in_pending": [],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "supersession_implicit.nevertwice.control_miss.never_written",
@@ -30180,7 +30548,11 @@
     "research/uncertainty.py",
     "sandbox_guard.py"
    ],
-   "derivation": "sum of arms.nevertwice*.control_never_written over the engine runs; the pooled artifact predates the `pooled_nevertwice.control_causes` field"
+   "derivation": "sum of arms.nevertwice*.control_never_written over the engine runs; the pooled artifact predates the `pooled_nevertwice.control_causes` field",
+   "cited_in_pending": [],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "supersession_implicit.nevertwice.control_miss.unranked",
@@ -30234,7 +30606,11 @@
     "research/uncertainty.py",
     "sandbox_guard.py"
    ],
-   "derivation": "sum of arms.nevertwice*.control_written_but_unranked over the engine runs; the pooled artifact predates the `pooled_nevertwice.control_causes` field"
+   "derivation": "sum of arms.nevertwice*.control_written_but_unranked over the engine runs; the pooled artifact predates the `pooled_nevertwice.control_causes` field",
+   "cited_in_pending": [],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "supersession_implicit.naive.control_miss_rate",
@@ -30294,7 +30670,11 @@
     "research/uncertainty.py",
     "sandbox_guard.py"
    ],
-   "note": "Read from the artifact's `over_retraction_rate`, which for an arm whose store the stand did not inspect is the broad control-miss rate: the still-true fact was not returned, for any cause."
+   "note": "Read from the artifact's `over_retraction_rate`, which for an arm whose store the stand did not inspect is the broad control-miss rate: the still-true fact was not returned, for any cause.",
+   "cited_in_pending": [],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "supersession_implicit.naive.control_miss.retired",
@@ -30348,7 +30728,11 @@
     "research/uncertainty.py",
     "sandbox_guard.py"
    ],
-   "derivation": "by construction: the floor stores every sentence and never retires one, so every control miss is a ranking miss"
+   "derivation": "by construction: the floor stores every sentence and never retires one, so every control miss is a ranking miss",
+   "cited_in_pending": [],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "supersession_implicit.naive.control_miss.never_written",
@@ -30402,7 +30786,11 @@
     "research/uncertainty.py",
     "sandbox_guard.py"
    ],
-   "derivation": "by construction: the floor stores every sentence and never retires one, so every control miss is a ranking miss"
+   "derivation": "by construction: the floor stores every sentence and never retires one, so every control miss is a ranking miss",
+   "cited_in_pending": [],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "supersession_implicit.naive.control_miss.unranked",
@@ -30456,7 +30844,11 @@
     "research/uncertainty.py",
     "sandbox_guard.py"
    ],
-   "derivation": "by construction: the floor stores every sentence and never retires one, so every control miss is a ranking miss"
+   "derivation": "by construction: the floor stores every sentence and never retires one, so every control miss is a ranking miss",
+   "cited_in_pending": [],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "supersession_implicit.mem0.control_miss_rate",
@@ -30516,7 +30908,11 @@
     "research/uncertainty.py",
     "sandbox_guard.py"
    ],
-   "note": "Read from the artifact's `over_retraction_rate`, which for an arm whose store the stand did not inspect is the broad control-miss rate: the still-true fact was not returned, for any cause."
+   "note": "Read from the artifact's `over_retraction_rate`, which for an arm whose store the stand did not inspect is the broad control-miss rate: the still-true fact was not returned, for any cause.",
+   "cited_in_pending": [],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "supersession_implicit.mem0.control_miss.retired",
@@ -30570,7 +30966,11 @@
     "research/uncertainty.py",
     "sandbox_guard.py"
    ],
-   "derivation": "no control case was missed on this run, so every cause is zero"
+   "derivation": "no control case was missed on this run, so every cause is zero",
+   "cited_in_pending": [],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "supersession_implicit.mem0.control_miss.never_written",
@@ -30624,7 +31024,11 @@
     "research/uncertainty.py",
     "sandbox_guard.py"
    ],
-   "derivation": "no control case was missed on this run, so every cause is zero"
+   "derivation": "no control case was missed on this run, so every cause is zero",
+   "cited_in_pending": [],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "supersession_implicit.mem0.control_miss.unranked",
@@ -30678,7 +31082,11 @@
     "research/uncertainty.py",
     "sandbox_guard.py"
    ],
-   "derivation": "no control case was missed on this run, so every cause is zero"
+   "derivation": "no control case was missed on this run, so every cause is zero",
+   "cited_in_pending": [],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "supersession_implicit.zep.control_miss_rate",
@@ -30738,7 +31146,11 @@
     "research/uncertainty.py",
     "sandbox_guard.py"
    ],
-   "note": "Read from the artifact's `over_retraction_rate`, which for an arm whose store the stand did not inspect is the broad control-miss rate: the still-true fact was not returned, for any cause."
+   "note": "Read from the artifact's `over_retraction_rate`, which for an arm whose store the stand did not inspect is the broad control-miss rate: the still-true fact was not returned, for any cause.",
+   "cited_in_pending": [],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "supersession_implicit.mem0_vs_naive.discordant.mem0",
@@ -30791,7 +31203,11 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "supersession_implicit.mem0_vs_naive.discordant.naive",
@@ -30844,7 +31260,11 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "supersession_implicit.mem0_vs_nevertwice.discordant.mem0",
@@ -30897,7 +31317,11 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "supersession_implicit.mem0_vs_nevertwice.discordant.nevertwice",
@@ -30950,7 +31374,11 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "supersession_implicit.mem0_vs_zep.discordant.mem0",
@@ -31003,7 +31431,11 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "supersession_implicit.mem0_vs_zep.discordant.zep",
@@ -31056,7 +31488,11 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "supersession_implicit.naive_vs_nevertwice.discordant.naive",
@@ -31109,7 +31545,11 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "supersession_implicit.naive_vs_nevertwice.discordant.nevertwice",
@@ -31162,7 +31602,11 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "supersession_implicit.naive_vs_zep.discordant.naive",
@@ -31215,7 +31659,11 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "supersession_implicit.naive_vs_zep.discordant.zep",
@@ -31268,7 +31716,11 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "supersession_implicit.nevertwice_vs_zep.discordant.nevertwice",
@@ -31321,7 +31773,11 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "supersession_implicit.nevertwice_vs_zep.discordant.zep",
@@ -31374,7 +31830,11 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "asof.nevertwice.per_run.one",
@@ -31428,7 +31888,11 @@
     "research/uncertainty.py",
     "sandbox_guard.py"
    ],
-   "ci": null
+   "ci": null,
+   "cited_in_pending": [],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "asof.nevertwice.per_run.two",
@@ -31482,7 +31946,11 @@
     "research/uncertainty.py",
     "sandbox_guard.py"
    ],
-   "ci": null
+   "ci": null,
+   "cited_in_pending": [],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "asof.gate.old_day_threshold",
@@ -31537,7 +32005,11 @@
     "sandbox_guard.py"
    ],
    "ci": null,
-   "raw_gap": "a threshold is a decision, not a measurement: it is quoted from .loop/GOAL-CLOSE.md item J2, written before the campaign of 2026-09-10 ran; the both-days half is `asof.gate.threshold`"
+   "raw_gap": "a threshold is a decision, not a measurement: it is quoted from .loop/GOAL-CLOSE.md item J2, written before the campaign of 2026-09-10 ran; the both-days half is `asof.gate.threshold`",
+   "cited_in_pending": [],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "abstention.recall.sweep.t0_0.mean_chars",
@@ -33472,9 +33944,7 @@
    "environment": "local_supersession_stand",
    "command": "python research/supersession_bench.py",
    "raw": "research/results/supersession_v1.json",
-   "cited_in": [
-    "docs/BENCHMARKS.md"
-   ],
+   "cited_in": [],
    "commit": "9262543aad4382a91c3d42db34446ba794cf5813",
    "produced_by": [
     "research/supersession_bench.py",
@@ -33510,7 +33980,13 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [
+    "docs/BENCHMARKS.md"
+   ],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   },
   {
    "id": "supersession_implicit.nevertwice.control_case_runs",
@@ -33563,7 +34039,11 @@
     "research/matched_conditions.py",
     "research/uncertainty.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "cited_in_pending": [],
+   "stale": "the supersession bench (research/supersession_bench.py, research/_graphiti_arm.py) now names control miss and over-retraction separately and reads every arm's store for the cause split; the families that import it are re-measured on the GPU in the K2 run (nevertwice two runs on both corpora, Mem0, the floor, Zep twice, as-of) before they are published again",
+   "withdrawn_on": "2026-09-11",
+   "pending_remeasure": true
   }
  ],
  "external_citations": [

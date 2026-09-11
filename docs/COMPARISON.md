@@ -148,7 +148,7 @@ reruns the whole stand, on the competitors' own packages, with one command.
   beats the reciprocal rank fusion Nevertwice itself shipped until 2026-07. The durable moat is the substrate: plain files,
   $0, fully local, Obsidian-readable, no server or vector DB - a combination none of the systems in
   the table above offered as of the mid-2026 survey.
-  We also measured chunk-level late interaction (R@5 0.814) and deliberately did **not** ship it,
+  We also measured chunk-level late interaction (`research/RETRIEVAL_FUSION.md` carries the figure) and deliberately did **not** ship it,
   because our distillation front-end already gives short notes the concentration it buys for long
   raw sessions (details in the study).
 

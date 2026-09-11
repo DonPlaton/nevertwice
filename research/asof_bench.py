@@ -280,6 +280,27 @@ ARMS = {"nevertwice": run_nevertwice, "naive": run_naive, "zep": run_zep}
 RUNS = 1
 
 
+def merge_arm(results: list[dict]) -> dict:
+    """One arm's result from several files: rows concatenated and tagged with their run, the rates
+    re-scored over the case-runs, the per-run values kept beside them - the shape `run_nevertwice`
+    gives our own arm when `--runs` is more than one. Ledger K2: the competitor arm is pooled and
+    published with its spread exactly as ours is, instead of standing on one run."""
+    live = [r for r in results if not r.get("blocked")]
+    if not live:
+        return results[0]
+    if len(live) == 1:
+        return live[0]
+    rows = [dict(r, run=i) for i, res in enumerate(live) for r in res["rows"]]
+    out = {"rows": rows, **score(rows), "runs": len(live),
+           "per_run": [res["both_correct_rate"] for res in live],
+           "seconds": round(sum(float(res.get("seconds") or 0) for res in live), 1),
+           "config": live[0].get("config", "")}
+    if any("graphiti" in res for res in live):
+        out["graphiti"] = live[0].get("graphiti")
+        out["graphiti_per_run"] = [res.get("graphiti") for res in live]
+    return out
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("--dataset", default=str(DATASET))
@@ -289,6 +310,9 @@ def main() -> int:
     ap.add_argument("--runs", type=int, default=2, help="engine runs to pool (extraction is not deterministic)")
     ap.add_argument("--recent", action="store_true",
                     help="J2b control: date session one inside the 90-day archive window (never archived)")
+    ap.add_argument("--with", dest="others", nargs="*", default=[], metavar="FILE",
+                    help="result files whose other arms (zep) are merged into the output; an arm present "
+                         "in several files is pooled over its runs, per-run values kept")
     ap.add_argument("--out", default="")
     args = ap.parse_args()
     if args.recent:
@@ -320,6 +344,24 @@ def main() -> int:
             print(f"  old-day failures by kind: {res['old_day_failures_by_kind']}  "
                   f"(session one never written: {res.get('s0_never_written')})")
         print()
+    # other arms measured in their own environments (the Zep arm runs under the graphiti venv):
+    # an arm present in several files is pooled over its runs, like ours
+    others: dict[str, list[dict]] = {}
+    for f in args.others:
+        blob = json.loads(Path(f).read_text(encoding="utf-8"))
+        if blob.get("dataset", {}).get("sha256") != out["dataset"]["sha256"]:
+            print(f"  {f}: measured on another dataset - not merged")
+            continue
+        for name, res in blob.get("arms", {}).items():
+            if name in out["arms"] or name == "mem0" or res.get("blocked"):
+                continue
+            others.setdefault(name, []).append(res)
+    for name, results in others.items():
+        out["arms"][name] = merge_arm(results)
+        res = out["arms"][name]
+        print(f"- {name} (merged from {len(results)} file(s), {res.get('runs', 1)} run(s)): "
+              f"both-correct {res['both_correct_rate']} {res['both_correct_ci']} | old day {res['old_day_rate']} "
+              f"| new day {res['new_day_rate']}" + (f" | per run {res['per_run']}" if res.get("per_run") else ""))
     out["arms"]["mem0"] = {"blocked": "Mem0 stamps a memory with the wall-clock time of the add() call and its "
                                       "search has no as-of filter; facts cannot be placed in the past without "
                                       "patching the product"}

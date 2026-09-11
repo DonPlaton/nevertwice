@@ -89,6 +89,13 @@ with tempfile.TemporaryDirectory() as tmp:
     check("pooled stale rate", P["stale"]["rate"] == 0.375)
     check("Wilson interval on the pooled count", 0 < P["stale"]["ci"][0] < 0.375 < P["stale"]["ci"][1] < 1)
     check("current pooled: 8 of 8", (P["current"]["k"], P["current"]["n"]) == (8, 8))
+    check("control miss counts every control that did not come back: 1 of 4, per run 0 and 0.5",
+          (P["control_miss"]["k"], P["control_miss"]["n"]) == (1, 4) and P["control_miss"]["per_run"] == [0.0, 0.5],
+          str(P["control_miss"]))
+    check("the miss is split by cause: the one miss was a retirement",
+          P["control_causes"] == {"retired": 1, "never_written": 0, "unranked": 0}, str(P["control_causes"]))
+    check("an arm whose store was not read has no over-retraction figure, only a control miss",
+          res["arms"]["mem0"]["over_retraction_rate"] is None and res["arms"]["mem0"]["control_miss_rate"] == 0.0)
     check("over-retraction counts only what the memory retired: 1 of 4 controls",
           (P["over_retraction"]["k"], P["over_retraction"]["n"], P["over_retraction"]["rate"])
           == (1, 4, 0.25), str(P["over_retraction"]))

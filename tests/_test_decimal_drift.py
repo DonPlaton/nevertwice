@@ -18,9 +18,11 @@ printed forms or interval bounds, an external citation, a recorded drift entry, 
 non-metric rule. Integers are left to the ratchet - a case count or a year is not what drifts -
 and a decimal that matches nothing is exactly a stand's figure that the stand no longer produces.
 
-The rule is deliberately about live claims only. A withdrawn claim's number on a page is the
-business of `tests/_test_withdrawn_pages.py`; here it is an orphan like any other, because a page
-that prints a retracted figure as if it were current is the failure this suite exists for.
+The rule is about live claims, with one qualified exception. A page that carries the withdrawal
+banner `tools/stamp_withdrawn.py` stamps may still print the figures of *withdrawn* claims - that
+is the honest state between a code change and the re-run, and the banner says the numbers are not
+to be quoted. Without the banner a withdrawn claim's figure is an orphan like any other, because a
+page that prints a retracted figure as if it were current is the failure this suite exists for.
 """
 from __future__ import annotations
 
@@ -60,6 +62,31 @@ def _mask(match: re.Match) -> str:
     return re.sub(r"[^\n]", " ", match.group(0))
 
 
+def withdrawn_forms(manifest: dict) -> set[str]:
+    """The forms of withdrawn claims - admissible only under a withdrawal banner."""
+    forms: set[str] = set()
+    for c in manifest["claims"]:
+        if not c.get("stale"):
+            continue
+        for p in c.get("printed", []):
+            p = str(p).strip()
+            forms |= {p, p.lstrip("+−-"), p.rstrip("%")}
+        v = c.get("value")
+        if isinstance(v, (int, float)) and not isinstance(v, bool):
+            forms |= {f"{v:.2f}", f"{v:.3f}", f"{v:.4f}", f"{v:g}"}
+        ci = c.get("ci")
+        if isinstance(ci, dict):
+            for b in (ci.get("low"), ci.get("high")):
+                if isinstance(b, (int, float)):
+                    forms |= {f"{b:.2f}", f"{b:.3f}", f"{b:.4f}"}
+    return forms
+
+
+def carries_withdrawal_banner(text: str) -> bool:
+    """The banner `tools/stamp_withdrawn.py` stamps, or a hand-written withdrawal notice."""
+    return "<!-- withdrawn-banner -->" in text or "**withdrawn" in text[:4000].lower()
+
+
 def vouched_forms(manifest: dict) -> set[str]:
     """Every decimal form a live claim, an external citation or a drift entry stands behind."""
     forms: set[str] = set()
@@ -94,16 +121,20 @@ def non_metric_rules(manifest: dict) -> list[tuple]:
     return rules
 
 
-def orphan_decimals(doc: str, forms: set[str], rules: list[tuple]) -> list[tuple[str, int]]:
-    text = (ROOT / doc).read_text(encoding="utf-8")
-    text = GENERATED_REGION.sub(_mask, FENCE.sub(_mask, text))
+def orphan_decimals(doc: str, forms: set[str], rules: list[tuple],
+                    withdrawn: set[str] | None = None) -> list[tuple[str, int]]:
+    raw = (ROOT / doc).read_text(encoding="utf-8")
+    text = GENERATED_REGION.sub(_mask, FENCE.sub(_mask, raw))
     lines = text.splitlines()
+    admissible = set(forms)
+    if withdrawn and carries_withdrawal_banner(raw):
+        admissible |= withdrawn
     out = []
     for m in DECIMAL.finditer(text):
         token = m.group(0)
         lineno = text[: m.start()].count("\n") + 1
         line = lines[lineno - 1] if lineno <= len(lines) else ""
-        if token in forms:
+        if token in admissible:
             continue
         if any(match(token) and (ctx is None or ctx.search(line)) for match, ctx in rules):
             continue
@@ -120,6 +151,7 @@ def pages_under_the_rule(manifest: dict) -> list[str]:
 def test_no_stand_page_prints_a_decimal_the_register_lost() -> None:
     print("\n- every decimal on a stand's page is one the register still vouches for -")
     forms = vouched_forms(MANIFEST)
+    withdrawn = withdrawn_forms(MANIFEST)
     rules = non_metric_rules(MANIFEST)
     pages = pages_under_the_rule(MANIFEST)
     check("the rule covers the study pages produced by a stand", len(pages) >= 5, str(len(pages)))
@@ -127,7 +159,7 @@ def test_no_stand_page_prints_a_decimal_the_register_lost() -> None:
         if not (ROOT / doc).is_file():
             check(f"{doc} exists", False)
             continue
-        orphans = orphan_decimals(doc, forms, rules)
+        orphans = orphan_decimals(doc, forms, rules, withdrawn)
         detail = "; ".join(f"{t} (line {ln})" for t, ln in orphans[:6])
         check(f"{doc}: no decimal outside a generated region is unvouched", not orphans, detail)
 

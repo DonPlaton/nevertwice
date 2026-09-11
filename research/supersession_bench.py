@@ -156,17 +156,24 @@ def classify(items: list[str], case: dict) -> dict:
 
 
 def score(rows: list[dict]) -> dict:
-    """Fold per-case outcomes into the three rates plus the token floor.
+    """Fold per-case outcomes into the rates plus the token floor.
 
-    Control cases carry no `superseded` markers and are scored on over-retraction only;
+    Control cases carry no `superseded` markers and are scored on the two control measures only;
     supersession cases are scored on stale and current. Mixing them into one denominator
     would let a system trade one axis for the other invisibly.
+
+    The control column has two strengths, and until 2026-09-11 both were called
+    `over_retraction_rate`: **control miss** - the still-true fact did not come back, for any
+    cause, which every arm can be scored on - and **over-retraction** proper - the memory retired
+    it, which only a store that records a retirement can show. The first is
+    `control_miss_rate` here; the second keeps the old name and is `None` for an arm whose store
+    the run did not read, never a number computed from the other.
     """
     sup = [r for r in rows if r["shape"] != "control"]
     ctl = [r for r in rows if r["shape"] == "control"]
     stale = sum(1 for r in sup if r["stale_returned"])
     current = sum(1 for r in sup if r["current_returned"])
-    over = sum(1 for r in ctl if not r["current_returned"])
+    missed = sum(1 for r in ctl if not r["current_returned"])
     chars = [r["chars_returned"] for r in rows]
     out = {
         "n_supersession": len(sup),
@@ -175,8 +182,10 @@ def score(rows: list[dict]) -> dict:
         "stale_ci": [round(x, 4) for x in wilson(stale, len(sup))] if sup else None,
         "current_rate": round(current / len(sup), 4) if sup else None,
         "current_ci": [round(x, 4) for x in wilson(current, len(sup))] if sup else None,
-        "over_retraction_rate": round(over / len(ctl), 4) if ctl else None,
-        "over_retraction_ci": [round(x, 4) for x in wilson(over, len(ctl))] if ctl else None,
+        "control_miss_rate": round(missed / len(ctl), 4) if ctl else None,
+        "control_miss_ci": [round(x, 4) for x in wilson(missed, len(ctl))] if ctl else None,
+        "over_retraction_rate": None,
+        "over_retraction_ci": None,
         "mean_chars_returned": round(sum(chars) / len(chars), 1) if chars else 0.0,
         "max_chars_returned": max(chars) if chars else 0,
         "stale_at_rank_1": sum(1 for r in sup if r.get("stale_rank") == 1),
@@ -188,7 +197,8 @@ def score(rows: list[dict]) -> dict:
         out["control_written_but_unranked"] = sum(
             1 for r in lost if r.get("current_live") and not r["current_returned"])
         n_ctl = len(ctl)
-        out["true_over_retraction_rate"] = round(out["control_retired_by_memory"] / n_ctl, 4)
+        out["over_retraction_rate"] = round(out["control_retired_by_memory"] / n_ctl, 4)
+        out["over_retraction_ci"] = [round(x, 4) for x in wilson(out["control_retired_by_memory"], n_ctl)]
     drifted = [r for r in rows if r.get("notes_in_cyrillic")]
     if any("notes_written" in r for r in rows):
         wrote = sum(r.get("notes_written", 0) for r in rows)
@@ -293,6 +303,15 @@ def store_bytes() -> int:
     return total
 
 
+def _state_from_texts(case: dict, live_texts: list[str], retired_texts: list[str]) -> dict:
+    """The three store-state flags from what an arm's store holds: `live_texts` are the items it
+    would still return, `retired_texts` the ones it invalidated, expired or deleted. The same
+    flags `_store_state` reads for our arm, so the cause split is computed by one rule for all."""
+    live = any(_hit(case.get("current", []), t) for t in live_texts)
+    retired = any(_hit(case.get("current", []), t) for t in retired_texts)
+    return {"current_live": live, "current_retired": retired, "current_absent": not (live or retired)}
+
+
 # ── arm: mem0 ─────────────────────────────────────────────────────────────────────────────
 
 def run_mem0(cases: list[dict], k: int) -> dict:
@@ -337,16 +356,29 @@ def run_mem0(cases: list[dict], k: int) -> dict:
             # in one call, so a per-sentence loop here would hand Mem0 twice the extraction
             # opportunities and charge it twice the latency for the same corpus. Same unit,
             # same count, same order.
+            events: list[dict] = []
             for session in case["sessions"]:
-                mem.add("\n".join(session), user_id=uid)
+                added = mem.add("\n".join(session), user_id=uid)
+                if isinstance(added, dict) and isinstance(added.get("results"), list):
+                    events += [e for e in added["results"] if isinstance(e, dict)]
             res = mem.search(case["query"], filters={"user_id": uid}, limit=k)
             got = res.get("results", res) if isinstance(res, dict) else res
             texts = [r.get("memory", "") for r in got] if isinstance(got, list) else []
+            # what the store holds, for the cause of a control miss: every memory still stored is
+            # live; a DELETE event's text, or an UPDATE whose previous text carried the marker and
+            # whose new text does not, is a retirement Mem0 itself decided
+            held = mem.get_all(user_id=uid)
+            held = held.get("results", held) if isinstance(held, dict) else held
+            live_texts = [r.get("memory", "") for r in held] if isinstance(held, list) else []
+            retired_texts = [str(e.get("memory") or "") for e in events if e.get("event") == "DELETE"]
+            retired_texts += [str(e.get("previous_memory") or "") for e in events
+                              if e.get("event") == "UPDATE"
+                              and not _hit(case.get("current", []), str(e.get("memory") or ""))]
         except Exception as e:
             rows.append({**_blank(case), "error": f"{type(e).__name__}: {e}"})
             print(f"  [{i + 1}/{len(cases)}] {case['id']}  ERROR {type(e).__name__}", flush=True)
             continue
-        rows.append(_row(case, texts))
+        rows.append({**_row(case, texts), **_state_from_texts(case, live_texts, retired_texts)})
         print(f"  [{i + 1}/{len(cases)}] {case['id']}  hits={len(texts)}"
               f"  stale={rows[-1]['stale_returned']}@{rows[-1]['stale_rank']}", flush=True)
     shutil.rmtree(base, ignore_errors=True)
@@ -388,7 +420,9 @@ def run_naive(cases: list[dict], k: int) -> dict:
             scored.append((s, d))
         scored.sort(key=lambda x: -x[0])
         texts = [d for s, d in scored[:k] if s > 0]
-        rows.append(_row(case, texts))
+        # the floor's store is every sentence and it never retires one, so a control miss here
+        # can only be a ranking miss - read from the store like the other arms rather than assumed
+        rows.append({**_row(case, texts), **_state_from_texts(case, [" ".join(docs)], [])})
     return {"rows": rows, **score(rows), "seconds": round(time.time() - t0, 1),
             "config": f"append-only markdown + BM25-style IDF overlap, k={k}"}
 
@@ -435,7 +469,14 @@ def run_zep(cases: list[dict], k: int) -> dict:
             print(f"  [{i + 1}/{len(cases)}] {case['id']}  ERROR {rows[-1]['error'][:60]}", flush=True)
             continue
         texts = arm.search_now(group, case["query"], k)
-        rows.append(_row(case, texts))
+        row = _row(case, texts)
+        edges = arm.edges_all(group)
+        if edges is not None:
+            # an edge Graphiti invalidated or expired is a retirement it decided; one it still
+            # holds is live - the same three flags our arm reads from its own store
+            row.update(_state_from_texts(case, [f for f, ended in edges if not ended],
+                                         [f for f, ended in edges if ended]))
+        rows.append(row)
         print(f"  [{i + 1}/{len(cases)}] {case['id']}  hits={len(texts)}"
               f"  stale={rows[-1]['stale_returned']}@{rows[-1]['stale_rank']}", flush=True)
     stats = arm.stats()
@@ -566,11 +607,20 @@ def pool(engine_files: list[Path], other_files: list[Path] | None = None) -> dic
     stale_k = sum(1 for a in runs for r in sup(a) if r["stale_returned"])
     cur_k = sum(1 for a in runs for r in sup(a) if r["current_returned"])
     sup_n = sum(len(sup(a)) for a in runs)
-    # true over-retraction only: the memory retired a still-true fact (not "ranked below k",
+    # over-retraction proper only: the memory retired a still-true fact (not "ranked below k",
     # not "never written"), which is what `_store_state` records per control row
     over_k = sum(1 for a in runs for r in ctl(a)
                  if not r["current_returned"] and r.get("current_retired"))
     ctl_n = sum(len(ctl(a)) for a in runs)
+    # the broad measure beside it - the still-true fact did not come back, any cause - and the
+    # split of that count by cause; the two used to share one name (2026-09-11)
+    miss_k = sum(1 for a in runs for r in ctl(a) if not r["current_returned"])
+    per_run_miss = [round(sum(1 for r in ctl(a) if not r["current_returned"]) / len(ctl(a)), 4)
+                    for a in runs if ctl(a)]
+    lost = [r for a in runs for r in ctl(a) if not r["current_returned"]]
+    causes = {"retired": sum(1 for r in lost if r.get("current_retired")),
+              "never_written": sum(1 for r in lost if r.get("current_absent")),
+              "unranked": sum(1 for r in lost if r.get("current_live"))}
     per_run_stale = [round(sum(1 for r in sup(a) if r["stale_returned"]) / len(sup(a)), 4)
                      for a in runs]
     per_run_cur = [round(sum(1 for r in sup(a) if r["current_returned"]) / len(sup(a)), 4)
@@ -584,6 +634,10 @@ def pool(engine_files: list[Path], other_files: list[Path] | None = None) -> dic
         "over_retraction": {"k": over_k, "n": ctl_n,
                             "rate": round(over_k / ctl_n, 4) if ctl_n else None,
                             "ci": _r4(wilson(over_k, ctl_n))},
+        "control_miss": {"k": miss_k, "n": ctl_n,
+                         "rate": round(miss_k / ctl_n, 4) if ctl_n else None,
+                         "ci": _r4(wilson(miss_k, ctl_n)), "per_run": per_run_miss},
+        "control_causes": causes,
         "mean_chars_returned": round(sum(a["mean_chars_returned"] for a in runs) / len(runs), 1),
     }
 
@@ -669,6 +723,9 @@ def main() -> int:
         print(f"pooled {p['runs']} engine runs on {res['dataset']['name']}: "
               f"stale {p['stale']['rate']} {p['stale']['ci']} per run {p['stale']['per_run']} | "
               f"current {p['current']['rate']} {p['current']['ci']} | "
+              f"control miss {p['control_miss']['rate']} (retired {p['control_causes']['retired']}, "
+              f"never written {p['control_causes']['never_written']}, "
+              f"unranked {p['control_causes']['unranked']}) | "
               f"over-retraction {p['over_retraction']['rate']} | "
               f"{p['mean_chars_returned']} chars/query")
         for pr in res["pairs"]:
@@ -721,14 +778,16 @@ def main() -> int:
         print(f"  stale {res['stale_rate']} {res['stale_ci']} "
               f"(rank-1: {res['stale_at_rank_1']}) | "
               f"current {res['current_rate']} {res['current_ci']} | "
-              f"over-retraction {res['over_retraction_rate']} | "
+              f"control miss {res['control_miss_rate']} | "
               f"{res['mean_chars_returned']} chars/query | {res['seconds']}s")
-        if "true_over_retraction_rate" in res:
+        if res.get("over_retraction_rate") is not None:
             print(f"    of the controls that came back empty: "
                   f"{res['control_retired_by_memory']} retired by the memory, "
                   f"{res['control_never_written']} never written, "
                   f"{res['control_written_but_unranked']} written but out of the top {args.k} "
-                  f"-> true over-retraction {res['true_over_retraction_rate']}")
+                  f"-> over-retraction proper {res['over_retraction_rate']}")
+        else:
+            print("    the store was not read for this arm: over-retraction proper is not a number here")
         if res.get("notes_written"):
             print(f"    extraction wrote {res['notes_written']} notes, "
                   f"{res['notes_in_cyrillic']} of them in Cyrillic on an all-English corpus "

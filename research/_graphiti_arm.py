@@ -144,6 +144,22 @@ class GraphitiArm:
                 break
         return out
 
+    def edges_all(self, group: str) -> list[tuple[str, bool]] | None:
+        """Every edge the graph holds for `group`, as (fact, ended): `ended` when Graphiti itself
+        invalidated or expired the edge. What the store holds, not what search ranks - the input to
+        the cause split of a control miss (retired / never written / unranked). None when the
+        graph could not be read, so the caller leaves the cause unread rather than zero."""
+        try:
+            from graphiti_core.edges import EntityEdge
+            edges = self.loop.run_until_complete(EntityEdge.get_by_group_ids(self.g.driver, [group]))
+            return [(e.fact, e.invalid_at is not None or e.expired_at is not None) for e in edges]
+        except Exception as e:                           # noqa: BLE001 - reported once, not a number
+            if not getattr(self, "_edges_all_failed", False):
+                self._edges_all_failed = True
+                self.last_error = f"edges_all: {type(e).__name__}: {str(e)[:160]}"
+                print(f"  (graph read for the cause split unavailable: {self.last_error})", flush=True)
+            return None
+
     def _stated_at(self, e) -> datetime | None:
         if e.valid_at is not None:
             return e.valid_at if e.valid_at.tzinfo else e.valid_at.replace(tzinfo=timezone.utc)

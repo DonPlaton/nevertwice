@@ -320,6 +320,19 @@ empty.
 
 ### Changed
 
+- **The supersession bench names its two control metrics and reads every arm's store**
+  (`research/supersession_bench.py`, `research/_graphiti_arm.py`; ledger K0/K2). `score()` reports
+  `control_miss_rate` for every arm (the still-true fact did not come back, any cause) and keeps
+  `over_retraction_rate` for the memory's own retirements only - `None`, never a number computed
+  from the other, for an arm whose store the run did not read. Mem0's `get_all` and its add-events
+  (a DELETE, or an UPDATE that drops the marker) and Graphiti's edges (`edges_all`: invalidated or
+  expired = retired) now feed the same three flags our arm reads from its own store, so the cause
+  split - retired / never written / written but below k - is computed by one rule for all arms;
+  the floor's flags are read from its sentence store rather than assumed. `pool()` carries the
+  pooled control miss with its per-run values and the pooled cause counts. A bench edit withdraws
+  every claim whose closure reaches it: 120 claims (both supersession families and as-of) are
+  withdrawn in this commit and return with the K2 re-run.
+
 - **The dense weight of the calibrated fusion is 1.0, from 0.5.** The weight was tuned when
   the stand embedded the first 2,000 characters of a session and the lexical arm scored raw
   tokens; with whole-session vectors and the stemmed lexical arm the shipped 0.5 gave back
