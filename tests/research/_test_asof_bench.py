@@ -92,7 +92,17 @@ sc = ab.score([{"shape": "narrowed", "both_correct": False, "old_day_correct": F
                {"shape": "narrowed", "both_correct": True, "old_day_correct": True, "new_day_correct": True,
                 "old_fail_kind": None, "store": {"s0": {"written": 1}}}])
 check("the score folds the kinds and counts session-one silence",
-      sc["old_day_failures_by_kind"] == {"never_written": 1, "unranked": 0, "paraphrase": 1, "leak": 0} and sc["s0_never_written"] == 1, str(sc))
+      sc["old_day_failures_by_kind"] == {"never_written": 1, "absorbed": 0, "unranked": 0, "paraphrase": 1, "leak": 0}
+      and sc["s0_never_written"] == 1 and sc["s0_absorbed"] == 0, str(sc))
+
+# K1b/K3: a first-session note the twin gate absorbed into session two's is credited to session
+# one through `sources`, and an old-day miss on it is its own kind, not silence
+sc2 = ab.old_fail_kind({"old_day_correct": False, "old_items": 1, "leak": False},
+                       {"s0": {"written": 1, "absorbed": 1}})
+check("every first-session note absorbed -> the old-day miss is `absorbed`, not never_written", sc2 == "absorbed", str(sc2))
+sc3 = ab.old_fail_kind({"old_day_correct": False, "old_items": 1, "leak": False},
+                       {"s0": {"written": 2, "absorbed": 1}})
+check("one absorbed note beside one served -> the miss is read from the answer, not the absorb", sc3 == "paraphrase", str(sc3))
 
 print(f"\n{'ALL OK' if not FAILS else f'{FAILS} FAILED'}")
 sys.exit(1 if FAILS else 0)

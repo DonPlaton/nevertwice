@@ -27,10 +27,11 @@ extraction model is the supersession stand's; two runs are pooled the same way.
 
 Since J2 every engine row also records what the store holds for the case's first session
 (notes written, live or retired, their `valid_to`) and classifies an old-day failure into one
-of four kinds - `never_written` (the extractor wrote nothing for session one), `unranked` (a
-note exists but nothing came back for the old day), `paraphrase` (the old note came back but
-no marker survived its wording), `leak` (the new fact came back for the old day) - so a miss
-says which half of the system missed.
+of five kinds - `never_written` (the extractor wrote nothing for session one), `absorbed` (the
+twin gate absorbed session two's different fact into session one's note, which no longer serves
+the old fact; K1b), `unranked` (a note exists but nothing came back for the old day),
+`paraphrase` (the old note came back but no marker survived its wording), `leak` (the new fact
+came back for the old day) - so a miss says which half of the system missed.
 
 `--recent` shifts all four dates inside the 90-day archive window (ledger J2b): the control
 that isolates "does the write path close an interval at all" from "does it close one after the
@@ -106,6 +107,7 @@ def _session_state(project: str, case: dict) -> dict:
     per = {j: {"written": 0, "live": 0, "retired": 0, "absorbed": 0, "valid_to": [], "marker_in_text": False,
                "titles": [], "supersedes": [], "superseded_via": []}
            for j in (0, 1)}
+    notes: list[tuple[int, Path, dict, str]] = []
     for folder in ("Patterns", "Mistakes", "Decisions"):
         d = root / folder
         if not d.exists():
@@ -116,35 +118,39 @@ def _session_state(project: str, case: dict) -> dict:
             j = next((jj for tag, jj in sid8.items() if tag in sess), None)
             if j is None:
                 continue
-            body = md.read_text(encoding="utf-8", errors="replace")
-            # A note the twin gate absorbed the other session's item into is rewritten in place:
-            # its `session` becomes the absorbing session and the earlier one survives only in
-            # `sources` (and its statement under `## Previous statement`). Until 2026-09-11 that
-            # read here as "session one wrote nothing" - K1b/K3: the old fact was written, then
-            # absorbed - so the earlier session is credited through `sources` and the absorb counted.
-            srcs = " ".join(str(s) for s in (fm.get("sources") or []) if s)
-            for tag, jj in sid8.items():
-                if jj != j and tag in srcs:
-                    per[jj]["written"] += 1
-                    per[jj]["absorbed"] += 1
-                    per[jj]["titles"].append(md.stem)
-            st = per[j]
-            st["written"] += 1
-            if md.parent.name == "Superseded" or str(fm.get("status") or "") == "superseded":
-                st["retired"] += 1
-                if fm.get("superseded_via"):
-                    st["superseded_via"].append(str(fm["superseded_via"]))   # J2b: slug|explicit|twin
-            else:
-                st["live"] += 1
-            if fm.get("valid_to"):
-                st["valid_to"].append(str(fm["valid_to"]))
-            st["titles"].append(md.stem)               # the slug is in the stem: did the two sessions agree on it?
-            sup = fm.get("supersedes")
-            if isinstance(sup, list) and sup:
-                st["supersedes"].extend(str(x) for x in sup)
-            markers = case["superseded"] if j == 0 else case["current"]
-            if markers and sb._hit(markers, body):
-                st["marker_in_text"] = True
+            notes.append((j, md, fm, md.read_text(encoding="utf-8", errors="replace")))
+    # A note the twin gate absorbed the other session's item into is rewritten in place: its
+    # `session` becomes the absorbing session and the earlier one survives only in `sources` (and
+    # its statement under `## Previous statement`). Until 2026-09-11 that read here as "session one
+    # wrote nothing" (K1b/K3). It is credited as absorbed only when the earlier session has NO
+    # note of its own anywhere - a proper same-slug supersession also inherits `sources`, and there
+    # the earlier session's note stands in `Superseded/` and is counted as retired, not absorbed.
+    own = {j: sum(1 for jj, *_ in notes if jj == j) for j in (0, 1)}
+    for j, md, fm, body in notes:
+        srcs = " ".join(str(s) for s in (fm.get("sources") or []) if s)
+        for tag, jj in sid8.items():
+            if jj != j and own[jj] == 0 and tag in srcs:
+                per[jj]["written"] += 1
+                per[jj]["absorbed"] += 1
+                per[jj]["titles"].append(md.stem)
+    for j, md, fm, body in notes:
+        st = per[j]
+        st["written"] += 1
+        if md.parent.name == "Superseded" or str(fm.get("status") or "") == "superseded":
+            st["retired"] += 1
+            if fm.get("superseded_via"):
+                st["superseded_via"].append(str(fm["superseded_via"]))   # J2b: slug|explicit|twin
+        else:
+            st["live"] += 1
+        if fm.get("valid_to"):
+            st["valid_to"].append(str(fm["valid_to"]))
+        st["titles"].append(md.stem)               # the slug is in the stem: did the two sessions agree on it?
+        sup = fm.get("supersedes")
+        if isinstance(sup, list) and sup:
+            st["supersedes"].extend(str(x) for x in sup)
+        markers = case["superseded"] if j == 0 else case["current"]
+        if markers and sb._hit(markers, body):
+            st["marker_in_text"] = True
     return {"s0": per[0], "s1": per[1]}
 
 
