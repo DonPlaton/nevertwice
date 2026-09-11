@@ -92,7 +92,7 @@ retirement.
 <sub>Over-retraction proper - the memory stopped serving a fact that was still true, by retiring the note or by absorbing another fact into it - is the first two cause columns as a rate: 0.125 [0.055, 0.261] for Nevertwice over its control case-runs.</sub>
 <!-- /claims:supersession-causes -->
 
-Nevertwice's row is pooled over two runs of the same commit; the other arms are one run each.
+Nevertwice's row is pooled over two runs of the same commit, and Zep/Graphiti's over two runs on a flushed FalkorDB; Mem0 and the append-only floor are one run each.
 Sixty supersession cases and twenty controls per run, Wilson intervals, one local stand, the same
 embedder and the same extraction model for every arm, and the text scored is the text a caller
 receives - for us the note with the literals the write path kept, for the others their memory or

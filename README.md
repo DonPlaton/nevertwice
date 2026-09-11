@@ -96,9 +96,9 @@ addendum); the freshness contract had withdrawn every number whose closure names
 that run. Earlier, a 2026-09 review found the retrieval stand had broken its own premise - our
 semantic arm embedded the first two thousand characters of each session while the competitors
 embedded the whole one, an error against us; the row prints the whole-session run. Competitor
-arms our engine does not touch (Mem0, LangMem, A-MEM, Zep/Graphiti) keep their last measurement,
-restamped. LoCoMo, excluded on paper for a year, was run too and narrows its own exclusion rather
-than lifting it ([LOCOMO.md](research/LOCOMO.md)).
+arms our engine does not touch (Mem0, LangMem, A-MEM) keep their last measurement, restamped; Zep/Graphiti
+was re-run twice on a flushed graph store after a defect in its arm, and its rows pool both runs. LoCoMo,
+excluded on paper for a year, was run too and narrows its own exclusion rather than lifting it ([LOCOMO.md](research/LOCOMO.md)).
 
 The 2026-07 run of that retrieval stand stays withdrawn - its corpus could not be identified -
 and the re-run above is a separate claim family on a named one:
