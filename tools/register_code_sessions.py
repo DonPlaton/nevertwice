@@ -45,6 +45,21 @@ def _dirty_files() -> set[str]:
 
 def dataset_entry(art: dict, heldout: bool) -> tuple[str, dict]:
     corpus = art["corpus"]
+    if heldout and corpus.get("name") == "code_heldout_v2":
+        # the hand-marked held-out (ledger J3 addendum): built by research/heldout_review.py, accepted by the owner
+        man = json.loads((ROOT / "research" / "data" / "code_heldout_review_manifest.json").read_text(encoding="utf-8"))
+        c, r = man["corpus"], man["review"]
+        return "code_heldout_v2", {
+            "name": "code_heldout_v2 - literal-fact questions over the owner's own coding sessions, accepted by hand",
+            "citation": "this repository, research/heldout_review.py (2026-09-10)", "source": "research/heldout_review.py",
+            "local_path": f"outside the repository ({c['path_outside_repo']})",
+            "committed": False, "sha256": c["sha256"],
+            "sha256_note": "The private file's hash is recorded in research/data/code_heldout_review_manifest.json; "
+                           "no transcript text, question or answer is in the repository.",
+            "note": f"{c['questions']} questions accepted by the owner of {r['marked']} marked ({r['verdicts']}; "
+                    f"{c['edited_by_hand']} corrected by hand) from {r['candidates']} candidates drafted by glm-4.7-flash. "
+                    "By retrieval the corpus does not separate (one gold session per question, so the naive floor equals "
+                    "the oracle); it is an extraction stand, and is published as one."}
     if heldout:
         man = json.loads((ROOT / "research" / "data" / "code_heldout_manifest.json").read_text(encoding="utf-8"))
         return "code_heldout_v1", {
@@ -100,6 +115,19 @@ def build_claims(fam: str, art: dict, *, dataset: str, command: str, raw: str, h
                     toks = sc["fact"]["mean_prompt_tokens"]
                     add(f"{fam}.{arm}.tokens", f"at {toks:.0f} prompt tokens per literal-fact question, counted by the reader",
                         toks, [f"{toks:.0f}", f"{toks:,.0f}"], "tokens", sc["fact"]["n"], None, f'{group}.{arm}.fact.mean_prompt_tokens')
+    # model-free write-path metric (ledger J3 held-out): the answer literally present in the returned notes
+    for group in ("arms", "brackets"):
+        for arm, sc in art.get(group, {}).items():
+            fs = sc.get("fact_survival") if isinstance(sc, dict) else None
+            if not fs or fs.get("fact_survival") is None:
+                continue
+            v, label = fs["fact_survival"], ARM_LABEL.get(arm, arm)
+            add(f"{fam}.{arm}.fact_survival",
+                f"{label}: the answer is literally present in the notes returned for {v * 100:.1f}% of the literal-fact "
+                f"questions (fact survival - counted without a reader or a judge)",
+                v, [f"{v:.3f}"], "rate", fs["n"], fs.get("ci"), f"{group}.{arm}.fact_survival.fact_survival",
+                note="Whole recall result, not the reader's top-k window: whether the fact reached memory at all. "
+                     "Baseline before the write-path literal-fact channel: 5/52 = 0.096 on this corpus.")
     g = art.get("corpus_gates") or {}
     add(f"{fam}.corpus.separates", "the corpus gates (no memory low, oracle high, floor a fifth below the oracle) "
         + ("all hold" if g.get("corpus_separates") else "do not all hold") + f": {g}",

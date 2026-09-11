@@ -1,0 +1,204 @@
+{
+ "corpus": {
+  "name": "code_heldout_v2",
+  "sha256": "c6b5ea361a563aa0c666d8f0a888c0395a49c48c3a80b2b977e730c8c3a96b64",
+  "generator_model": "glm-4.7-flash + owner review",
+  "counts": null
+ },
+ "reader": "qwen2.5:7b",
+ "judge": "qwen3.6:27b",
+ "extractor": "qwen2.5-7b-64k:latest",
+ "k": 5,
+ "top_situation": 3,
+ "arms": {
+  "nevertwice_full": {
+   "fact": {
+    "n": 52,
+    "accuracy": 0.4038,
+    "ci": [
+     0.2816,
+     0.5393
+    ],
+    "mean_prompt_tokens": 222.1
+   },
+   "core": {
+    "n": 52,
+    "accuracy": 0.4038,
+    "ci": [
+     0.2816,
+     0.5393
+    ]
+   },
+   "fact_survival": {
+    "n": 52,
+    "survived": 33,
+    "fact_survival": 0.6346,
+    "ci": [
+     0.4987,
+     0.752
+    ],
+    "misses": [
+     "Every session in a window of its own",
+     "tabs",
+     "AI-Agents-Security-Week",
+     "0.80",
+     "0.0",
+     "`nevertwice-mcp --version`",
+     "D:\\Universal_Local_Agent\\stack",
+     "python research/capability_grid.py --estimate",
+     "python big_run/odyssey/w0/golden_snapshot.py prefix",
+     "claude --resume",
+     "12 054 768 716",
+     "(3+2√2)/6",
+     "v3",
+     "~2.8 GB",
+     "+13.9%",
+     "port 8099",
+     "25",
+     "5.1 MB",
+     "100 %"
+    ]
+   }
+  },
+  "naive": {
+   "fact": {
+    "n": 52,
+    "accuracy": 0.8269,
+    "ci": [
+     0.7027,
+     0.9062
+    ],
+    "mean_prompt_tokens": 568.7
+   },
+   "core": {
+    "n": 52,
+    "accuracy": 0.8269,
+    "ci": [
+     0.7027,
+     0.9062
+    ]
+   },
+   "fact_survival": {
+    "n": 52,
+    "survived": 52,
+    "fact_survival": 1.0,
+    "ci": [
+     0.9312,
+     1.0
+    ],
+    "misses": []
+   }
+  },
+  "mem0_infer": {
+   "fact": {
+    "n": 52,
+    "accuracy": 0.25,
+    "ci": [
+     0.1523,
+     0.3821
+    ],
+    "mean_prompt_tokens": 180.5
+   },
+   "core": {
+    "n": 52,
+    "accuracy": 0.25,
+    "ci": [
+     0.1523,
+     0.3821
+    ]
+   },
+   "fact_survival": {
+    "n": 52,
+    "survived": 15,
+    "fact_survival": 0.2885,
+    "ci": [
+     0.1833,
+     0.4227
+    ],
+    "misses": [
+     "87c8b17",
+     "Every session in a window of its own",
+     "[1024, 512, 256]",
+     "0.0",
+     "tabs",
+     "zricethezav/gitleaks:latest",
+     "pytest -q",
+     "AI-Agents-Security-Week",
+     "ForeignReceivers",
+     "0.80",
+     "0.0",
+     "0.909",
+     "`nevertwice-mcp --version`",
+     "4096",
+     "python polygon/minq/run_w_screen.py 5 7",
+     "python run.py defaults-canary",
+     "1.59 ГБ",
+     "D:\\Universal_Local_Agent\\stack",
+     "big_run/odyssey/w3/w3_flagship_ckpt/flagship/latest.pt",
+     "python research/capability_grid.py --estimate"
+    ]
+   }
+  }
+ },
+ "brackets": {
+  "none": {
+   "fact": {
+    "n": 52,
+    "accuracy": 0.0,
+    "ci": [
+     0.0,
+     0.0688
+    ],
+    "mean_prompt_tokens": 122.4
+   },
+   "core": {
+    "n": 52,
+    "accuracy": 0.0,
+    "ci": [
+     0.0,
+     0.0688
+    ]
+   }
+  },
+  "oracle": {
+   "fact": {
+    "n": 52,
+    "accuracy": 0.8269,
+    "ci": [
+     0.7027,
+     0.9062
+    ],
+    "mean_prompt_tokens": 568.7
+   },
+   "core": {
+    "n": 52,
+    "accuracy": 0.8269,
+    "ci": [
+     0.7027,
+     0.9062
+    ]
+   }
+  }
+ },
+ "ingest": {
+  "nevertwice_full": {
+   "llm": "qwen2.5-7b-64k:latest",
+   "llm_calls_per_session": 1,
+   "sessions": 52,
+   "errors": 0,
+   "sessions_with_zero_notes": 2
+  },
+  "mem0_infer": {
+   "llm": "qwen2.5-7b-64k:latest",
+   "llm_calls_per_session": 2,
+   "sessions": 52,
+   "errors": 0
+  }
+ },
+ "corpus_gates": {
+  "none_le_0.10": true,
+  "oracle_ge_0.60": true,
+  "naive_le_oracle_minus_0.20": false,
+  "corpus_separates": false
+ }
+}

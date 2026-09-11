@@ -1,13 +1,5 @@
 # LoCoMo, the benchmark this project excluded, measured
 
-<!-- withdrawn-banner -->
-> **Withdrawn: figures on this page must not be quoted.** They were retracted and remain
-> here because deleting a result one was wrong about destroys the record of having been
-> wrong. The design, the method and the caveats stand; the numbers do not. Each figure's
-> own reason and date are in
-> [`research/evidence_manifest.json`](evidence_manifest.json), and
-> `python tools/check_freshness.py --list-stale` lists every one.
-
 For months the roadmap has carried one sentence about LoCoMo: **not a candidate**, because plain
 BM25 is reported to score about 94% on it, so it no longer separates memory systems and a vendor
 headline there says little about one. A test even pinned the wording, so the exclusion could not
@@ -73,9 +65,12 @@ embedder, same scoring function, same evidence ids; the competitor rows are thei
 labelled as such (`research/EXTERNAL_RETRIEVAL.md` says what each is).
 
 <!-- claims:head-to-head-locomo -->
-> **Withdrawn 2026-09.** the J1 evidence layer removed and the archive-aware reconcile added in one package (ledger J2b); every temporal, frontier and code-session stand re-measures without spans on the GPU campaign, and the model is bound by name in each artifact
->
-> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/head_to_head.py --data=locomo --only=nevertwice,mem0,langmem,amem --save --out=research/results/head_to_head_locomo.json` is what re-measures this one.
+| system | R@1 | R@5 | R@10 | MRR |
+|---|---|---|---|---|
+| **Nevertwice (calibrated fusion)** | **0.311** | 0.571 | 0.667 | **0.421** |
+| Mem0 | 0.271 | **0.575** | **0.674** | 0.404 |
+| LangMem | 0.189 | 0.441 | 0.549 | 0.295 |
+| A-MEM | 0.188 | 0.436 | 0.543 | 0.292 |
 <!-- /claims:head-to-head-locomo -->
 
 ## What running it found first

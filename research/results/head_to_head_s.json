@@ -18,15 +18,15 @@
   "recall@10": 0.514,
   "mrr": 0.3139,
   "n": 500,
-  "query_s": 1013.7,
+  "query_s": 1224.0,
   "embed_chars": 28000,
   "setup": "local bge-m3 via Ollama (calibrated fusion; 0 deps, no server, no DB)",
-  "_wall_s": 1028.8,
+  "_wall_s": 1241.8,
   "version": "nevertwice==2.4.0",
   "label": "Nevertwice (calibrated fusion, the shipped ranker)",
   "measured_at": {
-   "commit": "f0ed0809ae3b30c6a596ec438c5d45496e023ce4",
-   "utc": "2026-09-08T11:23:43Z"
+   "commit": "9262543aad4382a91c3d42db34446ba794cf5813",
+   "utc": "2026-09-11T11:13:38Z"
   },
   "morphology": true
  },

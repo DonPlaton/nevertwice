@@ -1,13 +1,5 @@
 # The defect list, and D5 does not run until it is empty
 
-<!-- withdrawn-banner -->
-> **Withdrawn: figures on this page must not be quoted.** They were retracted and remain
-> here because deleting a result one was wrong about destroys the record of having been
-> wrong. The design, the method and the caveats stand; the numbers do not. Each figure's
-> own reason and date are in
-> [`research/evidence_manifest.json`](../evidence_manifest.json), and
-> `python tools/check_freshness.py --list-stale` lists every one.
-
 **Phase D.** Rule 1 of `.loop/GOAL-INVARIANTS.md` §0: *a defect that is understood and unfixed is
 a reason to fix it, never a reason to discount the result it produces.* The previous run
 quantified five false-positive classes, left three of them in the code, and then reported the

@@ -194,6 +194,15 @@ ARTIFACTS = [
      "note": "as-of recall: the same corpus ingested with dates two months apart and asked for a "
              "day between the sessions and a day after. Two ingest runs pooled; the extractor is "
              "not deterministic, so a fresh run is a new measurement of the same design."},
+    {"file": "research/results/asof_recent.json",
+     "command": ["python", "research/asof_bench.py", "--recent", "--arms", "nevertwice", "--runs", "2",
+                 "--out", "research/results/asof_recent.json"],
+     "kind": HARDWARE, "task": "supersession",
+     "inputs": ["research/data/supersession_v1.json",
+                "a local Ollama serving bge-m3 and the extraction model"],
+     "note": "the J2b control: the same as-of design with the first session dated inside the 90-day "
+             "archive window, so the archived-closure rate of asof_v1.json is read against the write "
+             "path's own rate."},
     {"file": "research/results/supersession_v1_implicit.json",
      "command": ["python", "research/supersession_bench.py", "--dataset",
                  "research/data/supersession_v1_implicit.json", "--arms", "nevertwice,naive"],
@@ -212,15 +221,18 @@ ARTIFACTS = [
                 "for the Mem0 arm: a separate environment with mem0ai[extras]"],
      "volatile": ["seconds"],
      "note": "the code-session stand (ledger J3): contexts, answers and verdicts are cached per stage"},
-    {"file": "research/results/code_heldout_v1.json",
-     "command": ["python", "research/code_sessions_eval.py", "judge", "--arms", "nevertwice_full,naive",
-                 "--corpus", "D:/Coding/_nevertwice_polygon/code_heldout/code_heldout_v1.json", "--save"],
+    {"file": "research/results/code_heldout_v2.json",
+     "command": ["python", "research/code_sessions_eval.py", "summary", "--arms", "nevertwice_full,naive,mem0_infer",
+                 "--corpus", "D:/Coding/_nevertwice_polygon/code_heldout/code_heldout_v2.json", "--save",
+                 "--out", "research/results/code_heldout_v2.json"],
      "kind": ABSENT_INPUT, "task": "code-sessions",
-     "inputs": ["the private held-out corpus over the owner's own coding sessions - outside the repository by design; "
-                "research/data/code_heldout_manifest.json records its hash and one per item",
-                "a local Ollama serving qwen2.5-7b-64k, qwen2.5:7b, qwen3.6:27b, bge-m3"],
+     "inputs": ["the private hand-marked held-out over the owner's own coding sessions - outside the repository by "
+                "design; research/data/code_heldout_review_manifest.json records its hash and the review counts",
+                "a local Ollama serving qwen2.5-7b-64k (extractor, temperature pinned to 0), qwen2.5:7b (reader), bge-m3",
+                "for the Mem0 arm: a separate environment with mem0ai[extras]"],
      "volatile": ["seconds"],
-     "note": "cannot be regenerated from a clone: the sessions are the owner's; the manifest is what a reader can check"},
+     "note": "cannot be regenerated from a clone: the sessions are the owner's; the manifest is what a reader can "
+             "check. Carries the fact-survival metric per arm beside the reader's accuracy."},
     {"file": "research/data/guard_bench_v1.json",
      "command": ["python", "research/gen_guard_bench.py", "--out", "research/data/guard_bench_v1.json"],
      "kind": DETERMINISTIC, "task": "active-memory",

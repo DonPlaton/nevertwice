@@ -105,6 +105,35 @@ def main(argv: list[str] | None = None) -> int:
             note=("Read from the store per case (J2 instrumentation). 0.0 at the campaign of 2026-09-10: the stand dates "
                   "the first session 193 days back, `archive_old_typed` moves a note older than 90 days out of the live "
                   "folder on every capture, and the write path reconciles only against live notes."), **base)
+    # J2b: how each retirement was decided (`superseded_via`); the twin pass stays live-only, so an
+    # archived note is retired only by slug or by an explicit link
+    via = a.get("s0_retired_via") or {}
+    n_via = int(sum(int(v) for v in via.values())) if via else 0
+    for how, desc in (("slug", "the same slug - the replacing note carries the old note's name"),
+                      ("explicit", "an explicit `supersedes`/`contradicts` named by the extractor")):
+        if via.get(how) is not None:
+            add(f"asof.nevertwice.s0_retired_via.{how}",
+                f"of the first-session notes the replacing session retired, {int(via[how])} were retired via {desc}",
+                int(via[how]), [str(int(via[how]))], "retirements", n_via, None,
+                f'arms["nevertwice"].s0_retired_via.{how}', **base)
+    # the --recent control: session one dated inside the 90-day window, never archived - the rate the
+    # J2b gate is measured against (shipped >= 0.80 x this and >= 0.60 absolute)
+    raw_r = "research/results/asof_recent.json"
+    if (ROOT / raw_r).exists() and (ROOT / raw_r).stat().st_mtime >= code_time:
+        ar = (json.loads((ROOT / raw_r).read_text(encoding="utf-8")).get("arms") or {}).get("nevertwice") or {}
+        rr = ar.get("s0_retired_rate")
+        if rr is not None:
+            add("asof.nevertwice.recent.s0_retired_rate",
+                f"with session one dated inside the 90-day window (never archived), the replacing session closed its "
+                f"belief interval in {rr * 100:.1f}% of the case-runs - the control the J2b gate is measured against",
+                rr, [f"{rr:.3f}", f"{rr:.2f}"], "rate",
+                int(ar.get("n_cases") or 0) - int(ar.get("s0_never_written", 0)), None,
+                'arms["nevertwice"].s0_retired_rate',
+                note=("The `--recent` control isolates 'does the write path close an interval at all' from 'does it "
+                      "close one after the note was archived'."),
+                dataset="supersession_v1", env="local_supersession_stand",
+                command="python research/asof_bench.py --recent --arms nevertwice --runs 2 --out research/results/asof_recent.json",
+                raw=raw_r)
     zep = ((art or {}).get("arms") or {}).get("zep") or {}
     if zep and not zep.get("blocked") and zep.get("n_cases"):
         nz = int(zep["n_cases"])

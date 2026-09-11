@@ -71,6 +71,37 @@
      0.1742,
      0.2626
     ]
+   },
+   "fact_survival": {
+    "n": 180,
+    "survived": 0,
+    "fact_survival": 0.0,
+    "ci": [
+     0.0,
+     0.0209
+    ],
+    "misses": [
+     "60 seconds",
+     "5e-4",
+     "PostgreSQL 14",
+     "RabbitMQ",
+     "INFO",
+     "ap-southeast-1",
+     "2e-5",
+     "30 seconds",
+     "config/base.json",
+     "the data team",
+     "SQS",
+     "seven times",
+     "3e-4",
+     "Node 24",
+     "dashboard_2026",
+     "SQLite 3.45",
+     "32",
+     "3.12",
+     "the API guild",
+     "64"
+    ]
    }
   },
   "naive": {
@@ -121,40 +152,50 @@
      0.9118,
      0.9628
     ]
+   },
+   "fact_survival": {
+    "n": 180,
+    "survived": 180,
+    "fact_survival": 1.0,
+    "ci": [
+     0.9791,
+     1.0
+    ],
+    "misses": []
    }
   },
   "mem0_infer": {
    "fact": {
     "n": 180,
-    "accuracy": 0.7056,
+    "accuracy": 0.6833,
     "ci": [
-     0.6352,
-     0.7673
+     0.6121,
+     0.7469
     ],
-    "mean_prompt_tokens": 187.2
+    "mean_prompt_tokens": 187.0
    },
    "current": {
     "n": 60,
-    "accuracy": 0.7,
+    "accuracy": 0.75,
     "ci": [
-     0.5749,
-     0.801
+     0.6277,
+     0.8422
     ],
-    "mean_prompt_tokens": 194.3,
-    "stale_rate": 0.2167,
+    "mean_prompt_tokens": 195.5,
+    "stale_rate": 0.1167,
     "stale_ci": [
-     0.1312,
-     0.3362
+     0.0577,
+     0.2218
     ]
    },
    "lesson": {
     "n": 90,
-    "accuracy": 0.7222,
+    "accuracy": 0.7,
     "ci": [
-     0.622,
-     0.8042
+     0.5987,
+     0.7849
     ],
-    "mean_prompt_tokens": 203.8
+    "mean_prompt_tokens": 202.4
    },
    "situation": {
     "n": 90,
@@ -166,10 +207,41 @@
    },
    "core": {
     "n": 330,
-    "accuracy": 0.7091,
+    "accuracy": 0.7,
     "ci": [
-     0.6579,
-     0.7555
+     0.6485,
+     0.7469
+    ]
+   },
+   "fact_survival": {
+    "n": 180,
+    "survived": 126,
+    "fact_survival": 0.7,
+    "ci": [
+     0.6294,
+     0.7622
+    ],
+    "misses": [
+     "5e-4",
+     "PostgreSQL 14",
+     "INFO",
+     "3e-4",
+     "SQLite 3.45",
+     "32",
+     "the API guild",
+     "etc/app.yaml",
+     "release/2026.1",
+     "PostgreSQL 15",
+     "INFO",
+     "3.11",
+     "etc/app.yaml",
+     "6 hours",
+     "stable-main",
+     "eu-west-3",
+     "the API guild",
+     "64",
+     "the payments squad",
+     "etc/app.yaml"
     ]
    }
   }
@@ -282,13 +354,7 @@
    "llm_calls_per_session": 1,
    "sessions": 150,
    "errors": 0,
-   "sessions_with_zero_notes": 0,
-   "evidence": {
-    "sessions": 150,
-    "notes": 412,
-    "spans": 392,
-    "ms": 1186.3700000000001
-   }
+   "sessions_with_zero_notes": 0
   },
   "mem0_infer": {
    "llm": "qwen2.5-7b-64k:latest",

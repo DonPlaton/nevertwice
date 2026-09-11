@@ -27,8 +27,33 @@ empty.
   live-only, because an archived note has left the embedding cache the classifier ranks on.
   The as-of stand gains a `--recent` control that dates the replaced note inside the window,
   so the archived-closure rate is read against the write path's own rate. Gate, baseline and
-  the decision on a miss are in `.loop/GOAL-CLOSE.md`; the whole register is withdrawn and
-  re-measured on the changed engine in one campaign.
+  the decision on a miss are in `.loop/GOAL-CLOSE.md`. Measured on the campaign of 2026-09-11:
+  `s0_retired_rate` 0.000 -> **0.908** against a `--recent` control of 0.917 (gate: at least
+  0.80 x the control and 0.60 absolute - met); as-of both-days-correct 0.783 -> 0.800; the
+  supersession caps held (explicit stale 0.083 -> 0.033, implicit 0.100 -> 0.067) except implicit
+  over-retraction, 0.30 -> 0.35, inside its interval at sixty cases and printed as the one cost.
+
+- **A write-path channel keeps the literal the summary drops** (`nevertwice/memory_hook.py`,
+  ledger J3 addendum). The owner hand-marked a held-out of 52 literal-fact questions over his own
+  coding sessions; the extractor answered 0.058 of them where the raw slice answered 0.827, and a
+  model-free probe found the answer present in the notes returned for only 5 of 52 - lost at
+  write, not at retrieval (`nvcc -arch=sm_120` had become "sm_120 support"). Two channels put it
+  back, each verified as a verbatim substring of the session so a paraphrase cannot enter: the
+  extractor names the literal per item (prompt field `facts`) and a deterministic harvester
+  (`_harvest_literals`) salvages the ones it omitted from the session text near the note's topic;
+  `_note_facts` merges them (at most ten per note) and `_append_facts` writes them into the
+  description, so recall, the embedding and every reader carry them with no read-path change.
+  `code_sessions_eval.py` gains a `fact-survival` stage - the share of questions whose answer is
+  verbatim in the returned notes, counted in seconds without a reader or a judge - and pins the
+  extraction temperature to 0 through a new `NEVERTWICE_EXTRACT_TEMP` override (the live hook
+  keeps 0.2). On the hand-marked held-out: fact survival 0.096 -> **0.635**, reader accuracy
+  0.058 -> **0.404** (Mem0's pipeline: 0.288 and 0.250). The gate written first - survival at
+  or above 0.60 with accuracy at or above 0.40 - is met on the final measure; a deterministic
+  development run read 0.596, so the gate sits inside the run-to-run band and the page says so.
+  On the synthetic dev corpus the channel moved nothing (fact 0.083 -> 0.083); that corpus is
+  a diagnostic, not a benchmark. `research/heldout_review.py` builds the marking package (to the
+  polygon only; the repository gets a hashes-and-counts manifest); `tests/_test_fact_survival.py`
+  pins both channels.
 
 - **The as-of stand says why an old day failed** (`research/asof_bench.py`, ledger J2). Every
   engine row records what the store holds for the case's first session - notes written, live

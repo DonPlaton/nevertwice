@@ -1,13 +1,5 @@
 # Cross-encoder distillation — a second negative result, and the guard that caught it
 
-<!-- withdrawn-banner -->
-> **Withdrawn: figures on this page must not be quoted.** They were retracted and remain
-> here because deleting a result one was wrong about destroys the record of having been
-> wrong. The design, the method and the caveats stand; the numbers do not. Each figure's
-> own reason and date are in
-> [`research/evidence_manifest.json`](evidence_manifest.json), and
-> `python tools/check_freshness.py --list-stale` lists every one.
-
 **Run 2026-08-27** on the frozen external held-out set, RTX 5090, fp16. Thresholds were fixed
 first in [`EMBED_M3_THRESHOLD.md`](EMBED_M3_THRESHOLD.md) and committed before any teacher score
 was collected. Artifacts: `research/embed_universal/heldout/distil_v1.json`,

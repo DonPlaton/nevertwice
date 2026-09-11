@@ -1,43 +1,43 @@
 {
- "store_notes": 4926,
- "store_sessions": 933,
+ "store_notes": 5377,
+ "store_sessions": 1064,
  "embedder": "none (lexical only)",
  "protocols": {
   "session": {
    "protocol": "session",
    "halves": {
     "ru": {
-     "n": 254,
+     "n": 233,
      "raw": {
-      "recall@1": 0.622,
-      "recall@3": 0.7913,
-      "recall@5": 0.8189,
-      "recall@10": 0.8701,
-      "mrr": 0.7109
+      "recall@1": 0.6266,
+      "recall@3": 0.7897,
+      "recall@5": 0.8155,
+      "recall@10": 0.8584,
+      "mrr": 0.7158
      },
      "morph": {
-      "recall@1": 0.6811,
-      "recall@3": 0.811,
-      "recall@5": 0.8425,
-      "recall@10": 0.9055,
-      "mrr": 0.754
+      "recall@1": 0.7382,
+      "recall@3": 0.8283,
+      "recall@5": 0.8412,
+      "recall@10": 0.8884,
+      "mrr": 0.7885
      }
     },
     "en": {
-     "n": 678,
+     "n": 830,
      "raw": {
-      "recall@1": 0.7906,
-      "recall@3": 0.8938,
-      "recall@5": 0.9277,
-      "recall@10": 0.9499,
-      "mrr": 0.8482
+      "recall@1": 0.7614,
+      "recall@3": 0.8819,
+      "recall@5": 0.9169,
+      "recall@10": 0.947,
+      "mrr": 0.8291
      },
      "morph": {
-      "recall@1": 0.8112,
-      "recall@3": 0.8953,
-      "recall@5": 0.9233,
-      "recall@10": 0.9528,
-      "mrr": 0.8606
+      "recall@1": 0.7831,
+      "recall@3": 0.8867,
+      "recall@5": 0.9241,
+      "recall@10": 0.953,
+      "mrr": 0.8433
      }
     }
    }
@@ -46,37 +46,37 @@
    "protocol": "sibling",
    "halves": {
     "ru": {
-     "n": 968,
+     "n": 958,
      "raw": {
-      "recall@1": 0.8182,
-      "recall@3": 0.9287,
-      "recall@5": 0.9535,
-      "recall@10": 0.9752,
-      "mrr": 0.8782
+      "recall@1": 0.6889,
+      "recall@3": 0.8309,
+      "recall@5": 0.8747,
+      "recall@10": 0.9019,
+      "mrr": 0.768
      },
      "morph": {
-      "recall@1": 0.7304,
-      "recall@3": 0.875,
-      "recall@5": 0.9153,
-      "recall@10": 0.9432,
-      "mrr": 0.8092
+      "recall@1": 0.6608,
+      "recall@3": 0.8069,
+      "recall@5": 0.8539,
+      "recall@10": 0.8998,
+      "mrr": 0.7459
      }
     },
     "en": {
-     "n": 3950,
+     "n": 4393,
      "raw": {
-      "recall@1": 0.8033,
-      "recall@3": 0.919,
-      "recall@5": 0.9552,
-      "recall@10": 0.9803,
-      "mrr": 0.8679
+      "recall@1": 0.7318,
+      "recall@3": 0.8605,
+      "recall@5": 0.9008,
+      "recall@10": 0.9374,
+      "mrr": 0.8056
      },
      "morph": {
-      "recall@1": 0.7567,
-      "recall@3": 0.8729,
-      "recall@5": 0.9154,
-      "recall@10": 0.9549,
-      "mrr": 0.8256
+      "recall@1": 0.7013,
+      "recall@3": 0.8256,
+      "recall@5": 0.8707,
+      "recall@10": 0.9171,
+      "mrr": 0.7755
      }
     }
    }
