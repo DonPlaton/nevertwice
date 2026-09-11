@@ -1,13 +1,5 @@
 # Does the memory hand back a fact that has since been retracted?
 
-<!-- review-2026-09-05 -->
-> **Withdrawn 2026-09-05, pending a re-run.** The engine changed after these figures were
-> measured (guard delivery, the re-mine date and floor, the rollback generation of state
-> files - none of them the supersession path, and the register does not distinguish), so
-> every claim on this page is marked `stale` until the bench is re-run at the new HEAD. The
-> method, the dataset and the caveats stand; quote the numbers only once
-> `python tools/check_freshness.py --list-stale` no longer lists them.
-
 Every public benchmark for agent memory asks whether a system **recalls** a fact. LoCoMo,
 LongMemEval and BEAM all measure retrieval against a set of questions whose answers were true
 when the corpus was written and stayed true. None of them asks what happens when a fact is
@@ -25,18 +17,27 @@ number this project previously published turned out to lack.
 
 ## What is measured
 
-Three rates, because any one of them alone is trivially gamed.
+Three rates, because any one of them alone is trivially gamed - and the third comes in two
+strengths, which this page kept under one name until 2026-09-11.
 
 | | | |
 |---|---|---|
 | **stale** | the retracted fact came back, asserted as current | lower is better |
 | **current** | the replacement came back | higher is better |
-| **over-retraction** | on control cases, a fact that is still true went missing | lower is better |
+| **control miss** | on control cases, a fact that is still true did not come back - for any cause | lower is better; comparable across arms |
+| **over-retraction** | on control cases, the memory itself retired a fact that is still true | lower is better; readable only where the store records a retirement |
 
 A system that answers *I have nothing* scores a perfect stale rate and a zero current rate,
 and the pair of numbers says so at a glance. A system that deletes on any doubt scores well on
-both and is caught by the third: a third of the cases assert two facts that are simply
-different, where forgetting one is the failure.
+both and is caught by the third and fourth: a quarter of the cases assert two facts that are
+simply different, where forgetting one is the failure. The third is the broad measure - the
+fact did not come back, whether the memory retired it, never wrote it, or ranked it too low -
+and it is the one every arm can be scored on. The fourth is the narrow one, the design's own
+failure mode, and it needs the arm's store: ours records `valid_to`, Graphiti records
+`invalid_at`, Mem0 reports a delete event, the floor never retires by construction. Until
+2026-09-11 the published table printed our fourth beside the other arms' third under the one
+word *over-retraction*; the rows measured different things, and the register has since split
+them (`control_miss_rate` against `over_retraction_rate`).
 
 **A returned item counts as a stale assertion only if it carries a retracted marker and no
 current marker.** The first scoring pass matched the retracted value anywhere in the returned
@@ -109,79 +110,94 @@ does not separate systems and has to be thrown away.
 
 ## Result
 
-Run of 2026-09-10 at commit e225d9c (the Zep arm at dc523f1). The text each arm is scored on is
-what a caller receives: for Nevertwice, the lesson and - since the evidence layer - the verbatim
-transcript line it was aligned to; for Mem0 and Graphiti, their memory or fact text; for the
-floor, the stored sentence. The table is the generated one in the section *The same corpus, with
-the cue removed* below, which carries both corpora; on the explicit corpus the stale column reads
-ours 0.075, Mem0 0.883, Graphiti 0.317, the floor 0.950, and the current column 0.967, 0.967, 0.550,
-0.950. Over-retraction and characters per query are in the same table and in the register.
+Run of 2026-09-11 at commit 9262543 for our arms, Mem0 and the floor; the Zep/Graphiti arm is
+its run of 2026-09-10 on the unchanged stand, carried into the pooled artifact (one run, where
+ours are two - see *What this does not show*). The text each arm is scored on is what a caller
+receives: for Nevertwice, the note's
+title, description and prevention - the description carrying, since 2026-09-11, the literals the
+write path verified against the transcript (`[facts]`); for Mem0 and Graphiti, their memory or
+fact text; for the floor, the stored sentence. The table is the generated one in the section *The
+same corpus, with the cue removed* below, which carries the stale and current columns for both
+corpora. Control miss and characters per query are in the register; the control misses split by
+cause are the tables under *What it costs us*.
 
 Nevertwice's row is pooled over **two runs of the same commit**, so n = 120 case-runs for
-stale and current and n = 40 for over-retraction; the other two arms are one run each, n = 60
-and n = 20. Intervals are Wilson at 95%.
+stale and current and n = 40 for the two control measures; the other arms are one run each,
+n = 60 and n = 20. Intervals are Wilson at 95%.
 
-**Why two runs.** The two runs read stale 0.083 and 0.067 on the same commit, the same corpus
-and the same models. The extraction model is not deterministic at temperature 0, so a single
-run of this stand is not a result, and publishing one would have been the same mistake as
-reading a regression out of one latency run. Both per-run values are kept in the artifact.
+**Why two runs.** On this campaign the two runs read the same stale rate, 0.033 and 0.033,
+because the extractor was pinned to temperature zero for the whole re-measurement; earlier pairs
+on one commit had read four points apart, and even pinned the model is not bit-for-bit
+deterministic (the two as-of runs of the same campaign differ). A single run of this stand is
+therefore still not a result, and publishing one would be the same mistake as reading a
+regression out of one latency run. Both per-run values are kept in the artifact.
 
-**What the evidence layer changed here.** The scored text now carries the verbatim line, so a
-retracted value the note's own wording had paraphrased away is counted as stale when the line
-still says it - the metric got stricter, not the engine looser - and the replacement's literal
-value is found more often, which is where the current column's rise comes from. The stale
-column moved from the run before by less than its own interval.
+**What the literal-fact channel changed here.** The scored text now carries the literals the
+extractor named or the harvester found in the session, verified as substrings before they are
+written, so a retracted value the note's own wording had paraphrased away is counted as stale
+when the literal still says it - the metric got stricter, not the engine looser - and the
+replacement's literal is found more often, which is where the current column's rise to 0.975
+comes from. The stale column moved from the run before by less than its own interval.
 
-The other two columns are what make the first one mean anything. A memory that returned
-nothing at all would score 0.000 stale, which is the best possible number, and 0.000 current,
-which is the worst; a memory that deleted on any doubt would score well on both and be caught
-by over-retraction. Ours reads 0.075 / 0.967 / 0.05, and the third figure is the same as the
-floor's, so the silence on the first is not bought by forgetting.
+The other columns are what make the first one mean anything. A memory that returned nothing at
+all would score zero stale, which is the best possible number, and zero current, which is the
+worst; a memory that deleted on any doubt would score well on both and be caught on the
+controls. Ours reads 0.033 / 0.975 on the first two. On the controls the honest reading needs
+both measures, and *What it costs us* gives them: the memory retired **no** still-true fact in
+forty control case-runs, and a still-true fact failed to come back in nine of them - the worst
+control-miss rate on the stand, against one miss for the floor and none for Mem0. The silence on
+the first column is not bought by forgetting; it is paid for in the extractor's silence and the
+ranker's depth, and the split below says which.
 
 Paired, on the same cases, McNemar exact:
 
-| pair | discordant | p |
+<!-- claims:supersession-pairs -->
+| pair | discordant (first - second) | p, McNemar exact |
 |---|---|---|
-| Nevertwice vs Mem0 | 49 - 1 | 9.1 x 10^-14 |
-| Nevertwice vs naive | 52 - 0 | 4.4 x 10^-16 |
-| Nevertwice vs Graphiti | 19 - 5 | 0.01 |
-| **Mem0 vs naive** | 2 - 6 | **0.29** |
+| Nevertwice vs Mem0 | 0 - 54 | 1.1 x 10^-16 |
+| Nevertwice vs naive | 0 - 55 | 5.6 x 10^-17 |
+| Nevertwice vs Zep/Graphiti | 2 - 18 | 4.0 x 10^-4 |
+| **Mem0 vs naive** | 3 - 4 | 1.00 |
+<!-- /claims:supersession-pairs -->
 
-**The third row is the finding, and it is easy to misread.** Mem0 and the append-only file
+**The last row is the finding, and it is easy to misread.** Mem0 and the append-only file
 are tied *with each other*, at the wrong end: both hand back the retracted fact on the large
 majority of cases. The tie says nothing good about either. On supersession, Mem0 is
-statistically indistinguishable from a text file. That is not a defect report: Mem0 2.0 is
+statistically indistinguishable from a text file. That is not a defect report: Mem0 2.0.19 is
 single-pass and ADD-only by published design, and its note on the change says both facts
 survive on purpose. It is a good design for conversational history. This benchmark measures
 the axis where that design has nothing to offer, and the number says exactly that.
 
-Its retrieval, meanwhile, is as good as ours on this run - the same current rate - with zero
-over-retraction. Mem0 loses this benchmark and leads on the one everyone else runs.
+Its retrieval, meanwhile, is a shade ahead of ours on this run on the current column, and it
+missed no control fact at all where we missed nine of forty. Mem0 loses this benchmark
+and leads on the one everyone else runs.
 
 **Graphiti is the row that tests the claim.** It is the one system on the stand designed for
 retraction - an edge carries `valid_at` and `invalid_at`, and a model decides what an episode
-contradicts - and it does retract: a third of the retracted facts come back where Mem0 and the
-file return nine in ten. It pays on the other two columns, which is the whole reason they are
-printed: it returns the replacement barely more often than not, and it retires a still-true
-fact three times in twenty. Paired with us on the same cases the discordant pairs run nineteen
-to five - five cases where its invalidation caught a replacement ours did not - and on the
-implicit corpus, with the retraction cue removed, its stale rate reads 0.217 to our 0.092. The
-lead over the ADD-only stores was never the finding; this row is.
+contradicts - and it does retract: three in ten of the retracted facts come back where Mem0 and
+the file return nine in ten. It pays on the other columns, which is the whole reason they are
+printed: it returns the replacement barely more often than not, and a still-true fact fails to
+come back four times in twenty - whether it retired them or never wrote them this run did not
+read from its store, and the next one will. Paired with us on the same cases the discordant
+pairs run eighteen to two - two cases where its invalidation caught a replacement ours did not -
+and on the implicit corpus, with the retraction cue removed, its stale rate reads 0.267 to our
+0.067. The lead over the ADD-only stores was never the finding; this row is.
 
 ### By shape
 
 | shape | Nevertwice (2 runs) | Mem0 | Graphiti | naive |
 |---|---|---|---|---|
-| `value_replaced` | 1/30 | 15/15 | 5/15 | 15/15 |
-| `approach_abandoned` | **7/30** | 13/15 | 2/15 | 15/15 |
-| `retracted_no_replacement` | 1/30 | 13/15 | 7/15 | 15/15 |
-| `narrowed` | 0/30 | 12/15 | 5/15 | 12/15 |
+| `value_replaced` | 1/30 | 15/15 | 6/15 | 15/15 |
+| `approach_abandoned` | **3/30** | 14/15 | 2/15 | 15/15 |
+| `retracted_no_replacement` | 0/30 | 14/15 | 6/15 | 15/15 |
+| `narrowed` | 0/30 | 13/15 | 4/15 | 12/15 |
 
-Stale count, lower is better. `narrowed` is clean across both runs and `value_replaced` nearly
-so. `approach_abandoned` carries most of what remains: an abandoned approach is stated in
-different words from the one that replaced it, the two notes rarely share a slug, and the
-twin gate does not always join them - so the old note stays live, and its verbatim line now
-says exactly what it used to say.
+Stale count, lower is better, read from the rows of the pooled artifact. `narrowed` and
+`retracted_no_replacement` are clean across both runs and `value_replaced` nearly so.
+`approach_abandoned` carries most of what remains: an abandoned approach is stated in different
+words from the one that replaced it, the two notes rarely share a slug, and the twin gate does
+not always join them - so the old note stays live, and its literals still say what it used to
+say.
 
 `approach_abandoned` is the weakest of the four, and a run before the language fix had four
 failures there. They went away for a reason worth recording rather than celebrating - see
@@ -207,6 +223,17 @@ corpus is unchanged byte for byte, and `--check` proves it.
 <sub>Stale = the retracted fact came back, lower is better. Current = the fact that replaced it was returned, higher is better. *Explicit* names the retraction in the second session; *implicit* frames the replacement like any first assertion.</sub>
 <!-- /claims:supersession-variants -->
 
+Paired on the same cases of this corpus, McNemar exact:
+
+<!-- claims:supersession-pairs-implicit -->
+| pair | discordant (first - second) | p, McNemar exact |
+|---|---|---|
+| Nevertwice vs Mem0 | 0 - 52 | 4.4 x 10^-16 |
+| Nevertwice vs naive | 0 - 53 | 2.0 x 10^-11 |
+| Nevertwice vs Zep/Graphiti | 4 - 16 | 0.01 |
+| **Mem0 vs naive** | 3 - 4 | 1.00 |
+<!-- /claims:supersession-pairs-implicit -->
+
 The gate for this variant was written in the ledger before the run (item I5): our stale rate
 below the floor's, with a Wilson interval that excludes it. If it had missed, the README's
 supersession row would have been narrowed to "explicit retractions only".
@@ -227,8 +254,20 @@ day after the second. A case counts only when both answers are right.
 | Zep/Graphiti (`graphiti-core`, its own bitemporal edges) | 0.383 | 0.650 | 0.533 |
 | an append-only markdown file, no dates | 0.000 | 0.000 | 1.000 |
 
-<sub>The gate written before the run was 0.80 on both days, and this is below it. The loss is on the old day, and the stand now says why per case: a first session the extractor left without a note, a note whose wording lost the marker, or the new fact leaking into the old day; the artifact carries the split. Mem0 has no row - it stamps a memory with the wall-clock time of the `add()` call and its search has no as-of filter, so facts cannot be placed in the past without patching the product.</sub>
+<sub>The gate written before the run was 0.80 on both days and 0.85 on the old day; this run meets it - exactly at the threshold, a boundary rather than a margin: both days 0.800, the old day 0.892; the two runs behind the pooled figure read 0.867 and 0.733, and the interval [0.720, 0.862] covers the threshold. The larger loss is on the day after; the old-day misses split by kind in the artifact: 11 where the extractor left the first session without a note, 1 where its note existed and nothing came back, 1 where the note came back without the marker, 0 where the new fact leaked into the old day. Mem0 has no row - it stamps a memory with the wall-clock time of the `add()` call and its search has no as-of filter, so facts cannot be placed in the past without patching the product.</sub>
 <!-- /claims:asof -->
+
+The gate under the table was written in the ledger (I6) before the first run - 0.80 on both
+days, later joined by 0.85 on the old day (J2) - and was missed twice, by seventeen points and
+then by two. The campaign of 2026-09-11 meets it exactly at the threshold, and the caption
+says so in those words because it is computed from the claims rather than written once: a
+pooled 0.800 whose runs read 0.867 and 0.733 is a boundary, not a margin. What moved it was
+J2b, the archive-aware reconcile: the stand dates the first session past the ninety-day
+archive window, and until 2026-09-11 the replacing session never closed an archived note's
+interval (`s0_retired_rate` 0.000); it now closes 0.908 of them against a `--recent` control of
+0.917, where the first session is never archived. Until 2026-09-11 the caption here read *and
+this is below it* on a run that had met the gate - a verdict typed when the gate was missed
+and never compared again, which is the defect that made it computed.
 
 Graphiti's row is the first competitor number on this stand: its bitemporal edges answer both
 days for fewer than half the cases, and lose mostly on the day after - the replacement it did not
@@ -240,12 +279,59 @@ date filter admitted edges from after the day asked for in the probe.
 
 The stale rate is not free, and the honest accounting is on the other two columns.
 
-**Current rate 0.967, level with Mem0 and above the floor's 0.950.** The store says where the
-remaining misses went. Of the twenty control cases in the first run, eight returned nothing
-useful: **one** was retired by the memory - the only true over-retraction in the run - **three**
-were never written at all, and **four** were written and ranked below the top five; the second
-run reads one, two and three. Only the first is the memory being too eager, which is why the raw
-control miss rate is reported as 0.05 here.
+**Current rate 0.975, a shade under Mem0's 0.983 and above the floor's 0.950.** The store says
+where the control misses went. Of the forty control case-runs (two runs of twenty), nine returned
+nothing useful: **none** was retired by the memory, **four** were never written at all, and
+**five** were written, live, and ranked below the top five. Only the first is the memory being
+too eager, and it is zero; the control-miss rate - nine in forty, the worst on the stand - is the
+price of the other two, and both tables below say so per arm.
+
+<!-- claims:supersession-causes -->
+| arm | a still-true fact did not come back | retired by the memory | never written | written, below the top five |
+|---|---|---|---|---|
+| **Nevertwice** | 0.225 [0.123, 0.375] | 0 of 40 | 4 of 40 | 5 of 40 |
+| Mem0 | 0.000 [0.000, 0.161] | 0 of 20 | 0 of 20 | 0 of 20 |
+| Zep/Graphiti (`graphiti-core`, FalkorDB) | 0.200 [0.081, 0.416] | not read | not read | not read |
+| an append-only markdown file | 0.050 [0.009, 0.236] | 0 of 20 | 0 of 20 | 1 of 20 |
+
+<sub>The first column is the rate in the table above; the three after it split its count by cause. Only the first cause is the memory being too eager - the other two are the extractor's silence and the ranker's depth. A cause reads *not read* where the run did not inspect that arm's store: a retirement is visible only where the store records one (our `valid_to`; Graphiti's `invalid_at`/`expired_at`).</sub>
+
+<sub>Over-retraction proper - the memory closed the interval of a fact that was still true - is the *retired* column as a rate: 0.000 [0.000, 0.088] for Nevertwice over its control case-runs.</sub>
+<!-- /claims:supersession-causes -->
+
+On the implicit corpus the same split is starker - every one of the fourteen misses is a ranking
+miss:
+
+<!-- claims:supersession-causes-implicit -->
+| arm | a still-true fact did not come back | retired by the memory | never written | written, below the top five |
+|---|---|---|---|---|
+| **Nevertwice** | 0.350 [0.221, 0.505] | 0 of 40 | 0 of 40 | 14 of 40 |
+| Mem0 | 0.000 [0.000, 0.161] | 0 of 20 | 0 of 20 | 0 of 20 |
+| Zep/Graphiti (`graphiti-core`, FalkorDB) | 0.200 [0.081, 0.416] | not read | not read | not read |
+| an append-only markdown file | 0.050 [0.009, 0.236] | 0 of 20 | 0 of 20 | 1 of 20 |
+
+<sub>The first column is the rate in the table above; the three after it split its count by cause. Only the first cause is the memory being too eager - the other two are the extractor's silence and the ranker's depth. A cause reads *not read* where the run did not inspect that arm's store: a retirement is visible only where the store records one (our `valid_to`; Graphiti's `invalid_at`/`expired_at`).</sub>
+
+<sub>Over-retraction proper - the memory closed the interval of a fact that was still true - is the *retired* column as a rate: 0.000 [0.000, 0.088] for Nevertwice over its control case-runs.</sub>
+<!-- /claims:supersession-causes-implicit -->
+
+**A migration the sum hid.** Against the run before the literal-fact channel (commit ef8120d),
+per run of twenty controls on the implicit corpus, the misses read: retired by the memory 1
+then 0, never written 3 then 0, written but below the top five 3 then 7. The write path became
+strictly better on both of its own causes and every point of the sum's rise moved into ranking;
+both runs of the new engine read exactly seven, so this is a systematic set of cases rather
+than spread. On the explicit corpus the unranked count fell instead (four and three, then three
+and two), so the corpus that suffers is the one where the query overlaps the replacement least
+lexically. The campaign report had read the sum as a cap moving the wrong way and the cause as
+noise; it is the first measured sign that the `[facts]` block dilutes ranking on a query that
+does not share its literals, and the ledger writes the gate for measuring that (item K1)
+before anything is measured or changed.
+
+Reading the cause needs the arm's store. Ours records `valid_to`; the floor stores every
+sentence and never retires one, so its one miss is a ranking miss by construction; Mem0 missed
+nothing on this run, so there was nothing to split; Graphiti's four misses were not read from
+its graph on this run - its `invalid_at` and `expired_at` would say whether it retired them -
+and the next run reads them.
 
 **A defect this benchmark found in its own first run: the extractor answered in the wrong
 language.** On a corpus containing no Russian at all, the local model wrote **17 of 123 notes
@@ -262,8 +348,8 @@ models, same commit except for the prompt:
 | | before | after |
 |---|---|---|
 | notes written in Cyrillic | 17 of 123 | **0 of 128** |
-| stale | 0.067 | **0.017** |
-| current | 0.867 | **0.933** |
+| stale, of 60 | 4 | **1** |
+| current, of 60 | 52 | **56** |
 
 The condition is now resolved in Python and the prompt names one language. The detector counts
 letters rather than bytes, because a Russian session is full of Latin identifiers and a
@@ -293,9 +379,11 @@ Neither was visible from reading the code, and neither had a failing test.
 
 ```
 python research/gen_supersession_dataset.py --check      # the dataset matches its generator
-python research/supersession_bench.py --arms nevertwice,naive --out nt.json
+python research/supersession_bench.py --arms nevertwice,naive --out run1.json
+python research/supersession_bench.py --arms nevertwice --out run2.json
 python research/supersession_bench.py --arms mem0 --out mem0.json      # needs mem0ai[extras]
-python research/supersession_bench.py --compare nt.json mem0.json
+python research/supersession_bench.py --arms zep --out zep.json        # needs graphiti-core + FalkorDB
+python research/supersession_bench.py --pool run1.json run2.json --with mem0.json zep.json --out research/results/supersession_v1.json
 ```
 
 The Mem0 arm needs its own environment. It also needs one instance rather than one per case:
@@ -310,13 +398,23 @@ the harness now counts per-case errors and refuses to score an arm that mostly f
 - **The column that matters most is the least measured.** Over-retraction is this design's own
   worst failure mode: retiring a fact that is still true is silent data loss, and unlike a
   stale answer nothing downstream can catch it. It rests on **40 control case-runs**, two per
-  control. Two errors in forty is 0.05, and the Wilson interval on that runs to **0.165** - a
-  bound consistent with losing one still-true fact in six. The floor sits in the same place, so
-  the comparison holds, but the absolute number does not support the reading "about one in
-  twenty". Bringing the upper bound under 0.10 needs about **130 controls**, roughly ninety
-  more than the dataset carries, and that is the first thing it should gain.
-- **n = 120 supersession case-runs.** Enough to separate 0.075 from 0.950 many times over; not
-  enough to distinguish 0.075 from 0.04, and the two runs behind it read 0.083 and 0.067.
+  control. No retirement in forty is zero, and the Wilson interval on that still runs to
+  **0.088** - a bound consistent with losing one still-true fact in eleven. The absolute number
+  does not support the reading "never". Bringing that upper bound under one in twenty needs
+  about seventy-five controls, more than three times what the dataset carries, and that is the
+  first thing it should gain. The broad measure beside it is not small: nine in forty control
+  case-runs did not return the still-true fact, and the split by cause is what keeps that from
+  being read as forgetting.
+- **Zep/Graphiti is one run; ours is two.** This page says one run of this stand is not a
+  result, and applied the rule to its own arm only. The Graphiti rows were re-run once on
+  2026-09-10 on an unchanged stand, and moved by their own variance - the supersession stale
+  rate by two points, the as-of both-days rate by five - while the paired p against us was
+  recomputed against our new arm, as a paired test must be. A second Graphiti run on both
+  corpora and on as-of, pooled and published with its spread like ours, is ledger item K2;
+  until it lands, read its rows as one run.
+- **n = 120 supersession case-runs.** Enough to separate 0.033 from 0.950 many times over; not
+  enough to distinguish 0.033 from half of it, and pinning the extractor made the two runs
+  behind it identical, which says nothing about a third.
 - **The cases are written here, not scraped.** They are realistic in shape and were authored
   before any arm ran, but they are ours, and a corpus its author wrote is a weaker instrument
   than one they did not. The naive floor is the guard against the obvious failure mode - if
@@ -329,7 +427,7 @@ the harness now counts per-case errors and refuses to score an arm that mostly f
   this installation does.
 - **Retrieval quality is not the subject.** On this run the wanted fact comes back as often
   from us as from Mem0, and more often than from the floor; a run earlier this year read us two
-  points behind both. Part of the rise is the scored text now carrying the verbatim line the
-  caller receives, which is the honest reading of what a caller gets, and part is the run. The
+  points behind both. Part of the rise is the scored text now carrying the literals the write
+  path kept, which is the honest reading of what a caller gets, and part is the run. The
   axis a user meets every day, did my fact come back, is stated in the same table as the win
   rather than a footnote below it.

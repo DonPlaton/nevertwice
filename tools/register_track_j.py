@@ -53,12 +53,18 @@ def wilson(k: int, n: int, z: float = 1.96) -> tuple[float, float]:
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
+    ap.add_argument("--at", metavar="COMMIT", default="",
+                    help="register further fields of artifacts the register already carries at COMMIT (the "
+                         "tool learned them after the run): COMMIT must be an ancestor of HEAD and no file in "
+                         "a command's closure may have changed after it")
     ap.add_argument("--manifest", default=str(MANIFEST_PATH))
     ap.add_argument("--dry-run", action="store_true")
     args = ap.parse_args(argv)
     manifest = json.loads(Path(args.manifest).read_text(encoding="utf-8"))
     existing = {c["id"] for c in manifest["claims"]}
-    head = _git("rev-parse", "HEAD")
+    head = _git("rev-parse", args.at or "HEAD")
+    if args.at and subprocess.run(["git", "merge-base", "--is-ancestor", head, "HEAD"], cwd=ROOT).returncode != 0:
+        raise SystemExit(f"{args.at} is not an ancestor of HEAD")
     code_time = int(_git("log", "-1", "--format=%ct", head))
     import produced_by as pb                                     # noqa: PLC0415
     dirty = _dirty_files()
@@ -71,6 +77,13 @@ def main(argv: list[str] | None = None) -> int:
         bad = sorted(p for p in closure if p in dirty)
         if bad:
             raise SystemExit(f"working tree modifies {bad[0]} - commit first")
+        if args.at:
+            moved = [p for p in closure
+                     if subprocess.run(["git", "merge-base", "--is-ancestor",
+                                        _git("log", "-1", "--format=%H", "HEAD", "--", p), head],
+                                       cwd=ROOT).returncode != 0]
+            if moved:
+                raise SystemExit(f"{moved[0]} changed after {args.at} - the artifact no longer describes HEAD's code")
         new.append({"id": cid, "statement": statement, "value": value, "printed": list(printed), "unit": unit,
                     "n": n, "pointer": pointer, "dataset": dataset, "environment": env, "command": command,
                     "raw": raw, "cited_in": [], "commit": head, "produced_by": closure,
@@ -116,6 +129,28 @@ def main(argv: list[str] | None = None) -> int:
                 f"of the first-session notes the replacing session retired, {int(via[how])} were retired via {desc}",
                 int(via[how]), [str(int(via[how]))], "retirements", n_via, None,
                 f'arms["nevertwice"].s0_retired_via.{how}', **base)
+    # the two runs behind the pooled both-days figure: the caption under the as-of table names them,
+    # because a pooled 0.800 against a gate of 0.80 is a boundary and the spread says how wide it is
+    for i, word in enumerate(("one", "two")):
+        per_run = a.get("per_run") or []
+        if len(per_run) > i:
+            add(f"asof.nevertwice.per_run.{word}",
+                f"run {word} of the as-of stand read both-days-correct {per_run[i]:.3f} on its {n // max(len(per_run), 1)} cases",
+                per_run[i], [f"{per_run[i]:.3f}"], "rate", n // max(len(per_run), 1), None,
+                f'arms["nevertwice"].per_run[{i}]', **base)
+    # the old-day half of the J2 gate (ledger J2: both-correct >= 0.80, old day >= 0.85, two runs pooled);
+    # a decision, not a measurement, so it carries a raw_gap like `asof.gate.threshold`
+    if art and "asof.gate.old_day_threshold" not in existing:
+        closure = pb.closure(ASOF_CMD)
+        new.append({"id": "asof.gate.old_day_threshold",
+                    "statement": "the gate written for the old day before the as-of re-run (ledger J2) was 0.85 "
+                                 "of case-runs correct on the day the superseded fact still held",
+                    "value": 0.85, "printed": ["0.85"], "unit": "rate", "n": None, "pointer": None,
+                    "dataset": "supersession_v1", "environment": "local_supersession_stand", "command": ASOF_CMD,
+                    "raw": None, "cited_in": [], "commit": head, "produced_by": closure, "ci": None,
+                    "raw_gap": "a threshold is a decision, not a measurement: it is quoted from .loop/GOAL-CLOSE.md "
+                               "item J2, written before the campaign of 2026-09-10 ran; the both-days half is "
+                               "`asof.gate.threshold`"})
     # the --recent control: session one dated inside the 90-day window, never archived - the rate the
     # J2b gate is measured against (shipped >= 0.80 x this and >= 0.60 absolute)
     raw_r = "research/results/asof_recent.json"

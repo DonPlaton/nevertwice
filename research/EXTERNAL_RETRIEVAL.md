@@ -107,7 +107,7 @@ and it is where a retrieval claim earns its keep.
 | **calibrated fusion (shipped default, 0 deps)** | **0.228** | **0.422** | **0.514** | **0.329** |
 <!-- /claims:longmem-s -->
 
-Everything falls, which is what a twenty-one-fold haystack does, and the shape holds: fusion beats both signals it fuses, by +0.068 at R@5 over semantic alone and +0.006 over lexical. Lexical retrieval beats the bi-encoder on this pool, as it did on the smaller one. This is also the pool where the two changes of 2026-09-06 - stop words and stems on the lexical arm, the dense weight moved to one - cost rather than gained: the fused R@5 is below the raw-token, half-weight run that preceded them. Both gates were written on the oracle pool and LoCoMo, and this pool was outside them; `research/LEXICAL_MORPHOLOGY.md` says so and carries the figure.
+Everything falls, which is what a twenty-one-fold haystack does, and the shape holds: fusion beats both signals it fuses, by seven points at R@5 over semantic alone and by less than one point over lexical. Lexical retrieval beats the bi-encoder on this pool, as it did on the smaller one. This is also the pool where the two changes of 2026-09-06 - stop words and stems on the lexical arm, the dense weight moved to one - cost rather than gained: the fused R@5 is below the raw-token, half-weight run that preceded them. Both gates were written on the oracle pool and LoCoMo, and this pool was outside them; `research/LEXICAL_MORPHOLOGY.md` says so and carries the figure.
 
 **623 of the 19,829 sessions carry no text at all** in the published corpus and are skipped,
 which is where the pool size comes from. That is a property of the dataset, stated here so the
@@ -167,7 +167,7 @@ before the re-run rather than after it.
 2,000 characters before calling the embedder. That is a latency guard for the per-prompt
 query and costs nothing on a note, which is shorter than that. A LongMemEval session is not:
 the oracle pool's median is 14,386 characters, 936 of its 940 sessions are longer than the
-cap, and the annotated answer turn begins past the cap in 34.9% of the evidence sessions.
+cap, and the annotated answer turn begins past the cap in about a third of the evidence sessions.
 The competitors embedded the whole session through the same Ollama endpoint. So the
 sentence this page used to carry - *all of them use the same local embedder, so this isolates
 the memory pipeline* - was false, and false against us: the semantic arm was working from

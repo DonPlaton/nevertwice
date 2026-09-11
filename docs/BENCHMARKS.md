@@ -64,13 +64,33 @@ The one comparison here that runs on a corpus this repository ships. Full method
 breakdown and what it costs us: [`research/SUPERSESSION.md`](../research/SUPERSESSION.md).
 
 <!-- claims:supersession-pinned -->
-| arm | returns the retracted fact | returns the replacement | retires a still-true fact |
+| arm | returns the retracted fact | returns the replacement | a still-true fact did not come back |
 |---|---|---|---|
-| **Nevertwice** | 0.033 [0.013, 0.083] | 0.975 [0.929, 0.992] | 0.000 [0.000, 0.088] |
+| **Nevertwice** | 0.033 [0.013, 0.083] | 0.975 [0.929, 0.992] | 0.225 [0.123, 0.375] |
 | Mem0 | 0.933 [0.841, 0.974] | 0.983 [0.911, 0.997] | 0.000 [0.000, 0.161] |
 | Zep/Graphiti (`graphiti-core`, FalkorDB) | 0.300 [0.199, 0.425] | 0.550 [0.425, 0.669] | 0.200 [0.081, 0.416] |
 | an append-only markdown file | 0.950 [0.863, 0.983] | 0.950 [0.863, 0.983] | 0.050 [0.009, 0.236] |
 <!-- /claims:supersession-pinned -->
+
+The third column counts every control case whose still-true fact did not come back, whatever the
+cause, so it is comparable across arms - and on it we are the worst row. Until 2026-09-11 this table
+printed our narrow figure (the memory itself retired the fact) beside the other arms' broad one under
+one name, and the rows measured different things. The split by cause is the point: only the first
+cause is the design's own failure mode, and the stand reads it for every arm whose store records a
+retirement.
+
+<!-- claims:supersession-causes -->
+| arm | a still-true fact did not come back | retired by the memory | never written | written, below the top five |
+|---|---|---|---|---|
+| **Nevertwice** | 0.225 [0.123, 0.375] | 0 of 40 | 4 of 40 | 5 of 40 |
+| Mem0 | 0.000 [0.000, 0.161] | 0 of 20 | 0 of 20 | 0 of 20 |
+| Zep/Graphiti (`graphiti-core`, FalkorDB) | 0.200 [0.081, 0.416] | not read | not read | not read |
+| an append-only markdown file | 0.050 [0.009, 0.236] | 0 of 20 | 0 of 20 | 1 of 20 |
+
+<sub>The first column is the rate in the table above; the three after it split its count by cause. Only the first cause is the memory being too eager - the other two are the extractor's silence and the ranker's depth. A cause reads *not read* where the run did not inspect that arm's store: a retirement is visible only where the store records one (our `valid_to`; Graphiti's `invalid_at`/`expired_at`).</sub>
+
+<sub>Over-retraction proper - the memory closed the interval of a fact that was still true - is the *retired* column as a rate: 0.000 [0.000, 0.088] for Nevertwice over its control case-runs.</sub>
+<!-- /claims:supersession-causes -->
 
 Nevertwice's row is pooled over two runs of the same commit; the other arms are one run each.
 Sixty supersession cases and twenty controls per run, Wilson intervals, one local stand, the same
@@ -187,11 +207,11 @@ Re-measured at the reviewed engine on the cached vectors: every figure reproduce
 LoCoMo turns are short enough that the embedding-cap defect never touched them.
 
 <!-- claims:locomo -->
-| method | R@1 | R@5 | R@10 | MRR |
-|---|---|---|---|---|
-| semantic (bge-m3) | 0.182 | 0.432 | 0.560 | 0.301 |
-| lexical (BM25) | 0.339 | 0.601 | 0.681 | 0.459 |
-| **calibrated fusion (shipped default, 0 deps)** | **0.350** | **0.640** | **0.727** | **0.481** |
+| method | R@1 | R@3 | R@5 | R@10 | MRR |
+|---|---|---|---|---|---|
+| semantic (bge-m3) | 0.182 | 0.340 | 0.432 | 0.560 | 0.301 |
+| lexical (BM25) | 0.339 | 0.527 | 0.601 | 0.681 | 0.459 |
+| **calibrated fusion (shipped default, 0 deps)** | **0.350** | **0.556** | **0.640** | **0.727** | **0.481** |
 <!-- /claims:locomo -->
 
 The exclusion was written around a reported 94% for plain BM25. The term-overlap floor here

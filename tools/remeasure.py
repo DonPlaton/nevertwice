@@ -99,7 +99,13 @@ def reformat(old: str, value) -> str | None:
         return None
     m = re.fullmatch(r"(\d+)\.(\d+)", old)
     if m:
-        return f"{v:.{len(m.group(2))}f}"
+        out = f"{v:.{len(m.group(2))}f}"
+        if v > 0 and float(out) == 0.0:
+            # a p-value that shrank under the old precision is small, not zero: "0.00" would
+            # print a claim the artifact does not make (nevertwice_vs_zep, 2026-09-11)
+            mant, exp = f"{v:.1e}".split("e")
+            return f"{mant} x 10^{int(exp)}"
+        return out
     m = re.fullmatch(r"([+−-])(\d+)\.(\d+)", old)
     if m:
         sign = "+" if v >= 0 else "-"

@@ -38,17 +38,28 @@ questions scored**. Nine are dropped and each is accounted for: four carry no an
 at all, and five point at a turn id that is not in the conversation's own turns. Seven of the
 nine are category 3.
 
+<!-- claims:locomo -->
 | method | R@1 | R@3 | R@5 | R@10 | MRR |
 |---|---|---|---|---|---|
-| semantic (bge-m3 bi-encoder) | 0.182 | 0.340 | 0.432 | 0.560 | 0.301 |
-| lexical (term overlap, no embedder) | 0.271 | 0.428 | 0.499 | 0.576 | 0.377 |
-| **calibrated score fusion** (shipped) | **0.293** | **0.474** | **0.549** | **0.634** | **0.411** |
+| semantic (bge-m3) | 0.182 | 0.340 | 0.432 | 0.560 | 0.301 |
+| lexical (BM25) | 0.339 | 0.527 | 0.601 | 0.681 | 0.459 |
+| **calibrated fusion (shipped default, 0 deps)** | **0.350** | **0.556** | **0.640** | **0.727** | **0.481** |
+<!-- /claims:locomo -->
 
-Per category at R@5, fused: 0.377, 0.634, 0.315, 0.600, 0.547 for categories one to five.
+Per category at R@5 for the shipped ranker (this table and the one above are generated from the
+register; until 2026-09-11 both were typed by hand here and had drifted a whole engine revision -
+the morphology of 2026-09-06 - behind the figures the register carried):
+
+<!-- claims:locomo-categories -->
+| fused R@5, category 1 | 2 | 3 | 4 | 5 |
+|---|---|---|---|---|
+| 0.544 | 0.716 | 0.371 | 0.675 | 0.635 |
+<!-- /claims:locomo-categories -->
+
 Category 3 is the hardest and is also where seven of the nine dropped questions sit.
 
-**The term-overlap floor scores 0.499 at R@5, not 0.94.** On the retrieval axis LoCoMo separates
-systems perfectly well: fusion is 0.050 above the lexical floor and 0.117 above the bi-encoder,
+**The term-overlap floor scores 0.601 at R@5, not 0.94.** On the retrieval axis LoCoMo separates
+systems perfectly well: fusion is four points above the lexical floor and twenty-one above the bi-encoder,
 and the three methods are ordered the same way they are on LongMemEval. Whatever is saturated
 about LoCoMo, it is not this.
 
@@ -94,7 +105,7 @@ Namespacing the ids with the conversation moved semantic recall from 0.037 to 0.
   a judge, and a local judge would produce a number that is mostly about the judge. The concern
   that a strong reader washes out the memory's contribution stands, unmeasured here.
 - **A number from this page must never be compared with a published LoCoMo accuracy figure.**
-  They are different quantities. A vendor's 92.5 and our 0.549 are not on the same scale, not
+  They are different quantities. A vendor's ninety-odd per cent and our 0.640 are not on the same scale, not
   measuring the same thing, and putting them in one table would be the most misleading thing
   this repository could do with either.
 - **Nine questions are unscoreable and are dropped, not counted as failures.** Four have no

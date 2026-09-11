@@ -16,6 +16,23 @@ empty.
 
 ### Added
 
+- **A stand's page may not print a decimal the register lost** (`tests/_test_decimal_drift.py`).
+  The governed front pages already resolve every number to a live claim; the study pages were only
+  capped in how many unregistered numbers they print, and nothing asked whether those numbers were
+  still the stand's. On 2026-09-11 that held four pages at once: `SUPERSESSION.md` quoted the
+  previous campaign's rates under a heading one commit old while its generated table read the new
+  ones; `ABSTENTION_AB.md` said its sweep was "read from" an artifact whose every cell differed;
+  `LOCOMO.md` carried its headline table by hand, an engine revision behind the register; the as-of
+  caption asserted a miss on a run that had met its gate. The suite requires every decimal outside
+  fences and generated regions on a page with a `generator` (and every governed page) to resolve to
+  a live claim's forms or interval, an external citation, a drift entry or a non-metric rule. The
+  four pages now render those tables from the register: `tools/register_abstention.py` registers
+  the recall-abstention sweep (35 claims), `register_retrieval.py --categories` the per-category
+  LoCoMo recall, `register_supersession.py` the control-miss split and the paired discordant counts,
+  and every registrar takes `--at COMMIT` to register further fields of an artifact the register
+  already carries - COMMIT must be an ancestor of HEAD, a live claim on the artifact must carry it,
+  and no file in the command's closure may have moved after it.
+
 - **Archive-aware reconcile closes an interval past the archive window**
   (`nevertwice/memory_hook.py`, ledger J2b). A fact older than the 90-day window is in
   `Archive/` when its replacement arrives; the reconcile globbed only the live folder, so
@@ -30,8 +47,14 @@ empty.
   the decision on a miss are in `.loop/GOAL-CLOSE.md`. Measured on the campaign of 2026-09-11:
   `s0_retired_rate` 0.000 -> **0.908** against a `--recent` control of 0.917 (gate: at least
   0.80 x the control and 0.60 absolute - met); as-of both-days-correct 0.783 -> 0.800; the
-  supersession caps held (explicit stale 0.083 -> 0.033, implicit 0.100 -> 0.067) except implicit
-  over-retraction, 0.30 -> 0.35, inside its interval at sixty cases and printed as the one cost.
+  supersession caps held (explicit stale 0.083 -> 0.033, implicit 0.100 -> 0.067; over-retraction
+  proper - the memory retired a still-true fact - 0.05 -> 0.00 on both corpora). The first report of
+  the campaign read "over-retraction 0.30 -> 0.35, the one cap that moved the wrong way" off a field
+  that was never the gate: the broad control-miss rate, which the register now carries under its own
+  name (see *Fixed*). Its rise is real and is a different finding: per run of twenty implicit
+  controls the misses went retired 1 -> 0, never written 3 -> 0, written-but-unranked 3 -> 7 - the
+  write path got strictly better and the whole rise moved into ranking, the first measured sign that
+  the `[facts]` block dilutes a query that does not share its literals. Its gate is in the ledger (K1).
 
 - **A write-path channel keeps the literal the summary drops** (`nevertwice/memory_hook.py`,
   ledger J3 addendum). The owner hand-marked a held-out of 52 literal-fact questions over his own
@@ -427,6 +450,24 @@ empty.
   including a claim against ourselves.
 
 ### Fixed
+
+- **The as-of caption was a constant.** `tools/render_claims.py` printed "the gate written before the
+  run was 0.80 on both days, and this is below it" under the as-of table - a sentence written when
+  the gate was missed and never compared again, so it went on asserting a miss on the campaign of
+  2026-09-11, which met the gate exactly at its threshold (both days 0.800 [0.720, 0.862], old day
+  0.892 against 0.85, runs 0.867 and 0.733). The verdict is now computed from the claims
+  (`asof_verdict`) and names the spread and the interval, because a value on its threshold is a
+  boundary, not a margin. No other renderer carried a typed verdict.
+- **Two metrics under one name.** The supersession table's third column printed our over-retraction
+  proper (the memory retired a still-true fact, read from the store: 0.000) beside the other arms'
+  broad control-miss rate (the still-true fact did not come back, for any cause), both labelled
+  "retires a still-true fact". The register now carries `control_miss_rate` for every arm - the
+  comparable column, on which we are the worst row (0.225 against the floor's 0.050) - and
+  `over_retraction_rate` only where a store records a retirement; a second generated table splits
+  each arm's misses into retired / never written / written but below the top five, with "not read"
+  where the run did not inspect that arm's store. Six mislabeled competitor claims were removed.
+- **A p-value that shrank below its printed precision restored as `0.00`.** `remeasure.reformat`
+  now switches to the power-of-ten form instead of printing a claim the artifact does not make.
 
 - **The retrieval stand's embed fallback, the same on every arm.** Three of the non-oracle
   pool's 19,206 non-empty sessions exceed bge-m3's context even under the 28,000-character cap

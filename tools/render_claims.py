@@ -254,11 +254,47 @@ def render_locomo(c: Claims) -> str:
     and the page around this table says so in as many words."""
     rows = [[label,
              c.value(f"locomo.{slug}.recall_at_1"),
+             c.value(f"locomo.{slug}.recall_at_3"),
              c.value(f"locomo.{slug}.recall_at_5"),
              c.value(f"locomo.{slug}.recall_at_10"),
              round(c.value(f"locomo.{slug}.mrr"), 3)]
             for label, slug in RETRIEVAL_ROWS if slug in ("semantic", "lexical", "hybrid")]
-    return _apply_bold(rows, ["method", "R@1", "R@5", "R@10", "MRR"], 3)
+    return _apply_bold(rows, ["method", "R@1", "R@3", "R@5", "R@10", "MRR"], 3)
+
+
+def render_locomo_categories(c: Claims) -> str:
+    """Fused R@5 per LoCoMo question category. `research/LOCOMO.md` carried this line by hand
+    and it drifted a whole engine revision behind the table above it (2026-09-11)."""
+    if not c.has("locomo.hybrid.by_category.1.recall_at_5"):
+        return _not_yet("locomo", "python research/locomo_eval.py --save")
+    cells = [f"{c.value(f'locomo.hybrid.by_category.{k}.recall_at_5'):.3f}" for k in "12345"]
+    return _table(["fused R@5, category 1", "2", "3", "4", "5"], [cells])
+
+
+ABSTENTION_THRESHOLDS = ("0.0", "0.1", "0.2", "0.35", "0.5", "0.75")
+
+
+def render_abstention_sweep(c: Claims) -> str:
+    """The recall-abstention sweep (ledger C1) from its artifact's claims. The page carried this
+    table by hand and stayed one campaign behind the artifact it said it was read from."""
+    shipped = c.value("abstention.recall.shipped_threshold") if c.has("abstention.recall.shipped_threshold") else None
+    rows = []
+    for t in ABSTENTION_THRESHOLDS:
+        base = f"abstention.recall.sweep.t{t.replace('.', '_')}"
+        if not c.has(f"{base}.mean_chars"):
+            continue
+        label = f"{float(t):.2f}" + (" (off)" if float(t) == 0 else "")
+        if shipped is not None and abs(float(t) - shipped) < 1e-9:
+            label = f"**{label} (shipped)**"
+        saved = c.value(f"{base}.char_reduction")
+        lost = -c.value(f"{base}.current_delta")
+        rows.append([label, f"{c.value(f'{base}.mean_chars'):.1f}", f"{c.value(f'{base}.mean_hits'):.2f}",
+                     f"{c.value(f'{base}.current_rate'):.3f}",
+                     "-" if float(t) == 0 else f"{saved * 100:.1f}%",
+                     "-" if float(t) == 0 else f"{(0.0 if abs(lost) < 5e-4 else lost) * 100:.1f} pts"])
+    if not rows:
+        return _not_yet("abstention", "python research/abstention_ab.py --save")
+    return _table(["threshold", "chars/query", "hits", "wanted fact returned", "chars saved", "recall lost"], rows)
 
 
 def render_head_to_head_pinned(c: Claims) -> str:
@@ -553,18 +589,84 @@ def _with_ci(c: Claims, cid: str) -> str:
 
 def render_supersession_pinned(c: Claims) -> str:
     """The three-sided table: the retracted fact, the fact that replaced it, and a still-true
-    fact retired by mistake. All three are needed - a memory that returned nothing would score
-    perfectly on the first column alone."""
+    fact that did not come back. All three are needed - a memory that returned nothing would
+    score perfectly on the first column alone.
+
+    The third column is the *control miss rate*: on a control case the still-true fact was not
+    returned, for any reason. It is the one figure every arm can be measured on, so it is the
+    comparative column. Until 2026-09-11 this table printed our narrow figure - the memory
+    itself retired the fact - beside the other arms' broad one under the single name
+    "over-retraction"; the rows measured different things. The split by cause is the table
+    `render_supersession_causes` draws underneath."""
     if not c.has("supersession.nevertwice.stale_rate"):
         return _not_yet("supersession",
                         "python research/supersession_bench.py --arms nevertwice,naive")
     rows = [[label,
              _with_ci(c, f"supersession.{slug}.stale_rate"),
              _with_ci(c, f"supersession.{slug}.current_rate"),
-             _with_ci(c, f"supersession.{slug}.over_retraction_rate")]
+             _with_ci(c, f"supersession.{slug}.control_miss_rate")]
             for label, slug in SUPERSESSION_ARMS]
     return _table(["arm", "returns the retracted fact", "returns the replacement",
-                   "retires a still-true fact"], rows)
+                   "a still-true fact did not come back"], rows)
+
+
+CAUSES = (("retired", "retired by the memory"), ("never_written", "never written"),
+          ("unranked", "written, below the top five"))
+
+
+def render_supersession_causes(c: Claims, fam: str = "supersession") -> str:
+    """Why a still-true fact did not come back, per arm: the memory retired it (over-retraction
+    proper - the only cause that is the design's own failure), the write path never stored it,
+    or it was stored and ranked below k. The counts are over the control case-runs the arm ran
+    (two runs for ours, one for each other arm). A cause the stand could not read for an arm
+    prints as such rather than as a zero: reading it needs the arm's store, which the
+    2026-09-11 run inspected only for ours."""
+    if not c.has(f"{fam}.nevertwice.control_miss_rate"):
+        return _not_yet(fam, "python research/supersession_bench.py --arms nevertwice,naive")
+    rows = []
+    for label, slug in SUPERSESSION_ARMS:
+        if not c.has(f"{fam}.{slug}.control_miss_rate"):
+            continue
+        row = [label, _with_ci(c, f"{fam}.{slug}.control_miss_rate")]
+        for key, _ in CAUSES:
+            cid = f"{fam}.{slug}.control_miss.{key}"
+            row.append(f"{int(c.value(cid))} of {c.get(cid)['n']}" if c.has(cid) else "not read")
+        rows.append(row)
+    out = _table(["arm", "a still-true fact did not come back"] + [name for _, name in CAUSES], rows)
+    out += ("\n\n<sub>The first column is the rate in the table above; the three after it split its "
+            "count by cause. Only the first cause is the memory being too eager - the other two "
+            "are the extractor's silence and the ranker's depth. A cause reads *not read* where the "
+            "run did not inspect that arm's store: a retirement is visible only where the store "
+            "records one (our `valid_to`; Graphiti's `invalid_at`/`expired_at`).</sub>")
+    if c.has(f"{fam}.nevertwice.over_retraction_rate"):
+        out += (f"\n\n<sub>Over-retraction proper - the memory closed the interval of a fact that "
+                f"was still true - is the *retired* column as a rate: "
+                f"{_with_ci(c, f'{fam}.nevertwice.over_retraction_rate')} for Nevertwice over its "
+                f"control case-runs.</sub>")
+    return out
+
+
+PAIRS = (("Nevertwice vs Mem0", "nevertwice", "mem0"), ("Nevertwice vs naive", "nevertwice", "naive"),
+         ("Nevertwice vs Zep/Graphiti", "nevertwice", "zep"), ("**Mem0 vs naive**", "mem0", "naive"))
+
+
+def render_supersession_pairs(c: Claims, fam: str = "supersession") -> str:
+    """Paired McNemar tests on the same cases: discordant pairs (ours first) and the exact p.
+    The p prints in the form its claim registered - a tiny p in its power-of-ten form - so the
+    table cannot show `0.00` for a value that is small rather than zero."""
+    rows = []
+    for label, a, b in PAIRS:
+        x, y = sorted((a, b))
+        pid = f"{fam}.{x}_vs_{y}.p_mcnemar"
+        if not c.has(pid):
+            continue
+        da, db = f"{fam}.{x}_vs_{y}.discordant.{a}", f"{fam}.{x}_vs_{y}.discordant.{b}"
+        disc = (f"{int(c.value(da))} - {int(c.value(db))}" if c.has(da) and c.has(db) else "-")
+        c.value(pid)                                       # raises Withdrawn if it is
+        rows.append([label, disc, str(c.get(pid)["printed"][0])])
+    if not rows:
+        return _not_yet(fam, "python research/supersession_bench.py --pool ...")
+    return _table(["pair", "discordant (first - second)", "p, McNemar exact"], rows)
 
 
 def render_supersession_variants(c: Claims) -> str:
@@ -593,9 +695,61 @@ def render_supersession_variants(c: Claims) -> str:
     return out
 
 
+def asof_verdict(c: Claims) -> str:
+    """The sentence under the as-of table, computed from the claims.
+
+    Until 2026-09-11 this caption was a constant - "and this is below it" - written when the
+    gate was missed and never compared again, so it went on printing a miss on a run that had
+    met the gate (both days 0.800 against 0.80). A verdict is a comparison, and a comparison
+    the renderer does not perform is a number typed by hand. The sentence names the run-to-run
+    spread and the interval too, because a value that sits exactly on its threshold is a
+    boundary, not a margin, and the reader should not have to infer that.
+    """
+    thr = c.value("asof.gate.threshold")
+    both = c.value("asof.nevertwice.both_correct")
+    old_thr = c.value("asof.gate.old_day_threshold") if c.has("asof.gate.old_day_threshold") else None
+    old = c.value("asof.nevertwice.old_day")
+    new = c.value("asof.nevertwice.new_day")
+    gate = f"The gate written before the run was {thr:.2f} on both days"
+    if old_thr is not None:
+        gate += f" and {old_thr:.2f} on the old day"
+    met = both >= thr - 1e-9 and (old_thr is None or old >= old_thr - 1e-9)
+    if met:
+        at = (" - exactly at the threshold, a boundary rather than a margin"
+              if abs(both - thr) < 1e-9 else "")
+        verdict = f"{gate}; this run meets it{at}: both days {both:.3f}"
+        if old_thr is not None:
+            verdict += f", the old day {old:.3f}"
+    else:
+        verdict = f"{gate}, and this run is below it: both days {both:.3f}"
+        if old_thr is not None and old < old_thr:
+            verdict += f", the old day {old:.3f}"
+    runs = [c.value(f"asof.nevertwice.per_run.{i}") for i in ("one", "two")
+            if c.has(f"asof.nevertwice.per_run.{i}")]
+    if len(runs) == 2:
+        verdict += f"; the two runs behind the pooled figure read {runs[0]:.3f} and {runs[1]:.3f}"
+    ci = c.get("asof.nevertwice.both_correct").get("ci") or {}
+    if "low" in ci:
+        rel = "covers" if ci["low"] <= thr <= ci["high"] else "excludes"
+        verdict += f", and the interval [{ci['low']:.3f}, {ci['high']:.3f}] {rel} the threshold"
+    side = "the old day" if old <= new else "the day after"
+    verdict += f". The larger loss is on {side}"
+    kinds = {k: c.value(f"asof.nevertwice.old_day_miss.{k}")
+             for k in ("never_written", "unranked", "paraphrase", "leak")
+             if c.has(f"asof.nevertwice.old_day_miss.{k}")}
+    if kinds:
+        verdict += ("; the old-day misses split by kind in the artifact: "
+                    f"{int(kinds.get('never_written', 0))} where the extractor left the first session "
+                    f"without a note, {int(kinds.get('unranked', 0))} where its note existed and nothing "
+                    f"came back, {int(kinds.get('paraphrase', 0))} where the note came back without the "
+                    f"marker, {int(kinds.get('leak', 0))} where the new fact leaked into the old day")
+    return verdict
+
+
 def render_asof(c: Claims) -> str:
-    """As-of recall beside the gate written before it ran. The gate was missed; the table is
-    here because ledger I6 says a missed gate is published rather than buried."""
+    """As-of recall beside the gate written before it ran. The table is here whether the gate
+    was met or missed - ledger I6 says a missed gate is published rather than buried - and the
+    verdict under it is computed (`asof_verdict`), never typed."""
     if not c.has("asof.nevertwice.both_correct"):
         return _not_yet("asof", "python research/asof_bench.py --arms nevertwice,naive --runs 2")
     rows = [[label, _cell(c, f"asof.{slug}.both_correct"), _cell(c, f"asof.{slug}.old_day"),
@@ -606,11 +760,7 @@ def render_asof(c: Claims) -> str:
             if c.has(f"asof.{slug}.both_correct")]
     out = _table(["arm", "both days", "the old day", "the day after"], rows)
     if c.has("asof.gate.threshold"):
-        out += (f"\n\n<sub>The gate written before the run was {c.value('asof.gate.threshold'):.2f} "
-                "on both days, and this is below it. The loss is on the old day, and the stand now "
-                "says why per case: a first session the extractor left without a note, a note "
-                "whose wording lost the marker, or the new fact leaking into the old day; the "
-                "artifact carries the split. Mem0 has no row - it stamps a memory with "
+        out += (f"\n\n<sub>{asof_verdict(c)}. Mem0 has no row - it stamps a memory with "
                 "the wall-clock time of the `add()` call and its search has no as-of filter, so "
                 "facts cannot be placed in the past without patching the product.</sub>")
     return out
@@ -745,7 +895,13 @@ def render_code_sessions(c: Claims, fam: str = "code_sessions") -> str:
 RENDERERS = {
     "supersession-pinned": render_supersession_pinned,
     "supersession-variants": render_supersession_variants,
+    "supersession-causes": render_supersession_causes,
+    "supersession-causes-implicit": lambda c: render_supersession_causes(c, "supersession_implicit"),
+    "supersession-pairs": render_supersession_pairs,
+    "supersession-pairs-implicit": lambda c: render_supersession_pairs(c, "supersession_implicit"),
     "asof": render_asof,
+    "locomo-categories": render_locomo_categories,
+    "abstention-sweep": render_abstention_sweep,
     "longmem-benchmarks": render_longmem_benchmarks,
     "longmem-pinned": render_longmem_pinned,
     "longmem-s": render_longmem_s,

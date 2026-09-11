@@ -1,11 +1,12 @@
 # Three switches that shipped with tests and no measurement
 
-> **Re-measured 2026-09-10** at commit 2e9e79e, the first run of this sweep whose extractor is the one
-> the register names (the supersession stand's extractor; the artifact now records it). The three runs before it built
-> the store with whatever model the shell exported and read the shipped threshold's loss as eight and
-> a half, eleven and a half and seven points; this one reads five. The decision - both defaults at 0 -
-> was made on the first run and holds on every one since; the table below is read from
-> [`research/results/abstention_ab.json`](results/abstention_ab.json).
+> **Re-measured 2026-09-11** at commit 9262543, in the campaign that re-measured the whole register with
+> the extractor pinned deterministic and bound to the one the register names. The four runs before it
+> read the shipped threshold's loss as eight and a half, eleven and a half, seven and five points; this
+> one reads two and a half. The decision - both defaults at 0 - was made on the first run and holds on
+> every one since. The table below is generated from claims registered from
+> [`research/results/abstention_ab.json`](results/abstention_ab.json); until this date it was typed by
+> hand and stood one campaign behind the artifact it said it was read from.
 
 Three abstention mechanisms went into the engine in one sitting. Each had a test proving it
 *works*: the filter filters, the threshold thresholds, the reader reads only the new region.
@@ -36,23 +37,29 @@ hit is refused, even when there is room for it - the distinction between *does i
 **Declared before the run:** the payload must fall by at least 20% and the wanted fact must be
 returned no more than 2 points less often. On a miss the default returns to 0.
 
+<!-- claims:abstention-sweep -->
 | threshold | chars/query | hits | wanted fact returned | chars saved | recall lost |
 |---|---|---|---|---|---|
-| 0.00 (off) | 310.1 | 1.58 | 0.922 | - | - |
-| 0.10 | 292.1 | 1.49 | 0.922 | 5.8% | -0.0 pts |
-| 0.20 | 235.3 | 1.19 | 0.870 | 24.1% | 5.2 pts |
-| **0.35 (shipped)** | **232.9** | **1.18** | **0.870** | **24.9%** | **5.2 pts** |
-| 0.50 | 224.7 | 1.14 | 0.857 | 27.5% | 6.5 pts |
-| 0.75 | 222.2 | 1.13 | 0.844 | 28.3% | 7.8 pts |
+| 0.00 (off) | 408.7 | 1.48 | 0.962 | - | - |
+| 0.10 | 389.6 | 1.41 | 0.962 | 4.7% | 0.0 pts |
+| 0.20 | 298.5 | 1.09 | 0.937 | 27.0% | 2.5 pts |
+| **0.35 (shipped)** | 295.5 | 1.08 | 0.937 | 27.7% | 2.5 pts |
+| 0.50 | 295.5 | 1.08 | 0.937 | 27.7% | 2.5 pts |
+| 0.75 | 295.5 | 1.08 | 0.937 | 27.7% | 2.5 pts |
+<!-- /claims:abstention-sweep -->
 
-Thresholds above 0.75 read the same as 0.75: one hit is all that is left to refuse.
+Every threshold from 0.30 upward reads the same as the shipped one: one hit is all that is left to
+refuse.
 
-**Missed, and not narrowly.** At the shipped default the trade is about eighty characters against
-five points of finding the right lesson. No threshold on the curve clears both gates: the only
-ones inside the recall budget, 0.00 and 0.10, save nothing and a seventeenth - the gate asked for a
-fifth - and the first threshold that saves a fifth (0.20) already costs five points. The seventy-seven
-cases are the eighty of the corpus minus the three where retrieval returned no hit at all, on which no
-threshold can act.
+**Missed, by half a point.** At the shipped default the trade is about a hundred and ten characters
+against two and a half points of finding the right lesson, where the gate allowed two. No threshold on
+the curve clears both gates: the only one inside the recall budget, 0.10, saves a twentieth where the
+gate asked for a fifth, and the first threshold that saves a fifth (0.20) already costs the same two
+and a half points as the shipped one. The seventy-nine cases are the eighty of the corpus minus the
+one where retrieval returned no hit at all, on which no threshold can act. Earlier runs read the loss
+at five points and more; the deterministic extractor of this campaign writes fewer, longer notes, so
+the mechanism has less to refuse and refuses less that matters - the miss is now narrow, and it is
+still a miss.
 
 **Default is now 0.** The mechanism stays as an opt-in switch rather than being deleted,
 because the trade plausibly reverses on a store where recall returns ten hits instead of one
@@ -63,7 +70,7 @@ and a half. That is a hypothesis, and it is written here as one.
 `NEVERTWICE_INJECT_MIN_VALUE`, on the path capped at 2200 characters.
 
 The sweep is identical to C1's, and that is the result: **the mean payload on this corpus is
-310 characters, so the cap never binds and the two paths differ in nothing the measurement can
+408.7 characters, so the cap never binds and the two paths differ in nothing the measurement can
 see.** The gate written for it - 15% smaller with no loss of the top-ranked lesson - is
 **vacuous as written**: the top item scores 1.0 by construction and cannot be dropped at any
 threshold below 1.0, so the second half is satisfied by arithmetic rather than by evidence.
@@ -86,7 +93,7 @@ definition. What matters is that nothing is lost:
 - **coverage, hard gate:** every event appended since the watermark appears in the delta read.
 - **efficiency:** bytes read down by at least 50% over a realistic trigger sequence.
 
-Eight growth stages, 400 events each, 3,200 events and 1.39 MB by the end:
+Eight growth stages, 400 events each, 3,200 events and 1,391,395 bytes by the end:
 
 | | full re-read | delta |
 |---|---|---|
@@ -99,17 +106,17 @@ Running it is what found the defect it existed to rule out. The delta reader see
 watermark and then discarded a line unconditionally, on the assumption that a byte offset
 lands mid-line - but a watermark is recorded as the file size after a completed write, so it
 lands on a newline nearly every time, and the discard was eating the first complete event of
-every re-mine. Coverage read 0.4978 against the full read's 0.5000, a gap of seven events
-across eight triggers, and nothing but a coverage column would have shown it.
+every re-mine. Coverage read seven events short of the full read's across eight triggers, and
+nothing but a coverage column would have shown it.
 
-The 0.5000 was itself a fault, in the stand rather than the engine: assistant content is a
+The full read's own coverage - one half - was itself a fault, in the stand rather than the engine: assistant content is a
 list of blocks and the fixture passed a string, so half the events were silently dropped
 before either arm saw them. A measurement stand that discards half its own input is worse than
 no stand at all.
 
 ## What this does not show
 
-- **One corpus, and a small one.** Mean recall depth is 1.58 hits. The abstention mechanisms
+- **One corpus, and a small one.** Mean recall depth is 1.46 hits. The abstention mechanisms
   are built for the case where recall returns many hits of uneven quality, and that case is
   not in this corpus. The result is honest about the store it was measured on and says nothing
   about a larger one.

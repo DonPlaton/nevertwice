@@ -167,8 +167,12 @@ def test_recall_and_answer_accuracy_never_share_a_table() -> None:
           "; ".join(mixed))
 
     # The answer-accuracy figure is quoted in prose, and must say it is another axis.
-    if "0.788" in DOC or "0.898" in DOC:
-        window = DOC[max(0, DOC.find("0.898") - 900):DOC.find("0.898") + 900]
+    # Anchored on whichever figure the page still prints: memanto's headline left the page on
+    # 2026-09-11 (a third-party number with no registered source), the reader-sweep figure stayed.
+    anchor = next((tok for tok in ("0.898", "0.788") if tok in DOC), None)
+    if anchor:
+        at = DOC.find(anchor)
+        window = DOC[max(0, at - 900):at + 900]
         check("the answer-accuracy passage says it is a different axis",
               "different" in window.lower() and "axis" in window.lower())
 

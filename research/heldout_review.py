@@ -185,6 +185,13 @@ PAGE_TEMPLATE = r"""<!doctype html>
  textarea { width:100%; height:220px; font:12px/1.5 ui-monospace,Consolas,monospace; padding:10px;
             border-radius:8px; border:1px solid var(--line); background:var(--card); color:var(--fg) }
  .hint { color:var(--dim); font-size:12.5px; margin-top:10px }
+ .badge { display:inline-block; border-radius:999px; padding:2px 10px; font-size:12px;
+          border:1px solid var(--line); color:var(--dim); margin-bottom:10px }
+ .badge.yes { color:var(--ok); border-color:var(--ok) }
+ .badge.no { color:var(--no); border-color:var(--no) }
+ .nomark { color:var(--warn); font-size:12.5px; margin:0 0 6px }
+ .rule { background:var(--card); border:1px dashed var(--line); border-radius:8px;
+         padding:10px 14px; margin-bottom:14px; color:var(--dim); font-size:13px }
  kbd { border:1px solid var(--line); border-bottom-width:2px; border-radius:5px; padding:0 5px; font-size:12px }
 </style>
 <header>
@@ -195,6 +202,14 @@ PAGE_TEMPLATE = r"""<!doctype html>
   <button id="export" style="padding:4px 10px">Готово / выгрузить</button>
 </header>
 <main id="main"></main>
+<div style="max-width:900px;margin:0 auto;padding:0 18px 40px">
+<div class="rule"><b style="color:var(--fg)">Решает нижний блок — твой текст.</b>
+Вопрос и ответ — это то, что предложила модель; жёлтым подсвечено место, откуда она их взяла.
+<kbd>1</kbd> только если: ответ <b style="color:var(--fg)">дословно</b> есть во фрагменте ·
+вопрос понятен без пояснений · без фрагмента на него не ответить.<br>
+Ответ почти верный, но переформулирован или обрезан — <kbd>4</kbd>, впиши то, что буквально
+написано в тексте, и <kbd>Enter</kbd>. Общее программирование — <kbd>3</kbd>.</div>
+</div>
 <script>
 const DATA = __DATA__;
 const TARGET = __TARGET__;
@@ -234,16 +249,23 @@ function render() {
   document.getElementById("pos").textContent = (i + 1) + " / " + DATA.length;
   const flags = Object.entries(c.checks).map(([k, v]) =>
     '<span class="flag ' + (v ? "on" : "off") + '">' + (v ? "✓ " : "✕ ") + (LABEL[k] || k) + "</span>").join("");
+  const prev = marks[c.id];
+  const BADGE = { yes: "уже отмечено: годится", no: "уже отмечено: не годится",
+                  generic: "уже отмечено: ясно и без текста" };
   main.innerHTML =
     '<div class="card">' +
+      (prev ? '<div class="badge ' + (prev.verdict === "yes" ? "yes" : "no") + '">' +
+              (BADGE[prev.verdict] || "уже отмечено") + (prev.edited ? " (с правкой)" : "") +
+              " — нажми заново, чтобы изменить</div>" : "") +
       '<p class="q">' + esc(c.question) + "</p>" +
       '<p class="a">Ответ: <b>' + esc(c.answer) + "</b>" +
         (c.second_answer && c.second_answer !== c.answer ? ' <span class="hint">(второй проход: ' + esc(c.second_answer) + ")</span>" : "") +
       "</p>" +
-      '<div class="k">цитата, которую привела модель</div>' +
+      '<div class="k">1 · что модель считает цитатой из сессии</div>' +
       '<div class="quote">' + esc(c.quote || "(нет)") + "</div>" +
-      '<div class="k">фрагмент твоей сессии — ' + esc(c.source.project_dir) + (c.source.day ? " · " + esc(c.source.day) : "") + "</div>" +
-      '<div class="passage">' + passage(c) + "</div>" +
+      '<div class="k">2 · твой текст — он и решает · ' + esc(c.source.project_dir) + (c.source.day ? " · " + esc(c.source.day) : "") + "</div>" +
+      (c.quote_start < 0 ? '<p class="nomark">Цитата не найдена в тексте дословно — подсветки нет. Найди ответ глазами; если его тут нет, это 2.</p>' : "") +
+      '<div class="passage" id="passage">' + passage(c) + "</div>" +
       '<div class="flags">' + flags + "</div>" +
       '<div class="btns">' +
         '<button class="yes" onclick="mark(\'yes\')">1 · Годится</button>' +
@@ -253,11 +275,17 @@ function render() {
       "</div>" +
       '<div class="edit" id="edit">' +
         '<label>вопрос</label><input id="eq" value="' + esc(c.question).replace(/"/g, "&quot;") + '">' +
-        '<label>ответ (одно-восемь слов, дословно из текста)</label><input id="ea" value="' + esc(c.answer).replace(/"/g, "&quot;") + '">' +
+        '<label>ответ — одно-восемь слов, скопированных из текста как есть</label><input id="ea" value="' + esc(c.answer).replace(/"/g, "&quot;") + '">' +
         '<div class="btns"><button class="yes" onclick="mark(\'edited\')">Сохранить и дальше</button></div>' +
       "</div>" +
     "</div>" +
-    '<p class="hint">Годится = ответ буквально есть в этом фрагменте, вопрос осмысленный, и без фрагмента на него не ответить.</p>';
+    '<p class="hint">Годится = ответ буквально есть в этом фрагменте, вопрос осмысленный, и без фрагмента на него не ответить. ' +
+    'Фрагмент прокручивается — подсветка уже подведена к центру.</p>';
+  const hit = document.querySelector("#passage mark");
+  if (hit) {
+    const box = document.getElementById("passage");
+    box.scrollTop = Math.max(0, hit.offsetTop - box.clientHeight / 2 + hit.offsetHeight / 2);
+  }
 }
 
 function openEdit() { document.getElementById("edit").classList.add("open"); document.getElementById("ea").focus(); }
@@ -280,6 +308,7 @@ function mark(verdict) {
 document.addEventListener("keydown", e => {
   if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") {
     if (e.key === "Enter") mark("edited");
+    else if (e.key === "Escape") { document.getElementById("edit").classList.remove("open"); e.target.blur(); }
     return;
   }
   if (e.key === "1") mark("yes");

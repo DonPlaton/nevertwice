@@ -68,8 +68,8 @@ def _dirty_files() -> set[str]:
 def build_claims(family: str, artifact: dict, *, dataset: str, stand: str, command: str,
                  raw: str, head: str, produced_by: list[str], existing: set[str],
                  note: str = "", label_suffix: str = "", environment: str = ENVIRONMENT,
-                 cite: list[str] | None = None, methods: list[str] | None = None
-                 ) -> tuple[list[dict], list[str]]:
+                 cite: list[str] | None = None, methods: list[str] | None = None,
+                 categories: bool = False) -> tuple[list[dict], list[str]]:
     """Returns (new claims, ids skipped because they already exist)."""
     n = int(artifact.get("questions") or 0)
     if not n:
@@ -104,6 +104,26 @@ def build_claims(family: str, artifact: dict, *, dataset: str, stand: str, comma
         new.append({"id": cid, "statement": f"{label} reaches MRR {v:.3f} on {stand}",
                     "value": v, "printed": [f"{v:.3f}"], "unit": "mrr", **base,
                     "pointer": f"methods.{key}.mrr", "ci": None})
+    # LoCoMo's per-category R@5 for the shipped ranker. `research/LOCOMO.md` quoted these by hand
+    # and drifted a whole engine revision behind the table above them (2026-09-11).
+    cats = artifact.get("by_category_recall_at_5") or {}
+    if categories and "hybrid" in rows:
+        for cat in sorted(cats, key=lambda x: int(x)):
+            cid = f"{family}.hybrid.by_category.{cat}.recall_at_5"
+            if cid in existing:
+                skipped.append(cid)
+                continue
+            if "hybrid" not in cats[cat]:
+                continue
+            v = float(cats[cat]["hybrid"])
+            new.append({"id": cid,
+                        "statement": f"{METHODS['hybrid'][1]}{label_suffix} reaches RECALL@5 {v:.3f} on the "
+                                     f"category-{cat} questions of {stand}",
+                        "value": v, "printed": [f"{v:.3f}"], "unit": "recall@5",
+                        "dataset": dataset, "environment": environment, "n": None, "command": command,
+                        "raw": raw, "cited_in": list(cite or []), "commit": head, "note": note,
+                        "produced_by": list(produced_by), "pointer": f'by_category_recall_at_5["{cat}"].hybrid',
+                        "ci": None, "ci_note": "the artifact records the per-category rate, not its count"})
     return new, skipped
 
 
@@ -119,6 +139,12 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--environment", default=ENVIRONMENT)
     ap.add_argument("--cite", action="append", default=None, metavar="DOC")
     ap.add_argument("--methods", default="", help="comma list of artifact method keys (default: all known)")
+    ap.add_argument("--categories", action="store_true",
+                    help="also register the shipped ranker's per-category R@5 (`by_category_recall_at_5`)")
+    ap.add_argument("--at", metavar="COMMIT", default="",
+                    help="register further fields of an artifact the register already carries at COMMIT: "
+                         "COMMIT must be an ancestor of HEAD, a live claim on the artifact must carry it, "
+                         "and no file in the command's closure may have changed after it")
     ap.add_argument("--manifest", default=str(MANIFEST_PATH))
     ap.add_argument("--dry-run", action="store_true")
     args = ap.parse_args(argv)
@@ -134,14 +160,31 @@ def main(argv: list[str] | None = None) -> int:
         return 2
     existing = {c["id"] for c in manifest["claims"]}
 
-    head = _git("rev-parse", "HEAD")
-    code_time = int(_git("log", "-1", "--format=%ct", head))
-    if raw.stat().st_mtime < code_time:
-        print(f"{args.artifact} predates HEAD - a claim stamped {head[:7]} must come from a run "
-              f"at {head[:7]}; re-run `{args.command}`")
-        return 2
     import produced_by as pb                                     # noqa: PLC0415
     closure = pb.closure(args.command)
+    if args.at:
+        head = _git("rev-parse", args.at)
+        if subprocess.run(["git", "merge-base", "--is-ancestor", head, "HEAD"], cwd=ROOT).returncode != 0:
+            print(f"{args.at} is not an ancestor of HEAD")
+            return 2
+        if not any(c.get("raw") == args.artifact and c.get("commit") == head and not c.get("stale")
+                   for c in manifest["claims"]):
+            print(f"no live claim on {args.artifact} carries {args.at} - register the artifact at HEAD instead")
+            return 2
+        moved = [p for p in closure
+                 if subprocess.run(["git", "merge-base", "--is-ancestor",
+                                    _git("log", "-1", "--format=%H", "HEAD", "--", p), head],
+                                   cwd=ROOT).returncode != 0]
+        if moved:
+            print(f"{moved[0]} changed after {args.at} - the artifact no longer describes HEAD's code")
+            return 2
+    else:
+        head = _git("rev-parse", "HEAD")
+        code_time = int(_git("log", "-1", "--format=%ct", head))
+        if raw.stat().st_mtime < code_time:
+            print(f"{args.artifact} predates HEAD - a claim stamped {head[:7]} must come from a run "
+                  f"at {head[:7]}; re-run `{args.command}`")
+            return 2
     dirty = sorted(p for p in closure if p in _dirty_files())
     if dirty:
         print(f"working tree modifies {dirty[0]} - commit first, a claim names one commit")
@@ -152,7 +195,7 @@ def main(argv: list[str] | None = None) -> int:
             args.family, artifact, dataset=args.dataset, stand=args.stand, command=args.command,
             raw=args.artifact, head=head, produced_by=closure, existing=existing, note=args.note,
             label_suffix=args.label_suffix, environment=args.environment, cite=args.cite,
-            methods=[s for s in args.methods.split(",") if s] or None)
+            methods=[s for s in args.methods.split(",") if s] or None, categories=args.categories)
     except (ValueError, KeyError) as e:
         print(f"artifact does not have the longmem_eval/locomo_eval shape: {e}")
         return 2

@@ -176,7 +176,7 @@ A cluster of mechanisms no shipping agent-memory system has (all in `research/`,
 honest scope notes; the production-facing ones are opt-in and off by default):
 
 - **Retrieval as a calibrated posterior:** the ad-hoc salience stack derived as one
-  conditional-logit model; the *fitted* form beats the hand-tuned weights (+0.07 R@1, ECE 0.004)
+  conditional-logit model; the *fitted* form beats the hand-tuned weights (a higher R@1 with a calibration error near zero)
   and is interpretable. None of the systems above documented recall as a calibratable posterior at the mid-2026 survey.
 - **Memory that learns what to remember:** an online contextual bandit (LinUCB) that updates
   retrieval weights from *implicit feedback* and recovers the offline optimum. The retrieval weighting
@@ -253,15 +253,15 @@ Effort tags kept for reference. ✅ = shipped.
 and graph features that close the biggest gaps, then benchmark and reach.
 
 > Caveats: Mem0/Zep/Cognee/memanto benchmark numbers are vendor-self-published and
-> disputed (the Mem0↔Zep LOCOMO war is unreconciled). **memanto's headline 89.8%
-> LongMemEval / 87.1% LoCoMo are answer-accuracy** (retrieval + LLM), a *different
+> disputed (the Mem0↔Zep LOCOMO war is unreconciled). **memanto's headline LongMemEval
+> and LoCoMo figures are answer-accuracy** (retrieval + LLM), a *different
 > axis* from the recall@k head-to-head above, and run on a **closed engine
 > (Moorcheh - `moorcheh-sdk` + a proprietary Docker image)**, so they are not
 > independently reproducible the way this table's local, same-embedder numbers are.
 > Nevertwice's own answer-accuracy figure on the comparable axis (standard
 > LongMemEval-oracle, gold context) is **0.788** with an open reasoning reader
 > (deepseek-reasoner); a reader sweep walks it 0.61 → 0.68 → 0.75 → 0.79 with the memory
-> held fixed, localizing the ~0.11 gap to memanto's 0.898 as reader-model strength on hard
+> held fixed, localizing the gap to memanto's headline as reader-model strength on hard
 > temporal/multi-session reasoning, not the memory - full decomposition (reader sweep, CoT
 > effect, a negative result on retrieving more) in
 > [`QA_ACCURACY.md`](../research/QA_ACCURACY.md). Mem0 (Apr-2026 rewrite)
