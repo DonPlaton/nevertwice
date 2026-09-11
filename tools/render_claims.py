@@ -610,8 +610,8 @@ def render_supersession_pinned(c: Claims) -> str:
                    "a still-true fact did not come back"], rows)
 
 
-CAUSES = (("retired", "retired by the memory"), ("never_written", "never written"),
-          ("unranked", "written, below the top five"))
+CAUSES = (("retired", "retired by the memory"), ("demoted", "absorbed into another note"),
+          ("never_written", "never written"), ("unranked", "served, below the top five"))
 
 
 def render_supersession_causes(c: Claims, fam: str = "supersession") -> str:
@@ -633,14 +633,18 @@ def render_supersession_causes(c: Claims, fam: str = "supersession") -> str:
             row.append(f"{int(c.value(cid))} of {c.get(cid)['n']}" if c.has(cid) else "not read")
         rows.append(row)
     out = _table(["arm", "a still-true fact did not come back"] + [name for _, name in CAUSES], rows)
-    out += ("\n\n<sub>The first column is the rate in the table above; the three after it split its "
-            "count by cause. Only the first cause is the memory being too eager - the other two "
-            "are the extractor's silence and the ranker's depth. A cause reads *not read* where the "
-            "run did not inspect that arm's store: a retirement is visible only where the store "
-            "records one (our `valid_to`; Graphiti's `invalid_at`/`expired_at`).</sub>")
+    out += ("\n\n<sub>The first column is the rate in the table above; the four after it split its "
+            "count by cause. The first two are the memory being too eager - it retired the note, or "
+            "it judged a different fact a twin of this one, absorbed it into the note and stopped "
+            "serving this fact (the old statement survives on disk, unserved) - the other two are "
+            "the extractor's silence and the ranker's depth. A cause reads *not read* where the run "
+            "did not inspect that arm's store: a retirement is visible only where the store records "
+            "one (our `valid_to` and `## Previous statement`; Graphiti's `invalid_at`/`expired_at`; "
+            "Mem0's delete and update events).</sub>")
     if c.has(f"{fam}.nevertwice.over_retraction_rate"):
-        out += (f"\n\n<sub>Over-retraction proper - the memory closed the interval of a fact that "
-                f"was still true - is the *retired* column as a rate: "
+        out += (f"\n\n<sub>Over-retraction proper - the memory stopped serving a fact that was "
+                f"still true, by retiring the note or by absorbing another fact into it - is the "
+                f"first two cause columns as a rate: "
                 f"{_with_ci(c, f'{fam}.nevertwice.over_retraction_rate')} for Nevertwice over its "
                 f"control case-runs.</sub>")
     return out

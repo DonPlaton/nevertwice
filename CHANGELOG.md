@@ -481,6 +481,18 @@ empty.
   where the run did not inspect that arm's store. Six mislabeled competitor claims were removed.
 - **A p-value that shrank below its printed precision restored as `0.00`.** `remeasure.reformat`
   now switches to the power-of-ten form instead of printing a claim the artifact does not make.
+- **The supersession bench read a demoted fact as a ranking miss** (`_store_state`, ledger K1b).
+  The dilution probe (`research/facts_dilution_probe.py`, K1) found the `[facts]` block moves no
+  rank at all - and found what the "written, live, ranked below the top five" control misses
+  really were: the twin gate had judged session two's *different* fact a twin of session one's
+  note, absorbed it, rewritten the description to the new fact and kept the old statement only
+  under `## Previous statement`; the bench matched the marker anywhere in the file and called
+  the note live. The store state is now read against the *served* text (title, description,
+  prevention - what recall hands back) and a marker found only elsewhere in a live note is a new
+  cause, **demoted**; over-retraction proper counts retired and demoted alike, for every arm
+  (Mem0's UPDATE that drops the marker is its analogue). The K2 re-measurement carries the new
+  split; the harvester's own defect the probe exposed - the hook's `Working directory:` line kept
+  as a fact in nearly every note - has its gate in the ledger (K6) and waits for the marked cards.
 
 - **The retrieval stand's embed fallback, the same on every arm.** Three of the non-oracle
   pool's 19,206 non-empty sessions exceed bge-m3's context even under the 28,000-character cap

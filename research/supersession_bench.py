@@ -193,12 +193,16 @@ def score(rows: list[dict]) -> dict:
     if ctl and any("current_live" in r for r in ctl):
         lost = [r for r in ctl if not r["current_returned"]]
         out["control_retired_by_memory"] = sum(1 for r in lost if r.get("current_retired"))
+        out["control_demoted_by_merge"] = sum(1 for r in lost if r.get("current_demoted"))
         out["control_never_written"] = sum(1 for r in lost if r.get("current_absent"))
         out["control_written_but_unranked"] = sum(
             1 for r in lost if r.get("current_live") and not r["current_returned"])
         n_ctl = len(ctl)
-        out["over_retraction_rate"] = round(out["control_retired_by_memory"] / n_ctl, 4)
-        out["over_retraction_ci"] = [round(x, 4) for x in wilson(out["control_retired_by_memory"], n_ctl)]
+        # over-retraction proper: the memory stopped serving a still-true fact, whether it moved
+        # the note to Superseded/ or absorbed another fact into it (K1b)
+        eager = out["control_retired_by_memory"] + out["control_demoted_by_merge"]
+        out["over_retraction_rate"] = round(eager / n_ctl, 4)
+        out["over_retraction_ci"] = [round(x, 4) for x in wilson(eager, n_ctl)]
     drifted = [r for r in rows if r.get("notes_in_cyrillic")]
     if any("notes_written" in r for r in rows):
         wrote = sum(r.get("notes_written", 0) for r in rows)
@@ -212,18 +216,35 @@ def score(rows: list[dict]) -> dict:
 
 # ── arm: nevertwice ───────────────────────────────────────────────────────────────────────
 
+def _served_text(body: str) -> str:
+    """What recall hands back for this note: its title, description and prevention - the same
+    three fields `hit_text` scores. The rest of the file (frontmatter, `## Previous statement`,
+    related notes) is on disk and is not served."""
+    import memory_hook as m                                     # noqa: PLC0415
+    lines = body.split("\n")
+    title = next((ln.lstrip("# ").strip() for ln in lines if ln.startswith("# ")), "")
+    try:
+        _, desc, prevention = m._parse_note_body(lines)
+    except Exception:                                           # noqa: BLE001 - an unparsable note serves its title
+        desc = prevention = ""
+    return " ".join(p for p in (title, desc or "", prevention or "") if p)
+
+
 def _store_state(project: str, case: dict) -> dict:
-    """Where the current fact ended up: live, retired, or never written.
+    """Where the current fact ended up: served by a live note, demoted inside one, retired, or
+    never written.
 
     `current_returned=False` on a control case was reported as over-retraction, and that was
-    three different failures wearing one number. A fact can be missing because the memory
-    retired it (the failure this column is for), because retrieval ranked it below k, or
-    because extraction never wrote it at all - and only the first is the memory being too
-    eager. Reading the store settles it instead of inferring it.
+    several failures wearing one number. A fact can be missing because the memory retired it
+    (moved to `Superseded/`), because the memory absorbed a *different* fact into the note and
+    rewrote what it serves - session one's statement survives only under `## Previous statement`
+    (K1b, 2026-09-11) - because retrieval ranked a note that does serve it below k, or because
+    extraction never wrote it. The first two are the memory being too eager; until K1b the second
+    was read as the third, because the marker was matched anywhere in the file.
     """
     import sandbox_guard as sg                                  # noqa: PLC0415
     root = Path(sg.store())
-    live = retired = False
+    live = retired = demoted = False
     drift = 0
     total = 0
     for folder in ("Patterns", "Mistakes", "Decisions"):
@@ -236,13 +257,18 @@ def _store_state(project: str, case: dict) -> dict:
             total += 1
             if sum(1 for ch in body if "\u0400" <= ch <= "\u04ff") > 20:
                 drift += 1
-            if _hit(case["current"], body):
-                if md.parent.name == "Superseded":
-                    retired = True
-                else:
-                    live = True
-    return {"current_live": live, "current_retired": retired,
-            "current_absent": not (live or retired), "notes_written": total,
+            in_body = _hit(case["current"], body)
+            if not in_body:
+                continue
+            if md.parent.name == "Superseded":
+                retired = True
+            elif _hit(case["current"], _served_text(body)):
+                live = True
+            else:
+                demoted = True
+    demoted = demoted and not live
+    return {"current_live": live, "current_retired": retired, "current_demoted": demoted,
+            "current_absent": not (live or retired or demoted), "notes_written": total,
             "notes_in_cyrillic": drift}
 
 
@@ -303,13 +329,19 @@ def store_bytes() -> int:
     return total
 
 
-def _state_from_texts(case: dict, live_texts: list[str], retired_texts: list[str]) -> dict:
-    """The three store-state flags from what an arm's store holds: `live_texts` are the items it
-    would still return, `retired_texts` the ones it invalidated, expired or deleted. The same
-    flags `_store_state` reads for our arm, so the cause split is computed by one rule for all."""
-    live = any(_hit(case.get("current", []), t) for t in live_texts)
-    retired = any(_hit(case.get("current", []), t) for t in retired_texts)
-    return {"current_live": live, "current_retired": retired, "current_absent": not (live or retired)}
+def _state_from_texts(case: dict, live_texts: list[str], retired_texts: list[str],
+                      demoted_texts: list[str] = ()) -> dict:
+    """The store-state flags from what an arm's store holds: `live_texts` are the items it would
+    still return, `retired_texts` the ones it invalidated, expired or deleted, `demoted_texts` the
+    previous texts of items it rewrote so that the marker left them (Mem0's UPDATE - the analogue
+    of our twin absorb). The same flags `_store_state` reads for our arm, so the cause split is
+    computed by one rule for all."""
+    markers = case.get("current", [])
+    live = any(_hit(markers, t) for t in live_texts)
+    retired = any(_hit(markers, t) for t in retired_texts)
+    demoted = (not live) and any(_hit(markers, t) for t in demoted_texts)
+    return {"current_live": live, "current_retired": retired, "current_demoted": demoted,
+            "current_absent": not (live or retired or demoted)}
 
 
 # ── arm: mem0 ─────────────────────────────────────────────────────────────────────────────
@@ -371,14 +403,14 @@ def run_mem0(cases: list[dict], k: int) -> dict:
             held = held.get("results", held) if isinstance(held, dict) else held
             live_texts = [r.get("memory", "") for r in held] if isinstance(held, list) else []
             retired_texts = [str(e.get("memory") or "") for e in events if e.get("event") == "DELETE"]
-            retired_texts += [str(e.get("previous_memory") or "") for e in events
-                              if e.get("event") == "UPDATE"
-                              and not _hit(case.get("current", []), str(e.get("memory") or ""))]
+            demoted_texts = [str(e.get("previous_memory") or "") for e in events
+                             if e.get("event") == "UPDATE"
+                             and not _hit(case.get("current", []), str(e.get("memory") or ""))]
         except Exception as e:
             rows.append({**_blank(case), "error": f"{type(e).__name__}: {e}"})
             print(f"  [{i + 1}/{len(cases)}] {case['id']}  ERROR {type(e).__name__}", flush=True)
             continue
-        rows.append({**_row(case, texts), **_state_from_texts(case, live_texts, retired_texts)})
+        rows.append({**_row(case, texts), **_state_from_texts(case, live_texts, retired_texts, demoted_texts)})
         print(f"  [{i + 1}/{len(cases)}] {case['id']}  hits={len(texts)}"
               f"  stale={rows[-1]['stale_returned']}@{rows[-1]['stale_rank']}", flush=True)
     shutil.rmtree(base, ignore_errors=True)
@@ -633,7 +665,7 @@ def pool(engine_files: list[Path], other_files: list[Path] | None = None) -> dic
     # over-retraction proper only: the memory retired a still-true fact (not "ranked below k",
     # not "never written"), which is what `_store_state` records per control row
     over_k = sum(1 for a in runs for r in ctl(a)
-                 if not r["current_returned"] and r.get("current_retired"))
+                 if not r["current_returned"] and (r.get("current_retired") or r.get("current_demoted")))
     ctl_n = sum(len(ctl(a)) for a in runs)
     # the broad measure beside it - the still-true fact did not come back, any cause - and the
     # split of that count by cause; the two used to share one name (2026-09-11)
@@ -642,6 +674,7 @@ def pool(engine_files: list[Path], other_files: list[Path] | None = None) -> dic
                     for a in runs if ctl(a)]
     lost = [r for a in runs for r in ctl(a) if not r["current_returned"]]
     causes = {"retired": sum(1 for r in lost if r.get("current_retired")),
+              "demoted": sum(1 for r in lost if r.get("current_demoted")),
               "never_written": sum(1 for r in lost if r.get("current_absent")),
               "unranked": sum(1 for r in lost if r.get("current_live"))}
     per_run_stale = [round(sum(1 for r in sup(a) if r["stale_returned"]) / len(sup(a)), 4)
@@ -748,6 +781,7 @@ def main() -> int:
               f"stale {p['stale']['rate']} {p['stale']['ci']} per run {p['stale']['per_run']} | "
               f"current {p['current']['rate']} {p['current']['ci']} | "
               f"control miss {p['control_miss']['rate']} (retired {p['control_causes']['retired']}, "
+              f"demoted {p['control_causes'].get('demoted', 0)}, "
               f"never written {p['control_causes']['never_written']}, "
               f"unranked {p['control_causes']['unranked']}) | "
               f"over-retraction {p['over_retraction']['rate']} | "
@@ -807,6 +841,7 @@ def main() -> int:
         if res.get("over_retraction_rate") is not None:
             print(f"    of the controls that came back empty: "
                   f"{res['control_retired_by_memory']} retired by the memory, "
+                  f"{res.get('control_demoted_by_merge', 0)} demoted by a merge, "
                   f"{res['control_never_written']} never written, "
                   f"{res['control_written_but_unranked']} written but out of the top {args.k} "
                   f"-> over-retraction proper {res['over_retraction_rate']}")

@@ -57,7 +57,7 @@ def engine_rows(stale_ids, retired_ids=()):
         cid = f"c{j}"
         retired = cid in retired_ids
         rows.append(_row(cid, "control", False, not retired, current_live=not retired,
-                         current_retired=retired, current_absent=False))
+                         current_retired=retired, current_demoted=False, current_absent=False))
     return rows
 
 
@@ -93,7 +93,8 @@ with tempfile.TemporaryDirectory() as tmp:
           (P["control_miss"]["k"], P["control_miss"]["n"]) == (1, 4) and P["control_miss"]["per_run"] == [0.0, 0.5],
           str(P["control_miss"]))
     check("the miss is split by cause: the one miss was a retirement",
-          P["control_causes"] == {"retired": 1, "never_written": 0, "unranked": 0}, str(P["control_causes"]))
+          P["control_causes"] == {"retired": 1, "demoted": 0, "never_written": 0, "unranked": 0},
+          str(P["control_causes"]))
     check("an arm whose store was not read has no over-retraction figure, only a control miss",
           res["arms"]["mem0"]["over_retraction_rate"] is None and res["arms"]["mem0"]["control_miss_rate"] == 0.0)
     check("over-retraction counts only what the memory retired: 1 of 4 controls",

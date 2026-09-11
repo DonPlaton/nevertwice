@@ -58,8 +58,8 @@ new, skipped = rs.build_claims("supersession_implicit", ART, dataset="supersessi
                                produced_by=["research/supersession_bench.py"], existing=set(),
                                stand="the implicit-replacement variant")
 by = {c["id"]: c for c in new}
-check("thirty claims: 5 pooled engine, 4 per other arm x 2, 3 causes per other arm x 2, 3 pairs with 2 "
-      "discordant counts each, 2 dataset", len(new) == 30, str(len(new)))
+check("thirty-two claims: 5 pooled engine, 4 per other arm x 2, 4 causes per other arm x 2, 3 pairs with 2 "
+      "discordant counts each, 2 dataset", len(new) == 32, str(len(new)))
 check("the engine's control-miss rate is skipped when the artifact carries no rows to derive it from",
       "supersession_implicit.nevertwice.control_miss_rate" not in by)
 check("another arm's broad rate is registered as a control miss, never as over-retraction",
@@ -70,7 +70,7 @@ check("a floor that missed one control has one ranking miss by construction",
       and by["supersession_implicit.naive.control_miss.retired"]["value"] == 0
       and "construction" in by["supersession_implicit.naive.control_miss.unranked"]["derivation"])
 check("an arm that missed nothing has three zero causes", all(
-      by[f"supersession_implicit.mem0.control_miss.{k}"]["value"] == 0 for k in ("retired", "never_written", "unranked")))
+      by[f"supersession_implicit.mem0.control_miss.{k}"]["value"] == 0 for k in ("retired", "demoted", "never_written", "unranked")))
 check("discordant counts point into the pair, one per side",
       by["supersession_implicit.mem0_vs_nevertwice.discordant.mem0"]["value"] == 52
       and by["supersession_implicit.mem0_vs_nevertwice.discordant.nevertwice"]["pointer"] == "pairs[1].stale_only_nevertwice")
@@ -98,7 +98,7 @@ check("every claim carries dataset, environment, raw, command, commit and closur
 print("\n- existing claims are never rewritten -")
 new2, skipped2 = rs.build_claims("supersession_implicit", ART, dataset="d", command="c", raw="r", head="h",
                                  produced_by=[], existing=set(by))
-check("a second pass adds nothing and names every claim it left", new2 == [] and len(skipped2) == 30)
+check("a second pass adds nothing and names every claim it left", new2 == [] and len(skipped2) == 32)
 
 print("\n- refusals -")
 with tempfile.TemporaryDirectory() as tmp:

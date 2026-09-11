@@ -151,6 +151,8 @@ def build_claims(family: str, art: dict, *, dataset: str, command: str, raw: str
                            f"engine runs in arms.nevertwice*.rows; the pooled artifact predates the "
                            f"`pooled_nevertwice.control_miss` field")
     causes = (("retired", "control_retired_by_memory", "the memory retired it"),
+              ("demoted", "control_demoted_by_merge",
+               "the memory absorbed a different fact into the note and stopped serving this one"),
               ("never_written", "control_never_written", "the extractor never wrote it"),
               ("unranked", "control_written_but_unranked", "it was written and live but ranked below the top five"))
     pooled_causes = P.get("control_causes")
