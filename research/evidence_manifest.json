@@ -2763,7 +2763,7 @@
    "ci": null,
    "ci_note": "6 seeds on a synthetic world; report the spread, not a CI.",
    "cited_in": [],
-   "commit": "27b5b0901c09fd6b46c5f87643d47ecbecc18510",
+   "commit": "81dc96006072201111679462dd8dfd73ce5c876b",
    "produced_by": [
     "research/forgetting.py",
     "nevertwice/build_user_model.py",
@@ -2788,7 +2788,7 @@
     "sandbox_guard.py",
     "tools/render_claims.py"
    ],
-   "note": "Re-run on CPU at 2e9e79e (2026-09-10) after the renderer tool entered its closure; the artifact reproduced byte-identically, so the value stands and the commit is restamped by hand. Restored by hand at 9262543 (2026-09-11): no pointer to read it through, so the value was re-checked against the campaign artifact - research/forgetting.json: coreset.0.2.cov - salience.0.2.cov - and the commit restamped. Re-run again at b1bffab (2026-09-11) after the renderer moved for the as-of verdict; byte-identical artifact, value re-checked, commit restamped by hand. Re-run at 74cfcd4 (2026-09-11, the renderer moved again for the cause table); byte-identical, restamped by hand. Re-run at 27b5b09 (2026-09-11, the renderer moved for the absorbed kind); byte-identical, restamped by hand."
+   "note": "Re-run on CPU at 2e9e79e (2026-09-10) after the renderer tool entered its closure; the artifact reproduced byte-identically, so the value stands and the commit is restamped by hand. Restored by hand at 9262543 (2026-09-11): no pointer to read it through, so the value was re-checked against the campaign artifact - research/forgetting.json: coreset.0.2.cov - salience.0.2.cov - and the commit restamped. Re-run again at b1bffab (2026-09-11) after the renderer moved for the as-of verdict; byte-identical artifact, value re-checked, commit restamped by hand. Re-run at 74cfcd4 (2026-09-11, the renderer moved again for the cause table); byte-identical, restamped by hand. Re-run at 27b5b09 (2026-09-11, the renderer moved for the absorbed kind); byte-identical, restamped by hand. Re-run at 81dc960 (2026-09-12, the renderer's cause caption reworded); byte-identical, restamped by hand."
   },
   {
    "id": "consolidation.recall_drop",
