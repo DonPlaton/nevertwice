@@ -100,17 +100,27 @@ class GraphitiArm:
 
     # ── write ─────────────────────────────────────────────────────────────────
 
+    def _gid(self, group: str) -> str:
+        """The group id this run writes under. Graphiti's FalkorDB driver keeps **one graph per
+        group id** (`driver.clone(database=group_id)`), so a bare `sup000` is the same graph in every
+        run and in both corpora: the second run's episodes land on the first run's, and the implicit
+        corpus's case seven on the explicit corpus's case seven (found 2026-09-11 while reading the
+        graph for the cause split - the J4 runs of 2026-09-10 shared graphs this way, and the K2
+        parity runs would have). The run's database name, unique per instance, prefixes every group."""
+        return f"{self.database}_{group}"
+
     def ingest(self, group: str, sessions: list[tuple[str, str | None]]) -> dict:
         """Sessions as episodes, in order. `sessions` = [(text, 'YYYY-MM-DD' or None)]; an undated
         session is stamped now, as the other arms date it. Returns per-group counts."""
         from graphiti_core.nodes import EpisodeType
         ok = err = 0
+        gid = self._gid(group)
         for j, (text, day) in enumerate(sessions):
             when = _day(day) if day else datetime.now(timezone.utc)
             try:
                 res = self.loop.run_until_complete(self.g.add_episode(
                     name=f"{group}-s{j}", episode_body=text, source_description="agent session",
-                    reference_time=when, source=EpisodeType.text, group_id=group))
+                    reference_time=when, source=EpisodeType.text, group_id=gid))
                 ep = getattr(res, "episode", None)
                 if ep is not None:
                     self.episode_time[ep.uuid] = when
@@ -128,7 +138,7 @@ class GraphitiArm:
         from graphiti_core.search.search_config_recipes import EDGE_HYBRID_SEARCH_RRF
         cfg = EDGE_HYBRID_SEARCH_RRF.model_copy(deep=True)
         cfg.limit = max(k, 10)
-        res = self.loop.run_until_complete(self.g.search_(query, config=cfg, group_ids=[group]))
+        res = self.loop.run_until_complete(self.g.search_(query, config=cfg, group_ids=[self._gid(group)]))
         return list(res.edges)
 
     def search_now(self, group: str, query: str, k: int) -> list[str]:
@@ -151,7 +161,14 @@ class GraphitiArm:
         graph could not be read, so the caller leaves the cause unread rather than zero."""
         try:
             from graphiti_core.edges import EntityEdge
-            edges = self.loop.run_until_complete(EntityEdge.get_by_group_ids(self.g.driver, [group]))
+            from graphiti_core.errors import GroupsEdgesNotFoundError
+            gid = self._gid(group)
+            # the group's graph, not the default one: the FalkorDB driver keeps a graph per group
+            driver = self.g.driver.clone(database=gid)
+            try:
+                edges = self.loop.run_until_complete(EntityEdge.get_by_group_ids(driver, [gid]))
+            except GroupsEdgesNotFoundError:
+                return []                                # the graph holds no entity edge: nothing written
             return [(e.fact, e.invalid_at is not None or e.expired_at is not None) for e in edges]
         except Exception as e:                           # noqa: BLE001 - reported once, not a number
             if not getattr(self, "_edges_all_failed", False):
