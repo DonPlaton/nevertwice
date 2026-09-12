@@ -9,10 +9,10 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 534,
+     "chars_returned": 532,
      "returned": [
-      "set-http-client-timeout-to-5s The decision was made to set the HTTP client timeout to 5 seconds after verifying that this is the actual value used in the API client.  [facts] the HTTP client timeout is 5 seconds · D:\\Coding\\nevertwice",
-      "http-client-timeout-configuration The HTTP client timeout was initially configured to 30 seconds but was found to be 5 seconds during a pairing session. This pattern documents the correct timeout value for API client configuration.  [facts] the HTTP client timeout is 5 seconds · D:\\Coding\\nevertwice"
+      "http-client-timeout-configuration The HTTP client timeout was initially configured to 30 seconds but was found to be 5 seconds during a pairing session. This pattern documents the correct timeout value for API client configuration.  [facts] the HTTP client timeout is 5 seconds",
+      "set-http-client-timeout-to-5s The decision was made to set the HTTP client timeout to 5 seconds after discovering that this is the actual value in use, correcting a previous incorrect assumption of 30 seconds.  [facts] the HTTP client timeout is 5 seconds"
      ],
      "current_live": true,
      "current_retired": true,
@@ -46,9 +46,9 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 303,
+     "chars_returned": 280,
      "returned": [
-      "training-batch-size-confirmed The training batch size was confirmed to be 128 after the job changed this week. The dashboard showed no movement for an hour after the change.  [facts] The training batch size is now 128. · Checked the dashboards for an hour after and nothing moved. · D:\\Coding\\nevertwice"
+      "training-batch-size-confirmed The training batch size was confirmed to be 128 after the job changed this week. The dashboard showed no movement for an hour after the change.  [facts] The training batch size is now 128. · Checked the dashboards for an hour after and nothing moved."
      ],
      "current_live": true,
      "current_retired": false,
@@ -64,9 +64,9 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 263,
+     "chars_returned": 240,
      "returned": [
-      "frontend-build-target-node-22 The frontend build target was updated to Node 22. This change was reviewed and approved with only one rename requested.  [facts] the build targets Node 22 · reviewer asked for one rename · otherwise approved it · D:\\Coding\\nevertwice"
+      "frontend-build-target-node-22 The frontend build target was updated to Node 22. This change was reviewed and approved with only one rename requested.  [facts] the build targets Node 22 · reviewer asked for one rename · otherwise approved it"
      ],
      "current_live": true,
      "current_retired": true,
@@ -82,9 +82,9 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 326,
+     "chars_returned": 303,
      "returned": [
-      "queue-worker-retry-logic The queue worker now retries failed jobs 10 times instead of previously configured number. This change was documented in the README section that was already stale.  [facts] the worker now retries a failed job 10 times · Documented it in the README section that was already stale · D:\\Coding\\nevertwice"
+      "queue-worker-retry-logic The queue worker now retries failed jobs 10 times instead of previously configured number. This change was documented in the README section that was already stale.  [facts] the worker now retries a failed job 10 times · Documented it in the README section that was already stale"
      ],
      "current_live": true,
      "current_retired": false,
@@ -100,10 +100,10 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 566,
+     "chars_returned": 520,
      "returned": [
-      "cache-expiration-duration The decision was made that cache entries should expire after 15 minutes, which was validated through testing.  [facts] Cache entries expire after 15 minutes · D:\\Coding\\nevertwice · Follow-up",
-      "cache-layer-expiration The cache layer was tested and confirmed to expire after 15 minutes. The full test suite was run afterward and remained green, indicating no regression from the cache expiration behavior.  [facts] Cache entries expire after 15 minutes · Ran the full test suite afterwards and it stayed green · D:\\Coding\\nevertwice · Follow-up"
+      "cache-expiration-duration The decision was made that cache entries should expire after 15 minutes, which was validated through testing.  [facts] Cache entries expire after 15 minutes · Follow-up",
+      "cache-layer-expiration The cache layer was tested and confirmed to expire after 15 minutes. The full test suite was run afterward and remained green, indicating no regression from the cache expiration behavior.  [facts] Cache entries expire after 15 minutes · Ran the full test suite afterwards and it stayed green · Follow-up"
      ],
      "current_live": true,
      "current_retired": false,
@@ -119,9 +119,9 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 288,
+     "chars_returned": 265,
      "returned": [
-      "dev-server-port-configuration The development server listens on port 8080, not the previously assumed port. This was confirmed by returning to the dev server and verifying the configuration.  [facts] the dev server listens on port 8080 · Came back to the dev server · D:\\Coding\\nevertwice"
+      "dev-server-port-configuration The development server listens on port 8080, not the previously assumed port. This was confirmed by returning to the dev server and verifying the configuration.  [facts] the dev server listens on port 8080 · Came back to the dev server"
      ],
      "current_live": true,
      "current_retired": false,
@@ -137,9 +137,9 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 271,
+     "chars_returned": 248,
      "returned": [
-      "deployment-in-eu-west-1 The service was moved to us-east-2, touching three files and none of them were config. This shows a pattern of deployment repositioning without configuration changes.  [facts] touched three files and none of them were config · D:\\Coding\\nevertwice"
+      "deployment-in-eu-west-1 The service was moved to us-east-2, touching three files and none of them were config. This shows a pattern of deployment repositioning without configuration changes.  [facts] touched three files and none of them were config"
      ],
      "current_live": true,
      "current_retired": false,
@@ -155,9 +155,9 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 262,
+     "chars_returned": 239,
      "returned": [
-      "python-version-pinning The project now pins Python 3.13 due to changes in the toolchain. This ensures consistent environment setup and avoids compatibility issues.  [facts] The toolchain changed this week. The project now pins Python 3.13. · D:\\Coding\\nevertwice"
+      "python-version-pinning The project now pins Python 3.13 due to changes in the toolchain. This ensures consistent environment setup and avoids compatibility issues.  [facts] The toolchain changed this week. The project now pins Python 3.13."
      ],
      "current_live": true,
      "current_retired": false,
@@ -173,9 +173,9 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 205,
+     "chars_returned": 175,
      "returned": [
-      "api-capacity-configuration The API runs with 12 replicas after a load test. The rollout was done behind a staged release process, ensuring controlled deployment and stability.  [facts] D:\\Coding\\nevertwice"
+      "api-capacity-configuration The API runs with 12 replicas after a load test. The rollout was done behind a staged release process, ensuring controlled deployment and stability."
      ],
      "current_live": true,
      "current_retired": false,
@@ -191,9 +191,9 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 375,
+     "chars_returned": 352,
      "returned": [
-      "learning-rate-configuration Adjusting the learning rate to 5e-5 did not produce expected changes in model performance after an hour of monitoring. This suggests that learning rate alone may not be the primary factor affecting training dynamics.  [facts] the learning rate was lowered to 5e-5 · Checked the dashboards for an hour after and nothing moved · D:\\Coding\\nevertwice"
+      "learning-rate-configuration Adjusting the learning rate to 5e-5 did not produce expected changes in model performance after an hour of monitoring. This suggests that learning rate alone may not be the primary factor affecting training dynamics.  [facts] the learning rate was lowered to 5e-5 · Checked the dashboards for an hour after and nothing moved"
      ],
      "current_live": true,
      "current_retired": false,
@@ -209,10 +209,10 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 544,
+     "chars_returned": 498,
      "returned": [
-      "ingestion-chunk-size-decided The ingestion chunk size was decided to be 1024 tokens after review and a minor rename.  [facts] Documents are chunked at 1024 tokens now. · The reviewer asked for one rename and otherwise approved it. · D:\\Coding\\nevertwice · Follow-up",
-      "document-ingestion-chunking Documents are chunked at 1024 tokens. This approach was approved by the reviewer after a minor rename.  [facts] Documents are chunked at 1024 tokens now. · The reviewer asked for one rename and otherwise approved it. · D:\\Coding\\nevertwice · Follow-up"
+      "ingestion-chunk-size-decided The ingestion chunk size was decided to be 1024 tokens after review and a minor rename.  [facts] Documents are chunked at 1024 tokens now. · The reviewer asked for one rename and otherwise approved it. · Follow-up",
+      "document-ingestion-chunking Documents are chunked at 1024 tokens. This approach was approved by the reviewer after a minor rename.  [facts] Documents are chunked at 1024 tokens now. · The reviewer asked for one rename and otherwise approved it. · Follow-up"
      ],
      "current_live": true,
      "current_retired": false,
@@ -228,10 +228,10 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 718,
+     "chars_returned": 672,
      "returned": [
-      "cluster-quorum-requirement After a cluster resize, the quorum requirement was updated from an earlier assumption to 5 nodes. This pattern reflects the need to re-evaluate and document quorum requirements post-resize operations.  [facts] the cluster needs a quorum of 5 nodes after the resize · Documented it in the README section that was already stale · D:\\Coding\\nevertwice",
-      "quorum-update-post-resize The decision was made to update the quorum requirement for the cluster after a resize operation, changing it from an earlier assumption to 5 nodes. This ensures operational stability and correctness.  [facts] the cluster needs a quorum of 5 nodes after the resize · That earlier decision is off · D:\\Coding\\nevertwice"
+      "cluster-quorum-requirement After a cluster resize, the quorum requirement was updated from an earlier assumption to 5 nodes. This pattern reflects the need to re-evaluate and document quorum requirements post-resize operations.  [facts] the cluster needs a quorum of 5 nodes after the resize · Documented it in the README section that was already stale",
+      "quorum-update-post-resize The decision was made to update the quorum requirement for the cluster after a resize operation, changing it from an earlier assumption to 5 nodes. This ensures operational stability and correctness.  [facts] the cluster needs a quorum of 5 nodes after the resize · That earlier decision is off"
      ],
      "current_live": true,
      "current_retired": false,
@@ -247,9 +247,9 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 326,
+     "chars_returned": 303,
      "returned": [
-      "license-agpl3-to-apache-2-0 The project was relicensed from AGPL-3.0 to Apache-2.0 after a review. This decision was made to allow broader usage and distribution of the software under a more permissive license.  [facts] The project was relicensed to Apache-2.0 · reopened licensing after the last review · D:\\Coding\\nevertwice"
+      "license-agpl3-to-apache-2-0 The project was relicensed from AGPL-3.0 to Apache-2.0 after a review. This decision was made to allow broader usage and distribution of the software under a more permissive license.  [facts] The project was relicensed to Apache-2.0 · reopened licensing after the last review"
      ],
      "current_live": true,
      "current_retired": false,
@@ -265,9 +265,9 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 362,
+     "chars_returned": 339,
      "returned": [
-      "branch-renaming-protocol When a repository's default branch is renamed, it's important to leave a note in the tracker so future contributors don't repeat the same change. This ensures consistency and avoids redundant work.  [facts] The default branch was renamed to main. · Left a note in the tracker so the next person does not redo this. · D:\\Coding\\nevertwice"
+      "branch-renaming-protocol When a repository's default branch is renamed, it's important to leave a note in the tracker so future contributors don't repeat the same change. This ensures consistency and avoids redundant work.  [facts] The default branch was renamed to main. · Left a note in the tracker so the next person does not redo this."
      ],
      "current_live": true,
      "current_retired": false,
@@ -283,10 +283,10 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 507,
+     "chars_returned": 454,
      "returned": [
-      "redis-session-caching The team replaced Redis with an in-process LRU cache for session caching. This change touched three files and none of them were config files. The decision was made to use an in-process cache instead of Redis.  [facts] D:\\Coding\\nevertwice",
-      "in-process-lru-cache The decision was made to replace Redis with an in-process LRU cache for session caching. This change touched three files and none of them were config.  [facts] replaced Redis with an in-process LRU cache · D:\\Coding\\nevertwice"
+      "redis-session-caching The team replaced Redis with an in-process LRU cache for session caching. This change touched three files and none of them were config files. The decision was made to use an in-process cache instead of Redis.",
+      "in-process-lru-cache The decision was made to replace Redis with an in-process LRU cache for session caching. This change touched three files and none of them were config.  [facts] replaced Redis with an in-process LRU cache"
      ],
      "current_live": true,
      "current_retired": false,
@@ -302,10 +302,10 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 530,
+     "chars_returned": 470,
      "returned": [
-      "jwt-authentication-with-hs256 The session confirmed the use of JWT with HS256 for authentication, which is a standard and secure approach. The decision was made to move away from opaque session cookies backed by the database in favor of JWT tokens.  [facts] D:\\Coding\\nevertwice",
-      "jwt-authentication-with-hs256 The decision was made to use JWT with HS256 for authentication instead of opaque session cookies backed by the database. This approach provides better scalability and stateless authentication.  [facts] D:\\Coding\\nevertwice"
+      "jwt-authentication-with-hs256 The decision was made to use JWT with HS256 for authentication instead of opaque session cookies backed by the database. This approach provides better scalability and stateless authentication.",
+      "jwt-authentication-with-hs256 The session confirmed the use of JWT with HS256 for authentication, which is a standard and secure approach. The decision was made to move away from opaque session cookies backed by the database in favor of JWT tokens."
      ],
      "current_live": true,
      "current_retired": false,
@@ -317,18 +317,17 @@
     {
      "id": "app-bundler",
      "shape": "approach_abandoned",
-     "n_hits": 3,
-     "stale_returned": true,
-     "stale_rank": 2,
+     "n_hits": 2,
+     "stale_returned": false,
+     "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 762,
+     "chars_returned": 517,
      "returned": [
-      "frontend-bundling-with-vite The decision was made to switch frontend bundling from Webpack to Vite, which is more efficient and faster for development.  [facts] The frontend is bundled with Vite now · D:\\Coding\\nevertwice · Follow-up",
-      "frontend-bundling-with-webpack The frontend is bundled with Webpack, and the code now matches. This decision was made to ensure consistent and optimized frontend builds.  [facts] D:\\Coding\\nevertwice",
-      "frontend-bundling-with-vite The frontend is now bundled with Vite instead of the previous build system. This change was rolled out behind a staged release, indicating a controlled deployment approach.  [facts] The frontend is bundled with Vite now · Rolled it out behind the usual staged release · D:\\Coding\\nevertwice · Follow-up"
+      "frontend-bundling-with-vite The decision was made to switch frontend bundling from Webpack to Vite, which is more efficient and faster for development.  [facts] The frontend is bundled with Vite now · Follow-up",
+      "frontend-bundling-with-vite The frontend is now bundled with Vite instead of the previous build system. This change was rolled out behind a staged release, indicating a controlled deployment approach.  [facts] The frontend is bundled with Vite now · Rolled it out behind the usual staged release · Follow-up"
      ],
      "current_live": true,
-     "current_retired": false,
+     "current_retired": true,
      "current_demoted": false,
      "current_absent": false,
      "notes_written": 3,
@@ -341,11 +340,11 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 958,
+     "chars_returned": 889,
      "returned": [
-      "asyncpg-hand-written-sql-data-access Data access was rewritten using hand-written SQL with asyncpg instead of SQLAlchemy ORM. This approach was chosen for better control and performance.  [facts] data access was rewritten as hand-written SQL with asyncpg · D:\\Coding\\nevertwice",
-      "incorrect-assumption-about-data-access-method The earlier assumption that data access was handled via SQLAlchemy ORM was incorrect; it was actually rewritten using hand-written SQL with asyncpg.  [facts] That earlier decision is off: data access was rewritten as hand-written SQL with asyncpg · D:\\Coding\\nevertwice Verify the actual implementation method before making assumptions about data access patterns.",
-      "use-asyncpg-with-hand-written-sql Decision to use asyncpg with hand-written SQL for data access, replacing the previous SQLAlchemy ORM approach due to performance and control needs.  [facts] data access was rewritten as hand-written SQL with asyncpg · D:\\Coding\\nevertwice"
+      "asyncpg-hand-written-sql-data-access Data access was rewritten using hand-written SQL with asyncpg instead of SQLAlchemy ORM. This approach was chosen for better control and performance.  [facts] data access was rewritten as hand-written SQL with asyncpg",
+      "incorrect-assumption-about-data-access-method The earlier assumption that data access was handled via SQLAlchemy ORM was incorrect; it was actually rewritten using hand-written SQL with asyncpg.  [facts] That earlier decision is off: data access was rewritten as hand-written SQL with asyncpg Verify the actual implementation method before making assumptions about data access patterns.",
+      "use-asyncpg-with-hand-written-sql Decision to use asyncpg with hand-written SQL for data access, replacing the previous SQLAlchemy ORM approach due to performance and control needs.  [facts] data access was rewritten as hand-written SQL with asyncpg"
      ],
      "current_live": true,
      "current_retired": true,
@@ -361,10 +360,10 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 531,
+     "chars_returned": 485,
      "returned": [
-      "background-jobs-with-celery Background jobs are implemented using Celery with a Postgres-backed queue. This approach provides reliable job processing and persistence.  [facts] background jobs run on a Postgres-backed queue instead · D:\\Coding\\nevertwice",
-      "postgres-backed-queue-for-jobs The decision was made to use a Postgres-backed queue for background jobs instead of alternatives, based on the reviewer's approval and the need for reliability.  [facts] background jobs run on a Postgres-backed queue instead · D:\\Coding\\nevertwice"
+      "background-jobs-with-celery Background jobs are implemented using Celery with a Postgres-backed queue. This approach provides reliable job processing and persistence.  [facts] background jobs run on a Postgres-backed queue instead",
+      "postgres-backed-queue-for-jobs The decision was made to use a Postgres-backed queue for background jobs instead of alternatives, based on the reviewer's approval and the need for reliability.  [facts] background jobs run on a Postgres-backed queue instead"
      ],
      "current_live": true,
      "current_retired": false,
@@ -380,9 +379,9 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 358,
+     "chars_returned": 335,
      "returned": [
-      "ci-migration-to-github-actions The continuous integration system was migrated from an old platform to GitHub Actions. This change was documented in the README file which was already stale.  [facts] continuous integration changed this week · CI was migrated to GitHub Actions · Documented it in the README section that was already stale · D:\\Coding\\nevertwice"
+      "ci-migration-to-github-actions The continuous integration system was migrated from an old platform to GitHub Actions. This change was documented in the README file which was already stale.  [facts] continuous integration changed this week · CI was migrated to GitHub Actions · Documented it in the README section that was already stale"
      ],
      "current_live": true,
      "current_retired": false,
@@ -398,9 +397,9 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 310,
+     "chars_returned": 287,
      "returned": [
-      "elasticsearch-search-setup-review The search functionality is powered by Postgres full-text search. This was confirmed after running the full test suite which remained green.  [facts] search is powered by Postgres full-text search · Ran the full test suite afterwards and it stayed green · D:\\Coding\\nevertwice"
+      "elasticsearch-search-setup-review The search functionality is powered by Postgres full-text search. This was confirmed after running the full test suite which remained green.  [facts] search is powered by Postgres full-text search · Ran the full test suite afterwards and it stayed green"
      ],
      "current_live": true,
      "current_retired": false,
@@ -416,10 +415,10 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 514,
+     "chars_returned": 468,
      "returned": [
-      "styled-components-usage The project uses styled-components for UI styling. This pattern was noted and documented to avoid future confusion or rework.  [facts] components are styled with Tailwind utility classes · D:\\Coding\\nevertwice",
-      "ui-styling-approach The team decided to reverse earlier UI styling approach and use Tailwind utility classes instead of styled-components for component styling.  [facts] Reversed the earlier call on the UI: components are styled with Tailwind utility classes · D:\\Coding\\nevertwice"
+      "styled-components-usage The project uses styled-components for UI styling. This pattern was noted and documented to avoid future confusion or rework.  [facts] components are styled with Tailwind utility classes",
+      "ui-styling-approach The team decided to reverse earlier UI styling approach and use Tailwind utility classes instead of styled-components for component styling.  [facts] Reversed the earlier call on the UI: components are styled with Tailwind utility classes"
      ],
      "current_live": true,
      "current_retired": false,
@@ -435,10 +434,10 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 374,
+     "chars_returned": 328,
      "returned": [
-      "packaging-decision The packaging decision was to build with hatchling and publish via CI.  [facts] The package is built with hatchling and published by CI · D:\\Coding\\nevertwice · Follow-up",
-      "package-build-and-publish The package is built with hatchling and published by CI. The change touched three files and none of them were config.  [facts] D:\\Coding\\nevertwice · Follow-up"
+      "packaging-decision The packaging decision was to build with hatchling and publish via CI.  [facts] The package is built with hatchling and published by CI · Follow-up",
+      "package-build-and-publish The package is built with hatchling and published by CI. The change touched three files and none of them were config.  [facts] Follow-up"
      ],
      "current_live": true,
      "current_retired": false,
@@ -454,9 +453,9 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 354,
+     "chars_returned": 331,
      "returned": [
-      "frontend-state-management-with-zustand The frontend state management was moved from global state to Zustand stores, which provides a more predictable and maintainable approach to managing application state. This change improves performance and reduces complexity in the component tree.  [facts] global state moved to Zustand stores · D:\\Coding\\nevertwice"
+      "frontend-state-management-with-zustand The frontend state management was moved from global state to Zustand stores, which provides a more predictable and maintainable approach to managing application state. This change improves performance and reduces complexity in the component tree.  [facts] global state moved to Zustand stores"
      ],
      "current_live": true,
      "current_retired": true,
@@ -472,10 +471,10 @@
      "stale_returned": true,
      "stale_rank": 1,
      "current_returned": true,
-     "chars_returned": 532,
+     "chars_returned": 486,
      "returned": [
-      "infrastructure-provisioning-with-terraform The infrastructure was successfully provisioned using Terraform. This approach ensures consistent and reproducible deployment environments.  [facts] infrastructure is provisioned with Terraform · D:\\Coding\\nevertwice",
-      "infrastructure-provisioning-with-pulumi Infrastructure is provisioned with Pulumi in TypeScript. This approach was rolled out behind a staged release, indicating a controlled deployment strategy.  [facts] Rolled it out behind the usual staged release · D:\\Coding\\nevertwice"
+      "infrastructure-provisioning-with-terraform The infrastructure was successfully provisioned using Terraform. This approach ensures consistent and reproducible deployment environments.  [facts] infrastructure is provisioned with Terraform",
+      "infrastructure-provisioning-with-pulumi Infrastructure is provisioned with Pulumi in TypeScript. This approach was rolled out behind a staged release, indicating a controlled deployment strategy.  [facts] Rolled it out behind the usual staged release"
      ],
      "current_live": true,
      "current_retired": false,
@@ -491,9 +490,9 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 419,
+     "chars_returned": 396,
      "returned": [
-      "schema-migration-through-alembic Schema migrations are handled through plain numbered SQL files applied by a shell script. After applying the schema change, it's important to monitor dashboards for an hour to ensure nothing breaks or moves unexpectedly.  [facts] Schema migrations are plain numbered SQL files applied by a shell script · Checked the dashboards for an hour after and nothing moved · D:\\Coding\\nevertwice"
+      "schema-migration-through-alembic Schema migrations are handled through plain numbered SQL files applied by a shell script. After applying the schema change, it's important to monitor dashboards for an hour to ensure nothing breaks or moves unexpectedly.  [facts] Schema migrations are plain numbered SQL files applied by a shell script · Checked the dashboards for an hour after and nothing moved"
      ],
      "current_live": true,
      "current_retired": false,
@@ -509,9 +508,9 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 286,
+     "chars_returned": 263,
      "returned": [
-      "protobuf-message-serialization Messages are serialized as newline-delimited JSON. This format was confirmed after a review and one rename was requested but approved.  [facts] messages are serialised as newline-delimited JSON · one rename and otherwise approved it · D:\\Coding\\nevertwice"
+      "protobuf-message-serialization Messages are serialized as newline-delimited JSON. This format was confirmed after a review and one rename was requested but approved.  [facts] messages are serialised as newline-delimited JSON · one rename and otherwise approved it"
      ],
      "current_live": true,
      "current_retired": false,
@@ -527,9 +526,9 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 273,
+     "chars_returned": 250,
      "returned": [
-      "secrets-reading-from-vault Secrets are injected as environment variables by the orchestrator, not read from a vault. This was documented in the README section that was already stale.  [facts] Documented it in the README section that was already stale · D:\\Coding\\nevertwice"
+      "secrets-reading-from-vault Secrets are injected as environment variables by the orchestrator, not read from a vault. This was documented in the README section that was already stale.  [facts] Documented it in the README section that was already stale"
      ],
      "current_live": true,
      "current_retired": false,
@@ -545,10 +544,10 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 604,
+     "chars_returned": 558,
      "returned": [
-      "end-to-end-test-approach The decision was made to use Playwright for driving end-to-end tests, which proved effective as the full test suite remained green after execution.  [facts] End-to-end tests are driven by Playwright · Ran the full test suite afterwards and it stayed green · D:\\Coding\\nevertwice · Follow-up",
-      "end-to-end-test-approach End-to-end tests are driven by Playwright and the full test suite was run successfully, staying green. This confirms that the testing approach is valid and reliable.  [facts] Ran the full test suite afterwards and it stayed green · D:\\Coding\\nevertwice · Follow-up"
+      "end-to-end-test-approach The decision was made to use Playwright for driving end-to-end tests, which proved effective as the full test suite remained green after execution.  [facts] End-to-end tests are driven by Playwright · Ran the full test suite afterwards and it stayed green · Follow-up",
+      "end-to-end-test-approach End-to-end tests are driven by Playwright and the full test suite was run successfully, staying green. This confirms that the testing approach is valid and reliable.  [facts] Ran the full test suite afterwards and it stayed green · Follow-up"
      ],
      "current_live": true,
      "current_retired": false,
@@ -564,10 +563,10 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 459,
+     "chars_returned": 413,
      "returned": [
-      "beta-dashboard-flag The decision was made to remove the beta_dashboard flag, making the new UI unconditional and available to all users.  [facts] the beta_dashboard flag was deleted; the new UI is now unconditional · D:\\Coding\\nevertwice",
-      "feature-flag-gating The team uses feature flags to gate new UI implementations, allowing gradual rollout and rollback. This approach was used for the beta dashboard flag.  [facts] beta_dashboard flag · D:\\Coding\\nevertwice"
+      "feature-flag-gating The team uses feature flags to gate new UI implementations, allowing gradual rollout and rollback. This approach was used for the beta dashboard flag.  [facts] beta_dashboard flag",
+      "beta-dashboard-flag The decision was made to remove the beta_dashboard flag, making the new UI unconditional and available to all users.  [facts] the beta_dashboard flag was deleted; the new UI is now unconditional"
      ],
      "current_live": true,
      "current_retired": false,
@@ -583,9 +582,9 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 232,
+     "chars_returned": 202,
      "returned": [
-      "api-export-csv-endpoint-removed The /v1/export endpoint was removed without replacement. This change affected three files and none of them were config files. The removal was part of a recent API review.  [facts] D:\\Coding\\nevertwice"
+      "api-export-csv-endpoint-removed The /v1/export endpoint was removed without replacement. This change affected three files and none of them were config files. The removal was part of a recent API review."
      ],
      "current_live": true,
      "current_retired": true,
@@ -601,9 +600,9 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 343,
+     "chars_returned": 320,
      "returned": [
-      "telemetry-usage-counters The telemetry usage counters were removed from the client, which means no usage reporting is sent anymore. This change was made to reduce data collection and simplify the client behavior.  [facts] telemetry changed this week · Usage reporting was stripped out entirely · the client sends nothing · D:\\Coding\\nevertwice"
+      "telemetry-usage-counters The telemetry usage counters were removed from the client, which means no usage reporting is sent anymore. This change was made to reduce data collection and simplify the client behavior.  [facts] telemetry changed this week · Usage reporting was stripped out entirely · the client sends nothing"
      ],
      "current_live": true,
      "current_retired": false,
@@ -637,10 +636,10 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 641,
+     "chars_returned": 595,
      "returned": [
-      "third-party-plugins-entry-points The plugin system was removed before version 1.0 and never shipped, indicating a design decision to simplify the architecture by eliminating extensibility features.  [facts] Reversed the earlier call on extensibility: the plugin system was removed before 1.0 and never shipped. · D:\\Coding\\nevertwice",
-      "remove-plugin-system The decision was made to remove the plugin system before version 1.0, likely due to complexity or lack of use cases, which simplified the architecture.  [facts] Reversed the earlier call on extensibility: the plugin system was removed before 1.0 and never shipped. · D:\\Coding\\nevertwice"
+      "third-party-plugins-entry-points The plugin system was removed before version 1.0 and never shipped, indicating a design decision to simplify the architecture by eliminating extensibility features.  [facts] Reversed the earlier call on extensibility: the plugin system was removed before 1.0 and never shipped.",
+      "remove-plugin-system The decision was made to remove the plugin system before version 1.0, likely due to complexity or lack of use cases, which simplified the architecture.  [facts] Reversed the earlier call on extensibility: the plugin system was removed before 1.0 and never shipped."
      ],
      "current_live": true,
      "current_retired": false,
@@ -656,9 +655,9 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 317,
+     "chars_returned": 294,
      "returned": [
-      "ios-client-sync-engine The iOS client was discontinued and only the web app remains. The reviewer approved a rename and no other changes were required.  [facts] The iOS client was discontinued; only the web app remains. · The reviewer asked for one rename and otherwise approved it. · D:\\Coding\\nevertwice · Follow-up"
+      "ios-client-sync-engine The iOS client was discontinued and only the web app remains. The reviewer approved a rename and no other changes were required.  [facts] The iOS client was discontinued; only the web app remains. · The reviewer asked for one rename and otherwise approved it. · Follow-up"
      ],
      "current_live": true,
      "current_retired": false,
@@ -674,10 +673,10 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 727,
+     "chars_returned": 681,
      "returned": [
-      "nightly-cron-audit-log-compaction The system was previously configured to perform nightly compaction of audit logs, but this decision was reversed. The audit log is now append-only and persists forever. This pattern documents the change in behavior and the update to the README.  [facts] nightly compaction was dropped · audit log is append-only forever · documented it in the README section that was already stale · D:\\Coding\\nevertwice",
-      "audit-log-append-only The decision was made to keep audit logs append-only and never compact them. This ensures that all historical data is preserved indefinitely, which is a design choice for compliance or analysis purposes.  [facts] audit log is append-only forever · D:\\Coding\\nevertwice"
+      "nightly-cron-audit-log-compaction The system was previously configured to perform nightly compaction of audit logs, but this decision was reversed. The audit log is now append-only and persists forever. This pattern documents the change in behavior and the update to the README.  [facts] nightly compaction was dropped · audit log is append-only forever · documented it in the README section that was already stale",
+      "audit-log-append-only The decision was made to keep audit logs append-only and never compact them. This ensures that all historical data is preserved indefinitely, which is a design choice for compliance or analysis purposes.  [facts] audit log is append-only forever"
      ],
      "current_live": true,
      "current_retired": false,
@@ -711,9 +710,9 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 360,
+     "chars_returned": 337,
      "returned": [
-      "okta-saml-sign-in-flow The Okta SAML sign-in flow was previously in use but has been cancelled. Staff now use ordinary accounts instead. A note was left in the tracker to prevent future work on this integration.  [facts] access changed this week · Okta integration was cancelled · staff use ordinary accounts · Left a note in the tracker · D:\\Coding\\nevertwice"
+      "okta-saml-sign-in-flow The Okta SAML sign-in flow was previously in use but has been cancelled. Staff now use ordinary accounts instead. A note was left in the tracker to prevent future work on this integration.  [facts] access changed this week · Okta integration was cancelled · staff use ordinary accounts · Left a note in the tracker"
      ],
      "current_live": true,
      "current_retired": false,
@@ -747,9 +746,9 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 551,
+     "chars_returned": 528,
      "returned": [
-      "gpu-capacity-rental The infrastructure was adjusted to rent GPU capacity per training run instead of reserving a dedicated node. This change allows for more flexible and cost-efficient resource usage.  [facts] training rents capacity per run · reserved GPU node was given up · D:\\Coding\\nevertwice",
+      "gpu-capacity-rental The infrastructure was adjusted to rent GPU capacity per training run instead of reserving a dedicated node. This change allows for more flexible and cost-efficient resource usage.  [facts] training rents capacity per run · reserved GPU node was given up",
       "switch-to-rental-model It was decided to switch from reserving a GPU node to renting capacity per training run. This decision improves flexibility and cost-efficiency.  [facts] reversed the earlier call on infrastructure · training rents capacity per run"
      ],
      "current_live": true,
@@ -766,10 +765,10 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 603,
+     "chars_returned": 557,
      "returned": [
-      "use-legacy-flag-for-backward-compatibility The decision was made to not provide a direct replacement for the --legacy flag in version 3.0, implying that backward compatibility for older CLI usage patterns is not maintained.  [facts] rolled it out behind the usual staged release · --legacy flag was dropped · D:\\Coding\\nevertwice · Follow-up",
-      "cli-flag-legacy-restores-pre-2-0-format The --legacy flag was dropped in version 3.0 with no equivalent, and the CLI behavior changed accordingly. This pattern reflects a breaking change in command-line interface design.  [facts] D:\\Coding\\nevertwice · Follow-up"
+      "use-legacy-flag-for-backward-compatibility The decision was made to not provide a direct replacement for the --legacy flag in version 3.0, implying that backward compatibility for older CLI usage patterns is not maintained.  [facts] rolled it out behind the usual staged release · --legacy flag was dropped · Follow-up",
+      "cli-flag-legacy-restores-pre-2-0-format The --legacy flag was dropped in version 3.0 with no equivalent, and the CLI behavior changed accordingly. This pattern reflects a breaking change in command-line interface design.  [facts] Follow-up"
      ],
      "current_live": true,
      "current_retired": false,
@@ -785,9 +784,9 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 464,
+     "chars_returned": 441,
      "returned": [
-      "admin-panel-audit-filtering The audit tab was removed from the admin panel entirely, which required re-evaluating how to access audit-related functionality. This pattern shows that UI changes can invalidate previous assumptions about available features.  [facts] Came back to the admin panel. That earlier decision is off: the audit tab was taken out of the admin panel entirely. · Checked the dashboards for an hour after and nothing moved. · D:\\Coding\\nevertwice"
+      "admin-panel-audit-filtering The audit tab was removed from the admin panel entirely, which required re-evaluating how to access audit-related functionality. This pattern shows that UI changes can invalidate previous assumptions about available features.  [facts] Came back to the admin panel. That earlier decision is off: the audit tab was taken out of the admin panel entirely. · Checked the dashboards for an hour after and nothing moved."
      ],
      "current_live": true,
      "current_retired": false,
@@ -803,10 +802,10 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 635,
+     "chars_returned": 612,
      "returned": [
       "english-only-app The decision was made to drop translations and make the app English-only, based on the reviewer's feedback and the team's alignment with this direction.  [facts] translations were dropped; the app is English-only",
-      "localization-pair-programming The team used pair programming to handle localization changes, which allowed for immediate feedback and quick resolution of issues. The reviewer approved the changes after a minor rename, indicating effective collaboration.  [facts] Reopened localisation after the last review · The reviewer asked for one rename and otherwise approved it · D:\\Coding\\nevertwice · English-only"
+      "localization-pair-programming The team used pair programming to handle localization changes, which allowed for immediate feedback and quick resolution of issues. The reviewer approved the changes after a minor rename, indicating effective collaboration.  [facts] Reopened localisation after the last review · The reviewer asked for one rename and otherwise approved it · English-only"
      ],
      "current_live": true,
      "current_retired": false,
@@ -822,9 +821,9 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 368,
+     "chars_returned": 345,
      "returned": [
-      "sandbox-environment-mirroring The sandbox environment was shut down and partners now test against their own stubs. This change required updating documentation in the README to reflect the new testing approach.  [facts] The sandbox was shut down · partners test against their own stubs · Documented it in the README section that was already stale · D:\\Coding\\nevertwice"
+      "sandbox-environment-mirroring The sandbox environment was shut down and partners now test against their own stubs. This change required updating documentation in the README to reflect the new testing approach.  [facts] The sandbox was shut down · partners test against their own stubs · Documented it in the README section that was already stale"
      ],
      "current_live": true,
      "current_retired": false,
@@ -840,9 +839,9 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 309,
+     "chars_returned": 286,
      "returned": [
-      "http-client-retry-logic The HTTP client retries only on 5xx responses and never retries 4xx responses. This behavior was verified by running the full test suite which remained green after the change.  [facts] 4xx is never retried · Ran the full test suite afterwards and it stayed green · D:\\Coding\\nevertwice"
+      "http-client-retry-logic The HTTP client retries only on 5xx responses and never retries 4xx responses. This behavior was verified by running the full test suite which remained green after the change.  [facts] 4xx is never retried · Ran the full test suite afterwards and it stayed green"
      ],
      "current_live": true,
      "current_retired": false,
@@ -858,10 +857,10 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 651,
+     "chars_returned": 605,
      "returned": [
-      "cache-all-api-responses The decision was made to cache all API responses, but this was reversed to only cache GET requests and bypass caching for writes.  [facts] Reversed the earlier call on caching: only GET responses are cached; writes bypass the cache entirely. · D:\\Coding\\nevertwice",
-      "api-response-caching Only GET responses are cached; writes bypass the cache entirely. This approach prevents stale data from being served for write operations while still providing performance benefits for read-heavy operations.  [facts] Reversed the earlier call on caching: only GET responses are cached; writes bypass the cache entirely. · D:\\Coding\\nevertwice"
+      "cache-all-api-responses The decision was made to cache all API responses, but this was reversed to only cache GET requests and bypass caching for writes.  [facts] Reversed the earlier call on caching: only GET responses are cached; writes bypass the cache entirely.",
+      "api-response-caching Only GET responses are cached; writes bypass the cache entirely. This approach prevents stale data from being served for write operations while still providing performance benefits for read-heavy operations.  [facts] Reversed the earlier call on caching: only GET responses are cached; writes bypass the cache entirely."
      ],
      "current_live": true,
      "current_retired": false,
@@ -877,10 +876,10 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 539,
+     "chars_returned": 493,
      "returned": [
-      "audit-log-table-changes Changes to billing tables are audited now, while other changes were not audited and did not survive. The change touched three files and none of them were config.  [facts] Only changes to billing tables are audited now. · D:\\Coding\\nevertwice · Follow-up",
-      "document-audit-decision-in-readme The decision to audit only billing table changes was made and documented in the README.  [facts] Follow-up on auditing, and it did not survive. · Only changes to billing tables are audited now. · D:\\Coding\\nevertwice · Follow-up"
+      "audit-log-table-changes Changes to billing tables are audited now, while other changes were not audited and did not survive. The change touched three files and none of them were config.  [facts] Only changes to billing tables are audited now. · Follow-up",
+      "document-audit-decision-in-readme The decision to audit only billing table changes was made and documented in the README.  [facts] Follow-up on auditing, and it did not survive. · Only changes to billing tables are audited now. · Follow-up"
      ],
      "current_live": true,
      "current_retired": false,
@@ -896,9 +895,9 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 238,
+     "chars_returned": 215,
      "returned": [
-      "trainer-gpu-utilization The trainer uses GPU only for jobs with more than 10M parameters, smaller ones run on CPU. This was confirmed during a pairing session.  [facts] GPU is used only for jobs above 10M parameters · D:\\Coding\\nevertwice"
+      "trainer-gpu-utilization The trainer uses GPU only for jobs with more than 10M parameters, smaller ones run on CPU. This was confirmed during a pairing session.  [facts] GPU is used only for jobs above 10M parameters"
      ],
      "current_live": true,
      "current_retired": false,
@@ -914,9 +913,9 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 320,
+     "chars_returned": 297,
      "returned": [
-      "pre-commit-hook-lints-repository The linting hook now only lints staged files, improving performance and reducing noise during development. This change was rolled out as part of a staged release process.  [facts] the hook lints only the staged files · Rolled it out behind the usual staged release · D:\\Coding\\nevertwice"
+      "pre-commit-hook-lints-repository The linting hook now only lints staged files, improving performance and reducing noise during development. This change was rolled out as part of a staged release process.  [facts] the hook lints only the staged files · Rolled it out behind the usual staged release"
      ],
      "current_live": true,
      "current_retired": false,
@@ -932,9 +931,9 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 369,
+     "chars_returned": 346,
      "returned": [
-      "alerting-on-failed-deploy Production deploy failures trigger on-call alerts, while staging failures go to Slack. This change was implemented this week and monitored for an hour with no further activity.  [facts] alerting changed this week · Only production deploy failures page on-call · Checked the dashboards for an hour after and nothing moved · D:\\Coding\\nevertwice"
+      "alerting-on-failed-deploy Production deploy failures trigger on-call alerts, while staging failures go to Slack. This change was implemented this week and monitored for an hour with no further activity.  [facts] alerting changed this week · Only production deploy failures page on-call · Checked the dashboards for an hour after and nothing moved"
      ],
      "current_live": true,
      "current_retired": false,
@@ -950,9 +949,9 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 349,
+     "chars_returned": 326,
      "returned": [
-      "encryption-at-rest-scope Encryption at rest applies only to files in the private bucket. This was confirmed after a review and a rename request.  [facts] Had to revisit storage · What holds now is that encryption at rest applies only to files in the private bucket · The reviewer asked for one rename and otherwise approved it · D:\\Coding\\nevertwice"
+      "encryption-at-rest-scope Encryption at rest applies only to files in the private bucket. This was confirmed after a review and a rename request.  [facts] Had to revisit storage · What holds now is that encryption at rest applies only to files in the private bucket · The reviewer asked for one rename and otherwise approved it"
      ],
      "current_live": true,
      "current_retired": false,
@@ -968,9 +967,9 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 311,
+     "chars_returned": 288,
      "returned": [
-      "search-index-rollout The search index is configured to cover documents from the last 90 days only. This was documented in the README section that was already stale.  [facts] the index covers documents from the last 90 days only · Documented it in the README section that was already stale · D:\\Coding\\nevertwice"
+      "search-index-rollout The search index is configured to cover documents from the last 90 days only. This was documented in the README section that was already stale.  [facts] the index covers documents from the last 90 days only · Documented it in the README section that was already stale"
      ],
      "current_live": true,
      "current_retired": false,
@@ -986,10 +985,10 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 658,
+     "chars_returned": 612,
      "returned": [
-      "nightly-backup-database-dump The nightly backup process currently only covers the primary database, not all databases. This was confirmed by running the full test suite which stayed green after the change.  [facts] The nightly backup covers the primary database only. · Ran the full test suite afterwards and it stayed green. · D:\\Coding\\nevertwice · Follow-up",
-      "nightly-backup-process-dumps-all-databases The decision was made to ensure that the nightly backup process dumps all databases, not just the primary one.  [facts] The nightly backup covers the primary database only. · Follow-up on backups, and it did not survive. · D:\\Coding\\nevertwice · Follow-up"
+      "nightly-backup-database-dump The nightly backup process currently only covers the primary database, not all databases. This was confirmed by running the full test suite which stayed green after the change.  [facts] The nightly backup covers the primary database only. · Ran the full test suite afterwards and it stayed green. · Follow-up",
+      "nightly-backup-process-dumps-all-databases The decision was made to ensure that the nightly backup process dumps all databases, not just the primary one.  [facts] The nightly backup covers the primary database only. · Follow-up on backups, and it did not survive. · Follow-up"
      ],
      "current_live": true,
      "current_retired": false,
@@ -1005,10 +1004,10 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 382,
+     "chars_returned": 329,
      "returned": [
-      "rate-limiting-applies-to-all-calls Rate limiting applies only to unauthenticated callers, not all calls. This was previously misunderstood and corrected.  [facts] rate limits apply only to unauthenticated callers · D:\\Coding\\nevertwice",
-      "rename-approved-by-reviewer The rename decision was approved by the reviewer, confirming that renaming is acceptable.  [facts] D:\\Coding\\nevertwice"
+      "rate-limiting-applies-to-all-calls Rate limiting applies only to unauthenticated callers, not all calls. This was previously misunderstood and corrected.  [facts] rate limits apply only to unauthenticated callers",
+      "rename-approved-by-reviewer The rename decision was approved by the reviewer, confirming that renaming is acceptable."
      ],
      "current_live": true,
      "current_retired": false,
@@ -1042,9 +1041,9 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 291,
+     "chars_returned": 268,
      "returned": [
-      "mfa-enforcement-confirmed MFA enforcement has been confirmed to apply only to accounts with admin scope. This pattern was validated during a security configuration review session.  [facts] security changed this week · MFA is required only for accounts with admin scope · D:\\Coding\\nevertwice"
+      "mfa-enforcement-confirmed MFA enforcement has been confirmed to apply only to accounts with admin scope. This pattern was validated during a security configuration review session.  [facts] security changed this week · MFA is required only for accounts with admin scope"
      ],
      "current_live": true,
      "current_retired": false,
@@ -1060,9 +1059,9 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 212,
+     "chars_returned": 182,
      "returned": [
-      "event-log-replay-on-boot The consumer replays only events since the last checkpoint during boot. This ensures efficient recovery and avoids redundant processing of historical events.  [facts] D:\\Coding\\nevertwice"
+      "event-log-replay-on-boot The consumer replays only events since the last checkpoint during boot. This ensures efficient recovery and avoids redundant processing of historical events."
      ],
      "current_live": true,
      "current_retired": false,
@@ -1078,9 +1077,9 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 220,
+     "chars_returned": 197,
      "returned": [
-      "sharding-tenant-database Only tenants with above 50k records get a dedicated shard. This approach helps in managing database load and performance by isolating high-volume tenants.  [facts] sharding · D:\\Coding\\nevertwice"
+      "sharding-tenant-database Only tenants with above 50k records get a dedicated shard. This approach helps in managing database load and performance by isolating high-volume tenants.  [facts] sharding"
      ],
      "current_live": true,
      "current_retired": false,
@@ -1096,10 +1095,10 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 647,
+     "chars_returned": 601,
      "returned": [
-      "end-to-end-request-tracing The system implements end-to-end request tracing with sampling, where one request in a hundred is sampled for tracing. This approach was reviewed and approved with only a minor rename requested.  [facts] The reviewer asked for one rename and otherwise approved it · D:\\Coding\\nevertwice · Follow-up",
-      "request-tracing-implementation The decision was made to implement request tracing with a sampling rate of one in a hundred, which was reviewed and approved by the team.  [facts] One request in a hundred is sampled for tracing · The reviewer asked for one rename and otherwise approved it · D:\\Coding\\nevertwice · Follow-up"
+      "end-to-end-request-tracing The system implements end-to-end request tracing with sampling, where one request in a hundred is sampled for tracing. This approach was reviewed and approved with only a minor rename requested.  [facts] The reviewer asked for one rename and otherwise approved it · Follow-up",
+      "request-tracing-implementation The decision was made to implement request tracing with a sampling rate of one in a hundred, which was reviewed and approved by the team.  [facts] One request in a hundred is sampled for tracing · The reviewer asked for one rename and otherwise approved it · Follow-up"
      ],
      "current_live": true,
      "current_retired": false,
@@ -1115,10 +1114,10 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 719,
+     "chars_returned": 673,
      "returned": [
-      "postgresql-16-primary-database The primary database for the project was set to PostgreSQL 16. This decision ensures compatibility with modern features and performance improvements.  [facts] the primary database is PostgreSQL 16 · D:\\Coding\\nevertwice",
-      "redis-cache-layer-documentation The cache layer uses Redis 7, which was documented in the README section that was already stale. This ensures that the documentation reflects the current technology stack.  [facts] the cache layer is Redis 7 · Documented it in the README section that was already stale · D:\\Coding\\nevertwice",
+      "postgresql-16-primary-database The primary database for the project was set to PostgreSQL 16. This decision ensures compatibility with modern features and performance improvements.  [facts] the primary database is PostgreSQL 16",
+      "redis-cache-layer-documentation The cache layer uses Redis 7, which was documented in the README section that was already stale. This ensures that the documentation reflects the current technology stack.  [facts] the cache layer is Redis 7 · Documented it in the README section that was already stale",
       "staged-release-rollout The decision to use staged release rollout was made, likely to manage deployment risks and ensure stability during updates."
      ],
      "current_live": true,
@@ -1151,10 +1150,10 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 404,
+     "chars_returned": 358,
      "returned": [
-      "api-listens-on-port-8443 The API was confirmed to listen on port 8443. This is a verified fact about the system's networking configuration.  [facts] API listens on port 8443 · D:\\Coding\\nevertwice",
-      "metrics-endpoint-listens-on-port-9100 The metrics endpoint listens on port 9100. This was noted in the tracker to prevent future duplication of work.  [facts] Left a note in the tracker · D:\\Coding\\nevertwice"
+      "api-listens-on-port-8443 The API was confirmed to listen on port 8443. This is a verified fact about the system's networking configuration.  [facts] API listens on port 8443",
+      "metrics-endpoint-listens-on-port-9100 The metrics endpoint listens on port 9100. This was noted in the tracker to prevent future duplication of work.  [facts] Left a note in the tracker"
      ],
      "current_live": true,
      "current_retired": false,
@@ -1189,10 +1188,10 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": false,
-     "chars_returned": 428,
+     "chars_returned": 405,
      "returned": [
       "embedder-configuration-validation Validating embedder configurations prevents runtime errors and ensures model compatibility. The session confirmed that incorrect configuration values lead to silent failures or crashes.",
-      "reranker-is-cross-encoder The reranker is confirmed to be a cross-encoder model, which affects how queries are processed and ranked during retrieval.  [facts] reranker is a cross-encoder · D:\\Coding\\nevertwice"
+      "reranker-is-cross-encoder The reranker is confirmed to be a cross-encoder model, which affects how queries are processed and ranked during retrieval.  [facts] reranker is a cross-encoder"
      ],
      "current_live": false,
      "current_retired": false,
@@ -1208,10 +1207,10 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 585,
+     "chars_returned": 539,
      "returned": [
-      "s3-storage-for-uploads Decided to use S3 storage for handling uploads, which provides better scalability and reliability compared to local storage solutions.  [facts] database backups go to Glacier · Rolled it out behind the usual staged release · D:\\Coding\\nevertwice",
-      "s3-storage-configuration Configured S3 storage for uploads with a staged release approach. This pattern ensures reliable and scalable upload handling by leveraging S3's durability and availability features.  [facts] database backups go to Glacier · Rolled it out behind the usual staged release · D:\\Coding\\nevertwice"
+      "s3-storage-for-uploads Decided to use S3 storage for handling uploads, which provides better scalability and reliability compared to local storage solutions.  [facts] database backups go to Glacier · Rolled it out behind the usual staged release",
+      "s3-storage-configuration Configured S3 storage for uploads with a staged release approach. This pattern ensures reliable and scalable upload handling by leveraging S3's durability and availability features.  [facts] database backups go to Glacier · Rolled it out behind the usual staged release"
      ],
      "current_live": true,
      "current_retired": false,
@@ -1227,9 +1226,9 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 189,
+     "chars_returned": 159,
      "returned": [
-      "admin-panel-mfa-requirement The admin panel requires MFA for access. This was confirmed during a security review and is part of the project's security posture.  [facts] D:\\Coding\\nevertwice"
+      "admin-panel-mfa-requirement The admin panel requires MFA for access. This was confirmed during a security review and is part of the project's security posture."
      ],
      "current_live": true,
      "current_retired": false,
@@ -1245,9 +1244,9 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 265,
+     "chars_returned": 242,
      "returned": [
-      "ruff-formatting-for-python Python code in the project is formatted using ruff. This was confirmed during a pairing session where the tooling was worked through and the outcome was explicitly stated.  [facts] Python code is formatted with ruff · D:\\Coding\\nevertwice"
+      "ruff-formatting-for-python Python code in the project is formatted using ruff. This was confirmed during a pairing session where the tooling was worked through and the outcome was explicitly stated.  [facts] Python code is formatted with ruff"
      ],
      "current_live": true,
      "current_retired": false,
@@ -1263,9 +1262,9 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 164,
+     "chars_returned": 134,
      "returned": [
-      "traces-exported-to-tempo Logs are shipped to Loki for observability. This was documented in the README section that was already stale.  [facts] D:\\Coding\\nevertwice"
+      "traces-exported-to-tempo Logs are shipped to Loki for observability. This was documented in the README section that was already stale."
      ],
      "current_live": true,
      "current_retired": false,
@@ -1315,9 +1314,9 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 285,
+     "chars_returned": 262,
      "returned": [
-      "cli-distribution-homebrew The CLI distribution uses Homebrew as the package manager for desktop app installation.  [facts] the desktop app ships as a signed installer · D:\\Coding\\nevertwice Verify that all distribution methods are consistent with the chosen package manager (Homebrew)."
+      "cli-distribution-homebrew The CLI distribution uses Homebrew as the package manager for desktop app installation.  [facts] the desktop app ships as a signed installer Verify that all distribution methods are consistent with the chosen package manager (Homebrew)."
      ],
      "current_live": true,
      "current_retired": false,
@@ -1333,9 +1332,9 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 253,
+     "chars_returned": 223,
      "returned": [
-      "ingest-queue-nats-backend The ingest queue is backed by NATS, which provides reliable message delivery and supports horizontal scaling. This pattern ensures that messages are processed in order and can be retried if needed.  [facts] D:\\Coding\\nevertwice"
+      "ingest-queue-nats-backend The ingest queue is backed by NATS, which provides reliable message delivery and supports horizontal scaling. This pattern ensures that messages are processed in order and can be retried if needed."
      ],
      "current_live": true,
      "current_retired": false,
@@ -1351,9 +1350,9 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 284,
+     "chars_returned": 261,
      "returned": [
-      "api-reference-generation The API reference is generated from OpenAPI documentation. This process was documented and a note was left in the tracker to prevent future duplication of effort.  [facts] Left a note in the tracker so the next person does not redo this · D:\\Coding\\nevertwice"
+      "api-reference-generation The API reference is generated from OpenAPI documentation. This process was documented and a note was left in the tracker to prevent future duplication of effort.  [facts] Left a note in the tracker so the next person does not redo this"
      ],
      "current_live": true,
      "current_retired": false,
@@ -1369,9 +1368,9 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 263,
+     "chars_returned": 240,
      "returned": [
-      "python-3.13-worker-runtime The worker runs on Python 3.13, which was confirmed during the session. This is a key runtime detail for ensuring compatibility and correct execution of code.  [facts] Confirmed that the worker runs on Python 3.13 · D:\\Coding\\nevertwice"
+      "python-3.13-worker-runtime The worker runs on Python 3.13, which was confirmed during the session. This is a key runtime detail for ensuring compatibility and correct execution of code.  [facts] Confirmed that the worker runs on Python 3.13"
      ],
      "current_live": true,
      "current_retired": false,
@@ -1387,10 +1386,10 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 577,
+     "chars_returned": 524,
      "returned": [
-      "tls-termination-at-load-balancer Ingress terminates TLS at the load balancer. This setup ensures that encrypted traffic is decrypted before reaching the application layer, which can simplify certificate management and improve performance by offloading TLS processing.  [facts] D:\\Coding\\nevertwice",
-      "egress-through-nat-gateway The egress traffic now goes through a NAT gateway, which was a settled networking decision. This change affects how outbound connections are handled and requires updates to routing rules.  [facts] egress goes through a NAT gateway · D:\\Coding\\nevertwice"
+      "tls-termination-at-load-balancer Ingress terminates TLS at the load balancer. This setup ensures that encrypted traffic is decrypted before reaching the application layer, which can simplify certificate management and improve performance by offloading TLS processing.",
+      "egress-through-nat-gateway The egress traffic now goes through a NAT gateway, which was a settled networking decision. This change affects how outbound connections are handled and requires updates to routing rules.  [facts] egress goes through a NAT gateway"
      ],
      "current_live": true,
      "current_retired": false,
@@ -1406,10 +1405,10 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": false,
-     "chars_returned": 412,
+     "chars_returned": 389,
      "returned": [
       "pull-request-approval-policy The policy for pull request approval was already documented and enforced.",
-      "staged-release-rollout Every release requires a signed changelog entry. This was documented in the README section that was already stale.  [facts] Unrelated to the earlier change, every release needs a signed changelog entry. · Documented it in the README section that was already stale. · D:\\Coding\\nevertwice"
+      "staged-release-rollout Every release requires a signed changelog entry. This was documented in the README section that was already stale.  [facts] Unrelated to the earlier change, every release needs a signed changelog entry. · Documented it in the README section that was already stale."
      ],
      "current_live": false,
      "current_retired": false,
@@ -1425,11 +1424,11 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 795,
+     "chars_returned": 712,
      "returned": [
-      "request-latency-histogram Request latency is tracked as a histogram, and the code now matches. This approach provides detailed performance insights by capturing the distribution of request times rather than just average or peak values.  [facts] D:\\Coding\\nevertwice",
-      "observability-decision The decision was made to track request latency as a histogram for observability purposes, which allows better understanding of performance behavior over time.  [facts] Wrote up the observability decision · Request latency is tracked as a histogram · D:\\Coding\\nevertwice",
-      "queue-depth-gauge-tracking Queue depth is tracked as a gauge for observability purposes. This pattern ensures visibility into system queue behavior and helps in identifying bottlenecks or performance issues.  [facts] D:\\Coding\\nevertwice"
+      "request-latency-histogram Request latency is tracked as a histogram, and the code now matches. This approach provides detailed performance insights by capturing the distribution of request times rather than just average or peak values.",
+      "observability-decision The decision was made to track request latency as a histogram for observability purposes, which allows better understanding of performance behavior over time.  [facts] Wrote up the observability decision · Request latency is tracked as a histogram",
+      "queue-depth-gauge-tracking Queue depth is tracked as a gauge for observability purposes. This pattern ensures visibility into system queue behavior and helps in identifying bottlenecks or performance issues."
      ],
      "current_live": true,
      "current_retired": false,
@@ -1445,9 +1444,9 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 254,
+     "chars_returned": 224,
      "returned": [
-      "session-state-in-localstorage The session state is stored in localStorage for persistence across page reloads. This approach ensures that the user's progress and settings are maintained without requiring server-side storage.  [facts] D:\\Coding\\nevertwice"
+      "session-state-in-localstorage The session state is stored in localStorage for persistence across page reloads. This approach ensures that the user's progress and settings are maintained without requiring server-side storage."
      ],
      "current_live": true,
      "current_retired": false,
@@ -1463,9 +1462,9 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 208,
+     "chars_returned": 185,
      "returned": [
-      "paging-alerts-to-pagerduty The decision was made to route paging alerts to PagerDuty. This ensures proper alerting and incident response handling.  [facts] paging alerts go to PagerDuty · D:\\Coding\\nevertwice"
+      "paging-alerts-to-pagerduty The decision was made to route paging alerts to PagerDuty. This ensures proper alerting and incident response handling.  [facts] paging alerts go to PagerDuty"
      ],
      "current_live": true,
      "current_retired": false,
@@ -1477,10 +1476,10 @@
    ],
    "n_supersession": 60,
    "n_control": 20,
-   "stale_rate": 0.0333,
+   "stale_rate": 0.0167,
    "stale_ci": [
-    0.0092,
-    0.1136
+    0.0029,
+    0.0886
    ],
    "current_rate": 1.0,
    "current_ci": [
@@ -1497,8 +1496,8 @@
     0.0524,
     0.3604
    ],
-   "mean_chars_returned": 402.5,
-   "max_chars_returned": 958,
+   "mean_chars_returned": 370.6,
+   "max_chars_returned": 889,
    "stale_at_rank_1": 1,
    "control_retired_by_memory": 0,
    "control_demoted_by_merge": 3,
@@ -1508,9 +1507,9 @@
    "notes_in_cyrillic": 0,
    "language_drift_rate": 0.0,
    "cases_touched_by_drift": 0,
-   "seconds": 273.3,
+   "seconds": 302.2,
    "config": "ollama qwen3-coder:30b + bge-m3, k=5",
-   "store_bytes": 130440
+   "store_bytes": 126635
   },
   "nevertwice_run2": {
    "rows": [
@@ -1521,11 +1520,11 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 748,
+     "chars_returned": 672,
      "returned": [
-      "http-client-timeout-configured The HTTP client timeout was configured to 30 seconds after initial incorrect assumption of 5 seconds. This pattern ensures proper handling of API requests with appropriate timeouts.  [facts] HTTP client timeout is 5 seconds · D:\\Coding\\nevertwice",
-      "incorrect-http-client-timeout-assumption The agent initially assumed the HTTP client timeout was set to 5 seconds, which turned out to be incorrect.  [facts] the HTTP client timeout is 5 seconds · D:\\Coding\\nevertwice Verify actual configuration values before making assumptions about timeouts.",
-      "set-http-client-timeout-to-30s The decision was made to set the HTTP client timeout to 30 seconds, overriding the previous assumption of 5 seconds.  [facts] D:\\Coding\\nevertwice"
+      "http-client-timeout-configured The HTTP client timeout was configured to 30 seconds after initial incorrect assumption of 5 seconds. This pattern ensures proper handling of API requests with appropriate timeouts.  [facts] HTTP client timeout is 5 seconds",
+      "incorrect-http-client-timeout-assumption The agent initially assumed the HTTP client timeout was set to 5 seconds, which turned out to be incorrect.  [facts] the HTTP client timeout is 5 seconds Verify actual configuration values before making assumptions about timeouts.",
+      "set-http-client-timeout-to-30s The decision was made to set the HTTP client timeout to 30 seconds, overriding the previous assumption of 5 seconds."
      ],
      "current_live": true,
      "current_retired": false,
@@ -1559,9 +1558,9 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 303,
+     "chars_returned": 280,
      "returned": [
-      "training-batch-size-confirmed The training batch size was confirmed to be 128 after the job changed this week. The dashboard showed no movement for an hour after the change.  [facts] The training batch size is now 128. · Checked the dashboards for an hour after and nothing moved. · D:\\Coding\\nevertwice"
+      "training-batch-size-confirmed The training batch size was confirmed to be 128 after the job changed this week. The dashboard showed no movement for an hour after the change.  [facts] The training batch size is now 128. · Checked the dashboards for an hour after and nothing moved."
      ],
      "current_live": true,
      "current_retired": false,
@@ -1577,9 +1576,9 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 262,
+     "chars_returned": 239,
      "returned": [
-      "frontend-build-target-node22 The frontend build target was updated to Node 22. This change was reviewed and approved with only one rename requested.  [facts] the build targets Node 22 · reviewer asked for one rename · otherwise approved it · D:\\Coding\\nevertwice"
+      "frontend-build-target-node22 The frontend build target was updated to Node 22. This change was reviewed and approved with only one rename requested.  [facts] the build targets Node 22 · reviewer asked for one rename · otherwise approved it"
      ],
      "current_live": true,
      "current_retired": false,
@@ -1595,9 +1594,9 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 318,
+     "chars_returned": 295,
      "returned": [
-      "queue-worker-retry-logic The queue worker now retries a failed job 10 times instead of failing immediately. This change was documented in the README section that was already stale.  [facts] the worker now retries a failed job 10 times · Documented it in the README section that was already stale · D:\\Coding\\nevertwice"
+      "queue-worker-retry-logic The queue worker now retries a failed job 10 times instead of failing immediately. This change was documented in the README section that was already stale.  [facts] the worker now retries a failed job 10 times · Documented it in the README section that was already stale"
      ],
      "current_live": true,
      "current_retired": false,
@@ -1613,10 +1612,10 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 460,
+     "chars_returned": 414,
      "returned": [
-      "cache-entry-expiration Cache entries expire after 15 minutes. This was confirmed by running the full test suite which stayed green after the cache layer was reset.  [facts] Ran the full test suite afterwards and it stayed green · D:\\Coding\\nevertwice · Follow-up",
-      "cache-expiration-time The cache expiration time was set to 15 minutes based on the behavior observed during testing.  [facts] Cache entries expire after 15 minutes · D:\\Coding\\nevertwice · Follow-up"
+      "cache-entry-expiration Cache entries expire after 15 minutes. This was confirmed by running the full test suite which stayed green after the cache layer was reset.  [facts] Ran the full test suite afterwards and it stayed green · Follow-up",
+      "cache-expiration-time The cache expiration time was set to 15 minutes based on the behavior observed during testing.  [facts] Cache entries expire after 15 minutes · Follow-up"
      ],
      "current_live": true,
      "current_retired": false,
@@ -1632,9 +1631,9 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 288,
+     "chars_returned": 265,
      "returned": [
-      "dev-server-port-configuration The development server listens on port 8080, not the previously assumed port. This was confirmed by returning to the dev server and verifying the configuration.  [facts] the dev server listens on port 8080 · Came back to the dev server · D:\\Coding\\nevertwice"
+      "dev-server-port-configuration The development server listens on port 8080, not the previously assumed port. This was confirmed by returning to the dev server and verifying the configuration.  [facts] the dev server listens on port 8080 · Came back to the dev server"
      ],
      "current_live": true,
      "current_retired": false,
@@ -1650,9 +1649,9 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 223,
+     "chars_returned": 200,
      "returned": [
-      "service-deployment-in-eu-west-1 The service was moved from its previous location to us-east-2. This change touched three files and none of them were config.  [facts] the service was moved to us-east-2 · D:\\Coding\\nevertwice"
+      "service-deployment-in-eu-west-1 The service was moved from its previous location to us-east-2. This change touched three files and none of them were config.  [facts] the service was moved to us-east-2"
      ],
      "current_live": true,
      "current_retired": false,
@@ -1668,10 +1667,10 @@
      "stale_returned": true,
      "stale_rank": 2,
      "current_returned": true,
-     "chars_returned": 470,
+     "chars_returned": 424,
      "returned": [
-      "python-version-pinning The project now pins Python 3.13 due to a toolchain change. This ensures consistent environment setup and avoids compatibility issues.  [facts] The toolchain changed this week · D:\\Coding\\nevertwice",
-      "test-suite-validation Running the full test suite after changes ensures that no regressions were introduced. The session confirmed that tests stayed green.  [facts] Ran the full test suite afterwards and it stayed green · D:\\Coding\\nevertwice · 3.11"
+      "python-version-pinning The project now pins Python 3.13 due to a toolchain change. This ensures consistent environment setup and avoids compatibility issues.  [facts] The toolchain changed this week",
+      "test-suite-validation Running the full test suite after changes ensures that no regressions were introduced. The session confirmed that tests stayed green.  [facts] Ran the full test suite afterwards and it stayed green · 3.11"
      ],
      "current_live": true,
      "current_retired": false,
@@ -1687,9 +1686,9 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 205,
+     "chars_returned": 175,
      "returned": [
-      "api-capacity-configuration The API runs with 12 replicas after a load test. The rollout was done behind a staged release process, ensuring controlled deployment and stability.  [facts] D:\\Coding\\nevertwice"
+      "api-capacity-configuration The API runs with 12 replicas after a load test. The rollout was done behind a staged release process, ensuring controlled deployment and stability."
      ],
      "current_live": true,
      "current_retired": false,
@@ -1705,9 +1704,9 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 402,
+     "chars_returned": 379,
      "returned": [
-      "learning-rate-configuration Adjusting the learning rate to 5e-5 did not result in observable progress after an hour of monitoring. This suggests that the learning rate alone may not be sufficient to drive model improvements, or that other hyperparameters need adjustment.  [facts] the learning rate was lowered to 5e-5 · Checked the dashboards for an hour after and nothing moved · D:\\Coding\\nevertwice"
+      "learning-rate-configuration Adjusting the learning rate to 5e-5 did not result in observable progress after an hour of monitoring. This suggests that the learning rate alone may not be sufficient to drive model improvements, or that other hyperparameters need adjustment.  [facts] the learning rate was lowered to 5e-5 · Checked the dashboards for an hour after and nothing moved"
      ],
      "current_live": true,
      "current_retired": false,
@@ -1723,10 +1722,10 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 475,
+     "chars_returned": 429,
      "returned": [
-      "ingestion-decision-finalized The ingestion decision has been finalized with chunk size set to 1024 tokens.  [facts] Documents are chunked at 1024 tokens now. · D:\\Coding\\nevertwice · Follow-up",
-      "document-ingestion-chunking Documents are now chunked at 1024 tokens. This approach was approved by the reviewer after a minor rename.  [facts] Documents are chunked at 1024 tokens now. · The reviewer asked for one rename and otherwise approved it. · D:\\Coding\\nevertwice · Follow-up"
+      "ingestion-decision-finalized The ingestion decision has been finalized with chunk size set to 1024 tokens.  [facts] Documents are chunked at 1024 tokens now. · Follow-up",
+      "document-ingestion-chunking Documents are now chunked at 1024 tokens. This approach was approved by the reviewer after a minor rename.  [facts] Documents are chunked at 1024 tokens now. · The reviewer asked for one rename and otherwise approved it. · Follow-up"
      ],
      "current_live": true,
      "current_retired": false,
@@ -1742,10 +1741,10 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 626,
+     "chars_returned": 580,
      "returned": [
-      "cluster-quorum-requirement After a cluster resize, the quorum requirement changes and must be updated in documentation. The previous assumption about quorum was incorrect.  [facts] the cluster needs a quorum of 5 nodes after the resize · Documented it in the README section that was already stale · D:\\Coding\\nevertwice",
-      "cluster-quorum-update The decision to update the quorum requirement in the cluster documentation was made after realizing that the earlier assumption was incorrect.  [facts] Came back to the cluster. That earlier decision is off: the cluster needs a quorum of 5 nodes after the resize · D:\\Coding\\nevertwice"
+      "cluster-quorum-requirement After a cluster resize, the quorum requirement changes and must be updated in documentation. The previous assumption about quorum was incorrect.  [facts] the cluster needs a quorum of 5 nodes after the resize · Documented it in the README section that was already stale",
+      "cluster-quorum-update The decision to update the quorum requirement in the cluster documentation was made after realizing that the earlier assumption was incorrect.  [facts] Came back to the cluster. That earlier decision is off: the cluster needs a quorum of 5 nodes after the resize"
      ],
      "current_live": true,
      "current_retired": false,
@@ -1761,9 +1760,9 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 216,
+     "chars_returned": 193,
      "returned": [
-      "project-licensing-decided The project was relicensed to Apache-2.0 after a review.  [facts] reopened licensing after the last review · the new position: the project was relicensed to Apache-2.0 · D:\\Coding\\nevertwice"
+      "project-licensing-decided The project was relicensed to Apache-2.0 after a review.  [facts] reopened licensing after the last review · the new position: the project was relicensed to Apache-2.0"
      ],
      "current_live": true,
      "current_retired": false,
@@ -1779,9 +1778,9 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 350,
+     "chars_returned": 327,
      "returned": [
-      "branch-renaming-handling When a repository's default branch is renamed, it's important to update local configurations and inform team members to prevent redundant work. The agent noted this change in the tracker.  [facts] The default branch was renamed to main · Left a note in the tracker so the next person does not redo this · D:\\Coding\\nevertwice"
+      "branch-renaming-handling When a repository's default branch is renamed, it's important to update local configurations and inform team members to prevent redundant work. The agent noted this change in the tracker.  [facts] The default branch was renamed to main · Left a note in the tracker so the next person does not redo this"
      ],
      "current_live": true,
      "current_retired": false,
@@ -1797,10 +1796,10 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 536,
+     "chars_returned": 483,
      "returned": [
-      "redis-session-caching-setup The project replaced Redis with an in-process LRU cache for session caching. This change touched three files and none of them were config files. The decision was made to use an in-process cache instead of Redis.  [facts] D:\\Coding\\nevertwice",
-      "in-process-lru-cache-for-session-caching The decision was made to replace Redis with an in-process LRU cache for session caching. This change touched three files and none of them were config.  [facts] replaced Redis with an in-process LRU cache · D:\\Coding\\nevertwice"
+      "redis-session-caching-setup The project replaced Redis with an in-process LRU cache for session caching. This change touched three files and none of them were config files. The decision was made to use an in-process cache instead of Redis.",
+      "in-process-lru-cache-for-session-caching The decision was made to replace Redis with an in-process LRU cache for session caching. This change touched three files and none of them were config.  [facts] replaced Redis with an in-process LRU cache"
      ],
      "current_live": true,
      "current_retired": false,
@@ -1816,10 +1815,10 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 697,
+     "chars_returned": 651,
      "returned": [
-      "jwt-authentication-with-hs256 The decision was made to use JWT with HS256 for authentication, which is a secure and widely accepted method. This replaces the earlier approach of using opaque session cookies backed by the database.  [facts] authentication moved to opaque session cookies backed by the database · D:\\Coding\\nevertwice",
-      "jwt-authentication-with-hs256 The session confirmed the use of JWT with HS256 for authentication, which is a standard and secure approach. The decision was made to move away from opaque session cookies backed by the database to a more scalable token-based system.  [facts] authentication moved to opaque session cookies backed by the database · D:\\Coding\\nevertwice"
+      "jwt-authentication-with-hs256 The decision was made to use JWT with HS256 for authentication, which is a secure and widely accepted method. This replaces the earlier approach of using opaque session cookies backed by the database.  [facts] authentication moved to opaque session cookies backed by the database",
+      "jwt-authentication-with-hs256 The session confirmed the use of JWT with HS256 for authentication, which is a standard and secure approach. The decision was made to move away from opaque session cookies backed by the database to a more scalable token-based system.  [facts] authentication moved to opaque session cookies backed by the database"
      ],
      "current_live": true,
      "current_retired": false,
@@ -1833,13 +1832,13 @@
      "shape": "approach_abandoned",
      "n_hits": 3,
      "stale_returned": true,
-     "stale_rank": 2,
+     "stale_rank": 1,
      "current_returned": true,
-     "chars_returned": 747,
+     "chars_returned": 671,
      "returned": [
-      "switch-to-vite-for-frontend The decision was made to switch frontend bundling from the previous system to Vite, which is more modern and efficient.  [facts] The frontend is bundled with Vite now · D:\\Coding\\nevertwice · Follow-up",
-      "frontend-bundling-with-webpack The frontend is bundled with Webpack, and the code now matches. This decision was made to ensure consistent and optimized frontend builds.  [facts] D:\\Coding\\nevertwice",
-      "frontend-bundling-with-vite The frontend is now bundled with Vite instead of the previous build system. This change was rolled out behind a staged release, ensuring a controlled deployment.  [facts] The frontend is bundled with Vite now · Rolled it out behind the usual staged release · D:\\Coding\\nevertwice · Follow-up"
+      "frontend-bundling-with-webpack The frontend is bundled with Webpack, and the code now matches. This decision was made to ensure consistent and optimized frontend builds.",
+      "switch-to-vite-for-frontend The decision was made to switch frontend bundling from the previous system to Vite, which is more modern and efficient.  [facts] The frontend is bundled with Vite now · Follow-up",
+      "frontend-bundling-with-vite The frontend is now bundled with Vite instead of the previous build system. This change was rolled out behind a staged release, ensuring a controlled deployment.  [facts] The frontend is bundled with Vite now · Rolled it out behind the usual staged release · Follow-up"
      ],
      "current_live": true,
      "current_retired": false,
@@ -1855,10 +1854,10 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 518,
+     "chars_returned": 472,
      "returned": [
-      "use-asyncpg-for-data-access The decision was made to use asyncpg with hand-written SQL for data access, replacing the earlier SQLAlchemy ORM approach.  [facts] data access was rewritten as hand-written SQL with asyncpg · D:\\Coding\\nevertwice",
-      "asyncpg-hand-written-sql-data-access Data access was rewritten using hand-written SQL with asyncpg instead of SQLAlchemy ORM. This approach was chosen for better control and performance.  [facts] data access was rewritten as hand-written SQL with asyncpg · D:\\Coding\\nevertwice"
+      "use-asyncpg-for-data-access The decision was made to use asyncpg with hand-written SQL for data access, replacing the earlier SQLAlchemy ORM approach.  [facts] data access was rewritten as hand-written SQL with asyncpg",
+      "asyncpg-hand-written-sql-data-access Data access was rewritten using hand-written SQL with asyncpg instead of SQLAlchemy ORM. This approach was chosen for better control and performance.  [facts] data access was rewritten as hand-written SQL with asyncpg"
      ],
      "current_live": true,
      "current_retired": true,
@@ -1874,10 +1873,10 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 524,
+     "chars_returned": 478,
      "returned": [
-      "postgres-backed-queue The decision was made to use a Postgres-backed queue for background jobs instead of the previous implementation, which likely used Redis or another system.  [facts] background jobs run on a Postgres-backed queue instead · D:\\Coding\\nevertwice",
-      "background-jobs-with-celery-and-rabbitmq The project implements background jobs using Celery with RabbitMQ as the message broker. This pattern ensures reliable task queuing and processing in a distributed system.  [facts] D:\\Coding\\nevertwice · Postgres-backed"
+      "postgres-backed-queue The decision was made to use a Postgres-backed queue for background jobs instead of the previous implementation, which likely used Redis or another system.  [facts] background jobs run on a Postgres-backed queue instead",
+      "background-jobs-with-celery-and-rabbitmq The project implements background jobs using Celery with RabbitMQ as the message broker. This pattern ensures reliable task queuing and processing in a distributed system.  [facts] Postgres-backed"
      ],
      "current_live": true,
      "current_retired": false,
@@ -1893,9 +1892,9 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 393,
+     "chars_returned": 370,
      "returned": [
-      "ci-migration-documentation When a continuous integration system is migrated, it's important to document the change in relevant project documentation. This ensures that team members are aware of the new setup and can reference it for troubleshooting or understanding.  [facts] CI was migrated to GitHub Actions · Documented it in the README section that was already stale · D:\\Coding\\nevertwice"
+      "ci-migration-documentation When a continuous integration system is migrated, it's important to document the change in relevant project documentation. This ensures that team members are aware of the new setup and can reference it for troubleshooting or understanding.  [facts] CI was migrated to GitHub Actions · Documented it in the README section that was already stale"
      ],
      "current_live": true,
      "current_retired": false,
@@ -1911,9 +1910,9 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 301,
+     "chars_returned": 278,
      "returned": [
-      "elasticsearch-search-setup-review The search functionality is powered by Postgres full-text search. The full test suite was run and remained green after the changes.  [facts] search is powered by Postgres full-text search · Ran the full test suite afterwards and it stayed green · D:\\Coding\\nevertwice"
+      "elasticsearch-search-setup-review The search functionality is powered by Postgres full-text search. The full test suite was run and remained green after the changes.  [facts] search is powered by Postgres full-text search · Ran the full test suite afterwards and it stayed green"
      ],
      "current_live": true,
      "current_retired": false,
@@ -1929,9 +1928,9 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 309,
+     "chars_returned": 286,
      "returned": [
-      "tailwind-styling-components Components are styled using Tailwind utility classes. This approach was reversed from an earlier implementation where components were not styled with Tailwind.  [facts] components are styled with Tailwind utility classes · Reversed the earlier call on the UI · D:\\Coding\\nevertwice"
+      "tailwind-styling-components Components are styled using Tailwind utility classes. This approach was reversed from an earlier implementation where components were not styled with Tailwind.  [facts] components are styled with Tailwind utility classes · Reversed the earlier call on the UI"
      ],
      "current_live": true,
      "current_retired": false,
@@ -1947,10 +1946,10 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 464,
+     "chars_returned": 418,
      "returned": [
-      "package-build-and-publish The package is built with hatchling and published by CI. This approach was confirmed to be the correct method for packaging in this project.  [facts] D:\\Coding\\nevertwice · Follow-up",
-      "packaging-decision The packaging approach was decided to use hatchling for building and CI for publishing, which is the established method in this project.  [facts] The package is built with hatchling and published by CI. · D:\\Coding\\nevertwice · Follow-up"
+      "package-build-and-publish The package is built with hatchling and published by CI. This approach was confirmed to be the correct method for packaging in this project.  [facts] Follow-up",
+      "packaging-decision The packaging approach was decided to use hatchling for building and CI for publishing, which is the established method in this project.  [facts] The package is built with hatchling and published by CI. · Follow-up"
      ],
      "current_live": true,
      "current_retired": false,
@@ -1966,9 +1965,9 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 262,
+     "chars_returned": 239,
      "returned": [
-      "frontend-global-state-in-zustand The frontend global state was moved from Redux to Zustand stores. This change improves performance and simplifies state management by reducing boilerplate code.  [facts] global state moved to Zustand stores · D:\\Coding\\nevertwice"
+      "frontend-global-state-in-zustand The frontend global state was moved from Redux to Zustand stores. This change improves performance and simplifies state management by reducing boilerplate code.  [facts] global state moved to Zustand stores"
      ],
      "current_live": true,
      "current_retired": true,
@@ -1984,9 +1983,9 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 273,
+     "chars_returned": 250,
      "returned": [
-      "infrastructure-provisioning-with-pulumi Infrastructure is provisioned with Pulumi in TypeScript. This approach was rolled out behind a staged release, indicating a controlled deployment strategy.  [facts] Rolled it out behind the usual staged release · D:\\Coding\\nevertwice"
+      "infrastructure-provisioning-with-pulumi Infrastructure is provisioned with Pulumi in TypeScript. This approach was rolled out behind a staged release, indicating a controlled deployment strategy.  [facts] Rolled it out behind the usual staged release"
      ],
      "current_live": true,
      "current_retired": true,
@@ -2002,9 +2001,9 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 383,
+     "chars_returned": 360,
      "returned": [
-      "schema-migration-through-alembic Schema migrations are handled through plain numbered SQL files applied by a shell script. This approach was verified to work after checking dashboards for an hour following the change.  [facts] Schema migrations are plain numbered SQL files applied by a shell script · Checked the dashboards for an hour after and nothing moved · D:\\Coding\\nevertwice"
+      "schema-migration-through-alembic Schema migrations are handled through plain numbered SQL files applied by a shell script. This approach was verified to work after checking dashboards for an hour following the change.  [facts] Schema migrations are plain numbered SQL files applied by a shell script · Checked the dashboards for an hour after and nothing moved"
      ],
      "current_live": true,
      "current_retired": false,
@@ -2020,9 +2019,9 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 286,
+     "chars_returned": 263,
      "returned": [
-      "protobuf-message-serialization Messages are serialized as newline-delimited JSON. This format was confirmed after a review and one rename was requested but approved.  [facts] messages are serialised as newline-delimited JSON · one rename and otherwise approved it · D:\\Coding\\nevertwice"
+      "protobuf-message-serialization Messages are serialized as newline-delimited JSON. This format was confirmed after a review and one rename was requested but approved.  [facts] messages are serialised as newline-delimited JSON · one rename and otherwise approved it"
      ],
      "current_live": true,
      "current_retired": false,
@@ -2038,9 +2037,9 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 288,
+     "chars_returned": 265,
      "returned": [
-      "secrets-from-vault-at-boot Secrets are injected as environment variables by the orchestrator, not loaded from a vault at boot time. This was documented in the README section that was already stale.  [facts] Documented it in the README section that was already stale · D:\\Coding\\nevertwice"
+      "secrets-from-vault-at-boot Secrets are injected as environment variables by the orchestrator, not loaded from a vault at boot time. This was documented in the README section that was already stale.  [facts] Documented it in the README section that was already stale"
      ],
      "current_live": true,
      "current_retired": false,
@@ -2056,10 +2055,10 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 614,
+     "chars_returned": 568,
      "returned": [
-      "end-to-end-test-approach The decision was made to use Playwright for driving end-to-end tests, which proved effective as the full test suite remained green after execution.  [facts] End-to-end tests are driven by Playwright · Ran the full test suite afterwards and it stayed green · D:\\Coding\\nevertwice · Follow-up",
-      "end-to-end-test-approach End-to-end tests are driven by Playwright and the full test suite was run successfully, remaining green. This approach ensures comprehensive testing of the application's flow.  [facts] Ran the full test suite afterwards and it stayed green · D:\\Coding\\nevertwice · Follow-up"
+      "end-to-end-test-approach The decision was made to use Playwright for driving end-to-end tests, which proved effective as the full test suite remained green after execution.  [facts] End-to-end tests are driven by Playwright · Ran the full test suite afterwards and it stayed green · Follow-up",
+      "end-to-end-test-approach End-to-end tests are driven by Playwright and the full test suite was run successfully, remaining green. This approach ensures comprehensive testing of the application's flow.  [facts] Ran the full test suite afterwards and it stayed green · Follow-up"
      ],
      "current_live": true,
      "current_retired": false,
@@ -2075,10 +2074,10 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 452,
+     "chars_returned": 406,
      "returned": [
-      "beta-dashboard-flag The decision was made to remove the beta_dashboard flag, making the new UI unconditional and available to all users.  [facts] the beta_dashboard flag was deleted; the new UI is now unconditional · D:\\Coding\\nevertwice",
-      "feature-flag-gating The team uses feature flags to gate new UI features, allowing gradual rollout and rollback. This approach was used for the beta dashboard flag.  [facts] beta_dashboard flag · D:\\Coding\\nevertwice"
+      "beta-dashboard-flag The decision was made to remove the beta_dashboard flag, making the new UI unconditional and available to all users.  [facts] the beta_dashboard flag was deleted; the new UI is now unconditional",
+      "feature-flag-gating The team uses feature flags to gate new UI features, allowing gradual rollout and rollback. This approach was used for the beta dashboard flag.  [facts] beta_dashboard flag"
      ],
      "current_live": true,
      "current_retired": false,
@@ -2143,17 +2142,17 @@
      "id": "ret-plugin-api",
      "shape": "retracted_no_replacement",
      "n_hits": 1,
-     "stale_returned": false,
-     "stale_rank": null,
-     "current_returned": true,
-     "chars_returned": 303,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": false,
+     "chars_returned": 222,
      "returned": [
-      "third-party-plugins-entry-points The plugin system was removed before version 1.0 and never shipped, indicating a design decision to avoid extensibility at that stage.  [facts] Reversed the earlier call on extensibility: the plugin system was removed before 1.0 and never shipped. · D:\\Coding\\nevertwice"
+      "third-party-plugins-entry-points Third-party plugins load through the entry_points group. This approach touches multiple files but avoids config changes.  [facts] The change touched three files and none of them were config"
      ],
-     "current_live": true,
+     "current_live": false,
      "current_retired": false,
      "current_demoted": false,
-     "current_absent": false,
+     "current_absent": true,
      "notes_written": 1,
      "notes_in_cyrillic": 0
     },
@@ -2161,18 +2160,18 @@
      "id": "ret-mobile",
      "shape": "retracted_no_replacement",
      "n_hits": 2,
-     "stale_returned": false,
-     "stale_rank": null,
-     "current_returned": true,
-     "chars_returned": 454,
+     "stale_returned": true,
+     "stale_rank": 1,
+     "current_returned": false,
+     "chars_returned": 426,
      "returned": [
-      "ios-client-sync-engine The iOS client was discontinued and only the web app remains. This pattern reflects the shift in focus for the sync engine.  [facts] The iOS client was discontinued; only the web app remains. · D:\\Coding\\nevertwice · Follow-up",
-      "shared-sync-engine-decision The decision was made to proceed with the shared sync engine, as approved by the reviewer after one rename.  [facts] The reviewer asked for one rename and otherwise approved it."
+      "ios-client-sync-engine The iOS client shares the sync engine with the web app, and the code now matches. This pattern ensures consistency between platforms by reusing shared components.",
+      "shared-sync-engine-decision It was decided that the iOS client would share the sync engine with the web app to ensure code consistency and reduce duplication.  [facts] iOS client shares the sync engine with the web app · the code now matches"
      ],
-     "current_live": true,
+     "current_live": false,
      "current_retired": false,
      "current_demoted": false,
-     "current_absent": false,
+     "current_absent": true,
      "notes_written": 2,
      "notes_in_cyrillic": 0
     },
@@ -2183,10 +2182,10 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 762,
+     "chars_returned": 624,
      "returned": [
-      "nightly-cron-audit-log-compaction The system was previously configured to perform nightly compaction of audit logs, but this decision was reversed. The audit log is now append-only and persists forever. This pattern documents the change in behavior and the update to the README.  [facts] nightly compaction was dropped · the audit log is append-only forever · documented it in the README section that was already stale · D:\\Coding\\nevertwice",
-      "append-only-audit-log The decision was made to keep audit logs append-only and never compact them. This ensures that all historical data is preserved indefinitely, which is important for compliance or auditing purposes.  [facts] nightly compaction was dropped · the audit log is append-only forever · D:\\Coding\\nevertwice"
+      "audit-log-append-only The decision was made that the audit log is append-only and will never be compacted. This contradicts an earlier assumption that nightly compaction would occur.  [facts] nightly compaction was dropped · audit log is append-only forever",
+      "nightly-cron-audit-log-compaction The audit log is append-only and never compacted. This was previously thought to be a nightly compaction task, but that decision was dropped. The README section documenting this was already stale and had to be updated.  [facts] nightly compaction was dropped · audit log is append-only forever · README section that was already stale"
      ],
      "current_live": true,
      "current_retired": false,
@@ -2202,10 +2201,10 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 575,
+     "chars_returned": 529,
      "returned": [
-      "switch-to-http Decision was made to switch from gRPC to plain HTTP communication in the project, based on a review of transport setup and confirmation that tests remain green.  [facts] gRPC was ripped out · everything is plain HTTP now · D:\\Coding\\nevertwice",
-      "grpc-communication-setup The project was updated to use plain HTTP instead of gRPC. This change was made after reviewing the transport setup and ensuring all tests remain green.  [facts] gRPC was ripped out · everything is plain HTTP now · Ran the full test suite afterwards and it stayed green · D:\\Coding\\nevertwice"
+      "switch-to-http Decision was made to switch from gRPC to plain HTTP communication in the project, based on a review of transport setup and confirmation that tests remain green.  [facts] gRPC was ripped out · everything is plain HTTP now",
+      "grpc-communication-setup The project was updated to use plain HTTP instead of gRPC. This change was made after reviewing the transport setup and ensuring all tests remain green.  [facts] gRPC was ripped out · everything is plain HTTP now · Ran the full test suite afterwards and it stayed green"
      ],
      "current_live": true,
      "current_retired": false,
@@ -2221,9 +2220,9 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 318,
+     "chars_returned": 295,
      "returned": [
-      "okta-integration-cancelled The Okta integration was cancelled and staff now use ordinary accounts. This decision was made to simplify access management.  [facts] access changed this week · staff use ordinary accounts · D:\\Coding\\nevertwice Document the change in the tracker so the next person does not redo this work."
+      "okta-integration-cancelled The Okta integration was cancelled and staff now use ordinary accounts. This decision was made to simplify access management.  [facts] access changed this week · staff use ordinary accounts Document the change in the tracker so the next person does not redo this work."
      ],
      "current_live": true,
      "current_retired": false,
@@ -2273,10 +2272,10 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 520,
+     "chars_returned": 474,
      "returned": [
-      "use-legacy-flag-for-backward-compatibility The decision was made to use a legacy flag for backward compatibility, but it was ultimately dropped in version 3.0 without replacement.  [facts] --legacy flag · D:\\Coding\\nevertwice · Follow-up",
-      "cli-flag-legacy-restores-pre-2-0-format The --legacy flag was dropped in version 3.0 with no equivalent, and the CLI behavior changed to not support legacy formats. This pattern shows how a deprecated flag was removed during a major release.  [facts] D:\\Coding\\nevertwice · Follow-up"
+      "use-legacy-flag-for-backward-compatibility The decision was made to use a legacy flag for backward compatibility, but it was ultimately dropped in version 3.0 without replacement.  [facts] --legacy flag · Follow-up",
+      "cli-flag-legacy-restores-pre-2-0-format The --legacy flag was dropped in version 3.0 with no equivalent, and the CLI behavior changed to not support legacy formats. This pattern shows how a deprecated flag was removed during a major release.  [facts] Follow-up"
      ],
      "current_live": true,
      "current_retired": false,
@@ -2292,9 +2291,9 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 407,
+     "chars_returned": 404,
      "returned": [
-      "admin-panel-audit-filtering The audit tab was removed from the admin panel entirely, which contradicted an earlier assumption. This required re-evaluating the approach to monitoring and filtering.  [facts] Came back to the admin panel. That earlier decision is off: the audit tab was taken out of the admin panel entirely. · Checked the dashboards for an hour after and nothing moved. · D:\\Coding\\nevertwice"
+      "admin-panel-audit-filtering The audit tab was removed from the admin panel entirely, which contradicted an earlier assumption. This required re-evaluating the approach to auditing and checking dashboards for updates.  [facts] Came back to the admin panel. That earlier decision is off: the audit tab was taken out of the admin panel entirely. · Checked the dashboards for an hour after and nothing moved."
      ],
      "current_live": true,
      "current_retired": false,
@@ -2306,19 +2305,20 @@
     {
      "id": "ret-i18n",
      "shape": "retracted_no_replacement",
-     "n_hits": 1,
+     "n_hits": 2,
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 355,
+     "chars_returned": 609,
      "returned": [
-      "app-is-english-only The application is now English-only after dropping translations. The reviewer approved this change with only one rename requested.  [facts] translations were dropped · the app is English-only · one rename and otherwise approved · D:\\Coding\\nevertwice Confirm localization strategy before implementing changes to avoid unnecessary work."
+      "english-only-app The decision was made to drop translations and make the app English-only, as per the reviewer's feedback after a review process.  [facts] translations were dropped · the app is English-only",
+      "localization-pair-programming The team engaged in pair programming for localization tasks, which helped identify and resolve issues early. The session shows a review process where the reviewer requested one rename and approved the rest, indicating collaborative refinement.  [facts] Reopened localisation after the last review · The reviewer asked for one rename and otherwise approved it · English-only"
      ],
      "current_live": true,
      "current_retired": false,
      "current_demoted": false,
      "current_absent": false,
-     "notes_written": 1,
+     "notes_written": 2,
      "notes_in_cyrillic": 0
     },
     {
@@ -2328,9 +2328,9 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 368,
+     "chars_returned": 385,
      "returned": [
-      "sandbox-environment-mirroring The sandbox environment was shut down and partners now test against their own stubs. This change required updating documentation in the README to reflect the new testing approach.  [facts] The sandbox was shut down · partners test against their own stubs · Documented it in the README section that was already stale · D:\\Coding\\nevertwice"
+      "api-change-documentation When an API changes, it's important to update documentation like README to reflect the new state. This ensures that developers and partners are aware of the current setup and can work accordingly.  [facts] The API changed this week · The sandbox was shut down · partners test against their own stubs · Documented it in the README section that was already stale"
      ],
      "current_live": true,
      "current_retired": false,
@@ -2346,9 +2346,9 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 355,
+     "chars_returned": 332,
      "returned": [
-      "http-client-retry-logic The HTTP client retries only on 5xx responses and never retries on 4xx responses. This behavior was verified by running the full test suite which remained green after the change.  [facts] the client retries only on 5xx responses · 4xx is never retried · Ran the full test suite afterwards and it stayed green · D:\\Coding\\nevertwice"
+      "http-client-retry-logic The HTTP client retries only on 5xx responses and never retries on 4xx responses. This behavior was verified by running the full test suite which remained green after the change.  [facts] the client retries only on 5xx responses · 4xx is never retried · Ran the full test suite afterwards and it stayed green"
      ],
      "current_live": true,
      "current_retired": false,
@@ -2364,9 +2364,9 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 356,
+     "chars_returned": 333,
      "returned": [
-      "api-response-caching Only GET responses are cached; writes bypass the cache entirely. This prevents stale data from being returned for write operations while still providing performance benefits for read-heavy operations.  [facts] Reversed the earlier call on caching: only GET responses are cached; writes bypass the cache entirely. · D:\\Coding\\nevertwice"
+      "api-response-caching Only GET responses are cached; writes bypass the cache entirely. This prevents stale data from being returned for write operations while still providing performance benefits for read-heavy operations.  [facts] Reversed the earlier call on caching: only GET responses are cached; writes bypass the cache entirely."
      ],
      "current_live": true,
      "current_retired": false,
@@ -2382,10 +2382,10 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 472,
+     "chars_returned": 426,
      "returned": [
-      "audit-log-table-changes Changes to billing tables are audited now, while other audit logs were removed. This pattern reflects a shift in auditing scope.  [facts] Follow-up on auditing, and it did not survive. Only changes to billing tables are audited now. · D:\\Coding\\nevertwice · Follow-up",
-      "document-audit-decision-in-readme The decision to audit only billing tables was documented in the README, ensuring clarity and consistency.  [facts] D:\\Coding\\nevertwice · Follow-up"
+      "audit-log-table-changes Changes to billing tables are audited now, while other audit logs were removed. This pattern reflects a shift in auditing scope.  [facts] Follow-up on auditing, and it did not survive. Only changes to billing tables are audited now. · Follow-up",
+      "document-audit-decision-in-readme The decision to audit only billing tables was documented in the README, ensuring clarity and consistency.  [facts] Follow-up"
      ],
      "current_live": true,
      "current_retired": false,
@@ -2437,9 +2437,9 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 427,
+     "chars_returned": 404,
      "returned": [
-      "alerting-thread-confirmed The alerting system was updated to route production deploy failures to the on-call thread, while staging failures go to Slack. This change was verified by checking dashboards for an hour after the update.  [facts] alerting changed this week · Only production deploy failures page on-call; staging failures go to Slack · Checked the dashboards for an hour after and nothing moved · D:\\Coding\\nevertwice"
+      "alerting-thread-confirmed The alerting system was updated to route production deploy failures to the on-call thread, while staging failures go to Slack. This change was verified by checking dashboards for an hour after the update.  [facts] alerting changed this week · Only production deploy failures page on-call; staging failures go to Slack · Checked the dashboards for an hour after and nothing moved"
      ],
      "current_live": true,
      "current_retired": false,
@@ -2455,9 +2455,9 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 309,
+     "chars_returned": 286,
      "returned": [
-      "encryption-at-rest-bucket-scope Encryption at rest applies only to files in the private bucket. This was confirmed during a review process where the reviewer requested one rename and otherwise approved the implementation.  [facts] reviewer asked for one rename and otherwise approved it · D:\\Coding\\nevertwice"
+      "encryption-at-rest-bucket-scope Encryption at rest applies only to files in the private bucket. This was confirmed during a review process where the reviewer requested one rename and otherwise approved the implementation.  [facts] reviewer asked for one rename and otherwise approved it"
      ],
      "current_live": true,
      "current_retired": false,
@@ -2473,9 +2473,9 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": false,
-     "chars_returned": 365,
+     "chars_returned": 342,
      "returned": [
-      "index-documentation-update When reversing an earlier call on the index, it's important to document the change in the README section that was already stale. This ensures that the documentation reflects the current state of the system.  [facts] Reversed the earlier call on the index · Documented it in the README section that was already stale · D:\\Coding\\nevertwice"
+      "index-documentation-update When reversing an earlier call on the index, it's important to document the change in the README section that was already stale. This ensures that the documentation reflects the current state of the system.  [facts] Reversed the earlier call on the index · Documented it in the README section that was already stale"
      ],
      "current_live": false,
      "current_retired": false,
@@ -2491,9 +2491,9 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 637,
+     "chars_returned": 614,
      "returned": [
-      "nightly-backup-database-dump The nightly backup process only covers the primary database, not all databases. This was confirmed by running the full test suite which stayed green after the backup process.  [facts] The nightly backup covers the primary database only. · Ran the full test suite afterwards and it stayed green. · D:\\Coding\\nevertwice · Follow-up",
+      "nightly-backup-database-dump The nightly backup process only covers the primary database, not all databases. This was confirmed by running the full test suite which stayed green after the backup process.  [facts] The nightly backup covers the primary database only. · Ran the full test suite afterwards and it stayed green. · Follow-up",
       "backup-process-dumps-all-databases The decision was made to ensure that the backup process dumps all databases, not just the primary one, to avoid data loss.  [facts] The nightly backup covers the primary database only. · Follow-up on backups, and it did not survive. · Follow-up"
      ],
      "current_live": true,
@@ -2510,9 +2510,9 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 247,
+     "chars_returned": 224,
      "returned": [
-      "rate-limiting-applies-to-every-caller The initial assumption that rate limits apply to every caller was incorrect. Rate limits only apply to unauthenticated callers.  [facts] rate limits apply only to unauthenticated callers · D:\\Coding\\nevertwice"
+      "rate-limiting-applies-to-every-caller The initial assumption that rate limits apply to every caller was incorrect. Rate limits only apply to unauthenticated callers.  [facts] rate limits apply only to unauthenticated callers"
      ],
      "current_live": true,
      "current_retired": false,
@@ -2547,9 +2547,9 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 290,
+     "chars_returned": 267,
      "returned": [
-      "mfa-enforcement-confirmed MFA enforcement has been confirmed to apply only to accounts with admin scope. This pattern was verified during a security configuration review session.  [facts] security changed this week · MFA is required only for accounts with admin scope · D:\\Coding\\nevertwice"
+      "mfa-enforcement-confirmed MFA enforcement has been confirmed to apply only to accounts with admin scope. This pattern was verified during a security configuration review session.  [facts] security changed this week · MFA is required only for accounts with admin scope"
      ],
      "current_live": true,
      "current_retired": false,
@@ -2565,9 +2565,9 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 197,
+     "chars_returned": 167,
      "returned": [
-      "event-log-replay-on-boot The consumer replays only events since the last checkpoint. This ensures efficient processing and avoids redundant event handling during boot.  [facts] D:\\Coding\\nevertwice"
+      "event-log-replay-on-boot The consumer replays only events since the last checkpoint. This ensures efficient processing and avoids redundant event handling during boot."
      ],
      "current_live": true,
      "current_retired": false,
@@ -2583,9 +2583,9 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 346,
+     "chars_returned": 323,
      "returned": [
-      "sharding-tenant-database The system uses a sharding strategy where tenants with more than 50,000 records are assigned dedicated shards. This was confirmed by checking dashboards after an hour of operation.  [facts] tenants above 50k records get a dedicated shard · Checked the dashboards for an hour after and nothing moved · D:\\Coding\\nevertwice"
+      "sharding-tenant-database The system uses a sharding strategy where tenants with more than 50,000 records are assigned dedicated shards. This was confirmed by checking dashboards after an hour of operation.  [facts] tenants above 50k records get a dedicated shard · Checked the dashboards for an hour after and nothing moved"
      ],
      "current_live": true,
      "current_retired": false,
@@ -2601,10 +2601,10 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 531,
+     "chars_returned": 485,
      "returned": [
-      "trace-all-requests It was decided to trace all requests, not just a sample, as part of the tracing implementation.  [facts] One request in a hundred is sampled for tracing · D:\\Coding\\nevertwice · Follow-up",
-      "end-to-end-request-tracing The system implements end-to-end request tracing with sampling, where one request in a hundred is sampled for tracing. This approach was reviewed and approved with only a minor rename requested.  [facts] The reviewer asked for one rename and otherwise approved it · D:\\Coding\\nevertwice · Follow-up"
+      "trace-all-requests It was decided to trace all requests, not just a sample, as part of the tracing implementation.  [facts] One request in a hundred is sampled for tracing · Follow-up",
+      "end-to-end-request-tracing The system implements end-to-end request tracing with sampling, where one request in a hundred is sampled for tracing. This approach was reviewed and approved with only a minor rename requested.  [facts] The reviewer asked for one rename and otherwise approved it · Follow-up"
      ],
      "current_live": true,
      "current_retired": false,
@@ -2620,11 +2620,11 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 1110,
+     "chars_returned": 1064,
      "returned": [
-      "postgresql-16-primary-database The primary database for the project was set to PostgreSQL 16. This decision ensures compatibility with modern features and performance improvements.  [facts] the primary database is PostgreSQL 16 · D:\\Coding\\nevertwice",
+      "postgresql-16-primary-database The primary database for the project was set to PostgreSQL 16. This decision ensures compatibility with modern features and performance improvements.  [facts] the primary database is PostgreSQL 16",
       "postgresql-16-as-primary PostgreSQL 16 was chosen as the primary database version, likely due to its stability and features compared to older versions.",
-      "redis-cache-layer-documentation The cache layer is Redis 7, which was documented in the README section that was already stale. This pattern shows how to update documentation when system components change.  [facts] Documented it in the README section that was already stale · D:\\Coding\\nevertwice",
+      "redis-cache-layer-documentation The cache layer is Redis 7, which was documented in the README section that was already stale. This pattern shows how to update documentation when system components change.  [facts] Documented it in the README section that was already stale",
       "staged-release-deployment The rollout was executed behind a staged release process, which helps in managing risk and ensuring stability during deployment.  [facts] Rolled it out behind the usual staged release",
       "staged-release-process A staged release process was adopted for deployment, allowing controlled rollout and minimizing potential impact from failures.  [facts] Rolled it out behind the usual staged release"
      ],
@@ -2658,10 +2658,10 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 404,
+     "chars_returned": 358,
      "returned": [
-      "api-listens-on-port-8443 The API was confirmed to listen on port 8443. This is a verified fact about the system's networking configuration.  [facts] API listens on port 8443 · D:\\Coding\\nevertwice",
-      "metrics-endpoint-listens-on-port-9100 The metrics endpoint listens on port 9100. This was noted in the tracker to prevent future duplication of work.  [facts] Left a note in the tracker · D:\\Coding\\nevertwice"
+      "api-listens-on-port-8443 The API was confirmed to listen on port 8443. This is a verified fact about the system's networking configuration.  [facts] API listens on port 8443",
+      "metrics-endpoint-listens-on-port-9100 The metrics endpoint listens on port 9100. This was noted in the tracker to prevent future duplication of work.  [facts] Left a note in the tracker"
      ],
      "current_live": true,
      "current_retired": false,
@@ -2696,9 +2696,9 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 262,
+     "chars_returned": 239,
      "returned": [
-      "embedder-configuration The embedder was configured to use bge-m3. This configuration was verified by running the full test suite which remained green.  [facts] the embedder is bge-m3 · Ran the full test suite afterwards and it stayed green · D:\\Coding\\nevertwice"
+      "embedder-configuration The embedder was configured to use bge-m3. This configuration was verified by running the full test suite which remained green.  [facts] the embedder is bge-m3 · Ran the full test suite afterwards and it stayed green"
      ],
      "current_live": true,
      "current_retired": false,
@@ -2714,11 +2714,11 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 496,
+     "chars_returned": 413,
      "returned": [
-      "s3-storage-for-uploads Uploads are stored in S3, which was decided as the appropriate storage solution for this project.  [facts] D:\\Coding\\nevertwice",
-      "s3-storage-decision The decision to use S3 for uploads was made and implemented. This pattern shows how storage decisions are handled in the project.  [facts] D:\\Coding\\nevertwice",
-      "glacier-backups Database backups are stored in Glacier, which was chosen for long-term archival storage.  [facts] database backups go to Glacier · D:\\Coding\\nevertwice"
+      "s3-storage-for-uploads Uploads are stored in S3, which was decided as the appropriate storage solution for this project.",
+      "s3-storage-decision The decision to use S3 for uploads was made and implemented. This pattern shows how storage decisions are handled in the project.",
+      "glacier-backups Database backups are stored in Glacier, which was chosen for long-term archival storage.  [facts] database backups go to Glacier"
      ],
      "current_live": true,
      "current_retired": false,
@@ -2734,9 +2734,9 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 269,
+     "chars_returned": 246,
      "returned": [
-      "admin-panel-mfa-requirement The admin panel requires hardware MFA for access. This was confirmed during a security review. The change touched three files but none were config files.  [facts] change touched three files and none of them were config · D:\\Coding\\nevertwice"
+      "admin-panel-mfa-requirement The admin panel requires hardware MFA for access. This was confirmed during a security review. The change touched three files but none were config files.  [facts] change touched three files and none of them were config"
      ],
      "current_live": true,
      "current_retired": false,
@@ -2752,9 +2752,9 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 261,
+     "chars_returned": 238,
      "returned": [
-      "ruff-formatting-for-python Python code in the project is formatted using ruff. This was confirmed during a pairing session where the agent worked through tooling to ensure consistent formatting.  [facts] Python code is formatted with ruff · D:\\Coding\\nevertwice"
+      "ruff-formatting-for-python Python code in the project is formatted using ruff. This was confirmed during a pairing session where the agent worked through tooling to ensure consistent formatting.  [facts] Python code is formatted with ruff"
      ],
      "current_live": true,
      "current_retired": false,
@@ -2770,9 +2770,9 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 223,
+     "chars_returned": 200,
      "returned": [
-      "traces-exported-to-tempo Logs are shipped to Loki for observability. This pattern was already documented in the README but was stale and needed updating.  [facts] README section that was already stale · D:\\Coding\\nevertwice"
+      "traces-exported-to-tempo Logs are shipped to Loki for observability. This pattern was already documented in the README but was stale and needed updating.  [facts] README section that was already stale"
      ],
      "current_live": true,
      "current_retired": false,
@@ -2823,9 +2823,9 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 425,
+     "chars_returned": 395,
      "returned": [
-      "cli-distribution-homebrew The desktop app ships as a signed installer, which is part of the CLI distribution strategy. This approach ensures proper installation and signing validation.  [facts] D:\\Coding\\nevertwice",
+      "cli-distribution-homebrew The desktop app ships as a signed installer, which is part of the CLI distribution strategy. This approach ensures proper installation and signing validation.",
       "readme-stale-section-updated The README section that was already stale was updated to reflect the current CLI distribution method via Homebrew.  [facts] Documented it in the README section that was already stale"
      ],
      "current_live": true,
@@ -2842,9 +2842,9 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 281,
+     "chars_returned": 251,
      "returned": [
-      "ingest-queue-nats-backend The ingest queue is backed by NATS, which provides a reliable message queuing system for handling ingestion tasks. This setup ensures that the system can process incoming data asynchronously and maintain stability under load.  [facts] D:\\Coding\\nevertwice"
+      "ingest-queue-nats-backend The ingest queue is backed by NATS, which provides a reliable message queuing system for handling ingestion tasks. This setup ensures that the system can process incoming data asynchronously and maintain stability under load."
      ],
      "current_live": true,
      "current_retired": false,
@@ -2860,9 +2860,9 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 284,
+     "chars_returned": 261,
      "returned": [
-      "api-reference-generation The API reference is generated from OpenAPI documentation. This process was documented and a note was left in the tracker to prevent future duplication of effort.  [facts] Left a note in the tracker so the next person does not redo this · D:\\Coding\\nevertwice"
+      "api-reference-generation The API reference is generated from OpenAPI documentation. This process was documented and a note was left in the tracker to prevent future duplication of effort.  [facts] Left a note in the tracker so the next person does not redo this"
      ],
      "current_live": true,
      "current_retired": false,
@@ -2878,9 +2878,9 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 256,
+     "chars_returned": 233,
      "returned": [
-      "python-3.13-runtime-validation The worker confirmed it runs on Python 3.13, which is a key runtime requirement for the project's environment.  [facts] Picked up the runtime thread again. Confirmed that the worker runs on Python 3.13. · D:\\Coding\\nevertwice"
+      "python-3.13-runtime-validation The worker confirmed it runs on Python 3.13, which is a key runtime requirement for the project's environment.  [facts] Picked up the runtime thread again. Confirmed that the worker runs on Python 3.13."
      ],
      "current_live": true,
      "current_retired": false,
@@ -2896,10 +2896,10 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 523,
+     "chars_returned": 470,
      "returned": [
-      "tls-termination-at-load-balancer Ingress terminates TLS at the load balancer. This pattern ensures secure communication is handled at the network edge before reaching internal services.  [facts] D:\\Coding\\nevertwice",
-      "egress-through-nat-gateway Egress traffic now goes through a NAT gateway, which was a settled networking decision. This change affects how outbound connections are handled and requires updates to firewall rules or security groups accordingly.  [facts] egress goes through a NAT gateway · D:\\Coding\\nevertwice"
+      "tls-termination-at-load-balancer Ingress terminates TLS at the load balancer. This pattern ensures secure communication is handled at the network edge before reaching internal services.",
+      "egress-through-nat-gateway Egress traffic now goes through a NAT gateway, which was a settled networking decision. This change affects how outbound connections are handled and requires updates to firewall rules or security groups accordingly.  [facts] egress goes through a NAT gateway"
      ],
      "current_live": true,
      "current_retired": false,
@@ -2915,10 +2915,10 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": false,
-     "chars_returned": 443,
+     "chars_returned": 420,
      "returned": [
       "pull-request-approval-policy Pull request approval policy was already documented and is part of the project's decisions.",
-      "signed-changelog-entry-for-release Every release requires a signed changelog entry. This was documented in the README section which was already stale.  [facts] Unrelated to the earlier change, every release needs a signed changelog entry. · Documented it in the README section that was already stale. · D:\\Coding\\nevertwice"
+      "signed-changelog-entry-for-release Every release requires a signed changelog entry. This was documented in the README section which was already stale.  [facts] Unrelated to the earlier change, every release needs a signed changelog entry. · Documented it in the README section that was already stale."
      ],
      "current_live": false,
      "current_retired": false,
@@ -2934,11 +2934,11 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 747,
+     "chars_returned": 664,
      "returned": [
-      "latency-tracking-histogram A latency-tracking histogram was implemented as part of observability measures. This pattern helps in understanding request processing times and identifying performance bottlenecks.  [facts] D:\\Coding\\nevertwice",
-      "observability-decision The decision was made to track queue depth as a gauge for observability, in addition to other metrics like latency-tracking histograms.  [facts] One more observability item, independent of the first: queue depth is tracked as a gauge · D:\\Coding\\nevertwice",
-      "queue-depth-gauge Queue depth is tracked as a gauge for observability purposes. This allows monitoring the number of items waiting in queues, which can help detect backpressure or resource contention.  [facts] D:\\Coding\\nevertwice"
+      "latency-tracking-histogram A latency-tracking histogram was implemented as part of observability measures. This pattern helps in understanding request processing times and identifying performance bottlenecks.",
+      "observability-decision The decision was made to track queue depth as a gauge for observability, in addition to other metrics like latency-tracking histograms.  [facts] One more observability item, independent of the first: queue depth is tracked as a gauge",
+      "queue-depth-gauge Queue depth is tracked as a gauge for observability purposes. This allows monitoring the number of items waiting in queues, which can help detect backpressure or resource contention."
      ],
      "current_live": true,
      "current_retired": false,
@@ -2954,9 +2954,9 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 295,
+     "chars_returned": 272,
      "returned": [
-      "session-state-in-localstorage The session state was successfully moved to browser localStorage for persistent storage. This approach was approved by the reviewer after a minor rename.  [facts] session state lives in browser localStorage · one rename and otherwise approved · D:\\Coding\\nevertwice"
+      "session-state-in-localstorage The session state was successfully moved to browser localStorage for persistent storage. This approach was approved by the reviewer after a minor rename.  [facts] session state lives in browser localStorage · one rename and otherwise approved"
      ],
      "current_live": true,
      "current_retired": false,
@@ -2972,9 +2972,9 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "chars_returned": 265,
+     "chars_returned": 242,
      "returned": [
-      "alerting-paging-destination Paging alerts are configured to go to PagerDuty. This was documented in the README section that was already stale.  [facts] paging alerts go to PagerDuty · Documented it in the README section that was already stale · D:\\Coding\\nevertwice"
+      "alerting-paging-destination Paging alerts are configured to go to PagerDuty. This was documented in the README section that was already stale.  [facts] paging alerts go to PagerDuty · Documented it in the README section that was already stale"
      ],
      "current_live": true,
      "current_retired": false,
@@ -2986,15 +2986,15 @@
    ],
    "n_supersession": 60,
    "n_control": 20,
-   "stale_rate": 0.0333,
+   "stale_rate": 0.0667,
    "stale_ci": [
-    0.0092,
-    0.1136
+    0.0262,
+    0.1593
    ],
-   "current_rate": 0.95,
+   "current_rate": 0.9167,
    "current_ci": [
-    0.863,
-    0.9829
+    0.8193,
+    0.9639
    ],
    "control_miss_rate": 0.2,
    "control_miss_ci": [
@@ -3006,20 +3006,20 @@
     0.0279,
     0.301
    ],
-   "mean_chars_returned": 382.8,
-   "max_chars_returned": 1110,
-   "stale_at_rank_1": 0,
+   "mean_chars_returned": 357.0,
+   "max_chars_returned": 1064,
+   "stale_at_rank_1": 3,
    "control_retired_by_memory": 0,
    "control_demoted_by_merge": 2,
    "control_never_written": 2,
    "control_written_but_unranked": 0,
-   "notes_written": 118,
+   "notes_written": 119,
    "notes_in_cyrillic": 0,
    "language_drift_rate": 0.0,
    "cases_touched_by_drift": 0,
-   "seconds": 371.9,
+   "seconds": 425.6,
    "config": "ollama qwen3-coder:30b + bge-m3, k=5",
-   "store_bytes": 123304
+   "store_bytes": 119195
   },
   "naive": {
    "rows": [
@@ -8883,29 +8883,29 @@
  "pooled_nevertwice": {
   "runs": 2,
   "stale": {
-   "k": 4,
+   "k": 5,
    "n": 120,
-   "rate": 0.0333,
+   "rate": 0.0417,
    "ci": [
-    0.013,
-    0.0826
+    0.0179,
+    0.0938
    ],
    "per_run": [
-    0.0333,
-    0.0333
+    0.0167,
+    0.0667
    ]
   },
   "current": {
-   "k": 117,
+   "k": 115,
    "n": 120,
-   "rate": 0.975,
+   "rate": 0.9583,
    "ci": [
-    0.9291,
-    0.9915
+    0.9062,
+    0.9821
    ],
    "per_run": [
     1.0,
-    0.95
+    0.9167
    ]
   },
   "over_retraction": {
@@ -8936,9 +8936,9 @@
    "never_written": 4,
    "unranked": 0
   },
-  "mean_chars_returned": 392.6
+  "mean_chars_returned": 363.8
  },
- "pooled_note": "2 runs of the same commit on the same corpus with the same models read stale 0.0333 and 0.0333. The extraction model is not deterministic at temperature 0, so the published rate is pooled over case-runs and the per-run values are kept beside it. One run of this stand is not a result.",
+ "pooled_note": "2 runs of the same commit on the same corpus with the same models read stale 0.0167 and 0.0667. The extraction model is not deterministic at temperature 0, so the published rate is pooled over case-runs and the per-run values are kept beside it. One run of this stand is not a result.",
  "pairs": [
   {
    "a": "mem0",
@@ -8953,10 +8953,10 @@
    "a": "mem0",
    "b": "nevertwice",
    "n": 60,
-   "stale_only_mem0": 54,
+   "stale_only_mem0": 55,
    "stale_only_nevertwice": 0,
-   "discordant": 54,
-   "p_mcnemar": 1.1102230246251565e-16
+   "discordant": 55,
+   "p_mcnemar": 5.551115123125783e-17
   },
   {
    "a": "mem0",
@@ -8971,10 +8971,10 @@
    "a": "naive",
    "b": "nevertwice",
    "n": 60,
-   "stale_only_naive": 55,
+   "stale_only_naive": 56,
    "stale_only_nevertwice": 0,
-   "discordant": 55,
-   "p_mcnemar": 5.551115123125783e-17
+   "discordant": 56,
+   "p_mcnemar": 2.7755575615628914e-17
   },
   {
    "a": "naive",
@@ -8989,20 +8989,20 @@
    "a": "nevertwice",
    "b": "zep",
    "n": 60,
-   "stale_only_nevertwice": 2,
+   "stale_only_nevertwice": 1,
    "stale_only_zep": 19,
-   "discordant": 21,
-   "p_mcnemar": 0.00022125244140625
+   "discordant": 20,
+   "p_mcnemar": 4.00543212890625e-05
   }
  ],
  "pairs_per_engine_run": [
   {
    "nevertwice_only": 0,
-   "mem0_only": 54
+   "mem0_only": 55
   },
   {
    "nevertwice_only": 0,
-   "mem0_only": 54
+   "mem0_only": 52
   }
  ]
 }

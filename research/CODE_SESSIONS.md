@@ -1,13 +1,5 @@
 # Coding sessions with gold answers: the fact, the change, the lesson, the situation
 
-<!-- withdrawn-banner -->
-> **Withdrawn: figures on this page must not be quoted.** They were retracted and remain
-> here because deleting a result one was wrong about destroys the record of having been
-> wrong. The design, the method and the caveats stand; the numbers do not. Each figure's
-> own reason and date are in
-> [`research/evidence_manifest.json`](evidence_manifest.json), and
-> `python tools/check_freshness.py --list-stale` lists every one.
-
 Every memory benchmark this repository has run asks chat questions. A coding agent asks four
 other things: the literal value stated weeks ago, the value after it changed, the lesson learned
 the hard way, and - at the moment of a tool call - which note should fire. This page is the stand
@@ -43,13 +35,17 @@ separate and is not published. For the extractor (`.loop/GOAL-CLOSE.md`, J3): li
 accuracy not below the floor and not below Mem0's pipeline minus the judges' disagreement;
 lesson accuracy above Mem0's pipeline by the same margin. For the write path (the J3 addendum):
 **fact survival** - the share of questions whose answer is verbatim in the notes returned, counted
-with no reader and no judge - at or above six tenths on the held-out, with reader accuracy at or above
-forty hundredths; the base (five of fifty-two), the cost caps and the decision on a miss are in the ledger.
+with no reader and no judge - at or above 0.60 on the held-out, with reader accuracy at or above
+0.40; the base (five of fifty-two), the cost caps and the decision on a miss are in the ledger.
 
 <!-- claims:code-sessions -->
-> **Withdrawn 2026-09.** GPU stands must re-run on the engine the K5/K6/K7 gates left standing (K6 on, K5 and K7 reverted to off) - campaign B at the revert commit
->
-> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/code_sessions_eval.py judge --arms nevertwice_full,naive,mem0_infer --save` is what re-measures this one.
+| system | fact | current | stale | lesson | situation (top three) | tokens |
+|---|---|---|---|---|---|---|
+| **Nevertwice, our extractor's notes** | 0.083 | 0.033 | 0.017 | 0.600 | 0.000 | 113 |
+| append-only sessions, term overlap (floor) | 0.967 | 0.850 | 0.083 | 0.956 | 0.922 | 2,937 |
+| Mem0 full pipeline, its memories | 0.683 | 0.750 | 0.117 | 0.700 | 0.033 | 187 |
+| no memory (bracket) | 0.067 | 0.017 | 0.050 | 0.478 | 0.000 | 117 |
+| the gold session whole (bracket) | 0.978 | 0.967 | 0.000 | 1.000 | 1.000 | 727 |
 <!-- /claims:code-sessions -->
 
 ## What the first run says
@@ -60,9 +56,9 @@ rather than a fifth below it, and the reader with no memory clears its cap, beca
 are generic programming advice a seven-billion-parameter reader already knows. Five short
 sessions per project are few enough that term overlap finds the right one nearly every time; a
 corpus that a text file passes is a corpus about text files. The table above is the re-measure on
-the layer-free engine (the September campaign). The corpus stands as a diagnostic, not as a result - and note
+the layer-free engine (2026-09-11). The corpus stands as a diagnostic, not as a result - and note
 that the literal-fact channel which lifts the hand-marked held-out below did not move this set at
-all (fact eighty-three thousandths before and after): its facts sit in prose the harvester's literal shapes do not
+all (fact 0.083 before and after): its facts sit in prose the harvester's literal shapes do not
 catch, and the extractor names none of them.
 
 **What it diagnoses anyway.** On coding sessions with literal facts, our extractor's notes answer a twelfth of the fact questions where Mem0's sentence-keeping
@@ -81,9 +77,13 @@ project-specific facts phrased as lessons rather than the anti-patterns every mo
 ## The real held-out
 
 <!-- claims:code-heldout -->
-> **Withdrawn 2026-09.** GPU stands must re-run on the engine the K5/K6/K7 gates left standing (K6 on, K5 and K7 reverted to off) - campaign B at the revert commit
->
-> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/code_sessions_eval.py summary --arms nevertwice_full,naive,mem0_infer --corpus D:/Coding/_nevertwice_polygon/code_heldout/code_heldout_v2.json --save --out research/results/code_heldout_v2.json` is what re-measures this one.
+| system | fact | current | stale | lesson | situation (top three) | tokens |
+|---|---|---|---|---|---|---|
+| **Nevertwice, our extractor's notes** | 0.404 | - | - | - | - | 220 |
+| append-only sessions, term overlap (floor) | 0.827 | - | - | - | - | 569 |
+| Mem0 full pipeline, its memories | 0.250 | - | - | - | - | 180 |
+| no memory (bracket) | 0.000 | - | - | - | - | 122 |
+| the gold session whole (bracket) | 0.827 | - | - | - | - | 569 |
 <!-- /claims:code-heldout -->
 
 Two hundred candidates over thirty-seven transcripts; the automatic checks accepted thirty-nine,
@@ -103,9 +103,9 @@ elements for better organization"). That is
 the metric this page gates on, **fact survival**, counted in seconds with no reader and no judge.
 The literal-fact channel - the extractor names the literal per note and a deterministic harvester
 salvages the ones it dropped, each kept only if it is a verbatim substring of the session - takes
-it from under a tenth to **six hundred thirty-five thousandths**, and the reader's accuracy from fifty-eight to **four hundred four thousandths**, against Mem0's
-pipeline at two hundred eighty-eight and two hundred fifty thousandths. The gate written first (survival at or above six tenths with accuracy at
-or above four tenths) is met on this final measure; a deterministic development run read five hundred ninety-six thousandths, so the
+it from under a tenth to **0.635**, and the reader's accuracy from 0.058 to **0.404**, against Mem0's
+pipeline at 0.288 and 0.250. The gate written first (survival at or above 0.60 with accuracy at
+or above 0.40) is met on this final measure; a deterministic development run read 0.596, so the
 gate sits inside the run-to-run band and the page says so rather than rounding it away. One more
 honesty: the channel was iterated against this set in the fast loop the ledger prescribed, so for
 that mechanism this is a development set; the candidates still unmarked are the clean measure owed
@@ -114,9 +114,9 @@ next.
 <!-- claims:code-heldout-survival -->
 | system | fact survival (answer verbatim in the returned notes) |
 |---|---|
-| **Nevertwice, our extractor's notes** | withdrawn |
-| append-only sessions, term overlap (floor) | withdrawn |
-| Mem0 full pipeline, its memories | withdrawn |
+| **Nevertwice, our extractor's notes** | 0.635 |
+| append-only sessions, term overlap (floor) | 1.000 |
+| Mem0 full pipeline, its memories | 0.288 |
 <!-- /claims:code-heldout-survival -->
 
 ## Reproducing

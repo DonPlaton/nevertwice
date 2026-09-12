@@ -1,0 +1,78 @@
+{
+ "corpus": "code_heldout_v2",
+ "sha256": "c6b5ea361a563aa0c666d8f0a888c0395a49c48c3a80b2b977e730c8c3a96b64",
+ "extractor": "qwen2.5-7b-64k:latest",
+ "arms": {
+  "nevertwice_full": {
+   "n": 52,
+   "survived": 33,
+   "fact_survival": 0.6346,
+   "ci": [
+    0.4987,
+    0.752
+   ],
+   "misses": [
+    "Every session in a window of its own",
+    "tabs",
+    "AI-Agents-Security-Week",
+    "0.80",
+    "0.0",
+    "`nevertwice-mcp --version`",
+    "D:\\Universal_Local_Agent\\stack",
+    "python research/capability_grid.py --estimate",
+    "python big_run/odyssey/w0/golden_snapshot.py prefix",
+    "claude --resume",
+    "12 054 768 716",
+    "(3+2√2)/6",
+    "v3",
+    "~2.8 GB",
+    "+13.9%",
+    "port 8099",
+    "25",
+    "5.1 MB",
+    "100 %"
+   ]
+  },
+  "naive": {
+   "n": 52,
+   "survived": 52,
+   "fact_survival": 1.0,
+   "ci": [
+    0.9312,
+    1.0
+   ],
+   "misses": []
+  },
+  "mem0_infer": {
+   "n": 52,
+   "survived": 15,
+   "fact_survival": 0.2885,
+   "ci": [
+    0.1833,
+    0.4227
+   ],
+   "misses": [
+    "87c8b17",
+    "Every session in a window of its own",
+    "[1024, 512, 256]",
+    "0.0",
+    "tabs",
+    "zricethezav/gitleaks:latest",
+    "pytest -q",
+    "AI-Agents-Security-Week",
+    "ForeignReceivers",
+    "0.80",
+    "0.0",
+    "0.909",
+    "`nevertwice-mcp --version`",
+    "4096",
+    "python polygon/minq/run_w_screen.py 5 7",
+    "python run.py defaults-canary",
+    "1.59 ГБ",
+    "D:\\Universal_Local_Agent\\stack",
+    "big_run/odyssey/w3/w3_flagship_ckpt/flagship/latest.pt",
+    "python research/capability_grid.py --estimate"
+   ]
+  }
+ }
+}

@@ -18,7 +18,7 @@ their designs and their honest caveats stay here; the figures do not.
 
 External retrieval is live again below, on a corpus pinned by content hash and with whole sessions
 embedded on every arm; supersession, as-of and the code-session stands are live from the campaign
-of the September campaign.
+of 2026-09-11.
 `python tools/check_freshness.py --list-stale` lists every number that is still withdrawn and the
 gate that blocks re-measuring it.
 
@@ -32,8 +32,10 @@ Python 3.14; reproduce anywhere with `python research/latency_bench.py`:
 <!-- claims:latency -->
 | hot path | cost | when it is paid |
 |---|---|---|
-
-<sub>**Withdrawn** - PreToolUse end-to-end, UserPromptSubmit end-to-end, SessionStart end-to-end, idle, cold import of the engine: GPU stands must re-run on the engine the K5/K6/K7 gates left standing (K6 on, K5 and K7 reverted to off) - campaign B at the revert commit</sub>
+| PreToolUse end-to-end | **94 ms** | every tool call (interpreter start included) |
+| UserPromptSubmit end-to-end | 87 ms | per prompt (task-aware recall) |
+| SessionStart end-to-end, idle | 87 ms | per session start with no backlog |
+| cold import of the engine | 32 ms | once per hook process (inside the numbers above) |
 
 <sub>**Withdrawn** - `guards.check()` over a seeded ledger, lexical recall, no embedder: the bench's seed lands in the subprocess store while the in-process half reads the store pinned at import, so this row now measures an empty store (0 guards, 0 notes) instead of the seeded one the published number describes - the measurement, not just the value, is broken</sub>
 <!-- /claims:latency -->
@@ -62,22 +64,32 @@ The one comparison here that runs on a corpus this repository ships. Full method
 breakdown and what it costs us: [`research/SUPERSESSION.md`](../research/SUPERSESSION.md).
 
 <!-- claims:supersession-pinned -->
-> **Withdrawn 2026-09.** GPU stands must re-run on the engine the K5/K6/K7 gates left standing (K6 on, K5 and K7 reverted to off) - campaign B at the revert commit
->
-> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/supersession_bench.py` is what re-measures this one.
+| arm | returns the retracted fact | returns the replacement | a still-true fact did not come back |
+|---|---|---|---|
+| **Nevertwice** | 0.042 [0.018, 0.094] | 0.958 [0.906, 0.982] | 0.225 [0.123, 0.375] |
+| Mem0 | 0.933 [0.841, 0.974] | 0.983 [0.911, 0.997] | 0.000 [0.000, 0.161] |
+| Zep/Graphiti (`graphiti-core`, FalkorDB) | 0.317 [0.240, 0.405] | 0.575 [0.486, 0.660] | 0.225 [0.123, 0.375] |
+| an append-only markdown file | 0.950 [0.863, 0.983] | 0.950 [0.863, 0.983] | 0.050 [0.009, 0.236] |
 <!-- /claims:supersession-pinned -->
 
 The third column counts every control case whose still-true fact did not come back, whatever the
-cause, so it is comparable across arms - and on it we are the worst row. Until the September campaign this table
+cause, so it is comparable across arms - and on it we are the worst row. Until 2026-09-11 this table
 printed our narrow figure (the memory itself retired the fact) beside the other arms' broad one under
 one name, and the rows measured different things. The split by cause is the point: only the first
 cause is the design's own failure mode, and the stand reads it for every arm whose store records a
 retirement.
 
 <!-- claims:supersession-causes -->
-> **Withdrawn 2026-09.** GPU stands must re-run on the engine the K5/K6/K7 gates left standing (K6 on, K5 and K7 reverted to off) - campaign B at the revert commit
->
-> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/supersession_bench.py` is what re-measures this one.
+| arm | a still-true fact did not come back | retired by the memory | absorbed into another note | never written | served, below the top five |
+|---|---|---|---|---|---|
+| **Nevertwice** | 0.225 [0.123, 0.375] | 0 of 40 | 5 of 40 | 4 of 40 | 0 of 40 |
+| Mem0 | 0.000 [0.000, 0.161] | 0 of 20 | 0 of 20 | 0 of 20 | 0 of 20 |
+| Zep/Graphiti (`graphiti-core`, FalkorDB) | 0.225 [0.123, 0.375] | 0 of 40 | 0 of 40 | 9 of 40 | 0 of 40 |
+| an append-only markdown file | 0.050 [0.009, 0.236] | 0 of 20 | 0 of 20 | 0 of 20 | 1 of 20 |
+
+<sub>The first column is the rate in the table above; the four after it split its count by cause. The first two are the memory being too eager - it retired the note, or it judged a different fact a twin of this one and absorbed that fact into the note: the note stays on disk, but what it now hands back is the other fact, and this one is no longer served - the other two are the extractor's silence and the ranker's depth. A cause reads *not read* where the run did not inspect that arm's store: a retirement is visible only where the store records one (our `valid_to` and `## Previous statement`; Graphiti's `invalid_at`/`expired_at`; Mem0's delete and update events).</sub>
+
+<sub>Over-retraction proper - the memory stopped serving a fact that was still true, by retiring the note or by absorbing another fact into it - is the first two cause columns as a rate: 0.125 [0.055, 0.261] for Nevertwice over its control case-runs.</sub>
 <!-- /claims:supersession-causes -->
 
 Nevertwice's row is pooled over two runs of the same commit, and Zep/Graphiti's over two runs on a flushed FalkorDB; Mem0 and the append-only floor are one run each.
@@ -86,8 +98,8 @@ embedder and the same extraction model for every arm, and the text scored is the
 receives - for us the note with the literals the write path kept, for the others their memory or
 fact text. Paired on the same cases, the discordant pairs between Nevertwice and Mem0 run entirely
 in Mem0's disfavour; Mem0 and the append-only file are tied with each other at the bad end of the
-column - McNemar finds no difference between them. Our payload per query is three hundred ninety-three characters
-against Mem0's four hundred eleven. The floor is
+column - McNemar finds no difference between them. Our payload per query is 364 characters
+against Mem0's 411. The floor is
 why the table is worth printing at all: a benchmark only one vendor's architecture fails is a benchmark
 about that vendor, and this one is failed by an append-only text file too, which is what supersession
 costs when nothing implements it.
@@ -111,7 +123,7 @@ byte zero reads well under half the bytes at identical coverage of the appended 
 
 ## External retrieval: LongMemEval, on a hash-pinned corpus
 
-Real agent sessions in one shared store - nine hundred forty of them, five hundred questions - each question carrying
+Real agent sessions in one shared store - 940 of them, 500 questions - each question carrying
 **human-annotated** evidence sessions (`answer_session_ids`). Relevance is independent of our embeddings, so this is a real
 recall number rather than a self-grade.
 
@@ -121,18 +133,23 @@ before reading a byte, and the fingerprint is stamped into every result file. Fu
 the re-run found: [`research/EXTERNAL_RETRIEVAL.md`](../research/EXTERNAL_RETRIEVAL.md).
 
 <!-- claims:longmem-pinned -->
-> **Withdrawn 2026-09.** GPU stands must re-run on the engine the K5/K6/K7 gates left standing (K6 on, K5 and K7 reverted to off) - campaign B at the revert commit
->
-> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/longmem_eval.py --save --out=research/results/longmem_oracle.json` is what re-measures this one.
+| method | R@1 | R@5 | R@10 | MRR |
+|---|---|---|---|---|
+| semantic (bge-m3) | 0.428 | 0.692 | 0.782 | 0.552 |
+| lexical (BM25) | 0.470 | 0.738 | 0.830 | 0.596 |
+| **calibrated fusion (shipped default, 0 deps)** | 0.512 | 0.800 | **0.866** | 0.636 |
+| **+ trained cross-encoder (opt-in)** | **0.626** | **0.834** | **0.866** | **0.723** |
 <!-- /claims:longmem-pinned -->
 
-The same methods on the **non-oracle** pool - nineteen thousand two hundred six retrievable sessions, twenty-one times the
+The same methods on the **non-oracle** pool - 19,206 retrievable sessions, twenty-one times the
 haystack, the same questions and the same annotated evidence:
 
 <!-- claims:longmem-s -->
-> **Withdrawn 2026-09.** GPU stands must re-run on the engine the K5/K6/K7 gates left standing (K6 on, K5 and K7 reverted to off) - campaign B at the revert commit
->
-> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/longmem_eval.py --data=s --save --out=research/results/longmem_s.json` is what re-measures this one.
+| method | R@1 | R@5 | R@10 | MRR |
+|---|---|---|---|---|
+| semantic (bge-m3) | 0.184 | 0.354 | 0.440 | 0.267 |
+| lexical (BM25) | 0.218 | 0.416 | 0.510 | 0.313 |
+| **calibrated fusion (shipped default, 0 deps)** | **0.228** | **0.422** | **0.514** | **0.329** |
 <!-- /claims:longmem-s -->
 
 Everything falls, which is what twenty-one times the haystack does, and the shape holds: fusion
@@ -141,17 +158,23 @@ had been passing for the wrong reason; that story is on the study page. The same
 this pool, the competitor arms being their store layers as in the oracle table:
 
 <!-- claims:head-to-head-s -->
-> **Withdrawn 2026-09.** GPU stands must re-run on the engine the K5/K6/K7 gates left standing (K6 on, K5 and K7 reverted to off) - campaign B at the revert commit
->
-> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/head_to_head.py --data=s --only=nevertwice,mem0,langmem,amem --save --out=research/results/head_to_head_s.json` is what re-measures this one.
+| system | R@1 | R@5 | R@10 | MRR |
+|---|---|---|---|---|
+| **Nevertwice (calibrated fusion)** | **0.228** | **0.422** | **0.514** | **0.314** |
+| Mem0 | 0.194 | 0.380 | 0.464 | 0.281 |
+| LangMem | 0.150 | 0.354 | 0.442 | 0.237 |
+| A-MEM | 0.148 | 0.346 | 0.430 | 0.232 |
 <!-- /claims:head-to-head-s -->
 
 Four systems on the oracle pool, same embedder, same scoring function, the same questions:
 
 <!-- claims:head-to-head-pinned -->
-> **Withdrawn 2026-09.** GPU stands must re-run on the engine the K5/K6/K7 gates left standing (K6 on, K5 and K7 reverted to off) - campaign B at the revert commit
->
-> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/head_to_head.py --only=nevertwice,mem0,langmem,amem --save --out=research/results/head_to_head_v2.json` is what re-measures this one.
+| system | R@1 | R@5 | R@10 | MRR |
+|---|---|---|---|---|
+| **Nevertwice (calibrated fusion)** | **0.512** | **0.800** | **0.866** | **0.630** |
+| Mem0 | 0.478 | 0.758 | 0.846 | 0.603 |
+| LangMem | 0.426 | 0.692 | 0.782 | 0.543 |
+| A-MEM | 0.428 | 0.692 | 0.782 | 0.544 |
 <!-- /claims:head-to-head-pinned -->
 
 The rows above are the competitors' **store** arms - their retrieval layer over whole
@@ -167,27 +190,32 @@ run measure the shim, not A-MEM, so no claim was registered from them; the shim 
 the arm is re-measured with the rest of the head-to-head families.
 
 <!-- claims:head-to-head-full -->
-> **Withdrawn 2026-09.** GPU stands must re-run on the engine the K5/K6/K7 gates left standing (K6 on, K5 and K7 reverted to off) - campaign B at the revert commit
->
-> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/head_to_head.py --only=nevertwice,mem0,langmem,amem --save --out=research/results/head_to_head_v2.json` is what re-measures this one.
+| system | R@1 | R@5 | R@10 | MRR |
+|---|---|---|---|---|
+| **Nevertwice (calibrated fusion)** | **0.512** | **0.800** | **0.866** | **0.630** |
+| Mem0, full pipeline (`infer=True`: its LLM extraction, then its search) | 0.394 | 0.694 | 0.796 | 0.523 |
+| LangMem, full pipeline (`create_memory_store_manager`) | 0.434 | 0.728 | 0.820 | 0.558 |
+| A-MEM, full pipeline (`agentic_memory`: LLM notes and link evolution) | 0.426 | 0.694 | 0.782 | 0.544 |
 <!-- /claims:head-to-head-full -->
 
 ### LoCoMo, the benchmark this project had excluded on paper
 
-Ten long conversations, five thousand eight hundred eighty-two turns, nineteen hundred seventy-seven of nineteen hundred eighty-six questions scored, retrieving the
+Ten long conversations, 5,882 turns, 1,977 of 1,986 questions scored, retrieving the
 human-annotated evidence turn from the question's own conversation - LoCoMo's own setting. Full
 method and the defect running it found: [`research/LOCOMO.md`](../research/LOCOMO.md).
 Re-measured at the reviewed engine on the cached vectors: every figure reproduced exactly, and
 LoCoMo turns are short enough that the embedding-cap defect never touched them.
 
 <!-- claims:locomo -->
-> **Withdrawn 2026-09.** GPU stands must re-run on the engine the K5/K6/K7 gates left standing (K6 on, K5 and K7 reverted to off) - campaign B at the revert commit
->
-> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/locomo_eval.py --save --out=research/results/locomo.json` is what re-measures this one.
+| method | R@1 | R@3 | R@5 | R@10 | MRR |
+|---|---|---|---|---|---|
+| semantic (bge-m3) | 0.182 | 0.340 | 0.432 | 0.560 | 0.301 |
+| lexical (BM25) | 0.339 | 0.527 | 0.601 | 0.681 | 0.459 |
+| **calibrated fusion (shipped default, 0 deps)** | **0.350** | **0.556** | **0.640** | **0.727** | **0.481** |
 <!-- /claims:locomo -->
 
 The exclusion was written around a reported 94% for plain BM25. The term-overlap floor here
-reads six hundred one thousandths at R@5, and the three methods order exactly as they do on LongMemEval, so on the
+reads 0.601 at R@5, and the three methods order exactly as they do on LongMemEval, so on the
 **retrieval** axis LoCoMo separates systems perfectly well. The 94% figure is about judge-scored
 **answer accuracy**, which measures the reader as much as the memory and which nothing in this
 repository measures. So the exclusion is narrowed rather than lifted: not a candidate as a
@@ -199,9 +227,12 @@ conversations in one collection, which is harder than the per-conversation setti
 the setting every system is scored in here:
 
 <!-- claims:head-to-head-locomo -->
-> **Withdrawn 2026-09.** GPU stands must re-run on the engine the K5/K6/K7 gates left standing (K6 on, K5 and K7 reverted to off) - campaign B at the revert commit
->
-> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/head_to_head.py --data=locomo --only=nevertwice,mem0,langmem,amem --save --out=research/results/head_to_head_locomo.json` is what re-measures this one.
+| system | R@1 | R@5 | R@10 | MRR |
+|---|---|---|---|---|
+| **Nevertwice (calibrated fusion)** | **0.311** | 0.571 | 0.667 | **0.421** |
+| Mem0 | 0.271 | **0.575** | **0.674** | 0.404 |
+| LangMem | 0.189 | 0.441 | 0.549 | 0.295 |
+| A-MEM | 0.188 | 0.436 | 0.543 | 0.292 |
 <!-- /claims:head-to-head-locomo -->
 
 Reproduce:

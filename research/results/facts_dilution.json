@@ -10,34 +10,18 @@
  "extract_temperature": "0",
  "k": 5,
  "depth": 50,
- "ingest_seconds": 73.3,
+ "ingest_seconds": 78.0,
  "notes": 31,
- "notes_with_facts_block": 27,
- "notes_reembedded": 27,
- "named_cases": [
-  "ctl-doc",
-  "ctl-limits",
-  "ctl-model",
-  "ctl-obs",
-  "ctl-review",
-  "ctl-runtime",
-  "ctl-sched"
- ],
+ "notes_with_facts_block": 18,
+ "notes_reembedded": 18,
+ "named_cases": [],
  "named_from": "research/results/supersession_v1_implicit.json",
  "gate": {
   "worse_at_least": 6,
   "better_at_most": 0,
   "written": ".loop/GOAL-CLOSE.md item K1, before the run"
  },
- "named": {
-  "n": 7,
-  "worse_with_block": 0,
-  "better_with_block": 0,
-  "same": 7,
-  "in_top_k_with": 2,
-  "in_top_k_without": 2,
-  "p_sign_one_sided": 1.0
- },
+ "named": null,
  "all_controls": {
   "n": 20,
   "worse_with_block": 0,
@@ -47,7 +31,7 @@
   "in_top_k_without": 15,
   "p_sign_one_sided": 1.0
  },
- "verdict": "not confirmed",
+ "verdict": null,
  "rows": [
   {
    "id": "ctl-db-cache",
@@ -88,8 +72,8 @@
    "rank_with": 1,
    "rank_without": 1,
    "returned_with": [
-    "api-listens-on-port-8443 The API was confirmed to be listening on port 8443. This is a verified fact about the system's networking configuration.  [facts] API listens on port 8443 · D:\\Coding\\nevertwice",
-    "metrics-endpoint-listens-on-port-9100 The metrics endpoint listens on port 9100. This was noted in the tracker to prevent duplication of effort by future developers.  [facts] D:\\Coding\\nevertwice"
+    "api-listens-on-port-8443 The API was confirmed to be listening on port 8443. This is a verified fact about the system's networking configuration.  [facts] API listens on port 8443",
+    "metrics-endpoint-listens-on-port-9100 The metrics endpoint listens on port 9100. This was noted in the tracker to prevent duplication of effort by future developers."
    ],
    "returned_without": [
     "api-listens-on-port-8443 The API was confirmed to be listening on port 8443. This is a verified fact about the system's networking configuration.",
@@ -103,7 +87,7 @@
    "rank_with": 1,
    "rank_without": 1,
    "returned_with": [
-    "production-deploys-on-tagged-release Production deployments are now configured to occur only on tagged releases. This decision ensures that production environments are updated with deliberate, versioned releases rather than continuous integration.  [facts] production deploys on a tagged release · D:\\Coding\\nevertwice",
+    "production-deploys-on-tagged-release Production deployments are now configured to occur only on tagged releases. This decision ensures that production environments are updated with deliberate, versioned releases rather than continuous integration.  [facts] production deploys on a tagged release",
     "staging-deploy-on-merge Staging deployments are triggered on merge events. This pattern ensures that code changes are automatically deployed to the staging environment upon merging into the main branch."
    ],
    "returned_without": [
@@ -113,12 +97,12 @@
   },
   {
    "id": "ctl-model",
-   "named": true,
+   "named": false,
    "k": 5,
    "rank_with": 1,
    "rank_without": 1,
    "returned_with": [
-    "embedder-configuration The embedder was configured to use 'bge-m3'. This configuration was verified by running the full test suite, which remained green after the change.  [facts] the embedder is bge-m3 · Ran the full test suite afterwards and it stayed green · D:\\Coding\\nevertwice"
+    "embedder-configuration The embedder was configured to use 'bge-m3'. This configuration was verified by running the full test suite, which remained green after the change.  [facts] the embedder is bge-m3 · Ran the full test suite afterwards and it stayed green"
    ],
    "returned_without": [
     "embedder-configuration The embedder was configured to use 'bge-m3'. This configuration was verified by running the full test suite, which remained green after the change."
@@ -131,8 +115,8 @@
    "rank_with": 1,
    "rank_without": 1,
    "returned_with": [
-    "s3-storage-configuration Configured S3 storage with specific bucket and region settings. The configuration was applied to the project's infrastructure.  [facts] D:\\Coding\\nevertwice",
-    "s3-storage-decision Decided to use S3 for object storage with Glacier for long-term backups. This decision was made to balance cost and accessibility.  [facts] D:\\Coding\\nevertwice"
+    "s3-storage-decision Decided to use S3 for object storage with Glacier for long-term backups. This decision was made to balance cost and accessibility.",
+    "s3-storage-configuration Configured S3 storage with specific bucket and region settings. The configuration was applied to the project's infrastructure."
    ],
    "returned_without": [
     "s3-storage-decision Decided to use S3 for object storage with Glacier for long-term backups. This decision was made to balance cost and accessibility.",
@@ -146,7 +130,7 @@
    "rank_with": 1,
    "rank_without": 1,
    "returned_with": [
-    "admin-panel-mfa-requirement The admin panel requires hardware MFA for access. This was confirmed during a security review and implemented as part of the session's work.  [facts] D:\\Coding\\nevertwice"
+    "admin-panel-mfa-requirement The admin panel requires hardware MFA for access. This was confirmed during a security review and implemented as part of the session's work."
    ],
    "returned_without": [
     "admin-panel-mfa-requirement The admin panel requires hardware MFA for access. This was confirmed during a security review and implemented as part of the session's work."
@@ -159,7 +143,7 @@
    "rank_with": 1,
    "rank_without": 1,
    "returned_with": [
-    "ruff-formatting-for-python Python code in the project is formatted using ruff. This was confirmed during a pairing session where the tooling was worked through and the outcome was explicitly stated.  [facts] Python code is formatted with ruff · D:\\Coding\\nevertwice"
+    "ruff-formatting-for-python Python code in the project is formatted using ruff. This was confirmed during a pairing session where the tooling was worked through and the outcome was explicitly stated.  [facts] Python code is formatted with ruff"
    ],
    "returned_without": [
     "ruff-formatting-for-python Python code in the project is formatted using ruff. This was confirmed during a pairing session where the tooling was worked through and the outcome was explicitly stated."
@@ -167,12 +151,12 @@
   },
   {
    "id": "ctl-obs",
-   "named": true,
+   "named": false,
    "k": 5,
    "rank_with": null,
    "rank_without": null,
    "returned_with": [
-    "logs-exported-to-loki Logs are shipped to Loki for observability. This was documented in the README section which was already stale.  [facts] Documented it in the README section that was already stale · D:\\Coding\\nevertwice"
+    "logs-exported-to-loki Logs are shipped to Loki for observability. This was documented in the README section which was already stale.  [facts] Documented it in the README section that was already stale"
    ],
    "returned_without": [
     "logs-exported-to-loki Logs are shipped to Loki for observability. This was documented in the README section which was already stale."
@@ -180,7 +164,7 @@
   },
   {
    "id": "ctl-limits",
-   "named": true,
+   "named": false,
    "k": 5,
    "rank_with": null,
    "rank_without": null,
@@ -193,7 +177,7 @@
   },
   {
    "id": "ctl-sched",
-   "named": true,
+   "named": false,
    "k": 5,
    "rank_with": null,
    "rank_without": null,
@@ -207,8 +191,8 @@
    "rank_with": 2,
    "rank_without": 2,
    "returned_with": [
-    "cli-distribution-method The CLI distribution method includes shipping the desktop app as a signed installer, which is a deliberate choice for user trust and proper installation.  [facts] the desktop app ships as a signed installer · D:\\Coding\\nevertwice",
-    "cli-distribution-homebrew The desktop app ships as a signed installer, which is part of the CLI distribution strategy. This approach ensures proper installation and signing for end users.  [facts] D:\\Coding\\nevertwice"
+    "cli-distribution-method The CLI distribution method includes shipping the desktop app as a signed installer, which is a deliberate choice for user trust and proper installation.  [facts] the desktop app ships as a signed installer",
+    "cli-distribution-homebrew The desktop app ships as a signed installer, which is part of the CLI distribution strategy. This approach ensures proper installation and signing for end users."
    ],
    "returned_without": [
     "cli-distribution-method The CLI distribution method includes shipping the desktop app as a signed installer, which is a deliberate choice for user trust and proper installation.",
@@ -222,7 +206,7 @@
    "rank_with": 1,
    "rank_without": 1,
    "returned_with": [
-    "ingest-queue-nats-backend The ingest queue is backed by NATS, which provides a reliable message queuing system for handling ingestion tasks. This setup ensures that the system can process incoming data asynchronously and maintain stability under load.  [facts] D:\\Coding\\nevertwice"
+    "ingest-queue-nats-backend The ingest queue is backed by NATS, which provides a reliable message queuing system for handling ingestion tasks. This setup ensures that the system can process incoming data asynchronously and maintain stability under load."
    ],
    "returned_without": [
     "ingest-queue-nats-backend The ingest queue is backed by NATS, which provides a reliable message queuing system for handling ingestion tasks. This setup ensures that the system can process incoming data asynchronously and maintain stability under load."
@@ -230,12 +214,12 @@
   },
   {
    "id": "ctl-doc",
-   "named": true,
+   "named": false,
    "k": 5,
    "rank_with": 1,
    "rank_without": 1,
    "returned_with": [
-    "api-reference-generation The API reference is generated from OpenAPI documentation. This process was verified and documented to prevent future reinvention of the wheel.  [facts] D:\\Coding\\nevertwice"
+    "api-reference-generation The API reference is generated from OpenAPI documentation. This process was verified and documented to prevent future reinvention of the wheel."
    ],
    "returned_without": [
     "api-reference-generation The API reference is generated from OpenAPI documentation. This process was verified and documented to prevent future reinvention of the wheel."
@@ -243,12 +227,12 @@
   },
   {
    "id": "ctl-runtime",
-   "named": true,
+   "named": false,
    "k": 5,
    "rank_with": null,
    "rank_without": null,
    "returned_with": [
-    "worker-runtime-verification The sidecar runs on Go 1.23 and was verified through dashboard monitoring for an hour after deployment. No movement was observed, indicating a potential runtime issue or lack of expected behavior.  [facts] Checked the dashboards for an hour after and nothing moved · D:\\Coding\\nevertwice"
+    "worker-runtime-verification The sidecar runs on Go 1.23 and was verified through dashboard monitoring for an hour after deployment. No movement was observed, indicating a potential runtime issue or lack of expected behavior.  [facts] Checked the dashboards for an hour after and nothing moved"
    ],
    "returned_without": [
     "worker-runtime-verification The sidecar runs on Go 1.23 and was verified through dashboard monitoring for an hour after deployment. No movement was observed, indicating a potential runtime issue or lack of expected behavior."
@@ -261,8 +245,8 @@
    "rank_with": 1,
    "rank_without": 1,
    "returned_with": [
-    "tls-termination-at-load-balancer Ingress terminates TLS at the load balancer, which is the current networking setup. This pattern ensures secure communication while offloading TLS processing to a dedicated component.  [facts] D:\\Coding\\nevertwice",
-    "egress-through-nat-gateway Egress traffic now goes through a NAT gateway, which was settled as part of a networking configuration review. This change was approved after a minor rename request.  [facts] egress goes through a NAT gateway · a different piece of networking got settled · one rename and otherwise approved it · D:\\Coding\\nevertwice"
+    "tls-termination-at-load-balancer Ingress terminates TLS at the load balancer, which is the current networking setup. This pattern ensures secure communication while offloading TLS processing to a dedicated component.",
+    "egress-through-nat-gateway Egress traffic now goes through a NAT gateway, which was settled as part of a networking configuration review. This change was approved after a minor rename request.  [facts] egress goes through a NAT gateway · a different piece of networking got settled · one rename and otherwise approved it"
    ],
    "returned_without": [
     "tls-termination-at-load-balancer Ingress terminates TLS at the load balancer, which is the current networking setup. This pattern ensures secure communication while offloading TLS processing to a dedicated component.",
@@ -271,13 +255,13 @@
   },
   {
    "id": "ctl-review",
-   "named": true,
+   "named": false,
    "k": 5,
    "rank_with": null,
    "rank_without": null,
    "returned_with": [
-    "pull-request-approval-policy A pull request approval policy was already in place, but the session reinforced the need for a signed changelog entry as part of the release process.  [facts] Unrelated to the earlier change, every release needs a signed changelog entry. · Documented it in the README section that was already stale. · D:\\Coding\\nevertwice",
-    "staged-release-rollout Every release requires a signed changelog entry. This ensures accountability and traceability of changes. The process was documented in the README section that was already stale.  [facts] Unrelated to the earlier change, every release needs a signed changelog entry. · Documented it in the README section that was already stale. · D:\\Coding\\nevertwice"
+    "pull-request-approval-policy A pull request approval policy was already in place, but the session reinforced the need for a signed changelog entry as part of the release process.  [facts] Unrelated to the earlier change, every release needs a signed changelog entry. · Documented it in the README section that was already stale.",
+    "staged-release-rollout Every release requires a signed changelog entry. This ensures accountability and traceability of changes. The process was documented in the README section that was already stale.  [facts] Unrelated to the earlier change, every release needs a signed changelog entry. · Documented it in the README section that was already stale."
    ],
    "returned_without": [
     "pull-request-approval-policy A pull request approval policy was already in place, but the session reinforced the need for a signed changelog entry as part of the release process.",
@@ -291,9 +275,9 @@
    "rank_with": 1,
    "rank_without": 1,
    "returned_with": [
-    "latency-histogram-tracking Request latency is tracked as a histogram. This approach was validated by checking dashboards after an hour and observing no movement, confirming the implementation works as intended.  [facts] Checked the dashboards for an hour after and nothing moved · D:\\Coding\\nevertwice",
-    "observability-decision The decision to track queue depth as a gauge was made for observability purposes, in addition to existing latency histogram tracking.  [facts] One more observability item, independent of the first: queue depth is tracked as a gauge · D:\\Coding\\nevertwice",
-    "queue-depth-gauge-tracking Queue depth is tracked as a gauge for observability. This pattern was added independently of latency histogram tracking and was verified by running the full test suite which stayed green.  [facts] Ran the full test suite afterwards and it stayed green · D:\\Coding\\nevertwice"
+    "latency-histogram-tracking Request latency is tracked as a histogram. This approach was validated by checking dashboards after an hour and observing no movement, confirming the implementation works as intended.  [facts] Checked the dashboards for an hour after and nothing moved",
+    "observability-decision The decision to track queue depth as a gauge was made for observability purposes, in addition to existing latency histogram tracking.  [facts] One more observability item, independent of the first: queue depth is tracked as a gauge",
+    "queue-depth-gauge-tracking Queue depth is tracked as a gauge for observability. This pattern was added independently of latency histogram tracking and was verified by running the full test suite which stayed green.  [facts] Ran the full test suite afterwards and it stayed green"
    ],
    "returned_without": [
     "latency-histogram-tracking Request latency is tracked as a histogram. This approach was validated by checking dashboards after an hour and observing no movement, confirming the implementation works as intended.",
@@ -308,7 +292,7 @@
    "rank_with": 1,
    "rank_without": 1,
    "returned_with": [
-    "session-state-in-localstorage The session state is stored in localStorage for persistence across page reloads. This approach ensures that user interactions and application state are maintained without requiring server-side storage.  [facts] D:\\Coding\\nevertwice"
+    "session-state-in-localstorage The session state is stored in localStorage for persistence across page reloads. This approach ensures that user interactions and application state are maintained without requiring server-side storage."
    ],
    "returned_without": [
     "session-state-in-localstorage The session state is stored in localStorage for persistence across page reloads. This approach ensures that user interactions and application state are maintained without requiring server-side storage."
@@ -321,8 +305,8 @@
    "rank_with": 1,
    "rank_without": 1,
    "returned_with": [
-    "pagerduty-for-paging-alerts It was decided that paging alerts should be routed to PagerDuty. This decision was documented in the README.  [facts] paging alerts go to PagerDuty · documented it in the README · D:\\Coding\\nevertwice",
-    "alerting-destination-pagerduty Paging alerts are configured to go to PagerDuty. This was documented in the README section which was already stale.  [facts] paging alerts go to PagerDuty · README section that was already stale · D:\\Coding\\nevertwice"
+    "pagerduty-for-paging-alerts It was decided that paging alerts should be routed to PagerDuty. This decision was documented in the README.  [facts] paging alerts go to PagerDuty · documented it in the README",
+    "alerting-destination-pagerduty Paging alerts are configured to go to PagerDuty. This was documented in the README section which was already stale.  [facts] paging alerts go to PagerDuty · README section that was already stale"
    ],
    "returned_without": [
     "pagerduty-for-paging-alerts It was decided that paging alerts should be routed to PagerDuty. This decision was documented in the README.",

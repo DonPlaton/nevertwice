@@ -1,39 +1,39 @@
 {
  "platform": "win32",
  "python": "3.14.4",
- "commit": "9262543aad4382a91c3d42db34446ba794cf5813",
+ "commit": "b72a1ff63106129affa64904ddad455315ab0184",
  "repeats": 5,
  "measurements": {
   "cold_import": {
    "label": "cold import (guards + engine)",
    "note": "paid once per hook process",
-   "ms": 26,
-   "median_ms": 26,
-   "max_ms": 27,
+   "ms": 32,
+   "median_ms": 33,
+   "max_ms": 33,
    "repeats": 5
   },
   "pretooluse": {
    "label": "PreToolUse end-to-end",
    "note": "fires on every tool call; includes interpreter start",
-   "ms": 85,
-   "median_ms": 87,
-   "max_ms": 89,
+   "ms": 94,
+   "median_ms": 94,
+   "max_ms": 96,
    "repeats": 5
   },
   "userpromptsubmit": {
    "label": "UserPromptSubmit end-to-end",
    "note": "recall per prompt",
-   "ms": 80,
-   "median_ms": 81,
-   "max_ms": 83,
+   "ms": 87,
+   "median_ms": 88,
+   "max_ms": 89,
    "repeats": 5
   },
   "sessionstart": {
    "label": "SessionStart end-to-end (idle)",
    "note": "no backlog: the LLM probe is gated off",
-   "ms": 80,
-   "median_ms": 81,
-   "max_ms": 81,
+   "ms": 87,
+   "median_ms": 89,
+   "max_ms": 89,
    "repeats": 5
   },
   "guards_check": {
@@ -44,7 +44,7 @@
   "lexical_recall_floor": {
    "label": "lexical recall, 0 notes (no embedder)",
    "note": "the weak-PC floor",
-   "ms": 0.3
+   "ms": 2.0
   }
  },
  "load_note": "Each hot path was measured 5 times, and each of those is itself the best of 3 invocations; `ms` is the minimum, with `median_ms` and `max_ms` beside it. The minimum is the least-contended observation, so a busy host can only push these numbers up - which is the direction an honest latency claim should err in. Nothing here pins CPU affinity or waits for an idle stand."

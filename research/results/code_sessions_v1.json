@@ -354,7 +354,7 @@
    "llm_calls_per_session": 1,
    "sessions": 150,
    "errors": 0,
-   "sessions_with_zero_notes": 0
+   "sessions_with_zero_notes": 1
   },
   "mem0_infer": {
    "llm": "qwen2.5-7b-64k:latest",

@@ -1136,7 +1136,7 @@
    "at_fpr_0.05": null,
    "at_zero_false_alarms": null,
    "tokens_per_call": 3.32,
-   "ms_per_call": 0.0179,
+   "ms_per_call": 0.0185,
    "info": {
     "n_guards": 26,
     "notes_without_pattern": [
@@ -1189,7 +1189,7 @@
      "m-sync-scripts": "sync_install\\.py"
     }
    },
-   "seconds": 1.3
+   "seconds": 1.5
   },
   "universal_pack": {
    "n_calls": 230,
@@ -2319,7 +2319,7 @@
    },
    "at_zero_false_alarms": null,
    "tokens_per_call": 1.15,
-   "ms_per_call": 0.0081,
+   "ms_per_call": 0.0076,
    "hard_negatives": {
     "tp": 0,
     "fp": 0,
@@ -2386,7 +2386,7 @@
      "m-yaml-load"
     ]
    },
-   "seconds": 0.9
+   "seconds": 1.1
   },
   "linter_or_test": {
    "n_calls": 230,
@@ -4561,13 +4561,13 @@
     },
     {
      "tp": 81,
-     "fp": 131,
+     "fp": 132,
      "fn": 11,
-     "tn": 14,
-     "precision": 0.3821,
+     "tn": 13,
+     "precision": 0.3803,
      "recall": 0.8804,
-     "false_positive_rate": 0.9034,
-     "f1": 0.5329,
+     "false_positive_rate": 0.9103,
+     "f1": 0.5312,
      "threshold": 0.9
     },
     {
@@ -4583,13 +4583,13 @@
     },
     {
      "tp": 80,
-     "fp": 127,
+     "fp": 128,
      "fn": 12,
      "tn": 17,
-     "precision": 0.3865,
+     "precision": 0.3846,
      "recall": 0.8696,
-     "false_positive_rate": 0.8819,
-     "f1": 0.5351,
+     "false_positive_rate": 0.8828,
+     "f1": 0.5333,
      "threshold": 0.92
     },
     {
@@ -4649,13 +4649,13 @@
     },
     {
      "tp": 62,
-     "fp": 84,
+     "fp": 85,
      "fn": 30,
-     "tn": 57,
-     "precision": 0.4247,
+     "tn": 56,
+     "precision": 0.4218,
      "recall": 0.6739,
-     "false_positive_rate": 0.5957,
-     "f1": 0.521,
+     "false_positive_rate": 0.6028,
+     "f1": 0.5188,
      "threshold": 0.98
     },
     {
@@ -4671,59 +4671,59 @@
     },
     {
      "tp": 1,
-     "fp": 1,
+     "fp": 3,
      "fn": 91,
-     "tn": 137,
-     "precision": 0.5,
+     "tn": 135,
+     "precision": 0.25,
      "recall": 0.0109,
-     "false_positive_rate": 0.0072,
-     "f1": 0.0213,
+     "false_positive_rate": 0.0217,
+     "f1": 0.0209,
      "threshold": 1.0
     }
    ],
    "at_fpr_0.05": {
     "tp": 1,
-    "fp": 1,
+    "fp": 3,
     "fn": 91,
-    "tn": 137,
-    "precision": 0.5,
+    "tn": 135,
+    "precision": 0.25,
     "recall": 0.0109,
-    "false_positive_rate": 0.0072,
-    "f1": 0.0213,
+    "false_positive_rate": 0.0217,
+    "f1": 0.0209,
     "threshold": 1.0
    },
    "at_zero_false_alarms": null,
    "tokens_per_call": 103.56,
-   "ms_per_call": 56.1392,
+   "ms_per_call": 60.9187,
    "hard_negatives": {
     "tp": 0,
-    "fp": 1,
+    "fp": 3,
     "fn": 0,
-    "tn": 70,
+    "tn": 68,
     "precision": 0.0,
     "recall": null,
-    "false_positive_rate": 0.0141,
+    "false_positive_rate": 0.0423,
     "f1": 0.0
    },
    "generic": {
     "tp": 0,
-    "fp": 0,
+    "fp": 1,
     "fn": 40,
-    "tn": 60,
-    "precision": null,
+    "tn": 59,
+    "precision": 0.0,
     "recall": 0.0,
-    "false_positive_rate": 0.0,
+    "false_positive_rate": 0.0167,
     "f1": 0.0
    },
    "project": {
     "tp": 1,
-    "fp": 1,
+    "fp": 2,
     "fn": 51,
-    "tn": 77,
-    "precision": 0.5,
+    "tn": 76,
+    "precision": 0.3333,
     "recall": 0.0192,
-    "false_positive_rate": 0.0128,
-    "f1": 0.037
+    "false_positive_rate": 0.0256,
+    "f1": 0.0363
    },
    "recall_ci": [
     0.0019,
@@ -4735,7 +4735,7 @@
     "notes_embedded": 45,
     "mode": "semantic + lexical"
    },
-   "seconds": 17.1
+   "seconds": 20.8
   },
   "never": {
    "n_calls": 230,
@@ -7031,7 +7031,7 @@
    "at_fpr_0.05": null,
    "at_zero_false_alarms": null,
    "tokens_per_call": 5.51,
-   "ms_per_call": 0.0318,
+   "ms_per_call": 0.0253,
    "info": {
     "llm": "qwen3-coder:30b",
     "n_guards": 45,
@@ -7091,7 +7091,7 @@
      "m-sync-scripts": "^(\\s*)edit\\s*~/.claude/scripts/|^(\\s*)vim\\s*~/.claude/scripts/|^(\\s*)nano\\s*~/.claude/scripts/"
     }
    },
-   "seconds": 2.1
+   "seconds": 2.6
   }
  }
 }

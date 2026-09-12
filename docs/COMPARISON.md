@@ -1,8 +1,5 @@
 # Nevertwice vs the field (2025-2026)
 
-> **Withdrawn while re-measured (campaign B, September).** The answer-accuracy figures quoted below
-> rest on engine-dependent claims that are withdrawn until the re-run at the gate-reverted commit.
-
 How Nevertwice compares to current long-term-memory systems for agents, and what to
 borrow from each. Vendor benchmark numbers are self-published and mutually disputed;
 the load-bearing sources here are the cited papers and docs.

@@ -5566,9 +5566,9 @@
    },
    "s0_written_pairs": 109,
    "runs": 2,
-   "seconds": 429.6,
+   "seconds": 434.6,
    "config": "ollama qwen3-coder:30b + bge-m3, k=5, days 2026-03-01/2026-05-01",
-   "store_bytes": 300468,
+   "store_bytes": 293705,
    "per_run": [
     0.8667,
     0.7333

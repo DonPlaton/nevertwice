@@ -1,13 +1,5 @@
 # The complexity ratchet: it discriminates, and it will not stop talking either
 
-<!-- withdrawn-banner -->
-> **Withdrawn: figures on this page must not be quoted.** They were retracted and remain
-> here because deleting a result one was wrong about destroys the record of having been
-> wrong. The design, the method and the caveats stand; the numbers do not. Each figure's
-> own reason and date are in
-> [`research/evidence_manifest.json`](../evidence_manifest.json), and
-> `python tools/check_freshness.py --list-stale` lists every one.
-
 **Tasks R1, R2, R3.** One gate of four fails, so the declared consequence stands: **deleted, and
 this is the result.** It is the second mechanism in a row to fail on the same axis, and that
 pattern is worth more than either measurement alone.

@@ -51,7 +51,7 @@ HARDWARE = "needs-hardware"
 #: Every committed research artifact, what makes it, and what it takes to remake it.
 ARTIFACTS = [
     {"file": "research/results/longmem_oracle.json",
-     "command": ["python", "research/longmem_eval.py", "--save",
+     "command": ["python", "research/longmem_eval.py", "--xrerank", "--save",
                  "--out=research/results/longmem_oracle.json"],
      "kind": HARDWARE, "task": "external-retrieval",
      "inputs": ["research/data/longmemeval_oracle.json (third-party, MIT, hash-pinned in "

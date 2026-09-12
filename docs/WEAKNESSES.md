@@ -1,13 +1,5 @@
 # Nevertwice - weaknesses & limitations (hostile self-audit, 2026-06-17; launch update 2026-06-20; September update first)
 
-<!-- withdrawn-banner -->
-> **Withdrawn: figures on this page must not be quoted.** They were retracted and remain
-> here because deleting a result one was wrong about destroys the record of having been
-> wrong. The design, the method and the caveats stand; the numbers do not. Each figure's
-> own reason and date are in
-> [`research/evidence_manifest.json`](../research/evidence_manifest.json), and
-> `python tools/check_freshness.py --list-stale` lists every one.
-
 > **The body of this page is the June audit.** It is kept as written, grades included, because it is
 > the record of what was believed and checked then. Everything measured since - the supersession and
 > as-of stands, the code-session corpus, the guard stand, the campaigns of August and September - lives
@@ -36,19 +28,38 @@ they cannot lag the artifact.
   the extractor never writing the fact), the append-only file loses one to ranking depth. The bench
   read these misses as "ranked below the top five" until the September campaign (ledger K1b); the cap the J2b
   design registered for over-retraction is **missed on both corpora** on the corrected metric and is
-  published as missed. The engine is measured first at its pre-J2b commit under the same classifier
-  (ledger K2, item 2 of the September order), then the fix goes through its gate (K7).
+  published as missed. The engine was measured at its pre-J2b commit under the same classifier (the
+  absorb is older than J2b, and doubled with it on the implicit corpus), then the fix went through its
+  gate (K7): a same-title note is absorbed only when one adjudication call says it is the same fact.
+  **Measured and reverted:** not one still-true fact was absorbed or retired on eighty control case-runs
+  - the cost below went to nil - and the stale column rose by eight to ten points, four to five times
+  its cap, so the mechanism ships off and is an opt-in switch. Neither engine has both columns; the
+  owner decides whether the gate is re-read against a baseline measured under the same call pattern.
 
 <!-- claims:supersession-causes -->
-> **Withdrawn 2026-09.** GPU stands must re-run on the engine the K5/K6/K7 gates left standing (K6 on, K5 and K7 reverted to off) - campaign B at the revert commit
->
-> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/supersession_bench.py` is what re-measures this one.
+| arm | a still-true fact did not come back | retired by the memory | absorbed into another note | never written | served, below the top five |
+|---|---|---|---|---|---|
+| **Nevertwice** | 0.225 [0.123, 0.375] | 0 of 40 | 5 of 40 | 4 of 40 | 0 of 40 |
+| Mem0 | 0.000 [0.000, 0.161] | 0 of 20 | 0 of 20 | 0 of 20 | 0 of 20 |
+| Zep/Graphiti (`graphiti-core`, FalkorDB) | 0.225 [0.123, 0.375] | 0 of 40 | 0 of 40 | 9 of 40 | 0 of 40 |
+| an append-only markdown file | 0.050 [0.009, 0.236] | 0 of 20 | 0 of 20 | 0 of 20 | 1 of 20 |
+
+<sub>The first column is the rate in the table above; the four after it split its count by cause. The first two are the memory being too eager - it retired the note, or it judged a different fact a twin of this one and absorbed that fact into the note: the note stays on disk, but what it now hands back is the other fact, and this one is no longer served - the other two are the extractor's silence and the ranker's depth. A cause reads *not read* where the run did not inspect that arm's store: a retirement is visible only where the store records one (our `valid_to` and `## Previous statement`; Graphiti's `invalid_at`/`expired_at`; Mem0's delete and update events).</sub>
+
+<sub>Over-retraction proper - the memory stopped serving a fact that was still true, by retiring the note or by absorbing another fact into it - is the first two cause columns as a rate: 0.125 [0.055, 0.261] for Nevertwice over its control case-runs.</sub>
 <!-- /claims:supersession-causes -->
 
 <!-- claims:supersession-causes-implicit -->
-> **Withdrawn 2026-09.** GPU stands must re-run on the engine the K5/K6/K7 gates left standing (K6 on, K5 and K7 reverted to off) - campaign B at the revert commit
->
-> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/supersession_bench.py --dataset research/data/supersession_v1_implicit.json --arms nevertwice,naive` is what re-measures this one.
+| arm | a still-true fact did not come back | retired by the memory | absorbed into another note | never written | served, below the top five |
+|---|---|---|---|---|---|
+| **Nevertwice** | 0.350 [0.221, 0.505] | 0 of 40 | 14 of 40 | 0 of 40 | 0 of 40 |
+| Mem0 | 0.000 [0.000, 0.161] | 0 of 20 | 0 of 20 | 0 of 20 | 0 of 20 |
+| Zep/Graphiti (`graphiti-core`, FalkorDB) | 0.275 [0.161, 0.428] | 0 of 40 | 0 of 40 | 11 of 40 | 0 of 40 |
+| an append-only markdown file | 0.050 [0.009, 0.236] | 0 of 20 | 0 of 20 | 0 of 20 | 1 of 20 |
+
+<sub>The first column is the rate in the table above; the four after it split its count by cause. The first two are the memory being too eager - it retired the note, or it judged a different fact a twin of this one and absorbed that fact into the note: the note stays on disk, but what it now hands back is the other fact, and this one is no longer served - the other two are the extractor's silence and the ranker's depth. A cause reads *not read* where the run did not inspect that arm's store: a retirement is visible only where the store records one (our `valid_to` and `## Previous statement`; Graphiti's `invalid_at`/`expired_at`; Mem0's delete and update events).</sub>
+
+<sub>Over-retraction proper - the memory stopped serving a fact that was still true, by retiring the note or by absorbing another fact into it - is the first two cause columns as a rate: 0.350 [0.221, 0.505] for Nevertwice over its control case-runs.</sub>
 <!-- /claims:supersession-causes-implicit -->
 
 - **[OPEN - measured; fix gated as K5] The extractor's output on a bare two-sentence fact is
@@ -56,8 +67,10 @@ they cannot lag the artifact.
   context - the project name was enough. Of the first sessions the as-of stand marked *never written*,
   three were silent in both runs and five in one run only; captured alone, six of eight wrote the note
   with the fact, one paraphrased it, one produced no item (ledger K3, `research/silence_probe.py`). Not
-  length, not the absorb above. The fix is a single retry on an empty extraction, not a prompt rewrite;
-  its gate is written (K5) and it is measured beside the other two in one campaign.
+  length, not the absorb above. The fix was a single retry on an empty extraction, not a prompt rewrite
+  (K5). **Measured and reverted:** the retry took the never-written first sessions from eleven to eight
+  of one hundred twenty against a gate of five - a third of the silence, not the half the gate asked
+  for - so it ships off and is an opt-in switch. The silence stays published as the extractor's ceiling.
 
 - **[GATE MISSED - J6] No guard arm reaches the false-positive ceiling.** On the labelled guard corpus
   (`research/GUARD_BENCH.md`) no arm - lexical, all-fire, the prompt-time guard - reaches the ceiling
@@ -67,9 +80,16 @@ they cannot lag the artifact.
   is measured. Live table:
 
 <!-- claims:guard-bench -->
-> **Withdrawn 2026-09.** GPU stands must re-run on the engine the K5/K6/K7 gates left standing (K6 on, K5 and K7 reverted to off) - campaign B at the revert commit
->
-> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/guard_bench.py --llm --save` is what re-measures this one.
+| arm | recall of the right guard | precision | hard-negative false alarms | project-only recall | tokens / call | ms / check |
+|---|---|---|---|---|---|---|
+| **guards, engine's no-model patterns** | 0.380 at FPR 0.179 (over budget) | - | - | - | 3.320 | 0.018 |
+| **guards, model-written patterns** | 0.370 at FPR 0.155 (over budget) | - | - | - | 5.510 | 0.025 |
+| cold-start pack (no history) | 0.196 | 0.818 | 0.000 | 0.000 | 1.150 | 0.008 |
+| linter or scanner (scored in its favour) | 0.457 | 1.000 | 0.000 | 0.154 | 0.000 | 0.000 |
+| prompt recall over the notes (top three) | 0.011 | 0.250 | 0.042 | 0.019 | 103.560 | 60.919 |
+| silence (floor) | 0.000 | - | 0.000 | 0.000 | 0.000 | 0.000 |
+
+<sub>no operating point under the false-alarm budget for guards, engine's no-model patterns, guards, model-written patterns - a guard fires or it does not, and firing catches the repeats shown at the false-alarm rate shown.</sub>
 <!-- /claims:guard-bench -->
 
 - **[CORPUS GATES FAILED - J3] The code-session corpus does not separate retrieval systems.** On the
@@ -82,9 +102,13 @@ they cannot lag the artifact.
   and the stand is re-run on an unchanged engine. Live table:
 
 <!-- claims:code-sessions -->
-> **Withdrawn 2026-09.** GPU stands must re-run on the engine the K5/K6/K7 gates left standing (K6 on, K5 and K7 reverted to off) - campaign B at the revert commit
->
-> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/code_sessions_eval.py judge --arms nevertwice_full,naive,mem0_infer --save` is what re-measures this one.
+| system | fact | current | stale | lesson | situation (top three) | tokens |
+|---|---|---|---|---|---|---|
+| **Nevertwice, our extractor's notes** | 0.083 | 0.033 | 0.017 | 0.600 | 0.000 | 113 |
+| append-only sessions, term overlap (floor) | 0.967 | 0.850 | 0.083 | 0.956 | 0.922 | 2,937 |
+| Mem0 full pipeline, its memories | 0.683 | 0.750 | 0.117 | 0.700 | 0.033 | 187 |
+| no memory (bracket) | 0.067 | 0.017 | 0.050 | 0.478 | 0.000 | 117 |
+| the gold session whole (bracket) | 0.978 | 0.967 | 0.000 | 1.000 | 1.000 | 727 |
 <!-- /claims:code-sessions -->
 
 ## Launch-state update (2026-06-20)

@@ -1,13 +1,5 @@
 # Three switches that shipped with tests and no measurement
 
-<!-- withdrawn-banner -->
-> **Withdrawn: figures on this page must not be quoted.** They were retracted and remain
-> here because deleting a result one was wrong about destroys the record of having been
-> wrong. The design, the method and the caveats stand; the numbers do not. Each figure's
-> own reason and date are in
-> [`research/evidence_manifest.json`](evidence_manifest.json), and
-> `python tools/check_freshness.py --list-stale` lists every one.
-
 > **Re-measured 2026-09-11** at commit 9262543, in the campaign that re-measured the whole register with
 > the extractor pinned deterministic and bound to the one the register names. The four runs before it
 > read the shipped threshold's loss as eight and a half, eleven and a half, seven and five points; this
@@ -46,9 +38,14 @@ hit is refused, even when there is room for it - the distinction between *does i
 returned no more than 2 points less often. On a miss the default returns to 0.
 
 <!-- claims:abstention-sweep -->
-> **Withdrawn 2026-09.** GPU stands must re-run on the engine the K5/K6/K7 gates left standing (K6 on, K5 and K7 reverted to off) - campaign B at the revert commit
->
-> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/abstention_ab.py --part all` is what re-measures this one.
+| threshold | chars/query | hits | wanted fact returned | chars saved | recall lost |
+|---|---|---|---|---|---|
+| 0.00 (off) | 381.8 | 1.49 | 0.962 | - | - |
+| 0.10 | 363.6 | 1.42 | 0.962 | 4.8% | 0.0 pts |
+| 0.20 | 279.0 | 1.10 | 0.937 | 26.9% | 2.5 pts |
+| **0.35 (shipped)** | 276.5 | 1.09 | 0.937 | 27.6% | 2.5 pts |
+| 0.50 | 276.5 | 1.09 | 0.937 | 27.6% | 2.5 pts |
+| 0.75 | 276.5 | 1.09 | 0.937 | 27.6% | 2.5 pts |
 <!-- /claims:abstention-sweep -->
 
 Every threshold from 0.30 upward reads the same as the shipped one: one hit is all that is left to
@@ -73,7 +70,7 @@ and a half. That is a hypothesis, and it is written here as one.
 `NEVERTWICE_INJECT_MIN_VALUE`, on the path capped at 2200 characters.
 
 The sweep is identical to C1's, and that is the result: **the mean payload on this corpus is
-408.7 characters, so the cap never binds and the two paths differ in nothing the measurement can
+381.8 characters, so the cap never binds and the two paths differ in nothing the measurement can
 see.** The gate written for it - 15% smaller with no loss of the top-ranked lesson - is
 **vacuous as written**: the top item scores 1.0 by construction and cannot be dropped at any
 threshold below 1.0, so the second half is satisfied by arithmetic rather than by evidence.
@@ -119,7 +116,7 @@ no stand at all.
 
 ## What this does not show
 
-- **One corpus, and a small one.** Mean recall depth is 1.46 hits. The abstention mechanisms
+- **One corpus, and a small one.** Mean recall depth is 1.48 hits. The abstention mechanisms
   are built for the case where recall returns many hits of uneven quality, and that case is
   not in this corpus. The result is honest about the store it was measured on and says nothing
   about a larger one.
