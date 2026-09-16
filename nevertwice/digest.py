@@ -39,13 +39,16 @@ def _live_notes(project=None):
     return m._iter_project_notes(project) if project else m._iter_all_notes()
 
 
-def compute_conflicts(project=None, limit=50, *, live=None, sup=None):
-    """The supersession / contradiction ledger: each record is a fact that was revised.
-    `{kind, project, ntype, old_stem, old_title, old_date, new_stem, new_title,
-    new_date, resolved}`. `resolved` is False when the superseding note was itself later
-    superseded (a still-evolving chain). Newest revision first. kind is always
-    'superseded' today (M-2 turns a detected contradiction into a supersession at write
-    time); the field is kept so an explicit unresolved-CONTRADICTS kind can join later."""
+def compute_conflicts(project=None, limit=50, *, live=None, sup=None, contested=None):
+    """The supersession / contradiction ledger: each record is a fact that was revised or is in
+    dispute. `{kind, project, ntype, old_stem, old_title, old_date, new_stem, new_title, new_date,
+    resolved}`. kind `superseded`: a fact the memory revised (M-2 turns a detected contradiction
+    into a supersession at write time); `resolved` is False when the superseding note was itself
+    later superseded. kind `contested` (K8): two live notes of one title from different sessions
+    that the write path could not prove the same fact - both are served, newest first, until the
+    sleep-time judge rules (`consolidate_memory.py`); always `resolved: False`. kind `disputed`
+    (K8): the judge ruled `replaces` and the sleep-time guard refused for want of proof - both stay
+    served, a human may settle it. Newest first."""
     # `live`/`sup` let a caller that already scanned the vault (compute_digest, and the
     # dashboard through it) share the lists instead of re-reading every note (critic 2026-07:
     # one dashboard build scanned the vault three times).
@@ -69,6 +72,20 @@ def compute_conflicts(project=None, limit=50, *, live=None, sup=None):
             # itself-superseded successor == the fact is still being revised.
             "resolved": bool(succ) and succ.get("status") != "superseded",
         })
+    disputed = [dict(c, kind="disputed") for c in m._iter_contested(project, key=m.DISPUTED_KEY)] if contested is None else []
+    for c in ([dict(c, kind="contested") for c in m._iter_contested(project)] if contested is None
+              else [dict(c, kind="contested") for c in contested]) + disputed:
+        for new_stem in c["new_stems"]:
+            succ = by_stem.get(new_stem)
+            out.append({
+                "kind": c["kind"],
+                "project": c["project"], "ntype": c["ntype"],
+                "old_stem": c["stem"], "old_title": c["title"], "old_date": c["date"],
+                "new_stem": new_stem,
+                "new_title": (succ or {}).get("title", ""),
+                "new_date": (succ or {}).get("date", "") or (m.parse_typed_stem(new_stem) or {}).get("date", ""),
+                "resolved": False,
+            })
     out.sort(key=lambda r: (r["new_date"] or r["old_date"], r["old_stem"]), reverse=True)
     return out[:limit] if limit else out
 

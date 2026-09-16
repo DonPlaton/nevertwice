@@ -152,7 +152,11 @@ def classify(items: list[str], case: dict) -> dict:
                    and not _hit(case.get("current", []), t)]
     return {"stale_returned": bool(stale_ranks),
             "stale_rank": stale_ranks[0] if stale_ranks else None,
-            "current_returned": any(_hit(case.get("current", []), t) for t in items)}
+            "current_returned": any(_hit(case.get("current", []), t) for t in items),
+            # K8: the raw reading beside the rule above - the retracted value anywhere in what came
+            # back, attached to a newer statement or not. A memory that serves the earlier statement
+            # paired with its replacement is not stale by the rule and is counted here.
+            "old_value_served": any(_hit(case.get("superseded", []), t) for t in items)}
 
 
 def score(rows: list[dict]) -> dict:
@@ -172,6 +176,7 @@ def score(rows: list[dict]) -> dict:
     sup = [r for r in rows if r["shape"] != "control"]
     ctl = [r for r in rows if r["shape"] == "control"]
     stale = sum(1 for r in sup if r["stale_returned"])
+    old_served = sum(1 for r in sup if r.get("old_value_served"))
     current = sum(1 for r in sup if r["current_returned"])
     missed = sum(1 for r in ctl if not r["current_returned"])
     chars = [r["chars_returned"] for r in rows]
@@ -182,6 +187,7 @@ def score(rows: list[dict]) -> dict:
         "stale_ci": [round(x, 4) for x in wilson(stale, len(sup))] if sup else None,
         "current_rate": round(current / len(sup), 4) if sup else None,
         "current_ci": [round(x, 4) for x in wilson(current, len(sup))] if sup else None,
+        "old_value_served_rate": round(old_served / len(sup), 4) if sup else None,
         "control_miss_rate": round(missed / len(ctl), 4) if ctl else None,
         "control_miss_ci": [round(x, 4) for x in wilson(missed, len(ctl))] if ctl else None,
         "over_retraction_rate": None,
@@ -200,7 +206,9 @@ def score(rows: list[dict]) -> dict:
         n_ctl = len(ctl)
         # over-retraction proper: the memory stopped serving a still-true fact, whether it moved
         # the note to Superseded/ or absorbed another fact into it (K1b)
-        eager = out["control_retired_by_memory"] + out["control_demoted_by_merge"]
+        # one row is one control case-run: a row both retired and demoted is one loss, not two (as
+        # `pool()` counts it; the per-run figure double-counted until 2026-09-16)
+        eager = sum(1 for r in lost if r.get("current_retired") or r.get("current_demoted"))
         out["over_retraction_rate"] = round(eager / n_ctl, 4)
         out["over_retraction_ci"] = [round(x, 4) for x in wilson(eager, n_ctl)]
     drifted = [r for r in rows if r.get("notes_in_cyrillic")]
@@ -230,6 +238,14 @@ def _served_text(body: str) -> str:
     return " ".join(p for p in (title, desc or "", prevention or "") if p)
 
 
+def _statement_text(body: str) -> str:
+    """The served text plus the `## Previous statement` block - where a fact can be on disk and not
+    served (K1b). Not the frontmatter, not the `_Supersedes:_` / related-notes links: a link to a
+    retired stem names the retired fact's slug and read as a demotion of the winner (2026-09-16)."""
+    prev = re.search(r"^## Previous statement\s*\n((?:- .*\n?)+)", body, re.M)
+    return _served_text(body) + " " + (prev.group(1) if prev else "")
+
+
 def _store_state(project: str, case: dict) -> dict:
     """Where the current fact ended up: served by a live note, demoted inside one, retired, or
     never written.
@@ -257,7 +273,7 @@ def _store_state(project: str, case: dict) -> dict:
             total += 1
             if sum(1 for ch in body if "\u0400" <= ch <= "\u04ff") > 20:
                 drift += 1
-            in_body = _hit(case["current"], body)
+            in_body = _hit(case["current"], _statement_text(body))
             if not in_body:
                 continue
             if md.parent.name == "Superseded":
@@ -272,8 +288,30 @@ def _store_state(project: str, case: dict) -> dict:
             "notes_in_cyrillic": drift}
 
 
-def run_nevertwice(cases: list[dict], k: int) -> dict:
-    """The public path: one `capture_session` per session, then `recall`.
+# K8: the judge's budget per consolidation run on the stand - the gate's cap (ledger K8: <= 50).
+SLEEP_CAP = int(os.environ.get("K8_SLEEP_CAP", "50"))
+
+
+def _sleep_and_reread(api, cases: list[dict], k: int, prefix: str) -> dict:
+    """The second reading (K8): the sleep-time judge over every contested pair of the store, then
+    recall again on every case. What a user sees after the weekly consolidation, against the first
+    reading - what they see between nights."""
+    from nevertwice import consolidate_memory as cm                # noqa: PLC0415
+    t1 = time.time()
+    adj = cm.adjudicate_contested(apply=True, has_llm=True, cap=SLEEP_CAP)
+    rows = []
+    for i, case in enumerate(cases):
+        project = f"{prefix}{i:03d}"
+        hits = api.recall(case["query"], project=project, k=k)
+        rows.append({**_row(case, [hit_text(h) for h in hits]), **_store_state(project, case)})
+    return {"rows": rows, **score(rows), "adjudication": adj,
+            "seconds": round(time.time() - t1, 1), "store_bytes": store_bytes(),
+            "config": f"the same store after consolidate_memory.adjudicate_contested(cap={SLEEP_CAP})"}
+
+
+def run_nevertwice(cases: list[dict], k: int, sleep: bool = False) -> dict:
+    """The public path: one `capture_session` per session, then `recall`. `sleep` adds the second
+    reading of K8: the judge over the contested pairs, then recall again (`after_sleep`).
 
     A separate project per case, so one case cannot retrieve another's notes - the same
     isolation a real user gets from working in different repositories, and without it the
@@ -306,6 +344,8 @@ def run_nevertwice(cases: list[dict], k: int) -> dict:
     out = {"rows": rows, **score(rows), "seconds": round(time.time() - t0, 1),
            "config": f"ollama {LLM} + {EMBED_MODEL}, k={k}",
            "store_bytes": store_bytes()}
+    if sleep:
+        out["after_sleep"] = _sleep_and_reread(api, cases, k, "sup")
     return out
 
 
@@ -625,6 +665,7 @@ def pool(engine_files: list[Path], other_files: list[Path] | None = None) -> dic
     a silent choice.
     """
     runs: list[dict] = []
+    after_runs: list[dict] = []
     other_runs: dict[str, list[dict]] = {}
     meta: dict | None = None
     shas: set[str] = set()
@@ -635,16 +676,19 @@ def pool(engine_files: list[Path], other_files: list[Path] | None = None) -> dic
         if not arm or arm.get("blocked"):
             raise ValueError(f"{f}: no {ENGINE_ARM} arm to pool")
         runs.append(arm)
+        after = blob["arms"].get(f"{ENGINE_ARM}_after_sleep")     # K8: the second reading, when present
+        if after and not after.get("blocked"):
+            after_runs.append(after)
         if meta is None:
             meta = blob
         for name, res in blob["arms"].items():
-            if name != ENGINE_ARM and not res.get("blocked") and name not in other_runs:
+            if not name.startswith(ENGINE_ARM) and not res.get("blocked") and name not in other_runs:
                 other_runs[name] = [res]
     for f in [Path(p) for p in (other_files or [])]:
         blob = json.loads(f.read_text(encoding="utf-8"))
         shas.add(blob["dataset"]["sha256"])
         for name, res in blob["arms"].items():
-            if name == ENGINE_ARM or res.get("blocked"):
+            if name.startswith(ENGINE_ARM) or res.get("blocked"):
                 continue
             # Until 2026-09-11 a second file carrying the same arm was refused ("which one?"). It
             # is now what the K2 parity run produces on purpose: the arm's runs are pooled over
@@ -655,6 +699,64 @@ def pool(engine_files: list[Path], other_files: list[Path] | None = None) -> dic
     assert meta is not None
     others: dict[str, dict] = {name: pool_other_arm(rs) for name, rs in other_runs.items()}
 
+    pooled = _fold_engine_runs(runs)
+    arms: dict[str, dict] = {ENGINE_ARM: runs[0]}
+    for i, a in enumerate(runs[1:], start=2):
+        arms[f"{ENGINE_ARM}_run{i}"] = a
+    pooled_after = None
+    if after_runs and len(after_runs) == len(runs):
+        pooled_after = _fold_engine_runs(after_runs)
+        arms[f"{ENGINE_ARM}_after_sleep"] = after_runs[0]
+        for i, a in enumerate(after_runs[1:], start=2):
+            arms[f"{ENGINE_ARM}_after_sleep_run{i}"] = a
+    arms.update(others)
+
+    # the paired tests are computed on each arm's FIRST run, where the arms saw identical cases
+    first = {ENGINE_ARM: {r["id"]: r for r in runs[0]["rows"]}}
+    first.update({n: {r["id"]: r for r in rs[0]["rows"]} for n, rs in other_runs.items()})
+
+    per_run_pairs = []
+    if "mem0" in other_runs:
+        m0 = {r["id"]: r for r in other_runs["mem0"][0]["rows"]}
+        for a in runs:
+            rows = {r["id"]: r for r in a["rows"]}
+            ids = [i for i, r in rows.items() if r["shape"] != "control" and i in m0]
+            per_run_pairs.append({
+                "nevertwice_only": sum(1 for i in ids
+                                       if rows[i]["stale_returned"] and not m0[i]["stale_returned"]),
+                "mem0_only": sum(1 for i in ids
+                                 if m0[i]["stale_returned"] and not rows[i]["stale_returned"]),
+            })
+
+    def sup(a: dict) -> list[dict]:
+        return [r for r in a["rows"] if r["shape"] != "control"]
+
+    def ctl(a: dict) -> list[dict]:
+        return [r for r in a["rows"] if r["shape"] == "control"]
+
+    n_sup, n_ctl = len(sup(runs[0])), len(ctl(runs[0]))
+    ds = dict(meta["dataset"])
+    ds.update({"cases": n_sup + n_ctl, "supersession_cases": n_sup, "control_cases": n_ctl})
+    per_run_stale = pooled["stale"]["per_run"]
+    spread = " and ".join(f"{v:.4f}" for v in per_run_stale)
+    note = (f"{len(runs)} runs of the same commit on the same corpus with the same models read "
+            f"stale {spread}. The extraction model is not deterministic at temperature 0, so the "
+            "published rate is pooled over case-runs and the per-run values are kept beside it. "
+            "One run of this stand is not a result.")
+    out = {"arms": arms, "k": meta["k"], "llm": meta["llm"], "embedder": meta["embedder"],
+           "dataset": ds, "pooled_nevertwice": pooled, "pooled_note": note,
+           "pairs": compare_arms(first), "pairs_per_engine_run": per_run_pairs}
+    if pooled_after is not None:
+        # K8: the same fold over the second reading - the store after the sleep-time judge
+        pooled_after["adjudication"] = [a.get("adjudication") for a in after_runs]
+        out["pooled_nevertwice_after_sleep"] = pooled_after
+    return out
+
+
+def _fold_engine_runs(runs: list[dict]) -> dict:
+    """The engine arm's rates pooled over the case-runs of several runs, per-run values beside them
+    (the `pooled_nevertwice` block; since K8 also the after-sleep reading's)."""
+
     def sup(a: dict) -> list[dict]:
         return [r for r in a["rows"] if r["shape"] != "control"]
 
@@ -662,6 +764,7 @@ def pool(engine_files: list[Path], other_files: list[Path] | None = None) -> dic
         return [r for r in a["rows"] if r["shape"] == "control"]
 
     stale_k = sum(1 for a in runs for r in sup(a) if r["stale_returned"])
+    old_k = sum(1 for a in runs for r in sup(a) if r.get("old_value_served"))
     cur_k = sum(1 for a in runs for r in sup(a) if r["current_returned"])
     sup_n = sum(len(sup(a)) for a in runs)
     # over-retraction proper only: the memory retired a still-true fact (not "ranked below k",
@@ -689,6 +792,10 @@ def pool(engine_files: list[Path], other_files: list[Path] | None = None) -> dic
                   "ci": _r4(wilson(stale_k, sup_n)), "per_run": per_run_stale},
         "current": {"k": cur_k, "n": sup_n, "rate": round(cur_k / sup_n, 4),
                     "ci": _r4(wilson(cur_k, sup_n)), "per_run": per_run_cur},
+        "old_value_served": {"k": old_k, "n": sup_n, "rate": round(old_k / sup_n, 4),
+                             "ci": _r4(wilson(old_k, sup_n)),
+                             "per_run": [round(sum(1 for r in sup(a) if r.get("old_value_served")) / len(sup(a)), 4)
+                                         for a in runs]},
         "over_retraction": {"k": over_k, "n": ctl_n,
                             "rate": round(over_k / ctl_n, 4) if ctl_n else None,
                             "ci": _r4(wilson(over_k, ctl_n))},
@@ -698,40 +805,7 @@ def pool(engine_files: list[Path], other_files: list[Path] | None = None) -> dic
         "control_causes": causes,
         "mean_chars_returned": round(sum(a["mean_chars_returned"] for a in runs) / len(runs), 1),
     }
-
-    arms: dict[str, dict] = {ENGINE_ARM: runs[0]}
-    for i, a in enumerate(runs[1:], start=2):
-        arms[f"{ENGINE_ARM}_run{i}"] = a
-    arms.update(others)
-
-    # the paired tests are computed on each arm's FIRST run, where the arms saw identical cases
-    first = {ENGINE_ARM: {r["id"]: r for r in runs[0]["rows"]}}
-    first.update({n: {r["id"]: r for r in rs[0]["rows"]} for n, rs in other_runs.items()})
-
-    per_run_pairs = []
-    if "mem0" in other_runs:
-        m0 = {r["id"]: r for r in other_runs["mem0"][0]["rows"]}
-        for a in runs:
-            rows = {r["id"]: r for r in a["rows"]}
-            ids = [i for i, r in rows.items() if r["shape"] != "control" and i in m0]
-            per_run_pairs.append({
-                "nevertwice_only": sum(1 for i in ids
-                                       if rows[i]["stale_returned"] and not m0[i]["stale_returned"]),
-                "mem0_only": sum(1 for i in ids
-                                 if m0[i]["stale_returned"] and not rows[i]["stale_returned"]),
-            })
-
-    n_sup, n_ctl = len(sup(runs[0])), len(ctl(runs[0]))
-    ds = dict(meta["dataset"])
-    ds.update({"cases": n_sup + n_ctl, "supersession_cases": n_sup, "control_cases": n_ctl})
-    spread = " and ".join(f"{v:.4f}" for v in per_run_stale)
-    note = (f"{len(runs)} runs of the same commit on the same corpus with the same models read "
-            f"stale {spread}. The extraction model is not deterministic at temperature 0, so the "
-            "published rate is pooled over case-runs and the per-run values are kept beside it. "
-            "One run of this stand is not a result.")
-    return {"arms": arms, "k": meta["k"], "llm": meta["llm"], "embedder": meta["embedder"],
-            "dataset": ds, "pooled_nevertwice": pooled, "pooled_note": note,
-            "pairs": compare_arms(first), "pairs_per_engine_run": per_run_pairs}
+    return pooled
 
 
 def load_dataset(path: Path) -> dict:
@@ -762,6 +836,9 @@ def main() -> int:
     ap.add_argument("--arms", default="nevertwice,naive")
     ap.add_argument("--k", type=int, default=5)
     ap.add_argument("--limit", type=int, default=0, help="first N cases only (a smoke run)")
+    ap.add_argument("--sleep", action="store_true",
+                    help="K8: read the engine arm twice - after session two, and again after the "
+                         "sleep-time judge over the contested pairs (arm `nevertwice_after_sleep`)")
     ap.add_argument("--out", default="")
     ap.add_argument("--compare", nargs="*", default=None,
                     help="result files to pair against each other instead of running an arm")
@@ -830,16 +907,26 @@ def main() -> int:
             print(f"- {name}: unknown arm (have: {', '.join(ARMS)})")
             continue
         print(f"- {name}")
-        res = fn(cases, args.k)
+        res = fn(cases, args.k, sleep=args.sleep) if name == "nevertwice" else fn(cases, args.k)
         out["arms"][name] = res
         if res.get("blocked"):
             print(f"  BLOCKED: {res['blocked']}\n")
             continue
         print(f"  stale {res['stale_rate']} {res['stale_ci']} "
-              f"(rank-1: {res['stale_at_rank_1']}) | "
+              f"(rank-1: {res['stale_at_rank_1']}; old value served {res.get('old_value_served_rate')}) | "
               f"current {res['current_rate']} {res['current_ci']} | "
               f"control miss {res['control_miss_rate']} | "
               f"{res['mean_chars_returned']} chars/query | {res['seconds']}s")
+        if res.get("after_sleep"):
+            after = res.pop("after_sleep")
+            out["arms"]["nevertwice_after_sleep"] = after
+            adj = after["adjudication"]
+            print(f"  after sleep: stale {after['stale_rate']} (old value served {after.get('old_value_served_rate')}) | "
+                  f"current {after['current_rate']} | control miss {after['control_miss_rate']} | "
+                  f"over-retraction {after.get('over_retraction_rate')} | {after['mean_chars_returned']} chars/query | "
+                  f"judge: {adj['pairs']} pairs, judged {adj['judged']} (cap {adj['cap']}), replaces {adj['replaces']}, "
+                  f"separate {adj['separate']}, vetoed {adj.get('vetoed', 0)}, left {adj['left']}, "
+                  f"tokens {adj['prompt_tokens']}+{adj['eval_tokens']}")
         if res.get("over_retraction_rate") is not None:
             print(f"    of the controls that came back empty: "
                   f"{res['control_retired_by_memory']} retired by the memory, "

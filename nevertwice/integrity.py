@@ -431,7 +431,13 @@ def check_store(project: str | None = None, links: bool = True) -> dict:
                 bodies[n.get("stem", "")] = p.read_text(encoding="utf-8", errors="replace")
             except OSError:
                 continue
-    return check(notes, bodies, resolvable, entity_universe=universe)
+    report = check(notes, bodies, resolvable, entity_universe=universe)
+    # K8: the same-title pairs the write path kept apart and the sleep-time judge has not ruled on -
+    # two live statements under one title, both served; a human sees them here and in conflicts()
+    proj = mh.slug_project(project) if project else None
+    report["totals"]["contested_pairs"] = sum(len(c["new_stems"]) for c in mh._iter_contested(proj))
+    report["totals"]["disputed_pairs"] = sum(len(c["new_stems"]) for c in mh._iter_contested(proj, key=mh.DISPUTED_KEY))
+    return report
 
 
 # ── Rendering + CLI ───────────────────────────────────────────────────────────
@@ -444,8 +450,14 @@ def render(report: dict) -> str:
     totals = report.get("totals", {})
     lines = [f"graph laws: {s['notes']} notes, {s['entities']} entities, {s['edges']} edges",
              f"  unreachable edges: {s['dangling_rate']:.0%} "
-             f"({totals.get('referential', 0)}/{s['edges']} point at an entity no note defines)",
-             ""]
+             f"({totals.get('referential', 0)}/{s['edges']} point at an entity no note defines)"]
+    if totals.get("contested_pairs"):
+        lines.append(f"  contested pairs: {totals['contested_pairs']} - two live statements under one title, "
+                     "both served until the sleep-time judge rules (K8; see conflicts)")
+    if totals.get("disputed_pairs"):
+        lines.append(f"  disputed pairs: {totals['disputed_pairs']} - the judge said replace, the proof was "
+                     "missing; both served, a human may settle them (K8; see conflicts)")
+    lines.append("")
     if not report["findings"]:
         lines.append("  all laws hold - no dangling targets, unknown types, cycles or "
                      "contradictions.")

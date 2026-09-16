@@ -388,8 +388,15 @@ fm2 = m._read_frontmatter_file(d / "Mistakes" / f"{r2}.md")
 check("recurrence carried forward and incremented (1→2)", str(fm2.get("recurrence")) == "2")
 r3 = m.write_typed_note("Mistakes", {"title": "flaky test", "description": "race once more"},
                         "proj", "2026-06-09", ["t"], "mistake")
+# K8: "race once more" does not contain the earlier statement, so it is a contested sibling - the
+# earlier note stays live and the recurrence grows when the sleep-time judge rules it the same lesson
+check("a re-statement in other words is a contested sibling until the judge rules (K8)",
+      bool(r3) and (d / "Mistakes" / f"{r2}.md").exists()
+      and m._read_frontmatter_file(d / "Mistakes" / f"{r2}.md").get("contested") == [r3])
+import consolidate_memory as cm   # noqa: E402
+cm.adjudicate_contested(apply=True, has_llm=True, judge=lambda *a, **k: True)
 fm3 = m._read_frontmatter_file(d / "Mistakes" / f"{r3}.md")
-check("recurrence keeps growing across re-statements (2→3)", str(fm3.get("recurrence")) == "3")
+check("recurrence keeps growing across re-statements once the judge rules (2→3)", str(fm3.get("recurrence")) == "3")
 
 
 # ── A4/A5: index stamps model+dim and refuses a stale-model index ──────

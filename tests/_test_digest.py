@@ -37,6 +37,7 @@ def _install():
                                                      if not project or s["project"] == project]
     m._iter_all_notes = lambda: list(LIVE)
     m._iter_project_notes = lambda project: [n for n in LIVE if n["project"] == project]
+    m._iter_contested = lambda project=None, key=None: []
     m.entity_graph = lambda project=None, top=8: {"cuda": {"notes": 5, "links": []},
                                                   "torch": {"notes": 2, "links": []}}
     m.slug_project = lambda s: (s or "").lower()

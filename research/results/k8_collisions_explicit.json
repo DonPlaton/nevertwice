@@ -1,0 +1,4333 @@
+{
+ "stand": "supersession",
+ "engine_commit": "a04b5476ca7a3a2278ef47de0d5987d842dd132b",
+ "dataset": {
+  "name": "supersession_v1",
+  "sha256": "0e3114ea9175f8bb832522bdf0b182e11432da0603dc2571e3890f94d7b586f9",
+  "path": "research/data/supersession_v1.json"
+ },
+ "n_cases": 80,
+ "n_pairs": 79,
+ "by_truth": {
+  "replaces": 64,
+  "separate": 15
+ },
+ "by_branch": {
+  "d": 79,
+  "r": 0
+ },
+ "pairs": [
+  {
+   "case": "val-http-timeout",
+   "shape": "value_replaced",
+   "truth": "replaces",
+   "branch": "d",
+   "ntype": "pattern",
+   "slug": "http-client-timeout-configuration",
+   "old_stem": "2026-09-16-k8s000-pattern-http-client-timeout-configuration",
+   "old_archived": false,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "http-client-timeout-configuration",
+   "old_desc": "The HTTP client timeout was configured to 30 seconds. This ensures that API requests do not hang indefinitely and allows for graceful handling of slow or unresponsive services.  [facts] HTTP client timeout is 30 seconds",
+   "old_prevention": "",
+   "old_facts": [
+    "http client timeout is 30 seconds"
+   ],
+   "new_session_idx": 1,
+   "new_title": "http-client-timeout-configuration",
+   "new_desc": "The HTTP client timeout was initially configured to 30 seconds but was found to be 5 seconds during a pairing session. This pattern documents the correct timeout value for API client configuration.  [facts] the HTTP client timeout is 5 seconds",
+   "new_prevention": "",
+   "new_facts": [
+    "the http client timeout is 5 seconds"
+   ],
+   "new_entities": [
+    "http-client",
+    "api-client",
+    "timeout"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": true
+  },
+  {
+   "case": "val-pg-version",
+   "shape": "value_replaced",
+   "truth": "replaces",
+   "branch": "d",
+   "ntype": "pattern",
+   "slug": "postgresql-version-in-production",
+   "old_stem": "2026-09-16-k8s001-pattern-postgresql-version-in-production",
+   "old_archived": false,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "postgresql-version-in-production",
+   "old_desc": "The team confirmed that PostgreSQL 14 is running in production. This knowledge was documented to prevent future reinvestigation.  [facts] we run PostgreSQL 14 in production",
+   "old_prevention": "",
+   "old_facts": [
+    "we run postgresql 14 in production"
+   ],
+   "new_session_idx": 1,
+   "new_title": "postgresql-version-in-production",
+   "new_desc": "The production PostgreSQL version was upgraded to 16. This upgrade was rolled out using a staged release process, ensuring a controlled and gradual deployment.  [facts] production was upgraded to PostgreSQL 16 · Rolled it out behind the usual staged release",
+   "new_prevention": "",
+   "new_facts": [
+    "production was upgraded to postgresql 16",
+    "rolled it out behind the usual staged release"
+   ],
+   "new_entities": [
+    "postgresql",
+    "staged-release"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": true
+  },
+  {
+   "case": "val-retry-count",
+   "shape": "value_replaced",
+   "truth": "replaces",
+   "branch": "d",
+   "ntype": "pattern",
+   "slug": "queue-worker-retry-logic",
+   "old_stem": "2026-09-16-k8s004-pattern-queue-worker-retry-logic",
+   "old_archived": false,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "queue-worker-retry-logic",
+   "old_desc": "The queue worker retries failed jobs up to 3 times before giving up. This retry mechanism was rolled out using a staged release process to minimize risk.  [facts] the worker retries a failed job 3 times · Rolled it out behind the usual staged release",
+   "old_prevention": "",
+   "old_facts": [
+    "rolled it out behind the usual staged release",
+    "the worker retries a failed job 3 times"
+   ],
+   "new_session_idx": 1,
+   "new_title": "queue-worker-retry-logic",
+   "new_desc": "The queue worker now retries failed jobs up to 10 times instead of failing immediately. This change improves reliability by allowing transient failures to recover without manual intervention. The logic was reversed from an earlier implementation that did not include retries.  [facts] the worker now retries a failed job 10 times · Reversed the earlier call on the queue worker",
+   "new_prevention": "",
+   "new_facts": [
+    "reversed the earlier call on the queue worker",
+    "the worker now retries a failed job 10 times"
+   ],
+   "new_entities": [
+    "queue-worker",
+    "job-retry"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": true
+  },
+  {
+   "case": "val-cache-ttl",
+   "shape": "value_replaced",
+   "truth": "replaces",
+   "branch": "d",
+   "ntype": "pattern",
+   "slug": "cache-layer-expiration",
+   "old_stem": "2026-09-16-k8s005-pattern-cache-layer-expiration",
+   "old_archived": false,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "cache-layer-expiration",
+   "old_desc": "Cache entries are configured to expire after 60 seconds. The implementation was verified to match this requirement.  [facts] Cache entries expire after 60 seconds · the code now matches",
+   "old_prevention": "",
+   "old_facts": [
+    "cache entries expire after 60 seconds",
+    "the code now matches"
+   ],
+   "new_session_idx": 1,
+   "new_title": "cache-layer-expiration",
+   "new_desc": "The cache layer was not durable and entries expire after 15 minutes. This was confirmed by running the full test suite which stayed green.  [facts] Cache entries expire after 15 minutes · Ran the full test suite afterwards and it stayed green · Follow-up",
+   "new_prevention": "",
+   "new_facts": [
+    "cache entries expire after 15 minutes",
+    "follow-up",
+    "ran the full test suite afterwards and it stayed green"
+   ],
+   "new_entities": [
+    "cache",
+    "test-suite"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": true
+  },
+  {
+   "case": "val-cache-ttl",
+   "shape": "value_replaced",
+   "truth": "replaces",
+   "branch": "d",
+   "ntype": "decision",
+   "slug": "cache-expiration-timeout",
+   "old_stem": "2026-09-16-k8s005-decision-cache-expiration-timeout",
+   "old_archived": false,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "cache-expiration-timeout",
+   "old_desc": "The decision was made to set the cache entry expiration time to 60 seconds, which is now implemented and verified.  [facts] Cache entries expire after 60 seconds · the code now matches",
+   "old_prevention": "",
+   "old_facts": [
+    "cache entries expire after 60 seconds",
+    "the code now matches"
+   ],
+   "new_session_idx": 1,
+   "new_title": "cache-expiration-timeout",
+   "new_desc": "The cache expiration timeout was set to 15 minutes, which is the current decision for how long cache entries should remain valid.  [facts] Cache entries expire after 15 minutes · Follow-up",
+   "new_prevention": "",
+   "new_facts": [
+    "cache entries expire after 15 minutes",
+    "follow-up"
+   ],
+   "new_entities": [
+    "cache",
+    "expiration-timeout"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": true
+  },
+  {
+   "case": "val-port",
+   "shape": "value_replaced",
+   "truth": "replaces",
+   "branch": "d",
+   "ntype": "pattern",
+   "slug": "dev-server-port-configuration",
+   "old_stem": "2026-09-16-k8s006-pattern-dev-server-port-configuration",
+   "old_archived": false,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "dev-server-port-configuration",
+   "old_desc": "The dev server was successfully configured to listen on port 3000. This setup was validated and approved by a reviewer after one rename was requested.  [facts] dev server listens on port 3000 · reviewer asked for one rename",
+   "old_prevention": "",
+   "old_facts": [
+    "dev server listens on port 3000",
+    "reviewer asked for one rename"
+   ],
+   "new_session_idx": 1,
+   "new_title": "dev-server-port-configuration",
+   "new_desc": "The development server listens on port 8080, not the previously assumed port. This was confirmed by returning to the dev server and verifying the configuration.  [facts] the dev server listens on port 8080",
+   "new_prevention": "",
+   "new_facts": [
+    "the dev server listens on port 8080"
+   ],
+   "new_entities": [
+    "dev-server",
+    "port-8080"
+   ],
+   "new_supersedes": "dev-server-port-configuration",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": true
+  },
+  {
+   "case": "val-region",
+   "shape": "value_replaced",
+   "truth": "replaces",
+   "branch": "d",
+   "ntype": "pattern",
+   "slug": "service-deployment-in-eu-west-1",
+   "old_stem": "2026-09-16-k8s007-pattern-service-deployment-in-eu-west-1",
+   "old_archived": false,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "service-deployment-in-eu-west-1",
+   "old_desc": "The service was successfully deployed in the eu-west-1 region. This deployment outcome was documented in the README section which was already stale.  [facts] the service is deployed in eu-west-1 · Documented it in the README section that was already stale",
+   "old_prevention": "",
+   "old_facts": [
+    "documented it in the readme section that was already stale",
+    "the service is deployed in eu-west-1"
+   ],
+   "new_session_idx": 1,
+   "new_title": "service-deployment-in-eu-west-1",
+   "new_desc": "The service was moved from eu-west-1 to us-east-2. This change touched three files and none of them were config.  [facts] the service was moved to us-east-2",
+   "new_prevention": "",
+   "new_facts": [
+    "the service was moved to us-east-2"
+   ],
+   "new_entities": [
+    "service",
+    "deployment",
+    "us-east-2",
+    "eu-west-1"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": true
+  },
+  {
+   "case": "val-py-version",
+   "shape": "value_replaced",
+   "truth": "replaces",
+   "branch": "d",
+   "ntype": "pattern",
+   "slug": "python-version-pinning",
+   "old_stem": "2026-09-16-k8s008-pattern-python-version-pinning",
+   "old_archived": false,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "python-version-pinning",
+   "old_desc": "The project pins Python 3.11, which was confirmed during the session. This ensures consistent environment setup and avoids compatibility issues.  [facts] Confirmed that the project pins Python 3.11",
+   "old_prevention": "",
+   "old_facts": [
+    "confirmed that the project pins python 3.11"
+   ],
+   "new_session_idx": 1,
+   "new_title": "python-version-pinning",
+   "new_desc": "The project now pins Python 3.13 due to a toolchain change. This ensures consistent environment setup and avoids compatibility issues.  [facts] The toolchain changed this week. The project now pins Python 3.13.",
+   "new_prevention": "",
+   "new_facts": [
+    "the toolchain changed this week. the project now pins python 3.13."
+   ],
+   "new_entities": [
+    "python",
+    "toolchain"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": true
+  },
+  {
+   "case": "val-replicas",
+   "shape": "value_replaced",
+   "truth": "replaces",
+   "branch": "d",
+   "ntype": "pattern",
+   "slug": "api-capacity-replicas",
+   "old_stem": "2026-09-16-k8s009-pattern-api-capacity-replicas",
+   "old_archived": false,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "api-capacity-replicas",
+   "old_desc": "The API is currently running with 4 replicas. This setup was reviewed and confirmed as the current capacity configuration.  [facts] API runs with 4 replicas",
+   "old_prevention": "",
+   "old_facts": [
+    "api runs with 4 replicas"
+   ],
+   "new_session_idx": 1,
+   "new_title": "api-capacity-replicas",
+   "new_desc": "The API runs with 12 replicas after a load test. This configuration was rolled out using the usual staged release process. The number of replicas was determined based on performance requirements and load testing results.  [facts] rolled it out behind the usual staged release",
+   "new_prevention": "",
+   "new_facts": [
+    "rolled it out behind the usual staged release"
+   ],
+   "new_entities": [
+    "api",
+    "replicas",
+    "staged-release"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": true
+  },
+  {
+   "case": "val-lr",
+   "shape": "value_replaced",
+   "truth": "replaces",
+   "branch": "d",
+   "ntype": "pattern",
+   "slug": "learning-rate-configuration",
+   "old_stem": "2026-09-16-k8s010-pattern-learning-rate-configuration",
+   "old_archived": false,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "learning-rate-configuration",
+   "old_desc": "The learning rate was set to 3e-4 during training. This change affected three files but none were config files.  [facts] none of them were config",
+   "old_prevention": "",
+   "old_facts": [
+    "none of them were config"
+   ],
+   "new_session_idx": 1,
+   "new_title": "learning-rate-configuration",
+   "new_desc": "Adjusting the learning rate to 5e-5 did not produce expected improvements in training performance. The model showed no movement in metrics even after an hour of monitoring.  [facts] learning rate was lowered to 5e-5 · Checked the dashboards for an hour after and nothing moved",
+   "new_prevention": "",
+   "new_facts": [
+    "checked the dashboards for an hour after and nothing moved",
+    "learning rate was lowered to 5e-5"
+   ],
+   "new_entities": [
+    "learning-rate",
+    "training-dashboard",
+    "model-performance"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": true
+  },
+  {
+   "case": "val-chunk",
+   "shape": "value_replaced",
+   "truth": "replaces",
+   "branch": "d",
+   "ntype": "pattern",
+   "slug": "document-ingestion-chunking",
+   "old_stem": "2026-09-16-k8s011-pattern-document-ingestion-chunking",
+   "old_archived": false,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "document-ingestion-chunking",
+   "old_desc": "Documents are chunked at 512 tokens for ingestion. This approach ensures consistent processing and matching of code content.  [facts] the code now matches",
+   "old_prevention": "",
+   "old_facts": [
+    "the code now matches"
+   ],
+   "new_session_idx": 1,
+   "new_title": "document-ingestion-chunking",
+   "new_desc": "Documents are chunked at 1024 tokens now. The reviewer asked for one rename and otherwise approved it.  [facts] Follow-up",
+   "new_prevention": "",
+   "new_facts": [
+    "follow-up"
+   ],
+   "new_entities": [
+    "document",
+    "chunking",
+    "token"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": true
+  },
+  {
+   "case": "val-chunk",
+   "shape": "value_replaced",
+   "truth": "replaces",
+   "branch": "d",
+   "ntype": "decision",
+   "slug": "ingestion-strategy-decided",
+   "old_stem": "2026-09-16-k8s011-decision-ingestion-strategy-decided",
+   "old_archived": false,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "ingestion-strategy-decided",
+   "old_desc": "The ingestion strategy was decided to chunk documents at 512 tokens, aligning with code matching requirements.  [facts] Documents are chunked at 512 tokens · the code now matches",
+   "old_prevention": "",
+   "old_facts": [
+    "documents are chunked at 512 tokens",
+    "the code now matches"
+   ],
+   "new_session_idx": 1,
+   "new_title": "ingestion-strategy-decided",
+   "new_desc": "The ingestion strategy was decided to chunk documents at 1024 tokens.  [facts] Documents are chunked at 1024 tokens now. · Follow-up",
+   "new_prevention": "",
+   "new_facts": [
+    "documents are chunked at 1024 tokens now.",
+    "follow-up"
+   ],
+   "new_entities": [
+    "document",
+    "chunking",
+    "token"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": true
+  },
+  {
+   "case": "val-quorum",
+   "shape": "value_replaced",
+   "truth": "replaces",
+   "branch": "d",
+   "ntype": "pattern",
+   "slug": "cluster-quorum-requirement",
+   "old_stem": "2026-09-16-k8s012-pattern-cluster-quorum-requirement",
+   "old_archived": false,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "cluster-quorum-requirement",
+   "old_desc": "The cluster needs a quorum of 3 nodes to function properly. This was determined during the session when settling the cluster configuration.",
+   "old_prevention": "",
+   "old_facts": [],
+   "new_session_idx": 1,
+   "new_title": "cluster-quorum-requirement",
+   "new_desc": "After resizing the cluster, a quorum of 5 nodes is required for proper operation. This was documented in the README section that was already stale.  [facts] the cluster needs a quorum of 5 nodes after the resize · Documented it in the README section that was already stale",
+   "new_prevention": "",
+   "new_facts": [
+    "documented it in the readme section that was already stale",
+    "the cluster needs a quorum of 5 nodes after the resize"
+   ],
+   "new_entities": [
+    "cluster",
+    "quorum",
+    "readme"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": true
+  },
+  {
+   "case": "val-quorum",
+   "shape": "value_replaced",
+   "truth": "replaces",
+   "branch": "d",
+   "ntype": "decision",
+   "slug": "staged-release-rollout",
+   "old_stem": "2026-09-16-k8s012-decision-staged-release-rollout",
+   "old_archived": false,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "staged-release-rollout",
+   "old_desc": "The rollout was executed behind the usual staged release process, ensuring controlled deployment and minimizing risk.  [facts] Rolled it out behind the usual staged release",
+   "old_prevention": "",
+   "old_facts": [
+    "rolled it out behind the usual staged release"
+   ],
+   "new_session_idx": 1,
+   "new_title": "staged-release-rollout",
+   "new_desc": "The decision to stage the release rollout was made, but it was later determined that the cluster requires a quorum of 5 nodes after resizing.  [facts] That earlier decision is off: the cluster needs a quorum of 5 nodes after the resize",
+   "new_prevention": "",
+   "new_facts": [
+    "that earlier decision is off: the cluster needs a quorum of 5 nodes after the resize"
+   ],
+   "new_entities": [
+    "cluster",
+    "quorum",
+    "release-rollout"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": false,
+   "new_marked": true
+  },
+  {
+   "case": "val-license",
+   "shape": "value_replaced",
+   "truth": "replaces",
+   "branch": "d",
+   "ntype": "decision",
+   "slug": "project-licensing-decided",
+   "old_stem": "2026-09-16-k8s013-decision-project-licensing-decided",
+   "old_archived": false,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "project-licensing-decided",
+   "old_desc": "The project was decided to be released under the AGPL-3.0 license after a licensing review. This decision was made based on the outcome of the licensing work done during the session.  [facts] the project is released under AGPL-3.0",
+   "old_prevention": "",
+   "old_facts": [
+    "the project is released under agpl-3.0"
+   ],
+   "new_session_idx": 1,
+   "new_title": "project-licensing-decided",
+   "new_desc": "The project was relicensed to Apache-2.0 after a review.  [facts] reopened licensing after the last review · the new position: the project was relicensed to Apache-2.0",
+   "new_prevention": "",
+   "new_facts": [
+    "reopened licensing after the last review",
+    "the new position: the project was relicensed to apache-2.0"
+   ],
+   "new_entities": [
+    "project",
+    "licensing"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": true
+  },
+  {
+   "case": "val-branch",
+   "shape": "value_replaced",
+   "truth": "replaces",
+   "branch": "d",
+   "ntype": "pattern",
+   "slug": "rename-approval-workflow",
+   "old_stem": "2026-09-16-k8s014-pattern-rename-approval-workflow",
+   "old_archived": false,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "rename-approval-workflow",
+   "old_desc": "The workflow of renaming a file or component was successfully completed after reviewer approval. The process involved confirming the default branch, making the change, and receiving feedback that only one rename was needed.  [facts] Confirmed that the default branch is master · The reviewer asked for one rename and otherwise approved it",
+   "old_prevention": "",
+   "old_facts": [
+    "confirmed that the default branch is master",
+    "the reviewer asked for one rename and otherwise approved it"
+   ],
+   "new_session_idx": 1,
+   "new_title": "rename-approval-workflow",
+   "new_desc": "The default branch was renamed to main. A note was left in the tracker to prevent future duplication of this work.  [facts] Left a note in the tracker so the next person does not redo this",
+   "new_prevention": "",
+   "new_facts": [
+    "left a note in the tracker so the next person does not redo this"
+   ],
+   "new_entities": [
+    "branch",
+    "tracker"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": true
+  },
+  {
+   "case": "app-cache-store",
+   "shape": "approach_abandoned",
+   "truth": "replaces",
+   "branch": "d",
+   "ntype": "pattern",
+   "slug": "redis-session-caching",
+   "old_stem": "2026-09-16-k8s015-pattern-redis-session-caching",
+   "old_archived": false,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "redis-session-caching",
+   "old_desc": "Session data is cached in Redis as of today. This was documented in the README section that was already stale.  [facts] cache session data in Redis · Documented it in the README section that was already stale",
+   "old_prevention": "",
+   "old_facts": [
+    "cache session data in redis",
+    "documented it in the readme section that was already stale"
+   ],
+   "new_session_idx": 1,
+   "new_title": "redis-session-caching",
+   "new_desc": "The team replaced Redis with an in-process LRU cache for session caching. This change touched three files and none of them were config. The decision was made to improve performance and reduce external dependencies.",
+   "new_prevention": "",
+   "new_facts": [],
+   "new_entities": [
+    "redis",
+    "lru-cache",
+    "session-caching"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": true
+  },
+  {
+   "case": "app-auth",
+   "shape": "approach_abandoned",
+   "truth": "replaces",
+   "branch": "d",
+   "ntype": "pattern",
+   "slug": "jwt-authentication-implementation",
+   "old_stem": "2026-09-16-k8s016-pattern-jwt-authentication-implementation",
+   "old_archived": false,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "jwt-authentication-implementation",
+   "old_desc": "Authentication is implemented using JWT tokens signed with HS256 algorithm. This approach was verified by running the full test suite which remained green after the change.  [facts] authentication uses JWT tokens signed with HS256 · Ran the full test suite afterwards and it stayed green",
+   "old_prevention": "",
+   "old_facts": [
+    "authentication uses jwt tokens signed with hs256",
+    "ran the full test suite afterwards and it stayed green"
+   ],
+   "new_session_idx": 1,
+   "new_title": "jwt-authentication-implementation",
+   "new_desc": "JWT authentication was initially implemented but later reversed to use opaque session cookies backed by the database. This approach provides better security and state management for user sessions.  [facts] authentication moved to opaque session cookies backed by the database",
+   "new_prevention": "",
+   "new_facts": [
+    "authentication moved to opaque session cookies backed by the database"
+   ],
+   "new_entities": [
+    "authentication",
+    "session-cookies",
+    "database"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": true
+  },
+  {
+   "case": "app-bundler",
+   "shape": "approach_abandoned",
+   "truth": "replaces",
+   "branch": "d",
+   "ntype": "decision",
+   "slug": "build-decision-made",
+   "old_stem": "2026-09-16-k8s017-decision-build-decision-made",
+   "old_archived": false,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "build-decision-made",
+   "old_desc": "The build decision was written, confirming that the frontend is bundled with Webpack and the code now matches.  [facts] Wrote up the the build decision",
+   "old_prevention": "",
+   "old_facts": [
+    "wrote up the the build decision"
+   ],
+   "new_session_idx": 1,
+   "new_title": "build-decision-made",
+   "new_desc": "The decision was made to use Vite for frontend bundling, replacing the previous build system. This decision was implemented and deployed using a staged release process.  [facts] The frontend is bundled with Vite now · Rolled it out behind the usual staged release · Follow-up",
+   "new_prevention": "",
+   "new_facts": [
+    "follow-up",
+    "rolled it out behind the usual staged release",
+    "the frontend is bundled with vite now"
+   ],
+   "new_entities": [
+    "frontend",
+    "vite",
+    "staged-release"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": true
+  },
+  {
+   "case": "app-queue",
+   "shape": "approach_abandoned",
+   "truth": "replaces",
+   "branch": "d",
+   "ntype": "pattern",
+   "slug": "background-jobs-with-celery",
+   "old_stem": "2026-09-16-k8s019-pattern-background-jobs-with-celery",
+   "old_archived": false,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "background-jobs-with-celery",
+   "old_desc": "Background jobs are implemented using Celery with RabbitMQ as the message broker. This setup allows for distributed task processing and reliable job execution.  [facts] background jobs run on Celery with RabbitMQ",
+   "old_prevention": "",
+   "old_facts": [
+    "background jobs run on celery with rabbitmq"
+   ],
+   "new_session_idx": 1,
+   "new_title": "background-jobs-with-celery",
+   "new_desc": "Background jobs are implemented using Celery with a Postgres-backed queue. This approach provides reliable job processing and persistence.  [facts] background jobs run on a Postgres-backed queue instead",
+   "new_prevention": "",
+   "new_facts": [
+    "background jobs run on a postgres-backed queue instead"
+   ],
+   "new_entities": [
+    "celery",
+    "postgres",
+    "queue"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": true
+  },
+  {
+   "case": "app-ci",
+   "shape": "approach_abandoned",
+   "truth": "replaces",
+   "branch": "d",
+   "ntype": "pattern",
+   "slug": "staged-release-deployment",
+   "old_stem": "2026-09-16-k8s020-pattern-staged-release-deployment",
+   "old_archived": false,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "staged-release-deployment",
+   "old_desc": "The agent confirmed that CI runs on Jenkins and rolled out the deployment behind a staged release. This approach ensures controlled rollout and reduces risk of system-wide failure.  [facts] rolled it out behind the usual staged release",
+   "old_prevention": "",
+   "old_facts": [
+    "rolled it out behind the usual staged release"
+   ],
+   "new_session_idx": 1,
+   "new_title": "staged-release-deployment",
+   "new_desc": "The project uses a staged release deployment pattern where changes are incrementally rolled out. This approach helps in minimizing risks during deployments.",
+   "new_prevention": "",
+   "new_facts": [],
+   "new_entities": [
+    "deployment",
+    "release"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": false
+  },
+  {
+   "case": "app-packaging",
+   "shape": "approach_abandoned",
+   "truth": "replaces",
+   "branch": "d",
+   "ntype": "pattern",
+   "slug": "package-build-and-publish",
+   "old_stem": "2026-09-16-k8s023-pattern-package-build-and-publish",
+   "old_archived": false,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "package-build-and-publish",
+   "old_desc": "The package is built and published with Poetry. This approach was chosen and implemented successfully.",
+   "old_prevention": "",
+   "old_facts": [],
+   "new_session_idx": 1,
+   "new_title": "package-build-and-publish",
+   "new_desc": "The package is built with hatchling and published by CI. This approach was confirmed to work and is consistent with the project's setup.  [facts] Follow-up",
+   "new_prevention": "",
+   "new_facts": [
+    "follow-up"
+   ],
+   "new_entities": [
+    "hatchling",
+    "ci"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": true
+  },
+  {
+   "case": "app-packaging",
+   "shape": "approach_abandoned",
+   "truth": "replaces",
+   "branch": "d",
+   "ntype": "decision",
+   "slug": "use-poetry-for-packaging",
+   "old_stem": "2026-09-16-k8s023-decision-use-poetry-for-packaging",
+   "old_archived": false,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "use-poetry-for-packaging",
+   "old_desc": "The decision was made to use Poetry for building and publishing the package, which aligns with current project practices.  [facts] The package is built and published with Poetry",
+   "old_prevention": "",
+   "old_facts": [
+    "the package is built and published with poetry"
+   ],
+   "new_session_idx": 1,
+   "new_title": "use-poetry-for-packaging",
+   "new_desc": "Poetry was considered for packaging but ultimately not used; hatchling is the chosen method.  [facts] The package is built with hatchling and published by CI. · Follow-up",
+   "new_prevention": "",
+   "new_facts": [
+    "follow-up",
+    "the package is built with hatchling and published by ci."
+   ],
+   "new_entities": [
+    "hatchling",
+    "poetry"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": true
+  },
+  {
+   "case": "app-migrations",
+   "shape": "approach_abandoned",
+   "truth": "replaces",
+   "branch": "d",
+   "ntype": "pattern",
+   "slug": "schema-migration-through-alembic",
+   "old_stem": "2026-09-16-k8s026-pattern-schema-migration-through-alembic",
+   "old_archived": false,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "schema-migration-through-alembic",
+   "old_desc": "Schema migrations in the project run through Alembic. The change touched three files and none of them were config.  [facts] Schema migrations run through Alembic",
+   "old_prevention": "",
+   "old_facts": [
+    "schema migrations run through alembic"
+   ],
+   "new_session_idx": 1,
+   "new_title": "schema-migration-through-alembic",
+   "new_desc": "Schema migrations are handled through plain numbered SQL files applied by a shell script. The process was checked via dashboards for an hour after execution with no movement observed.  [facts] Schema migrations are plain numbered SQL files applied by a shell script · Checked the dashboards for an hour after and nothing moved",
+   "new_prevention": "",
+   "new_facts": [
+    "checked the dashboards for an hour after and nothing moved",
+    "schema migrations are plain numbered sql files applied by a shell script"
+   ],
+   "new_entities": [
+    "schema",
+    "sql-file",
+    "shell-script",
+    "dashboard"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": true
+  },
+  {
+   "case": "app-serialisation",
+   "shape": "approach_abandoned",
+   "truth": "replaces",
+   "branch": "d",
+   "ntype": "pattern",
+   "slug": "protobuf-message-serialization",
+   "old_stem": "2026-09-16-k8s027-pattern-protobuf-message-serialization",
+   "old_archived": false,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "protobuf-message-serialization",
+   "old_desc": "Messages are serialized as Protobuf in the current wire format. This was confirmed during a ninety-minute session with no interruptions.  [facts] messages are serialised as Protobuf",
+   "old_prevention": "",
+   "old_facts": [
+    "messages are serialised as protobuf"
+   ],
+   "new_session_idx": 1,
+   "new_title": "protobuf-message-serialization",
+   "new_desc": "Messages are serialized as newline-delimited JSON. This format was confirmed after a review and one rename was requested but otherwise approved.  [facts] messages are serialised as newline-delimited JSON · one rename and otherwise approved",
+   "new_prevention": "",
+   "new_facts": [
+    "messages are serialised as newline-delimited json",
+    "one rename and otherwise approved"
+   ],
+   "new_entities": [
+    "protobuf",
+    "message",
+    "serialization",
+    "json"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": true
+  },
+  {
+   "case": "app-secrets",
+   "shape": "approach_abandoned",
+   "truth": "replaces",
+   "branch": "d",
+   "ntype": "pattern",
+   "slug": "secrets-from-vault-at-boot",
+   "old_stem": "2026-09-16-k8s028-pattern-secrets-from-vault-at-boot",
+   "old_archived": false,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "secrets-from-vault-at-boot",
+   "old_desc": "Secrets are read from HashiCorp Vault at boot time, which is rolled out behind a staged release process. This approach ensures secure and controlled access to sensitive data during application startup.  [facts] Rolled it out behind the usual staged release",
+   "old_prevention": "",
+   "old_facts": [
+    "rolled it out behind the usual staged release"
+   ],
+   "new_session_idx": 1,
+   "new_title": "secrets-from-vault-at-boot",
+   "new_desc": "Secrets are injected as environment variables by the orchestrator, not loaded from Vault at boot time. This was documented in the README section that was already stale.  [facts] Documented it in the README section that was already stale",
+   "new_prevention": "",
+   "new_facts": [
+    "documented it in the readme section that was already stale"
+   ],
+   "new_entities": [
+    "secrets",
+    "orchestrator",
+    "readme"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": true
+  },
+  {
+   "case": "app-e2e",
+   "shape": "approach_abandoned",
+   "truth": "replaces",
+   "branch": "d",
+   "ntype": "decision",
+   "slug": "testing-decision-made",
+   "old_stem": "2026-09-16-k8s029-decision-testing-decision-made",
+   "old_archived": false,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "testing-decision-made",
+   "old_desc": "The decision was made to use Selenium for end-to-end testing, and the code now matches this approach.  [facts] end-to-end tests",
+   "old_prevention": "",
+   "old_facts": [
+    "end-to-end tests"
+   ],
+   "new_session_idx": 1,
+   "new_title": "testing-decision-made",
+   "new_desc": "A decision was made regarding testing, specifically that end-to-end tests are driven by Playwright.  [facts] Follow-up",
+   "new_prevention": "",
+   "new_facts": [
+    "follow-up"
+   ],
+   "new_entities": [
+    "playwright",
+    "testing"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": true
+  },
+  {
+   "case": "ret-beta-flag",
+   "shape": "retracted_no_replacement",
+   "truth": "replaces",
+   "branch": "d",
+   "ntype": "pattern",
+   "slug": "feature-flag-gating",
+   "old_stem": "2026-09-16-k8s030-pattern-feature-flag-gating",
+   "old_archived": false,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "feature-flag-gating",
+   "old_desc": "Using a feature flag to gate new UI functionality is an effective way to manage releases and control access. The beta_dashboard flag was used to gate the new UI, which allowed for controlled rollout and review.  [facts] beta_dashboard feature flag",
+   "old_prevention": "",
+   "old_facts": [
+    "beta_dashboard feature flag"
+   ],
+   "new_session_idx": 1,
+   "new_title": "feature-flag-gating",
+   "new_desc": "Feature flags can be used to gate new functionality, but they should be removed once the feature is ready for unconditional use. The beta_dashboard flag was deleted after the new UI became unconditional.  [facts] new UI is now unconditional",
+   "new_prevention": "",
+   "new_facts": [
+    "new ui is now unconditional"
+   ],
+   "new_entities": [
+    "feature-flag",
+    "ui",
+    "beta-dashboard-flag"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": false,
+   "new_marked": true
+  },
+  {
+   "case": "ret-beta-flag",
+   "shape": "retracted_no_replacement",
+   "truth": "replaces",
+   "branch": "d",
+   "ntype": "decision",
+   "slug": "beta-dashboard-flag",
+   "old_stem": "2026-09-16-k8s030-decision-beta-dashboard-flag",
+   "old_archived": false,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "beta-dashboard-flag",
+   "old_desc": "The decision was made to use the beta_dashboard feature flag to gate the new UI, allowing for controlled access and review before full release.  [facts] beta_dashboard feature flag gates the new UI",
+   "old_prevention": "",
+   "old_facts": [
+    "beta_dashboard feature flag gates the new ui"
+   ],
+   "new_session_idx": 1,
+   "new_title": "beta-dashboard-flag",
+   "new_desc": "The decision was made to remove the beta_dashboard flag once the new UI became unconditional, ensuring no further gating of the feature.  [facts] beta_dashboard flag was deleted · new UI is now unconditional",
+   "new_prevention": "",
+   "new_facts": [
+    "beta_dashboard flag was deleted",
+    "new ui is now unconditional"
+   ],
+   "new_entities": [
+    "feature-flag",
+    "ui",
+    "beta-dashboard-flag"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": true
+  },
+  {
+   "case": "ret-legacy-endpoint",
+   "shape": "retracted_no_replacement",
+   "truth": "replaces",
+   "branch": "d",
+   "ntype": "pattern",
+   "slug": "api-export-csv-streaming",
+   "old_stem": "2026-09-16-k8s031-pattern-api-export-csv-streaming",
+   "old_archived": false,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "api-export-csv-streaming",
+   "old_desc": "The /v1/export endpoint streams a CSV of all records. This was documented in the README section that was already stale.",
+   "old_prevention": "",
+   "old_facts": [],
+   "new_session_idx": 1,
+   "new_title": "api-export-csv-streaming",
+   "new_desc": "The /v1/export endpoint was removed with no replacement, affecting three files but not config. This pattern shows a breaking API change that requires careful handling of client-side code updates.  [facts] touched three files · none of them were config",
+   "new_prevention": "",
+   "new_facts": [
+    "none of them were config",
+    "touched three files"
+   ],
+   "new_entities": [
+    "api",
+    "endpoint",
+    "export",
+    "csv",
+    "streaming"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": true
+  },
+  {
+   "case": "ret-telemetry",
+   "shape": "retracted_no_replacement",
+   "truth": "replaces",
+   "branch": "d",
+   "ntype": "pattern",
+   "slug": "telemetry-thread-continuity",
+   "old_stem": "2026-09-16-k8s032-pattern-telemetry-thread-continuity",
+   "old_archived": false,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "telemetry-thread-continuity",
+   "old_desc": "The client reports anonymous usage counters on startup, and this behavior was confirmed to persist through the session. The full test suite was run afterward and remained green, indicating no regression from telemetry integration.  [facts] Picked up the telemetry thread again · Confirmed that the client reports anonymous usage counters on startup · Ran the full test suite afterwards and it stayed green",
+   "old_prevention": "",
+   "old_facts": [
+    "confirmed that the client reports anonymous usage counters on startup",
+    "picked up the telemetry thread again",
+    "ran the full test suite afterwards and it stayed green"
+   ],
+   "new_session_idx": 1,
+   "new_title": "telemetry-thread-continuity",
+   "new_desc": "The telemetry system maintains thread continuity during data processing. This was confirmed through a pairing session where the agent and user worked together for roughly ninety minutes without interruptions.  [facts] telemetry changed this week · Usage reporting was stripped out entirely; the client sends nothing",
+   "new_prevention": "",
+   "new_facts": [
+    "telemetry changed this week",
+    "usage reporting was stripped out entirely; the client sends nothing"
+   ],
+   "new_entities": [
+    "telemetry",
+    "thread-continuity"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": true
+  },
+  {
+   "case": "ret-mirror",
+   "shape": "retracted_no_replacement",
+   "truth": "replaces",
+   "branch": "d",
+   "ntype": "pattern",
+   "slug": "read-replica-for-analytics",
+   "old_stem": "2026-09-16-k8s033-pattern-read-replica-for-analytics",
+   "old_archived": false,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "read-replica-for-analytics",
+   "old_desc": "A read replica in ap-south-1 is used to serve analytics queries. This setup allows offloading analytical workloads from the primary database, improving performance and scalability.  [facts] a read replica in ap-south-1 serves analytics queries",
+   "old_prevention": "",
+   "old_facts": [
+    "a read replica in ap-south-1 serves analytics queries"
+   ],
+   "new_session_idx": 1,
+   "new_title": "read-replica-for-analytics",
+   "new_desc": "Using a read replica for analytics queries reduces load on the primary database. The ap-south-1 replica was decommissioned and analytics reads now hit the primary, which was rolled out behind a staged release.  [facts] analytics reads hit the primary · rolled it out behind the usual staged release",
+   "new_prevention": "",
+   "new_facts": [
+    "analytics reads hit the primary",
+    "rolled it out behind the usual staged release"
+   ],
+   "new_entities": [
+    "read-replica",
+    "analytics",
+    "primary-database",
+    "staged-release"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": true
+  },
+  {
+   "case": "ret-plugin-api",
+   "shape": "retracted_no_replacement",
+   "truth": "replaces",
+   "branch": "d",
+   "ntype": "pattern",
+   "slug": "third-party-plugins-loading",
+   "old_stem": "2026-09-16-k8s034-pattern-third-party-plugins-loading",
+   "old_archived": false,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "third-party-plugins-loading",
+   "old_desc": "Third-party plugins load through the entry_points group. This was confirmed during a session where the change touched three files and none of them were config.",
+   "old_prevention": "",
+   "old_facts": [],
+   "new_session_idx": 1,
+   "new_title": "third-party-plugins-loading",
+   "new_desc": "The plugin system was removed before version 1.0 and never shipped, which means third-party plugins cannot be loaded in the current architecture.  [facts] Reversed the earlier call on extensibility: the plugin system was removed before 1.0 and never shipped.",
+   "new_prevention": "",
+   "new_facts": [
+    "reversed the earlier call on extensibility: the plugin system was removed before 1.0 and never shipped."
+   ],
+   "new_entities": [
+    "plugin-system",
+    "version-1-0"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": true
+  },
+  {
+   "case": "ret-mobile",
+   "shape": "retracted_no_replacement",
+   "truth": "replaces",
+   "branch": "d",
+   "ntype": "decision",
+   "slug": "shared-sync-engine-decision",
+   "old_stem": "2026-09-16-k8s035-decision-shared-sync-engine-decision",
+   "old_archived": false,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "shared-sync-engine-decision",
+   "old_desc": "The decision was made to have the iOS client share the sync engine with the web app, ensuring code consistency and reducing duplication.  [facts] iOS client shares the sync engine with the web app",
+   "old_prevention": "",
+   "old_facts": [
+    "ios client shares the sync engine with the web app"
+   ],
+   "new_session_idx": 1,
+   "new_title": "shared-sync-engine-decision",
+   "new_desc": "The shared sync engine decision was made, likely based on the need for consistency across platforms and the discontinuation of iOS client.  [facts] Follow-up",
+   "new_prevention": "",
+   "new_facts": [
+    "follow-up"
+   ],
+   "new_entities": [
+    "sync-engine",
+    "ios-client",
+    "web-app"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": true
+  },
+  {
+   "case": "ret-cron",
+   "shape": "retracted_no_replacement",
+   "truth": "replaces",
+   "branch": "d",
+   "ntype": "pattern",
+   "slug": "nightly-cron-audit-log-compaction",
+   "old_stem": "2026-09-16-k8s036-pattern-nightly-cron-audit-log-compaction",
+   "old_archived": false,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "nightly-cron-audit-log-compaction",
+   "old_desc": "A nightly cron job was scheduled to compact the audit log at 03:00. This approach ensures regular maintenance without impacting user-facing operations. The rollout was done behind a staged release, minimizing risk.  [facts] a nightly cron compacts the audit log at 03:00 · Rolled it out behind the usual staged release",
+   "old_prevention": "",
+   "old_facts": [
+    "a nightly cron compacts the audit log at 03:00",
+    "rolled it out behind the usual staged release"
+   ],
+   "new_session_idx": 1,
+   "new_title": "nightly-cron-audit-log-compaction",
+   "new_desc": "The audit log is append-only and never compacted. This was previously thought to be a nightly cron job, but that decision was dropped.  [facts] nightly compaction was dropped · audit log is append-only forever",
+   "new_prevention": "",
+   "new_facts": [
+    "audit log is append-only forever",
+    "nightly compaction was dropped"
+   ],
+   "new_entities": [
+    "audit-log",
+    "cron-job"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": true
+  },
+  {
+   "case": "ret-grpc",
+   "shape": "retracted_no_replacement",
+   "truth": "replaces",
+   "branch": "d",
+   "ntype": "pattern",
+   "slug": "grpc-communication-setup",
+   "old_stem": "2026-09-16-k8s037-pattern-grpc-communication-setup",
+   "old_archived": false,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "grpc-communication-setup",
+   "old_desc": "Internal services communicate over gRPC on port 9090. This was confirmed through transport checks and dashboard monitoring.  [facts] internal services talk over gRPC on port 9090 · Checked the dashboards for an hour after and nothing moved",
+   "old_prevention": "",
+   "old_facts": [
+    "checked the dashboards for an hour after and nothing moved",
+    "internal services talk over grpc on port 9090"
+   ],
+   "new_session_idx": 1,
+   "new_title": "grpc-communication-setup",
+   "new_desc": "The system was initially set up with gRPC communication but was later switched to plain HTTP. This change was verified by running the full test suite which remained green.  [facts] gRPC was ripped out · everything is plain HTTP now · Ran the full test suite afterwards and it stayed green",
+   "new_prevention": "",
+   "new_facts": [
+    "everything is plain http now",
+    "grpc was ripped out",
+    "ran the full test suite afterwards and it stayed green"
+   ],
+   "new_entities": [
+    "grpc",
+    "http",
+    "test-suite"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": true
+  },
+  {
+   "case": "ret-sso",
+   "shape": "retracted_no_replacement",
+   "truth": "replaces",
+   "branch": "d",
+   "ntype": "pattern",
+   "slug": "okta-saml-sign-in-flow",
+   "old_stem": "2026-09-16-k8s038-pattern-okta-saml-sign-in-flow",
+   "old_archived": false,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "okta-saml-sign-in-flow",
+   "old_desc": "Staff sign in through the Okta SAML integration. The process was confirmed and approved with only one rename requested by the reviewer.  [facts] one rename and otherwise approved it",
+   "old_prevention": "",
+   "old_facts": [
+    "one rename and otherwise approved it"
+   ],
+   "new_session_idx": 1,
+   "new_title": "okta-saml-sign-in-flow",
+   "new_desc": "The Okta SAML sign-in flow was implemented but later cancelled. Staff now use ordinary accounts instead. A note was left in the tracker to prevent future work on this integration.  [facts] access changed this week · The Okta integration was cancelled · staff use ordinary accounts · Left a note in the tracker",
+   "new_prevention": "",
+   "new_facts": [
+    "access changed this week",
+    "left a note in the tracker",
+    "staff use ordinary accounts",
+    "the okta integration was cancelled"
+   ],
+   "new_entities": [
+    "okta",
+    "saml",
+    "access-control",
+    "tracker"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": true
+  },
+  {
+   "case": "ret-webhook",
+   "shape": "retracted_no_replacement",
+   "truth": "replaces",
+   "branch": "d",
+   "ntype": "pattern",
+   "slug": "webhook-order-integration",
+   "old_stem": "2026-09-16-k8s039-pattern-webhook-order-integration",
+   "old_archived": false,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "webhook-order-integration",
+   "old_desc": "A webhook posts every order to the partner endpoint. This setup was documented in the README section that was already stale.  [facts] Documented it in the README section that was already stale",
+   "old_prevention": "",
+   "old_facts": [
+    "documented it in the readme section that was already stale"
+   ],
+   "new_session_idx": 1,
+   "new_title": "webhook-order-integration",
+   "new_desc": "The partner integration was terminated and the webhook deleted. This change touched three files and none of them were config.  [facts] The change touched three files and none of them were config.",
+   "new_prevention": "",
+   "new_facts": [
+    "the change touched three files and none of them were config."
+   ],
+   "new_entities": [
+    "integration",
+    "webhook",
+    "files"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": true
+  },
+  {
+   "case": "ret-gpu-node",
+   "shape": "retracted_no_replacement",
+   "truth": "replaces",
+   "branch": "d",
+   "ntype": "pattern",
+   "slug": "a100-node-reservation-for-training",
+   "old_stem": "2026-09-16-k8s040-pattern-a100-node-reservation-for-training",
+   "old_archived": false,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "a100-node-reservation-for-training",
+   "old_desc": "An A100 node is reserved for nightly training. This setup ensures dedicated resources for training tasks without interference from other workloads. The reservation was confirmed by running the full test suite which stayed green.  [facts] one A100 node is reserved for nightly training · Ran the full test suite afterwards and it stayed green",
+   "old_prevention": "",
+   "old_facts": [
+    "one a100 node is reserved for nightly training",
+    "ran the full test suite afterwards and it stayed green"
+   ],
+   "new_session_idx": 1,
+   "new_title": "a100-node-reservation-for-training",
+   "new_desc": "The reserved GPU node was given up in favor of renting capacity per run. This approach allows for more flexible and cost-effective training sessions, especially when the full node reservation is not needed.  [facts] training rents capacity per run",
+   "new_prevention": "",
+   "new_facts": [
+    "training rents capacity per run"
+   ],
+   "new_entities": [
+    "gpu-node",
+    "training",
+    "capacity-renting"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": true
+  },
+  {
+   "case": "ret-cli-flag",
+   "shape": "retracted_no_replacement",
+   "truth": "replaces",
+   "branch": "d",
+   "ntype": "pattern",
+   "slug": "cli-flag-legacy-restores-pre-2-0-format",
+   "old_stem": "2026-09-16-k8s041-pattern-cli-flag-legacy-restores-pre-2-0-format",
+   "old_archived": false,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "cli-flag-legacy-restores-pre-2.0-format",
+   "old_desc": "The --legacy flag in the CLI restores the pre-2.0 output format, which was necessary to match expected behavior after a code change. This pattern ensures backward compatibility for users relying on older output formats.",
+   "old_prevention": "",
+   "old_facts": [],
+   "new_session_idx": 1,
+   "new_title": "cli-flag-legacy-restores-pre-2-0-format",
+   "new_desc": "The --legacy flag was dropped in version 3.0 with no equivalent, and the functionality was rolled out behind a staged release.  [facts] Follow-up",
+   "new_prevention": "",
+   "new_facts": [
+    "follow-up"
+   ],
+   "new_entities": [
+    "cli",
+    "flag",
+    "release"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": true
+  },
+  {
+   "case": "ret-cli-flag",
+   "shape": "retracted_no_replacement",
+   "truth": "replaces",
+   "branch": "d",
+   "ntype": "decision",
+   "slug": "use-legacy-flag-for-backward-compatibility",
+   "old_stem": "2026-09-16-k8s041-decision-use-legacy-flag-for-backward-compatibility",
+   "old_archived": false,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "use-legacy-flag-for-backward-compatibility",
+   "old_desc": "The decision was made to use the --legacy flag to restore pre-2.0 output format, ensuring that existing workflows and scripts continue to function without modification.",
+   "old_prevention": "",
+   "old_facts": [],
+   "new_session_idx": 1,
+   "new_title": "use-legacy-flag-for-backward-compatibility",
+   "new_desc": "The decision was made to use the legacy flag for backward compatibility, even though it was dropped in version 3.0.  [facts] --legacy flag · Follow-up",
+   "new_prevention": "",
+   "new_facts": [
+    "--legacy flag",
+    "follow-up"
+   ],
+   "new_entities": [
+    "flag",
+    "compatibility"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": true
+  },
+  {
+   "case": "ret-audit-ui",
+   "shape": "retracted_no_replacement",
+   "truth": "replaces",
+   "branch": "d",
+   "ntype": "pattern",
+   "slug": "admin-panel-audit-filtering",
+   "old_stem": "2026-09-16-k8s042-pattern-admin-panel-audit-filtering",
+   "old_archived": false,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "admin-panel-audit-filtering",
+   "old_desc": "The admin panel's audit tab can be configured to show a filterable event history. This allows for targeted inspection of system events without manual sifting.  [facts] audit tab shows a filterable event history",
+   "old_prevention": "",
+   "old_facts": [
+    "audit tab shows a filterable event history"
+   ],
+   "new_session_idx": 1,
+   "new_title": "admin-panel-audit-filtering",
+   "new_desc": "The audit tab was removed from the admin panel entirely, which contradicted an earlier assumption. This required re-evaluating the dashboard monitoring approach.  [facts] Came back to the admin panel. That earlier decision is off: the audit tab was taken out of the admin panel entirely. · Checked the dashboards for an hour after and nothing moved.",
+   "new_prevention": "",
+   "new_facts": [
+    "came back to the admin panel. that earlier decision is off: the audit tab was taken out of the admin panel entirely.",
+    "checked the dashboards for an hour after and nothing moved."
+   ],
+   "new_entities": [
+    "admin-panel",
+    "dashboard"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "admin-panel-audit-filtering",
+   "old_marked": true,
+   "new_marked": true
+  },
+  {
+   "case": "ret-i18n",
+   "shape": "retracted_no_replacement",
+   "truth": "replaces",
+   "branch": "d",
+   "ntype": "pattern",
+   "slug": "localization-pairing-session",
+   "old_stem": "2026-09-16-k8s043-pattern-localization-pairing-session",
+   "old_archived": false,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "localization-pairing-session",
+   "old_desc": "A ninety-minute pairing session was conducted to implement German and French translations for the application. The session was uninterrupted and resulted in successful localization.  [facts] Pairing session, roughly ninety minutes, no interruptions. · the app ships German and French translations.",
+   "old_prevention": "",
+   "old_facts": [
+    "pairing session, roughly ninety minutes, no interruptions.",
+    "the app ships german and french translations."
+   ],
+   "new_session_idx": 1,
+   "new_title": "localization-pairing-session",
+   "new_desc": "A localization pairing session was conducted where translations were dropped and the app became English-only. The reviewer approved the changes with only one rename requested.  [facts] Reopened localisation after the last review · translations were dropped; the app is English-only · The reviewer asked for one rename and otherwise approved it",
+   "new_prevention": "",
+   "new_facts": [
+    "reopened localisation after the last review",
+    "the reviewer asked for one rename and otherwise approved it",
+    "translations were dropped; the app is english-only"
+   ],
+   "new_entities": [
+    "localization",
+    "app",
+    "reviewer"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": true
+  },
+  {
+   "case": "ret-sandbox",
+   "shape": "retracted_no_replacement",
+   "truth": "replaces",
+   "branch": "d",
+   "ntype": "pattern",
+   "slug": "sandbox-environment-mirroring",
+   "old_stem": "2026-09-16-k8s044-pattern-sandbox-environment-mirroring",
+   "old_archived": false,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "sandbox-environment-mirroring",
+   "old_desc": "A sandbox environment can be configured to mirror production for partners, enabling accurate testing and validation before deployment. This approach ensures that partner-facing features behave consistently across environments.  [facts] Confirmed that a sandbox environment mirrors production for partners · Rolled it out behind the usual staged release",
+   "old_prevention": "",
+   "old_facts": [
+    "confirmed that a sandbox environment mirrors production for partners",
+    "rolled it out behind the usual staged release"
+   ],
+   "new_session_idx": 1,
+   "new_title": "sandbox-environment-mirroring",
+   "new_desc": "The sandbox environment was shut down and partners now test against their own stubs. This change required updating documentation in the README to reflect the new testing approach.  [facts] The sandbox was shut down · partners test against their own stubs · Documented it in the README section that was already stale",
+   "new_prevention": "",
+   "new_facts": [
+    "documented it in the readme section that was already stale",
+    "partners test against their own stubs",
+    "the sandbox was shut down"
+   ],
+   "new_entities": [
+    "sandbox",
+    "stub",
+    "readme"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": true
+  },
+  {
+   "case": "nar-retry-scope",
+   "shape": "narrowed",
+   "truth": "replaces",
+   "branch": "d",
+   "ntype": "pattern",
+   "slug": "http-client-retry-logic",
+   "old_stem": "2026-09-16-k8s045-pattern-http-client-retry-logic",
+   "old_archived": false,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "http-client-retry-logic",
+   "old_desc": "The HTTP client is configured to retry failed requests. This pattern was observed during a review of the client setup and confirmed to be active.  [facts] the client retries every failed request",
+   "old_prevention": "",
+   "old_facts": [
+    "the client retries every failed request"
+   ],
+   "new_session_idx": 1,
+   "new_title": "http-client-retry-logic",
+   "new_desc": "The HTTP client now retries only on 5xx responses and never retries on 4xx responses. This behavior was verified by running the full test suite which stayed green after the change.  [facts] the client retries only on 5xx responses · 4xx is never retried · Ran the full test suite afterwards and it stayed green",
+   "new_prevention": "",
+   "new_facts": [
+    "4xx is never retried",
+    "ran the full test suite afterwards and it stayed green",
+    "the client retries only on 5xx responses"
+   ],
+   "new_entities": [
+    "http-client",
+    "retry-logic",
+    "response-code"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": true
+  },
+  {
+   "case": "nar-cache-scope",
+   "shape": "narrowed",
+   "truth": "replaces",
+   "branch": "d",
+   "ntype": "pattern",
+   "slug": "api-response-caching",
+   "old_stem": "2026-09-16-k8s046-pattern-api-response-caching",
+   "old_archived": false,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "api-response-caching",
+   "old_desc": "All API responses are cached to improve performance and reduce redundant calls. This was confirmed after a review and the reviewer requested only one rename which was approved.  [facts] Cleared the open question on caching: all API responses are cached. · The reviewer asked for one rename and otherwise approved it.",
+   "old_prevention": "",
+   "old_facts": [
+    "cleared the open question on caching: all api responses are cached.",
+    "the reviewer asked for one rename and otherwise approved it."
+   ],
+   "new_session_idx": 1,
+   "new_title": "api-response-caching",
+   "new_desc": "Only GET responses are cached; writes bypass the cache entirely. This approach prevents stale data from being served during write operations while maintaining performance for read-heavy operations.  [facts] Reversed the earlier call on caching: only GET responses are cached; writes bypass the cache entirely.",
+   "new_prevention": "",
+   "new_facts": [
+    "reversed the earlier call on caching: only get responses are cached; writes bypass the cache entirely."
+   ],
+   "new_entities": [
+    "api",
+    "response",
+    "caching",
+    "get",
+    "write"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": true
+  },
+  {
+   "case": "nar-audit-scope",
+   "shape": "narrowed",
+   "truth": "replaces",
+   "branch": "d",
+   "ntype": "pattern",
+   "slug": "audit-log-table-changes",
+   "old_stem": "2026-09-16-k8s047-pattern-audit-log-table-changes",
+   "old_archived": false,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "audit-log-table-changes",
+   "old_desc": "Every table change is written to the audit log, and the code now matches. This ensures traceability and consistency of database modifications.",
+   "old_prevention": "",
+   "old_facts": [],
+   "new_session_idx": 1,
+   "new_title": "audit-log-table-changes",
+   "new_desc": "Changes to billing tables are audited now, while other audit functionality was removed. The change touched three files and none were config.  [facts] Only changes to billing tables are audited now. · The change touched three files and none of them were config. · Follow-up",
+   "new_prevention": "",
+   "new_facts": [
+    "follow-up",
+    "only changes to billing tables are audited now.",
+    "the change touched three files and none of them were config."
+   ],
+   "new_entities": [
+    "billing-tables",
+    "audit-log"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": true
+  },
+  {
+   "case": "nar-audit-scope",
+   "shape": "narrowed",
+   "truth": "replaces",
+   "branch": "d",
+   "ntype": "decision",
+   "slug": "document-audit-decision-in-readme",
+   "old_stem": "2026-09-16-k8s047-decision-document-audit-decision-in-readme",
+   "old_archived": false,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "document-audit-decision-in-readme",
+   "old_desc": "The auditing decision was documented in the README section that was already stale, ensuring that documentation stays up-to-date with code changes.  [facts] Documented it in the README section that was already stale",
+   "old_prevention": "",
+   "old_facts": [
+    "documented it in the readme section that was already stale"
+   ],
+   "new_session_idx": 1,
+   "new_title": "document-audit-decision-in-readme",
+   "new_desc": "The decision to audit only billing table changes was made and should be documented in the README.  [facts] Follow-up on auditing, and it did not survive. Only changes to billing tables are audited now. · Follow-up",
+   "new_prevention": "",
+   "new_facts": [
+    "follow-up",
+    "follow-up on auditing, and it did not survive. only changes to billing tables are audited now."
+   ],
+   "new_entities": [
+    "audit-decision",
+    "readme"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": false,
+   "new_marked": true
+  },
+  {
+   "case": "nar-gpu-scope",
+   "shape": "narrowed",
+   "truth": "replaces",
+   "branch": "d",
+   "ntype": "pattern",
+   "slug": "trainer-gpu-utilization",
+   "old_stem": "2026-09-16-k8s048-pattern-trainer-gpu-utilization",
+   "old_archived": false,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "trainer-gpu-utilization",
+   "old_desc": "The trainer runs on GPU for every job, which ensures consistent hardware utilization and performance. This pattern was validated by running the full test suite after configuration.  [facts] Ran the full test suite afterwards and it stayed green",
+   "old_prevention": "",
+   "old_facts": [
+    "ran the full test suite afterwards and it stayed green"
+   ],
+   "new_session_idx": 1,
+   "new_title": "trainer-gpu-utilization",
+   "new_desc": "The trainer uses GPU only for jobs with more than 10M parameters, while smaller models run on CPU. This was confirmed through a pairing session.  [facts] GPU is used only for jobs above 10M parameters; smaller ones run on CPU.",
+   "new_prevention": "",
+   "new_facts": [
+    "gpu is used only for jobs above 10m parameters; smaller ones run on cpu."
+   ],
+   "new_entities": [
+    "trainer",
+    "gpu",
+    "cpu",
+    "job"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": true
+  },
+  {
+   "case": "nar-lint-scope",
+   "shape": "narrowed",
+   "truth": "replaces",
+   "branch": "d",
+   "ntype": "pattern",
+   "slug": "pre-commit-hook-lints-repository",
+   "old_stem": "2026-09-16-k8s049-pattern-pre-commit-hook-lints-repository",
+   "old_archived": false,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "pre-commit-hook-lints-repository",
+   "old_desc": "The pre-commit hook is configured to lint the entire repository. This ensures consistent code quality across all files and prevents issues from being introduced.  [facts] the pre-commit hook lints the whole repository",
+   "old_prevention": "",
+   "old_facts": [
+    "the pre-commit hook lints the whole repository"
+   ],
+   "new_session_idx": 1,
+   "new_title": "pre-commit-hook-lints-repository",
+   "new_desc": "The hook lints only the staged files. This approach ensures that only changes intended for commit are validated, reducing noise and improving developer experience.  [facts] Rolled it out behind the usual staged release",
+   "new_prevention": "",
+   "new_facts": [
+    "rolled it out behind the usual staged release"
+   ],
+   "new_entities": [
+    "pre-commit-hook",
+    "staged-files",
+    "linting"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": true
+  },
+  {
+   "case": "nar-notify-scope",
+   "shape": "narrowed",
+   "truth": "replaces",
+   "branch": "d",
+   "ntype": "pattern",
+   "slug": "alerting-on-failed-deploy",
+   "old_stem": "2026-09-16-k8s050-pattern-alerting-on-failed-deploy",
+   "old_archived": false,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "alerting-on-failed-deploy",
+   "old_desc": "When a deploy fails, the on-call engineer is paged. This ensures immediate attention to deployment issues.  [facts] Confirmed that every failed deploy pages the on-call engineer",
+   "old_prevention": "",
+   "old_facts": [
+    "confirmed that every failed deploy pages the on-call engineer"
+   ],
+   "new_session_idx": 1,
+   "new_title": "alerting-on-failed-deploy",
+   "new_desc": "Production deploy failures trigger page-on-call alerts, while staging failures go to Slack. This separation helps prioritize critical issues and reduces noise in production monitoring.  [facts] alerting changed this week · Only production deploy failures page on-call; staging failures go to Slack",
+   "new_prevention": "",
+   "new_facts": [
+    "alerting changed this week",
+    "only production deploy failures page on-call; staging failures go to slack"
+   ],
+   "new_entities": [
+    "deploy",
+    "alerting",
+    "on-call",
+    "slack"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": true
+  },
+  {
+   "case": "nar-encrypt-scope",
+   "shape": "narrowed",
+   "truth": "replaces",
+   "branch": "d",
+   "ntype": "pattern",
+   "slug": "encrypted-at-rest-storage",
+   "old_stem": "2026-09-16-k8s051-pattern-encrypted-at-rest-storage",
+   "old_archived": false,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "encrypted-at-rest-storage",
+   "old_desc": "All uploaded files are encrypted at rest as of today. This ensures data security during storage.",
+   "old_prevention": "",
+   "old_facts": [],
+   "new_session_idx": 1,
+   "new_title": "encrypted-at-rest-storage",
+   "new_desc": "Encryption at rest applies only to files in the private bucket. This was confirmed after a review and one rename was requested.  [facts] one rename and otherwise approved it",
+   "new_prevention": "",
+   "new_facts": [
+    "one rename and otherwise approved it"
+   ],
+   "new_entities": [
+    "storage",
+    "private-bucket",
+    "encryption"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": true
+  },
+  {
+   "case": "nar-index-scope",
+   "shape": "narrowed",
+   "truth": "replaces",
+   "branch": "d",
+   "ntype": "pattern",
+   "slug": "staged-release-rollout",
+   "old_stem": "2026-09-16-k8s052-pattern-staged-release-rollout",
+   "old_archived": false,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "staged-release-rollout",
+   "old_desc": "The search index was rolled out behind a staged release process, ensuring controlled deployment and reducing risk of disruption.  [facts] Rolled it out behind the usual staged release",
+   "old_prevention": "",
+   "old_facts": [
+    "rolled it out behind the usual staged release"
+   ],
+   "new_session_idx": 1,
+   "new_title": "staged-release-rollout",
+   "new_desc": "The index covers documents from the last 90 days only, which was reversed in an earlier call. This pattern ensures that stale documentation is updated to reflect current data coverage.  [facts] Reversed the earlier call on the index · Documented it in the README section that was already stale",
+   "new_prevention": "",
+   "new_facts": [
+    "documented it in the readme section that was already stale",
+    "reversed the earlier call on the index"
+   ],
+   "new_entities": [
+    "index",
+    "readme"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": false,
+   "new_marked": true
+  },
+  {
+   "case": "nar-backup-scope",
+   "shape": "narrowed",
+   "truth": "replaces",
+   "branch": "d",
+   "ntype": "pattern",
+   "slug": "nightly-backup-database-dump",
+   "old_stem": "2026-09-16-k8s053-pattern-nightly-backup-database-dump",
+   "old_archived": false,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "nightly-backup-database-dump",
+   "old_desc": "The nightly backup dumps every database and the code now matches. This ensures comprehensive data protection by backing up all databases regularly.",
+   "old_prevention": "",
+   "old_facts": [],
+   "new_session_idx": 1,
+   "new_title": "nightly-backup-database-dump",
+   "new_desc": "The nightly backup process only covers the primary database, not all databases. This was confirmed after running the full test suite which stayed green.  [facts] The nightly backup covers the primary database only. · Ran the full test suite afterwards and it stayed green. · Follow-up",
+   "new_prevention": "",
+   "new_facts": [
+    "follow-up",
+    "ran the full test suite afterwards and it stayed green.",
+    "the nightly backup covers the primary database only."
+   ],
+   "new_entities": [
+    "database",
+    "backup"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": true
+  },
+  {
+   "case": "nar-backup-scope",
+   "shape": "narrowed",
+   "truth": "replaces",
+   "branch": "d",
+   "ntype": "decision",
+   "slug": "backups-decision-written",
+   "old_stem": "2026-09-16-k8s053-decision-backups-decision-written",
+   "old_archived": false,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "backups-decision-written",
+   "old_desc": "A decision was written up regarding backups, confirming that nightly backup dumps every database and the code now matches.  [facts] Wrote up the backups decision · The nightly backup dumps every database",
+   "old_prevention": "",
+   "old_facts": [
+    "the nightly backup dumps every database",
+    "wrote up the backups decision"
+   ],
+   "new_session_idx": 1,
+   "new_title": "backups-decision-written",
+   "new_desc": "A decision was made regarding backups, and it is documented as written.  [facts] Follow-up on backups, and it did not survive. · The nightly backup covers the primary database only. · Follow-up",
+   "new_prevention": "",
+   "new_facts": [
+    "follow-up",
+    "follow-up on backups, and it did not survive.",
+    "the nightly backup covers the primary database only."
+   ],
+   "new_entities": [
+    "backup",
+    "database"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": true
+  },
+  {
+   "case": "nar-ratelimit-scope",
+   "shape": "narrowed",
+   "truth": "replaces",
+   "branch": "d",
+   "ntype": "pattern",
+   "slug": "rate-limiting-applies-to-all-calls",
+   "old_stem": "2026-09-16-k8s054-pattern-rate-limiting-applies-to-all-calls",
+   "old_archived": false,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "rate-limiting-applies-to-all-calls",
+   "old_desc": "Rate limits apply to every caller, not just specific endpoints. This was confirmed during the session when the agent worked on rate limiting issues.",
+   "old_prevention": "",
+   "old_facts": [],
+   "new_session_idx": 1,
+   "new_title": "rate-limiting-applies-to-all-calls",
+   "new_desc": "Rate limiting applies only to unauthenticated callers, not all API calls. This was a misapprehension that needed correction.  [facts] rate limits apply only to unauthenticated callers",
+   "new_prevention": "",
+   "new_facts": [
+    "rate limits apply only to unauthenticated callers"
+   ],
+   "new_entities": [
+    "rate-limiting",
+    "authentication"
+   ],
+   "new_supersedes": "rate-limiting-applies-to-all-calls",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": true
+  },
+  {
+   "case": "nar-ratelimit-scope",
+   "shape": "narrowed",
+   "truth": "replaces",
+   "branch": "d",
+   "ntype": "decision",
+   "slug": "rename-approved-by-reviewer",
+   "old_stem": "2026-09-16-k8s054-decision-rename-approved-by-reviewer",
+   "old_archived": false,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "rename-approved-by-reviewer",
+   "old_desc": "A rename was requested by the reviewer and approved after one change. The session confirmed that the reviewer asked for a single rename.  [facts] reviewer asked for one rename · otherwise approved it",
+   "old_prevention": "",
+   "old_facts": [
+    "otherwise approved it",
+    "reviewer asked for one rename"
+   ],
+   "new_session_idx": 1,
+   "new_title": "rename-approved-by-reviewer",
+   "new_desc": "The rename decision was approved by a reviewer, confirming that renaming is acceptable under review.",
+   "new_prevention": "",
+   "new_facts": [],
+   "new_entities": [
+    "rename",
+    "reviewer"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": false,
+   "new_marked": false
+  },
+  {
+   "case": "nar-compress-scope",
+   "shape": "narrowed",
+   "truth": "replaces",
+   "branch": "d",
+   "ntype": "pattern",
+   "slug": "gzip-compression-response",
+   "old_stem": "2026-09-16-k8s055-pattern-gzip-compression-response",
+   "old_archived": false,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "gzip-compression-response",
+   "old_desc": "Every response from the transport layer is gzip-compressed. This was documented in the README section that was already stale.  [facts] every response is gzip-compressed · Documented it in the README section that was already stale",
+   "old_prevention": "",
+   "old_facts": [
+    "documented it in the readme section that was already stale",
+    "every response is gzip-compressed"
+   ],
+   "new_session_idx": 1,
+   "new_title": "gzip-compression-response",
+   "new_desc": "The system now compresses HTTP responses larger than 8 KB. This change was implemented by modifying three files, none of which were configuration files. The compression improves bandwidth usage for large responses.  [facts] only responses above 8 KB are compressed · three files and none of them were config",
+   "new_prevention": "",
+   "new_facts": [
+    "only responses above 8 kb are compressed",
+    "three files and none of them were config"
+   ],
+   "new_entities": [
+    "response",
+    "compression",
+    "http"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": true
+  },
+  {
+   "case": "nar-mfa-scope",
+   "shape": "narrowed",
+   "truth": "replaces",
+   "branch": "d",
+   "ntype": "pattern",
+   "slug": "mfa-enforcement-confirmed",
+   "old_stem": "2026-09-16-k8s056-pattern-mfa-enforcement-confirmed",
+   "old_archived": false,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "mfa-enforcement-confirmed",
+   "old_desc": "Multi-Factor Authentication (MFA) was confirmed to be required for all users, strengthening security measures. The full test suite was run afterward and remained green, confirming no regressions were introduced.  [facts] Confirmed that MFA is required for all users · Ran the full test suite afterwards and it stayed green",
+   "old_prevention": "",
+   "old_facts": [
+    "confirmed that mfa is required for all users",
+    "ran the full test suite afterwards and it stayed green"
+   ],
+   "new_session_idx": 1,
+   "new_title": "mfa-enforcement-confirmed",
+   "new_desc": "MFA enforcement was confirmed to be scoped to admin accounts only. This pattern ensures that security policies are correctly applied and avoids unnecessary MFA prompts for regular users.  [facts] security changed this week · MFA is required only for accounts with admin scope",
+   "new_prevention": "",
+   "new_facts": [
+    "mfa is required only for accounts with admin scope",
+    "security changed this week"
+   ],
+   "new_entities": [
+    "mfa",
+    "admin-scope",
+    "security-policy"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": true
+  },
+  {
+   "case": "nar-replay-scope",
+   "shape": "narrowed",
+   "truth": "replaces",
+   "branch": "d",
+   "ntype": "pattern",
+   "slug": "event-log-replay-on-boot",
+   "old_stem": "2026-09-16-k8s057-pattern-event-log-replay-on-boot",
+   "old_archived": false,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "event-log-replay-on-boot",
+   "old_desc": "The consumer currently replays the entire event log on boot. This pattern was identified during a review of how the event log is set up and documented for future developers.  [facts] the consumer replays the entire event log on boot",
+   "old_prevention": "",
+   "old_facts": [
+    "the consumer replays the entire event log on boot"
+   ],
+   "new_session_idx": 1,
+   "new_title": "event-log-replay-on-boot",
+   "new_desc": "The consumer replays only events since the last checkpoint. This pattern ensures that the system can resume processing from where it left off after a restart, maintaining consistency and avoiding duplicate processing.",
+   "new_prevention": "",
+   "new_facts": [],
+   "new_entities": [
+    "consumer",
+    "event-log",
+    "checkpoint"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": true
+  },
+  {
+   "case": "nar-shard-scope",
+   "shape": "narrowed",
+   "truth": "replaces",
+   "branch": "d",
+   "ntype": "pattern",
+   "slug": "sharding-tenant-database",
+   "old_stem": "2026-09-16-k8s058-pattern-sharding-tenant-database",
+   "old_archived": false,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "sharding-tenant-database",
+   "old_desc": "Each tenant gets its own database shard. This approach was implemented by touching three files, none of which were configuration files. The solution provides clear separation of data per tenant.  [facts] every tenant gets its own database shard · touched three files and none of them were config",
+   "old_prevention": "",
+   "old_facts": [
+    "every tenant gets its own database shard",
+    "touched three files and none of them were config"
+   ],
+   "new_session_idx": 1,
+   "new_title": "sharding-tenant-database",
+   "new_desc": "The system uses a sharding strategy where tenants with more than 50,000 records are assigned dedicated shards. This approach helps manage performance and resource allocation for high-volume tenants.  [facts] only tenants above 50k records get a dedicated shard",
+   "new_prevention": "",
+   "new_facts": [
+    "only tenants above 50k records get a dedicated shard"
+   ],
+   "new_entities": [
+    "tenant",
+    "shard",
+    "database"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": true
+  },
+  {
+   "case": "nar-shard-scope",
+   "shape": "narrowed",
+   "truth": "replaces",
+   "branch": "d",
+   "ntype": "decision",
+   "slug": "tenant-sharding-approach",
+   "old_stem": "2026-09-16-k8s058-decision-tenant-sharding-approach",
+   "old_archived": false,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "tenant-sharding-approach",
+   "old_desc": "The decision was made to assign each tenant its own database shard. This ensures data isolation and scalability for multi-tenant environments.  [facts] every tenant gets its own database shard",
+   "old_prevention": "",
+   "old_facts": [
+    "every tenant gets its own database shard"
+   ],
+   "new_session_idx": 1,
+   "new_title": "tenant-sharding-approach",
+   "new_desc": "The decision was made to shard tenants based on record count, specifically assigning dedicated shards only to those with over 50,000 records. This balances performance and resource usage.  [facts] only tenants above 50k records get a dedicated shard",
+   "new_prevention": "",
+   "new_facts": [
+    "only tenants above 50k records get a dedicated shard"
+   ],
+   "new_entities": [
+    "tenant",
+    "shard",
+    "approach"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": true
+  },
+  {
+   "case": "nar-trace-scope",
+   "shape": "narrowed",
+   "truth": "replaces",
+   "branch": "d",
+   "ntype": "pattern",
+   "slug": "end-to-end-request-tracing",
+   "old_stem": "2026-09-16-k8s059-pattern-end-to-end-request-tracing",
+   "old_archived": false,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "end-to-end-request-tracing",
+   "old_desc": "Every request is now traced end to end, ensuring full visibility of the flow. This was implemented by updating the tracing decision and aligning the code accordingly.  [facts] Every request is traced end to end · the code now matches",
+   "old_prevention": "",
+   "old_facts": [
+    "every request is traced end to end",
+    "the code now matches"
+   ],
+   "new_session_idx": 1,
+   "new_title": "end-to-end-request-tracing",
+   "new_desc": "The system implements end-to-end request tracing with a sampling rate of one in a hundred. This approach was reviewed and approved with only a minor rename requested.  [facts] One request in a hundred is sampled for tracing · The reviewer asked for one rename and otherwise approved it · Follow-up",
+   "new_prevention": "",
+   "new_facts": [
+    "follow-up",
+    "one request in a hundred is sampled for tracing",
+    "the reviewer asked for one rename and otherwise approved it"
+   ],
+   "new_entities": [
+    "request-tracing",
+    "sampling-rate"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": true
+  },
+  {
+   "case": "nar-trace-scope",
+   "shape": "narrowed",
+   "truth": "replaces",
+   "branch": "d",
+   "ntype": "decision",
+   "slug": "request-tracing-implementation",
+   "old_stem": "2026-09-16-k8s059-decision-request-tracing-implementation",
+   "old_archived": false,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "request-tracing-implementation",
+   "old_desc": "It was decided to implement end-to-end tracing for all requests, which ensures that every step of the process is logged and traceable.  [facts] Every request is traced end to end",
+   "old_prevention": "",
+   "old_facts": [
+    "every request is traced end to end"
+   ],
+   "new_session_idx": 1,
+   "new_title": "request-tracing-implementation",
+   "new_desc": "The implementation of request tracing was decided to proceed with a sampling rate of one in a hundred, which was approved by the reviewer after a minor rename.  [facts] One request in a hundred is sampled for tracing · The reviewer asked for one rename and otherwise approved it · Follow-up",
+   "new_prevention": "",
+   "new_facts": [
+    "follow-up",
+    "one request in a hundred is sampled for tracing",
+    "the reviewer asked for one rename and otherwise approved it"
+   ],
+   "new_entities": [
+    "request-tracing",
+    "sampling-rate"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": true
+  },
+  {
+   "case": "ctl-db-cache",
+   "shape": "control",
+   "truth": "separate",
+   "branch": "d",
+   "ntype": "pattern",
+   "slug": "postgresql-16-primary-database",
+   "old_stem": "2026-09-16-k8s060-pattern-postgresql-16-primary-database",
+   "old_archived": false,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "postgresql-16-primary-database",
+   "old_desc": "The primary database for the project was settled on PostgreSQL 16. This decision was made during a stack analysis and confirmed as the chosen technology for the database layer.  [facts] the primary database is PostgreSQL 16",
+   "old_prevention": "",
+   "old_facts": [
+    "the primary database is postgresql 16"
+   ],
+   "new_session_idx": 1,
+   "new_title": "postgresql-16-primary-database",
+   "new_desc": "The team decided to use PostgreSQL 16 as the primary database for the project. This decision was documented in the README and aligns with the existing patterns for database management.  [facts] README section that was already stale",
+   "new_prevention": "",
+   "new_facts": [
+    "readme section that was already stale"
+   ],
+   "new_entities": [
+    "postgresql",
+    "database",
+    "readme"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": false
+  },
+  {
+   "case": "ctl-db-cache",
+   "shape": "control",
+   "truth": "separate",
+   "branch": "d",
+   "ntype": "decision",
+   "slug": "postgresql-16-as-primary-database",
+   "old_stem": "2026-09-16-k8s060-decision-postgresql-16-as-primary-database",
+   "old_archived": false,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "postgresql-16-as-primary-database",
+   "old_desc": "It was decided to use PostgreSQL 16 as the primary database for the project after analyzing the stack.  [facts] the primary database is PostgreSQL 16",
+   "old_prevention": "",
+   "old_facts": [
+    "the primary database is postgresql 16"
+   ],
+   "new_session_idx": 1,
+   "new_title": "postgresql-16-as-primary-database",
+   "new_desc": "PostgreSQL 16 was chosen as the primary database for the project, replacing older versions. This decision was made to ensure compatibility and leverage new features.",
+   "new_prevention": "",
+   "new_facts": [],
+   "new_entities": [
+    "postgresql",
+    "database"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": false
+  },
+  {
+   "case": "ctl-lang-test",
+   "shape": "control",
+   "truth": "separate",
+   "branch": "d",
+   "ntype": "pattern",
+   "slug": "service-written-in-rust",
+   "old_stem": "2026-09-16-k8s061-pattern-service-written-in-rust",
+   "old_archived": false,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "service-written-in-rust",
+   "old_desc": "The service was determined to be written in Rust after investigation. This was confirmed by checking the codebase and dashboards.  [facts] the service is written in Rust · Checked the dashboards for an hour after and nothing moved",
+   "old_prevention": "",
+   "old_facts": [
+    "checked the dashboards for an hour after and nothing moved",
+    "the service is written in rust"
+   ],
+   "new_session_idx": 1,
+   "new_title": "service-written-in-rust",
+   "new_desc": "The service is written in Rust, which provides memory safety and performance benefits. This choice was made to ensure robustness and efficiency in the system.  [facts] the integration tests are written in Python",
+   "new_prevention": "",
+   "new_facts": [
+    "the integration tests are written in python"
+   ],
+   "new_entities": [
+    "service",
+    "rust"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": false
+  },
+  {
+   "case": "ctl-env",
+   "shape": "control",
+   "truth": "separate",
+   "branch": "d",
+   "ntype": "pattern",
+   "slug": "staging-deployment-on-merge",
+   "old_stem": "2026-09-16-k8s063-pattern-staging-deployment-on-merge",
+   "old_archived": false,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "staging-deployment-on-merge",
+   "old_desc": "Staging environment deploys on every merge to main branch. This was documented in the README section that was already stale.  [facts] staging deploys on every merge to main · Documented it in the README section that was already stale",
+   "old_prevention": "",
+   "old_facts": [
+    "documented it in the readme section that was already stale",
+    "staging deploys on every merge to main"
+   ],
+   "new_session_idx": 1,
+   "new_title": "staging-deployment-on-merge",
+   "new_desc": "Staging deployments are triggered on merge events. This pattern ensures that code changes are automatically deployed to staging for testing before reaching production.",
+   "new_prevention": "",
+   "new_facts": [],
+   "new_entities": [
+    "deployment",
+    "staging",
+    "merge"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": false
+  },
+  {
+   "case": "ctl-model",
+   "shape": "control",
+   "truth": "separate",
+   "branch": "d",
+   "ntype": "pattern",
+   "slug": "embedder-configuration",
+   "old_stem": "2026-09-16-k8s064-pattern-embedder-configuration",
+   "old_archived": false,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "embedder-configuration",
+   "old_desc": "The embedder was configured to use bge-m3. This configuration was verified by running the full test suite which remained green, indicating no regressions were introduced.  [facts] the embedder is bge-m3 · Ran the full test suite afterwards and it stayed green",
+   "old_prevention": "",
+   "old_facts": [
+    "ran the full test suite afterwards and it stayed green",
+    "the embedder is bge-m3"
+   ],
+   "new_session_idx": 1,
+   "new_title": "embedder-configuration",
+   "new_desc": "The embedder configuration was updated to use a cross-encoder reranker. This change improves the quality of search results by leveraging more sophisticated ranking models.  [facts] the reranker is a cross-encoder",
+   "new_prevention": "",
+   "new_facts": [
+    "the reranker is a cross-encoder"
+   ],
+   "new_entities": [
+    "embedder",
+    "reranker",
+    "cross-encoder"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": false
+  },
+  {
+   "case": "ctl-storage",
+   "shape": "control",
+   "truth": "separate",
+   "branch": "d",
+   "ntype": "pattern",
+   "slug": "storage-decision-implementation",
+   "old_stem": "2026-09-16-k8s065-pattern-storage-decision-implementation",
+   "old_archived": false,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "storage-decision-implementation",
+   "old_desc": "The user implemented a decision to store user uploads in S3, aligning the code with this storage strategy. A note was left in the tracker to prevent future duplication of this work.  [facts] Wrote up the storage decision · User uploads go to S3 · the code now matches · Left a note in the tracker",
+   "old_prevention": "",
+   "old_facts": [
+    "left a note in the tracker",
+    "the code now matches",
+    "user uploads go to s3",
+    "wrote up the storage decision"
+   ],
+   "new_session_idx": 1,
+   "new_title": "storage-decision-implementation",
+   "new_desc": "The team implemented a storage strategy where database backups are directed to Glacier, which is a cost-effective long-term storage solution. This was rolled out using a staged release process to ensure stability and minimize risk.  [facts] database backups go to Glacier · Rolled it out behind the usual staged release",
+   "new_prevention": "",
+   "new_facts": [
+    "database backups go to glacier",
+    "rolled it out behind the usual staged release"
+   ],
+   "new_entities": [
+    "database",
+    "glacier",
+    "staged-release"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": false
+  },
+  {
+   "case": "ctl-storage",
+   "shape": "control",
+   "truth": "separate",
+   "branch": "d",
+   "ntype": "decision",
+   "slug": "user-uploads-to-s3",
+   "old_stem": "2026-09-16-k8s065-decision-user-uploads-to-s3",
+   "old_archived": false,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "user-uploads-to-s3",
+   "old_desc": "It was decided that user uploads should be stored in S3, and the code was updated to reflect this decision.  [facts] User uploads go to S3 · the code now matches",
+   "old_prevention": "",
+   "old_facts": [
+    "the code now matches",
+    "user uploads go to s3"
+   ],
+   "new_session_idx": 1,
+   "new_title": "user-uploads-to-s3",
+   "new_desc": "It was decided that user uploads should be stored in S3, which is a scalable and secure object storage service suitable for handling large volumes of unstructured data.",
+   "new_prevention": "",
+   "new_facts": [],
+   "new_entities": [
+    "user-uploads",
+    "s3"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": false
+  },
+  {
+   "case": "ctl-limits",
+   "shape": "control",
+   "truth": "separate",
+   "branch": "d",
+   "ntype": "pattern",
+   "slug": "upload-size-limit-check",
+   "old_stem": "2026-09-16-k8s069-pattern-upload-size-limit-check",
+   "old_archived": false,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "upload-size-limit-check",
+   "old_desc": "The upload size limit is set to 25 MB. This was confirmed by reviewing the limits configuration and checking dashboards for an hour after.  [facts] upload size limit is 25 MB · Checked the dashboards for an hour after and nothing moved",
+   "old_prevention": "",
+   "old_facts": [
+    "checked the dashboards for an hour after and nothing moved",
+    "upload size limit is 25 mb"
+   ],
+   "new_session_idx": 1,
+   "new_title": "upload-size-limit-check",
+   "new_desc": "The system enforces an upload size limit to prevent excessive resource usage. This was validated through a full test suite run which remained green after the change.  [facts] the request rate limit is 100 per minute · Ran the full test suite afterwards and it stayed green",
+   "new_prevention": "",
+   "new_facts": [
+    "ran the full test suite afterwards and it stayed green",
+    "the request rate limit is 100 per minute"
+   ],
+   "new_entities": [
+    "request-rate-limit",
+    "upload-size",
+    "test-suite"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": false
+  },
+  {
+   "case": "ctl-clients",
+   "shape": "control",
+   "truth": "separate",
+   "branch": "d",
+   "ntype": "pattern",
+   "slug": "cli-distribution-homebrew",
+   "old_stem": "2026-09-16-k8s071-pattern-cli-distribution-homebrew",
+   "old_archived": false,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "cli-distribution-homebrew",
+   "old_desc": "The CLI is distributed through Homebrew, which was confirmed by reviewing the client's decision and updating the code to match. This ensures consistency in distribution method.  [facts] code now matches",
+   "old_prevention": "",
+   "old_facts": [
+    "code now matches"
+   ],
+   "new_session_idx": 1,
+   "new_title": "cli-distribution-homebrew",
+   "new_desc": "The desktop app ships as a signed installer, which is part of the CLI distribution strategy. This approach ensures proper signing and distribution of the application.",
+   "new_prevention": "",
+   "new_facts": [],
+   "new_entities": [
+    "desktop-app",
+    "signed-installer",
+    "cli-distribution"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": false
+  },
+  {
+   "case": "ctl-clients",
+   "shape": "control",
+   "truth": "separate",
+   "branch": "d",
+   "ntype": "decision",
+   "slug": "update-readme-stale-section",
+   "old_stem": "2026-09-16-k8s071-decision-update-readme-stale-section",
+   "old_archived": false,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "update-readme-stale-section",
+   "old_desc": "The README section that was already stale was updated to reflect the current CLI distribution method via Homebrew.  [facts] Documented it in the README section that was already stale",
+   "old_prevention": "",
+   "old_facts": [
+    "documented it in the readme section that was already stale"
+   ],
+   "new_session_idx": 1,
+   "new_title": "update-readme-stale-section",
+   "new_desc": "The README section related to CLI distribution needs updating due to changes in how the desktop app is shipped as a signed installer.  [facts] the desktop app ships as a signed installer",
+   "new_prevention": "",
+   "new_facts": [
+    "the desktop app ships as a signed installer"
+   ],
+   "new_entities": [
+    "readme",
+    "cli-distribution",
+    "signed-installer"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": false
+  },
+  {
+   "case": "ctl-queue-pair",
+   "shape": "control",
+   "truth": "separate",
+   "branch": "d",
+   "ntype": "pattern",
+   "slug": "ingest-queue-nats-backend",
+   "old_stem": "2026-09-16-k8s072-pattern-ingest-queue-nats-backend",
+   "old_archived": false,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "ingest-queue-nats-backend",
+   "old_desc": "The ingest queue is backed by NATS, which was confirmed to work correctly after running the full test suite. This setup ensures reliable message queuing for ingestion tasks.  [facts] Ran the full test suite afterwards and it stayed green",
+   "old_prevention": "",
+   "old_facts": [
+    "ran the full test suite afterwards and it stayed green"
+   ],
+   "new_session_idx": 1,
+   "new_title": "ingest-queue-nats-backend",
+   "new_desc": "The ingest queue is backed by NATS, which provides reliable message delivery and supports horizontal scaling. This pattern ensures that messages are processed in order and can be retried if needed.",
+   "new_prevention": "",
+   "new_facts": [],
+   "new_entities": [
+    "ingest-queue",
+    "nats"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": false
+  },
+  {
+   "case": "ctl-runtime",
+   "shape": "control",
+   "truth": "separate",
+   "branch": "d",
+   "ntype": "pattern",
+   "slug": "python-3-13-worker-runtime",
+   "old_stem": "2026-09-16-k8s074-pattern-python-3-13-worker-runtime",
+   "old_archived": false,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "python-3.13-worker-runtime",
+   "old_desc": "The worker runs on Python 3.13, which was confirmed during the session. This is a key runtime detail for the project's environment setup.  [facts] Confirmed that the worker runs on Python 3.13",
+   "old_prevention": "",
+   "old_facts": [
+    "confirmed that the worker runs on python 3.13"
+   ],
+   "new_session_idx": 1,
+   "new_title": "python-3-13-worker-runtime",
+   "new_desc": "The worker runtime uses Python 3.13, which is a known pattern for this project's environment.  [facts] 1.23",
+   "new_prevention": "",
+   "new_facts": [
+    "1.23"
+   ],
+   "new_entities": [
+    "worker",
+    "runtime",
+    "python"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": false
+  },
+  {
+   "case": "ctl-net",
+   "shape": "control",
+   "truth": "separate",
+   "branch": "d",
+   "ntype": "pattern",
+   "slug": "tls-termination-at-load-balancer",
+   "old_stem": "2026-09-16-k8s075-pattern-tls-termination-at-load-balancer",
+   "old_archived": false,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "tls-termination-at-load-balancer",
+   "old_desc": "Ingress terminates TLS at the load balancer. This setup is currently in place and working as expected.",
+   "old_prevention": "",
+   "old_facts": [],
+   "new_session_idx": 1,
+   "new_title": "tls-termination-at-load-balancer",
+   "new_desc": "TLS termination was configured at the load balancer level, which is a common and recommended pattern for handling SSL/TLS connections in cloud environments. This approach offloads the encryption/decryption work from backend services.",
+   "new_prevention": "",
+   "new_facts": [],
+   "new_entities": [
+    "tls",
+    "load-balancer",
+    "ssl",
+    "encryption"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": false
+  },
+  {
+   "case": "ctl-metrics",
+   "shape": "control",
+   "truth": "separate",
+   "branch": "d",
+   "ntype": "decision",
+   "slug": "observability-decision",
+   "old_stem": "2026-09-16-k8s077-decision-observability-decision",
+   "old_archived": false,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "observability-decision",
+   "old_desc": "The decision was made to track request latency as a histogram, which allows for better understanding of performance distribution and anomalies.  [facts] Wrote up the observability decision · Request latency is tracked as a histogram",
+   "old_prevention": "",
+   "old_facts": [
+    "request latency is tracked as a histogram",
+    "wrote up the observability decision"
+   ],
+   "new_session_idx": 1,
+   "new_title": "observability-decision",
+   "new_desc": "The decision was made to track queue depth as a gauge for observability, in addition to tracking request latency. This ensures comprehensive monitoring of system behavior.  [facts] queue depth is tracked as a gauge",
+   "new_prevention": "",
+   "new_facts": [
+    "queue depth is tracked as a gauge"
+   ],
+   "new_entities": [
+    "queue",
+    "gauge",
+    "observability"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": false
+  },
+  {
+   "case": "ctl-store",
+   "shape": "control",
+   "truth": "separate",
+   "branch": "d",
+   "ntype": "pattern",
+   "slug": "session-state-in-localstorage",
+   "old_stem": "2026-09-16-k8s078-pattern-session-state-in-localstorage",
+   "old_archived": false,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "session-state-in-localstorage",
+   "old_desc": "The session state was settled to live in browser localStorage for storage purposes. This approach was reviewed and approved with only one rename requested.  [facts] session state lives in browser localStorage · one rename and otherwise approved",
+   "old_prevention": "",
+   "old_facts": [
+    "one rename and otherwise approved",
+    "session state lives in browser localstorage"
+   ],
+   "new_session_idx": 1,
+   "new_title": "session-state-in-localstorage",
+   "new_desc": "The session state is stored in localStorage for persistence across page reloads. This approach ensures that the user's progress and settings are maintained even after a refresh.",
+   "new_prevention": "",
+   "new_facts": [],
+   "new_entities": [
+    "session",
+    "localstorage"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": false
+  }
+ ],
+ "rows": [
+  {
+   "id": "val-http-timeout",
+   "shape": "value_replaced",
+   "n_hits": 2,
+   "stale_returned": false,
+   "stale_rank": null,
+   "current_returned": true,
+   "chars_returned": 534,
+   "returned": [
+    "http-client-timeout-configuration The HTTP client timeout was initially configured to 30 seconds but was found to be 5 seconds during a pairing session. This pattern documents the correct timeout value for API client configuration.  [facts] the HTTP client timeout is 5 seconds",
+    "set-http-client-timeout-to-5s The decision was made to set the HTTP client timeout to 5 seconds after verifying that this is the actual value in use. This overrides a previous incorrect assumption of 30 seconds.  [facts] the HTTP client timeout is 5 seconds"
+   ],
+   "current_live": true,
+   "current_retired": true,
+   "current_demoted": false,
+   "current_absent": false,
+   "notes_written": 3,
+   "notes_in_cyrillic": 0,
+   "pairs": 1
+  },
+  {
+   "id": "val-pg-version",
+   "shape": "value_replaced",
+   "n_hits": 1,
+   "stale_returned": false,
+   "stale_rank": null,
+   "current_returned": true,
+   "chars_returned": 290,
+   "returned": [
+    "postgresql-version-in-production The production PostgreSQL version was upgraded to 16. This upgrade was rolled out using a staged release process, ensuring a controlled and gradual deployment.  [facts] production was upgraded to PostgreSQL 16 · Rolled it out behind the usual staged release"
+   ],
+   "current_live": true,
+   "current_retired": false,
+   "current_demoted": false,
+   "current_absent": false,
+   "notes_written": 1,
+   "notes_in_cyrillic": 0,
+   "pairs": 1
+  },
+  {
+   "id": "val-batch-size",
+   "shape": "value_replaced",
+   "n_hits": 1,
+   "stale_returned": false,
+   "stale_rank": null,
+   "current_returned": true,
+   "chars_returned": 341,
+   "returned": [
+    "training-batch-size-128 The training job was updated to use a batch size of 128. This change was observed in the code and confirmed via dashboard monitoring for an hour, but no movement was detected.  [facts] the training job changed this week · The training batch size is now 128 · Checked the dashboards for an hour after and nothing moved"
+   ],
+   "current_live": true,
+   "current_retired": true,
+   "current_demoted": false,
+   "current_absent": false,
+   "notes_written": 2,
+   "notes_in_cyrillic": 0,
+   "pairs": 0
+  },
+  {
+   "id": "val-node-version",
+   "shape": "value_replaced",
+   "n_hits": 1,
+   "stale_returned": false,
+   "stale_rank": null,
+   "current_returned": true,
+   "chars_returned": 260,
+   "returned": [
+    "frontend-build-target-node22 The frontend build targets Node 22, which was confirmed during a review process. The reviewer requested one rename and approved the changes.  [facts] the build targets Node 22 · reviewer asked for one rename · otherwise approved it"
+   ],
+   "current_live": true,
+   "current_retired": false,
+   "current_demoted": false,
+   "current_absent": false,
+   "notes_written": 1,
+   "notes_in_cyrillic": 0,
+   "pairs": 0
+  },
+  {
+   "id": "val-retry-count",
+   "shape": "value_replaced",
+   "n_hits": 1,
+   "stale_returned": false,
+   "stale_rank": null,
+   "current_returned": true,
+   "chars_returned": 402,
+   "returned": [
+    "queue-worker-retry-logic The queue worker now retries failed jobs up to 10 times instead of failing immediately. This change improves reliability by allowing transient failures to recover without manual intervention. The logic was reversed from an earlier implementation that did not include retries.  [facts] the worker now retries a failed job 10 times · Reversed the earlier call on the queue worker"
+   ],
+   "current_live": true,
+   "current_retired": false,
+   "current_demoted": false,
+   "current_absent": false,
+   "notes_written": 1,
+   "notes_in_cyrillic": 0,
+   "pairs": 1
+  },
+  {
+   "id": "val-cache-ttl",
+   "shape": "value_replaced",
+   "n_hits": 2,
+   "stale_returned": false,
+   "stale_rank": null,
+   "current_returned": true,
+   "chars_returned": 490,
+   "returned": [
+    "cache-expiration-timeout The cache expiration timeout was set to 15 minutes, which is the current decision for how long cache entries should remain valid.  [facts] Cache entries expire after 15 minutes · Follow-up",
+    "cache-layer-expiration The cache layer was not durable and entries expire after 15 minutes. This was confirmed by running the full test suite which stayed green.  [facts] Cache entries expire after 15 minutes · Ran the full test suite afterwards and it stayed green · Follow-up"
+   ],
+   "current_live": true,
+   "current_retired": false,
+   "current_demoted": false,
+   "current_absent": false,
+   "notes_written": 2,
+   "notes_in_cyrillic": 0,
+   "pairs": 2
+  },
+  {
+   "id": "val-port",
+   "shape": "value_replaced",
+   "n_hits": 1,
+   "stale_returned": false,
+   "stale_rank": null,
+   "current_returned": true,
+   "chars_returned": 235,
+   "returned": [
+    "dev-server-port-configuration The development server listens on port 8080, not the previously assumed port. This was confirmed by returning to the dev server and verifying the configuration.  [facts] the dev server listens on port 8080"
+   ],
+   "current_live": true,
+   "current_retired": false,
+   "current_demoted": false,
+   "current_absent": false,
+   "notes_written": 1,
+   "notes_in_cyrillic": 0,
+   "pairs": 1
+  },
+  {
+   "id": "val-region",
+   "shape": "value_replaced",
+   "n_hits": 1,
+   "stale_returned": false,
+   "stale_rank": null,
+   "current_returned": true,
+   "chars_returned": 188,
+   "returned": [
+    "service-deployment-in-eu-west-1 The service was moved from eu-west-1 to us-east-2. This change touched three files and none of them were config.  [facts] the service was moved to us-east-2"
+   ],
+   "current_live": true,
+   "current_retired": false,
+   "current_demoted": false,
+   "current_absent": false,
+   "notes_written": 1,
+   "notes_in_cyrillic": 0,
+   "pairs": 1
+  },
+  {
+   "id": "val-py-version",
+   "shape": "value_replaced",
+   "n_hits": 2,
+   "stale_returned": true,
+   "stale_rank": 2,
+   "current_returned": true,
+   "chars_returned": 438,
+   "returned": [
+    "python-version-pinning The project now pins Python 3.13 due to a toolchain change. This ensures consistent environment setup and avoids compatibility issues.  [facts] The toolchain changed this week. The project now pins Python 3.13.",
+    "test-suite-validation After making changes, the full test suite was run and remained green, confirming no regressions were introduced.  [facts] Ran the full test suite afterwards and it stayed green · 3.11"
+   ],
+   "current_live": true,
+   "current_retired": false,
+   "current_demoted": false,
+   "current_absent": false,
+   "notes_written": 2,
+   "notes_in_cyrillic": 0,
+   "pairs": 1
+  },
+  {
+   "id": "val-replicas",
+   "shape": "value_replaced",
+   "n_hits": 1,
+   "stale_returned": false,
+   "stale_rank": null,
+   "current_returned": true,
+   "chars_returned": 297,
+   "returned": [
+    "api-capacity-replicas The API runs with 12 replicas after a load test. This configuration was rolled out using the usual staged release process. The number of replicas was determined based on performance requirements and load testing results.  [facts] rolled it out behind the usual staged release"
+   ],
+   "current_live": true,
+   "current_retired": false,
+   "current_demoted": false,
+   "current_absent": false,
+   "notes_written": 1,
+   "notes_in_cyrillic": 0,
+   "pairs": 1
+  },
+  {
+   "id": "val-lr",
+   "shape": "value_replaced",
+   "n_hits": 1,
+   "stale_returned": false,
+   "stale_rank": null,
+   "current_returned": true,
+   "chars_returned": 304,
+   "returned": [
+    "learning-rate-configuration Adjusting the learning rate to 5e-5 did not produce expected improvements in training performance. The model showed no movement in metrics even after an hour of monitoring.  [facts] learning rate was lowered to 5e-5 · Checked the dashboards for an hour after and nothing moved"
+   ],
+   "current_live": true,
+   "current_retired": false,
+   "current_demoted": false,
+   "current_absent": false,
+   "notes_written": 1,
+   "notes_in_cyrillic": 0,
+   "pairs": 1
+  },
+  {
+   "id": "val-chunk",
+   "shape": "value_replaced",
+   "n_hits": 2,
+   "stale_returned": false,
+   "stale_rank": null,
+   "current_returned": true,
+   "chars_returned": 308,
+   "returned": [
+    "ingestion-strategy-decided The ingestion strategy was decided to chunk documents at 1024 tokens.  [facts] Documents are chunked at 1024 tokens now. · Follow-up",
+    "document-ingestion-chunking Documents are chunked at 1024 tokens now. The reviewer asked for one rename and otherwise approved it.  [facts] Follow-up"
+   ],
+   "current_live": true,
+   "current_retired": false,
+   "current_demoted": false,
+   "current_absent": false,
+   "notes_written": 2,
+   "notes_in_cyrillic": 0,
+   "pairs": 2
+  },
+  {
+   "id": "val-quorum",
+   "shape": "value_replaced",
+   "n_hits": 2,
+   "stale_returned": false,
+   "stale_rank": null,
+   "current_returned": true,
+   "chars_returned": 557,
+   "returned": [
+    "cluster-quorum-requirement After resizing the cluster, a quorum of 5 nodes is required for proper operation. This was documented in the README section that was already stale.  [facts] the cluster needs a quorum of 5 nodes after the resize · Documented it in the README section that was already stale",
+    "staged-release-rollout The decision to stage the release rollout was made, but it was later determined that the cluster requires a quorum of 5 nodes after resizing.  [facts] That earlier decision is off: the cluster needs a quorum of 5 nodes after the resize"
+   ],
+   "current_live": true,
+   "current_retired": false,
+   "current_demoted": false,
+   "current_absent": false,
+   "notes_written": 2,
+   "notes_in_cyrillic": 0,
+   "pairs": 2
+  },
+  {
+   "id": "val-license",
+   "shape": "value_replaced",
+   "n_hits": 1,
+   "stale_returned": false,
+   "stale_rank": null,
+   "current_returned": true,
+   "chars_returned": 193,
+   "returned": [
+    "project-licensing-decided The project was relicensed to Apache-2.0 after a review.  [facts] reopened licensing after the last review · the new position: the project was relicensed to Apache-2.0"
+   ],
+   "current_live": true,
+   "current_retired": false,
+   "current_demoted": false,
+   "current_absent": false,
+   "notes_written": 1,
+   "notes_in_cyrillic": 0,
+   "pairs": 1
+  },
+  {
+   "id": "val-branch",
+   "shape": "value_replaced",
+   "n_hits": 1,
+   "stale_returned": false,
+   "stale_rank": null,
+   "current_returned": true,
+   "chars_returned": 213,
+   "returned": [
+    "rename-approval-workflow The default branch was renamed to main. A note was left in the tracker to prevent future duplication of this work.  [facts] Left a note in the tracker so the next person does not redo this"
+   ],
+   "current_live": true,
+   "current_retired": false,
+   "current_demoted": false,
+   "current_absent": false,
+   "notes_written": 1,
+   "notes_in_cyrillic": 0,
+   "pairs": 1
+  },
+  {
+   "id": "app-cache-store",
+   "shape": "approach_abandoned",
+   "n_hits": 2,
+   "stale_returned": false,
+   "stale_rank": null,
+   "current_returned": true,
+   "chars_returned": 432,
+   "returned": [
+    "redis-session-caching The team replaced Redis with an in-process LRU cache for session caching. This change touched three files and none of them were config. The decision was made to improve performance and reduce external dependencies.",
+    "in-process-lru-cache-replacement The team decided to replace Redis with an in-process LRU cache for session caching. This decision was made to reduce external dependencies and improve performance."
+   ],
+   "current_live": true,
+   "current_retired": false,
+   "current_demoted": false,
+   "current_absent": false,
+   "notes_written": 2,
+   "notes_in_cyrillic": 0,
+   "pairs": 1
+  },
+  {
+   "id": "app-auth",
+   "shape": "approach_abandoned",
+   "n_hits": 2,
+   "stale_returned": false,
+   "stale_rank": null,
+   "current_returned": true,
+   "chars_returned": 647,
+   "returned": [
+    "jwt-authentication-implementation JWT authentication was initially implemented but later reversed to use opaque session cookies backed by the database. This approach provides better security and state management for user sessions.  [facts] authentication moved to opaque session cookies backed by the database",
+    "opaque-session-cookies-backing The decision was made to back session cookies with the database instead of using JWT tokens for improved security and session management.  [facts] authentication moved to opaque session cookies backed by the database Always evaluate session cookie design against security requirements before implementation."
+   ],
+   "current_live": true,
+   "current_retired": false,
+   "current_demoted": false,
+   "current_absent": false,
+   "notes_written": 2,
+   "notes_in_cyrillic": 0,
+   "pairs": 1
+  },
+  {
+   "id": "app-bundler",
+   "shape": "approach_abandoned",
+   "n_hits": 2,
+   "stale_returned": false,
+   "stale_rank": null,
+   "current_returned": true,
+   "chars_returned": 603,
+   "returned": [
+    "build-decision-made The decision was made to use Vite for frontend bundling, replacing the previous build system. This decision was implemented and deployed using a staged release process.  [facts] The frontend is bundled with Vite now · Rolled it out behind the usual staged release · Follow-up",
+    "frontend-bundling-with-vite The frontend is now bundled with Vite instead of the previous build system. This change was rolled out behind a staged release, indicating a cautious approach to deployment.  [facts] The frontend is bundled with Vite now · Rolled it out behind the usual staged release · Follow-up"
+   ],
+   "current_live": true,
+   "current_retired": true,
+   "current_demoted": false,
+   "current_absent": false,
+   "notes_written": 3,
+   "notes_in_cyrillic": 0,
+   "pairs": 1
+  },
+  {
+   "id": "app-orm",
+   "shape": "approach_abandoned",
+   "n_hits": 2,
+   "stale_returned": false,
+   "stale_rank": null,
+   "current_returned": true,
+   "chars_returned": 606,
+   "returned": [
+    "asyncpg-handwritten-sql-data-access Data access was rewritten using hand-written SQL with asyncpg instead of SQLAlchemy ORM. This approach was chosen after reviewing dashboard behavior and finding no movement despite monitoring.  [facts] data access was rewritten as hand-written SQL with asyncpg · Checked the dashboards for an hour after and nothing moved",
+    "use-asyncpg-handwritten-sql The decision was made to use asyncpg with hand-written SQL for data access, replacing the earlier SQLAlchemy ORM approach.  [facts] data access was rewritten as hand-written SQL with asyncpg · That earlier decision is off"
+   ],
+   "current_live": true,
+   "current_retired": true,
+   "current_demoted": false,
+   "current_absent": false,
+   "notes_written": 4,
+   "notes_in_cyrillic": 0,
+   "pairs": 0
+  },
+  {
+   "id": "app-queue",
+   "shape": "approach_abandoned",
+   "n_hits": 1,
+   "stale_returned": false,
+   "stale_rank": null,
+   "current_returned": true,
+   "chars_returned": 230,
+   "returned": [
+    "background-jobs-with-celery Background jobs are implemented using Celery with a Postgres-backed queue. This approach provides reliable job processing and persistence.  [facts] background jobs run on a Postgres-backed queue instead"
+   ],
+   "current_live": true,
+   "current_retired": false,
+   "current_demoted": false,
+   "current_absent": false,
+   "notes_written": 1,
+   "notes_in_cyrillic": 0,
+   "pairs": 1
+  },
+  {
+   "id": "app-ci",
+   "shape": "approach_abandoned",
+   "n_hits": 1,
+   "stale_returned": false,
+   "stale_rank": null,
+   "current_returned": false,
+   "chars_returned": 182,
+   "returned": [
+    "staged-release-deployment The project uses a staged release deployment pattern where changes are incrementally rolled out. This approach helps in minimizing risks during deployments."
+   ],
+   "current_live": false,
+   "current_retired": false,
+   "current_demoted": false,
+   "current_absent": true,
+   "notes_written": 1,
+   "notes_in_cyrillic": 0,
+   "pairs": 1
+  },
+  {
+   "id": "app-search",
+   "shape": "approach_abandoned",
+   "n_hits": 2,
+   "stale_returned": true,
+   "stale_rank": 1,
+   "current_returned": true,
+   "chars_returned": 606,
+   "returned": [
+    "elasticsearch-search-setup-review The search functionality is powered by Elasticsearch. A review was conducted to understand how the search is set up, and dashboards were checked for an hour after without any movement.  [facts] search is powered by Elasticsearch · Checked the dashboards for an hour after and nothing moved",
+    "postgres-fulltext-search-used The search functionality is powered by Postgres full-text search. This was confirmed after running the full test suite which remained green.  [facts] search is powered by Postgres full-text search · Ran the full test suite afterwards and it stayed green"
+   ],
+   "current_live": true,
+   "current_retired": false,
+   "current_demoted": false,
+   "current_absent": false,
+   "notes_written": 2,
+   "notes_in_cyrillic": 0,
+   "pairs": 0
+  },
+  {
+   "id": "app-styling",
+   "shape": "approach_abandoned",
+   "n_hits": 3,
+   "stale_returned": true,
+   "stale_rank": 1,
+   "current_returned": true,
+   "chars_returned": 687,
+   "returned": [
+    "styled-components-usage Components are styled with styled-components, which is a valid and accepted approach for styling in this project.",
+    "tailwind-styling-in-components Components are styled with Tailwind utility classes instead of styled-components. This approach was chosen to align with the project's UI conventions and improve consistency.",
+    "switch-to-tailwind-styling The decision was made to use Tailwind utility classes for styling components, reversing an earlier choice that used styled-components. This change improves maintainability and aligns with the project's current direction.  [facts] Reversed the earlier call on the UI: components are styled with Tailwind utility classes"
+   ],
+   "current_live": true,
+   "current_retired": false,
+   "current_demoted": false,
+   "current_absent": false,
+   "notes_written": 3,
+   "notes_in_cyrillic": 0,
+   "pairs": 0
+  },
+  {
+   "id": "app-packaging",
+   "shape": "approach_abandoned",
+   "n_hits": 2,
+   "stale_returned": false,
+   "stale_rank": null,
+   "current_returned": true,
+   "chars_returned": 376,
+   "returned": [
+    "use-poetry-for-packaging Poetry was considered for packaging but ultimately not used; hatchling is the chosen method.  [facts] The package is built with hatchling and published by CI. · Follow-up",
+    "package-build-and-publish The package is built with hatchling and published by CI. This approach was confirmed to work and is consistent with the project's setup.  [facts] Follow-up"
+   ],
+   "current_live": true,
+   "current_retired": false,
+   "current_demoted": false,
+   "current_absent": false,
+   "notes_written": 2,
+   "notes_in_cyrillic": 0,
+   "pairs": 2
+  },
+  {
+   "id": "app-state",
+   "shape": "approach_abandoned",
+   "n_hits": 1,
+   "stale_returned": false,
+   "stale_rank": null,
+   "current_returned": true,
+   "chars_returned": 239,
+   "returned": [
+    "frontend-global-state-in-zustand The frontend global state was moved from Redux to Zustand stores. This change improves performance and simplifies state management by reducing boilerplate code.  [facts] global state moved to Zustand stores"
+   ],
+   "current_live": true,
+   "current_retired": true,
+   "current_demoted": false,
+   "current_absent": false,
+   "notes_written": 2,
+   "notes_in_cyrillic": 0,
+   "pairs": 0
+  },
+  {
+   "id": "app-infra",
+   "shape": "approach_abandoned",
+   "n_hits": 3,
+   "stale_returned": true,
+   "stale_rank": 1,
+   "current_returned": true,
+   "chars_returned": 794,
+   "returned": [
+    "infrastructure-provisioning-with-terraform The infrastructure was successfully provisioned using Terraform. This approach ensures consistent and reproducible deployment of the Kubernetes environment.  [facts] infrastructure is provisioned with Terraform",
+    "pulumi-for-infrastructure The decision was made to use Pulumi for infrastructure provisioning in TypeScript, replacing previous methods such as Terraform.  [facts] infrastructure is provisioned with Pulumi in TypeScript · new position: infrastructure is provisioned with Pulumi in TypeScript",
+    "infrastructure-provisioning-with-pulumi Infrastructure is provisioned with Pulumi in TypeScript. This approach was rolled out behind a staged release, indicating a controlled deployment strategy.  [facts] Rolled it out behind the usual staged release"
+   ],
+   "current_live": true,
+   "current_retired": false,
+   "current_demoted": false,
+   "current_absent": false,
+   "notes_written": 3,
+   "notes_in_cyrillic": 0,
+   "pairs": 0
+  },
+  {
+   "id": "app-migrations",
+   "shape": "approach_abandoned",
+   "n_hits": 1,
+   "stale_returned": false,
+   "stale_rank": null,
+   "current_returned": true,
+   "chars_returned": 359,
+   "returned": [
+    "schema-migration-through-alembic Schema migrations are handled through plain numbered SQL files applied by a shell script. The process was checked via dashboards for an hour after execution with no movement observed.  [facts] Schema migrations are plain numbered SQL files applied by a shell script · Checked the dashboards for an hour after and nothing moved"
+   ],
+   "current_live": true,
+   "current_retired": false,
+   "current_demoted": false,
+   "current_absent": false,
+   "notes_written": 1,
+   "notes_in_cyrillic": 0,
+   "pairs": 1
+  },
+  {
+   "id": "app-serialisation",
+   "shape": "approach_abandoned",
+   "n_hits": 1,
+   "stale_returned": false,
+   "stale_rank": null,
+   "current_returned": true,
+   "chars_returned": 270,
+   "returned": [
+    "protobuf-message-serialization Messages are serialized as newline-delimited JSON. This format was confirmed after a review and one rename was requested but otherwise approved.  [facts] messages are serialised as newline-delimited JSON · one rename and otherwise approved"
+   ],
+   "current_live": true,
+   "current_retired": false,
+   "current_demoted": false,
+   "current_absent": false,
+   "notes_written": 1,
+   "notes_in_cyrillic": 0,
+   "pairs": 1
+  },
+  {
+   "id": "app-secrets",
+   "shape": "approach_abandoned",
+   "n_hits": 1,
+   "stale_returned": false,
+   "stale_rank": null,
+   "current_returned": true,
+   "chars_returned": 263,
+   "returned": [
+    "secrets-from-vault-at-boot Secrets are injected as environment variables by the orchestrator, not loaded from Vault at boot time. This was documented in the README section that was already stale.  [facts] Documented it in the README section that was already stale"
+   ],
+   "current_live": true,
+   "current_retired": false,
+   "current_demoted": false,
+   "current_absent": false,
+   "notes_written": 1,
+   "notes_in_cyrillic": 0,
+   "pairs": 1
+  },
+  {
+   "id": "app-e2e",
+   "shape": "approach_abandoned",
+   "n_hits": 3,
+   "stale_returned": true,
+   "stale_rank": 1,
+   "current_returned": true,
+   "chars_returned": 512,
+   "returned": [
+    "selenium-end-to-end-testing End-to-end tests are driven by Selenium and the code now matches. This approach was validated through testing and monitoring.",
+    "playwright-end-to-end-testing End-to-end tests are driven by Playwright and ran successfully. The full test suite stayed green after execution.  [facts] Ran the full test suite afterwards and it stayed green · Follow-up",
+    "testing-decision-made A decision was made regarding testing, specifically that end-to-end tests are driven by Playwright.  [facts] Follow-up"
+   ],
+   "current_live": true,
+   "current_retired": false,
+   "current_demoted": false,
+   "current_absent": false,
+   "notes_written": 3,
+   "notes_in_cyrillic": 0,
+   "pairs": 1
+  },
+  {
+   "id": "ret-beta-flag",
+   "shape": "retracted_no_replacement",
+   "n_hits": 2,
+   "stale_returned": false,
+   "stale_rank": null,
+   "current_returned": true,
+   "chars_returned": 487,
+   "returned": [
+    "beta-dashboard-flag The decision was made to remove the beta_dashboard flag once the new UI became unconditional, ensuring no further gating of the feature.  [facts] beta_dashboard flag was deleted · new UI is now unconditional",
+    "feature-flag-gating Feature flags can be used to gate new functionality, but they should be removed once the feature is ready for unconditional use. The beta_dashboard flag was deleted after the new UI became unconditional.  [facts] new UI is now unconditional"
+   ],
+   "current_live": true,
+   "current_retired": false,
+   "current_demoted": false,
+   "current_absent": false,
+   "notes_written": 2,
+   "notes_in_cyrillic": 0,
+   "pairs": 2
+  },
+  {
+   "id": "ret-legacy-endpoint",
+   "shape": "retracted_no_replacement",
+   "n_hits": 1,
+   "stale_returned": false,
+   "stale_rank": null,
+   "current_returned": true,
+   "chars_returned": 276,
+   "returned": [
+    "api-export-csv-streaming The /v1/export endpoint was removed with no replacement, affecting three files but not config. This pattern shows a breaking API change that requires careful handling of client-side code updates.  [facts] touched three files · none of them were config"
+   ],
+   "current_live": true,
+   "current_retired": false,
+   "current_demoted": false,
+   "current_absent": false,
+   "notes_written": 1,
+   "notes_in_cyrillic": 0,
+   "pairs": 1
+  },
+  {
+   "id": "ret-telemetry",
+   "shape": "retracted_no_replacement",
+   "n_hits": 1,
+   "stale_returned": false,
+   "stale_rank": null,
+   "current_returned": true,
+   "chars_returned": 343,
+   "returned": [
+    "telemetry-thread-continuity The telemetry system maintains thread continuity during data processing. This was confirmed through a pairing session where the agent and user worked together for roughly ninety minutes without interruptions.  [facts] telemetry changed this week · Usage reporting was stripped out entirely; the client sends nothing"
+   ],
+   "current_live": true,
+   "current_retired": false,
+   "current_demoted": false,
+   "current_absent": false,
+   "notes_written": 1,
+   "notes_in_cyrillic": 0,
+   "pairs": 1
+  },
+  {
+   "id": "ret-mirror",
+   "shape": "retracted_no_replacement",
+   "n_hits": 1,
+   "stale_returned": false,
+   "stale_rank": null,
+   "current_returned": true,
+   "chars_returned": 325,
+   "returned": [
+    "read-replica-for-analytics Using a read replica for analytics queries reduces load on the primary database. The ap-south-1 replica was decommissioned and analytics reads now hit the primary, which was rolled out behind a staged release.  [facts] analytics reads hit the primary · rolled it out behind the usual staged release"
+   ],
+   "current_live": true,
+   "current_retired": false,
+   "current_demoted": false,
+   "current_absent": false,
+   "notes_written": 1,
+   "notes_in_cyrillic": 0,
+   "pairs": 1
+  },
+  {
+   "id": "ret-plugin-api",
+   "shape": "retracted_no_replacement",
+   "n_hits": 1,
+   "stale_returned": false,
+   "stale_rank": null,
+   "current_returned": true,
+   "chars_returned": 286,
+   "returned": [
+    "third-party-plugins-loading The plugin system was removed before version 1.0 and never shipped, which means third-party plugins cannot be loaded in the current architecture.  [facts] Reversed the earlier call on extensibility: the plugin system was removed before 1.0 and never shipped."
+   ],
+   "current_live": true,
+   "current_retired": false,
+   "current_demoted": false,
+   "current_absent": false,
+   "notes_written": 1,
+   "notes_in_cyrillic": 0,
+   "pairs": 1
+  },
+  {
+   "id": "ret-mobile",
+   "shape": "retracted_no_replacement",
+   "n_hits": 3,
+   "stale_returned": true,
+   "stale_rank": 1,
+   "current_returned": true,
+   "chars_returned": 641,
+   "returned": [
+    "ios-client-sync-engine The iOS client shares the sync engine with the web app, and the code now matches. This pattern ensures consistency between platforms by reusing shared components.",
+    "ios-client-discontinued The iOS client was discontinued and only the web app remains. This decision was confirmed during a follow-up review.  [facts] The iOS client was discontinued; only the web app remains. · The reviewer asked for one rename and otherwise approved it.",
+    "shared-sync-engine-decision The shared sync engine decision was made, likely based on the need for consistency across platforms and the discontinuation of iOS client.  [facts] Follow-up"
+   ],
+   "current_live": true,
+   "current_retired": false,
+   "current_demoted": false,
+   "current_absent": false,
+   "notes_written": 3,
+   "notes_in_cyrillic": 0,
+   "pairs": 1
+  },
+  {
+   "id": "ret-cron",
+   "shape": "retracted_no_replacement",
+   "n_hits": 2,
+   "stale_returned": false,
+   "stale_rank": null,
+   "current_returned": true,
+   "chars_returned": 500,
+   "returned": [
+    "nightly-cron-audit-log-compaction The audit log is append-only and never compacted. This was previously thought to be a nightly cron job, but that decision was dropped.  [facts] nightly compaction was dropped · audit log is append-only forever",
+    "audit-log-append-only The decision was made that the audit log is append-only and will never be compacted. This was previously thought to be a nightly cron job, but that was dropped.  [facts] nightly compaction was dropped · audit log is append-only forever"
+   ],
+   "current_live": true,
+   "current_retired": false,
+   "current_demoted": false,
+   "current_absent": false,
+   "notes_written": 2,
+   "notes_in_cyrillic": 0,
+   "pairs": 1
+  },
+  {
+   "id": "ret-grpc",
+   "shape": "retracted_no_replacement",
+   "n_hits": 1,
+   "stale_returned": false,
+   "stale_rank": null,
+   "current_returned": true,
+   "chars_returned": 313,
+   "returned": [
+    "grpc-communication-setup The system was initially set up with gRPC communication but was later switched to plain HTTP. This change was verified by running the full test suite which remained green.  [facts] gRPC was ripped out · everything is plain HTTP now · Ran the full test suite afterwards and it stayed green"
+   ],
+   "current_live": true,
+   "current_retired": false,
+   "current_demoted": false,
+   "current_absent": false,
+   "notes_written": 1,
+   "notes_in_cyrillic": 0,
+   "pairs": 1
+  },
+  {
+   "id": "ret-sso",
+   "shape": "retracted_no_replacement",
+   "n_hits": 1,
+   "stale_returned": false,
+   "stale_rank": null,
+   "current_returned": true,
+   "chars_returned": 332,
+   "returned": [
+    "okta-saml-sign-in-flow The Okta SAML sign-in flow was implemented but later cancelled. Staff now use ordinary accounts instead. A note was left in the tracker to prevent future work on this integration.  [facts] access changed this week · The Okta integration was cancelled · staff use ordinary accounts · Left a note in the tracker"
+   ],
+   "current_live": true,
+   "current_retired": false,
+   "current_demoted": false,
+   "current_absent": false,
+   "notes_written": 1,
+   "notes_in_cyrillic": 0,
+   "pairs": 1
+  },
+  {
+   "id": "ret-webhook",
+   "shape": "retracted_no_replacement",
+   "n_hits": 1,
+   "stale_returned": false,
+   "stale_rank": null,
+   "current_returned": true,
+   "chars_returned": 221,
+   "returned": [
+    "webhook-order-integration The partner integration was terminated and the webhook deleted. This change touched three files and none of them were config.  [facts] The change touched three files and none of them were config."
+   ],
+   "current_live": true,
+   "current_retired": false,
+   "current_demoted": false,
+   "current_absent": false,
+   "notes_written": 1,
+   "notes_in_cyrillic": 0,
+   "pairs": 1
+  },
+  {
+   "id": "ret-gpu-node",
+   "shape": "retracted_no_replacement",
+   "n_hits": 2,
+   "stale_returned": false,
+   "stale_rank": null,
+   "current_returned": true,
+   "chars_returned": 537,
+   "returned": [
+    "a100-node-reservation-for-training The reserved GPU node was given up in favor of renting capacity per run. This approach allows for more flexible and cost-effective training sessions, especially when the full node reservation is not needed.  [facts] training rents capacity per run",
+    "training-capacity-renting It was decided to rent training capacity per run instead of reserving an A100 node. This decision improves resource utilization and reduces cost when full node reservation is not required.  [facts] training rents capacity per run"
+   ],
+   "current_live": true,
+   "current_retired": false,
+   "current_demoted": false,
+   "current_absent": false,
+   "notes_written": 2,
+   "notes_in_cyrillic": 0,
+   "pairs": 1
+  },
+  {
+   "id": "ret-cli-flag",
+   "shape": "retracted_no_replacement",
+   "n_hits": 2,
+   "stale_returned": false,
+   "stale_rank": null,
+   "current_returned": true,
+   "chars_returned": 378,
+   "returned": [
+    "cli-flag-legacy-restores-pre-2-0-format The --legacy flag was dropped in version 3.0 with no equivalent, and the functionality was rolled out behind a staged release.  [facts] Follow-up",
+    "use-legacy-flag-for-backward-compatibility The decision was made to use the legacy flag for backward compatibility, even though it was dropped in version 3.0.  [facts] --legacy flag · Follow-up"
+   ],
+   "current_live": true,
+   "current_retired": false,
+   "current_demoted": false,
+   "current_absent": false,
+   "notes_written": 2,
+   "notes_in_cyrillic": 0,
+   "pairs": 2
+  },
+  {
+   "id": "ret-audit-ui",
+   "shape": "retracted_no_replacement",
+   "n_hits": 2,
+   "stale_returned": false,
+   "stale_rank": null,
+   "current_returned": true,
+   "chars_returned": 638,
+   "returned": [
+    "admin-panel-audit-filtering The audit tab was removed from the admin panel entirely, which contradicted an earlier assumption. This required re-evaluating the dashboard monitoring approach.  [facts] Came back to the admin panel. That earlier decision is off: the audit tab was taken out of the admin panel entirely. · Checked the dashboards for an hour after and nothing moved.",
+    "dashboard-monitoring-update The decision to monitor the dashboards for an hour after the audit tab removal was made, but no changes occurred, indicating a need to reassess monitoring strategy.  [facts] Checked the dashboards for an hour after and nothing moved."
+   ],
+   "current_live": true,
+   "current_retired": false,
+   "current_demoted": false,
+   "current_absent": false,
+   "notes_written": 2,
+   "notes_in_cyrillic": 0,
+   "pairs": 1
+  },
+  {
+   "id": "ret-i18n",
+   "shape": "retracted_no_replacement",
+   "n_hits": 2,
+   "stale_returned": false,
+   "stale_rank": null,
+   "current_returned": true,
+   "chars_returned": 613,
+   "returned": [
+    "english-only-app The decision was made to drop translations and make the app English-only, as approved by the reviewer.  [facts] translations were dropped; the app is English-only · The reviewer asked for one rename and otherwise approved it",
+    "localization-pairing-session A localization pairing session was conducted where translations were dropped and the app became English-only. The reviewer approved the changes with only one rename requested.  [facts] Reopened localisation after the last review · translations were dropped; the app is English-only · The reviewer asked for one rename and otherwise approved it"
+   ],
+   "current_live": true,
+   "current_retired": false,
+   "current_demoted": false,
+   "current_absent": false,
+   "notes_written": 2,
+   "notes_in_cyrillic": 0,
+   "pairs": 1
+  },
+  {
+   "id": "ret-sandbox",
+   "shape": "retracted_no_replacement",
+   "n_hits": 1,
+   "stale_returned": false,
+   "stale_rank": null,
+   "current_returned": true,
+   "chars_returned": 345,
+   "returned": [
+    "sandbox-environment-mirroring The sandbox environment was shut down and partners now test against their own stubs. This change required updating documentation in the README to reflect the new testing approach.  [facts] The sandbox was shut down · partners test against their own stubs · Documented it in the README section that was already stale"
+   ],
+   "current_live": true,
+   "current_retired": false,
+   "current_demoted": false,
+   "current_absent": false,
+   "notes_written": 1,
+   "notes_in_cyrillic": 0,
+   "pairs": 1
+  },
+  {
+   "id": "nar-retry-scope",
+   "shape": "narrowed",
+   "n_hits": 1,
+   "stale_returned": false,
+   "stale_rank": null,
+   "current_returned": true,
+   "chars_returned": 334,
+   "returned": [
+    "http-client-retry-logic The HTTP client now retries only on 5xx responses and never retries on 4xx responses. This behavior was verified by running the full test suite which stayed green after the change.  [facts] the client retries only on 5xx responses · 4xx is never retried · Ran the full test suite afterwards and it stayed green"
+   ],
+   "current_live": true,
+   "current_retired": false,
+   "current_demoted": false,
+   "current_absent": false,
+   "notes_written": 1,
+   "notes_in_cyrillic": 0,
+   "pairs": 1
+  },
+  {
+   "id": "nar-cache-scope",
+   "shape": "narrowed",
+   "n_hits": 2,
+   "stale_returned": false,
+   "stale_rank": null,
+   "current_returned": true,
+   "chars_returned": 620,
+   "returned": [
+    "api-response-caching Only GET responses are cached; writes bypass the cache entirely. This approach prevents stale data from being served during write operations while maintaining performance for read-heavy operations.  [facts] Reversed the earlier call on caching: only GET responses are cached; writes bypass the cache entirely.",
+    "get-only-caching The decision was made to cache only GET responses and bypass the cache for writes. This ensures data consistency by avoiding stale reads during write operations.  [facts] Reversed the earlier call on caching: only GET responses are cached; writes bypass the cache entirely."
+   ],
+   "current_live": true,
+   "current_retired": false,
+   "current_demoted": false,
+   "current_absent": false,
+   "notes_written": 2,
+   "notes_in_cyrillic": 0,
+   "pairs": 1
+  },
+  {
+   "id": "nar-audit-scope",
+   "shape": "narrowed",
+   "n_hits": 2,
+   "stale_returned": false,
+   "stale_rank": null,
+   "current_returned": true,
+   "chars_returned": 543,
+   "returned": [
+    "audit-log-table-changes Changes to billing tables are audited now, while other audit functionality was removed. The change touched three files and none were config.  [facts] Only changes to billing tables are audited now. · The change touched three files and none of them were config. · Follow-up",
+    "document-audit-decision-in-readme The decision to audit only billing table changes was made and should be documented in the README.  [facts] Follow-up on auditing, and it did not survive. Only changes to billing tables are audited now. · Follow-up"
+   ],
+   "current_live": true,
+   "current_retired": false,
+   "current_demoted": false,
+   "current_absent": false,
+   "notes_written": 2,
+   "notes_in_cyrillic": 0,
+   "pairs": 2
+  },
+  {
+   "id": "nar-gpu-scope",
+   "shape": "narrowed",
+   "n_hits": 1,
+   "stale_returned": false,
+   "stale_rank": null,
+   "current_returned": true,
+   "chars_returned": 250,
+   "returned": [
+    "trainer-gpu-utilization The trainer uses GPU only for jobs with more than 10M parameters, while smaller models run on CPU. This was confirmed through a pairing session.  [facts] GPU is used only for jobs above 10M parameters; smaller ones run on CPU."
+   ],
+   "current_live": true,
+   "current_retired": false,
+   "current_demoted": false,
+   "current_absent": false,
+   "notes_written": 1,
+   "notes_in_cyrillic": 0,
+   "pairs": 1
+  },
+  {
+   "id": "nar-lint-scope",
+   "shape": "narrowed",
+   "n_hits": 1,
+   "stale_returned": false,
+   "stale_rank": null,
+   "current_returned": true,
+   "chars_returned": 251,
+   "returned": [
+    "pre-commit-hook-lints-repository The hook lints only the staged files. This approach ensures that only changes intended for commit are validated, reducing noise and improving developer experience.  [facts] Rolled it out behind the usual staged release"
+   ],
+   "current_live": true,
+   "current_retired": false,
+   "current_demoted": false,
+   "current_absent": false,
+   "notes_written": 1,
+   "notes_in_cyrillic": 0,
+   "pairs": 1
+  },
+  {
+   "id": "nar-notify-scope",
+   "shape": "narrowed",
+   "n_hits": 1,
+   "stale_returned": false,
+   "stale_rank": null,
+   "current_returned": true,
+   "chars_returned": 323,
+   "returned": [
+    "alerting-on-failed-deploy Production deploy failures trigger page-on-call alerts, while staging failures go to Slack. This separation helps prioritize critical issues and reduces noise in production monitoring.  [facts] alerting changed this week · Only production deploy failures page on-call; staging failures go to Slack"
+   ],
+   "current_live": true,
+   "current_retired": false,
+   "current_demoted": false,
+   "current_absent": false,
+   "notes_written": 1,
+   "notes_in_cyrillic": 0,
+   "pairs": 1
+  },
+  {
+   "id": "nar-encrypt-scope",
+   "shape": "narrowed",
+   "n_hits": 1,
+   "stale_returned": false,
+   "stale_rank": null,
+   "current_returned": true,
+   "chars_returned": 199,
+   "returned": [
+    "encrypted-at-rest-storage Encryption at rest applies only to files in the private bucket. This was confirmed after a review and one rename was requested.  [facts] one rename and otherwise approved it"
+   ],
+   "current_live": true,
+   "current_retired": false,
+   "current_demoted": false,
+   "current_absent": false,
+   "notes_written": 1,
+   "notes_in_cyrillic": 0,
+   "pairs": 1
+  },
+  {
+   "id": "nar-index-scope",
+   "shape": "narrowed",
+   "n_hits": 1,
+   "stale_returned": false,
+   "stale_rank": null,
+   "current_returned": true,
+   "chars_returned": 316,
+   "returned": [
+    "staged-release-rollout The index covers documents from the last 90 days only, which was reversed in an earlier call. This pattern ensures that stale documentation is updated to reflect current data coverage.  [facts] Reversed the earlier call on the index · Documented it in the README section that was already stale"
+   ],
+   "current_live": true,
+   "current_retired": false,
+   "current_demoted": false,
+   "current_absent": false,
+   "notes_written": 1,
+   "notes_in_cyrillic": 0,
+   "pairs": 1
+  },
+  {
+   "id": "nar-backup-scope",
+   "shape": "narrowed",
+   "n_hits": 2,
+   "stale_returned": false,
+   "stale_rank": null,
+   "current_returned": true,
+   "chars_returned": 531,
+   "returned": [
+    "nightly-backup-database-dump The nightly backup process only covers the primary database, not all databases. This was confirmed after running the full test suite which stayed green.  [facts] The nightly backup covers the primary database only. · Ran the full test suite afterwards and it stayed green. · Follow-up",
+    "backups-decision-written A decision was made regarding backups, and it is documented as written.  [facts] Follow-up on backups, and it did not survive. · The nightly backup covers the primary database only. · Follow-up"
+   ],
+   "current_live": true,
+   "current_retired": false,
+   "current_demoted": false,
+   "current_absent": false,
+   "notes_written": 2,
+   "notes_in_cyrillic": 0,
+   "pairs": 2
+  },
+  {
+   "id": "nar-ratelimit-scope",
+   "shape": "narrowed",
+   "n_hits": 2,
+   "stale_returned": false,
+   "stale_rank": null,
+   "current_returned": true,
+   "chars_returned": 346,
+   "returned": [
+    "rate-limiting-applies-to-all-calls Rate limiting applies only to unauthenticated callers, not all API calls. This was a misapprehension that needed correction.  [facts] rate limits apply only to unauthenticated callers",
+    "rename-approved-by-reviewer The rename decision was approved by a reviewer, confirming that renaming is acceptable under review."
+   ],
+   "current_live": true,
+   "current_retired": false,
+   "current_demoted": false,
+   "current_absent": false,
+   "notes_written": 2,
+   "notes_in_cyrillic": 0,
+   "pairs": 2
+  },
+  {
+   "id": "nar-compress-scope",
+   "shape": "narrowed",
+   "n_hits": 1,
+   "stale_returned": false,
+   "stale_rank": null,
+   "current_returned": true,
+   "chars_returned": 333,
+   "returned": [
+    "gzip-compression-response The system now compresses HTTP responses larger than 8 KB. This change was implemented by modifying three files, none of which were configuration files. The compression improves bandwidth usage for large responses.  [facts] only responses above 8 KB are compressed · three files and none of them were config"
+   ],
+   "current_live": true,
+   "current_retired": false,
+   "current_demoted": false,
+   "current_absent": false,
+   "notes_written": 1,
+   "notes_in_cyrillic": 0,
+   "pairs": 1
+  },
+  {
+   "id": "nar-mfa-scope",
+   "shape": "narrowed",
+   "n_hits": 1,
+   "stale_returned": false,
+   "stale_rank": null,
+   "current_returned": true,
+   "chars_returned": 301,
+   "returned": [
+    "mfa-enforcement-confirmed MFA enforcement was confirmed to be scoped to admin accounts only. This pattern ensures that security policies are correctly applied and avoids unnecessary MFA prompts for regular users.  [facts] security changed this week · MFA is required only for accounts with admin scope"
+   ],
+   "current_live": true,
+   "current_retired": false,
+   "current_demoted": false,
+   "current_absent": false,
+   "notes_written": 1,
+   "notes_in_cyrillic": 0,
+   "pairs": 1
+  },
+  {
+   "id": "nar-replay-scope",
+   "shape": "narrowed",
+   "n_hits": 1,
+   "stale_returned": false,
+   "stale_rank": null,
+   "current_returned": true,
+   "chars_returned": 242,
+   "returned": [
+    "event-log-replay-on-boot The consumer replays only events since the last checkpoint. This pattern ensures that the system can resume processing from where it left off after a restart, maintaining consistency and avoiding duplicate processing."
+   ],
+   "current_live": true,
+   "current_retired": false,
+   "current_demoted": false,
+   "current_absent": false,
+   "notes_written": 1,
+   "notes_in_cyrillic": 0,
+   "pairs": 1
+  },
+  {
+   "id": "nar-shard-scope",
+   "shape": "narrowed",
+   "n_hits": 2,
+   "stale_returned": false,
+   "stale_rank": null,
+   "current_returned": true,
+   "chars_returned": 559,
+   "returned": [
+    "tenant-sharding-approach The decision was made to shard tenants based on record count, specifically assigning dedicated shards only to those with over 50,000 records. This balances performance and resource usage.  [facts] only tenants above 50k records get a dedicated shard",
+    "sharding-tenant-database The system uses a sharding strategy where tenants with more than 50,000 records are assigned dedicated shards. This approach helps manage performance and resource allocation for high-volume tenants.  [facts] only tenants above 50k records get a dedicated shard"
+   ],
+   "current_live": true,
+   "current_retired": false,
+   "current_demoted": false,
+   "current_absent": false,
+   "notes_written": 2,
+   "notes_in_cyrillic": 0,
+   "pairs": 2
+  },
+  {
+   "id": "nar-trace-scope",
+   "shape": "narrowed",
+   "n_hits": 2,
+   "stale_returned": false,
+   "stale_rank": null,
+   "current_returned": true,
+   "chars_returned": 645,
+   "returned": [
+    "end-to-end-request-tracing The system implements end-to-end request tracing with a sampling rate of one in a hundred. This approach was reviewed and approved with only a minor rename requested.  [facts] One request in a hundred is sampled for tracing · The reviewer asked for one rename and otherwise approved it · Follow-up",
+    "request-tracing-implementation The implementation of request tracing was decided to proceed with a sampling rate of one in a hundred, which was approved by the reviewer after a minor rename.  [facts] One request in a hundred is sampled for tracing · The reviewer asked for one rename and otherwise approved it · Follow-up"
+   ],
+   "current_live": true,
+   "current_retired": false,
+   "current_demoted": false,
+   "current_absent": false,
+   "notes_written": 2,
+   "notes_in_cyrillic": 0,
+   "pairs": 2
+  },
+  {
+   "id": "ctl-db-cache",
+   "shape": "control",
+   "n_hits": 3,
+   "stale_returned": false,
+   "stale_rank": null,
+   "current_returned": true,
+   "chars_returned": 661,
+   "returned": [
+    "postgresql-16-primary-database The team decided to use PostgreSQL 16 as the primary database for the project. This decision was documented in the README and aligns with the existing patterns for database management.  [facts] README section that was already stale",
+    "postgresql-16-as-primary-database PostgreSQL 16 was chosen as the primary database for the project, replacing older versions. This decision was made to ensure compatibility and leverage new features.",
+    "staged-release-deployment The database rollout was performed behind a staged release process, ensuring controlled deployment and minimizing risk.  [facts] Rolled it out behind the usual staged release"
+   ],
+   "current_live": true,
+   "current_retired": false,
+   "current_demoted": false,
+   "current_absent": false,
+   "notes_written": 3,
+   "notes_in_cyrillic": 0,
+   "pairs": 2
+  },
+  {
+   "id": "ctl-lang-test",
+   "shape": "control",
+   "n_hits": 1,
+   "stale_returned": false,
+   "stale_rank": null,
+   "current_returned": true,
+   "chars_returned": 235,
+   "returned": [
+    "service-written-in-rust The service is written in Rust, which provides memory safety and performance benefits. This choice was made to ensure robustness and efficiency in the system.  [facts] the integration tests are written in Python"
+   ],
+   "current_live": true,
+   "current_retired": false,
+   "current_demoted": false,
+   "current_absent": false,
+   "notes_written": 1,
+   "notes_in_cyrillic": 0,
+   "pairs": 1
+  },
+  {
+   "id": "ctl-port-pair",
+   "shape": "control",
+   "n_hits": 2,
+   "stale_returned": false,
+   "stale_rank": null,
+   "current_returned": true,
+   "chars_returned": 415,
+   "returned": [
+    "api-listens-on-port-8443 The API was confirmed to be listening on port 8443. This is a key configuration detail for networking setup and integration.  [facts] API listens on port 8443",
+    "metrics-endpoint-listens-on-port-9100 The metrics endpoint was found to listen on port 9100. This is a key networking detail that should be documented to avoid redundant work in future.  [facts] metrics endpoint listens on port 9100"
+   ],
+   "current_live": true,
+   "current_retired": false,
+   "current_demoted": false,
+   "current_absent": false,
+   "notes_written": 2,
+   "notes_in_cyrillic": 0,
+   "pairs": 0
+  },
+  {
+   "id": "ctl-env",
+   "shape": "control",
+   "n_hits": 2,
+   "stale_returned": false,
+   "stale_rank": null,
+   "current_returned": true,
+   "chars_returned": 435,
+   "returned": [
+    "production-deploys-on-tagged-release Production deployments are now triggered exclusively on tagged releases. This decision ensures controlled and intentional deployment of code to production.  [facts] production deploys on a tagged release",
+    "staging-deployment-on-merge Staging deployments are triggered on merge events. This pattern ensures that code changes are automatically deployed to staging for testing before reaching production."
+   ],
+   "current_live": true,
+   "current_retired": false,
+   "current_demoted": false,
+   "current_absent": false,
+   "notes_written": 2,
+   "notes_in_cyrillic": 0,
+   "pairs": 1
+  },
+  {
+   "id": "ctl-model",
+   "shape": "control",
+   "n_hits": 2,
+   "stale_returned": false,
+   "stale_rank": null,
+   "current_returned": false,
+   "chars_returned": 405,
+   "returned": [
+    "embedder-configuration The embedder configuration was updated to use a cross-encoder reranker. This change improves the quality of search results by leveraging more sophisticated ranking models.  [facts] the reranker is a cross-encoder",
+    "cross-encoder-reranker It was decided to switch the reranker to a cross-encoder model for improved search accuracy and relevance.  [facts] the reranker is a cross-encoder"
+   ],
+   "current_live": false,
+   "current_retired": false,
+   "current_demoted": true,
+   "current_absent": false,
+   "notes_written": 2,
+   "notes_in_cyrillic": 0,
+   "pairs": 1
+  },
+  {
+   "id": "ctl-storage",
+   "shape": "control",
+   "n_hits": 2,
+   "stale_returned": false,
+   "stale_rank": null,
+   "current_returned": true,
+   "chars_returned": 538,
+   "returned": [
+    "user-uploads-to-s3 It was decided that user uploads should be stored in S3, which is a scalable and secure object storage service suitable for handling large volumes of unstructured data.",
+    "storage-decision-implementation The team implemented a storage strategy where database backups are directed to Glacier, which is a cost-effective long-term storage solution. This was rolled out using a staged release process to ensure stability and minimize risk.  [facts] database backups go to Glacier · Rolled it out behind the usual staged release"
+   ],
+   "current_live": true,
+   "current_retired": false,
+   "current_demoted": false,
+   "current_absent": false,
+   "notes_written": 2,
+   "notes_in_cyrillic": 0,
+   "pairs": 2
+  },
+  {
+   "id": "ctl-auth-pair",
+   "shape": "control",
+   "n_hits": 1,
+   "stale_returned": false,
+   "stale_rank": null,
+   "current_returned": true,
+   "chars_returned": 145,
+   "returned": [
+    "admin-panel-mfa-requirement The admin panel requires hardware MFA for security. This was confirmed during a session focused on security measures."
+   ],
+   "current_live": true,
+   "current_retired": false,
+   "current_demoted": false,
+   "current_absent": false,
+   "notes_written": 1,
+   "notes_in_cyrillic": 0,
+   "pairs": 0
+  },
+  {
+   "id": "ctl-fmt",
+   "shape": "control",
+   "n_hits": 1,
+   "stale_returned": false,
+   "stale_rank": null,
+   "current_returned": true,
+   "chars_returned": 242,
+   "returned": [
+    "ruff-formatting-for-python Python code in the project is formatted using ruff. This was confirmed during a pairing session where the tooling was worked through and the outcome was explicitly stated.  [facts] Python code is formatted with ruff"
+   ],
+   "current_live": true,
+   "current_retired": false,
+   "current_demoted": false,
+   "current_absent": false,
+   "notes_written": 1,
+   "notes_in_cyrillic": 0,
+   "pairs": 0
+  },
+  {
+   "id": "ctl-obs",
+   "shape": "control",
+   "n_hits": 2,
+   "stale_returned": false,
+   "stale_rank": null,
+   "current_returned": true,
+   "chars_returned": 439,
+   "returned": [
+    "traces-exported-to-tempo Traces are successfully exported to Tempo as part of the observability setup. This confirms that the tracing infrastructure is working correctly and can be used for monitoring.  [facts] traces are exported to Tempo",
+    "logs-exported-to-loki Logs are shipped to Loki for observability. This was documented in the README section which was already stale.  [facts] documented it in the README section that was already stale"
+   ],
+   "current_live": true,
+   "current_retired": false,
+   "current_demoted": false,
+   "current_absent": false,
+   "notes_written": 2,
+   "notes_in_cyrillic": 0,
+   "pairs": 0
+  },
+  {
+   "id": "ctl-limits",
+   "shape": "control",
+   "n_hits": 2,
+   "stale_returned": false,
+   "stale_rank": null,
+   "current_returned": false,
+   "chars_returned": 461,
+   "returned": [
+    "upload-size-limit-check The system enforces an upload size limit to prevent excessive resource usage. This was validated through a full test suite run which remained green after the change.  [facts] the request rate limit is 100 per minute · Ran the full test suite afterwards and it stayed green",
+    "request-rate-limit A request rate limit of 100 per minute was implemented to control system load and prevent abuse.  [facts] the request rate limit is 100 per minute"
+   ],
+   "current_live": false,
+   "current_retired": false,
+   "current_demoted": true,
+   "current_absent": false,
+   "notes_written": 2,
+   "notes_in_cyrillic": 0,
+   "pairs": 1
+  },
+  {
+   "id": "ctl-sched",
+   "shape": "control",
+   "n_hits": 1,
+   "stale_returned": false,
+   "stale_rank": null,
+   "current_returned": true,
+   "chars_returned": 291,
+   "returned": [
+    "weekly-reindexing-schedule The system runs reindexing weekly on Sunday. This was confirmed during a review process where the reviewer asked for one rename and otherwise approved the schedule.  [facts] reindexing runs weekly on Sunday · reviewer asked for one rename and otherwise approved it"
+   ],
+   "current_live": true,
+   "current_retired": false,
+   "current_demoted": false,
+   "current_absent": false,
+   "notes_written": 1,
+   "notes_in_cyrillic": 0,
+   "pairs": 0
+  },
+  {
+   "id": "ctl-clients",
+   "shape": "control",
+   "n_hits": 2,
+   "stale_returned": false,
+   "stale_rank": null,
+   "current_returned": true,
+   "chars_returned": 406,
+   "returned": [
+    "cli-distribution-homebrew The desktop app ships as a signed installer, which is part of the CLI distribution strategy. This approach ensures proper signing and distribution of the application.",
+    "update-readme-stale-section The README section related to CLI distribution needs updating due to changes in how the desktop app is shipped as a signed installer.  [facts] the desktop app ships as a signed installer"
+   ],
+   "current_live": true,
+   "current_retired": false,
+   "current_demoted": false,
+   "current_absent": false,
+   "notes_written": 2,
+   "notes_in_cyrillic": 0,
+   "pairs": 2
+  },
+  {
+   "id": "ctl-queue-pair",
+   "shape": "control",
+   "n_hits": 1,
+   "stale_returned": false,
+   "stale_rank": null,
+   "current_returned": true,
+   "chars_returned": 223,
+   "returned": [
+    "ingest-queue-nats-backend The ingest queue is backed by NATS, which provides reliable message delivery and supports horizontal scaling. This pattern ensures that messages are processed in order and can be retried if needed."
+   ],
+   "current_live": true,
+   "current_retired": false,
+   "current_demoted": false,
+   "current_absent": false,
+   "notes_written": 1,
+   "notes_in_cyrillic": 0,
+   "pairs": 1
+  },
+  {
+   "id": "ctl-doc",
+   "shape": "control",
+   "n_hits": 1,
+   "stale_returned": false,
+   "stale_rank": null,
+   "current_returned": true,
+   "chars_returned": 147,
+   "returned": [
+    "api-reference-generation The API reference is generated from OpenAPI specifications. This process was documented and understood during the session."
+   ],
+   "current_live": true,
+   "current_retired": false,
+   "current_demoted": false,
+   "current_absent": false,
+   "notes_written": 1,
+   "notes_in_cyrillic": 0,
+   "pairs": 0
+  },
+  {
+   "id": "ctl-runtime",
+   "shape": "control",
+   "n_hits": 1,
+   "stale_returned": false,
+   "stale_rank": null,
+   "current_returned": true,
+   "chars_returned": 134,
+   "returned": [
+    "python-3-13-worker-runtime The worker runtime uses Python 3.13, which is a known pattern for this project's environment.  [facts] 1.23"
+   ],
+   "current_live": true,
+   "current_retired": false,
+   "current_demoted": false,
+   "current_absent": false,
+   "notes_written": 1,
+   "notes_in_cyrillic": 0,
+   "pairs": 1
+  },
+  {
+   "id": "ctl-net",
+   "shape": "control",
+   "n_hits": 3,
+   "stale_returned": false,
+   "stale_rank": null,
+   "current_returned": true,
+   "chars_returned": 704,
+   "returned": [
+    "tls-termination-at-load-balancer TLS termination was configured at the load balancer level, which is a common and recommended pattern for handling SSL/TLS connections in cloud environments. This approach offloads the encryption/decryption work from backend services.",
+    "egress-through-nat-gateway Egress traffic now goes through a NAT gateway, which provides controlled internet access for outbound requests from the cluster while maintaining security and IP address management.  [facts] egress goes through a NAT gateway",
+    "rename-for-clarity A rename was requested by the reviewer to improve clarity and consistency in naming conventions, which helps maintain clean and understandable code.  [facts] one rename"
+   ],
+   "current_live": true,
+   "current_retired": false,
+   "current_demoted": false,
+   "current_absent": false,
+   "notes_written": 3,
+   "notes_in_cyrillic": 0,
+   "pairs": 1
+  },
+  {
+   "id": "ctl-review",
+   "shape": "control",
+   "n_hits": 2,
+   "stale_returned": false,
+   "stale_rank": null,
+   "current_returned": true,
+   "chars_returned": 561,
+   "returned": [
+    "pull-request-approval-process A pull request approval process was implemented requiring two approvals. This was rolled out using a staged release approach to minimize disruption.  [facts] every pull request needs two approvals · Rolled it out behind the usual staged release",
+    "signed-changelog-entry Every release requires a signed changelog entry. This was documented in the README section that was already stale.  [facts] Unrelated to the earlier change, every release needs a signed changelog entry. · Documented it in the README section that was already stale."
+   ],
+   "current_live": true,
+   "current_retired": false,
+   "current_demoted": false,
+   "current_absent": false,
+   "notes_written": 2,
+   "notes_in_cyrillic": 0,
+   "pairs": 0
+  },
+  {
+   "id": "ctl-metrics",
+   "shape": "control",
+   "n_hits": 3,
+   "stale_returned": false,
+   "stale_rank": null,
+   "current_returned": true,
+   "chars_returned": 814,
+   "returned": [
+    "request-latency-histogram Request latency is tracked as a histogram, and the code now matches. This approach provides detailed performance insights by capturing the distribution of request times rather than just averages.",
+    "observability-decision The decision was made to track queue depth as a gauge for observability, in addition to tracking request latency. This ensures comprehensive monitoring of system behavior.  [facts] queue depth is tracked as a gauge",
+    "queue-depth-gauge-tracking Queue depth is tracked as a gauge for observability. This pattern was added independently of the first observability item, which tracked request latency. The full test suite was run after implementation and remained green, confirming no regressions were introduced.  [facts] Ran the full test suite afterwards and it stayed green"
+   ],
+   "current_live": true,
+   "current_retired": false,
+   "current_demoted": false,
+   "current_absent": false,
+   "notes_written": 3,
+   "notes_in_cyrillic": 0,
+   "pairs": 1
+  },
+  {
+   "id": "ctl-store",
+   "shape": "control",
+   "n_hits": 1,
+   "stale_returned": false,
+   "stale_rank": null,
+   "current_returned": true,
+   "chars_returned": 207,
+   "returned": [
+    "session-state-in-localstorage The session state is stored in localStorage for persistence across page reloads. This approach ensures that the user's progress and settings are maintained even after a refresh."
+   ],
+   "current_live": true,
+   "current_retired": false,
+   "current_demoted": false,
+   "current_absent": false,
+   "notes_written": 1,
+   "notes_in_cyrillic": 0,
+   "pairs": 1
+  },
+  {
+   "id": "ctl-alerting",
+   "shape": "control",
+   "n_hits": 1,
+   "stale_returned": false,
+   "stale_rank": null,
+   "current_returned": true,
+   "chars_returned": 246,
+   "returned": [
+    "alerting-pagerduty-integration Paging alerts are configured to go to PagerDuty. This was documented in the README section which was already stale.  [facts] paging alerts go to PagerDuty · Documented it in the README section that was already stale"
+   ],
+   "current_live": true,
+   "current_retired": false,
+   "current_demoted": false,
+   "current_absent": false,
+   "notes_written": 1,
+   "notes_in_cyrillic": 0,
+   "pairs": 0
+  }
+ ],
+ "score": {
+  "n_supersession": 60,
+  "n_control": 20,
+  "stale_rate": 0.1,
+  "stale_ci": [
+   0.0466,
+   0.2015
+  ],
+  "current_rate": 0.9833,
+  "current_ci": [
+   0.9114,
+   0.9971
+  ],
+  "control_miss_rate": 0.1,
+  "control_miss_ci": [
+   0.0279,
+   0.301
+  ],
+  "over_retraction_rate": 0.1,
+  "over_retraction_ci": [
+   0.0279,
+   0.301
+  ],
+  "mean_chars_returned": 394.9,
+  "max_chars_returned": 814,
+  "stale_at_rank_1": 5,
+  "control_retired_by_memory": 0,
+  "control_demoted_by_merge": 2,
+  "control_never_written": 0,
+  "control_written_but_unranked": 0,
+  "notes_written": 131,
+  "notes_in_cyrillic": 0,
+  "language_drift_rate": 0.0,
+  "cases_touched_by_drift": 0
+ },
+ "seconds": 281.4,
+ "llm": "qwen3-coder:30b",
+ "embedder": "bge-m3",
+ "k": 5,
+ "dates": null
+}

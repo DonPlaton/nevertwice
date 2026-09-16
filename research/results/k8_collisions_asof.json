@@ -1,0 +1,5759 @@
+{
+ "stand": "asof",
+ "engine_commit": "a04b5476ca7a3a2278ef47de0d5987d842dd132b",
+ "dataset": {
+  "name": "supersession_v1",
+  "sha256": "0e3114ea9175f8bb832522bdf0b182e11432da0603dc2571e3890f94d7b586f9",
+  "path": "research/data/supersession_v1.json"
+ },
+ "n_cases": 80,
+ "n_pairs": 62,
+ "by_truth": {
+  "replaces": 53,
+  "separate": 9
+ },
+ "by_branch": {
+  "d": 0,
+  "r": 62
+ },
+ "pairs": [
+  {
+   "case": "val-http-timeout",
+   "shape": "value_replaced",
+   "truth": "replaces",
+   "branch": "r",
+   "ntype": "pattern",
+   "slug": "http-client-timeout-configuration",
+   "old_stem": "2026-03-01-k8a000-pattern-http-client-timeout-configuration",
+   "old_archived": true,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "http-client-timeout-configuration",
+   "old_desc": "The HTTP client timeout was configured to 30 seconds, which resolved potential connection issues. This configuration was validated by running the full test suite, which remained green after the change.  [facts] HTTP client timeout is 30 seconds · Ran the full test suite afterwards and it stayed green",
+   "old_prevention": "",
+   "old_facts": [
+    "http client timeout is 30 seconds",
+    "ran the full test suite afterwards and it stayed green"
+   ],
+   "new_session_idx": 1,
+   "new_title": "http-client-timeout-configuration",
+   "new_desc": "The HTTP client timeout was initially configured to 30 seconds but was found to be 5 seconds during a pairing session. This pattern documents the correct timeout value for API client configuration.  [facts] HTTP client timeout is 5 seconds",
+   "new_prevention": "",
+   "new_facts": [
+    "http client timeout is 5 seconds"
+   ],
+   "new_entities": [
+    "http-client",
+    "api-client",
+    "timeout"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": true
+  },
+  {
+   "case": "val-pg-version",
+   "shape": "value_replaced",
+   "truth": "replaces",
+   "branch": "r",
+   "ntype": "pattern",
+   "slug": "postgresql-version-in-production",
+   "old_stem": "2026-03-01-k8a001-pattern-postgresql-version-in-production",
+   "old_archived": true,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "postgresql-version-in-production",
+   "old_desc": "The production environment runs PostgreSQL version 14. This was confirmed through database investigation and documented for future reference.  [facts] we run PostgreSQL 14 in production",
+   "old_prevention": "",
+   "old_facts": [
+    "we run postgresql 14 in production"
+   ],
+   "new_session_idx": 1,
+   "new_title": "postgresql-version-in-production",
+   "new_desc": "The production environment was upgraded to PostgreSQL 16 in a staged rollout. This pattern shows how database version upgrades are handled in production with minimal disruption.  [facts] production was upgraded to PostgreSQL 16 · Rolled it out behind the usual staged release",
+   "new_prevention": "",
+   "new_facts": [
+    "production was upgraded to postgresql 16",
+    "rolled it out behind the usual staged release"
+   ],
+   "new_entities": [
+    "postgresql",
+    "production",
+    "staged-release"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": true
+  },
+  {
+   "case": "val-batch-size",
+   "shape": "value_replaced",
+   "truth": "replaces",
+   "branch": "r",
+   "ntype": "pattern",
+   "slug": "training-batch-size-confirmed",
+   "old_stem": "2026-03-01-k8a002-pattern-training-batch-size-confirmed",
+   "old_archived": true,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "training-batch-size-confirmed",
+   "old_desc": "The training batch size was confirmed to be 32. This is a key hyperparameter that affects memory usage and training dynamics.  [facts] training batch size is 32",
+   "old_prevention": "",
+   "old_facts": [
+    "training batch size is 32"
+   ],
+   "new_session_idx": 1,
+   "new_title": "training-batch-size-confirmed",
+   "new_desc": "The training job's batch size was updated to 128. This change was verified by checking dashboards for an hour afterward, but no movement was observed.  [facts] The training job changed this week. The training batch size is now 128. · Checked the dashboards for an hour after and nothing moved.",
+   "new_prevention": "",
+   "new_facts": [
+    "checked the dashboards for an hour after and nothing moved.",
+    "the training job changed this week. the training batch size is now 128."
+   ],
+   "new_entities": [
+    "training-job",
+    "batch-size",
+    "dashboard"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": true
+  },
+  {
+   "case": "val-retry-count",
+   "shape": "value_replaced",
+   "truth": "replaces",
+   "branch": "r",
+   "ntype": "pattern",
+   "slug": "queue-worker-retry-logic",
+   "old_stem": "2026-03-01-k8a004-pattern-queue-worker-retry-logic",
+   "old_archived": true,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "queue-worker-retry-logic",
+   "old_desc": "The queue worker retries failed jobs up to 3 times before giving up. This retry mechanism is part of the standard job processing workflow and was rolled out using a staged release approach.  [facts] the worker retries a failed job 3 times · Rolled it out behind the usual staged release",
+   "old_prevention": "",
+   "old_facts": [
+    "rolled it out behind the usual staged release",
+    "the worker retries a failed job 3 times"
+   ],
+   "new_session_idx": 1,
+   "new_title": "queue-worker-retry-logic",
+   "new_desc": "The queue worker now retries failed jobs 10 times instead of failing immediately. This improves reliability by allowing transient failures to recover without manual intervention. The change was documented in the README section.  [facts] retries a failed job 10 times · documented it in the README section that was already stale",
+   "new_prevention": "",
+   "new_facts": [
+    "documented it in the readme section that was already stale",
+    "retries a failed job 10 times"
+   ],
+   "new_entities": [
+    "queue-worker",
+    "job",
+    "retry-logic",
+    "readme"
+   ],
+   "new_supersedes": "queue-worker-retry-logic",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": true
+  },
+  {
+   "case": "val-cache-ttl",
+   "shape": "value_replaced",
+   "truth": "replaces",
+   "branch": "r",
+   "ntype": "pattern",
+   "slug": "cache-layer-expiration",
+   "old_stem": "2026-03-01-k8a005-pattern-cache-layer-expiration",
+   "old_archived": true,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "cache-layer-expiration",
+   "old_desc": "Cache entries are configured to expire after 60 seconds. The implementation was verified to match this requirement.  [facts] Cache entries expire after 60 seconds · the code now matches",
+   "old_prevention": "",
+   "old_facts": [
+    "cache entries expire after 60 seconds",
+    "the code now matches"
+   ],
+   "new_session_idx": 1,
+   "new_title": "cache-layer-expiration",
+   "new_desc": "The cache layer was not durable and entries expired after 15 minutes. This was confirmed by running the full test suite which stayed green, indicating no regression from the expiration.  [facts] Cache entries expire after 15 minutes · Ran the full test suite afterwards and it stayed green · Follow-up",
+   "new_prevention": "",
+   "new_facts": [
+    "cache entries expire after 15 minutes",
+    "follow-up",
+    "ran the full test suite afterwards and it stayed green"
+   ],
+   "new_entities": [
+    "cache-layer",
+    "test-suite"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": true
+  },
+  {
+   "case": "val-cache-ttl",
+   "shape": "value_replaced",
+   "truth": "replaces",
+   "branch": "r",
+   "ntype": "decision",
+   "slug": "cache-expiration-duration",
+   "old_stem": "2026-03-01-k8a005-decision-cache-expiration-duration",
+   "old_archived": true,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "cache-expiration-duration",
+   "old_desc": "The decision was made to set cache entry expiration to 60 seconds, which is now implemented.  [facts] Cache entries expire after 60 seconds",
+   "old_prevention": "",
+   "old_facts": [
+    "cache entries expire after 60 seconds"
+   ],
+   "new_session_idx": 1,
+   "new_title": "cache-expiration-duration",
+   "new_desc": "The decision was made that cache entries should expire after 15 minutes, which was implemented and verified through testing.  [facts] Cache entries expire after 15 minutes · Follow-up",
+   "new_prevention": "",
+   "new_facts": [
+    "cache entries expire after 15 minutes",
+    "follow-up"
+   ],
+   "new_entities": [
+    "cache-expiration",
+    "test-suite"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": true
+  },
+  {
+   "case": "val-port",
+   "shape": "value_replaced",
+   "truth": "replaces",
+   "branch": "r",
+   "ntype": "pattern",
+   "slug": "dev-server-port-configuration",
+   "old_stem": "2026-03-01-k8a006-pattern-dev-server-port-configuration",
+   "old_archived": true,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "dev-server-port-configuration",
+   "old_desc": "The dev server was configured to listen on port 3000. This setup was approved by the reviewer after a minor rename.  [facts] the dev server listens on port 3000 · one rename and otherwise approved it",
+   "old_prevention": "",
+   "old_facts": [
+    "one rename and otherwise approved it",
+    "the dev server listens on port 3000"
+   ],
+   "new_session_idx": 1,
+   "new_title": "dev-server-port-configuration",
+   "new_desc": "The development server listens on port 8080, not the previously assumed port. This was confirmed by returning to the dev server and verifying the configuration.  [facts] the dev server listens on port 8080",
+   "new_prevention": "",
+   "new_facts": [
+    "the dev server listens on port 8080"
+   ],
+   "new_entities": [
+    "dev-server",
+    "port-8080"
+   ],
+   "new_supersedes": "dev-server-port-configuration",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": true
+  },
+  {
+   "case": "val-py-version",
+   "shape": "value_replaced",
+   "truth": "replaces",
+   "branch": "r",
+   "ntype": "pattern",
+   "slug": "python-version-pinning",
+   "old_stem": "2026-03-01-k8a008-pattern-python-version-pinning",
+   "old_archived": true,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "python-version-pinning",
+   "old_desc": "The project pins Python 3.11, which ensures consistent runtime environment and avoids compatibility issues. This was confirmed during the session.  [facts] Confirmed that the project pins Python 3.11",
+   "old_prevention": "",
+   "old_facts": [
+    "confirmed that the project pins python 3.11"
+   ],
+   "new_session_idx": 1,
+   "new_title": "python-version-pinning",
+   "new_desc": "The project now pins Python 3.13 due to a toolchain change. This ensures consistent environment setup and avoids compatibility issues.  [facts] The toolchain changed this week",
+   "new_prevention": "",
+   "new_facts": [
+    "the toolchain changed this week"
+   ],
+   "new_entities": [
+    "python",
+    "toolchain"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": true
+  },
+  {
+   "case": "val-replicas",
+   "shape": "value_replaced",
+   "truth": "replaces",
+   "branch": "r",
+   "ntype": "pattern",
+   "slug": "api-capacity-configuration",
+   "old_stem": "2026-03-01-k8a009-pattern-api-capacity-configuration",
+   "old_archived": true,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "api-capacity-configuration",
+   "old_desc": "The API is currently running with 4 replicas. This setup was reviewed and documented to prevent redundant work by future developers.  [facts] API runs with 4 replicas",
+   "old_prevention": "",
+   "old_facts": [
+    "api runs with 4 replicas"
+   ],
+   "new_session_idx": 1,
+   "new_title": "api-capacity-configuration",
+   "new_desc": "The API runs with 12 replicas after a load test. The rollout was done behind a staged release, which is a standard procedure for capacity management.",
+   "new_prevention": "",
+   "new_facts": [],
+   "new_entities": [
+    "api",
+    "replicas",
+    "staged-release"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": true
+  },
+  {
+   "case": "val-lr",
+   "shape": "value_replaced",
+   "truth": "replaces",
+   "branch": "r",
+   "ntype": "pattern",
+   "slug": "learning-rate-configuration",
+   "old_stem": "2026-03-01-k8a010-pattern-learning-rate-configuration",
+   "old_archived": true,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "learning-rate-configuration",
+   "old_desc": "The learning rate was set to 3e-4 during training. This change affected three files but none were configuration files.  [facts] The change touched three files and none of them were config. · learning rate is 3e-4",
+   "old_prevention": "",
+   "old_facts": [
+    "learning rate is 3e-4",
+    "the change touched three files and none of them were config."
+   ],
+   "new_session_idx": 1,
+   "new_title": "learning-rate-configuration",
+   "new_desc": "Adjusting the learning rate to 5e-5 did not produce expected changes in model performance after an hour of monitoring. This indicates that learning rate alone may not be sufficient to resolve training issues, or that other hyperparameters need adjustment.  [facts] the learning rate was lowered to 5e-5 · Checked the dashboards for an hour after and nothing moved",
+   "new_prevention": "",
+   "new_facts": [
+    "checked the dashboards for an hour after and nothing moved",
+    "the learning rate was lowered to 5e-5"
+   ],
+   "new_entities": [
+    "learning-rate",
+    "model-training",
+    "dashboard"
+   ],
+   "new_supersedes": "learning-rate-configuration",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": true
+  },
+  {
+   "case": "val-chunk",
+   "shape": "value_replaced",
+   "truth": "replaces",
+   "branch": "r",
+   "ntype": "pattern",
+   "slug": "document-ingestion-chunking",
+   "old_stem": "2026-03-01-k8a011-pattern-document-ingestion-chunking",
+   "old_archived": true,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "document-ingestion-chunking",
+   "old_desc": "Documents are chunked at 512 tokens for ingestion. This approach ensures consistent processing and matching of code content.  [facts] Documents are chunked at 512 tokens, and the code now matches.",
+   "old_prevention": "",
+   "old_facts": [
+    "documents are chunked at 512 tokens, and the code now matches."
+   ],
+   "new_session_idx": 1,
+   "new_title": "document-ingestion-chunking",
+   "new_desc": "Documents are chunked at 1024 tokens. The reviewer asked for one rename and otherwise approved it.  [facts] Documents are chunked at 1024 tokens now. · Follow-up",
+   "new_prevention": "",
+   "new_facts": [
+    "documents are chunked at 1024 tokens now.",
+    "follow-up"
+   ],
+   "new_entities": [
+    "document",
+    "chunking",
+    "tokens"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": true
+  },
+  {
+   "case": "val-chunk",
+   "shape": "value_replaced",
+   "truth": "replaces",
+   "branch": "r",
+   "ntype": "decision",
+   "slug": "ingestion-decision-made",
+   "old_stem": "2026-03-01-k8a011-decision-ingestion-decision-made",
+   "old_archived": true,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "ingestion-decision-made",
+   "old_desc": "The ingestion decision was written, specifying that documents are chunked at 512 tokens to match code processing.  [facts] Wrote up the ingestion decision. Documents are chunked at 512 tokens, and the code now matches.",
+   "old_prevention": "",
+   "old_facts": [
+    "wrote up the ingestion decision. documents are chunked at 512 tokens, and the code now matches."
+   ],
+   "new_session_idx": 1,
+   "new_title": "ingestion-decision-made",
+   "new_desc": "The ingestion process was decided to chunk documents at 1024 tokens.  [facts] Documents are chunked at 1024 tokens now. · Follow-up",
+   "new_prevention": "",
+   "new_facts": [
+    "documents are chunked at 1024 tokens now.",
+    "follow-up"
+   ],
+   "new_entities": [
+    "document",
+    "chunking",
+    "tokens"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": true
+  },
+  {
+   "case": "val-quorum",
+   "shape": "value_replaced",
+   "truth": "replaces",
+   "branch": "r",
+   "ntype": "pattern",
+   "slug": "cluster-quorum-requirement",
+   "old_stem": "2026-03-01-k8a012-pattern-cluster-quorum-requirement",
+   "old_archived": true,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "cluster-quorum-requirement",
+   "old_desc": "A Kubernetes cluster requires a quorum of 3 nodes to function properly. This was confirmed during session work on the cluster.  [facts] the cluster needs a quorum of 3 nodes",
+   "old_prevention": "",
+   "old_facts": [
+    "the cluster needs a quorum of 3 nodes"
+   ],
+   "new_session_idx": 1,
+   "new_title": "cluster-quorum-requirement",
+   "new_desc": "After resizing the cluster, a quorum of 5 nodes is required. This was documented in the README section that was already stale.  [facts] the cluster needs a quorum of 5 nodes after the resize · Documented it in the README section that was already stale",
+   "new_prevention": "",
+   "new_facts": [
+    "documented it in the readme section that was already stale",
+    "the cluster needs a quorum of 5 nodes after the resize"
+   ],
+   "new_entities": [
+    "cluster",
+    "quorum",
+    "readme"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": true
+  },
+  {
+   "case": "val-license",
+   "shape": "value_replaced",
+   "truth": "replaces",
+   "branch": "r",
+   "ntype": "decision",
+   "slug": "project-licensing-decided",
+   "old_stem": "2026-03-01-k8a013-decision-project-licensing-decided",
+   "old_archived": true,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "project-licensing-decided",
+   "old_desc": "The project was decided to be released under the AGPL-3.0 license after reviewing licensing options and checking dashboards for updates.  [facts] the project is released under AGPL-3.0 · Checked the dashboards for an hour after and nothing moved",
+   "old_prevention": "",
+   "old_facts": [
+    "checked the dashboards for an hour after and nothing moved",
+    "the project is released under agpl-3.0"
+   ],
+   "new_session_idx": 1,
+   "new_title": "project-licensing-decided",
+   "new_desc": "The project was relicensed to Apache-2.0 after a review.",
+   "new_prevention": "",
+   "new_facts": [],
+   "new_entities": [
+    "project",
+    "licensing"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": true
+  },
+  {
+   "case": "app-auth",
+   "shape": "approach_abandoned",
+   "truth": "replaces",
+   "branch": "r",
+   "ntype": "pattern",
+   "slug": "jwt-authentication-with-hs256",
+   "old_stem": "2026-03-01-k8a016-pattern-jwt-authentication-with-hs256",
+   "old_archived": true,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "jwt-authentication-with-hs256",
+   "old_desc": "Authentication in the project uses JWT tokens signed with HS256 algorithm. This was confirmed by clearing the open question on authentication and running the full test suite which stayed green.  [facts] authentication uses JWT tokens signed with HS256 · Ran the full test suite afterwards and it stayed green",
+   "old_prevention": "",
+   "old_facts": [
+    "authentication uses jwt tokens signed with hs256",
+    "ran the full test suite afterwards and it stayed green"
+   ],
+   "new_session_idx": 1,
+   "new_title": "jwt-authentication-with-hs256",
+   "new_desc": "The session confirmed that JWT authentication with HS256 is a valid and secure approach for backend services. It was chosen over opaque session cookies due to its stateless nature and ease of implementation in Node.js environments.",
+   "new_prevention": "",
+   "new_facts": [],
+   "new_entities": [
+    "jwt",
+    "hs256",
+    "nodejs"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": true
+  },
+  {
+   "case": "app-bundler",
+   "shape": "approach_abandoned",
+   "truth": "replaces",
+   "branch": "r",
+   "ntype": "decision",
+   "slug": "build-decision-confirmed",
+   "old_stem": "2026-03-01-k8a017-decision-build-decision-confirmed",
+   "old_archived": true,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "build-decision-confirmed",
+   "old_desc": "The build decision was finalized to use Webpack for bundling the frontend, aligning with current code structure and ensuring consistency.  [facts] Wrote up the the build decision · frontend is bundled with Webpack · the code now matches",
+   "old_prevention": "",
+   "old_facts": [
+    "frontend is bundled with webpack",
+    "the code now matches",
+    "wrote up the the build decision"
+   ],
+   "new_session_idx": 1,
+   "new_title": "build-decision-confirmed",
+   "new_desc": "The decision to use Vite for frontend bundling was confirmed and implemented in the project.  [facts] The frontend is bundled with Vite now · Follow-up",
+   "new_prevention": "",
+   "new_facts": [
+    "follow-up",
+    "the frontend is bundled with vite now"
+   ],
+   "new_entities": [
+    "vite",
+    "frontend",
+    "build-decision"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": true
+  },
+  {
+   "case": "app-queue",
+   "shape": "approach_abandoned",
+   "truth": "replaces",
+   "branch": "r",
+   "ntype": "pattern",
+   "slug": "background-jobs-with-celery-rabbitmq",
+   "old_stem": "2026-03-01-k8a019-pattern-background-jobs-with-celery-rabbitmq",
+   "old_archived": true,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "background-jobs-with-celery-rabbitmq",
+   "old_desc": "Background jobs are implemented using Celery with RabbitMQ as the message broker. This setup allows for reliable task distribution and execution in a distributed system.  [facts] background jobs run on Celery with RabbitMQ",
+   "old_prevention": "",
+   "old_facts": [
+    "background jobs run on celery with rabbitmq"
+   ],
+   "new_session_idx": 1,
+   "new_title": "background-jobs-with-celery-rabbitmq",
+   "new_desc": "Background jobs are implemented using Celery with RabbitMQ as the message broker. This pattern ensures reliable job processing and distribution across multiple workers.  [facts] background jobs run on a Postgres-backed queue instead · Postgres-backed",
+   "new_prevention": "",
+   "new_facts": [
+    "background jobs run on a postgres-backed queue instead",
+    "postgres-backed"
+   ],
+   "new_entities": [
+    "celery",
+    "rabbitmq",
+    "postgres",
+    "queue"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": true
+  },
+  {
+   "case": "app-ci",
+   "shape": "approach_abandoned",
+   "truth": "replaces",
+   "branch": "r",
+   "ntype": "pattern",
+   "slug": "staged-release-deployment",
+   "old_stem": "2026-03-01-k8a020-pattern-staged-release-deployment",
+   "old_archived": true,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "staged-release-deployment",
+   "old_desc": "The agent confirmed that CI runs on Jenkins and rolled out the deployment behind a staged release. This approach ensures controlled rollout and reduces risk of system-wide failure.  [facts] Rolled it out behind the usual staged release",
+   "old_prevention": "",
+   "old_facts": [
+    "rolled it out behind the usual staged release"
+   ],
+   "new_session_idx": 1,
+   "new_title": "staged-release-deployment",
+   "new_desc": "The project uses a staged release deployment pattern to manage CI changes. This approach allows for gradual rollout and reduces risk during migration.  [facts] CI was migrated to GitHub Actions · Documented it in the README section that was already stale",
+   "new_prevention": "",
+   "new_facts": [
+    "ci was migrated to github actions",
+    "documented it in the readme section that was already stale"
+   ],
+   "new_entities": [
+    "ci",
+    "github-actions",
+    "readme"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": true
+  },
+  {
+   "case": "app-packaging",
+   "shape": "approach_abandoned",
+   "truth": "replaces",
+   "branch": "r",
+   "ntype": "pattern",
+   "slug": "package-build-and-publish",
+   "old_stem": "2026-03-01-k8a023-pattern-package-build-and-publish",
+   "old_archived": true,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "package-build-and-publish",
+   "old_desc": "The package is built and published with Poetry. This approach was chosen and implemented successfully.",
+   "old_prevention": "",
+   "old_facts": [],
+   "new_session_idx": 1,
+   "new_title": "package-build-and-publish",
+   "new_desc": "The package is built with hatchling and published by CI. This approach avoids local packaging issues and ensures consistent builds.  [facts] Follow-up",
+   "new_prevention": "",
+   "new_facts": [
+    "follow-up"
+   ],
+   "new_entities": [
+    "hatchling",
+    "ci",
+    "package"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": true
+  },
+  {
+   "case": "app-packaging",
+   "shape": "approach_abandoned",
+   "truth": "replaces",
+   "branch": "r",
+   "ntype": "decision",
+   "slug": "use-poetry-for-packaging",
+   "old_stem": "2026-03-01-k8a023-decision-use-poetry-for-packaging",
+   "old_archived": true,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "use-poetry-for-packaging",
+   "old_desc": "The decision was made to use Poetry for building and publishing the package. This choice is documented in the README.  [facts] The package is built and published with Poetry · Documented it in the README section that was already stale",
+   "old_prevention": "",
+   "old_facts": [
+    "documented it in the readme section that was already stale",
+    "the package is built and published with poetry"
+   ],
+   "new_session_idx": 1,
+   "new_title": "use-poetry-for-packaging",
+   "new_desc": "Poetry was chosen for packaging, but the implementation details were not fully realized in this session.  [facts] Follow-up",
+   "new_prevention": "",
+   "new_facts": [
+    "follow-up"
+   ],
+   "new_entities": [
+    "poetry",
+    "packaging"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": false
+  },
+  {
+   "case": "app-state",
+   "shape": "approach_abandoned",
+   "truth": "replaces",
+   "branch": "r",
+   "ntype": "decision",
+   "slug": "frontend-state-management",
+   "old_stem": "2026-03-01-k8a024-decision-frontend-state-management",
+   "old_archived": true,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "frontend-state-management",
+   "old_desc": "Redux was selected as the state management solution for the frontend. This decision was made to ensure a centralized and predictable way of handling application state.  [facts] global state is held in Redux",
+   "old_prevention": "",
+   "old_facts": [
+    "global state is held in redux"
+   ],
+   "new_session_idx": 1,
+   "new_title": "frontend-state-management",
+   "new_desc": "The decision to move global state management from Redux to Zustand stores was made after evaluating performance and complexity trade-offs.  [facts] global state moved to Zustand stores",
+   "new_prevention": "",
+   "new_facts": [
+    "global state moved to zustand stores"
+   ],
+   "new_entities": [
+    "zustand",
+    "frontend",
+    "state-management"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": true
+  },
+  {
+   "case": "app-migrations",
+   "shape": "approach_abandoned",
+   "truth": "replaces",
+   "branch": "r",
+   "ntype": "pattern",
+   "slug": "schema-migration-through-alembic",
+   "old_stem": "2026-03-01-k8a026-pattern-schema-migration-through-alembic",
+   "old_archived": true,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "schema-migration-through-alembic",
+   "old_desc": "Schema migrations are handled through Alembic, as confirmed during the session. The change touched three files, none of which were config files.  [facts] Confirmed that schema migrations run through Alembic · The change touched three files and none of them were config",
+   "old_prevention": "",
+   "old_facts": [
+    "confirmed that schema migrations run through alembic",
+    "the change touched three files and none of them were config"
+   ],
+   "new_session_idx": 1,
+   "new_title": "schema-migration-through-alembic",
+   "new_desc": "Schema migrations are handled through plain numbered SQL files applied by a shell script. The process was checked for an hour after deployment and nothing moved, indicating potential issues with the migration execution or monitoring.  [facts] Schema migrations are plain numbered SQL files applied by a shell script · Checked the dashboards for an hour after and nothing moved",
+   "new_prevention": "",
+   "new_facts": [
+    "checked the dashboards for an hour after and nothing moved",
+    "schema migrations are plain numbered sql files applied by a shell script"
+   ],
+   "new_entities": [
+    "schema",
+    "sql-file",
+    "shell-script",
+    "dashboard"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": true
+  },
+  {
+   "case": "app-secrets",
+   "shape": "approach_abandoned",
+   "truth": "replaces",
+   "branch": "r",
+   "ntype": "pattern",
+   "slug": "secrets-from-vault-at-boot",
+   "old_stem": "2026-03-01-k8a028-pattern-secrets-from-vault-at-boot",
+   "old_archived": true,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "secrets-from-vault-at-boot",
+   "old_desc": "Secrets are read from HashiCorp Vault at boot time. This approach was rolled out behind a staged release to ensure stability and gradual adoption.  [facts] Rolled it out behind the usual staged release",
+   "old_prevention": "",
+   "old_facts": [
+    "rolled it out behind the usual staged release"
+   ],
+   "new_session_idx": 1,
+   "new_title": "secrets-from-vault-at-boot",
+   "new_desc": "Secrets are injected as environment variables by the orchestrator, not loaded at runtime. This was documented in the README section that was already stale.  [facts] Documented it in the README section that was already stale",
+   "new_prevention": "",
+   "new_facts": [
+    "documented it in the readme section that was already stale"
+   ],
+   "new_entities": [
+    "secrets",
+    "orchestrator",
+    "readme"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": true
+  },
+  {
+   "case": "app-e2e",
+   "shape": "approach_abandoned",
+   "truth": "replaces",
+   "branch": "r",
+   "ntype": "decision",
+   "slug": "testing-decision",
+   "old_stem": "2026-03-01-k8a029-decision-testing-decision",
+   "old_archived": true,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "testing-decision",
+   "old_desc": "The testing decision was written, confirming that end-to-end tests are driven by Selenium and the code now matches.  [facts] Wrote up the testing decision",
+   "old_prevention": "",
+   "old_facts": [
+    "wrote up the testing decision"
+   ],
+   "new_session_idx": 1,
+   "new_title": "testing-decision",
+   "new_desc": "The decision was made to use Playwright for end-to-end testing, which proved effective after running the full test suite.  [facts] End-to-end tests are driven by Playwright · Follow-up",
+   "new_prevention": "",
+   "new_facts": [
+    "end-to-end tests are driven by playwright",
+    "follow-up"
+   ],
+   "new_entities": [
+    "playwright",
+    "end-to-end-testing"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": true
+  },
+  {
+   "case": "ret-beta-flag",
+   "shape": "retracted_no_replacement",
+   "truth": "replaces",
+   "branch": "r",
+   "ntype": "pattern",
+   "slug": "feature-flag-gating",
+   "old_stem": "2026-03-01-k8a030-pattern-feature-flag-gating",
+   "old_archived": true,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "feature-flag-gating",
+   "old_desc": "A feature flag can effectively gate access to new UI components. This approach allows controlled rollout and testing of new features.  [facts] beta_dashboard feature flag gates the new UI",
+   "old_prevention": "",
+   "old_facts": [
+    "beta_dashboard feature flag gates the new ui"
+   ],
+   "new_session_idx": 1,
+   "new_title": "feature-flag-gating",
+   "new_desc": "Feature flags were used to gate the beta dashboard UI, but this decision was later reversed. The flag was deleted and the new UI became unconditional.  [facts] beta_dashboard flag · new UI is now unconditional",
+   "new_prevention": "",
+   "new_facts": [
+    "beta_dashboard flag",
+    "new ui is now unconditional"
+   ],
+   "new_entities": [
+    "beta-dashboard",
+    "feature-flag"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": true
+  },
+  {
+   "case": "ret-beta-flag",
+   "shape": "retracted_no_replacement",
+   "truth": "replaces",
+   "branch": "r",
+   "ntype": "decision",
+   "slug": "beta-dashboard-flag-usage",
+   "old_stem": "2026-03-01-k8a030-decision-beta-dashboard-flag-usage",
+   "old_archived": true,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "beta-dashboard-flag-usage",
+   "old_desc": "The decision was made to use the 'beta_dashboard' feature flag to gate access to the new UI, ensuring controlled release and testing.  [facts] the beta_dashboard feature flag gates the new UI",
+   "old_prevention": "",
+   "old_facts": [
+    "the beta_dashboard feature flag gates the new ui"
+   ],
+   "new_session_idx": 1,
+   "new_title": "beta-dashboard-flag-usage",
+   "new_desc": "The decision to use a feature flag for gating the beta dashboard UI was reversed. The new UI is now unconditional.  [facts] beta_dashboard flag was deleted",
+   "new_prevention": "",
+   "new_facts": [
+    "beta_dashboard flag was deleted"
+   ],
+   "new_entities": [
+    "beta-dashboard",
+    "feature-flag"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": true
+  },
+  {
+   "case": "ret-legacy-endpoint",
+   "shape": "retracted_no_replacement",
+   "truth": "replaces",
+   "branch": "r",
+   "ntype": "pattern",
+   "slug": "api-export-csv-streaming",
+   "old_stem": "2026-03-01-k8a031-pattern-api-export-csv-streaming",
+   "old_archived": true,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "api-export-csv-streaming",
+   "old_desc": "The /v1/export endpoint streams a CSV of all records. This was documented in the README section that was already stale.",
+   "old_prevention": "",
+   "old_facts": [],
+   "new_session_idx": 1,
+   "new_title": "api-export-csv-streaming",
+   "new_desc": "The /v1/export endpoint was removed with no replacement, affecting three files but not config files. This pattern shows a deliberate API change that impacts data export functionality.  [facts] none of them were config",
+   "new_prevention": "",
+   "new_facts": [
+    "none of them were config"
+   ],
+   "new_entities": [
+    "api",
+    "export",
+    "endpoint",
+    "csv",
+    "streaming"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": true
+  },
+  {
+   "case": "ret-mirror",
+   "shape": "retracted_no_replacement",
+   "truth": "replaces",
+   "branch": "r",
+   "ntype": "pattern",
+   "slug": "read-replica-for-analytics",
+   "old_stem": "2026-03-01-k8a033-pattern-read-replica-for-analytics",
+   "old_archived": true,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "read-replica-for-analytics",
+   "old_desc": "A read replica in ap-south-1 is used to serve analytics queries. This setup allows offloading analytical workloads from the primary database to improve performance and reduce load.  [facts] a read replica in ap-south-1 serves analytics queries",
+   "old_prevention": "",
+   "old_facts": [
+    "a read replica in ap-south-1 serves analytics queries"
+   ],
+   "new_session_idx": 1,
+   "new_title": "read-replica-for-analytics",
+   "new_desc": "Using a read replica for analytics queries reduces load on the primary database. The ap-south-1 replica was decommissioned and analytics reads now hit the primary, which was rolled out behind a staged release.  [facts] analytics reads hit the primary · Rolled it out behind the usual staged release",
+   "new_prevention": "",
+   "new_facts": [
+    "analytics reads hit the primary",
+    "rolled it out behind the usual staged release"
+   ],
+   "new_entities": [
+    "analytics",
+    "primary-database",
+    "staged-release"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": true
+  },
+  {
+   "case": "ret-plugin-api",
+   "shape": "retracted_no_replacement",
+   "truth": "replaces",
+   "branch": "r",
+   "ntype": "pattern",
+   "slug": "third-party-plugins-loading",
+   "old_stem": "2026-03-01-k8a034-pattern-third-party-plugins-loading",
+   "old_archived": true,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "third-party-plugins-loading",
+   "old_desc": "Third-party plugins load through the entry_points group. This approach touches multiple files but avoids configuration changes.  [facts] The change touched three files and none of them were config",
+   "old_prevention": "",
+   "old_facts": [
+    "the change touched three files and none of them were config"
+   ],
+   "new_session_idx": 1,
+   "new_title": "third-party-plugins-loading",
+   "new_desc": "The plugin system was removed before version 1.0 and never shipped. This decision was made to simplify the architecture and reduce complexity.  [facts] Reversed the earlier call on extensibility: the plugin system was removed before 1.0 and never shipped.",
+   "new_prevention": "",
+   "new_facts": [
+    "reversed the earlier call on extensibility: the plugin system was removed before 1.0 and never shipped."
+   ],
+   "new_entities": [
+    "plugin-system",
+    "extensibility"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": true
+  },
+  {
+   "case": "ret-mobile",
+   "shape": "retracted_no_replacement",
+   "truth": "replaces",
+   "branch": "r",
+   "ntype": "decision",
+   "slug": "ios-client-sync-engine",
+   "old_stem": "2026-03-01-k8a035-decision-ios-client-sync-engine",
+   "old_archived": true,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "ios-client-sync-engine",
+   "old_desc": "The iOS client shares the sync engine with the web app, and the code now matches.",
+   "old_prevention": "Ensure that both iOS and web app code are updated together when changes to the sync engine are made.",
+   "old_facts": [],
+   "new_session_idx": 1,
+   "new_title": "ios-client-sync-engine",
+   "new_desc": "The iOS client was discontinued and only the web app remains. The reviewer asked for one rename and otherwise approved the work.  [facts] The iOS client was discontinued; only the web app remains. · The reviewer asked for one rename and otherwise approved it. · Follow-up",
+   "new_prevention": "",
+   "new_facts": [
+    "follow-up",
+    "the ios client was discontinued; only the web app remains.",
+    "the reviewer asked for one rename and otherwise approved it."
+   ],
+   "new_entities": [
+    "ios-client",
+    "web-app",
+    "reviewer"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": true
+  },
+  {
+   "case": "ret-cron",
+   "shape": "retracted_no_replacement",
+   "truth": "replaces",
+   "branch": "r",
+   "ntype": "pattern",
+   "slug": "nightly-cron-audit-log-compaction",
+   "old_stem": "2026-03-01-k8a036-pattern-nightly-cron-audit-log-compaction",
+   "old_archived": true,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "nightly-cron-audit-log-compaction",
+   "old_desc": "A nightly cron job was scheduled to compact the audit log at 03:00. This approach ensures regular maintenance without manual intervention and integrates smoothly with existing release processes.  [facts] a nightly cron compacts the audit log at 03:00 · Rolled it out behind the usual staged release",
+   "old_prevention": "",
+   "old_facts": [
+    "a nightly cron compacts the audit log at 03:00",
+    "rolled it out behind the usual staged release"
+   ],
+   "new_session_idx": 1,
+   "new_title": "nightly-cron-audit-log-compaction",
+   "new_desc": "The audit log is append-only forever, and nightly compaction was dropped. This pattern documents the decision to keep logs indefinitely without compaction.",
+   "new_prevention": "",
+   "new_facts": [],
+   "new_entities": [
+    "audit-log",
+    "compaction",
+    "cron"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": true
+  },
+  {
+   "case": "ret-cron",
+   "shape": "retracted_no_replacement",
+   "truth": "replaces",
+   "branch": "r",
+   "ntype": "decision",
+   "slug": "schedule-audit-log-compaction",
+   "old_stem": "2026-03-01-k8a036-decision-schedule-audit-log-compaction",
+   "old_archived": true,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "schedule-audit-log-compaction",
+   "old_desc": "It was decided to schedule a nightly cron job that compacts the audit log at 03:00. This decision balances system performance with operational simplicity.  [facts] Settled it: a nightly cron compacts the audit log at 03:00",
+   "old_prevention": "",
+   "old_facts": [
+    "settled it: a nightly cron compacts the audit log at 03:00"
+   ],
+   "new_session_idx": 1,
+   "new_title": "schedule-audit-log-compaction",
+   "new_desc": "The decision to schedule audit log compaction was revised and dropped, as the audit log is now append-only forever.  [facts] nightly compaction was dropped · audit log is append-only forever",
+   "new_prevention": "",
+   "new_facts": [
+    "audit log is append-only forever",
+    "nightly compaction was dropped"
+   ],
+   "new_entities": [
+    "audit-log",
+    "compaction",
+    "schedule"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": true
+  },
+  {
+   "case": "ret-webhook",
+   "shape": "retracted_no_replacement",
+   "truth": "replaces",
+   "branch": "r",
+   "ntype": "pattern",
+   "slug": "webhook-order-integration",
+   "old_stem": "2026-03-01-k8a039-pattern-webhook-order-integration",
+   "old_archived": true,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "webhook-order-integration",
+   "old_desc": "A webhook posts every order to the partner endpoint. This setup was documented in the README section that was already stale.  [facts] Documented it in the README section that was already stale",
+   "old_prevention": "",
+   "old_facts": [
+    "documented it in the readme section that was already stale"
+   ],
+   "new_session_idx": 1,
+   "new_title": "webhook-order-integration",
+   "new_desc": "The partner integration was terminated and the webhook deleted. The change touched three files and none of them were config.",
+   "new_prevention": "",
+   "new_facts": [],
+   "new_entities": [
+    "integration",
+    "webhook",
+    "config"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": true
+  },
+  {
+   "case": "ret-cli-flag",
+   "shape": "retracted_no_replacement",
+   "truth": "replaces",
+   "branch": "r",
+   "ntype": "pattern",
+   "slug": "cli-flag-legacy-restores-pre-2-0-format",
+   "old_stem": "2026-03-01-k8a041-pattern-cli-flag-legacy-restores-pre-2-0-format",
+   "old_archived": true,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "cli-flag-legacy-restores-pre-2.0-format",
+   "old_desc": "The --legacy flag in the CLI restores the pre-2.0 output format, which was necessary to ensure compatibility and correct behavior after a version update.",
+   "old_prevention": "",
+   "old_facts": [],
+   "new_session_idx": 1,
+   "new_title": "cli-flag-legacy-restores-pre-2-0-format",
+   "new_desc": "The --legacy flag was dropped in version 3.0 with no equivalent, but it was rolled out behind a staged release.  [facts] Follow-up",
+   "new_prevention": "",
+   "new_facts": [
+    "follow-up"
+   ],
+   "new_entities": [
+    "cli",
+    "flag",
+    "version-3-0",
+    "release"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": true
+  },
+  {
+   "case": "ret-cli-flag",
+   "shape": "retracted_no_replacement",
+   "truth": "replaces",
+   "branch": "r",
+   "ntype": "decision",
+   "slug": "use-legacy-flag-for-backward-compatibility",
+   "old_stem": "2026-03-01-k8a041-decision-use-legacy-flag-for-backward-compatibility",
+   "old_archived": true,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "use-legacy-flag-for-backward-compatibility",
+   "old_desc": "It was decided to use the --legacy flag to restore the pre-2.0 output format, ensuring that existing workflows and expectations are maintained during the transition.",
+   "old_prevention": "",
+   "old_facts": [],
+   "new_session_idx": 1,
+   "new_title": "use-legacy-flag-for-backward-compatibility",
+   "new_desc": "The decision was made to use the legacy flag for backward compatibility, even though it was dropped in 3.0.  [facts] --legacy flag · Follow-up",
+   "new_prevention": "",
+   "new_facts": [
+    "--legacy flag",
+    "follow-up"
+   ],
+   "new_entities": [
+    "flag",
+    "compatibility",
+    "version-3-0"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": true
+  },
+  {
+   "case": "ret-audit-ui",
+   "shape": "retracted_no_replacement",
+   "truth": "replaces",
+   "branch": "r",
+   "ntype": "pattern",
+   "slug": "admin-panel-audit-tab-filtering",
+   "old_stem": "2026-03-01-k8a042-pattern-admin-panel-audit-tab-filtering",
+   "old_archived": true,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "admin-panel-audit-tab-filtering",
+   "old_desc": "The audit tab in the admin panel can be used to filter event history. This approach allows for targeted inspection of specific events without manually sifting through large logs.  [facts] audit tab shows a filterable event history",
+   "old_prevention": "",
+   "old_facts": [
+    "audit tab shows a filterable event history"
+   ],
+   "new_session_idx": 1,
+   "new_title": "admin-panel-audit-tab-filtering",
+   "new_desc": "The audit tab was removed from the admin panel entirely, which contradicted an earlier assumption. This required re-evaluating the dashboard functionality and confirming that no related data was being processed.  [facts] Came back to the admin panel. That earlier decision is off: the audit tab was taken out of the admin panel entirely. · Checked the dashboards for an hour after and nothing moved.",
+   "new_prevention": "",
+   "new_facts": [
+    "came back to the admin panel. that earlier decision is off: the audit tab was taken out of the admin panel entirely.",
+    "checked the dashboards for an hour after and nothing moved."
+   ],
+   "new_entities": [
+    "admin-panel",
+    "audit-tab",
+    "dashboard"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "admin-panel-audit-tab-filtering",
+   "old_marked": true,
+   "new_marked": true
+  },
+  {
+   "case": "ret-i18n",
+   "shape": "retracted_no_replacement",
+   "truth": "replaces",
+   "branch": "r",
+   "ntype": "pattern",
+   "slug": "localization-pairing-session",
+   "old_stem": "2026-03-01-k8a043-pattern-localization-pairing-session",
+   "old_archived": true,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "localization-pairing-session",
+   "old_desc": "A ninety-minute pairing session was conducted to implement German and French translations for the application. The session was uninterrupted and resulted in successful localization.  [facts] Worked through localisation today · the app ships German and French translations · Pairing session, roughly ninety minutes, no interruptions",
+   "old_prevention": "",
+   "old_facts": [
+    "pairing session, roughly ninety minutes, no interruptions",
+    "the app ships german and french translations",
+    "worked through localisation today"
+   ],
+   "new_session_idx": 1,
+   "new_title": "localization-pairing-session",
+   "new_desc": "The session involved a localization review and subsequent decision to drop translations, making the app English-only. The reviewer approved the change with only one rename requested.  [facts] Reopened localisation after the last review · translations were dropped; the app is English-only · The reviewer asked for one rename and otherwise approved it",
+   "new_prevention": "",
+   "new_facts": [
+    "reopened localisation after the last review",
+    "the reviewer asked for one rename and otherwise approved it",
+    "translations were dropped; the app is english-only"
+   ],
+   "new_entities": [
+    "localization",
+    "app",
+    "reviewer"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": true
+  },
+  {
+   "case": "ret-sandbox",
+   "shape": "retracted_no_replacement",
+   "truth": "replaces",
+   "branch": "r",
+   "ntype": "pattern",
+   "slug": "sandbox-environment-mirroring",
+   "old_stem": "2026-03-01-k8a044-pattern-sandbox-environment-mirroring",
+   "old_archived": true,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "sandbox-environment-mirroring",
+   "old_desc": "A sandbox environment can be configured to mirror production for partners, enabling accurate testing and validation before deployment. This approach ensures that partner-facing features behave consistently across environments.  [facts] Confirmed that a sandbox environment mirrors production for partners · Rolled it out behind the usual staged release",
+   "old_prevention": "",
+   "old_facts": [
+    "confirmed that a sandbox environment mirrors production for partners",
+    "rolled it out behind the usual staged release"
+   ],
+   "new_session_idx": 1,
+   "new_title": "sandbox-environment-mirroring",
+   "new_desc": "The team adapted to a new testing setup where the sandbox was shut down and partners now test against their own stubs. This change required updating documentation in the README to reflect the new workflow.  [facts] partners test against their own stubs · Documented it in the README section that was already stale",
+   "new_prevention": "",
+   "new_facts": [
+    "documented it in the readme section that was already stale",
+    "partners test against their own stubs"
+   ],
+   "new_entities": [
+    "sandbox",
+    "stub",
+    "readme"
+   ],
+   "new_supersedes": "sandbox-environment-mirroring",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": true
+  },
+  {
+   "case": "nar-retry-scope",
+   "shape": "narrowed",
+   "truth": "replaces",
+   "branch": "r",
+   "ntype": "pattern",
+   "slug": "http-client-retry-logic",
+   "old_stem": "2026-03-01-k8a045-pattern-http-client-retry-logic",
+   "old_archived": true,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "http-client-retry-logic",
+   "old_desc": "The HTTP client is configured to retry failed requests. This pattern ensures resilience against transient network issues or temporary server unavailability.  [facts] the client retries every failed request",
+   "old_prevention": "",
+   "old_facts": [
+    "the client retries every failed request"
+   ],
+   "new_session_idx": 1,
+   "new_title": "http-client-retry-logic",
+   "new_desc": "The HTTP client retries only on 5xx responses; 4xx is never retried. This logic was verified by running the full test suite which stayed green.  [facts] Had to revisit the HTTP client · What holds now is that the client retries only on 5xx responses; 4xx is never retried · Ran the full test suite afterwards and it stayed green",
+   "new_prevention": "",
+   "new_facts": [
+    "had to revisit the http client",
+    "ran the full test suite afterwards and it stayed green",
+    "what holds now is that the client retries only on 5xx responses; 4xx is never retried"
+   ],
+   "new_entities": [
+    "http-client",
+    "retry-logic",
+    "5xx-response",
+    "4xx-response",
+    "test-suite"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": true
+  },
+  {
+   "case": "nar-audit-scope",
+   "shape": "narrowed",
+   "truth": "replaces",
+   "branch": "r",
+   "ntype": "pattern",
+   "slug": "audit-log-table-changes",
+   "old_stem": "2026-03-01-k8a047-pattern-audit-log-table-changes",
+   "old_archived": true,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "audit-log-table-changes",
+   "old_desc": "Every table change is written to the audit log, and the code now matches. This ensures traceability and consistency of database modifications.",
+   "old_prevention": "",
+   "old_facts": [],
+   "new_session_idx": 1,
+   "new_title": "audit-log-table-changes",
+   "new_desc": "Changes to billing tables are audited now, while other auditing was removed. This pattern ensures that only relevant table changes are logged for audit purposes.  [facts] Only changes to billing tables are audited now. · The change touched three files and none of them were config. · Follow-up",
+   "new_prevention": "",
+   "new_facts": [
+    "follow-up",
+    "only changes to billing tables are audited now.",
+    "the change touched three files and none of them were config."
+   ],
+   "new_entities": [
+    "billing-tables",
+    "audit-log"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": true
+  },
+  {
+   "case": "nar-audit-scope",
+   "shape": "narrowed",
+   "truth": "replaces",
+   "branch": "r",
+   "ntype": "decision",
+   "slug": "document-audit-decision-in-readme",
+   "old_stem": "2026-03-01-k8a047-decision-document-audit-decision-in-readme",
+   "old_archived": true,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "document-audit-decision-in-readme",
+   "old_desc": "The auditing decision was documented in the README section that was already stale, ensuring that documentation stays up-to-date with code changes.  [facts] Documented it in the README section that was already stale",
+   "old_prevention": "",
+   "old_facts": [
+    "documented it in the readme section that was already stale"
+   ],
+   "new_session_idx": 1,
+   "new_title": "document-audit-decision-in-readme",
+   "new_desc": "It was decided that audit decisions should be documented in the README to maintain clarity and traceability of changes.  [facts] Follow-up on auditing, and it did not survive. · Only changes to billing tables are audited now. · Follow-up",
+   "new_prevention": "",
+   "new_facts": [
+    "follow-up",
+    "follow-up on auditing, and it did not survive.",
+    "only changes to billing tables are audited now."
+   ],
+   "new_entities": [
+    "audit-decision",
+    "readme"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": false,
+   "new_marked": true
+  },
+  {
+   "case": "nar-gpu-scope",
+   "shape": "narrowed",
+   "truth": "replaces",
+   "branch": "r",
+   "ntype": "pattern",
+   "slug": "trainer-gpu-utilization",
+   "old_stem": "2026-03-01-k8a048-pattern-trainer-gpu-utilization",
+   "old_archived": true,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "trainer-gpu-utilization",
+   "old_desc": "The trainer runs on GPU for every job, which ensures efficient utilization of compute resources. This was confirmed after running the full test suite and observing that it stayed green.  [facts] Ran the full test suite afterwards and it stayed green",
+   "old_prevention": "",
+   "old_facts": [
+    "ran the full test suite afterwards and it stayed green"
+   ],
+   "new_session_idx": 1,
+   "new_title": "trainer-gpu-utilization",
+   "new_desc": "The trainer uses GPU only for jobs with more than 10M parameters, while smaller ones run on CPU. This was confirmed during a ninety-minute pairing session.  [facts] GPU is used only for jobs above 10M parameters; smaller ones run on CPU.",
+   "new_prevention": "",
+   "new_facts": [
+    "gpu is used only for jobs above 10m parameters; smaller ones run on cpu."
+   ],
+   "new_entities": [
+    "trainer",
+    "gpu",
+    "cpu",
+    "job"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": true
+  },
+  {
+   "case": "nar-lint-scope",
+   "shape": "narrowed",
+   "truth": "replaces",
+   "branch": "r",
+   "ntype": "pattern",
+   "slug": "pre-commit-hook-lints-repository",
+   "old_stem": "2026-03-01-k8a049-pattern-pre-commit-hook-lints-repository",
+   "old_archived": true,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "pre-commit-hook-lints-repository",
+   "old_desc": "The pre-commit hook is configured to lint the entire repository. This ensures consistent code quality across all files and prevents issues from being introduced.  [facts] the pre-commit hook lints the whole repository",
+   "old_prevention": "",
+   "old_facts": [
+    "the pre-commit hook lints the whole repository"
+   ],
+   "new_session_idx": 1,
+   "new_title": "pre-commit-hook-lints-repository",
+   "new_desc": "The hook lints only the staged files. This approach ensures that linting is efficient and focused, reducing unnecessary overhead during development.  [facts] Rolled it out behind the usual staged release",
+   "new_prevention": "",
+   "new_facts": [
+    "rolled it out behind the usual staged release"
+   ],
+   "new_entities": [
+    "pre-commit-hook",
+    "linting",
+    "staged-files"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": true
+  },
+  {
+   "case": "nar-notify-scope",
+   "shape": "narrowed",
+   "truth": "replaces",
+   "branch": "r",
+   "ntype": "pattern",
+   "slug": "alerting-on-failed-deploy",
+   "old_stem": "2026-03-01-k8a050-pattern-alerting-on-failed-deploy",
+   "old_archived": true,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "alerting-on-failed-deploy",
+   "old_desc": "When a deploy fails, the on-call engineer is automatically paged. This ensures quick response to deployment issues.  [facts] Confirmed that every failed deploy pages the on-call engineer",
+   "old_prevention": "",
+   "old_facts": [
+    "confirmed that every failed deploy pages the on-call engineer"
+   ],
+   "new_session_idx": 1,
+   "new_title": "alerting-on-failed-deploy",
+   "new_desc": "Only production deploy failures trigger page-on-call alerts; staging failures go to Slack. This reduces noise in production while keeping staging issues visible.  [facts] alerting changed this week · Only production deploy failures page on-call; staging failures go to Slack",
+   "new_prevention": "",
+   "new_facts": [
+    "alerting changed this week",
+    "only production deploy failures page on-call; staging failures go to slack"
+   ],
+   "new_entities": [
+    "alerting",
+    "deploy",
+    "staging",
+    "production"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": true
+  },
+  {
+   "case": "nar-backup-scope",
+   "shape": "narrowed",
+   "truth": "replaces",
+   "branch": "r",
+   "ntype": "pattern",
+   "slug": "nightly-backup-database-dump",
+   "old_stem": "2026-03-01-k8a053-pattern-nightly-backup-database-dump",
+   "old_archived": true,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "nightly-backup-database-dump",
+   "old_desc": "The nightly backup dumps every database and the code now matches this behavior. This ensures comprehensive data protection by including all databases in the backup process.  [facts] Wrote up the backups decision. The nightly backup dumps every database, and the code now matches.",
+   "old_prevention": "",
+   "old_facts": [
+    "wrote up the backups decision. the nightly backup dumps every database, and the code now matches."
+   ],
+   "new_session_idx": 1,
+   "new_title": "nightly-backup-database-dump",
+   "new_desc": "The nightly backup process was updated to include all databases instead of just the primary one. This ensures comprehensive data protection and recovery capabilities.  [facts] The nightly backup covers the primary database only. · Ran the full test suite afterwards and it stayed green. · Follow-up",
+   "new_prevention": "",
+   "new_facts": [
+    "follow-up",
+    "ran the full test suite afterwards and it stayed green.",
+    "the nightly backup covers the primary database only."
+   ],
+   "new_entities": [
+    "database",
+    "backup",
+    "nightly"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": true
+  },
+  {
+   "case": "nar-backup-scope",
+   "shape": "narrowed",
+   "truth": "replaces",
+   "branch": "r",
+   "ntype": "decision",
+   "slug": "nightly-backup-includes-all-databases",
+   "old_stem": "2026-03-01-k8a053-decision-nightly-backup-includes-all-databases",
+   "old_archived": true,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "nightly-backup-includes-all-databases",
+   "old_desc": "It was decided that the nightly backup should include all databases to ensure complete data protection and consistency.  [facts] Wrote up the backups decision. The nightly backup dumps every database, and the code now matches.",
+   "old_prevention": "",
+   "old_facts": [
+    "wrote up the backups decision. the nightly backup dumps every database, and the code now matches."
+   ],
+   "new_session_idx": 1,
+   "new_title": "nightly-backup-includes-all-databases",
+   "new_desc": "It was decided that the nightly backup should include all databases, not just the primary one, to ensure complete data integrity and recovery.  [facts] The nightly backup covers the primary database only. · Follow-up on backups, and it did not survive. · Follow-up",
+   "new_prevention": "",
+   "new_facts": [
+    "follow-up",
+    "follow-up on backups, and it did not survive.",
+    "the nightly backup covers the primary database only."
+   ],
+   "new_entities": [
+    "database",
+    "backup",
+    "nightly"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": true
+  },
+  {
+   "case": "nar-ratelimit-scope",
+   "shape": "narrowed",
+   "truth": "replaces",
+   "branch": "r",
+   "ntype": "pattern",
+   "slug": "rate-limiting-applies-to-all-calls",
+   "old_stem": "2026-03-01-k8a054-pattern-rate-limiting-applies-to-all-calls",
+   "old_archived": true,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "rate-limiting-applies-to-all-calls",
+   "old_desc": "Rate limits apply to every caller, not just specific endpoints. This was confirmed during a review where the reviewer asked for one rename and otherwise approved the implementation.  [facts] reviewer asked for one rename and otherwise approved it",
+   "old_prevention": "",
+   "old_facts": [
+    "reviewer asked for one rename and otherwise approved it"
+   ],
+   "new_session_idx": 1,
+   "new_title": "rate-limiting-applies-to-all-calls",
+   "new_desc": "Rate limiting applies only to unauthenticated callers, not all calls as previously believed. This was confirmed by revisiting the decision and updating the tracker.  [facts] rate limits apply only to unauthenticated callers",
+   "new_prevention": "",
+   "new_facts": [
+    "rate limits apply only to unauthenticated callers"
+   ],
+   "new_entities": [
+    "rate-limiting",
+    "authentication"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "rate-limiting-applies-to-all-calls",
+   "old_marked": true,
+   "new_marked": true
+  },
+  {
+   "case": "nar-compress-scope",
+   "shape": "narrowed",
+   "truth": "replaces",
+   "branch": "r",
+   "ntype": "pattern",
+   "slug": "gzip-response-compression",
+   "old_stem": "2026-03-01-k8a055-pattern-gzip-response-compression",
+   "old_archived": true,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "gzip-response-compression",
+   "old_desc": "Every response is now gzip-compressed. This was documented in the README section that was already stale.  [facts] every response is gzip-compressed · Documented it in the README section that was already stale",
+   "old_prevention": "",
+   "old_facts": [
+    "documented it in the readme section that was already stale",
+    "every response is gzip-compressed"
+   ],
+   "new_session_idx": 1,
+   "new_title": "gzip-response-compression",
+   "new_desc": "The system now compresses HTTP responses larger than 8 KB. This change was implemented by modifying three files, none of which were configuration files.  [facts] only responses above 8 KB are compressed · touched three files and none of them were config",
+   "new_prevention": "",
+   "new_facts": [
+    "only responses above 8 kb are compressed",
+    "touched three files and none of them were config"
+   ],
+   "new_entities": [
+    "http-response",
+    "gzip",
+    "compression"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": true
+  },
+  {
+   "case": "nar-replay-scope",
+   "shape": "narrowed",
+   "truth": "replaces",
+   "branch": "r",
+   "ntype": "pattern",
+   "slug": "event-log-replay-on-boot",
+   "old_stem": "2026-03-01-k8a057-pattern-event-log-replay-on-boot",
+   "old_archived": true,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "event-log-replay-on-boot",
+   "old_desc": "The consumer currently replays the entire event log on boot. This approach was reviewed and documented to prevent future reinvestigation of the same issue.  [facts] the consumer replays the entire event log on boot",
+   "old_prevention": "",
+   "old_facts": [
+    "the consumer replays the entire event log on boot"
+   ],
+   "new_session_idx": 1,
+   "new_title": "event-log-replay-on-boot",
+   "new_desc": "The consumer replays only events since the last checkpoint. This pattern ensures that the system can resume processing from where it left off after a restart, maintaining consistency and avoiding duplicate processing.",
+   "new_prevention": "",
+   "new_facts": [],
+   "new_entities": [
+    "consumer",
+    "event-log",
+    "checkpoint"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": true
+  },
+  {
+   "case": "nar-shard-scope",
+   "shape": "narrowed",
+   "truth": "replaces",
+   "branch": "r",
+   "ntype": "pattern",
+   "slug": "tenant-sharding-database",
+   "old_stem": "2026-03-01-k8a058-pattern-tenant-sharding-database",
+   "old_archived": true,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "tenant-sharding-database",
+   "old_desc": "Each tenant gets its own database shard to isolate data. This approach was implemented by touching three files, none of which were configuration files.  [facts] sharding · none of them were config",
+   "old_prevention": "",
+   "old_facts": [
+    "none of them were config",
+    "sharding"
+   ],
+   "new_session_idx": 1,
+   "new_title": "tenant-sharding-database",
+   "new_desc": "The system uses a sharding approach where tenants with more than 50,000 records are assigned dedicated shards. This was confirmed by checking dashboards after an hour of operation.  [facts] only tenants above 50k records get a dedicated shard · Checked the dashboards for an hour after and nothing moved",
+   "new_prevention": "",
+   "new_facts": [
+    "checked the dashboards for an hour after and nothing moved",
+    "only tenants above 50k records get a dedicated shard"
+   ],
+   "new_entities": [
+    "tenant",
+    "shard",
+    "database"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": false,
+   "new_marked": true
+  },
+  {
+   "case": "nar-shard-scope",
+   "shape": "narrowed",
+   "truth": "replaces",
+   "branch": "r",
+   "ntype": "decision",
+   "slug": "sharding-approach",
+   "old_stem": "2026-03-01-k8a058-decision-sharding-approach",
+   "old_archived": true,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "sharding-approach",
+   "old_desc": "The decision was made to implement sharding where each tenant gets its own database shard. This ensures data isolation and scalability.",
+   "old_prevention": "",
+   "old_facts": [],
+   "new_session_idx": 1,
+   "new_title": "sharding-approach",
+   "new_desc": "The decision was made to shard tenants based on record count, specifically assigning dedicated shards only to those with over 50,000 records.  [facts] only tenants above 50k records get a dedicated shard",
+   "new_prevention": "",
+   "new_facts": [
+    "only tenants above 50k records get a dedicated shard"
+   ],
+   "new_entities": [
+    "tenant",
+    "shard",
+    "records-count"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": false,
+   "new_marked": true
+  },
+  {
+   "case": "nar-trace-scope",
+   "shape": "narrowed",
+   "truth": "replaces",
+   "branch": "r",
+   "ntype": "pattern",
+   "slug": "end-to-end-request-tracing",
+   "old_stem": "2026-03-01-k8a059-pattern-end-to-end-request-tracing",
+   "old_archived": true,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "end-to-end-request-tracing",
+   "old_desc": "Every request is now traced end to end, ensuring full visibility of the flow. This was implemented to match the tracing decision and improve debugging capabilities.  [facts] Every request is traced end to end · the code now matches",
+   "old_prevention": "",
+   "old_facts": [
+    "every request is traced end to end",
+    "the code now matches"
+   ],
+   "new_session_idx": 1,
+   "new_title": "end-to-end-request-tracing",
+   "new_desc": "The system implements end-to-end request tracing with a sampling rate of one in a hundred requests. This approach was reviewed and approved with only one minor rename requested.  [facts] One request in a hundred is sampled for tracing · The reviewer asked for one rename and otherwise approved it · Follow-up",
+   "new_prevention": "",
+   "new_facts": [
+    "follow-up",
+    "one request in a hundred is sampled for tracing",
+    "the reviewer asked for one rename and otherwise approved it"
+   ],
+   "new_entities": [
+    "request-tracing",
+    "sampling-rate"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": true
+  },
+  {
+   "case": "nar-trace-scope",
+   "shape": "narrowed",
+   "truth": "replaces",
+   "branch": "r",
+   "ntype": "decision",
+   "slug": "trace-all-requests",
+   "old_stem": "2026-03-01-k8a059-decision-trace-all-requests",
+   "old_archived": true,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "trace-all-requests",
+   "old_desc": "It was decided that every request should be traced end to end for better observability and debugging. This decision aligns with the project's need for robust monitoring.  [facts] Every request is traced end to end · the code now matches",
+   "old_prevention": "",
+   "old_facts": [
+    "every request is traced end to end",
+    "the code now matches"
+   ],
+   "new_session_idx": 1,
+   "new_title": "trace-all-requests",
+   "new_desc": "The decision was made to trace all requests, but this approach did not survive the review process.  [facts] Follow-up on tracing, and it did not survive · Follow-up",
+   "new_prevention": "",
+   "new_facts": [
+    "follow-up",
+    "follow-up on tracing, and it did not survive"
+   ],
+   "new_entities": [
+    "request-tracing",
+    "sampling-rate"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": false
+  },
+  {
+   "case": "ctl-db-cache",
+   "shape": "control",
+   "truth": "separate",
+   "branch": "r",
+   "ntype": "decision",
+   "slug": "postgresql-16-as-primary-database",
+   "old_stem": "2026-03-01-k8a060-decision-postgresql-16-as-primary-database",
+   "old_archived": true,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "postgresql-16-as-primary-database",
+   "old_desc": "It was decided to use PostgreSQL 16 as the primary database for the project, based on discussion and stack evaluation.  [facts] the primary database is PostgreSQL 16",
+   "old_prevention": "",
+   "old_facts": [
+    "the primary database is postgresql 16"
+   ],
+   "new_session_idx": 1,
+   "new_title": "postgresql-16-as-primary-database",
+   "new_desc": "PostgreSQL 16 was chosen as the primary database, which is documented in the project's decisions.",
+   "new_prevention": "",
+   "new_facts": [],
+   "new_entities": [
+    "postgresql",
+    "database"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": false
+  },
+  {
+   "case": "ctl-lang-test",
+   "shape": "control",
+   "truth": "separate",
+   "branch": "r",
+   "ntype": "pattern",
+   "slug": "service-written-in-rust",
+   "old_stem": "2026-03-01-k8a061-pattern-service-written-in-rust",
+   "old_archived": true,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "service-written-in-rust",
+   "old_desc": "The service was determined to be written in Rust after working through the stack. This was confirmed by checking the codebase and dashboards.  [facts] the service is written in Rust · Checked the dashboards for an hour after and nothing moved",
+   "old_prevention": "",
+   "old_facts": [
+    "checked the dashboards for an hour after and nothing moved",
+    "the service is written in rust"
+   ],
+   "new_session_idx": 1,
+   "new_title": "service-written-in-rust",
+   "new_desc": "The service is written in Rust, which provides memory safety and performance benefits. This choice helps avoid common runtime errors and improves system reliability.  [facts] the integration tests are written in Python",
+   "new_prevention": "",
+   "new_facts": [
+    "the integration tests are written in python"
+   ],
+   "new_entities": [
+    "service",
+    "rust"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": false
+  },
+  {
+   "case": "ctl-env",
+   "shape": "control",
+   "truth": "separate",
+   "branch": "r",
+   "ntype": "pattern",
+   "slug": "staging-deploy-on-merge",
+   "old_stem": "2026-03-01-k8a063-pattern-staging-deploy-on-merge",
+   "old_archived": true,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "staging-deploy-on-merge",
+   "old_desc": "Staging environment deploys on every merge to main branch. This was documented in the README section that was already stale.  [facts] staging deploys on every merge to main · Documented it in the README section that was already stale",
+   "old_prevention": "",
+   "old_facts": [
+    "documented it in the readme section that was already stale",
+    "staging deploys on every merge to main"
+   ],
+   "new_session_idx": 1,
+   "new_title": "staging-deploy-on-merge",
+   "new_desc": "Staging deployments are triggered on merge events. This pattern ensures that changes are automatically deployed to the staging environment when merged into the main branch.",
+   "new_prevention": "",
+   "new_facts": [],
+   "new_entities": [
+    "staging",
+    "deployment",
+    "merge"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": false
+  },
+  {
+   "case": "ctl-storage",
+   "shape": "control",
+   "truth": "separate",
+   "branch": "r",
+   "ntype": "pattern",
+   "slug": "s3-storage-configuration",
+   "old_stem": "2026-03-01-k8a065-pattern-s3-storage-configuration",
+   "old_archived": true,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "s3-storage-configuration",
+   "old_desc": "User uploads are configured to go to S3, and the code now matches this decision. This ensures consistent storage handling for user data.  [facts] user uploads go to S3",
+   "old_prevention": "",
+   "old_facts": [
+    "user uploads go to s3"
+   ],
+   "new_session_idx": 1,
+   "new_title": "s3-storage-configuration",
+   "new_desc": "Configured S3 storage for uploads with a staged release approach. This pattern ensures reliable and scalable upload handling by leveraging S3's durability and availability features.  [facts] database backups go to Glacier · Rolled it out behind the usual staged release",
+   "new_prevention": "",
+   "new_facts": [
+    "database backups go to glacier",
+    "rolled it out behind the usual staged release"
+   ],
+   "new_entities": [
+    "s3",
+    "glacier",
+    "staged-release"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": false
+  },
+  {
+   "case": "ctl-storage",
+   "shape": "control",
+   "truth": "separate",
+   "branch": "r",
+   "ntype": "decision",
+   "slug": "s3-storage-for-uploads",
+   "old_stem": "2026-03-01-k8a065-decision-s3-storage-for-uploads",
+   "old_archived": true,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "s3-storage-for-uploads",
+   "old_desc": "It was decided that user uploads should go to S3, and the code has been updated to reflect this configuration.  [facts] user uploads go to S3 · the code now matches",
+   "old_prevention": "",
+   "old_facts": [
+    "the code now matches",
+    "user uploads go to s3"
+   ],
+   "new_session_idx": 1,
+   "new_title": "s3-storage-for-uploads",
+   "new_desc": "Decided to use S3 for handling uploads, which provides scalable and durable storage for user-generated content.  [facts] database backups go to Glacier · Rolled it out behind the usual staged release",
+   "new_prevention": "",
+   "new_facts": [
+    "database backups go to glacier",
+    "rolled it out behind the usual staged release"
+   ],
+   "new_entities": [
+    "s3",
+    "uploads",
+    "glacier"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": false
+  },
+  {
+   "case": "ctl-limits",
+   "shape": "control",
+   "truth": "separate",
+   "branch": "r",
+   "ntype": "pattern",
+   "slug": "upload-size-limit-check",
+   "old_stem": "2026-03-01-k8a069-pattern-upload-size-limit-check",
+   "old_archived": true,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "upload-size-limit-check",
+   "old_desc": "The upload size limit was confirmed to be 25 MB. The session verified this by reviewing the limits configuration and checking dashboards for an hour without any movement, indicating no change in the limit.  [facts] upload size limit is 25 MB · Checked the dashboards for an hour after and nothing moved",
+   "old_prevention": "",
+   "old_facts": [
+    "checked the dashboards for an hour after and nothing moved",
+    "upload size limit is 25 mb"
+   ],
+   "new_session_idx": 1,
+   "new_title": "upload-size-limit-check",
+   "new_desc": "The system enforces an upload size limit to prevent excessive resource usage. This was verified by running the full test suite which stayed green after the change.  [facts] the request rate limit is 100 per minute · Ran the full test suite afterwards and it stayed green",
+   "new_prevention": "",
+   "new_facts": [
+    "ran the full test suite afterwards and it stayed green",
+    "the request rate limit is 100 per minute"
+   ],
+   "new_entities": [
+    "upload-size-limit",
+    "request-rate-limit",
+    "test-suite"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": false
+  },
+  {
+   "case": "ctl-clients",
+   "shape": "control",
+   "truth": "separate",
+   "branch": "r",
+   "ntype": "pattern",
+   "slug": "cli-distribution-through-homebrew",
+   "old_stem": "2026-03-01-k8a071-pattern-cli-distribution-through-homebrew",
+   "old_archived": true,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "cli-distribution-through-homebrew",
+   "old_desc": "The CLI is distributed through Homebrew, which was confirmed by the agent's work. This decision aligns with the project's needs and ensures proper distribution.",
+   "old_prevention": "",
+   "old_facts": [],
+   "new_session_idx": 1,
+   "new_title": "cli-distribution-through-homebrew",
+   "new_desc": "The desktop app ships as a signed installer, which is a valid distribution method for CLI tools. This approach ensures proper signing and user trust.",
+   "new_prevention": "",
+   "new_facts": [],
+   "new_entities": [
+    "desktop-app",
+    "signed-installer"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": false
+  },
+  {
+   "case": "ctl-clients",
+   "shape": "control",
+   "truth": "separate",
+   "branch": "r",
+   "ntype": "decision",
+   "slug": "cli-distribution-method",
+   "old_stem": "2026-03-01-k8a071-decision-cli-distribution-method",
+   "old_archived": true,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "cli-distribution-method",
+   "old_desc": "The decision was made to distribute the CLI through Homebrew, which aligns with the project's needs and ensures proper distribution.  [facts] CLI is distributed through Homebrew",
+   "old_prevention": "",
+   "old_facts": [
+    "cli is distributed through homebrew"
+   ],
+   "new_session_idx": 1,
+   "new_title": "cli-distribution-method",
+   "new_desc": "The decision was made to distribute the CLI through a signed installer, which is appropriate for desktop applications requiring code signing.  [facts] the desktop app ships as a signed installer",
+   "new_prevention": "",
+   "new_facts": [
+    "the desktop app ships as a signed installer"
+   ],
+   "new_entities": [
+    "desktop-app",
+    "signed-installer"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": false
+  },
+  {
+   "case": "ctl-metrics",
+   "shape": "control",
+   "truth": "separate",
+   "branch": "r",
+   "ntype": "decision",
+   "slug": "track-request-latency-as-histogram",
+   "old_stem": "2026-03-01-k8a077-decision-track-request-latency-as-histogram",
+   "old_archived": true,
+   "old_session_idx": 0,
+   "old_sources": [],
+   "old_title": "track-request-latency-as-histogram",
+   "old_desc": "It was decided to track request latency as a histogram, which aligns with the system's observability requirements and was implemented accordingly.  [facts] Request latency is tracked as a histogram · the code now matches",
+   "old_prevention": "",
+   "old_facts": [
+    "request latency is tracked as a histogram",
+    "the code now matches"
+   ],
+   "new_session_idx": 1,
+   "new_title": "track-request-latency-as-histogram",
+   "new_desc": "Request latency is tracked as a histogram, which was already decided and implemented in this project.",
+   "new_prevention": "",
+   "new_facts": [],
+   "new_entities": [
+    "request-latency",
+    "histogram"
+   ],
+   "new_supersedes": "",
+   "new_contradicts": "",
+   "old_marked": true,
+   "new_marked": false
+  }
+ ],
+ "rows": [
+  {
+   "id": "val-http-timeout",
+   "shape": "value_replaced",
+   "old_day_correct": true,
+   "new_day_correct": true,
+   "both_correct": true,
+   "old_items": 2,
+   "new_items": 4,
+   "leak": false,
+   "store": {
+    "s0": {
+     "written": 2,
+     "live": 1,
+     "retired": 1,
+     "absorbed": 0,
+     "valid_to": [
+      "2026-05-01"
+     ],
+     "marker_in_text": true,
+     "titles": [
+      "2026-03-01-k8a000-pattern-http-client-timeout-configuration",
+      "2026-03-01-k8a000-decision-set-http-client-timeout-to-30s"
+     ],
+     "supersedes": [],
+     "superseded_via": [
+      "slug"
+     ]
+    },
+    "s1": {
+     "written": 3,
+     "live": 3,
+     "retired": 0,
+     "absorbed": 0,
+     "valid_to": [],
+     "marker_in_text": true,
+     "titles": [
+      "2026-05-01-k8a000-pattern-http-client-timeout-configuration",
+      "2026-05-01-k8a000-mistake-incorrect-http-client-timeout-value",
+      "2026-05-01-k8a000-decision-set-http-client-timeout-to-5s"
+     ],
+     "supersedes": [
+      "2026-03-01-k8a000-pattern-http-client-timeout-configuration"
+     ],
+     "superseded_via": []
+    }
+   },
+   "old_fail_kind": null,
+   "pairs": 1
+  },
+  {
+   "id": "val-pg-version",
+   "shape": "value_replaced",
+   "old_day_correct": true,
+   "new_day_correct": true,
+   "both_correct": true,
+   "old_items": 1,
+   "new_items": 1,
+   "leak": false,
+   "store": {
+    "s0": {
+     "written": 1,
+     "live": 0,
+     "retired": 1,
+     "absorbed": 0,
+     "valid_to": [
+      "2026-05-01"
+     ],
+     "marker_in_text": true,
+     "titles": [
+      "2026-03-01-k8a001-pattern-postgresql-version-in-production"
+     ],
+     "supersedes": [],
+     "superseded_via": [
+      "slug"
+     ]
+    },
+    "s1": {
+     "written": 1,
+     "live": 1,
+     "retired": 0,
+     "absorbed": 0,
+     "valid_to": [],
+     "marker_in_text": true,
+     "titles": [
+      "2026-05-01-k8a001-pattern-postgresql-version-in-production"
+     ],
+     "supersedes": [
+      "2026-03-01-k8a001-pattern-postgresql-version-in-production"
+     ],
+     "superseded_via": []
+    }
+   },
+   "old_fail_kind": null,
+   "pairs": 1
+  },
+  {
+   "id": "val-batch-size",
+   "shape": "value_replaced",
+   "old_day_correct": true,
+   "new_day_correct": true,
+   "both_correct": true,
+   "old_items": 1,
+   "new_items": 1,
+   "leak": false,
+   "store": {
+    "s0": {
+     "written": 1,
+     "live": 0,
+     "retired": 1,
+     "absorbed": 0,
+     "valid_to": [
+      "2026-05-01"
+     ],
+     "marker_in_text": true,
+     "titles": [
+      "2026-03-01-k8a002-pattern-training-batch-size-confirmed"
+     ],
+     "supersedes": [],
+     "superseded_via": [
+      "slug"
+     ]
+    },
+    "s1": {
+     "written": 1,
+     "live": 1,
+     "retired": 0,
+     "absorbed": 0,
+     "valid_to": [],
+     "marker_in_text": true,
+     "titles": [
+      "2026-05-01-k8a002-pattern-training-batch-size-confirmed"
+     ],
+     "supersedes": [
+      "2026-03-01-k8a002-pattern-training-batch-size-confirmed"
+     ],
+     "superseded_via": []
+    }
+   },
+   "old_fail_kind": null,
+   "pairs": 1
+  },
+  {
+   "id": "val-node-version",
+   "shape": "value_replaced",
+   "old_day_correct": true,
+   "new_day_correct": true,
+   "both_correct": true,
+   "old_items": 1,
+   "new_items": 1,
+   "leak": false,
+   "store": {
+    "s0": {
+     "written": 1,
+     "live": 0,
+     "retired": 1,
+     "absorbed": 0,
+     "valid_to": [
+      "2026-05-01"
+     ],
+     "marker_in_text": true,
+     "titles": [
+      "2026-03-01-k8a003-pattern-frontend-build-target-node18"
+     ],
+     "supersedes": [],
+     "superseded_via": [
+      "explicit"
+     ]
+    },
+    "s1": {
+     "written": 1,
+     "live": 1,
+     "retired": 0,
+     "absorbed": 0,
+     "valid_to": [],
+     "marker_in_text": true,
+     "titles": [
+      "2026-05-01-k8a003-pattern-frontend-build-target-node22"
+     ],
+     "supersedes": [
+      "2026-03-01-k8a003-pattern-frontend-build-target-node18"
+     ],
+     "superseded_via": []
+    }
+   },
+   "old_fail_kind": null,
+   "pairs": 0
+  },
+  {
+   "id": "val-retry-count",
+   "shape": "value_replaced",
+   "old_day_correct": true,
+   "new_day_correct": true,
+   "both_correct": true,
+   "old_items": 1,
+   "new_items": 1,
+   "leak": false,
+   "store": {
+    "s0": {
+     "written": 1,
+     "live": 0,
+     "retired": 1,
+     "absorbed": 0,
+     "valid_to": [
+      "2026-05-01"
+     ],
+     "marker_in_text": true,
+     "titles": [
+      "2026-03-01-k8a004-pattern-queue-worker-retry-logic"
+     ],
+     "supersedes": [],
+     "superseded_via": [
+      "slug"
+     ]
+    },
+    "s1": {
+     "written": 1,
+     "live": 1,
+     "retired": 0,
+     "absorbed": 0,
+     "valid_to": [],
+     "marker_in_text": true,
+     "titles": [
+      "2026-05-01-k8a004-pattern-queue-worker-retry-logic"
+     ],
+     "supersedes": [
+      "2026-03-01-k8a004-pattern-queue-worker-retry-logic"
+     ],
+     "superseded_via": []
+    }
+   },
+   "old_fail_kind": null,
+   "pairs": 1
+  },
+  {
+   "id": "val-cache-ttl",
+   "shape": "value_replaced",
+   "old_day_correct": true,
+   "new_day_correct": true,
+   "both_correct": true,
+   "old_items": 2,
+   "new_items": 2,
+   "leak": false,
+   "store": {
+    "s0": {
+     "written": 2,
+     "live": 0,
+     "retired": 2,
+     "absorbed": 0,
+     "valid_to": [
+      "2026-05-01",
+      "2026-05-01"
+     ],
+     "marker_in_text": true,
+     "titles": [
+      "2026-03-01-k8a005-pattern-cache-layer-expiration",
+      "2026-03-01-k8a005-decision-cache-expiration-duration"
+     ],
+     "supersedes": [],
+     "superseded_via": [
+      "slug",
+      "slug"
+     ]
+    },
+    "s1": {
+     "written": 2,
+     "live": 2,
+     "retired": 0,
+     "absorbed": 0,
+     "valid_to": [],
+     "marker_in_text": true,
+     "titles": [
+      "2026-05-01-k8a005-pattern-cache-layer-expiration",
+      "2026-05-01-k8a005-decision-cache-expiration-duration"
+     ],
+     "supersedes": [
+      "2026-03-01-k8a005-pattern-cache-layer-expiration",
+      "2026-03-01-k8a005-decision-cache-expiration-duration"
+     ],
+     "superseded_via": []
+    }
+   },
+   "old_fail_kind": null,
+   "pairs": 2
+  },
+  {
+   "id": "val-port",
+   "shape": "value_replaced",
+   "old_day_correct": true,
+   "new_day_correct": true,
+   "both_correct": true,
+   "old_items": 1,
+   "new_items": 1,
+   "leak": false,
+   "store": {
+    "s0": {
+     "written": 1,
+     "live": 0,
+     "retired": 1,
+     "absorbed": 0,
+     "valid_to": [
+      "2026-05-01"
+     ],
+     "marker_in_text": true,
+     "titles": [
+      "2026-03-01-k8a006-pattern-dev-server-port-configuration"
+     ],
+     "supersedes": [],
+     "superseded_via": [
+      "slug"
+     ]
+    },
+    "s1": {
+     "written": 1,
+     "live": 1,
+     "retired": 0,
+     "absorbed": 0,
+     "valid_to": [],
+     "marker_in_text": true,
+     "titles": [
+      "2026-05-01-k8a006-pattern-dev-server-port-configuration"
+     ],
+     "supersedes": [
+      "2026-03-01-k8a006-pattern-dev-server-port-configuration"
+     ],
+     "superseded_via": []
+    }
+   },
+   "old_fail_kind": null,
+   "pairs": 1
+  },
+  {
+   "id": "val-region",
+   "shape": "value_replaced",
+   "old_day_correct": true,
+   "new_day_correct": true,
+   "both_correct": true,
+   "old_items": 1,
+   "new_items": 2,
+   "leak": false,
+   "store": {
+    "s0": {
+     "written": 1,
+     "live": 1,
+     "retired": 0,
+     "absorbed": 0,
+     "valid_to": [],
+     "marker_in_text": true,
+     "titles": [
+      "2026-03-01-k8a007-pattern-service-deployment-in-eu-west-1"
+     ],
+     "supersedes": [],
+     "superseded_via": []
+    },
+    "s1": {
+     "written": 1,
+     "live": 1,
+     "retired": 0,
+     "absorbed": 0,
+     "valid_to": [],
+     "marker_in_text": true,
+     "titles": [
+      "2026-05-01-k8a007-pattern-service-deployment-in-us-east-2"
+     ],
+     "supersedes": [],
+     "superseded_via": []
+    }
+   },
+   "old_fail_kind": null,
+   "pairs": 0
+  },
+  {
+   "id": "val-py-version",
+   "shape": "value_replaced",
+   "old_day_correct": true,
+   "new_day_correct": true,
+   "both_correct": true,
+   "old_items": 2,
+   "new_items": 2,
+   "leak": false,
+   "store": {
+    "s0": {
+     "written": 2,
+     "live": 1,
+     "retired": 1,
+     "absorbed": 0,
+     "valid_to": [
+      "2026-05-01"
+     ],
+     "marker_in_text": true,
+     "titles": [
+      "2026-03-01-k8a008-pattern-test-suite-validation",
+      "2026-03-01-k8a008-pattern-python-version-pinning"
+     ],
+     "supersedes": [],
+     "superseded_via": [
+      "slug"
+     ]
+    },
+    "s1": {
+     "written": 1,
+     "live": 1,
+     "retired": 0,
+     "absorbed": 0,
+     "valid_to": [],
+     "marker_in_text": true,
+     "titles": [
+      "2026-05-01-k8a008-pattern-python-version-pinning"
+     ],
+     "supersedes": [
+      "2026-03-01-k8a008-pattern-python-version-pinning"
+     ],
+     "superseded_via": []
+    }
+   },
+   "old_fail_kind": null,
+   "pairs": 1
+  },
+  {
+   "id": "val-replicas",
+   "shape": "value_replaced",
+   "old_day_correct": true,
+   "new_day_correct": true,
+   "both_correct": true,
+   "old_items": 1,
+   "new_items": 1,
+   "leak": false,
+   "store": {
+    "s0": {
+     "written": 1,
+     "live": 0,
+     "retired": 1,
+     "absorbed": 0,
+     "valid_to": [
+      "2026-05-01"
+     ],
+     "marker_in_text": true,
+     "titles": [
+      "2026-03-01-k8a009-pattern-api-capacity-configuration"
+     ],
+     "supersedes": [],
+     "superseded_via": [
+      "slug"
+     ]
+    },
+    "s1": {
+     "written": 1,
+     "live": 1,
+     "retired": 0,
+     "absorbed": 0,
+     "valid_to": [],
+     "marker_in_text": true,
+     "titles": [
+      "2026-05-01-k8a009-pattern-api-capacity-configuration"
+     ],
+     "supersedes": [
+      "2026-03-01-k8a009-pattern-api-capacity-configuration"
+     ],
+     "superseded_via": []
+    }
+   },
+   "old_fail_kind": null,
+   "pairs": 1
+  },
+  {
+   "id": "val-lr",
+   "shape": "value_replaced",
+   "old_day_correct": true,
+   "new_day_correct": true,
+   "both_correct": true,
+   "old_items": 1,
+   "new_items": 1,
+   "leak": false,
+   "store": {
+    "s0": {
+     "written": 1,
+     "live": 0,
+     "retired": 1,
+     "absorbed": 0,
+     "valid_to": [
+      "2026-05-01"
+     ],
+     "marker_in_text": true,
+     "titles": [
+      "2026-03-01-k8a010-pattern-learning-rate-configuration"
+     ],
+     "supersedes": [],
+     "superseded_via": [
+      "slug"
+     ]
+    },
+    "s1": {
+     "written": 1,
+     "live": 1,
+     "retired": 0,
+     "absorbed": 0,
+     "valid_to": [],
+     "marker_in_text": true,
+     "titles": [
+      "2026-05-01-k8a010-pattern-learning-rate-configuration"
+     ],
+     "supersedes": [
+      "2026-03-01-k8a010-pattern-learning-rate-configuration"
+     ],
+     "superseded_via": []
+    }
+   },
+   "old_fail_kind": null,
+   "pairs": 1
+  },
+  {
+   "id": "val-chunk",
+   "shape": "value_replaced",
+   "old_day_correct": true,
+   "new_day_correct": true,
+   "both_correct": true,
+   "old_items": 2,
+   "new_items": 2,
+   "leak": false,
+   "store": {
+    "s0": {
+     "written": 2,
+     "live": 0,
+     "retired": 2,
+     "absorbed": 0,
+     "valid_to": [
+      "2026-05-01",
+      "2026-05-01"
+     ],
+     "marker_in_text": true,
+     "titles": [
+      "2026-03-01-k8a011-pattern-document-ingestion-chunking",
+      "2026-03-01-k8a011-decision-ingestion-decision-made"
+     ],
+     "supersedes": [],
+     "superseded_via": [
+      "slug",
+      "slug"
+     ]
+    },
+    "s1": {
+     "written": 2,
+     "live": 2,
+     "retired": 0,
+     "absorbed": 0,
+     "valid_to": [],
+     "marker_in_text": true,
+     "titles": [
+      "2026-05-01-k8a011-pattern-document-ingestion-chunking",
+      "2026-05-01-k8a011-decision-ingestion-decision-made"
+     ],
+     "supersedes": [
+      "2026-03-01-k8a011-pattern-document-ingestion-chunking",
+      "2026-03-01-k8a011-decision-ingestion-decision-made"
+     ],
+     "superseded_via": []
+    }
+   },
+   "old_fail_kind": null,
+   "pairs": 2
+  },
+  {
+   "id": "val-quorum",
+   "shape": "value_replaced",
+   "old_day_correct": true,
+   "new_day_correct": true,
+   "both_correct": true,
+   "old_items": 1,
+   "new_items": 2,
+   "leak": false,
+   "store": {
+    "s0": {
+     "written": 1,
+     "live": 0,
+     "retired": 1,
+     "absorbed": 0,
+     "valid_to": [
+      "2026-05-01"
+     ],
+     "marker_in_text": true,
+     "titles": [
+      "2026-03-01-k8a012-pattern-cluster-quorum-requirement"
+     ],
+     "supersedes": [],
+     "superseded_via": [
+      "slug"
+     ]
+    },
+    "s1": {
+     "written": 2,
+     "live": 2,
+     "retired": 0,
+     "absorbed": 0,
+     "valid_to": [],
+     "marker_in_text": true,
+     "titles": [
+      "2026-05-01-k8a012-pattern-cluster-quorum-requirement",
+      "2026-05-01-k8a012-decision-quorum-requirement-update"
+     ],
+     "supersedes": [
+      "2026-03-01-k8a012-pattern-cluster-quorum-requirement"
+     ],
+     "superseded_via": []
+    }
+   },
+   "old_fail_kind": null,
+   "pairs": 1
+  },
+  {
+   "id": "val-license",
+   "shape": "value_replaced",
+   "old_day_correct": true,
+   "new_day_correct": true,
+   "both_correct": true,
+   "old_items": 1,
+   "new_items": 1,
+   "leak": false,
+   "store": {
+    "s0": {
+     "written": 1,
+     "live": 0,
+     "retired": 1,
+     "absorbed": 0,
+     "valid_to": [
+      "2026-05-01"
+     ],
+     "marker_in_text": true,
+     "titles": [
+      "2026-03-01-k8a013-decision-project-licensing-decided"
+     ],
+     "supersedes": [],
+     "superseded_via": [
+      "slug"
+     ]
+    },
+    "s1": {
+     "written": 1,
+     "live": 1,
+     "retired": 0,
+     "absorbed": 0,
+     "valid_to": [],
+     "marker_in_text": true,
+     "titles": [
+      "2026-05-01-k8a013-decision-project-licensing-decided"
+     ],
+     "supersedes": [
+      "2026-03-01-k8a013-decision-project-licensing-decided"
+     ],
+     "superseded_via": []
+    }
+   },
+   "old_fail_kind": null,
+   "pairs": 1
+  },
+  {
+   "id": "val-branch",
+   "shape": "value_replaced",
+   "old_day_correct": false,
+   "new_day_correct": true,
+   "both_correct": false,
+   "old_items": 0,
+   "new_items": 1,
+   "leak": false,
+   "store": {
+    "s0": {
+     "written": 0,
+     "live": 0,
+     "retired": 0,
+     "absorbed": 0,
+     "valid_to": [],
+     "marker_in_text": false,
+     "titles": [],
+     "supersedes": [],
+     "superseded_via": []
+    },
+    "s1": {
+     "written": 1,
+     "live": 1,
+     "retired": 0,
+     "absorbed": 0,
+     "valid_to": [],
+     "marker_in_text": true,
+     "titles": [
+      "2026-05-01-k8a014-pattern-branch-renaming-protocol"
+     ],
+     "supersedes": [],
+     "superseded_via": []
+    }
+   },
+   "old_fail_kind": "never_written",
+   "pairs": 0
+  },
+  {
+   "id": "app-cache-store",
+   "shape": "approach_abandoned",
+   "old_day_correct": true,
+   "new_day_correct": true,
+   "both_correct": true,
+   "old_items": 1,
+   "new_items": 2,
+   "leak": false,
+   "store": {
+    "s0": {
+     "written": 1,
+     "live": 1,
+     "retired": 0,
+     "absorbed": 0,
+     "valid_to": [],
+     "marker_in_text": true,
+     "titles": [
+      "2026-03-01-k8a015-pattern-redis-session-caching"
+     ],
+     "supersedes": [],
+     "superseded_via": []
+    },
+    "s1": {
+     "written": 1,
+     "live": 1,
+     "retired": 0,
+     "absorbed": 0,
+     "valid_to": [],
+     "marker_in_text": true,
+     "titles": [
+      "2026-05-01-k8a015-pattern-in-process-lru-cache-replacement"
+     ],
+     "supersedes": [],
+     "superseded_via": []
+    }
+   },
+   "old_fail_kind": null,
+   "pairs": 0
+  },
+  {
+   "id": "app-auth",
+   "shape": "approach_abandoned",
+   "old_day_correct": true,
+   "new_day_correct": true,
+   "both_correct": true,
+   "old_items": 1,
+   "new_items": 2,
+   "leak": false,
+   "store": {
+    "s0": {
+     "written": 1,
+     "live": 0,
+     "retired": 1,
+     "absorbed": 0,
+     "valid_to": [
+      "2026-05-01"
+     ],
+     "marker_in_text": true,
+     "titles": [
+      "2026-03-01-k8a016-pattern-jwt-authentication-with-hs256"
+     ],
+     "supersedes": [],
+     "superseded_via": [
+      "slug"
+     ]
+    },
+    "s1": {
+     "written": 2,
+     "live": 2,
+     "retired": 0,
+     "absorbed": 0,
+     "valid_to": [],
+     "marker_in_text": true,
+     "titles": [
+      "2026-05-01-k8a016-pattern-jwt-authentication-with-hs256",
+      "2026-05-01-k8a016-decision-jwt-authentication-with-hs256"
+     ],
+     "supersedes": [
+      "2026-03-01-k8a016-pattern-jwt-authentication-with-hs256"
+     ],
+     "superseded_via": []
+    }
+   },
+   "old_fail_kind": null,
+   "pairs": 1
+  },
+  {
+   "id": "app-bundler",
+   "shape": "approach_abandoned",
+   "old_day_correct": true,
+   "new_day_correct": true,
+   "both_correct": true,
+   "old_items": 2,
+   "new_items": 2,
+   "leak": false,
+   "store": {
+    "s0": {
+     "written": 2,
+     "live": 0,
+     "retired": 2,
+     "absorbed": 0,
+     "valid_to": [
+      "2026-05-01",
+      "2026-05-01"
+     ],
+     "marker_in_text": true,
+     "titles": [
+      "2026-03-01-k8a017-pattern-frontend-bundling-with-webpack",
+      "2026-03-01-k8a017-decision-build-decision-confirmed"
+     ],
+     "supersedes": [],
+     "superseded_via": [
+      "explicit",
+      "slug"
+     ]
+    },
+    "s1": {
+     "written": 2,
+     "live": 2,
+     "retired": 0,
+     "absorbed": 0,
+     "valid_to": [],
+     "marker_in_text": true,
+     "titles": [
+      "2026-05-01-k8a017-pattern-frontend-bundling-with-vite",
+      "2026-05-01-k8a017-decision-build-decision-confirmed"
+     ],
+     "supersedes": [
+      "2026-03-01-k8a017-pattern-frontend-bundling-with-webpack",
+      "2026-03-01-k8a017-decision-build-decision-confirmed"
+     ],
+     "superseded_via": []
+    }
+   },
+   "old_fail_kind": null,
+   "pairs": 1
+  },
+  {
+   "id": "app-orm",
+   "shape": "approach_abandoned",
+   "old_day_correct": true,
+   "new_day_correct": true,
+   "both_correct": true,
+   "old_items": 2,
+   "new_items": 2,
+   "leak": false,
+   "store": {
+    "s0": {
+     "written": 2,
+     "live": 0,
+     "retired": 2,
+     "absorbed": 0,
+     "valid_to": [
+      "2026-05-01",
+      "2026-05-01"
+     ],
+     "marker_in_text": true,
+     "titles": [
+      "2026-03-01-k8a018-pattern-sqlalchemy-orm-data-access",
+      "2026-03-01-k8a018-decision-use-sqlalchemy-orm"
+     ],
+     "supersedes": [],
+     "superseded_via": [
+      "explicit",
+      "explicit"
+     ]
+    },
+    "s1": {
+     "written": 2,
+     "live": 2,
+     "retired": 0,
+     "absorbed": 0,
+     "valid_to": [],
+     "marker_in_text": true,
+     "titles": [
+      "2026-05-01-k8a018-pattern-asyncpg-data-access",
+      "2026-05-01-k8a018-decision-use-asyncpg-for-data-access"
+     ],
+     "supersedes": [
+      "2026-03-01-k8a018-pattern-sqlalchemy-orm-data-access",
+      "2026-03-01-k8a018-decision-use-sqlalchemy-orm"
+     ],
+     "superseded_via": []
+    }
+   },
+   "old_fail_kind": null,
+   "pairs": 0
+  },
+  {
+   "id": "app-queue",
+   "shape": "approach_abandoned",
+   "old_day_correct": true,
+   "new_day_correct": true,
+   "both_correct": true,
+   "old_items": 1,
+   "new_items": 2,
+   "leak": false,
+   "store": {
+    "s0": {
+     "written": 1,
+     "live": 0,
+     "retired": 1,
+     "absorbed": 0,
+     "valid_to": [
+      "2026-05-01"
+     ],
+     "marker_in_text": true,
+     "titles": [
+      "2026-03-01-k8a019-pattern-background-jobs-with-celery-rabbitmq"
+     ],
+     "supersedes": [],
+     "superseded_via": [
+      "slug"
+     ]
+    },
+    "s1": {
+     "written": 2,
+     "live": 2,
+     "retired": 0,
+     "absorbed": 0,
+     "valid_to": [],
+     "marker_in_text": true,
+     "titles": [
+      "2026-05-01-k8a019-pattern-background-jobs-with-celery-rabbitmq",
+      "2026-05-01-k8a019-decision-postgres-backed-queue-for-background-jobs"
+     ],
+     "supersedes": [
+      "2026-03-01-k8a019-pattern-background-jobs-with-celery-rabbitmq"
+     ],
+     "superseded_via": []
+    }
+   },
+   "old_fail_kind": null,
+   "pairs": 1
+  },
+  {
+   "id": "app-ci",
+   "shape": "approach_abandoned",
+   "old_day_correct": true,
+   "new_day_correct": false,
+   "both_correct": false,
+   "old_items": 1,
+   "new_items": 0,
+   "leak": false,
+   "store": {
+    "s0": {
+     "written": 1,
+     "live": 0,
+     "retired": 1,
+     "absorbed": 0,
+     "valid_to": [
+      "2026-05-01"
+     ],
+     "marker_in_text": true,
+     "titles": [
+      "2026-03-01-k8a020-pattern-staged-release-deployment"
+     ],
+     "supersedes": [],
+     "superseded_via": [
+      "slug"
+     ]
+    },
+    "s1": {
+     "written": 1,
+     "live": 1,
+     "retired": 0,
+     "absorbed": 0,
+     "valid_to": [],
+     "marker_in_text": true,
+     "titles": [
+      "2026-05-01-k8a020-pattern-staged-release-deployment"
+     ],
+     "supersedes": [
+      "2026-03-01-k8a020-pattern-staged-release-deployment"
+     ],
+     "superseded_via": []
+    }
+   },
+   "old_fail_kind": null,
+   "pairs": 1
+  },
+  {
+   "id": "app-search",
+   "shape": "approach_abandoned",
+   "old_day_correct": false,
+   "new_day_correct": true,
+   "both_correct": false,
+   "old_items": 0,
+   "new_items": 1,
+   "leak": false,
+   "store": {
+    "s0": {
+     "written": 0,
+     "live": 0,
+     "retired": 0,
+     "absorbed": 0,
+     "valid_to": [],
+     "marker_in_text": false,
+     "titles": [],
+     "supersedes": [],
+     "superseded_via": []
+    },
+    "s1": {
+     "written": 1,
+     "live": 1,
+     "retired": 0,
+     "absorbed": 0,
+     "valid_to": [],
+     "marker_in_text": true,
+     "titles": [
+      "2026-05-01-k8a021-pattern-postgres-fulltext-search"
+     ],
+     "supersedes": [],
+     "superseded_via": []
+    }
+   },
+   "old_fail_kind": "never_written",
+   "pairs": 0
+  },
+  {
+   "id": "app-styling",
+   "shape": "approach_abandoned",
+   "old_day_correct": true,
+   "new_day_correct": true,
+   "both_correct": true,
+   "old_items": 1,
+   "new_items": 3,
+   "leak": false,
+   "store": {
+    "s0": {
+     "written": 1,
+     "live": 1,
+     "retired": 0,
+     "absorbed": 0,
+     "valid_to": [],
+     "marker_in_text": true,
+     "titles": [
+      "2026-03-01-k8a022-pattern-styled-components-styling"
+     ],
+     "supersedes": [],
+     "superseded_via": []
+    },
+    "s1": {
+     "written": 2,
+     "live": 2,
+     "retired": 0,
+     "absorbed": 0,
+     "valid_to": [],
+     "marker_in_text": true,
+     "titles": [
+      "2026-05-01-k8a022-pattern-tailwind-utility-styling",
+      "2026-05-01-k8a022-decision-ui-styling-approach"
+     ],
+     "supersedes": [],
+     "superseded_via": []
+    }
+   },
+   "old_fail_kind": null,
+   "pairs": 0
+  },
+  {
+   "id": "app-packaging",
+   "shape": "approach_abandoned",
+   "old_day_correct": true,
+   "new_day_correct": true,
+   "both_correct": true,
+   "old_items": 2,
+   "new_items": 2,
+   "leak": false,
+   "store": {
+    "s0": {
+     "written": 2,
+     "live": 0,
+     "retired": 2,
+     "absorbed": 0,
+     "valid_to": [
+      "2026-05-01",
+      "2026-05-01"
+     ],
+     "marker_in_text": true,
+     "titles": [
+      "2026-03-01-k8a023-pattern-package-build-and-publish",
+      "2026-03-01-k8a023-decision-use-poetry-for-packaging"
+     ],
+     "supersedes": [],
+     "superseded_via": [
+      "slug",
+      "slug"
+     ]
+    },
+    "s1": {
+     "written": 2,
+     "live": 2,
+     "retired": 0,
+     "absorbed": 0,
+     "valid_to": [],
+     "marker_in_text": true,
+     "titles": [
+      "2026-05-01-k8a023-pattern-package-build-and-publish",
+      "2026-05-01-k8a023-decision-use-poetry-for-packaging"
+     ],
+     "supersedes": [
+      "2026-03-01-k8a023-pattern-package-build-and-publish",
+      "2026-03-01-k8a023-decision-use-poetry-for-packaging"
+     ],
+     "superseded_via": []
+    }
+   },
+   "old_fail_kind": null,
+   "pairs": 2
+  },
+  {
+   "id": "app-state",
+   "shape": "approach_abandoned",
+   "old_day_correct": true,
+   "new_day_correct": true,
+   "both_correct": true,
+   "old_items": 2,
+   "new_items": 2,
+   "leak": false,
+   "store": {
+    "s0": {
+     "written": 2,
+     "live": 0,
+     "retired": 2,
+     "absorbed": 0,
+     "valid_to": [
+      "2026-05-01",
+      "2026-05-01"
+     ],
+     "marker_in_text": true,
+     "titles": [
+      "2026-03-01-k8a024-pattern-redux-global-state",
+      "2026-03-01-k8a024-decision-frontend-state-management"
+     ],
+     "supersedes": [],
+     "superseded_via": [
+      "explicit",
+      "slug"
+     ]
+    },
+    "s1": {
+     "written": 2,
+     "live": 2,
+     "retired": 0,
+     "absorbed": 0,
+     "valid_to": [],
+     "marker_in_text": true,
+     "titles": [
+      "2026-05-01-k8a024-pattern-zustand-store-for-global-state",
+      "2026-05-01-k8a024-decision-frontend-state-management"
+     ],
+     "supersedes": [
+      "2026-03-01-k8a024-pattern-redux-global-state",
+      "2026-03-01-k8a024-decision-frontend-state-management"
+     ],
+     "superseded_via": []
+    }
+   },
+   "old_fail_kind": null,
+   "pairs": 1
+  },
+  {
+   "id": "app-infra",
+   "shape": "approach_abandoned",
+   "old_day_correct": true,
+   "new_day_correct": true,
+   "both_correct": true,
+   "old_items": 1,
+   "new_items": 1,
+   "leak": false,
+   "store": {
+    "s0": {
+     "written": 1,
+     "live": 0,
+     "retired": 1,
+     "absorbed": 0,
+     "valid_to": [
+      "2026-05-01"
+     ],
+     "marker_in_text": true,
+     "titles": [
+      "2026-03-01-k8a025-pattern-infrastructure-provisioning-with-terraform"
+     ],
+     "supersedes": [],
+     "superseded_via": [
+      "explicit"
+     ]
+    },
+    "s1": {
+     "written": 1,
+     "live": 1,
+     "retired": 0,
+     "absorbed": 0,
+     "valid_to": [],
+     "marker_in_text": true,
+     "titles": [
+      "2026-05-01-k8a025-pattern-infrastructure-provisioning-with-pulumi"
+     ],
+     "supersedes": [
+      "2026-03-01-k8a025-pattern-infrastructure-provisioning-with-terraform"
+     ],
+     "superseded_via": []
+    }
+   },
+   "old_fail_kind": null,
+   "pairs": 0
+  },
+  {
+   "id": "app-migrations",
+   "shape": "approach_abandoned",
+   "old_day_correct": true,
+   "new_day_correct": true,
+   "both_correct": true,
+   "old_items": 1,
+   "new_items": 1,
+   "leak": false,
+   "store": {
+    "s0": {
+     "written": 1,
+     "live": 0,
+     "retired": 1,
+     "absorbed": 0,
+     "valid_to": [
+      "2026-05-01"
+     ],
+     "marker_in_text": true,
+     "titles": [
+      "2026-03-01-k8a026-pattern-schema-migration-through-alembic"
+     ],
+     "supersedes": [],
+     "superseded_via": [
+      "slug"
+     ]
+    },
+    "s1": {
+     "written": 1,
+     "live": 1,
+     "retired": 0,
+     "absorbed": 0,
+     "valid_to": [],
+     "marker_in_text": true,
+     "titles": [
+      "2026-05-01-k8a026-pattern-schema-migration-through-alembic"
+     ],
+     "supersedes": [
+      "2026-03-01-k8a026-pattern-schema-migration-through-alembic"
+     ],
+     "superseded_via": []
+    }
+   },
+   "old_fail_kind": null,
+   "pairs": 1
+  },
+  {
+   "id": "app-serialisation",
+   "shape": "approach_abandoned",
+   "old_day_correct": true,
+   "new_day_correct": true,
+   "both_correct": true,
+   "old_items": 1,
+   "new_items": 2,
+   "leak": false,
+   "store": {
+    "s0": {
+     "written": 1,
+     "live": 1,
+     "retired": 0,
+     "absorbed": 0,
+     "valid_to": [],
+     "marker_in_text": true,
+     "titles": [
+      "2026-03-01-k8a027-pattern-protobuf-message-serialization"
+     ],
+     "supersedes": [],
+     "superseded_via": []
+    },
+    "s1": {
+     "written": 1,
+     "live": 1,
+     "retired": 0,
+     "absorbed": 0,
+     "valid_to": [],
+     "marker_in_text": true,
+     "titles": [
+      "2026-05-01-k8a027-pattern-newline-delimited-json-serialization"
+     ],
+     "supersedes": [],
+     "superseded_via": []
+    }
+   },
+   "old_fail_kind": null,
+   "pairs": 0
+  },
+  {
+   "id": "app-secrets",
+   "shape": "approach_abandoned",
+   "old_day_correct": true,
+   "new_day_correct": true,
+   "both_correct": true,
+   "old_items": 1,
+   "new_items": 1,
+   "leak": false,
+   "store": {
+    "s0": {
+     "written": 1,
+     "live": 0,
+     "retired": 1,
+     "absorbed": 0,
+     "valid_to": [
+      "2026-05-01"
+     ],
+     "marker_in_text": true,
+     "titles": [
+      "2026-03-01-k8a028-pattern-secrets-from-vault-at-boot"
+     ],
+     "supersedes": [],
+     "superseded_via": [
+      "slug"
+     ]
+    },
+    "s1": {
+     "written": 1,
+     "live": 1,
+     "retired": 0,
+     "absorbed": 0,
+     "valid_to": [],
+     "marker_in_text": true,
+     "titles": [
+      "2026-05-01-k8a028-pattern-secrets-from-vault-at-boot"
+     ],
+     "supersedes": [
+      "2026-03-01-k8a028-pattern-secrets-from-vault-at-boot"
+     ],
+     "superseded_via": []
+    }
+   },
+   "old_fail_kind": null,
+   "pairs": 1
+  },
+  {
+   "id": "app-e2e",
+   "shape": "approach_abandoned",
+   "old_day_correct": true,
+   "new_day_correct": true,
+   "both_correct": true,
+   "old_items": 2,
+   "new_items": 3,
+   "leak": false,
+   "store": {
+    "s0": {
+     "written": 2,
+     "live": 1,
+     "retired": 1,
+     "absorbed": 0,
+     "valid_to": [
+      "2026-05-01"
+     ],
+     "marker_in_text": true,
+     "titles": [
+      "2026-03-01-k8a029-pattern-selenium-end-to-end-testing",
+      "2026-03-01-k8a029-decision-testing-decision"
+     ],
+     "supersedes": [],
+     "superseded_via": [
+      "slug"
+     ]
+    },
+    "s1": {
+     "written": 2,
+     "live": 2,
+     "retired": 0,
+     "absorbed": 0,
+     "valid_to": [],
+     "marker_in_text": true,
+     "titles": [
+      "2026-05-01-k8a029-pattern-playwright-end-to-end-testing",
+      "2026-05-01-k8a029-decision-testing-decision"
+     ],
+     "supersedes": [
+      "2026-03-01-k8a029-decision-testing-decision"
+     ],
+     "superseded_via": []
+    }
+   },
+   "old_fail_kind": null,
+   "pairs": 1
+  },
+  {
+   "id": "ret-beta-flag",
+   "shape": "retracted_no_replacement",
+   "old_day_correct": true,
+   "new_day_correct": true,
+   "both_correct": true,
+   "old_items": 2,
+   "new_items": 2,
+   "leak": false,
+   "store": {
+    "s0": {
+     "written": 2,
+     "live": 0,
+     "retired": 2,
+     "absorbed": 0,
+     "valid_to": [
+      "2026-05-01",
+      "2026-05-01"
+     ],
+     "marker_in_text": true,
+     "titles": [
+      "2026-03-01-k8a030-pattern-feature-flag-gating",
+      "2026-03-01-k8a030-decision-beta-dashboard-flag-usage"
+     ],
+     "supersedes": [],
+     "superseded_via": [
+      "slug",
+      "slug"
+     ]
+    },
+    "s1": {
+     "written": 2,
+     "live": 2,
+     "retired": 0,
+     "absorbed": 0,
+     "valid_to": [],
+     "marker_in_text": true,
+     "titles": [
+      "2026-05-01-k8a030-pattern-feature-flag-gating",
+      "2026-05-01-k8a030-decision-beta-dashboard-flag-usage"
+     ],
+     "supersedes": [
+      "2026-03-01-k8a030-pattern-feature-flag-gating",
+      "2026-03-01-k8a030-decision-beta-dashboard-flag-usage"
+     ],
+     "superseded_via": []
+    }
+   },
+   "old_fail_kind": null,
+   "pairs": 2
+  },
+  {
+   "id": "ret-legacy-endpoint",
+   "shape": "retracted_no_replacement",
+   "old_day_correct": true,
+   "new_day_correct": true,
+   "both_correct": true,
+   "old_items": 1,
+   "new_items": 1,
+   "leak": false,
+   "store": {
+    "s0": {
+     "written": 1,
+     "live": 0,
+     "retired": 1,
+     "absorbed": 0,
+     "valid_to": [
+      "2026-05-01"
+     ],
+     "marker_in_text": true,
+     "titles": [
+      "2026-03-01-k8a031-pattern-api-export-csv-streaming"
+     ],
+     "supersedes": [],
+     "superseded_via": [
+      "slug"
+     ]
+    },
+    "s1": {
+     "written": 1,
+     "live": 1,
+     "retired": 0,
+     "absorbed": 0,
+     "valid_to": [],
+     "marker_in_text": true,
+     "titles": [
+      "2026-05-01-k8a031-pattern-api-export-csv-streaming"
+     ],
+     "supersedes": [
+      "2026-03-01-k8a031-pattern-api-export-csv-streaming"
+     ],
+     "superseded_via": []
+    }
+   },
+   "old_fail_kind": null,
+   "pairs": 1
+  },
+  {
+   "id": "ret-telemetry",
+   "shape": "retracted_no_replacement",
+   "old_day_correct": false,
+   "new_day_correct": false,
+   "both_correct": false,
+   "old_items": 0,
+   "new_items": 0,
+   "leak": false,
+   "store": {
+    "s0": {
+     "written": 0,
+     "live": 0,
+     "retired": 0,
+     "absorbed": 0,
+     "valid_to": [],
+     "marker_in_text": false,
+     "titles": [],
+     "supersedes": [],
+     "superseded_via": []
+    },
+    "s1": {
+     "written": 0,
+     "live": 0,
+     "retired": 0,
+     "absorbed": 0,
+     "valid_to": [],
+     "marker_in_text": false,
+     "titles": [],
+     "supersedes": [],
+     "superseded_via": []
+    }
+   },
+   "old_fail_kind": "never_written",
+   "pairs": 0
+  },
+  {
+   "id": "ret-mirror",
+   "shape": "retracted_no_replacement",
+   "old_day_correct": false,
+   "new_day_correct": true,
+   "both_correct": false,
+   "old_items": 1,
+   "new_items": 1,
+   "leak": true,
+   "store": {
+    "s0": {
+     "written": 1,
+     "live": 0,
+     "retired": 1,
+     "absorbed": 0,
+     "valid_to": [
+      "2026-05-01"
+     ],
+     "marker_in_text": true,
+     "titles": [
+      "2026-03-01-k8a033-pattern-read-replica-for-analytics"
+     ],
+     "supersedes": [],
+     "superseded_via": [
+      "slug"
+     ]
+    },
+    "s1": {
+     "written": 1,
+     "live": 1,
+     "retired": 0,
+     "absorbed": 0,
+     "valid_to": [],
+     "marker_in_text": true,
+     "titles": [
+      "2026-05-01-k8a033-pattern-read-replica-for-analytics"
+     ],
+     "supersedes": [
+      "2026-03-01-k8a033-pattern-read-replica-for-analytics"
+     ],
+     "superseded_via": []
+    }
+   },
+   "old_fail_kind": "leak",
+   "pairs": 1
+  },
+  {
+   "id": "ret-plugin-api",
+   "shape": "retracted_no_replacement",
+   "old_day_correct": true,
+   "new_day_correct": true,
+   "both_correct": true,
+   "old_items": 1,
+   "new_items": 2,
+   "leak": false,
+   "store": {
+    "s0": {
+     "written": 1,
+     "live": 0,
+     "retired": 1,
+     "absorbed": 0,
+     "valid_to": [
+      "2026-05-01"
+     ],
+     "marker_in_text": true,
+     "titles": [
+      "2026-03-01-k8a034-pattern-third-party-plugins-loading"
+     ],
+     "supersedes": [],
+     "superseded_via": [
+      "slug"
+     ]
+    },
+    "s1": {
+     "written": 2,
+     "live": 2,
+     "retired": 0,
+     "absorbed": 0,
+     "valid_to": [],
+     "marker_in_text": true,
+     "titles": [
+      "2026-05-01-k8a034-pattern-third-party-plugins-loading",
+      "2026-05-01-k8a034-decision-remove-plugin-system"
+     ],
+     "supersedes": [
+      "2026-03-01-k8a034-pattern-third-party-plugins-loading"
+     ],
+     "superseded_via": []
+    }
+   },
+   "old_fail_kind": null,
+   "pairs": 1
+  },
+  {
+   "id": "ret-mobile",
+   "shape": "retracted_no_replacement",
+   "old_day_correct": true,
+   "new_day_correct": true,
+   "both_correct": true,
+   "old_items": 1,
+   "new_items": 1,
+   "leak": false,
+   "store": {
+    "s0": {
+     "written": 1,
+     "live": 0,
+     "retired": 1,
+     "absorbed": 0,
+     "valid_to": [
+      "2026-05-01"
+     ],
+     "marker_in_text": true,
+     "titles": [
+      "2026-03-01-k8a035-decision-ios-client-sync-engine"
+     ],
+     "supersedes": [],
+     "superseded_via": [
+      "slug"
+     ]
+    },
+    "s1": {
+     "written": 1,
+     "live": 1,
+     "retired": 0,
+     "absorbed": 0,
+     "valid_to": [],
+     "marker_in_text": true,
+     "titles": [
+      "2026-05-01-k8a035-decision-ios-client-sync-engine"
+     ],
+     "supersedes": [
+      "2026-03-01-k8a035-decision-ios-client-sync-engine"
+     ],
+     "superseded_via": []
+    }
+   },
+   "old_fail_kind": null,
+   "pairs": 1
+  },
+  {
+   "id": "ret-cron",
+   "shape": "retracted_no_replacement",
+   "old_day_correct": true,
+   "new_day_correct": true,
+   "both_correct": true,
+   "old_items": 2,
+   "new_items": 2,
+   "leak": false,
+   "store": {
+    "s0": {
+     "written": 2,
+     "live": 0,
+     "retired": 2,
+     "absorbed": 0,
+     "valid_to": [
+      "2026-05-01",
+      "2026-05-01"
+     ],
+     "marker_in_text": true,
+     "titles": [
+      "2026-03-01-k8a036-pattern-nightly-cron-audit-log-compaction",
+      "2026-03-01-k8a036-decision-schedule-audit-log-compaction"
+     ],
+     "supersedes": [],
+     "superseded_via": [
+      "slug",
+      "slug"
+     ]
+    },
+    "s1": {
+     "written": 2,
+     "live": 2,
+     "retired": 0,
+     "absorbed": 0,
+     "valid_to": [],
+     "marker_in_text": true,
+     "titles": [
+      "2026-05-01-k8a036-pattern-nightly-cron-audit-log-compaction",
+      "2026-05-01-k8a036-decision-schedule-audit-log-compaction"
+     ],
+     "supersedes": [
+      "2026-03-01-k8a036-pattern-nightly-cron-audit-log-compaction",
+      "2026-03-01-k8a036-decision-schedule-audit-log-compaction"
+     ],
+     "superseded_via": []
+    }
+   },
+   "old_fail_kind": null,
+   "pairs": 2
+  },
+  {
+   "id": "ret-grpc",
+   "shape": "retracted_no_replacement",
+   "old_day_correct": true,
+   "new_day_correct": false,
+   "both_correct": false,
+   "old_items": 1,
+   "new_items": 0,
+   "leak": false,
+   "store": {
+    "s0": {
+     "written": 1,
+     "live": 0,
+     "retired": 1,
+     "absorbed": 0,
+     "valid_to": [
+      "2026-05-01"
+     ],
+     "marker_in_text": true,
+     "titles": [
+      "2026-03-01-k8a037-pattern-grpc-communication-setup"
+     ],
+     "supersedes": [],
+     "superseded_via": [
+      "explicit"
+     ]
+    },
+    "s1": {
+     "written": 1,
+     "live": 1,
+     "retired": 0,
+     "absorbed": 0,
+     "valid_to": [],
+     "marker_in_text": true,
+     "titles": [
+      "2026-05-01-k8a037-pattern-http-communication-setup"
+     ],
+     "supersedes": [
+      "2026-03-01-k8a037-pattern-grpc-communication-setup"
+     ],
+     "superseded_via": []
+    }
+   },
+   "old_fail_kind": null,
+   "pairs": 0
+  },
+  {
+   "id": "ret-sso",
+   "shape": "retracted_no_replacement",
+   "old_day_correct": false,
+   "new_day_correct": false,
+   "both_correct": false,
+   "old_items": 0,
+   "new_items": 0,
+   "leak": false,
+   "store": {
+    "s0": {
+     "written": 0,
+     "live": 0,
+     "retired": 0,
+     "absorbed": 0,
+     "valid_to": [],
+     "marker_in_text": false,
+     "titles": [],
+     "supersedes": [],
+     "superseded_via": []
+    },
+    "s1": {
+     "written": 0,
+     "live": 0,
+     "retired": 0,
+     "absorbed": 0,
+     "valid_to": [],
+     "marker_in_text": false,
+     "titles": [],
+     "supersedes": [],
+     "superseded_via": []
+    }
+   },
+   "old_fail_kind": "never_written",
+   "pairs": 0
+  },
+  {
+   "id": "ret-webhook",
+   "shape": "retracted_no_replacement",
+   "old_day_correct": true,
+   "new_day_correct": true,
+   "both_correct": true,
+   "old_items": 1,
+   "new_items": 1,
+   "leak": false,
+   "store": {
+    "s0": {
+     "written": 1,
+     "live": 0,
+     "retired": 1,
+     "absorbed": 0,
+     "valid_to": [
+      "2026-05-01"
+     ],
+     "marker_in_text": true,
+     "titles": [
+      "2026-03-01-k8a039-pattern-webhook-order-integration"
+     ],
+     "supersedes": [],
+     "superseded_via": [
+      "slug"
+     ]
+    },
+    "s1": {
+     "written": 1,
+     "live": 1,
+     "retired": 0,
+     "absorbed": 0,
+     "valid_to": [],
+     "marker_in_text": true,
+     "titles": [
+      "2026-05-01-k8a039-pattern-webhook-order-integration"
+     ],
+     "supersedes": [
+      "2026-03-01-k8a039-pattern-webhook-order-integration"
+     ],
+     "superseded_via": []
+    }
+   },
+   "old_fail_kind": null,
+   "pairs": 1
+  },
+  {
+   "id": "ret-gpu-node",
+   "shape": "retracted_no_replacement",
+   "old_day_correct": true,
+   "new_day_correct": false,
+   "both_correct": false,
+   "old_items": 1,
+   "new_items": 1,
+   "leak": false,
+   "store": {
+    "s0": {
+     "written": 1,
+     "live": 1,
+     "retired": 0,
+     "absorbed": 0,
+     "valid_to": [],
+     "marker_in_text": true,
+     "titles": [
+      "2026-03-01-k8a040-pattern-a100-node-reservation-for-training"
+     ],
+     "supersedes": [],
+     "superseded_via": []
+    },
+    "s1": {
+     "written": 0,
+     "live": 0,
+     "retired": 0,
+     "absorbed": 0,
+     "valid_to": [],
+     "marker_in_text": false,
+     "titles": [],
+     "supersedes": [],
+     "superseded_via": []
+    }
+   },
+   "old_fail_kind": null,
+   "pairs": 0
+  },
+  {
+   "id": "ret-cli-flag",
+   "shape": "retracted_no_replacement",
+   "old_day_correct": true,
+   "new_day_correct": true,
+   "both_correct": true,
+   "old_items": 2,
+   "new_items": 2,
+   "leak": false,
+   "store": {
+    "s0": {
+     "written": 2,
+     "live": 0,
+     "retired": 2,
+     "absorbed": 0,
+     "valid_to": [
+      "2026-05-01",
+      "2026-05-01"
+     ],
+     "marker_in_text": true,
+     "titles": [
+      "2026-03-01-k8a041-pattern-cli-flag-legacy-restores-pre-2-0-format",
+      "2026-03-01-k8a041-decision-use-legacy-flag-for-backward-compatibility"
+     ],
+     "supersedes": [],
+     "superseded_via": [
+      "slug",
+      "slug"
+     ]
+    },
+    "s1": {
+     "written": 2,
+     "live": 2,
+     "retired": 0,
+     "absorbed": 0,
+     "valid_to": [],
+     "marker_in_text": true,
+     "titles": [
+      "2026-05-01-k8a041-pattern-cli-flag-legacy-restores-pre-2-0-format",
+      "2026-05-01-k8a041-decision-use-legacy-flag-for-backward-compatibility"
+     ],
+     "supersedes": [
+      "2026-03-01-k8a041-pattern-cli-flag-legacy-restores-pre-2-0-format",
+      "2026-03-01-k8a041-decision-use-legacy-flag-for-backward-compatibility"
+     ],
+     "superseded_via": []
+    }
+   },
+   "old_fail_kind": null,
+   "pairs": 2
+  },
+  {
+   "id": "ret-audit-ui",
+   "shape": "retracted_no_replacement",
+   "old_day_correct": true,
+   "new_day_correct": true,
+   "both_correct": true,
+   "old_items": 1,
+   "new_items": 1,
+   "leak": false,
+   "store": {
+    "s0": {
+     "written": 1,
+     "live": 0,
+     "retired": 1,
+     "absorbed": 0,
+     "valid_to": [
+      "2026-05-01"
+     ],
+     "marker_in_text": true,
+     "titles": [
+      "2026-03-01-k8a042-pattern-admin-panel-audit-tab-filtering"
+     ],
+     "supersedes": [],
+     "superseded_via": [
+      "slug"
+     ]
+    },
+    "s1": {
+     "written": 1,
+     "live": 1,
+     "retired": 0,
+     "absorbed": 0,
+     "valid_to": [],
+     "marker_in_text": true,
+     "titles": [
+      "2026-05-01-k8a042-pattern-admin-panel-audit-tab-filtering"
+     ],
+     "supersedes": [
+      "2026-03-01-k8a042-pattern-admin-panel-audit-tab-filtering"
+     ],
+     "superseded_via": []
+    }
+   },
+   "old_fail_kind": null,
+   "pairs": 1
+  },
+  {
+   "id": "ret-i18n",
+   "shape": "retracted_no_replacement",
+   "old_day_correct": true,
+   "new_day_correct": true,
+   "both_correct": true,
+   "old_items": 1,
+   "new_items": 2,
+   "leak": false,
+   "store": {
+    "s0": {
+     "written": 1,
+     "live": 0,
+     "retired": 1,
+     "absorbed": 0,
+     "valid_to": [
+      "2026-05-01"
+     ],
+     "marker_in_text": true,
+     "titles": [
+      "2026-03-01-k8a043-pattern-localization-pairing-session"
+     ],
+     "supersedes": [],
+     "superseded_via": [
+      "slug"
+     ]
+    },
+    "s1": {
+     "written": 2,
+     "live": 2,
+     "retired": 0,
+     "absorbed": 0,
+     "valid_to": [],
+     "marker_in_text": true,
+     "titles": [
+      "2026-05-01-k8a043-pattern-localization-pairing-session",
+      "2026-05-01-k8a043-decision-english-only-app"
+     ],
+     "supersedes": [
+      "2026-03-01-k8a043-pattern-localization-pairing-session"
+     ],
+     "superseded_via": []
+    }
+   },
+   "old_fail_kind": null,
+   "pairs": 1
+  },
+  {
+   "id": "ret-sandbox",
+   "shape": "retracted_no_replacement",
+   "old_day_correct": true,
+   "new_day_correct": true,
+   "both_correct": true,
+   "old_items": 1,
+   "new_items": 1,
+   "leak": false,
+   "store": {
+    "s0": {
+     "written": 1,
+     "live": 0,
+     "retired": 1,
+     "absorbed": 0,
+     "valid_to": [
+      "2026-05-01"
+     ],
+     "marker_in_text": true,
+     "titles": [
+      "2026-03-01-k8a044-pattern-sandbox-environment-mirroring"
+     ],
+     "supersedes": [],
+     "superseded_via": [
+      "slug"
+     ]
+    },
+    "s1": {
+     "written": 1,
+     "live": 1,
+     "retired": 0,
+     "absorbed": 0,
+     "valid_to": [],
+     "marker_in_text": true,
+     "titles": [
+      "2026-05-01-k8a044-pattern-sandbox-environment-mirroring"
+     ],
+     "supersedes": [
+      "2026-03-01-k8a044-pattern-sandbox-environment-mirroring"
+     ],
+     "superseded_via": []
+    }
+   },
+   "old_fail_kind": null,
+   "pairs": 1
+  },
+  {
+   "id": "nar-retry-scope",
+   "shape": "narrowed",
+   "old_day_correct": true,
+   "new_day_correct": true,
+   "both_correct": true,
+   "old_items": 1,
+   "new_items": 1,
+   "leak": false,
+   "store": {
+    "s0": {
+     "written": 1,
+     "live": 0,
+     "retired": 1,
+     "absorbed": 0,
+     "valid_to": [
+      "2026-05-01"
+     ],
+     "marker_in_text": true,
+     "titles": [
+      "2026-03-01-k8a045-pattern-http-client-retry-logic"
+     ],
+     "supersedes": [],
+     "superseded_via": [
+      "slug"
+     ]
+    },
+    "s1": {
+     "written": 1,
+     "live": 1,
+     "retired": 0,
+     "absorbed": 0,
+     "valid_to": [],
+     "marker_in_text": true,
+     "titles": [
+      "2026-05-01-k8a045-pattern-http-client-retry-logic"
+     ],
+     "supersedes": [
+      "2026-03-01-k8a045-pattern-http-client-retry-logic"
+     ],
+     "superseded_via": []
+    }
+   },
+   "old_fail_kind": null,
+   "pairs": 1
+  },
+  {
+   "id": "nar-cache-scope",
+   "shape": "narrowed",
+   "old_day_correct": false,
+   "new_day_correct": true,
+   "both_correct": false,
+   "old_items": 0,
+   "new_items": 2,
+   "leak": false,
+   "store": {
+    "s0": {
+     "written": 0,
+     "live": 0,
+     "retired": 0,
+     "absorbed": 0,
+     "valid_to": [],
+     "marker_in_text": false,
+     "titles": [],
+     "supersedes": [],
+     "superseded_via": []
+    },
+    "s1": {
+     "written": 2,
+     "live": 2,
+     "retired": 0,
+     "absorbed": 0,
+     "valid_to": [],
+     "marker_in_text": true,
+     "titles": [
+      "2026-05-01-k8a046-pattern-cache-policy-reversal",
+      "2026-05-01-k8a046-decision-get-only-caching-policy"
+     ],
+     "supersedes": [],
+     "superseded_via": []
+    }
+   },
+   "old_fail_kind": "never_written",
+   "pairs": 0
+  },
+  {
+   "id": "nar-audit-scope",
+   "shape": "narrowed",
+   "old_day_correct": true,
+   "new_day_correct": true,
+   "both_correct": true,
+   "old_items": 2,
+   "new_items": 2,
+   "leak": false,
+   "store": {
+    "s0": {
+     "written": 2,
+     "live": 0,
+     "retired": 2,
+     "absorbed": 0,
+     "valid_to": [
+      "2026-05-01",
+      "2026-05-01"
+     ],
+     "marker_in_text": true,
+     "titles": [
+      "2026-03-01-k8a047-pattern-audit-log-table-changes",
+      "2026-03-01-k8a047-decision-document-audit-decision-in-readme"
+     ],
+     "supersedes": [],
+     "superseded_via": [
+      "slug",
+      "slug"
+     ]
+    },
+    "s1": {
+     "written": 2,
+     "live": 2,
+     "retired": 0,
+     "absorbed": 0,
+     "valid_to": [],
+     "marker_in_text": true,
+     "titles": [
+      "2026-05-01-k8a047-pattern-audit-log-table-changes",
+      "2026-05-01-k8a047-decision-document-audit-decision-in-readme"
+     ],
+     "supersedes": [
+      "2026-03-01-k8a047-pattern-audit-log-table-changes",
+      "2026-03-01-k8a047-decision-document-audit-decision-in-readme"
+     ],
+     "superseded_via": []
+    }
+   },
+   "old_fail_kind": null,
+   "pairs": 2
+  },
+  {
+   "id": "nar-gpu-scope",
+   "shape": "narrowed",
+   "old_day_correct": true,
+   "new_day_correct": true,
+   "both_correct": true,
+   "old_items": 1,
+   "new_items": 1,
+   "leak": false,
+   "store": {
+    "s0": {
+     "written": 1,
+     "live": 0,
+     "retired": 1,
+     "absorbed": 0,
+     "valid_to": [
+      "2026-05-01"
+     ],
+     "marker_in_text": true,
+     "titles": [
+      "2026-03-01-k8a048-pattern-trainer-gpu-utilization"
+     ],
+     "supersedes": [],
+     "superseded_via": [
+      "slug"
+     ]
+    },
+    "s1": {
+     "written": 1,
+     "live": 1,
+     "retired": 0,
+     "absorbed": 0,
+     "valid_to": [],
+     "marker_in_text": true,
+     "titles": [
+      "2026-05-01-k8a048-pattern-trainer-gpu-utilization"
+     ],
+     "supersedes": [
+      "2026-03-01-k8a048-pattern-trainer-gpu-utilization"
+     ],
+     "superseded_via": []
+    }
+   },
+   "old_fail_kind": null,
+   "pairs": 1
+  },
+  {
+   "id": "nar-lint-scope",
+   "shape": "narrowed",
+   "old_day_correct": true,
+   "new_day_correct": true,
+   "both_correct": true,
+   "old_items": 1,
+   "new_items": 1,
+   "leak": false,
+   "store": {
+    "s0": {
+     "written": 1,
+     "live": 0,
+     "retired": 1,
+     "absorbed": 0,
+     "valid_to": [
+      "2026-05-01"
+     ],
+     "marker_in_text": true,
+     "titles": [
+      "2026-03-01-k8a049-pattern-pre-commit-hook-lints-repository"
+     ],
+     "supersedes": [],
+     "superseded_via": [
+      "slug"
+     ]
+    },
+    "s1": {
+     "written": 1,
+     "live": 1,
+     "retired": 0,
+     "absorbed": 0,
+     "valid_to": [],
+     "marker_in_text": true,
+     "titles": [
+      "2026-05-01-k8a049-pattern-pre-commit-hook-lints-repository"
+     ],
+     "supersedes": [
+      "2026-03-01-k8a049-pattern-pre-commit-hook-lints-repository"
+     ],
+     "superseded_via": []
+    }
+   },
+   "old_fail_kind": null,
+   "pairs": 1
+  },
+  {
+   "id": "nar-notify-scope",
+   "shape": "narrowed",
+   "old_day_correct": true,
+   "new_day_correct": true,
+   "both_correct": true,
+   "old_items": 1,
+   "new_items": 1,
+   "leak": false,
+   "store": {
+    "s0": {
+     "written": 1,
+     "live": 0,
+     "retired": 1,
+     "absorbed": 0,
+     "valid_to": [
+      "2026-05-01"
+     ],
+     "marker_in_text": true,
+     "titles": [
+      "2026-03-01-k8a050-pattern-alerting-on-failed-deploy"
+     ],
+     "supersedes": [],
+     "superseded_via": [
+      "slug"
+     ]
+    },
+    "s1": {
+     "written": 1,
+     "live": 1,
+     "retired": 0,
+     "absorbed": 0,
+     "valid_to": [],
+     "marker_in_text": true,
+     "titles": [
+      "2026-05-01-k8a050-pattern-alerting-on-failed-deploy"
+     ],
+     "supersedes": [
+      "2026-03-01-k8a050-pattern-alerting-on-failed-deploy"
+     ],
+     "superseded_via": []
+    }
+   },
+   "old_fail_kind": null,
+   "pairs": 1
+  },
+  {
+   "id": "nar-encrypt-scope",
+   "shape": "narrowed",
+   "old_day_correct": false,
+   "new_day_correct": false,
+   "both_correct": false,
+   "old_items": 0,
+   "new_items": 0,
+   "leak": false,
+   "store": {
+    "s0": {
+     "written": 0,
+     "live": 0,
+     "retired": 0,
+     "absorbed": 0,
+     "valid_to": [],
+     "marker_in_text": false,
+     "titles": [],
+     "supersedes": [],
+     "superseded_via": []
+    },
+    "s1": {
+     "written": 0,
+     "live": 0,
+     "retired": 0,
+     "absorbed": 0,
+     "valid_to": [],
+     "marker_in_text": false,
+     "titles": [],
+     "supersedes": [],
+     "superseded_via": []
+    }
+   },
+   "old_fail_kind": "never_written",
+   "pairs": 0
+  },
+  {
+   "id": "nar-index-scope",
+   "shape": "narrowed",
+   "old_day_correct": false,
+   "new_day_correct": true,
+   "both_correct": false,
+   "old_items": 0,
+   "new_items": 1,
+   "leak": false,
+   "store": {
+    "s0": {
+     "written": 0,
+     "live": 0,
+     "retired": 0,
+     "absorbed": 0,
+     "valid_to": [],
+     "marker_in_text": false,
+     "titles": [],
+     "supersedes": [],
+     "superseded_via": []
+    },
+    "s1": {
+     "written": 1,
+     "live": 1,
+     "retired": 0,
+     "absorbed": 0,
+     "valid_to": [],
+     "marker_in_text": true,
+     "titles": [
+      "2026-05-01-k8a052-pattern-reverse-index-call-on-documents"
+     ],
+     "supersedes": [],
+     "superseded_via": []
+    }
+   },
+   "old_fail_kind": "never_written",
+   "pairs": 0
+  },
+  {
+   "id": "nar-backup-scope",
+   "shape": "narrowed",
+   "old_day_correct": true,
+   "new_day_correct": true,
+   "both_correct": true,
+   "old_items": 2,
+   "new_items": 2,
+   "leak": false,
+   "store": {
+    "s0": {
+     "written": 2,
+     "live": 0,
+     "retired": 2,
+     "absorbed": 0,
+     "valid_to": [
+      "2026-05-01",
+      "2026-05-01"
+     ],
+     "marker_in_text": true,
+     "titles": [
+      "2026-03-01-k8a053-pattern-nightly-backup-database-dump",
+      "2026-03-01-k8a053-decision-nightly-backup-includes-all-databases"
+     ],
+     "supersedes": [],
+     "superseded_via": [
+      "slug",
+      "slug"
+     ]
+    },
+    "s1": {
+     "written": 2,
+     "live": 2,
+     "retired": 0,
+     "absorbed": 0,
+     "valid_to": [],
+     "marker_in_text": true,
+     "titles": [
+      "2026-05-01-k8a053-pattern-nightly-backup-database-dump",
+      "2026-05-01-k8a053-decision-nightly-backup-includes-all-databases"
+     ],
+     "supersedes": [
+      "2026-03-01-k8a053-pattern-nightly-backup-database-dump",
+      "2026-03-01-k8a053-decision-nightly-backup-includes-all-databases"
+     ],
+     "superseded_via": []
+    }
+   },
+   "old_fail_kind": null,
+   "pairs": 2
+  },
+  {
+   "id": "nar-ratelimit-scope",
+   "shape": "narrowed",
+   "old_day_correct": true,
+   "new_day_correct": true,
+   "both_correct": true,
+   "old_items": 1,
+   "new_items": 2,
+   "leak": false,
+   "store": {
+    "s0": {
+     "written": 1,
+     "live": 0,
+     "retired": 1,
+     "absorbed": 0,
+     "valid_to": [
+      "2026-05-01"
+     ],
+     "marker_in_text": true,
+     "titles": [
+      "2026-03-01-k8a054-pattern-rate-limiting-applies-to-all-calls"
+     ],
+     "supersedes": [],
+     "superseded_via": [
+      "slug"
+     ]
+    },
+    "s1": {
+     "written": 2,
+     "live": 2,
+     "retired": 0,
+     "absorbed": 0,
+     "valid_to": [],
+     "marker_in_text": true,
+     "titles": [
+      "2026-05-01-k8a054-pattern-rate-limiting-applies-to-all-calls",
+      "2026-05-01-k8a054-decision-unauthenticated-rate-limits"
+     ],
+     "supersedes": [
+      "2026-03-01-k8a054-pattern-rate-limiting-applies-to-all-calls"
+     ],
+     "superseded_via": []
+    }
+   },
+   "old_fail_kind": null,
+   "pairs": 1
+  },
+  {
+   "id": "nar-compress-scope",
+   "shape": "narrowed",
+   "old_day_correct": true,
+   "new_day_correct": true,
+   "both_correct": true,
+   "old_items": 1,
+   "new_items": 1,
+   "leak": false,
+   "store": {
+    "s0": {
+     "written": 1,
+     "live": 0,
+     "retired": 1,
+     "absorbed": 0,
+     "valid_to": [
+      "2026-05-01"
+     ],
+     "marker_in_text": true,
+     "titles": [
+      "2026-03-01-k8a055-pattern-gzip-response-compression"
+     ],
+     "supersedes": [],
+     "superseded_via": [
+      "slug"
+     ]
+    },
+    "s1": {
+     "written": 1,
+     "live": 1,
+     "retired": 0,
+     "absorbed": 0,
+     "valid_to": [],
+     "marker_in_text": true,
+     "titles": [
+      "2026-05-01-k8a055-pattern-gzip-response-compression"
+     ],
+     "supersedes": [
+      "2026-03-01-k8a055-pattern-gzip-response-compression"
+     ],
+     "superseded_via": []
+    }
+   },
+   "old_fail_kind": null,
+   "pairs": 1
+  },
+  {
+   "id": "nar-mfa-scope",
+   "shape": "narrowed",
+   "old_day_correct": true,
+   "new_day_correct": false,
+   "both_correct": false,
+   "old_items": 1,
+   "new_items": 1,
+   "leak": false,
+   "store": {
+    "s0": {
+     "written": 1,
+     "live": 1,
+     "retired": 0,
+     "absorbed": 0,
+     "valid_to": [],
+     "marker_in_text": true,
+     "titles": [
+      "2026-03-01-k8a056-pattern-mfa-enforcement-confirmed"
+     ],
+     "supersedes": [],
+     "superseded_via": []
+    },
+    "s1": {
+     "written": 0,
+     "live": 0,
+     "retired": 0,
+     "absorbed": 0,
+     "valid_to": [],
+     "marker_in_text": false,
+     "titles": [],
+     "supersedes": [],
+     "superseded_via": []
+    }
+   },
+   "old_fail_kind": null,
+   "pairs": 0
+  },
+  {
+   "id": "nar-replay-scope",
+   "shape": "narrowed",
+   "old_day_correct": true,
+   "new_day_correct": true,
+   "both_correct": true,
+   "old_items": 1,
+   "new_items": 1,
+   "leak": false,
+   "store": {
+    "s0": {
+     "written": 1,
+     "live": 0,
+     "retired": 1,
+     "absorbed": 0,
+     "valid_to": [
+      "2026-05-01"
+     ],
+     "marker_in_text": true,
+     "titles": [
+      "2026-03-01-k8a057-pattern-event-log-replay-on-boot"
+     ],
+     "supersedes": [],
+     "superseded_via": [
+      "slug"
+     ]
+    },
+    "s1": {
+     "written": 1,
+     "live": 1,
+     "retired": 0,
+     "absorbed": 0,
+     "valid_to": [],
+     "marker_in_text": true,
+     "titles": [
+      "2026-05-01-k8a057-pattern-event-log-replay-on-boot"
+     ],
+     "supersedes": [
+      "2026-03-01-k8a057-pattern-event-log-replay-on-boot"
+     ],
+     "superseded_via": []
+    }
+   },
+   "old_fail_kind": null,
+   "pairs": 1
+  },
+  {
+   "id": "nar-shard-scope",
+   "shape": "narrowed",
+   "old_day_correct": false,
+   "new_day_correct": true,
+   "both_correct": false,
+   "old_items": 2,
+   "new_items": 2,
+   "leak": false,
+   "store": {
+    "s0": {
+     "written": 2,
+     "live": 0,
+     "retired": 2,
+     "absorbed": 0,
+     "valid_to": [
+      "2026-05-01",
+      "2026-05-01"
+     ],
+     "marker_in_text": false,
+     "titles": [
+      "2026-03-01-k8a058-pattern-tenant-sharding-database",
+      "2026-03-01-k8a058-decision-sharding-approach"
+     ],
+     "supersedes": [],
+     "superseded_via": [
+      "slug",
+      "slug"
+     ]
+    },
+    "s1": {
+     "written": 2,
+     "live": 2,
+     "retired": 0,
+     "absorbed": 0,
+     "valid_to": [],
+     "marker_in_text": true,
+     "titles": [
+      "2026-05-01-k8a058-pattern-tenant-sharding-database",
+      "2026-05-01-k8a058-decision-sharding-approach"
+     ],
+     "supersedes": [
+      "2026-03-01-k8a058-pattern-tenant-sharding-database",
+      "2026-03-01-k8a058-decision-sharding-approach"
+     ],
+     "superseded_via": []
+    }
+   },
+   "old_fail_kind": "paraphrase",
+   "pairs": 2
+  },
+  {
+   "id": "nar-trace-scope",
+   "shape": "narrowed",
+   "old_day_correct": true,
+   "new_day_correct": true,
+   "both_correct": true,
+   "old_items": 2,
+   "new_items": 2,
+   "leak": false,
+   "store": {
+    "s0": {
+     "written": 2,
+     "live": 0,
+     "retired": 2,
+     "absorbed": 0,
+     "valid_to": [
+      "2026-05-01",
+      "2026-05-01"
+     ],
+     "marker_in_text": true,
+     "titles": [
+      "2026-03-01-k8a059-pattern-end-to-end-request-tracing",
+      "2026-03-01-k8a059-decision-trace-all-requests"
+     ],
+     "supersedes": [],
+     "superseded_via": [
+      "slug",
+      "slug"
+     ]
+    },
+    "s1": {
+     "written": 2,
+     "live": 2,
+     "retired": 0,
+     "absorbed": 0,
+     "valid_to": [],
+     "marker_in_text": true,
+     "titles": [
+      "2026-05-01-k8a059-pattern-end-to-end-request-tracing",
+      "2026-05-01-k8a059-decision-trace-all-requests"
+     ],
+     "supersedes": [
+      "2026-03-01-k8a059-pattern-end-to-end-request-tracing",
+      "2026-03-01-k8a059-decision-trace-all-requests"
+     ],
+     "superseded_via": []
+    }
+   },
+   "old_fail_kind": null,
+   "pairs": 2
+  },
+  {
+   "id": "ctl-db-cache",
+   "shape": "control",
+   "old_day_correct": false,
+   "new_day_correct": true,
+   "both_correct": false,
+   "old_items": 3,
+   "new_items": 4,
+   "leak": true,
+   "store": {
+    "s0": {
+     "written": 3,
+     "live": 2,
+     "retired": 1,
+     "absorbed": 0,
+     "valid_to": [
+      "2026-05-01"
+     ],
+     "marker_in_text": false,
+     "titles": [
+      "2026-03-01-k8a060-pattern-postgresql-16-primary-database",
+      "2026-03-01-k8a060-pattern-staged-release-deployment",
+      "2026-03-01-k8a060-decision-postgresql-16-as-primary-database"
+     ],
+     "supersedes": [],
+     "superseded_via": [
+      "slug"
+     ]
+    },
+    "s1": {
+     "written": 2,
+     "live": 2,
+     "retired": 0,
+     "absorbed": 0,
+     "valid_to": [],
+     "marker_in_text": true,
+     "titles": [
+      "2026-05-01-k8a060-pattern-redis-cache-layer-documentation",
+      "2026-05-01-k8a060-decision-postgresql-16-as-primary-database"
+     ],
+     "supersedes": [
+      "2026-03-01-k8a060-decision-postgresql-16-as-primary-database"
+     ],
+     "superseded_via": []
+    }
+   },
+   "old_fail_kind": "leak",
+   "pairs": 1
+  },
+  {
+   "id": "ctl-lang-test",
+   "shape": "control",
+   "old_day_correct": false,
+   "new_day_correct": true,
+   "both_correct": false,
+   "old_items": 1,
+   "new_items": 1,
+   "leak": true,
+   "store": {
+    "s0": {
+     "written": 1,
+     "live": 0,
+     "retired": 1,
+     "absorbed": 0,
+     "valid_to": [
+      "2026-05-01"
+     ],
+     "marker_in_text": false,
+     "titles": [
+      "2026-03-01-k8a061-pattern-service-written-in-rust"
+     ],
+     "supersedes": [],
+     "superseded_via": [
+      "slug"
+     ]
+    },
+    "s1": {
+     "written": 1,
+     "live": 1,
+     "retired": 0,
+     "absorbed": 0,
+     "valid_to": [],
+     "marker_in_text": true,
+     "titles": [
+      "2026-05-01-k8a061-pattern-service-written-in-rust"
+     ],
+     "supersedes": [
+      "2026-03-01-k8a061-pattern-service-written-in-rust"
+     ],
+     "superseded_via": []
+    }
+   },
+   "old_fail_kind": "leak",
+   "pairs": 1
+  },
+  {
+   "id": "ctl-port-pair",
+   "shape": "control",
+   "old_day_correct": false,
+   "new_day_correct": true,
+   "both_correct": false,
+   "old_items": 1,
+   "new_items": 2,
+   "leak": true,
+   "store": {
+    "s0": {
+     "written": 1,
+     "live": 1,
+     "retired": 0,
+     "absorbed": 0,
+     "valid_to": [],
+     "marker_in_text": false,
+     "titles": [
+      "2026-03-01-k8a062-pattern-api-listens-on-port-8443"
+     ],
+     "supersedes": [],
+     "superseded_via": []
+    },
+    "s1": {
+     "written": 1,
+     "live": 1,
+     "retired": 0,
+     "absorbed": 0,
+     "valid_to": [],
+     "marker_in_text": false,
+     "titles": [
+      "2026-05-01-k8a062-pattern-metrics-endpoint-listens-on-port-9100"
+     ],
+     "supersedes": [],
+     "superseded_via": []
+    }
+   },
+   "old_fail_kind": "leak",
+   "pairs": 0
+  },
+  {
+   "id": "ctl-env",
+   "shape": "control",
+   "old_day_correct": false,
+   "new_day_correct": true,
+   "both_correct": false,
+   "old_items": 1,
+   "new_items": 2,
+   "leak": true,
+   "store": {
+    "s0": {
+     "written": 1,
+     "live": 0,
+     "retired": 1,
+     "absorbed": 0,
+     "valid_to": [
+      "2026-05-01"
+     ],
+     "marker_in_text": false,
+     "titles": [
+      "2026-03-01-k8a063-pattern-staging-deploy-on-merge"
+     ],
+     "supersedes": [],
+     "superseded_via": [
+      "slug"
+     ]
+    },
+    "s1": {
+     "written": 2,
+     "live": 2,
+     "retired": 0,
+     "absorbed": 0,
+     "valid_to": [],
+     "marker_in_text": true,
+     "titles": [
+      "2026-05-01-k8a063-pattern-staging-deploy-on-merge",
+      "2026-05-01-k8a063-decision-production-deploys-on-tagged-release"
+     ],
+     "supersedes": [
+      "2026-03-01-k8a063-pattern-staging-deploy-on-merge"
+     ],
+     "superseded_via": []
+    }
+   },
+   "old_fail_kind": "leak",
+   "pairs": 1
+  },
+  {
+   "id": "ctl-model",
+   "shape": "control",
+   "old_day_correct": false,
+   "new_day_correct": true,
+   "both_correct": false,
+   "old_items": 1,
+   "new_items": 1,
+   "leak": true,
+   "store": {
+    "s0": {
+     "written": 1,
+     "live": 1,
+     "retired": 0,
+     "absorbed": 0,
+     "valid_to": [],
+     "marker_in_text": false,
+     "titles": [
+      "2026-03-01-k8a064-pattern-embedder-configuration"
+     ],
+     "supersedes": [],
+     "superseded_via": []
+    },
+    "s1": {
+     "written": 0,
+     "live": 0,
+     "retired": 0,
+     "absorbed": 0,
+     "valid_to": [],
+     "marker_in_text": false,
+     "titles": [],
+     "supersedes": [],
+     "superseded_via": []
+    }
+   },
+   "old_fail_kind": "leak",
+   "pairs": 0
+  },
+  {
+   "id": "ctl-storage",
+   "shape": "control",
+   "old_day_correct": false,
+   "new_day_correct": true,
+   "both_correct": false,
+   "old_items": 2,
+   "new_items": 2,
+   "leak": true,
+   "store": {
+    "s0": {
+     "written": 2,
+     "live": 0,
+     "retired": 2,
+     "absorbed": 0,
+     "valid_to": [
+      "2026-05-01",
+      "2026-05-01"
+     ],
+     "marker_in_text": false,
+     "titles": [
+      "2026-03-01-k8a065-pattern-s3-storage-configuration",
+      "2026-03-01-k8a065-decision-s3-storage-for-uploads"
+     ],
+     "supersedes": [],
+     "superseded_via": [
+      "slug",
+      "slug"
+     ]
+    },
+    "s1": {
+     "written": 2,
+     "live": 2,
+     "retired": 0,
+     "absorbed": 0,
+     "valid_to": [],
+     "marker_in_text": true,
+     "titles": [
+      "2026-05-01-k8a065-pattern-s3-storage-configuration",
+      "2026-05-01-k8a065-decision-s3-storage-for-uploads"
+     ],
+     "supersedes": [
+      "2026-03-01-k8a065-pattern-s3-storage-configuration",
+      "2026-03-01-k8a065-decision-s3-storage-for-uploads"
+     ],
+     "superseded_via": []
+    }
+   },
+   "old_fail_kind": "leak",
+   "pairs": 2
+  },
+  {
+   "id": "ctl-auth-pair",
+   "shape": "control",
+   "old_day_correct": false,
+   "new_day_correct": true,
+   "both_correct": false,
+   "old_items": 1,
+   "new_items": 1,
+   "leak": true,
+   "store": {
+    "s0": {
+     "written": 1,
+     "live": 1,
+     "retired": 0,
+     "absorbed": 0,
+     "valid_to": [],
+     "marker_in_text": false,
+     "titles": [
+      "2026-03-01-k8a066-pattern-admin-panel-mfa-requirement"
+     ],
+     "supersedes": [],
+     "superseded_via": []
+    },
+    "s1": {
+     "written": 0,
+     "live": 0,
+     "retired": 0,
+     "absorbed": 0,
+     "valid_to": [],
+     "marker_in_text": false,
+     "titles": [],
+     "supersedes": [],
+     "superseded_via": []
+    }
+   },
+   "old_fail_kind": "leak",
+   "pairs": 0
+  },
+  {
+   "id": "ctl-fmt",
+   "shape": "control",
+   "old_day_correct": false,
+   "new_day_correct": false,
+   "both_correct": false,
+   "old_items": 0,
+   "new_items": 0,
+   "leak": false,
+   "store": {
+    "s0": {
+     "written": 0,
+     "live": 0,
+     "retired": 0,
+     "absorbed": 0,
+     "valid_to": [],
+     "marker_in_text": false,
+     "titles": [],
+     "supersedes": [],
+     "superseded_via": []
+    },
+    "s1": {
+     "written": 0,
+     "live": 0,
+     "retired": 0,
+     "absorbed": 0,
+     "valid_to": [],
+     "marker_in_text": false,
+     "titles": [],
+     "supersedes": [],
+     "superseded_via": []
+    }
+   },
+   "old_fail_kind": "never_written",
+   "pairs": 0
+  },
+  {
+   "id": "ctl-obs",
+   "shape": "control",
+   "old_day_correct": false,
+   "new_day_correct": true,
+   "both_correct": false,
+   "old_items": 1,
+   "new_items": 2,
+   "leak": true,
+   "store": {
+    "s0": {
+     "written": 1,
+     "live": 1,
+     "retired": 0,
+     "absorbed": 0,
+     "valid_to": [],
+     "marker_in_text": false,
+     "titles": [
+      "2026-03-01-k8a068-pattern-traces-exported-to-tempo"
+     ],
+     "supersedes": [],
+     "superseded_via": []
+    },
+    "s1": {
+     "written": 1,
+     "live": 1,
+     "retired": 0,
+     "absorbed": 0,
+     "valid_to": [],
+     "marker_in_text": false,
+     "titles": [
+      "2026-05-01-k8a068-pattern-logs-exported-to-loki"
+     ],
+     "supersedes": [],
+     "superseded_via": []
+    }
+   },
+   "old_fail_kind": "leak",
+   "pairs": 0
+  },
+  {
+   "id": "ctl-limits",
+   "shape": "control",
+   "old_day_correct": false,
+   "new_day_correct": false,
+   "both_correct": false,
+   "old_items": 1,
+   "new_items": 2,
+   "leak": true,
+   "store": {
+    "s0": {
+     "written": 1,
+     "live": 0,
+     "retired": 1,
+     "absorbed": 0,
+     "valid_to": [
+      "2026-05-01"
+     ],
+     "marker_in_text": false,
+     "titles": [
+      "2026-03-01-k8a069-pattern-upload-size-limit-check"
+     ],
+     "supersedes": [],
+     "superseded_via": [
+      "slug"
+     ]
+    },
+    "s1": {
+     "written": 2,
+     "live": 2,
+     "retired": 0,
+     "absorbed": 0,
+     "valid_to": [],
+     "marker_in_text": false,
+     "titles": [
+      "2026-05-01-k8a069-pattern-upload-size-limit-check",
+      "2026-05-01-k8a069-decision-request-rate-limit"
+     ],
+     "supersedes": [
+      "2026-03-01-k8a069-pattern-upload-size-limit-check"
+     ],
+     "superseded_via": []
+    }
+   },
+   "old_fail_kind": "leak",
+   "pairs": 1
+  },
+  {
+   "id": "ctl-sched",
+   "shape": "control",
+   "old_day_correct": false,
+   "new_day_correct": false,
+   "both_correct": false,
+   "old_items": 0,
+   "new_items": 0,
+   "leak": false,
+   "store": {
+    "s0": {
+     "written": 0,
+     "live": 0,
+     "retired": 0,
+     "absorbed": 0,
+     "valid_to": [],
+     "marker_in_text": false,
+     "titles": [],
+     "supersedes": [],
+     "superseded_via": []
+    },
+    "s1": {
+     "written": 0,
+     "live": 0,
+     "retired": 0,
+     "absorbed": 0,
+     "valid_to": [],
+     "marker_in_text": false,
+     "titles": [],
+     "supersedes": [],
+     "superseded_via": []
+    }
+   },
+   "old_fail_kind": "never_written",
+   "pairs": 0
+  },
+  {
+   "id": "ctl-clients",
+   "shape": "control",
+   "old_day_correct": false,
+   "new_day_correct": true,
+   "both_correct": false,
+   "old_items": 2,
+   "new_items": 2,
+   "leak": true,
+   "store": {
+    "s0": {
+     "written": 2,
+     "live": 0,
+     "retired": 2,
+     "absorbed": 0,
+     "valid_to": [
+      "2026-05-01",
+      "2026-05-01"
+     ],
+     "marker_in_text": false,
+     "titles": [
+      "2026-03-01-k8a071-pattern-cli-distribution-through-homebrew",
+      "2026-03-01-k8a071-decision-cli-distribution-method"
+     ],
+     "supersedes": [],
+     "superseded_via": [
+      "slug",
+      "slug"
+     ]
+    },
+    "s1": {
+     "written": 2,
+     "live": 2,
+     "retired": 0,
+     "absorbed": 0,
+     "valid_to": [],
+     "marker_in_text": true,
+     "titles": [
+      "2026-05-01-k8a071-pattern-cli-distribution-through-homebrew",
+      "2026-05-01-k8a071-decision-cli-distribution-method"
+     ],
+     "supersedes": [
+      "2026-03-01-k8a071-pattern-cli-distribution-through-homebrew",
+      "2026-03-01-k8a071-decision-cli-distribution-method"
+     ],
+     "superseded_via": []
+    }
+   },
+   "old_fail_kind": "leak",
+   "pairs": 2
+  },
+  {
+   "id": "ctl-queue-pair",
+   "shape": "control",
+   "old_day_correct": false,
+   "new_day_correct": true,
+   "both_correct": false,
+   "old_items": 1,
+   "new_items": 1,
+   "leak": true,
+   "store": {
+    "s0": {
+     "written": 1,
+     "live": 1,
+     "retired": 0,
+     "absorbed": 0,
+     "valid_to": [],
+     "marker_in_text": false,
+     "titles": [
+      "2026-03-01-k8a072-pattern-ingest-queue-nats-backend"
+     ],
+     "supersedes": [],
+     "superseded_via": []
+    },
+    "s1": {
+     "written": 0,
+     "live": 0,
+     "retired": 0,
+     "absorbed": 0,
+     "valid_to": [],
+     "marker_in_text": false,
+     "titles": [],
+     "supersedes": [],
+     "superseded_via": []
+    }
+   },
+   "old_fail_kind": "leak",
+   "pairs": 0
+  },
+  {
+   "id": "ctl-doc",
+   "shape": "control",
+   "old_day_correct": false,
+   "new_day_correct": true,
+   "both_correct": false,
+   "old_items": 1,
+   "new_items": 1,
+   "leak": true,
+   "store": {
+    "s0": {
+     "written": 1,
+     "live": 1,
+     "retired": 0,
+     "absorbed": 0,
+     "valid_to": [],
+     "marker_in_text": false,
+     "titles": [
+      "2026-03-01-k8a073-pattern-api-reference-generation"
+     ],
+     "supersedes": [],
+     "superseded_via": []
+    },
+    "s1": {
+     "written": 0,
+     "live": 0,
+     "retired": 0,
+     "absorbed": 0,
+     "valid_to": [],
+     "marker_in_text": false,
+     "titles": [],
+     "supersedes": [],
+     "superseded_via": []
+    }
+   },
+   "old_fail_kind": "leak",
+   "pairs": 0
+  },
+  {
+   "id": "ctl-runtime",
+   "shape": "control",
+   "old_day_correct": false,
+   "new_day_correct": true,
+   "both_correct": false,
+   "old_items": 1,
+   "new_items": 2,
+   "leak": true,
+   "store": {
+    "s0": {
+     "written": 1,
+     "live": 1,
+     "retired": 0,
+     "absorbed": 0,
+     "valid_to": [],
+     "marker_in_text": false,
+     "titles": [
+      "2026-03-01-k8a074-pattern-python-3-13-worker-validation"
+     ],
+     "supersedes": [],
+     "superseded_via": []
+    },
+    "s1": {
+     "written": 1,
+     "live": 1,
+     "retired": 0,
+     "absorbed": 0,
+     "valid_to": [],
+     "marker_in_text": false,
+     "titles": [
+      "2026-05-01-k8a074-pattern-sidecar-go-version-check"
+     ],
+     "supersedes": [],
+     "superseded_via": []
+    }
+   },
+   "old_fail_kind": "leak",
+   "pairs": 0
+  },
+  {
+   "id": "ctl-net",
+   "shape": "control",
+   "old_day_correct": false,
+   "new_day_correct": false,
+   "both_correct": false,
+   "old_items": 0,
+   "new_items": 0,
+   "leak": false,
+   "store": {
+    "s0": {
+     "written": 0,
+     "live": 0,
+     "retired": 0,
+     "absorbed": 0,
+     "valid_to": [],
+     "marker_in_text": false,
+     "titles": [],
+     "supersedes": [],
+     "superseded_via": []
+    },
+    "s1": {
+     "written": 0,
+     "live": 0,
+     "retired": 0,
+     "absorbed": 0,
+     "valid_to": [],
+     "marker_in_text": false,
+     "titles": [],
+     "supersedes": [],
+     "superseded_via": []
+    }
+   },
+   "old_fail_kind": "never_written",
+   "pairs": 0
+  },
+  {
+   "id": "ctl-review",
+   "shape": "control",
+   "old_day_correct": false,
+   "new_day_correct": true,
+   "both_correct": false,
+   "old_items": 1,
+   "new_items": 2,
+   "leak": true,
+   "store": {
+    "s0": {
+     "written": 1,
+     "live": 1,
+     "retired": 0,
+     "absorbed": 0,
+     "valid_to": [],
+     "marker_in_text": false,
+     "titles": [
+      "2026-03-01-k8a076-pattern-pull-request-approval-process"
+     ],
+     "supersedes": [],
+     "superseded_via": []
+    },
+    "s1": {
+     "written": 1,
+     "live": 1,
+     "retired": 0,
+     "absorbed": 0,
+     "valid_to": [],
+     "marker_in_text": false,
+     "titles": [
+      "2026-05-01-k8a076-pattern-signed-changelog-entry"
+     ],
+     "supersedes": [],
+     "superseded_via": []
+    }
+   },
+   "old_fail_kind": "leak",
+   "pairs": 0
+  },
+  {
+   "id": "ctl-metrics",
+   "shape": "control",
+   "old_day_correct": false,
+   "new_day_correct": true,
+   "both_correct": false,
+   "old_items": 2,
+   "new_items": 3,
+   "leak": true,
+   "store": {
+    "s0": {
+     "written": 2,
+     "live": 1,
+     "retired": 1,
+     "absorbed": 0,
+     "valid_to": [
+      "2026-05-01"
+     ],
+     "marker_in_text": false,
+     "titles": [
+      "2026-03-01-k8a077-pattern-request-latency-histogram",
+      "2026-03-01-k8a077-decision-track-request-latency-as-histogram"
+     ],
+     "supersedes": [],
+     "superseded_via": [
+      "slug"
+     ]
+    },
+    "s1": {
+     "written": 2,
+     "live": 2,
+     "retired": 0,
+     "absorbed": 0,
+     "valid_to": [],
+     "marker_in_text": true,
+     "titles": [
+      "2026-05-01-k8a077-pattern-queue-depth-gauge-tracking",
+      "2026-05-01-k8a077-decision-track-request-latency-as-histogram"
+     ],
+     "supersedes": [
+      "2026-03-01-k8a077-decision-track-request-latency-as-histogram"
+     ],
+     "superseded_via": []
+    }
+   },
+   "old_fail_kind": "leak",
+   "pairs": 1
+  },
+  {
+   "id": "ctl-store",
+   "shape": "control",
+   "old_day_correct": false,
+   "new_day_correct": true,
+   "both_correct": false,
+   "old_items": 1,
+   "new_items": 1,
+   "leak": true,
+   "store": {
+    "s0": {
+     "written": 1,
+     "live": 1,
+     "retired": 0,
+     "absorbed": 0,
+     "valid_to": [],
+     "marker_in_text": false,
+     "titles": [
+      "2026-03-01-k8a078-pattern-local-storage-session-persistence"
+     ],
+     "supersedes": [],
+     "superseded_via": []
+    },
+    "s1": {
+     "written": 0,
+     "live": 0,
+     "retired": 0,
+     "absorbed": 0,
+     "valid_to": [],
+     "marker_in_text": false,
+     "titles": [],
+     "supersedes": [],
+     "superseded_via": []
+    }
+   },
+   "old_fail_kind": "leak",
+   "pairs": 0
+  },
+  {
+   "id": "ctl-alerting",
+   "shape": "control",
+   "old_day_correct": false,
+   "new_day_correct": true,
+   "both_correct": false,
+   "old_items": 1,
+   "new_items": 1,
+   "leak": true,
+   "store": {
+    "s0": {
+     "written": 1,
+     "live": 1,
+     "retired": 0,
+     "absorbed": 0,
+     "valid_to": [],
+     "marker_in_text": false,
+     "titles": [
+      "2026-03-01-k8a079-pattern-alerting-pagerduty-integration"
+     ],
+     "supersedes": [],
+     "superseded_via": []
+    },
+    "s1": {
+     "written": 0,
+     "live": 0,
+     "retired": 0,
+     "absorbed": 0,
+     "valid_to": [],
+     "marker_in_text": false,
+     "titles": [],
+     "supersedes": [],
+     "superseded_via": []
+    }
+   },
+   "old_fail_kind": "leak",
+   "pairs": 0
+  }
+ ],
+ "score": {
+  "n_cases": 60,
+  "both_correct_rate": 0.7833,
+  "both_correct_ci": [
+   0.6638,
+   0.8688
+  ],
+  "old_day_rate": 0.85,
+  "new_day_rate": 0.8833,
+  "errors": 0,
+  "old_day_failures_by_kind": {
+   "never_written": 7,
+   "absorbed": 0,
+   "unranked": 0,
+   "paraphrase": 1,
+   "leak": 1
+  },
+  "s0_never_written": 7,
+  "s0_absorbed": 0,
+  "s0_retired_rate": 0.8868,
+  "s0_retired_via": {
+   "slug": 53,
+   "explicit": 7
+  },
+  "s0_written_pairs": 53
+ },
+ "seconds": 261.3,
+ "llm": "qwen3-coder:30b",
+ "embedder": "bge-m3",
+ "k": 5,
+ "dates": [
+  "2026-03-01",
+  "2026-05-01"
+ ]
+}

@@ -118,10 +118,18 @@ s2 = m.write_typed_note("Mistakes", {"title": "Cuda OOM", "description": "d2",
                         ["t"], "mistake")
 mist = m.VAULT / "Mistakes"
 check("newer note live", (mist / f"{s2}.md").exists())
+# K8: "d2" against "d1" is not proven the same fact by the item alone, so the older note is not
+# retired on the spot - it stays live beside the new one, stamped contested, until the sleep-time
+# judge rules; the interval closes at sleep, not on a presumption
+check("K8: older note stays live and is stamped contested",
+      (mist / f"{s1}.md").exists() and m._read_frontmatter_file(mist / f"{s1}.md").get("contested") == [s2])
+import consolidate_memory as cm   # noqa: E402
+adj = cm.adjudicate_contested(apply=True, has_llm=True, judge=lambda *a, **k: True)
+check("the judge's `replaces` retires the older note", adj["replaces"] == 1)
 check("older note moved to Superseded/", (mist / "Superseded" / f"{s1}.md").exists())
 check("older note removed from live folder", not (mist / f"{s1}.md").exists())
-check("superseded note stamped",
-      "superseded_by" in (mist / "Superseded" / f"{s1}.md").read_text(encoding="utf-8"))
+_sup_text = (mist / "Superseded" / f"{s1}.md").read_text(encoding="utf-8")
+check("superseded note stamped", "superseded_by" in _sup_text and "superseded_via: judge" in _sup_text)
 check("keeper records what it supersedes",
       "supersedes" in (mist / f"{s2}.md").read_text(encoding="utf-8"))
 

@@ -90,16 +90,42 @@ _archive(s_old, "decision")
 s_new = m.write_typed_note("Decisions", {"title": "cache backend", "description": "use memcached for the cache"},
                            "proj", "2026-09-10", ["t"], "decision")
 live_now = folder / f"{s_new}.md"
+arch_old = folder / "Archive" / f"{s_old}.md"
+check("the replacement is live", live_now.exists() and s_new != "")
+# K8: "memcached" against "redis" is not proven the same fact by the item alone, so the archived note
+# is reached in Archive/ (the J2b reach) and stamped contested rather than retired on the spot
+check("the archived fact is reached in Archive/ and stamped contested (K8)",
+      arch_old.exists() and m._read_frontmatter_file(arch_old).get("contested") == [s_new])
+import consolidate_memory as cm   # noqa: E402
+adj = cm.adjudicate_contested(apply=True, has_llm=True, judge=lambda *a, **k: True)
 sup = folder / "Archive" / "Superseded"
 retired = list(sup.glob(f"{s_old}*.md")) if sup.exists() else []
-check("the replacement is live", live_now.exists() and s_new != "")
-check("the archived fact was retired despite living in Archive/", len(retired) == 1)
+check("the judge's `replaces` retires the archived fact into Archive/Superseded/",
+      adj["replaces"] == 1 and len(retired) == 1)
 if retired:
     rbody = retired[0].read_text(encoding="utf-8")
     check("its interval is closed (valid_to stamped)", "valid_to:" in rbody)
-    check("the closure is attributed (superseded_via)", "superseded_via:" in rbody)
+    check("the closure is attributed (superseded_via: judge)", "superseded_via: judge" in rbody)
 new_body = live_now.read_text(encoding="utf-8") if live_now.exists() else ""
 check("the replacement records what it supersedes", "supersedes" in new_body)
+
+# an item that NAMES the title it replaces (rule 1) still closes an archived interval at write time
+print("\n# end-to-end: an explicit supersedes closes an archived interval on the spot")
+make_sandbox(m, "j2b_", offline=True)
+folder = m.VAULT / m.TYPE_FOLDER["decision"]
+s_old = m.write_typed_note("Decisions", {"title": "queue backend", "description": "jobs go through sqs"},
+                           "proj", "2026-01-01", ["t"], "decision")
+_archive(s_old, "decision")
+s_new = m.write_typed_note("Decisions", {"title": "queue backend", "description": "jobs go through nats",
+                                         "supersedes": "queue backend"},
+                           "proj", "2026-09-10", ["t"], "decision")
+sup = folder / "Archive" / "Superseded"
+retired = list(sup.glob(f"{s_old}*.md")) if sup.exists() else []
+check("the named replacement retires the archived fact at write time", len(retired) == 1)
+if retired:
+    rbody = retired[0].read_text(encoding="utf-8")
+    check("attributed to the explicit path", "superseded_via: explicit" in rbody)
+    check("its interval is closed", "valid_to:" in rbody)
 
 
 print(f"\n{P} passed, {F} failed")

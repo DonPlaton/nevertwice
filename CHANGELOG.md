@@ -16,22 +16,36 @@ empty.
 
 ### Added
 
-- **A same-title note from another session is absorbed only when it is the same fact** (ledger K7;
-  `tests/_test_absorb_same_fact_only.py`). The same-day same-stem absorb rewrote an earlier note in place
-  whenever a later session produced the same title - decided by the title alone. On the supersession
-  stand's controls that was most of what we lost: a *different* fact on the same topic ("logs to Loki"
-  after "traces to Tempo") replaced the served text, the earlier statement survived only under
-  `## Previous statement`, and a still-true fact stopped being handed back on 5 of 40 explicit and 14 of
-  40 implicit control case-runs. Now: literals that agree (the new `[facts]` block carries every old
-  literal, both sides carrying some) absorb as before, with no call; anything else - literals that
-  disagree, or a side with none - goes to one adjudication call on the extraction model, which names
-  what each statement settles and rules `replaces` (absorb) or `separate` (keep both, the new note as a
-  `-2` sibling). The judge fails open to the prior behaviour; `NEVERTWICE_ABSORB_JUDGE=0` turns it off,
-  and `NEVERTWICE_ABSORB_JUDGE_MODE=shadow` makes the call without acting on it (a stand control).
-  The same-session refresh path is untouched. Gate: over-retraction proper <= 0.05 on both corpora.
-  Fast cycles before the campaign found the stand's own confound: an extra extraction-model call
-  between two sessions changes what the next session extracts (the server's prompt cache goes cold),
-  which moves the stale column by itself; the ledger (K7) carries the table and the measurement order.
+- **A same-title note from another session is kept, not absorbed, unless the replacement is proven -
+  and the judge moves out of the hook into sleep** (ledger K8; `tests/_test_k8_same_replacement.py`,
+  `_test_k8_read_pairing.py`, `_test_k8_adjudicate.py`, `_test_k8_one_call_per_session.py`). The slug is a
+  title the extractor composes - a topic, not a fact's identity - and two facts on one topic share it. The
+  same-day collision was absorbed in place by the title alone and the other-day collision retired the
+  earlier note by the slug alone; on the supersession stand's controls that lost 5 of 40 explicit and 14 of
+  40 implicit still-true facts, and 7 of 17 on the two-day dating. Three layers, each with its price in the
+  market's units. *Write (zero calls):* one function for both branches - an explicit `supersedes` /
+  `contradicts` naming the title, the old literals all in the new `[facts]` block, or the old statement's
+  text inside the new one replaces as before; a lesson without literals never absorbs a note with them;
+  everything else is a `-2` sibling and the earlier note is stamped `contested`. *Read (zero calls):* two
+  live notes of one slug fold into the newest hit, the earlier statement attached as one bounded line
+  (`NEVERTWICE_EARLIER_MAX_CHARS`, 100) - both served, newest first, nothing demoted on a presumption;
+  `conflicts()` lists the pairs, `integrity()` counts them. *Sleep:* `consolidate_memory.py` adjudicates
+  the contested pairs with K7's prompt, at most `NEVERTWICE_CONTESTED_CAP` (50) calls a run - `replaces`
+  retires the earlier note with `valid_to` and `superseded_via: judge` and carries its recurrence into
+  the winner, `separate` clears the stamp. Measured before the code: the skeleton similarity of the two
+  statements reads AUC 0.63-0.66 on the extractor's descriptions and 0.76-0.81 on the facts block, so it
+  is published and not shipped as a rule; the judge reads accuracy 0.956 on 204 pairs of known truth
+  (`replaces` precision 1.000, recall 0.953) at 414 tokens a pair; the owner's vault would send at most
+  73 pairs a week. Two guards sit between the judge's `replaces` and the retirement, both found on the
+  first fast cycle: a note with verified literals is never retired for one without (rule 4 kept at
+  sleep), and a value in the new statement that its own `[facts]` block does not carry - the session
+  was never seen to say it - cannot retire a verified one. The one write-time loss the same-slug rule
+  leaves is the extractor's explicit `contradicts` naming another title on a same-topic control;
+  `NEVERTWICE_EXPLICIT_RETIRE=judge` routes that claim to the judge too (default `write`, rule 1 as
+  the ledger wrote it). A store without a model gets the first two layers whole. The K7 hook judge
+  (`NEVERTWICE_ABSORB_JUDGE`) and its shadow mode are removed; a `-2` sibling is now found by every
+  slug lookup (a crash-retry of the session that wrote it used to mint a `-3`); the supersession stand
+  reports `old_value_served` beside `stale_returned` and reads the engine twice under `--sleep`.
 - **One retry, differently framed, when a relevant session yields no item** (ledger K5;
   `tests/_test_extraction_retry.py`). Ledger K3 read the extractor's "silence" on a bare two-sentence
   fact as instability - same text, temperature zero, a note or nothing depending on incidental prompt

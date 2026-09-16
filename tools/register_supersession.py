@@ -25,6 +25,7 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -72,8 +73,14 @@ def _pct(v: float) -> str:
 
 def build_claims(family: str, art: dict, *, dataset: str, command: str, raw: str, head: str,
                  produced_by: list[str], existing: set[str], stand: str = "",
-                 cite: list[str] | None = None) -> tuple[list[dict], list[str]]:
-    P = art["pooled_nevertwice"]
+                 cite: list[str] | None = None, pooled_key: str = "pooled_nevertwice",
+                 engine_prefix: str = "nevertwice") -> tuple[list[dict], list[str]]:
+    """`pooled_key` / `engine_prefix` select which engine reading the family is built from: the
+    default block, or K8's `pooled_nevertwice_after_sleep` / `nevertwice_after_sleep` (the store after
+    the sleep-time judge). A non-default reading registers the engine block only - the competitor,
+    pairing and corpus claims belong to the family of the first reading."""
+    P = art[pooled_key]
+    engine_only = pooled_key != "pooled_nevertwice"
     runs = P["runs"]
     ds = art["dataset"]
     n_sup, n_ctl = int(ds["supersession_cases"]), int(ds["control_cases"])
@@ -104,7 +111,8 @@ def build_claims(family: str, art: dict, *, dataset: str, command: str, raw: str
 
     def engine_runs() -> list[dict]:
         return [res for arm, res in art["arms"].items()
-                if arm.startswith("nevertwice") and not res.get("blocked")]
+                if (arm == engine_prefix or re.fullmatch(re.escape(engine_prefix) + r"_run\d+", arm))
+                and not res.get("blocked")]
 
     def controls(res: dict) -> list[dict]:
         return [r for r in res.get("rows", []) if r.get("shape") == "control"]
@@ -113,10 +121,21 @@ def build_claims(family: str, art: dict, *, dataset: str, command: str, raw: str
     add(f"{family}.nevertwice.stale_rate",
         f"Nevertwice returns a retracted fact as a current assertion on {_pct(st['rate'])} of "
         f"supersession case-runs on {stand}, pooled over {runs} runs of the same commit",
-        st["rate"], [f"{st['rate']:.3f}"], "rate", st["n"], st["ci"], "pooled_nevertwice.stale.rate", note_pooled)
+        st["rate"], [f"{st['rate']:.3f}"], "rate", st["n"], st["ci"], f"{pooled_key}.stale.rate", note_pooled)
     add(f"{family}.nevertwice.current_rate",
         f"Nevertwice returns the replacement fact on {_pct(cu['rate'])} of supersession case-runs on {stand}",
-        cu["rate"], [f"{cu['rate']:.3f}"], "rate", cu["n"], cu["ci"], "pooled_nevertwice.current.rate", note_pooled)
+        cu["rate"], [f"{cu['rate']:.3f}"], "rate", cu["n"], cu["ci"], f"{pooled_key}.current.rate", note_pooled)
+    osv = P.get("old_value_served")
+    if osv is not None:
+        # K8: the raw reading beside the rule - the retracted value anywhere in what came back, attached
+        # to a newer statement or not; the stale rate above does not count an item naming both values
+        add(f"{family}.nevertwice.old_value_served_rate",
+            f"the retracted value appears somewhere in what Nevertwice returns on {_pct(osv['rate'])} of "
+            f"supersession case-runs on {stand} (attached to a newer statement or served on its own)",
+            osv["rate"], [f"{osv['rate']:.3f}"], "rate", osv["n"], osv["ci"], f"{pooled_key}.old_value_served.rate",
+            note="The stale rate counts an item that asserts the retracted value without the current one; this "
+                 "counts the retracted value wherever it appears in the returned text, so a paired hit "
+                 "(newest statement with the earlier one attached, K8 layer 2) is counted here and not there.")
     # Two metrics lived under one name until 2026-09-11. `over_retraction_rate` is the NARROW
     # one - the memory retired a still-true fact, read from the store - and `control_miss_rate`
     # the BROAD one - the still-true fact did not come back, whatever the cause. The published
@@ -125,20 +144,20 @@ def build_claims(family: str, art: dict, *, dataset: str, command: str, raw: str
         f"Nevertwice retires a still-true fact (the memory closed its interval) on {ov['k']} of {ov['n']} "
         f"control case-runs on {stand}",
         ov["rate"], [f"{ov['rate']:.2f}", f"{ov['rate']:.3f}"], "rate", ov["n"], ov["ci"],
-        "pooled_nevertwice.over_retraction.rate",
+        f"{pooled_key}.over_retraction.rate",
         note="Over-retraction proper: only a control case whose still-true fact the store shows as retired "
              "counts. A fact that was never written, or was written and ranked below k, is a control miss "
              "(`control_miss_rate`) and is split by cause in `control_miss.*`.")
     add(f"{family}.nevertwice.control_case_runs",
         f"Nevertwice's control measures on {stand} rest on {ov['n']} control case-runs ({runs} runs of the corpus's controls)",
-        int(ov["n"]), [str(ov["n"])], "control case-runs", int(ov["n"]), None, "pooled_nevertwice.over_retraction.n")
+        int(ov["n"]), [str(ov["n"])], "control case-runs", int(ov["n"]), None, f"{pooled_key}.over_retraction.n")
     cm = P.get("control_miss")
     if cm is not None:
         add(f"{family}.nevertwice.control_miss_rate",
             f"on {stand} a still-true fact did not come back for Nevertwice on {cm['k']} of {cm['n']} control "
             f"case-runs, whatever the cause",
             cm["rate"], [f"{cm['rate']:.3f}", f"{cm['rate']:.2f}"], "rate", cm["n"], cm["ci"],
-            "pooled_nevertwice.control_miss.rate")
+            f"{pooled_key}.control_miss.rate")
     else:
         ctl = [r for res in engine_runs() for r in controls(res)]
         if ctl:
@@ -161,7 +180,7 @@ def build_claims(family: str, art: dict, *, dataset: str, command: str, raw: str
             v, n = int(pooled_causes[key]), int(P["control_miss"]["n"])
             add(f"{family}.nevertwice.control_miss.{key}",
                 f"of Nevertwice's control case-runs on {stand}, {v} of {n} lost the still-true fact because {why}",
-                v, [str(v)], "control case-runs", n, None, f"pooled_nevertwice.control_causes.{key}")
+                v, [str(v)], "control case-runs", n, None, f"{pooled_key}.control_causes.{key}")
         else:
             rs = [res for res in engine_runs() if field in res]
             if rs:
@@ -174,8 +193,10 @@ def build_claims(family: str, art: dict, *, dataset: str, command: str, raw: str
     add(f"{family}.nevertwice.chars_per_query",
         f"Nevertwice returns {P['mean_chars_returned']:.0f} characters per query on {stand}",
         P["mean_chars_returned"], [f"{P['mean_chars_returned']:.0f}"], "characters", (n_sup + n_ctl) * runs,
-        None, "pooled_nevertwice.mean_chars_returned")
+        None, f"{pooled_key}.mean_chars_returned")
     n_sup_ds, n_ctl_ds = n_sup, n_ctl                     # the corpus counts, for the dataset claims below
+    if engine_only:
+        return new, skipped
     for arm, res in art["arms"].items():
         if arm.startswith("nevertwice") or res.get("blocked"):
             continue
@@ -285,6 +306,11 @@ def main(argv: list[str] | None = None) -> int:
                          "REASON`), cite nothing, and keep their pointers so the artifact stays checkable. The "
                          "mtime guard does not apply - the artifact describes a commit, not HEAD")
     ap.add_argument("--engine-commit", default="", help="with --historical: the engine the artifact measured")
+    ap.add_argument("--pooled-key", default="pooled_nevertwice",
+                    help="K8: the engine reading to register - `pooled_nevertwice_after_sleep` for the store "
+                         "after the sleep-time judge (engine block only)")
+    ap.add_argument("--engine-prefix", default="nevertwice",
+                    help="the arm name of that reading (`nevertwice_after_sleep` with the after-sleep key)")
     ap.add_argument("--manifest", default=str(MANIFEST_PATH))
     ap.add_argument("--dry-run", action="store_true")
     args = ap.parse_args(argv)
@@ -341,7 +367,8 @@ def main(argv: list[str] | None = None) -> int:
     existing = {c["id"] for c in manifest["claims"]}
     new, skipped = build_claims(args.family, art, dataset=args.dataset, command=args.command,
                                 raw=args.artifact, head=head, produced_by=closure, existing=existing,
-                                stand=args.stand, cite=args.cite)
+                                stand=args.stand, cite=args.cite, pooled_key=args.pooled_key,
+                                engine_prefix=args.engine_prefix)
     if args.historical:
         import datetime as _dt                                    # noqa: PLC0415
         today = _dt.date.today().isoformat()

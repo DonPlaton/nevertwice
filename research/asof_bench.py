@@ -170,10 +170,28 @@ def old_fail_kind(row: dict, state: dict | None) -> str | None:
     return "leak" if row.get("leak") else "paraphrase"
 
 
-def run_nevertwice(cases: list[dict], k: int, runs: int = 1) -> dict:
+def _read_case(api, case: dict, project: str, k: int, run: int) -> dict:
+    old_hits = api.as_of(case["query"], DAY_BETWEEN, project, k=k)
+    new_hits = api.as_of(case["query"], DAY_AFTER, project, k=k)
+    old, new = _items(old_hits), _items(new_hits)
+    row = _row(case, old, new)
+    row["leak"] = bool(sb._hit(case["current"], " ".join(old)))
+    try:
+        state = _session_state(project, case)
+    except Exception as e:                                        # noqa: BLE001 - diagnostics only
+        state = {"error": f"{type(e).__name__}: {e}"}
+    row["store"] = state
+    row["old_fail_kind"] = old_fail_kind(row, state if "s0" in state else None)
+    row["run"] = run
+    return row
+
+
+def run_nevertwice(cases: list[dict], k: int, runs: int = 1, sleep: bool = False) -> dict:
     """`runs` > 1 repeats the whole ingest under fresh project names and pools the case-runs:
     the extraction model is not deterministic at temperature 0 (the supersession bench pools
-    two runs for the same reason), so one run of this stand is not a result either."""
+    two runs for the same reason), so one run of this stand is not a result either. `sleep`
+    (K8) adds the second reading: the sleep-time judge over the store's contested pairs, then
+    both days asked again (`after_sleep`)."""
     os.environ["NEVERTWICE_CLOUD"] = "none"
     os.environ["NEVERTWICE_MODEL"] = sb.LLM
     os.environ.setdefault("NEVERTWICE_EMBED_MODEL", sb.EMBED_MODEL)
@@ -213,6 +231,19 @@ def run_nevertwice(cases: list[dict], k: int, runs: int = 1) -> dict:
            "store_bytes": sb.store_bytes()}
     if runs > 1:
         out["per_run"] = [score([r for r in rows if r.get("run") == run])["both_correct_rate"] for run in range(runs)]
+    if sleep:
+        from nevertwice import consolidate_memory as cm            # noqa: PLC0415
+        t1 = time.time()
+        adj = cm.adjudicate_contested(apply=True, has_llm=True, cap=sb.SLEEP_CAP)
+        rows2 = [_read_case(api, cases[i], f"asof{run}{i:03d}", k, run)
+                 for run in range(runs) for i in range(len(cases))]
+        after = {"rows": rows2, **score(rows2), "runs": runs, "adjudication": adj,
+                 "seconds": round(time.time() - t1, 1), "store_bytes": sb.store_bytes(),
+                 "config": f"the same store after consolidate_memory.adjudicate_contested(cap={sb.SLEEP_CAP})"}
+        if runs > 1:
+            after["per_run"] = [score([r for r in rows2 if r.get("run") == run])["both_correct_rate"]
+                                for run in range(runs)]
+        out["after_sleep"] = after
     return out
 
 
@@ -332,6 +363,8 @@ def main() -> int:
     ap.add_argument("--k", type=int, default=5)
     ap.add_argument("--limit", type=int, default=0)
     ap.add_argument("--runs", type=int, default=2, help="engine runs to pool (extraction is not deterministic)")
+    ap.add_argument("--sleep", action="store_true",
+                    help="K8: ask both days again after the sleep-time judge (arm `nevertwice_after_sleep`)")
     ap.add_argument("--recent", action="store_true",
                     help="J2b control: date session one inside the 90-day archive window (never archived)")
     ap.add_argument("--with", dest="others", nargs="*", default=[], metavar="FILE",
@@ -360,8 +393,15 @@ def main() -> int:
             print(f"- {name}: unknown arm (have: {', '.join(ARMS)})")
             continue
         print(f"- {name}")
-        res = fn(cases, args.k, args.runs) if name == "nevertwice" else fn(cases, args.k)
+        res = fn(cases, args.k, args.runs, sleep=args.sleep) if name == "nevertwice" else fn(cases, args.k)
         out["arms"][name] = res
+        if res.get("after_sleep"):
+            after = res.pop("after_sleep")
+            out["arms"]["nevertwice_after_sleep"] = after
+            adj = after["adjudication"]
+            print(f"  after sleep: both {after['both_correct_rate']} old {after['old_day_rate']} new {after['new_day_rate']} "
+                  f"s0_retired {after.get('s0_retired_rate')} via {after.get('s0_retired_via')} | judge: {adj['pairs']} pairs, "
+                  f"judged {adj['judged']}, replaces {adj['replaces']}, separate {adj['separate']}, left {adj['left']}")
         print(f"  both-correct {res['both_correct_rate']} {res['both_correct_ci']} | old day {res['old_day_rate']} "
               f"| new day {res['new_day_rate']} | errors {res['errors']} | {res['seconds']}s")
         if res.get("old_day_failures_by_kind"):

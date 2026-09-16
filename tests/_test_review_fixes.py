@@ -247,19 +247,27 @@ sA = m.write_typed_note("Mistakes", {"title": "tau restore missing",
 sB = m.write_typed_note("Mistakes", {"title": "tau restore missing",
                                      "description": "tau parameter lost on early stopping"},
                         "proj", "2026-08-18", ["t"], "mistake", session_stem_="sess-two")
-check("the second session is ABSORBED into the base note, no '-2' twin", sB == sA and
-      not (m.VAULT / "Mistakes" / f"{sA}-2.md").exists())
-fmB, _ = m._read_frontmatter((m.VAULT / "Mistakes" / f"{sB}.md").read_text(encoding="utf-8"))
-check("recurrence reflects two distinct sessions", int(fmB.get("recurrence") or 0) >= 2)
-check("both sessions recorded as sources",
-      set(fmB.get("sources") or []) >= {"sess-one", "sess-two"})
-check("crash-retry of the absorbing session does NOT bump again",
+# K8 (2026-09-16): the two statements are in other words and carry no literal, so the write path
+# cannot prove them the same lesson - the second session is a contested SIBLING ('-2'), both stay
+# live and served, and the recurrence merges when the sleep-time judge rules `replaces`
+check("the second session is a contested '-2' sibling, the first statement still live (K8)",
+      sB == f"{sA}-2" and (m.VAULT / "Mistakes" / f"{sA}.md").exists()
+      and (m.VAULT / "Mistakes" / f"{sB}.md").exists())
+fmA, _ = m._read_frontmatter((m.VAULT / "Mistakes" / f"{sA}.md").read_text(encoding="utf-8"))
+check("the earlier note is stamped contested with the sibling's stem", fmA.get("contested") == [sB])
+check("crash-retry of session two refreshes its own sibling, no third note",
       m.write_typed_note("Mistakes", {"title": "tau restore missing",
                                       "description": "retry of session two"},
                          "proj", "2026-08-18", ["t"], "mistake",
                          session_stem_="sess-two") == sB
-      and int(m._read_frontmatter((m.VAULT / "Mistakes" / f"{sB}.md")
-                                  .read_text(encoding="utf-8"))[0].get("recurrence")) == 2)
+      and not (m.VAULT / "Mistakes" / f"{sA}-3.md").exists())
+import consolidate_memory as cm   # noqa: E402
+adj = cm.adjudicate_contested(apply=True, has_llm=True, judge=lambda *a, **k: True)
+fmB, _ = m._read_frontmatter((m.VAULT / "Mistakes" / f"{sB}.md").read_text(encoding="utf-8"))
+check("after the judge's `replaces` the sibling carries both sessions (recurrence 2)",
+      adj["replaces"] == 1 and int(fmB.get("recurrence") or 0) >= 2
+      and set(fmB.get("sources") or []) >= {"sess-one", "sess-two"}
+      and (m.VAULT / "Mistakes" / "Superseded" / f"{sA}.md").exists())
 
 # ── 8. relation targets become reachable by construction ──────────────────────
 print("fix 8 - relation-target reachability")

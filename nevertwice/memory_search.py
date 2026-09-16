@@ -137,7 +137,7 @@ def search_core(query: str, project: str | None = None, k: int = 10,
         # lexical also finds nothing.
         lex = _lexical_only(query, project, k, cache)
         if lex:
-            return lex, "lexical (no embedder)"
+            return m.pair_siblings(lex, attach=True), "lexical (no embedder)"
         # "nothing embedded at all" ≠ "this project has no notes" - don't tell the
         # user to rebuild a perfectly good index when a filter just missed (audit A14).
         # 'empty-project' only when a project FILTER was given: with no filter a
@@ -216,6 +216,9 @@ def search_core(query: str, project: str | None = None, k: int = 10,
                 "low_confidence": lc}
     results = ([_mk(sc, s, r, low_conf) for sc, s, r in scored]
                + [_mk(sc, s, r, True) for sc, s, r in text_extra])[:pool]
+    # K8 layer 2: two live notes of one slug fold into the newest, the earlier statement attached to
+    # its description - the same pairing the hook's injection path applies (memory_hook.pair_siblings)
+    results = m.pair_siblings(results, attach=True)
     if xrerank and len(results) > 1:                 # trained cross-encoder wins if both set
         results = _ce.reorder(query, results, k)
         mode += " + xrerank"

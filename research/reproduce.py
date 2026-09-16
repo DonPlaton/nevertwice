@@ -287,6 +287,56 @@ ARTIFACTS = [
                 "the carried Zep/Graphiti as-of runs of campaign K (--with)"],
      "note": "the as-of stand at d07375e, kept as the record the K5 gate (never-written first sessions) was read from; "
              "the live as-of claims come from the re-run on the engine the gates left standing."},
+    {"file": "research/results/k8_collisions_explicit.json",
+     "command": ["python", "research/k8_collisions.py", "--stand", "supersession",
+                 "--out", "research/results/k8_collisions_explicit.json"],
+     "kind": HARDWARE, "task": "supersession",
+     "inputs": ["this repository at a04b547 (the engine before K8: absorb by title)",
+                "research/data/supersession_v1.json", "a local Ollama serving bge-m3 and the extraction model"],
+     "note": "ledger K8 step 0: the K7 store made durable - every same-slug collision the write path met on the "
+             "explicit corpus, both statements and the case's truth, recorded by a wrapper around write_typed_note. "
+             "The calibration set of the skeleton test and the truth set of the judge."},
+    {"file": "research/results/k8_collisions_implicit.json",
+     "command": ["python", "research/k8_collisions.py", "--stand", "supersession", "--dataset",
+                 "research/data/supersession_v1_implicit.json", "--out", "research/results/k8_collisions_implicit.json"],
+     "kind": HARDWARE, "task": "supersession",
+     "inputs": ["this repository at a04b547", "research/data/supersession_v1_implicit.json",
+                "a local Ollama serving bge-m3 and the extraction model"],
+     "note": "the implicit-corpus half of the K8 collision record."},
+    {"file": "research/results/k8_collisions_asof.json",
+     "command": ["python", "research/k8_collisions.py", "--stand", "asof",
+                 "--out", "research/results/k8_collisions_asof.json"],
+     "kind": HARDWARE, "task": "supersession",
+     "inputs": ["this repository at a04b547", "research/data/supersession_v1.json",
+                "a local Ollama serving bge-m3 and the extraction model"],
+     "note": "the two-day dating of the as-of stand, controls included: the `r` branch (same slug, another day - "
+             "the slug retirement) recorded pair by pair; 7 of 17 still-true control notes were retired."},
+    {"file": "research/results/k8_step0.json",
+     "command": ["python", "research/k8_skeleton.py", "research/results/k8_collisions_explicit.json",
+                 "research/results/k8_collisions_implicit.json", "research/results/k8_collisions_asof.json",
+                 "--out", "research/results/k8_step0.json"],
+     "kind": DETERMINISTIC, "task": "supersession",
+     "inputs": ["the three k8_collisions_*.json files", "research/data/supersession_v1{,_implicit}.json (the markers)"],
+     "note": "ledger K8 step 0: can a skeleton test tell a replacement from a different fact on one topic? AUC "
+             "0.63-0.66 on the extractor's descriptions, 0.76-0.81 on the facts block - the 'about 0.5' branch; the "
+             "similarity is published and not shipped as a rule. Pure string work over the recorded pairs."},
+    {"file": "research/results/k8_judge_eval.json",
+     "command": ["python", "research/k8_judge_eval.py", "research/results/k8_collisions_explicit.json",
+                 "research/results/k8_collisions_implicit.json", "research/results/k8_collisions_asof.json",
+                 "--out", "research/results/k8_judge_eval.json"],
+     "kind": HARDWARE, "task": "supersession",
+     "inputs": ["the three k8_collisions_*.json files", "a local Ollama serving the extraction model (the judge)"],
+     "note": "ledger K8 step 3: the same-fact judge (K7's prompt, K8's sleep-time step) over 222 pairs, 204 of known "
+             "truth - accuracy 0.956, `replaces` precision 1.000 / recall 0.953, `separate` precision 0.571 / recall "
+             "1.000, 414.5 tokens a pair. What K7 was really worth, without a campaign or a cache confound."},
+    {"file": "research/results/k8_vault_dryrun.json",
+     "command": ["python", "research/k8_vault_dryrun.py", "<path to the owner's vault>", "--weeks", "4",
+                 "--today", "2026-09-16", "--out", "research/results/k8_vault_dryrun.json"],
+     "kind": ABSENT_INPUT, "task": "supersession",
+     "inputs": ["the owner's private vault (8,235 typed notes; read-only, not committed)"],
+     "note": "ledger K8, the price of layer 3 in the field: 292 same-slug collisions from other sessions in the four "
+             "weeks to 2026-09-16 -> at most 73 contested pairs a week for the sleep-time judge (rules 2 and 4 are "
+             "inert on a store whose notes carry no facts block yet)."},
     {"file": "research/results/code_sessions_v1.json",
      "command": ["python", "research/code_sessions_eval.py", "judge", "--arms", "nevertwice_full,naive,mem0_infer", "--save"],
      "kind": HARDWARE, "task": "code-sessions",

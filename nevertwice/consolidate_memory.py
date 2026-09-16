@@ -39,6 +39,146 @@ SIM_THRESHOLD = m.env_float("NEVERTWICE_DEDUP_SIM", 0.86)   # safe-cast: a misty
 # Per-project live-note cap (improvement P2). 0 = OFF - a memory store must not shed
 # memory without being told to. When >0, the lowest-salience excess is archived.
 MAX_LIVE_PER_PROJECT = m.env_int("NEVERTWICE_MAX_LIVE_PER_PROJECT", 0)  # degrades, never crashes
+# K8 layer 3: at most this many judge calls per run over the `contested` same-slug pairs the write
+# path kept apart (ledger K8: 50 written before the code; the owner's vault produces up to ~73 pairs
+# a week, so a weekly run leaves a visible remainder in conflicts() rather than spending more).
+CONTESTED_CAP = m.env_int("NEVERTWICE_CONTESTED_CAP", 50)
+
+
+def _pair_fields(p: Path) -> tuple[dict, str, str]:
+    """(frontmatter, title, description) of one typed note - the judge's two sides."""
+    text = p.read_text(encoding="utf-8", errors="replace")
+    fm, body = m._read_frontmatter(text)
+    title, desc, _ = m._parse_note_body(body.split("\n"))
+    return fm, (title or p.stem), (desc or "")
+
+
+def _set_contested(p: Path, stems: list[str], disputed: str | None = None) -> None:
+    text = p.read_text(encoding="utf-8", errors="replace")
+    fields = {m.CONTESTED_KEY: stems}
+    if disputed:
+        fm, _ = m._read_frontmatter(text)
+        cur = m._contested_of({m.CONTESTED_KEY: fm.get(m.DISPUTED_KEY)})
+        fields[m.DISPUTED_KEY] = cur + ([disputed] if disputed not in cur else [])
+    m.write_atomic(p, m._stamp_frontmatter(text, fields))
+
+
+def _replacement_guard(old_desc: str, new_desc: str) -> str:
+    """Why a `replaces` verdict may NOT be acted on (K8, the sleep-time guards; "" when it may):
+    `no_literals_in_new` - a note with verified literals is never retired for one without (rule 4,
+    the write-time rule kept at sleep: the judge ruled a boilerplate restatement a replacement on
+    the first fast cycle); `unverified_value` - the new statement's value is not in its `[facts]`
+    block, so the session was never seen to say it (a hallucinated "100 MB" retired a true "25 MB");
+    `no_value_in_new` - the earlier note's verified literals carry a value and the new statement
+    carries none at all ("the upload size limit check is working correctly" over "25 MB").
+    A vetoed pair stays two live notes, leaves the judge's queue and is stamped `disputed`: the
+    judge has spoken, the proof is missing, both are served, a human can still see it."""
+    old_f, new_f = m._facts_in(old_desc), m._facts_in(new_desc)
+    if old_f and not new_f:
+        return "no_literals_in_new"
+    if old_f and m._unverified_values(new_desc):
+        return "unverified_value"
+    if m._VALUE_RE.search(" ".join(old_f)) and not m._VALUE_RE.search(m._norm_statement(new_desc)):
+        # a valued fact is not replaced by a STATEMENT that names no value - the block beside it may
+        # carry a different fact's literal ("the request rate limit is 100 per minute" under a
+        # boilerplate "the upload size limit check is working correctly", the third fast cycle)
+        return "no_value_in_new"
+    return ""
+
+
+def adjudicate_contested(apply: bool, has_llm: bool, cap: int | None = None,
+                         judge=None, cache: dict | None = None) -> dict:
+    """K8 layer 3 - the same-fact judge over the `contested` pairs, outside any session.
+
+    The write path keeps a same-slug note from another session as a live sibling unless the
+    replacement is proven, and stamps the earlier note `contested: [<new stems>]` (layer 1). Here,
+    newest pair first and at most `cap` calls a run, each pair goes to the judge
+    (`memory_hook._same_fact_verdict`, K7's prompt): `replaces` - the earlier note is retired with
+    `valid_to` and `superseded_via: judge`, its recurrence and sources carried into the note that
+    replaced it; `separate` - the stamp is cleared and both stay; no answer - the pair stays
+    contested. A pair whose newer note is gone (retired, archived or deleted) is dropped from the
+    stamp. Without a backend nothing is judged and the pairs stay visible in `conflicts()`. Dry-run
+    calls the judge and prints the plan; `apply` writes. Returns the counts and the tokens spent."""
+    cap = CONTESTED_CAP if cap is None else cap
+    judge = judge or m._same_fact_verdict
+    pairs: list[tuple] = []
+    for c in m._iter_contested(None):
+        old_path = Path(c["path"])
+        folder = m.VAULT / m.TYPE_FOLDER[c["ntype"]]
+        live_new = []
+        for ns in c["new_stems"]:
+            # the newer note is live, or has itself aged into Archive/ (an importer of old transcripts
+            # archives on the way in - the as-of stand's dating does exactly that); Superseded/ is gone
+            new_path = next((q for q in (folder / f"{ns}.md", folder / "Archive" / f"{ns}.md") if q.exists()), None)
+            if new_path is not None:
+                pairs.append((c, old_path, new_path, ns))
+                live_new.append(ns)
+        if apply and len(live_new) != len(c["new_stems"]):
+            _set_contested(old_path, live_new)         # the newer note is gone: nothing left to judge
+    pairs.sort(key=lambda t: t[3], reverse=True)       # date-prefixed stems: the newest pair first
+    stats = {"pairs": len(pairs), "cap": cap, "judged": 0, "replaces": 0, "separate": 0, "vetoed": 0,
+             "unanswered": 0, "left": len(pairs), "prompt_tokens": 0, "eval_tokens": 0, "skipped": None}
+    if not pairs:
+        return stats
+    if not has_llm:
+        stats["skipped"] = "no LLM backend - the pairs stay contested and visible in conflicts()"
+        return stats
+    p0 = m._LLM_STATS.get("prompt_tokens", 0)
+    e0 = m._LLM_STATS.get("eval_tokens", 0)
+    for c, old_path, new_path, new_stem in pairs[:cap]:
+        try:
+            fm_old, old_title, old_desc = _pair_fields(old_path)
+            fm_new, _, new_desc = _pair_fields(new_path)
+        except OSError as e:
+            print(f"      contested pair unreadable ({e}) - left as is", file=sys.stderr)
+            continue
+        verdict = judge(old_title, old_desc, new_desc, c["project"])
+        stats["judged"] += 1
+        remaining = [s_ for s_ in m._contested_of(fm_old) if s_ != new_stem]
+        veto = _replacement_guard(old_desc, new_desc) if verdict is True else ""
+        if veto:
+            # the verdict says replace, the proof is not there: both stay, off the judge's queue,
+            # and the pair is stamped `disputed` so conflicts() still shows it to a human
+            stats["vetoed"] += 1
+            print(f"      vetoed ({veto}): {c['stem']} | {new_stem} - both stay, disputed")
+            if apply:
+                _set_contested(old_path, remaining, disputed=new_stem)
+        elif verdict is True:
+            stats["replaces"] += 1
+            print(f"      replaces: {c['stem']} -> {new_stem}")
+            if apply:
+                # the retired statement's history carries into the one that replaced it, as the
+                # write-time absorb used to carry it (recurrence = distinct contributing sessions)
+                r_old, s_old = m._note_recur_sources(old_path)
+                sources = set(s_old) | {str(x) for x in (fm_new.get("sources") or []) if x}
+                for sess in (fm_old.get("session"), fm_new.get("session")):
+                    if sess:
+                        sources.add(str(sess))
+                rec = max(m._coerce_recurrence(fm_new.get("recurrence")), r_old + 1, len(sources))
+                sup_list = [str(x) for x in (fm_new.get("supersedes") or []) if x]
+                if c["stem"] not in sup_list:
+                    sup_list.append(c["stem"])
+                new_text = new_path.read_text(encoding="utf-8", errors="replace")
+                m.write_atomic(new_path, m._stamp_frontmatter(
+                    new_text, {"recurrence": rec, "sources": sorted(sources)[-m.RECUR_SOURCES_CAP:],
+                               "supersedes": sup_list}))
+                if cache is not None and isinstance(cache.get(new_stem), dict):
+                    cache[new_stem]["recurrence"] = rec
+                _set_contested(old_path, remaining)
+                if not m.supersede_note(old_path, new_stem, via="judge"):
+                    print(f"      supersede failed for {old_path.name} - left live", file=sys.stderr)
+        elif verdict is False:
+            stats["separate"] += 1
+            print(f"      separate: {c['stem']} | {new_stem}")
+            if apply:
+                _set_contested(old_path, remaining)
+        else:
+            stats["unanswered"] += 1
+            print(f"      unanswered: {c['stem']} ? {new_stem}")
+    stats["left"] = len(pairs) - stats["replaces"] - stats["separate"] - stats["vetoed"]
+    stats["prompt_tokens"] = m._LLM_STATS.get("prompt_tokens", 0) - p0
+    stats["eval_tokens"] = m._LLM_STATS.get("eval_tokens", 0) - e0
+    return stats
 
 
 def _int1(x) -> int:
@@ -703,6 +843,17 @@ def _run_consolidation(apply, mode, has_llm):
                     cache.pop(src.stem, None)
                     merged += 1
     if apply and (merged or clusters):
+        m.save_embed_cache(cache)
+
+    # 2c) K8 layer 3: the contested same-slug pairs the write path kept apart go to the judge here -
+    #     one call a pair, capped, outside any session chain (no cache confound, no hook millisecond)
+    adj = adjudicate_contested(apply, has_llm, cache=cache)
+    print(f"[consolidate] contested pairs: {adj['pairs']} - judged {adj['judged']} of at most {adj['cap']}: "
+          f"replaces {adj['replaces']}, separate {adj['separate']}, vetoed {adj['vetoed']}, "
+          f"unanswered {adj['unanswered']}, left {adj['left']}"
+          + (f"; tokens {adj['prompt_tokens']}+{adj['eval_tokens']}" if adj["judged"] else "")
+          + (f" ({adj['skipped']})" if adj.get("skipped") else "") + f" [{mode}]")
+    if apply and adj["replaces"]:
         m.save_embed_cache(cache)
 
     # 2b) per-project cap (P2): bound live notes per project so none grows unbounded

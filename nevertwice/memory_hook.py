@@ -2378,6 +2378,9 @@ def call_ollama(prompt: str) -> dict:
     }).encode("utf-8")
 
     def _extract(data, last):
+        # the price in the market's units: prompt and answer tokens of every call this run (K8)
+        _LLM_STATS["prompt_tokens"] = _LLM_STATS.get("prompt_tokens", 0) + int(data.get("prompt_eval_count") or 0)
+        _LLM_STATS["eval_tokens"] = _LLM_STATS.get("eval_tokens", 0) + int(data.get("eval_count") or 0)
         raw = (data.get("response") or "").strip()
         if not raw:
             return "fail", "returned empty response"
@@ -3237,15 +3240,27 @@ def _near_duplicate_paths(folder_path: Path, project: str, ntype: str,
         return []
 
 
+def _slug_family(parsed_slug: str, slug: str) -> bool:
+    """The slug itself or one of its `-2`..`-9` siblings (K8): a note minted beside a same-title
+    note carries the suffix in its stem, and every slug lookup - the same-session refresh, the
+    reconcile, the contested pairing - must see the whole family, not the base alone. (Before K8 a
+    crash-retry of the session that wrote a `-2` minted a `-3`, and a third statement never met
+    the second.) A slug that merely ends in a digit is its own family: `python-3` is not a sibling
+    of `python` unless a note of that exact base exists - the callers compare by family only when
+    the base slug is the one being written."""
+    return parsed_slug == slug or (parsed_slug[:-2] == slug and parsed_slug[-2] == "-"
+                                   and parsed_slug[-1] in "23456789")
+
+
 def _live_typed_paths(folder_path: Path, project: str, ntype: str,
                       slug: str) -> list[Path]:
-    """Live (non-archived, non-superseded) notes matching project+ntype+slug,
-    newest first. Superseded/ and Archive/ are subdirs, so a flat glob skips them."""
+    """Live (non-archived, non-superseded) notes of the slug family (project+ntype+slug and its
+    `-N` siblings), newest first. Superseded/ and Archive/ are subdirs, so a flat glob skips them."""
     hits = []
     for p in folder_path.glob("*.md"):
         parsed = parse_typed_stem(p.stem)
         if parsed and parsed["project"] == project \
-                and parsed["ntype"] == ntype and parsed["slug"] == slug:
+                and parsed["ntype"] == ntype and _slug_family(parsed["slug"], slug):
             hits.append(p)
     return sorted(hits, key=lambda p: p.stem, reverse=True)
 
@@ -3264,7 +3279,7 @@ def _archived_typed_paths(folder_path: Path, project: str, ntype: str,
     for p in arch.glob("*.md"):
         parsed = parse_typed_stem(p.stem)
         if parsed and parsed["project"] == project \
-                and parsed["ntype"] == ntype and parsed["slug"] == slug:
+                and parsed["ntype"] == ntype and _slug_family(parsed["slug"], slug):
             hits.append(p)
     return sorted(hits, key=lambda p: p.stem, reverse=True)
 
@@ -3584,21 +3599,142 @@ def _facts_in(desc: str) -> set:
     return {_norm_ws(f) for f in tail.split("\u00b7") if _norm_ws(f)}
 
 
-#: K7 - a same-day, same-title note from ANOTHER session is rewritten in place (absorbed) only when
-#: the new statement is the same fact restated, refined or replaced - not when it is a different fact
-#: on the same topic ("logs to Loki" after "traces to Tempo"). Before this gate the absorb was
-#: decided by the title alone, and on the supersession stand's controls it was most of what we lost:
-#: 5 of 40 explicit and 14 of 40 implicit control case-runs, the note kept on disk and no longer
-#: serving the earlier fact (ledger K1b/K7). Stage one is deterministic - literals that agree (the new
-#: block carries every old literal) or a side with no literals absorb as before. Stage two, only when
-#: the literals disagree, is one adjudication call; it fails open to the prior behaviour.
-#: Off by default since the campaign at d07375e (2026-09-12). Measured on: over-retraction proper fell
-#: from 0.125 / 0.350 to 0.000 / 0.000 on the two corpora (the cap of 0.05 met), the stale rate rose
-#: from 0.033 / 0.067 to 0.117 / 0.167 against a cap of +0.02 - missed, so K7's own rule reverts it.
-#: Most of the stale cost is the stand's cache confound and the accidental absorbs the gate exposed
-#: (ledger K7). Opt in with NEVERTWICE_ABSORB_JUDGE=1; the owner decides whether it is re-gated
-#: against a same-regime baseline.
-ABSORB_JUDGE = env_int("NEVERTWICE_ABSORB_JUDGE", 0)
+#: K8 - the same slug from ANOTHER session is a sibling unless the replacement is proven (ledger K8,
+#: 2026-09-16). The slug is a title the extractor composes - a topic, not a fact's identity - and two
+#: facts on one topic share it. Until K8 the same-day collision was absorbed in place (the earlier
+#: statement kept under `## Previous statement` and no longer served) and the other-day collision
+#: retired the earlier note by the slug alone; on the supersession stand's controls that was 5 of 40
+#: explicit and 14 of 40 implicit still-true facts lost (K1b/K7), and 7 of 17 on the two-day dating.
+#: Layer 1 decides with no model call and only on what the item and the note already carry: an
+#: explicit `supersedes` / `contradicts` naming this title, the old literals all present in the new
+#: `[facts]` block, or the old statement's text contained in the new. Everything else is a `-2`
+#: sibling - both statements keep being served, newest first (`pair_siblings`) - and the earlier note
+#: is stamped `contested` for the sleep-time judge (consolidate_memory.py). Nothing is retired or
+#: rewritten on a presumption: the skeleton similarity of the two statements read AUC 0.63-0.66 on
+#: the extractor's descriptions and 0.76-0.81 on the facts block (research/results/k8_step0.json),
+#: so it is not a rule here. K7's hook judge (NEVERTWICE_ABSORB_JUDGE) is gone: the judge lives at
+#: sleep, and its honest number is the accuracy of its verdicts.
+CONTESTED_KEY = "contested"
+#: A pair the judge ruled `replaces` on and the sleep-time guard refused (the proof is missing: no
+#: literal in the newer statement against literals in the earlier, or a value the session never
+#: said). Off the judge's queue, both served, visible to a human in conflicts() / integrity().
+DISPUTED_KEY = "disputed"
+#: How an item's explicit `supersedes` / `contradicts` naming ANOTHER title is acted on. `write` (the
+#: default, rule 1 of ledger K8 as written: the extractor's own statement replaces on the spot, the
+#: M-2 path since 2026-08). `judge`: the named note is stamped contested and the sleep-time judge
+#: confirms - on the first K8 fast cycles the extractor filled `contradicts: traces exported to
+#: Tempo` on "logs go to Loki" and retired the still-true Tempo note on both corpora (ctl-obs), the
+#: one write-time loss the same-slug rule left; the switch is the owner's call, not a default change.
+EXPLICIT_RETIRE = os.environ.get("NEVERTWICE_EXPLICIT_RETIRE", "write").strip().lower()
+
+
+def _norm_statement(desc: str) -> str:
+    """A description without its `[facts]` block, whitespace folded, lower-cased - the statement."""
+    return _norm_ws(re.sub(r"\s*\[facts\].*$", "", desc or "", flags=re.DOTALL))
+
+
+def _same_replacement(old_path: Path, title: str, desc: str,
+                      supersedes_title: str = "", contradicts_title: str = "") -> tuple[bool, str]:
+    """K8 layer 1: may the item about to be written under `title` REPLACE the same-slug note at
+    `old_path` - absorb it in place on the same day, retire it on another? `(True, rule)` with rule
+    `explicit` (the item's supersedes/contradicts names this title), `literals` (both sides carry
+    literals and the new block carries every old one) or `restated` (the old statement's text stands
+    inside the new one); `(False, reason)` otherwise - `no_literals_in_new` (a lesson without literals
+    never absorbs a note with them), `unproven`, `unreadable`. A False verdict costs nothing: the pair
+    becomes two live siblings and a contested stamp."""
+    try:
+        _, d_old, _ = _parse_note_body(old_path.read_text(encoding="utf-8", errors="replace").split("\n"))
+    except Exception:                                    # noqa: BLE001 - keep what cannot be read
+        return False, "unreadable"
+    slug = slugify(title)
+    for other in (supersedes_title, contradicts_title):
+        if other and slugify(other) == slug:
+            return True, "explicit"                      # rule 1: the extractor itself names the replacement
+    old_f, new_f = _facts_in(d_old or ""), _facts_in(desc or "")
+    if old_f and not new_f:
+        return False, "no_literals_in_new"               # rule 4: a lesson never absorbs a note with facts
+    if old_f and new_f and old_f <= new_f:
+        return True, "literals"                          # rule 2: the same fact restated or refined
+    o, n = _norm_statement(d_old or ""), _norm_statement(desc or "")
+    if o and n and o in n:
+        return True, "restated"                          # rule 2': the same words, said again
+    return False, "unproven"
+
+
+def _mark_contested(old_path: Path, new_stem: str) -> bool:
+    """Stamp `contested: [new_stem, ...]` on the earlier note of a kept-apart pair - what the
+    sleep-time judge reads and `conflicts()` prints (K8). Appends without duplicating; a failure
+    leaves the note as it was (the sibling is on disk regardless)."""
+    try:
+        text = old_path.read_text(encoding="utf-8", errors="replace")
+        fm, _ = _read_frontmatter(text)
+        cur = fm.get(CONTESTED_KEY) or []
+        cur = [cur] if isinstance(cur, str) else [str(x) for x in cur]
+        if new_stem in cur:
+            return True
+        write_atomic(old_path, _stamp_frontmatter(text, {CONTESTED_KEY: cur + [new_stem]}))
+        return True
+    except Exception as e:                               # noqa: BLE001 - a stamp must never fail a write
+        log(f"contested stamp failed for {old_path.name} ({type(e).__name__}: {e})")
+        return False
+
+
+#: Value-shaped tokens: numbers with or without a unit, versions. The shape a replacement changes
+#: ("30 seconds" -> "5 seconds", "PostgreSQL 14" -> "16") and the shape an extractor hallucinates.
+_VALUE_RE = re.compile(
+    r"[~+\-]?\b\d+(?:[.,]\d+)*\s?(?:MB|GB|KB|TB|ms|s|GHz|MHz|px|%|seconds?|minutes?|hours?|days?)?\b"
+    r"|\bv\d+(?:\.\d+)*\b", re.I)
+
+
+def _unverified_values(desc: str) -> list[str]:
+    """Value-shaped tokens in a description's statement that its `[facts]` block does not carry -
+    values the extractor wrote that the session was never seen to say (the block holds only literals
+    verified verbatim against the session). A replacement may not rest on one (K8, the sleep-time
+    guard): on the first fast cycle the judge retired "the upload size limit is 25 MB" for a note
+    saying "100 MB" when the session had said "100 per minute"."""
+    statement = _norm_statement(desc)
+    facts = " ".join(_facts_in(desc))
+    out = []
+    for mo in _VALUE_RE.finditer(statement):
+        tok = _norm_ws(mo.group(0).strip("~+- "))
+        if tok and not tok.isdigit() and tok not in facts and tok not in out:
+            out.append(tok)
+        elif tok and tok.isdigit() and len(tok) >= 2 and tok not in facts and tok not in out:
+            out.append(tok)
+    return out
+
+
+def _contested_of(fm: dict) -> list[str]:
+    cur = fm.get(CONTESTED_KEY) or []
+    return [cur] if isinstance(cur, str) else [str(x) for x in cur if x]
+
+
+def _iter_contested(project: str | None = None, key: str = CONTESTED_KEY) -> list[dict]:
+    """Every live or archived typed note carrying a `contested` stamp (or, with `key`, a `disputed`
+    one), with the sibling stems it names: `[{stem, path, project, ntype, date, title, archived,
+    new_stems}]`. A header-only scan of the type folders (Superseded/ skipped - a retired note's
+    stamp is settled)."""
+    out = []
+    for ntype, folder in TYPE_FOLDER.items():
+        base = VAULT / folder
+        if not base.exists():
+            continue
+        for p in base.rglob("*.md"):
+            if "Superseded" in p.parts[len(base.parts):]:
+                continue
+            parsed = parse_typed_stem(p.stem)
+            if not parsed or (project and parsed["project"] != project):
+                continue
+            fm = _read_frontmatter_file(p)
+            new_stems = _contested_of(fm) if key == CONTESTED_KEY else _contested_of({CONTESTED_KEY: fm.get(key)})
+            if not new_stems:
+                continue
+            out.append({"stem": p.stem, "path": str(p), "project": parsed["project"], "ntype": ntype,
+                        "date": parsed["date"], "title": parsed["slug"].replace("-", " "),
+                        "archived": p.parent.name == "Archive", "new_stems": new_stems})
+    return sorted(out, key=lambda r: (r["ntype"], r["stem"]))
+
+
 _JUDGE_PROMPT = (
     "Two statements were recorded for one project under the same title, by two different sessions.\n\n"
     "OLD (recorded first): {old}\n\nNEW (recorded later): {new}\n\n"
@@ -3618,8 +3754,12 @@ _JUDGE_PROMPT = (
 
 
 def _same_fact_verdict(old_title: str, old_desc: str, new_desc: str, project: str):
-    """K7 stage two: `True` (the new statement replaces the old - absorb), `False` (a different fact -
-    keep both), `None` (no answer - the caller falls back to the prior behaviour)."""
+    """The same-fact judge (K7's prompt, K8's sleep-time step): `True` (the new statement replaces
+    the old), `False` (a different fact - both hold), `None` (no answer). Since K8 it is called only by
+    `consolidate_memory.adjudicate_contested`, never from the hook: one call a contested pair, in a
+    batch, outside the chain of sessions - no cache confound, no hook millisecond. Measured on the K7
+    store (204 pairs of known truth, research/results/k8_judge_eval.json): accuracy 0.956, `replaces`
+    precision 1.000 / recall 0.953, `separate` precision 0.571 / recall 1.000, 414 tokens a pair."""
     prompt = _JUDGE_PROMPT.format(old=f"{old_title} - {(old_desc or '')[:600]}", new=(new_desc or "")[:600])
     try:
         res = generate_json(prompt, project=project)
@@ -3634,40 +3774,82 @@ def _same_fact_verdict(old_title: str, old_desc: str, new_desc: str, project: st
     return None
 
 
-#: How stage two decides when the literals do not: `llm` - one adjudication call on the extraction
-#: model; `shadow` - a stand control that makes the call, logs the verdict and absorbs regardless.
-#: Two alternatives were measured on 2026-09-12 and rejected: the calibrated twin classifier
-#: (cosine + word features) reads P(same lesson) 0.93-1.00 for every different-fact control pair,
-#: because a shared title saturates its title feature; a literal-only rule cannot see a corpus whose
-#: sentences carry no literal-shaped token ("the service is written in Rust").
-ABSORB_JUDGE_MODE = os.environ.get("NEVERTWICE_ABSORB_JUDGE_MODE", "llm").strip().lower()
+
+#: K8 layer 2 - the merge as a representation at read time, re-decided for free. Two live notes of
+#: one slug among the hits are one topic with two statements: the newest leads, the earlier one is
+#: attached to it as a compact line (its `[facts]` block, else the head of its description) and
+#: leaves the list as a separate hit. Nothing is hidden and nothing is demoted below k on a
+#: presumption - both facts are served and the agent sees which is newer. `as_of` sees both files.
+EARLIER_MAX_CHARS = env_int("NEVERTWICE_EARLIER_MAX_CHARS", 100)
+_SIB_SUFFIX_RE = re.compile(r"-[2-9]$")
 
 
-def _absorb_is_same_fact(old_path: Path, title: str, desc: str, project: str) -> bool:
-    """K7: may this same-stem note from another session be rewritten in place with `desc`?"""
-    if ABSORB_JUDGE <= 0:
-        return True
+def _sibling_key(stem: str):
+    parsed = parse_typed_stem(stem or "")
+    if not parsed:
+        return None
+    return parsed["project"], parsed["ntype"], _SIB_SUFFIX_RE.sub("", parsed["slug"])
+
+
+def _earlier_text(stem: str, ntype: str, max_chars: int | None = None) -> str:
+    """The compact form of an earlier sibling: its literals when they carry a value (the fact itself,
+    in the session's words), else the head of its statement. Bounded."""
+    cap = EARLIER_MAX_CHARS if max_chars is None else max_chars
+    folder = TYPE_FOLDER.get(ntype or "")
+    if not folder:
+        return ""
+    fp = VAULT / folder / f"{stem}.md"
     try:
-        _, d_old, _ = _parse_note_body(old_path.read_text(encoding="utf-8", errors="replace").split("\n"))
-    except Exception:                                    # noqa: BLE001 - an unreadable note absorbs as before
-        return True
-    old_f, new_f = _facts_in(d_old or ""), _facts_in(desc or "")
-    if old_f and new_f and old_f <= new_f:
-        return True                          # the new block carries every old literal: the same fact, refined
-    # Disagreeing literals, or a side with none: on the implicit corpus most control notes carry
-    # no literal at all (the sentences hold few literal-shaped tokens), so "no literal, absorb" let
-    # 11 of 20 different facts through on the smoke run. The judge decides.
-    _LLM_STATS["absorb_judge"] = _LLM_STATS.get("absorb_judge", 0) + 1
-    verdict = _same_fact_verdict(title, d_old or "", desc or "", project)
-    if ABSORB_JUDGE_MODE == "shadow":        # a stand control: the call is made, the verdict only logged
-        log(f"Same-stem shadow judge (K7): verdict {verdict} for {old_path.stem} - absorbing regardless")
-        return True
-    if verdict is None:
-        log(f"Same-stem absorb kept, judge unanswered (K7): {old_path.stem}")
-        return True                          # fail open: the behaviour before the gate
-    if verdict:
-        log(f"Same-stem absorb confirmed by the judge (K7, replaces): {old_path.stem}")
-    return verdict
+        lines = fp.read_text(encoding="utf-8", errors="replace").split("\n")
+    except OSError:
+        return ""
+    _, desc, _ = _parse_note_body(lines)
+    desc = desc or ""
+    facts = desc.split(_FACTS_MARK.strip(), 1)[1].strip() if _FACTS_MARK.strip() in desc else ""
+    statement = re.sub(r"\s*\[facts\].*$", "", desc, flags=re.DOTALL).strip()
+    # the block is the fact in the session's words only when it carries a value; a harvested
+    # distractor ("rolled it out behind the usual staged release") is not, and the statement is
+    text = facts if (facts and _VALUE_RE.search(facts)) else (statement or facts)
+    text = re.sub(r"\s+", " ", text)
+    return text if len(text) <= cap else text[:max(0, cap - 1)].rstrip() + "…"
+
+
+def pair_siblings(hits: list[dict], attach: bool = False) -> list[dict]:
+    """Fold same-slug live siblings among ranked hits into their newest note (K8 layer 2). The
+    lead keeps the group's best rank and gains `earlier: [stems]` (newest first); with `attach`
+    the compact earlier text is also appended to its `description` (the API result shape - the
+    hook renders `earlier` itself in `_fact_line`). Hits without a typed stem pass through."""
+    groups: dict = {}
+    for i, h in enumerate(hits):
+        key = _sibling_key(h.get("stem", ""))
+        if key:
+            groups.setdefault(key, []).append(i)
+    if not any(len(v) > 1 for v in groups.values()):
+        return hits
+    lead_of, drop = {}, set()
+    for idxs in groups.values():
+        if len(idxs) < 2:
+            continue
+        order = sorted(idxs, key=lambda i: ((parse_typed_stem(hits[i]["stem"]) or {}).get("date", ""),
+                                            hits[i]["stem"]), reverse=True)
+        lead, earlier = order[0], order[1:]
+        lead_of[min(idxs)] = (lead, [hits[i]["stem"] for i in earlier])
+        drop.update(idxs)
+    out = []
+    for i, h in enumerate(hits):
+        if i in lead_of:
+            lead, earlier = lead_of[i]
+            lh = dict(hits[lead])
+            lh["earlier"] = earlier
+            if attach:
+                texts = [t for t in (_earlier_text(e, lh.get("ntype", "")) for e in earlier) if t]
+                if texts:
+                    lh["description"] = (f"{lh.get('description', '') or ''} | earlier under this title: "
+                                         + " ; ".join(texts)).strip(" |")
+            out.append(lh)
+        elif i not in drop:
+            out.append(h)
+    return out
 
 
 def _append_facts(desc: str, facts: list[str]) -> str:
@@ -3736,6 +3918,7 @@ def write_typed_note(folder: str, item, project: str, date: str,
     # without the retry duplicating notes.
     absorb_into = None
     absorb_recur, absorb_sources = 0, set()
+    contested_olds: list = []           # K8: same-slug notes kept apart as siblings, stamped after the write
     for old in _live_typed_paths(p, project, ntype, slug):
         try:
             prev_fm, _ = _read_frontmatter(old.read_text(encoding="utf-8", errors="replace"))
@@ -3764,11 +3947,14 @@ def write_typed_note(folder: str, item, project: str, date: str,
             # the new text into cache/index (a split-brain no incremental path healed),
             # and session-less writers (api.remember retries, weekly distill re-runs)
             # bypassed absorb entirely, minting '-2' twins.
-            if not _absorb_is_same_fact(old, title, desc, project):
-                # K7: a different fact under the same title is a SIBLING, not a re-encounter - it
-                # gets its own note (`-2`) and the earlier statement keeps being served.
-                log(f"Same-stem sibling kept (K7): {old.stem} states a different fact")
+            _ok, _rule = _same_replacement(old, title, desc, supersedes_title, contradicts_title)
+            if not _ok:
+                # K8: not proven the same fact - a SIBLING (`-2`), the earlier statement keeps being
+                # served, and the pair is stamped contested for the sleep-time judge.
+                log(f"Same-stem sibling kept (K8, {_rule}): {old.stem}")
+                contested_olds.append(old)
                 continue
+            log(f"Same-stem absorb (K8, {_rule}): {old.stem}")
             r_old, s_old = _note_recur_sources(old)
             absorb_into = old
             absorb_recur, absorb_sources = r_old, set(s_old)
@@ -3797,6 +3983,16 @@ def write_typed_note(folder: str, item, project: str, date: str,
         if absorb_into is not None and old == absorb_into:
             continue                    # the absorb target is refreshed in place, never retired
         if old.stem != base_stem:
+            if old in contested_olds:
+                continue                # a same-day sibling already kept apart above
+            _ok, _rule = _same_replacement(old, title, desc, supersedes_title, contradicts_title)
+            if not _ok:
+                # K8, the `r` branch: the same slug on another day used to retire the earlier note by
+                # the title alone (7 of 17 still-true control notes on the two-day dating, ledger K8).
+                # Now the earlier note stays live beside the new one and the pair is contested.
+                log(f"Same-slug sibling kept (K8, {_rule}): {old.stem}")
+                contested_olds.append(old)
+                continue
             # A same-slug note is THIS lesson recurring: read its count + contributing sessions
             # BEFORE supersede drops it from the cache, then carry forward below - otherwise
             # recurrence is pinned at 1 forever and the recurrence-boost signal is dead (audit A3).
@@ -3813,7 +4009,7 @@ def write_typed_note(folder: str, item, project: str, date: str,
                 # LLM reproduced the exact title or a variant (review 2026-08 G3)
                 superseded_corroborated = True
             to_retire.append(old)
-            retire_via[old] = "slug"
+            retire_via[old] = "explicit" if _rule == "explicit" else "slug"
     _retire_slugs_seen: set = set()
     for other_title in (supersedes_title, contradicts_title):
         if not other_title:
@@ -3827,6 +4023,12 @@ def write_typed_note(folder: str, item, project: str, date: str,
         if o_slug and o_slug != slug and o_slug not in _retire_slugs_seen:
             _retire_slugs_seen.add(o_slug)
             for old in _reconcilable_typed_paths(p, project, ntype, o_slug):
+                if EXPLICIT_RETIRE == "judge":
+                    # K8 switch: the extractor's claim is a hint for the sleep-time judge, not a proof
+                    log(f"Explicit {('supersedes' if other_title == supersedes_title else 'contradicts')} "
+                        f"held for the judge (K8): {old.stem}")
+                    contested_olds.append(old)
+                    continue
                 # An explicit supersede/contradict (incl. the M-2 write-time semantic path) is ALSO a
                 # re-encounter of that lesson - carry its recurrence + sources forward, else
                 # recurrence only grows on the rare exact-slug re-statement (measured: 328/328 were 1).
@@ -3845,7 +4047,7 @@ def write_typed_note(folder: str, item, project: str, date: str,
     # a same-slug older note: its recurrence/sources carry into the new note, so the lesson
     # RECURS instead of fragmenting into twins.
     if WRITE_DEDUP_SIM > 0:
-        _nd_exclude = {base_stem} | {o.stem for o in to_retire}
+        _nd_exclude = {base_stem} | {o.stem for o in to_retire} | {o.stem for o in contested_olds}
         for old in _near_duplicate_paths(p, project, ntype, title, desc, prevention,
                                          _nd_exclude, entities=entities):
             r_old, s_old = _note_recur_sources(old)
@@ -4037,6 +4239,10 @@ def write_typed_note(folder: str, item, project: str, date: str,
     if failed_resolve:
         log(f"WARNING: mark_resolved failed for {', '.join(failed_resolve[:3])} - "
             f"mistake(s) stay active despite resolver {stem}")
+    # K8: the earlier notes this one was kept apart from carry the pair for the sleep-time judge
+    for old in contested_olds:
+        if old.stem != stem and _mark_contested(old, stem):
+            log(f"Contested: {old.stem} <- {stem}")
     _ndup_register(stem, project, ntype, title, desc, prevention, entities)
     log(f"Written: {folder}/{fp.name}")
     return stem
@@ -4528,7 +4734,8 @@ def _note_meta(p: Path, ntype: str, parsed: dict) -> dict | None:
             # the writing session, so a restatement can be told from a recurrence
             # (`_collapse_restatements`); "" on notes written before the field existed
             "session": str(fm.get("session") or ""),
-            "superseded_by": str(fm.get("superseded_by") or "")}    # "" for live notes (F3 timeline)
+            "superseded_by": str(fm.get("superseded_by") or ""),    # "" for live notes (F3 timeline)
+            "contested": _contested_of(fm)}                          # K8: sibling stems the judge must read
 
 
 def _coerce_salience(v) -> float:
@@ -6117,7 +6324,11 @@ def retrieve_relevant(project: str, query: str, k: int,
     if RETRIEVAL_DIVERGENCE > 0 and len(ranked) > 1:     # 2B: diverse/serendipitous recall
         window = ranked[:max(k * 4, k)]                  # MMR the head; tail keeps its order
         ranked = _load_rankers().mmr_rerank(window, scores, rec_of, RETRIEVAL_DIVERGENCE) + ranked[len(window):]
-    top = ranked[:k]
+    # K8 layer 2: same-slug siblings in the head of the ranking fold into their newest note, so the
+    # older statement rides along attached instead of taking a slot or being hidden
+    _paired = pair_siblings([_hit(s, rec_of[s]) for s in ranked[:max(k * 2, k)]])
+    _earlier_of = {h["stem"]: h["earlier"] for h in _paired if h.get("earlier")}
+    top = [h["stem"] for h in _paired][:k]
     # graph multi-hop expansion (M-6): pull in notes linked from the top hits so
     # a chain A→B→C is reachable; bounded and same-project (linked stems in cache).
     hops = GRAPH_HOPS if expand_hops is None else expand_hops
@@ -6130,6 +6341,9 @@ def retrieve_relevant(project: str, query: str, k: int,
                     extra.append(ln)
         top = (top + extra)[:k + k]      # cap total at 2k
     hits = [_hit(s, rec_of[s]) for s in top]
+    for _h in hits:
+        if _h.get("stem") in _earlier_of:
+            _h["earlier"] = _earlier_of[_h["stem"]]
     # Carry the fused score so a caller can decide whether a hit is WORTH its tokens.
     # The raw value is not comparable across fusion modes - RRF lives around 1/60 while
     # calibrated fusion is a logistic (0,1) - so callers must normalise against the batch
@@ -6369,7 +6583,12 @@ def _fact_line(r: dict, stale: bool = False) -> str:
     marker = _age_marker(r.get("stem", ""), r.get("recurrence"))
     flag = " ⚠️_(possibly stale: file not found)_" if stale else ""
     via = f" _(related: {r['via']})_" if r.get("via") else ""   # graph-expanded lesson (Phase 2b)
-    return f"- **{title}**" + (f" - {snip}" if snip else "") + marker + via + flag
+    earlier = ""
+    if r.get("earlier"):                                        # K8 layer 2: the older same-slug sibling
+        texts = [t for t in (_earlier_text(e, r.get("ntype", "")) for e in r["earlier"]) if t]
+        if texts:
+            earlier = " _(earlier under this title: " + " ; ".join(texts) + ")_"
+    return f"- **{title}**" + (f" - {snip}" if snip else "") + earlier + marker + via + flag
 
 
 def _user_brief(max_chars: int = 320) -> str:
