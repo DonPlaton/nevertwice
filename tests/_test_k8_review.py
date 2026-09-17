@@ -788,6 +788,24 @@ check("with the pre-fix rule restored by hand, two empty writes wrongly mint a c
       e6 == f"{e5}-2" and contested(e5) == [e6])
 m._same_replacement = _real_same_repl
 
+# ═══════════════════════════════════════════════════════════════════════════════════════════
+# Also-fix: make_sandbox pins the three env-frozen K8 defaults, not just assumes them
+# ═══════════════════════════════════════════════════════════════════════════════════════════
+
+print("\n- also-fix: make_sandbox pins EARLIER_MAX_CHARS/EXPLICIT_RETIRE/CONTESTED_* every time -")
+m.EARLIER_MAX_CHARS = 12345          # simulate a shell that exports the matching env var
+m.EXPLICIT_RETIRE = "judge"
+cm.CONTESTED_BUDGET = 1
+cm.CONTESTED_CAP = 99
+cm.CONTESTED_SECONDS = 1
+fresh()
+check("EARLIER_MAX_CHARS is reset to its documented default (100) by the sandbox, not the "
+      "process's own leftover value", m.EARLIER_MAX_CHARS == 100, m.EARLIER_MAX_CHARS)
+check("EXPLICIT_RETIRE is reset to 'write'", m.EXPLICIT_RETIRE == "write", m.EXPLICIT_RETIRE)
+check("CONTESTED_BUDGET/_CAP/_SECONDS are reset to their documented defaults",
+      (cm.CONTESTED_BUDGET, cm.CONTESTED_CAP, cm.CONTESTED_SECONDS) == (100_000, 0, 900),
+      (cm.CONTESTED_BUDGET, cm.CONTESTED_CAP, cm.CONTESTED_SECONDS))
+
 print(f"\nxhigh review (write path + consolidation integrity + identity/stamps + surfaces + F14 + "
-      f"empty-restatement): {len(RUN) - len(FAILED)} passed, {len(FAILED)} failed")
+      f"empty-restatement + sandbox-pins): {len(RUN) - len(FAILED)} passed, {len(FAILED)} failed")
 sys.exit(1 if FAILED else 0)

@@ -12,11 +12,27 @@ from pathlib import Path
 def make_sandbox(m, prefix: str = "nwtest_", offline: bool = False) -> Path:
     """Fresh temp vault for module `m` (memory_hook). `offline=True` additionally
     stubs git + the embedder so no section can reach the live embedder or repo -
-    the D14 hermeticity class (cloud leak / Ollama connect-timeout per write)."""
+    the D14 hermeticity class (cloud leak / Ollama connect-timeout per write).
+
+    Also-fix (xhigh review): three K8 module constants are read from the environment ONCE at
+    import time (`m.EARLIER_MAX_CHARS`, `m.EXPLICIT_RETIRE`, and consolidate_memory's
+    `CONTESTED_BUDGET`/`CONTESTED_CAP`/`CONTESTED_SECONDS`) - a suite asserting "the default
+    is X" was actually asserting "whatever this PROCESS happened to import with", true only as
+    long as nobody's shell exports the matching NEVERTWICE_* var. Pinned here, every time, so
+    the suites that assert these defaults test the code's default, not the machine's env."""
     d = Path(tempfile.mkdtemp(prefix=prefix))
     m._rebase_vault(d)
     m.collect_existing_titles.cache_clear()
     m.collect_existing_tags.cache_clear()
+    m.EARLIER_MAX_CHARS = 100
+    m.EXPLICIT_RETIRE = "write"
+    try:
+        import consolidate_memory as _cm                      # noqa: PLC0415
+        _cm.CONTESTED_BUDGET = 100_000
+        _cm.CONTESTED_CAP = 0
+        _cm.CONTESTED_SECONDS = 900
+    except ImportError:
+        pass
     if offline:
         m.git_autocommit = lambda *a, **k: None
         m.embed_text = lambda *a, **k: None
