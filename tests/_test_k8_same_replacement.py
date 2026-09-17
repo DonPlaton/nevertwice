@@ -213,8 +213,11 @@ m._same_replacement = _real
 d = fresh()
 _facts = m._facts_in
 m._facts_in = lambda desc: set()                                # rule 4 blind: no side has literals
-old = write(OLD_FACT, S1)
-new = write("Touched three files. " + OLD_FACT.split(F)[0], S2)
+# a value-free pair (F3/F4, xhigh review): OLD_FACT's "30 seconds" would also trip the write-time
+# unverified-value check once _facts_in is blinded (it shares the same dependency), confounding
+# THIS mutation - isolate rule 4's own protection with a fact that carries no value-shaped literal.
+old = write(f"Use redis for the cache.{F}use redis for the cache", S1, title="cache rule4 blind")
+new = write("Touched three files. Use redis for the cache.", S2, title="cache rule4 blind")
 check("rule 4 broken by hand is caught: the lesson would absorb the fact note by rule 2'", new == old)
 m._facts_in = _facts
 

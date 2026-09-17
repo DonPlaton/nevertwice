@@ -3638,10 +3638,28 @@ def _same_replacement(old_path: Path, title: str, desc: str,
     """K8 layer 1: may the item about to be written under `title` REPLACE the same-slug note at
     `old_path` - absorb it in place on the same day, retire it on another? `(True, rule)` with rule
     `explicit` (the item's supersedes/contradicts names this title), `literals` (both sides carry
-    literals and the new block carries every old one) or `restated` (the old statement's text stands
-    inside the new one); `(False, reason)` otherwise - `no_literals_in_new` (a lesson without literals
-    never absorbs a note with them), `unproven`, `unreadable`. A False verdict costs nothing: the pair
-    becomes two live siblings and a contested stamp."""
+    literals, the new block carries every old one AND at least one of them names a value, and the
+    new prose names no OTHER, unverified value) or `restated` (the old statement's text stands inside
+    the new one, with the facts blocks agreeing where both have one, and the same check); `(False,
+    reason)` otherwise - `no_literals_in_new` (a lesson without literals never absorbs a note with
+    them), `unverified_value` (the extraction's own prose names a value its `[facts]` block does not
+    back), `unproven`, `unreadable`. A False verdict costs nothing: the pair becomes two live siblings
+    and a contested stamp.
+
+    xhigh review F3: rule 2 used to accept ANY shared literal, including a bare CONTEXT (a filename,
+    a path) that proves the two notes touch the same thing but not that they state the same fact - a
+    different fact about `docker-compose.yml` "proved" replacement by sharing nothing but where it
+    lives. Rule 2 now also requires the old side to carry a VALUE-shaped literal (`_has_value_literal`).
+    Rule 2' used to run on disagreeing facts blocks too - the old statement's boilerplate prose can be
+    a substring of the new prose even when the values in their `[facts]` blocks contradict each other
+    - so it now requires the old block to be absent or a subset of the new one. Both rules also run
+    `_unverified_values` on the new extraction before returning True - the same hallucination check
+    the sleep-time judge already had (`_replacement_guard`), moved here so a changed or hallucinated
+    value can no longer replace the true note at write time either. Only that one check of the guard
+    applies here (not `no_value_in_new`): rule 2/2' already proved the OLD value literal is present
+    VERBATIM in the new block, a stronger guarantee than the judge's own verdict ever has, so the
+    guard's weaker "does the new PROSE also restate it" check would reject a legitimate refinement
+    whose new prose adds a detail without repeating the unchanged value."""
     try:
         _, d_old, _ = _parse_note_body(old_path.read_text(encoding="utf-8", errors="replace").split("\n"))
     except Exception:                                    # noqa: BLE001 - keep what cannot be read
@@ -3653,10 +3671,14 @@ def _same_replacement(old_path: Path, title: str, desc: str,
     old_f, new_f = _facts_in(d_old or ""), _facts_in(desc or "")
     if old_f and not new_f:
         return False, "no_literals_in_new"               # rule 4: a lesson never absorbs a note with facts
-    if old_f and new_f and old_f <= new_f:
+    if old_f and new_f and old_f <= new_f and _has_value_literal(old_f):
+        if _unverified_values(desc):
+            return False, "unverified_value"
         return True, "literals"                          # rule 2: the same fact restated or refined
     o, n = _norm_statement(d_old or ""), _norm_statement(desc or "")
-    if o and n and o in n:
+    if o and n and o in n and (not old_f or old_f <= new_f):
+        if _unverified_values(desc):
+            return False, "unverified_value"
         return True, "restated"                          # rule 2': the same words, said again
     return False, "unproven"
 
@@ -3691,9 +3713,14 @@ def _unverified_values(desc: str) -> list[str]:
     values the extractor wrote that the session was never seen to say (the block holds only literals
     verified verbatim against the session). A replacement may not rest on one (K8, the sleep-time
     guard): on the first fast cycle the judge retired "the upload size limit is 25 MB" for a note
-    saying "100 MB" when the session had said "100 per minute"."""
+    saying "100 MB" when the session had said "100 per minute".
+
+    Whole-token membership (F4, xhigh review): `facts` is the SET of value-shaped tokens the block
+    itself carries, not the block's raw text - a plain substring scan ('tok not in facts' over the
+    joined text) let "5 mb" pass against a block that only ever said "25 mb", "v2" against "v2.0",
+    "80" against "8080"."""
     statement = _norm_statement(desc)
-    facts = " ".join(_facts_in(desc))
+    facts = {_norm_ws(mo.group(0).strip("~+- ")) for mo in _VALUE_RE.finditer(" ".join(_facts_in(desc)))}
     out = []
     for mo in _VALUE_RE.finditer(statement):
         tok = _norm_ws(mo.group(0).strip("~+- "))
@@ -3702,6 +3729,47 @@ def _unverified_values(desc: str) -> list[str]:
         elif tok and tok.isdigit() and len(tok) >= 2 and tok not in facts and tok not in out:
             out.append(tok)
     return out
+
+
+#: A bare hex identifier (a commit sha, a build id) - the "identifier" shape rule 2 (F3) also
+#: accepts as proof, alongside a value-shaped literal from `_VALUE_RE`.
+_IDENTIFIER_RE = re.compile(r"\b[0-9a-f]{7,40}\b", re.I)
+
+
+def _has_value_literal(facts: set) -> bool:
+    """True when at least one literal in a `[facts]` block NAMES A VALUE (a number, a unit, a
+    version or a hex identifier) rather than merely a shared CONTEXT (a filename, a path, a bare
+    word). Rule 2 (K8, xhigh review F3) may only prove replacement on a value match - a different
+    fact that happens to touch the same file ("docker-compose.yml") shares nothing but where it
+    lives, and `old_f <= new_f` alone cannot tell the two apart."""
+    return any(_VALUE_RE.search(f) or _IDENTIFIER_RE.search(f) for f in facts)
+
+
+def _replacement_guard(old_desc: str, new_desc: str) -> str:
+    """Why a `replaces` verdict may NOT be acted on (K8; "" when it may): `no_literals_in_new` - a
+    note with verified literals is never retired for one without (rule 4, the write-time rule kept
+    here too: the judge ruled a boilerplate restatement a replacement on the first fast cycle);
+    `unverified_value` - the new statement's value is not in its `[facts]` block, so the session was
+    never seen to say it (a hallucinated "100 MB" retired a true "25 MB"); `no_value_in_new` - the
+    earlier note's verified literals carry a value and the new statement carries none at all ("the
+    upload size limit check is working correctly" over "25 MB").
+
+    Shared by both callers (xhigh review F3): the sleep-time judge (consolidate_memory.py) and, since
+    this pair moved here, rules 2/2' of `_same_replacement` themselves - a changed or hallucinated
+    value used to replace the true note at write time, because this guard ran only at sleep. A vetoed
+    pair stays two live notes; at sleep it also leaves the judge's queue and is stamped `disputed` so
+    a human can still see it."""
+    old_f, new_f = _facts_in(old_desc), _facts_in(new_desc)
+    if old_f and not new_f:
+        return "no_literals_in_new"
+    if old_f and _unverified_values(new_desc):
+        return "unverified_value"
+    if _VALUE_RE.search(" ".join(old_f)) and not _VALUE_RE.search(_norm_statement(new_desc)):
+        # a valued fact is not replaced by a STATEMENT that names no value - the block beside it may
+        # carry a different fact's literal ("the request rate limit is 100 per minute" under a
+        # boilerplate "the upload size limit check is working correctly", the third fast cycle)
+        return "no_value_in_new"
+    return ""
 
 
 def _contested_of(fm: dict) -> list[str]:
@@ -3969,6 +4037,16 @@ def write_typed_note(folder: str, item, project: str, date: str,
                 log(f"Idempotent skip (already quarantined this session): {old.stem}")
                 return ""
 
+    # F9 (xhigh review): the note actually being written may be a `-2` sibling, not `base_stem` -
+    # a same-session refresh (crash retry / grown transcript) absorbs into whichever live note this
+    # session already owns, which can be a sibling minted because ANOTHER session took the base slug
+    # first. Every "is this old note really MYSELF" check below must compare against that real
+    # identity, not the freshly-slugified base: comparing against base_stem let the near-duplicate
+    # gate return the absorb target itself (retired against its own stem, a spurious "supersede
+    # failed") and silently dropped a legitimate explicit `supersedes: T` whose target happened to
+    # BE base_stem (filtered out as if it were self-reference).
+    write_stem = absorb_into.stem if absorb_into is not None else base_stem
+
     # Reconcile (audit H1 + M-2): retire prior versions / contradicted notes so current truth stays
     # single. (a) older same-slug note = a re-statement; (b) explicit `supersedes`/`contradicts`.
     # Retirement is DEFERRED into `to_retire` and executed only AFTER the W7 quarantine decision, so
@@ -4047,7 +4125,11 @@ def write_typed_note(folder: str, item, project: str, date: str,
     # a same-slug older note: its recurrence/sources carry into the new note, so the lesson
     # RECURS instead of fragmenting into twins.
     if WRITE_DEDUP_SIM > 0:
-        _nd_exclude = {base_stem} | {o.stem for o in to_retire} | {o.stem for o in contested_olds}
+        # F9: exclude the absorb target's REAL stem too (write_stem), not just base_stem - else a
+        # same-session refresh into a `-2` sibling found itself as its own "near duplicate" and was
+        # written as superseding its own stem.
+        _nd_exclude = ({base_stem, write_stem} | {o.stem for o in to_retire}
+                       | {o.stem for o in contested_olds})
         for old in _near_duplicate_paths(p, project, ntype, title, desc, prevention,
                                          _nd_exclude, entities=entities):
             r_old, s_old = _note_recur_sources(old)
@@ -4080,7 +4162,8 @@ def write_typed_note(folder: str, item, project: str, date: str,
         # hook-timeout kill between retire and write used to leave the lesson retired
         # with a dangling superseded_by and nothing live, resetting its recurrence
         # provenance forever (review 2026-08 B5).
-        retired = [old.stem for old in to_retire if old.stem != base_stem]
+        # F9: compare against write_stem (this note's REAL identity), not base_stem - see above.
+        retired = [old.stem for old in to_retire if old.stem != write_stem]
 
     if absorb_into is not None and not quarantine_reason:
         fp = absorb_into                # rewrite in place: same stem, no '-2' twin
@@ -4111,6 +4194,11 @@ def write_typed_note(folder: str, item, project: str, date: str,
     # still carried `resolves:` pointing at it, so a dead bug was re-injected at
     # SessionStart against a fix that was committed and tested (vault review 2026-09).
     # These are carried unless the new extraction supplies its own value.
+    # F1 (xhigh review): CONTESTED_KEY/DISPUTED_KEY belong on this list too - an absorb rewrite
+    # (a same-session refresh) dropped the earlier note's `contested`/`disputed` stamp exactly the
+    # same way, and the reconcile loop below then re-discovered the kept-apart sibling and stamped
+    # IT contested against the refreshed note - the sleep-time judge read OLD/NEW inverted and
+    # retired the still-true sibling.
     _carried: dict = {}
     if absorb_into is not None:
         try:
@@ -4118,7 +4206,7 @@ def write_typed_note(folder: str, item, project: str, date: str,
         except Exception:                       # a corrupt prior must not lose the new note
             _old_fm = {}
         for _k in ("status", "resolved_by", "resolves", "relations", "salience",
-                   "supersedes", "valid_to", "confidence"):
+                   "supersedes", "valid_to", "confidence", CONTESTED_KEY, DISPUTED_KEY):
             if _old_fm.get(_k) not in (None, "", [], {}):
                 _carried[_k] = _old_fm[_k]
 
@@ -4228,7 +4316,7 @@ def write_typed_note(folder: str, item, project: str, date: str,
     # A failure here leaves the old note live BESIDE the new one (recoverable by the
     # weekly consolidator), never a retired lesson with no live successor.
     failed_retire = [old.stem for old in to_retire
-                     if old.stem != base_stem
+                     if old.stem != write_stem                    # F9: this note's real identity
                      and not supersede_note(old, stem, via=retire_via.get(old, "slug"))]
     if failed_retire:
         log(f"WARNING: supersede failed after write for {', '.join(failed_retire[:3])}"
@@ -4239,9 +4327,16 @@ def write_typed_note(folder: str, item, project: str, date: str,
     if failed_resolve:
         log(f"WARNING: mark_resolved failed for {', '.join(failed_resolve[:3])} - "
             f"mistake(s) stay active despite resolver {stem}")
-    # K8: the earlier notes this one was kept apart from carry the pair for the sleep-time judge
+    # K8: the earlier notes this one was kept apart from carry the pair for the sleep-time judge.
+    # F1 (xhigh review): never invert the stamp. When THIS note's own (carried-forward) `contested`
+    # already names `old`, the pair is already recorded in the correct direction - earlier note
+    # contested against later - and stamping `old` contested against `stem` here would ALSO record
+    # it backwards: a same-session refresh absorbing the earlier note of a kept-apart pair back into
+    # itself used to reach this loop with the later sibling in `contested_olds`, and would otherwise
+    # stamp the later sibling `contested: [stem]` - the judge then reads OLD/NEW swapped.
+    _already_contests = set(_contested_of(fm)) if fm.get(CONTESTED_KEY) else set()
     for old in contested_olds:
-        if old.stem != stem and _mark_contested(old, stem):
+        if old.stem != stem and old.stem not in _already_contests and _mark_contested(old, stem):
             log(f"Contested: {old.stem} <- {stem}")
     _ndup_register(stem, project, ntype, title, desc, prevention, entities)
     log(f"Written: {folder}/{fp.name}")

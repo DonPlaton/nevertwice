@@ -74,26 +74,12 @@ def _set_contested(p: Path, stems: list[str], disputed: str | None = None) -> No
 
 
 def _replacement_guard(old_desc: str, new_desc: str) -> str:
-    """Why a `replaces` verdict may NOT be acted on (K8, the sleep-time guards; "" when it may):
-    `no_literals_in_new` - a note with verified literals is never retired for one without (rule 4,
-    the write-time rule kept at sleep: the judge ruled a boilerplate restatement a replacement on
-    the first fast cycle); `unverified_value` - the new statement's value is not in its `[facts]`
-    block, so the session was never seen to say it (a hallucinated "100 MB" retired a true "25 MB");
-    `no_value_in_new` - the earlier note's verified literals carry a value and the new statement
-    carries none at all ("the upload size limit check is working correctly" over "25 MB").
-    A vetoed pair stays two live notes, leaves the judge's queue and is stamped `disputed`: the
-    judge has spoken, the proof is missing, both are served, a human can still see it."""
-    old_f, new_f = m._facts_in(old_desc), m._facts_in(new_desc)
-    if old_f and not new_f:
-        return "no_literals_in_new"
-    if old_f and m._unverified_values(new_desc):
-        return "unverified_value"
-    if m._VALUE_RE.search(" ".join(old_f)) and not m._VALUE_RE.search(m._norm_statement(new_desc)):
-        # a valued fact is not replaced by a STATEMENT that names no value - the block beside it may
-        # carry a different fact's literal ("the request rate limit is 100 per minute" under a
-        # boilerplate "the upload size limit check is working correctly", the third fast cycle)
-        return "no_value_in_new"
-    return ""
+    """Delegates to `memory_hook._replacement_guard` (xhigh review F3): the guard moved there so
+    the write-time rules 2/2' of `_same_replacement` apply the identical check, not just the
+    sleep-time judge here - a changed or hallucinated value used to replace the true note at write
+    time because this guard used to live only in this module. Kept as a local name (like `_int1`)
+    so this module's own call site and tests need no change."""
+    return m._replacement_guard(old_desc, new_desc)
 
 
 def adjudicate_contested(apply: bool, has_llm: bool, cap: int | None = None,
