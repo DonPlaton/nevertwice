@@ -3733,6 +3733,14 @@ def _same_replacement(old_path: Path, title: str, desc: str,
             return False, "unverified_value"
         return True, "literals"                          # rule 2: the same fact restated or refined
     o, n = _norm_statement(d_old or ""), _norm_statement(desc or "")
+    if not o and not old_f:
+        # also-fix (xhigh review): an EMPTY old statement with no facts (api.remember / MCP
+        # memory_remember / remember_lessons writing a bare title with no description) carries
+        # nothing to preserve - empty-vs-empty or empty-vs-anything used to fall through to
+        # "unproven" (rules 2/2' both need SOME old content to compare against), minting a
+        # contested '-2' twin and a sleep-time judge call for a pair with nothing to adjudicate.
+        # Pre-K8 a second same-title write absorbed unconditionally with recurrence carried.
+        return True, "restated"
     if o and n and o in n and (not old_f or old_f <= new_f):
         if _unverified_values(desc):
             return False, "unverified_value"

@@ -732,6 +732,62 @@ check("a value in plain seconds is harvested as a literal",
 check("_LIT_PATTERNS itself matches a bare time-unit value",
       any(rx.search("retries wait 45 minutes between attempts") for rx in m._LIT_PATTERNS))
 
-print(f"\nxhigh review (write path + consolidation integrity + identity/stamps + surfaces + F14): "
-      f"{len(RUN) - len(FAILED)} passed, {len(FAILED)} failed")
+
+# ═══════════════════════════════════════════════════════════════════════════════════════════
+# Also-fix: empty-description twins are a restatement, not a contested pair
+# ═══════════════════════════════════════════════════════════════════════════════════════════
+
+print("\n- also-fix: two same-title notes with EMPTY descriptions absorb, not a contested twin -")
+d = fresh()
+e1 = write("", S1, title="bare title note")
+e2 = write("", S2, title="bare title note")
+check("the second empty write absorbs into the first (same stem), recurrence carried",
+      e2 == e1 and m._read_frontmatter_file(note(e1)).get("recurrence") in (2, "2"),
+      m._read_frontmatter_file(note(e1)))
+check("no contested stamp, no sibling minted for two empty descriptions",
+      contested(e1) is None and not note(f"{e1}-2").exists())
+
+print("\n- also-fix: an empty old description absorbs a non-empty new one too (nothing to protect) -")
+d = fresh()
+e3 = write("", S1, title="bare title note 2")
+e4 = write("Now there is real content here.", S2, title="bare title note 2")
+check("empty-vs-anything absorbs in place, not a contested twin",
+      e4 == e3 and served(e3) == "Now there is real content here.")
+check("_same_replacement reports it restated", m._same_replacement(note(e3), "bare title note 2",
+      "Now there is real content here.") == (True, "restated"))
+
+print("\n- mutation check: without the empty-old carve-out, the empty pair is wrongly kept apart -")
+_real_same_repl = m._same_replacement
+
+
+def _pre_fix_same_replacement(old_path, title, desc, supersedes_title="", contradicts_title=""):
+    try:
+        _, d_old, _ = m._parse_note_body(old_path.read_text(encoding="utf-8", errors="replace").split("\n"))
+    except Exception:
+        return False, "unreadable"
+    slug = m.slugify(title)
+    for other in (supersedes_title, contradicts_title):
+        if other and m.slugify(other) == slug:
+            return True, "explicit"
+    old_f, new_f = m._facts_in(d_old or ""), m._facts_in(desc or "")
+    if old_f and not new_f:
+        return False, "no_literals_in_new"
+    if old_f and new_f and old_f <= new_f and m._has_value_literal(old_f):
+        return (False, "unverified_value") if m._unverified_values(desc) else (True, "literals")
+    o, n = m._norm_statement(d_old or ""), m._norm_statement(desc or "")
+    if o and n and o in n and (not old_f or old_f <= new_f):
+        return (False, "unverified_value") if m._unverified_values(desc) else (True, "restated")
+    return False, "unproven"
+
+
+m._same_replacement = _pre_fix_same_replacement
+d = fresh()
+e5 = write("", S1, title="bare title note mut")
+e6 = write("", S2, title="bare title note mut")
+check("with the pre-fix rule restored by hand, two empty writes wrongly mint a contested twin (the bug)",
+      e6 == f"{e5}-2" and contested(e5) == [e6])
+m._same_replacement = _real_same_repl
+
+print(f"\nxhigh review (write path + consolidation integrity + identity/stamps + surfaces + F14 + "
+      f"empty-restatement): {len(RUN) - len(FAILED)} passed, {len(FAILED)} failed")
 sys.exit(1 if FAILED else 0)

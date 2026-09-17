@@ -118,18 +118,18 @@ def build_claims(family: str, art: dict, *, dataset: str, command: str, raw: str
         return [r for r in res.get("rows", []) if r.get("shape") == "control"]
 
     st, cu, ov = P["stale"], P["current"], P["over_retraction"]
-    add(f"{family}.nevertwice.stale_rate",
+    add(f"{family}.{engine_prefix}.stale_rate",
         f"Nevertwice returns a retracted fact as a current assertion on {_pct(st['rate'])} of "
         f"supersession case-runs on {stand}, pooled over {runs} runs of the same commit",
         st["rate"], [f"{st['rate']:.3f}"], "rate", st["n"], st["ci"], f"{pooled_key}.stale.rate", note_pooled)
-    add(f"{family}.nevertwice.current_rate",
+    add(f"{family}.{engine_prefix}.current_rate",
         f"Nevertwice returns the replacement fact on {_pct(cu['rate'])} of supersession case-runs on {stand}",
         cu["rate"], [f"{cu['rate']:.3f}"], "rate", cu["n"], cu["ci"], f"{pooled_key}.current.rate", note_pooled)
     osv = P.get("old_value_served")
     if osv is not None:
         # K8: the raw reading beside the rule - the retracted value anywhere in what came back, attached
         # to a newer statement or not; the stale rate above does not count an item naming both values
-        add(f"{family}.nevertwice.old_value_served_rate",
+        add(f"{family}.{engine_prefix}.old_value_served_rate",
             f"the retracted value appears somewhere in what Nevertwice returns on {_pct(osv['rate'])} of "
             f"supersession case-runs on {stand} (attached to a newer statement or served on its own)",
             osv["rate"], [f"{osv['rate']:.3f}"], "rate", osv["n"], osv["ci"], f"{pooled_key}.old_value_served.rate",
@@ -140,7 +140,7 @@ def build_claims(family: str, art: dict, *, dataset: str, command: str, raw: str
     # one - the memory retired a still-true fact, read from the store - and `control_miss_rate`
     # the BROAD one - the still-true fact did not come back, whatever the cause. The published
     # comparison table used the narrow figure for us and the broad one for every other arm.
-    add(f"{family}.nevertwice.over_retraction_rate",
+    add(f"{family}.{engine_prefix}.over_retraction_rate",
         f"Nevertwice retires a still-true fact (the memory closed its interval) on {ov['k']} of {ov['n']} "
         f"control case-runs on {stand}",
         ov["rate"], [f"{ov['rate']:.2f}", f"{ov['rate']:.3f}"], "rate", ov["n"], ov["ci"],
@@ -148,12 +148,12 @@ def build_claims(family: str, art: dict, *, dataset: str, command: str, raw: str
         note="Over-retraction proper: only a control case whose still-true fact the store shows as retired "
              "counts. A fact that was never written, or was written and ranked below k, is a control miss "
              "(`control_miss_rate`) and is split by cause in `control_miss.*`.")
-    add(f"{family}.nevertwice.control_case_runs",
+    add(f"{family}.{engine_prefix}.control_case_runs",
         f"Nevertwice's control measures on {stand} rest on {ov['n']} control case-runs ({runs} runs of the corpus's controls)",
         int(ov["n"]), [str(ov["n"])], "control case-runs", int(ov["n"]), None, f"{pooled_key}.over_retraction.n")
     cm = P.get("control_miss")
     if cm is not None:
-        add(f"{family}.nevertwice.control_miss_rate",
+        add(f"{family}.{engine_prefix}.control_miss_rate",
             f"on {stand} a still-true fact did not come back for Nevertwice on {cm['k']} of {cm['n']} control "
             f"case-runs, whatever the cause",
             cm["rate"], [f"{cm['rate']:.3f}", f"{cm['rate']:.2f}"], "rate", cm["n"], cm["ci"],
@@ -162,7 +162,7 @@ def build_claims(family: str, art: dict, *, dataset: str, command: str, raw: str
         ctl = [r for res in engine_runs() for r in controls(res)]
         if ctl:
             k, n = sum(1 for r in ctl if not r.get("current_returned")), len(ctl)
-            add(f"{family}.nevertwice.control_miss_rate",
+            add(f"{family}.{engine_prefix}.control_miss_rate",
                 f"on {stand} a still-true fact did not come back for Nevertwice on {k} of {n} control "
                 f"case-runs, whatever the cause",
                 round(k / n, 4), [f"{k / n:.3f}", f"{k / n:.2f}"], "rate", n, wilson(k, n), None,
@@ -178,19 +178,19 @@ def build_claims(family: str, art: dict, *, dataset: str, command: str, raw: str
     for key, field, why in causes:
         if pooled_causes is not None and key in pooled_causes:
             v, n = int(pooled_causes[key]), int(P["control_miss"]["n"])
-            add(f"{family}.nevertwice.control_miss.{key}",
+            add(f"{family}.{engine_prefix}.control_miss.{key}",
                 f"of Nevertwice's control case-runs on {stand}, {v} of {n} lost the still-true fact because {why}",
                 v, [str(v)], "control case-runs", n, None, f"{pooled_key}.control_causes.{key}")
         else:
             rs = [res for res in engine_runs() if field in res]
             if rs:
                 v, n = sum(int(res[field]) for res in rs), sum(int(res.get("n_control", 0)) for res in rs)
-                add(f"{family}.nevertwice.control_miss.{key}",
+                add(f"{family}.{engine_prefix}.control_miss.{key}",
                     f"of Nevertwice's control case-runs on {stand}, {v} of {n} lost the still-true fact because {why}",
                     v, [str(v)], "control case-runs", n, None, None,
                     derivation=f"sum of arms.nevertwice*.{field} over the engine runs; the pooled artifact "
                                f"predates the `pooled_nevertwice.control_causes` field")
-    add(f"{family}.nevertwice.chars_per_query",
+    add(f"{family}.{engine_prefix}.chars_per_query",
         f"Nevertwice returns {P['mean_chars_returned']:.0f} characters per query on {stand}",
         P["mean_chars_returned"], [f"{P['mean_chars_returned']:.0f}"], "characters", (n_sup + n_ctl) * runs,
         None, f"{pooled_key}.mean_chars_returned")
@@ -364,6 +364,16 @@ def main(argv: list[str] | None = None) -> int:
         print(f"working tree modifies {dirty[0]} - commit first")
         return 2
     art = json.loads(raw.read_text(encoding="utf-8"))
+    if args.pooled_key not in art:
+        # also-fix (xhigh review): a bare `art[pooled_key]` inside build_claims raised an
+        # uncaught KeyError (a traceback, not a clean exit) when the artifact has no
+        # after-sleep block - e.g. the run that produced it skipped consolidation, or the
+        # key was mistyped. Caught here, before build_claims, with the same controlled
+        # return-2 shape every other validation failure in this tool uses.
+        print(f"no {args.pooled_key!r} block in the artifact {args.artifact} - was the "
+              f"after-sleep step run? (available pooled blocks: "
+              f"{sorted(k for k in art if k.startswith('pooled'))})")
+        return 2
     existing = {c["id"] for c in manifest["claims"]}
     new, skipped = build_claims(args.family, art, dataset=args.dataset, command=args.command,
                                 raw=args.artifact, head=head, produced_by=closure, existing=existing,
@@ -391,9 +401,17 @@ def main(argv: list[str] | None = None) -> int:
         print(f"  already registered ({len(skipped)})")
     for c in new:
         print(f"  + {c['id']} = {c['value']}")
-    if args.dry_run or not new:
-        print(f"{'would register' if args.dry_run else 'registered'} {len(new)} claim(s)")
+    if args.dry_run:
+        print(f"would register {len(new)} claim(s)")
         return 0
+    if not new:
+        # also-fix (xhigh review): 0 claims on a REAL run used to exit 0 - indistinguishable
+        # from a legitimate no-op, so a second reading silently registering nothing (the
+        # claim-id collision above, now fixed) went unnoticed by the campaign's own script.
+        print(f"registered 0 claim(s) for {args.family} at {head[:7]} - nothing new "
+              f"(already registered, or --pooled-key/--engine-prefix matched nothing in "
+              f"the artifact)")
+        return 1
     manifest["claims"].extend(new)
     Path(args.manifest).write_text(json.dumps(manifest, indent=1, ensure_ascii=False) + "\n",
                                    encoding="utf-8")

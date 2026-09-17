@@ -100,6 +100,30 @@ new2, skipped2 = rs.build_claims("supersession_implicit", ART, dataset="d", comm
                                  produced_by=[], existing=set(by))
 check("a second pass adds nothing and names every claim it left", new2 == [] and len(skipped2) == 32)
 
+print("\n- K8: a second (after-sleep) reading under the same family gets its OWN claim ids -")
+ART_AS = dict(ART, arms=dict(ART["arms"], nevertwice_after_sleep={
+    "stale_rate": 0.05, "current_rate": 0.95, "rows": []}))
+ART_AS["pooled_nevertwice_after_sleep"] = {
+    "runs": 1, "stale": {"k": 3, "n": 60, "rate": 0.05, "ci": [0.01, 0.14], "per_run": [0.05]},
+    "current": {"k": 57, "n": 60, "rate": 0.95, "ci": [0.86, 0.98], "per_run": [0.95]},
+    "over_retraction": {"k": 1, "n": 20, "rate": 0.05, "ci": [0.01, 0.24]},
+    "mean_chars_returned": 240.0}
+new3, skipped3 = rs.build_claims("supersession_implicit", ART_AS, dataset="supersession_v1_implicit",
+                                 command="c", raw="r", head="h", produced_by=[], existing=set(by),
+                                 pooled_key="pooled_nevertwice_after_sleep",
+                                 engine_prefix="nevertwice_after_sleep")
+check("the after-sleep reading registers its OWN claims, not zero (the id-collision bug this fixes)",
+      len(new3) > 0, str(len(new3)))
+by3 = {c["id"] for c in new3}
+check("its ids are distinct from the first reading's, under the SAME family",
+      all(cid.startswith("supersession_implicit.nevertwice_after_sleep.") for cid in by3)
+      and "supersession_implicit.nevertwice.stale_rate" not in by3, str(by3))
+check("a THIRD build with the SAME engine_prefix as an already-registered reading correctly collides "
+      "(idempotent skip, not a bug) - uniqueness comes from engine_prefix, not from re-running",
+      rs.build_claims("supersession_implicit", ART_AS, dataset="supersession_v1_implicit", command="c",
+                      raw="r", head="h", produced_by=[], existing=set(by) | by3,
+                      pooled_key="pooled_nevertwice_after_sleep", engine_prefix="nevertwice_after_sleep")[0] == [])
+
 print("\n- refusals -")
 with tempfile.TemporaryDirectory() as tmp:
     man = Path(tmp) / "m.json"
@@ -110,6 +134,37 @@ with tempfile.TemporaryDirectory() as tmp:
     rc = rs.main(["--family", "f", "--artifact", "research/results/nope.json", "--dataset", "d",
                   "--command", "python research/supersession_bench.py", "--manifest", str(man), "--dry-run"])
     check("a missing artifact is refused", rc == 2)
+
+print("\n- also-fix: a missing after-sleep block is refused cleanly, not an uncaught KeyError -")
+with tempfile.TemporaryDirectory() as tmp:
+    man = Path(tmp) / "m.json"
+    man.write_text(json.dumps({"claims": [], "datasets": {"d": {"path": "x"}}}), encoding="utf-8")
+    art_no_sleep = Path(tmp) / "art.json"
+    art_no_sleep.write_text(json.dumps(ART), encoding="utf-8")   # ART has no after-sleep block
+    rc = rs.main(["--family", "f", "--artifact", str(art_no_sleep), "--dataset", "d",
+                  "--command", "python research/supersession_bench.py", "--manifest", str(man),
+                  "--pooled-key", "pooled_nevertwice_after_sleep", "--dry-run"])
+    check("a missing pooled_key is refused with return code 2, not a traceback", rc == 2)
+
+print("\n- also-fix: a real (non-dry-run) run that registers 0 claims exits non-zero -")
+with tempfile.TemporaryDirectory() as tmp:
+    man = Path(tmp) / "m.json"
+    # pre-seed the manifest with every claim this artifact/family/reading would produce, so a
+    # real run finds nothing new to register - the exact "second reading found nothing" shape
+    # this fix must not let through silently.
+    seeded, _ = rs.build_claims("f", ART, dataset="d", command="c", raw="r", head="h",
+                                produced_by=[], existing=set())
+    man.write_text(json.dumps({"claims": seeded, "datasets": {"d": {"path": "x"}}}), encoding="utf-8")
+    art_dup = Path(tmp) / "art.json"
+    art_dup.write_text(json.dumps(ART), encoding="utf-8")
+    rc = rs.main(["--family", "f", "--artifact", str(art_dup), "--dataset", "d",
+                  "--command", "python research/supersession_bench.py", "--manifest", str(man)])
+    check("a real run with nothing new to register exits non-zero, not 0 (the bug this fixes)",
+          rc == 1, rc)
+    check("...but --dry-run with nothing new still exits 0 (it never claimed to register anything)",
+          rs.main(["--family", "f", "--artifact", str(art_dup), "--dataset", "d",
+                  "--command", "python research/supersession_bench.py", "--manifest", str(man),
+                  "--dry-run"]) == 0)
 
 print(f"\n{'ALL OK' if not FAILS else f'{FAILS} FAILED'}")
 sys.exit(1 if FAILS else 0)
