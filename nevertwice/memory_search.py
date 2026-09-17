@@ -214,11 +214,16 @@ def search_core(query: str, project: str | None = None, k: int = 10,
                 "project": r.get("project"), "title": r.get("title"), "stem": s,
                 "description": r.get("desc", ""), "prevention": r.get("prevention", ""),
                 "low_confidence": lc}
-    results = ([_mk(sc, s, r, low_conf) for sc, s, r in scored]
-               + [_mk(sc, s, r, True) for sc, s, r in text_extra])[:pool]
-    # K8 layer 2: two live notes of one slug fold into the newest, the earlier statement attached to
-    # its description - the same pairing the hook's injection path applies (memory_hook.pair_siblings)
-    results = m.pair_siblings(results, attach=True)
+    # K8 layer 2 / F12 (xhigh review): fold BEFORE the `[:pool]` cut, over a window at least
+    # 2*pool wide - folding after the cut can never see a sibling just outside it, and every
+    # successful fold shrinks the list by one with nothing pulled in to replace it (fewer than
+    # k results with no reranker set). The wider pre-fold window gives the post-fold cut real
+    # candidates to top up with instead.
+    fold_pool = max(pool, k * 2)
+    combined = ([_mk(sc, s, r, low_conf) for sc, s, r in scored]
+               + [_mk(sc, s, r, True) for sc, s, r in text_extra])[:fold_pool]
+    # the same pairing the hook's injection path applies (memory_hook.pair_siblings)
+    results = m.pair_siblings(combined, attach=True)[:pool]
     if xrerank and len(results) > 1:                 # trained cross-encoder wins if both set
         results = _ce.reorder(query, results, k)
         mode += " + xrerank"
@@ -363,6 +368,12 @@ def main():
             snip = m._note_snippet(r["stem"], nt, max_chars=300) or r.get("description", "")
             if snip:
                 print(f"        {snip}")
+            # F12 (xhigh review): the on-disk snippet above shadows the fold's OWN description
+            # augmentation, so the earlier sibling attached by pair_siblings never reached this
+            # surface at all - print it explicitly from its own field regardless of what `snip`
+            # showed instead.
+            if r.get("earlier_text"):
+                print(f"        earlier under this title: {r['earlier_text']}")
         print(f"        {r['stem']}")
         if "--expand" in flags:
             for sib in _linked(r["stem"], nt):

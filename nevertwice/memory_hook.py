@@ -3937,7 +3937,13 @@ def _sibling_key(stem: str):
 
 def _earlier_text(stem: str, ntype: str, max_chars: int | None = None) -> str:
     """The compact form of an earlier sibling: its literals when they carry a value (the fact itself,
-    in the session's words), else the head of its statement. Bounded."""
+    in the session's words), else the head of its statement, plus its Prevention when it has one.
+    Bounded.
+
+    xhigh review (also-fix): Prevention used to be discarded here - the write-time absorb's OWN
+    inheritance (a fresh note with no Prevention keeps the note-being-absorbed's) never runs for
+    a K8 sibling, because siblings are deliberately never absorbed into each other; the only place
+    left to surface an earlier mistake's "how to avoid it" is this read-time summary."""
     cap = EARLIER_MAX_CHARS if max_chars is None else max_chars
     folder = TYPE_FOLDER.get(ntype or "")
     if not folder:
@@ -3947,13 +3953,16 @@ def _earlier_text(stem: str, ntype: str, max_chars: int | None = None) -> str:
         lines = fp.read_text(encoding="utf-8", errors="replace").split("\n")
     except OSError:
         return ""
-    _, desc, _ = _parse_note_body(lines)
+    _, desc, prevention = _parse_note_body(lines)
     desc = desc or ""
     facts = desc.split(_FACTS_MARK.strip(), 1)[1].strip() if _FACTS_MARK.strip() in desc else ""
     statement = re.sub(r"\s*\[facts\].*$", "", desc, flags=re.DOTALL).strip()
     # the block is the fact in the session's words only when it carries a value; a harvested
     # distractor ("rolled it out behind the usual staged release") is not, and the statement is
     text = facts if (facts and _VALUE_RE.search(facts)) else (statement or facts)
+    prevention = (prevention or "").strip()
+    if prevention:
+        text = f"{text} - {prevention}" if text else prevention
     text = re.sub(r"\s+", " ", text)
     return text if len(text) <= cap else text[:max(0, cap - 1)].rstrip() + "…"
 
@@ -3988,8 +3997,14 @@ def pair_siblings(hits: list[dict], attach: bool = False) -> list[dict]:
             if attach:
                 texts = [t for t in (_earlier_text(e, lh.get("ntype", "")) for e in earlier) if t]
                 if texts:
+                    joined = " ; ".join(texts)
                     lh["description"] = (f"{lh.get('description', '') or ''} | earlier under this title: "
-                                         + " ; ".join(texts)).strip(" |")
+                                         + joined).strip(" |")
+                    # F12 (xhigh review): a SEPARATE field, not just the description suffix above -
+                    # the CLI and the MCP tool render the on-disk snippet or a caller-supplied
+                    # description, either of which can shadow this text; a field of its own is
+                    # always there for a renderer to check regardless of what it shows instead.
+                    lh["earlier_text"] = joined
             out.append(lh)
         elif i not in drop:
             out.append(h)
@@ -6379,9 +6394,13 @@ def _recency_fallback(project: str, k: int) -> list[dict]:
             if parsed and parsed["project"] == project and parsed["ntype"] == ntype:
                 hits.append((parsed["date"], p.stem, parsed["slug"]))
         hits.sort(reverse=True)
-        for _, stem, slug in hits[:k]:
-            out.append({"ntype": ntype, "title": slug.replace("-", " "),
-                        "stem": stem})
+        # Also-fix (xhigh review): this fallback never folded same-slug siblings at all - a
+        # pair K8 kept apart could take two of the k slots instead of one, crowding out an
+        # unrelated note. Fold within this ntype's own candidates before capping.
+        typed = [{"ntype": ntype, "title": slug.replace("-", " "), "stem": stem}
+                for _, stem, slug in hits[:max(k * 2, k)]]
+        for h in pair_siblings(typed)[:k]:
+            out.append(h)
             if len(out) >= k:
                 return out
     return out
@@ -6508,16 +6527,28 @@ def retrieve_relevant(project: str, query: str, k: int,
     if RETRIEVAL_DIVERGENCE > 0 and len(ranked) > 1:     # 2B: diverse/serendipitous recall
         window = ranked[:max(k * 4, k)]                  # MMR the head; tail keeps its order
         ranked = _load_rankers().mmr_rerank(window, scores, rec_of, RETRIEVAL_DIVERGENCE) + ranked[len(window):]
-    # K8 layer 2: same-slug siblings in the head of the ranking fold into their newest note, so the
-    # older statement rides along attached instead of taking a slot or being hidden
-    _paired = pair_siblings([_hit(s, rec_of[s]) for s in ranked[:max(k * 2, k)]])
+    # K8 layer 2: same-slug siblings anywhere in the ranking fold into their newest note, so the
+    # older statement rides along attached instead of taking a slot or being hidden.
+    # F15 (xhigh review): fold over the FULL ranked list, not a `2k` window - MMR (just above)
+    # or the fusion itself can push a true sibling past that window, where it never got the
+    # chance to fold at all; dict grouping is cheap, so there is no reason to bound it here.
+    # Also-fix: filter dead index rows BEFORE folding, not after (6544 below) - a stale LEAD
+    # (retired/deleted, cache not yet rebuilt) used to fold a perfectly live sibling into
+    # itself and then get dropped whole at 6544, losing both.
+    _live_ranked = [s for s in ranked if _live_note_exists(s, (rec_of.get(s) or {}).get("ntype", ""))]
+    _paired = pair_siblings([_hit(s, rec_of[s]) for s in _live_ranked])
     _earlier_of = {h["stem"]: h["earlier"] for h in _paired if h.get("earlier")}
     top = [h["stem"] for h in _paired][:k]
     # graph multi-hop expansion (M-6): pull in notes linked from the top hits so
     # a chain A→B→C is reachable; bounded and same-project (linked stems in cache).
     hops = GRAPH_HOPS if expand_hops is None else expand_hops
     if hops > 0 and top:
-        present, extra = set(top), []
+        # Also-fix (xhigh review): `present` must also cover every stem folded INTO a lead -
+        # a lead's own body can link to the earlier statement it was just folded with (a
+        # "Previous statement" backlink, a shared relation), and without this an auto-link
+        # re-added the earlier note as its own hit, undoing the fold.
+        present = set(top) | {e for es in _earlier_of.values() for e in es}
+        extra = []
         for s in top:
             for ln in _note_links(s, (rec_of.get(s) or {}).get("ntype", "")):
                 if ln in rec_of and ln not in present:
@@ -6533,8 +6564,14 @@ def retrieve_relevant(project: str, query: str, k: int,
     # calibrated fusion is a logistic (0,1) - so callers must normalise against the batch
     # rather than compare to an absolute constant. `_relative_value` below does that; this
     # project has twice shipped a threshold written on the wrong scale and will not again.
+    # Also-fix (xhigh review): a folded group takes its BEST member's score, not just the
+    # lead's own - the lead is picked by newest DATE (pair_siblings), which is not always
+    # the better-RANKED statement, so scoring the lead alone produced non-monotone lists and
+    # let a min-value filter downstream drop a lead (with its attached earlier statement)
+    # whose sibling alone would have cleared the bar.
     for _h in hits:
-        _h["score"] = float(scores.get(_h.get("stem"), 0.0))
+        _h["score"] = float(max([scores.get(_h.get("stem"), 0.0)]
+                                + [scores.get(e, 0.0) for e in (_h.get("earlier") or [])]))
     # A retracted fact must never come back. Today that holds only STRUCTURALLY - the
     # live folders are flat-globbed and Superseded/ is a subdirectory - so an index row or
     # a cached vector that outlived the file it describes can still surface one. Mem0
@@ -6631,8 +6668,11 @@ def retrieve_cross_project(project: str, query: str, k: int = CROSS_PROJECT_K,
         return []
     scores = _rrf_scores(rankings)
     ranked = sorted(scores, key=lambda s: (-scores[s], s))
-    return [dict(_hit(s, rec_of[s]), project=rec_of[s].get("project"))
-            for s in ranked[:k]]
+    # Also-fix (xhigh review): this path never folded same-slug siblings at all - fold the
+    # FULL ranked list (K8 layer 2), same as retrieve_relevant, before the `[:k]` cut.
+    paired = pair_siblings([dict(_hit(s, rec_of[s]), project=rec_of[s].get("project"))
+                            for s in ranked])
+    return paired[:k]
 
 
 def rerank_notes(query: str, results: list[dict], k: int = RETRIEVAL_TOP_K,

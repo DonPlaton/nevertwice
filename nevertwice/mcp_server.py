@@ -363,6 +363,11 @@ def _tool_memory_search(args: dict) -> tuple[str, bool]:
         head = f"- [{r.get('project')}/{r.get('ntype')}] {r.get('title')}  (score {r['score']}){via}"
         body = m._note_snippet(r["stem"], r.get("ntype", "")) or r.get("description", "")
         lines.append(head + (f"\n    {body}" if body else ""))
+        # F12 (xhigh review): `body` above renders the on-disk snippet, which shadows the
+        # fold's own description augmentation - print the earlier sibling from its own field
+        # so it reaches this surface regardless of what `body` showed instead.
+        if r.get("earlier_text"):
+            lines.append(f"    earlier under this title: {r['earlier_text']}")
         lines.append(f"    id: {r['stem']}")
     return "\n".join(lines), False
 

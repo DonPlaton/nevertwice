@@ -13,8 +13,13 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "nevertwice"))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import contextlib
+import io
+
 import memory_hook as m  # noqa: E402
 import consolidate_memory as cm  # noqa: E402
+import memory_search as ms  # noqa: E402
+import mcp_server  # noqa: E402
 from _sandbox import make_sandbox  # noqa: E402
 
 RUN, FAILED = [], []
@@ -521,6 +526,178 @@ check("supersede_note actually retires a BOM note",
       ok3 and not bom_note.exists()
       and (m.VAULT / "Decisions" / "Superseded" / "2026-06-01-p-decision-bom-note.md").exists())
 
-print(f"\nxhigh review (write path + consolidation integrity + identity/stamps): "
+
+# ═══════════════════════════════════════════════════════════════════════════════════════════
+# Surfaces: F12, F15, and the read-path also-fix items
+# ═══════════════════════════════════════════════════════════════════════════════════════════
+
+print("\n- F12: the CLI text path prints the earlier sibling from its own field -")
+d = fresh()
+old_cli = write(OLD_FACT, S1, title="cli earlier test")
+new_cli = write(NEW_FACT, S2, title="cli earlier test")
+m.save_embed_cache({
+    old_cli: {"ntype": "decision", "project": PROJ, "title": "cli earlier test", "desc": OLD_FACT,
+             "prevention": "", "recurrence": 1},
+    new_cli: {"ntype": "decision", "project": PROJ, "title": "cli earlier test", "desc": NEW_FACT,
+             "prevention": "", "recurrence": 1},
+})
+buf = io.StringIO()
+_argv = sys.argv
+sys.argv = ["memory_search.py", "http client timeout", PROJ]
+with contextlib.redirect_stdout(buf):
+    ms.main()
+sys.argv = _argv
+out = buf.getvalue()
+check("the CLI prints the earlier statement's own line, not just the on-disk snippet",
+      "earlier under this title:" in out and "30 seconds" in out, out)
+
+print("\n- F12: the MCP tool prints the earlier sibling from its own field -")
+res_text, _is_err = mcp_server._tool_memory_search({"query": "http client timeout", "project": PROJ})
+check("the MCP tool prints the earlier statement's own line too",
+      "earlier under this title:" in res_text and "30 seconds" in res_text, res_text)
+
+print("\n- F12: search_core folds over a window well past the final cut, not just the cut itself -")
+d = fresh()
+_extra_cache = {}
+for i in range(6):
+    stem_i = write(f"Unrelated note number {i}.", S1, title=f"unrelated {i}", ntype="pattern")
+    _extra_cache[stem_i] = {"ntype": "pattern", "project": PROJ, "title": f"unrelated {i}",
+                            "desc": f"Unrelated note number {i}.", "prevention": "", "recurrence": 1,
+                            "vec": [0.1, 0.2]}   # a "vec" key routes search_core past _lexical_only
+m.save_embed_cache(_extra_cache)
+_seen_len = []
+_real_pair_siblings = m.pair_siblings
+
+
+def _spy_pair_siblings(hits, attach=False):
+    _seen_len.append(len(hits))
+    return _real_pair_siblings(hits, attach=attach)
+
+
+m.pair_siblings = _spy_pair_siblings
+ms.search_core("unrelated note", PROJ, k=2)
+m.pair_siblings = _real_pair_siblings
+check("pair_siblings was handed a window of at least 2*k candidates, not just k",
+      bool(_seen_len) and _seen_len[0] >= 4, str(_seen_len))
+
+# ── F15: fold over the FULL ranked list; every retrieval path folds ────────────────────────
+print("\n- F15: retrieve_relevant folds a sibling ranked past the old 2k window -")
+d = fresh()
+old15 = write(OLD_FACT, S1, title="deep fold test")
+new15 = write(NEW_FACT, S2, title="deep fold test")
+# push the sibling pair far down the ranking with a wall of higher-recurrence unrelated notes
+m.save_embed_cache({
+    old15: {"ntype": "decision", "project": PROJ, "title": "deep fold test", "desc": OLD_FACT,
+            "prevention": "", "recurrence": 1},
+    new15: {"ntype": "decision", "project": PROJ, "title": "deep fold test", "desc": NEW_FACT,
+            "prevention": "", "recurrence": 1},
+    **{f"2026-06-01-{PROJ}-decision-filler-{i}": {
+        "ntype": "decision", "project": PROJ, "title": f"filler {i}",
+        "desc": "the http client timeout matters for filler purposes", "prevention": "",
+        "recurrence": 50} for i in range(10)},
+})
+hits15 = m.retrieve_relevant(PROJ, "http client timeout", 3, cache=m.load_embed_cache())
+stems15 = [h["stem"] for h in hits15]
+check("the sibling still folds even ranked well past a 2k (k=3 -> 6) window",
+      new15 in stems15 and old15 not in stems15
+      and any(h.get("earlier") == [old15] for h in hits15 if h["stem"] == new15), str(hits15))
+
+print("\n- F15: retrieve_cross_project also folds same-slug siblings (previously never did) -")
+d = fresh()
+oldx = write(OLD_FACT, S1, title="cross project fold", ntype="pattern")
+newx = write(NEW_FACT, S2, title="cross project fold", ntype="pattern")
+m.save_embed_cache({
+    oldx: {"ntype": "pattern", "project": "other", "title": "cross project fold", "desc": OLD_FACT,
+          "prevention": "", "recurrence": 1},
+    newx: {"ntype": "pattern", "project": "other", "title": "cross project fold", "desc": NEW_FACT,
+          "prevention": "", "recurrence": 1},
+})
+xhits = m.retrieve_cross_project(PROJ, "http client timeout", k=5, cache=m.load_embed_cache())
+xstems = [h["stem"] for h in xhits]
+check("cross-project recall folds the pair too - one hit, the earlier attached",
+      newx in xstems and oldx not in xstems, str(xhits))
+
+print("\n- F15: _recency_fallback also folds same-slug siblings (previously never did) -")
+d = fresh()
+oldr = write("First note on the topic.", S1, title="recency fold", ntype="mistake")
+newr = write("Something else about it entirely, unrelated wording here.", S2, title="recency fold", ntype="mistake")
+rhits = m._recency_fallback(PROJ, 5)
+rstems = [h["stem"] for h in rhits]
+check("the recency fallback folds the pair too - one hit, not two slots for one topic",
+      newr in rstems and oldr not in rstems, str(rhits))
+
+print("\n- also-fix: dead index rows are filtered BEFORE folding, not after -")
+d = fresh()
+olddead = write(OLD_FACT, S1, title="stale lead test")
+newdead = write(NEW_FACT, S2, title="stale lead test")
+# simulate a stale cache: the LEAD was properly superseded (moved to Superseded/, same as
+# supersede_note does) outside this cache's knowledge, but the earlier sibling is still live.
+(m.VAULT / "Decisions" / "Superseded").mkdir(exist_ok=True)
+note(newdead).rename(m.VAULT / "Decisions" / "Superseded" / f"{newdead}.md")
+m.save_embed_cache({
+    olddead: {"ntype": "decision", "project": PROJ, "title": "stale lead test", "desc": OLD_FACT,
+              "prevention": "", "recurrence": 1},
+    newdead: {"ntype": "decision", "project": PROJ, "title": "stale lead test", "desc": NEW_FACT,
+              "prevention": "", "recurrence": 1},
+})
+deadhits = m.retrieve_relevant(PROJ, "http client timeout", 3, cache=m.load_embed_cache())
+deadstems = [h["stem"] for h in deadhits]
+check("the live earlier note survives - it is not folded into (and dropped with) a dead lead",
+      olddead in deadstems, str(deadhits))
+
+print("\n- also-fix: a folded group takes its best member's score -")
+
+
+def _score_for(old_recur, new_recur):
+    fresh()
+    o = write(OLD_FACT, S1, title="score fold test")
+    n = write(NEW_FACT, S2, title="score fold test")
+    m.save_embed_cache({
+        o: {"ntype": "decision", "project": PROJ, "title": "score fold test", "desc": OLD_FACT,
+            "prevention": "", "recurrence": old_recur},
+        n: {"ntype": "decision", "project": PROJ, "title": "score fold test", "desc": NEW_FACT,
+            "prevention": "", "recurrence": new_recur},
+    })
+    hh = m.retrieve_relevant(PROJ, "http client timeout", 3, cache=m.load_embed_cache())
+    return next(h for h in hh if h["stem"] == n)["score"]
+
+
+score_weak_lead = _score_for(20, 1)      # the EARLIER (folded-out) note has the high recurrence
+score_strong_lead = _score_for(1, 20)    # the LEAD itself has the high recurrence
+check("the group's best member sets the score - a strong earlier sibling lifts a weak lead to "
+      "roughly the same reported score as when the lead itself is strong",
+      score_weak_lead > 0 and abs(score_weak_lead - score_strong_lead) <= 0.05 * max(score_strong_lead, 1e-9),
+      (score_weak_lead, score_strong_lead))
+
+print("\n- also-fix: GRAPH_HOPS never re-adds a stem that was just folded into its lead -")
+d = fresh()
+oldg = write(f"See also [[2026-06-01-{PROJ}-decision-graph-hop-lead]] for context.{F}graph hop link",
+            S1, title="graph hop earlier")
+leadg = write(f"The current answer, linking [[{oldg}]] as history.{F}graph hop link current",
+             S2, title="graph hop earlier")
+m.save_embed_cache({
+    oldg: {"ntype": "decision", "project": PROJ, "title": "graph hop earlier",
+          "desc": f"See also for context.{F}graph hop link", "prevention": "", "recurrence": 1},
+    leadg: {"ntype": "decision", "project": PROJ, "title": "graph hop earlier",
+           "desc": f"The current answer, linking as history.{F}graph hop link current",
+           "prevention": "", "recurrence": 1},
+})
+ghits = m.retrieve_relevant(PROJ, "graph hop link", 3, cache=m.load_embed_cache(), expand_hops=1)
+gstems = [h["stem"] for h in ghits]
+check("the folded-away earlier note is not re-added as its own hit via the graph-hop link",
+      gstems.count(oldg) == 0, str(gstems))
+
+print("\n- also-fix: _earlier_text keeps a note's Prevention in the compact earlier line -")
+d = fresh()
+prevention_note = write("The retry logic looped forever.", S1, title="prevention carry", ntype="mistake")
+p_path = note(prevention_note, "mistake")
+p_path.write_text(p_path.read_text(encoding="utf-8").replace(
+    "\n\n**Project:**", "\n\n**Prevention:** Always cap retries with backoff.\n\n**Project:**"),
+    encoding="utf-8")
+etext = m._earlier_text(prevention_note, "mistake")
+check("the earlier line carries the Prevention text, not just the statement",
+      "cap retries" in etext.lower(), etext)
+
+print(f"\nxhigh review (write path + consolidation integrity + identity/stamps + surfaces): "
       f"{len(RUN) - len(FAILED)} passed, {len(FAILED)} failed")
 sys.exit(1 if FAILED else 0)
