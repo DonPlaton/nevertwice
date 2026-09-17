@@ -38,14 +38,9 @@ hit is refused, even when there is room for it - the distinction between *does i
 returned no more than 2 points less often. On a miss the default returns to 0.
 
 <!-- claims:abstention-sweep -->
-| threshold | chars/query | hits | wanted fact returned | chars saved | recall lost |
-|---|---|---|---|---|---|
-| 0.00 (off) | 381.8 | 1.49 | 0.962 | - | - |
-| 0.10 | 363.6 | 1.42 | 0.962 | 4.8% | 0.0 pts |
-| 0.20 | 279.0 | 1.10 | 0.937 | 26.9% | 2.5 pts |
-| **0.35 (shipped)** | 276.5 | 1.09 | 0.937 | 27.6% | 2.5 pts |
-| 0.50 | 276.5 | 1.09 | 0.937 | 27.6% | 2.5 pts |
-| 0.75 | 276.5 | 1.09 | 0.937 | 27.6% | 2.5 pts |
+> **Withdrawn 2026-09.** the K8 zero-loss package merged (a same-slug replacement rule on the write path, read-time sibling pairing, sleep-time adjudication, and the twelve fixes of the K9 review); every number whose closure names the engine waits for the K8-C campaign, which needs the GPU and a local Ollama extractor
+>
+> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/abstention_ab.py --part all` is what re-measures this one.
 <!-- /claims:abstention-sweep -->
 
 Every threshold from 0.30 upward reads the same as the shipped one: one hit is all that is left to

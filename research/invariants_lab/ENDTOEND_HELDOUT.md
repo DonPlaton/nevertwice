@@ -1,5 +1,13 @@
 # The gate that decides shipping, measured out of sample: not met
 
+<!-- withdrawn-banner -->
+> **Withdrawn: figures on this page must not be quoted.** They were retracted and remain
+> here because deleting a result one was wrong about destroys the record of having been
+> wrong. The design, the method and the caveats stand; the numbers do not. Each figure's
+> own reason and date are in
+> [`research/evidence_manifest.json`](../evidence_manifest.json), and
+> `python tools/check_freshness.py --list-stale` lists every one.
+
 **Task G-C, re-run on the held-out corpus.** The in-sample stand was capped at 53 tasks and
 produced 3 discordant pairs — an absence of measurement rather than a result. The held-out corpus
 supplies **2,623 source commits**, the task pool is **514**, and the stand ran at **150 benefit and

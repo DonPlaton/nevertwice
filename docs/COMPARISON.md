@@ -1,5 +1,10 @@
 # Nevertwice vs the field (2025-2026)
 
+<!-- withdrawn-banner -->
+> **Withdrawn while the engine is re-measured (campaign K8-C, September).** The answer-accuracy
+> and retrieval figures quoted below rest on engine-dependent claims withdrawn until the K8-C
+> campaign re-measures them at the merged HEAD.
+
 How Nevertwice compares to current long-term-memory systems for agents, and what to
 borrow from each. Vendor benchmark numbers are self-published and mutually disputed;
 the load-bearing sources here are the cited papers and docs.

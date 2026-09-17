@@ -42,16 +42,9 @@ tokens per call and latency per check. A guard that fires on the right risk but 
 mistake is a false alarm, not partial credit.
 
 <!-- claims:guard-bench -->
-| arm | recall of the right guard | precision | hard-negative false alarms | project-only recall | tokens / call | ms / check |
-|---|---|---|---|---|---|---|
-| **guards, engine's no-model patterns** | 0.380 at FPR 0.179 (over budget) | - | - | - | 3.320 | 0.018 |
-| **guards, model-written patterns** | 0.370 at FPR 0.155 (over budget) | - | - | - | 5.510 | 0.025 |
-| cold-start pack (no history) | 0.196 | 0.818 | 0.000 | 0.000 | 1.150 | 0.008 |
-| linter or scanner (scored in its favour) | 0.457 | 1.000 | 0.000 | 0.154 | 0.000 | 0.000 |
-| prompt recall over the notes (top three) | 0.011 | 0.250 | 0.042 | 0.019 | 103.560 | 60.919 |
-| silence (floor) | 0.000 | - | 0.000 | 0.000 | 0.000 | 0.000 |
-
-<sub>no operating point under the false-alarm budget for guards, engine's no-model patterns, guards, model-written patterns - a guard fires or it does not, and firing catches the repeats shown at the false-alarm rate shown.</sub>
+> **Withdrawn 2026-09.** the K8 zero-loss package merged (a same-slug replacement rule on the write path, read-time sibling pairing, sleep-time adjudication, and the twelve fixes of the K9 review); every number whose closure names the engine waits for the K8-C campaign, which needs the GPU and a local Ollama extractor
+>
+> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/guard_bench.py --llm --save` is what re-measures this one.
 <!-- /claims:guard-bench -->
 
 The gate written before the run (`.loop/GOAL-CLOSE.md`, J6): a guard arm keeps the README's
