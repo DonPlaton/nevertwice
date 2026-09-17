@@ -14,7 +14,10 @@ written before J2b stamped `superseded_via`, so it is reported as unresolvable a
 count is the upper bound. What is left is a `contested` pair - one adjudication call at sleep time.
 
 Nothing is written. The vault path is read from the argument; the engine's own parsers are used
-on the text (pure functions, no store constant is touched).
+on the text (pure functions, no store constant is touched). The script declares `allow_live` to the
+sandbox lint - a declaration, not a proof - and `tests/_test_k8_vault_dryrun_readonly.py` is the proof:
+it runs this file over a real-engine store with every write-capable hook function spied and the store
+fingerprinted, and shows that three planted writes turn that check red.
 
     python research/k8_vault_dryrun.py "D:/Obsidian/Claude_Memory" --weeks 4 --out research/results/k8_vault_dryrun.json
 """
@@ -30,8 +33,9 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent
-sys.path.insert(0, str(ROOT / "tests"))
-import _env_guard  # noqa: E402,F401 - a read-only script must not let a store path into the engine
+sys.path.insert(0, str(ROOT))
+import sandbox_guard  # noqa: E402 - the declaration the sandbox lint reads, before any nevertwice import
+sandbox_guard.allow_live("read-only: parses notes by path, calls no store function")
 sys.path.insert(0, str(ROOT / "nevertwice"))
 import memory_hook as m  # noqa: E402
 

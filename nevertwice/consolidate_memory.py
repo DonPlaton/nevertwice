@@ -39,10 +39,20 @@ SIM_THRESHOLD = m.env_float("NEVERTWICE_DEDUP_SIM", 0.86)   # safe-cast: a misty
 # Per-project live-note cap (improvement P2). 0 = OFF - a memory store must not shed
 # memory without being told to. When >0, the lowest-salience excess is archived.
 MAX_LIVE_PER_PROJECT = m.env_int("NEVERTWICE_MAX_LIVE_PER_PROJECT", 0)  # degrades, never crashes
-# K8 layer 3: at most this many judge calls per run over the `contested` same-slug pairs the write
-# path kept apart (ledger K8: 50 written before the code; the owner's vault produces up to ~73 pairs
-# a week, so a weekly run leaves a visible remainder in conflicts() rather than spending more).
-CONTESTED_CAP = m.env_int("NEVERTWICE_CONTESTED_CAP", 50)
+# K8 layer 3: the judge's budget per consolidation run over the `contested` same-slug pairs the write
+# path kept apart - in tokens (prompt + answer as the backend reports them; a call that reports none is
+# charged the measured mean), not in calls. 100k tokens is ~240 pairs at the 415 measured on the K7
+# store (research/results/k8_judge_eval.json) - three times the 73 pairs a week the owner's vault
+# produces (k8_vault_dryrun.json), so a weekly run empties the queue. A cap of 50 calls (the first
+# fast cycles, ledger K8) left 15-19 pairs a stand run and would have left ~23 a week on the vault
+# never judged under "newest first" - amended before the campaign (naryad K8-B, 2026-09-17). 0 switches
+# the judge off. The number of calls is printed; `NEVERTWICE_CONTESTED_CAP` > 0 adds a hard cap on
+# calls for a stand that wants one.
+CONTESTED_BUDGET = m.env_int("NEVERTWICE_CONTESTED_BUDGET", 100_000)
+CONTESTED_CAP = m.env_int("NEVERTWICE_CONTESTED_CAP", 0)
+#: what one pair is charged when the backend reports no token counts (a cloud backend, a stub): the
+#: K7 store's mean, prompt 375 + answer 40
+TOKENS_PER_PAIR_EST = 415
 
 
 def _pair_fields(p: Path) -> tuple[dict, str, str]:
@@ -87,19 +97,27 @@ def _replacement_guard(old_desc: str, new_desc: str) -> str:
 
 
 def adjudicate_contested(apply: bool, has_llm: bool, cap: int | None = None,
-                         judge=None, cache: dict | None = None) -> dict:
+                         judge=None, cache: dict | None = None, budget: int | None = None) -> dict:
     """K8 layer 3 - the same-fact judge over the `contested` pairs, outside any session.
 
     The write path keeps a same-slug note from another session as a live sibling unless the
     replacement is proven, and stamps the earlier note `contested: [<new stems>]` (layer 1). Here,
-    newest pair first and at most `cap` calls a run, each pair goes to the judge
-    (`memory_hook._same_fact_verdict`, K7's prompt): `replaces` - the earlier note is retired with
-    `valid_to` and `superseded_via: judge`, its recurrence and sources carried into the note that
+    the OLDEST contested pair first and within a token `budget` a run (`CONTESTED_BUDGET`; a call
+    whose backend reports no token counts is charged `TOKENS_PER_PAIR_EST`), each pair goes to the
+    judge (`memory_hook._same_fact_verdict`, K7's prompt): `replaces` - the earlier note is retired
+    with `valid_to` and `superseded_via: judge`, its recurrence and sources carried into the note that
     replaced it; `separate` - the stamp is cleared and both stay; no answer - the pair stays
     contested. A pair whose newer note is gone (retired, archived or deleted) is dropped from the
     stamp. Without a backend nothing is judged and the pairs stay visible in `conflicts()`. Dry-run
-    calls the judge and prints the plan; `apply` writes. Returns the counts and the tokens spent."""
+    calls the judge and prints the plan; `apply` writes. `cap` > 0 is a hard cap on calls besides the
+    budget (stands). Returns the counts, the calls, and the tokens spent against the budget.
+
+    Oldest first, one queue: with the budget above the inflow the queue empties every run, and when
+    it does not, no pair waits more than one run - "newest first" starved the tail forever (15-19
+    pairs a stand run, ~23 a week on the owner's vault); two queues with a quota only pay when the
+    budget is below the inflow, which at three times the measured inflow it is not."""
     cap = CONTESTED_CAP if cap is None else cap
+    budget = CONTESTED_BUDGET if budget is None else budget
     judge = judge or m._same_fact_verdict
     pairs: list[tuple] = []
     for c in m._iter_contested(None):
@@ -115,25 +133,38 @@ def adjudicate_contested(apply: bool, has_llm: bool, cap: int | None = None,
                 live_new.append(ns)
         if apply and len(live_new) != len(c["new_stems"]):
             _set_contested(old_path, live_new)         # the newer note is gone: nothing left to judge
-    pairs.sort(key=lambda t: t[3], reverse=True)       # date-prefixed stems: the newest pair first
-    stats = {"pairs": len(pairs), "cap": cap, "judged": 0, "replaces": 0, "separate": 0, "vetoed": 0,
-             "unanswered": 0, "left": len(pairs), "prompt_tokens": 0, "eval_tokens": 0, "skipped": None}
+    pairs.sort(key=lambda t: t[3])                     # date-prefixed stems: the OLDEST pair first
+    stats = {"pairs": len(pairs), "budget": budget, "cap": cap, "judged": 0, "tokens_spent": 0,
+             "estimated_calls": 0, "replaces": 0, "separate": 0, "vetoed": 0, "unanswered": 0,
+             "left": len(pairs), "prompt_tokens": 0, "eval_tokens": 0, "skipped": None}
     if not pairs:
         return stats
     if not has_llm:
         stats["skipped"] = "no LLM backend - the pairs stay contested and visible in conflicts()"
         return stats
+    if budget <= 0:
+        stats["skipped"] = "judge budget 0 - the pairs stay contested and visible in conflicts()"
+        return stats
     p0 = m._LLM_STATS.get("prompt_tokens", 0)
     e0 = m._LLM_STATS.get("eval_tokens", 0)
-    for c, old_path, new_path, new_stem in pairs[:cap]:
+    spent = 0
+    for c, old_path, new_path, new_stem in pairs:
+        if spent >= budget or (cap and stats["judged"] >= cap):
+            break                                      # the rest stays contested, served and visible
         try:
             fm_old, old_title, old_desc = _pair_fields(old_path)
             fm_new, _, new_desc = _pair_fields(new_path)
         except OSError as e:
             print(f"      contested pair unreadable ({e}) - left as is", file=sys.stderr)
             continue
+        tp, te = m._LLM_STATS.get("prompt_tokens", 0), m._LLM_STATS.get("eval_tokens", 0)
         verdict = judge(old_title, old_desc, new_desc, c["project"])
         stats["judged"] += 1
+        used = (m._LLM_STATS.get("prompt_tokens", 0) - tp) + (m._LLM_STATS.get("eval_tokens", 0) - te)
+        if used <= 0:
+            used = TOKENS_PER_PAIR_EST                 # the backend did not say: charge the measured mean
+            stats["estimated_calls"] += 1
+        spent += used
         remaining = [s_ for s_ in m._contested_of(fm_old) if s_ != new_stem]
         veto = _replacement_guard(old_desc, new_desc) if verdict is True else ""
         if veto:
@@ -176,6 +207,7 @@ def adjudicate_contested(apply: bool, has_llm: bool, cap: int | None = None,
             stats["unanswered"] += 1
             print(f"      unanswered: {c['stem']} ? {new_stem}")
     stats["left"] = len(pairs) - stats["replaces"] - stats["separate"] - stats["vetoed"]
+    stats["tokens_spent"] = spent
     stats["prompt_tokens"] = m._LLM_STATS.get("prompt_tokens", 0) - p0
     stats["eval_tokens"] = m._LLM_STATS.get("eval_tokens", 0) - e0
     return stats
@@ -848,10 +880,12 @@ def _run_consolidation(apply, mode, has_llm):
     # 2c) K8 layer 3: the contested same-slug pairs the write path kept apart go to the judge here -
     #     one call a pair, capped, outside any session chain (no cache confound, no hook millisecond)
     adj = adjudicate_contested(apply, has_llm, cache=cache)
-    print(f"[consolidate] contested pairs: {adj['pairs']} - judged {adj['judged']} of at most {adj['cap']}: "
-          f"replaces {adj['replaces']}, separate {adj['separate']}, vetoed {adj['vetoed']}, "
+    print(f"[consolidate] contested pairs: {adj['pairs']} - {adj['judged']} judge call(s), "
+          f"{adj['tokens_spent']} of {adj['budget']} tokens (~{adj['budget'] // TOKENS_PER_PAIR_EST} pairs a run "
+          f"at {TOKENS_PER_PAIR_EST}): replaces {adj['replaces']}, separate {adj['separate']}, vetoed {adj['vetoed']}, "
           f"unanswered {adj['unanswered']}, left {adj['left']}"
           + (f"; tokens {adj['prompt_tokens']}+{adj['eval_tokens']}" if adj["judged"] else "")
+          + (f"; {adj['estimated_calls']} call(s) charged the estimate" if adj["estimated_calls"] else "")
           + (f" ({adj['skipped']})" if adj.get("skipped") else "") + f" [{mode}]")
     if apply and adj["replaces"]:
         m.save_embed_cache(cache)

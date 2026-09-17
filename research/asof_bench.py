@@ -234,12 +234,12 @@ def run_nevertwice(cases: list[dict], k: int, runs: int = 1, sleep: bool = False
     if sleep:
         from nevertwice import consolidate_memory as cm            # noqa: PLC0415
         t1 = time.time()
-        adj = cm.adjudicate_contested(apply=True, has_llm=True, cap=sb.SLEEP_CAP)
+        adj = cm.adjudicate_contested(apply=True, has_llm=True, cap=sb.SLEEP_CAP, budget=sb.SLEEP_BUDGET)
         rows2 = [_read_case(api, cases[i], f"asof{run}{i:03d}", k, run)
                  for run in range(runs) for i in range(len(cases))]
         after = {"rows": rows2, **score(rows2), "runs": runs, "adjudication": adj,
                  "seconds": round(time.time() - t1, 1), "store_bytes": sb.store_bytes(),
-                 "config": f"the same store after consolidate_memory.adjudicate_contested(cap={sb.SLEEP_CAP})"}
+                 "config": f"the same store after consolidate_memory.adjudicate_contested(budget={adj['budget']}, cap={adj['cap']})"}
         if runs > 1:
             after["per_run"] = [score([r for r in rows2 if r.get("run") == run])["both_correct_rate"]
                                 for run in range(runs)]

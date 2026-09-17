@@ -2,8 +2,9 @@
 """K8 layer 3: the judge outside the hook - `consolidate_memory.adjudicate_contested`.
 
 The write path keeps a same-slug note from another session as a live sibling unless the replacement
-is proven and stamps the earlier note `contested` (layer 1). At sleep, newest pair first and at most
-`cap` calls a run, each pair goes to the same-fact judge: `replaces` retires the earlier note with
+is proven and stamps the earlier note `contested` (layer 1). At sleep, oldest pair first and within a
+token budget a run (K8-B: 100k, ~240 pairs; a call reporting no tokens is charged the measured mean),
+each pair goes to the same-fact judge: `replaces` retires the earlier note with
 `valid_to` and `superseded_via: judge` and carries its recurrence and sources into the winner;
 `separate` clears the stamp and both stay; no answer leaves the pair contested; a pair whose newer
 note is gone is dropped from the stamp. Without a backend nothing is judged and the pairs stay
@@ -103,15 +104,52 @@ o, n = pair()
 res = cm.adjudicate_contested(apply=True, has_llm=True, judge=judge(None))
 check("unanswered counted, left 1, stamp intact", (res["unanswered"], res["left"]) == (1, 1) and fm(o).get("contested") == [n], str(res))
 
-print("\n- the cap, newest first -")
+print("\n- the budget, oldest first (K8-B) -")
 d = fresh()
 o1, n1 = pair(title="alpha", d1="2026-05-01", d2="2026-05-02")
 o2, n2 = pair(title="beta", d1="2026-06-01", d2="2026-06-09")
 res = cm.adjudicate_contested(apply=True, has_llm=True, cap=1, judge=judge(True))
-check("one call under a cap of one, the newer pair first, the other left contested",
-      res["judged"] == 1 and res["left"] == 1 and SEEN[0][0] == "beta" and fm(o1).get("contested") == [n1]
-      and fm(o2, where="Superseded").get("superseded_via") == "judge", str(res))
-check("the default cap is the ledger's fifty", cm.CONTESTED_CAP == 50)
+check("one call under a hard cap of one: the OLDER pair goes first, the newer is left contested",
+      res["judged"] == 1 and res["left"] == 1 and SEEN[0][0] == "alpha" and fm(o2).get("contested") == [n2]
+      and fm(o1, where="Superseded").get("superseded_via") == "judge", str(res))
+d = fresh()
+o1, n1 = pair(title="alpha", d1="2026-05-01", d2="2026-05-02")
+o2, n2 = pair(title="beta", d1="2026-06-01", d2="2026-06-09")
+res = cm.adjudicate_contested(apply=True, has_llm=True, budget=1, judge=judge(True))
+check("a stub judge reports no tokens and is charged the measured mean: a budget of one token buys one call",
+      res["judged"] == 1 and res["tokens_spent"] == cm.TOKENS_PER_PAIR_EST and res["estimated_calls"] == 1
+      and res["left"] == 1 and SEEN[0][0] == "alpha", str(res))
+res = cm.adjudicate_contested(apply=True, has_llm=True, budget=cm.TOKENS_PER_PAIR_EST * 2, judge=judge(True))
+check("the next run spends its budget on what was left", res["judged"] == 1 and res["left"] == 0, str(res))
+
+
+def counting_judge(prompt_tokens: int, eval_tokens: int):
+    """A judge whose backend reports token counts the way call_ollama does."""
+    def fake(old_title, old_desc, new_desc, project):
+        SEEN.append((old_title, old_desc[:20], new_desc[:20], project))
+        m._LLM_STATS["prompt_tokens"] = m._LLM_STATS.get("prompt_tokens", 0) + prompt_tokens
+        m._LLM_STATS["eval_tokens"] = m._LLM_STATS.get("eval_tokens", 0) + eval_tokens
+        return True
+    return fake
+
+
+d = fresh()
+o1, n1 = pair(title="alpha", d1="2026-05-01", d2="2026-05-02")
+o2, n2 = pair(title="beta", d1="2026-06-01", d2="2026-06-09")
+o3, n3 = pair(title="gamma", d1="2026-07-01", d2="2026-07-09")
+res = cm.adjudicate_contested(apply=True, has_llm=True, budget=680, judge=counting_judge(300, 40))
+check("reported tokens are what the budget counts, read before each call: 680 tokens buy two 340-token calls, oldest two, the third left",
+      res["judged"] == 2 and res["tokens_spent"] == 680 and res["estimated_calls"] == 0 and res["left"] == 1
+      and [s[0] for s in SEEN] == ["alpha", "beta"] and fm(o3).get("contested") == [n3]
+      and (res["prompt_tokens"], res["eval_tokens"]) == (600, 80), str(res))
+d = fresh()
+o, n = pair()
+res = cm.adjudicate_contested(apply=True, has_llm=True, budget=0, judge=judge(True))
+check("budget 0 switches the judge off: no call, the pair stays contested and visible",
+      res["judged"] == 0 and res["skipped"] and SEEN == [] and fm(o).get("contested") == [n], str(res))
+check("the defaults: 100k tokens a run - at least three times the 73 pairs a week measured on the owner's vault - and no cap on calls",
+      cm.CONTESTED_BUDGET == 100_000 and cm.CONTESTED_CAP == 0 and cm.TOKENS_PER_PAIR_EST == 415
+      and cm.CONTESTED_BUDGET // cm.TOKENS_PER_PAIR_EST >= 3 * 73)
 
 print("\n- no backend: nothing judged, the pairs visible -")
 d = fresh()

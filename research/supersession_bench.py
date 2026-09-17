@@ -288,8 +288,11 @@ def _store_state(project: str, case: dict) -> dict:
             "notes_in_cyrillic": drift}
 
 
-# K8: the judge's budget per consolidation run on the stand - the gate's cap (ledger K8: <= 50).
-SLEEP_CAP = int(os.environ.get("K8_SLEEP_CAP", "50"))
+# K8: the judge's budget per consolidation run on the stand - the engine's default (100k tokens a run,
+# ~240 pairs) unless `K8_SLEEP_BUDGET` says otherwise; `K8_SLEEP_CAP` > 0 adds a hard cap on calls (the
+# first fast cycles ran at 50 calls; amended before the campaign, naryad K8-B).
+SLEEP_BUDGET = int(os.environ.get("K8_SLEEP_BUDGET", "0")) or None
+SLEEP_CAP = int(os.environ.get("K8_SLEEP_CAP", "0")) or None
 
 
 def _sleep_and_reread(api, cases: list[dict], k: int, prefix: str) -> dict:
@@ -298,7 +301,7 @@ def _sleep_and_reread(api, cases: list[dict], k: int, prefix: str) -> dict:
     reading - what they see between nights."""
     from nevertwice import consolidate_memory as cm                # noqa: PLC0415
     t1 = time.time()
-    adj = cm.adjudicate_contested(apply=True, has_llm=True, cap=SLEEP_CAP)
+    adj = cm.adjudicate_contested(apply=True, has_llm=True, cap=SLEEP_CAP, budget=SLEEP_BUDGET)
     rows = []
     for i, case in enumerate(cases):
         project = f"{prefix}{i:03d}"
@@ -306,7 +309,7 @@ def _sleep_and_reread(api, cases: list[dict], k: int, prefix: str) -> dict:
         rows.append({**_row(case, [hit_text(h) for h in hits]), **_store_state(project, case)})
     return {"rows": rows, **score(rows), "adjudication": adj,
             "seconds": round(time.time() - t1, 1), "store_bytes": store_bytes(),
-            "config": f"the same store after consolidate_memory.adjudicate_contested(cap={SLEEP_CAP})"}
+            "config": f"the same store after consolidate_memory.adjudicate_contested(budget={adj['budget']}, cap={adj['cap']})"}
 
 
 def run_nevertwice(cases: list[dict], k: int, sleep: bool = False) -> dict:
@@ -924,7 +927,8 @@ def main() -> int:
             print(f"  after sleep: stale {after['stale_rate']} (old value served {after.get('old_value_served_rate')}) | "
                   f"current {after['current_rate']} | control miss {after['control_miss_rate']} | "
                   f"over-retraction {after.get('over_retraction_rate')} | {after['mean_chars_returned']} chars/query | "
-                  f"judge: {adj['pairs']} pairs, judged {adj['judged']} (cap {adj['cap']}), replaces {adj['replaces']}, "
+                  f"judge: {adj['pairs']} pairs, {adj['judged']} calls ({adj['tokens_spent']} of {adj['budget']} tokens"
+                  + (f", cap {adj['cap']}" if adj.get("cap") else "") + f"), replaces {adj['replaces']}, "
                   f"separate {adj['separate']}, vetoed {adj.get('vetoed', 0)}, left {adj['left']}, "
                   f"tokens {adj['prompt_tokens']}+{adj['eval_tokens']}")
         if res.get("over_retraction_rate") is not None:

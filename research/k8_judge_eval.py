@@ -31,8 +31,9 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent
-sys.path.insert(0, str(ROOT / "tests"))
-import _env_guard  # noqa: E402,F401
+sys.path.insert(0, str(ROOT))
+import sandbox_guard  # noqa: E402 - the declaration the sandbox lint reads, before any nevertwice import
+sandbox_guard.isolate(prefix="nevertwice_k8_")
 sys.path.insert(0, str(ROOT / "nevertwice"))
 import memory_hook as m  # noqa: E402
 sys.path.insert(0, str(HERE))

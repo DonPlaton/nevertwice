@@ -16,6 +16,21 @@ empty.
 
 ### Added
 
+- **K8-B, four corrections before the merge (2026-09-17;** `tests/_test_k8_vault_dryrun_readonly.py`**).** The three
+  step-0 research scripts declare their store to the sandbox lint: `k8_judge_eval.py` and `k8_skeleton.py` isolate
+  before the first project import; `k8_vault_dryrun.py` declares `allow_live` (it parses the owner's vault by path),
+  and the new suite proves the word - the script runs over a real-engine store with every write-capable hook
+  function spied (the set derived from the hook's source, not kept by hand) and the store fingerprinted, and three
+  planted writes each turn the check red. The judge's cap is a token budget a run, `NEVERTWICE_CONTESTED_BUDGET`
+  (100k, ~240 pairs at the measured 415, three times the owner's vault inflow), oldest contested pair first, the
+  number of calls printed, 0 switching the judge off - a cap of 50 calls newest-first had left 15-19 pairs a stand
+  run never judged. The J2b gate `s0_retired_rate` (>= 0.734 after sleep) is back in the ledger and reads 0.707 -
+  a miss by two pairs (four `separate` verdicts, thirteen guard vetoes), published. `NEVERTWICE_EXPLICIT_RETIRE=judge`
+  measured within one extraction draw on both corpora, both readings: over-retraction 0.000 everywhere, stale after
+  sleep 0.067 / 0.183 against caps of 0.117 / 0.167 - by the rule written before the run the default stays `write`;
+  the switch removes the last loss (the extractor's false `contradicts`) at the price of one stale case in sixty
+  after sleep. Tokens a pair held at 411-416 across eight runs. Seen on the way: the extractor is not deterministic
+  across runs at temperature 0 (two draws on the implicit corpus, 28-29 of 80 cases apart).
 - **A same-title note from another session is kept, not absorbed, unless the replacement is proven -
   and the judge moves out of the hook into sleep** (ledger K8; `tests/_test_k8_same_replacement.py`,
   `_test_k8_read_pairing.py`, `_test_k8_adjudicate.py`, `_test_k8_one_call_per_session.py`). The slug is a
@@ -30,7 +45,10 @@ empty.
   live notes of one slug fold into the newest hit, the earlier statement attached as one bounded line
   (`NEVERTWICE_EARLIER_MAX_CHARS`, 100) - both served, newest first, nothing demoted on a presumption;
   `conflicts()` lists the pairs, `integrity()` counts them. *Sleep:* `consolidate_memory.py` adjudicates
-  the contested pairs with K7's prompt, at most `NEVERTWICE_CONTESTED_CAP` (50) calls a run - `replaces`
+  the contested pairs with K7's prompt, oldest pair first, within a token budget a run
+  (`NEVERTWICE_CONTESTED_BUDGET`, 100k - ~240 pairs at the measured 415, three times the 73 a week the
+  owner's vault produces; the number of calls is printed; a cap of 50 calls newest-first, the first
+  cut, left 15-19 pairs a stand run never judged - amended before the campaign) - `replaces`
   retires the earlier note with `valid_to` and `superseded_via: judge` and carries its recurrence into
   the winner, `separate` clears the stamp. Measured before the code: the skeleton similarity of the two
   statements reads AUC 0.63-0.66 on the extractor's descriptions and 0.76-0.81 on the facts block, so it

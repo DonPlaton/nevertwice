@@ -35,8 +35,9 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent
-sys.path.insert(0, str(ROOT / "tests"))
-import _env_guard  # noqa: E402,F401 - no store path may leak into the engine's constants (read-only script)
+sys.path.insert(0, str(ROOT))
+import sandbox_guard  # noqa: E402 - the declaration the sandbox lint reads, before any nevertwice import
+sandbox_guard.isolate(prefix="nevertwice_k8_")     # a read-only script: no store path may leak into the engine
 sys.path.insert(0, str(ROOT / "nevertwice"))
 import memory_hook as m  # noqa: E402
 import stemmer  # noqa: E402
