@@ -3884,6 +3884,35 @@ def _iter_contested(project: str | None = None, key: str = CONTESTED_KEY) -> lis
     return sorted(out, key=lambda r: (r["ntype"], r["stem"]))
 
 
+def _iter_contested_both(project: str | None = None) -> tuple[list[dict], list[dict]]:
+    """`(contested, disputed)` - both of `_iter_contested`'s keys from ONE filesystem walk
+    (also-fix, xhigh review): `compute_conflicts` used to call `_iter_contested` once per key,
+    so a single digest/inbox build walked every type folder twice for the same set of files."""
+    out_c, out_d = [], []
+    for ntype, folder in TYPE_FOLDER.items():
+        base = VAULT / folder
+        if not base.exists():
+            continue
+        for p in base.rglob("*.md"):
+            if "Superseded" in p.parts[len(base.parts):]:
+                continue
+            parsed = parse_typed_stem(p.stem)
+            if not parsed or (project and parsed["project"] != project):
+                continue
+            fm = _read_frontmatter_file(p)
+            row = {"stem": p.stem, "path": str(p), "project": parsed["project"], "ntype": ntype,
+                  "date": parsed["date"], "title": parsed["slug"].replace("-", " "),
+                  "archived": p.parent.name == "Archive"}
+            cs = _contested_of(fm)
+            if cs:
+                out_c.append({**row, "new_stems": cs})
+            ds = _contested_of({CONTESTED_KEY: fm.get(DISPUTED_KEY)})
+            if ds:
+                out_d.append({**row, "new_stems": ds})
+    key_fn = lambda r: (r["ntype"], r["stem"])                # noqa: E731
+    return sorted(out_c, key=key_fn), sorted(out_d, key=key_fn)
+
+
 _JUDGE_PROMPT = (
     "Two statements were recorded for one project under the same title, by two different sessions.\n\n"
     "OLD (recorded first): {old}\n\nNEW (recorded later): {new}\n\n"

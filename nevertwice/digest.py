@@ -72,9 +72,15 @@ def compute_conflicts(project=None, limit=50, *, live=None, sup=None, contested=
             # itself-superseded successor == the fact is still being revised.
             "resolved": bool(succ) and succ.get("status") != "superseded",
         })
-    disputed = [dict(c, kind="disputed") for c in m._iter_contested(project, key=m.DISPUTED_KEY)] if contested is None else []
-    for c in ([dict(c, kind="contested") for c in m._iter_contested(project)] if contested is None
-              else [dict(c, kind="contested") for c in contested]) + disputed:
+    # Also-fix (xhigh review): one filesystem walk for both stamps, not `_iter_contested` called
+    # once per key - a caller with no pre-fetched `contested` used to walk every type folder
+    # twice for the same set of files.
+    if contested is None:
+        contested_rows, disputed_rows = m._iter_contested_both(project)
+    else:
+        contested_rows, disputed_rows = contested, []
+    disputed = [dict(c, kind="disputed") for c in disputed_rows]
+    for c in [dict(c, kind="contested") for c in contested_rows] + disputed:
         for new_stem in c["new_stems"]:
             succ = by_stem.get(new_stem)
             out.append({
@@ -109,7 +115,12 @@ def compute_digest(project=None, days=7, top_entities=8, recent_n=12):
     cutoff = _cutoff(days)
     recent = [n for n in live if n.get("date", "") >= cutoff]
     conflicts = compute_conflicts(project, limit=0, live=live, sup=sup)
-    changed = [c for c in conflicts if (c["new_date"] or c["old_date"]) >= cutoff]
+    # Also-fix (xhigh review): `changed`/`revised_in_window` is "conflicts RESOLVED" (see
+    # _print_digest) - a `contested`/`disputed` row is neither: both notes are still live and
+    # nothing has been revised, it is a pair the sleep-time judge has not ruled on yet (or ruled
+    # on without proof). Counting it here inflated "revised" with pairs that are still open.
+    changed = [c for c in conflicts
+              if c["kind"] == "superseded" and (c["new_date"] or c["old_date"]) >= cutoff]
 
     by_project = {}
     for n in live:

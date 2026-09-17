@@ -133,6 +133,12 @@ def _revision_counts(project=None, notes=None) -> dict:
         proj = _m().slug_project(project) if project else None
         counts: dict = {}
         for rec in dg.compute_conflicts(proj, limit=100_000, live=notes):
+            # also-fix (xhigh review): a `contested`/`disputed` row is two live siblings
+            # neither of which has actually been revised - counting both `old_stem` and
+            # `new_stem` for that kind doubled the falsification risk of BOTH notes for one
+            # still-open pair. Only a genuine `superseded` revision counts here.
+            if rec.get("kind") != "superseded":
+                continue
             for key in ("new_stem", "old_stem"):
                 s = rec.get(key)
                 if s:

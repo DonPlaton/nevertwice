@@ -806,6 +806,78 @@ check("CONTESTED_BUDGET/_CAP/_SECONDS are reset to their documented defaults",
       (cm.CONTESTED_BUDGET, cm.CONTESTED_CAP, cm.CONTESTED_SECONDS) == (100_000, 0, 900),
       (cm.CONTESTED_BUDGET, cm.CONTESTED_CAP, cm.CONTESTED_SECONDS))
 
+
+# ═══════════════════════════════════════════════════════════════════════════════════════════
+# Also-fix: digest/inbox/lenses - contested != resolved, slugged project, one vault walk
+# ═══════════════════════════════════════════════════════════════════════════════════════════
+
+import digest as dg  # noqa: E402
+import inbox  # noqa: E402
+import lenses  # noqa: E402
+
+print("\n- also-fix: a contested pair is not counted as 'revised' in the digest window -")
+d = fresh()
+do = write(OLD_FACT, S1, title="digest revised test")
+dn = write(NEW_FACT, S2, title="digest revised test")
+digest = dg.compute_digest(PROJ, days=30)
+check("setup: the pair is contested and visible in the full ledger",
+      any(c["kind"] == "contested" and c["old_stem"] == do for c in digest["conflicts"]))
+check("revised_in_window counts only true supersessions, not the open contested pair",
+      digest["totals"]["revised_in_window"] == 0, digest["totals"])
+check("the per-project 'superseded' counter is not bumped by a contested pair",
+      digest["by_project"].get(PROJ, {}).get("superseded", 0) == 0, digest["by_project"])
+check("'changed' (rendered as 'conflicts resolved') does not list the open pair",
+      not any(c["old_stem"] == do for c in digest["changed"]))
+
+print("\n- also-fix: a genuine supersession IS still counted as revised -")
+d = fresh()
+_today = m.datetime.now().strftime("%Y-%m-%d")
+so = write("Traces are exported to Tempo.", S1, title="traces destination", date=_today)
+sn = write("Logs go to Loki now.", S2, title="logs destination", date=_today,
+          contradicts="traces destination")     # a DIFFERENT title, explicitly retiring the old one
+digest2 = dg.compute_digest(PROJ, days=30)
+check("setup: the old note was genuinely retired to Superseded/", note(so, where="Superseded").exists())
+check("a true supersession still counts toward revised_in_window",
+      digest2["totals"]["revised_in_window"] == 1
+      and digest2["by_project"][PROJ]["superseded"] == 1, digest2["totals"])
+
+print("\n- also-fix: inbox.build slugs the project name before it reaches compute_conflicts -")
+d = fresh()
+io_ = write(OLD_FACT, S1, title="inbox slug test")
+in_ = write(NEW_FACT, S2, title="inbox slug test")
+check("setup: k8proj is the slug 'K8Proj' resolves to", m.slug_project("K8Proj") == PROJ)
+screen = inbox.build(project="K8Proj")
+check("the raw (mixed-case) project name still finds the contested pair via slug_project",
+      any(c["old_stem"] == io_ for c in screen["contradictions"]), screen["contradictions"])
+
+print("\n- also-fix: lenses._revision_counts does not double-count a contested pair -")
+d = fresh()
+lo = write(OLD_FACT, S1, title="lens revision test")
+ln = write(NEW_FACT, S2, title="lens revision test")
+counts = lenses._revision_counts(PROJ)
+check("neither sibling of an open contested pair gets a revision count from it",
+      counts.get(lo, 0) == 0 and counts.get(ln, 0) == 0, counts)
+
+print("\n- also-fix: compute_conflicts (no pre-fetched contested=) walks the vault once, not twice -")
+d = fresh()
+wo = write(OLD_FACT, S1, title="one walk test")
+wn = write(NEW_FACT, S2, title="one walk test")
+_calls_walk = []
+_real_both = m._iter_contested_both
+
+
+def _spy_both(project=None):
+    _calls_walk.append(project)
+    return _real_both(project)
+
+
+m._iter_contested_both = _spy_both
+dg.compute_conflicts(PROJ, limit=10)
+m._iter_contested_both = _real_both
+check("compute_conflicts fetches both contested and disputed through ONE walk helper",
+      _calls_walk == [PROJ], _calls_walk)
+
 print(f"\nxhigh review (write path + consolidation integrity + identity/stamps + surfaces + F14 + "
-      f"empty-restatement + sandbox-pins): {len(RUN) - len(FAILED)} passed, {len(FAILED)} failed")
+      f"empty-restatement + sandbox-pins + digest/inbox/lenses): "
+      f"{len(RUN) - len(FAILED)} passed, {len(FAILED)} failed")
 sys.exit(1 if FAILED else 0)

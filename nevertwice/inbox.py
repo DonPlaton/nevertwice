@@ -175,7 +175,12 @@ def build(project: str | None = None, *, limit: int = 40) -> dict:
     for rows in by_status.values():
         rows.sort(key=lambda r: (-r["fired"], r["id"]))
 
-    contradictions = [c for c in _digest.compute_conflicts(project, limit=limit)
+    # also-fix (xhigh review): compute_conflicts (via _iter_contested) compares against the
+    # SLUGGED project stored in each note's stem - the raw caller-facing name ('My-App')
+    # silently returned zero contested/disputed rows for exactly the repo-name shapes
+    # slug_project rewrites, same class as lenses.py's own fix (review 2026-08).
+    contradictions = [c for c in _digest.compute_conflicts(m.slug_project(project) if project else None,
+                                                            limit=limit)
                       if not c.get("resolved")]
     orphaned = _orphaned(guards)
     unconfirmed = _unconfirmed(project, limit=limit)
