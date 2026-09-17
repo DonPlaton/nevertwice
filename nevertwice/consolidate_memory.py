@@ -19,6 +19,7 @@ import heapq
 import os
 import re
 import sys
+import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
@@ -53,6 +54,15 @@ CONTESTED_CAP = m.env_int("NEVERTWICE_CONTESTED_CAP", 0)
 #: what one pair is charged when the backend reports no token counts (a cloud backend, a stub): the
 #: K7 store's mean, prompt 375 + answer 40
 TOKENS_PER_PAIR_EST = 415
+# F6 (xhigh review): a wall-clock ceiling on the judge step itself, independent of the token
+# budget above - Ollama hanging on /api/generate can cost 364s a pair (retries x timeout), and
+# the step held the vault lock the whole time with no refresh_lock(), so past LOCK_STALE_S*10 a
+# concurrent SessionEnd hook stole the lock and wrote at the same time. 900s (15 min) comfortably
+# covers the ~73-pair weekly inflow even at several seconds a call; 0 disables the ceiling.
+CONTESTED_SECONDS = m.env_int("NEVERTWICE_CONTESTED_SECONDS", 900)
+#: consecutive None/timeout verdicts that stop the step early (F6): a hung backend answering
+#: nothing must not spend the whole run's budget retrying the SAME oldest pair forever.
+CONTESTED_FAIL_LIMIT = 3
 
 
 def _pair_fields(p: Path) -> tuple[dict, str, str]:
@@ -83,7 +93,8 @@ def _replacement_guard(old_desc: str, new_desc: str) -> str:
 
 
 def adjudicate_contested(apply: bool, has_llm: bool, cap: int | None = None,
-                         judge=None, cache: dict | None = None, budget: int | None = None) -> dict:
+                         judge=None, cache: dict | None = None, budget: int | None = None,
+                         seconds: float | None = None) -> dict:
     """K8 layer 3 - the same-fact judge over the `contested` pairs, outside any session.
 
     The write path keeps a same-slug note from another session as a live sibling unless the
@@ -104,6 +115,7 @@ def adjudicate_contested(apply: bool, has_llm: bool, cap: int | None = None,
     budget is below the inflow, which at three times the measured inflow it is not."""
     cap = CONTESTED_CAP if cap is None else cap
     budget = CONTESTED_BUDGET if budget is None else budget
+    seconds = CONTESTED_SECONDS if seconds is None else seconds
     judge = judge or m._same_fact_verdict
     pairs: list[tuple] = []
     for c in m._iter_contested(None):
@@ -118,11 +130,15 @@ def adjudicate_contested(apply: bool, has_llm: bool, cap: int | None = None,
                 pairs.append((c, old_path, new_path, ns))
                 live_new.append(ns)
         if apply and len(live_new) != len(c["new_stems"]):
-            _set_contested(old_path, live_new)         # the newer note is gone: nothing left to judge
+            try:
+                _set_contested(old_path, live_new)      # the newer note is gone: nothing left to judge
+            except OSError as e:
+                print(f"      stale stamp cleanup failed for {old_path.name} ({e}) - left as is",
+                      file=sys.stderr)
     pairs.sort(key=lambda t: t[3])                     # date-prefixed stems: the OLDEST pair first
     stats = {"pairs": len(pairs), "budget": budget, "cap": cap, "judged": 0, "tokens_spent": 0,
              "estimated_calls": 0, "replaces": 0, "separate": 0, "vetoed": 0, "unanswered": 0,
-             "left": len(pairs), "prompt_tokens": 0, "eval_tokens": 0, "skipped": None}
+             "errors": 0, "left": len(pairs), "prompt_tokens": 0, "eval_tokens": 0, "skipped": None}
     if not pairs:
         return stats
     if not has_llm:
@@ -134,9 +150,18 @@ def adjudicate_contested(apply: bool, has_llm: bool, cap: int | None = None,
     p0 = m._LLM_STATS.get("prompt_tokens", 0)
     e0 = m._LLM_STATS.get("eval_tokens", 0)
     spent = 0
+    deadline = (time.monotonic() + seconds) if seconds > 0 else None
+    consecutive_none = 0
     for c, old_path, new_path, new_stem in pairs:
         if spent >= budget or (cap and stats["judged"] >= cap):
             break                                      # the rest stays contested, served and visible
+        if deadline is not None and time.monotonic() >= deadline:
+            # F6 (xhigh review): a wall-clock ceiling independent of the token budget - Ollama
+            # hanging on /api/generate can cost minutes a pair (retries x timeout), and this step
+            # held the vault lock the whole time.
+            stats["skipped"] = (f"wall-clock budget ({seconds:.0f}s) reached - "
+                                 "the rest stays contested and visible in conflicts()")
+            break
         try:
             fm_old, old_title, old_desc = _pair_fields(old_path)
             fm_new, _, new_desc = _pair_fields(new_path)
@@ -144,8 +169,30 @@ def adjudicate_contested(apply: bool, has_llm: bool, cap: int | None = None,
             print(f"      contested pair unreadable ({e}) - left as is", file=sys.stderr)
             continue
         tp, te = m._LLM_STATS.get("prompt_tokens", 0), m._LLM_STATS.get("eval_tokens", 0)
+        c0, o0 = m._LLM_STATS.get("cloud", 0), m._LLM_STATS.get("ollama", 0)
         verdict = judge(old_title, old_desc, new_desc, c["project"])
+        # F6: refresh the lock after EVERY call, not just once a run - a long step (Ollama
+        # fallback on a big backlog) never touched the mtime before, so past LOCK_STALE_S*10 a
+        # concurrent SessionEnd hook stole the lock and wrote to the vault at the same time.
+        m.refresh_lock()
+        if verdict is None:
+            # K8-B: a None verdict is NOT counted `judged` or charged against the budget - the
+            # old code charged it the same as a real answer, which fed the SAME timing-out pair
+            # back to the head of the oldest-first queue every run, burning the whole budget on
+            # repeats instead of ever reaching the rest.
+            stats["unanswered"] += 1
+            consecutive_none += 1
+            print(f"      unanswered: {c['stem']} ? {new_stem}")
+            if consecutive_none >= CONTESTED_FAIL_LIMIT:
+                stats["skipped"] = (f"{CONTESTED_FAIL_LIMIT} consecutive unanswered verdicts - "
+                                     "stopping the step; the rest stays contested")
+                break
+            continue
+        consecutive_none = 0
         stats["judged"] += 1
+        backend = "cloud" if m._LLM_STATS.get("cloud", 0) > c0 else (
+            "ollama" if m._LLM_STATS.get("ollama", 0) > o0 else "unknown")
+        stats[f"judged_{backend}"] = stats.get(f"judged_{backend}", 0) + 1
         used = (m._LLM_STATS.get("prompt_tokens", 0) - tp) + (m._LLM_STATS.get("eval_tokens", 0) - te)
         if used <= 0:
             used = TOKENS_PER_PAIR_EST                 # the backend did not say: charge the measured mean
@@ -153,46 +200,87 @@ def adjudicate_contested(apply: bool, has_llm: bool, cap: int | None = None,
         spent += used
         remaining = [s_ for s_ in m._contested_of(fm_old) if s_ != new_stem]
         veto = _replacement_guard(old_desc, new_desc) if verdict is True else ""
-        if veto:
-            # the verdict says replace, the proof is not there: both stay, off the judge's queue,
-            # and the pair is stamped `disputed` so conflicts() still shows it to a human
-            stats["vetoed"] += 1
-            print(f"      vetoed ({veto}): {c['stem']} | {new_stem} - both stay, disputed")
-            if apply:
-                _set_contested(old_path, remaining, disputed=new_stem)
-        elif verdict is True:
-            stats["replaces"] += 1
-            print(f"      replaces: {c['stem']} -> {new_stem}")
-            if apply:
-                # the retired statement's history carries into the one that replaced it, as the
-                # write-time absorb used to carry it (recurrence = distinct contributing sessions)
-                r_old, s_old = m._note_recur_sources(old_path)
-                sources = set(s_old) | {str(x) for x in (fm_new.get("sources") or []) if x}
-                for sess in (fm_old.get("session"), fm_new.get("session")):
-                    if sess:
-                        sources.add(str(sess))
-                rec = max(m._coerce_recurrence(fm_new.get("recurrence")), r_old + 1, len(sources))
-                sup_list = [str(x) for x in (fm_new.get("supersedes") or []) if x]
-                if c["stem"] not in sup_list:
-                    sup_list.append(c["stem"])
-                new_text = new_path.read_text(encoding="utf-8", errors="replace")
-                m.write_atomic(new_path, m._stamp_frontmatter(
-                    new_text, {"recurrence": rec, "sources": sorted(sources)[-m.RECUR_SOURCES_CAP:],
-                               "supersedes": sup_list}))
-                if cache is not None and isinstance(cache.get(new_stem), dict):
-                    cache[new_stem]["recurrence"] = rec
-                _set_contested(old_path, remaining)
-                if not m.supersede_note(old_path, new_stem, via="judge"):
-                    print(f"      supersede failed for {old_path.name} - left live", file=sys.stderr)
-        elif verdict is False:
-            stats["separate"] += 1
-            print(f"      separate: {c['stem']} | {new_stem}")
-            if apply:
-                _set_contested(old_path, remaining)
-        else:
-            stats["unanswered"] += 1
-            print(f"      unanswered: {c['stem']} ? {new_stem}")
-    stats["left"] = len(pairs) - stats["replaces"] - stats["separate"] - stats["vetoed"]
+        try:
+            if veto:
+                # the verdict says replace, the proof is not there: both stay, off the judge's
+                # queue, and the pair is stamped `disputed` so conflicts() still shows it to a human
+                stats["vetoed"] += 1
+                print(f"      vetoed ({veto}): {c['stem']} | {new_stem} - both stay, disputed")
+                if apply:
+                    _set_contested(old_path, remaining, disputed=new_stem)
+            elif verdict is True:
+                stats["replaces"] += 1
+                print(f"      replaces: {c['stem']} -> {new_stem}")
+                if apply:
+                    # the retired statement's history carries into the one that replaced it, as
+                    # the write-time absorb used to carry it (recurrence = distinct sessions)
+                    r_old, s_old = m._note_recur_sources(old_path)
+                    sources = set(s_old) | {str(x) for x in (fm_new.get("sources") or []) if x}
+                    for sess in (fm_old.get("session"), fm_new.get("session")):
+                        if sess:
+                            sources.add(str(sess))
+                    # also-fix (xhigh review): the same "a known session adds nothing" gate the
+                    # write-time absorb applies (memory_hook.py, `grew = session_stem_ not in
+                    # prior_sources`) - unconditionally adding 1 to r_old let one session's note
+                    # replacing another already-known-session note yield recurrence 2 for what is
+                    # still ONE distinct source. Anonymous notes (no session on either side, no
+                    # prior sources - session_stem_ was never passed, same as write-time's own
+                    # `if session_stem_ is None` branch) carry no identity to check "already
+                    # known" against, so they keep the unconditional +1 exactly as before.
+                    if fm_old.get("session") or fm_new.get("session") or s_old or (fm_new.get("sources") or []):
+                        grew = len(sources) > len(s_old)
+                    else:
+                        grew = True
+                    rec = max(m._coerce_recurrence(fm_new.get("recurrence")), r_old + (1 if grew else 0),
+                              len(sources))
+                    sup_list = [str(x) for x in (fm_new.get("supersedes") or []) if x]
+                    if c["stem"] not in sup_list:
+                        sup_list.append(c["stem"])
+                    # F5 (xhigh review): supersede FIRST, the contested clear riding along in the
+                    # SAME atomic stamp (extra_fields) - the old code cleared the stamp with a
+                    # SEPARATE write before attempting the retirement, so a failed unlink (Windows:
+                    # Obsidian/AV/sync holding the note open) left the pair orphaned: live, with
+                    # the stamp already gone and nothing pointing back at it. A failure here
+                    # leaves `old_path` untouched and still contested - re-queued next run.
+                    if not m.supersede_note(old_path, new_stem, via="judge",
+                                            extra_fields={m.CONTESTED_KEY: remaining}):
+                        print(f"      supersede failed for {old_path.name} - left live, still contested",
+                              file=sys.stderr)
+                    else:
+                        new_text = new_path.read_text(encoding="utf-8", errors="replace")
+                        m.write_atomic(new_path, m._stamp_frontmatter(
+                            new_text, {"recurrence": rec, "sources": sorted(sources)[-m.RECUR_SOURCES_CAP:],
+                                       "supersedes": sup_list}))
+                        if cache is not None and isinstance(cache.get(new_stem), dict):
+                            cache[new_stem]["recurrence"] = rec
+                        # F13 (xhigh review): pop the retired stem from the CALLER's cache too -
+                        # otherwise it is still in there when the caller saves it back (e.g. the
+                        # near-dup merge just above this step, before F2 reordered them; or this
+                        # very step's own save a few lines below), so a rebuilt SQLite index would
+                        # serve a note that is no longer live.
+                        if cache is not None:
+                            cache.pop(c["stem"], None)
+            elif verdict is False:
+                stats["separate"] += 1
+                print(f"      separate: {c['stem']} | {new_stem}")
+                if apply:
+                    _set_contested(old_path, remaining)
+            # verdict is None was already handled above (unanswered, uncounted, uncharged)
+            # and never reaches here.
+        except OSError as e:
+            # F10 (xhigh review): one PermissionError (Windows: Obsidian/AV/OneDrive holding a
+            # note open) used to abort the WHOLE weekly run mid-queue - the same class fixed once
+            # before for archival (cap_project_notes, P4). This pair is left exactly as
+            # _iter_contested found it (the judge call already happened and is already counted/
+            # charged above; only the write that would have acted on its verdict failed) and the
+            # run continues with the next pair and its later steps.
+            stats["errors"] += 1
+            print(f"      pair failed ({e}): {c['stem']} | {new_stem} - left as is", file=sys.stderr)
+    # F10: a pair that errored still bumped its verdict's counter before the write that
+    # implements it failed (the judged/charged accounting above is verdict-level, same as
+    # `judged` itself) - add errors back so "left" reflects what is ACTUALLY still contested
+    # on disk, not what the verdict alone would have resolved.
+    stats["left"] = len(pairs) - stats["replaces"] - stats["separate"] - stats["vetoed"] + stats["errors"]
     stats["tokens_spent"] = spent
     stats["prompt_tokens"] = m._LLM_STATS.get("prompt_tokens", 0) - p0
     stats["eval_tokens"] = m._LLM_STATS.get("eval_tokens", 0) - e0
@@ -360,13 +448,21 @@ def _cluster_tokens(rec: dict) -> set:
     return set(m._tokens(f"{rec.get('title','')} {rec.get('desc','')} {rec.get('prevention','')}"))
 
 
-def find_clusters(cache: dict) -> list[list[str]]:
+def find_clusters(cache: dict, exclude: set | None = None) -> list[list[str]]:
     """Greedy near-duplicate clusters within the same (project, ntype). Cosine is
     computed only between notes that share lexical tokens (found via a token→stems
     inverted index), not across all M² pairs in a bucket (audit A6): near-duplicates
     always share vocabulary, so the weekly scan that was quadratic (10k notes in one
     bucket ≈ 87 min of Python cosine) becomes roughly linear and finds the same
-    clusters."""
+    clusters.
+
+    `exclude` (F2, xhigh review): both members of every pair K8's write path is still keeping
+    apart (`contested`) or the judge vetoed (`disputed`) are dropped from clustering entirely,
+    on EITHER side. The same-title saturation that makes this merge useful (cosine/the twin
+    classifier both key heavily on a shared title) is exactly what used to let it archive one
+    side of a pair before the judge ever ruled - a duplicate merge is a different, unrelated
+    mechanism from K8's own adjudication and must not pre-empt it."""
+    exclude = exclude or set()
     # ≥1 shared content token (was 2): the twin classifier's own learned fact is that
     # true twins are re-PHRASINGS with LOW word overlap, so the 2-token prefilter was
     # biased against exactly the pairs worth merging (review 2026-08 D9). One shared
@@ -383,7 +479,7 @@ def find_clusters(cache: dict) -> list[list[str]]:
     for stem, rec in cache.items():
         # only valid-ntype records - a malformed/legacy entry must not crash the
         # later TYPE_FOLDER[rec['ntype']] lookup (audit C4)
-        if not isinstance(rec, dict) or rec.get("ntype") not in m.TYPE_FOLDER:
+        if not isinstance(rec, dict) or rec.get("ntype") not in m.TYPE_FOLDER or stem in exclude:
             continue
         groups.setdefault((rec.get("project"), rec.get("ntype")), []).append(stem)
 
@@ -766,8 +862,36 @@ def _run_consolidation(apply, mode, has_llm):
             m.save_embed_cache(cache)
             print(f"[consolidate] embedded {upgraded} text-only note(s) (index self-heal)")
 
-    # 2) near-duplicate merge
-    clusters = find_clusters(cache) if dedup_ok else []
+    # 2) K8 layer 3: the contested same-slug pairs the write path kept apart go to the judge here -
+    #    one call a pair, capped, outside any session chain (no cache confound, no hook millisecond).
+    #    F2 (xhigh review): this runs BEFORE the near-duplicate merge below, not after - the merge
+    #    saturates on a shared title (cosine and the twin classifier both key heavily on it) and used
+    #    to archive one side of a pair K8 deliberately keeps apart before the judge ever ruled on it.
+    #    Judging first also means a pair the judge just resolved this run is already off the
+    #    contested list by the time the merge's own exclusion set (next) is built.
+    adj = adjudicate_contested(apply, has_llm, cache=cache)
+    print(f"[consolidate] contested pairs: {adj['pairs']} - {adj['judged']} judge call(s), "
+          f"{adj['tokens_spent']} of {adj['budget']} tokens (~{adj['budget'] // TOKENS_PER_PAIR_EST} pairs a run "
+          f"at {TOKENS_PER_PAIR_EST}): replaces {adj['replaces']}, separate {adj['separate']}, vetoed {adj['vetoed']}, "
+          f"unanswered {adj['unanswered']}, left {adj['left']}"
+          + (f"; tokens {adj['prompt_tokens']}+{adj['eval_tokens']}" if adj["judged"] else "")
+          + (f"; {adj['estimated_calls']} call(s) charged the estimate" if adj["estimated_calls"] else "")
+          + (f"; {adj['errors']} pair(s) failed (left as is)" if adj.get("errors") else "")  # F10
+          + (f" ({adj['skipped']})" if adj.get("skipped") else "") + f" [{mode}]")
+    if apply and adj["replaces"]:
+        m.save_embed_cache(cache)
+
+    # 2b) F2: both members of every pair K8 is still keeping apart (contested) or the judge
+    #     vetoed (disputed) are off limits to the near-dup merge below - a pair still on either
+    #     list after the judging above is one no automatic mechanism has resolved yet.
+    contested_stems: set = set()
+    for _key in (m.CONTESTED_KEY, m.DISPUTED_KEY):
+        for _c in m._iter_contested(None, key=_key):
+            contested_stems.add(_c["stem"])
+            contested_stems.update(_c["new_stems"])
+
+    # 3) near-duplicate merge
+    clusters = find_clusters(cache, exclude=contested_stems) if dedup_ok else []
     print(f"[consolidate] {mode} | {len(clusters)} near-duplicate cluster(s) "
           f"(sim>={SIM_THRESHOLD})")
     merged = 0
@@ -863,20 +987,7 @@ def _run_consolidation(apply, mode, has_llm):
     if apply and (merged or clusters):
         m.save_embed_cache(cache)
 
-    # 2c) K8 layer 3: the contested same-slug pairs the write path kept apart go to the judge here -
-    #     one call a pair, capped, outside any session chain (no cache confound, no hook millisecond)
-    adj = adjudicate_contested(apply, has_llm, cache=cache)
-    print(f"[consolidate] contested pairs: {adj['pairs']} - {adj['judged']} judge call(s), "
-          f"{adj['tokens_spent']} of {adj['budget']} tokens (~{adj['budget'] // TOKENS_PER_PAIR_EST} pairs a run "
-          f"at {TOKENS_PER_PAIR_EST}): replaces {adj['replaces']}, separate {adj['separate']}, vetoed {adj['vetoed']}, "
-          f"unanswered {adj['unanswered']}, left {adj['left']}"
-          + (f"; tokens {adj['prompt_tokens']}+{adj['eval_tokens']}" if adj["judged"] else "")
-          + (f"; {adj['estimated_calls']} call(s) charged the estimate" if adj["estimated_calls"] else "")
-          + (f" ({adj['skipped']})" if adj.get("skipped") else "") + f" [{mode}]")
-    if apply and adj["replaces"]:
-        m.save_embed_cache(cache)
-
-    # 2b) per-project cap (P2): bound live notes per project so none grows unbounded
+    # 4) per-project cap (P2): bound live notes per project so none grows unbounded
     #     (opt-in; archives lowest-salience excess). The scale-index rebuild below
     #     reflects the archival.
     capped = cap_project_notes(cache, apply)
@@ -885,7 +996,7 @@ def _run_consolidation(apply, mode, has_llm):
         if apply:
             m.save_embed_cache(cache)
 
-    # 3) compaction + aging. This is the designated heavy/non-interactive window,
+    # 5) compaction + aging. This is the designated heavy/non-interactive window,
     #    so LLM context summaries are allowed here (unlike the live hook path,
     #    which is GPU-free to keep the vault lock off any model call - audit C4).
     print("[consolidate] context compaction + archival "
@@ -895,21 +1006,21 @@ def _run_consolidation(apply, mode, has_llm):
         m.archive_old_typed()
         m.archive_old_sessions()
 
-    # 4) sleep-time reflection (M-1) + dynamic linking (M-7) - episodic→semantic
+    # 6) sleep-time reflection (M-1) + dynamic linking (M-7) - episodic→semantic
     #    distillation and a navigable note network. Reload cache (links/distil read it).
     distilled = distill_patterns(cache, apply) if has_llm else 0
     linked = link_related_notes(m.load_embed_cache() if apply else cache, apply)
     print(f"[consolidate] reflection: {distilled} pattern(s) distilled, "
           f"{linked} note(s) auto-linked ({'applied' if apply else 'dry-run'})")
 
-    # 4b) salience scoring (Brain F5): stamp graph-centrality salience BEFORE the index rebuild
+    # 6b) salience scoring (Brain F5): stamp graph-centrality salience BEFORE the index rebuild
     #     so retrieval reads the fresh nudge. GPU-free; inert on an entity-less store.
     salstamp = stamp_salience(apply)
     if salstamp:
         print(f"[consolidate] salience: {salstamp} note(s) "
               f"{'stamped' if apply else 'would be stamped'} (graph centrality)")
 
-    # 4c) active memory (axis A): distil high-recurrence mistakes into executable guards so the
+    # 6c) active memory (axis A): distil high-recurrence mistakes into executable guards so the
     #     PreToolUse hot path has something to fire on. Sleep-time only (may use the LLM); the
     #     hot path only ever READS the resulting ledger. Idempotent (dedup by born_from).
     if apply:

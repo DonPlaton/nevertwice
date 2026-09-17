@@ -14,6 +14,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "nevertwice"))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import memory_hook as m  # noqa: E402
+import consolidate_memory as cm  # noqa: E402
 from _sandbox import make_sandbox  # noqa: E402
 
 RUN, FAILED = [], []
@@ -219,5 +220,198 @@ check("no self-reference lands in its own supersedes list",
       qsib not in (fm_of(qsib).get("supersedes") or []), str(fm_of(qsib).get("supersedes")))
 m._near_duplicate_paths = _real_ndp2
 
-print(f"\nxhigh review (write path): {len(RUN) - len(FAILED)} passed, {len(FAILED)} failed")
+
+# ═══════════════════════════════════════════════════════════════════════════════════════════
+# Consolidation integrity: F2, F5, F6, F10, F13
+# ═══════════════════════════════════════════════════════════════════════════════════════════
+
+def judge_fixed(verdict):
+    def fake(old_title, old_desc, new_desc, project):
+        return verdict
+    return fake
+
+
+# ── F5: supersede-then-stamp ordering ───────────────────────────────────────────────────────
+print("\n- F5: a failed supersede leaves the pair contested, not orphaned -")
+d = fresh()
+o = write(OLD_FACT, S1, title="pool retry")
+n = write(NEW_FACT, S2, title="pool retry")
+check("setup: contested", contested(o) == [n])
+_real_supersede = m.supersede_note
+m.supersede_note = lambda *a, **k: False
+cm.adjudicate_contested(apply=True, has_llm=True, judge=judge_fixed(True))
+check("a failed supersede leaves the earlier note live and still contested",
+      note(o).exists() and contested(o) == [n], str(contested(o)))
+m.supersede_note = _real_supersede
+
+print("\n- mutation check: clearing the stamp separately before a failed retirement reproduces the orphan -")
+d = fresh()
+o = write(OLD_FACT, S1, title="pool retry mut")
+n = write(NEW_FACT, S2, title="pool retry mut")
+
+
+def _broken_order(p, new_stem, via="slug", extra_fields=None):
+    cm._set_contested(p, [])          # the pre-fix bug: clear the stamp with a SEPARATE write first
+    return False                       # ... then the retirement itself fails
+
+
+m.supersede_note = _broken_order
+cm.adjudicate_contested(apply=True, has_llm=True, judge=judge_fixed(True))
+check("with the old ordering restored by hand, a failed retirement orphans the pair", not contested(o))
+m.supersede_note = _real_supersede
+
+# ── F10: one pair's write failure must not abort the rest of the queue ─────────────────────
+print("\n- F10: one pair's write failure does not abort the rest of the queue -")
+d = fresh()
+o1 = write(OLD_FACT, S1, title="pool retry a")
+n1 = write(NEW_FACT, S2, title="pool retry a")
+o2 = write(f"The retry backoff is 2 seconds.{F}the retry backoff is 2 seconds", S1, title="pool retry b")
+n2 = write(f"The retry backoff is 9 seconds.{F}the retry backoff is 9 seconds", S2, title="pool retry b")
+_real_write_atomic = m.write_atomic
+_calls: list = []
+
+
+def _raising_write_atomic(path, text):
+    if "Superseded" not in path.parts and not _calls:
+        _calls.append(path.name)
+        raise OSError("simulated: file locked")
+    return _real_write_atomic(path, text)
+
+
+m.write_atomic = _raising_write_atomic
+res = cm.adjudicate_contested(apply=True, has_llm=True, judge=judge_fixed(True))
+check("the run did not abort - both pairs were judged", res["judged"] == 2, str(res))
+check("one pair recorded an error; 'left' still reflects it as unresolved",
+      res["errors"] == 1 and res["left"] == 1, str(res))
+m.write_atomic = _real_write_atomic
+
+# ── F6: refresh_lock, wall-clock budget, consecutive-failure stop, backend recorded ─────────
+print("\n- F6: refresh_lock is called after every judge call -")
+d = fresh()
+write(OLD_FACT, S1, title="lock a")
+write(NEW_FACT, S2, title="lock a")
+write(f"The retry backoff is 2 seconds.{F}the retry backoff is 2 seconds", S1, title="lock b")
+write(f"The retry backoff is 9 seconds.{F}the retry backoff is 9 seconds", S2, title="lock b")
+refreshes: list = []
+_real_refresh = m.refresh_lock
+m.refresh_lock = lambda: refreshes.append(1)
+res = cm.adjudicate_contested(apply=True, has_llm=True, judge=judge_fixed(True))
+check("the lock was refreshed once per judge call", len(refreshes) == res["judged"] == 2,
+      str((len(refreshes), res["judged"])))
+m.refresh_lock = _real_refresh
+
+print("\n- F6: a wall-clock budget stops the step, leaving the rest contested -")
+d = fresh()
+write(OLD_FACT, S1, title="clock a")
+write(NEW_FACT, S2, title="clock a")
+write(f"The retry backoff is 2 seconds.{F}the retry backoff is 2 seconds", S1, title="clock b")
+write(f"The retry backoff is 9 seconds.{F}the retry backoff is 9 seconds", S2, title="clock b")
+_real_monotonic = cm.time.monotonic
+# call 1: the deadline computation itself (0.0 -> deadline 1.0). call 2: the first pair's
+# pre-check (0.5, still inside budget - that pair is judged). call 3+: the second pair's
+# pre-check (10_000.0, blown - the step stops there).
+_clock = iter([0.0, 0.5, 10_000.0])
+
+
+def _fake_monotonic():
+    return next(_clock, 10_000.0)
+
+
+cm.time.monotonic = _fake_monotonic
+res = cm.adjudicate_contested(apply=True, has_llm=True, judge=judge_fixed(True), seconds=1)
+check("the step stopped early on the wall-clock budget, one pair left contested",
+      res["judged"] == 1 and res["left"] == 1 and "wall-clock" in (res.get("skipped") or ""), str(res))
+cm.time.monotonic = _real_monotonic
+
+print("\n- F6: three consecutive unanswered verdicts stop the step, none charged -")
+d = fresh()
+pairs_od = []
+for i, t in enumerate(["stop a", "stop b", "stop c", "stop d"]):
+    oo = write(f"Value is {10 + i}.{F}value is {10 + i}", S1, title=t, date=f"2026-06-0{i + 1}")
+    nn = write(f"Value is {90 + i}.{F}value is {90 + i}", S2, title=t, date=f"2026-06-0{i + 1}")
+    pairs_od.append((oo, nn))
+res = cm.adjudicate_contested(apply=True, has_llm=True, judge=judge_fixed(None))
+check("stopped after 3 consecutive unanswered verdicts, none counted judged or charged",
+      res["unanswered"] == 3 and res["judged"] == 0 and res["tokens_spent"] == 0
+      and "consecutive" in (res.get("skipped") or ""), str(res))
+check("the 4th pair was never even reached, still contested",
+      contested(pairs_od[3][0]) == [pairs_od[3][1]])
+
+print("\n- F6: the backend actually used per verdict is broken out in stats -")
+d = fresh()
+write(OLD_FACT, S1, title="backend a")
+write(NEW_FACT, S2, title="backend a")
+write(f"The retry backoff is 2 seconds.{F}the retry backoff is 2 seconds", S1, title="backend b")
+write(f"The retry backoff is 9 seconds.{F}the retry backoff is 9 seconds", S2, title="backend b")
+_i = {"n": 0}
+
+
+def _judge_backend(old_title, old_desc, new_desc, project):
+    _i["n"] += 1
+    m._LLM_STATS[("cloud" if _i["n"] == 1 else "ollama")] = \
+        m._LLM_STATS.get("cloud" if _i["n"] == 1 else "ollama", 0) + 1
+    return True
+
+
+res = cm.adjudicate_contested(apply=True, has_llm=True, judge=_judge_backend)
+check("both backends actually used this run are broken out",
+      res.get("judged_cloud") == 1 and res.get("judged_ollama") == 1, str(res))
+
+print("\n- also-fix: the judge's recurrence carry has the same 'known session adds nothing' gate -")
+d = fresh()
+SA_ = "2026-05-01-1000-k8p-session-aaaaaaaa"
+SB_ = "2026-05-09-1100-k8p-session-bbbbbbbb"
+o = write(OLD_FACT, SA_, title="gate test", date="2026-05-01")
+p_o = note(o)
+p_o.write_text(m._stamp_frontmatter(p_o.read_text(encoding="utf-8"), {"recurrence": 2, "sources": [SA_, SB_]}),
+               encoding="utf-8")
+n = write(NEW_FACT, SB_, title="gate test", date="2026-05-09")      # session B is ALREADY a known source
+cm.adjudicate_contested(apply=True, has_llm=True, judge=judge_fixed(True))
+check("a known session merging in adds nothing extra - mirrors the write-time 'grew' gate",
+      str(fm_of(n).get("recurrence")) == "2", str(fm_of(n)))
+
+# ── F13: pop the retired stem from the caller's cache; never save {} over a real cache ──────
+print("\n- F13: a successful supersede pops the retired stem from the caller's cache -")
+d = fresh()
+o = write(OLD_FACT, S1, title="cache pop test")
+n = write(NEW_FACT, S2, title="cache pop test")
+fake_cache = {o: {"ntype": "decision", "project": PROJ, "recurrence": 1},
+              n: {"ntype": "decision", "project": PROJ, "recurrence": 1}}
+cm.adjudicate_contested(apply=True, has_llm=True, judge=judge_fixed(True), cache=fake_cache)
+check("the retired stem is popped from the caller's cache; the winner stays",
+      o not in fake_cache and n in fake_cache, str(list(fake_cache)))
+
+print("\n- F13: save_embed_cache refuses to overwrite a non-empty on-disk cache with an empty one -")
+d = fresh()
+m.save_embed_cache({"some-stem": {"ntype": "decision", "vec": [1.0]}})
+before = m.EMBED_CACHE.read_text(encoding="utf-8")
+m.save_embed_cache({})
+after = m.EMBED_CACHE.read_text(encoding="utf-8")
+check("the on-disk cache is unchanged, not clobbered with {}", after == before and after != "{}", after)
+
+print("\n- mutation check: without the guard, an empty cache clobbers a non-empty one -")
+d = fresh()
+m.save_embed_cache({"some-stem": {"ntype": "decision", "vec": [1.0]}})
+m._save_json_generations(m.EMBED_CACHE, __import__("json").dumps({}), prev=False)   # the pre-fix write path
+check("without the guard, {} silently overwrites the real cache (the bug)",
+      m.EMBED_CACHE.read_text(encoding="utf-8") == "{}")
+
+# ── F2: the near-dup merge must not cluster a pair K8 is keeping apart ──────────────────────
+print("\n- F2: a contested/disputed pair is excluded from the near-dup merge, both members -")
+cache2 = {
+    "2026-06-01-proj-mistake-a": {"ntype": "mistake", "project": "proj", "title": "oom",
+        "desc": "cuda out of memory during the training loop", "vec": [1.0, 0.0], "recurrence": 1},
+    "2026-06-02-proj-mistake-b": {"ntype": "mistake", "project": "proj", "title": "oom2",
+        "desc": "cuda out of memory during the training loop", "vec": [1.0, 0.0], "recurrence": 1},
+}
+fl_no_exclude = [set(c) for c in cm.find_clusters(cache2)]
+check("setup: without exclude they would cluster (the merge this fix must NOT apply to a kept-apart pair)",
+      any(set(cache2) <= c for c in fl_no_exclude), str(fl_no_exclude))
+fl_excluded = [set(c) for c in cm.find_clusters(cache2, exclude=set(cache2))]
+check("with both members excluded, no cluster forms", fl_excluded == [])
+fl_one = [set(c) for c in cm.find_clusters(cache2, exclude={"2026-06-01-proj-mistake-a"})]
+check("excluding just ONE member still keeps the pair apart on the other side too",
+      not any("2026-06-02-proj-mistake-b" in c for c in fl_one))
+
+print(f"\nxhigh review (write path + consolidation integrity): {len(RUN) - len(FAILED)} passed, {len(FAILED)} failed")
 sys.exit(1 if FAILED else 0)

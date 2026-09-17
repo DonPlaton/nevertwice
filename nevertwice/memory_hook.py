@@ -2868,6 +2868,20 @@ def load_embed_cache() -> dict:
 
 
 def save_embed_cache(cache: dict):
+    if not cache:
+        # F13 (xhigh review): refuse to overwrite a NON-empty on-disk cache with an empty one.
+        # `cache` reaches {} in the caller's hands when both generations were transiently
+        # unreadable (a lock steal, a crash between file ops) - load_embed_cache's own fallback -
+        # and a caller that then saves it back turns a transient read failure into permanent
+        # loss, indistinguishable on disk from a genuinely empty vault. `embed_index.py --rebuild`
+        # is the deliberate way to write a real empty cache.
+        try:
+            if EMBED_CACHE.exists() and EMBED_CACHE.stat().st_size > 2:
+                log("Embed cache save refused: in-memory cache is empty but the on-disk cache is "
+                    "not - run embed_index.py --rebuild if the vault is genuinely empty")
+                return
+        except OSError:
+            pass
     try:
         # prev=False: a 90 MB rebuildable cache earns no rollback copy (store_state).
         _save_json_generations(EMBED_CACHE, json.dumps(cache, ensure_ascii=False), prev=False)
@@ -3297,7 +3311,7 @@ def _reconcilable_typed_paths(folder_path: Path, project: str, ntype: str,
                   key=lambda p: p.stem, reverse=True)
 
 
-def supersede_note(p: Path, new_stem: str, via: str = "slug") -> bool:
+def supersede_note(p: Path, new_stem: str, via: str = "slug", extra_fields: dict | None = None) -> bool:
     """Retire a superseded note: stamp status, move into <folder>/Superseded/
     (Obsidian still resolves [[stem]]), drop it from the embedding cache so
     recall surfaces only current truth - contradictory facts no longer coexist
@@ -3308,7 +3322,17 @@ def supersede_note(p: Path, new_stem: str, via: str = "slug") -> bool:
     (the near-duplicate classifier). Stamped as `superseded_via` so the as-of
     stand can split interval closures by mechanism (ledger J2b). An archived note
     (`p` under `Archive/`) moves to `Archive/Superseded/` by the same
-    `p.parent / "Superseded"` rule below - the reconcile now reaches it (J2b)."""
+    `p.parent / "Superseded"` rule below - the reconcile now reaches it (J2b).
+
+    `extra_fields` (F5, xhigh review), when given, is merged into the SAME stamp the
+    archived copy gets - a caller that also wants to clear its own frontmatter field
+    (the sleep-time judge clearing `contested`) rides along atomically with the
+    retirement instead of writing it separately BEFORE this call. A separate pre-write
+    left the field cleared on the ORIGINAL live note even when the retirement below then
+    failed (Windows: Obsidian/AV/sync holding it open) - orphaned, the stamp already gone
+    and nothing pointing back at it. Nothing here ever touches `p` on disk before the
+    unlink at the end, so a failure (this function returning False) always leaves `p`
+    exactly as it was."""
     if p.stem == new_stem:
         return False
     try:
@@ -3319,6 +3343,8 @@ def supersede_note(p: Path, new_stem: str, via: str = "slug") -> bool:
     new_date = (parse_typed_stem(new_stem) or {}).get("date", "")
     if new_date:
         fields["valid_to"] = new_date    # M-5: belief held until the replacement
+    if extra_fields:
+        fields.update(extra_fields)
     text = _stamp_frontmatter(text, fields)
     dest_dir = p.parent / "Superseded"
     dest_dir.mkdir(exist_ok=True)
