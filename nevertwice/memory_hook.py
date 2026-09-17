@@ -3538,7 +3538,11 @@ _LIT_PATTERNS = [re.compile(p) for p in (
     r"\b\d{1,3}(?:\.\d{1,3}){3}:\d+\b",
     r"\b\w+(?:\.\w+)+:\w+\b",
     r"[A-Za-z]:\\[\w\\.-]+",
-    r"[~+\-]?\b\d+(?:\.\d+)?\s?(?:MB|GB|KB|TB|ms|GHz|MHz|px|%)",
+    # F14 (xhigh review): the unit list lacked plain time units - a value stated in seconds/
+    # minutes/hours/days (the commonest shape for a timeout/backoff/TTL) was never harvested,
+    # so the write-time facts block never verified it and the sleep-time guard vetoed a true
+    # replacement, parking it `disputed` on nothing but a missing unit word.
+    r"[~+\-]?\b\d+(?:\.\d+)?\s?(?:MB|GB|KB|TB|ms|GHz|MHz|px|%|s|seconds?|minutes?|hours?|days?)\b",
     r"\b\d+\.\d+\b",
     r"\[[^\]\n]{1,40}\]",
     r"\b[A-Z][A-Za-z0-9]*(?:-[A-Za-z0-9]+)+\b",
@@ -3760,6 +3764,15 @@ _VALUE_RE = re.compile(
     r"[~+\-]?\b\d+(?:[.,]\d+)*\s?(?:MB|GB|KB|TB|ms|s|GHz|MHz|px|%|seconds?|minutes?|hours?|days?)?\b"
     r"|\bv\d+(?:\.\d+)*\b", re.I)
 
+#: F14 (xhigh review): the context a BARE integer (no unit, no version prefix) needs to count as
+#: a value at all - port/PR/#/version, immediately before it. Without one it is far more likely an
+#: ISO-date piece, a year or a plain count than a value a replacement actually changed.
+_BARE_VALUE_CTX_RE = re.compile(r"(?:\bport|\bpr|\bversion)\s*#?\s*$|#\s*$", re.I)
+
+
+def _bare_int_has_value_context(statement: str, pos: int) -> bool:
+    return bool(_BARE_VALUE_CTX_RE.search(statement[max(0, pos - 15):pos]))
+
 
 def _unverified_values(desc: str) -> list[str]:
     """Value-shaped tokens in a description's statement that its `[facts]` block does not carry -
@@ -3771,7 +3784,13 @@ def _unverified_values(desc: str) -> list[str]:
     Whole-token membership (F4, xhigh review): `facts` is the SET of value-shaped tokens the block
     itself carries, not the block's raw text - a plain substring scan ('tok not in facts' over the
     joined text) let "5 mb" pass against a block that only ever said "25 mb", "v2" against "v2.0",
-    "80" against "8080"."""
+    "80" against "8080".
+
+    F14 (xhigh review): a BARE integer (no unit) only counts as a value with a value-shaped
+    CONTEXT (port/PR/#/version) - every ISO-date piece, year, PR number and plain count used to
+    flag, and the harvester never captures those (no date/year/bare-int pattern in
+    `_LIT_PATTERNS`), so they can never be verified - `_replacement_guard` vetoed true
+    replacements on nothing but a bare year or a date fragment and parked them `disputed`."""
     statement = _norm_statement(desc)
     facts = {_norm_ws(mo.group(0).strip("~+- ")) for mo in _VALUE_RE.finditer(" ".join(_facts_in(desc)))}
     out = []
@@ -3779,7 +3798,8 @@ def _unverified_values(desc: str) -> list[str]:
         tok = _norm_ws(mo.group(0).strip("~+- "))
         if tok and not tok.isdigit() and tok not in facts and tok not in out:
             out.append(tok)
-        elif tok and tok.isdigit() and len(tok) >= 2 and tok not in facts and tok not in out:
+        elif (tok and tok.isdigit() and len(tok) >= 2 and _bare_int_has_value_context(statement, mo.start())
+              and tok not in facts and tok not in out):
             out.append(tok)
     return out
 

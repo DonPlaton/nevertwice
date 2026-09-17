@@ -143,17 +143,24 @@ def run(stand: str, cases: list[dict], k: int) -> dict:
         except Exception as e:                                    # noqa: BLE001 - reported per case
             rows.append({"id": case["id"], "shape": case["shape"], "error": f"{type(e).__name__}: {e}"})
             continue
-        if stand == "asof":
-            old = ab._items(api.as_of(case["query"], ab.DAY_BETWEEN, project, k=k))
-            new = ab._items(api.as_of(case["query"], ab.DAY_AFTER, project, k=k))
-            row = ab._row(case, old, new)
-            row["leak"] = bool(sb._hit(case["current"], " ".join(old)))
-            state = ab._session_state(project, case)
-            row["store"] = state
-            row["old_fail_kind"] = ab.old_fail_kind(row, state)
-        else:
-            hits = api.recall(case["query"], project=project, k=k)
-            row = {**sb._row(case, [sb.hit_text(h) for h in hits]), **sb._store_state(project, case)}
+        try:
+            if stand == "asof":
+                old = ab._items(api.as_of(case["query"], ab.DAY_BETWEEN, project, k=k))
+                new = ab._items(api.as_of(case["query"], ab.DAY_AFTER, project, k=k))
+                row = ab._row(case, old, new)
+                row["leak"] = bool(sb._hit(case["current"], " ".join(old)))
+                state = ab._session_state(project, case)
+                row["store"] = state
+                row["old_fail_kind"] = ab.old_fail_kind(row, state)
+            else:
+                hits = api.recall(case["query"], project=project, k=k)
+                row = {**sb._row(case, [sb.hit_text(h) for h in hits]), **sb._store_state(project, case)}
+        except OSError as e:
+            # also-fix (xhigh review): `_session_state`/`_store_state` read the vault's own files
+            # (a transient OSError, not a scoring bug) - one case's read failure must cost that
+            # case, not the whole recording run.
+            rows.append({"id": case["id"], "shape": case["shape"], "error": f"{type(e).__name__}: {e}"})
+            continue
         row["pairs"] = len(PAIRS) - n_before
         rows.append(row)
         print(f"  [{i + 1}/{len(cases)}] {case['id']}  pairs={row['pairs']}"

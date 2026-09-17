@@ -111,6 +111,13 @@ def main() -> int:
         if ds.exists():
             for c in json.loads(ds.read_text(encoding="utf-8"))["cases"]:
                 corpus[c["id"]] = c
+        else:
+            # also-fix (xhigh review): a missing dataset used to silently score against
+            # whatever corpus the earlier files in `a.files` had already loaded (or an
+            # empty one, on the first file) - fail loudly instead of reporting a number
+            # that looks legitimate but is missing this file's ground truth entirely.
+            print(f"missing dataset for {f}: {ds} does not exist", file=sys.stderr)
+            return 1
         label_pairs(d["pairs"], corpus)
         stands[Path(f).stem.replace("k8_collisions_", "")] = d
     all_rows: list[dict] = []

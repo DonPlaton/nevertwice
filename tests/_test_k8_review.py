@@ -133,25 +133,25 @@ check("_same_replacement reports it unproven, not restated",
 
 print("\n- F3: rule 2/2' run the write-time guard - a hallucinated additional value is not absorbed -")
 d = fresh()
-pool_old = write(f"The connection pool size is 10.{F}the connection pool size is 10", S1, title="pool size")
-pool_new = write(f"The connection pool size is 10, raised temporarily to 99 under load.{F}the connection pool size is 10",
+pool_old = write(f"The retry timeout is 10 seconds.{F}the retry timeout is 10 seconds", S1, title="pool size")
+pool_new = write(f"The retry timeout is 10 seconds, raised temporarily to 99 seconds under load.{F}the retry timeout is 10 seconds",
                  S2, title="pool size")
 check("a value the new facts block does not back is not proven replacement, even though the old value is unchanged",
-      pool_new == f"{pool_old}-2" and served(pool_old) == f"The connection pool size is 10.{F}the connection pool size is 10"
+      pool_new == f"{pool_old}-2" and served(pool_old) == f"The retry timeout is 10 seconds.{F}the retry timeout is 10 seconds"
       and contested(pool_old) == [pool_new])
 check("_same_replacement names the veto reason",
       m._same_replacement(note(pool_old), "pool size",
-                          f"The connection pool size is 10, raised temporarily to 99 under load.{F}the connection pool size is 10")
+                          f"The retry timeout is 10 seconds, raised temporarily to 99 seconds under load.{F}the retry timeout is 10 seconds")
       == (False, "unverified_value"))
 
 print("\n- mutation check: without the write-time guard, the hallucinated value is wrongly absorbed -")
 d = fresh()
 _real_uv_guard = m._unverified_values
 m._unverified_values = lambda desc: []
-old3 = write(f"The connection pool size is 10.{F}the connection pool size is 10", S1, title="pool size mut")
-new3 = write(f"The connection pool size is 10, raised temporarily to 99 under load.{F}the connection pool size is 10",
+old3 = write(f"The retry timeout is 10 seconds.{F}the retry timeout is 10 seconds", S1, title="pool size mut")
+new3 = write(f"The retry timeout is 10 seconds, raised temporarily to 99 seconds under load.{F}the retry timeout is 10 seconds",
              S2, title="pool size mut")
-check("without the guard, the hallucinated '99' is silently absorbed as the same fact", new3 == old3)
+check("without the guard, the hallucinated '99 seconds' is silently absorbed as the same fact", new3 == old3)
 m._unverified_values = _real_uv_guard
 
 # ── F4: _unverified_values is whole-token membership, not substring ────────────────────────────
@@ -698,6 +698,40 @@ etext = m._earlier_text(prevention_note, "mistake")
 check("the earlier line carries the Prevention text, not just the statement",
       "cap retries" in etext.lower(), etext)
 
-print(f"\nxhigh review (write path + consolidation integrity + identity/stamps + surfaces): "
+
+# ═══════════════════════════════════════════════════════════════════════════════════════════
+# F14: a bare integer is a "value" only with a value-shaped context
+# ═══════════════════════════════════════════════════════════════════════════════════════════
+
+print("\n- F14: a bare ISO-date piece, a year, or a plain count is not an unverified value -")
+check("a year in the statement is not flagged",
+      m._unverified_values(f"Migrated in 2026.{F}migrated") == [])
+check("ISO-date pieces (day/month) are not flagged",
+      m._unverified_values(f"Shipped on 2026-06-01.{F}shipped") == [])
+check("a plain count with no unit and no value-shaped context is not flagged",
+      m._unverified_values(f"Retried 12 times before giving up.{F}retried before giving up") == [])
+check("...but a number WITH a unit is still flagged as before",
+      m._unverified_values(f"The timeout is 12 seconds.{F}confirmed") == ["12 seconds"])
+check("...and a bare number WITH a value-shaped context (port/PR/#/version) is still flagged",
+      m._unverified_values(f"Now listening on port 8080.{F}confirmed") == ["8080"]
+      and m._unverified_values(f"Fixed in PR 4213.{F}confirmed") == ["4213"]
+      and m._unverified_values(f"See issue #4213.{F}confirmed") == ["4213"]
+      and m._unverified_values(f"Now on version 14.{F}confirmed") == ["14"])
+
+print("\n- mutation check: without the context gate, a bare year/date piece is wrongly flagged -")
+_real_ctx = m._bare_int_has_value_context
+m._bare_int_has_value_context = lambda statement, pos: True
+check("with the gate blinded, a plain year is wrongly treated as an unverified value (the bug)",
+      m._unverified_values(f"Migrated in 2026.{F}migrated") == ["2026"])
+m._bare_int_has_value_context = _real_ctx
+
+print("\n- F14: the harvester's unit list now includes plain time units -")
+check("a value in plain seconds is harvested as a literal",
+      any("30 seconds" in lit or lit == "30" for lit in m._harvest_literals(
+          "The client timeout is 30 seconds now.", "client timeout", want=5, exclude=set())), )
+check("_LIT_PATTERNS itself matches a bare time-unit value",
+      any(rx.search("retries wait 45 minutes between attempts") for rx in m._LIT_PATTERNS))
+
+print(f"\nxhigh review (write path + consolidation integrity + identity/stamps + surfaces + F14): "
       f"{len(RUN) - len(FAILED)} passed, {len(FAILED)} failed")
 sys.exit(1 if FAILED else 0)

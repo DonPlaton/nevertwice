@@ -288,11 +288,26 @@ def _store_state(project: str, case: dict) -> dict:
             "notes_in_cyrillic": drift}
 
 
+def _env_int_safe(name: str, default: int) -> int:
+    """also-fix (xhigh review): a bare `int(os.environ[...])` at import made a mistyped
+    K8_SLEEP_BUDGET/K8_SLEEP_CAP kill this whole tool (and asof_bench/k8_collisions, which
+    import it) with an import-time ValueError - `memory_hook.env_int` is not imported at
+    module level here (it is loaded lazily, inside a function), so this mirrors its degrade-
+    to-default behaviour locally instead of promoting that import to module scope."""
+    raw = os.environ.get(name)
+    if raw is None or not raw.strip():
+        return default
+    try:
+        return int(raw.strip())
+    except ValueError:
+        return default
+
+
 # K8: the judge's budget per consolidation run on the stand - the engine's default (100k tokens a run,
 # ~240 pairs) unless `K8_SLEEP_BUDGET` says otherwise; `K8_SLEEP_CAP` > 0 adds a hard cap on calls (the
 # first fast cycles ran at 50 calls; amended before the campaign, naryad K8-B).
-SLEEP_BUDGET = int(os.environ.get("K8_SLEEP_BUDGET", "0")) or None
-SLEEP_CAP = int(os.environ.get("K8_SLEEP_CAP", "0")) or None
+SLEEP_BUDGET = _env_int_safe("K8_SLEEP_BUDGET", 0) or None
+SLEEP_CAP = _env_int_safe("K8_SLEEP_CAP", 0) or None
 
 
 def _sleep_and_reread(api, cases: list[dict], k: int, prefix: str) -> dict:
