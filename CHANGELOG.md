@@ -24,13 +24,17 @@ empty.
   planted writes each turn the check red. The judge's cap is a token budget a run, `NEVERTWICE_CONTESTED_BUDGET`
   (100k, ~240 pairs at the measured 415, three times the owner's vault inflow), oldest contested pair first, the
   number of calls printed, 0 switching the judge off - a cap of 50 calls newest-first had left 15-19 pairs a stand
-  run never judged. The J2b gate `s0_retired_rate` (>= 0.734 after sleep) is back in the ledger and reads 0.707 -
-  a miss by two pairs (four `separate` verdicts, thirteen guard vetoes), published. `NEVERTWICE_EXPLICIT_RETIRE=judge`
-  measured within one extraction draw on both corpora, both readings: over-retraction 0.000 everywhere, stale after
-  sleep 0.067 / 0.183 against caps of 0.117 / 0.167 - by the rule written before the run the default stays `write`;
-  the switch removes the last loss (the extractor's false `contradicts`) at the price of one stale case in sixty
-  after sleep. Tokens a pair held at 411-416 across eight runs. Seen on the way: the extractor is not deterministic
-  across runs at temperature 0 (two draws on the implicit corpus, 28-29 of 80 cases apart).
+  run never judged.
+  **The numbers below are fast-cycle figures from the pre-merge draws, not a committed campaign artifact
+  (no `research/results/k8b_*.json` for this paragraph) - pending the campaign re-measuring this branch
+  post-review and publishing under `research/results/`:** the J2b gate `s0_retired_rate` (>= 0.734 after
+  sleep) read 0.707 - a miss by two pairs (four `separate` verdicts, thirteen guard vetoes).
+  `NEVERTWICE_EXPLICIT_RETIRE=judge` measured within one extraction draw on both corpora, both readings:
+  over-retraction 0.000 everywhere, stale after sleep 0.067 / 0.183 against caps of 0.117 / 0.167 - by the
+  rule written before the run the default stays `write`; the switch removes the last loss (the extractor's
+  false `contradicts`) at the price of one stale case in sixty after sleep. Tokens a pair held at 411-416
+  across eight runs. Seen on the way: the extractor is not deterministic across runs at temperature 0 (two
+  draws on the implicit corpus, 28-29 of 80 cases apart).
 - **A same-title note from another session is kept, not absorbed, unless the replacement is proven -
   and the judge moves out of the hook into sleep** (ledger K8; `tests/_test_k8_same_replacement.py`,
   `_test_k8_read_pairing.py`, `_test_k8_adjudicate.py`, `_test_k8_one_call_per_session.py`). The slug is a

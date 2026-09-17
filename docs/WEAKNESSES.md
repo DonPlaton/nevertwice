@@ -17,24 +17,33 @@ Four weaknesses the June audit had no stand to see. Each has a page with the reg
 ledger entry (`.loop/GOAL-CLOSE.md`) with its gate; the tables here are rendered from the register, so
 they cannot lag the artifact.
 
-- **[OPEN - measured; fix gated as K7] Over-consolidation: a later fact on the same topic is absorbed
-  into an earlier note.** When a second session states a *different* fact on a topic an earlier note
-  already covers - "logs are shipped to Loki" after "traces are exported to Tempo" - and the extractor
-  gives both the same title, the write path rewrites the earlier note in place: the new statement
-  becomes the served text and the earlier one survives only under `## Previous statement`. The note
-  stays on disk; what recall hands back is the other fact. On the supersession stand's controls -
-  facts that stayed true - this is what most of our misses are, and it makes ours the **worst row of
-  the stand on that column**: Mem0 and Zep/Graphiti lose nothing to over-retraction (their misses are
-  the extractor never writing the fact), the append-only file loses one to ranking depth. The bench
-  read these misses as "ranked below the top five" until the September campaign (ledger K1b); the cap the J2b
-  design registered for over-retraction is **missed on both corpora** on the corrected metric and is
-  published as missed. The engine was measured at its pre-J2b commit under the same classifier (the
-  absorb is older than J2b, and doubled with it on the implicit corpus), then the fix went through its
-  gate (K7): a same-title note is absorbed only when one adjudication call says it is the same fact.
-  **Measured and reverted:** not one still-true fact was absorbed or retired on eighty control case-runs
-  - the cost below went to nil - and the stale column rose by eight to ten points, four to five times
-  its cap, so the mechanism ships off and is an opt-in switch. Neither engine has both columns; the
-  owner decides whether the gate is re-read against a baseline measured under the same call pattern.
+- **[FIXED at K8, superseding the reverted K7 gate] Over-consolidation: a later fact on the same topic
+  was absorbed into an earlier note.** When a second session stated a *different* fact on a topic an
+  earlier note already covered - "logs are shipped to Loki" after "traces are exported to Tempo" - and
+  the extractor gave both the same title, the write path used to rewrite the earlier note in place: the
+  new statement became the served text and the earlier one survived only under `## Previous statement`.
+  The note stayed on disk; what recall handed back was the other fact. On the supersession stand's
+  controls - facts that stayed true - this was what most of our misses were, and it made ours the
+  **worst row of the stand on that column**: Mem0 and Zep/Graphiti lose nothing to over-retraction
+  (their misses are the extractor never writing the fact), the append-only file loses one to ranking
+  depth. The bench read these misses as "ranked below the top five" until the September campaign
+  (ledger K1b); the cap the J2b design registered for over-retraction was **missed on both corpora** on
+  the corrected metric and was published as missed. The engine was measured at its pre-J2b commit under
+  the same classifier (the absorb is older than J2b, and doubled with it on the implicit corpus); a
+  first fix (K7, `NEVERTWICE_ABSORB_JUDGE`: one write-time adjudication call before absorbing) was
+  **measured and reverted** - not one still-true fact was absorbed or retired on eighty control
+  case-runs, but the stale column rose by eight to ten points, four to five times its cap, so that
+  mechanism shipped off as an opt-in switch.
+  K8 (ledger K8, this branch) replaces it: a same-slug note from another session is now a live
+  **sibling**, never absorbed, unless the replacement is *proven* by rule (an explicit `supersedes`/
+  `contradicts` naming this title, or the new statement's facts block carrying every one of the old
+  note's value-shaped literals) - no model call on the write path at all. An unproven pair stays two
+  live notes, the earlier one stamped `contested`, and a sleep-time judge (`consolidate_memory.py`,
+  outside any session, budgeted in tokens/wall-clock rather than per-call) resolves it later; a verdict
+  the judge's own guard cannot back is stamped `disputed` and left for a human, never acted on. This
+  keeps K7's zero-write-time-model-call property AND K7's own measured cost (nothing still-true lost)
+  without K7's stale-column regression, because nothing is EVER absorbed on a presumption at write
+  time - see `memory_hook._same_replacement` and the K8/K8-B ledger entries for the numbers.
 
 <!-- claims:supersession-causes -->
 | arm | a still-true fact did not come back | retired by the memory | absorbed into another note | never written | served, below the top five |

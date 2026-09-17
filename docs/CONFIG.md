@@ -230,6 +230,16 @@ machine and against a cloud coding agent.
 | `NEVERTWICE_DEDUP_SIM` | `0.86` | Cosine threshold for the weekly consolidation merge (sleep-time dedup). The old 0.92 default was measured near-inert on real bge-m3 cosines. |
 | `NEVERTWICE_POST_W_REL` / `_FREQ` / `_SAL` | `1.0` / `0.3` / `0.2` | Weights for the opt-in posterior ranker (`NEVERTWICE_RANKER=posterior`). |
 
+## K8: same-slug siblings, kept apart until proven the same fact
+
+| Variable | Default | Notes |
+|---|---|---|
+| `NEVERTWICE_EXPLICIT_RETIRE` | `write` | How an item's explicit `supersedes`/`contradicts` naming ANOTHER title is acted on. `write` (default): the extractor's own claim retires the named note on the spot. `judge`: the named note is only stamped `contested` and the sleep-time judge (below) confirms before anything is retired - safer, at the cost of a live sibling until the next consolidation run. |
+| `NEVERTWICE_EARLIER_MAX_CHARS` | `100` | Length cap on the compact "earlier under this title: …" line a folded sibling attaches to its lead at read time. |
+| `NEVERTWICE_CONTESTED_BUDGET` | `100000` | Token budget per weekly consolidation run for the sleep-time judge over `contested` same-slug pairs (prompt + answer as the backend reports them; a call that reports no counts is charged the measured mean, 415). ~240 pairs a run at that mean - three times the ~73/week measured on the reference vault. `0` switches the judge off; the pairs stay contested and visible in `conflicts()`/`integrity()`. |
+| `NEVERTWICE_CONTESTED_CAP` | `0` | Optional hard cap on judge *calls* per run, on top of the token budget (`0` = no extra cap). |
+| `NEVERTWICE_CONTESTED_SECONDS` | `900` | Wall-clock ceiling on the judge step, independent of the token budget - a hung backend (Ollama retry×timeout) can cost minutes a call, and the step holds the vault lock the whole time. `0` disables the ceiling. |
+
 ## Write-time near-duplicate gate (v2.3)
 
 | Variable | Default | Notes |
