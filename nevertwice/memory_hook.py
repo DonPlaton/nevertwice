@@ -3127,12 +3127,20 @@ def _link_section(items: list[str], label: str) -> str:
 
 def _stamp_frontmatter(text: str, fields: dict) -> str:
     """Insert or replace top-level scalar keys in a note's YAML frontmatter,
-    leaving the body untouched. Shared by supersession and consolidation."""
+    leaving the body untouched. Shared by supersession and consolidation.
+
+    F11 (xhigh review): a BOM-saved note (readers strip it) used to fail the plain `---` check
+    below, so every stamp writer silently no-oped on it - `_mark_contested`/`_set_contested`
+    rewrote identical bytes and reported success, `supersede_note`'s own stamp no-oped too. The
+    BOM is recognised, stripped before processing and re-emitted on the result."""
+    bom = "﻿" if text.startswith("﻿") else ""
+    if bom:
+        text = text[1:]
     if not text.startswith("---"):
-        return text
+        return bom + text
     end = text.find("\n---", 3)
     if end == -1:
-        return text
+        return bom + text
     body = text[end:]
     pending = dict(fields)
     out = []
@@ -3144,7 +3152,7 @@ def _stamp_frontmatter(text: str, fields: dict) -> str:
             out.append(ln)
     for k, v in pending.items():
         out.append(f"{k}: {_yaml_scalar(v)}")
-    return "\n".join(out) + body
+    return bom + "\n".join(out) + body
 
 
 _NDUP_MEMO: list = [None, None]        # [cache-file mtime, parsed cache] - reload on change
@@ -3254,16 +3262,35 @@ def _near_duplicate_paths(folder_path: Path, project: str, ntype: str,
         return []
 
 
-def _slug_family(parsed_slug: str, slug: str) -> bool:
-    """The slug itself or one of its `-2`..`-9` siblings (K8): a note minted beside a same-title
-    note carries the suffix in its stem, and every slug lookup - the same-session refresh, the
-    reconcile, the contested pairing - must see the whole family, not the base alone. (Before K8 a
-    crash-retry of the session that wrote a `-2` minted a `-3`, and a third statement never met
-    the second.) A slug that merely ends in a digit is its own family: `python-3` is not a sibling
-    of `python` unless a note of that exact base exists - the callers compare by family only when
-    the base slug is the one being written."""
-    return parsed_slug == slug or (parsed_slug[:-2] == slug and parsed_slug[-2] == "-"
-                                   and parsed_slug[-1] in "23456789")
+#: F7 (xhigh review): sibling identity is a STAMP, not a name pattern. Written on a `-N` note
+#: when `_unique_path` mints it for a same-slug collision, naming the base stem it collided with.
+SIBLING_KEY = "sibling_of"
+
+
+def _slug_family(p: Path, parsed: dict, slug: str, folder_path: Path) -> bool:
+    """Is `p` (parsed as `parsed`) in the slug family of `slug` - the base itself, or one of its
+    `-N` siblings? A note minted beside a same-title note carries the suffix in its stem, and
+    every slug lookup - the same-session refresh, the reconcile, the contested pairing - must see
+    the whole family, not the base alone. (Before K8 a crash-retry of the session that wrote a
+    `-2` minted a `-3`, and a third statement never met the second.)
+
+    xhigh review F7: `_SIB_SUFFIX_RE` used to accept `<slug>-N` for ANY base - 'Python 3', 'Use
+    HTTP/2', 'Sprint 2'/'Sprint 3' were folded, contested or retired against unrelated titles.
+    Family membership now comes from `p`'s OWN `sibling_of` stamp (written when `_unique_path`
+    minted it); the name pattern is a legacy fallback ONLY for a pre-stamp note, and only when a
+    base note of the exact stripped slug and the SAME day actually exists in this same folder -
+    `python-3` is not a sibling of `python` merely by looking like one."""
+    if parsed["slug"] == slug:
+        return True
+    stamped = _read_frontmatter_file(p).get(SIBLING_KEY)
+    if stamped:
+        base_parsed = parse_typed_stem(str(stamped))
+        return bool(base_parsed) and base_parsed["slug"] == slug
+    stripped = _SIB_SUFFIX_RE.sub("", parsed["slug"])
+    if stripped == slug and stripped != parsed["slug"]:
+        base_stem = f"{parsed['date']}-{parsed['project']}-{parsed['ntype']}-{slug}"
+        return (folder_path / f"{base_stem}.md").exists()
+    return False
 
 
 def _live_typed_paths(folder_path: Path, project: str, ntype: str,
@@ -3274,7 +3301,7 @@ def _live_typed_paths(folder_path: Path, project: str, ntype: str,
     for p in folder_path.glob("*.md"):
         parsed = parse_typed_stem(p.stem)
         if parsed and parsed["project"] == project \
-                and parsed["ntype"] == ntype and _slug_family(parsed["slug"], slug):
+                and parsed["ntype"] == ntype and _slug_family(p, parsed, slug, folder_path):
             hits.append(p)
     return sorted(hits, key=lambda p: p.stem, reverse=True)
 
@@ -3293,7 +3320,7 @@ def _archived_typed_paths(folder_path: Path, project: str, ntype: str,
     for p in arch.glob("*.md"):
         parsed = parse_typed_stem(p.stem)
         if parsed and parsed["project"] == project \
-                and parsed["ntype"] == ntype and _slug_family(parsed["slug"], slug):
+                and parsed["ntype"] == ntype and _slug_family(p, parsed, slug, arch):
             hits.append(p)
     return sorted(hits, key=lambda p: p.stem, reverse=True)
 
@@ -3879,10 +3906,33 @@ _SIB_SUFFIX_RE = re.compile(r"-[2-9]$")
 
 
 def _sibling_key(stem: str):
+    """The read-time grouping key `pair_siblings` folds hits by (F7, xhigh review): the STEM's own
+    `sibling_of` stamp names the base it was minted beside; a pre-stamp legacy note falls back to
+    the name pattern only when a same-day base of the exact stripped slug actually exists. A slug
+    that merely ends in a digit ('python-3') is its own family otherwise - see `_slug_family`,
+    whose fallback rule this mirrors for the read path (no `folder_path` here: the type folder is
+    derived from `ntype` instead)."""
     parsed = parse_typed_stem(stem or "")
     if not parsed:
         return None
-    return parsed["project"], parsed["ntype"], _SIB_SUFFIX_RE.sub("", parsed["slug"])
+    folder = TYPE_FOLDER.get(parsed["ntype"])
+    if folder:
+        for sub in (VAULT / folder, VAULT / folder / "Archive"):
+            fp = sub / f"{stem}.md"
+            if fp.exists():
+                stamped = _read_frontmatter_file(fp).get(SIBLING_KEY)
+                if stamped:
+                    base_parsed = parse_typed_stem(str(stamped))
+                    if base_parsed:
+                        return base_parsed["project"], base_parsed["ntype"], base_parsed["slug"]
+                break
+    stripped = _SIB_SUFFIX_RE.sub("", parsed["slug"])
+    if stripped != parsed["slug"] and folder:
+        base_stem = f"{parsed['date']}-{parsed['project']}-{parsed['ntype']}-{stripped}"
+        for sub in (VAULT / folder, VAULT / folder / "Archive"):
+            if (sub / f"{base_stem}.md").exists():
+                return parsed["project"], parsed["ntype"], stripped
+    return parsed["project"], parsed["ntype"], parsed["slug"]
 
 
 def _earlier_text(stem: str, ntype: str, max_chars: int | None = None) -> str:
@@ -4127,6 +4177,8 @@ def write_typed_note(folder: str, item, project: str, date: str,
         if o_slug and o_slug != slug and o_slug not in _retire_slugs_seen:
             _retire_slugs_seen.add(o_slug)
             for old in _reconcilable_typed_paths(p, project, ntype, o_slug):
+                if old in contested_olds:
+                    continue                # F7: already kept apart above - do not also retire it
                 if EXPLICIT_RETIRE == "judge":
                     # K8 switch: the extractor's claim is a hint for the sleep-time judge, not a proof
                     log(f"Explicit {('supersedes' if other_title == supersedes_title else 'contradicts')} "
@@ -4209,8 +4261,13 @@ def write_typed_note(folder: str, item, project: str, date: str,
     if resolves_title and ntype in ("pattern", "decision") and not quarantine_reason:
         r_slug = slugify(resolves_title)
         if r_slug:
-            resolve_targets = list(_live_typed_paths(VAULT / TYPE_FOLDER["mistake"],
-                                                     project, "mistake", r_slug))
+            # F8 (xhigh review): the EXACT slug only (pre-K8 behaviour), not the whole slug family -
+            # `_live_typed_paths` now folds in `-N` siblings too, which used to stamp `status:
+            # resolved` on every contested sibling of the named mistake, not just the one this
+            # decision/pattern actually names. A contested sibling is resolved only when named.
+            resolve_targets = [mp for mp in _live_typed_paths(VAULT / TYPE_FOLDER["mistake"],
+                                                              project, "mistake", r_slug)
+                               if (parse_typed_stem(mp.stem) or {}).get("slug") == r_slug]
             resolved = [mp.stem for mp in resolve_targets]
 
     # An absorb rewrite used to rebuild frontmatter from scratch, carrying forward only
@@ -4286,6 +4343,12 @@ def write_typed_note(folder: str, item, project: str, date: str,
     # new pass simply did not mention keeps the value the note already had.
     for _k, _v in _carried.items():
         fm.setdefault(_k, _v)
+    if absorb_into is None and stem != base_stem:
+        # F7 (xhigh review): sibling identity is a STAMP, not a name pattern - `_unique_path`
+        # just minted `stem` because `base_stem` collided (K8: a same-slug note kept apart, or a
+        # plain same-day title collision). Name it explicitly so `_slug_family`/`_sibling_key`
+        # never have to guess from the suffix alone.
+        fm[SIBLING_KEY] = base_stem
 
     body_tags = render_body_tags(tags, [f"project/{project}", ntype])
 

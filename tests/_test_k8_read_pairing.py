@@ -31,14 +31,25 @@ def check(name, cond, detail=""):
         FAILED.append(name)
 
 
-def H(stem, **kw):
-    return {"stem": stem, "ntype": "decision", "title": stem.split("-decision-", 1)[-1], **kw}
-
-
 A0 = "2026-06-01-p-decision-timeout"
 A1 = "2026-06-01-p-decision-timeout-2"
 A2 = "2026-06-09-p-decision-timeout"
 B0 = "2026-06-01-p-decision-cache"
+
+# F7 (xhigh review): `_sibling_key`'s legacy fallback (a pre-stamp note) now requires the
+# stripped base to actually exist on disk, same day, same folder - a bare synthetic hit dict
+# with no backing file no longer folds on the name pattern alone. A0 is the base these `-2`/
+# cross-day checks fold against, so its file needs to be real; the OTHERS (A1/A2/B0) do not -
+# the fallback only ever reads the STRIPPED BASE's path, never the sibling's own.
+d = make_sandbox(m, "k8l2_", offline=True)
+(m.VAULT / "Decisions").mkdir(exist_ok=True)
+(m.VAULT / "Decisions" / f"{A0}.md").write_text(
+    "---\ndate: 2026-06-01\nproject: p\ntype: decision\n---\n\n# timeout\n\nplaceholder\n", encoding="utf-8")
+
+
+def H(stem, **kw):
+    return {"stem": stem, "ntype": "decision", "title": stem.split("-decision-", 1)[-1], **kw}
+
 
 print("\n- pairing on ranked hits -")
 out = m.pair_siblings([H(A0), H(B0), H(A1)])

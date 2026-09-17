@@ -413,5 +413,114 @@ fl_one = [set(c) for c in cm.find_clusters(cache2, exclude={"2026-06-01-proj-mis
 check("excluding just ONE member still keeps the pair apart on the other side too",
       not any("2026-06-02-proj-mistake-b" in c for c in fl_one))
 
-print(f"\nxhigh review (write path + consolidation integrity): {len(RUN) - len(FAILED)} passed, {len(FAILED)} failed")
+
+# ═══════════════════════════════════════════════════════════════════════════════════════════
+# Identity and stamps: F7, F8, F11
+# ═══════════════════════════════════════════════════════════════════════════════════════════
+
+print("\n- F7: a coincidental digit-suffixed title is not folded without a base note -")
+d = fresh()
+p3 = write("Python 3 support was added.", S1, title="python 3", ntype="pattern")
+check("'python 3' stands on its own stem - no base 'python' note exists",
+      p3 == "2026-06-01-k8proj-pattern-python-3" and m._sibling_key(p3) == (PROJ, "pattern", "python-3"), p3)
+
+print("\n- F7: writing a real base note does not retroactively swallow a pre-existing digit-suffixed title -")
+d = fresh()
+p3b = write("Python 3 support was added.", S1, title="python 3", ntype="pattern")
+pbase = write("Use Python for scripting.", S2, title="python", ntype="pattern")
+check("both notes stand on their own exact stems - no collision, no contested stamp",
+      pbase == "2026-06-01-k8proj-pattern-python" and p3b == "2026-06-01-k8proj-pattern-python-3"
+      and contested(pbase, "pattern") is None and contested(p3b, "pattern") is None, (pbase, p3b))
+
+print("\n- F7: a TRUE stamped sibling whose slug itself ends in a digit still folds correctly -")
+d = fresh()
+h1 = write(f"Use HTTP/2 for the API.{F}use http 2 for the api", S1, title="use HTTP/2")
+h2 = write(f"Use HTTP/3 for the API.{F}use http 3 for the api", S2, title="use HTTP/2")
+check("setup: h2 is minted as a true '-2' sibling of h1 (h1's own slug already ends in a digit)",
+      h2 == f"{h1}-2", h2)
+check("the sibling carries the sibling_of stamp naming the base",
+      m._read_frontmatter_file(note(h2)).get("sibling_of") == h1)
+check("_sibling_key folds them by the stamp, not the coincidental trailing digit",
+      m._sibling_key(h1) == m._sibling_key(h2), (m._sibling_key(h1), m._sibling_key(h2)))
+
+print("\n- mutation check: without the stamp/existence check, 'python 3' folds into any 'python' -")
+d = fresh()
+_real_slug_family = m._slug_family
+m._slug_family = lambda p, parsed, slug, folder_path: (
+    parsed["slug"] == slug or (parsed["slug"][:-2] == slug and parsed["slug"][-2] == "-"
+                               and parsed["slug"][-1] in "23456789"))
+p3c = write("Python 3 support was added.", S1, title="python 3", ntype="pattern")
+pbase2 = write("Use Python for scripting.", S2, title="python", ntype="pattern")
+check("with the old pattern-only rule restored, the unrelated titles collide (the bug)",
+      pbase2 != "2026-06-01-k8proj-pattern-python" or contested(pbase2, "pattern") is not None
+      or contested(p3c, "pattern") is not None)
+m._slug_family = _real_slug_family
+
+# ── F8: `resolves:` targets the exact slug only ─────────────────────────────────────────────
+print("\n- F8: `resolves:` resolves the exact slug, not the whole slug family -")
+d = fresh()
+mbase = write("Retries loop forever.", S1, title="retry storm", ntype="mistake")
+msib = write("Something else about retries entirely, unrelated wording here.", S2, title="retry storm", ntype="mistake")
+check("setup: the mistake has a contested sibling", msib == f"{mbase}-2", msib)
+write("Cap retries at 3 with backoff.", S1, title="cap retries", ntype="decision", resolves="retry storm")
+check("the named mistake is resolved", m._read_frontmatter_file(note(mbase, "mistake")).get("status") == "resolved")
+check("its contested sibling is NOT silently resolved too - it was never named",
+      m._read_frontmatter_file(note(msib, "mistake")).get("status") != "resolved",
+      m._read_frontmatter_file(note(msib, "mistake")))
+
+# ── F11: _stamp_frontmatter recognises and re-emits a UTF-8 BOM ─────────────────────────────
+print("\n- F11: _stamp_frontmatter recognizes and re-emits a UTF-8 BOM -")
+BOM_TEXT = "﻿---\ndate: 2026-06-01\nproject: p\ntype: decision\n---\n\n# t\n\nbody\n"
+stamped = m._stamp_frontmatter(BOM_TEXT, {"contested": ["x"]})
+check("the BOM is preserved on the result", stamped.startswith("﻿"))
+fm_bom, _ = m._read_frontmatter(stamped)
+check("the field was actually written, not a silent no-op", fm_bom.get("contested") == ["x"], stamped)
+
+
+def _pre_f11_stamp(text, fields):
+    """The pre-fix implementation: no BOM handling at all."""
+    if not text.startswith("---"):
+        return text
+    end = text.find("\n---", 3)
+    if end == -1:
+        return text
+    body = text[end:]
+    pending = dict(fields)
+    out = []
+    for ln in text[:end].split("\n"):
+        key = ln.split(":", 1)[0].strip() if ":" in ln else ""
+        if key in pending:
+            out.append(f"{key}: {m._yaml_scalar(pending.pop(key))}")
+        else:
+            out.append(ln)
+    for k, v in pending.items():
+        out.append(f"{k}: {m._yaml_scalar(v)}")
+    return "\n".join(out) + body
+
+
+print("\n- mutation check: without BOM-awareness, the stamp silently no-ops -")
+broken = _pre_f11_stamp(BOM_TEXT, {"contested": ["x"]})
+check("the pre-fix implementation returns the text byte-identical (the bug: a silent no-op)",
+      broken == BOM_TEXT)
+
+print("\n- F11: a BOM-saved note's stamp actually lands, through every stamp writer -")
+d = fresh()
+(m.VAULT / "Decisions").mkdir(exist_ok=True)
+bom_note = m.VAULT / "Decisions" / "2026-06-01-p-decision-bom-note.md"
+bom_note.write_text("﻿---\ndate: 2026-06-01\nproject: p\ntype: decision\n---\n\n# bom note\n\nsome text\n",
+                    encoding="utf-8")
+ok1 = m._mark_contested(bom_note, "2026-06-01-p-decision-other")
+check("_mark_contested actually stamps a BOM note",
+      ok1 and m._read_frontmatter_file(bom_note).get("contested") == ["2026-06-01-p-decision-other"])
+cm._set_contested(bom_note, [], disputed="2026-06-01-p-decision-other")
+check("_set_contested actually stamps a BOM note",
+      m._read_frontmatter_file(bom_note).get("disputed") == ["2026-06-01-p-decision-other"])
+winner = write("winner content", S1, title="bom winner")
+ok3 = m.supersede_note(bom_note, winner, via="slug")
+check("supersede_note actually retires a BOM note",
+      ok3 and not bom_note.exists()
+      and (m.VAULT / "Decisions" / "Superseded" / "2026-06-01-p-decision-bom-note.md").exists())
+
+print(f"\nxhigh review (write path + consolidation integrity + identity/stamps): "
+      f"{len(RUN) - len(FAILED)} passed, {len(FAILED)} failed")
 sys.exit(1 if FAILED else 0)
