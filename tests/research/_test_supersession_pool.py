@@ -175,6 +175,48 @@ with tempfile.TemporaryDirectory() as tmp:
     check("the three original pairs are among them (a fourth arm, zep, joined on 2026-09-10)",
           {("mem0", "naive"), ("mem0", "nevertwice"), ("naive", "nevertwice")} <= set(got))
 
+print("\n- the eager OR-count: a control row both retired AND demoted is one loss, not two -")
+# a row can carry BOTH current_retired and current_demoted only as a synthetic edge case (the
+# real _store_state sets exactly one), but score()/pool() must not double-count it regardless.
+both_row = _row("c9", "control", False, False, current_live=False,
+               current_retired=True, current_demoted=True, current_absent=False)
+retired_only = _row("c8", "control", False, False, current_live=False,
+                    current_retired=True, current_demoted=False, current_absent=False)
+neither = _row("c7", "control", False, True, current_live=True,
+              current_retired=False, current_demoted=False, current_absent=False)
+sc = sb.score([both_row, retired_only, neither])
+check("two losses (one retired, one retired-AND-demoted), not three: the OR-count",
+      sc["over_retraction_rate"] == round(2 / 3, 4), sc.get("over_retraction_rate"))
+with tempfile.TemporaryDirectory() as tmp2:
+    # one supersession row beside the controls: pool() folds per-run stale over the supersession
+    # rows and a run has at least one in every real artifact
+    sup_row = _row("s9", "explicit", False, True)
+    run_a = _write(tmp2, "a.json", _blob({"nevertwice": _arm([sup_row, both_row, retired_only, neither])}))
+    pooled_eager = sb.pool([run_a])
+    Pe = pooled_eager["pooled_nevertwice"]
+    check("the pooled over_retraction count is also 2 of 3, not 3 (no addition of the two flags)",
+          (Pe["over_retraction"]["k"], Pe["over_retraction"]["n"]) == (2, 3), str(Pe["over_retraction"]))
+    check("the cause split still counts each flag on its own row (retired:2, demoted:1) - that sum "
+          "may exceed the loss count by design (one row names two causes), unlike over_retraction",
+          pooled_eager["pooled_nevertwice"]["control_causes"] == {"retired": 2, "demoted": 1,
+                                                                   "never_written": 0, "unranked": 0},
+          str(pooled_eager["pooled_nevertwice"]["control_causes"]))
+
+print("\n- _statement_text: a fact demoted into '## Previous statement' is found there, not served -")
+served_body = ("---\ndate: 2026-06-01\n---\n\n# the upload limit\n\nThe upload limit is 100 MB.\n\n"
+              "**Project:** [[p]]\n")
+demoted_body = ("---\ndate: 2026-06-01\n---\n\n# the upload limit\n\nThe upload limit is 100 MB.\n\n"
+               "## Previous statement\n- The upload limit is 25 MB.\n\n**Project:** [[p]]\n")
+check("the currently-served text does not carry a fact only the old note stated",
+      not sb._hit(["25 MB"], sb._served_text(demoted_body)))
+check("_statement_text finds it in the Previous-statement block",
+      sb._hit(["25 MB"], sb._statement_text(demoted_body)))
+check("a note with no Previous-statement block: _statement_text is just the served text",
+      sb._statement_text(served_body).strip() == sb._served_text(served_body).strip())
+check("mutation check: served_text ALONE (the pre-K1b matcher) misses the demoted fact - "
+      "this is exactly the false 'never written' _statement_text exists to prevent",
+      not sb._hit(["25 MB"], sb._served_text(demoted_body)) and sb._hit(["25 MB"], sb._statement_text(demoted_body)))
+
 print("\n- the corpus is addressable the way reproduce.py prints it -")
 rel = "research/data/supersession_v1.json"
 by_rel = sb.load_dataset(Path(rel))
