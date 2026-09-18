@@ -85,10 +85,10 @@ notes. That is the direction production runs in - a situation, then the lessons 
 <!-- claims:lexical-morphology-vault -->
 | half | R@1 | R@5 | R@10 | MRR |
 |---|---|---|---|---|
-| Russian half, raw tokens | 0.652 | 0.800 | 0.857 | 0.724 |
-| Russian half, stop words + stems | 0.726 | 0.835 | 0.883 | 0.779 |
-| English half, raw tokens | 0.761 | 0.918 | 0.950 | 0.830 |
-| English half, stop words + stems | **0.779** | **0.925** | **0.954** | **0.842** |
+| Russian half, raw tokens | 0.665 | 0.810 | 0.864 | 0.735 |
+| Russian half, stop words + stems | 0.731 | 0.843 | 0.888 | 0.785 |
+| English half, raw tokens | 0.764 | 0.918 | 0.950 | 0.831 |
+| English half, stop words + stems | **0.781** | **0.925** | **0.955** | **0.843** |
 <!-- /claims:lexical-morphology-vault -->
 
 The store is private and the numbers are published from the committed artifact

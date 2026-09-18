@@ -88,7 +88,7 @@ What survived re-measurement at HEAD, and what it cost:
 | handing back a fact that has since been **retracted** | **0.017** of the time between nights and **0.017** after the weekly consolidation, against **0.933** for Mem0, **0.317** for Zep/Graphiti and **0.950** for an append-only file with term matching. The price this row used to carry - a fact that stayed true stops being served - is now **0.000** on the explicit corpus and **0.000** with the cue removed: nothing is retired unless a rule proves the replacement or the sleep-time judge rules on it, and an unproven pair is served whole, newest first ([the causes](research/SUPERSESSION.md#what-it-costs-us)) | [SUPERSESSION.md](research/SUPERSESSION.md) |
 | acting vs *always-injecting* the same lesson | same error prevention for **31×** fewer memory tokens | [ACTIVE_MEMORY.md](research/ACTIVE_MEMORY.md) |
 | memory-poisoning acceptance attacks | **81%** blocked overall - **100%** of prompt injection, **25%** of plausible-false facts | [POISONING.md](research/POISONING.md) |
-| what being there costs | PreToolUse **89 ms** end to end - a tenth of a second, and it moves by a third between sessions - and zero context tokens until a guard fires | [BENCHMARKS.md](docs/BENCHMARKS.md) |
+| what being there costs | PreToolUse **55 ms** end to end - it fell by well over a third once the hook stopped recompiling the engine on every call - and zero context tokens until a guard fires | [BENCHMARKS.md](docs/BENCHMARKS.md) |
 
 Every row was re-measured on 2026-09-11 on the engine as committed - the J1 evidence layer removed,
 an archive-aware reconcile and a write-path literal-fact channel added (ledger J2b and the J3

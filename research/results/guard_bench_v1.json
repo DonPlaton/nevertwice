@@ -1136,7 +1136,42 @@
    "at_fpr_0.05": null,
    "at_zero_false_alarms": null,
    "tokens_per_call": 3.32,
-   "ms_per_call": 0.0187,
+   "ms_per_call": 0.0183,
+   "split_at": {
+    "threshold": 0.0,
+    "false_positive_rate": 0.1786,
+    "matched_target_fpr": false
+   },
+   "hard_negatives": {
+    "tp": 0,
+    "fp": 19,
+    "fn": 0,
+    "tn": 52,
+    "precision": 0.0,
+    "recall": null,
+    "false_positive_rate": 0.2676,
+    "f1": 0.0
+   },
+   "generic": {
+    "tp": 27,
+    "fp": 8,
+    "fn": 13,
+    "tn": 52,
+    "precision": 0.7714,
+    "recall": 0.675,
+    "false_positive_rate": 0.1333,
+    "f1": 0.72
+   },
+   "project": {
+    "tp": 8,
+    "fp": 17,
+    "fn": 44,
+    "tn": 63,
+    "precision": 0.32,
+    "recall": 0.1538,
+    "false_positive_rate": 0.2125,
+    "f1": 0.2078
+   },
    "info": {
     "n_guards": 26,
     "notes_without_pattern": [
@@ -1189,7 +1224,7 @@
      "m-sync-scripts": "sync_install\\.py"
     }
    },
-   "seconds": 1.4
+   "seconds": 1.5
   },
   "universal_pack": {
    "n_calls": 230,
@@ -2319,7 +2354,12 @@
    },
    "at_zero_false_alarms": null,
    "tokens_per_call": 1.15,
-   "ms_per_call": 0.0077,
+   "ms_per_call": 0.0071,
+   "split_at": {
+    "threshold": 0.0,
+    "false_positive_rate": 0.0282,
+    "matched_target_fpr": true
+   },
    "hard_negatives": {
     "tp": 0,
     "fp": 0,
@@ -3527,6 +3567,11 @@
    },
    "tokens_per_call": 0.0,
    "ms_per_call": 0.0,
+   "split_at": {
+    "threshold": 0.0,
+    "false_positive_rate": 0.0,
+    "matched_target_fpr": true
+   },
    "hard_negatives": {
     "tp": 0,
     "fp": 0,
@@ -4694,7 +4739,12 @@
    },
    "at_zero_false_alarms": null,
    "tokens_per_call": 103.56,
-   "ms_per_call": 47.6239,
+   "ms_per_call": 53.6148,
+   "split_at": {
+    "threshold": 1.0,
+    "false_positive_rate": 0.0435,
+    "matched_target_fpr": true
+   },
    "hard_negatives": {
     "tp": 0,
     "fp": 4,
@@ -4735,7 +4785,7 @@
     "notes_embedded": 45,
     "mode": "semantic + lexical"
    },
-   "seconds": 15.9
+   "seconds": 35.0
   },
   "never": {
    "n_calls": 230,
@@ -5876,6 +5926,11 @@
    },
    "tokens_per_call": 0.0,
    "ms_per_call": 0.0,
+   "split_at": {
+    "threshold": 0.0,
+    "false_positive_rate": 0.0,
+    "matched_target_fpr": true
+   },
    "hard_negatives": {
     "tp": 0,
     "fp": 0,
@@ -7031,7 +7086,42 @@
    "at_fpr_0.05": null,
    "at_zero_false_alarms": null,
    "tokens_per_call": 5.51,
-   "ms_per_call": 0.0247,
+   "ms_per_call": 0.0259,
+   "split_at": {
+    "threshold": 0.0,
+    "false_positive_rate": 0.1549,
+    "matched_target_fpr": false
+   },
+   "hard_negatives": {
+    "tp": 0,
+    "fp": 16,
+    "fn": 0,
+    "tn": 55,
+    "precision": 0.0,
+    "recall": null,
+    "false_positive_rate": 0.2254,
+    "f1": 0.0
+   },
+   "generic": {
+    "tp": 13,
+    "fp": 4,
+    "fn": 27,
+    "tn": 57,
+    "precision": 0.7647,
+    "recall": 0.325,
+    "false_positive_rate": 0.0656,
+    "f1": 0.4561
+   },
+   "project": {
+    "tp": 21,
+    "fp": 18,
+    "fn": 31,
+    "tn": 63,
+    "precision": 0.5385,
+    "recall": 0.4038,
+    "false_positive_rate": 0.2222,
+    "f1": 0.4615
+   },
    "info": {
     "llm": "qwen3-coder:30b",
     "n_guards": 45,
@@ -7091,7 +7181,7 @@
      "m-sync-scripts": "^(\\s*)edit\\s*~/.claude/scripts/|^(\\s*)vim\\s*~/.claude/scripts/|^(\\s*)nano\\s*~/.claude/scripts/"
     }
    },
-   "seconds": 2.4
+   "seconds": 2.9
   }
  }
 }

@@ -3,38 +3,38 @@
  "today": "2026-09-16",
  "weeks": 4,
  "cutoff": "2026-08-19",
- "notes_scanned": 8371,
- "slug_groups": 8068,
- "collision_events": 297,
+ "notes_scanned": 8477,
+ "slug_groups": 8172,
+ "collision_events": 302,
  "by_kind": {
-  "later_note": 112,
-  "absorbed": 185
+  "later_note": 114,
+  "absorbed": 188
  },
  "by_branch": {
-  "r": 98,
-  "d": 199
+  "r": 100,
+  "d": 202
  },
  "by_rule": {
-  "contested": 297
+  "contested": 302
  },
  "facts_seen": {
   "old_has_facts": 0,
   "new_has_facts": 0,
   "notes_with_facts_block_in_window": 1,
-  "notes_in_window": 3540
+  "notes_in_window": 3646
  },
- "contested_total": 297,
- "contested_per_week": 74.25,
+ "contested_total": 302,
+ "contested_per_week": 75.5,
  "contested_by_iso_week": {
   "2026-W34": 23,
   "2026-W35": 129,
   "2026-W36": 42,
   "2026-W37": 85,
-  "2026-W38": 18
+  "2026-W38": 23
  },
  "contested_by_project": {
   "codex": 99,
-  "nevertwice": 46,
+  "nevertwice": 51,
   "quantum_prism": 45,
   "cognitive_errors": 28,
   "universal_local_agent": 27,
@@ -516,6 +516,20 @@
    "slug": "verifikatsiya-pered-zafiksatsiey",
    "old": "2026-09-12-codex-pattern-verifikatsiya-pered-zafiksatsiey",
    "new": "2026-09-13-codex-pattern-verifikatsiya-pered-zafiksatsiey",
+   "old_where": "Superseded",
+   "old_via": "",
+   "rule": "contested",
+   "old_has_facts": false,
+   "new_has_facts": false
+  },
+  {
+   "kind": "later_note",
+   "branch": "r",
+   "project": "nevertwice",
+   "ntype": "pattern",
+   "slug": "zero-loss-invariant-implementation",
+   "old": "2026-09-10-nevertwice-pattern-zero-loss-invariant-implementation",
+   "new": "2026-09-17-nevertwice-pattern-zero-loss-invariant-implementation",
    "old_where": "Superseded",
    "old_via": "",
    "rule": "contested",
@@ -1216,6 +1230,20 @@
    "slug": "unverified-assumption-on-model-knowledge",
    "old": "2026-09-12-cognitive_errors-mistake-unverified-assumption-on-model-knowledge",
    "new": "2026-09-16-cognitive_errors-mistake-unverified-assumption-on-model-knowledge",
+   "old_where": "Superseded",
+   "old_via": "",
+   "rule": "contested",
+   "old_has_facts": false,
+   "new_has_facts": false
+  },
+  {
+   "kind": "later_note",
+   "branch": "r",
+   "project": "nevertwice",
+   "ntype": "mistake",
+   "slug": "verbatim-quote-bloat-risk",
+   "old": "2026-09-10-nevertwice-mistake-verbatim-quote-bloat-risk",
+   "new": "2026-09-17-nevertwice-mistake-verbatim-quote-bloat-risk",
    "old_where": "Superseded",
    "old_via": "",
    "rule": "contested",
@@ -3129,6 +3157,30 @@
   {
    "kind": "absorbed",
    "branch": "d",
+   "project": "nevertwice",
+   "ntype": "mistake",
+   "slug": "silent-subprocess-failure-in-tests",
+   "old": "2026-09-18-nevertwice-mistake-silent-subprocess-failure-in-tests (previous statement)",
+   "new": "2026-09-18-nevertwice-mistake-silent-subprocess-failure-in-tests",
+   "rule": "contested",
+   "old_has_facts": false,
+   "new_has_facts": false
+  },
+  {
+   "kind": "absorbed",
+   "branch": "d",
+   "project": "nevertwice",
+   "ntype": "mistake",
+   "slug": "underestimating-refactor-surface-area",
+   "old": "2026-09-18-nevertwice-mistake-underestimating-refactor-surface-area (previous statement)",
+   "new": "2026-09-18-nevertwice-mistake-underestimating-refactor-surface-area",
+   "rule": "contested",
+   "old_has_facts": false,
+   "new_has_facts": false
+  },
+  {
+   "kind": "absorbed",
+   "branch": "d",
    "project": "codex",
    "ntype": "decision",
    "slug": "freeze-code-during-review",
@@ -3830,6 +3882,18 @@
    "slug": "split-language-specific-claims",
    "old": "2026-09-16-cognitive_errors-decision-split-language-specific-claims (previous statement)",
    "new": "2026-09-16-cognitive_errors-decision-split-language-specific-claims",
+   "rule": "contested",
+   "old_has_facts": false,
+   "new_has_facts": false
+  },
+  {
+   "kind": "absorbed",
+   "branch": "d",
+   "project": "nevertwice",
+   "ntype": "decision",
+   "slug": "defer-module-splitting-with-patch-dependency",
+   "old": "2026-09-18-nevertwice-decision-defer-module-splitting-with-patch-dependency (previous statement)",
+   "new": "2026-09-18-nevertwice-decision-defer-module-splitting-with-patch-dependency",
    "rule": "contested",
    "old_has_facts": false,
    "new_has_facts": false

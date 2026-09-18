@@ -8,7 +8,8 @@
  "extract_temperature": "0",
  "silent_cases": 8,
  "by_kind": {
-  "written with the marker": 7,
+  "written with the marker": 6,
+  "no items returned": 1,
   "written without the marker": 1
  },
  "rows": [
@@ -70,9 +71,9 @@
    "raw_items": {
     "patterns": 1,
     "mistakes": 0,
-    "decisions": 1
+    "decisions": 0
    },
-   "raw_total": 2,
+   "raw_total": 1,
    "notes_written": 1,
    "marker_in_note": true,
    "kind": "written with the marker",
@@ -143,14 +144,14 @@
    "chars": 145,
    "sentences": 2,
    "raw_items": {
-    "patterns": 1,
+    "patterns": 0,
     "mistakes": 0,
     "decisions": 0
    },
-   "raw_total": 1,
-   "notes_written": 1,
-   "marker_in_note": true,
-   "kind": "written with the marker",
+   "raw_total": 0,
+   "notes_written": 0,
+   "marker_in_note": false,
+   "kind": "no items returned",
    "extraction_keys": [
     "context_update",
     "decisions",

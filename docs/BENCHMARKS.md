@@ -32,10 +32,10 @@ Python 3.14; reproduce anywhere with `python research/latency_bench.py`:
 <!-- claims:latency -->
 | hot path | cost | when it is paid |
 |---|---|---|
-| PreToolUse end-to-end | **89 ms** | every tool call (interpreter start included) |
-| UserPromptSubmit end-to-end | 84 ms | per prompt (task-aware recall) |
-| SessionStart end-to-end, idle | 84 ms | per session start with no backlog |
-| cold import of the engine | 29 ms | once per hook process (inside the numbers above) |
+| PreToolUse end-to-end | **55 ms** | every tool call (interpreter start included) |
+| UserPromptSubmit end-to-end | 42 ms | per prompt (task-aware recall) |
+| SessionStart end-to-end, idle | 42 ms | per session start with no backlog |
+| cold import of the engine | 30 ms | once per hook process (inside the numbers above) |
 
 <sub>**Withdrawn** - `guards.check()` over a seeded ledger, lexical recall, no embedder: the bench's seed lands in the subprocess store while the in-process half reads the store pinned at import, so this row now measures an empty store (0 guards, 0 notes) instead of the seeded one the published number describes - the measurement, not just the value, is broken</sub>
 <!-- /claims:latency -->
@@ -66,8 +66,8 @@ breakdown and what it costs us: [`research/SUPERSESSION.md`](../research/SUPERSE
 <!-- claims:supersession-pinned -->
 | arm | returns the retracted fact | returns the replacement | a still-true fact did not come back |
 |---|---|---|---|
-| **Nevertwice**, between nights | 0.017 [0.005, 0.059] | 1.000 [0.969, 1.000] | 0.100 [0.040, 0.231] |
-| **Nevertwice**, after consolidation | 0.017 [0.005, 0.059] | 1.000 [0.969, 1.000] | 0.100 [0.040, 0.231] |
+| **Nevertwice**, between nights | 0.058 [0.029, 0.116] | 0.983 [0.941, 0.995] | 0.125 [0.055, 0.261] |
+| **Nevertwice**, after consolidation | 0.058 [0.029, 0.116] | 0.983 [0.941, 0.995] | 0.125 [0.055, 0.261] |
 | Mem0 | 0.933 [0.841, 0.974] | 0.983 [0.911, 0.997] | 0.000 [0.000, 0.161] |
 | Zep/Graphiti (`graphiti-core`, FalkorDB) | 0.317 [0.240, 0.405] | 0.575 [0.486, 0.660] | 0.225 [0.123, 0.375] |
 | an append-only markdown file | 0.950 [0.863, 0.983] | 0.950 [0.863, 0.983] | 0.050 [0.009, 0.236] |
@@ -85,8 +85,8 @@ retirement.
 <!-- claims:supersession-causes -->
 | arm | a still-true fact did not come back | retired by the memory | absorbed into another note | never written | served, below the top five |
 |---|---|---|---|---|---|
-| **Nevertwice**, between nights | 0.100 [0.040, 0.231] | 0 of 40 | 0 of 40 | 4 of 40 | 0 of 40 |
-| **Nevertwice**, after consolidation | 0.100 [0.040, 0.231] | 0 of 40 | 0 of 40 | 4 of 40 | 0 of 40 |
+| **Nevertwice**, between nights | 0.125 [0.055, 0.261] | 0 of 40 | 0 of 40 | 5 of 40 | 0 of 40 |
+| **Nevertwice**, after consolidation | 0.125 [0.055, 0.261] | 0 of 40 | 0 of 40 | 5 of 40 | 0 of 40 |
 | Mem0 | 0.000 [0.000, 0.161] | 0 of 20 | 0 of 20 | 0 of 20 | 0 of 20 |
 | Zep/Graphiti (`graphiti-core`, FalkorDB) | 0.225 [0.123, 0.375] | 0 of 40 | 0 of 40 | 9 of 40 | 0 of 40 |
 | an append-only markdown file | 0.050 [0.009, 0.236] | 0 of 20 | 0 of 20 | 0 of 20 | 1 of 20 |
@@ -102,8 +102,9 @@ embedder and the same extraction model for every arm, and the text scored is the
 receives - for us the note with the literals the write path kept, for the others their memory or
 fact text. Paired on the same cases, the discordant pairs between Nevertwice and Mem0 run entirely
 in Mem0's disfavour; Mem0 and the append-only file are tied with each other at the bad end of the
-column - McNemar finds no difference between them. Our payload per query is 473 characters
-against Mem0's 411. The floor is
+column - McNemar finds no difference between them. Our payload per query is 438 characters between nights and 394 after the
+weekly consolidation, against Mem0's 411 - so the reading a user gets once the night has
+run is lighter than Mem0's, and the one between nights is not. The floor is
 why the table is worth printing at all: a benchmark only one vendor's architecture fails is a benchmark
 about that vendor, and this one is failed by an append-only text file too, which is what supersession
 costs when nothing implements it.

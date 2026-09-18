@@ -157,9 +157,9 @@ Paired, on the same cases, McNemar exact:
 <!-- claims:supersession-pairs -->
 | pair | discordant (first - second) | p, McNemar exact |
 |---|---|---|
-| Nevertwice vs Mem0 | 0 - 55 | 5.6 x 10^-17 |
-| Nevertwice vs naive | 0 - 56 | 2.8 x 10^-17 |
-| Nevertwice vs Zep/Graphiti | 1 - 19 | 4.0 x 10^-05 |
+| Nevertwice vs Mem0 | 1 - 51 | 2.4 x 10^-14 |
+| Nevertwice vs naive | 0 - 51 | 8.9 x 10^-16 |
+| Nevertwice vs Zep/Graphiti | 5 - 18 | 1.1 x 10^-2 |
 | **Mem0 vs naive** | 3 - 4 | 1.00 |
 <!-- /claims:supersession-pairs -->
 
@@ -212,14 +212,14 @@ what a user sees between nights, and once after the adjudication on that same st
 <!-- claims:supersession-readings -->
 | reading | returns the retracted fact | the retracted value appears anywhere | returns the replacement | retires a still-true fact | characters per query |
 |---|---|---|---|---|---|
-| Between nights | 0.017 [0.005, 0.059] | 0.733 | 1.000 [0.969, 1.000] | 0.000 [0.000, 0.088] | 473 |
-| After consolidation | 0.017 [0.005, 0.059] | 0.392 | 1.000 [0.969, 1.000] | 0.000 [0.000, 0.088] | 400 |
+| Between nights | 0.058 [0.029, 0.116] | 0.608 | 0.983 [0.941, 0.995] | 0.000 [0.000, 0.088] | 438 |
+| After consolidation | 0.058 [0.029, 0.116] | 0.358 | 0.983 [0.941, 0.995] | 0.000 [0.000, 0.088] | 394 |
 
 <sub>The second column counts an item that asserts the retracted value without the current one, which is the bench's rule and the one the comparison uses. The third counts the retracted value wherever it appears in the returned text, so a paired hit - the newest statement with the earlier one attached - is counted here and not there. Both are printed because the design serves the older statement on purpose rather than hiding it, and a reader deciding whether that is acceptable needs the number it costs.</sub>
 
-<sub>What the second row costs: one model call per contested pair at consolidation and none in the hook, at 414 tokens a pair; on a real store the dry run counted at most 74 contested pairs a week, against a run budget of a hundred thousand tokens. With no model backend at all the first row is what the product does, and the contested pairs stay visible through `conflicts()` and `integrity()`.</sub>
+<sub>What the second row costs: one model call per contested pair at consolidation and none in the hook, at 414 tokens a pair; on a real store the dry run counted at most 76 contested pairs a week, against a run budget of a hundred thousand tokens. With no model backend at all the first row is what the product does, and the contested pairs stay visible through `conflicts()` and `integrity()`.</sub>
 
-<sub>Why the judge's verdict is not the last word. On a recorded set of pairs whose truth is known it rules correctly 0.931 of the time, and its precision on `replaces` - the verdict that retires a note - is 0.989, not one. An earlier draw of the same prompt over the same bytes read exactly one, so that figure is a draw and not a property of the judge. This is why three guards sit between a verdict and a retirement: a note with verified literals is never retired for one without, a value the new statement's own verified block does not carry vetoes the replacement, and a replacement naming no value does not displace one that does. The column above reads zero with the judge making false calls, which is the guards doing the work.</sub>
+<sub>Why the judge's verdict is not the last word. On a recorded set of pairs whose truth is known it rules correctly 0.956 of the time, and its precision on `replaces` - the verdict that retires a note - is 1.000, not one. An earlier draw of the same prompt over the same bytes read exactly one, so that figure is a draw and not a property of the judge. This is why three guards sit between a verdict and a retirement: a note with verified literals is never retired for one without, a value the new statement's own verified block does not carry vetoes the replacement, and a replacement naming no value does not displace one that does. The column above reads zero with the judge making false calls, which is the guards doing the work.</sub>
 <!-- /claims:supersession-readings -->
 
 ### By shape
@@ -255,7 +255,7 @@ corpus is unchanged byte for byte, and `--check` proves it.
 <!-- claims:supersession-variants -->
 | system | stale, explicit | stale, implicit | current, explicit | current, implicit |
 |---|---|---|---|---|
-| **Nevertwice** | 0.017 | 0.067 | 1.000 | 1.000 |
+| **Nevertwice** | 0.058 | 0.067 | 0.983 | 1.000 |
 | Mem0 | 0.933 | 0.933 | 0.983 | 0.983 |
 | Zep/Graphiti (`graphiti-core`, FalkorDB) | 0.317 | 0.242 | 0.575 | 0.633 |
 | an append-only markdown file | 0.950 | 0.950 | 0.950 | 0.950 |
@@ -268,14 +268,14 @@ The same two readings on this corpus:
 <!-- claims:supersession-readings-implicit -->
 | reading | returns the retracted fact | the retracted value appears anywhere | returns the replacement | retires a still-true fact | characters per query |
 |---|---|---|---|---|---|
-| Between nights | 0.067 [0.034, 0.126] | 0.817 | 1.000 [0.969, 1.000] | 0.000 [0.000, 0.088] | 530 |
-| After consolidation | 0.067 [0.034, 0.126] | 0.433 | 1.000 [0.969, 1.000] | 0.000 [0.000, 0.088] | 454 |
+| Between nights | 0.067 [0.034, 0.126] | 0.692 | 1.000 [0.969, 1.000] | 0.000 [0.000, 0.088] | 490 |
+| After consolidation | 0.067 [0.034, 0.126] | 0.417 | 1.000 [0.969, 1.000] | 0.000 [0.000, 0.088] | 439 |
 
 <sub>The second column counts an item that asserts the retracted value without the current one, which is the bench's rule and the one the comparison uses. The third counts the retracted value wherever it appears in the returned text, so a paired hit - the newest statement with the earlier one attached - is counted here and not there. Both are printed because the design serves the older statement on purpose rather than hiding it, and a reader deciding whether that is acceptable needs the number it costs.</sub>
 
-<sub>What the second row costs: one model call per contested pair at consolidation and none in the hook, at 414 tokens a pair; on a real store the dry run counted at most 74 contested pairs a week, against a run budget of a hundred thousand tokens. With no model backend at all the first row is what the product does, and the contested pairs stay visible through `conflicts()` and `integrity()`.</sub>
+<sub>What the second row costs: one model call per contested pair at consolidation and none in the hook, at 414 tokens a pair; on a real store the dry run counted at most 76 contested pairs a week, against a run budget of a hundred thousand tokens. With no model backend at all the first row is what the product does, and the contested pairs stay visible through `conflicts()` and `integrity()`.</sub>
 
-<sub>Why the judge's verdict is not the last word. On a recorded set of pairs whose truth is known it rules correctly 0.931 of the time, and its precision on `replaces` - the verdict that retires a note - is 0.989, not one. An earlier draw of the same prompt over the same bytes read exactly one, so that figure is a draw and not a property of the judge. This is why three guards sit between a verdict and a retirement: a note with verified literals is never retired for one without, a value the new statement's own verified block does not carry vetoes the replacement, and a replacement naming no value does not displace one that does. The column above reads zero with the judge making false calls, which is the guards doing the work.</sub>
+<sub>Why the judge's verdict is not the last word. On a recorded set of pairs whose truth is known it rules correctly 0.956 of the time, and its precision on `replaces` - the verdict that retires a note - is 1.000, not one. An earlier draw of the same prompt over the same bytes read exactly one, so that figure is a draw and not a property of the judge. This is why three guards sit between a verdict and a retirement: a note with verified literals is never retired for one without, a value the new statement's own verified block does not carry vetoes the replacement, and a replacement naming no value does not displace one that does. The column above reads zero with the judge making false calls, which is the guards doing the work.</sub>
 <!-- /claims:supersession-readings-implicit -->
 
 Paired on the same cases of this corpus, McNemar exact:
@@ -367,8 +367,8 @@ readings. Both tables below say so per arm.
 <!-- claims:supersession-causes -->
 | arm | a still-true fact did not come back | retired by the memory | absorbed into another note | never written | served, below the top five |
 |---|---|---|---|---|---|
-| **Nevertwice**, between nights | 0.100 [0.040, 0.231] | 0 of 40 | 0 of 40 | 4 of 40 | 0 of 40 |
-| **Nevertwice**, after consolidation | 0.100 [0.040, 0.231] | 0 of 40 | 0 of 40 | 4 of 40 | 0 of 40 |
+| **Nevertwice**, between nights | 0.125 [0.055, 0.261] | 0 of 40 | 0 of 40 | 5 of 40 | 0 of 40 |
+| **Nevertwice**, after consolidation | 0.125 [0.055, 0.261] | 0 of 40 | 0 of 40 | 5 of 40 | 0 of 40 |
 | Mem0 | 0.000 [0.000, 0.161] | 0 of 20 | 0 of 20 | 0 of 20 | 0 of 20 |
 | Zep/Graphiti (`graphiti-core`, FalkorDB) | 0.225 [0.123, 0.375] | 0 of 40 | 0 of 40 | 9 of 40 | 0 of 40 |
 | an append-only markdown file | 0.050 [0.009, 0.236] | 0 of 20 | 0 of 20 | 0 of 20 | 1 of 20 |
@@ -404,16 +404,9 @@ like any other contested pair. The campaign ran both arms on both corpora in bot
 rule that picks the default was written before the runs. What the switch costs and what it buys:
 
 <!-- claims:supersession-switch -->
-| corpus and reading | default | with the switch on |
-|---|---|---|
-| explicit, between nights - retires a still-true fact | 0.000 | 0.000 |
-| explicit, between nights - returns the retracted fact | 0.017 | 0.100 |
-| explicit, after consolidation - retires a still-true fact | 0.000 | 0.000 |
-| explicit, after consolidation - returns the retracted fact | 0.017 | 0.050 |
-| implicit, between nights - retires a still-true fact | 0.000 | 0.000 |
-| implicit, between nights - returns the retracted fact | 0.067 | 0.083 |
-| implicit, after consolidation - retires a still-true fact | 0.000 | 0.000 |
-| implicit, after consolidation - returns the retracted fact | 0.067 | 0.067 |
+> **Withdrawn 2026-09.** gpu: the campaign at 71f83a1 re-measured every stand - the entry point, the payload delta and the per-question rows moved the engine, so every number whose closure names it is withdrawn until it is re-read from this run's artifacts
+>
+> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/supersession_bench.py --arms nevertwice --sleep` is what re-measures this one.
 <!-- /claims:supersession-switch -->
 
 **How the absorb was found, and what it is not.** The first reading of this run's artifact called

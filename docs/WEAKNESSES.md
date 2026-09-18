@@ -48,8 +48,8 @@ they cannot lag the artifact.
 <!-- claims:supersession-causes -->
 | arm | a still-true fact did not come back | retired by the memory | absorbed into another note | never written | served, below the top five |
 |---|---|---|---|---|---|
-| **Nevertwice**, between nights | 0.100 [0.040, 0.231] | 0 of 40 | 0 of 40 | 4 of 40 | 0 of 40 |
-| **Nevertwice**, after consolidation | 0.100 [0.040, 0.231] | 0 of 40 | 0 of 40 | 4 of 40 | 0 of 40 |
+| **Nevertwice**, between nights | 0.125 [0.055, 0.261] | 0 of 40 | 0 of 40 | 5 of 40 | 0 of 40 |
+| **Nevertwice**, after consolidation | 0.125 [0.055, 0.261] | 0 of 40 | 0 of 40 | 5 of 40 | 0 of 40 |
 | Mem0 | 0.000 [0.000, 0.161] | 0 of 20 | 0 of 20 | 0 of 20 | 0 of 20 |
 | Zep/Graphiti (`graphiti-core`, FalkorDB) | 0.225 [0.123, 0.375] | 0 of 40 | 0 of 40 | 9 of 40 | 0 of 40 |
 | an append-only markdown file | 0.050 [0.009, 0.236] | 0 of 20 | 0 of 20 | 0 of 20 | 1 of 20 |
@@ -93,11 +93,11 @@ they cannot lag the artifact.
 <!-- claims:guard-bench -->
 | arm | recall of the right guard | precision | hard-negative false alarms | project-only recall | tokens / call | ms / check |
 |---|---|---|---|---|---|---|
-| **guards, engine's no-model patterns** | 0.380 at FPR 0.179 (over budget) | - | - | - | 3.320 | 0.019 |
-| **guards, model-written patterns** | 0.370 at FPR 0.155 (over budget) | - | - | - | 5.510 | 0.025 |
-| cold-start pack (no history) | 0.196 | 0.818 | 0.000 | 0.000 | 1.150 | 0.008 |
+| **guards, engine's no-model patterns** | 0.380 at FPR 0.179 (over budget) | - | - | - | 3.320 | 0.018 |
+| **guards, model-written patterns** | 0.370 at FPR 0.155 (over budget) | - | - | - | 5.510 | 0.026 |
+| cold-start pack (no history) | 0.196 | 0.818 | 0.000 | 0.000 | 1.150 | 0.007 |
 | linter or scanner (scored in its favour) | 0.457 | 1.000 | 0.000 | 0.154 | 0.000 | 0.000 |
-| prompt recall over the notes (top three) | 0.033 | 0.333 | 0.056 | 0.038 | 103.560 | 47.624 |
+| prompt recall over the notes (top three) | 0.033 | 0.333 | 0.056 | 0.038 | 103.560 | 53.615 |
 | silence (floor) | 0.000 | - | 0.000 | 0.000 | 0.000 | 0.000 |
 
 <sub>no operating point under the false-alarm budget for guards, engine's no-model patterns, guards, model-written patterns - a guard fires or it does not, and firing catches the repeats shown at the false-alarm rate shown.</sub>

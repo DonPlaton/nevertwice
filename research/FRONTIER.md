@@ -22,7 +22,7 @@ gap between two systems smaller than that disagreement is not a gap.
 |---|---|---|---|---|---|---|
 | **Nevertwice, shipped ranker, sessions whole** | 0.353 | 2,777 | 0.447 | 8,707 | 0.447 | 14,274 |
 | Nevertwice, shipped ranker, query passages | 0.293 | 379 | 0.427 | 897 | 0.433 | 1,417 |
-| Nevertwice, our extractor's notes | 0.013 | 198 | 0.047 | 357 | 0.073 | 513 |
+| Nevertwice, our extractor's notes | 0.060 | 195 | 0.067 | 348 | 0.080 | 501 |
 | Mem0 store search, sessions whole | 0.353 | 2,733 | 0.433 | 8,552 | 0.400 | 13,839 |
 | Mem0 full pipeline, its memories | 0.207 | 144 | 0.273 | 184 | 0.333 | 227 |
 | A-MEM full pipeline, its notes | 0.027 | 124 | 0.027 | 124 | 0.027 | 124 |

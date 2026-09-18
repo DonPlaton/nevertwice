@@ -35,7 +35,10 @@ sys.path.insert(0, str(ROOT / "nevertwice"))
 
 #: Volatile by nature: the run's clock, the sandbox's path, and the host's own name. Masked
 #: rather than removed, so a snapshot still proves that SOMETHING was written there.
-TS_RE = re.compile(r"\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}(:\d{2})?")
+#: A bare date counts too. The guard ledger stamps `born` with today's date and no clock, so a
+#: snapshot recorded on one day failed on the next - a proof that cries wolf at midnight is worse
+#: than no proof, because the next real difference gets read as the calendar again.
+TS_RE = re.compile(r"\d{4}-\d{2}-\d{2}(?:[T ]\d{2}:\d{2}(?::\d{2})?)?")
 SID_RE = re.compile(r"\b[0-9a-f]{8}\b")
 #: Bookkeeping files key on absolute transcript paths, and a sandbox lands somewhere new every
 #: run. Where the sandbox landed is a property of the host, not a decision the engine made.

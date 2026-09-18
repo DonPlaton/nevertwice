@@ -5016,7 +5016,7 @@
    },
    "s0_written_pairs": 109,
    "runs": 2,
-   "seconds": 403.2,
+   "seconds": 422.1,
    "config": "ollama qwen3-coder:30b + bge-m3, k=5, days 2026-03-01/2026-05-01",
    "store_bytes": 258993,
    "per_run": [
@@ -10490,7 +10490,7 @@
     "skipped": null,
     "judged_ollama": 105
    },
-   "seconds": 28.2,
+   "seconds": 29.4,
    "store_bytes": 281267,
    "config": "the same store after consolidate_memory.adjudicate_contested(budget=100000, cap=0)",
    "per_run": [
