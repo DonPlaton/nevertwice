@@ -264,22 +264,39 @@ def score(ranked_by_q: dict, data, pool_ids) -> dict:
     hit = {k: 0 for k in KS}
     mrr = 0.0
     n = 0
+    per_q = []
     for e in data:
         rel = set(e["answer_session_ids"])
         if not (rel & relset):
             continue
         n += 1
         got = _dedup(ranked_by_q.get(e["question_id"], []))
+        row = {"q": e["question_id"]}
+        if e.get("category") is not None:
+            row["category"] = e["category"]
         for k in KS:
-            if rel & set(got[:k]):
+            in_k = bool(rel & set(got[:k]))
+            row[f"h{k}"] = int(in_k)
+            if in_k:
                 hit[k] += 1
         for i, s in enumerate(got):
             if s in rel:
                 mrr += 1.0 / (i + 1)
+                row["rr"] = round(1.0 / (i + 1), 4)
                 break
+        else:
+            row["rr"] = 0.0
+        per_q.append(row)
     out = {f"recall@{k}": round(hit[k] / n, 3) if n else 0.0 for k in KS}
     out["mrr"] = round(mrr / n, 4) if n else 0.0
     out["n"] = n
+    #: P1 (part 3.5). Without these rows the arms can only be compared unpaired, and unpaired this
+    #: design resolves 4.4 points while the interesting differences are one - "behind Mem0 at R@5"
+    #: was 8 questions of 1,977 inside an interval three points wide. The rows cost nothing: the
+    #: loop above already computed every one of them, and they are what makes a McNemar possible.
+    #: They are written beside the aggregates, never instead of them; the aggregates above are
+    #: untouched arithmetic.
+    out["per_question"] = per_q
     return out
 
 

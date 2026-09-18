@@ -20,7 +20,6 @@ A lazy import nobody exercises is not a saving, it is a latent AttributeError on
 """
 from __future__ import annotations
 
-import statistics
 import subprocess
 import sys
 from pathlib import Path
@@ -63,34 +62,29 @@ for mod, why in DEFERRED.items():
     check(f"importing the hook does not pull {mod} ({why})", mod not in loaded)
 
 
-print("# gate 2: -X importtime falls, on min and median, over repeats")
+print("# gate 2: the module set is the invariant; the millisecond is not asserted here")
 
-
-def import_ms(n: int = 5) -> list[float]:
-    """Total import time for the engine, as `-X importtime` reports it, one fresh process each."""
-    out = []
-    for _ in range(n):
-        p = subprocess.run([sys.executable, "-X", "importtime", "-c",
-                            f"import sys;sys.path.insert(0, r'{PKG}');import memory_hook"],
-                           capture_output=True, text=True)
-        for line in reversed(p.stderr.splitlines()):
-            if line.startswith("import time:") and line.rstrip().split("|")[-1].strip() == "memory_hook":
-                out.append(int(line.split("|")[1].strip()) / 1000)
-                break
-    return sorted(out)
-
-
-now = import_ms()
-check("importtime reports the engine", len(now) >= 5, f"{len(now)} samples")
-#: The base is the committed figure from the M1 measurement at cc07b29: 28.1 ms marginal.
-BASE_MS = 28.1
-if now:
-    print(f"       min {now[0]:.1f} ms, median {statistics.median(now):.1f} ms, "
-          f"max {now[-1]:.1f} ms  (base {BASE_MS} ms)")
-    check("min below the base", now[0] < BASE_MS, f"{now[0]:.1f} vs {BASE_MS}")
-    check("median below the base", statistics.median(now) < BASE_MS,
-          f"{statistics.median(now):.1f} vs {BASE_MS}")
-
+#: What M1b actually buys was measured on a quiet host and lives in `.loop/GOAL-CLOSE.md`:
+#: `-X importtime` for the engine, 28.1 -> 23.7 ms on min and median over five fresh processes,
+#: and PreToolUse unchanged at a median of 58.2 against a base interval of 54.1-58.5.
+#:
+#: None of that is asserted in this file, and the reason is the lesson of the whole track. Under a
+#: full suite run the same import reads 38-59 ms against 23.7 idle, so a threshold taken from a
+#: quiet machine fails here for reasons that have nothing to do with the code. A paired arm does
+#: not rescue it either: pre-importing the two modules removes them from what `importtime` counts
+#: *inside* `memory_hook`, so the "laden" arm reports a smaller number than the lean one and the
+#: comparison measures the instrument rather than the change.
+#:
+#: The invariant that survives every load is which modules get loaded, and gate 1 above is exactly
+#: that. What is left here is the count, pinned so a future import creeping in is caught by name
+#: rather than by a stopwatch.
+mod_probe = ("import sys;sys.path.insert(0, r'%s');import memory_hook;"
+             "print(len([k for k in sys.modules if '.' not in k]))" % PKG)
+r2 = subprocess.run([sys.executable, "-S", "-c", mod_probe], capture_output=True, text=True)
+count = int((r2.stdout or "0").strip() or 0)
+print(f"       top-level modules after importing the engine: {count}")
+check("the engine imports no more top-level modules than it did", 0 < count <= 63,
+      f"{count} - if this grew, name the new import and decide whether the hot path needs it")
 
 print("# gate 3: nothing the deferred imports serve has stopped working")
 
