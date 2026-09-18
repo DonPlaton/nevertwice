@@ -876,7 +876,7 @@
   },
   "research/SUPERSESSION.md": {
    "governance": "backlog",
-   "budget": 81,
+   "budget": 80,
    "note": "Every figure on this page is registered above; the budget covers the per-shape breakdown and the prose, which restate registered numbers in other shapes. The study pages are backlog by the same rule as the rest of the archive.",
    "budget_metric": "evidence-bearing numeric tokens: numbers outside fenced blocks and generated regions, excluding years, months, Python versions and bare single digits",
    "generator": "research/supersession_bench.py"

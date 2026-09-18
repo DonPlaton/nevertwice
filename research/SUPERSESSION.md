@@ -171,9 +171,10 @@ single-pass and ADD-only by published design, and its note on the change says bo
 survive on purpose. It is a good design for conversational history. This benchmark measures
 the axis where that design has nothing to offer, and the number says exactly that.
 
-Its retrieval, meanwhile, is a shade ahead of ours on this run on the current column, and it
-missed no control fact at all where we missed nine of forty. Mem0 loses this benchmark
-and leads on the one everyone else runs.
+Its retrieval, meanwhile, misses no control fact at all where we miss four of forty - every one
+of those a session our extractor wrote no note for, none of them a fact the memory retired. On the
+current column the shade of a lead it held over us on the campaign before this one is gone - the
+table above has both figures. Mem0 loses this benchmark and leads on the one everyone else runs.
 
 **Graphiti is the row that tests the claim.** It is the one system on the stand designed for
 retraction - an edge carries `valid_at` and `invalid_at`, and a model decides what an episode
@@ -377,8 +378,8 @@ readings. Both tables below say so per arm.
 <sub>Over-retraction proper - the memory stopped serving a fact that was still true, by retiring the note or by absorbing another fact into it - is the first two cause columns as a rate: 0.000 [0.000, 0.088] for Nevertwice over its control case-runs.</sub>
 <!-- /claims:supersession-causes -->
 
-On the implicit corpus the same split is starker - every one of the fourteen misses is an absorb,
-over-retraction proper 0.35:
+On the implicit corpus the split is empty in every column - no still-true fact failed to come back
+at all, where the engine before K8 lost fourteen of forty to an absorb:
 
 <!-- claims:supersession-causes-implicit -->
 | arm | a still-true fact did not come back | retired by the memory | absorbed into another note | never written | served, below the top five |
@@ -436,8 +437,9 @@ literal channel? The commit before both was checked out into a worktree and run 
 bench, two runs per corpus (`research/results/supersession_baseline_*.json`, registered as
 historical claims that cite nothing). The absorb was already there: on the explicit corpus the
 older engine lost a still-true fact to retirement or absorption on four of forty control case-runs
-against five now - the same within noise; on the implicit corpus seven of forty then against
-fourteen now, while its never-written misses fell from eight to none and its stale rate halved. The
+against five at the J2b engine - the same within noise; on the implicit corpus seven of forty then
+against fourteen there, while its never-written misses fell from eight to none and its stale rate
+halved. (Both of those columns read zero on the engine that ships today; K8 is what closed them.) The
 total control miss on that corpus barely moved; what moved is its cause - from the extractor's
 silence to over-consolidation - and that is a finding, not a confirmation: the J2b prompt made
 session two write more often, and every extra same-title note it wrote was absorbed. The cap J2b
