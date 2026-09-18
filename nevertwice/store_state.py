@@ -32,7 +32,10 @@ from __future__ import annotations
 
 import json
 import os
-import threading
+#: `_thread` is the builtin `threading` wraps, and `get_ident` is literally the same
+#: function object. Importing `threading` for it cost 0.9 ms on every hook process -
+#: paid on every tool call, for a name that resolves to the same C function.
+import _thread
 import time
 from pathlib import Path
 
@@ -72,7 +75,7 @@ def write_atomic(path: Path, text: str, encoding: str = "utf-8") -> None:
     # with WinError 32, and on POSIX it silently publishes whichever thread wrote last, which
     # is the worse outcome because nothing reports it (GOAL E1, concurrent writers).
     # Cleanup on failure leaves no orphaned .tmp in the synced vault (audit D3).
-    tmp = path.with_name(f"{path.name}.{os.getpid()}.{threading.get_ident()}.tmp")
+    tmp = path.with_name(f"{path.name}.{os.getpid()}.{_thread.get_ident()}.tmp")
     try:
         tmp.write_text(text, encoding=encoding)
         _replace_with_retry(tmp, path)

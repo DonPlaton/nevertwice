@@ -16,7 +16,6 @@ Pipeline per session:
   old sessions, prune old DB rows.
 """
 
-import hashlib
 import importlib
 import json
 import math
@@ -880,6 +879,13 @@ def _sid8(session_id: str) -> str:
     every ingest ever to the literal constant 'ingest-f' (34 live notes shared it; review
     2026-08) - conflating same-minute transcripts and letting the per-session idempotency
     guard silently drop a same-slug lesson mined from a DIFFERENT transcript."""
+    #: Imported here, not at the top. `hashlib` costs 3.0 ms of every hook process and this
+    #: is its only caller in the module, on the write path - while PreToolUse, which pays
+    #: that cost on every tool call the customer makes, never reaches it. Re-gated as M1b:
+    #: the first gate asked for disjoint millisecond ranges, which an effect smaller than
+    #: the host's own spread cannot produce at any sample size.
+    import hashlib                                              # noqa: PLC0415
+
     return hashlib.sha1((session_id or "unknown").encode("utf-8", "replace")).hexdigest()[:8]
 
 
