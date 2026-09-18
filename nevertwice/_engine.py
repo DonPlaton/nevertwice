@@ -4080,6 +4080,84 @@ def pair_siblings(hits: list[dict], attach: bool = False) -> list[dict]:
     return out
 
 
+#: Track N (part 3.1). The payload was decomposed from the strings the supersession stand returned:
+#: about 100 characters a query of `[facts]`, 104-130 of attached earlier statement, and the note.
+#: Both switches default to the lighter behaviour and exist so a missed gate is reverted, not argued
+#: with - the same shape K5 and K7 were left in.
+SERVE_FACTS_BLOCK = os.environ.get("NEVERTWICE_SERVE_FACTS", "0") != "0"
+ATTACH_EARLIER_ALWAYS = os.environ.get("NEVERTWICE_ATTACH_EARLIER_ALWAYS", "0") != "0"
+
+
+def _served_text(desc: str) -> str:
+    """A note's description as the READER gets it: the sentence, without the literal list.
+
+    The `[facts]` block is a list of verified literals the extractor harvested out of the very
+    sentence it is appended to, so serving both hands the reader the same words twice - about 100
+    characters a query, in every reading, including after the night. The block stays in the note
+    and in the frontmatter, where rules 2 and 2' and the shape rule read it; only the copy that
+    goes out over the wire is dropped. K1 measured this block's effect on ranking and did not
+    confirm it, which is the reason to suspect it is weight rather than signal - and `R@5` on the
+    retrieval stands is the measurement that would refute that, so it is in track N's gate.
+    """
+    if SERVE_FACTS_BLOCK or not desc:
+        return desc
+    mark = _FACTS_MARK.strip()
+    return desc.split(mark, 1)[0].rstrip() if mark in desc else desc
+
+
+def _earlier_delta(earlier: str, current: str) -> str:
+    """What the older statement carries that the newer one does not - its values, not its sentence.
+
+    H1 of track N predicted that most attached lines are duplicates and could be dropped. Measured
+    on the 212 lines the stand recorded, that is false: only 11 are, because a corpus of real
+    replacements is one where the old value genuinely exists nowhere else. The prediction was wrong
+    and the line has to stay.
+
+    What does not have to stay is the sentence around the value. The reader needs "30 seconds", not
+    "The HTTP client timeout was configured to 30 seconds. This ensures that API requests do not
+    hang indefinitely." Measured on the same strings, carrying the values alone takes the explicit
+    corpus from 473.3 to 352.8 characters a query and the implicit from 530.4 to 408.8, with the
+    replaced value still in the payload every time.
+
+    Returns "" when nothing verifiable differs, and the caller then keeps the sentence: an unproven
+    pair is never resolved against the reader, which is the rule the whole K8 package turns on.
+    """
+    if ATTACH_EARLIER_ALWAYS:
+        return ""
+    have = {v.strip().lower() for v in _VALUE_RE.findall(current or "")}
+    gone = [v.strip() for v in _VALUE_RE.findall(earlier or "") if v.strip().lower() not in have]
+    return ", ".join(dict.fromkeys(gone))
+
+
+def _earlier_is_informative(earlier: str, current: str) -> bool:
+    """Does the older statement tell the reader something the newer one does not?
+
+    The attached line is what buys zero loss, and it is not free: 104 characters a query on the
+    explicit corpus, 130 on the implicit. The K8-C audit measured that it carries the ONLY copy of
+    the fact in 3 of 20 explicit and 7 of 20 implicit controls - so in most pairs it repeats the
+    newer note, and a repeat is weight with no reader.
+
+    The test is the one that scored `replaces` precision 1.000 on 222 recorded pairs this morning:
+    compare the verified literals. Different literal - the line stays, because the old value cannot
+    be recovered from the new note. Same literal - it goes. **No literal at all - it stays**, and
+    that asymmetry is deliberate: silence is not evidence of a duplicate, and an unproven pair is
+    never resolved against the reader. That rule is what keeps control miss from moving, which is
+    the one thing this track may not trade for weight.
+    """
+    if ATTACH_EARLIER_ALWAYS:
+        return bool((earlier or "").strip())
+    e = (earlier or "").strip()
+    if not e:
+        return False
+    #: `_earlier_text` hands over the compact statement, not a `[facts]` block, so the comparison
+    #: is on the value literals themselves - the same `_VALUE_RE` the write path's rules use.
+    a = {v.strip().lower() for v in _VALUE_RE.findall(e)}
+    b = {v.strip().lower() for v in _VALUE_RE.findall(current or "")}
+    if not a or not b:
+        return True                      # nothing verified to compare - keep it
+    return bool(a - b)                   # the older statement carries a value the newer lacks
+
+
 def _append_facts(desc: str, facts: list[str]) -> str:
     """Append verified literals to the one-line description, replacing any prior facts block so a
     re-mine never stacks them. Kept on the single description line so `_parse_note_body` reads it
@@ -6823,7 +6901,7 @@ def _note_snippet(stem: str, ntype: str, max_chars: int = 220) -> str:
         return ""
     resolved = any(ln.strip().startswith("resolved_by:") for ln in lines[:20])   # audit I-18
     _, desc, prevention = _parse_note_body(lines)
-    out = desc
+    out = _served_text(desc)                       # track N: the literal list is not re-served
     if prevention:
         out = f"{out} → {prevention}" if out else prevention
     if resolved:
@@ -6879,8 +6957,12 @@ def _fact_line(r: dict, stale: bool = False) -> str:
     earlier = ""
     if r.get("earlier"):                                        # K8 layer 2: the older same-slug sibling
         texts = [t for t in (_earlier_text(e, r.get("ntype", "")) for e in r["earlier"]) if t]
+        #: track N: a line that repeats the newer note's own value is weight with no reader, and a
+        #: line that does differ needs to carry the value rather than the sentence around it
+        texts = [t for t in texts if _earlier_is_informative(t, snip or "")]
+        texts = [_earlier_delta(t, snip or "") or t for t in texts]
         if texts:
-            earlier = " _(earlier under this title: " + " ; ".join(texts) + ")_"
+            earlier = " _(earlier: " + " ; ".join(texts) + ")_"
     return f"- **{title}**" + (f" - {snip}" if snip else "") + earlier + marker + via + flag
 
 

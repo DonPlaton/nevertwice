@@ -99,11 +99,15 @@ check("a facts block without a value is a harvested distractor: the statement is
 
 print("\n- the hook's line -")
 line = m._fact_line({"stem": new, "ntype": "decision", "title": "http client timeout", "earlier": [old]})
-check("the fact line carries the newest statement and the earlier one, in that order",
-      "5 seconds" in line and "earlier under this title: the HTTP client timeout is 30 seconds" in line
+#: Track N (part 3.1): the line still carries both statements, newest first, but the earlier half
+#: is now the value that differs rather than the sentence around it - measured at 473.3 -> 352.8
+#: characters a query on the explicit corpus, with the replaced value present every time.
+check("the fact line carries the newest statement and the earlier value, in that order",
+      "5 seconds" in line and "earlier: 30 seconds" in line
+      and line.index("5 seconds") < line.index("earlier: 30 seconds")
       and line.index("5 seconds") < line.index("30 seconds"), line)
 check("a hit without `earlier` renders as before",
-      "earlier under this title" not in m._fact_line({"stem": new, "ntype": "decision", "title": "http client timeout"}))
+      "earlier:" not in m._fact_line({"stem": new, "ntype": "decision", "title": "http client timeout"}))
 
 print("\n- the API result -")
 res = m.pair_siblings([{"stem": old, "ntype": "decision", "title": "http client timeout", "description": OLD},

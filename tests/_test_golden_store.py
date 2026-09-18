@@ -163,6 +163,12 @@ def run_corpus(store: Path) -> dict:
     except Exception as exc:                               # noqa: BLE001 - recorded, not hidden
         guard_out.append(f"error: {type(exc).__name__}: {exc}")
 
+    #: the served payload itself, not just which notes came back. Without this the proof is blind
+    #: to every change in what the reader is handed - which is exactly what track N moves.
+    def payload(q):
+        hits = m.pair_siblings(m.retrieve_relevant(project, q, 3))
+        return [m._fact_line(h) for h in hits]
+
     queries = ["which database does the service use",
                "what port does the api listen on",
                "eval on user input"]
@@ -171,8 +177,11 @@ def run_corpus(store: Path) -> dict:
     asof = {day: [h.get("stem") or h.get("title") for h in m.as_of(project, day)]
             for day in ("2026-03-03", "2026-03-06")}
 
+    served = {q: payload(q) for q in queries}
     return G.snapshot(store, {
-        "recall": recall, "as_of": asof,
+        "recall": recall, "served": served,
+        "served_chars": {q: sum(len(x) for x in v) for q, v in served.items()},
+        "as_of": asof,
         "contested": [contested_before, contested_after],
         "adjudication": adjudication,
         "guard": guard_out,
