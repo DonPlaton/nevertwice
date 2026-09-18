@@ -127,9 +127,16 @@ def _rebase_vault(path) -> None:
     REAL vault, so a test that patched only VAULT still wrote the LIVE embedding
     cache and log - which is exactly how the 2026-08-13 hermeticity incident
     clobbered the production cache, and how a partial patch did it AGAIN on
-    2026-08-18. One call, no forgotten constants."""
+    2026-08-18. One call, no forgotten constants.
+
+    The path-classification constants below (`_VAULT_NORM`, `_PROJECTS_ROOT_NORM` and the
+    `_EXCLUDE_PREFIXES` built from them) were themselves forgotten until 2026-09-18: every file
+    went to the sandbox while every *question* about a path was still answered about the store
+    the process imported with, so `_is_excluded_path` kept the real store excluded and the
+    sandbox merely tracked. Same incident shape, one layer up - pinned by
+    `tests/_test_entry_and_rebase.py`."""
     global VAULT, PROCESSED_DB, STATUS_FILE, EMBED_CACHE, EMBED_META, LOG_FILE, \
-        PROMPT_RECALL_STATE_DIR
+        PROMPT_RECALL_STATE_DIR, _VAULT_NORM, _PROJECTS_ROOT_NORM, _EXCLUDE_PREFIXES
     VAULT = Path(path)
     PROCESSED_DB = VAULT / ".processed_sessions.json"
     STATUS_FILE = VAULT / "status.txt"
@@ -137,6 +144,11 @@ def _rebase_vault(path) -> None:
     EMBED_META = VAULT / ".embeddings_meta.json"
     LOG_FILE = VAULT / ".logs" / "memory_hook.log"
     PROMPT_RECALL_STATE_DIR = VAULT / ".prompt_recall"
+    _VAULT_NORM = _norm_path(str(VAULT))
+    _PROJECTS_ROOT_NORM = _norm_path(str(PROJECTS_ROOT))
+    # rebuilt, not appended to: the list must stop naming the store we just left
+    _EXCLUDE_PREFIXES = [_norm_path(p) for p in
+                         (*_SYS_DIRS, _VAULT_NORM, _PROJECTS_ROOT_NORM) if p]
     _EMBED_CACHE_MEMO["sig"] = None
     _EMBED_CACHE_MEMO["data"] = None
 
