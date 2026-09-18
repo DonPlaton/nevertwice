@@ -3,41 +3,41 @@
  "today": "2026-09-16",
  "weeks": 4,
  "cutoff": "2026-08-19",
- "notes_scanned": 8235,
- "slug_groups": 7934,
- "collision_events": 292,
+ "notes_scanned": 8371,
+ "slug_groups": 8068,
+ "collision_events": 297,
  "by_kind": {
-  "later_note": 110,
-  "absorbed": 182
+  "later_note": 112,
+  "absorbed": 185
  },
  "by_branch": {
-  "r": 96,
-  "d": 196
+  "r": 98,
+  "d": 199
  },
  "by_rule": {
-  "contested": 292
+  "contested": 297
  },
  "facts_seen": {
   "old_has_facts": 0,
   "new_has_facts": 0,
   "notes_with_facts_block_in_window": 1,
-  "notes_in_window": 3404
+  "notes_in_window": 3540
  },
- "contested_total": 292,
- "contested_per_week": 73.0,
+ "contested_total": 297,
+ "contested_per_week": 74.25,
  "contested_by_iso_week": {
   "2026-W34": 23,
   "2026-W35": 129,
   "2026-W36": 42,
   "2026-W37": 85,
-  "2026-W38": 13
+  "2026-W38": 18
  },
  "contested_by_project": {
   "codex": 99,
   "nevertwice": 46,
   "quantum_prism": 45,
+  "cognitive_errors": 28,
   "universal_local_agent": 27,
-  "cognitive_errors": 23,
   "gears_experiments": 16,
   "auto_shorts": 10,
   "sonarum": 10,
@@ -447,6 +447,20 @@
    "old": "2026-08-30-codex-pattern-weighted-download-progress-calculation",
    "new": "2026-09-10-codex-pattern-weighted-download-progress-calculation",
    "old_where": "Superseded",
+   "old_via": "",
+   "rule": "contested",
+   "old_has_facts": false,
+   "new_has_facts": false
+  },
+  {
+   "kind": "later_note",
+   "branch": "r",
+   "project": "cognitive_errors",
+   "ntype": "pattern",
+   "slug": "denominator-consistency-audit",
+   "old": "2026-09-12-cognitive_errors-pattern-denominator-consistency-audit",
+   "new": "2026-09-16-cognitive_errors-pattern-denominator-consistency-audit",
+   "old_where": "Patterns",
    "old_via": "",
    "rule": "contested",
    "old_has_facts": false,
@@ -1188,6 +1202,20 @@
    "slug": "silent-config-field-mismatch",
    "old": "2026-09-10-codex-mistake-silent-config-field-mismatch",
    "new": "2026-09-13-codex-mistake-silent-config-field-mismatch",
+   "old_where": "Superseded",
+   "old_via": "",
+   "rule": "contested",
+   "old_has_facts": false,
+   "new_has_facts": false
+  },
+  {
+   "kind": "later_note",
+   "branch": "r",
+   "project": "cognitive_errors",
+   "ntype": "mistake",
+   "slug": "unverified-assumption-on-model-knowledge",
+   "old": "2026-09-12-cognitive_errors-mistake-unverified-assumption-on-model-knowledge",
+   "new": "2026-09-16-cognitive_errors-mistake-unverified-assumption-on-model-knowledge",
    "old_where": "Superseded",
    "old_via": "",
    "rule": "contested",
@@ -2299,18 +2327,6 @@
    "branch": "d",
    "project": "cognitive_errors",
    "ntype": "pattern",
-   "slug": "denominator-consistency-audit",
-   "old": "2026-09-16-cognitive_errors-pattern-denominator-consistency-audit (previous statement)",
-   "new": "2026-09-16-cognitive_errors-pattern-denominator-consistency-audit",
-   "rule": "contested",
-   "old_has_facts": false,
-   "new_has_facts": false
-  },
-  {
-   "kind": "absorbed",
-   "branch": "d",
-   "project": "cognitive_errors",
-   "ntype": "pattern",
    "slug": "denominator-inclusion-verification",
    "old": "2026-09-16-cognitive_errors-pattern-denominator-inclusion-verification (previous statement)",
    "new": "2026-09-16-cognitive_errors-pattern-denominator-inclusion-verification",
@@ -2326,6 +2342,18 @@
    "slug": "intersection-answers-as-finding",
    "old": "2026-09-16-cognitive_errors-pattern-intersection-answers-as-finding (previous statement)",
    "new": "2026-09-16-cognitive_errors-pattern-intersection-answers-as-finding",
+   "rule": "contested",
+   "old_has_facts": false,
+   "new_has_facts": false
+  },
+  {
+   "kind": "absorbed",
+   "branch": "d",
+   "project": "cognitive_errors",
+   "ntype": "pattern",
+   "slug": "semantic-fidelity-check-for-metrics",
+   "old": "2026-09-16-cognitive_errors-pattern-semantic-fidelity-check-for-metrics (previous statement)",
+   "new": "2026-09-16-cognitive_errors-pattern-semantic-fidelity-check-for-metrics",
    "rule": "contested",
    "old_has_facts": false,
    "new_has_facts": false
@@ -3019,6 +3047,18 @@
    "branch": "d",
    "project": "cognitive_errors",
    "ntype": "mistake",
+   "slug": "blind-spot-on-symmetry",
+   "old": "2026-09-16-cognitive_errors-mistake-blind-spot-on-symmetry (previous statement)",
+   "new": "2026-09-16-cognitive_errors-mistake-blind-spot-on-symmetry",
+   "rule": "contested",
+   "old_has_facts": false,
+   "new_has_facts": false
+  },
+  {
+   "kind": "absorbed",
+   "branch": "d",
+   "project": "cognitive_errors",
+   "ntype": "mistake",
    "slug": "denominator-exclusion-bias",
    "old": "2026-09-16-cognitive_errors-mistake-denominator-exclusion-bias (previous statement)",
    "new": "2026-09-16-cognitive_errors-mistake-denominator-exclusion-bias",
@@ -3058,6 +3098,18 @@
    "slug": "silent-denominator-shrinkage",
    "old": "2026-09-16-cognitive_errors-mistake-silent-denominator-shrinkage (previous statement)",
    "new": "2026-09-16-cognitive_errors-mistake-silent-denominator-shrinkage",
+   "rule": "contested",
+   "old_has_facts": false,
+   "new_has_facts": false
+  },
+  {
+   "kind": "absorbed",
+   "branch": "d",
+   "project": "cognitive_errors",
+   "ntype": "mistake",
+   "slug": "undercounting-methodological-changes",
+   "old": "2026-09-16-cognitive_errors-mistake-undercounting-methodological-changes (previous statement)",
+   "new": "2026-09-16-cognitive_errors-mistake-undercounting-methodological-changes",
    "rule": "contested",
    "old_has_facts": false,
    "new_has_facts": false
@@ -3742,6 +3794,18 @@
    "slug": "audit-shared-helper-functions",
    "old": "2026-09-16-cognitive_errors-decision-audit-shared-helper-functions (previous statement)",
    "new": "2026-09-16-cognitive_errors-decision-audit-shared-helper-functions",
+   "rule": "contested",
+   "old_has_facts": false,
+   "new_has_facts": false
+  },
+  {
+   "kind": "absorbed",
+   "branch": "d",
+   "project": "cognitive_errors",
+   "ntype": "decision",
+   "slug": "prioritize-semantic-fidelity-over-fluency",
+   "old": "2026-09-16-cognitive_errors-decision-prioritize-semantic-fidelity-over-fluency (previous statement)",
+   "new": "2026-09-16-cognitive_errors-decision-prioritize-semantic-fidelity-over-fluency",
    "rule": "contested",
    "old_has_facts": false,
    "new_has_facts": false

@@ -385,6 +385,43 @@ ARTIFACTS = [
              "committed and hash-checked (gen_supersession_dataset.py --check), which is the "
              "half a stranger verifies without the model. The Mem0 arm runs from its own "
              "environment and is merged in by --compare."},
+    {"file": "research/results/supersession_v1_switch.json",
+     "command": ["python", "research/supersession_bench.py", "--arms", "nevertwice", "--sleep",
+                 "--out", "research/results/supersession_v1_switch.json"],
+     "kind": HARDWARE, "task": "supersession",
+     "inputs": ["research/data/supersession_v1.json",
+                "a local Ollama serving bge-m3 and qwen3-coder:30b",
+                "NEVERTWICE_EXPLICIT_RETIRE=judge in the environment"],
+     "volatile": ["seconds"],
+     "note": "the switch arm of the explicit corpus: the same stand with the extractor's explicit "
+             "`contradicts` routed to the sleep-time judge instead of retiring at write time "
+             "(default write). Pooled over two runs like the default arm, and read twice - after the "
+             "replacing session and after the adjudication - so the switch's price is a paired "
+             "comparison within one extraction draw rather than a difference between two."},
+    {"file": "research/results/supersession_v1_implicit_switch.json",
+     "command": ["python", "research/supersession_bench.py", "--dataset",
+                 "research/data/supersession_v1_implicit.json", "--arms", "nevertwice", "--sleep",
+                 "--out", "research/results/supersession_v1_implicit_switch.json"],
+     "kind": HARDWARE, "task": "supersession",
+     "inputs": ["research/data/supersession_v1_implicit.json",
+                "a local Ollama serving bge-m3 and qwen3-coder:30b",
+                "NEVERTWICE_EXPLICIT_RETIRE=judge in the environment"],
+     "volatile": ["seconds"],
+     "note": "the same switch arm on the corpus whose second session never names the retraction - "
+             "the half of the rule that decides the default, since this is where the switch's cost "
+             "in stale facts shows up."},
+    {"file": "research/results/asof_v1_switch.json",
+     "command": ["python", "research/asof_bench.py", "--arms", "nevertwice,naive", "--runs", "2",
+                 "--sleep", "--out", "research/results/asof_v1_switch.json"],
+     "kind": HARDWARE, "task": "supersession",
+     "inputs": ["research/data/supersession_v1.json",
+                "a local Ollama serving bge-m3 and qwen3-coder:30b",
+                "NEVERTWICE_EXPLICIT_RETIRE=judge in the environment"],
+     "volatile": ["seconds"],
+     "note": "the as-of stand under the switch, both readings. It carries no published claim - the "
+             "switch's effect is decided on the displacement corpora - and is kept because a mode "
+             "that changes what is retired changes when a belief interval closes, and that is the "
+             "measure this stand reads."},
     {"file": "research/results/abstention_ab.json",
      "command": ["python", "research/abstention_ab.py", "--part", "all",
                  "--out", "research/results/abstention_ab.json"],

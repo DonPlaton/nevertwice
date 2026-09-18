@@ -1,13 +1,5 @@
 # All of them at once: the ceiling and the only measured mechanism are incompatible
 
-<!-- withdrawn-banner -->
-> **Withdrawn: figures on this page must not be quoted.** They were retracted and remain
-> here because deleting a result one was wrong about destroys the record of having been
-> wrong. The design, the method and the caveats stand; the numbers do not. Each figure's
-> own reason and date are in
-> [`research/evidence_manifest.json`](../evidence_manifest.json), and
-> `python tools/check_freshness.py --list-stale` lists every one.
-
 **Tasks S1–S3, T1, T2.** The seam journal is executed and works. The union of everything that
 passed its own gate fires on **11.9%** of commits against a declared ceiling of **5%** — and the
 declared remedy, applied honestly, removes the one mechanism with non-circular evidence behind it.

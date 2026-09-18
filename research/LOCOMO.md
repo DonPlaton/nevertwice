@@ -39,9 +39,11 @@ at all, and five point at a turn id that is not in the conversation's own turns.
 nine are category 3.
 
 <!-- claims:locomo -->
-> **Withdrawn 2026-09.** the K8 zero-loss package merged (a same-slug replacement rule on the write path, read-time sibling pairing, sleep-time adjudication, and the twelve fixes of the K9 review); every number whose closure names the engine waits for the K8-C campaign, which needs the GPU and a local Ollama extractor
->
-> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/locomo_eval.py --save --out=research/results/locomo.json` is what re-measures this one.
+| method | R@1 | R@3 | R@5 | R@10 | MRR |
+|---|---|---|---|---|---|
+| semantic (bge-m3) | 0.182 | 0.340 | 0.432 | 0.560 | 0.301 |
+| lexical (BM25) | 0.339 | 0.527 | 0.601 | 0.681 | 0.459 |
+| **calibrated fusion (shipped default, 0 deps)** | **0.350** | **0.556** | **0.640** | **0.727** | **0.481** |
 <!-- /claims:locomo -->
 
 Per category at R@5 for the shipped ranker (this table and the one above are generated from the
@@ -49,9 +51,9 @@ register; until 2026-09-11 both were typed by hand here and had drifted a whole 
 the morphology of 2026-09-06 - behind the figures the register carried):
 
 <!-- claims:locomo-categories -->
-> **Withdrawn 2026-09.** the K8 zero-loss package merged (a same-slug replacement rule on the write path, read-time sibling pairing, sleep-time adjudication, and the twelve fixes of the K9 review); every number whose closure names the engine waits for the K8-C campaign, which needs the GPU and a local Ollama extractor
->
-> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/locomo_eval.py --save --out=research/results/locomo.json` is what re-measures this one.
+| fused R@5, category 1 | 2 | 3 | 4 | 5 |
+|---|---|---|---|---|
+| 0.544 | 0.716 | 0.371 | 0.675 | 0.635 |
 <!-- /claims:locomo-categories -->
 
 Category 3 is the hardest and is also where seven of the nine dropped questions sit.
@@ -74,9 +76,12 @@ embedder, same scoring function, same evidence ids; the competitor rows are thei
 labelled as such (`research/EXTERNAL_RETRIEVAL.md` says what each is).
 
 <!-- claims:head-to-head-locomo -->
-> **Withdrawn 2026-09.** the K8 zero-loss package merged (a same-slug replacement rule on the write path, read-time sibling pairing, sleep-time adjudication, and the twelve fixes of the K9 review); every number whose closure names the engine waits for the K8-C campaign, which needs the GPU and a local Ollama extractor
->
-> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/head_to_head.py --data=locomo --only=nevertwice,mem0,langmem,amem --save --out=research/results/head_to_head_locomo.json` is what re-measures this one.
+| system | R@1 | R@5 | R@10 | MRR |
+|---|---|---|---|---|
+| **Nevertwice (calibrated fusion)** | **0.311** | 0.571 | 0.667 | **0.421** |
+| Mem0 | 0.271 | **0.575** | **0.674** | 0.404 |
+| LangMem | 0.189 | 0.441 | 0.549 | 0.295 |
+| A-MEM | 0.188 | 0.436 | 0.543 | 0.292 |
 <!-- /claims:head-to-head-locomo -->
 
 ## What running it found first

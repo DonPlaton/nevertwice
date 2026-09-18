@@ -38,9 +38,14 @@ hit is refused, even when there is room for it - the distinction between *does i
 returned no more than 2 points less often. On a miss the default returns to 0.
 
 <!-- claims:abstention-sweep -->
-> **Withdrawn 2026-09.** the K8 zero-loss package merged (a same-slug replacement rule on the write path, read-time sibling pairing, sleep-time adjudication, and the twelve fixes of the K9 review); every number whose closure names the engine waits for the K8-C campaign, which needs the GPU and a local Ollama extractor
->
-> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/abstention_ab.py --part all` is what re-measures this one.
+| threshold | chars/query | hits | wanted fact returned | chars saved | recall lost |
+|---|---|---|---|---|---|
+| 0.00 (off) | 490.1 | 1.48 | 1.000 | - | - |
+| 0.10 | 460.1 | 1.38 | 0.987 | 6.1% | 1.3 pts |
+| 0.20 | 424.7 | 1.25 | 0.975 | 13.3% | 2.5 pts |
+| **0.35 (shipped)** | 404.6 | 1.20 | 0.975 | 17.4% | 2.5 pts |
+| 0.50 | 385.9 | 1.15 | 0.975 | 21.3% | 2.5 pts |
+| 0.75 | 348.6 | 1.05 | 0.975 | 28.9% | 2.5 pts |
 <!-- /claims:abstention-sweep -->
 
 Every threshold from 0.30 upward reads the same as the shipped one: one hit is all that is left to
@@ -65,7 +70,7 @@ and a half. That is a hypothesis, and it is written here as one.
 `NEVERTWICE_INJECT_MIN_VALUE`, on the path capped at 2200 characters.
 
 The sweep is identical to C1's, and that is the result: **the mean payload on this corpus is
-381.8 characters, so the cap never binds and the two paths differ in nothing the measurement can
+490.1 characters, so the cap never binds and the two paths differ in nothing the measurement can
 see.** The gate written for it - 15% smaller with no loss of the top-ranked lesson - is
 **vacuous as written**: the top item scores 1.0 by construction and cannot be dropped at any
 threshold below 1.0, so the second half is satisfied by arithmetic rather than by evidence.

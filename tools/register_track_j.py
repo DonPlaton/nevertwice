@@ -178,6 +178,56 @@ def main(argv: list[str] | None = None) -> int:
                 dataset="supersession_v1", env="local_supersession_stand",
                 command="python research/asof_bench.py --recent --arms nevertwice --runs 2 --out research/results/asof_recent.json",
                 raw=raw_r)
+    # ── K8: the second reading of the as-of stand - the same store after the sleep-time judge ──
+    # Between nights a user sees the first reading; after consolidation, this one. Both are the
+    # product, so both are registered, and the page prints them side by side rather than choosing.
+    slp = ((art or {}).get("arms") or {}).get("nevertwice_after_sleep") or {}
+    if slp and not slp.get("blocked") and slp.get("n_cases"):
+        ns = int(slp["n_cases"])
+        for key, what in (("both_correct_rate", "answers BOTH days correctly"),
+                          ("old_day_rate", "answers the day the superseded fact still held"),
+                          ("new_day_rate", "answers the day after the replacement")):
+            v = slp[key]
+            add(f"asof.nevertwice_after_sleep.{key.replace('_rate', '')}",
+                f"after the sleep-time adjudication on the same store, Nevertwice {what} on {v * 100:.1f}% of "
+                f"the {ns} as-of case-runs",
+                v, [f"{v:.3f}"], "rate", ns, list(wilson(int(round(v * ns)), ns)),
+                f'arms["nevertwice_after_sleep"].{key}',
+                note=("The second of two readings declared in ledger K8: each store is asked once after the "
+                      "replacing session and once after consolidation has judged its contested pairs. The "
+                      "first reading is what a user sees between nights."), **base)
+        r = slp.get("s0_retired_rate")
+        if r is not None:
+            add("asof.nevertwice_after_sleep.s0_retired_rate",
+                f"after the sleep-time adjudication the first session's belief interval is closed in "
+                f"{r * 100:.1f}% of the case-runs where the first session wrote a note",
+                r, [f"{r:.3f}", f"{r:.2f}"], "rate", int(slp.get("s0_written_pairs") or ns), None,
+                'arms["nevertwice_after_sleep"].s0_retired_rate',
+                note=("The J2b metric read where K8 moved its closure: layer 1 leaves an unproven pair "
+                      "contested instead of retiring on the title, so the interval closes at consolidation. "
+                      "The before-sleep figure is `asof.nevertwice.s0_retired_rate`."), **base)
+        via = slp.get("s0_retired_via") or {}
+        n_via = int(sum(int(v) for v in via.values())) if via else 0
+        for how, desc in (("judge", "the sleep-time judge ruling `replaces` on a contested pair"),
+                          ("slug", "the same slug - the replacing note carries the old note's name"),
+                          ("explicit", "an explicit `supersedes`/`contradicts` named by the extractor")):
+            if via.get(how) is not None:
+                add(f"asof.nevertwice_after_sleep.s0_retired_via.{how}",
+                    f"of the first-session notes retired by the end of the second reading, {int(via[how])} "
+                    f"were retired via {desc}",
+                    int(via[how]), [str(int(via[how]))], "retirements", n_via, None,
+                    f'arms["nevertwice_after_sleep"].s0_retired_via.{how}', **base)
+        adj = slp.get("adjudication") or {}
+        if adj.get("judged") is not None:
+            add("asof.nevertwice_after_sleep.judge_calls",
+                f"the adjudication step spent {int(adj['judged'])} judge calls on the {int(adj['pairs'])} "
+                f"contested pairs of this store, leaving {int(adj.get('left', 0))} unjudged",
+                int(adj["judged"]), [str(int(adj["judged"]))], "calls", int(adj["pairs"]), None,
+                'arms["nevertwice_after_sleep"].adjudication.judged',
+                note=(f"Under a token budget of {int(adj.get('budget', 0)):,} a run, oldest contested pair "
+                      f"first; {int(adj.get('tokens_spent', 0)):,} tokens were spent, and "
+                      f"{int(adj.get('vetoed', 0))} verdicts were vetoed by the replacement guards."), **base)
+
     zep = ((art or {}).get("arms") or {}).get("zep") or {}
     if zep and not zep.get("blocked") and zep.get("n_cases"):
         nz = int(zep["n_cases"])

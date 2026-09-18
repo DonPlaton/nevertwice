@@ -1,12 +1,5 @@
 # Does the memory hand back a fact that has since been retracted?
 
-<!-- withdrawn-banner -->
-> **Withdrawn while the engine is re-measured (campaign K8-C, September).** The K8 zero-loss
-> package changed the write path, the read path and consolidation, so every figure on this page
-> whose claim names the engine is withdrawn until that campaign restores it; the generated tables
-> below say so per region. The numbers left in the prose are the last campaign's and are not to
-> be quoted until this banner goes.
-
 Every public benchmark for agent memory asks whether a system **recalls** a fact. LoCoMo,
 LongMemEval and BEAM all measure retrieval against a set of questions whose answers were true
 when the corpus was written and stayed true. None of them asks what happens when a fact is
@@ -146,25 +139,28 @@ regression out of one latency run. Both per-run values are kept in the artifact.
 extractor named or the harvester found in the session, verified as substrings before they are
 written, so a retracted value the note's own wording had paraphrased away is counted as stale
 when the literal still says it - the metric got stricter, not the engine looser - and the
-replacement's literal is found more often, which is where the current column's rise to 0.958
+replacement's literal is found more often, which is where the current column's rise to 1.000
 comes from. The stale column moved from the run before by less than its own interval.
 
 The other columns are what make the first one mean anything. A memory that returned nothing at
 all would score zero stale, which is the best possible number, and zero current, which is the
 worst; a memory that deleted on any doubt would score well on both and be caught on the
-controls. Ours reads 0.042 / 0.958 on the first two. On the controls the honest reading needs
-both measures, and *What it costs us* gives them: a still-true fact failed to come back in nine
-of forty control case-runs - level with Graphiti, against one miss for the floor and none for
-Mem0 - and in **five of the nine the memory itself was the cause**: not by retiring the note but
-by absorbing a different fact into it and serving only the new one. The silence on the first
+controls. Ours reads 0.017 / 1.000 on the first two. On the controls the honest reading needs
+both measures, and *What it costs us* gives them: a still-true fact failed to come back in four
+of forty control case-runs, against one miss for the floor and none for Mem0 - and in **none of
+them was the memory the cause**. Every one is a session the extractor wrote no note for at all. Before
+K8 this paragraph read the other way round, and the difference is the whole of that package. The silence on the first
 column is partly bought by that, and the split below says exactly how much.
 
 Paired, on the same cases, McNemar exact:
 
 <!-- claims:supersession-pairs -->
-> **Withdrawn 2026-09.** the K8 zero-loss package merged (a same-slug replacement rule on the write path, read-time sibling pairing, sleep-time adjudication, and the twelve fixes of the K9 review); every number whose closure names the engine waits for the K8-C campaign, which needs the GPU and a local Ollama extractor
->
-> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/supersession_bench.py` is what re-measures this one.
+| pair | discordant (first - second) | p, McNemar exact |
+|---|---|---|
+| Nevertwice vs Mem0 | 0 - 55 | 5.6 x 10^-17 |
+| Nevertwice vs naive | 0 - 56 | 2.8 x 10^-17 |
+| Nevertwice vs Zep/Graphiti | 1 - 19 | 4.0 x 10^-05 |
+| **Mem0 vs naive** | 3 - 4 | 1.00 |
 <!-- /claims:supersession-pairs -->
 
 **The last row is the finding, and it is easy to misread.** Mem0 and the append-only file
@@ -189,6 +185,41 @@ fact), and it retired none. Paired with us on the same cases the discordant pair
 two - two cases where its invalidation caught a replacement ours did not - and on the implicit
 corpus, with the retraction cue removed, its stale rate reads 0.242 to our 0.067 (its two runs sit five
 points apart). The lead over the ADD-only stores was never the finding; this row is.
+
+## Between nights, and after the night
+
+**The mode without a model is the first mode.** Nothing on the write path calls a model to decide a
+replacement. Two notes land under one title; a small set of rules asks whether the newer one *proves*
+it replaces the older - the writer named the older note, or every literal the older note verified
+appears in the newer, or the older statement is contained word for word in the newer. If one of those
+holds, the older note is retired with its interval closed. If none holds, nothing is retired and
+nothing is rewritten: both notes stay, the pair is marked contested, and recall hands back the newer
+statement with the earlier one attached to it, newest first. An installation with no model backend at
+all stops here, and the contested pairs stay visible through `conflicts()` and `integrity()`.
+
+A contested pair is a real state, not a queue: the user is served both facts and told which is newer.
+What the weekly consolidation adds is a verdict. It takes the contested pairs oldest first, asks one
+model call per pair whether the newer statement replaces the older, and retires the older only if
+the verdict survives three guards - a note with verified literals is never retired for one without, a
+value-shaped token the newer statement's own verified block does not carry vetoes the replacement,
+and a replacement that names no value at all does not displace one that does. A vetoed pair stays
+two live notes and is marked disputed.
+
+So each store is read twice, and the page prints both: once after the replacing session, which is
+what a user sees between nights, and once after the adjudication on that same store.
+
+<!-- claims:supersession-readings -->
+| reading | returns the retracted fact | the retracted value appears anywhere | returns the replacement | retires a still-true fact | characters per query |
+|---|---|---|---|---|---|
+| Between nights | 0.017 [0.005, 0.059] | 0.733 | 1.000 [0.969, 1.000] | 0.000 [0.000, 0.088] | 473 |
+| After consolidation | 0.017 [0.005, 0.059] | 0.392 | 1.000 [0.969, 1.000] | 0.000 [0.000, 0.088] | 400 |
+
+<sub>The second column counts an item that asserts the retracted value without the current one, which is the bench's rule and the one the comparison uses. The third counts the retracted value wherever it appears in the returned text, so a paired hit - the newest statement with the earlier one attached - is counted here and not there. Both are printed because the design serves the older statement on purpose rather than hiding it, and a reader deciding whether that is acceptable needs the number it costs.</sub>
+
+<sub>What the second row costs: one model call per contested pair at consolidation and none in the hook, at 414 tokens a pair; on a real store the dry run counted at most 74 contested pairs a week, against a run budget of a hundred thousand tokens. With no model backend at all the first row is what the product does, and the contested pairs stay visible through `conflicts()` and `integrity()`.</sub>
+
+<sub>Why the judge's verdict is not the last word. On a recorded set of pairs whose truth is known it rules correctly 0.931 of the time, and its precision on `replaces` - the verdict that retires a note - is 0.989, not one. An earlier draw of the same prompt over the same bytes read exactly one, so that figure is a draw and not a property of the judge. This is why three guards sit between a verdict and a retirement: a note with verified literals is never retired for one without, a value the new statement's own verified block does not carry vetoes the replacement, and a replacement naming no value does not displace one that does. The column above reads zero with the judge making false calls, which is the guards doing the work.</sub>
+<!-- /claims:supersession-readings -->
 
 ### By shape
 
@@ -221,17 +252,40 @@ second session reframed and rotated so the two sessions never share a frame. The
 corpus is unchanged byte for byte, and `--check` proves it.
 
 <!-- claims:supersession-variants -->
-> **Withdrawn 2026-09.** the K8 zero-loss package merged (a same-slug replacement rule on the write path, read-time sibling pairing, sleep-time adjudication, and the twelve fixes of the K9 review); every number whose closure names the engine waits for the K8-C campaign, which needs the GPU and a local Ollama extractor
->
-> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/supersession_bench.py` is what re-measures this one.
+| system | stale, explicit | stale, implicit | current, explicit | current, implicit |
+|---|---|---|---|---|
+| **Nevertwice** | 0.017 | 0.067 | 1.000 | 1.000 |
+| Mem0 | 0.933 | 0.933 | 0.983 | 0.983 |
+| Zep/Graphiti (`graphiti-core`, FalkorDB) | 0.317 | 0.242 | 0.575 | 0.633 |
+| an append-only markdown file | 0.950 | 0.950 | 0.950 | 0.950 |
+
+<sub>Stale = the retracted fact came back, lower is better. Current = the fact that replaced it was returned, higher is better. *Explicit* names the retraction in the second session; *implicit* frames the replacement like any first assertion.</sub>
 <!-- /claims:supersession-variants -->
+
+The same two readings on this corpus:
+
+<!-- claims:supersession-readings-implicit -->
+| reading | returns the retracted fact | the retracted value appears anywhere | returns the replacement | retires a still-true fact | characters per query |
+|---|---|---|---|---|---|
+| Between nights | 0.067 [0.034, 0.126] | 0.817 | 1.000 [0.969, 1.000] | 0.000 [0.000, 0.088] | 530 |
+| After consolidation | 0.067 [0.034, 0.126] | 0.433 | 1.000 [0.969, 1.000] | 0.000 [0.000, 0.088] | 454 |
+
+<sub>The second column counts an item that asserts the retracted value without the current one, which is the bench's rule and the one the comparison uses. The third counts the retracted value wherever it appears in the returned text, so a paired hit - the newest statement with the earlier one attached - is counted here and not there. Both are printed because the design serves the older statement on purpose rather than hiding it, and a reader deciding whether that is acceptable needs the number it costs.</sub>
+
+<sub>What the second row costs: one model call per contested pair at consolidation and none in the hook, at 414 tokens a pair; on a real store the dry run counted at most 74 contested pairs a week, against a run budget of a hundred thousand tokens. With no model backend at all the first row is what the product does, and the contested pairs stay visible through `conflicts()` and `integrity()`.</sub>
+
+<sub>Why the judge's verdict is not the last word. On a recorded set of pairs whose truth is known it rules correctly 0.931 of the time, and its precision on `replaces` - the verdict that retires a note - is 0.989, not one. An earlier draw of the same prompt over the same bytes read exactly one, so that figure is a draw and not a property of the judge. This is why three guards sit between a verdict and a retirement: a note with verified literals is never retired for one without, a value the new statement's own verified block does not carry vetoes the replacement, and a replacement naming no value does not displace one that does. The column above reads zero with the judge making false calls, which is the guards doing the work.</sub>
+<!-- /claims:supersession-readings-implicit -->
 
 Paired on the same cases of this corpus, McNemar exact:
 
 <!-- claims:supersession-pairs-implicit -->
-> **Withdrawn 2026-09.** the K8 zero-loss package merged (a same-slug replacement rule on the write path, read-time sibling pairing, sleep-time adjudication, and the twelve fixes of the K9 review); every number whose closure names the engine waits for the K8-C campaign, which needs the GPU and a local Ollama extractor
->
-> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/supersession_bench.py --dataset research/data/supersession_v1_implicit.json --arms nevertwice,naive` is what re-measures this one.
+| pair | discordant (first - second) | p, McNemar exact |
+|---|---|---|
+| Nevertwice vs Mem0 | 0 - 52 | 4.4 x 10^-16 |
+| Nevertwice vs naive | 0 - 53 | 2.2 x 10^-16 |
+| Nevertwice vs Zep/Graphiti | 3 - 15 | 0.01 |
+| **Mem0 vs naive** | 3 - 4 | 1.00 |
 <!-- /claims:supersession-pairs-implicit -->
 
 The gate for this variant was written in the ledger before the run (item I5): our stale rate
@@ -248,9 +302,13 @@ dates two months apart and asks each one twice: for a day between the two sessio
 day after the second. A case counts only when both answers are right.
 
 <!-- claims:asof -->
-> **Withdrawn 2026-09.** the K8 zero-loss package merged (a same-slug replacement rule on the write path, read-time sibling pairing, sleep-time adjudication, and the twelve fixes of the K9 review); every number whose closure names the engine waits for the K8-C campaign, which needs the GPU and a local Ollama extractor
->
-> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/asof_bench.py --arms nevertwice,naive --runs 2 --out research/results/asof_v1.json` is what re-measures this one.
+| arm | both days | the old day | the day after |
+|---|---|---|---|
+| **Nevertwice** (`api.as_of`) | 0.800 | 0.892 | 0.883 |
+| Zep/Graphiti (`graphiti-core`, its own bitemporal edges) | 0.367 | 0.600 | 0.533 |
+| an append-only markdown file, no dates | 0.000 | 0.000 | 1.000 |
+
+<sub>The gate written before the run was 0.80 on both days and 0.85 on the old day; this run meets it - exactly at the threshold, a boundary rather than a margin: both days 0.800, the old day 0.892; the two runs behind the pooled figure read 0.867 and 0.733, and the interval [0.720, 0.862] covers the threshold. The larger loss is on the day after; the old-day misses split by kind in the artifact: 11 where the extractor left the first session without a note, 0 where its note was absorbed into the second session's and no longer serves the old fact, 1 where its note existed and nothing came back, 1 where the note came back without the marker, 0 where the new fact leaked into the old day. Mem0 has no row - it stamps a memory with the wall-clock time of the `add()` call and its search has no as-of filter, so facts cannot be placed in the past without patching the product.</sub>
 <!-- /claims:asof -->
 
 The gate under the table was written in the ledger (I6) before the first run - 0.80 on both
@@ -260,8 +318,11 @@ says so in those words because it is computed from the claims rather than writte
 pooled 0.800 whose runs read 0.867 and 0.733 is a boundary, not a margin. What moved it was
 J2b, the archive-aware reconcile: the stand dates the first session past the ninety-day
 archive window, and until this September the replacing session never closed an archived note's
-interval (`s0_retired_rate` 0.000); it now closes 0.908 of them against a `--recent` control of
-0.917, where the first session is never archived. Until this September the caption here read *and
+interval (`s0_retired_rate` 0.000). With the archive-aware reconcile it closed most of them at write
+time; since K8 an unproven pair is left contested instead of retired on the title, so the closure
+moved to the night: 0.193 of them before the weekly consolidation and
+0.789 after it, against a `--recent` control that reads like the
+before-sleep figure, so the archive is no longer what holds the closure back. Until this September the caption here read *and
 this is below it* on a run that had met the gate - a verdict typed when the gate was missed
 and never compared again, which is the defect that made it computed.
 
@@ -287,30 +348,72 @@ probe.
 
 The stale rate is not free, and the honest accounting is on the other two columns.
 
-**Current rate 0.958, a shade under Mem0's 0.983 and above the floor's 0.950.** The store says
-where the control misses went. Of the forty control case-runs (two runs of twenty), nine returned
-nothing useful: **none** was retired to `Superseded/`, **five** were absorbed - the extractor gave
-session two's *different* fact the same title as session one's note, the write path took the
-same-day same-title re-encounter for the same lesson restated, rewrote the note to the new fact
-and kept the old statement only under `## Previous statement`, so no served text carries it any
-more - and **four** were never written. None was written, served and ranked below the top
-five. The first two causes are the memory being too eager, and together they are over-retraction
-proper: five in forty on this corpus. Both tables below say so per arm.
+**Current rate 1.000, above Mem0's 0.983 and the floor's 0.950.** The store says where the control
+misses went, and since K8 the answer is short: of the forty control case-runs, four returned nothing
+useful and **none of them is the memory's doing**. Nothing was retired to `Superseded/`; nothing was
+absorbed into another note; nothing was written, served and ranked below the top five. All four are
+sessions the extractor wrote no note for at all, which is the extractor's silence and not the write
+path's eagerness.
+
+That is the sentence this section existed to avoid having to write the other way round. Before K8 the
+write path met a second fact under a first fact's title and rewrote the note, keeping the old
+statement only under `## Previous statement` - live on disk, absent from everything recall returned.
+Now a second fact under one title is proved a replacement or left alone: both notes stay, the pair is
+marked contested, and recall hands back the newer statement with the earlier one attached. Over-retraction
+proper - the memory retiring or displacing a fact that is still true - is zero on both corpora, in both
+readings. Both tables below say so per arm.
 
 <!-- claims:supersession-causes -->
-> **Withdrawn 2026-09.** the K8 zero-loss package merged (a same-slug replacement rule on the write path, read-time sibling pairing, sleep-time adjudication, and the twelve fixes of the K9 review); every number whose closure names the engine waits for the K8-C campaign, which needs the GPU and a local Ollama extractor
->
-> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/supersession_bench.py` is what re-measures this one.
+| arm | a still-true fact did not come back | retired by the memory | absorbed into another note | never written | served, below the top five |
+|---|---|---|---|---|---|
+| **Nevertwice**, between nights | 0.100 [0.040, 0.231] | 0 of 40 | 0 of 40 | 4 of 40 | 0 of 40 |
+| **Nevertwice**, after consolidation | 0.100 [0.040, 0.231] | 0 of 40 | 0 of 40 | 4 of 40 | 0 of 40 |
+| Mem0 | 0.000 [0.000, 0.161] | 0 of 20 | 0 of 20 | 0 of 20 | 0 of 20 |
+| Zep/Graphiti (`graphiti-core`, FalkorDB) | 0.225 [0.123, 0.375] | 0 of 40 | 0 of 40 | 9 of 40 | 0 of 40 |
+| an append-only markdown file | 0.050 [0.009, 0.236] | 0 of 20 | 0 of 20 | 0 of 20 | 1 of 20 |
+
+<sub>The first column is the rate in the table above; the four after it split its count by cause. The first two are the memory being too eager - it retired the note, or it judged a different fact a twin of this one and absorbed that fact into the note: the note stays on disk, but what it now hands back is the other fact, and this one is no longer served - the other two are the extractor's silence and the ranker's depth. A cause reads *not read* where the run did not inspect that arm's store: a retirement is visible only where the store records one (our `valid_to` and `## Previous statement`; Graphiti's `invalid_at`/`expired_at`; Mem0's delete and update events).</sub>
+
+<sub>Over-retraction proper - the memory stopped serving a fact that was still true, by retiring the note or by absorbing another fact into it - is the first two cause columns as a rate: 0.000 [0.000, 0.088] for Nevertwice over its control case-runs.</sub>
 <!-- /claims:supersession-causes -->
 
 On the implicit corpus the same split is starker - every one of the fourteen misses is an absorb,
 over-retraction proper 0.35:
 
 <!-- claims:supersession-causes-implicit -->
-> **Withdrawn 2026-09.** the K8 zero-loss package merged (a same-slug replacement rule on the write path, read-time sibling pairing, sleep-time adjudication, and the twelve fixes of the K9 review); every number whose closure names the engine waits for the K8-C campaign, which needs the GPU and a local Ollama extractor
->
-> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/supersession_bench.py --dataset research/data/supersession_v1_implicit.json --arms nevertwice,naive` is what re-measures this one.
+| arm | a still-true fact did not come back | retired by the memory | absorbed into another note | never written | served, below the top five |
+|---|---|---|---|---|---|
+| **Nevertwice**, between nights | 0.000 [0.000, 0.088] | 0 of 40 | 0 of 40 | 0 of 40 | 0 of 40 |
+| **Nevertwice**, after consolidation | 0.000 [0.000, 0.088] | 0 of 40 | 0 of 40 | 0 of 40 | 0 of 40 |
+| Mem0 | 0.000 [0.000, 0.161] | 0 of 20 | 0 of 20 | 0 of 20 | 0 of 20 |
+| Zep/Graphiti (`graphiti-core`, FalkorDB) | 0.275 [0.161, 0.428] | 0 of 40 | 0 of 40 | 11 of 40 | 0 of 40 |
+| an append-only markdown file | 0.050 [0.009, 0.236] | 0 of 20 | 0 of 20 | 0 of 20 | 1 of 20 |
+
+<sub>The first column is the rate in the table above; the four after it split its count by cause. The first two are the memory being too eager - it retired the note, or it judged a different fact a twin of this one and absorbed that fact into the note: the note stays on disk, but what it now hands back is the other fact, and this one is no longer served - the other two are the extractor's silence and the ranker's depth. A cause reads *not read* where the run did not inspect that arm's store: a retirement is visible only where the store records one (our `valid_to` and `## Previous statement`; Graphiti's `invalid_at`/`expired_at`; Mem0's delete and update events).</sub>
+
+<sub>Over-retraction proper - the memory stopped serving a fact that was still true, by retiring the note or by absorbing another fact into it - is the first two cause columns as a rate: 0.000 [0.000, 0.088] for Nevertwice over its control case-runs.</sub>
 <!-- /claims:supersession-causes-implicit -->
+
+**The one loss the write path leaves standing, and the switch that removes it.** Rule one
+is the extractor's own word: when it writes `contradicts: <another note's title>`, that note is
+retired. On a control case where two facts on one topic are both true, a wrong `contradicts` retires
+a fact that still holds - and it is the only loss left on either corpus. `NEVERTWICE_EXPLICIT_RETIRE`
+decides what that claim does: `write` retires at once, `judge` sends the pair to the sleep-time judge
+like any other contested pair. The campaign ran both arms on both corpora in both readings, and the
+rule that picks the default was written before the runs. What the switch costs and what it buys:
+
+<!-- claims:supersession-switch -->
+| corpus and reading | default | with the switch on |
+|---|---|---|
+| explicit, between nights - retires a still-true fact | 0.000 | 0.000 |
+| explicit, between nights - returns the retracted fact | 0.017 | 0.100 |
+| explicit, after consolidation - retires a still-true fact | 0.000 | 0.000 |
+| explicit, after consolidation - returns the retracted fact | 0.017 | 0.050 |
+| implicit, between nights - retires a still-true fact | 0.000 | 0.000 |
+| implicit, between nights - returns the retracted fact | 0.067 | 0.083 |
+| implicit, after consolidation - retires a still-true fact | 0.000 | 0.000 |
+| implicit, after consolidation - returns the retracted fact | 0.067 | 0.067 |
+<!-- /claims:supersession-switch -->
 
 **How the absorb was found, and what it is not.** The first reading of this run's artifact called
 these misses "written, live, ranked below the top five", because the bench matched the marker
@@ -393,6 +496,14 @@ The condition is now resolved in Python and the prompt names one language. The d
 letters rather than bytes, because a Russian session is full of Latin identifiers and a
 majority vote reads almost every bilingual transcript as English - which, on this owner's
 bilingual store, is the population that matters.
+
+**The extractor is not deterministic, and that is a property of every number on
+this page.** The local extraction model is pinned to temperature zero, and two runs of one commit on
+one corpus still differ: on the implicit corpus two draws disagreed on more than a third of the
+cases' note counts. Every engine figure here is therefore pooled over two runs with the per-run
+values kept beside it in the artifact, and the two modes of the switch above are compared only within
+one draw. A single run of this stand is not a result, and a difference smaller than the spread
+between two runs of the same commit is not a finding.
 
 ## Three defects this benchmark found
 

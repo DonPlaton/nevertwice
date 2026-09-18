@@ -148,25 +148,21 @@
      "new_day_correct": true,
      "both_correct": true,
      "old_items": 1,
-     "new_items": 1,
+     "new_items": 2,
      "leak": false,
      "store": {
       "s0": {
        "written": 1,
-       "live": 0,
-       "retired": 1,
+       "live": 1,
+       "retired": 0,
        "absorbed": 0,
-       "valid_to": [
-        "2026-05-01"
-       ],
+       "valid_to": [],
        "marker_in_text": true,
        "titles": [
         "2026-03-01-asof0003-pattern-frontend-build-target-node-18"
        ],
        "supersedes": [],
-       "superseded_via": [
-        "explicit"
-       ]
+       "superseded_via": []
       },
       "s1": {
        "written": 1,
@@ -178,9 +174,7 @@
        "titles": [
         "2026-05-01-asof0003-pattern-frontend-build-target-node-22"
        ],
-       "supersedes": [
-        "2026-03-01-asof0003-pattern-frontend-build-target-node-18"
-       ],
+       "supersedes": [],
        "superseded_via": []
       }
      },
@@ -728,28 +722,22 @@
      "new_day_correct": true,
      "both_correct": true,
      "old_items": 2,
-     "new_items": 2,
+     "new_items": 4,
      "leak": false,
      "store": {
       "s0": {
        "written": 2,
-       "live": 0,
-       "retired": 2,
+       "live": 2,
+       "retired": 0,
        "absorbed": 0,
-       "valid_to": [
-        "2026-05-01",
-        "2026-05-01"
-       ],
+       "valid_to": [],
        "marker_in_text": true,
        "titles": [
         "2026-03-01-asof0017-pattern-frontend-bundling-with-webpack",
         "2026-03-01-asof0017-decision-use-webpack-for-frontend-bundling"
        ],
        "supersedes": [],
-       "superseded_via": [
-        "explicit",
-        "explicit"
-       ]
+       "superseded_via": []
       },
       "s1": {
        "written": 2,
@@ -762,10 +750,7 @@
         "2026-05-01-asof0017-pattern-frontend-bundling-with-vite",
         "2026-05-01-asof0017-decision-use-vite-for-frontend-bundling"
        ],
-       "supersedes": [
-        "2026-03-01-asof0017-pattern-frontend-bundling-with-webpack",
-        "2026-03-01-asof0017-decision-use-webpack-for-frontend-bundling"
-       ],
+       "supersedes": [],
        "superseded_via": []
       }
      },
@@ -779,26 +764,22 @@
      "new_day_correct": true,
      "both_correct": true,
      "old_items": 2,
-     "new_items": 3,
+     "new_items": 4,
      "leak": false,
      "store": {
       "s0": {
        "written": 2,
-       "live": 1,
-       "retired": 1,
+       "live": 2,
+       "retired": 0,
        "absorbed": 0,
-       "valid_to": [
-        "2026-05-01"
-       ],
+       "valid_to": [],
        "marker_in_text": true,
        "titles": [
         "2026-03-01-asof0018-pattern-sqlalchemy-orm-data-access",
         "2026-03-01-asof0018-decision-orm-for-data-access"
        ],
        "supersedes": [],
-       "superseded_via": [
-        "explicit"
-       ]
+       "superseded_via": []
       },
       "s1": {
        "written": 2,
@@ -811,9 +792,7 @@
         "2026-05-01-asof0018-pattern-asyncpg-for-data-access",
         "2026-05-01-asof0018-decision-use-asyncpg-for-data-access"
        ],
-       "supersedes": [
-        "2026-03-01-asof0018-pattern-sqlalchemy-orm-data-access"
-       ],
+       "supersedes": [],
        "superseded_via": []
       }
      },
@@ -1078,25 +1057,21 @@
      "new_day_correct": true,
      "both_correct": true,
      "old_items": 1,
-     "new_items": 1,
+     "new_items": 2,
      "leak": false,
      "store": {
       "s0": {
        "written": 1,
-       "live": 0,
-       "retired": 1,
+       "live": 1,
+       "retired": 0,
        "absorbed": 0,
-       "valid_to": [
-        "2026-05-01"
-       ],
+       "valid_to": [],
        "marker_in_text": true,
        "titles": [
         "2026-03-01-asof0025-pattern-infrastructure-provisioning-with-terraform"
        ],
        "supersedes": [],
-       "superseded_via": [
-        "explicit"
-       ]
+       "superseded_via": []
       },
       "s1": {
        "written": 1,
@@ -1108,9 +1083,7 @@
        "titles": [
         "2026-05-01-asof0025-pattern-infrastructure-provisioning-with-pulumi"
        ],
-       "supersedes": [
-        "2026-03-01-asof0025-pattern-infrastructure-provisioning-with-terraform"
-       ],
+       "supersedes": [],
        "superseded_via": []
       }
      },
@@ -2351,25 +2324,21 @@
      "new_day_correct": true,
      "both_correct": true,
      "old_items": 1,
-     "new_items": 1,
+     "new_items": 2,
      "leak": false,
      "store": {
       "s0": {
        "written": 1,
-       "live": 0,
-       "retired": 1,
+       "live": 1,
+       "retired": 0,
        "absorbed": 0,
-       "valid_to": [
-        "2026-05-01"
-       ],
+       "valid_to": [],
        "marker_in_text": true,
        "titles": [
         "2026-03-01-asof0056-pattern-mfa-required-for-all-users"
        ],
        "supersedes": [],
-       "superseded_via": [
-        "explicit"
-       ]
+       "superseded_via": []
       },
       "s1": {
        "written": 1,
@@ -2381,9 +2350,7 @@
        "titles": [
         "2026-05-01-asof0056-pattern-mfa-required-for-admins"
        ],
-       "supersedes": [
-        "2026-03-01-asof0056-pattern-mfa-required-for-all-users"
-       ],
+       "supersedes": [],
        "superseded_via": []
       }
      },
@@ -2641,25 +2608,21 @@
      "new_day_correct": true,
      "both_correct": true,
      "old_items": 1,
-     "new_items": 1,
+     "new_items": 2,
      "leak": false,
      "store": {
       "s0": {
        "written": 1,
-       "live": 0,
-       "retired": 1,
+       "live": 1,
+       "retired": 0,
        "absorbed": 0,
-       "valid_to": [
-        "2026-05-01"
-       ],
+       "valid_to": [],
        "marker_in_text": true,
        "titles": [
         "2026-03-01-asof1003-pattern-frontend-build-target-node-18"
        ],
        "supersedes": [],
-       "superseded_via": [
-        "explicit"
-       ]
+       "superseded_via": []
       },
       "s1": {
        "written": 1,
@@ -2671,9 +2634,7 @@
        "titles": [
         "2026-05-01-asof1003-pattern-frontend-build-target-node-22"
        ],
-       "supersedes": [
-        "2026-03-01-asof1003-pattern-frontend-build-target-node-18"
-       ],
+       "supersedes": [],
        "superseded_via": []
       }
      },
@@ -3218,26 +3179,22 @@
      "new_day_correct": true,
      "both_correct": true,
      "old_items": 2,
-     "new_items": 3,
+     "new_items": 4,
      "leak": false,
      "store": {
       "s0": {
        "written": 2,
-       "live": 1,
-       "retired": 1,
+       "live": 2,
+       "retired": 0,
        "absorbed": 0,
-       "valid_to": [
-        "2026-05-01"
-       ],
+       "valid_to": [],
        "marker_in_text": true,
        "titles": [
         "2026-03-01-asof1017-pattern-frontend-bundling-with-webpack",
         "2026-03-01-asof1017-decision-build-decision-made"
        ],
        "supersedes": [],
-       "superseded_via": [
-        "explicit"
-       ]
+       "superseded_via": []
       },
       "s1": {
        "written": 2,
@@ -3250,9 +3207,7 @@
         "2026-05-01-asof1017-pattern-frontend-bundling-with-vite",
         "2026-05-01-asof1017-decision-build-decision-made"
        ],
-       "supersedes": [
-        "2026-03-01-asof1017-pattern-frontend-bundling-with-webpack"
-       ],
+       "supersedes": [],
        "superseded_via": []
       }
      },
@@ -3266,28 +3221,22 @@
      "new_day_correct": true,
      "both_correct": true,
      "old_items": 2,
-     "new_items": 2,
+     "new_items": 4,
      "leak": false,
      "store": {
       "s0": {
        "written": 2,
-       "live": 0,
-       "retired": 2,
+       "live": 2,
+       "retired": 0,
        "absorbed": 0,
-       "valid_to": [
-        "2026-05-01",
-        "2026-05-01"
-       ],
+       "valid_to": [],
        "marker_in_text": true,
        "titles": [
         "2026-03-01-asof1018-pattern-sqlalchemy-orm-data-access",
         "2026-03-01-asof1018-decision-use-sqlalchemy-orm"
        ],
        "supersedes": [],
-       "superseded_via": [
-        "explicit",
-        "explicit"
-       ]
+       "superseded_via": []
       },
       "s1": {
        "written": 2,
@@ -3300,10 +3249,7 @@
         "2026-05-01-asof1018-pattern-asyncpg-data-access",
         "2026-05-01-asof1018-decision-use-asyncpg-for-data-access"
        ],
-       "supersedes": [
-        "2026-03-01-asof1018-pattern-sqlalchemy-orm-data-access",
-        "2026-03-01-asof1018-decision-use-sqlalchemy-orm"
-       ],
+       "supersedes": [],
        "superseded_via": []
       }
      },
@@ -3511,28 +3457,22 @@
      "new_day_correct": true,
      "both_correct": true,
      "old_items": 2,
-     "new_items": 2,
+     "new_items": 4,
      "leak": false,
      "store": {
       "s0": {
        "written": 2,
-       "live": 0,
-       "retired": 2,
+       "live": 2,
+       "retired": 0,
        "absorbed": 0,
-       "valid_to": [
-        "2026-05-01",
-        "2026-05-01"
-       ],
+       "valid_to": [],
        "marker_in_text": true,
        "titles": [
         "2026-03-01-asof1024-pattern-frontend-global-state-redux",
         "2026-03-01-asof1024-decision-use-redux-for-global-state"
        ],
        "supersedes": [],
-       "superseded_via": [
-        "explicit",
-        "explicit"
-       ]
+       "superseded_via": []
       },
       "s1": {
        "written": 2,
@@ -3545,10 +3485,7 @@
         "2026-05-01-asof1024-pattern-frontend-global-state-zustand",
         "2026-05-01-asof1024-decision-use-zustand-for-global-state"
        ],
-       "supersedes": [
-        "2026-03-01-asof1024-pattern-frontend-global-state-redux",
-        "2026-03-01-asof1024-decision-use-redux-for-global-state"
-       ],
+       "supersedes": [],
        "superseded_via": []
       }
      },
@@ -3562,25 +3499,21 @@
      "new_day_correct": true,
      "both_correct": true,
      "old_items": 1,
-     "new_items": 1,
+     "new_items": 2,
      "leak": false,
      "store": {
       "s0": {
        "written": 1,
-       "live": 0,
-       "retired": 1,
+       "live": 1,
+       "retired": 0,
        "absorbed": 0,
-       "valid_to": [
-        "2026-05-01"
-       ],
+       "valid_to": [],
        "marker_in_text": true,
        "titles": [
         "2026-03-01-asof1025-pattern-infrastructure-provisioning-with-terraform"
        ],
        "supersedes": [],
-       "superseded_via": [
-        "explicit"
-       ]
+       "superseded_via": []
       },
       "s1": {
        "written": 1,
@@ -3592,9 +3525,7 @@
        "titles": [
         "2026-05-01-asof1025-pattern-infrastructure-provisioning-with-pulumi"
        ],
-       "supersedes": [
-        "2026-03-01-asof1025-pattern-infrastructure-provisioning-with-terraform"
-       ],
+       "supersedes": [],
        "superseded_via": []
       }
      },
@@ -4829,25 +4760,21 @@
      "new_day_correct": true,
      "both_correct": true,
      "old_items": 1,
-     "new_items": 1,
+     "new_items": 2,
      "leak": false,
      "store": {
       "s0": {
        "written": 1,
-       "live": 0,
-       "retired": 1,
+       "live": 1,
+       "retired": 0,
        "absorbed": 0,
-       "valid_to": [
-        "2026-05-01"
-       ],
+       "valid_to": [],
        "marker_in_text": true,
        "titles": [
         "2026-03-01-asof1056-pattern-mfa-required-for-all-users"
        ],
        "supersedes": [],
-       "superseded_via": [
-        "explicit"
-       ]
+       "superseded_via": []
       },
       "s1": {
        "written": 1,
@@ -4859,9 +4786,7 @@
        "titles": [
         "2026-05-01-asof1056-pattern-mfa-required-for-admins"
        ],
-       "supersedes": [
-        "2026-03-01-asof1056-pattern-mfa-required-for-all-users"
-       ],
+       "supersedes": [],
        "superseded_via": []
       }
      },
@@ -5010,15 +4935,15 @@
    },
    "s0_never_written": 11,
    "s0_absorbed": 0,
-   "s0_retired_rate": 0.1927,
+   "s0_retired_rate": 0.0917,
    "s0_retired_via": {
-    "explicit": 24
+    "explicit": 10
    },
    "s0_written_pairs": 109,
    "runs": 2,
-   "seconds": 403.2,
+   "seconds": 426.5,
    "config": "ollama qwen3-coder:30b + bge-m3, k=5, days 2026-03-01/2026-05-01",
-   "store_bytes": 258993,
+   "store_bytes": 254247,
    "per_run": [
     0.8667,
     0.7333
@@ -5185,7 +5110,7 @@
        ],
        "supersedes": [],
        "superseded_via": [
-        "explicit"
+        "judge"
        ]
       },
       "s1": {
@@ -5830,8 +5755,8 @@
        ],
        "supersedes": [],
        "superseded_via": [
-        "explicit",
-        "explicit"
+        "judge",
+        "judge"
        ]
       },
       "s1": {
@@ -5880,7 +5805,7 @@
        ],
        "supersedes": [],
        "superseded_via": [
-        "explicit"
+        "judge"
        ]
       },
       "s1": {
@@ -6208,7 +6133,7 @@
        ],
        "supersedes": [],
        "superseded_via": [
-        "explicit"
+        "judge"
        ]
       },
       "s1": {
@@ -7610,7 +7535,7 @@
        ],
        "supersedes": [],
        "superseded_via": [
-        "explicit"
+        "judge"
        ]
       },
       "s1": {
@@ -7927,7 +7852,7 @@
        ],
        "supersedes": [],
        "superseded_via": [
-        "explicit"
+        "judge"
        ]
       },
       "s1": {
@@ -8551,7 +8476,7 @@
        ],
        "supersedes": [],
        "superseded_via": [
-        "explicit",
+        "judge",
         "judge"
        ]
       },
@@ -8602,8 +8527,8 @@
        ],
        "supersedes": [],
        "superseded_via": [
-        "explicit",
-        "explicit"
+        "judge",
+        "judge"
        ]
       },
       "s1": {
@@ -8862,8 +8787,8 @@
        ],
        "supersedes": [],
        "superseded_via": [
-        "explicit",
-        "explicit"
+        "judge",
+        "judge"
        ]
       },
       "s1": {
@@ -8911,7 +8836,7 @@
        ],
        "supersedes": [],
        "superseded_via": [
-        "explicit"
+        "judge"
        ]
       },
       "s1": {
@@ -10286,7 +10211,7 @@
        ],
        "supersedes": [],
        "superseded_via": [
-        "explicit"
+        "judge"
        ]
       },
       "s1": {
@@ -10467,31 +10392,31 @@
    "s0_absorbed": 0,
    "s0_retired_rate": 0.789,
    "s0_retired_via": {
-    "judge": 84,
-    "explicit": 24
+    "judge": 98,
+    "explicit": 10
    },
    "s0_written_pairs": 109,
    "runs": 2,
    "adjudication": {
-    "pairs": 105,
+    "pairs": 119,
     "budget": 100000,
     "cap": 0,
-    "judged": 105,
-    "tokens_spent": 43914,
+    "judged": 119,
+    "tokens_spent": 49603,
     "estimated_calls": 0,
-    "replaces": 84,
+    "replaces": 98,
     "separate": 7,
     "vetoed": 14,
     "unanswered": 0,
     "errors": 0,
     "left": 0,
-    "prompt_tokens": 39730,
-    "eval_tokens": 4184,
+    "prompt_tokens": 44862,
+    "eval_tokens": 4741,
     "skipped": null,
-    "judged_ollama": 105
+    "judged_ollama": 119
    },
-   "seconds": 28.2,
-   "store_bytes": 281267,
+   "seconds": 33.2,
+   "store_bytes": 280322,
    "config": "the same store after consolidate_memory.adjudicate_contested(budget=100000, cap=0)",
    "per_run": [
     0.8667,

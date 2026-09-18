@@ -571,6 +571,12 @@ SUPERSESSION_ARMS = (("**Nevertwice**", "nevertwice"), ("Mem0", "mem0"),
                      ("Zep/Graphiti (`graphiti-core`, FalkorDB)", "zep"),
                      ("an append-only markdown file", "naive"))
 
+#: K8 reads each store twice - once after the replacing session, which is what a user sees between
+#: nights, and once after the weekly consolidation has judged the contested pairs. Neither reading
+#: is the product on its own, so the tables carry both rather than choosing.
+SUPERSESSION_READINGS = (("**Nevertwice**, between nights", "nevertwice"),
+                         ("**Nevertwice**, after consolidation", "nevertwice_after_sleep"))
+
 
 def _cell(c: Claims, cid: str) -> str:
     """A three-decimal figure, or a dash when that arm has no claim yet."""
@@ -601,13 +607,21 @@ def render_supersession_pinned(c: Claims) -> str:
     if not c.has("supersession.nevertwice.stale_rate"):
         return _not_yet("supersession",
                         "python research/supersession_bench.py --arms nevertwice,naive")
+    arms = list(SUPERSESSION_READINGS) + [a for a in SUPERSESSION_ARMS if a[1] != "nevertwice"]
     rows = [[label,
              _with_ci(c, f"supersession.{slug}.stale_rate"),
              _with_ci(c, f"supersession.{slug}.current_rate"),
              _with_ci(c, f"supersession.{slug}.control_miss_rate")]
-            for label, slug in SUPERSESSION_ARMS]
-    return _table(["arm", "returns the retracted fact", "returns the replacement",
-                   "a still-true fact did not come back"], rows)
+            for label, slug in arms if c.has(f"supersession.{slug}.stale_rate")]
+    out = _table(["arm", "returns the retracted fact", "returns the replacement",
+                  "a still-true fact did not come back"], rows)
+    if c.has("supersession.nevertwice_after_sleep.stale_rate"):
+        out += ("\n\n<sub>Two rows for one system, because there are two moments. A contested pair - "
+                "two notes on one topic where no rule proved a replacement - is served whole until the "
+                "weekly consolidation judges it, so the first row is what a user sees between nights "
+                "and the second is the same store after that judgement. The competitors have one row: "
+                "nothing in them waits for a night.</sub>")
+    return out
 
 
 CAUSES = (("retired", "retired by the memory"), ("demoted", "absorbed into another note"),
@@ -625,7 +639,8 @@ def render_supersession_causes(c: Claims, fam: str = "supersession") -> str:
     if not c.has(f"{fam}.nevertwice.control_miss_rate"):
         return _not_yet(fam, "python research/supersession_bench.py --arms nevertwice,naive")
     rows = []
-    for label, slug in SUPERSESSION_ARMS:
+    arms = list(SUPERSESSION_READINGS) + [a for a in SUPERSESSION_ARMS if a[1] != "nevertwice"]
+    for label, slug in arms:
         if not c.has(f"{fam}.{slug}.control_miss_rate"):
             continue
         row = [label, _with_ci(c, f"{fam}.{slug}.control_miss_rate")]
@@ -650,6 +665,93 @@ def render_supersession_causes(c: Claims, fam: str = "supersession") -> str:
                 f"{_with_ci(c, f'{fam}.nevertwice.over_retraction_rate')} for Nevertwice over its "
                 f"control case-runs.</sub>")
     return out
+
+
+def render_supersession_readings(c: Claims, fam: str = "supersession") -> str:
+    """The two readings of one store, in full, with the price of the second beside it.
+
+    The comparative table above prints the three rates every arm can be measured on. This one is
+    about us alone and carries the two columns a competitor has no analogue for: `old value served`,
+    the retracted value appearing *anywhere* in what came back - attached to the newer statement or
+    not, which is the honest reading of "both facts, newest first" - and what the sleep-time judge
+    spent to get from the first row to the second."""
+    if not c.has(f"{fam}.nevertwice.stale_rate"):
+        return _not_yet(fam, "python research/supersession_bench.py --arms nevertwice --sleep")
+    header = ["reading", "returns the retracted fact", "the retracted value appears anywhere",
+              "returns the replacement", "retires a still-true fact", "characters per query"]
+    rows = []
+    for label, slug in SUPERSESSION_READINGS:
+        if not c.has(f"{fam}.{slug}.stale_rate"):
+            continue
+        rows.append([label.replace("**Nevertwice**, ", "").capitalize(),
+                     _with_ci(c, f"{fam}.{slug}.stale_rate"),
+                     _cell(c, f"{fam}.{slug}.old_value_served_rate"),
+                     _with_ci(c, f"{fam}.{slug}.current_rate"),
+                     _with_ci(c, f"{fam}.{slug}.over_retraction_rate"),
+                     f"{c.value(f'{fam}.{slug}.chars_per_query'):.0f}"
+                     if c.has(f"{fam}.{slug}.chars_per_query") else "-"])
+    if len(rows) < 2:
+        return _not_yet(f"{fam}.nevertwice_after_sleep",
+                        "python research/supersession_bench.py --arms nevertwice --sleep")
+    out = _table(header, rows)
+    out += ("\n\n<sub>The second column counts an item that asserts the retracted value without the "
+            "current one, which is the bench's rule and the one the comparison uses. The third counts "
+            "the retracted value wherever it appears in the returned text, so a paired hit - the newest "
+            "statement with the earlier one attached - is counted here and not there. Both are printed "
+            "because the design serves the older statement on purpose rather than hiding it, and a "
+            "reader deciding whether that is acceptable needs the number it costs.</sub>")
+    if c.has("absorb_judge.tokens_per_pair") and c.has("vault.contested_per_week"):
+        out += (f"\n\n<sub>What the second row costs: one model call per contested pair at consolidation "
+                f"and none in the hook, at {c.value('absorb_judge.tokens_per_pair'):.0f} tokens a pair; on "
+                f"a real store the dry run counted at most "
+                f"{c.value('vault.contested_per_week'):.0f} contested pairs a week, against a run budget of "
+                f"a hundred thousand tokens. With no model backend at all the first row is what the "
+                f"product does, and the contested pairs stay visible through `conflicts()` and "
+                f"`integrity()`.</sub>")
+    if c.has("absorb_judge.accuracy") and c.has("absorb_judge.replaces_precision"):
+        out += (f"\n\n<sub>Why the judge's verdict is not the last word. On a recorded set of pairs whose "
+                f"truth is known it rules correctly {c.value('absorb_judge.accuracy'):.3f} of the time, and "
+                f"its precision on `replaces` - the verdict that retires a note - is "
+                f"{c.value('absorb_judge.replaces_precision'):.3f}, not one. An earlier draw of the same "
+                f"prompt over the same bytes read exactly one, so that figure is a draw and not a property "
+                f"of the judge. This is why three guards sit between a verdict and a retirement: a note "
+                f"with verified literals is never retired for one without, a value the new statement's own "
+                f"verified block does not carry vetoes the replacement, and a replacement naming no value "
+                f"does not displace one that does. The column above reads zero with the judge making false "
+                f"calls, which is the guards doing the work.</sub>")
+    return out
+
+
+def render_supersession_switch(c: Claims) -> str:
+    """The one loss the default leaves standing, and what removing it costs.
+
+    `NEVERTWICE_EXPLICIT_RETIRE` decides what happens when the extractor writes `contradicts: <another
+    note's title>`: `write` retires that note at once, on the extractor's word; `judge` sends the pair
+    to the sleep-time judge instead. The campaign ran both, on both corpora, in both readings. The
+    default is whichever the rule written before the run selected, and this table is the other arm -
+    because a switch whose price is not printed is a switch nobody can decide about."""
+    if not c.has("supersession_switch.nevertwice.stale_rate"):
+        return _not_yet("supersession_switch",
+                        "NEVERTWICE_EXPLICIT_RETIRE=judge python research/supersession_bench.py "
+                        "--arms nevertwice --sleep")
+    header = ["corpus and reading", "default", "with the switch on"]
+    rows = []
+    for corpus, fam_a, fam_b in (("explicit", "supersession", "supersession_switch"),
+                                 ("implicit", "supersession_implicit", "supersession_implicit_switch")):
+        for reading, slug in (("between nights", "nevertwice"),
+                              ("after consolidation", "nevertwice_after_sleep")):
+            for metric, name in (("over_retraction_rate", "retires a still-true fact"),
+                                 ("stale_rate", "returns the retracted fact")):
+                a, b = f"{fam_a}.{slug}.{metric}", f"{fam_b}.{slug}.{metric}"
+                if not (c.has(a) and c.has(b)):
+                    continue
+                rows.append([f"{corpus}, {reading} - {name}",
+                             f"{c.value(a):.3f}", f"{c.value(b):.3f}"])
+    if not rows:
+        return _not_yet("supersession_switch",
+                        "NEVERTWICE_EXPLICIT_RETIRE=judge python research/supersession_bench.py "
+                        "--arms nevertwice --sleep")
+    return _table(header, rows)
 
 
 PAIRS = (("Nevertwice vs Mem0", "nevertwice", "mem0"), ("Nevertwice vs naive", "nevertwice", "naive"),
@@ -907,6 +1009,9 @@ RENDERERS = {
     "supersession-causes-implicit": lambda c: render_supersession_causes(c, "supersession_implicit"),
     "supersession-pairs": render_supersession_pairs,
     "supersession-pairs-implicit": lambda c: render_supersession_pairs(c, "supersession_implicit"),
+    "supersession-readings": render_supersession_readings,
+    "supersession-readings-implicit": lambda c: render_supersession_readings(c, "supersession_implicit"),
+    "supersession-switch": render_supersession_switch,
     "asof": render_asof,
     "locomo-categories": render_locomo_categories,
     "abstention-sweep": render_abstention_sweep,

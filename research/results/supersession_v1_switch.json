@@ -5,21 +5,23 @@
     {
      "id": "val-http-timeout",
      "shape": "value_replaced",
-     "n_hits": 2,
-     "stale_returned": false,
-     "stale_rank": null,
+     "n_hits": 4,
+     "stale_returned": true,
+     "stale_rank": 2,
      "current_returned": true,
      "old_value_served": true,
-     "chars_returned": 651,
+     "chars_returned": 1187,
      "returned": [
-      "http-client-timeout-configuration The HTTP client timeout was initially configured to 30 seconds but was found to be 5 seconds during a pairing session. This pattern documents the correct timeout value for API client configuration.  [facts] the HTTP client timeout is 5 seconds | earlier under this title: HTTP client timeout is 30 seconds · Ran the full test suite afterwards and it stayed green",
-      "set-http-client-timeout-to-5s The decision was made to set the HTTP client timeout to 5 seconds after discovering that this is the actual value in use, correcting a previous incorrect assumption of 30 seconds.  [facts] the HTTP client timeout is 5 seconds"
+      "http-client-timeout-configuration The HTTP client timeout was initially configured to 30 seconds but was later corrected to 5 seconds. This pattern shows the importance of verifying actual configuration values rather than relying on assumptions.  [facts] HTTP client timeout is 5 seconds | earlier under this title: HTTP client timeout is 30 seconds · Ran the full test suite afterwards and it stayed green",
+      "set-http-client-timeout-to-30s It was decided to set the HTTP client timeout to 30 seconds as a reasonable default for API connectivity, balancing responsiveness with reliability.  [facts] Settled it: the HTTP client timeout is 30 seconds",
+      "correct-http-client-timeout-to-5s The decision was made to correct the HTTP client timeout from 30 seconds to 5 seconds after verifying the actual configuration.  [facts] HTTP client timeout is 5 seconds",
+      "incorrect-http-client-timeout-assumption The agent incorrectly assumed that the HTTP client timeout was set to 30 seconds based on a previous decision, when in fact it was configured to 5 seconds.  [facts] HTTP client timeout is 5 seconds Always verify actual configuration values from code or logs before making assumptions about timeouts."
      ],
      "current_live": true,
      "current_retired": false,
      "current_demoted": false,
      "current_absent": false,
-     "notes_written": 4,
+     "notes_written": 5,
      "notes_in_cyrillic": 0
     },
     {
@@ -63,13 +65,14 @@
     {
      "id": "val-node-version",
      "shape": "value_replaced",
-     "n_hits": 1,
-     "stale_returned": false,
-     "stale_rank": null,
+     "n_hits": 2,
+     "stale_returned": true,
+     "stale_rank": 1,
      "current_returned": true,
-     "old_value_served": false,
-     "chars_returned": 240,
+     "old_value_served": true,
+     "chars_returned": 543,
      "returned": [
+      "frontend-build-target-node-18 The frontend build is configured to target Node 18. This ensures compatibility with the current runtime environment and avoids potential issues with newer JavaScript features or deprecated APIs.  [facts] the frontend build is set up. As of today, the build targets Node 18.",
       "frontend-build-target-node-22 The frontend build target was updated to Node 22. This change was reviewed and approved with only one rename requested.  [facts] the build targets Node 22 · reviewer asked for one rename · otherwise approved it"
      ],
      "current_live": true,
@@ -256,13 +259,14 @@
     {
      "id": "val-license",
      "shape": "value_replaced",
-     "n_hits": 1,
-     "stale_returned": false,
-     "stale_rank": null,
+     "n_hits": 2,
+     "stale_returned": true,
+     "stale_rank": 1,
      "current_returned": true,
      "old_value_served": true,
-     "chars_returned": 303,
+     "chars_returned": 514,
      "returned": [
+      "license-agpl3 The project is released under the AGPL-3.0 license. This decision was made after reviewing licensing options and confirming the terms of the license.  [facts] the project is released under AGPL-3.0",
       "license-agpl3-to-apache-2-0 The project was relicensed from AGPL-3.0 to Apache-2.0 after a review. This decision was made to allow broader usage and distribution of the software under a more permissive license.  [facts] The project was relicensed to Apache-2.0 · reopened licensing after the last review"
      ],
      "current_live": true,
@@ -354,15 +358,17 @@
     {
      "id": "app-orm",
      "shape": "approach_abandoned",
-     "n_hits": 3,
-     "stale_returned": false,
-     "stale_rank": null,
+     "n_hits": 5,
+     "stale_returned": true,
+     "stale_rank": 1,
      "current_returned": true,
      "old_value_served": true,
-     "chars_returned": 889,
+     "chars_returned": 1387,
      "returned": [
+      "sqlalchemy-orm-data-access Data access is handled through the SQLAlchemy ORM. This approach was chosen after evaluating alternatives and settling on ORM for its abstraction and maintainability benefits.  [facts] data access goes through the SQLAlchemy ORM",
       "asyncpg-hand-written-sql-data-access Data access was rewritten using hand-written SQL with asyncpg instead of SQLAlchemy ORM. This approach was chosen for better control and performance.  [facts] data access was rewritten as hand-written SQL with asyncpg",
       "incorrect-assumption-about-data-access-method The earlier assumption that data access was handled via SQLAlchemy ORM was incorrect; it was actually rewritten using hand-written SQL with asyncpg.  [facts] That earlier decision is off: data access was rewritten as hand-written SQL with asyncpg Verify the actual implementation method before making assumptions about data access patterns.",
+      "use-sqlalchemy-orm The decision was made to use SQLAlchemy ORM for data access, as it provides a clean abstraction layer and better maintainability compared to raw SQL or other alternatives.  [facts] data access goes through the SQLAlchemy ORM",
       "use-asyncpg-with-hand-written-sql Decision to use asyncpg with hand-written SQL for data access, replacing the previous SQLAlchemy ORM approach due to performance and control needs.  [facts] data access was rewritten as hand-written SQL with asyncpg"
      ],
      "current_live": true,
@@ -473,13 +479,14 @@
     {
      "id": "app-state",
      "shape": "approach_abandoned",
-     "n_hits": 1,
-     "stale_returned": false,
-     "stale_rank": null,
+     "n_hits": 2,
+     "stale_returned": true,
+     "stale_rank": 1,
      "current_returned": true,
-     "old_value_served": false,
-     "chars_returned": 331,
+     "old_value_served": true,
+     "chars_returned": 584,
      "returned": [
+      "frontend-state-management-with-redux The frontend global state is managed using Redux, which provides a centralized store for application state. This approach ensures predictable state updates and easier debugging.  [facts] global state is held in Redux",
       "frontend-state-management-with-zustand The frontend state management was moved from global state to Zustand stores, which provides a more predictable and maintainable approach to managing application state. This change improves performance and reduces complexity in the component tree.  [facts] global state moved to Zustand stores"
      ],
      "current_live": true,
@@ -1556,17 +1563,17 @@
    ],
    "n_supersession": 60,
    "n_control": 20,
-   "stale_rate": 0.0167,
+   "stale_rate": 0.1,
    "stale_ci": [
-    0.0029,
-    0.0886
+    0.0466,
+    0.2015
    ],
    "current_rate": 1.0,
    "current_ci": [
     0.9398,
     1.0
    ],
-   "old_value_served_rate": 0.7333,
+   "old_value_served_rate": 0.7667,
    "control_miss_rate": 0.1,
    "control_miss_ci": [
     0.0279,
@@ -1577,34 +1584,35 @@
     0.0,
     0.1611
    ],
-   "mean_chars_returned": 473.3,
-   "max_chars_returned": 889,
-   "stale_at_rank_1": 1,
+   "mean_chars_returned": 495.8,
+   "max_chars_returned": 1387,
+   "stale_at_rank_1": 5,
    "control_retired_by_memory": 0,
    "control_demoted_by_merge": 0,
    "control_never_written": 2,
    "control_written_but_unranked": 0,
-   "notes_written": 190,
+   "notes_written": 191,
    "notes_in_cyrillic": 0,
    "language_drift_rate": 0.0,
    "cases_touched_by_drift": 0,
-   "seconds": 293.9,
+   "seconds": 305.0,
    "config": "ollama qwen3-coder:30b + bge-m3, k=5",
-   "store_bytes": 169828
+   "store_bytes": 169227
   },
   "nevertwice_run2": {
    "rows": [
     {
      "id": "val-http-timeout",
      "shape": "value_replaced",
-     "n_hits": 2,
-     "stale_returned": false,
-     "stale_rank": null,
+     "n_hits": 3,
+     "stale_returned": true,
+     "stale_rank": 2,
      "current_returned": true,
      "old_value_served": true,
-     "chars_returned": 651,
+     "chars_returned": 889,
      "returned": [
       "http-client-timeout-configuration The HTTP client timeout was initially configured to 30 seconds but was found to be 5 seconds during a pairing session. This pattern documents the correct timeout value for API client configuration.  [facts] the HTTP client timeout is 5 seconds | earlier under this title: HTTP client timeout is 30 seconds · Ran the full test suite afterwards and it stayed green",
+      "set-http-client-timeout-to-30s It was decided to set the HTTP client timeout to 30 seconds as a reasonable default for API connectivity, balancing responsiveness with reliability.  [facts] Settled it: the HTTP client timeout is 30 seconds",
       "set-http-client-timeout-to-5s The decision was made to set the HTTP client timeout to 5 seconds after discovering that this is the actual value in use, correcting a previous incorrect assumption of 30 seconds.  [facts] the HTTP client timeout is 5 seconds"
      ],
      "current_live": true,
@@ -1655,13 +1663,14 @@
     {
      "id": "val-node-version",
      "shape": "value_replaced",
-     "n_hits": 1,
-     "stale_returned": false,
-     "stale_rank": null,
+     "n_hits": 2,
+     "stale_returned": true,
+     "stale_rank": 1,
      "current_returned": true,
-     "old_value_served": false,
-     "chars_returned": 240,
+     "old_value_served": true,
+     "chars_returned": 543,
      "returned": [
+      "frontend-build-target-node-18 The frontend build is configured to target Node 18. This ensures compatibility with the current runtime environment and avoids potential issues with newer JavaScript features or deprecated APIs.  [facts] the frontend build is set up. As of today, the build targets Node 18.",
       "frontend-build-target-node-22 The frontend build target was updated to Node 22. This change was reviewed and approved with only one rename requested.  [facts] the build targets Node 22 · reviewer asked for one rename · otherwise approved it"
      ],
      "current_live": true,
@@ -1848,13 +1857,14 @@
     {
      "id": "val-license",
      "shape": "value_replaced",
-     "n_hits": 1,
-     "stale_returned": false,
-     "stale_rank": null,
+     "n_hits": 2,
+     "stale_returned": true,
+     "stale_rank": 1,
      "current_returned": true,
      "old_value_served": true,
-     "chars_returned": 303,
+     "chars_returned": 514,
      "returned": [
+      "license-agpl3 The project is released under the AGPL-3.0 license. This decision was made after reviewing licensing options and confirming the terms of the license.  [facts] the project is released under AGPL-3.0",
       "license-agpl3-to-apache-2-0 The project was relicensed from AGPL-3.0 to Apache-2.0 after a review. This decision was made to allow broader usage and distribution of the software under a more permissive license.  [facts] The project was relicensed to Apache-2.0 · reopened licensing after the last review"
      ],
      "current_live": true,
@@ -1946,15 +1956,17 @@
     {
      "id": "app-orm",
      "shape": "approach_abandoned",
-     "n_hits": 3,
-     "stale_returned": false,
-     "stale_rank": null,
+     "n_hits": 5,
+     "stale_returned": true,
+     "stale_rank": 1,
      "current_returned": true,
      "old_value_served": true,
-     "chars_returned": 889,
+     "chars_returned": 1387,
      "returned": [
+      "sqlalchemy-orm-data-access Data access is handled through the SQLAlchemy ORM. This approach was chosen after evaluating alternatives and settling on ORM for its abstraction and maintainability benefits.  [facts] data access goes through the SQLAlchemy ORM",
       "asyncpg-hand-written-sql-data-access Data access was rewritten using hand-written SQL with asyncpg instead of SQLAlchemy ORM. This approach was chosen for better control and performance.  [facts] data access was rewritten as hand-written SQL with asyncpg",
       "incorrect-assumption-about-data-access-method The earlier assumption that data access was handled via SQLAlchemy ORM was incorrect; it was actually rewritten using hand-written SQL with asyncpg.  [facts] That earlier decision is off: data access was rewritten as hand-written SQL with asyncpg Verify the actual implementation method before making assumptions about data access patterns.",
+      "use-sqlalchemy-orm The decision was made to use SQLAlchemy ORM for data access, as it provides a clean abstraction layer and better maintainability compared to raw SQL or other alternatives.  [facts] data access goes through the SQLAlchemy ORM",
       "use-asyncpg-with-hand-written-sql Decision to use asyncpg with hand-written SQL for data access, replacing the previous SQLAlchemy ORM approach due to performance and control needs.  [facts] data access was rewritten as hand-written SQL with asyncpg"
      ],
      "current_live": true,
@@ -2065,13 +2077,14 @@
     {
      "id": "app-state",
      "shape": "approach_abandoned",
-     "n_hits": 1,
-     "stale_returned": false,
-     "stale_rank": null,
+     "n_hits": 2,
+     "stale_returned": true,
+     "stale_rank": 1,
      "current_returned": true,
-     "old_value_served": false,
-     "chars_returned": 331,
+     "old_value_served": true,
+     "chars_returned": 584,
      "returned": [
+      "frontend-state-management-with-redux The frontend global state is managed using Redux, which provides a centralized store for application state. This approach ensures predictable state updates and easier debugging.  [facts] global state is held in Redux",
       "frontend-state-management-with-zustand The frontend state management was moved from global state to Zustand stores, which provides a more predictable and maintainable approach to managing application state. This change improves performance and reduces complexity in the component tree.  [facts] global state moved to Zustand stores"
      ],
      "current_live": true,
@@ -3148,17 +3161,17 @@
    ],
    "n_supersession": 60,
    "n_control": 20,
-   "stale_rate": 0.0167,
+   "stale_rate": 0.1,
    "stale_ci": [
-    0.0029,
-    0.0886
+    0.0466,
+    0.2015
    ],
    "current_rate": 1.0,
    "current_ci": [
     0.9398,
     1.0
    ],
-   "old_value_served_rate": 0.7333,
+   "old_value_served_rate": 0.7667,
    "control_miss_rate": 0.1,
    "control_miss_ci": [
     0.0279,
@@ -3169,9 +3182,9 @@
     0.0,
     0.1611
    ],
-   "mean_chars_returned": 473.3,
-   "max_chars_returned": 889,
-   "stale_at_rank_1": 1,
+   "mean_chars_returned": 492.1,
+   "max_chars_returned": 1387,
+   "stale_at_rank_1": 5,
    "control_retired_by_memory": 0,
    "control_demoted_by_merge": 0,
    "control_never_written": 2,
@@ -3180,30 +3193,32 @@
    "notes_in_cyrillic": 0,
    "language_drift_rate": 0.0,
    "cases_touched_by_drift": 0,
-   "seconds": 282.2,
+   "seconds": 281.6,
    "config": "ollama qwen3-coder:30b + bge-m3, k=5",
-   "store_bytes": 169547
+   "store_bytes": 167605
   },
   "nevertwice_after_sleep": {
    "rows": [
     {
      "id": "val-http-timeout",
      "shape": "value_replaced",
-     "n_hits": 2,
-     "stale_returned": false,
-     "stale_rank": null,
+     "n_hits": 4,
+     "stale_returned": true,
+     "stale_rank": 2,
      "current_returned": true,
      "old_value_served": true,
-     "chars_returned": 651,
+     "chars_returned": 1187,
      "returned": [
-      "http-client-timeout-configuration The HTTP client timeout was initially configured to 30 seconds but was found to be 5 seconds during a pairing session. This pattern documents the correct timeout value for API client configuration.  [facts] the HTTP client timeout is 5 seconds | earlier under this title: HTTP client timeout is 30 seconds · Ran the full test suite afterwards and it stayed green",
-      "set-http-client-timeout-to-5s The decision was made to set the HTTP client timeout to 5 seconds after discovering that this is the actual value in use, correcting a previous incorrect assumption of 30 seconds.  [facts] the HTTP client timeout is 5 seconds"
+      "http-client-timeout-configuration The HTTP client timeout was initially configured to 30 seconds but was later corrected to 5 seconds. This pattern shows the importance of verifying actual configuration values rather than relying on assumptions.  [facts] HTTP client timeout is 5 seconds | earlier under this title: HTTP client timeout is 30 seconds · Ran the full test suite afterwards and it stayed green",
+      "set-http-client-timeout-to-30s It was decided to set the HTTP client timeout to 30 seconds as a reasonable default for API connectivity, balancing responsiveness with reliability.  [facts] Settled it: the HTTP client timeout is 30 seconds",
+      "correct-http-client-timeout-to-5s The decision was made to correct the HTTP client timeout from 30 seconds to 5 seconds after verifying the actual configuration.  [facts] HTTP client timeout is 5 seconds",
+      "incorrect-http-client-timeout-assumption The agent incorrectly assumed that the HTTP client timeout was set to 30 seconds based on a previous decision, when in fact it was configured to 5 seconds.  [facts] HTTP client timeout is 5 seconds Always verify actual configuration values from code or logs before making assumptions about timeouts."
      ],
      "current_live": true,
      "current_retired": false,
      "current_demoted": false,
      "current_absent": false,
-     "notes_written": 4,
+     "notes_written": 5,
      "notes_in_cyrillic": 0
     },
     {
@@ -3440,13 +3455,14 @@
     {
      "id": "val-license",
      "shape": "value_replaced",
-     "n_hits": 1,
-     "stale_returned": false,
-     "stale_rank": null,
+     "n_hits": 2,
+     "stale_returned": true,
+     "stale_rank": 1,
      "current_returned": true,
      "old_value_served": true,
-     "chars_returned": 303,
+     "chars_returned": 514,
      "returned": [
+      "license-agpl3 The project is released under the AGPL-3.0 license. This decision was made after reviewing licensing options and confirming the terms of the license.  [facts] the project is released under AGPL-3.0",
       "license-agpl3-to-apache-2-0 The project was relicensed from AGPL-3.0 to Apache-2.0 after a review. This decision was made to allow broader usage and distribution of the software under a more permissive license.  [facts] The project was relicensed to Apache-2.0 · reopened licensing after the last review"
      ],
      "current_live": true,
@@ -4108,10 +4124,10 @@
      "stale_rank": null,
      "current_returned": true,
      "old_value_served": false,
-     "chars_returned": 622,
+     "chars_returned": 493,
      "returned": [
       "audit-log-table-changes Changes to billing tables are audited now, while other changes were not audited and did not survive. The change touched three files and none of them were config.  [facts] Only changes to billing tables are audited now. · Follow-up",
-      "document-audit-decision-in-readme The decision to audit only billing table changes was made and documented in the README.  [facts] Follow-up on auditing, and it did not survive. · Only changes to billing tables are audited now. · Follow-up | earlier under this title: The auditing decision was documented in the README section that was already stale, ensuring that th…"
+      "document-audit-decision-in-readme The decision to audit only billing table changes was made and documented in the README.  [facts] Follow-up on auditing, and it did not survive. · Only changes to billing tables are audited now. · Follow-up"
      ],
      "current_live": true,
      "current_retired": false,
@@ -4740,10 +4756,10 @@
    ],
    "n_supersession": 60,
    "n_control": 20,
-   "stale_rate": 0.0167,
+   "stale_rate": 0.05,
    "stale_ci": [
-    0.0029,
-    0.0886
+    0.0171,
+    0.137
    ],
    "current_rate": 1.0,
    "current_ci": [
@@ -4761,37 +4777,37 @@
     0.0,
     0.1611
    ],
-   "mean_chars_returned": 401.1,
-   "max_chars_returned": 889,
-   "stale_at_rank_1": 1,
+   "mean_chars_returned": 408.8,
+   "max_chars_returned": 1187,
+   "stale_at_rank_1": 2,
    "control_retired_by_memory": 0,
    "control_demoted_by_merge": 0,
    "control_never_written": 2,
    "control_written_but_unranked": 0,
-   "notes_written": 190,
+   "notes_written": 191,
    "notes_in_cyrillic": 0,
    "language_drift_rate": 0.0,
    "cases_touched_by_drift": 0,
    "adjudication": {
-    "pairs": 69,
+    "pairs": 75,
     "budget": 100000,
     "cap": 0,
-    "judged": 69,
-    "tokens_spent": 28615,
+    "judged": 75,
+    "tokens_spent": 31141,
     "estimated_calls": 0,
-    "replaces": 49,
+    "replaces": 54,
     "separate": 8,
-    "vetoed": 12,
+    "vetoed": 13,
     "unanswered": 0,
     "errors": 0,
     "left": 0,
-    "prompt_tokens": 25887,
-    "eval_tokens": 2728,
+    "prompt_tokens": 28142,
+    "eval_tokens": 2999,
     "skipped": null,
-    "judged_ollama": 69
+    "judged_ollama": 75
    },
-   "seconds": 22.1,
-   "store_bytes": 182399,
+   "seconds": 24.0,
+   "store_bytes": 183137,
    "config": "the same store after consolidate_memory.adjudicate_contested(budget=100000, cap=0)"
   },
   "nevertwice_after_sleep_run2": {
@@ -4799,14 +4815,15 @@
     {
      "id": "val-http-timeout",
      "shape": "value_replaced",
-     "n_hits": 2,
-     "stale_returned": false,
-     "stale_rank": null,
+     "n_hits": 3,
+     "stale_returned": true,
+     "stale_rank": 2,
      "current_returned": true,
      "old_value_served": true,
-     "chars_returned": 651,
+     "chars_returned": 889,
      "returned": [
       "http-client-timeout-configuration The HTTP client timeout was initially configured to 30 seconds but was found to be 5 seconds during a pairing session. This pattern documents the correct timeout value for API client configuration.  [facts] the HTTP client timeout is 5 seconds | earlier under this title: HTTP client timeout is 30 seconds · Ran the full test suite afterwards and it stayed green",
+      "set-http-client-timeout-to-30s It was decided to set the HTTP client timeout to 30 seconds as a reasonable default for API connectivity, balancing responsiveness with reliability.  [facts] Settled it: the HTTP client timeout is 30 seconds",
       "set-http-client-timeout-to-5s The decision was made to set the HTTP client timeout to 5 seconds after discovering that this is the actual value in use, correcting a previous incorrect assumption of 30 seconds.  [facts] the HTTP client timeout is 5 seconds"
      ],
      "current_live": true,
@@ -5050,13 +5067,14 @@
     {
      "id": "val-license",
      "shape": "value_replaced",
-     "n_hits": 1,
-     "stale_returned": false,
-     "stale_rank": null,
+     "n_hits": 2,
+     "stale_returned": true,
+     "stale_rank": 1,
      "current_returned": true,
      "old_value_served": true,
-     "chars_returned": 303,
+     "chars_returned": 514,
      "returned": [
+      "license-agpl3 The project is released under the AGPL-3.0 license. This decision was made after reviewing licensing options and confirming the terms of the license.  [facts] the project is released under AGPL-3.0",
       "license-agpl3-to-apache-2-0 The project was relicensed from AGPL-3.0 to Apache-2.0 after a review. This decision was made to allow broader usage and distribution of the software under a more permissive license.  [facts] The project was relicensed to Apache-2.0 · reopened licensing after the last review"
      ],
      "current_live": true,
@@ -5561,10 +5579,10 @@
      "stale_returned": false,
      "stale_rank": null,
      "current_returned": true,
-     "old_value_served": false,
-     "chars_returned": 221,
+     "old_value_served": true,
+     "chars_returned": 350,
      "returned": [
-      "webhook-order-integration The partner integration was terminated and the webhook deleted. This change touched three files and none of them were config.  [facts] The change touched three files and none of them were config."
+      "webhook-order-integration The partner integration was terminated and the webhook deleted. This change touched three files and none of them were config.  [facts] The change touched three files and none of them were config. | earlier under this title: A webhook posts every order to the partner endpoint. This setup was documented in the README sectio…"
      ],
      "current_live": true,
      "current_retired": false,
@@ -5718,10 +5736,10 @@
      "stale_rank": null,
      "current_returned": true,
      "old_value_served": false,
-     "chars_returned": 622,
+     "chars_returned": 493,
      "returned": [
       "audit-log-table-changes Changes to billing tables are audited now, while other changes were not audited and did not survive. The change touched three files and none of them were config.  [facts] Only changes to billing tables are audited now. · Follow-up",
-      "document-audit-decision-in-readme The decision to audit only billing table changes was made and documented in the README.  [facts] Follow-up on auditing, and it did not survive. · Only changes to billing tables are audited now. · Follow-up | earlier under this title: The auditing decision was documented in the README section that was already stale, ensuring that th…"
+      "document-audit-decision-in-readme The decision to audit only billing table changes was made and documented in the README.  [facts] Follow-up on auditing, and it did not survive. · Only changes to billing tables are audited now. · Follow-up"
      ],
      "current_live": true,
      "current_retired": false,
@@ -6350,17 +6368,17 @@
    ],
    "n_supersession": 60,
    "n_control": 20,
-   "stale_rate": 0.0167,
+   "stale_rate": 0.05,
    "stale_ci": [
-    0.0029,
-    0.0886
+    0.0171,
+    0.137
    ],
    "current_rate": 1.0,
    "current_ci": [
     0.9398,
     1.0
    ],
-   "old_value_served_rate": 0.3833,
+   "old_value_served_rate": 0.4,
    "control_miss_rate": 0.1,
    "control_miss_ci": [
     0.0279,
@@ -6371,9 +6389,9 @@
     0.0,
     0.1611
    ],
-   "mean_chars_returned": 399.4,
+   "mean_chars_returned": 405.1,
    "max_chars_returned": 889,
-   "stale_at_rank_1": 1,
+   "stale_at_rank_1": 2,
    "control_retired_by_memory": 0,
    "control_demoted_by_merge": 0,
    "control_never_written": 2,
@@ -6383,25 +6401,25 @@
    "language_drift_rate": 0.0,
    "cases_touched_by_drift": 0,
    "adjudication": {
-    "pairs": 69,
+    "pairs": 75,
     "budget": 100000,
     "cap": 0,
-    "judged": 69,
-    "tokens_spent": 28650,
+    "judged": 75,
+    "tokens_spent": 31154,
     "estimated_calls": 0,
-    "replaces": 50,
+    "replaces": 54,
     "separate": 8,
-    "vetoed": 11,
+    "vetoed": 13,
     "unanswered": 0,
     "errors": 0,
     "left": 0,
-    "prompt_tokens": 25873,
-    "eval_tokens": 2777,
+    "prompt_tokens": 28155,
+    "eval_tokens": 2999,
     "skipped": null,
-    "judged_ollama": 69
+    "judged_ollama": 75
    },
-   "seconds": 20.7,
-   "store_bytes": 182347,
+   "seconds": 23.4,
+   "store_bytes": 181515,
    "config": "the same store after consolidate_memory.adjudicate_contested(budget=100000, cap=0)"
   },
   "naive": {
@@ -12348,16 +12366,16 @@
  "pooled_nevertwice": {
   "runs": 2,
   "stale": {
-   "k": 2,
+   "k": 12,
    "n": 120,
-   "rate": 0.0167,
+   "rate": 0.1,
    "ci": [
-    0.0046,
-    0.0587
+    0.0581,
+    0.1667
    ],
    "per_run": [
-    0.0167,
-    0.0167
+    0.1,
+    0.1
    ]
   },
   "current": {
@@ -12374,16 +12392,16 @@
    ]
   },
   "old_value_served": {
-   "k": 88,
+   "k": 92,
    "n": 120,
-   "rate": 0.7333,
+   "rate": 0.7667,
    "ci": [
-    0.6479,
-    0.8043
+    0.6834,
+    0.8333
    ],
    "per_run": [
-    0.7333,
-    0.7333
+    0.7667,
+    0.7667
    ]
   },
   "over_retraction": {
@@ -12414,9 +12432,9 @@
    "never_written": 4,
    "unranked": 0
   },
-  "mean_chars_returned": 473.3
+  "mean_chars_returned": 494.0
  },
- "pooled_note": "2 runs of the same commit on the same corpus with the same models read stale 0.0167 and 0.0167. The extraction model is not deterministic at temperature 0, so the published rate is pooled over case-runs and the per-run values are kept beside it. One run of this stand is not a result.",
+ "pooled_note": "2 runs of the same commit on the same corpus with the same models read stale 0.1000 and 0.1000. The extraction model is not deterministic at temperature 0, so the published rate is pooled over case-runs and the per-run values are kept beside it. One run of this stand is not a result.",
  "pairs": [
   {
    "a": "mem0",
@@ -12431,10 +12449,10 @@
    "a": "mem0",
    "b": "nevertwice",
    "n": 60,
-   "stale_only_mem0": 55,
+   "stale_only_mem0": 50,
    "stale_only_nevertwice": 0,
-   "discordant": 55,
-   "p_mcnemar": 5.551115123125783e-17
+   "discordant": 50,
+   "p_mcnemar": 1.7763568394002505e-15
   },
   {
    "a": "mem0",
@@ -12449,10 +12467,10 @@
    "a": "naive",
    "b": "nevertwice",
    "n": 60,
-   "stale_only_naive": 56,
+   "stale_only_naive": 51,
    "stale_only_nevertwice": 0,
-   "discordant": 56,
-   "p_mcnemar": 2.7755575615628914e-17
+   "discordant": 51,
+   "p_mcnemar": 8.881784197001252e-16
   },
   {
    "a": "naive",
@@ -12467,35 +12485,35 @@
    "a": "nevertwice",
    "b": "zep",
    "n": 60,
-   "stale_only_nevertwice": 1,
+   "stale_only_nevertwice": 6,
    "stale_only_zep": 19,
-   "discordant": 20,
-   "p_mcnemar": 4.00543212890625e-05
+   "discordant": 25,
+   "p_mcnemar": 0.01463329792022705
   }
  ],
  "pairs_per_engine_run": [
   {
    "nevertwice_only": 0,
-   "mem0_only": 55
+   "mem0_only": 50
   },
   {
    "nevertwice_only": 0,
-   "mem0_only": 55
+   "mem0_only": 50
   }
  ],
  "pooled_nevertwice_after_sleep": {
   "runs": 2,
   "stale": {
-   "k": 2,
+   "k": 6,
    "n": 120,
-   "rate": 0.0167,
+   "rate": 0.05,
    "ci": [
-    0.0046,
-    0.0587
+    0.0231,
+    0.1048
    ],
    "per_run": [
-    0.0167,
-    0.0167
+    0.05,
+    0.05
    ]
   },
   "current": {
@@ -12512,16 +12530,16 @@
    ]
   },
   "old_value_served": {
-   "k": 47,
+   "k": 48,
    "n": 120,
-   "rate": 0.3917,
+   "rate": 0.4,
    "ci": [
-    0.309,
-    0.4811
+    0.3168,
+    0.4894
    ],
    "per_run": [
     0.4,
-    0.3833
+    0.4
    ]
   },
   "over_retraction": {
@@ -12552,43 +12570,43 @@
    "never_written": 4,
    "unranked": 0
   },
-  "mean_chars_returned": 400.2,
+  "mean_chars_returned": 407.0,
   "adjudication": [
    {
-    "pairs": 69,
+    "pairs": 75,
     "budget": 100000,
     "cap": 0,
-    "judged": 69,
-    "tokens_spent": 28615,
+    "judged": 75,
+    "tokens_spent": 31141,
     "estimated_calls": 0,
-    "replaces": 49,
+    "replaces": 54,
     "separate": 8,
-    "vetoed": 12,
+    "vetoed": 13,
     "unanswered": 0,
     "errors": 0,
     "left": 0,
-    "prompt_tokens": 25887,
-    "eval_tokens": 2728,
+    "prompt_tokens": 28142,
+    "eval_tokens": 2999,
     "skipped": null,
-    "judged_ollama": 69
+    "judged_ollama": 75
    },
    {
-    "pairs": 69,
+    "pairs": 75,
     "budget": 100000,
     "cap": 0,
-    "judged": 69,
-    "tokens_spent": 28650,
+    "judged": 75,
+    "tokens_spent": 31154,
     "estimated_calls": 0,
-    "replaces": 50,
+    "replaces": 54,
     "separate": 8,
-    "vetoed": 11,
+    "vetoed": 13,
     "unanswered": 0,
     "errors": 0,
     "left": 0,
-    "prompt_tokens": 25873,
-    "eval_tokens": 2777,
+    "prompt_tokens": 28155,
+    "eval_tokens": 2999,
     "skipped": null,
-    "judged_ollama": 69
+    "judged_ollama": 75
    }
   ]
  }

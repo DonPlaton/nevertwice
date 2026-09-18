@@ -46,15 +46,31 @@ they cannot lag the artifact.
   time - see `memory_hook._same_replacement` and the K8/K8-B ledger entries for the numbers.
 
 <!-- claims:supersession-causes -->
-> **Withdrawn 2026-09.** the K8 zero-loss package merged (a same-slug replacement rule on the write path, read-time sibling pairing, sleep-time adjudication, and the twelve fixes of the K9 review); every number whose closure names the engine waits for the K8-C campaign, which needs the GPU and a local Ollama extractor
->
-> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/supersession_bench.py` is what re-measures this one.
+| arm | a still-true fact did not come back | retired by the memory | absorbed into another note | never written | served, below the top five |
+|---|---|---|---|---|---|
+| **Nevertwice**, between nights | 0.100 [0.040, 0.231] | 0 of 40 | 0 of 40 | 4 of 40 | 0 of 40 |
+| **Nevertwice**, after consolidation | 0.100 [0.040, 0.231] | 0 of 40 | 0 of 40 | 4 of 40 | 0 of 40 |
+| Mem0 | 0.000 [0.000, 0.161] | 0 of 20 | 0 of 20 | 0 of 20 | 0 of 20 |
+| Zep/Graphiti (`graphiti-core`, FalkorDB) | 0.225 [0.123, 0.375] | 0 of 40 | 0 of 40 | 9 of 40 | 0 of 40 |
+| an append-only markdown file | 0.050 [0.009, 0.236] | 0 of 20 | 0 of 20 | 0 of 20 | 1 of 20 |
+
+<sub>The first column is the rate in the table above; the four after it split its count by cause. The first two are the memory being too eager - it retired the note, or it judged a different fact a twin of this one and absorbed that fact into the note: the note stays on disk, but what it now hands back is the other fact, and this one is no longer served - the other two are the extractor's silence and the ranker's depth. A cause reads *not read* where the run did not inspect that arm's store: a retirement is visible only where the store records one (our `valid_to` and `## Previous statement`; Graphiti's `invalid_at`/`expired_at`; Mem0's delete and update events).</sub>
+
+<sub>Over-retraction proper - the memory stopped serving a fact that was still true, by retiring the note or by absorbing another fact into it - is the first two cause columns as a rate: 0.000 [0.000, 0.088] for Nevertwice over its control case-runs.</sub>
 <!-- /claims:supersession-causes -->
 
 <!-- claims:supersession-causes-implicit -->
-> **Withdrawn 2026-09.** the K8 zero-loss package merged (a same-slug replacement rule on the write path, read-time sibling pairing, sleep-time adjudication, and the twelve fixes of the K9 review); every number whose closure names the engine waits for the K8-C campaign, which needs the GPU and a local Ollama extractor
->
-> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/supersession_bench.py --dataset research/data/supersession_v1_implicit.json --arms nevertwice,naive` is what re-measures this one.
+| arm | a still-true fact did not come back | retired by the memory | absorbed into another note | never written | served, below the top five |
+|---|---|---|---|---|---|
+| **Nevertwice**, between nights | 0.000 [0.000, 0.088] | 0 of 40 | 0 of 40 | 0 of 40 | 0 of 40 |
+| **Nevertwice**, after consolidation | 0.000 [0.000, 0.088] | 0 of 40 | 0 of 40 | 0 of 40 | 0 of 40 |
+| Mem0 | 0.000 [0.000, 0.161] | 0 of 20 | 0 of 20 | 0 of 20 | 0 of 20 |
+| Zep/Graphiti (`graphiti-core`, FalkorDB) | 0.275 [0.161, 0.428] | 0 of 40 | 0 of 40 | 11 of 40 | 0 of 40 |
+| an append-only markdown file | 0.050 [0.009, 0.236] | 0 of 20 | 0 of 20 | 0 of 20 | 1 of 20 |
+
+<sub>The first column is the rate in the table above; the four after it split its count by cause. The first two are the memory being too eager - it retired the note, or it judged a different fact a twin of this one and absorbed that fact into the note: the note stays on disk, but what it now hands back is the other fact, and this one is no longer served - the other two are the extractor's silence and the ranker's depth. A cause reads *not read* where the run did not inspect that arm's store: a retirement is visible only where the store records one (our `valid_to` and `## Previous statement`; Graphiti's `invalid_at`/`expired_at`; Mem0's delete and update events).</sub>
+
+<sub>Over-retraction proper - the memory stopped serving a fact that was still true, by retiring the note or by absorbing another fact into it - is the first two cause columns as a rate: 0.000 [0.000, 0.088] for Nevertwice over its control case-runs.</sub>
 <!-- /claims:supersession-causes-implicit -->
 
 - **[OPEN - measured; fix gated as K5] The extractor's output on a bare two-sentence fact is
@@ -75,9 +91,16 @@ they cannot lag the artifact.
   is measured. Live table:
 
 <!-- claims:guard-bench -->
-> **Withdrawn 2026-09.** the K8 zero-loss package merged (a same-slug replacement rule on the write path, read-time sibling pairing, sleep-time adjudication, and the twelve fixes of the K9 review); every number whose closure names the engine waits for the K8-C campaign, which needs the GPU and a local Ollama extractor
->
-> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/guard_bench.py --llm --save` is what re-measures this one.
+| arm | recall of the right guard | precision | hard-negative false alarms | project-only recall | tokens / call | ms / check |
+|---|---|---|---|---|---|---|
+| **guards, engine's no-model patterns** | 0.380 at FPR 0.179 (over budget) | - | - | - | 3.320 | 0.019 |
+| **guards, model-written patterns** | 0.370 at FPR 0.155 (over budget) | - | - | - | 5.510 | 0.025 |
+| cold-start pack (no history) | 0.196 | 0.818 | 0.000 | 0.000 | 1.150 | 0.008 |
+| linter or scanner (scored in its favour) | 0.457 | 1.000 | 0.000 | 0.154 | 0.000 | 0.000 |
+| prompt recall over the notes (top three) | 0.033 | 0.333 | 0.056 | 0.038 | 103.560 | 47.624 |
+| silence (floor) | 0.000 | - | 0.000 | 0.000 | 0.000 | 0.000 |
+
+<sub>no operating point under the false-alarm budget for guards, engine's no-model patterns, guards, model-written patterns - a guard fires or it does not, and firing catches the repeats shown at the false-alarm rate shown.</sub>
 <!-- /claims:guard-bench -->
 
 - **[CORPUS GATES FAILED - J3] The code-session corpus does not separate retrieval systems.** On the
@@ -90,9 +113,13 @@ they cannot lag the artifact.
   and the stand is re-run on an unchanged engine. Live table:
 
 <!-- claims:code-sessions -->
-> **Withdrawn 2026-09.** the K8 zero-loss package merged (a same-slug replacement rule on the write path, read-time sibling pairing, sleep-time adjudication, and the twelve fixes of the K9 review); every number whose closure names the engine waits for the K8-C campaign, which needs the GPU and a local Ollama extractor
->
-> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/code_sessions_eval.py judge --arms nevertwice_full,naive,mem0_infer --save` is what re-measures this one.
+| system | fact | current | stale | lesson | situation (top three) | tokens |
+|---|---|---|---|---|---|---|
+| **Nevertwice, our extractor's notes** | 0.083 | 0.033 | 0.017 | 0.600 | 0.000 | 113 |
+| append-only sessions, term overlap (floor) | 0.967 | 0.850 | 0.083 | 0.956 | 0.922 | 2,937 |
+| Mem0 full pipeline, its memories | 0.683 | 0.750 | 0.117 | 0.700 | 0.033 | 187 |
+| no memory (bracket) | 0.067 | 0.017 | 0.050 | 0.478 | 0.000 | 117 |
+| the gold session whole (bracket) | 0.978 | 0.967 | 0.000 | 1.000 | 1.000 | 727 |
 <!-- /claims:code-sessions -->
 
 ## Launch-state update (2026-06-20)

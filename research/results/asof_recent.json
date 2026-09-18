@@ -25,28 +25,22 @@
      "new_day_correct": true,
      "both_correct": true,
      "old_items": 2,
-     "new_items": 3,
+     "new_items": 5,
      "leak": false,
      "store": {
       "s0": {
        "written": 2,
-       "live": 0,
-       "retired": 2,
+       "live": 2,
+       "retired": 0,
        "absorbed": 0,
-       "valid_to": [
-        "2026-08-20",
-        "2026-08-20"
-       ],
+       "valid_to": [],
        "marker_in_text": true,
        "titles": [
         "2026-07-15-asof0000-pattern-http-client-timeout-configuration",
-        "2026-07-15-asof0000-decision-set-http-client-timeout-to-30s"
+        "2026-07-15-asof0000-decision-api-client-timeout-set-to-30s"
        ],
        "supersedes": [],
-       "superseded_via": [
-        "slug",
-        "explicit"
-       ]
+       "superseded_via": []
       },
       "s1": {
        "written": 3,
@@ -57,13 +51,10 @@
        "marker_in_text": true,
        "titles": [
         "2026-08-20-asof0000-pattern-http-client-timeout-configuration",
-        "2026-08-20-asof0000-mistake-incorrect-http-client-timeout-assumption",
-        "2026-08-20-asof0000-decision-correct-http-client-timeout-to-5s"
+        "2026-08-20-asof0000-mistake-incorrect-timeout-value",
+        "2026-08-20-asof0000-decision-api-client-timeout-set-to-30s"
        ],
-       "supersedes": [
-        "2026-07-15-asof0000-pattern-http-client-timeout-configuration",
-        "2026-07-15-asof0000-decision-set-http-client-timeout-to-30s"
-       ],
+       "supersedes": [],
        "superseded_via": []
       }
      },
@@ -77,25 +68,21 @@
      "new_day_correct": true,
      "both_correct": true,
      "old_items": 1,
-     "new_items": 1,
+     "new_items": 2,
      "leak": false,
      "store": {
       "s0": {
        "written": 1,
-       "live": 0,
-       "retired": 1,
+       "live": 1,
+       "retired": 0,
        "absorbed": 0,
-       "valid_to": [
-        "2026-08-20"
-       ],
+       "valid_to": [],
        "marker_in_text": true,
        "titles": [
         "2026-07-15-asof0001-pattern-postgresql-version-in-production"
        ],
        "supersedes": [],
-       "superseded_via": [
-        "slug"
-       ]
+       "superseded_via": []
       },
       "s1": {
        "written": 1,
@@ -107,9 +94,7 @@
        "titles": [
         "2026-08-20-asof0001-pattern-postgresql-version-in-production"
        ],
-       "supersedes": [
-        "2026-07-15-asof0001-pattern-postgresql-version-in-production"
-       ],
+       "supersedes": [],
        "superseded_via": []
       }
      },
@@ -123,25 +108,21 @@
      "new_day_correct": true,
      "both_correct": true,
      "old_items": 1,
-     "new_items": 1,
+     "new_items": 2,
      "leak": false,
      "store": {
       "s0": {
        "written": 1,
-       "live": 0,
-       "retired": 1,
+       "live": 1,
+       "retired": 0,
        "absorbed": 0,
-       "valid_to": [
-        "2026-08-20"
-       ],
+       "valid_to": [],
        "marker_in_text": true,
        "titles": [
         "2026-07-15-asof0002-pattern-training-batch-size-confirmed"
        ],
        "supersedes": [],
-       "superseded_via": [
-        "slug"
-       ]
+       "superseded_via": []
       },
       "s1": {
        "written": 1,
@@ -153,9 +134,7 @@
        "titles": [
         "2026-08-20-asof0002-pattern-training-batch-size-confirmed"
        ],
-       "supersedes": [
-        "2026-07-15-asof0002-pattern-training-batch-size-confirmed"
-       ],
+       "supersedes": [],
        "superseded_via": []
       }
      },
@@ -215,25 +194,21 @@
      "new_day_correct": true,
      "both_correct": true,
      "old_items": 1,
-     "new_items": 1,
+     "new_items": 2,
      "leak": false,
      "store": {
       "s0": {
        "written": 1,
-       "live": 0,
-       "retired": 1,
+       "live": 1,
+       "retired": 0,
        "absorbed": 0,
-       "valid_to": [
-        "2026-08-20"
-       ],
+       "valid_to": [],
        "marker_in_text": true,
        "titles": [
         "2026-07-15-asof0004-pattern-queue-worker-retry-logic"
        ],
        "supersedes": [],
-       "superseded_via": [
-        "slug"
-       ]
+       "superseded_via": []
       },
       "s1": {
        "written": 1,
@@ -245,9 +220,7 @@
        "titles": [
         "2026-08-20-asof0004-pattern-queue-worker-retry-logic"
        ],
-       "supersedes": [
-        "2026-07-15-asof0004-pattern-queue-worker-retry-logic"
-       ],
+       "supersedes": [],
        "superseded_via": []
       }
      },
@@ -261,28 +234,22 @@
      "new_day_correct": true,
      "both_correct": true,
      "old_items": 2,
-     "new_items": 2,
+     "new_items": 4,
      "leak": false,
      "store": {
       "s0": {
        "written": 2,
-       "live": 0,
-       "retired": 2,
+       "live": 2,
+       "retired": 0,
        "absorbed": 0,
-       "valid_to": [
-        "2026-08-20",
-        "2026-08-20"
-       ],
+       "valid_to": [],
        "marker_in_text": true,
        "titles": [
         "2026-07-15-asof0005-pattern-cache-layer-expiration",
         "2026-07-15-asof0005-decision-cache-expiration-time"
        ],
        "supersedes": [],
-       "superseded_via": [
-        "slug",
-        "slug"
-       ]
+       "superseded_via": []
       },
       "s1": {
        "written": 2,
@@ -295,10 +262,7 @@
         "2026-08-20-asof0005-pattern-cache-layer-expiration",
         "2026-08-20-asof0005-decision-cache-expiration-time"
        ],
-       "supersedes": [
-        "2026-07-15-asof0005-pattern-cache-layer-expiration",
-        "2026-07-15-asof0005-decision-cache-expiration-time"
-       ],
+       "supersedes": [],
        "superseded_via": []
       }
      },
@@ -329,7 +293,7 @@
        ],
        "supersedes": [],
        "superseded_via": [
-        "slug"
+        "explicit"
        ]
       },
       "s1": {
@@ -358,25 +322,21 @@
      "new_day_correct": true,
      "both_correct": true,
      "old_items": 1,
-     "new_items": 1,
+     "new_items": 2,
      "leak": false,
      "store": {
       "s0": {
        "written": 1,
-       "live": 0,
-       "retired": 1,
+       "live": 1,
+       "retired": 0,
        "absorbed": 0,
-       "valid_to": [
-        "2026-08-20"
-       ],
+       "valid_to": [],
        "marker_in_text": true,
        "titles": [
         "2026-07-15-asof0007-pattern-deployment-in-eu-west-1"
        ],
        "supersedes": [],
-       "superseded_via": [
-        "slug"
-       ]
+       "superseded_via": []
       },
       "s1": {
        "written": 1,
@@ -388,9 +348,7 @@
        "titles": [
         "2026-08-20-asof0007-pattern-deployment-in-eu-west-1"
        ],
-       "supersedes": [
-        "2026-07-15-asof0007-pattern-deployment-in-eu-west-1"
-       ],
+       "supersedes": [],
        "superseded_via": []
       }
      },
@@ -404,26 +362,22 @@
      "new_day_correct": true,
      "both_correct": true,
      "old_items": 2,
-     "new_items": 2,
+     "new_items": 3,
      "leak": false,
      "store": {
       "s0": {
        "written": 2,
-       "live": 1,
-       "retired": 1,
+       "live": 2,
+       "retired": 0,
        "absorbed": 0,
-       "valid_to": [
-        "2026-08-20"
-       ],
+       "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-07-15-asof0008-pattern-test-suite-validation",
-        "2026-07-15-asof0008-pattern-python-version-pinning"
+        "2026-07-15-asof0008-pattern-python-version-pinning",
+        "2026-07-15-asof0008-pattern-test-suite-validation"
        ],
        "supersedes": [],
-       "superseded_via": [
-        "slug"
-       ]
+       "superseded_via": []
       },
       "s1": {
        "written": 1,
@@ -435,9 +389,7 @@
        "titles": [
         "2026-08-20-asof0008-pattern-python-version-pinning"
        ],
-       "supersedes": [
-        "2026-07-15-asof0008-pattern-python-version-pinning"
-       ],
+       "supersedes": [],
        "superseded_via": []
       }
      },
@@ -451,25 +403,21 @@
      "new_day_correct": true,
      "both_correct": true,
      "old_items": 1,
-     "new_items": 1,
+     "new_items": 2,
      "leak": false,
      "store": {
       "s0": {
        "written": 1,
-       "live": 0,
-       "retired": 1,
+       "live": 1,
+       "retired": 0,
        "absorbed": 0,
-       "valid_to": [
-        "2026-08-20"
-       ],
+       "valid_to": [],
        "marker_in_text": true,
        "titles": [
         "2026-07-15-asof0009-pattern-api-capacity-replicas"
        ],
        "supersedes": [],
-       "superseded_via": [
-        "slug"
-       ]
+       "superseded_via": []
       },
       "s1": {
        "written": 1,
@@ -481,9 +429,7 @@
        "titles": [
         "2026-08-20-asof0009-pattern-api-capacity-replicas"
        ],
-       "supersedes": [
-        "2026-07-15-asof0009-pattern-api-capacity-replicas"
-       ],
+       "supersedes": [],
        "superseded_via": []
       }
      },
@@ -497,25 +443,21 @@
      "new_day_correct": true,
      "both_correct": true,
      "old_items": 1,
-     "new_items": 1,
+     "new_items": 2,
      "leak": false,
      "store": {
       "s0": {
        "written": 1,
-       "live": 0,
-       "retired": 1,
+       "live": 1,
+       "retired": 0,
        "absorbed": 0,
-       "valid_to": [
-        "2026-08-20"
-       ],
+       "valid_to": [],
        "marker_in_text": true,
        "titles": [
         "2026-07-15-asof0010-pattern-learning-rate-configuration"
        ],
        "supersedes": [],
-       "superseded_via": [
-        "slug"
-       ]
+       "superseded_via": []
       },
       "s1": {
        "written": 1,
@@ -527,9 +469,7 @@
        "titles": [
         "2026-08-20-asof0010-pattern-learning-rate-configuration"
        ],
-       "supersedes": [
-        "2026-07-15-asof0010-pattern-learning-rate-configuration"
-       ],
+       "supersedes": [],
        "superseded_via": []
       }
      },
@@ -543,28 +483,22 @@
      "new_day_correct": true,
      "both_correct": true,
      "old_items": 2,
-     "new_items": 2,
+     "new_items": 4,
      "leak": false,
      "store": {
       "s0": {
        "written": 2,
-       "live": 0,
-       "retired": 2,
+       "live": 2,
+       "retired": 0,
        "absorbed": 0,
-       "valid_to": [
-        "2026-08-20",
-        "2026-08-20"
-       ],
+       "valid_to": [],
        "marker_in_text": true,
        "titles": [
         "2026-07-15-asof0011-pattern-document-ingestion-chunking",
         "2026-07-15-asof0011-decision-ingestion-chunk-size"
        ],
        "supersedes": [],
-       "superseded_via": [
-        "slug",
-        "slug"
-       ]
+       "superseded_via": []
       },
       "s1": {
        "written": 2,
@@ -577,10 +511,7 @@
         "2026-08-20-asof0011-pattern-document-ingestion-chunking",
         "2026-08-20-asof0011-decision-ingestion-chunk-size"
        ],
-       "supersedes": [
-        "2026-07-15-asof0011-pattern-document-ingestion-chunking",
-        "2026-07-15-asof0011-decision-ingestion-chunk-size"
-       ],
+       "supersedes": [],
        "superseded_via": []
       }
      },
@@ -594,28 +525,22 @@
      "new_day_correct": true,
      "both_correct": true,
      "old_items": 2,
-     "new_items": 2,
+     "new_items": 4,
      "leak": false,
      "store": {
       "s0": {
        "written": 2,
-       "live": 0,
-       "retired": 2,
+       "live": 2,
+       "retired": 0,
        "absorbed": 0,
-       "valid_to": [
-        "2026-08-20",
-        "2026-08-20"
-       ],
+       "valid_to": [],
        "marker_in_text": true,
        "titles": [
         "2026-07-15-asof0012-pattern-cluster-quorum-setup",
         "2026-07-15-asof0012-decision-staged-release-rollout"
        ],
        "supersedes": [],
-       "superseded_via": [
-        "slug",
-        "slug"
-       ]
+       "superseded_via": []
       },
       "s1": {
        "written": 2,
@@ -628,10 +553,7 @@
         "2026-08-20-asof0012-pattern-cluster-quorum-setup",
         "2026-08-20-asof0012-decision-staged-release-rollout"
        ],
-       "supersedes": [
-        "2026-07-15-asof0012-pattern-cluster-quorum-setup",
-        "2026-07-15-asof0012-decision-staged-release-rollout"
-       ],
+       "supersedes": [],
        "superseded_via": []
       }
      },
@@ -645,25 +567,21 @@
      "new_day_correct": true,
      "both_correct": true,
      "old_items": 1,
-     "new_items": 1,
+     "new_items": 2,
      "leak": false,
      "store": {
       "s0": {
        "written": 1,
-       "live": 0,
-       "retired": 1,
+       "live": 1,
+       "retired": 0,
        "absorbed": 0,
-       "valid_to": [
-        "2026-08-20"
-       ],
+       "valid_to": [],
        "marker_in_text": true,
        "titles": [
         "2026-07-15-asof0013-decision-license-agpl3"
        ],
        "supersedes": [],
-       "superseded_via": [
-        "slug"
-       ]
+       "superseded_via": []
       },
       "s1": {
        "written": 1,
@@ -675,9 +593,7 @@
        "titles": [
         "2026-08-20-asof0013-decision-license-agpl3"
        ],
-       "supersedes": [
-        "2026-07-15-asof0013-decision-license-agpl3"
-       ],
+       "supersedes": [],
        "superseded_via": []
       }
      },
@@ -691,25 +607,21 @@
      "new_day_correct": true,
      "both_correct": true,
      "old_items": 1,
-     "new_items": 1,
+     "new_items": 2,
      "leak": false,
      "store": {
       "s0": {
        "written": 1,
-       "live": 0,
-       "retired": 1,
+       "live": 1,
+       "retired": 0,
        "absorbed": 0,
-       "valid_to": [
-        "2026-08-20"
-       ],
+       "valid_to": [],
        "marker_in_text": true,
        "titles": [
         "2026-07-15-asof0014-pattern-repository-thread-resumption"
        ],
        "supersedes": [],
-       "superseded_via": [
-        "slug"
-       ]
+       "superseded_via": []
       },
       "s1": {
        "written": 1,
@@ -721,9 +633,7 @@
        "titles": [
         "2026-08-20-asof0014-pattern-repository-thread-resumption"
        ],
-       "supersedes": [
-        "2026-07-15-asof0014-pattern-repository-thread-resumption"
-       ],
+       "supersedes": [],
        "superseded_via": []
       }
      },
@@ -737,25 +647,21 @@
      "new_day_correct": true,
      "both_correct": true,
      "old_items": 1,
-     "new_items": 1,
+     "new_items": 2,
      "leak": false,
      "store": {
       "s0": {
        "written": 1,
-       "live": 0,
-       "retired": 1,
+       "live": 1,
+       "retired": 0,
        "absorbed": 0,
-       "valid_to": [
-        "2026-08-20"
-       ],
+       "valid_to": [],
        "marker_in_text": true,
        "titles": [
         "2026-07-15-asof0015-pattern-redis-session-caching"
        ],
        "supersedes": [],
-       "superseded_via": [
-        "slug"
-       ]
+       "superseded_via": []
       },
       "s1": {
        "written": 1,
@@ -767,9 +673,7 @@
        "titles": [
         "2026-08-20-asof0015-pattern-redis-session-caching"
        ],
-       "supersedes": [
-        "2026-07-15-asof0015-pattern-redis-session-caching"
-       ],
+       "supersedes": [],
        "superseded_via": []
       }
      },
@@ -783,25 +687,21 @@
      "new_day_correct": true,
      "both_correct": true,
      "old_items": 1,
-     "new_items": 2,
+     "new_items": 3,
      "leak": false,
      "store": {
       "s0": {
        "written": 1,
-       "live": 0,
-       "retired": 1,
+       "live": 1,
+       "retired": 0,
        "absorbed": 0,
-       "valid_to": [
-        "2026-08-20"
-       ],
+       "valid_to": [],
        "marker_in_text": true,
        "titles": [
         "2026-07-15-asof0016-pattern-jwt-authentication-with-hs256"
        ],
        "supersedes": [],
-       "superseded_via": [
-        "slug"
-       ]
+       "superseded_via": []
       },
       "s1": {
        "written": 2,
@@ -814,9 +714,7 @@
         "2026-08-20-asof0016-pattern-jwt-authentication-with-hs256",
         "2026-08-20-asof0016-decision-opaque-session-cookies"
        ],
-       "supersedes": [
-        "2026-07-15-asof0016-pattern-jwt-authentication-with-hs256"
-       ],
+       "supersedes": [],
        "superseded_via": []
       }
      },
@@ -932,25 +830,21 @@
      "new_day_correct": true,
      "both_correct": true,
      "old_items": 1,
-     "new_items": 1,
+     "new_items": 2,
      "leak": false,
      "store": {
       "s0": {
        "written": 1,
-       "live": 0,
-       "retired": 1,
+       "live": 1,
+       "retired": 0,
        "absorbed": 0,
-       "valid_to": [
-        "2026-08-20"
-       ],
+       "valid_to": [],
        "marker_in_text": true,
        "titles": [
         "2026-07-15-asof0019-pattern-celery-background-jobs"
        ],
        "supersedes": [],
-       "superseded_via": [
-        "slug"
-       ]
+       "superseded_via": []
       },
       "s1": {
        "written": 1,
@@ -962,9 +856,7 @@
        "titles": [
         "2026-08-20-asof0019-pattern-celery-background-jobs"
        ],
-       "supersedes": [
-        "2026-07-15-asof0019-pattern-celery-background-jobs"
-       ],
+       "supersedes": [],
        "superseded_via": []
       }
      },
@@ -978,25 +870,21 @@
      "new_day_correct": false,
      "both_correct": false,
      "old_items": 1,
-     "new_items": 0,
+     "new_items": 1,
      "leak": false,
      "store": {
       "s0": {
        "written": 1,
-       "live": 0,
-       "retired": 1,
+       "live": 1,
+       "retired": 0,
        "absorbed": 0,
-       "valid_to": [
-        "2026-08-20"
-       ],
+       "valid_to": [],
        "marker_in_text": true,
        "titles": [
         "2026-07-15-asof0020-pattern-ci-staged-release"
        ],
        "supersedes": [],
-       "superseded_via": [
-        "slug"
-       ]
+       "superseded_via": []
       },
       "s1": {
        "written": 1,
@@ -1008,9 +896,7 @@
        "titles": [
         "2026-08-20-asof0020-pattern-ci-staged-release"
        ],
-       "supersedes": [
-        "2026-07-15-asof0020-pattern-ci-staged-release"
-       ],
+       "supersedes": [],
        "superseded_via": []
       }
      },
@@ -1024,25 +910,21 @@
      "new_day_correct": true,
      "both_correct": true,
      "old_items": 1,
-     "new_items": 1,
+     "new_items": 2,
      "leak": false,
      "store": {
       "s0": {
        "written": 1,
-       "live": 0,
-       "retired": 1,
+       "live": 1,
+       "retired": 0,
        "absorbed": 0,
-       "valid_to": [
-        "2026-08-20"
-       ],
+       "valid_to": [],
        "marker_in_text": true,
        "titles": [
         "2026-07-15-asof0021-pattern-elasticsearch-search-setup"
        ],
        "supersedes": [],
-       "superseded_via": [
-        "slug"
-       ]
+       "superseded_via": []
       },
       "s1": {
        "written": 1,
@@ -1054,9 +936,7 @@
        "titles": [
         "2026-08-20-asof0021-pattern-elasticsearch-search-setup"
        ],
-       "supersedes": [
-        "2026-07-15-asof0021-pattern-elasticsearch-search-setup"
-       ],
+       "supersedes": [],
        "superseded_via": []
       }
      },
@@ -1111,28 +991,22 @@
      "new_day_correct": true,
      "both_correct": true,
      "old_items": 2,
-     "new_items": 2,
+     "new_items": 4,
      "leak": false,
      "store": {
       "s0": {
        "written": 2,
-       "live": 0,
-       "retired": 2,
+       "live": 2,
+       "retired": 0,
        "absorbed": 0,
-       "valid_to": [
-        "2026-08-20",
-        "2026-08-20"
-       ],
+       "valid_to": [],
        "marker_in_text": true,
        "titles": [
         "2026-07-15-asof0023-pattern-package-deployment-with-poetry",
         "2026-07-15-asof0023-decision-use-poetry-for-packaging"
        ],
        "supersedes": [],
-       "superseded_via": [
-        "slug",
-        "slug"
-       ]
+       "superseded_via": []
       },
       "s1": {
        "written": 2,
@@ -1145,10 +1019,7 @@
         "2026-08-20-asof0023-pattern-package-deployment-with-poetry",
         "2026-08-20-asof0023-decision-use-poetry-for-packaging"
        ],
-       "supersedes": [
-        "2026-07-15-asof0023-pattern-package-deployment-with-poetry",
-        "2026-07-15-asof0023-decision-use-poetry-for-packaging"
-       ],
+       "supersedes": [],
        "superseded_via": []
       }
      },
@@ -1162,16 +1033,15 @@
      "new_day_correct": true,
      "both_correct": true,
      "old_items": 2,
-     "new_items": 2,
+     "new_items": 3,
      "leak": false,
      "store": {
       "s0": {
        "written": 2,
-       "live": 0,
-       "retired": 2,
+       "live": 1,
+       "retired": 1,
        "absorbed": 0,
        "valid_to": [
-        "2026-08-20",
         "2026-08-20"
        ],
        "marker_in_text": true,
@@ -1181,8 +1051,7 @@
        ],
        "supersedes": [],
        "superseded_via": [
-        "slug",
-        "slug"
+        "explicit"
        ]
       },
       "s1": {
@@ -1197,7 +1066,6 @@
         "2026-08-20-asof0024-decision-redux-for-global-state"
        ],
        "supersedes": [
-        "2026-07-15-asof0024-pattern-frontend-state-management",
         "2026-07-15-asof0024-decision-redux-for-global-state"
        ],
        "superseded_via": []
@@ -1259,25 +1127,21 @@
      "new_day_correct": true,
      "both_correct": true,
      "old_items": 1,
-     "new_items": 1,
+     "new_items": 2,
      "leak": false,
      "store": {
       "s0": {
        "written": 1,
-       "live": 0,
-       "retired": 1,
+       "live": 1,
+       "retired": 0,
        "absorbed": 0,
-       "valid_to": [
-        "2026-08-20"
-       ],
+       "valid_to": [],
        "marker_in_text": true,
        "titles": [
         "2026-07-15-asof0026-pattern-schema-migration-through-alembic"
        ],
        "supersedes": [],
-       "superseded_via": [
-        "slug"
-       ]
+       "superseded_via": []
       },
       "s1": {
        "written": 1,
@@ -1289,9 +1153,7 @@
        "titles": [
         "2026-08-20-asof0026-pattern-schema-migration-through-alembic"
        ],
-       "supersedes": [
-        "2026-07-15-asof0026-pattern-schema-migration-through-alembic"
-       ],
+       "supersedes": [],
        "superseded_via": []
       }
      },
@@ -1305,25 +1167,21 @@
      "new_day_correct": true,
      "both_correct": true,
      "old_items": 1,
-     "new_items": 1,
+     "new_items": 2,
      "leak": false,
      "store": {
       "s0": {
        "written": 1,
-       "live": 0,
-       "retired": 1,
+       "live": 1,
+       "retired": 0,
        "absorbed": 0,
-       "valid_to": [
-        "2026-08-20"
-       ],
+       "valid_to": [],
        "marker_in_text": true,
        "titles": [
         "2026-07-15-asof0027-pattern-protobuf-message-serialization"
        ],
        "supersedes": [],
-       "superseded_via": [
-        "slug"
-       ]
+       "superseded_via": []
       },
       "s1": {
        "written": 1,
@@ -1335,9 +1193,7 @@
        "titles": [
         "2026-08-20-asof0027-pattern-protobuf-message-serialization"
        ],
-       "supersedes": [
-        "2026-07-15-asof0027-pattern-protobuf-message-serialization"
-       ],
+       "supersedes": [],
        "superseded_via": []
       }
      },
@@ -1351,25 +1207,21 @@
      "new_day_correct": true,
      "both_correct": true,
      "old_items": 1,
-     "new_items": 1,
+     "new_items": 2,
      "leak": false,
      "store": {
       "s0": {
        "written": 1,
-       "live": 0,
-       "retired": 1,
+       "live": 1,
+       "retired": 0,
        "absorbed": 0,
-       "valid_to": [
-        "2026-08-20"
-       ],
+       "valid_to": [],
        "marker_in_text": true,
        "titles": [
         "2026-07-15-asof0028-pattern-secrets-from-vault-at-boot"
        ],
        "supersedes": [],
-       "superseded_via": [
-        "slug"
-       ]
+       "superseded_via": []
       },
       "s1": {
        "written": 1,
@@ -1381,9 +1233,7 @@
        "titles": [
         "2026-08-20-asof0028-pattern-secrets-from-vault-at-boot"
        ],
-       "supersedes": [
-        "2026-07-15-asof0028-pattern-secrets-from-vault-at-boot"
-       ],
+       "supersedes": [],
        "superseded_via": []
       }
      },
@@ -1397,28 +1247,22 @@
      "new_day_correct": true,
      "both_correct": true,
      "old_items": 2,
-     "new_items": 2,
+     "new_items": 4,
      "leak": false,
      "store": {
       "s0": {
        "written": 2,
-       "live": 0,
-       "retired": 2,
+       "live": 2,
+       "retired": 0,
        "absorbed": 0,
-       "valid_to": [
-        "2026-08-20",
-        "2026-08-20"
-       ],
+       "valid_to": [],
        "marker_in_text": true,
        "titles": [
         "2026-07-15-asof0029-pattern-end-to-end-test-verification",
         "2026-07-15-asof0029-decision-testing-decision-confirmed"
        ],
        "supersedes": [],
-       "superseded_via": [
-        "slug",
-        "slug"
-       ]
+       "superseded_via": []
       },
       "s1": {
        "written": 2,
@@ -1431,10 +1275,7 @@
         "2026-08-20-asof0029-pattern-end-to-end-test-verification",
         "2026-08-20-asof0029-decision-testing-decision-confirmed"
        ],
-       "supersedes": [
-        "2026-07-15-asof0029-pattern-end-to-end-test-verification",
-        "2026-07-15-asof0029-decision-testing-decision-confirmed"
-       ],
+       "supersedes": [],
        "superseded_via": []
       }
      },
@@ -1448,28 +1289,22 @@
      "new_day_correct": true,
      "both_correct": true,
      "old_items": 2,
-     "new_items": 2,
+     "new_items": 4,
      "leak": false,
      "store": {
       "s0": {
        "written": 2,
-       "live": 0,
-       "retired": 2,
+       "live": 2,
+       "retired": 0,
        "absorbed": 0,
-       "valid_to": [
-        "2026-08-20",
-        "2026-08-20"
-       ],
+       "valid_to": [],
        "marker_in_text": true,
        "titles": [
         "2026-07-15-asof0030-pattern-feature-flag-gating",
         "2026-07-15-asof0030-decision-beta-dashboard-flag"
        ],
        "supersedes": [],
-       "superseded_via": [
-        "slug",
-        "slug"
-       ]
+       "superseded_via": []
       },
       "s1": {
        "written": 2,
@@ -1482,10 +1317,7 @@
         "2026-08-20-asof0030-pattern-feature-flag-gating",
         "2026-08-20-asof0030-decision-beta-dashboard-flag"
        ],
-       "supersedes": [
-        "2026-07-15-asof0030-pattern-feature-flag-gating",
-        "2026-07-15-asof0030-decision-beta-dashboard-flag"
-       ],
+       "supersedes": [],
        "superseded_via": []
       }
      },
@@ -1584,25 +1416,21 @@
      "new_day_correct": true,
      "both_correct": true,
      "old_items": 1,
-     "new_items": 1,
+     "new_items": 2,
      "leak": false,
      "store": {
       "s0": {
        "written": 1,
-       "live": 0,
-       "retired": 1,
+       "live": 1,
+       "retired": 0,
        "absorbed": 0,
-       "valid_to": [
-        "2026-08-20"
-       ],
+       "valid_to": [],
        "marker_in_text": true,
        "titles": [
         "2026-07-15-asof0033-pattern-read-replica-setup"
        ],
        "supersedes": [],
-       "superseded_via": [
-        "slug"
-       ]
+       "superseded_via": []
       },
       "s1": {
        "written": 1,
@@ -1614,9 +1442,7 @@
        "titles": [
         "2026-08-20-asof0033-pattern-read-replica-setup"
        ],
-       "supersedes": [
-        "2026-07-15-asof0033-pattern-read-replica-setup"
-       ],
+       "supersedes": [],
        "superseded_via": []
       }
      },
@@ -1630,25 +1456,21 @@
      "new_day_correct": true,
      "both_correct": true,
      "old_items": 1,
-     "new_items": 2,
+     "new_items": 3,
      "leak": false,
      "store": {
       "s0": {
        "written": 1,
-       "live": 0,
-       "retired": 1,
+       "live": 1,
+       "retired": 0,
        "absorbed": 0,
-       "valid_to": [
-        "2026-08-20"
-       ],
+       "valid_to": [],
        "marker_in_text": true,
        "titles": [
         "2026-07-15-asof0034-pattern-third-party-plugins-loading"
        ],
        "supersedes": [],
-       "superseded_via": [
-        "slug"
-       ]
+       "superseded_via": []
       },
       "s1": {
        "written": 2,
@@ -1661,9 +1483,7 @@
         "2026-08-20-asof0034-pattern-third-party-plugins-loading",
         "2026-08-20-asof0034-decision-extensibility-removed"
        ],
-       "supersedes": [
-        "2026-07-15-asof0034-pattern-third-party-plugins-loading"
-       ],
+       "supersedes": [],
        "superseded_via": []
       }
      },
@@ -1715,16 +1535,15 @@
      "new_day_correct": true,
      "both_correct": true,
      "old_items": 2,
-     "new_items": 2,
+     "new_items": 3,
      "leak": false,
      "store": {
       "s0": {
        "written": 2,
-       "live": 0,
-       "retired": 2,
+       "live": 1,
+       "retired": 1,
        "absorbed": 0,
        "valid_to": [
-        "2026-08-20",
         "2026-08-20"
        ],
        "marker_in_text": true,
@@ -1734,8 +1553,7 @@
        ],
        "supersedes": [],
        "superseded_via": [
-        "slug",
-        "slug"
+        "explicit"
        ]
       },
       "s1": {
@@ -1750,8 +1568,7 @@
         "2026-08-20-asof0036-decision-staged-release-rollout"
        ],
        "supersedes": [
-        "2026-07-15-asof0036-pattern-nightly-cron-audit-log-compaction",
-        "2026-07-15-asof0036-decision-staged-release-rollout"
+        "2026-07-15-asof0036-pattern-nightly-cron-audit-log-compaction"
        ],
        "superseded_via": []
       }
@@ -1766,25 +1583,21 @@
      "new_day_correct": false,
      "both_correct": false,
      "old_items": 1,
-     "new_items": 0,
+     "new_items": 1,
      "leak": false,
      "store": {
       "s0": {
        "written": 1,
-       "live": 0,
-       "retired": 1,
+       "live": 1,
+       "retired": 0,
        "absorbed": 0,
-       "valid_to": [
-        "2026-08-20"
-       ],
+       "valid_to": [],
        "marker_in_text": true,
        "titles": [
         "2026-07-15-asof0037-pattern-grpc-communication-setup"
        ],
        "supersedes": [],
-       "superseded_via": [
-        "slug"
-       ]
+       "superseded_via": []
       },
       "s1": {
        "written": 1,
@@ -1796,9 +1609,7 @@
        "titles": [
         "2026-08-20-asof0037-pattern-grpc-communication-setup"
        ],
-       "supersedes": [
-        "2026-07-15-asof0037-pattern-grpc-communication-setup"
-       ],
+       "supersedes": [],
        "superseded_via": []
       }
      },
@@ -1812,28 +1623,22 @@
      "new_day_correct": true,
      "both_correct": true,
      "old_items": 2,
-     "new_items": 2,
+     "new_items": 4,
      "leak": false,
      "store": {
       "s0": {
        "written": 2,
-       "live": 0,
-       "retired": 2,
+       "live": 2,
+       "retired": 0,
        "absorbed": 0,
-       "valid_to": [
-        "2026-08-20",
-        "2026-08-20"
-       ],
+       "valid_to": [],
        "marker_in_text": true,
        "titles": [
         "2026-07-15-asof0038-pattern-okta-saml-sign-in",
         "2026-07-15-asof0038-decision-rename-approval"
        ],
        "supersedes": [],
-       "superseded_via": [
-        "slug",
-        "slug"
-       ]
+       "superseded_via": []
       },
       "s1": {
        "written": 2,
@@ -1846,10 +1651,7 @@
         "2026-08-20-asof0038-pattern-okta-saml-sign-in",
         "2026-08-20-asof0038-decision-rename-approval"
        ],
-       "supersedes": [
-        "2026-07-15-asof0038-pattern-okta-saml-sign-in",
-        "2026-07-15-asof0038-decision-rename-approval"
-       ],
+       "supersedes": [],
        "superseded_via": []
       }
      },
@@ -1863,25 +1665,21 @@
      "new_day_correct": true,
      "both_correct": true,
      "old_items": 1,
-     "new_items": 1,
+     "new_items": 2,
      "leak": false,
      "store": {
       "s0": {
        "written": 1,
-       "live": 0,
-       "retired": 1,
+       "live": 1,
+       "retired": 0,
        "absorbed": 0,
-       "valid_to": [
-        "2026-08-20"
-       ],
+       "valid_to": [],
        "marker_in_text": true,
        "titles": [
         "2026-07-15-asof0039-pattern-webhook-order-integration"
        ],
        "supersedes": [],
-       "superseded_via": [
-        "slug"
-       ]
+       "superseded_via": []
       },
       "s1": {
        "written": 1,
@@ -1893,9 +1691,7 @@
        "titles": [
         "2026-08-20-asof0039-pattern-webhook-order-integration"
        ],
-       "supersedes": [
-        "2026-07-15-asof0039-pattern-webhook-order-integration"
-       ],
+       "supersedes": [],
        "superseded_via": []
       }
      },
@@ -1945,28 +1741,22 @@
      "new_day_correct": true,
      "both_correct": true,
      "old_items": 2,
-     "new_items": 2,
+     "new_items": 4,
      "leak": false,
      "store": {
       "s0": {
        "written": 2,
-       "live": 0,
-       "retired": 2,
+       "live": 2,
+       "retired": 0,
        "absorbed": 0,
-       "valid_to": [
-        "2026-08-20",
-        "2026-08-20"
-       ],
+       "valid_to": [],
        "marker_in_text": true,
        "titles": [
         "2026-07-15-asof0041-pattern-cli-flag-legacy-restores-pre-2-0-format",
         "2026-07-15-asof0041-decision-use-legacy-flag-to-match-pre-2-0-behavior"
        ],
        "supersedes": [],
-       "superseded_via": [
-        "slug",
-        "slug"
-       ]
+       "superseded_via": []
       },
       "s1": {
        "written": 2,
@@ -1979,10 +1769,7 @@
         "2026-08-20-asof0041-pattern-cli-flag-legacy-restores-pre-2-0-format",
         "2026-08-20-asof0041-decision-use-legacy-flag-to-match-pre-2-0-behavior"
        ],
-       "supersedes": [
-        "2026-07-15-asof0041-pattern-cli-flag-legacy-restores-pre-2-0-format",
-        "2026-07-15-asof0041-decision-use-legacy-flag-to-match-pre-2-0-behavior"
-       ],
+       "supersedes": [],
        "superseded_via": []
       }
      },
@@ -2013,7 +1800,7 @@
        ],
        "supersedes": [],
        "superseded_via": [
-        "slug"
+        "explicit"
        ]
       },
       "s1": {
@@ -2047,20 +1834,16 @@
      "store": {
       "s0": {
        "written": 1,
-       "live": 0,
-       "retired": 1,
+       "live": 1,
+       "retired": 0,
        "absorbed": 0,
-       "valid_to": [
-        "2026-08-20"
-       ],
+       "valid_to": [],
        "marker_in_text": false,
        "titles": [
         "2026-07-15-asof0043-pattern-localization-pair-programming"
        ],
        "supersedes": [],
-       "superseded_via": [
-        "slug"
-       ]
+       "superseded_via": []
       },
       "s1": {
        "written": 2,
@@ -2073,9 +1856,7 @@
         "2026-08-20-asof0043-pattern-localization-pair-programming",
         "2026-08-20-asof0043-decision-english-only-app"
        ],
-       "supersedes": [
-        "2026-07-15-asof0043-pattern-localization-pair-programming"
-       ],
+       "supersedes": [],
        "superseded_via": []
       }
      },
@@ -2089,25 +1870,21 @@
      "new_day_correct": true,
      "both_correct": true,
      "old_items": 1,
-     "new_items": 1,
+     "new_items": 2,
      "leak": false,
      "store": {
       "s0": {
        "written": 1,
-       "live": 0,
-       "retired": 1,
+       "live": 1,
+       "retired": 0,
        "absorbed": 0,
-       "valid_to": [
-        "2026-08-20"
-       ],
+       "valid_to": [],
        "marker_in_text": true,
        "titles": [
         "2026-07-15-asof0044-pattern-sandbox-environment-mirrors-production"
        ],
        "supersedes": [],
-       "superseded_via": [
-        "slug"
-       ]
+       "superseded_via": []
       },
       "s1": {
        "written": 1,
@@ -2119,9 +1896,7 @@
        "titles": [
         "2026-08-20-asof0044-pattern-sandbox-environment-mirrors-production"
        ],
-       "supersedes": [
-        "2026-07-15-asof0044-pattern-sandbox-environment-mirrors-production"
-       ],
+       "supersedes": [],
        "superseded_via": []
       }
      },
@@ -2135,25 +1910,21 @@
      "new_day_correct": true,
      "both_correct": true,
      "old_items": 1,
-     "new_items": 1,
+     "new_items": 2,
      "leak": false,
      "store": {
       "s0": {
        "written": 1,
-       "live": 0,
-       "retired": 1,
+       "live": 1,
+       "retired": 0,
        "absorbed": 0,
-       "valid_to": [
-        "2026-08-20"
-       ],
+       "valid_to": [],
        "marker_in_text": true,
        "titles": [
         "2026-07-15-asof0045-pattern-http-client-retry-logic"
        ],
        "supersedes": [],
-       "superseded_via": [
-        "slug"
-       ]
+       "superseded_via": []
       },
       "s1": {
        "written": 1,
@@ -2165,9 +1936,7 @@
        "titles": [
         "2026-08-20-asof0045-pattern-http-client-retry-logic"
        ],
-       "supersedes": [
-        "2026-07-15-asof0045-pattern-http-client-retry-logic"
-       ],
+       "supersedes": [],
        "superseded_via": []
       }
      },
@@ -2181,25 +1950,21 @@
      "new_day_correct": true,
      "both_correct": true,
      "old_items": 1,
-     "new_items": 2,
+     "new_items": 3,
      "leak": false,
      "store": {
       "s0": {
        "written": 1,
-       "live": 0,
-       "retired": 1,
+       "live": 1,
+       "retired": 0,
        "absorbed": 0,
-       "valid_to": [
-        "2026-08-20"
-       ],
+       "valid_to": [],
        "marker_in_text": true,
        "titles": [
         "2026-07-15-asof0046-pattern-api-response-caching"
        ],
        "supersedes": [],
-       "superseded_via": [
-        "slug"
-       ]
+       "superseded_via": []
       },
       "s1": {
        "written": 2,
@@ -2212,9 +1977,7 @@
         "2026-08-20-asof0046-pattern-api-response-caching",
         "2026-08-20-asof0046-decision-get-request-caching"
        ],
-       "supersedes": [
-        "2026-07-15-asof0046-pattern-api-response-caching"
-       ],
+       "supersedes": [],
        "superseded_via": []
       }
      },
@@ -2228,28 +1991,22 @@
      "new_day_correct": true,
      "both_correct": true,
      "old_items": 2,
-     "new_items": 2,
+     "new_items": 4,
      "leak": false,
      "store": {
       "s0": {
        "written": 2,
-       "live": 0,
-       "retired": 2,
+       "live": 2,
+       "retired": 0,
        "absorbed": 0,
-       "valid_to": [
-        "2026-08-20",
-        "2026-08-20"
-       ],
+       "valid_to": [],
        "marker_in_text": true,
        "titles": [
         "2026-07-15-asof0047-pattern-audit-log-table-changes",
         "2026-07-15-asof0047-decision-document-audit-decision"
        ],
        "supersedes": [],
-       "superseded_via": [
-        "slug",
-        "slug"
-       ]
+       "superseded_via": []
       },
       "s1": {
        "written": 2,
@@ -2262,10 +2019,7 @@
         "2026-08-20-asof0047-pattern-audit-log-table-changes",
         "2026-08-20-asof0047-decision-document-audit-decision"
        ],
-       "supersedes": [
-        "2026-07-15-asof0047-pattern-audit-log-table-changes",
-        "2026-07-15-asof0047-decision-document-audit-decision"
-       ],
+       "supersedes": [],
        "superseded_via": []
       }
      },
@@ -2279,25 +2033,21 @@
      "new_day_correct": true,
      "both_correct": true,
      "old_items": 1,
-     "new_items": 1,
+     "new_items": 2,
      "leak": false,
      "store": {
       "s0": {
        "written": 1,
-       "live": 0,
-       "retired": 1,
+       "live": 1,
+       "retired": 0,
        "absorbed": 0,
-       "valid_to": [
-        "2026-08-20"
-       ],
+       "valid_to": [],
        "marker_in_text": true,
        "titles": [
         "2026-07-15-asof0048-pattern-trainer-gpu-utilization"
        ],
        "supersedes": [],
-       "superseded_via": [
-        "slug"
-       ]
+       "superseded_via": []
       },
       "s1": {
        "written": 1,
@@ -2309,9 +2059,7 @@
        "titles": [
         "2026-08-20-asof0048-pattern-trainer-gpu-utilization"
        ],
-       "supersedes": [
-        "2026-07-15-asof0048-pattern-trainer-gpu-utilization"
-       ],
+       "supersedes": [],
        "superseded_via": []
       }
      },
@@ -2325,25 +2073,21 @@
      "new_day_correct": true,
      "both_correct": true,
      "old_items": 1,
-     "new_items": 1,
+     "new_items": 2,
      "leak": false,
      "store": {
       "s0": {
        "written": 1,
-       "live": 0,
-       "retired": 1,
+       "live": 1,
+       "retired": 0,
        "absorbed": 0,
-       "valid_to": [
-        "2026-08-20"
-       ],
+       "valid_to": [],
        "marker_in_text": true,
        "titles": [
         "2026-07-15-asof0049-pattern-pre-commit-hook-lints-repo"
        ],
        "supersedes": [],
-       "superseded_via": [
-        "slug"
-       ]
+       "superseded_via": []
       },
       "s1": {
        "written": 1,
@@ -2355,9 +2099,7 @@
        "titles": [
         "2026-08-20-asof0049-pattern-pre-commit-hook-lints-repo"
        ],
-       "supersedes": [
-        "2026-07-15-asof0049-pattern-pre-commit-hook-lints-repo"
-       ],
+       "supersedes": [],
        "superseded_via": []
       }
      },
@@ -2371,25 +2113,21 @@
      "new_day_correct": true,
      "both_correct": true,
      "old_items": 1,
-     "new_items": 1,
+     "new_items": 2,
      "leak": false,
      "store": {
       "s0": {
        "written": 1,
-       "live": 0,
-       "retired": 1,
+       "live": 1,
+       "retired": 0,
        "absorbed": 0,
-       "valid_to": [
-        "2026-08-20"
-       ],
+       "valid_to": [],
        "marker_in_text": true,
        "titles": [
         "2026-07-15-asof0050-pattern-deploy-alerting-works"
        ],
        "supersedes": [],
-       "superseded_via": [
-        "slug"
-       ]
+       "superseded_via": []
       },
       "s1": {
        "written": 1,
@@ -2401,9 +2139,7 @@
        "titles": [
         "2026-08-20-asof0050-pattern-deploy-alerting-works"
        ],
-       "supersedes": [
-        "2026-07-15-asof0050-pattern-deploy-alerting-works"
-       ],
+       "supersedes": [],
        "superseded_via": []
       }
      },
@@ -2493,28 +2229,22 @@
      "new_day_correct": true,
      "both_correct": true,
      "old_items": 2,
-     "new_items": 2,
+     "new_items": 4,
      "leak": false,
      "store": {
       "s0": {
        "written": 2,
-       "live": 0,
-       "retired": 2,
+       "live": 2,
+       "retired": 0,
        "absorbed": 0,
-       "valid_to": [
-        "2026-08-20",
-        "2026-08-20"
-       ],
+       "valid_to": [],
        "marker_in_text": true,
        "titles": [
         "2026-07-15-asof0053-pattern-nightly-backup-database-dump",
         "2026-07-15-asof0053-decision-backups-decision-written"
        ],
        "supersedes": [],
-       "superseded_via": [
-        "slug",
-        "slug"
-       ]
+       "superseded_via": []
       },
       "s1": {
        "written": 2,
@@ -2527,10 +2257,7 @@
         "2026-08-20-asof0053-pattern-nightly-backup-database-dump",
         "2026-08-20-asof0053-decision-backups-decision-written"
        ],
-       "supersedes": [
-        "2026-07-15-asof0053-pattern-nightly-backup-database-dump",
-        "2026-07-15-asof0053-decision-backups-decision-written"
-       ],
+       "supersedes": [],
        "superseded_via": []
       }
      },
@@ -2544,16 +2271,15 @@
      "new_day_correct": true,
      "both_correct": true,
      "old_items": 2,
-     "new_items": 3,
+     "new_items": 4,
      "leak": false,
      "store": {
       "s0": {
        "written": 2,
-       "live": 0,
-       "retired": 2,
+       "live": 1,
+       "retired": 1,
        "absorbed": 0,
        "valid_to": [
-        "2026-08-20",
         "2026-08-20"
        ],
        "marker_in_text": true,
@@ -2563,8 +2289,7 @@
        ],
        "supersedes": [],
        "superseded_via": [
-        "slug",
-        "slug"
+        "explicit"
        ]
       },
       "s1": {
@@ -2580,8 +2305,7 @@
         "2026-08-20-asof0054-decision-rename-approval"
        ],
        "supersedes": [
-        "2026-07-15-asof0054-pattern-rate-limiting-handling",
-        "2026-07-15-asof0054-decision-rename-approval"
+        "2026-07-15-asof0054-pattern-rate-limiting-handling"
        ],
        "superseded_via": []
       }
@@ -2596,25 +2320,21 @@
      "new_day_correct": true,
      "both_correct": true,
      "old_items": 1,
-     "new_items": 1,
+     "new_items": 2,
      "leak": false,
      "store": {
       "s0": {
        "written": 1,
-       "live": 0,
-       "retired": 1,
+       "live": 1,
+       "retired": 0,
        "absorbed": 0,
-       "valid_to": [
-        "2026-08-20"
-       ],
+       "valid_to": [],
        "marker_in_text": true,
        "titles": [
         "2026-07-15-asof0055-pattern-gzip-compression-response"
        ],
        "supersedes": [],
-       "superseded_via": [
-        "slug"
-       ]
+       "superseded_via": []
       },
       "s1": {
        "written": 1,
@@ -2626,9 +2346,7 @@
        "titles": [
         "2026-08-20-asof0055-pattern-gzip-compression-response"
        ],
-       "supersedes": [
-        "2026-07-15-asof0055-pattern-gzip-compression-response"
-       ],
+       "supersedes": [],
        "superseded_via": []
       }
      },
@@ -2688,25 +2406,21 @@
      "new_day_correct": true,
      "both_correct": true,
      "old_items": 1,
-     "new_items": 1,
+     "new_items": 2,
      "leak": false,
      "store": {
       "s0": {
        "written": 1,
-       "live": 0,
-       "retired": 1,
+       "live": 1,
+       "retired": 0,
        "absorbed": 0,
-       "valid_to": [
-        "2026-08-20"
-       ],
+       "valid_to": [],
        "marker_in_text": true,
        "titles": [
         "2026-07-15-asof0057-pattern-event-log-replay-on-boot"
        ],
        "supersedes": [],
-       "superseded_via": [
-        "slug"
-       ]
+       "superseded_via": []
       },
       "s1": {
        "written": 1,
@@ -2718,9 +2432,7 @@
        "titles": [
         "2026-08-20-asof0057-pattern-event-log-replay-on-boot"
        ],
-       "supersedes": [
-        "2026-07-15-asof0057-pattern-event-log-replay-on-boot"
-       ],
+       "supersedes": [],
        "superseded_via": []
       }
      },
@@ -2734,25 +2446,21 @@
      "new_day_correct": true,
      "both_correct": true,
      "old_items": 1,
-     "new_items": 2,
+     "new_items": 3,
      "leak": false,
      "store": {
       "s0": {
        "written": 1,
-       "live": 0,
-       "retired": 1,
+       "live": 1,
+       "retired": 0,
        "absorbed": 0,
-       "valid_to": [
-        "2026-08-20"
-       ],
+       "valid_to": [],
        "marker_in_text": true,
        "titles": [
         "2026-07-15-asof0058-pattern-sharding-tenant-database"
        ],
        "supersedes": [],
-       "superseded_via": [
-        "slug"
-       ]
+       "superseded_via": []
       },
       "s1": {
        "written": 2,
@@ -2765,9 +2473,7 @@
         "2026-08-20-asof0058-pattern-sharding-tenant-database",
         "2026-08-20-asof0058-decision-dedicated-shard-for-high-volume-tenants"
        ],
-       "supersedes": [
-        "2026-07-15-asof0058-pattern-sharding-tenant-database"
-       ],
+       "supersedes": [],
        "superseded_via": []
       }
      },
@@ -2781,28 +2487,22 @@
      "new_day_correct": true,
      "both_correct": true,
      "old_items": 2,
-     "new_items": 2,
+     "new_items": 4,
      "leak": false,
      "store": {
       "s0": {
        "written": 2,
-       "live": 0,
-       "retired": 2,
+       "live": 2,
+       "retired": 0,
        "absorbed": 0,
-       "valid_to": [
-        "2026-08-20",
-        "2026-08-20"
-       ],
+       "valid_to": [],
        "marker_in_text": true,
        "titles": [
         "2026-07-15-asof0059-pattern-end-to-end-request-tracing",
         "2026-07-15-asof0059-decision-request-tracing-implementation"
        ],
        "supersedes": [],
-       "superseded_via": [
-        "slug",
-        "slug"
-       ]
+       "superseded_via": []
       },
       "s1": {
        "written": 2,
@@ -2815,10 +2515,7 @@
         "2026-08-20-asof0059-pattern-end-to-end-request-tracing",
         "2026-08-20-asof0059-decision-request-tracing-implementation"
        ],
-       "supersedes": [
-        "2026-07-15-asof0059-pattern-end-to-end-request-tracing",
-        "2026-07-15-asof0059-decision-request-tracing-implementation"
-       ],
+       "supersedes": [],
        "superseded_via": []
       }
      },
@@ -2832,26 +2529,22 @@
      "new_day_correct": true,
      "both_correct": true,
      "old_items": 2,
-     "new_items": 2,
+     "new_items": 3,
      "leak": false,
      "store": {
       "s0": {
        "written": 2,
-       "live": 1,
-       "retired": 1,
+       "live": 2,
+       "retired": 0,
        "absorbed": 0,
-       "valid_to": [
-        "2026-08-20"
-       ],
+       "valid_to": [],
        "marker_in_text": true,
        "titles": [
         "2026-07-15-asof1000-pattern-http-client-timeout-configured",
         "2026-07-15-asof1000-decision-api-client-timeout-set-to-thirty-seconds"
        ],
        "supersedes": [],
-       "superseded_via": [
-        "slug"
-       ]
+       "superseded_via": []
       },
       "s1": {
        "written": 1,
@@ -2863,9 +2556,7 @@
        "titles": [
         "2026-08-20-asof1000-pattern-http-client-timeout-configured"
        ],
-       "supersedes": [
-        "2026-07-15-asof1000-pattern-http-client-timeout-configured"
-       ],
+       "supersedes": [],
        "superseded_via": []
       }
      },
@@ -2879,25 +2570,21 @@
      "new_day_correct": true,
      "both_correct": true,
      "old_items": 1,
-     "new_items": 1,
+     "new_items": 2,
      "leak": false,
      "store": {
       "s0": {
        "written": 1,
-       "live": 0,
-       "retired": 1,
+       "live": 1,
+       "retired": 0,
        "absorbed": 0,
-       "valid_to": [
-        "2026-08-20"
-       ],
+       "valid_to": [],
        "marker_in_text": true,
        "titles": [
         "2026-07-15-asof1001-pattern-postgresql-version-in-production"
        ],
        "supersedes": [],
-       "superseded_via": [
-        "slug"
-       ]
+       "superseded_via": []
       },
       "s1": {
        "written": 1,
@@ -2909,9 +2596,7 @@
        "titles": [
         "2026-08-20-asof1001-pattern-postgresql-version-in-production"
        ],
-       "supersedes": [
-        "2026-07-15-asof1001-pattern-postgresql-version-in-production"
-       ],
+       "supersedes": [],
        "superseded_via": []
       }
      },
@@ -2925,25 +2610,21 @@
      "new_day_correct": true,
      "both_correct": true,
      "old_items": 1,
-     "new_items": 1,
+     "new_items": 2,
      "leak": false,
      "store": {
       "s0": {
        "written": 1,
-       "live": 0,
-       "retired": 1,
+       "live": 1,
+       "retired": 0,
        "absorbed": 0,
-       "valid_to": [
-        "2026-08-20"
-       ],
+       "valid_to": [],
        "marker_in_text": true,
        "titles": [
         "2026-07-15-asof1002-pattern-training-batch-size-confirmed"
        ],
        "supersedes": [],
-       "superseded_via": [
-        "slug"
-       ]
+       "superseded_via": []
       },
       "s1": {
        "written": 1,
@@ -2955,9 +2636,7 @@
        "titles": [
         "2026-08-20-asof1002-pattern-training-batch-size-confirmed"
        ],
-       "supersedes": [
-        "2026-07-15-asof1002-pattern-training-batch-size-confirmed"
-       ],
+       "supersedes": [],
        "superseded_via": []
       }
      },
@@ -3017,25 +2696,21 @@
      "new_day_correct": true,
      "both_correct": true,
      "old_items": 1,
-     "new_items": 1,
+     "new_items": 2,
      "leak": false,
      "store": {
       "s0": {
        "written": 1,
-       "live": 0,
-       "retired": 1,
+       "live": 1,
+       "retired": 0,
        "absorbed": 0,
-       "valid_to": [
-        "2026-08-20"
-       ],
+       "valid_to": [],
        "marker_in_text": true,
        "titles": [
         "2026-07-15-asof1004-pattern-queue-worker-retry-logic"
        ],
        "supersedes": [],
-       "superseded_via": [
-        "slug"
-       ]
+       "superseded_via": []
       },
       "s1": {
        "written": 1,
@@ -3047,9 +2722,7 @@
        "titles": [
         "2026-08-20-asof1004-pattern-queue-worker-retry-logic"
        ],
-       "supersedes": [
-        "2026-07-15-asof1004-pattern-queue-worker-retry-logic"
-       ],
+       "supersedes": [],
        "superseded_via": []
       }
      },
@@ -3063,28 +2736,22 @@
      "new_day_correct": true,
      "both_correct": true,
      "old_items": 2,
-     "new_items": 2,
+     "new_items": 4,
      "leak": false,
      "store": {
       "s0": {
        "written": 2,
-       "live": 0,
-       "retired": 2,
+       "live": 2,
+       "retired": 0,
        "absorbed": 0,
-       "valid_to": [
-        "2026-08-20",
-        "2026-08-20"
-       ],
+       "valid_to": [],
        "marker_in_text": true,
        "titles": [
         "2026-07-15-asof1005-pattern-cache-layer-expiration",
         "2026-07-15-asof1005-decision-cache-expiration-time"
        ],
        "supersedes": [],
-       "superseded_via": [
-        "slug",
-        "slug"
-       ]
+       "superseded_via": []
       },
       "s1": {
        "written": 2,
@@ -3097,10 +2764,7 @@
         "2026-08-20-asof1005-pattern-cache-layer-expiration",
         "2026-08-20-asof1005-decision-cache-expiration-time"
        ],
-       "supersedes": [
-        "2026-07-15-asof1005-pattern-cache-layer-expiration",
-        "2026-07-15-asof1005-decision-cache-expiration-time"
-       ],
+       "supersedes": [],
        "superseded_via": []
       }
      },
@@ -3131,7 +2795,7 @@
        ],
        "supersedes": [],
        "superseded_via": [
-        "slug"
+        "explicit"
        ]
       },
       "s1": {
@@ -3160,25 +2824,21 @@
      "new_day_correct": true,
      "both_correct": true,
      "old_items": 1,
-     "new_items": 1,
+     "new_items": 2,
      "leak": false,
      "store": {
       "s0": {
        "written": 1,
-       "live": 0,
-       "retired": 1,
+       "live": 1,
+       "retired": 0,
        "absorbed": 0,
-       "valid_to": [
-        "2026-08-20"
-       ],
+       "valid_to": [],
        "marker_in_text": true,
        "titles": [
         "2026-07-15-asof1007-pattern-service-deployment-in-eu-west-1"
        ],
        "supersedes": [],
-       "superseded_via": [
-        "slug"
-       ]
+       "superseded_via": []
       },
       "s1": {
        "written": 1,
@@ -3190,9 +2850,7 @@
        "titles": [
         "2026-08-20-asof1007-pattern-service-deployment-in-eu-west-1"
        ],
-       "supersedes": [
-        "2026-07-15-asof1007-pattern-service-deployment-in-eu-west-1"
-       ],
+       "supersedes": [],
        "superseded_via": []
       }
      },
@@ -3206,26 +2864,22 @@
      "new_day_correct": true,
      "both_correct": true,
      "old_items": 2,
-     "new_items": 2,
+     "new_items": 3,
      "leak": false,
      "store": {
       "s0": {
        "written": 2,
-       "live": 1,
-       "retired": 1,
+       "live": 2,
+       "retired": 0,
        "absorbed": 0,
-       "valid_to": [
-        "2026-08-20"
-       ],
+       "valid_to": [],
        "marker_in_text": true,
        "titles": [
-        "2026-07-15-asof1008-pattern-test-suite-stays-green",
-        "2026-07-15-asof1008-pattern-python-version-pinning"
+        "2026-07-15-asof1008-pattern-python-version-pinning",
+        "2026-07-15-asof1008-pattern-test-suite-stays-green"
        ],
        "supersedes": [],
-       "superseded_via": [
-        "slug"
-       ]
+       "superseded_via": []
       },
       "s1": {
        "written": 1,
@@ -3237,9 +2891,7 @@
        "titles": [
         "2026-08-20-asof1008-pattern-python-version-pinning"
        ],
-       "supersedes": [
-        "2026-07-15-asof1008-pattern-python-version-pinning"
-       ],
+       "supersedes": [],
        "superseded_via": []
       }
      },
@@ -3253,25 +2905,21 @@
      "new_day_correct": true,
      "both_correct": true,
      "old_items": 1,
-     "new_items": 1,
+     "new_items": 2,
      "leak": false,
      "store": {
       "s0": {
        "written": 1,
-       "live": 0,
-       "retired": 1,
+       "live": 1,
+       "retired": 0,
        "absorbed": 0,
-       "valid_to": [
-        "2026-08-20"
-       ],
+       "valid_to": [],
        "marker_in_text": true,
        "titles": [
         "2026-07-15-asof1009-pattern-api-capacity-replicas"
        ],
        "supersedes": [],
-       "superseded_via": [
-        "slug"
-       ]
+       "superseded_via": []
       },
       "s1": {
        "written": 1,
@@ -3283,9 +2931,7 @@
        "titles": [
         "2026-08-20-asof1009-pattern-api-capacity-replicas"
        ],
-       "supersedes": [
-        "2026-07-15-asof1009-pattern-api-capacity-replicas"
-       ],
+       "supersedes": [],
        "superseded_via": []
       }
      },
@@ -3299,25 +2945,21 @@
      "new_day_correct": true,
      "both_correct": true,
      "old_items": 1,
-     "new_items": 1,
+     "new_items": 2,
      "leak": false,
      "store": {
       "s0": {
        "written": 1,
-       "live": 0,
-       "retired": 1,
+       "live": 1,
+       "retired": 0,
        "absorbed": 0,
-       "valid_to": [
-        "2026-08-20"
-       ],
+       "valid_to": [],
        "marker_in_text": true,
        "titles": [
         "2026-07-15-asof1010-pattern-learning-rate-configuration"
        ],
        "supersedes": [],
-       "superseded_via": [
-        "slug"
-       ]
+       "superseded_via": []
       },
       "s1": {
        "written": 1,
@@ -3329,9 +2971,7 @@
        "titles": [
         "2026-08-20-asof1010-pattern-learning-rate-configuration"
        ],
-       "supersedes": [
-        "2026-07-15-asof1010-pattern-learning-rate-configuration"
-       ],
+       "supersedes": [],
        "superseded_via": []
       }
      },
@@ -3345,28 +2985,22 @@
      "new_day_correct": true,
      "both_correct": true,
      "old_items": 2,
-     "new_items": 2,
+     "new_items": 4,
      "leak": false,
      "store": {
       "s0": {
        "written": 2,
-       "live": 0,
-       "retired": 2,
+       "live": 2,
+       "retired": 0,
        "absorbed": 0,
-       "valid_to": [
-        "2026-08-20",
-        "2026-08-20"
-       ],
+       "valid_to": [],
        "marker_in_text": true,
        "titles": [
         "2026-07-15-asof1011-pattern-document-ingestion-chunking",
         "2026-07-15-asof1011-decision-ingestion-decision-finalized"
        ],
        "supersedes": [],
-       "superseded_via": [
-        "slug",
-        "slug"
-       ]
+       "superseded_via": []
       },
       "s1": {
        "written": 2,
@@ -3379,10 +3013,7 @@
         "2026-08-20-asof1011-pattern-document-ingestion-chunking",
         "2026-08-20-asof1011-decision-ingestion-decision-finalized"
        ],
-       "supersedes": [
-        "2026-07-15-asof1011-pattern-document-ingestion-chunking",
-        "2026-07-15-asof1011-decision-ingestion-decision-finalized"
-       ],
+       "supersedes": [],
        "superseded_via": []
       }
      },
@@ -3396,28 +3027,22 @@
      "new_day_correct": true,
      "both_correct": true,
      "old_items": 2,
-     "new_items": 2,
+     "new_items": 4,
      "leak": false,
      "store": {
       "s0": {
        "written": 2,
-       "live": 0,
-       "retired": 2,
+       "live": 2,
+       "retired": 0,
        "absorbed": 0,
-       "valid_to": [
-        "2026-08-20",
-        "2026-08-20"
-       ],
+       "valid_to": [],
        "marker_in_text": true,
        "titles": [
         "2026-07-15-asof1012-pattern-cluster-quorum-requirement",
         "2026-07-15-asof1012-decision-staged-release-rollout"
        ],
        "supersedes": [],
-       "superseded_via": [
-        "slug",
-        "slug"
-       ]
+       "superseded_via": []
       },
       "s1": {
        "written": 2,
@@ -3430,10 +3055,7 @@
         "2026-08-20-asof1012-pattern-cluster-quorum-requirement",
         "2026-08-20-asof1012-decision-staged-release-rollout"
        ],
-       "supersedes": [
-        "2026-07-15-asof1012-pattern-cluster-quorum-requirement",
-        "2026-07-15-asof1012-decision-staged-release-rollout"
-       ],
+       "supersedes": [],
        "superseded_via": []
       }
      },
@@ -3447,25 +3069,21 @@
      "new_day_correct": true,
      "both_correct": true,
      "old_items": 1,
-     "new_items": 1,
+     "new_items": 2,
      "leak": false,
      "store": {
       "s0": {
        "written": 1,
-       "live": 0,
-       "retired": 1,
+       "live": 1,
+       "retired": 0,
        "absorbed": 0,
-       "valid_to": [
-        "2026-08-20"
-       ],
+       "valid_to": [],
        "marker_in_text": true,
        "titles": [
         "2026-07-15-asof1013-decision-license-agpl3"
        ],
        "supersedes": [],
-       "superseded_via": [
-        "slug"
-       ]
+       "superseded_via": []
       },
       "s1": {
        "written": 1,
@@ -3477,9 +3095,7 @@
        "titles": [
         "2026-08-20-asof1013-decision-license-agpl3"
        ],
-       "supersedes": [
-        "2026-07-15-asof1013-decision-license-agpl3"
-       ],
+       "supersedes": [],
        "superseded_via": []
       }
      },
@@ -3493,25 +3109,21 @@
      "new_day_correct": true,
      "both_correct": true,
      "old_items": 1,
-     "new_items": 1,
+     "new_items": 2,
      "leak": false,
      "store": {
       "s0": {
        "written": 1,
-       "live": 0,
-       "retired": 1,
+       "live": 1,
+       "retired": 0,
        "absorbed": 0,
-       "valid_to": [
-        "2026-08-20"
-       ],
+       "valid_to": [],
        "marker_in_text": true,
        "titles": [
         "2026-07-15-asof1014-pattern-repository-thread-resumption"
        ],
        "supersedes": [],
-       "superseded_via": [
-        "slug"
-       ]
+       "superseded_via": []
       },
       "s1": {
        "written": 1,
@@ -3523,9 +3135,7 @@
        "titles": [
         "2026-08-20-asof1014-pattern-repository-thread-resumption"
        ],
-       "supersedes": [
-        "2026-07-15-asof1014-pattern-repository-thread-resumption"
-       ],
+       "supersedes": [],
        "superseded_via": []
       }
      },
@@ -3539,25 +3149,21 @@
      "new_day_correct": true,
      "both_correct": true,
      "old_items": 1,
-     "new_items": 1,
+     "new_items": 2,
      "leak": false,
      "store": {
       "s0": {
        "written": 1,
-       "live": 0,
-       "retired": 1,
+       "live": 1,
+       "retired": 0,
        "absorbed": 0,
-       "valid_to": [
-        "2026-08-20"
-       ],
+       "valid_to": [],
        "marker_in_text": true,
        "titles": [
         "2026-07-15-asof1015-pattern-redis-session-caching"
        ],
        "supersedes": [],
-       "superseded_via": [
-        "slug"
-       ]
+       "superseded_via": []
       },
       "s1": {
        "written": 1,
@@ -3569,9 +3175,7 @@
        "titles": [
         "2026-08-20-asof1015-pattern-redis-session-caching"
        ],
-       "supersedes": [
-        "2026-07-15-asof1015-pattern-redis-session-caching"
-       ],
+       "supersedes": [],
        "superseded_via": []
       }
      },
@@ -3623,16 +3227,15 @@
      "new_day_correct": true,
      "both_correct": true,
      "old_items": 2,
-     "new_items": 2,
+     "new_items": 3,
      "leak": false,
      "store": {
       "s0": {
        "written": 2,
-       "live": 0,
-       "retired": 2,
+       "live": 1,
+       "retired": 1,
        "absorbed": 0,
        "valid_to": [
-        "2026-08-20",
         "2026-08-20"
        ],
        "marker_in_text": true,
@@ -3642,8 +3245,7 @@
        ],
        "supersedes": [],
        "superseded_via": [
-        "explicit",
-        "slug"
+        "explicit"
        ]
       },
       "s1": {
@@ -3658,8 +3260,7 @@
         "2026-08-20-asof1017-decision-build-decision-made"
        ],
        "supersedes": [
-        "2026-07-15-asof1017-pattern-frontend-bundling-with-webpack",
-        "2026-07-15-asof1017-decision-build-decision-made"
+        "2026-07-15-asof1017-pattern-frontend-bundling-with-webpack"
        ],
        "superseded_via": []
       }
@@ -3763,25 +3364,21 @@
      "new_day_correct": false,
      "both_correct": false,
      "old_items": 1,
-     "new_items": 0,
+     "new_items": 1,
      "leak": false,
      "store": {
       "s0": {
        "written": 1,
-       "live": 0,
-       "retired": 1,
+       "live": 1,
+       "retired": 0,
        "absorbed": 0,
-       "valid_to": [
-        "2026-08-20"
-       ],
+       "valid_to": [],
        "marker_in_text": true,
        "titles": [
         "2026-07-15-asof1020-pattern-ci-staged-release"
        ],
        "supersedes": [],
-       "superseded_via": [
-        "slug"
-       ]
+       "superseded_via": []
       },
       "s1": {
        "written": 1,
@@ -3793,9 +3390,7 @@
        "titles": [
         "2026-08-20-asof1020-pattern-ci-staged-release"
        ],
-       "supersedes": [
-        "2026-07-15-asof1020-pattern-ci-staged-release"
-       ],
+       "supersedes": [],
        "superseded_via": []
       }
      },
@@ -3883,28 +3478,22 @@
      "new_day_correct": true,
      "both_correct": true,
      "old_items": 2,
-     "new_items": 2,
+     "new_items": 4,
      "leak": false,
      "store": {
       "s0": {
        "written": 2,
-       "live": 0,
-       "retired": 2,
+       "live": 2,
+       "retired": 0,
        "absorbed": 0,
-       "valid_to": [
-        "2026-08-20",
-        "2026-08-20"
-       ],
+       "valid_to": [],
        "marker_in_text": true,
        "titles": [
         "2026-07-15-asof1023-pattern-package-build-and-publish",
         "2026-07-15-asof1023-decision-packaging-decision"
        ],
        "supersedes": [],
-       "superseded_via": [
-        "slug",
-        "slug"
-       ]
+       "superseded_via": []
       },
       "s1": {
        "written": 2,
@@ -3917,10 +3506,7 @@
         "2026-08-20-asof1023-pattern-package-build-and-publish",
         "2026-08-20-asof1023-decision-packaging-decision"
        ],
-       "supersedes": [
-        "2026-07-15-asof1023-pattern-package-build-and-publish",
-        "2026-07-15-asof1023-decision-packaging-decision"
-       ],
+       "supersedes": [],
        "superseded_via": []
       }
      },
@@ -4031,25 +3617,21 @@
      "new_day_correct": true,
      "both_correct": true,
      "old_items": 1,
-     "new_items": 1,
+     "new_items": 2,
      "leak": false,
      "store": {
       "s0": {
        "written": 1,
-       "live": 0,
-       "retired": 1,
+       "live": 1,
+       "retired": 0,
        "absorbed": 0,
-       "valid_to": [
-        "2026-08-20"
-       ],
+       "valid_to": [],
        "marker_in_text": true,
        "titles": [
         "2026-07-15-asof1026-pattern-schema-migration-through-alembic"
        ],
        "supersedes": [],
-       "superseded_via": [
-        "slug"
-       ]
+       "superseded_via": []
       },
       "s1": {
        "written": 1,
@@ -4061,9 +3643,7 @@
        "titles": [
         "2026-08-20-asof1026-pattern-schema-migration-through-alembic"
        ],
-       "supersedes": [
-        "2026-07-15-asof1026-pattern-schema-migration-through-alembic"
-       ],
+       "supersedes": [],
        "superseded_via": []
       }
      },
@@ -4153,28 +3733,22 @@
      "new_day_correct": true,
      "both_correct": true,
      "old_items": 2,
-     "new_items": 2,
+     "new_items": 4,
      "leak": false,
      "store": {
       "s0": {
        "written": 2,
-       "live": 0,
-       "retired": 2,
+       "live": 2,
+       "retired": 0,
        "absorbed": 0,
-       "valid_to": [
-        "2026-08-20",
-        "2026-08-20"
-       ],
+       "valid_to": [],
        "marker_in_text": true,
        "titles": [
         "2026-07-15-asof1029-pattern-end-to-end-test-validation",
         "2026-07-15-asof1029-decision-testing-decision-confirmed"
        ],
        "supersedes": [],
-       "superseded_via": [
-        "slug",
-        "slug"
-       ]
+       "superseded_via": []
       },
       "s1": {
        "written": 2,
@@ -4187,10 +3761,7 @@
         "2026-08-20-asof1029-pattern-end-to-end-test-validation",
         "2026-08-20-asof1029-decision-testing-decision-confirmed"
        ],
-       "supersedes": [
-        "2026-07-15-asof1029-pattern-end-to-end-test-validation",
-        "2026-07-15-asof1029-decision-testing-decision-confirmed"
-       ],
+       "supersedes": [],
        "superseded_via": []
       }
      },
@@ -4204,28 +3775,22 @@
      "new_day_correct": true,
      "both_correct": false,
      "old_items": 2,
-     "new_items": 2,
+     "new_items": 4,
      "leak": false,
      "store": {
       "s0": {
        "written": 2,
-       "live": 0,
-       "retired": 2,
+       "live": 2,
+       "retired": 0,
        "absorbed": 0,
-       "valid_to": [
-        "2026-08-20",
-        "2026-08-20"
-       ],
+       "valid_to": [],
        "marker_in_text": false,
        "titles": [
         "2026-07-15-asof1030-pattern-feature-flag-gating",
         "2026-07-15-asof1030-decision-beta-dashboard-flag"
        ],
        "supersedes": [],
-       "superseded_via": [
-        "slug",
-        "slug"
-       ]
+       "superseded_via": []
       },
       "s1": {
        "written": 2,
@@ -4238,10 +3803,7 @@
         "2026-08-20-asof1030-pattern-feature-flag-gating",
         "2026-08-20-asof1030-decision-beta-dashboard-flag"
        ],
-       "supersedes": [
-        "2026-07-15-asof1030-pattern-feature-flag-gating",
-        "2026-07-15-asof1030-decision-beta-dashboard-flag"
-       ],
+       "supersedes": [],
        "superseded_via": []
       }
      },
@@ -4334,25 +3896,21 @@
      "new_day_correct": true,
      "both_correct": true,
      "old_items": 1,
-     "new_items": 1,
+     "new_items": 2,
      "leak": false,
      "store": {
       "s0": {
        "written": 1,
-       "live": 0,
-       "retired": 1,
+       "live": 1,
+       "retired": 0,
        "absorbed": 0,
-       "valid_to": [
-        "2026-08-20"
-       ],
+       "valid_to": [],
        "marker_in_text": true,
        "titles": [
         "2026-07-15-asof1033-pattern-read-replica-setup"
        ],
        "supersedes": [],
-       "superseded_via": [
-        "slug"
-       ]
+       "superseded_via": []
       },
       "s1": {
        "written": 1,
@@ -4364,9 +3922,7 @@
        "titles": [
         "2026-08-20-asof1033-pattern-read-replica-setup"
        ],
-       "supersedes": [
-        "2026-07-15-asof1033-pattern-read-replica-setup"
-       ],
+       "supersedes": [],
        "superseded_via": []
       }
      },
@@ -4380,25 +3936,21 @@
      "new_day_correct": true,
      "both_correct": true,
      "old_items": 1,
-     "new_items": 2,
+     "new_items": 3,
      "leak": false,
      "store": {
       "s0": {
        "written": 1,
-       "live": 0,
-       "retired": 1,
+       "live": 1,
+       "retired": 0,
        "absorbed": 0,
-       "valid_to": [
-        "2026-08-20"
-       ],
+       "valid_to": [],
        "marker_in_text": true,
        "titles": [
         "2026-07-15-asof1034-pattern-third-party-plugins-loading"
        ],
        "supersedes": [],
-       "superseded_via": [
-        "slug"
-       ]
+       "superseded_via": []
       },
       "s1": {
        "written": 2,
@@ -4411,9 +3963,7 @@
         "2026-08-20-asof1034-pattern-third-party-plugins-loading",
         "2026-08-20-asof1034-decision-plugin-system-removal"
        ],
-       "supersedes": [
-        "2026-07-15-asof1034-pattern-third-party-plugins-loading"
-       ],
+       "supersedes": [],
        "superseded_via": []
       }
      },
@@ -4465,16 +4015,15 @@
      "new_day_correct": true,
      "both_correct": true,
      "old_items": 2,
-     "new_items": 2,
+     "new_items": 3,
      "leak": false,
      "store": {
       "s0": {
        "written": 2,
-       "live": 0,
-       "retired": 2,
+       "live": 1,
+       "retired": 1,
        "absorbed": 0,
        "valid_to": [
-        "2026-08-20",
         "2026-08-20"
        ],
        "marker_in_text": true,
@@ -4484,8 +4033,7 @@
        ],
        "supersedes": [],
        "superseded_via": [
-        "slug",
-        "slug"
+        "explicit"
        ]
       },
       "s1": {
@@ -4500,8 +4048,7 @@
         "2026-08-20-asof1036-decision-staged-release-rollout"
        ],
        "supersedes": [
-        "2026-07-15-asof1036-pattern-nightly-cron-audit-log-compaction",
-        "2026-07-15-asof1036-decision-staged-release-rollout"
+        "2026-07-15-asof1036-pattern-nightly-cron-audit-log-compaction"
        ],
        "superseded_via": []
       }
@@ -4516,25 +4063,21 @@
      "new_day_correct": false,
      "both_correct": false,
      "old_items": 1,
-     "new_items": 0,
+     "new_items": 1,
      "leak": false,
      "store": {
       "s0": {
        "written": 1,
-       "live": 0,
-       "retired": 1,
+       "live": 1,
+       "retired": 0,
        "absorbed": 0,
-       "valid_to": [
-        "2026-08-20"
-       ],
+       "valid_to": [],
        "marker_in_text": true,
        "titles": [
         "2026-07-15-asof1037-pattern-grpc-communication-setup"
        ],
        "supersedes": [],
-       "superseded_via": [
-        "slug"
-       ]
+       "superseded_via": []
       },
       "s1": {
        "written": 1,
@@ -4546,9 +4089,7 @@
        "titles": [
         "2026-08-20-asof1037-pattern-grpc-communication-setup"
        ],
-       "supersedes": [
-        "2026-07-15-asof1037-pattern-grpc-communication-setup"
-       ],
+       "supersedes": [],
        "superseded_via": []
       }
      },
@@ -4600,25 +4141,21 @@
      "new_day_correct": true,
      "both_correct": true,
      "old_items": 1,
-     "new_items": 1,
+     "new_items": 2,
      "leak": false,
      "store": {
       "s0": {
        "written": 1,
-       "live": 0,
-       "retired": 1,
+       "live": 1,
+       "retired": 0,
        "absorbed": 0,
-       "valid_to": [
-        "2026-08-20"
-       ],
+       "valid_to": [],
        "marker_in_text": true,
        "titles": [
         "2026-07-15-asof1039-pattern-webhook-integration-documentation"
        ],
        "supersedes": [],
-       "superseded_via": [
-        "slug"
-       ]
+       "superseded_via": []
       },
       "s1": {
        "written": 1,
@@ -4630,9 +4167,7 @@
        "titles": [
         "2026-08-20-asof1039-pattern-webhook-integration-documentation"
        ],
-       "supersedes": [
-        "2026-07-15-asof1039-pattern-webhook-integration-documentation"
-       ],
+       "supersedes": [],
        "superseded_via": []
       }
      },
@@ -4682,28 +4217,22 @@
      "new_day_correct": true,
      "both_correct": true,
      "old_items": 2,
-     "new_items": 2,
+     "new_items": 4,
      "leak": false,
      "store": {
       "s0": {
        "written": 2,
-       "live": 0,
-       "retired": 2,
+       "live": 2,
+       "retired": 0,
        "absorbed": 0,
-       "valid_to": [
-        "2026-08-20",
-        "2026-08-20"
-       ],
+       "valid_to": [],
        "marker_in_text": true,
        "titles": [
         "2026-07-15-asof1041-pattern-cli-flag-legacy-restores-pre-2-0-format",
         "2026-07-15-asof1041-decision-use-legacy-flag-for-compatibility"
        ],
        "supersedes": [],
-       "superseded_via": [
-        "slug",
-        "slug"
-       ]
+       "superseded_via": []
       },
       "s1": {
        "written": 2,
@@ -4716,10 +4245,7 @@
         "2026-08-20-asof1041-pattern-cli-flag-legacy-restores-pre-2-0-format",
         "2026-08-20-asof1041-decision-use-legacy-flag-for-compatibility"
        ],
-       "supersedes": [
-        "2026-07-15-asof1041-pattern-cli-flag-legacy-restores-pre-2-0-format",
-        "2026-07-15-asof1041-decision-use-legacy-flag-for-compatibility"
-       ],
+       "supersedes": [],
        "superseded_via": []
       }
      },
@@ -4750,7 +4276,7 @@
        ],
        "supersedes": [],
        "superseded_via": [
-        "slug"
+        "explicit"
        ]
       },
       "s1": {
@@ -4779,25 +4305,21 @@
      "new_day_correct": true,
      "both_correct": true,
      "old_items": 1,
-     "new_items": 2,
+     "new_items": 3,
      "leak": false,
      "store": {
       "s0": {
        "written": 1,
-       "live": 0,
-       "retired": 1,
+       "live": 1,
+       "retired": 0,
        "absorbed": 0,
-       "valid_to": [
-        "2026-08-20"
-       ],
+       "valid_to": [],
        "marker_in_text": true,
        "titles": [
         "2026-07-15-asof1043-pattern-localization-pairing-session"
        ],
        "supersedes": [],
-       "superseded_via": [
-        "slug"
-       ]
+       "superseded_via": []
       },
       "s1": {
        "written": 2,
@@ -4810,9 +4332,7 @@
         "2026-08-20-asof1043-pattern-localization-pairing-session",
         "2026-08-20-asof1043-decision-english-only-app"
        ],
-       "supersedes": [
-        "2026-07-15-asof1043-pattern-localization-pairing-session"
-       ],
+       "supersedes": [],
        "superseded_via": []
       }
      },
@@ -4826,25 +4346,21 @@
      "new_day_correct": true,
      "both_correct": true,
      "old_items": 1,
-     "new_items": 1,
+     "new_items": 2,
      "leak": false,
      "store": {
       "s0": {
        "written": 1,
-       "live": 0,
-       "retired": 1,
+       "live": 1,
+       "retired": 0,
        "absorbed": 0,
-       "valid_to": [
-        "2026-08-20"
-       ],
+       "valid_to": [],
        "marker_in_text": true,
        "titles": [
         "2026-07-15-asof1044-pattern-sandbox-environment-mirrors-production"
        ],
        "supersedes": [],
-       "superseded_via": [
-        "slug"
-       ]
+       "superseded_via": []
       },
       "s1": {
        "written": 1,
@@ -4856,9 +4372,7 @@
        "titles": [
         "2026-08-20-asof1044-pattern-sandbox-environment-mirrors-production"
        ],
-       "supersedes": [
-        "2026-07-15-asof1044-pattern-sandbox-environment-mirrors-production"
-       ],
+       "supersedes": [],
        "superseded_via": []
       }
      },
@@ -4889,7 +4403,7 @@
        ],
        "supersedes": [],
        "superseded_via": [
-        "slug"
+        "explicit"
        ]
       },
       "s1": {
@@ -4918,25 +4432,21 @@
      "new_day_correct": true,
      "both_correct": true,
      "old_items": 1,
-     "new_items": 2,
+     "new_items": 3,
      "leak": false,
      "store": {
       "s0": {
        "written": 1,
-       "live": 0,
-       "retired": 1,
+       "live": 1,
+       "retired": 0,
        "absorbed": 0,
-       "valid_to": [
-        "2026-08-20"
-       ],
+       "valid_to": [],
        "marker_in_text": true,
        "titles": [
         "2026-07-15-asof1046-pattern-api-response-caching"
        ],
        "supersedes": [],
-       "superseded_via": [
-        "slug"
-       ]
+       "superseded_via": []
       },
       "s1": {
        "written": 2,
@@ -4949,9 +4459,7 @@
         "2026-08-20-asof1046-pattern-api-response-caching",
         "2026-08-20-asof1046-decision-get-request-caching-only"
        ],
-       "supersedes": [
-        "2026-07-15-asof1046-pattern-api-response-caching"
-       ],
+       "supersedes": [],
        "superseded_via": []
       }
      },
@@ -4965,28 +4473,22 @@
      "new_day_correct": true,
      "both_correct": true,
      "old_items": 2,
-     "new_items": 2,
+     "new_items": 4,
      "leak": false,
      "store": {
       "s0": {
        "written": 2,
-       "live": 0,
-       "retired": 2,
+       "live": 2,
+       "retired": 0,
        "absorbed": 0,
-       "valid_to": [
-        "2026-08-20",
-        "2026-08-20"
-       ],
+       "valid_to": [],
        "marker_in_text": true,
        "titles": [
         "2026-07-15-asof1047-pattern-audit-log-table-changes",
         "2026-07-15-asof1047-decision-document-audit-decision-in-readme"
        ],
        "supersedes": [],
-       "superseded_via": [
-        "slug",
-        "slug"
-       ]
+       "superseded_via": []
       },
       "s1": {
        "written": 2,
@@ -4999,10 +4501,7 @@
         "2026-08-20-asof1047-pattern-audit-log-table-changes",
         "2026-08-20-asof1047-decision-document-audit-decision-in-readme"
        ],
-       "supersedes": [
-        "2026-07-15-asof1047-pattern-audit-log-table-changes",
-        "2026-07-15-asof1047-decision-document-audit-decision-in-readme"
-       ],
+       "supersedes": [],
        "superseded_via": []
       }
      },
@@ -5016,25 +4515,21 @@
      "new_day_correct": true,
      "both_correct": true,
      "old_items": 1,
-     "new_items": 1,
+     "new_items": 2,
      "leak": false,
      "store": {
       "s0": {
        "written": 1,
-       "live": 0,
-       "retired": 1,
+       "live": 1,
+       "retired": 0,
        "absorbed": 0,
-       "valid_to": [
-        "2026-08-20"
-       ],
+       "valid_to": [],
        "marker_in_text": true,
        "titles": [
         "2026-07-15-asof1048-pattern-trainer-runs-on-gpu"
        ],
        "supersedes": [],
-       "superseded_via": [
-        "slug"
-       ]
+       "superseded_via": []
       },
       "s1": {
        "written": 1,
@@ -5046,9 +4541,7 @@
        "titles": [
         "2026-08-20-asof1048-pattern-trainer-runs-on-gpu"
        ],
-       "supersedes": [
-        "2026-07-15-asof1048-pattern-trainer-runs-on-gpu"
-       ],
+       "supersedes": [],
        "superseded_via": []
       }
      },
@@ -5062,25 +4555,21 @@
      "new_day_correct": true,
      "both_correct": true,
      "old_items": 1,
-     "new_items": 1,
+     "new_items": 2,
      "leak": false,
      "store": {
       "s0": {
        "written": 1,
-       "live": 0,
-       "retired": 1,
+       "live": 1,
+       "retired": 0,
        "absorbed": 0,
-       "valid_to": [
-        "2026-08-20"
-       ],
+       "valid_to": [],
        "marker_in_text": true,
        "titles": [
         "2026-07-15-asof1049-pattern-pre-commit-hook-lints-repository"
        ],
        "supersedes": [],
-       "superseded_via": [
-        "slug"
-       ]
+       "superseded_via": []
       },
       "s1": {
        "written": 1,
@@ -5092,9 +4581,7 @@
        "titles": [
         "2026-08-20-asof1049-pattern-pre-commit-hook-lints-repository"
        ],
-       "supersedes": [
-        "2026-07-15-asof1049-pattern-pre-commit-hook-lints-repository"
-       ],
+       "supersedes": [],
        "superseded_via": []
       }
      },
@@ -5222,28 +4709,22 @@
      "new_day_correct": true,
      "both_correct": true,
      "old_items": 2,
-     "new_items": 2,
+     "new_items": 4,
      "leak": false,
      "store": {
       "s0": {
        "written": 2,
-       "live": 0,
-       "retired": 2,
+       "live": 2,
+       "retired": 0,
        "absorbed": 0,
-       "valid_to": [
-        "2026-08-20",
-        "2026-08-20"
-       ],
+       "valid_to": [],
        "marker_in_text": true,
        "titles": [
         "2026-07-15-asof1053-pattern-nightly-backup-database-dump",
         "2026-07-15-asof1053-decision-backup-decision-written"
        ],
        "supersedes": [],
-       "superseded_via": [
-        "slug",
-        "slug"
-       ]
+       "superseded_via": []
       },
       "s1": {
        "written": 2,
@@ -5256,10 +4737,7 @@
         "2026-08-20-asof1053-pattern-nightly-backup-database-dump",
         "2026-08-20-asof1053-decision-backup-decision-written"
        ],
-       "supersedes": [
-        "2026-07-15-asof1053-pattern-nightly-backup-database-dump",
-        "2026-07-15-asof1053-decision-backup-decision-written"
-       ],
+       "supersedes": [],
        "superseded_via": []
       }
      },
@@ -5290,7 +4768,7 @@
        ],
        "supersedes": [],
        "superseded_via": [
-        "slug"
+        "explicit"
        ]
       },
       "s1": {
@@ -5320,25 +4798,21 @@
      "new_day_correct": true,
      "both_correct": true,
      "old_items": 1,
-     "new_items": 1,
+     "new_items": 2,
      "leak": false,
      "store": {
       "s0": {
        "written": 1,
-       "live": 0,
-       "retired": 1,
+       "live": 1,
+       "retired": 0,
        "absorbed": 0,
-       "valid_to": [
-        "2026-08-20"
-       ],
+       "valid_to": [],
        "marker_in_text": true,
        "titles": [
         "2026-07-15-asof1055-pattern-gzip-compression-response"
        ],
        "supersedes": [],
-       "superseded_via": [
-        "slug"
-       ]
+       "superseded_via": []
       },
       "s1": {
        "written": 1,
@@ -5350,9 +4824,7 @@
        "titles": [
         "2026-08-20-asof1055-pattern-gzip-compression-response"
        ],
-       "supersedes": [
-        "2026-07-15-asof1055-pattern-gzip-compression-response"
-       ],
+       "supersedes": [],
        "superseded_via": []
       }
      },
@@ -5412,25 +4884,21 @@
      "new_day_correct": true,
      "both_correct": true,
      "old_items": 1,
-     "new_items": 1,
+     "new_items": 2,
      "leak": false,
      "store": {
       "s0": {
        "written": 1,
-       "live": 0,
-       "retired": 1,
+       "live": 1,
+       "retired": 0,
        "absorbed": 0,
-       "valid_to": [
-        "2026-08-20"
-       ],
+       "valid_to": [],
        "marker_in_text": true,
        "titles": [
         "2026-07-15-asof1057-pattern-event-log-replay-on-boot"
        ],
        "supersedes": [],
-       "superseded_via": [
-        "slug"
-       ]
+       "superseded_via": []
       },
       "s1": {
        "written": 1,
@@ -5442,9 +4910,7 @@
        "titles": [
         "2026-08-20-asof1057-pattern-event-log-replay-on-boot"
        ],
-       "supersedes": [
-        "2026-07-15-asof1057-pattern-event-log-replay-on-boot"
-       ],
+       "supersedes": [],
        "superseded_via": []
       }
      },
@@ -5458,25 +4924,21 @@
      "new_day_correct": true,
      "both_correct": true,
      "old_items": 1,
-     "new_items": 2,
+     "new_items": 3,
      "leak": false,
      "store": {
       "s0": {
        "written": 1,
-       "live": 0,
-       "retired": 1,
+       "live": 1,
+       "retired": 0,
        "absorbed": 0,
-       "valid_to": [
-        "2026-08-20"
-       ],
+       "valid_to": [],
        "marker_in_text": true,
        "titles": [
         "2026-07-15-asof1058-pattern-sharding-tenant-database"
        ],
        "supersedes": [],
-       "superseded_via": [
-        "slug"
-       ]
+       "superseded_via": []
       },
       "s1": {
        "written": 2,
@@ -5489,9 +4951,7 @@
         "2026-08-20-asof1058-pattern-sharding-tenant-database",
         "2026-08-20-asof1058-decision-tenant-shard-threshold"
        ],
-       "supersedes": [
-        "2026-07-15-asof1058-pattern-sharding-tenant-database"
-       ],
+       "supersedes": [],
        "superseded_via": []
       }
      },
@@ -5505,28 +4965,22 @@
      "new_day_correct": true,
      "both_correct": true,
      "old_items": 2,
-     "new_items": 2,
+     "new_items": 4,
      "leak": false,
      "store": {
       "s0": {
        "written": 2,
-       "live": 0,
-       "retired": 2,
+       "live": 2,
+       "retired": 0,
        "absorbed": 0,
-       "valid_to": [
-        "2026-08-20",
-        "2026-08-20"
-       ],
+       "valid_to": [],
        "marker_in_text": true,
        "titles": [
         "2026-07-15-asof1059-pattern-end-to-end-request-tracing",
         "2026-07-15-asof1059-decision-tracing-implementation"
        ],
        "supersedes": [],
-       "superseded_via": [
-        "slug",
-        "slug"
-       ]
+       "superseded_via": []
       },
       "s1": {
        "written": 2,
@@ -5539,10 +4993,7 @@
         "2026-08-20-asof1059-pattern-end-to-end-request-tracing",
         "2026-08-20-asof1059-decision-tracing-implementation"
        ],
-       "supersedes": [
-        "2026-07-15-asof1059-pattern-end-to-end-request-tracing",
-        "2026-07-15-asof1059-decision-tracing-implementation"
-       ],
+       "supersedes": [],
        "superseded_via": []
       }
      },
@@ -5568,17 +5019,16 @@
    },
    "s0_never_written": 11,
    "s0_absorbed": 0,
-   "s0_retired_rate": 0.9174,
+   "s0_retired_rate": 0.2018,
    "s0_retired_via": {
-    "slug": 114,
-    "explicit": 15,
+    "explicit": 24,
     "twin": 2
    },
    "s0_written_pairs": 109,
    "runs": 2,
-   "seconds": 445.1,
+   "seconds": 437.0,
    "config": "ollama qwen3-coder:30b + bge-m3, k=5, days 2026-07-15/2026-08-20",
-   "store_bytes": 294246,
+   "store_bytes": 259780,
    "per_run": [
     0.8667,
     0.7333

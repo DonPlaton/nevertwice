@@ -75,23 +75,23 @@
   "nevertwice_full": {
    "1": {
     "n": 150,
-    "accuracy": 0.0267,
+    "accuracy": 0.0133,
     "ci": [
-     0.0104,
-     0.0666
+     0.0037,
+     0.0473
     ],
-    "mean_prompt_tokens": 194.2,
-    "median_prompt_tokens": 191
+    "mean_prompt_tokens": 198.0,
+    "median_prompt_tokens": 197
    },
    "3": {
     "n": 150,
-    "accuracy": 0.0667,
+    "accuracy": 0.0467,
     "ci": [
-     0.0366,
-     0.1184
+     0.0228,
+     0.0932
     ],
-    "mean_prompt_tokens": 337.5,
-    "median_prompt_tokens": 329
+    "mean_prompt_tokens": 356.8,
+    "median_prompt_tokens": 347
    },
    "5": {
     "n": 150,
@@ -100,8 +100,8 @@
      0.0414,
      0.1265
     ],
-    "mean_prompt_tokens": 480.7,
-    "median_prompt_tokens": 471
+    "mean_prompt_tokens": 513.4,
+    "median_prompt_tokens": 511
    }
   },
   "mem0": {
@@ -229,10 +229,10 @@
   "disagreement": 0.05
  },
  "extractor_silence": {
-  "questions_gold_without_notes": 0,
+  "questions_gold_without_notes": 1,
   "questions": 150,
-  "fraction": 0.0,
-  "sessions_with_zero_notes": 5,
+  "fraction": 0.0067,
+  "sessions_with_zero_notes": 7,
   "sessions": 940
  }
 }

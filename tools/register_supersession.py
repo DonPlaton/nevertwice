@@ -74,13 +74,19 @@ def _pct(v: float) -> str:
 def build_claims(family: str, art: dict, *, dataset: str, command: str, raw: str, head: str,
                  produced_by: list[str], existing: set[str], stand: str = "",
                  cite: list[str] | None = None, pooled_key: str = "pooled_nevertwice",
-                 engine_prefix: str = "nevertwice") -> tuple[list[dict], list[str]]:
+                 engine_prefix: str = "nevertwice", engine_only: bool = False) -> tuple[list[dict], list[str]]:
     """`pooled_key` / `engine_prefix` select which engine reading the family is built from: the
     default block, or K8's `pooled_nevertwice_after_sleep` / `nevertwice_after_sleep` (the store after
     the sleep-time judge). A non-default reading registers the engine block only - the competitor,
-    pairing and corpus claims belong to the family of the first reading."""
+    pairing and corpus claims belong to the family of the first reading.
+
+    `engine_only` forces that same restriction on the default block, which is what a **second engine
+    arm** on one corpus needs: the K8-C campaign ran the displacement stands twice over, once per
+    `NEVERTWICE_EXPLICIT_RETIRE` mode, and the switch's family must carry its own engine numbers
+    without a second copy of Mem0's, Zep's and the floor's - those arms ran once and belong to the
+    default mode's family."""
     P = art[pooled_key]
-    engine_only = pooled_key != "pooled_nevertwice"
+    engine_only = engine_only or pooled_key != "pooled_nevertwice"
     runs = P["runs"]
     ds = art["dataset"]
     n_sup, n_ctl = int(ds["supersession_cases"]), int(ds["control_cases"])
@@ -311,6 +317,10 @@ def main(argv: list[str] | None = None) -> int:
                          "after the sleep-time judge (engine block only)")
     ap.add_argument("--engine-prefix", default="nevertwice",
                     help="the arm name of that reading (`nevertwice_after_sleep` with the after-sleep key)")
+    ap.add_argument("--engine-only", action="store_true",
+                    help="register the engine block alone, leaving the competitor, pairing and corpus claims "
+                         "to the family that owns them - what a second engine arm on one corpus needs (the "
+                         "K8-C switch mode)")
     ap.add_argument("--manifest", default=str(MANIFEST_PATH))
     ap.add_argument("--dry-run", action="store_true")
     args = ap.parse_args(argv)
@@ -378,7 +388,7 @@ def main(argv: list[str] | None = None) -> int:
     new, skipped = build_claims(args.family, art, dataset=args.dataset, command=args.command,
                                 raw=args.artifact, head=head, produced_by=closure, existing=existing,
                                 stand=args.stand, cite=args.cite, pooled_key=args.pooled_key,
-                                engine_prefix=args.engine_prefix)
+                                engine_prefix=args.engine_prefix, engine_only=args.engine_only)
     if args.historical:
         import datetime as _dt                                    # noqa: PLC0415
         today = _dt.date.today().isoformat()
