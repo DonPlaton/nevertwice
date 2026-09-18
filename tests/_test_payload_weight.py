@@ -59,16 +59,25 @@ DESC = ("The HTTP client timeout was raised to 5 seconds after the pairing sessi
 check("the engine can strip the block from a served description",
       hasattr(m, "_served_text"), "no _served_text on the module")
 if hasattr(m, "_served_text"):
+    #: H2 was REFUTED on the stand and the default reverted with it. Six cases, everything else
+    #: held: serving the block reads stale 0.000 / current 1.000 at 398.5 characters a query,
+    #: stripping it reads stale 0.167 / current 0.833 at 326.5. The literals are not a second copy
+    #: of the sentence - they are what the current fact is matched on. The mechanism stays, off,
+    #: for whoever re-opens it with a version that keeps findability; the default is measured.
+    check("by default the literal list is served, because stripping it loses the fact",
+          "[facts]" in m._served_text(DESC))
+    m.SERVE_FACTS_BLOCK = False
     served = m._served_text(DESC)
-    check("the block is gone", "[facts]" not in served)
+    check("with the switch, the block is gone", "[facts]" not in served)
     check("the statement survives whole", served.startswith("The HTTP client timeout was raised"))
     check("nothing else is trimmed", served.endswith("pairing session."))
     check("a description with no block is returned unchanged",
           m._served_text("plain sentence.") == "plain sentence.")
-    #: the switch exists because a missed gate is reverted, not argued with
+    #: and it never strips a value the sentence does not already carry
+    only_in_block = "We raised the client timeout.  [facts] the HTTP client timeout is 5 seconds"
+    check("a value living only in the block is kept",
+          "[facts]" in m._served_text(only_in_block))
     m.SERVE_FACTS_BLOCK = True
-    check("the switch restores the old payload", "[facts]" in m._served_text(DESC))
-    m.SERVE_FACTS_BLOCK = False
 
 print("# the earlier statement is attached only when it says something new")
 

@@ -4065,10 +4065,19 @@ def pair_siblings(hits: list[dict], attach: bool = False) -> list[dict]:
             lh["earlier"] = earlier
             if attach:
                 texts = [t for t in (_earlier_text(e, lh.get("ntype", "")) for e in earlier) if t]
+                #: Track N applies HERE as well as in the hook's `_fact_line`, and the distinction
+                #: cost a campaign to learn: the first implementation changed only the hook, while
+                #: `research/supersession_bench.py` measures `api.recall`, whose text is assembled
+                #: right here. Fifteen minutes of the run read 473.4 against a base of 473.3 and
+                #: the run was stopped. Two surfaces hand text to a reader; a weight change that
+                #: reaches one of them has not been made.
+                base = _served_text(lh.get("description", "") or "")
+                texts = [t for t in texts if _earlier_is_informative(t, base)]
+                texts = [_earlier_delta(t, base) or t for t in texts]
+                lh["description"] = base
                 if texts:
                     joined = " ; ".join(texts)
-                    lh["description"] = (f"{lh.get('description', '') or ''} | earlier under this title: "
-                                         + joined).strip(" |")
+                    lh["description"] = (f"{base} | earlier: " + joined).strip(" |")
                     # F12 (xhigh review): a SEPARATE field, not just the description suffix above -
                     # the CLI and the MCP tool render the on-disk snippet or a caller-supplied
                     # description, either of which can shadow this text; a field of its own is
@@ -4076,6 +4085,11 @@ def pair_siblings(hits: list[dict], attach: bool = False) -> list[dict]:
                     lh["earlier_text"] = joined
             out.append(lh)
         elif i not in drop:
+            #: a hit with no sibling still carries the literal list in its description, and it is
+            #: the majority of hits - about 100 characters a query across the whole result set,
+            #: not only across the paired ones
+            if attach:
+                h = dict(h, description=_served_text(h.get("description", "") or ""))
             out.append(h)
     return out
 
@@ -4084,7 +4098,14 @@ def pair_siblings(hits: list[dict], attach: bool = False) -> list[dict]:
 #: about 100 characters a query of `[facts]`, 104-130 of attached earlier statement, and the note.
 #: Both switches default to the lighter behaviour and exist so a missed gate is reverted, not argued
 #: with - the same shape K5 and K7 were left in.
-SERVE_FACTS_BLOCK = os.environ.get("NEVERTWICE_SERVE_FACTS", "0") != "0"
+#: H2 - "the literal list is weight the reader does not need" - was REFUTED on the stand, not
+#: reasoned away. Six cases, everything else held: serving the block reads stale 0.000 and
+#: current 1.000 at 398.5 characters; stripping it reads stale 0.167 and current 0.833 at
+#: 326.5. The literals are not a second copy of the sentence - they are what the reader (and
+#: the scorer) matches the current fact on, even where the same values appear in the prose.
+#: So the default serves them, and the switch is here for whoever wants to re-open it with a
+#: mechanism that keeps findability.
+SERVE_FACTS_BLOCK = os.environ.get("NEVERTWICE_SERVE_FACTS", "1") != "0"
 ATTACH_EARLIER_ALWAYS = os.environ.get("NEVERTWICE_ATTACH_EARLIER_ALWAYS", "0") != "0"
 
 
@@ -4102,7 +4123,17 @@ def _served_text(desc: str) -> str:
     if SERVE_FACTS_BLOCK or not desc:
         return desc
     mark = _FACTS_MARK.strip()
-    return desc.split(mark, 1)[0].rstrip() if mark in desc else desc
+    if mark not in desc:
+        return desc
+    statement, block = desc.split(mark, 1)
+    #: The block is a duplicate only when the sentence already says what it says. The extractor
+    #: does not always put the value in both - `_earlier_text` prefers the block for exactly that
+    #: reason - and a six-case smoke caught it: `current` fell to 0.833 because one fact lived in
+    #: the block alone. Dropping it there would be losing a fact to save characters, which is the
+    #: one trade this part is forbidden to make.
+    have = {v.strip().lower() for v in _VALUE_RE.findall(statement)}
+    need = {v.strip().lower() for v in _VALUE_RE.findall(block)}
+    return statement.rstrip() if need <= have else desc
 
 
 def _earlier_delta(earlier: str, current: str) -> str:

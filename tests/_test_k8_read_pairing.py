@@ -112,11 +112,14 @@ check("a hit without `earlier` renders as before",
 print("\n- the API result -")
 res = m.pair_siblings([{"stem": old, "ntype": "decision", "title": "http client timeout", "description": OLD},
                        {"stem": new, "ntype": "decision", "title": "http client timeout", "description": NEW}], attach=True)
-check("one result, the newest, with the earlier statement appended to its description",
-      len(res) == 1 and res[0]["stem"] == new and res[0]["description"].startswith(NEW)
-      and "earlier under this title: the HTTP client timeout is 30 seconds" in res[0]["description"], str(res))
+#: Track N: the description now starts with the SERVED statement - the sentence without the
+#: `[facts]` list, which the reader was being handed twice - and ends with the value that differs.
+check("one result, the newest, with the earlier value appended to its served description",
+      len(res) == 1 and res[0]["stem"] == new
+      and res[0]["description"].startswith(m._served_text(NEW))
+      and "earlier: 30 seconds" in res[0]["description"], str(res))
 check("the attachment is bounded: at most the cap plus the label",
-      len(res[0]["description"]) <= len(NEW) + len(" | earlier under this title: ") + m.EARLIER_MAX_CHARS)
+      len(res[0]["description"]) <= len(NEW) + len(" | earlier: ") + m.EARLIER_MAX_CHARS)
 
 print("\n- through the ranking paths, no embedder -")
 m.save_embed_cache({
@@ -131,7 +134,7 @@ check("the hook's ranking returns the newest sibling once, with the earlier atta
 results, mode = ms.search_core("http client timeout seconds", "k8p", 5)
 rs = [r["stem"] for r in results]
 check(f"search_core ({mode}) pairs them too and attaches the earlier text",
-      new in rs and old not in rs and "earlier under this title" in next(r for r in results if r["stem"] == new)["description"], str(results))
+      new in rs and old not in rs and "earlier:" in next(r for r in results if r["stem"] == new)["description"], str(results))
 check("the earlier note itself is still live and reachable by as_of",
       (m.VAULT / "Decisions" / f"{old}.md").exists() and any(r["stem"] == old for r in m.as_of("k8p", "2026-06-02")))
 
