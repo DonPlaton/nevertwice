@@ -205,8 +205,12 @@ def main(argv: list[str] | None = None) -> int:
             deps = resolved.get(claim["command"])
             if deps is not None:
                 claim["produced_by"] = deps
-        MANIFEST_PATH.write_text(json.dumps(manifest, indent=2, ensure_ascii=False) + "\n",
-                                 encoding="utf-8")
+        #: indent=1 and "\n" are the register's format, which every `tools/register_*.py`
+        #: writes. This file used indent=2 and Windows newlines, so a run that changed one
+        #: line per claim reformatted all 44,000 and produced an 89,000-line diff - which is
+        #: the same as producing no reviewable diff at all.
+        MANIFEST_PATH.write_text(json.dumps(manifest, indent=1, ensure_ascii=False) + "\n",
+                                 encoding="utf-8", newline="\n")
         print(f"stamped produced_by on "
               f"{sum(1 for c in manifest['claims'] if 'produced_by' in c)} claims")
     else:
