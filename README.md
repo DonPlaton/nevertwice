@@ -160,10 +160,13 @@ With no backend at all, extraction pauses loudly (sessions are kept and retried,
 recall runs on lexical search until an embedder shows up. The five-minute walkthrough is in
 [QUICKSTART.md](QUICKSTART.md); every environment variable is in [CONFIG.md](docs/CONFIG.md).
 
-Contributing: `pip install -e ".[dev]"`, then `python -m pytest -q`. One hundred sixty-three hermetic suites -
+Contributing: `pip install -e ".[dev]"`, then `python -m pytest -q`. One hundred sixty-four hermetic suites -
 LLMs, embedders, the optional reranker, network and GPU execution are disabled or mocked, and a lint
 fails the build if a script reaches a memory store without declaring which store it means. CI runs
-them on Linux, Windows and macOS across four Python versions.
+them on Linux, Windows and macOS across four Python versions. One of them is a golden store: the
+same sessions in, the same bytes out, with a canary that breaks four load-bearing functions on
+purpose to prove the check can fail — and [a signed list of what it does not
+cover](tests/UNPROVEN.md).
 
 ## Docs, and who wrote this
 
