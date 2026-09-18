@@ -16,6 +16,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "nevertwice"))
 import memory_hook as m  # noqa: E402
+import _engine_source  # noqa: E402  the engine's text, one path for every suite
 
 RUN, FAILED = [], []
 
@@ -59,7 +60,7 @@ v3 = m._relative_value(unscored)
 check("a wholly unscored batch values everything at 1.0", set(v3.values()) == {1.0})
 
 print("\n- the wiring is present at the payload site -")
-src = (Path(__file__).resolve().parents[1] / "nevertwice" / "memory_hook.py").read_text(encoding="utf-8")
+src = _engine_source.SRC
 seg = src.split("def _add_facts(")[1][:1400]
 check("the payload consults INJECT_MIN_VALUE", "INJECT_MIN_VALUE" in seg)
 check("it only filters when something is scored", 'any(r.get("score")' in seg)

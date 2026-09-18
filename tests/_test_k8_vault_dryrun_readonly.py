@@ -36,6 +36,7 @@ sys.path.insert(0, str(ROOT / "nevertwice"))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import memory_hook as m  # noqa: E402
 from _sandbox import make_sandbox  # noqa: E402
+import _engine_source  # noqa: E402  the engine's text, one path for every suite
 
 SCRIPT = ROOT / "research" / "k8_vault_dryrun.py"
 RUN, FAILED = [], []
@@ -86,7 +87,7 @@ def _is_sink(call: ast.Call) -> bool:
 def hook_writers() -> set:
     """Every module-level function of memory_hook that can reach a filesystem write, plus the two
     primitives the hook re-exports from store_state."""
-    tree = ast.parse((ROOT / "nevertwice" / "memory_hook.py").read_text(encoding="utf-8"))
+    tree = ast.parse(_engine_source.SRC)
     funcs = {n.name: n for n in tree.body if isinstance(n, ast.FunctionDef)}
     direct, calls = set(), {}
     for name, fn in funcs.items():

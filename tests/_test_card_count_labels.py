@@ -11,8 +11,9 @@ one treating it as evidence strength over-counts.
 import _env_guard  # noqa: F401
 import sys
 from pathlib import Path
+import _engine_source  # noqa: E402  the engine's text, one path for every suite
 
-SRC = (Path(__file__).resolve().parents[1] / "nevertwice" / "memory_hook.py").read_text(encoding="utf-8")
+SRC = _engine_source.SRC
 
 RUN, FAILED = [], []
 

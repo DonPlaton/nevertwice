@@ -220,7 +220,7 @@ class LargeFiles(unittest.TestCase):
             for p in (ROOT / "nevertwice").rglob("*.py")
         )
         self.assertLess(biggest * 4, br.MAX_DIFF_LINES)
-        source = (ROOT / "nevertwice" / "memory_hook.py").read_text(
+        source = (ROOT / "nevertwice" / "_engine.py").read_text(
             encoding="utf-8", errors="replace").splitlines()
         self.assertFalse(br._too_costly(source, source),
                          "the longest module in this repository must still be diffed")

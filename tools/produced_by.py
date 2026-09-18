@@ -88,11 +88,19 @@ def _module_file(dotted: str, near: Path | None = None) -> Path | None:
 
 
 # Deferred-import helpers whose first argument is the module name. `_sibling` is this
-# repository's own resolver (memory_hook.py:74) and is the *only* way several engine modules
+# repository's own resolver (_engine.py:74) and is the *only* way several engine modules
 # are reached - `nevertwice/rankers.py`, the ranker the retrieval numbers measure, appears
 # nowhere in an `import` statement. A closure built from `import` statements alone would
 # therefore declare the retrieval claims independent of the ranker.
-DEFERRED_IMPORTERS = ("_sibling", "import_module")
+#
+# `spec_from_file_location` is here for the hook's entry point: `nevertwice/memory_hook.py` is a
+# loader that executes `_engine.py`'s cached bytecode, because CPython recompiles a `__main__`
+# script on every run and the agent runs that file on every tool call. Without this name the
+# resolver walked the loader, found no `import`, and dropped the entire engine - and with it
+# `graph.py`, `rankers.py` and every module reached through `_sibling` - out of 649 claims'
+# closures, in silence. A register that stops naming the engine is the exact drift it exists to
+# catch, so the mechanism that hides it has to be taught, not worked around.
+DEFERRED_IMPORTERS = ("_sibling", "import_module", "spec_from_file_location")
 
 
 def _imports(path: Path) -> list[tuple[str, int]]:
