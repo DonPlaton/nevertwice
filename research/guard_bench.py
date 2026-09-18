@@ -294,10 +294,23 @@ def score_arm(preds: list, calls: list[dict], info: dict) -> dict:
     out = {"n_calls": len(calls), "curve": cv, f"at_fpr_{TARGET_FPR}": matched, "at_zero_false_alarms": zero,
            "tokens_per_call": round(info.get("tokens_total", 0) / n, 2),
            "ms_per_call": round(info.get("ms_total", 0.0) / n, 4)}
+    #: The class split is a DIAGNOSTIC - which kinds of repeat an arm catches - not a result that
+    #: has to earn a threshold first. Gating it on `thr` meant the one arm part 3.7 is about,
+    #: `guards_deterministic` (26 guards distilled from this project's own notes), had no split at
+    #: all: it sits at FPR 0.179 and never reaches the target, so the harness declined to answer
+    #: the only question being asked of it. Every arm now gets a split at its OWN operating point,
+    #: and the point is recorded beside it so a split taken at 0.179 can never be read as one
+    #: taken at 0.
+    split_thr = thr if thr is not None else (cv[0]["threshold"] if cv else None)
+    if split_thr is not None:
+        at = next((r for r in cv if r["threshold"] == split_thr), None)
+        out["split_at"] = {"threshold": split_thr,
+                           "false_positive_rate": (at or {}).get("false_positive_rate"),
+                           "matched_target_fpr": thr is not None}
+        out["hard_negatives"] = subset_rates(preds, calls, split_thr, lambda c: c["label"] is None and c.get("hard"))
+        out["generic"] = subset_rates(preds, calls, split_thr, lambda c: c["family"] == "generic")
+        out["project"] = subset_rates(preds, calls, split_thr, lambda c: c["family"] == "project")
     if thr is not None:
-        out["hard_negatives"] = subset_rates(preds, calls, thr, lambda c: c["label"] is None and c.get("hard"))
-        out["generic"] = subset_rates(preds, calls, thr, lambda c: c["family"] == "generic")
-        out["project"] = subset_rates(preds, calls, thr, lambda c: c["family"] == "project")
         pos = sum(1 for c in calls if c["label"])
         out["recall_ci"] = list(MC.wilson(int(round((matched["recall"] or 0.0) * pos)), pos))
     return out
