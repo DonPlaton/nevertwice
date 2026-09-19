@@ -50,6 +50,19 @@ HARDWARE = "needs-hardware"
 
 #: Every committed research artifact, what makes it, and what it takes to remake it.
 ARTIFACTS = [
+    {"file": "research/results/draw_divergence.json",
+     "command": ["python", "tools/r1_verdict.py", "--divergence-all"],
+     "kind": DETERMINISTIC, "task": "instrument",
+     "inputs": ["research/results/supersession_v1.json",
+                "research/results/supersession_v1_implicit.json",
+                "research/results/supersession_baseline_ef8120d.json",
+                "research/results/supersession_baseline_ef8120d_implicit.json"],
+     "note": "How many cases change outcome between the two draws of the SAME commit, over every "
+             "outcome field the supersession stand records. Pure arithmetic over four committed "
+             "artifacts, so it reproduces byte for byte with no model, embedder or GPU. This is "
+             "the number R1's clause 3 is calibrated against: at this divergence a 'any new "
+             "failing id' test would demand a third draw on nearly every run, which is why the "
+             "clause tests the SIZE of the failing union instead."},
     {"file": "research/results/longmem_oracle.json",
      "command": ["python", "research/longmem_eval.py", "--xrerank", "--save",
                  "--out=research/results/longmem_oracle.json"],

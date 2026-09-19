@@ -1,5 +1,5 @@
 {
- "measured_by": "python tools/r1_verdict.py <artifact> --divergence",
+ "measured_by": "python tools/r1_verdict.py --divergence-all",
  "what": "cases whose outcome changes between the two draws of the SAME commit",
  "artifacts": {
   "supersession_v1": {

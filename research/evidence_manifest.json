@@ -49055,6 +49055,118 @@
    "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
    "withdrawn_on": "2026-09-19",
    "pending_remeasure": true
+  },
+  {
+   "id": "instrument.draw_divergence.explicit",
+   "dataset": "supersession_v1",
+   "environment": "local_supersession_stand",
+   "raw": "research/results/draw_divergence.json",
+   "command": "python tools/r1_verdict.py research/results/supersession_v1.json --divergence",
+   "commit": "ba94d1d7a5a241cbab411c4eb0317281d6a1e38c",
+   "pointer": "artifacts.supersession_v1.rate",
+   "value": 0.2,
+   "n": 80,
+   "unit": "rate",
+   "printed": [
+    "0.200"
+   ],
+   "ci": {
+    "level": 0.95,
+    "low": 0.127,
+    "high": 0.3005,
+    "method": "wilson"
+   },
+   "statement": "On the explicit corpus at the post-J2b engine, 16 of 80 cases change outcome between the two draws of the same commit - the instrument noise R1's clause 3 is calibrated against",
+   "note": "Counted over every outcome field the stand records (current_retired, stale_returned, current_returned, old_value_served, current_demoted, current_absent) on the cases present in both draws. This is why clause 3 tests the SIZE of the failing union rather than whether it contains an id the base did not: at this divergence a set test would demand a third draw on nearly every run, and a rule that always fires is not a signal.",
+   "cited_in": [],
+   "cited_in_pending": [],
+   "produced_by": [
+    "tools/r1_verdict.py"
+   ]
+  },
+  {
+   "id": "instrument.draw_divergence.explicit_implicit",
+   "dataset": "supersession_v1",
+   "environment": "local_supersession_stand",
+   "raw": "research/results/draw_divergence.json",
+   "command": "python tools/r1_verdict.py research/results/supersession_v1_implicit.json --divergence",
+   "commit": "ba94d1d7a5a241cbab411c4eb0317281d6a1e38c",
+   "pointer": "artifacts.supersession_v1_implicit.rate",
+   "value": 0.0125,
+   "n": 80,
+   "unit": "rate",
+   "printed": [
+    "0.013"
+   ],
+   "ci": {
+    "level": 0.95,
+    "low": 0.0022,
+    "high": 0.0675,
+    "method": "wilson"
+   },
+   "statement": "On the implicit corpus at the same engine, 1 of 80 cases change outcome between the two draws of the same commit - the instrument noise R1's clause 3 is calibrated against",
+   "note": "Counted over every outcome field the stand records (current_retired, stale_returned, current_returned, old_value_served, current_demoted, current_absent) on the cases present in both draws. This is why clause 3 tests the SIZE of the failing union rather than whether it contains an id the base did not: at this divergence a set test would demand a third draw on nearly every run, and a rule that always fires is not a signal.",
+   "cited_in": [],
+   "cited_in_pending": [],
+   "produced_by": [
+    "tools/r1_verdict.py"
+   ]
+  },
+  {
+   "id": "instrument.draw_divergence.baseline",
+   "dataset": "supersession_v1",
+   "environment": "local_supersession_stand",
+   "raw": "research/results/draw_divergence.json",
+   "command": "python tools/r1_verdict.py research/results/supersession_baseline_ef8120d.json --divergence",
+   "commit": "ba94d1d7a5a241cbab411c4eb0317281d6a1e38c",
+   "pointer": "artifacts.supersession_baseline_ef8120d.rate",
+   "value": 0.225,
+   "n": 80,
+   "unit": "rate",
+   "printed": [
+    "0.225"
+   ],
+   "ci": {
+    "level": 0.95,
+    "low": 0.1473,
+    "high": 0.3279,
+    "method": "wilson"
+   },
+   "statement": "On the explicit corpus at the pre-J2b baseline, 18 of 80 cases change outcome between the two draws of the same commit - the instrument noise R1's clause 3 is calibrated against",
+   "note": "Counted over every outcome field the stand records (current_retired, stale_returned, current_returned, old_value_served, current_demoted, current_absent) on the cases present in both draws. This is why clause 3 tests the SIZE of the failing union rather than whether it contains an id the base did not: at this divergence a set test would demand a third draw on nearly every run, and a rule that always fires is not a signal.",
+   "cited_in": [],
+   "cited_in_pending": [],
+   "produced_by": [
+    "tools/r1_verdict.py"
+   ]
+  },
+  {
+   "id": "instrument.draw_divergence.baseline_implicit",
+   "dataset": "supersession_v1",
+   "environment": "local_supersession_stand",
+   "raw": "research/results/draw_divergence.json",
+   "command": "python tools/r1_verdict.py research/results/supersession_baseline_ef8120d_implicit.json --divergence",
+   "commit": "ba94d1d7a5a241cbab411c4eb0317281d6a1e38c",
+   "pointer": "artifacts.supersession_baseline_ef8120d_implicit.rate",
+   "value": 0.2375,
+   "n": 80,
+   "unit": "rate",
+   "printed": [
+    "0.237"
+   ],
+   "ci": {
+    "level": 0.95,
+    "low": 0.1576,
+    "high": 0.3414,
+    "method": "wilson"
+   },
+   "statement": "On the implicit corpus at that baseline, 19 of 80 cases change outcome between the two draws of the same commit - the instrument noise R1's clause 3 is calibrated against",
+   "note": "Counted over every outcome field the stand records (current_retired, stale_returned, current_returned, old_value_served, current_demoted, current_absent) on the cases present in both draws. This is why clause 3 tests the SIZE of the failing union rather than whether it contains an id the base did not: at this divergence a set test would demand a third draw on nearly every run, and a rule that always fires is not a signal.",
+   "cited_in": [],
+   "cited_in_pending": [],
+   "produced_by": [
+    "tools/r1_verdict.py"
+   ]
   }
  ],
  "external_citations": [

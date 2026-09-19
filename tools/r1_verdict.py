@@ -101,6 +101,22 @@ def divergence(doc: dict) -> dict:
             "by_field": {f: n for f, n in by_field.items() if n}}
 
 
+#: The four committed stand artifacts the divergence figure is measured over. Named here rather
+#: than passed in, so `--divergence-all` is one reproducible command with no arguments to get wrong.
+DIVERGENCE_SET = ("supersession_v1", "supersession_v1_implicit",
+                  "supersession_baseline_ef8120d", "supersession_baseline_ef8120d_implicit")
+
+
+def divergence_all(root: Path) -> dict:
+    out = {"measured_by": "python tools/r1_verdict.py --divergence-all",
+           "what": "cases whose outcome changes between the two draws of the SAME commit",
+           "artifacts": {}}
+    for key in DIVERGENCE_SET:
+        doc = json.loads((root / "research" / "results" / f"{key}.json").read_text(encoding="utf-8"))
+        out["artifacts"][key] = divergence(doc)
+    return out
+
+
 def verdict(doc: dict, metric: str, base: dict | None) -> dict:
     d = draws(doc, metric)
     if len(d) < 2:
@@ -181,14 +197,29 @@ def render(rec: dict) -> str:
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("artifact")
+    ap.add_argument("artifact", nargs="?", default="")
     ap.add_argument("--base", default="", help="the artifact this one is compared against")
     ap.add_argument("--metric", action="append", default=[],
                     help=f"one of {', '.join(METRICS)}; repeatable, default all")
     ap.add_argument("--json", default="", metavar="PATH")
     ap.add_argument("--divergence", action="store_true",
                     help="report how often the two draws disagree instead of judging a gate")
+    ap.add_argument("--divergence-all", action="store_true",
+                    help="measure every artifact in DIVERGENCE_SET and write the combined record")
     args = ap.parse_args()
+
+    if args.divergence_all:
+        rec = divergence_all(ROOT)
+        for key, d in rec["artifacts"].items():
+            print(f"  {key:42} {d['diverging']:3} of {d['cases']}  ({d['rate']})")
+        out = Path(args.json) if args.json else ROOT / "research/results/draw_divergence.json"
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(json.dumps(rec, indent=1) + chr(10), encoding="utf-8")
+        print(f"artifact: {out}")
+        return 0
+
+    if not args.artifact:
+        ap.error("an artifact is required unless --divergence-all is given")
 
     if args.divergence:
         rec = {"artifact": args.artifact, **divergence(
