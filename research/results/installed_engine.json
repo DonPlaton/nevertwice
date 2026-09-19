@@ -1,6 +1,70 @@
 {
   "commit": "5687219bc31f2479fdb5278ffc964ae6b31a6868",
   "committed": "2026-08-24T13:30:35+03:00",
+  "dedup_blindness": {
+    "including_superseded": {
+      "blind_groups": 52,
+      "groups": 506,
+      "largest": [
+        {
+          "group": "universal_local_agent|2026-09-02|pattern",
+          "notes": 288
+        },
+        {
+          "group": "universal_local_agent|2026-09-02|mistake",
+          "notes": 202
+        },
+        {
+          "group": "codex|2026-08-17|pattern",
+          "notes": 150
+        },
+        {
+          "group": "codex|2026-08-21|pattern",
+          "notes": 142
+        },
+        {
+          "group": "codex|2026-08-18|pattern",
+          "notes": 135
+        }
+      ],
+      "notes_in_blind_groups": 4042
+    },
+    "live": {
+      "blind_groups": 45,
+      "groups": 502,
+      "largest": [
+        {
+          "group": "universal_local_agent|2026-09-02|pattern",
+          "notes": 222
+        },
+        {
+          "group": "universal_local_agent|2026-09-02|mistake",
+          "notes": 157
+        },
+        {
+          "group": "codex|2026-08-17|pattern",
+          "notes": 138
+        },
+        {
+          "group": "codex|2026-08-18|pattern",
+          "notes": 124
+        },
+        {
+          "group": "codex|2026-08-21|pattern",
+          "notes": 123
+        }
+      ],
+      "notes_in_blind_groups": 3378
+    },
+    "window": 40
+  },
+  "defects": {
+    "dedup_window_evicts_the_day": {
+      "in_installed": true,
+      "still_in_repo": false,
+      "what": "the extractor's dedup window drops every same-day note once the day has TITLE_WINDOW of its own, because other[-0:] is the whole list"
+    }
+  },
   "features": {
     "CONTESTED_KEY": {
       "installed": false,
@@ -61,7 +125,7 @@
   "installed_bytes": 345593,
   "installed_hook": "C:\\Users\\Platon\\.claude\\scripts\\memory_hook.py",
   "installed_is_loader": false,
-  "measured_at": "2026-09-19T12:09:51+00:00",
+  "measured_at": "2026-09-19T13:34:54+00:00",
   "missing_from_installed": [
     "CONTESTED_KEY",
     "DISPUTED_KEY",
@@ -75,7 +139,7 @@
     "_same_replacement",
     "pair_siblings"
   ],
-  "repo_head": "47f7fdc2bf2f34abf8f7aee3ef5945d54344999d",
+  "repo_head": "9b0b700a8e58e812743ef8d902351f341aed5edd",
   "settings": "C:\\Users\\Platon\\.claude\\settings.json",
   "status": "installed-lags-repo",
   "store": {

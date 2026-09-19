@@ -1,0 +1,49 @@
+{
+ "measured_by": "python tools/r1_verdict.py <artifact> --divergence",
+ "what": "cases whose outcome changes between the two draws of the SAME commit",
+ "artifacts": {
+  "supersession_v1": {
+   "cases": 80,
+   "diverging": 16,
+   "rate": 0.2,
+   "by_field": {
+    "stale_returned": 7,
+    "current_returned": 3,
+    "old_value_served": 9,
+    "current_absent": 3
+   }
+  },
+  "supersession_v1_implicit": {
+   "cases": 80,
+   "diverging": 1,
+   "rate": 0.0125,
+   "by_field": {
+    "old_value_served": 1
+   }
+  },
+  "supersession_baseline_ef8120d": {
+   "cases": 80,
+   "diverging": 18,
+   "rate": 0.225,
+   "by_field": {
+    "current_retired": 6,
+    "stale_returned": 5,
+    "current_returned": 9,
+    "current_demoted": 4,
+    "current_absent": 5
+   }
+  },
+  "supersession_baseline_ef8120d_implicit": {
+   "cases": 80,
+   "diverging": 19,
+   "rate": 0.2375,
+   "by_field": {
+    "current_retired": 4,
+    "stale_returned": 4,
+    "current_returned": 12,
+    "current_demoted": 8,
+    "current_absent": 5
+   }
+  }
+ }
+}

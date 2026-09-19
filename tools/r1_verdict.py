@@ -75,6 +75,32 @@ def draws(doc: dict, metric: str) -> list:
     return got
 
 
+OUTCOME_FIELDS = ("current_retired", "stale_returned", "current_returned",
+                  "old_value_served", "current_demoted", "current_absent")
+
+
+def divergence(doc: dict) -> dict:
+    """How many cases change outcome between the two draws of the SAME commit.
+
+    This is the number clause 3 rests on. A set test - "any failing id the base did not have" -
+    would fire whenever the draws disagree at all, so how often they disagree decides whether that
+    test is a trigger or a permanent third campaign. Counted over every outcome field the stand
+    records, on cases present in both draws.
+    """
+    a = {r.get("id"): r for r in rows_of(doc, DRAW_KEYS[0])}
+    b = {r.get("id"): r for r in rows_of(doc, DRAW_KEYS[1])}
+    both = sorted(set(a) & set(b))
+    if not both:
+        return {"cases": 0, "diverging": 0, "by_field": {}}
+    diverging = [i for i in both
+                 if any(bool(a[i].get(f)) != bool(b[i].get(f)) for f in OUTCOME_FIELDS)]
+    by_field = {f: sum(1 for i in both if bool(a[i].get(f)) != bool(b[i].get(f)))
+                for f in OUTCOME_FIELDS}
+    return {"cases": len(both), "diverging": len(diverging),
+            "rate": round(len(diverging) / len(both), 4),
+            "by_field": {f: n for f, n in by_field.items() if n}}
+
+
 def verdict(doc: dict, metric: str, base: dict | None) -> dict:
     d = draws(doc, metric)
     if len(d) < 2:
@@ -160,7 +186,22 @@ def main() -> int:
     ap.add_argument("--metric", action="append", default=[],
                     help=f"one of {', '.join(METRICS)}; repeatable, default all")
     ap.add_argument("--json", default="", metavar="PATH")
+    ap.add_argument("--divergence", action="store_true",
+                    help="report how often the two draws disagree instead of judging a gate")
     args = ap.parse_args()
+
+    if args.divergence:
+        rec = {"artifact": args.artifact, **divergence(
+            json.loads(Path(args.artifact).read_text(encoding="utf-8")))}
+        print(f"{Path(args.artifact).name}: {rec['diverging']} of {rec['cases']} cases change "
+              f"outcome between two draws of the same commit")
+        for f, n in (rec.get("by_field") or {}).items():
+            print(f"    {f:20} {n}")
+        if args.json:
+            Path(args.json).parent.mkdir(parents=True, exist_ok=True)
+            Path(args.json).write_text(json.dumps(rec, indent=1) + "\n", encoding="utf-8")
+            print(f"\nartifact: {args.json}")
+        return 0
 
     doc = json.loads(Path(args.artifact).read_text(encoding="utf-8"))
     base = json.loads(Path(args.base).read_text(encoding="utf-8")) if args.base else None

@@ -121,6 +121,60 @@ def store_facts_census(vault: Path, since: str = "2026-09-16") -> dict:
             "since": since, "typed_since": recent, "carrying_since": recent_block}
 
 
+#: Defects the INSTALLED build carries. The feature table above answers "what does the owner not
+#: have yet"; this answers the other half, "what is the owner running into today". A marker is a
+#: fragment of the defective source: present in the installed file means the defect is live, absent
+#: from the repo means the working tree has moved past it.
+DEFECTS = {
+    "dedup_window_evicts_the_day": {
+        "marker": "other[-(max(0, TITLE_WINDOW - len(same))):]",
+        "what": "the extractor's dedup window drops every same-day note once the day has "
+                "TITLE_WINDOW of its own, because other[-0:] is the whole list",
+    },
+}
+
+
+def defects_in(installed: str, repo: str) -> dict:
+    out = {}
+    for name, spec in DEFECTS.items():
+        out[name] = {"in_installed": spec["marker"] in installed,
+                     "still_in_repo": spec["marker"] in repo,
+                     "what": spec["what"]}
+    return out
+
+
+def dedup_blindness(vault: Path, window: int = 40) -> dict:
+    """How often the dedup window went blind on this store, counted two ways.
+
+    `collect_existing_titles` globs the type folder FLAT, so `Superseded/` is out of its view: the
+    live-only count is what the window sees today. But a note now in `Superseded/` was live on the
+    day it was written, so the historical blindness - the thing that would have caused duplicates -
+    is closer to the count that includes it. Both are reported because they answer different
+    questions and only one of them is about today.
+    """
+    stem_re = re.compile(r"^(\d{4}-\d{2}-\d{2})-(.+?)-(mistake|pattern|decision)-(.+)$")
+    rec = {"window": window}
+    for label, include_retired in (("live", False), ("including_superseded", True)):
+        groups: dict = {}
+        for folder in ("Mistakes", "Patterns", "Decisions"):
+            base = vault / folder
+            if not base.exists():
+                continue
+            for f in base.rglob("*.md"):
+                if not include_retired and "Superseded" in f.parts:
+                    continue
+                mo = stem_re.match(f.stem)
+                if mo:
+                    key = f"{mo.group(2)}|{mo.group(1)}|{mo.group(3)}"
+                    groups[key] = groups.get(key, 0) + 1
+        big = {k: v for k, v in groups.items() if v >= window}
+        top = sorted(big.items(), key=lambda kv: -kv[1])[:5]
+        rec[label] = {"groups": len(groups), "blind_groups": len(big),
+                      "notes_in_blind_groups": sum(big.values()),
+                      "largest": [{"group": k, "notes": v} for k, v in top]}
+    return rec
+
+
 def probe() -> dict:
     path = installed_hook_path()
     rec = {
@@ -156,10 +210,12 @@ def probe() -> dict:
     }
     missing = sorted(n for n in FEATURES if in_repo[n] and not carried[n])
     rec["missing_from_installed"] = missing
+    rec["defects"] = defects_in(source, repo_src)
 
     vault = os.environ.get("CLAUDE_MEMORY_VAULT") or str(Path(r"D:\Obsidian\Claude_Memory"))
     if Path(vault).exists():
         rec["store"] = {"vault": vault, **store_facts_census(Path(vault))}
+        rec["dedup_blindness"] = dedup_blindness(Path(vault))
     rec["status"] = "in-sync" if not missing else "installed-lags-repo"
     return rec
 
@@ -185,6 +241,26 @@ def main() -> int:
         mark = "ok  " if row["installed"] else ("LAGS" if row["repo"] else "n/a ")
         print(f"  {mark} {name:22} {row['shipped_by']}")
     print()
+    live = [(n, d) for n, d in (rec.get("defects") or {}).items() if d["in_installed"]]
+    if live:
+        print("defects the installed build carries:")
+        for name, d in live:
+            print(f"  LIVE {name}" + ("  (fixed in the working tree)" if not d["still_in_repo"]
+                                       else "  (STILL in the working tree)"))
+            print(f"       {d['what']}")
+        print()
+    db = rec.get("dedup_blindness")
+    if db:
+        for label in ("live", "including_superseded"):
+            s = db[label]
+            print(f"  dedup window, {label:20} {s['blind_groups']} of {s['groups']} "
+                  f"project/day/type groups hold {db['window']}+ notes "
+                  f"({s['notes_in_blind_groups']} notes)")
+        big = db["including_superseded"]["largest"]
+        if big:
+            print(f"    largest: " + ", ".join(f"{x['notes']} ({x['group']})" for x in big[:3]))
+        print()
+
     st = rec.get("store")
     if st:
         print(f"store           : {st['carrying_facts_block']} of {st['live_typed_notes']:,} live "

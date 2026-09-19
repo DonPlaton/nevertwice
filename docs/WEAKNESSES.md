@@ -48,6 +48,19 @@ they cannot lag the artifact.
   deliberately unpushed while part 5 is open. The weakness stays open until the two builds are the
   same build, and the probe above is what will say when they are.
 
+  **The gap cuts both ways, and the second case is a defect rather than a missing feature.** The
+  part-four review found that the extractor's duplicate window drops every note from the current
+  day once that day has as many notes of its own as the window holds - the branch meant to fill the
+  remainder after them fills it with everything instead. That line is in the installed build too,
+  and it predates the K-series, so unlike the channel above it has been running the whole time. On
+  the live store dozens of project-day-type groups are large enough to trigger it, the largest by
+  several times over, and on those days the extractor was shown nothing it had written that day.
+  The duplicates this predicts are in the vault's own history: the August cleanup consolidated
+  notes in those groups at several times the rate it did elsewhere, which is not a volume effect -
+  the comparison is per note. One confound survives and is worth saying: a day that busy is also a
+  day spent on one topic, and topical concentration produces similar notes by itself. The counts
+  are in the probe's record.
+
 - **[FIXED at K8, superseding the reverted K7 gate] Over-consolidation: a later fact on the same topic
   was absorbed into an earlier note.** When a second session stated a *different* fact on a topic an
   earlier note already covered - "logs are shipped to Loki" after "traces are exported to Tempo" - and
