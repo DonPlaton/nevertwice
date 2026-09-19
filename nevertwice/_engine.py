@@ -2805,7 +2805,10 @@ def _embed_http(url: str, payload: dict, headers: dict, timeout: int | None):
         log(f"Embed ({EMBED_PROVIDER}) HTTP {e.code}: {_scrub_for_log(emsg)}")
         return None
     except Exception as e:
-        log(f"Embed ({EMBED_PROVIDER}) failed: {type(e).__name__}: {e}")
+        log(f"Embed ({EMBED_PROVIDER}) failed: {type(e).__name__}: {str(e)!a}")
+        #: ascii-escape: an OS-localized error text (a Russian WinError, say) must not
+        #: depend on the log reader's codepage. Came from the ollama branch, which used
+        #: to build its own request and carried this fix alone.
         return None
 
 
@@ -2864,9 +2867,6 @@ def embed_text(text: str, kind: str | None = None, timeout: int | None = None,
     when a CLOUD embedder is configured, a project in LOCAL_ONLY_PROJECTS is NEVER sent
     to it - embedding is skipped (→ text-only / lexical recall) so local-only note text
     and query prompts can't leave the machine. Ollama is local, so it needs no gate."""
-    # deferred: keep the guard/recall hot path free of this import cost (perf audit A2)
-    import urllib.error
-    import urllib.request
     raw = (text or "")[:2000]
     # One-slot memo: retrieve_relevant and retrieve_cross_project embed the IDENTICAL
     # query back-to-back on every injection event - two Ollama round-trips (0.2-2s)
@@ -2892,16 +2892,15 @@ def embed_text(text: str, kind: str | None = None, timeout: int | None = None,
         if vec:
             _EMBED_TEXT_MEMO["key"], _EMBED_TEXT_MEMO["vec"] = memo_key, vec
         return vec
-    payload = json.dumps({"model": EMBED_MODEL,
-                          "input": _embed_prefix(kind) + raw}).encode("utf-8")
-    req = urllib.request.Request(OLLAMA_EMBED_URL, data=payload,
-                                 headers={"Content-Type": "application/json"})
-    try:
-        with urllib.request.urlopen(req, timeout=timeout or EMBED_TIMEOUT) as r:
-            data = json.loads(r.read())
-    except Exception as e:
-        log(f"Embed failed: {type(e).__name__}: {str(e)!a}")   # ascii-escape: OS-localized
-        # error text (e.g. Russian WinError) must not depend on the log reader's codepage
+    #: Ollama goes through the same door as every cloud provider. It used to build its own
+    #: `urllib` request here, which meant a harness that stubs `_embed_http` - the golden
+    #: store - did not cover the configured provider, and its "deterministic" proof was
+    #: ranked by the live model on 127.0.0.1 (measured 2026-09-19: 1024 real dimensions
+    #: where the stub returns 48). One door, one place to stub, one place to log.
+    data = _embed_http(OLLAMA_EMBED_URL,
+                       {"model": EMBED_MODEL, "input": _embed_prefix(kind) + raw},
+                       {}, timeout)
+    if data is None:
         return None
     embs = data.get("embeddings")
     vec = None

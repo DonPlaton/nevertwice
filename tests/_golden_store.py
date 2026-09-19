@@ -47,22 +47,31 @@ TMP_RE = re.compile(r"[A-Za-z]:\\\\?[^\"\n]*?[Tt]e?mp\\\\?[^\"\n]*|/tmp/[^\"\n]*
 NUM_RE = re.compile(r'"(from_byte|size|bytes|mtime)":\s*-?\d+')
 
 
+_TOKEN_RE = re.compile(r"[a-z0-9]+")
+
+
 def _vec(text: str, dims: int = 48) -> list[float]:
     """A deterministic stand-in for the embedder: a pure function of the text, unit length.
 
     Real arithmetic downstream is the point. A stub returning None (what the offline sandbox
     does) skips the semantic tier entirely, so fusion, the similarity floor and the twin gate
     are never exercised and a refactor of any of them certifies clean.
+
+    Deterministic is not enough on its own. This used to be `sha256` of the WHOLE text, which
+    made every pair of texts orthogonal noise: the similarity floor then rejected every
+    candidate and the semantic tier contributed nothing, so the branches above were exercised
+    only in their rejecting arm. Measured 2026-09-19 - a query sharing four words with a note
+    scored 0.005 against it while an unrelated sentence scored 0.134. Signed feature hashing
+    over tokens keeps the function pure and gives real lexical similarity, so a note and a
+    query about the same thing are actually near each other.
     """
-    out: list[float] = []
-    seed = text.strip().lower().encode("utf-8")
-    i = 0
-    while len(out) < dims:
-        digest = hashlib.sha256(seed + str(i).encode()).digest()
-        out += [(b - 127.5) / 127.5 for b in digest]
-        i += 1
-    out = out[:dims]
-    norm = math.sqrt(sum(x * x for x in out)) or 1.0
+    out = [0.0] * dims
+    for tok in _TOKEN_RE.findall((text or "").lower()):
+        digest = hashlib.sha256(tok.encode("utf-8")).digest()
+        out[int.from_bytes(digest[:4], "big") % dims] += 1.0 if digest[4] & 1 else -1.0
+    norm = math.sqrt(sum(x * x for x in out))
+    if not norm:                    # no tokens at all: a fixed direction, still unit length
+        out[0], norm = 1.0, 1.0
     return [x / norm for x in out]
 
 
@@ -123,7 +132,31 @@ def install(m, table: dict[str, dict], *, judge=None) -> Extractor:
     m._embed_cloud = lambda text, kind=None, timeout=None: _vec(text)
     m.embedder_available = lambda timeout_s=4: True
     m.git_autocommit = lambda *a, **k: None
+    _refuse_every_socket()
     return extractor
+
+
+def _refuse_every_socket() -> None:
+    """The tripwire that makes the two stubs above provable rather than asserted.
+
+    `install` names two doors, and for a year one of them was not a door: with the default
+    `NEVERTWICE_EMBED_PROVIDER=ollama`, `embed_text` built its own `urllib` request and went to
+    127.0.0.1:11434, so `_embed_http` was stubbed and never called. Measured 2026-09-19 under
+    this harness: `embed_text` returned 1024 live bge-m3 dimensions where `_vec` returns 48.
+    The golden proof was ranked by a running model, and it failed the same day when that model
+    was busy - `Embed failed: TimeoutError`, snapshot mismatch, on an unchanged tree.
+
+    Naming doors is a claim; refusing sockets is a measurement. Anything that reaches out from
+    here now raises with the URL in the message instead of quietly borrowing the machine.
+    """
+    import urllib.request
+
+    def refuse(req, *a, **k):                       # noqa: ANN001,ANN002
+        url = getattr(req, "full_url", req)
+        raise AssertionError(f"the golden store reached the network: {url!r}. Every model and "
+                             "embedder call must go through a door `install()` replaces.")
+
+    urllib.request.urlopen = refuse
 
 
 def session(path: Path, *, cwd: str, marker: str, day: str, turns: int = 3) -> str:
