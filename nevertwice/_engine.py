@@ -2260,9 +2260,18 @@ def _iter_events(path: str, from_byte: int = 0):
                 if not line:
                     continue
                 try:
-                    yield json.loads(line)
+                    evt = json.loads(line)
                 except json.JSONDecodeError:
                     continue
+                # A line can be valid JSON and still not be an event: `[1, 2]`, `"text"`, `null`
+                # and `7` all decode cleanly, and the first consumer to call `.get()` on one
+                # raises AttributeError - which is not an OSError, so it escaped this function's
+                # own guard and aborted `sweep_unprocessed` at `read_session_meta`, BEFORE its
+                # per-candidate try, skipping every session sorted behind the bad transcript.
+                # That is the outcome this function's comment above says it prevents, reached by
+                # the shape rather than the bytes (T1 review 2026-09-19).
+                if isinstance(evt, dict):
+                    yield evt
     except OSError as e:
         log(f"Transcript read error: {e}")
 
@@ -5948,6 +5957,13 @@ def process_session(session_id: str, cwd: str, transcript_path: str,
     extraction = generate_json(prompt, project=project_hint)
     if not extraction:
         log(f"Extraction failed for {session_id[:8]} - left for retry")
+        # The counter whose docstring says "the 2026 stall showed up here as a flat store and
+        # nowhere else". It could not have: nothing called it (T1 review 2026-09-19).
+        try:
+            from . import telemetry as _tel
+            _tel.record_extraction_failure("no_extraction")
+        except Exception:       # noqa: BLE001 - a hook never fails on telemetry
+            pass
         return False
     extraction = _retry_if_silent(extraction, prompt, body, project_hint)
 

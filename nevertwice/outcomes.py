@@ -127,6 +127,15 @@ def record(guard: dict, outcome: str, *, session_id: str | None = None) -> str |
     acc = block(guard)
     acc["counts"][name] = int(acc["counts"].get(name, 0)) + 1
 
+    # The local counter behind `intervention_outcomes`. It had no caller, so the dashboard read
+    # zero for every outcome however much feedback arrived (T1 review 2026-09-19). Best-effort by
+    # the module's own contract: telemetry that can break the loop it measures is worse than none.
+    try:
+        from . import telemetry as _tel
+        _tel.record_outcome(name)
+    except Exception:           # noqa: BLE001 - never fail a recorded outcome on bookkeeping
+        pass
+
     # Bounded on both axes, because this list lives in `guards.json`, which the PreToolUse hook
     # reads before every edit. Twenty MCP calls carrying 5 KB ids grew that file to 201 KB;
     # `guards.py` already caps `delivered_sessions` the same way, and this is the same class.

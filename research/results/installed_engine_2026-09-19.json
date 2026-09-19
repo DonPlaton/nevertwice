@@ -1,0 +1,90 @@
+{
+  "commit": "5687219bc31f2479fdb5278ffc964ae6b31a6868",
+  "committed": "2026-08-24T13:30:35+03:00",
+  "features": {
+    "CONTESTED_KEY": {
+      "installed": false,
+      "repo": true,
+      "shipped_by": "K8 - the sibling stamp a pair gets instead of an absorb"
+    },
+    "DISPUTED_KEY": {
+      "installed": false,
+      "repo": true,
+      "shipped_by": "K8 - where a vetoed verdict is parked for a human"
+    },
+    "EARLIER_MAX_CHARS": {
+      "installed": false,
+      "repo": true,
+      "shipped_by": "K8 - the cap on the attached earlier statement"
+    },
+    "_FACTS_MARK": {
+      "installed": false,
+      "repo": true,
+      "shipped_by": "K6 - the verified-literal block appended to a description"
+    },
+    "_facts_source": {
+      "installed": false,
+      "repo": true,
+      "shipped_by": "K6 - the session body the literal channel may quote"
+    },
+    "_harvest_literals": {
+      "installed": false,
+      "repo": true,
+      "shipped_by": "K6 - the deterministic literal harvester"
+    },
+    "_note_facts": {
+      "installed": false,
+      "repo": true,
+      "shipped_by": "J3/K6 - the per-note literal picker"
+    },
+    "_replacement_guard": {
+      "installed": false,
+      "repo": true,
+      "shipped_by": "K8 - the veto on an unproven `replaces` verdict"
+    },
+    "_same_fact_verdict": {
+      "installed": false,
+      "repo": true,
+      "shipped_by": "K8 - the sleep-time judge's verdict shape"
+    },
+    "_same_replacement": {
+      "installed": false,
+      "repo": true,
+      "shipped_by": "K8 - the write-time proof rules"
+    },
+    "pair_siblings": {
+      "installed": false,
+      "repo": true,
+      "shipped_by": "K8 - both statements served, newest first"
+    }
+  },
+  "installed_bytes": 345593,
+  "installed_hook": "C:\\Users\\Platon\\.claude\\scripts\\memory_hook.py",
+  "installed_is_loader": false,
+  "measured_at": "2026-09-19T12:09:51+00:00",
+  "missing_from_installed": [
+    "CONTESTED_KEY",
+    "DISPUTED_KEY",
+    "EARLIER_MAX_CHARS",
+    "_FACTS_MARK",
+    "_facts_source",
+    "_harvest_literals",
+    "_note_facts",
+    "_replacement_guard",
+    "_same_fact_verdict",
+    "_same_replacement",
+    "pair_siblings"
+  ],
+  "repo_head": "47f7fdc2bf2f34abf8f7aee3ef5945d54344999d",
+  "settings": "C:\\Users\\Platon\\.claude\\settings.json",
+  "status": "installed-lags-repo",
+  "store": {
+    "carrying_facts_block": 0,
+    "carrying_since": 0,
+    "live_typed_notes": 7991,
+    "since": "2026-09-16",
+    "typed_since": 377,
+    "vault": "D:\\Obsidian\\Claude_Memory"
+  },
+  "subject": "fix: port post-cleanup review fixes (dev bac8b79)"
+}

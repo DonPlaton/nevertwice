@@ -436,13 +436,18 @@ def apply(source: str, path, project: str) -> dict:
 
     ledger = _ledger_load()
     batch = _batch_id(source, records, existing=ledger)
-    stems = api.remember_lessons(
+    #: ALIGNED, not filtered. `remember_lessons` returns only the lessons it wrote, so one
+    #: skipped record shortened the list and `zip` stamped every later note with an earlier
+    #: record's author, date and source reference - provenance that is wrong rather than absent,
+    #: and that `revert` then reads to decide what it may delete (T1 review 2026-09-19).
+    aligned = api.remember_lessons_aligned(
         [{"type": r["type"], "title": r["title"], "description": r["description"],
           "prevention": r["prevention"]} for r in records], project=project)
+    stems = [s for s in aligned if s]
 
     stamped = []
-    for stem, rec in zip(stems, records):
-        if _stamp(stem, rec, batch):
+    for stem, rec in zip(aligned, records):
+        if stem and _stamp(stem, rec, batch):
             stamped.append(stem)
 
     entry = {"id": batch, "source": source, "path": str(path), "project": project,
@@ -547,8 +552,27 @@ def revert(batch_id: str, *, dry_run: bool = True) -> dict:
         except OSError:
             skipped.append({"stem": stem, "why": "the file could not be removed"})
 
-    remaining = [b for b in _ledger_load() if b["id"] != batch_id]
-    _ledger_save(remaining)
+    #: A note is not reverted until it is out of RECALL. `rebuild_index()` rebuilds `Index.md`;
+    #: the embedding vector and the SQLite row are separate stores, and leaving them made a
+    #: reverted note keep being retrieved and injected with no file on disk to explain it.
+    #: `supersede_note` and the archive sweep both do this; this path was written without them.
+    if removed:
+        cache = m.load_embed_cache()
+        if any(s in cache for s in removed):
+            for s in removed:
+                cache.pop(s, None)
+            m.save_embed_cache(cache)
+        try:
+            m.sync_scale_index(delete=removed)
+        except Exception:       # noqa: BLE001 - a graph-only or absent index must not fail it
+            pass
+
+    #: The batch leaves the ledger only when nothing of it is left on disk. Dropping it while a
+    #: note could not be unlinked (Obsidian or an AV scanner holding the file) made that note
+    #: permanently unrevertable: the record of which batch it belonged to was the only way back.
+    failed = [s for s in removable if s not in set(removed)]
+    rest = [b for b in _ledger_load() if b["id"] != batch_id]
+    _ledger_save((rest + [{**entry, "stems": failed}]) if failed else rest)
     try:
         m.rebuild_index()
     except Exception:           # noqa: BLE001 - a stale index must not fail the revert

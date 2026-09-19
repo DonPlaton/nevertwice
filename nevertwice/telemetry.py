@@ -303,7 +303,14 @@ def render(snap: dict | None = None) -> str:
     interventions = snap["intervention_outcomes"]
     failures = snap["extraction_failures"]
 
+    #: `lag_seconds` is None in TWO unlike cases and 0 in one. `refresh_capture_lag` stores None
+    #: both when there is no session at all and when sessions exist but no note was ever written
+    #: from one - the total stall this counter was built to expose - and 0 only when a note is at
+    #: least as new as the newest session. Reading them all as falsy printed "keeping up" over a
+    #: store where nothing had ever been extracted (T1 review 2026-09-19).
     lag_line = ("never captured" if not lag.get("last_session")
+                else "sessions on disk, but no note has ever been written from one"
+                if lag.get("last_note") is None
                 else "keeping up" if not lag.get("lag_seconds")
                 else f"{lag['lag_seconds'] // 60} min behind the newest session")
     lines = [

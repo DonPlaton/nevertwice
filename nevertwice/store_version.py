@@ -301,6 +301,21 @@ def rebuild(vault: Path, *, dry_run: bool = True, include_embeddings: bool = Fal
     nothing but suggesting it was load-bearing.
     """
     vault = Path(vault)
+
+    #: `--include-embeddings` used to delete the vector caches and then rebuild `Index.md` and
+    #: `.index.sqlite`, neither of which holds a vector. Nothing re-embedded, and the call
+    #: returned `ok: True` with the store's whole embedding space gone - on a machine that may
+    #: have no embedder to make it again, which is the loss the EXPENSIVE comment above exists to
+    #: prevent. The flag now refuses rather than destroys, and rebuilds what it removed.
+    if include_embeddings and not m.embedder_available():
+        return {"ok": False, "dry_run": bool(dry_run), "vault": str(vault), "removed": [],
+                "rebuilt": [], "preserved": [n for n in PRESERVED if (vault / n).exists()],
+                "skipped": {"artifacts": [n for n in EXPENSIVE if (vault / n).exists()],
+                            "why": "no embedder is reachable"},
+                "detail": "refusing --include-embeddings: no embedder is reachable, so the "
+                          "vector caches would be deleted and could not be rebuilt. Start the "
+                          "embedder, or drop the flag and keep them."}
+
     targets = list(REBUILDABLE) + (list(EXPENSIVE) if include_embeddings else [])
     present = [name for name in targets if (vault / name).exists()]
 
@@ -337,6 +352,21 @@ def rebuild(vault: Path, *, dry_run: bool = True, include_embeddings: bool = Fal
         rebuilt.append(".index.sqlite")
     except Exception as exc:                 # noqa: BLE001
         rebuilt.append(f".index.sqlite FAILED: {type(exc).__name__}")
+    if include_embeddings:
+        # Under the vault lock, like `embed_index.main` and `consolidate_memory --apply`: all
+        # three do a read-modify-write of the same `.embeddings_cache.json`.
+        try:
+            import embed_index as _emb
+            if not m.acquire_lock(timeout_s=120):
+                rebuilt.append("embeddings FAILED: vault lock busy")
+            else:
+                try:
+                    _emb._run_embed(True)
+                    rebuilt.append("embeddings")
+                finally:
+                    m.release_lock()
+        except Exception as exc:             # noqa: BLE001 - report, never abort the rest
+            rebuilt.append(f"embeddings FAILED: {type(exc).__name__}")
 
     return {"ok": not any("FAILED" in r for r in rebuilt), "dry_run": False,
             "vault": str(vault), "removed": present, "rebuilt": rebuilt,

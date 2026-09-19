@@ -298,7 +298,15 @@ class ClaudeCodeAdapter(HostAdapter):
                     "detail": "no Claude Code settings file - nothing to undo",
                     "dry_run": dry_run}
         try:
-            data = json.loads(settings.read_text(encoding="utf-8-sig"))
+            # ONE read. `data` is parsed from these bytes and the backup is written from them,
+            # so the backup is exactly the version being replaced. Taking the backup from a
+            # second read meant a write landing between the two put the NEW content in the
+            # backup while `data`, computed from the old, overwrote it - losing the change and
+            # not preserving it either (T1 review 2026-09-19). This narrows the window to the
+            # atomic write itself; it does not lock another agent's config file, which is not
+            # ours to lock.
+            raw = settings.read_text(encoding="utf-8-sig")
+            data = json.loads(raw)
         except (OSError, ValueError) as exc:
             return {"host": self.name, "ok": False, "changed": [],
                     "detail": f"could not read {settings}: {exc}", "dry_run": dry_run}
@@ -329,7 +337,7 @@ class ClaudeCodeAdapter(HostAdapter):
 
         if removed and not dry_run:
             backup = settings.with_suffix(".json.nevertwice-backup")
-            backup.write_text(settings.read_text(encoding="utf-8-sig"), encoding="utf-8")
+            backup.write_text(raw, encoding="utf-8")
             m.write_atomic(settings, json.dumps(data, indent=2) + "\n")
             return {"host": self.name, "ok": True, "changed": [str(settings), str(backup)],
                     "detail": f"removed {len(removed)} hook entry(ies); "

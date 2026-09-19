@@ -19,6 +19,7 @@ or this API) a call came from.
 """
 import os
 import re
+import time
 import sys
 import uuid
 from datetime import datetime
@@ -72,9 +73,18 @@ def recall(query: str, project: str | None = None, k: int = 5,
     tagged with `via`. Off by default, so plain recall is unchanged."""
     if not query or not query.strip():
         return []
+    started = time.perf_counter()
     results, _mode = _search.search_core(query, project, k, rerank=rerank)
     if expand_relations and results:
         results = results + m.relation_expand(results, project, max_add=max_expand)
+    # `search_latency` had no caller, so its percentiles were computed over an empty sample for
+    # every store (T1 review 2026-09-19). Timed around the ranking itself, after the empty-query
+    # guard, so the sample is of searches that actually searched.
+    try:
+        from . import telemetry as _tel
+        _tel.record_search((time.perf_counter() - started) * 1000.0)
+    except Exception:           # noqa: BLE001 - a search never fails on bookkeeping
+        pass
     return results
 
 
@@ -546,14 +556,16 @@ def remember(title: str, *, project: str, type: str = "pattern",
     return stems[0] if stems else None
 
 
-def remember_lessons(lessons, *, project: str, embed: bool = True) -> list[str]:
+def remember_lessons_aligned(lessons, *, project: str, embed: bool = True) -> list:
     """Write a BATCH of agent-extracted lessons - the turnkey "the agent is the
     extractor" path (#34). No separate extraction model runs: the agent (Claude Code
     or any LLM) decides what it learned, emits structured lessons, and this persists
     them through the same write path as `remember()`. Each lesson is a dict with keys
     `type` (pattern|mistake|decision), `title`, and optional `description`,
-    `prevention`, `tags`, `supersedes`. Returns the written stems (lessons that are
-    malformed, untitled, or rejected as injection-shaped are skipped, not raised).
+    `prevention`, `tags`, `supersedes`. Returns ONE entry per input lesson, in the input's
+    own order: the written stem, or `None` where the lesson was malformed, untitled, or
+    rejected as injection-shaped (skipped, not raised). The alignment is the point - see
+    `remember_lessons` for the filtered list.
 
     One vault lock / one index rebuild / one git commit for the whole batch - so an
     agent recording five lessons at end-of-task doesn't produce five commits. Empty
@@ -561,23 +573,25 @@ def remember_lessons(lessons, *, project: str, embed: bool = True) -> list[str]:
     if not project:
         raise ValueError("project is required")
     proj = m.slug_project(project)
+    lessons = list(lessons or [])
     valid = []
-    for ln in lessons or []:
+    for i, ln in enumerate(lessons):
         if not isinstance(ln, dict):
             continue
         title = (ln.get("title") or "").strip()
         typ = (ln.get("type") or "pattern").strip()
         if not title or typ not in m.TYPED_TYPES:
             continue
-        valid.append((typ, title, ln))
+        valid.append((i, typ, title, ln))
     if not valid:
-        return []
+        return [None] * len(lessons)
     if not m.acquire_lock(timeout_s=60):
         raise RuntimeError("vault busy (lock held by another process) - try again")
     try:
         date = datetime.now().strftime("%Y-%m-%d")
+        out: list = [None] * len(lessons)
         written, embed_recs = [], []
-        for typ, title, ln in valid:
+        for idx, typ, title, ln in valid:
             raw_tags = ln.get("tags") or ()
             tag_list = m._norm_tags(raw_tags.split(",") if isinstance(raw_tags, str)
                                     else list(raw_tags))
@@ -588,6 +602,7 @@ def remember_lessons(lessons, *, project: str, embed: bool = True) -> list[str]:
                     "relations": ln.get("relations") or []}
             stem = m.write_typed_note(m.TYPE_FOLDER[typ], item, proj, date, tag_list, typ)
             if stem:                       # None == rejected (injection-shaped) - skip it
+                out[idx] = stem
                 written.append(stem)
                 embed_recs.append((stem, typ, proj, title,
                                    item["description"], item["prevention"]))
@@ -597,9 +612,22 @@ def remember_lessons(lessons, *, project: str, embed: bool = True) -> list[str]:
         if written:
             m.rebuild_index()
             m.git_autocommit()
-        return written
+        return out
     finally:
         m.release_lock()
+
+
+def remember_lessons(lessons, *, project: str, embed: bool = True) -> list[str]:
+    """The written stems, in order, for a BATCH of agent-extracted lessons - the turnkey
+    "the agent is the extractor" path (#34). See `remember_lessons_aligned`, of which this is
+    the filtered view: malformed, untitled and injection-shaped lessons are skipped, not raised,
+    so the result can be SHORTER than `lessons` and its positions do not line up with the input.
+
+    A caller that needs to know which lesson a stem came from - an importer carrying provenance,
+    say - must use `remember_lessons_aligned`: `migrate.apply` paired these two lists with `zip`
+    and stamped every note after the first skip with another record's author and source reference
+    (T1 review 2026-09-19)."""
+    return [s for s in remember_lessons_aligned(lessons, project=project, embed=embed) if s]
 
 
 def capture_session(text: str, *, project: str | None = None,
