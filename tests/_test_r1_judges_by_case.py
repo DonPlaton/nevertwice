@@ -103,6 +103,34 @@ check("no third draw is demanded, because the union shrank",
       f"union {v['union_size']} vs base {v.get('base_union_size')} - gating on new ids rather "
       f"than on size would be stricter than the rule the owner confirmed")
 
+print("# ... and the same size with entirely different cases DOES, which the size test cannot see")
+same_base = doc(["a", "b"], ["c"], IDS)                 # base union {a, b, c}
+moved = doc(["d", "e"], ["f"], IDS)                     # union {d, e, f}: same size, disjoint
+v = r1.verdict(moved, "over_retraction", same_base)
+check("the union is the same size as the base's",
+      v["union_size"] == v["base_union_size"], f"{v['union_size']} vs {v.get('base_union_size')}")
+check("it shares no case with the base", v["union_disjoint_from_base"] is True)
+check("so a third draw is demanded although the rate did not move",
+      v["third_draw_required"] is True,
+      "the set moved whole while the size stayed put - invisible to the size test alone")
+
+print("# ... and a union that overlaps the base at the same size does not")
+overlap = doc(["a", "d"], ["e"], IDS)                   # union {a, d, e}: same size, shares 'a'
+v = r1.verdict(overlap, "over_retraction", same_base)
+check("no third draw when the union still shares a case with the base",
+      v["third_draw_required"] is False,
+      f"union {v['union_size']} vs base {v.get('base_union_size')}")
+
+print("# ... and two clean readings against a clean base are not 'disjoint'")
+#: The degenerate case the clause's wording does not cover on its own: an empty union is the same
+#: size as an empty base union and shares no id with it, so a literal reading would demand a third
+#: draw for a result with nothing wrong in it.
+clean = doc([], [], IDS)
+v = r1.verdict(clean, "over_retraction", doc([], [], IDS))
+check("nothing failing anywhere is not a moved set", v["third_draw_required"] is False,
+      "an empty union trivially satisfies 'not smaller and disjoint'")
+check("and the gate is met", v["ok"] is True)
+
 print("# a mode with only one draw is not judged at all")
 one = {"arms": {"nevertwice": {"rows": [{"id": "a", "current_retired": False}]}}}
 v = r1.verdict(one, "over_retraction", None)

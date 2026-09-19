@@ -17,8 +17,9 @@ Three clauses, all enforced here:
    flatter a change.
 3. **The union is checked against the base, and growth demands a third draw.** Two draws agreeing
    on zero shared failures can still be two draws failing on different cases each. If the union of
-   failing ids is larger than the base's, the mechanism moved the SET of what fails even when it
-   did not move the rate, and nothing is concluded until a third draw is in.
+   failing ids is larger than the base's - or the same size and sharing no case with it - the
+   mechanism moved the SET of what fails even when it did not move the rate, and nothing is
+   concluded until a third draw is in.
 
     python tools/r1_verdict.py research/results/supersession_v1.json --metric over_retraction
     python tools/r1_verdict.py NEW.json --base research/results/supersession_baseline.json --json OUT
@@ -94,13 +95,24 @@ def verdict(doc: dict, metric: str, base: dict | None) -> dict:
             b_union = bd[0][1] | bd[1][1]
             b_shared = bd[0][1] & bd[1][1]
             rec["base_union_size"] = len(b_union)
-            #: R1 clause 3 gates on the union being LARGER, which is what the owner confirmed.
-            #: The ids that are new are reported beside it because "moved the set" is the stated
-            #: rationale - but a union that is new AND smaller is a mechanism fixing more than it
-            #: breaks, and demanding a third draw for that would be a stricter rule than the one
-            #: on the books. Tightening a confirmed rule quietly is the thing R1 exists against.
+            #: Clause 3 has two branches, and the reason it is a SIZE test rather than a "any new
+            #: id" test is measured: on the committed artifacts 16, 1, 18 and 19 of 80 cases
+            #: change outcome between two draws of identical code. New ids therefore appear on
+            #: almost every run, so a set test would demand a third draw every time - a rule that
+            #: always fires is not a signal. And a genuinely new failure that fails in BOTH draws
+            #: is already charged by clause 1 regardless of union size, so the set test would add
+            #: only one-draw new failures: exactly the noise R1 exists in order not to act on.
+            #: The new ids are reported beside the verdict because that visibility is free.
+            #:
+            #: The second branch closes the shape the size test alone cannot see: a union the same
+            #: size as the base's but made of entirely different cases - the set moved whole while
+            #: the rate did not move at all. `union` must be non-empty for it, or two clean
+            #: readings against a clean base (empty, disjoint from empty, and not smaller) would
+            #: demand a third draw for having nothing wrong with them.
             rec["union_new_ids"] = sorted(union - b_union)
-            rec["third_draw_required"] = len(union) > len(b_union)
+            moved_whole = bool(union) and len(union) >= len(b_union) and not (union & b_union)
+            rec["union_disjoint_from_base"] = moved_whole
+            rec["third_draw_required"] = len(union) > len(b_union) or moved_whole
             # Clause 2: a fix counts only when BOTH draws fixed the same case.
             rec["credited_fixes"] = sorted(b_shared - union)
             rec["fixes_named_not_counted"] = sorted((b_shared - f1) ^ (b_shared - f2))
@@ -129,7 +141,10 @@ def render(rec: dict) -> str:
         if rec.get("union_new_ids"):
             out.append(f"    new to this arm       {', '.join(rec['union_new_ids'])}")
         if rec.get("third_draw_required"):
-            out.append(f"    THIRD DRAW REQUIRED - the union of failures is larger than the base's")
+            why = ("the union is the same size as the base's and shares no case with it"
+                   if rec.get("union_disjoint_from_base")
+                   else "the union of failures is larger than the base's")
+            out.append(f"    THIRD DRAW REQUIRED - {why}")
         if rec.get("credited_fixes"):
             out.append(f"    credited fixes (both)  {', '.join(rec['credited_fixes'])}")
         if rec.get("fixes_named_not_counted"):
