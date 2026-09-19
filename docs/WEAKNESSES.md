@@ -17,32 +17,33 @@ Four weaknesses the June audit had no stand to see. Each has a page with the reg
 ledger entry (`.loop/GOAL-CLOSE.md`) with its gate; the tables here are rendered from the register, so
 they cannot lag the artifact.
 
-- **[OPEN - measured 2026-09-19, and it conditions every line below] The engine we measure is not the
+- **[OPEN - measured in September, and it conditions every line below] The engine we measure is not the
   engine that runs.** All five hooks in the agent's `settings.json` invoke
-  `~/.claude/scripts/memory_hook.py`, whose own last sync commit is **2026-08-24**. It is a 345,593
-  byte monolith, and it contains **none** of the eleven K-series markers this repo's research pages
-  are about: the verified-literal channel (`_FACTS_MARK`, `_note_facts`, `_harvest_literals`,
-  `_facts_source`), the write-time proof rules and the sleep-time judge's veto (`_same_replacement`,
+  `~/.claude/scripts/memory_hook.py`, whose own last sync commit is from **August**. It is a
+  monolith, and it contains **none** of the K-series markers this repo's research pages are about:
+  the verified-literal channel (`_FACTS_MARK`, `_note_facts`, `_harvest_literals`, `_facts_source`),
+  the write-time proof rules and the sleep-time judge's veto (`_same_replacement`,
   `_same_fact_verdict`, `_replacement_guard`), and the sibling mechanism that replaced the absorb
-  (`CONTESTED_KEY`, `DISPUTED_KEY`, `pair_siblings`, `EARLIER_MAX_CHARS`). K6, K7 and K8 live only on
-  the unpushed `invariants/v3`. `python tools/check_installed_engine.py` reports the gap and writes
-  the record; the one behind this entry is
-  [`research/results/installed_engine_2026-09-19.json`](../research/results/installed_engine_2026-09-19.json).
+  (`CONTESTED_KEY`, `DISPUTED_KEY`, `pair_siblings`, `EARLIER_MAX_CHARS`). That whole series lives
+  only on the unpushed `invariants/v3`. `python tools/check_installed_engine.py` reports the gap,
+  prints the sync commit and the count, and writes the record; the one behind this entry is
+  [the installed-engine record](../research/results/installed_engine.json).
 
   What this costs is not a bench number - the campaigns ran against the repo at its own HEAD and
   remain true of that code. It costs every sentence of the form *"measured on the owner's store"*,
   because the store was written by the August build. One such sentence was drafted the same day and
-  is withdrawn here rather than published: a read of the vault found **0 of 7,991** live typed notes
-  carrying a `[facts]` block (**0 of 377** since 2026-09-16) and was taken - independently, by two
-  readers - as evidence that `_replacement_guard`'s veto is always empty in practice. It is not
-  evidence of that. A store with no blocks, written by a build with no channel, is **silent** about
-  the guard. Four read-only probes closed it: the harvester returns literals for every item tried on
-  a realistic session, including a prose lesson with none in its own text; the block survives
-  `write_typed_note` onto disk; the channel has exactly one caller, `process_session`; and that
-  caller is absent from the installed file.
+  is withdrawn here rather than published: a read of the vault found that **not one** live typed
+  note carries a `[facts]` block, and none written since K8 shipped does either, and this was taken
+  - independently, by two readers - as evidence that `_replacement_guard`'s veto is always empty in
+  practice. It is not evidence of that. A store with no blocks, written by a build with no channel,
+  is **silent** about the guard. Read-only probes closed it: the harvester returns literals for
+  every item tried on a realistic session, including a prose lesson with none in its own text; the
+  block survives `write_typed_note` onto disk; the channel has exactly one caller,
+  `process_session`; and that caller is absent from the installed file. The counts are in the
+  artifact.
 
-  So the honest state of K8's `over_retraction 0.000` is neither "it transfers" nor "it does not":
-  it is **untested on this store and untestable until the code is installed**. Whether to install is
+  So the honest state of K8's zero-over-retraction headline is neither "it transfers" nor "it does
+  not": it is **untested on this store and untestable until the code is installed**. Whether to install is
   the owner's call - `tools/sync_install.py --apply` is permissioned separately, and the branch is
   deliberately unpushed while part 5 is open. The weakness stays open until the two builds are the
   same build, and the probe above is what will say when they are.
