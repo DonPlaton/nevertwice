@@ -5133,6 +5133,19 @@ def _read_frontmatter_file(p: Path) -> dict:
     return fm
 
 
+#: Lines that are a typed note's STRUCTURE rather than its statement. The bold arm is the reason
+#: this exists: the exclusion list used to hold a bare `"**"`, which reads every emphasised opening
+#: as markup - a lesson beginning "**Never** commit on a red suite" parsed with an EMPTY
+#: description. `_same_replacement` then reached its empty-old-statement shortcut, concluded the
+#: note "carries nothing to preserve", and let the next note on the same topic absorb it
+#: unconditionally: a still-true statement overwritten because the parser would not read it
+#: (T1 review 2026-09-19). Only a `**Label:**` lead is structure - `**Prevention:**`,
+#: `**Project:**`, `**Date:**`, the legacy `**Как избежать:**`. A statement that genuinely opens
+#: `**Always:** ...` is still excluded, which is the narrow price of not being able to tell it
+#: apart from a label.
+_STRUCTURAL_LEAD = re.compile(r"(?:\*\*[^*]{1,40}:\*\*)|[#\-_|]|\[\[")
+
+
 def _parse_note_body(lines) -> tuple[str, str, str]:
     """The ONE body parser for a typed note → (title, desc, prevention). Title is the first
     `# ` heading (icon-stripped, "" if none); desc is the first plain line after it; prevention
@@ -5154,7 +5167,7 @@ def _parse_note_body(lines) -> tuple[str, str, str]:
             prevention = s.replace("**Prevention:**", "").strip()
         elif s.startswith("**Как избежать:**"):          # legacy marker, dual-read
             prevention = s.replace("**Как избежать:**", "").strip()
-        elif not desc and not s.startswith(("**", "#", "-", "_", "---", "[[", "|")):
+        elif not desc and not _STRUCTURAL_LEAD.match(s):
             desc = s
     return title, desc, prevention
 
