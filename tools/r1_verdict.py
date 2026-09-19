@@ -24,6 +24,9 @@ Three clauses, all enforced here:
     python tools/r1_verdict.py research/results/supersession_v1.json --metric over_retraction
     python tools/r1_verdict.py NEW.json --base research/results/supersession_baseline.json --json OUT
 
+The divergence figure this clause is calibrated against is measured by
+`tools/draw_divergence.py`, which carries no argument parser for the reason above.
+
 Exit status is 0 when the gate is judged, 3 when a third draw is required before it can be.
 Standard library only.
 """
@@ -36,6 +39,11 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+#: The measurement lives in its own module so that editing this file's argument parser or its
+#: rendering cannot stale a registered number. The dependency points THIS way on purpose.
+from draw_divergence import DRAW_KEYS, rows_of        # noqa: E402
+
 #: metric -> (row field, the value that means this case FAILED, only these shapes)
 #: A metric is defined by what counts as a loss on ONE case, because that is the unit R1 judges.
 METRICS = {
@@ -45,12 +53,6 @@ METRICS = {
     "old_value_served": ("old_value_served", True, None),
 }
 
-#: The two readings of one mode. `nevertwice_run2` is the stand's own name for the second draw.
-DRAW_KEYS = ("nevertwice", "nevertwice_run2")
-
-
-def rows_of(doc: dict, arm: str) -> list:
-    return list(((doc.get("arms") or {}).get(arm) or {}).get("rows") or [])
 
 
 def failing(rows: list, metric: str) -> set:
@@ -73,48 +75,6 @@ def draws(doc: dict, metric: str) -> list:
         if rows:
             got.append((key, failing(rows, metric)))
     return got
-
-
-OUTCOME_FIELDS = ("current_retired", "stale_returned", "current_returned",
-                  "old_value_served", "current_demoted", "current_absent")
-
-
-def divergence(doc: dict) -> dict:
-    """How many cases change outcome between the two draws of the SAME commit.
-
-    This is the number clause 3 rests on. A set test - "any failing id the base did not have" -
-    would fire whenever the draws disagree at all, so how often they disagree decides whether that
-    test is a trigger or a permanent third campaign. Counted over every outcome field the stand
-    records, on cases present in both draws.
-    """
-    a = {r.get("id"): r for r in rows_of(doc, DRAW_KEYS[0])}
-    b = {r.get("id"): r for r in rows_of(doc, DRAW_KEYS[1])}
-    both = sorted(set(a) & set(b))
-    if not both:
-        return {"cases": 0, "diverging": 0, "by_field": {}}
-    diverging = [i for i in both
-                 if any(bool(a[i].get(f)) != bool(b[i].get(f)) for f in OUTCOME_FIELDS)]
-    by_field = {f: sum(1 for i in both if bool(a[i].get(f)) != bool(b[i].get(f)))
-                for f in OUTCOME_FIELDS}
-    return {"cases": len(both), "diverging": len(diverging),
-            "rate": round(len(diverging) / len(both), 4),
-            "by_field": {f: n for f, n in by_field.items() if n}}
-
-
-#: The four committed stand artifacts the divergence figure is measured over. Named here rather
-#: than passed in, so `--divergence-all` is one reproducible command with no arguments to get wrong.
-DIVERGENCE_SET = ("supersession_v1", "supersession_v1_implicit",
-                  "supersession_baseline_ef8120d", "supersession_baseline_ef8120d_implicit")
-
-
-def divergence_all(root: Path) -> dict:
-    out = {"measured_by": "python tools/r1_verdict.py --divergence-all",
-           "what": "cases whose outcome changes between the two draws of the SAME commit",
-           "artifacts": {}}
-    for key in DIVERGENCE_SET:
-        doc = json.loads((root / "research" / "results" / f"{key}.json").read_text(encoding="utf-8"))
-        out["artifacts"][key] = divergence(doc)
-    return out
 
 
 def verdict(doc: dict, metric: str, base: dict | None) -> dict:
@@ -197,42 +157,16 @@ def render(rec: dict) -> str:
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("artifact", nargs="?", default="")
+    ap.add_argument("artifact", nargs="?", default="",
+                    help="a supersession stand result to judge")
     ap.add_argument("--base", default="", help="the artifact this one is compared against")
     ap.add_argument("--metric", action="append", default=[],
                     help=f"one of {', '.join(METRICS)}; repeatable, default all")
     ap.add_argument("--json", default="", metavar="PATH")
-    ap.add_argument("--divergence", action="store_true",
-                    help="report how often the two draws disagree instead of judging a gate")
-    ap.add_argument("--divergence-all", action="store_true",
-                    help="measure every artifact in DIVERGENCE_SET and write the combined record")
     args = ap.parse_args()
 
-    if args.divergence_all:
-        rec = divergence_all(ROOT)
-        for key, d in rec["artifacts"].items():
-            print(f"  {key:42} {d['diverging']:3} of {d['cases']}  ({d['rate']})")
-        out = Path(args.json) if args.json else ROOT / "research/results/draw_divergence.json"
-        out.parent.mkdir(parents=True, exist_ok=True)
-        out.write_text(json.dumps(rec, indent=1) + chr(10), encoding="utf-8")
-        print(f"artifact: {out}")
-        return 0
-
     if not args.artifact:
-        ap.error("an artifact is required unless --divergence-all is given")
-
-    if args.divergence:
-        rec = {"artifact": args.artifact, **divergence(
-            json.loads(Path(args.artifact).read_text(encoding="utf-8")))}
-        print(f"{Path(args.artifact).name}: {rec['diverging']} of {rec['cases']} cases change "
-              f"outcome between two draws of the same commit")
-        for f, n in (rec.get("by_field") or {}).items():
-            print(f"    {f:20} {n}")
-        if args.json:
-            Path(args.json).parent.mkdir(parents=True, exist_ok=True)
-            Path(args.json).write_text(json.dumps(rec, indent=1) + "\n", encoding="utf-8")
-            print(f"\nartifact: {args.json}")
-        return 0
+        ap.error("an artifact is required")
 
     doc = json.loads(Path(args.artifact).read_text(encoding="utf-8"))
     base = json.loads(Path(args.base).read_text(encoding="utf-8")) if args.base else None

@@ -85,7 +85,7 @@ def main() -> int:
             "dataset": "supersession_v1",
             "environment": "local_supersession_stand",
             "raw": RAW,
-            "command": f"python tools/r1_verdict.py research/results/{key}.json --divergence",
+            "command": "python tools/draw_divergence.py",
             "commit": commit,
             "pointer": f"artifacts.{key}.rate",
             "value": round(row["diverging"] / row["cases"], 4) if row["cases"] else 0.0,

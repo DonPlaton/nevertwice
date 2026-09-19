@@ -49061,7 +49061,7 @@
    "dataset": "supersession_v1",
    "environment": "local_supersession_stand",
    "raw": "research/results/draw_divergence.json",
-   "command": "python tools/r1_verdict.py research/results/supersession_v1.json --divergence",
+   "command": "python tools/draw_divergence.py",
    "commit": "ba94d1d7a5a241cbab411c4eb0317281d6a1e38c",
    "pointer": "artifacts.supersession_v1.rate",
    "value": 0.2,
@@ -49081,7 +49081,7 @@
    "cited_in": [],
    "cited_in_pending": [],
    "produced_by": [
-    "tools/r1_verdict.py"
+    "tools/draw_divergence.py"
    ]
   },
   {
@@ -49089,7 +49089,7 @@
    "dataset": "supersession_v1",
    "environment": "local_supersession_stand",
    "raw": "research/results/draw_divergence.json",
-   "command": "python tools/r1_verdict.py research/results/supersession_v1_implicit.json --divergence",
+   "command": "python tools/draw_divergence.py",
    "commit": "ba94d1d7a5a241cbab411c4eb0317281d6a1e38c",
    "pointer": "artifacts.supersession_v1_implicit.rate",
    "value": 0.0125,
@@ -49109,7 +49109,7 @@
    "cited_in": [],
    "cited_in_pending": [],
    "produced_by": [
-    "tools/r1_verdict.py"
+    "tools/draw_divergence.py"
    ]
   },
   {
@@ -49117,7 +49117,7 @@
    "dataset": "supersession_v1",
    "environment": "local_supersession_stand",
    "raw": "research/results/draw_divergence.json",
-   "command": "python tools/r1_verdict.py research/results/supersession_baseline_ef8120d.json --divergence",
+   "command": "python tools/draw_divergence.py",
    "commit": "ba94d1d7a5a241cbab411c4eb0317281d6a1e38c",
    "pointer": "artifacts.supersession_baseline_ef8120d.rate",
    "value": 0.225,
@@ -49137,7 +49137,7 @@
    "cited_in": [],
    "cited_in_pending": [],
    "produced_by": [
-    "tools/r1_verdict.py"
+    "tools/draw_divergence.py"
    ]
   },
   {
@@ -49145,7 +49145,7 @@
    "dataset": "supersession_v1",
    "environment": "local_supersession_stand",
    "raw": "research/results/draw_divergence.json",
-   "command": "python tools/r1_verdict.py research/results/supersession_baseline_ef8120d_implicit.json --divergence",
+   "command": "python tools/draw_divergence.py",
    "commit": "ba94d1d7a5a241cbab411c4eb0317281d6a1e38c",
    "pointer": "artifacts.supersession_baseline_ef8120d_implicit.rate",
    "value": 0.2375,
@@ -49165,7 +49165,7 @@
    "cited_in": [],
    "cited_in_pending": [],
    "produced_by": [
-    "tools/r1_verdict.py"
+    "tools/draw_divergence.py"
    ]
   }
  ],

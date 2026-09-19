@@ -51,7 +51,7 @@ HARDWARE = "needs-hardware"
 #: Every committed research artifact, what makes it, and what it takes to remake it.
 ARTIFACTS = [
     {"file": "research/results/draw_divergence.json",
-     "command": ["python", "tools/r1_verdict.py", "--divergence-all"],
+     "command": ["python", "tools/draw_divergence.py"],
      "kind": DETERMINISTIC, "task": "instrument",
      "inputs": ["research/results/supersession_v1.json",
                 "research/results/supersession_v1_implicit.json",
