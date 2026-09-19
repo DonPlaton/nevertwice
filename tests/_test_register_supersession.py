@@ -164,6 +164,11 @@ with tempfile.TemporaryDirectory() as tmp:
     # engine: they returned 2 (refused) instead of 1, and this suite went red on every working
     # tree in which work was being done. Measured twice on 2026-09-19. The guard is stubbed for
     # them, and exercised on its own immediately below, so coverage goes up rather than down.
+    #
+    # What the stub does NOT cover is how `_dirty_files` reads git, and with the stub in place
+    # that reading had no test left anywhere - which is how it kept a rename parsed as a single
+    # path called "old -> new" and every quoted path mangled. It now lives in one module with
+    # its own suite: `tools/git_status.py`, `tests/_test_git_status_parsing.py`.
     real_dirty = rs._dirty_files
     rs._dirty_files = lambda: set()
     try:

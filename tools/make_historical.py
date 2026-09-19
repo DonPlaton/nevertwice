@@ -115,7 +115,7 @@ def main() -> int:
 
     for c in chosen:
         make_historical(c, args.reason.strip(), when)
-    path.write_text(json.dumps(manifest, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
+    path.write_text(json.dumps(manifest, indent=1, ensure_ascii=False) + "\n", encoding="utf-8", newline="\n")
     print(f"\nwritten: {len(chosen)} claim(s) are historical as of {when}")
     return 0
 

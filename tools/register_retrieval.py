@@ -28,6 +28,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 MANIFEST_PATH = ROOT / "research" / "evidence_manifest.json"
 sys.path.insert(0, str(ROOT / "tools"))
+import git_status  # noqa: E402  the shared reading of `git status --porcelain -z`
 
 try:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -58,11 +59,12 @@ def _git(*args: str) -> str:
 
 
 def _dirty_files() -> set[str]:
-    out = set()
-    for line in _git("status", "--porcelain").splitlines():
-        if len(line) > 3:
-            out.add(line[3:].strip().replace("\\", "/"))
-    return out
+    #: One reading of `git status` for every registrar - `tools/git_status.py`, held by
+    #: `tests/_test_git_status_parsing.py`. The copy that used to sit here (in ten files, three
+    #: spellings) read a rename as a single path called "old -> new", kept the quotes git puts
+    #: around any path with a space or a non-ascii byte, and turned that path's octal escapes
+    #: into slashes. So `git mv` on a file inside a claim's closure left this guard blind.
+    return git_status.dirty_files(ROOT)
 
 
 def build_claims(family: str, artifact: dict, *, dataset: str, stand: str, command: str,
@@ -209,7 +211,7 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     manifest["claims"].extend(new)
     Path(args.manifest).write_text(json.dumps(manifest, indent=1, ensure_ascii=False) + "\n",
-                                   encoding="utf-8")
+                                   encoding="utf-8", newline="\n")
     print(f"registered {len(new)} claim(s) for {args.family} at {head[:7]}")
     return 0
 

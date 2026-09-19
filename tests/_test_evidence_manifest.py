@@ -411,6 +411,34 @@ def test_drift_entries_carry_the_correct_value() -> None:
           f"generated, so an entry only opens for a figure a change cannot fix yet)")
 
 
+def test_every_register_writer_keeps_the_line_endings() -> None:
+    """A writer that lets the platform choose rewrites all 49,369 lines of the register.
+
+    `.gitattributes` normalises on commit, so the damage is invisible in `git diff` and visible
+    only as a file that will not go clean - the same shape as the reproduction command that left
+    ` M` behind. `tools/produced_by.py` carries the fix and the comment explaining it; measured
+    2026-09-19, twelve other writers did not, and each run flipped every line of the register.
+
+    Structural on purpose: the next tool to write the manifest gets the rule for free.
+    """
+    import ast                                                    # noqa: PLC0415
+    print("\n- the register is written with the line endings it has -")
+    offenders = []
+    for path in sorted((ROOT / "tools").glob("*.py")):
+        src = path.read_text(encoding="utf-8")
+        for node in ast.walk(ast.parse(src)):
+            if not (isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
+                    and node.func.attr == "write_text"):
+                continue
+            seg = ast.get_source_segment(src, node) or ""
+            if "json.dumps(manifest" not in seg:
+                continue
+            if not any(k.arg == "newline" for k in node.keywords):
+                offenders.append(f"{path.name}:{node.lineno}")
+    check("every tool that writes the register pins its newline",
+          not offenders, ", ".join(offenders))
+
+
 def test_zz_every_check_passed() -> None:
     """Bare pytest must reach the same verdict as this suite's exit code.
 

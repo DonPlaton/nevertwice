@@ -20,8 +20,14 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT / "tools"))
+
+import git_status  # noqa: E402  the shared reading of `git status --porcelain -z`
+import produced_by  # noqa: E402  the transitive import closure of a measurement command
+
 MANIFEST = ROOT / "research" / "evidence_manifest.json"
 RAW = "research/results/draw_divergence.json"
+COMMAND = "python tools/draw_divergence.py"
 
 #: artifact key -> (claim suffix, the corpus in words)
 ARTIFACTS = {
@@ -70,6 +76,16 @@ def main() -> int:
     have = {c.get("id") for c in (claims if as_list else claims.values())}
     commit = head()
 
+    #: Every other registrar refuses to stamp a claim onto HEAD while a file the measurement
+    #: imports is uncommitted. This one had no such guard, so the four divergence claims could be
+    #: stamped onto a commit that does not contain the code that produced them - and freshness
+    #: here IS commit ancestry over that closure, so the register would have had no way to tell.
+    #: Found 2026-09-19 by `tests/_test_git_status_parsing.py`, which asks it of every registrar.
+    dirty = sorted(p for p in produced_by.closure(COMMAND) if p in git_status.dirty_files(ROOT))
+    if dirty:
+        print(f"working tree modifies {dirty[0]} - commit first")
+        return 2
+
     added, skipped = [], []
     for key, (suffix, words) in ARTIFACTS.items():
         row = (raw.get("artifacts") or {}).get(key)
@@ -85,7 +101,7 @@ def main() -> int:
             "dataset": "supersession_v1",
             "environment": "local_supersession_stand",
             "raw": RAW,
-            "command": "python tools/draw_divergence.py",
+            "command": COMMAND,
             "commit": commit,
             "pointer": f"artifacts.{key}.rate",
             "value": round(row["diverging"] / row["cases"], 4) if row["cases"] else 0.0,
@@ -125,7 +141,7 @@ def main() -> int:
         for c in added:
             claims[c["id"]] = c
     MANIFEST.write_text(json.dumps(manifest, indent=1, ensure_ascii=False) + "\n",
-                        encoding="utf-8")
+                        encoding="utf-8", newline="\n")
     print(f"\nwritten: {len(added)} claim(s). Run `python tools/produced_by.py --write` next.")
     return 0
 
