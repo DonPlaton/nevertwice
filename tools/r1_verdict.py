@@ -182,7 +182,7 @@ def main() -> int:
         Path(args.json).parent.mkdir(parents=True, exist_ok=True)
         Path(args.json).write_text(json.dumps({"artifact": args.artifact, "base": args.base,
                                                "verdicts": recs}, indent=1) + "\n",
-                                   encoding="utf-8")
+                                   encoding="utf-8", newline="\n")
         print(f"\nartifact: {args.json}")
 
     if any(r.get("third_draw_required") for r in recs):

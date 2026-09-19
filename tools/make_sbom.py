@@ -141,7 +141,7 @@ def main(argv: list[str] | None = None) -> int:
     sbom = build_sbom(args.dist, args.serial, args.timestamp)
     text = json.dumps(sbom, indent=2, sort_keys=False) + "\n"
     if args.out:
-        args.out.write_text(text, encoding="utf-8")
+        args.out.write_text(text, encoding="utf-8", newline="\n")
         component = sbom["metadata"]["component"]
         print(f"wrote {args.out} - {component['name']} {component['version']}, "
               f"{len(sbom['components'])} optional component(s), "

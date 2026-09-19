@@ -57,6 +57,14 @@ def wilson(k: int, n: int, z: float = 1.959963985) -> dict:
             "high": round(min(1.0, centre + half), 4), "method": "wilson"}
 
 
+def _dirty_files() -> set[str]:
+    #: The same one-line wrapper every other registrar has. It is not decoration: it is the
+    #: single name a test can replace to ask this tool what it does on a dirty tree, and this
+    #: file reaching `git_status.dirty_files` inline was enough to make it the one registrar
+    #: `tests/_test_git_status_parsing.py` could not drive that way.
+    return git_status.dirty_files(ROOT)
+
+
 def head() -> str:
     return subprocess.run(["git", "rev-parse", "HEAD"], cwd=str(ROOT),
                           capture_output=True, text=True).stdout.strip()
@@ -81,7 +89,7 @@ def main() -> int:
     #: stamped onto a commit that does not contain the code that produced them - and freshness
     #: here IS commit ancestry over that closure, so the register would have had no way to tell.
     #: Found 2026-09-19 by `tests/_test_git_status_parsing.py`, which asks it of every registrar.
-    dirty = sorted(p for p in produced_by.closure(COMMAND) if p in git_status.dirty_files(ROOT))
+    dirty = sorted(p for p in produced_by.closure(COMMAND) if p in _dirty_files())
     if dirty:
         print(f"working tree modifies {dirty[0]} - commit first")
         return 2

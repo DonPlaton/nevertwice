@@ -228,8 +228,8 @@ def main() -> int:
         return 1 if todo else 0
 
     for rel, p, figs in todo:
-        p.write_text(insert(p.read_text(encoding="utf-8"), _link_from(rel)),
-                     encoding="utf-8")
+        p.write_text(insert(p.read_text(encoding="utf-8", newline="\n"), _link_from(rel)),
+                     encoding="utf-8", newline="\n")
     print(f"\nstamped {len(todo)} page(s)")
 
     if args.unstamp:
@@ -243,7 +243,7 @@ def main() -> int:
                 continue
             figs = figures_on_page(text, claims, live)
             if not any(_strength(pr) >= STAMP_AT for _cid, pr in figs):
-                f.write_text(remove(text), encoding="utf-8")
+                f.write_text(remove(text), encoding="utf-8", newline="\n")
                 print(f"  unstamped {rel} - its only overlap was round numbers")
                 removed += 1
         print(f"unstamped {removed} page(s)")

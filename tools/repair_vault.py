@@ -197,7 +197,7 @@ def main(argv: list[str] | None = None) -> int:
         for tag in tags:
             text = re.sub(rf"(?<![\w/#\-])#{re.escape(tag)}(?![\w/\-])[ \t]*", "", text)
         text = re.sub(r"[ \t]+$", "", text, flags=re.M)      # no trailing blanks left behind
-        p.write_text(text, encoding="utf-8")
+        p.write_text(text, encoding="utf-8", newline="\n")
         print(f"  untagged  {p.name}  ({', '.join(sorted(tags))})")
 
     print("\nRe-run without --apply to confirm the store is clean, then rebuild the index:")

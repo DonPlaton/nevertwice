@@ -245,7 +245,7 @@ def main(argv: list[str] | None = None) -> int:
         if not snapshot:
             print("fetch failed; the committed snapshot was left untouched")
             return 1
-        SNAPSHOT.write_text(json.dumps(snapshot, indent=2) + "\n", encoding="utf-8")
+        SNAPSHOT.write_text(json.dumps(snapshot, indent=2) + "\n", encoding="utf-8", newline="\n")
         print(f"wrote {SNAPSHOT.relative_to(ROOT).as_posix()} ({today})")
 
     data, snap = load(DATA), load(SNAPSHOT)
