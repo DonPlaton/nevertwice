@@ -508,6 +508,39 @@ def _confidence(g: dict) -> float:
     return 0.5 if interval["point"] is None else round(interval["point"], 3)
 
 
+#: How long a ledger writer waits for the vault lock. `record_fired` runs on the PreToolUse path
+#: before every Edit, Write, MultiEdit and Bash, so it waits briefly and gives up: `fired` is
+#: telemetry by this module's own rule - it never touches the lifecycle and `support()` cannot see
+#: it - and telemetry that blocks the agent is worse than a telemetry value that is one low.
+#: `forget_delivery` runs at PreCompact, off the hot path, and can afford to wait.
+FIRED_LOCK_S = 2.0
+FORGET_LOCK_S = 15.0
+
+
+def _persist_under_lock(mutate, timeout_s: float) -> bool:
+    """Apply `mutate` to a FRESHLY loaded ledger and write it, holding the vault lock.
+
+    Every writer here was a read-modify-write over one JSON file with no lock: the caller loaded
+    the ledger, mutated its own copy, and saved it whole, so two tool calls in flight lost one of
+    the two updates - a delivery record silently dropped, and the same advisory re-injected for the
+    rest of the session. Re-loading INSIDE the lock is what makes the other writer's change
+    survive; mutating the caller's copy as well is what keeps the value it already holds correct.
+
+    Returns False when the lock could not be taken in time, so the caller can say nothing was
+    persisted rather than assume it was.
+    """
+    if not m.acquire_lock(timeout_s=timeout_s):
+        m.log("guards ledger: vault lock busy, counters not persisted this call")
+        return False
+    try:
+        fresh = load_guards()
+        if mutate(fresh):
+            save_guards(fresh)
+        return True
+    finally:
+        m.release_lock()
+
+
 def record_fired(guard_ids, guards=None, persist=True, session=None) -> None:
     """Bump the fired counters for a set of hits in ONE pass and (at most) one atomic write -
     the telemetry behind `guards list`'s fired= column, distinct from the helped/false-positive
@@ -518,11 +551,13 @@ def record_fired(guard_ids, guards=None, persist=True, session=None) -> None:
         return
     guards = load_guards() if guards is None else guards
     stamp = datetime.now().strftime("%Y-%m-%d %H:%M")
-    hit = False
-    for g in guards:
-        if g.get("id") in ids:
-            g["fired"] = g.get("fired", 0) + 1
-            g["last_fired"] = stamp
+
+    def _bump(rows) -> bool:
+        touched = False
+        for g in rows:
+            if g.get("id") in ids:
+                g["fired"] = g.get("fired", 0) + 1
+                g["last_fired"] = stamp
             # Record WHICH session it was delivered to, so the same advisory is not
             # re-injected on every matching PreToolUse for the rest of the session. This is
             # delivery, not corroboration: a guard that merely MATCHED in K sessions has
@@ -530,17 +565,21 @@ def record_fired(guard_ids, guards=None, persist=True, session=None) -> None:
             # `outcomes` seeds from) let the first feedback of any kind - a false positive
             # included - promote such a guard to blocking (review 2026-09-05). Support
             # sessions come only from feedback; `_mirror_legacy_counters` derives them.
-            if session:
-                seen = g.get("delivered_sessions") or []
-                if session not in seen:
-                    seen.append(session)
-                    g["delivered_sessions"] = seen[-SEEN_SESSIONS_CAP:]
-            hit = True
+                if session:
+                    seen = g.get("delivered_sessions") or []
+                    if session not in seen:
+                        seen.append(session)
+                        g["delivered_sessions"] = seen[-SEEN_SESSIONS_CAP:]
+                touched = True
+        return touched
+
+    hit = _bump(guards)                 # the caller's own copy, so what it holds stays right
     if hit and persist:
         # persist regardless of who loaded the list: every check surface hands us the
         # ledger it already read (one load per event, critic 2026-07), and none of them
-        # writes it back themselves - pass persist=False to batch externally.
-        save_guards(guards)
+        # writes it back themselves - pass persist=False to batch externally. The write
+        # re-reads under the lock so a concurrent tool call's delivery record is not lost.
+        _persist_under_lock(_bump, FIRED_LOCK_S)
 
 
 # ── generation from mistakes (sleep-time, off the hot path) ───────────
@@ -832,12 +871,17 @@ def forget_delivery(session: str | None, guards=None, persist=True) -> int:
     if not session:
         return 0
     guards = load_guards() if guards is None else guards
-    changed = 0
-    for g in guards:
-        seen = g.get("delivered_sessions") or []
-        if session in seen:
-            g["delivered_sessions"] = [s for s in seen if s != session]
-            changed += 1
+
+    def _drop(rows) -> int:
+        n = 0
+        for g in rows:
+            seen = g.get("delivered_sessions") or []
+            if session in seen:
+                g["delivered_sessions"] = [s for s in seen if s != session]
+                n += 1
+        return n
+
+    changed = _drop(guards)             # the caller's own copy
     if changed and persist:
-        save_guards(guards)
+        _persist_under_lock(_drop, FORGET_LOCK_S)
     return changed

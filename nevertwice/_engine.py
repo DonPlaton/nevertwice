@@ -1739,8 +1739,14 @@ def collect_existing_titles(project: str, for_date: str | None = None
         if for_date:
             same = [sl for dt, sl in rows if dt == for_date]
             other = [sl for dt, sl in rows if dt != for_date]
-            # the day's own notes first, then the newest others fill the remainder
-            window = same[-TITLE_WINDOW:] + other[-(max(0, TITLE_WINDOW - len(same))):]
+            # The day's own notes first, then the newest others fill the remainder. `fill` is
+            # bound to its own name because `other[-0:]` is the WHOLE list, not none of it: once
+            # the day had TITLE_WINDOW notes of its own the remainder was every other-day note,
+            # and the trailing slice then kept the tail - which was all of `other`. A busy day
+            # showed the extractor no note from that day at all, the case the window exists for
+            # (T1 review 2026-09-19).
+            fill = max(0, TITLE_WINDOW - len(same))
+            window = same[-TITLE_WINDOW:] + (other[-fill:] if fill else [])
             picked[nt] = tuple(window[-TITLE_WINDOW:] if len(window) > TITLE_WINDOW else window)
         else:
             picked[nt] = tuple(sl for _dt, sl in rows[-TITLE_WINDOW:])
@@ -6968,6 +6974,12 @@ def retrieve_cross_project(project: str, query: str, k: int = CROSS_PROJECT_K,
     # FULL ranked list (K8 layer 2), same as retrieve_relevant, before the `[:k]` cut.
     paired = pair_siblings([dict(_hit(s, rec_of[s]), project=rec_of[s].get("project"))
                             for s in ranked])
+    # A retracted fact must never come back - the same guarantee `retrieve_relevant` makes, and
+    # for the same reason: the live folders are flat-globbed and `Superseded/` is a subdirectory,
+    # so the structure alone is not a guarantee. An index row or a cached vector that outlived
+    # the file it describes surfaces the retracted title anyway, and this path had no stat between
+    # the index and the reader (T1 review 2026-09-19).
+    paired = [h for h in paired if _live_note_exists(h.get("stem", ""), h.get("ntype", ""))]
     return paired[:k]
 
 
