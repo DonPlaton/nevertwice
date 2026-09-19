@@ -42952,9 +42952,9 @@
    ],
    "note": "Pooled over 2 runs of the same commit: the extraction model is not deterministic at temperature 0 and the runs read 0.1 and 0.1. One run of this stand is not a result, so the published figure is the pooled rate over 120 case-runs with the per-run values beside it in the artifact.",
    "cited_in_pending": [],
-   "stale": "gpu: the campaign at 71f83a1 re-measured every stand - the entry point, the payload delta and the per-question rows moved the engine, so every number whose closure names it is withdrawn until it is re-read from this run's artifacts",
+   "stale": "historical: the NEVERTWICE_EXPLICIT_RETIRE=judge arm, evaluated at K8-C and decided against on 2026-09-18: the default stays write, so this measures a mode the project does not ship; its artifacts predate HEAD and remeasure --restore refuses an artifact older than the commit, by design. If the arm is wanted alive it returns as an arm in a later window, re-measured, not restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "historical_on": "2026-09-19"
   },
   {
    "id": "supersession_switch.nevertwice.current_rate",
@@ -43019,9 +43019,9 @@
    ],
    "note": "Pooled over 2 runs of the same commit: the extraction model is not deterministic at temperature 0 and the runs read 0.1 and 0.1. One run of this stand is not a result, so the published figure is the pooled rate over 120 case-runs with the per-run values beside it in the artifact.",
    "cited_in_pending": [],
-   "stale": "gpu: the campaign at 71f83a1 re-measured every stand - the entry point, the payload delta and the per-question rows moved the engine, so every number whose closure names it is withdrawn until it is re-read from this run's artifacts",
+   "stale": "historical: the NEVERTWICE_EXPLICIT_RETIRE=judge arm, evaluated at K8-C and decided against on 2026-09-18: the default stays write, so this measures a mode the project does not ship; its artifacts predate HEAD and remeasure --restore refuses an artifact older than the commit, by design. If the arm is wanted alive it returns as an arm in a later window, re-measured, not restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "historical_on": "2026-09-19"
   },
   {
    "id": "supersession_switch.nevertwice.old_value_served_rate",
@@ -43086,9 +43086,9 @@
    ],
    "note": "The stale rate counts an item that asserts the retracted value without the current one; this counts the retracted value wherever it appears in the returned text, so a paired hit (newest statement with the earlier one attached, K8 layer 2) is counted here and not there.",
    "cited_in_pending": [],
-   "stale": "gpu: the campaign at 71f83a1 re-measured every stand - the entry point, the payload delta and the per-question rows moved the engine, so every number whose closure names it is withdrawn until it is re-read from this run's artifacts",
+   "stale": "historical: the NEVERTWICE_EXPLICIT_RETIRE=judge arm, evaluated at K8-C and decided against on 2026-09-18: the default stays write, so this measures a mode the project does not ship; its artifacts predate HEAD and remeasure --restore refuses an artifact older than the commit, by design. If the arm is wanted alive it returns as an arm in a later window, re-measured, not restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "historical_on": "2026-09-19"
   },
   {
    "id": "supersession_switch.nevertwice.over_retraction_rate",
@@ -43154,9 +43154,9 @@
    ],
    "note": "Over-retraction proper: only a control case whose still-true fact the store shows as retired counts. A fact that was never written, or was written and ranked below k, is a control miss (`control_miss_rate`) and is split by cause in `control_miss.*`.",
    "cited_in_pending": [],
-   "stale": "gpu: the campaign at 71f83a1 re-measured every stand - the entry point, the payload delta and the per-question rows moved the engine, so every number whose closure names it is withdrawn until it is re-read from this run's artifacts",
+   "stale": "historical: the NEVERTWICE_EXPLICIT_RETIRE=judge arm, evaluated at K8-C and decided against on 2026-09-18: the default stays write, so this measures a mode the project does not ship; its artifacts predate HEAD and remeasure --restore refuses an artifact older than the commit, by design. If the arm is wanted alive it returns as an arm in a later window, re-measured, not restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "historical_on": "2026-09-19"
   },
   {
    "id": "supersession_switch.nevertwice.control_case_runs",
@@ -43215,9 +43215,9 @@
     "sandbox_guard.py"
    ],
    "cited_in_pending": [],
-   "stale": "gpu: the campaign at 71f83a1 re-measured every stand - the entry point, the payload delta and the per-question rows moved the engine, so every number whose closure names it is withdrawn until it is re-read from this run's artifacts",
+   "stale": "historical: the NEVERTWICE_EXPLICIT_RETIRE=judge arm, evaluated at K8-C and decided against on 2026-09-18: the default stays write, so this measures a mode the project does not ship; its artifacts predate HEAD and remeasure --restore refuses an artifact older than the commit, by design. If the arm is wanted alive it returns as an arm in a later window, re-measured, not restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "historical_on": "2026-09-19"
   },
   {
    "id": "supersession_switch.nevertwice.control_miss_rate",
@@ -43282,9 +43282,9 @@
     "sandbox_guard.py"
    ],
    "cited_in_pending": [],
-   "stale": "gpu: the campaign at 71f83a1 re-measured every stand - the entry point, the payload delta and the per-question rows moved the engine, so every number whose closure names it is withdrawn until it is re-read from this run's artifacts",
+   "stale": "historical: the NEVERTWICE_EXPLICIT_RETIRE=judge arm, evaluated at K8-C and decided against on 2026-09-18: the default stays write, so this measures a mode the project does not ship; its artifacts predate HEAD and remeasure --restore refuses an artifact older than the commit, by design. If the arm is wanted alive it returns as an arm in a later window, re-measured, not restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "historical_on": "2026-09-19"
   },
   {
    "id": "supersession_switch.nevertwice.control_miss.retired",
@@ -43343,9 +43343,9 @@
     "sandbox_guard.py"
    ],
    "cited_in_pending": [],
-   "stale": "gpu: the campaign at 71f83a1 re-measured every stand - the entry point, the payload delta and the per-question rows moved the engine, so every number whose closure names it is withdrawn until it is re-read from this run's artifacts",
+   "stale": "historical: the NEVERTWICE_EXPLICIT_RETIRE=judge arm, evaluated at K8-C and decided against on 2026-09-18: the default stays write, so this measures a mode the project does not ship; its artifacts predate HEAD and remeasure --restore refuses an artifact older than the commit, by design. If the arm is wanted alive it returns as an arm in a later window, re-measured, not restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "historical_on": "2026-09-19"
   },
   {
    "id": "supersession_switch.nevertwice.control_miss.demoted",
@@ -43404,9 +43404,9 @@
     "sandbox_guard.py"
    ],
    "cited_in_pending": [],
-   "stale": "gpu: the campaign at 71f83a1 re-measured every stand - the entry point, the payload delta and the per-question rows moved the engine, so every number whose closure names it is withdrawn until it is re-read from this run's artifacts",
+   "stale": "historical: the NEVERTWICE_EXPLICIT_RETIRE=judge arm, evaluated at K8-C and decided against on 2026-09-18: the default stays write, so this measures a mode the project does not ship; its artifacts predate HEAD and remeasure --restore refuses an artifact older than the commit, by design. If the arm is wanted alive it returns as an arm in a later window, re-measured, not restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "historical_on": "2026-09-19"
   },
   {
    "id": "supersession_switch.nevertwice.control_miss.never_written",
@@ -43465,9 +43465,9 @@
     "sandbox_guard.py"
    ],
    "cited_in_pending": [],
-   "stale": "gpu: the campaign at 71f83a1 re-measured every stand - the entry point, the payload delta and the per-question rows moved the engine, so every number whose closure names it is withdrawn until it is re-read from this run's artifacts",
+   "stale": "historical: the NEVERTWICE_EXPLICIT_RETIRE=judge arm, evaluated at K8-C and decided against on 2026-09-18: the default stays write, so this measures a mode the project does not ship; its artifacts predate HEAD and remeasure --restore refuses an artifact older than the commit, by design. If the arm is wanted alive it returns as an arm in a later window, re-measured, not restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "historical_on": "2026-09-19"
   },
   {
    "id": "supersession_switch.nevertwice.control_miss.unranked",
@@ -43526,9 +43526,9 @@
     "sandbox_guard.py"
    ],
    "cited_in_pending": [],
-   "stale": "gpu: the campaign at 71f83a1 re-measured every stand - the entry point, the payload delta and the per-question rows moved the engine, so every number whose closure names it is withdrawn until it is re-read from this run's artifacts",
+   "stale": "historical: the NEVERTWICE_EXPLICIT_RETIRE=judge arm, evaluated at K8-C and decided against on 2026-09-18: the default stays write, so this measures a mode the project does not ship; its artifacts predate HEAD and remeasure --restore refuses an artifact older than the commit, by design. If the arm is wanted alive it returns as an arm in a later window, re-measured, not restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "historical_on": "2026-09-19"
   },
   {
    "id": "supersession_switch.nevertwice.chars_per_query",
@@ -43587,9 +43587,9 @@
     "sandbox_guard.py"
    ],
    "cited_in_pending": [],
-   "stale": "gpu: the campaign at 71f83a1 re-measured every stand - the entry point, the payload delta and the per-question rows moved the engine, so every number whose closure names it is withdrawn until it is re-read from this run's artifacts",
+   "stale": "historical: the NEVERTWICE_EXPLICIT_RETIRE=judge arm, evaluated at K8-C and decided against on 2026-09-18: the default stays write, so this measures a mode the project does not ship; its artifacts predate HEAD and remeasure --restore refuses an artifact older than the commit, by design. If the arm is wanted alive it returns as an arm in a later window, re-measured, not restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "historical_on": "2026-09-19"
   },
   {
    "id": "supersession_switch.nevertwice_after_sleep.stale_rate",
@@ -43654,9 +43654,9 @@
    ],
    "note": "Pooled over 2 runs of the same commit: the extraction model is not deterministic at temperature 0 and the runs read 0.05 and 0.05. One run of this stand is not a result, so the published figure is the pooled rate over 120 case-runs with the per-run values beside it in the artifact.",
    "cited_in_pending": [],
-   "stale": "gpu: the campaign at 71f83a1 re-measured every stand - the entry point, the payload delta and the per-question rows moved the engine, so every number whose closure names it is withdrawn until it is re-read from this run's artifacts",
+   "stale": "historical: the NEVERTWICE_EXPLICIT_RETIRE=judge arm, evaluated at K8-C and decided against on 2026-09-18: the default stays write, so this measures a mode the project does not ship; its artifacts predate HEAD and remeasure --restore refuses an artifact older than the commit, by design. If the arm is wanted alive it returns as an arm in a later window, re-measured, not restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "historical_on": "2026-09-19"
   },
   {
    "id": "supersession_switch.nevertwice_after_sleep.current_rate",
@@ -43721,9 +43721,9 @@
    ],
    "note": "Pooled over 2 runs of the same commit: the extraction model is not deterministic at temperature 0 and the runs read 0.05 and 0.05. One run of this stand is not a result, so the published figure is the pooled rate over 120 case-runs with the per-run values beside it in the artifact.",
    "cited_in_pending": [],
-   "stale": "gpu: the campaign at 71f83a1 re-measured every stand - the entry point, the payload delta and the per-question rows moved the engine, so every number whose closure names it is withdrawn until it is re-read from this run's artifacts",
+   "stale": "historical: the NEVERTWICE_EXPLICIT_RETIRE=judge arm, evaluated at K8-C and decided against on 2026-09-18: the default stays write, so this measures a mode the project does not ship; its artifacts predate HEAD and remeasure --restore refuses an artifact older than the commit, by design. If the arm is wanted alive it returns as an arm in a later window, re-measured, not restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "historical_on": "2026-09-19"
   },
   {
    "id": "supersession_switch.nevertwice_after_sleep.old_value_served_rate",
@@ -43788,9 +43788,9 @@
    ],
    "note": "The stale rate counts an item that asserts the retracted value without the current one; this counts the retracted value wherever it appears in the returned text, so a paired hit (newest statement with the earlier one attached, K8 layer 2) is counted here and not there.",
    "cited_in_pending": [],
-   "stale": "gpu: the campaign at 71f83a1 re-measured every stand - the entry point, the payload delta and the per-question rows moved the engine, so every number whose closure names it is withdrawn until it is re-read from this run's artifacts",
+   "stale": "historical: the NEVERTWICE_EXPLICIT_RETIRE=judge arm, evaluated at K8-C and decided against on 2026-09-18: the default stays write, so this measures a mode the project does not ship; its artifacts predate HEAD and remeasure --restore refuses an artifact older than the commit, by design. If the arm is wanted alive it returns as an arm in a later window, re-measured, not restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "historical_on": "2026-09-19"
   },
   {
    "id": "supersession_switch.nevertwice_after_sleep.over_retraction_rate",
@@ -43856,9 +43856,9 @@
    ],
    "note": "Over-retraction proper: only a control case whose still-true fact the store shows as retired counts. A fact that was never written, or was written and ranked below k, is a control miss (`control_miss_rate`) and is split by cause in `control_miss.*`.",
    "cited_in_pending": [],
-   "stale": "gpu: the campaign at 71f83a1 re-measured every stand - the entry point, the payload delta and the per-question rows moved the engine, so every number whose closure names it is withdrawn until it is re-read from this run's artifacts",
+   "stale": "historical: the NEVERTWICE_EXPLICIT_RETIRE=judge arm, evaluated at K8-C and decided against on 2026-09-18: the default stays write, so this measures a mode the project does not ship; its artifacts predate HEAD and remeasure --restore refuses an artifact older than the commit, by design. If the arm is wanted alive it returns as an arm in a later window, re-measured, not restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "historical_on": "2026-09-19"
   },
   {
    "id": "supersession_switch.nevertwice_after_sleep.control_case_runs",
@@ -43917,9 +43917,9 @@
     "sandbox_guard.py"
    ],
    "cited_in_pending": [],
-   "stale": "gpu: the campaign at 71f83a1 re-measured every stand - the entry point, the payload delta and the per-question rows moved the engine, so every number whose closure names it is withdrawn until it is re-read from this run's artifacts",
+   "stale": "historical: the NEVERTWICE_EXPLICIT_RETIRE=judge arm, evaluated at K8-C and decided against on 2026-09-18: the default stays write, so this measures a mode the project does not ship; its artifacts predate HEAD and remeasure --restore refuses an artifact older than the commit, by design. If the arm is wanted alive it returns as an arm in a later window, re-measured, not restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "historical_on": "2026-09-19"
   },
   {
    "id": "supersession_switch.nevertwice_after_sleep.control_miss_rate",
@@ -43984,9 +43984,9 @@
     "sandbox_guard.py"
    ],
    "cited_in_pending": [],
-   "stale": "gpu: the campaign at 71f83a1 re-measured every stand - the entry point, the payload delta and the per-question rows moved the engine, so every number whose closure names it is withdrawn until it is re-read from this run's artifacts",
+   "stale": "historical: the NEVERTWICE_EXPLICIT_RETIRE=judge arm, evaluated at K8-C and decided against on 2026-09-18: the default stays write, so this measures a mode the project does not ship; its artifacts predate HEAD and remeasure --restore refuses an artifact older than the commit, by design. If the arm is wanted alive it returns as an arm in a later window, re-measured, not restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "historical_on": "2026-09-19"
   },
   {
    "id": "supersession_switch.nevertwice_after_sleep.control_miss.retired",
@@ -44045,9 +44045,9 @@
     "sandbox_guard.py"
    ],
    "cited_in_pending": [],
-   "stale": "gpu: the campaign at 71f83a1 re-measured every stand - the entry point, the payload delta and the per-question rows moved the engine, so every number whose closure names it is withdrawn until it is re-read from this run's artifacts",
+   "stale": "historical: the NEVERTWICE_EXPLICIT_RETIRE=judge arm, evaluated at K8-C and decided against on 2026-09-18: the default stays write, so this measures a mode the project does not ship; its artifacts predate HEAD and remeasure --restore refuses an artifact older than the commit, by design. If the arm is wanted alive it returns as an arm in a later window, re-measured, not restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "historical_on": "2026-09-19"
   },
   {
    "id": "supersession_switch.nevertwice_after_sleep.control_miss.demoted",
@@ -44106,9 +44106,9 @@
     "sandbox_guard.py"
    ],
    "cited_in_pending": [],
-   "stale": "gpu: the campaign at 71f83a1 re-measured every stand - the entry point, the payload delta and the per-question rows moved the engine, so every number whose closure names it is withdrawn until it is re-read from this run's artifacts",
+   "stale": "historical: the NEVERTWICE_EXPLICIT_RETIRE=judge arm, evaluated at K8-C and decided against on 2026-09-18: the default stays write, so this measures a mode the project does not ship; its artifacts predate HEAD and remeasure --restore refuses an artifact older than the commit, by design. If the arm is wanted alive it returns as an arm in a later window, re-measured, not restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "historical_on": "2026-09-19"
   },
   {
    "id": "supersession_switch.nevertwice_after_sleep.control_miss.never_written",
@@ -44167,9 +44167,9 @@
     "sandbox_guard.py"
    ],
    "cited_in_pending": [],
-   "stale": "gpu: the campaign at 71f83a1 re-measured every stand - the entry point, the payload delta and the per-question rows moved the engine, so every number whose closure names it is withdrawn until it is re-read from this run's artifacts",
+   "stale": "historical: the NEVERTWICE_EXPLICIT_RETIRE=judge arm, evaluated at K8-C and decided against on 2026-09-18: the default stays write, so this measures a mode the project does not ship; its artifacts predate HEAD and remeasure --restore refuses an artifact older than the commit, by design. If the arm is wanted alive it returns as an arm in a later window, re-measured, not restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "historical_on": "2026-09-19"
   },
   {
    "id": "supersession_switch.nevertwice_after_sleep.control_miss.unranked",
@@ -44228,9 +44228,9 @@
     "sandbox_guard.py"
    ],
    "cited_in_pending": [],
-   "stale": "gpu: the campaign at 71f83a1 re-measured every stand - the entry point, the payload delta and the per-question rows moved the engine, so every number whose closure names it is withdrawn until it is re-read from this run's artifacts",
+   "stale": "historical: the NEVERTWICE_EXPLICIT_RETIRE=judge arm, evaluated at K8-C and decided against on 2026-09-18: the default stays write, so this measures a mode the project does not ship; its artifacts predate HEAD and remeasure --restore refuses an artifact older than the commit, by design. If the arm is wanted alive it returns as an arm in a later window, re-measured, not restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "historical_on": "2026-09-19"
   },
   {
    "id": "supersession_switch.nevertwice_after_sleep.chars_per_query",
@@ -44289,9 +44289,9 @@
     "sandbox_guard.py"
    ],
    "cited_in_pending": [],
-   "stale": "gpu: the campaign at 71f83a1 re-measured every stand - the entry point, the payload delta and the per-question rows moved the engine, so every number whose closure names it is withdrawn until it is re-read from this run's artifacts",
+   "stale": "historical: the NEVERTWICE_EXPLICIT_RETIRE=judge arm, evaluated at K8-C and decided against on 2026-09-18: the default stays write, so this measures a mode the project does not ship; its artifacts predate HEAD and remeasure --restore refuses an artifact older than the commit, by design. If the arm is wanted alive it returns as an arm in a later window, re-measured, not restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "historical_on": "2026-09-19"
   },
   {
    "id": "supersession_implicit_switch.nevertwice.stale_rate",
@@ -44356,9 +44356,9 @@
    ],
    "note": "Pooled over 2 runs of the same commit: the extraction model is not deterministic at temperature 0 and the runs read 0.0833 and 0.0833. One run of this stand is not a result, so the published figure is the pooled rate over 120 case-runs with the per-run values beside it in the artifact.",
    "cited_in_pending": [],
-   "stale": "gpu: the campaign at 71f83a1 re-measured every stand - the entry point, the payload delta and the per-question rows moved the engine, so every number whose closure names it is withdrawn until it is re-read from this run's artifacts",
+   "stale": "historical: the NEVERTWICE_EXPLICIT_RETIRE=judge arm, evaluated at K8-C and decided against on 2026-09-18: the default stays write, so this measures a mode the project does not ship; its artifacts predate HEAD and remeasure --restore refuses an artifact older than the commit, by design. If the arm is wanted alive it returns as an arm in a later window, re-measured, not restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "historical_on": "2026-09-19"
   },
   {
    "id": "supersession_implicit_switch.nevertwice.current_rate",
@@ -44423,9 +44423,9 @@
    ],
    "note": "Pooled over 2 runs of the same commit: the extraction model is not deterministic at temperature 0 and the runs read 0.0833 and 0.0833. One run of this stand is not a result, so the published figure is the pooled rate over 120 case-runs with the per-run values beside it in the artifact.",
    "cited_in_pending": [],
-   "stale": "gpu: the campaign at 71f83a1 re-measured every stand - the entry point, the payload delta and the per-question rows moved the engine, so every number whose closure names it is withdrawn until it is re-read from this run's artifacts",
+   "stale": "historical: the NEVERTWICE_EXPLICIT_RETIRE=judge arm, evaluated at K8-C and decided against on 2026-09-18: the default stays write, so this measures a mode the project does not ship; its artifacts predate HEAD and remeasure --restore refuses an artifact older than the commit, by design. If the arm is wanted alive it returns as an arm in a later window, re-measured, not restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "historical_on": "2026-09-19"
   },
   {
    "id": "supersession_implicit_switch.nevertwice.old_value_served_rate",
@@ -44490,9 +44490,9 @@
    ],
    "note": "The stale rate counts an item that asserts the retracted value without the current one; this counts the retracted value wherever it appears in the returned text, so a paired hit (newest statement with the earlier one attached, K8 layer 2) is counted here and not there.",
    "cited_in_pending": [],
-   "stale": "gpu: the campaign at 71f83a1 re-measured every stand - the entry point, the payload delta and the per-question rows moved the engine, so every number whose closure names it is withdrawn until it is re-read from this run's artifacts",
+   "stale": "historical: the NEVERTWICE_EXPLICIT_RETIRE=judge arm, evaluated at K8-C and decided against on 2026-09-18: the default stays write, so this measures a mode the project does not ship; its artifacts predate HEAD and remeasure --restore refuses an artifact older than the commit, by design. If the arm is wanted alive it returns as an arm in a later window, re-measured, not restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "historical_on": "2026-09-19"
   },
   {
    "id": "supersession_implicit_switch.nevertwice.over_retraction_rate",
@@ -44558,9 +44558,9 @@
    ],
    "note": "Over-retraction proper: only a control case whose still-true fact the store shows as retired counts. A fact that was never written, or was written and ranked below k, is a control miss (`control_miss_rate`) and is split by cause in `control_miss.*`.",
    "cited_in_pending": [],
-   "stale": "gpu: the campaign at 71f83a1 re-measured every stand - the entry point, the payload delta and the per-question rows moved the engine, so every number whose closure names it is withdrawn until it is re-read from this run's artifacts",
+   "stale": "historical: the NEVERTWICE_EXPLICIT_RETIRE=judge arm, evaluated at K8-C and decided against on 2026-09-18: the default stays write, so this measures a mode the project does not ship; its artifacts predate HEAD and remeasure --restore refuses an artifact older than the commit, by design. If the arm is wanted alive it returns as an arm in a later window, re-measured, not restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "historical_on": "2026-09-19"
   },
   {
    "id": "supersession_implicit_switch.nevertwice.control_case_runs",
@@ -44619,9 +44619,9 @@
     "sandbox_guard.py"
    ],
    "cited_in_pending": [],
-   "stale": "gpu: the campaign at 71f83a1 re-measured every stand - the entry point, the payload delta and the per-question rows moved the engine, so every number whose closure names it is withdrawn until it is re-read from this run's artifacts",
+   "stale": "historical: the NEVERTWICE_EXPLICIT_RETIRE=judge arm, evaluated at K8-C and decided against on 2026-09-18: the default stays write, so this measures a mode the project does not ship; its artifacts predate HEAD and remeasure --restore refuses an artifact older than the commit, by design. If the arm is wanted alive it returns as an arm in a later window, re-measured, not restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "historical_on": "2026-09-19"
   },
   {
    "id": "supersession_implicit_switch.nevertwice.control_miss_rate",
@@ -44686,9 +44686,9 @@
     "sandbox_guard.py"
    ],
    "cited_in_pending": [],
-   "stale": "gpu: the campaign at 71f83a1 re-measured every stand - the entry point, the payload delta and the per-question rows moved the engine, so every number whose closure names it is withdrawn until it is re-read from this run's artifacts",
+   "stale": "historical: the NEVERTWICE_EXPLICIT_RETIRE=judge arm, evaluated at K8-C and decided against on 2026-09-18: the default stays write, so this measures a mode the project does not ship; its artifacts predate HEAD and remeasure --restore refuses an artifact older than the commit, by design. If the arm is wanted alive it returns as an arm in a later window, re-measured, not restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "historical_on": "2026-09-19"
   },
   {
    "id": "supersession_implicit_switch.nevertwice.control_miss.retired",
@@ -44747,9 +44747,9 @@
     "sandbox_guard.py"
    ],
    "cited_in_pending": [],
-   "stale": "gpu: the campaign at 71f83a1 re-measured every stand - the entry point, the payload delta and the per-question rows moved the engine, so every number whose closure names it is withdrawn until it is re-read from this run's artifacts",
+   "stale": "historical: the NEVERTWICE_EXPLICIT_RETIRE=judge arm, evaluated at K8-C and decided against on 2026-09-18: the default stays write, so this measures a mode the project does not ship; its artifacts predate HEAD and remeasure --restore refuses an artifact older than the commit, by design. If the arm is wanted alive it returns as an arm in a later window, re-measured, not restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "historical_on": "2026-09-19"
   },
   {
    "id": "supersession_implicit_switch.nevertwice.control_miss.demoted",
@@ -44808,9 +44808,9 @@
     "sandbox_guard.py"
    ],
    "cited_in_pending": [],
-   "stale": "gpu: the campaign at 71f83a1 re-measured every stand - the entry point, the payload delta and the per-question rows moved the engine, so every number whose closure names it is withdrawn until it is re-read from this run's artifacts",
+   "stale": "historical: the NEVERTWICE_EXPLICIT_RETIRE=judge arm, evaluated at K8-C and decided against on 2026-09-18: the default stays write, so this measures a mode the project does not ship; its artifacts predate HEAD and remeasure --restore refuses an artifact older than the commit, by design. If the arm is wanted alive it returns as an arm in a later window, re-measured, not restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "historical_on": "2026-09-19"
   },
   {
    "id": "supersession_implicit_switch.nevertwice.control_miss.never_written",
@@ -44869,9 +44869,9 @@
     "sandbox_guard.py"
    ],
    "cited_in_pending": [],
-   "stale": "gpu: the campaign at 71f83a1 re-measured every stand - the entry point, the payload delta and the per-question rows moved the engine, so every number whose closure names it is withdrawn until it is re-read from this run's artifacts",
+   "stale": "historical: the NEVERTWICE_EXPLICIT_RETIRE=judge arm, evaluated at K8-C and decided against on 2026-09-18: the default stays write, so this measures a mode the project does not ship; its artifacts predate HEAD and remeasure --restore refuses an artifact older than the commit, by design. If the arm is wanted alive it returns as an arm in a later window, re-measured, not restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "historical_on": "2026-09-19"
   },
   {
    "id": "supersession_implicit_switch.nevertwice.control_miss.unranked",
@@ -44930,9 +44930,9 @@
     "sandbox_guard.py"
    ],
    "cited_in_pending": [],
-   "stale": "gpu: the campaign at 71f83a1 re-measured every stand - the entry point, the payload delta and the per-question rows moved the engine, so every number whose closure names it is withdrawn until it is re-read from this run's artifacts",
+   "stale": "historical: the NEVERTWICE_EXPLICIT_RETIRE=judge arm, evaluated at K8-C and decided against on 2026-09-18: the default stays write, so this measures a mode the project does not ship; its artifacts predate HEAD and remeasure --restore refuses an artifact older than the commit, by design. If the arm is wanted alive it returns as an arm in a later window, re-measured, not restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "historical_on": "2026-09-19"
   },
   {
    "id": "supersession_implicit_switch.nevertwice.chars_per_query",
@@ -44991,9 +44991,9 @@
     "sandbox_guard.py"
    ],
    "cited_in_pending": [],
-   "stale": "gpu: the campaign at 71f83a1 re-measured every stand - the entry point, the payload delta and the per-question rows moved the engine, so every number whose closure names it is withdrawn until it is re-read from this run's artifacts",
+   "stale": "historical: the NEVERTWICE_EXPLICIT_RETIRE=judge arm, evaluated at K8-C and decided against on 2026-09-18: the default stays write, so this measures a mode the project does not ship; its artifacts predate HEAD and remeasure --restore refuses an artifact older than the commit, by design. If the arm is wanted alive it returns as an arm in a later window, re-measured, not restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "historical_on": "2026-09-19"
   },
   {
    "id": "supersession_implicit_switch.nevertwice_after_sleep.stale_rate",
@@ -45058,9 +45058,9 @@
    ],
    "note": "Pooled over 2 runs of the same commit: the extraction model is not deterministic at temperature 0 and the runs read 0.0667 and 0.0667. One run of this stand is not a result, so the published figure is the pooled rate over 120 case-runs with the per-run values beside it in the artifact.",
    "cited_in_pending": [],
-   "stale": "gpu: the campaign at 71f83a1 re-measured every stand - the entry point, the payload delta and the per-question rows moved the engine, so every number whose closure names it is withdrawn until it is re-read from this run's artifacts",
+   "stale": "historical: the NEVERTWICE_EXPLICIT_RETIRE=judge arm, evaluated at K8-C and decided against on 2026-09-18: the default stays write, so this measures a mode the project does not ship; its artifacts predate HEAD and remeasure --restore refuses an artifact older than the commit, by design. If the arm is wanted alive it returns as an arm in a later window, re-measured, not restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "historical_on": "2026-09-19"
   },
   {
    "id": "supersession_implicit_switch.nevertwice_after_sleep.current_rate",
@@ -45125,9 +45125,9 @@
    ],
    "note": "Pooled over 2 runs of the same commit: the extraction model is not deterministic at temperature 0 and the runs read 0.0667 and 0.0667. One run of this stand is not a result, so the published figure is the pooled rate over 120 case-runs with the per-run values beside it in the artifact.",
    "cited_in_pending": [],
-   "stale": "gpu: the campaign at 71f83a1 re-measured every stand - the entry point, the payload delta and the per-question rows moved the engine, so every number whose closure names it is withdrawn until it is re-read from this run's artifacts",
+   "stale": "historical: the NEVERTWICE_EXPLICIT_RETIRE=judge arm, evaluated at K8-C and decided against on 2026-09-18: the default stays write, so this measures a mode the project does not ship; its artifacts predate HEAD and remeasure --restore refuses an artifact older than the commit, by design. If the arm is wanted alive it returns as an arm in a later window, re-measured, not restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "historical_on": "2026-09-19"
   },
   {
    "id": "supersession_implicit_switch.nevertwice_after_sleep.old_value_served_rate",
@@ -45192,9 +45192,9 @@
    ],
    "note": "The stale rate counts an item that asserts the retracted value without the current one; this counts the retracted value wherever it appears in the returned text, so a paired hit (newest statement with the earlier one attached, K8 layer 2) is counted here and not there.",
    "cited_in_pending": [],
-   "stale": "gpu: the campaign at 71f83a1 re-measured every stand - the entry point, the payload delta and the per-question rows moved the engine, so every number whose closure names it is withdrawn until it is re-read from this run's artifacts",
+   "stale": "historical: the NEVERTWICE_EXPLICIT_RETIRE=judge arm, evaluated at K8-C and decided against on 2026-09-18: the default stays write, so this measures a mode the project does not ship; its artifacts predate HEAD and remeasure --restore refuses an artifact older than the commit, by design. If the arm is wanted alive it returns as an arm in a later window, re-measured, not restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "historical_on": "2026-09-19"
   },
   {
    "id": "supersession_implicit_switch.nevertwice_after_sleep.over_retraction_rate",
@@ -45260,9 +45260,9 @@
    ],
    "note": "Over-retraction proper: only a control case whose still-true fact the store shows as retired counts. A fact that was never written, or was written and ranked below k, is a control miss (`control_miss_rate`) and is split by cause in `control_miss.*`.",
    "cited_in_pending": [],
-   "stale": "gpu: the campaign at 71f83a1 re-measured every stand - the entry point, the payload delta and the per-question rows moved the engine, so every number whose closure names it is withdrawn until it is re-read from this run's artifacts",
+   "stale": "historical: the NEVERTWICE_EXPLICIT_RETIRE=judge arm, evaluated at K8-C and decided against on 2026-09-18: the default stays write, so this measures a mode the project does not ship; its artifacts predate HEAD and remeasure --restore refuses an artifact older than the commit, by design. If the arm is wanted alive it returns as an arm in a later window, re-measured, not restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "historical_on": "2026-09-19"
   },
   {
    "id": "supersession_implicit_switch.nevertwice_after_sleep.control_case_runs",
@@ -45321,9 +45321,9 @@
     "sandbox_guard.py"
    ],
    "cited_in_pending": [],
-   "stale": "gpu: the campaign at 71f83a1 re-measured every stand - the entry point, the payload delta and the per-question rows moved the engine, so every number whose closure names it is withdrawn until it is re-read from this run's artifacts",
+   "stale": "historical: the NEVERTWICE_EXPLICIT_RETIRE=judge arm, evaluated at K8-C and decided against on 2026-09-18: the default stays write, so this measures a mode the project does not ship; its artifacts predate HEAD and remeasure --restore refuses an artifact older than the commit, by design. If the arm is wanted alive it returns as an arm in a later window, re-measured, not restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "historical_on": "2026-09-19"
   },
   {
    "id": "supersession_implicit_switch.nevertwice_after_sleep.control_miss_rate",
@@ -45388,9 +45388,9 @@
     "sandbox_guard.py"
    ],
    "cited_in_pending": [],
-   "stale": "gpu: the campaign at 71f83a1 re-measured every stand - the entry point, the payload delta and the per-question rows moved the engine, so every number whose closure names it is withdrawn until it is re-read from this run's artifacts",
+   "stale": "historical: the NEVERTWICE_EXPLICIT_RETIRE=judge arm, evaluated at K8-C and decided against on 2026-09-18: the default stays write, so this measures a mode the project does not ship; its artifacts predate HEAD and remeasure --restore refuses an artifact older than the commit, by design. If the arm is wanted alive it returns as an arm in a later window, re-measured, not restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "historical_on": "2026-09-19"
   },
   {
    "id": "supersession_implicit_switch.nevertwice_after_sleep.control_miss.retired",
@@ -45449,9 +45449,9 @@
     "sandbox_guard.py"
    ],
    "cited_in_pending": [],
-   "stale": "gpu: the campaign at 71f83a1 re-measured every stand - the entry point, the payload delta and the per-question rows moved the engine, so every number whose closure names it is withdrawn until it is re-read from this run's artifacts",
+   "stale": "historical: the NEVERTWICE_EXPLICIT_RETIRE=judge arm, evaluated at K8-C and decided against on 2026-09-18: the default stays write, so this measures a mode the project does not ship; its artifacts predate HEAD and remeasure --restore refuses an artifact older than the commit, by design. If the arm is wanted alive it returns as an arm in a later window, re-measured, not restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "historical_on": "2026-09-19"
   },
   {
    "id": "supersession_implicit_switch.nevertwice_after_sleep.control_miss.demoted",
@@ -45510,9 +45510,9 @@
     "sandbox_guard.py"
    ],
    "cited_in_pending": [],
-   "stale": "gpu: the campaign at 71f83a1 re-measured every stand - the entry point, the payload delta and the per-question rows moved the engine, so every number whose closure names it is withdrawn until it is re-read from this run's artifacts",
+   "stale": "historical: the NEVERTWICE_EXPLICIT_RETIRE=judge arm, evaluated at K8-C and decided against on 2026-09-18: the default stays write, so this measures a mode the project does not ship; its artifacts predate HEAD and remeasure --restore refuses an artifact older than the commit, by design. If the arm is wanted alive it returns as an arm in a later window, re-measured, not restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "historical_on": "2026-09-19"
   },
   {
    "id": "supersession_implicit_switch.nevertwice_after_sleep.control_miss.never_written",
@@ -45571,9 +45571,9 @@
     "sandbox_guard.py"
    ],
    "cited_in_pending": [],
-   "stale": "gpu: the campaign at 71f83a1 re-measured every stand - the entry point, the payload delta and the per-question rows moved the engine, so every number whose closure names it is withdrawn until it is re-read from this run's artifacts",
+   "stale": "historical: the NEVERTWICE_EXPLICIT_RETIRE=judge arm, evaluated at K8-C and decided against on 2026-09-18: the default stays write, so this measures a mode the project does not ship; its artifacts predate HEAD and remeasure --restore refuses an artifact older than the commit, by design. If the arm is wanted alive it returns as an arm in a later window, re-measured, not restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "historical_on": "2026-09-19"
   },
   {
    "id": "supersession_implicit_switch.nevertwice_after_sleep.control_miss.unranked",
@@ -45632,9 +45632,9 @@
     "sandbox_guard.py"
    ],
    "cited_in_pending": [],
-   "stale": "gpu: the campaign at 71f83a1 re-measured every stand - the entry point, the payload delta and the per-question rows moved the engine, so every number whose closure names it is withdrawn until it is re-read from this run's artifacts",
+   "stale": "historical: the NEVERTWICE_EXPLICIT_RETIRE=judge arm, evaluated at K8-C and decided against on 2026-09-18: the default stays write, so this measures a mode the project does not ship; its artifacts predate HEAD and remeasure --restore refuses an artifact older than the commit, by design. If the arm is wanted alive it returns as an arm in a later window, re-measured, not restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "historical_on": "2026-09-19"
   },
   {
    "id": "supersession_implicit_switch.nevertwice_after_sleep.chars_per_query",
@@ -45693,9 +45693,9 @@
     "sandbox_guard.py"
    ],
    "cited_in_pending": [],
-   "stale": "gpu: the campaign at 71f83a1 re-measured every stand - the entry point, the payload delta and the per-question rows moved the engine, so every number whose closure names it is withdrawn until it is re-read from this run's artifacts",
+   "stale": "historical: the NEVERTWICE_EXPLICIT_RETIRE=judge arm, evaluated at K8-C and decided against on 2026-09-18: the default stays write, so this measures a mode the project does not ship; its artifacts predate HEAD and remeasure --restore refuses an artifact older than the commit, by design. If the arm is wanted alive it returns as an arm in a later window, re-measured, not restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "historical_on": "2026-09-19"
   },
   {
    "id": "asof.nevertwice.old_day_miss.never_written",

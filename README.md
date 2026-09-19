@@ -55,8 +55,8 @@ So the interventions are the product, and each one is token-budgeted:
 
 - **Guards** - a pattern distilled from a past mistake, checked against the edit before your agent writes
   it; one line fires on a match, at **zero context tokens until it does**. Measured ([GUARD_BENCH.md](research/GUARD_BENCH.md)):
-  about a third of repeats caught, false alarms on a sixth of clean edits, a linter catches more of the generic
-  ones. Advisory until corroborated, self-retiring on false positives, always overridable: memory proposes, reality disposes.
+  a linter wins on generic repeats; on the project-specific ones only memory knows, guards catch about two and a half times as many, at a false alarm on a fifth of **that same class's** clean calls where a linter pays none - every rate withdrawn until the post-review campaign.
+  Advisory until corroborated, self-retiring on false positives, always overridable: memory proposes, reality disposes.
 - **Anticipation** - predicts the failure the current plan is heading toward by resemblance to past
   ones, and surfaces *one* precise warning. Spend is proportional to risk, not paid per turn.
 - **Counterfactual** - *"what breaks if I change X?"*, answered from an induced causal graph
@@ -160,7 +160,7 @@ With no backend at all, extraction pauses loudly (sessions are kept and retried,
 recall runs on lexical search until an embedder shows up. The five-minute walkthrough is in
 [QUICKSTART.md](QUICKSTART.md); every environment variable is in [CONFIG.md](docs/CONFIG.md).
 
-Contributing: `pip install -e ".[dev]"`, then `python -m pytest -q`. One hundred eighty-one hermetic suites -
+Contributing: `pip install -e ".[dev]"`, then `python -m pytest -q`. One hundred eighty-three hermetic suites -
 LLMs, embedders, the optional reranker, network and GPU execution are disabled or mocked, and a lint
 fails the build if a script reaches a memory store without declaring which store it means. CI runs
 them on Linux, Windows and macOS across four Python versions. One is a golden store - same sessions
