@@ -10,9 +10,10 @@ statement of the named function, runs the same corpus against the copy, and exit
 the proof correctly fails. Exit 0 here means the injection went unnoticed - the proof is empty for
 that function, and the caller reports it as a failure.
 
-A second mode moves a number instead of raising: `--nudge=E` wraps the named function so one of
-the scores it returns shifts by E. That is the ranking mutation - nothing crashes, one order
-changes - and it is the one a refactor of the ranker would produce.
+A second mode moves a number instead of raising: `--nudge=E` wraps the named function so its
+LOWEST-ranked score shifts up by E. That is the ranking mutation - nothing crashes, one order
+changes - and it is the one a refactor of the ranker would produce. Bisecting E measures the
+smallest adjacent gap the fixture's ranking still records.
 
     python tests/_canary_run.py as_of                             # inject a raise
     python tests/_canary_run.py _calibrated_fusion --nudge=0.05    # move one score
@@ -51,16 +52,23 @@ def injected(src: str, func: str) -> str:
 
 
 def nudged(src: str, func: str, epsilon: float) -> str:
-    """Return `src` with `func` wrapped so ONE of the scores it returns moves by `epsilon`.
+    """Return `src` with `func` wrapped so the LOWEST-ranked score it returns moves by `epsilon`.
 
     A `raise` proves the proof entered a function. It does not prove the proof can see a change
     in what that function *returns* - and ranking is exactly that: nothing crashes, one number
-    moves, an order changes. The distinction became load-bearing when the embedder stub started
-    carrying signal: the fixture got less generous (two queries fell from two notes to one), so
-    its discriminating power had to be measured rather than assumed.
+    moves, an order changes.
 
-    The wrapper adds `epsilon` to the alphabetically first key of the returned mapping - one
-    score, deterministically chosen, no crash.
+    WHICH score is moved decides what the mutation measures, and the first draft got it wrong.
+    It nudged the ALPHABETICALLY first key, so the epsilon that changed anything was the
+    distance from that candidate up to the leader. On a corpus whose queries fused one or two
+    candidates that is a forced flip of a pair - not a resolution, and not a number the ranker
+    could plausibly move on its own. Nudging the lowest-scoring candidate instead makes it
+    climb over the one immediately above it, so a bisection of epsilon finds the SMALLEST
+    ADJACENT GAP in the ranking, which is what "the fixture can see a ranking change of size E"
+    has to mean. It follows that the corpus must give at least one query three candidates or
+    more: with two, every mutation is a pair flip whatever is nudged.
+
+    The target is the minimum by score, ties broken alphabetically - deterministic, no crash.
     """
     if f"def {func}(" not in src:
         raise SystemExit(f"{func}: not a function of the engine")
@@ -73,8 +81,8 @@ def nudged(src: str, func: str, epsilon: float) -> str:
         f"def {func}(*a, **k):",
         f"    out = _canary_original_{func}(*a, **k)",
         "    if isinstance(out, dict) and out:",
-        "        first = sorted(out)[0]",
-        f"        out[first] = out[first] + {epsilon!r}",
+        "        target = min(sorted(out), key=lambda s: out[s])",
+        f"        out[target] = out[target] + {epsilon!r}",
         "    return out",
         "",
     ]

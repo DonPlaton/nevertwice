@@ -2,11 +2,15 @@
  "adjudication": "ran",
  "as_of": {
   "2026-03-03": [
+   "2026-02-27-golden_proj-decision-the-cache-layer",
+   "2026-02-28-golden_proj-decision-database-migrations-run-with-alembic",
    "2026-03-01-golden_proj-decision-production-database-version",
    "2026-03-02-golden_proj-decision-the-api-listens-on-8080",
    "2026-03-03-golden_proj-mistake-eval-on-user-input-crashes-the-handler"
   ],
   "2026-03-06": [
+   "2026-02-27-golden_proj-decision-the-cache-layer",
+   "2026-02-28-golden_proj-decision-database-migrations-run-with-alembic",
    "2026-03-02-golden_proj-decision-the-api-listens-on-8080",
    "2026-03-05-golden_proj-decision-production-database-version",
    "2026-03-03-golden_proj-mistake-eval-on-user-input-crashes-the-handler"
@@ -17,24 +21,30 @@
   0
  ],
  "files": {
-  ".embeddings_cache.json": "f806aabe0099b537",
+  ".embeddings_cache.json": "96ec8a4999f408d8",
   ".embeddings_meta.json": "848a9b569296faee",
   ".index.sqlite": "<binary 81920>",
   ".processed_sessions.json": "7f3717a9e370aa66",
   ".processed_sessions.json.prev": "57d805e09b5d4633",
-  "Context/golden_proj.md": "fc5f23c6a01b36e4",
+  "Context/golden_proj.md": "6dc585505a55dd7a",
+  "Decisions/2026-02-27-golden_proj-decision-the-cache-layer.md": "3160a3e667918ce2",
+  "Decisions/2026-02-28-golden_proj-decision-database-migrations-run-with-alembic.md": "5083a0e4ba994364",
   "Decisions/2026-03-02-golden_proj-decision-the-api-listens-on-8080.md": "715114652682531f",
   "Decisions/2026-03-05-golden_proj-decision-production-database-version.md": "702c567075dd071b",
   "Decisions/Superseded/2026-03-01-golden_proj-decision-production-database-version.md": "b117f8eeb98d51b7",
   "Mistakes/2026-03-03-golden_proj-mistake-eval-on-user-input-crashes-the-handler.md": "b8a4003f55283a29",
+  "Sessions/2026-02-27-1000-golden_proj-session-d9afd647.md": "c90255dff696213a",
+  "Sessions/2026-02-28-1000-golden_proj-session-9ee70624.md": "2451cade7873f8a0",
   "Sessions/2026-03-01-1000-golden_proj-session-899c566f.md": "9553614d98acdffd",
   "Sessions/2026-03-02-1000-golden_proj-session-ac7f1b09.md": "7d75914f377af0b6",
   "Sessions/2026-03-03-1000-golden_proj-session-dac8e074.md": "400c26ba48b21f25",
   "Sessions/2026-03-04-1000-golden_proj-session-aea9e7d7.md": "0c1e3d1be9dd5aad",
   "Sessions/2026-03-05-1000-golden_proj-session-6fd89f12.md": "dd2a6a658ab895d1",
   "_transcripts/GS-BUG.jsonl": "035a9025c03b8119",
+  "_transcripts/GS-CACHE.jsonl": "16ec8329255cf478",
   "_transcripts/GS-DB-NEW.jsonl": "f5b5cc134777a4e1",
   "_transcripts/GS-DB-OLD.jsonl": "ccc453c5c8396e7c",
+  "_transcripts/GS-MIGRATION.jsonl": "ad35c236cfe4b39c",
   "_transcripts/GS-OFFTOPIC.jsonl": "cc020491e0b2d0d2",
   "_transcripts/GS-PORT.jsonl": "6b9b523f9bed7c06",
   "guards.json": "c43128551b9ba5cd",
@@ -45,30 +55,36 @@
  "recall": {
   "eval on user input": [
    "2026-03-03-golden_proj-mistake-eval-on-user-input-crashes-the-handler",
-   "2026-03-02-golden_proj-decision-the-api-listens-on-8080"
+   "2026-03-02-golden_proj-decision-the-api-listens-on-8080",
+   "2026-02-27-golden_proj-decision-the-cache-layer"
   ],
   "what port does the api listen on": [
    "2026-03-02-golden_proj-decision-the-api-listens-on-8080"
   ],
   "which database does the service use": [
-   "2026-03-05-golden_proj-decision-production-database-version"
+   "2026-03-05-golden_proj-decision-production-database-version",
+   "2026-02-28-golden_proj-decision-database-migrations-run-with-alembic",
+   "2026-02-27-golden_proj-decision-the-cache-layer"
   ]
  },
  "served": {
   "eval on user input": [
    "- **eval on user input crashes the handler** - Calling eval on request data raised and took the worker down.  [facts] GS-BUG \u2192 Parse with json.loads instead of eval.  _(~6mo)_",
-   "- **the api listens on 8080** - The public API listens on port 8080.  [facts] GS-PORT  _(~6mo)_"
+   "- **the api listens on 8080** - The public API listens on port 8080.  [facts] GS-PORT  _(~6mo)_",
+   "- **the cache layer** - Redis 7 caches the service session data in production.  [facts] GS-CACHE  _(~6mo)_"
   ],
   "what port does the api listen on": [
    "- **the api listens on 8080** - The public API listens on port 8080.  [facts] GS-PORT  _(~6mo)_"
   ],
   "which database does the service use": [
-   "- **production database version** - The service runs on Postgres 16 in production.  _(~6mo)_"
+   "- **production database version** - The service runs on Postgres 16 in production.  _(~6mo)_",
+   "- **database migrations run with alembic** - Schema migrations for the production database run through Alembic.  _(~6mo)_",
+   "- **the cache layer** - Redis 7 caches the service session data in production.  [facts] GS-CACHE  _(~6mo)_"
   ]
  },
  "served_chars": {
-  "eval on user input": 270,
+  "eval on user input": 376,
   "what port does the api listen on": 95,
-  "which database does the service use": 92
+  "which database does the service use": 319
  }
 }

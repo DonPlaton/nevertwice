@@ -18,7 +18,9 @@ Two invariants, and the second is what makes the first worth anything:
 * **stable** - running the corpus twice gives the identical snapshot;
 * **sensitive** - the canary: a `raise` injected into any of four load-bearing functions must make
   this proof FAIL. A proof those four can survive is empty, and would certify a refactor that broke
-  them. `--canary` runs that check; the suite runs it as its last section.
+  them. `--canary` runs that check; the suite runs it as its last section. A raise only proves the
+  proof ENTERED a function, so a fifth canary moves a number instead: see NUDGE below for what
+  that measures and what it does not.
 
     python tests/_test_golden_store.py
     python tests/_test_golden_store.py --coverage    # print what the corpus enters
@@ -61,7 +63,28 @@ def check(name, cond, detail=""):
 #: Five sessions. Two of them state the same fact differently on different days, which is the
 #: whole displacement machinery; one resolves a mistake; one is off-topic; one carries a literal
 #: the guards can fire on.
+#: Two of them exist so a query has an ORDER to lose. A corpus where every query returns one
+#: or two candidates cannot be used to measure ranking: the only mutation it can see is a
+#: forced flip of a pair. These two share vocabulary with the database question without
+#: answering it, so "which database does the service use" fuses three candidates with distinct
+#: scores, and the gap between rank 1 and rank 2 is a number that can be bisected.
 TABLE = {
+    "GS-CACHE": {
+        "project_relevant": True,
+        "decisions": [{"title": "the cache layer",
+                       "description": "Redis 7 caches the service session data in production.",
+                       "facts": ["Redis 7"]}],
+        "patterns": [], "mistakes": [],
+        "session_summary": "added a cache", "context_update": "cache added",
+    },
+    "GS-MIGRATION": {
+        "project_relevant": True,
+        "decisions": [{"title": "database migrations run with alembic",
+                       "description": "Schema migrations for the production database run through Alembic.",
+                       "facts": ["Alembic"]}],
+        "patterns": [], "mistakes": [],
+        "session_summary": "wired migrations", "context_update": "migrations wired",
+    },
     "GS-DB-OLD": {
         "project_relevant": True,
         "decisions": [{"title": "production database version",
@@ -129,7 +152,10 @@ def run_corpus(store: Path) -> dict:
 
     tdir = store / "_transcripts"
     tdir.mkdir(parents=True, exist_ok=True)
-    order = [("GS-DB-OLD", "2026-03-01"), ("GS-PORT", "2026-03-02"), ("GS-BUG", "2026-03-03"),
+    #: The two ranking neighbours land BEFORE the supersession story, so the displacement
+    #: timeline and both as-of days are unchanged by their presence.
+    order = [("GS-CACHE", "2026-02-27"), ("GS-MIGRATION", "2026-02-28"),
+             ("GS-DB-OLD", "2026-03-01"), ("GS-PORT", "2026-03-02"), ("GS-BUG", "2026-03-03"),
              ("GS-OFFTOPIC", "2026-03-04"), ("GS-DB-NEW", "2026-03-05")]
     for marker, day in order:
         tp = G.session(tdir / f"{marker}.jsonl", cwd=PROJ_DIR, marker=marker, day=day)
@@ -235,11 +261,29 @@ if "--no-canary" in sys.argv:
 
 #: A raise proves the proof ENTERED a function. It does not prove the proof can see a change in
 #: what that function RETURNS, and a ranking regression is exactly that: nothing crashes, one
-#: number moves, an order changes. Measured 2026-09-19 by bisection at `_calibrated_fusion`: a
-#: shift of 0.75 goes unnoticed and 0.9 is caught, so the fixture's ranking resolution sits
-#: between them. The gate is written at 1.0 - above the resolution, never below it.
+#: number moves, an order changes.
+#:
+#: The first gate written here was 1.0, and it measured nothing. Instrumented 2026-09-19: the corpus
+#: made 12 fusion calls, each over ONE or TWO candidates; in 8 of them the nudged candidate was
+#: already first, so no epsilon could change anything, and in the other four the distance up to the
+#: leader was a single number, 0.8628. `_calibrated_fusion` returns a logistic in (0,1), so a gate
+#: of "1.0" asked for more than the entire range to be added to one of two candidates. That proves
+#: the proof notices a FORCED PAIR FLIP; it is not a ranking resolution, and a fixture with no third
+#: position has no order to lose in the first place. The bisection reported then (0.75 unnoticed,
+#: 0.9 caught) was not a property of the fixture at all - it was that one gap, 0.8628.
+#:
+#: Two changes make the number mean something. The corpus gained two notes that share vocabulary
+#: with the database question without answering it, so 8 of the 12 calls now rank THREE candidates;
+#: and the mutation lifts the LOWEST-ranked score rather than an arbitrary one, so the epsilon a
+#: bisection finds is the smallest ADJACENT gap in the ranking. Measured on this fixture: 0.00367
+#: goes unnoticed, 0.004 is caught. (The raw fusion gap between those two candidates is 0.003669;
+#: the end-to-end threshold is not identical to it because the recurrence tiebreak (+0.02·ln n·amb)
+#: and the salience multiplier - 0.679 to 0.687 here, age decay - rescale every score after fusion.)
+#:
+#: The gate is written at 0.01: above the measured resolution, never below it, with enough room
+#: that a harmless corpus drift does not turn it red for a reason that is not a regression.
 NUDGE_TARGET = "_calibrated_fusion"
-NUDGE = 1.0
+NUDGE = 0.01
 
 print("# the proof itself is sensitive")
 for target in CANARIES:
@@ -252,8 +296,8 @@ for target in CANARIES:
 r = subprocess.run([sys.executable, str(HERE / "_canary_run.py"), NUDGE_TARGET,
                     f"--nudge={NUDGE}"], capture_output=True, text=True, timeout=900)
 broke = r.returncode != 0
-check(f"moving ONE score by {NUDGE} in {NUDGE_TARGET} breaks the proof - a ranking change, "
-      "not a crash", broke, (r.stdout or r.stderr)[-400:] if not broke else "")
+check(f"lifting the LAST-ranked score by {NUDGE} in {NUDGE_TARGET} breaks the proof - a "
+      "reordering, not a crash", broke, (r.stdout or r.stderr)[-400:] if not broke else "")
 
 print()
 print(f"golden store: {P} passed, {F} failed")
