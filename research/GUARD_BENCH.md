@@ -44,28 +44,44 @@ mistake is a false alarm, not partial credit.
 <!-- claims:guard-bench -->
 | arm | recall of the right guard | precision | hard-negative false alarms | project-only recall | tokens / call | ms / check |
 |---|---|---|---|---|---|---|
-| **guards, engine's no-model patterns** | 0.380 at FPR 0.179 (over budget) | - | - | - | 3.320 | 0.018 |
-| **guards, model-written patterns** | 0.370 at FPR 0.155 (over budget) | - | - | - | 5.510 | 0.026 |
+| **guards, engine's no-model patterns** | 0.380 at FPR 0.179 (over budget) | - | 0.268 | 0.154 | 3.320 | 0.019 |
+| **guards, model-written patterns** | 0.370 at FPR 0.155 (over budget) | - | 0.225 | 0.404 | 5.510 | 0.026 |
 | cold-start pack (no history) | 0.196 | 0.818 | 0.000 | 0.000 | 1.150 | 0.007 |
 | linter or scanner (scored in its favour) | 0.457 | 1.000 | 0.000 | 0.154 | 0.000 | 0.000 |
-| prompt recall over the notes (top three) | 0.033 | 0.333 | 0.056 | 0.038 | 103.560 | 53.615 |
+| prompt recall over the notes (top three) | 0.000 | 0.000 | 0.014 | 0.000 | 103.560 | 53.771 |
 | silence (floor) | 0.000 | - | 0.000 | 0.000 | 0.000 | 0.000 |
 
-<sub>no operating point under the false-alarm budget for guards, engine's no-model patterns, guards, model-written patterns - a guard fires or it does not, and firing catches the repeats shown at the false-alarm rate shown.</sub>
+<sub>no operating point under the false-alarm budget for guards, engine's no-model patterns, guards, model-written patterns - a guard fires or it does not, and firing catches the repeats shown at the false-alarm rate shown; their hard-negative and project-only cells are read where the arm fires, not at the budget the rows below use.</sub>
 <!-- /claims:guard-bench -->
 
 The gate written before the run (`.loop/GOAL-CLOSE.md`, J6): a guard arm keeps the README's
 sentence if it catches at least half the repeats at the budget, beats the linter on the project
-family, and spends at most a tenth of prompt recall's tokens. **Missed on every clause.** Neither
-guard arm has an operating point under the budget: a guard is binary, so the threshold a matched
-comparison would sweep lives inside the regex, and the regex either fires or does not. Firing, the
-engine's patterns catch a little over a third of the repeats and false-alarm on a sixth of the calls
-that repeat nothing; the model-written patterns do the same. The deterministic generator lifts the
-most distinctive token from the note, and that token is exactly what a hard negative shares with
-the repeat. The linter catches most generic repeats and few project ones at no false alarms; prompt
-recall over the notes catches nothing at any threshold and spends the most tokens. The README's
-sentence now says what this table says. The next mechanism, if there is one, needs its gate
-written first: a guard that reads the surrounding lines or the file's role, not a longer regex.
+family, and spends at most a tenth of prompt recall's tokens. **Missed**, on the clause that
+decides it: neither guard arm has an operating point under the budget, because a guard is binary -
+the threshold a matched comparison would sweep lives inside the regex, and the regex either fires
+or does not. Firing, the engine's patterns catch a little over a third of the repeats and
+false-alarm on a sixth of the calls that repeat nothing; the model-written patterns catch the same
+share overall. The deterministic generator lifts the most distinctive token from the note, and that
+token is exactly what a hard negative shares with the repeat.
+
+The other two clauses can be read for the first time, because until 2026-09-18 the stand computed
+the class split only for arms that reached the budget - so the two arms the project-class question
+is about were the only ones with no project figure, and the clause was scored as missed for want of
+a number. Read now, at each arm's own firing rate rather than at the budget: the model-written
+patterns catch **0.404** of the project-class repeats against the linter's 0.154, and the
+engine's no-model patterns catch 0.154 - the same as the linter, which is what the ledger recorded
+in track O before the model arm had a row. Tokens: 5.51 and 3.32 a call against prompt recall's
+103.56, inside the tenth the clause allows.
+
+That does not turn the gate: it was written at a false-alarm budget this arm never reaches, and a
+gate is not re-judged after the run it failed. What it says is narrower and worth stating exactly.
+On the class a linter cannot reach - the facts only this project's history holds - the model-written
+guard catches two and a half times what the linter does, and pays for it with a false alarm on
+about a sixth of the clean calls, where the linter pays none. The linter catches most generic
+repeats and few project ones at no false alarms; prompt recall over the notes catches nothing at
+any threshold and spends the most tokens. The README's sentence is unchanged by this page and says
+only what was measured at the budget. The next mechanism, if there is one, needs its gate written
+first: a guard that reads the surrounding lines or the file's role, not a longer regex.
 
 ## What this does not show
 

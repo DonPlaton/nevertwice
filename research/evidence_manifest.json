@@ -6742,7 +6742,7 @@
    "raw_gap": "A property of the shipped pack; a test should assert it (task D1).",
    "ci": null,
    "cited_in": [],
-   "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
+   "commit": "f1218fc8d7a7e7d7b91514d4cb2b3c1f461a4249",
    "produced_by": [
     "nevertwice/guards.py",
     "nevertwice/_engine.py",
@@ -6760,7 +6760,7 @@
     "nevertwice/store_state.py",
     "nevertwice/why_fired.py"
    ],
-   "note": "The former command (`--list`) was not a subcommand the CLI accepts; `pack --count` is read-only and prints the number (review 2026-09-05). Restored by hand at 9262543 (2026-09-11): no pointer to read it through, so the value was re-checked against the campaign artifact - `python -m nevertwice.guards pack --count` printed 11 - and the commit restamped. Restored by hand at b72a1ff (2026-09-12, campaign B): `python -m nevertwice.guards pack --count` printed 11 (cb2_guards_pack.log) Restored by hand at 32796e8 (2026-09-18, campaign K8-C): `python -m nevertwice.guards pack --count` printed 11 in this campaign (k8c2_guards_pack.log) Restored by hand at 71f83a1 (2026-09-19, the campaign at 71f83a1): `python -m nevertwice.guards pack --count` printed 11 in this campaign (camp_f2_guards_pack.log)"
+   "note": "The former command (`--list`) was not a subcommand the CLI accepts; `pack --count` is read-only and prints the number (review 2026-09-05). Restored by hand at 9262543 (2026-09-11): no pointer to read it through, so the value was re-checked against the campaign artifact - `python -m nevertwice.guards pack --count` printed 11 - and the commit restamped. Restored by hand at b72a1ff (2026-09-12, campaign B): `python -m nevertwice.guards pack --count` printed 11 (cb2_guards_pack.log) Restored by hand at 32796e8 (2026-09-18, campaign K8-C): `python -m nevertwice.guards pack --count` printed 11 in this campaign (k8c2_guards_pack.log) Restored by hand at 71f83a1 (2026-09-19, the campaign at 71f83a1): `python -m nevertwice.guards pack --count` printed 11 in this campaign (camp_f2_guards_pack.log) Restored by hand at f1218fc (2026-09-19): `python -m nevertwice.guards pack --count` printed 11 in this session."
   },
   {
    "id": "head_to_head.nevertwice.recall_at_10",
@@ -20819,7 +20819,7 @@
    "command": "python research/guard_bench.py --llm --save",
    "raw": "research/results/guard_bench_v1.json",
    "cited_in": [],
-   "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
+   "commit": "f1218fc8d7a7e7d7b91514d4cb2b3c1f461a4249",
    "produced_by": [
     "research/guard_bench.py",
     "nevertwice/_engine.py",
@@ -20869,7 +20869,7 @@
    "command": "python research/guard_bench.py --llm --save",
    "raw": "research/results/guard_bench_v1.json",
    "cited_in": [],
-   "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
+   "commit": "f1218fc8d7a7e7d7b91514d4cb2b3c1f461a4249",
    "produced_by": [
     "research/guard_bench.py",
     "nevertwice/_engine.py",
@@ -20920,7 +20920,7 @@
    "command": "python research/guard_bench.py --llm --save",
    "raw": "research/results/guard_bench_v1.json",
    "cited_in": [],
-   "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
+   "commit": "f1218fc8d7a7e7d7b91514d4cb2b3c1f461a4249",
    "produced_by": [
     "research/guard_bench.py",
     "nevertwice/_engine.py",
@@ -20955,11 +20955,11 @@
   },
   {
    "id": "guards.guards_deterministic.ms_per_call",
-   "statement": "and 0.0185 ms per check",
-   "value": 0.0183,
+   "statement": "and 0.0195 ms per check",
+   "value": 0.0187,
    "printed": [
-    "0.018",
-    "0.0183",
+    "0.019",
+    "0.0187",
     "0.02"
    ],
    "unit": "milliseconds",
@@ -20971,7 +20971,7 @@
    "command": "python research/guard_bench.py --llm --save",
    "raw": "research/results/guard_bench_v1.json",
    "cited_in": [],
-   "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
+   "commit": "f1218fc8d7a7e7d7b91514d4cb2b3c1f461a4249",
    "produced_by": [
     "research/guard_bench.py",
     "nevertwice/_engine.py",
@@ -21025,7 +21025,7 @@
    "command": "python research/guard_bench.py --llm --save",
    "raw": "research/results/guard_bench_v1.json",
    "cited_in": [],
-   "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
+   "commit": "f1218fc8d7a7e7d7b91514d4cb2b3c1f461a4249",
    "produced_by": [
     "research/guard_bench.py",
     "nevertwice/_engine.py",
@@ -21074,7 +21074,7 @@
    "command": "python research/guard_bench.py --llm --save",
    "raw": "research/results/guard_bench_v1.json",
    "cited_in": [],
-   "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
+   "commit": "f1218fc8d7a7e7d7b91514d4cb2b3c1f461a4249",
    "produced_by": [
     "research/guard_bench.py",
     "nevertwice/_engine.py",
@@ -21123,7 +21123,7 @@
    "command": "python research/guard_bench.py --llm --save",
    "raw": "research/results/guard_bench_v1.json",
    "cited_in": [],
-   "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
+   "commit": "f1218fc8d7a7e7d7b91514d4cb2b3c1f461a4249",
    "produced_by": [
     "research/guard_bench.py",
     "nevertwice/_engine.py",
@@ -21172,7 +21172,7 @@
    "command": "python research/guard_bench.py --llm --save",
    "raw": "research/results/guard_bench_v1.json",
    "cited_in": [],
-   "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
+   "commit": "f1218fc8d7a7e7d7b91514d4cb2b3c1f461a4249",
    "produced_by": [
     "research/guard_bench.py",
     "nevertwice/_engine.py",
@@ -21223,7 +21223,7 @@
    "command": "python research/guard_bench.py --llm --save",
    "raw": "research/results/guard_bench_v1.json",
    "cited_in": [],
-   "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
+   "commit": "f1218fc8d7a7e7d7b91514d4cb2b3c1f461a4249",
    "produced_by": [
     "research/guard_bench.py",
     "nevertwice/_engine.py",
@@ -21258,11 +21258,11 @@
   },
   {
    "id": "guards.universal_pack.ms_per_call",
-   "statement": "and 0.0071 ms per check",
-   "value": 0.0071,
+   "statement": "and 0.0072 ms per check",
+   "value": 0.0072,
    "printed": [
     "0.007",
-    "0.0071",
+    "0.0072",
     "0.01"
    ],
    "unit": "milliseconds",
@@ -21274,7 +21274,7 @@
    "command": "python research/guard_bench.py --llm --save",
    "raw": "research/results/guard_bench_v1.json",
    "cited_in": [],
-   "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
+   "commit": "f1218fc8d7a7e7d7b91514d4cb2b3c1f461a4249",
    "produced_by": [
     "research/guard_bench.py",
     "nevertwice/_engine.py",
@@ -21328,7 +21328,7 @@
    "command": "python research/guard_bench.py --llm --save",
    "raw": "research/results/guard_bench_v1.json",
    "cited_in": [],
-   "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
+   "commit": "f1218fc8d7a7e7d7b91514d4cb2b3c1f461a4249",
    "produced_by": [
     "research/guard_bench.py",
     "nevertwice/_engine.py",
@@ -21377,7 +21377,7 @@
    "command": "python research/guard_bench.py --llm --save",
    "raw": "research/results/guard_bench_v1.json",
    "cited_in": [],
-   "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
+   "commit": "f1218fc8d7a7e7d7b91514d4cb2b3c1f461a4249",
    "produced_by": [
     "research/guard_bench.py",
     "nevertwice/_engine.py",
@@ -21426,7 +21426,7 @@
    "command": "python research/guard_bench.py --llm --save",
    "raw": "research/results/guard_bench_v1.json",
    "cited_in": [],
-   "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
+   "commit": "f1218fc8d7a7e7d7b91514d4cb2b3c1f461a4249",
    "produced_by": [
     "research/guard_bench.py",
     "nevertwice/_engine.py",
@@ -21475,7 +21475,7 @@
    "command": "python research/guard_bench.py --llm --save",
    "raw": "research/results/guard_bench_v1.json",
    "cited_in": [],
-   "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
+   "commit": "f1218fc8d7a7e7d7b91514d4cb2b3c1f461a4249",
    "produced_by": [
     "research/guard_bench.py",
     "nevertwice/_engine.py",
@@ -21526,7 +21526,7 @@
    "command": "python research/guard_bench.py --llm --save",
    "raw": "research/results/guard_bench_v1.json",
    "cited_in": [],
-   "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
+   "commit": "f1218fc8d7a7e7d7b91514d4cb2b3c1f461a4249",
    "produced_by": [
     "research/guard_bench.py",
     "nevertwice/_engine.py",
@@ -21577,7 +21577,7 @@
    "command": "python research/guard_bench.py --llm --save",
    "raw": "research/results/guard_bench_v1.json",
    "cited_in": [],
-   "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
+   "commit": "f1218fc8d7a7e7d7b91514d4cb2b3c1f461a4249",
    "produced_by": [
     "research/guard_bench.py",
     "nevertwice/_engine.py",
@@ -21612,10 +21612,10 @@
   },
   {
    "id": "guards.prompt_recall.recall_at_fpr",
-   "statement": "prompt recall over the mistake notes (the right note in the top three) catches 1.1% of the tool calls that repeat a recorded mistake, at a false-positive rate of 0.0172 on the calls that do not (the best operating point with a false-positive rate at or below 0.05)",
-   "value": 0.0326,
+   "statement": "prompt recall over the mistake notes (the right note in the top three) catches 0.0% of the tool calls that repeat a recorded mistake, at a false-positive rate of 0.0072 on the calls that do not (the best operating point with a false-positive rate at or below 0.05)",
+   "value": 0.0,
    "printed": [
-    "0.033"
+    "0.000"
    ],
    "unit": "rate",
    "n": 92,
@@ -21623,15 +21623,15 @@
    "ci": {
     "method": "wilson",
     "level": 0.95,
-    "low": 0.0111,
-    "high": 0.0915
+    "low": 0.0,
+    "high": 0.0401
    },
    "dataset": "guard_bench_v1",
    "environment": "local_guard_stand",
    "command": "python research/guard_bench.py --llm --save",
    "raw": "research/results/guard_bench_v1.json",
    "cited_in": [],
-   "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
+   "commit": "f1218fc8d7a7e7d7b91514d4cb2b3c1f461a4249",
    "produced_by": [
     "research/guard_bench.py",
     "nevertwice/_engine.py",
@@ -21662,14 +21662,15 @@
     "nevertwice/why_fired.py",
     "research/matched_conditions.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "note": "Re-read at this HEAD from a fresh run of the stand: the value moved from 0.0326 to 0.0. The prompt-recall arm is not stable across runs - it returns a different neighbour set each time - so this figure is one draw, not a constant. The sentence is rewritten from the same run as the value; before this commit it quoted a rate from a third draw."
   },
   {
    "id": "guards.prompt_recall.precision_at_fpr",
    "statement": "with precision 0.0",
-   "value": 0.3333,
+   "value": 0.0,
    "printed": [
-    "0.333"
+    "0.000"
    ],
    "unit": "rate",
    "n": 1,
@@ -21680,7 +21681,7 @@
    "command": "python research/guard_bench.py --llm --save",
    "raw": "research/results/guard_bench_v1.json",
    "cited_in": [],
-   "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
+   "commit": "f1218fc8d7a7e7d7b91514d4cb2b3c1f461a4249",
    "produced_by": [
     "research/guard_bench.py",
     "nevertwice/_engine.py",
@@ -21711,14 +21712,15 @@
     "nevertwice/why_fired.py",
     "research/matched_conditions.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "note": "Re-read at this HEAD from a fresh run of the stand: the value moved from 0.3333 to 0.0. The prompt-recall arm is not stable across runs - it returns a different neighbour set each time - so this figure is one draw, not a constant. The sentence is rewritten from the same run as the value; before this commit it quoted a rate from a third draw."
   },
   {
    "id": "guards.prompt_recall.hard_negative_fpr",
    "statement": "prompt recall over the mistake notes (the right note in the top three) fires on 1.4% of the hard negatives - the same identifiers, correct code",
-   "value": 0.0563,
+   "value": 0.0141,
    "printed": [
-    "0.056"
+    "0.014"
    ],
    "unit": "rate",
    "n": 71,
@@ -21729,7 +21731,7 @@
    "command": "python research/guard_bench.py --llm --save",
    "raw": "research/results/guard_bench_v1.json",
    "cited_in": [],
-   "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
+   "commit": "f1218fc8d7a7e7d7b91514d4cb2b3c1f461a4249",
    "produced_by": [
     "research/guard_bench.py",
     "nevertwice/_engine.py",
@@ -21760,14 +21762,15 @@
     "nevertwice/why_fired.py",
     "research/matched_conditions.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "note": "Re-read at this HEAD from a fresh run of the stand: the value moved from 0.0563 to 0.0141. The prompt-recall arm is not stable across runs - it returns a different neighbour set each time - so this figure is one draw, not a constant. The sentence is rewritten from the same run as the value; before this commit it quoted a rate from a third draw."
   },
   {
    "id": "guards.prompt_recall.project_recall",
-   "statement": "prompt recall over the mistake notes (the right note in the top three) catches 1.9% of the repeats of project-specific mistakes - the facts only memory can know",
-   "value": 0.0385,
+   "statement": "prompt recall over the mistake notes (the right note in the top three) catches 0.0% of the repeats of project-specific mistakes - the facts only memory can know",
+   "value": 0.0,
    "printed": [
-    "0.038"
+    "0.000"
    ],
    "unit": "rate",
    "n": 52,
@@ -21778,7 +21781,7 @@
    "command": "python research/guard_bench.py --llm --save",
    "raw": "research/results/guard_bench_v1.json",
    "cited_in": [],
-   "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
+   "commit": "f1218fc8d7a7e7d7b91514d4cb2b3c1f461a4249",
    "produced_by": [
     "research/guard_bench.py",
     "nevertwice/_engine.py",
@@ -21809,7 +21812,8 @@
     "nevertwice/why_fired.py",
     "research/matched_conditions.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "note": "Re-read at this HEAD from a fresh run of the stand: the value moved from 0.0385 to 0.0. The prompt-recall arm is not stable across runs - it returns a different neighbour set each time - so this figure is one draw, not a constant. The sentence is rewritten from the same run as the value; before this commit it quoted a rate from a third draw."
   },
   {
    "id": "guards.prompt_recall.tokens_per_call",
@@ -21829,7 +21833,7 @@
    "command": "python research/guard_bench.py --llm --save",
    "raw": "research/results/guard_bench_v1.json",
    "cited_in": [],
-   "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
+   "commit": "f1218fc8d7a7e7d7b91514d4cb2b3c1f461a4249",
    "produced_by": [
     "research/guard_bench.py",
     "nevertwice/_engine.py",
@@ -21864,12 +21868,12 @@
   },
   {
    "id": "guards.prompt_recall.ms_per_call",
-   "statement": "and 53.6152 ms per check",
-   "value": 53.6148,
+   "statement": "and 53.7712 ms per check",
+   "value": 53.771,
    "printed": [
-    "53.615",
-    "53.6148",
-    "53.61"
+    "53.771",
+    "53.7710",
+    "53.77"
    ],
    "unit": "milliseconds",
    "n": 230,
@@ -21880,7 +21884,7 @@
    "command": "python research/guard_bench.py --llm --save",
    "raw": "research/results/guard_bench_v1.json",
    "cited_in": [],
-   "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
+   "commit": "f1218fc8d7a7e7d7b91514d4cb2b3c1f461a4249",
    "produced_by": [
     "research/guard_bench.py",
     "nevertwice/_engine.py",
@@ -21934,7 +21938,7 @@
    "command": "python research/guard_bench.py --llm --save",
    "raw": "research/results/guard_bench_v1.json",
    "cited_in": [],
-   "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
+   "commit": "f1218fc8d7a7e7d7b91514d4cb2b3c1f461a4249",
    "produced_by": [
     "research/guard_bench.py",
     "nevertwice/_engine.py",
@@ -21983,7 +21987,7 @@
    "command": "python research/guard_bench.py --llm --save",
    "raw": "research/results/guard_bench_v1.json",
    "cited_in": [],
-   "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
+   "commit": "f1218fc8d7a7e7d7b91514d4cb2b3c1f461a4249",
    "produced_by": [
     "research/guard_bench.py",
     "nevertwice/_engine.py",
@@ -22032,7 +22036,7 @@
    "command": "python research/guard_bench.py --llm --save",
    "raw": "research/results/guard_bench_v1.json",
    "cited_in": [],
-   "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
+   "commit": "f1218fc8d7a7e7d7b91514d4cb2b3c1f461a4249",
    "produced_by": [
     "research/guard_bench.py",
     "nevertwice/_engine.py",
@@ -22083,7 +22087,7 @@
    "command": "python research/guard_bench.py --llm --save",
    "raw": "research/results/guard_bench_v1.json",
    "cited_in": [],
-   "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
+   "commit": "f1218fc8d7a7e7d7b91514d4cb2b3c1f461a4249",
    "produced_by": [
     "research/guard_bench.py",
     "nevertwice/_engine.py",
@@ -22134,7 +22138,7 @@
    "command": "python research/guard_bench.py --llm --save",
    "raw": "research/results/guard_bench_v1.json",
    "cited_in": [],
-   "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
+   "commit": "f1218fc8d7a7e7d7b91514d4cb2b3c1f461a4249",
    "produced_by": [
     "research/guard_bench.py",
     "nevertwice/_engine.py",
@@ -22188,7 +22192,7 @@
    "command": "python research/guard_bench.py --llm --save",
    "raw": "research/results/guard_bench_v1.json",
    "cited_in": [],
-   "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
+   "commit": "f1218fc8d7a7e7d7b91514d4cb2b3c1f461a4249",
    "produced_by": [
     "research/guard_bench.py",
     "nevertwice/_engine.py",
@@ -22238,7 +22242,7 @@
    "command": "python research/guard_bench.py --llm --save",
    "raw": "research/results/guard_bench_v1.json",
    "cited_in": [],
-   "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
+   "commit": "f1218fc8d7a7e7d7b91514d4cb2b3c1f461a4249",
    "produced_by": [
     "research/guard_bench.py",
     "nevertwice/_engine.py",
@@ -22289,7 +22293,7 @@
    "command": "python research/guard_bench.py --llm --save",
    "raw": "research/results/guard_bench_v1.json",
    "cited_in": [],
-   "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
+   "commit": "f1218fc8d7a7e7d7b91514d4cb2b3c1f461a4249",
    "produced_by": [
     "research/guard_bench.py",
     "nevertwice/_engine.py",
@@ -22324,11 +22328,11 @@
   },
   {
    "id": "guards.guards_llm.ms_per_call",
-   "statement": "and 0.0359 ms per check",
-   "value": 0.0259,
+   "statement": "and 0.0263 ms per check",
+   "value": 0.0263,
    "printed": [
     "0.026",
-    "0.0259",
+    "0.0263",
     "0.03"
    ],
    "unit": "milliseconds",
@@ -22340,7 +22344,7 @@
    "command": "python research/guard_bench.py --llm --save",
    "raw": "research/results/guard_bench_v1.json",
    "cited_in": [],
-   "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
+   "commit": "f1218fc8d7a7e7d7b91514d4cb2b3c1f461a4249",
    "produced_by": [
     "research/guard_bench.py",
     "nevertwice/_engine.py",
@@ -22371,7 +22375,8 @@
     "nevertwice/why_fired.py",
     "research/matched_conditions.py",
     "sandbox_guard.py"
-   ]
+   ],
+   "note": "Re-read at this HEAD from a fresh run of the stand: the value moved from 0.0259 to 0.0263. The prompt-recall arm is not stable across runs - it returns a different neighbour set each time - so this figure is one draw, not a constant. The sentence is rewritten from the same run as the value; before this commit it quoted a rate from a third draw."
   },
   {
    "id": "guards.dataset.mistakes",
@@ -22389,7 +22394,7 @@
    "command": "python research/guard_bench.py --llm --save",
    "raw": "research/results/guard_bench_v1.json",
    "cited_in": [],
-   "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
+   "commit": "f1218fc8d7a7e7d7b91514d4cb2b3c1f461a4249",
    "produced_by": [
     "research/guard_bench.py",
     "nevertwice/_engine.py",
@@ -22438,7 +22443,7 @@
    "command": "python research/guard_bench.py --llm --save",
    "raw": "research/results/guard_bench_v1.json",
    "cited_in": [],
-   "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
+   "commit": "f1218fc8d7a7e7d7b91514d4cb2b3c1f461a4249",
    "produced_by": [
     "research/guard_bench.py",
     "nevertwice/_engine.py",
@@ -22487,7 +22492,7 @@
    "command": "python research/guard_bench.py --llm --save",
    "raw": "research/results/guard_bench_v1.json",
    "cited_in": [],
-   "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
+   "commit": "f1218fc8d7a7e7d7b91514d4cb2b3c1f461a4249",
    "produced_by": [
     "research/guard_bench.py",
     "nevertwice/_engine.py",
@@ -22536,7 +22541,7 @@
    "command": "python research/guard_bench.py --llm --save",
    "raw": "research/results/guard_bench_v1.json",
    "cited_in": [],
-   "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
+   "commit": "f1218fc8d7a7e7d7b91514d4cb2b3c1f461a4249",
    "produced_by": [
     "research/guard_bench.py",
     "nevertwice/_engine.py",
@@ -44944,6 +44949,402 @@
    "ci": null,
    "note": "`tests/_test_k8_vault_dryrun_readonly.py` proves the word read-only: every write-capable function of the hook is spied and the store fingerprinted, and three planted writes each turn the check red.",
    "raw_gap": "the vault is private, so the counts are published and the notes behind them are not"
+  },
+  {
+   "id": "guards.guards_deterministic.project_recall",
+   "statement": "guards written by the engine's no-model path catches 15.4% of the repeats of project-specific mistakes - the facts only memory can know - 8 of 52 (measured where the arm fires, a false-alarm rate of 0.1786)",
+   "value": 0.1538,
+   "printed": [
+    "0.154"
+   ],
+   "unit": "rate",
+   "n": 52,
+   "pointer": "arms.guards_deterministic.project.recall",
+   "ci": null,
+   "dataset": "guard_bench_v1",
+   "environment": "local_guard_stand",
+   "command": "python research/guard_bench.py --llm --save",
+   "raw": "research/results/guard_bench_v1.json",
+   "cited_in": [],
+   "commit": "f1218fc8d7a7e7d7b91514d4cb2b3c1f461a4249",
+   "produced_by": [
+    "research/guard_bench.py",
+    "nevertwice/_engine.py",
+    "nevertwice/anticipate.py",
+    "nevertwice/api.py",
+    "nevertwice/budget.py",
+    "nevertwice/causal.py",
+    "nevertwice/config.py",
+    "nevertwice/dashboard.py",
+    "nevertwice/digest.py",
+    "nevertwice/emit.py",
+    "nevertwice/graph.py",
+    "nevertwice/guards.py",
+    "nevertwice/inbox.py",
+    "nevertwice/index_sqlite.py",
+    "nevertwice/integrity.py",
+    "nevertwice/interop.py",
+    "nevertwice/lenses.py",
+    "nevertwice/memory_hook.py",
+    "nevertwice/memory_search.py",
+    "nevertwice/outcomes.py",
+    "nevertwice/rankers.py",
+    "nevertwice/receipt.py",
+    "nevertwice/reranker_ce.py",
+    "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
+    "nevertwice/store_state.py",
+    "nevertwice/why_fired.py",
+    "research/matched_conditions.py",
+    "sandbox_guard.py"
+   ]
+  },
+  {
+   "id": "guards.guards_deterministic.project_fpr",
+   "statement": "and raises a flag on 21.2% of the project-class calls that repeat nothing (measured where the arm fires, a false-alarm rate of 0.1786)",
+   "value": 0.2125,
+   "printed": [
+    "0.212"
+   ],
+   "unit": "rate",
+   "n": 80,
+   "pointer": "arms.guards_deterministic.project.false_positive_rate",
+   "ci": null,
+   "dataset": "guard_bench_v1",
+   "environment": "local_guard_stand",
+   "command": "python research/guard_bench.py --llm --save",
+   "raw": "research/results/guard_bench_v1.json",
+   "cited_in": [],
+   "commit": "f1218fc8d7a7e7d7b91514d4cb2b3c1f461a4249",
+   "produced_by": [
+    "research/guard_bench.py",
+    "nevertwice/_engine.py",
+    "nevertwice/anticipate.py",
+    "nevertwice/api.py",
+    "nevertwice/budget.py",
+    "nevertwice/causal.py",
+    "nevertwice/config.py",
+    "nevertwice/dashboard.py",
+    "nevertwice/digest.py",
+    "nevertwice/emit.py",
+    "nevertwice/graph.py",
+    "nevertwice/guards.py",
+    "nevertwice/inbox.py",
+    "nevertwice/index_sqlite.py",
+    "nevertwice/integrity.py",
+    "nevertwice/interop.py",
+    "nevertwice/lenses.py",
+    "nevertwice/memory_hook.py",
+    "nevertwice/memory_search.py",
+    "nevertwice/outcomes.py",
+    "nevertwice/rankers.py",
+    "nevertwice/receipt.py",
+    "nevertwice/reranker_ce.py",
+    "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
+    "nevertwice/store_state.py",
+    "nevertwice/why_fired.py",
+    "research/matched_conditions.py",
+    "sandbox_guard.py"
+   ]
+  },
+  {
+   "id": "guards.guards_deterministic.generic_recall",
+   "statement": "guards written by the engine's no-model path catches 67.5% of the repeats a linter could also catch (measured where the arm fires, a false-alarm rate of 0.1786)",
+   "value": 0.675,
+   "printed": [
+    "0.675"
+   ],
+   "unit": "rate",
+   "n": 40,
+   "pointer": "arms.guards_deterministic.generic.recall",
+   "ci": null,
+   "dataset": "guard_bench_v1",
+   "environment": "local_guard_stand",
+   "command": "python research/guard_bench.py --llm --save",
+   "raw": "research/results/guard_bench_v1.json",
+   "cited_in": [],
+   "commit": "f1218fc8d7a7e7d7b91514d4cb2b3c1f461a4249",
+   "produced_by": [
+    "research/guard_bench.py",
+    "nevertwice/_engine.py",
+    "nevertwice/anticipate.py",
+    "nevertwice/api.py",
+    "nevertwice/budget.py",
+    "nevertwice/causal.py",
+    "nevertwice/config.py",
+    "nevertwice/dashboard.py",
+    "nevertwice/digest.py",
+    "nevertwice/emit.py",
+    "nevertwice/graph.py",
+    "nevertwice/guards.py",
+    "nevertwice/inbox.py",
+    "nevertwice/index_sqlite.py",
+    "nevertwice/integrity.py",
+    "nevertwice/interop.py",
+    "nevertwice/lenses.py",
+    "nevertwice/memory_hook.py",
+    "nevertwice/memory_search.py",
+    "nevertwice/outcomes.py",
+    "nevertwice/rankers.py",
+    "nevertwice/receipt.py",
+    "nevertwice/reranker_ce.py",
+    "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
+    "nevertwice/store_state.py",
+    "nevertwice/why_fired.py",
+    "research/matched_conditions.py",
+    "sandbox_guard.py"
+   ]
+  },
+  {
+   "id": "guards.guards_deterministic.hard_negative_fpr",
+   "statement": "guards written by the engine's no-model path fires on 26.8% of the hard negatives - the same identifiers, correct code (measured where the arm fires, a false-alarm rate of 0.1786)",
+   "value": 0.2676,
+   "printed": [
+    "0.268"
+   ],
+   "unit": "rate",
+   "n": 71,
+   "pointer": "arms.guards_deterministic.hard_negatives.false_positive_rate",
+   "ci": null,
+   "dataset": "guard_bench_v1",
+   "environment": "local_guard_stand",
+   "command": "python research/guard_bench.py --llm --save",
+   "raw": "research/results/guard_bench_v1.json",
+   "cited_in": [],
+   "commit": "f1218fc8d7a7e7d7b91514d4cb2b3c1f461a4249",
+   "produced_by": [
+    "research/guard_bench.py",
+    "nevertwice/_engine.py",
+    "nevertwice/anticipate.py",
+    "nevertwice/api.py",
+    "nevertwice/budget.py",
+    "nevertwice/causal.py",
+    "nevertwice/config.py",
+    "nevertwice/dashboard.py",
+    "nevertwice/digest.py",
+    "nevertwice/emit.py",
+    "nevertwice/graph.py",
+    "nevertwice/guards.py",
+    "nevertwice/inbox.py",
+    "nevertwice/index_sqlite.py",
+    "nevertwice/integrity.py",
+    "nevertwice/interop.py",
+    "nevertwice/lenses.py",
+    "nevertwice/memory_hook.py",
+    "nevertwice/memory_search.py",
+    "nevertwice/outcomes.py",
+    "nevertwice/rankers.py",
+    "nevertwice/receipt.py",
+    "nevertwice/reranker_ce.py",
+    "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
+    "nevertwice/store_state.py",
+    "nevertwice/why_fired.py",
+    "research/matched_conditions.py",
+    "sandbox_guard.py"
+   ]
+  },
+  {
+   "id": "guards.guards_llm.project_recall",
+   "statement": "guards written by the local model catches 40.4% of the repeats of project-specific mistakes - the facts only memory can know - 21 of 52 (measured where the arm fires, a false-alarm rate of 0.1549)",
+   "value": 0.4038,
+   "printed": [
+    "0.404"
+   ],
+   "unit": "rate",
+   "n": 52,
+   "pointer": "arms.guards_llm.project.recall",
+   "ci": null,
+   "dataset": "guard_bench_v1",
+   "environment": "local_guard_stand",
+   "command": "python research/guard_bench.py --llm --save",
+   "raw": "research/results/guard_bench_v1.json",
+   "cited_in": [],
+   "commit": "f1218fc8d7a7e7d7b91514d4cb2b3c1f461a4249",
+   "produced_by": [
+    "research/guard_bench.py",
+    "nevertwice/_engine.py",
+    "nevertwice/anticipate.py",
+    "nevertwice/api.py",
+    "nevertwice/budget.py",
+    "nevertwice/causal.py",
+    "nevertwice/config.py",
+    "nevertwice/dashboard.py",
+    "nevertwice/digest.py",
+    "nevertwice/emit.py",
+    "nevertwice/graph.py",
+    "nevertwice/guards.py",
+    "nevertwice/inbox.py",
+    "nevertwice/index_sqlite.py",
+    "nevertwice/integrity.py",
+    "nevertwice/interop.py",
+    "nevertwice/lenses.py",
+    "nevertwice/memory_hook.py",
+    "nevertwice/memory_search.py",
+    "nevertwice/outcomes.py",
+    "nevertwice/rankers.py",
+    "nevertwice/receipt.py",
+    "nevertwice/reranker_ce.py",
+    "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
+    "nevertwice/store_state.py",
+    "nevertwice/why_fired.py",
+    "research/matched_conditions.py",
+    "sandbox_guard.py"
+   ],
+   "note": "the arm's patterns came from 0 fresh generation(s) in this run and the rest from research/data/guard_bench_llm_cache.json, which is not committed; the scoring is this run's"
+  },
+  {
+   "id": "guards.guards_llm.project_fpr",
+   "statement": "and raises a flag on 22.2% of the project-class calls that repeat nothing (measured where the arm fires, a false-alarm rate of 0.1549)",
+   "value": 0.2222,
+   "printed": [
+    "0.222"
+   ],
+   "unit": "rate",
+   "n": 81,
+   "pointer": "arms.guards_llm.project.false_positive_rate",
+   "ci": null,
+   "dataset": "guard_bench_v1",
+   "environment": "local_guard_stand",
+   "command": "python research/guard_bench.py --llm --save",
+   "raw": "research/results/guard_bench_v1.json",
+   "cited_in": [],
+   "commit": "f1218fc8d7a7e7d7b91514d4cb2b3c1f461a4249",
+   "produced_by": [
+    "research/guard_bench.py",
+    "nevertwice/_engine.py",
+    "nevertwice/anticipate.py",
+    "nevertwice/api.py",
+    "nevertwice/budget.py",
+    "nevertwice/causal.py",
+    "nevertwice/config.py",
+    "nevertwice/dashboard.py",
+    "nevertwice/digest.py",
+    "nevertwice/emit.py",
+    "nevertwice/graph.py",
+    "nevertwice/guards.py",
+    "nevertwice/inbox.py",
+    "nevertwice/index_sqlite.py",
+    "nevertwice/integrity.py",
+    "nevertwice/interop.py",
+    "nevertwice/lenses.py",
+    "nevertwice/memory_hook.py",
+    "nevertwice/memory_search.py",
+    "nevertwice/outcomes.py",
+    "nevertwice/rankers.py",
+    "nevertwice/receipt.py",
+    "nevertwice/reranker_ce.py",
+    "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
+    "nevertwice/store_state.py",
+    "nevertwice/why_fired.py",
+    "research/matched_conditions.py",
+    "sandbox_guard.py"
+   ],
+   "note": "the arm's patterns came from 0 fresh generation(s) in this run and the rest from research/data/guard_bench_llm_cache.json, which is not committed; the scoring is this run's"
+  },
+  {
+   "id": "guards.guards_llm.generic_recall",
+   "statement": "guards written by the local model catches 32.5% of the repeats a linter could also catch (measured where the arm fires, a false-alarm rate of 0.1549)",
+   "value": 0.325,
+   "printed": [
+    "0.325"
+   ],
+   "unit": "rate",
+   "n": 40,
+   "pointer": "arms.guards_llm.generic.recall",
+   "ci": null,
+   "dataset": "guard_bench_v1",
+   "environment": "local_guard_stand",
+   "command": "python research/guard_bench.py --llm --save",
+   "raw": "research/results/guard_bench_v1.json",
+   "cited_in": [],
+   "commit": "f1218fc8d7a7e7d7b91514d4cb2b3c1f461a4249",
+   "produced_by": [
+    "research/guard_bench.py",
+    "nevertwice/_engine.py",
+    "nevertwice/anticipate.py",
+    "nevertwice/api.py",
+    "nevertwice/budget.py",
+    "nevertwice/causal.py",
+    "nevertwice/config.py",
+    "nevertwice/dashboard.py",
+    "nevertwice/digest.py",
+    "nevertwice/emit.py",
+    "nevertwice/graph.py",
+    "nevertwice/guards.py",
+    "nevertwice/inbox.py",
+    "nevertwice/index_sqlite.py",
+    "nevertwice/integrity.py",
+    "nevertwice/interop.py",
+    "nevertwice/lenses.py",
+    "nevertwice/memory_hook.py",
+    "nevertwice/memory_search.py",
+    "nevertwice/outcomes.py",
+    "nevertwice/rankers.py",
+    "nevertwice/receipt.py",
+    "nevertwice/reranker_ce.py",
+    "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
+    "nevertwice/store_state.py",
+    "nevertwice/why_fired.py",
+    "research/matched_conditions.py",
+    "sandbox_guard.py"
+   ],
+   "note": "the arm's patterns came from 0 fresh generation(s) in this run and the rest from research/data/guard_bench_llm_cache.json, which is not committed; the scoring is this run's"
+  },
+  {
+   "id": "guards.guards_llm.hard_negative_fpr",
+   "statement": "guards written by the local model fires on 22.5% of the hard negatives - the same identifiers, correct code (measured where the arm fires, a false-alarm rate of 0.1549)",
+   "value": 0.2254,
+   "printed": [
+    "0.225"
+   ],
+   "unit": "rate",
+   "n": 71,
+   "pointer": "arms.guards_llm.hard_negatives.false_positive_rate",
+   "ci": null,
+   "dataset": "guard_bench_v1",
+   "environment": "local_guard_stand",
+   "command": "python research/guard_bench.py --llm --save",
+   "raw": "research/results/guard_bench_v1.json",
+   "cited_in": [],
+   "commit": "f1218fc8d7a7e7d7b91514d4cb2b3c1f461a4249",
+   "produced_by": [
+    "research/guard_bench.py",
+    "nevertwice/_engine.py",
+    "nevertwice/anticipate.py",
+    "nevertwice/api.py",
+    "nevertwice/budget.py",
+    "nevertwice/causal.py",
+    "nevertwice/config.py",
+    "nevertwice/dashboard.py",
+    "nevertwice/digest.py",
+    "nevertwice/emit.py",
+    "nevertwice/graph.py",
+    "nevertwice/guards.py",
+    "nevertwice/inbox.py",
+    "nevertwice/index_sqlite.py",
+    "nevertwice/integrity.py",
+    "nevertwice/interop.py",
+    "nevertwice/lenses.py",
+    "nevertwice/memory_hook.py",
+    "nevertwice/memory_search.py",
+    "nevertwice/outcomes.py",
+    "nevertwice/rankers.py",
+    "nevertwice/receipt.py",
+    "nevertwice/reranker_ce.py",
+    "nevertwice/stats.py",
+    "nevertwice/stemmer.py",
+    "nevertwice/store_state.py",
+    "nevertwice/why_fired.py",
+    "research/matched_conditions.py",
+    "sandbox_guard.py"
+   ],
+   "note": "the arm's patterns came from 0 fresh generation(s) in this run and the rest from research/data/guard_bench_llm_cache.json, which is not committed; the scoring is this run's"
   }
  ],
  "external_citations": [

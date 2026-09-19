@@ -946,8 +946,14 @@ def render_guard_bench(c: Claims) -> str:
     for label, slug in GUARD_ROWS:
         if c.has(f"{fam}.{slug}.recall_all_fire"):
             none.append(label.strip("*"))
+            # An arm above the budget still has a class split, and the two arms the project-class
+            # question is about are both here. Their cells are read at the arm's own firing rate,
+            # not at the budget the other rows use, so the caption says so - a reader who compares
+            # them column-wise without that sentence is comparing two different operating points.
             rows.append([label, f"{_cell(c, f'{fam}.{slug}.recall_all_fire')} at FPR {_cell(c, f'{fam}.{slug}.fpr_all_fire')} (over budget)",
-                         "-", "-", "-",
+                         "-",
+                         _cell(c, f"{fam}.{slug}.hard_negative_fpr") if c.has(f"{fam}.{slug}.hard_negative_fpr") else "-",
+                         _cell(c, f"{fam}.{slug}.project_recall") if c.has(f"{fam}.{slug}.project_recall") else "-",
                          _cell(c, f"{fam}.{slug}.tokens_per_call") if c.has(f"{fam}.{slug}.tokens_per_call") else "-",
                          _cell(c, f"{fam}.{slug}.ms_per_call") if c.has(f"{fam}.{slug}.ms_per_call") else "-"])
             continue
@@ -963,7 +969,9 @@ def render_guard_bench(c: Claims) -> str:
     notes = []
     if none:
         notes.append("no operating point under the false-alarm budget for " + ", ".join(none)
-                     + " - a guard fires or it does not, and firing catches the repeats shown at the false-alarm rate shown")
+                     + " - a guard fires or it does not, and firing catches the repeats shown at the false-alarm rate "
+                       "shown; their hard-negative and project-only cells are read where the arm fires, not at the "
+                       "budget the rows below use")
     if missing:
         notes.append("no row for " + ", ".join(missing) + ": the arm has no registered number (not run, or blocked)")
     if notes:

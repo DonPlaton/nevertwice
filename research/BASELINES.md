@@ -80,6 +80,15 @@ at a fraction of the latency. For the failure classes an existing tool already c
 is a worse linter. What the memory system can still claim has to be about the classes no
 linter covers, and that is now a written constraint rather than an open question.
 
+That constraint now has a number against it. On the project-specific class - the facts only this
+project's history holds, where a linter has nothing to read - the model-written guards catch
+**0.404** of the repeats against the linter's **0.154**, and the engine's no-model patterns catch
+0.154, the same as the linter. The lead is paid for: it is measured where the arm fires, a false
+alarm on 0.155 of the clean calls, against the linter's zero. See
+[`GUARD_BENCH.md`](GUARD_BENCH.md); until 2026-09-19 neither guard arm had a project-class figure
+anywhere, because the stand and its registrar both computed the split only for arms that reached
+the false-alarm budget.
+
 **And the cheapest arm of all is not yet beaten.** Raw lexical recall is not distinguished from
 the memory arm on this corpus, and at zero false alarms it is nominally ahead. See
 `research/cheap_baselines.json` for the full verdict, including which differences the sample

@@ -121,6 +121,48 @@ def build_claims(art: dict, *, command: str, raw: str, head: str, produced_by: l
             add(f"{FAMILY}.{arm}.ms_per_call",
                 f"and {sc['ms_per_call']} ms per check", sc["ms_per_call"], [f"{sc['ms_per_call']:.3f}", f"{sc['ms_per_call']:.4f}", f"{sc['ms_per_call']:.2f}"],
                 "milliseconds", sc["n_calls"], None, f'arms.{arm}.ms_per_call')
+            # The class split is a diagnostic - WHICH repeats an arm catches - and an arm that sits
+            # above the false-alarm budget still has one. Skipping it here was the mirror of the
+            # defect track O fixed in the bench: the two arms the project-class question is actually
+            # about were the only ones with no project row, so "we tie with a linter" was read off a
+            # table that had never asked them. Every figure carries the operating point it was taken
+            # at, so a split measured at a false-alarm rate of 0.155 can never be read as one taken
+            # at zero.
+            at = (sc.get("split_at") or {}).get("false_positive_rate")
+            where = f" (measured where the arm fires, a false-alarm rate of {at})" if at is not None else ""
+            # The model-written arm reuses its patterns from an uncommitted cache, by design: a re-score
+            # costs no generation. The scoring is this run's; the patterns may be an earlier draw, and a
+            # claim that did not say so would read as a fresh model measurement.
+            fresh = (sc.get("info") or {}).get("fresh_generations")
+            split_note = (f"the arm's patterns came from {fresh} fresh generation(s) in this run and the "
+                          f"rest from research/data/guard_bench_llm_cache.json, which is not committed; "
+                          f"the scoring is this run's") if fresh is not None else None
+            pr0 = sc.get("project") or {}
+            if pr0.get("recall") is not None:
+                add(f"{FAMILY}.{arm}.project_recall",
+                    f"{label} catches {pr0['recall'] * 100:.1f}% of the repeats of project-specific mistakes - "
+                    f"the facts only memory can know - {pr0['tp']} of {pr0['tp'] + pr0['fn']}{where}",
+                    pr0["recall"], [f"{pr0['recall']:.3f}"], "rate", pr0["tp"] + pr0["fn"], None,
+                    f'arms.{arm}.project.recall', split_note)
+            if pr0.get("false_positive_rate") is not None:
+                add(f"{FAMILY}.{arm}.project_fpr",
+                    f"and raises a flag on {pr0['false_positive_rate'] * 100:.1f}% of the project-class calls "
+                    f"that repeat nothing{where}",
+                    pr0["false_positive_rate"], [f"{pr0['false_positive_rate']:.3f}"], "rate",
+                    pr0["fp"] + pr0["tn"], None, f'arms.{arm}.project.false_positive_rate', split_note)
+            gen0 = sc.get("generic") or {}
+            if gen0.get("recall") is not None:
+                add(f"{FAMILY}.{arm}.generic_recall",
+                    f"{label} catches {gen0['recall'] * 100:.1f}% of the repeats a linter could also catch{where}",
+                    gen0["recall"], [f"{gen0['recall']:.3f}"], "rate", gen0["tp"] + gen0["fn"], None,
+                    f'arms.{arm}.generic.recall', split_note)
+            hn0 = sc.get("hard_negatives") or {}
+            if hn0.get("false_positive_rate") is not None:
+                add(f"{FAMILY}.{arm}.hard_negative_fpr",
+                    f"{label} fires on {hn0['false_positive_rate'] * 100:.1f}% of the hard negatives - "
+                    f"the same identifiers, correct code{where}",
+                    hn0["false_positive_rate"], [f"{hn0['false_positive_rate']:.3f}"], "rate",
+                    hn0["fp"] + hn0["tn"], None, f'arms.{arm}.hard_negatives.false_positive_rate', split_note)
             continue
         add(f"{FAMILY}.{arm}.recall_at_fpr",
             f"{label} catches {mt['recall'] * 100:.1f}% of the tool calls that repeat a recorded mistake, at a "
