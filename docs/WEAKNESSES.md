@@ -93,11 +93,11 @@ they cannot lag the artifact.
 <!-- claims:guard-bench -->
 | arm | recall of the right guard | precision | hard-negative false alarms | project-only recall | tokens / call | ms / check |
 |---|---|---|---|---|---|---|
-| **guards, engine's no-model patterns** | 0.380 at FPR 0.179 (over budget) | - | 0.268 | 0.154 | 3.320 | 0.019 |
-| **guards, model-written patterns** | 0.370 at FPR 0.155 (over budget) | - | 0.225 | 0.404 | 5.510 | 0.026 |
-| cold-start pack (no history) | 0.196 | 0.818 | 0.000 | 0.000 | 1.150 | 0.007 |
+| **guards, engine's no-model patterns** | 0.380 at FPR 0.179 (over budget) | - | 0.268 | 0.154 | 3.320 | 0.017 |
+| **guards, model-written patterns** | 0.370 at FPR 0.155 (over budget) | - | 0.225 | 0.404 | 5.510 | 0.027 |
+| cold-start pack (no history) | 0.196 | 0.818 | 0.000 | 0.000 | 1.150 | 0.008 |
 | linter or scanner (scored in its favour) | 0.457 | 1.000 | 0.000 | 0.154 | 0.000 | 0.000 |
-| prompt recall over the notes (top three) | 0.000 | 0.000 | 0.014 | 0.000 | 103.560 | 53.771 |
+| prompt recall over the notes (top three) | 0.000 | 0.000 | 0.014 | 0.000 | 103.560 | 48.837 |
 | silence (floor) | 0.000 | - | 0.000 | 0.000 | 0.000 | 0.000 |
 
 <sub>no operating point under the false-alarm budget for guards, engine's no-model patterns, guards, model-written patterns - a guard fires or it does not, and firing catches the repeats shown at the false-alarm rate shown; their hard-negative and project-only cells are read where the arm fires, not at the budget the rows below use.</sub>

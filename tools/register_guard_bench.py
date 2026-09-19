@@ -75,16 +75,30 @@ def dataset_entry(corpus_path: Path) -> dict:
 
 
 def build_claims(art: dict, *, command: str, raw: str, head: str, produced_by: list[str],
-                 existing: set[str]) -> tuple[list[dict], list[str]]:
+                 existing: set[str], refresh: dict | None = None) -> tuple[list[dict], list[str]]:
     base = {"dataset": DATASET, "environment": ENVIRONMENT, "command": command, "raw": raw,
             "cited_in": [], "commit": head, "produced_by": list(produced_by)}
     counts = art["corpus"]["counts"]
     fpr = art["target_fpr"]
     key = f"at_fpr_{fpr}"
-    new, skipped = [], []
+    new, skipped, refreshed = [], [], []
 
     def add(cid, statement, value, printed, unit, n, ci, pointer, note=None):
         if cid in existing:
+            # A claim's statement spells its rate out in prose - "catches 37.0%", "0.0263 ms per
+            # check" - and `remeasure.py --restore` moves the value and the printed forms but not
+            # the sentence, because it has no way to know which words are the number. Five guard
+            # statements were found on 2026-09-19 quoting percentages from a draw that matched
+            # neither their own value nor any artifact in the tree. `--refresh-statements` rebuilds
+            # the sentence from the same artifact the value came from, which is the only way the two
+            # cannot drift apart.
+            if refresh is not None and cid in refresh:
+                c = refresh[cid]
+                if c.get("statement") != statement or c.get("printed") != list(printed):
+                    c["statement"], c["printed"] = statement, list(printed)
+                    c["value"], c["n"] = value, n
+                    c["commit"] = head
+                    refreshed.append(cid)
             skipped.append(cid)
             return
         c = {"id": cid, "statement": statement, "value": value, "printed": list(printed), "unit": unit, "n": n,
@@ -184,6 +198,23 @@ def build_claims(art: dict, *, command: str, raw: str, head: str, produced_by: l
             add(f"{FAMILY}.{arm}.project_recall",
                 f"{label} catches {pr['recall'] * 100:.1f}% of the repeats of project-specific mistakes - the facts only memory can know",
                 pr["recall"], [f"{pr['recall']:.3f}"], "rate", pr["tp"] + pr["fn"], None, f'arms.{arm}.project.recall')
+        # The price of that recall has to be quoted on the same denominator as the recall itself.
+        # `hard_negative_fpr` and `fpr_all_fire` are rates over other populations; a sentence that
+        # pairs project-class recall with either of them is comparing two different questions. This
+        # is the false-alarm rate on the project-class calls that repeat nothing, and it is what a
+        # claim about the project class has to pay with.
+        if pr.get("false_positive_rate") is not None:
+            add(f"{FAMILY}.{arm}.project_fpr",
+                f"and raises a flag on {pr['false_positive_rate'] * 100:.1f}% of the project-class calls "
+                f"that repeat nothing",
+                pr["false_positive_rate"], [f"{pr['false_positive_rate']:.3f}"], "rate",
+                pr["fp"] + pr["tn"], None, f'arms.{arm}.project.false_positive_rate')
+        gen = sc.get("generic") or {}
+        if gen.get("recall") is not None:
+            add(f"{FAMILY}.{arm}.generic_recall",
+                f"{label} catches {gen['recall'] * 100:.1f}% of the repeats a linter could also catch",
+                gen["recall"], [f"{gen['recall']:.3f}"], "rate", gen["tp"] + gen["fn"], None,
+                f'arms.{arm}.generic.recall')
         add(f"{FAMILY}.{arm}.tokens_per_call",
             f"{label} spends {sc['tokens_per_call']} context tokens per tool call, silence included",
             sc["tokens_per_call"], [f"{sc['tokens_per_call']:.3f}", f"{sc['tokens_per_call']:.2f}", f"{sc['tokens_per_call']:.1f}"], "tokens", sc["n_calls"], None,
@@ -195,7 +226,7 @@ def build_claims(art: dict, *, command: str, raw: str, head: str, produced_by: l
                      ("negatives", "tool calls that do not"), ("hard_negatives", "hard negatives")):
         add(f"{FAMILY}.dataset.{k_}", f"the guard corpus carries {counts[k_]} {what}", counts[k_], [str(counts[k_])],
             "count", counts[k_], None, f"corpus.counts.{k_}")
-    return new, skipped
+    return new, skipped, refreshed
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -204,6 +235,9 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--command", required=True)
     ap.add_argument("--manifest", default=str(MANIFEST_PATH))
     ap.add_argument("--dry-run", action="store_true")
+    ap.add_argument("--refresh-statements", action="store_true",
+                    help="rebuild an existing claim's sentence from this artifact, so the prose "
+                         "cannot drift from the value the way five statements did on 2026-09-19")
     args = ap.parse_args(argv)
     raw = ROOT / args.artifact
     if not raw.is_file():
@@ -237,10 +271,13 @@ def main(argv: list[str] | None = None) -> int:
         print("the artifact was produced from a corpus whose hash differs from the registered dataset")
         return 2
     existing = {c["id"] for c in manifest["claims"]}
-    new, skipped = build_claims(art, command=args.command, raw=args.artifact, head=head,
-                                produced_by=closure, existing=existing)
+    by_id = {c["id"]: c for c in manifest["claims"]} if args.refresh_statements else None
+    new, skipped, refreshed = build_claims(art, command=args.command, raw=args.artifact, head=head,
+                                           produced_by=closure, existing=existing, refresh=by_id)
     if skipped:
         print(f"  already registered ({len(skipped)})")
+    for cid in refreshed:
+        print(f"  ~ {cid} statement rebuilt from this artifact")
     for c in new:
         print(f"  + {c['id']} = {c['value']}")
     if args.dry_run:
@@ -248,7 +285,8 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     manifest["claims"].extend(new)
     Path(args.manifest).write_text(json.dumps(manifest, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
-    print(f"registered {len(new)} claim(s) for {FAMILY} at {head[:7]}")
+    print(f"registered {len(new)} claim(s) for {FAMILY} at {head[:7]}"
+          + (f", rebuilt {len(refreshed)} statement(s)" if refreshed else ""))
     return 0
 
 

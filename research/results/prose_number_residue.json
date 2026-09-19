@@ -1,0 +1,37 @@
+[
+ {
+  "page": "BLAST_RADIUS_CALIBRATION.md",
+  "line": 104,
+  "nums": [
+   "1.1991",
+   "2.00"
+  ],
+  "unsourced": [
+   "2.00"
+  ],
+  "text": "1.1991 s, against a 2.00 s ceiling the integration spec claims for itself. These"
+ },
+ {
+  "page": "BLAST_RADIUS_THRESHOLDS.md",
+  "line": 82,
+  "nums": [
+   "2.00"
+  ],
+  "unsourced": [
+   "2.00"
+  ],
+  "text": "> Median wall-clock **≤ 2.00 s** per commit on the calibration set; p95 and max reported"
+ },
+ {
+  "page": "BLAST_RADIUS_THRESHOLDS.md",
+  "line": 85,
+  "nums": [
+   "2.00",
+   "3.3"
+  ],
+  "unsourced": [
+   "2.00"
+  ],
+  "text": "2.00 s is the ceiling the integration spec claims for itself (§3.3), so it is the spec's own"
+ }
+]

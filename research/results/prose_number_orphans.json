@@ -1,0 +1,1293 @@
+[
+ {
+  "page": "ABSTENTION_AB.md",
+  "line": 3,
+  "nums": [
+   "9262543"
+  ],
+  "unsourced": [
+   "9262543"
+  ],
+  "text": "> **Re-measured 2026-09-11** at commit 9262543, in the campaign that re-measured the whole register with",
+  "page_artifacts": [
+   "data/supersession_v1.json",
+   "research/results/abstention_ab.json",
+   "results/abstention_ab.json"
+  ]
+ },
+ {
+  "page": "ABSTRACTIVE.md",
+  "line": 49,
+  "nums": [
+   "0.085"
+  ],
+  "unsourced": [
+   "0.085"
+  ],
+  "text": "The single-episode signal is K-independent (≈ 0.085); only the principle improves with K - the",
+  "page_artifacts": []
+ },
+ {
+  "page": "ABSTRACTIVE.md",
+  "line": 52,
+  "nums": [
+   "1",
+   "0.3",
+   "8",
+   "0.206"
+  ],
+  "unsourced": [
+   "0.206"
+  ],
+  "text": "**Downstream - novel-context rule recall@1 (β=0.3, K=8):** episodic **0.206** → consolidated",
+  "page_artifacts": []
+ },
+ {
+  "page": "ABSTRACTIVE.md",
+  "line": 53,
+  "nums": [
+   "0.439",
+   "0.233",
+   "8"
+  ],
+  "unsourced": [
+   "0.439",
+   "0.233"
+  ],
+  "text": "**0.439** (+0.233) at **8× compression**. The cleaner rule recovery *translates* to retrieval of",
+  "page_artifacts": []
+ },
+ {
+  "page": "ABSTRACTIVE.md",
+  "line": 60,
+  "nums": [
+   "0.059",
+   "0.095",
+   "0.05"
+  ],
+  "unsourced": [
+   "0.059",
+   "0.095"
+  ],
+  "text": "0.059, con 0.095, 1/R = 0.05). The headline recall lift lives in the regime where the rule is",
+  "page_artifacts": []
+ },
+ {
+  "page": "ABSTRACTIVE.md",
+  "line": 83,
+  "nums": [
+   "0.542",
+   "0.684"
+  ],
+  "unsourced": [
+   "0.542",
+   "0.684"
+  ],
+  "text": "*worse* than the vector-mean idealisation (cosine **0.542 vs 0.684**) and worse than the best raw",
+  "page_artifacts": []
+ },
+ {
+  "page": "ABSTRACTIVE.md",
+  "line": 84,
+  "nums": [
+   "0.642",
+   "3",
+   "0.824"
+  ],
+  "unsourced": [
+   "0.642",
+   "0.824"
+  ],
+  "text": "episode (**0.642**), and replacing episodes with principles cuts full-store recall@3 **0.824 →",
+  "page_artifacts": []
+ },
+ {
+  "page": "ABSTRACTIVE.md",
+  "line": 94,
+  "nums": [
+   "26",
+   "3"
+  ],
+  "unsourced": [
+   "26"
+  ],
+  "text": "On the live store, **26 cross-session clusters** are consolidation candidates (≥ 3 members spanning",
+  "page_artifacts": []
+ },
+ {
+  "page": "ABSTRACTIVE.md",
+  "line": 95,
+  "nums": [
+   "1",
+   "109"
+  ],
+  "unsourced": [
+   "109"
+  ],
+  "text": "> 1 date), covering **109 episodic notes** - real abstraction opportunities the slug-based system",
+  "page_artifacts": []
+ },
+ {
+  "page": "BANDIT.md",
+  "line": 5,
+  "nums": [
+   "6",
+   "1530"
+  ],
+  "unsourced": [
+   "1530"
+  ],
+  "text": "6 streams × ~1530 queries; features reuse the posterior model's extraction (`POSTERIOR_MODEL.md`);",
+  "page_artifacts": []
+ },
+ {
+  "page": "BANDIT.md",
+  "line": 30,
+  "nums": [
+   "0.255",
+   "0.051"
+  ],
+  "unsourced": [
+   "0.255"
+  ],
+  "text": "`‖θ̂ − θ*‖` cosine distance **0.255 → 0.051** across the stream. Cumulative regret vs the oracle",
+  "page_artifacts": []
+ },
+ {
+  "page": "BANDIT.md",
+  "line": 31,
+  "nums": [
+   "62",
+   "1530"
+  ],
+  "unsourced": [
+   "1530"
+  ],
+  "text": "is ~62 over ~1530 queries - **sublinear**, the LinUCB signature.",
+  "page_artifacts": []
+ },
+ {
+  "page": "BLAST_RADIUS_CALIBRATION.md",
+  "line": 103,
+  "nums": [
+   "0.0143",
+   "0.5803"
+  ],
+  "unsourced": [
+   "0.5803"
+  ],
+  "text": "Median **0.0143 s** per commit, p95 0.5803 s, max",
+  "page_artifacts": [
+   "evidence_manifest.json",
+   "research/blast_radius_calibration.json",
+   "research/evidence_manifest.json"
+  ]
+ },
+ {
+  "page": "BLAST_RADIUS_CALIBRATION.md",
+  "line": 111,
+  "nums": [
+   "2.1686"
+  ],
+  "unsourced": [
+   "2.1686"
+  ],
+  "text": "2.1686 s worst case is the harness doing double work. The tool's own worst",
+  "page_artifacts": [
+   "evidence_manifest.json",
+   "research/blast_radius_calibration.json",
+   "research/evidence_manifest.json"
+  ]
+ },
+ {
+  "page": "BLAST_RADIUS_DECISION.md",
+  "line": 17,
+  "nums": [
+   "24",
+   "150"
+  ],
+  "unsourced": [
+   "150"
+  ],
+  "text": "show that firing is *useful*. A checker that reports 24 dependency findings across 150 commits is",
+  "page_artifacts": []
+ },
+ {
+  "page": "BLAST_RADIUS_DECISION.md",
+  "line": 18,
+  "nums": [
+   "1,000"
+  ],
+  "unsourced": [
+   "1,000"
+  ],
+  "text": "only worth its interruption cost if those findings are mostly real, and only worth its ~1,000",
+  "page_artifacts": []
+ },
+ {
+  "page": "BLAST_RADIUS_DECISION.md",
+  "line": 75,
+  "nums": [
+   "8.1"
+  ],
+  "unsourced": [
+   "8.1"
+  ],
+  "text": "as this mechanism's most likely killer (§8.1). Fifty percent is the floor at which the tool is",
+  "page_artifacts": []
+ },
+ {
+  "page": "BLAST_RADIUS_DECISION.md",
+  "line": 122,
+  "nums": [
+   "150"
+  ],
+  "unsourced": [
+   "150"
+  ],
+  "text": "one style, 150 commits. The result generalises no further than that, and the write-up will say so",
+  "page_artifacts": []
+ },
+ {
+  "page": "BLAST_RADIUS_THRESHOLDS.md",
+  "line": 82,
+  "nums": [
+   "2.00"
+  ],
+  "unsourced": [
+   "2.00"
+  ],
+  "text": "> Median wall-clock **≤ 2.00 s** per commit on the calibration set; p95 and max reported",
+  "page_artifacts": []
+ },
+ {
+  "page": "BLAST_RADIUS_THRESHOLDS.md",
+  "line": 85,
+  "nums": [
+   "2.00",
+   "3.3"
+  ],
+  "unsourced": [
+   "2.00"
+  ],
+  "text": "2.00 s is the ceiling the integration spec claims for itself (§3.3), so it is the spec's own",
+  "page_artifacts": []
+ },
+ {
+  "page": "BLAST_RADIUS_THRESHOLDS.md",
+  "line": 86,
+  "nums": [
+   "10.3"
+  ],
+  "unsourced": [
+   "10.3"
+  ],
+  "text": "number rather than one chosen to be easy. The same spot check measured **10.3 s** on a",
+  "page_artifacts": []
+ },
+ {
+  "page": "BLAST_RADIUS_THRESHOLDS.md",
+  "line": 92,
+  "nums": [
+   "150"
+  ],
+  "unsourced": [
+   "150"
+  ],
+  "text": "The **150 most recent commits** reachable from `master` at `7ef8ad2`, each compared against its",
+  "page_artifacts": []
+ },
+ {
+  "page": "BLAST_RADIUS_THRESHOLDS.md",
+  "line": 93,
+  "nums": [
+   "217"
+  ],
+  "unsourced": [
+   "217"
+  ],
+  "text": "own parent. The repository has 217 commits and **no merges**, so no merge policy is needed. The",
+  "page_artifacts": []
+ },
+ {
+  "page": "CAUSAL_VOCAB.md",
+  "line": 3,
+  "nums": [
+   "3414",
+   "3989",
+   "2400"
+  ],
+  "unsourced": [
+   "3414",
+   "3989"
+  ],
+  "text": "**Date:** 2026-08 · **Status:** SHIPPED · **Stand:** the live store (3414 notes, 3989 entities, 2400 typed edges)",
+  "page_artifacts": []
+ },
+ {
+  "page": "CAUSAL_VOCAB.md",
+  "line": 53,
+  "nums": [
+   "59"
+  ],
+  "unsourced": [
+   "59"
+  ],
+  "text": "59 new cycles. Each is a genuine contradiction in the data - `A fixes B` asserted alongside",
+  "page_artifacts": []
+ },
+ {
+  "page": "CONSOLIDATION_EVAL.md",
+  "line": 5,
+  "nums": [
+   "109"
+  ],
+  "unsourced": [
+   "109"
+  ],
+  "text": "109 leave-one-out syntheses on the real store). Aggregate-only: reads the local cache + synthesises",
+  "page_artifacts": []
+ },
+ {
+  "page": "CONSOLIDATION_EVAL.md",
+  "line": 21,
+  "nums": [
+   "26",
+   "109"
+  ],
+  "unsourced": [
+   "26",
+   "109"
+  ],
+  "text": "date - the 26 clusters / 109 notes the abstractive study counted). Each member is held out as a **simulated new",
+  "page_artifacts": []
+ },
+ {
+  "page": "CONSOLIDATION_EVAL.md",
+  "line": 28,
+  "nums": [
+   "1",
+   "109",
+   "26"
+  ],
+  "unsourced": [
+   "109",
+   "26"
+  ],
+  "text": "the 1 principle, vs the episodic store (production status quo), at 109→26 compression.",
+  "page_artifacts": []
+ },
+ {
+  "page": "CONSOLIDATION_EVAL.md",
+  "line": 40,
+  "nums": [
+   "0.542",
+   "0.642"
+  ],
+  "unsourced": [
+   "0.542",
+   "0.642"
+  ],
+  "text": "- The real principle (0.542) is **worse than the best episode** (0.642) and **far short of the",
+  "page_artifacts": []
+ },
+ {
+  "page": "CONSOLIDATION_EVAL.md",
+  "line": 41,
+  "nums": [
+   "0.684",
+   "9%"
+  ],
+  "unsourced": [
+   "0.684"
+  ],
+  "text": "vector-mean idealisation** (0.684). It beats the best episode in only **9%** of queries and the",
+  "page_artifacts": []
+ },
+ {
+  "page": "CONSOLIDATION_EVAL.md",
+  "line": 43,
+  "nums": [
+   "3",
+   "0.824",
+   "0.352",
+   "0.472"
+  ],
+  "unsourced": [
+   "0.824",
+   "0.472"
+  ],
+  "text": "- **Downstream full-store recall@3: episodic 0.824 → consolidated 0.352 (−0.472).** Replacing",
+  "page_artifacts": []
+ },
+ {
+  "page": "CONSOLIDATION_EVAL.md",
+  "line": 57,
+  "nums": [
+   "0.542",
+   "0.684"
+  ],
+  "unsourced": [
+   "0.542",
+   "0.684"
+  ],
+  "text": "better model would lift 0.542 toward 0.684; it cannot lift it past the episodes for this regime. (We",
+  "page_artifacts": []
+ },
+ {
+  "page": "CONSOLIDATION_EVAL.md",
+  "line": 75,
+  "nums": [
+   "0.472"
+  ],
+  "unsourced": [
+   "0.472"
+  ],
+  "text": "even archive-and-link, since archiving episodes is what removes them from the index that the −0.472",
+  "page_artifacts": []
+ },
+ {
+  "page": "DIVERGENT.md",
+  "line": 11,
+  "nums": [
+   "0,1"
+  ],
+  "unsourced": [
+   "0,1"
+  ],
+  "text": "(a note that could spark a novel connection). A knob `NEVERTWICE_DIVERGENCE ∈ [0,1]` should",
+  "page_artifacts": []
+ },
+ {
+  "page": "DIVERGENT.md",
+  "line": 31,
+  "nums": [
+   "0.945",
+   "0.75"
+  ],
+  "unsourced": [
+   "0.945"
+  ],
+  "text": "- **Bridge-aware divergence recovers them (up to 0.945 at div=0.75)** - the headline serendipity result.",
+  "page_artifacts": []
+ },
+ {
+  "page": "DIVERGENT.md",
+  "line": 37,
+  "nums": [
+   "0.649",
+   "0"
+  ],
+  "unsourced": [
+   "0.649"
+  ],
+  "text": "cluster* drops to 0.649. The optimum is **moderate** divergence (~0.5-0.75).",
+  "page_artifacts": []
+ },
+ {
+  "page": "DIVERGENT.md",
+  "line": 55,
+  "nums": [
+   "0.945",
+   "0.457"
+  ],
+  "unsourced": [
+   "0.945"
+  ],
+  "text": "(bridge-aware 0.945 vs MMR 0.457 on bridge recovery).",
+  "page_artifacts": []
+ },
+ {
+  "page": "EMBED_M2_THRESHOLD.md",
+  "line": 44,
+  "nums": [
+   "1",
+   "0.014",
+   "0.074",
+   "0.042"
+  ],
+  "unsourced": [
+   "0.074"
+  ],
+  "text": "recall@1 (−0.014 [−0.074, 0.042]). Mining teaches a bi-encoder to separate near-misses, which is",
+  "page_artifacts": []
+ },
+ {
+  "page": "EMBED_M2_THRESHOLD.md",
+  "line": 52,
+  "nums": [
+   "216",
+   "5",
+   "0",
+   "95%"
+  ],
+  "unsourced": [
+   "216"
+  ],
+  "text": "> Paired against shipped v1 on the same 216 situation queries, **Δ recall@5 > 0 with a 95%",
+  "page_artifacts": []
+ },
+ {
+  "page": "EMBED_M2_THRESHOLD.md",
+  "line": 62,
+  "nums": [
+   "0.010"
+  ],
+  "unsourced": [
+   "0.010"
+  ],
+  "text": "v1 already sits 0.010 below stock on the easy axis. A mined model that improves the hard axis by",
+  "page_artifacts": []
+ },
+ {
+  "page": "EMBED_M2_THRESHOLD.md",
+  "line": 74,
+  "nums": [
+   "216"
+  ],
+  "unsourced": [
+   "216"
+  ],
+  "text": "216 queries. The tightest paired interval M1 produced on this axis had a half-width of about",
+  "page_artifacts": []
+ },
+ {
+  "page": "EMBED_M2_THRESHOLD.md",
+  "line": 75,
+  "nums": [
+   "0.053",
+   "5",
+   "0.053",
+   "0.106"
+  ],
+  "unsourced": [
+   "0.053",
+   "0.053"
+  ],
+  "text": "**0.053** (the reranker's Δ recall@5, ±0.053 around 0.106). So this comparison can resolve a true",
+  "page_artifacts": []
+ },
+ {
+  "page": "EMBED_M3_THRESHOLD.md",
+  "line": 45,
+  "nums": [
+   "216",
+   "5",
+   "0",
+   "95%"
+  ],
+  "unsourced": [
+   "216"
+  ],
+  "text": "> Paired against shipped v1 on the same 216 situation queries, **Δ recall@5 > 0 with a 95%",
+  "page_artifacts": []
+ },
+ {
+  "page": "EMBED_M3_THRESHOLD.md",
+  "line": 68,
+  "nums": [
+   "216",
+   "5"
+  ],
+  "unsourced": [
+   "216"
+  ],
+  "text": "216 queries, same as M2: roughly **five points of recall@5 and no smaller**. The teacher's own",
+  "page_artifacts": []
+ },
+ {
+  "page": "EMBED_M3_THRESHOLD.md",
+  "line": 69,
+  "nums": [
+   "10.6"
+  ],
+  "unsourced": [
+   "10.6"
+  ],
+  "text": "advantage is 10.6 points, so a student recovering half of it would clear the gate and a student",
+  "page_artifacts": []
+ },
+ {
+  "page": "EMBED_M4_THRESHOLD.md",
+  "line": 14,
+  "nums": [
+   "512",
+   "256"
+  ],
+  "unsourced": [
+   "512"
+  ],
+  "text": "the model so that the **first 512 and first 256 dimensions of its vector are usable on their",
+  "page_artifacts": []
+ },
+ {
+  "page": "EMBED_M4_THRESHOLD.md",
+  "line": 26,
+  "nums": [
+   "96",
+   "1024",
+   "4",
+   "256",
+   "1"
+  ],
+  "unsourced": [
+   "1024"
+  ],
+  "text": "**96 MB** and growing. At 1024 float32 dimensions a note costs 4 KB of vector. At 256 it costs 1",
+  "page_artifacts": []
+ },
+ {
+  "page": "EMBED_M4_THRESHOLD.md",
+  "line": 34,
+  "nums": [
+   "1024"
+  ],
+  "unsourced": [
+   "1024"
+  ],
+  "text": "> At the full 1024 dimensions, paired against shipped v1 on the frozen external set: **no",
+  "page_artifacts": []
+ },
+ {
+  "page": "EMBED_M4_THRESHOLD.md",
+  "line": 44,
+  "nums": [
+   "512",
+   "5",
+   "0.03"
+  ],
+  "unsourced": [
+   "512"
+  ],
+  "text": "> At 512 dimensions: `retrieval_situation` recall@5 within **−0.03** of the same model's 1024-d",
+  "page_artifacts": []
+ },
+ {
+  "page": "EMBED_M4_THRESHOLD.md",
+  "line": 58,
+  "nums": [
+   "512",
+   "256"
+  ],
+  "unsourced": [
+   "512"
+  ],
+  "text": "v1 truncated to 512 and 256 without Matryoshka training, so the gain from the training rather",
+  "page_artifacts": []
+ },
+ {
+  "page": "EMBED_M4_THRESHOLD.md",
+  "line": 64,
+  "nums": [
+   "216",
+   "5"
+  ],
+  "unsourced": [
+   "216"
+  ],
+  "text": "216 situation queries, so about **five points of recall@5**, as in M2 and M3. K2's tolerances",
+  "page_artifacts": []
+ },
+ {
+  "page": "EMBED_M5_THRESHOLD.md",
+  "line": 24,
+  "nums": [
+   "284",
+   "124"
+  ],
+  "unsourced": [
+   "284"
+  ],
+  "text": "the frozen set's 284 English and 124 Russian documents are broken out per language. That does not",
+  "page_artifacts": [
+   "train_pairs.json"
+  ]
+ },
+ {
+  "page": "EMBED_M5_THRESHOLD.md",
+  "line": 31,
+  "nums": [
+   "216",
+   "5",
+   "0",
+   "95%"
+  ],
+  "unsourced": [
+   "216"
+  ],
+  "text": "> Paired against shipped v1 on the same 216 situation queries: **Δ recall@5 > 0 with a 95%",
+  "page_artifacts": [
+   "train_pairs.json"
+  ]
+ },
+ {
+  "page": "EMBED_M5_THRESHOLD.md",
+  "line": 56,
+  "nums": [
+   "216",
+   "5"
+  ],
+  "unsourced": [
+   "216"
+  ],
+  "text": "216 situation queries, about **five points of recall@5**, as in M2, M3 and M4. Four arms compared",
+  "page_artifacts": [
+   "train_pairs.json"
+  ]
+ },
+ {
+  "page": "EMBED_SERVING.md",
+  "line": 41,
+  "nums": [
+   "1.0",
+   "1024"
+  ],
+  "unsourced": [
+   "1024"
+  ],
+  "text": "*(A median cosine slightly above 1.0 is float32 accumulation over 1024 dimensions of two",
+  "page_artifacts": [
+   "modules.json",
+   "research/embed_universal/heldout/serving_check.json"
+  ]
+ },
+ {
+  "page": "EMBED_SPECIALIZE.md",
+  "line": 4,
+  "nums": [
+   "5090",
+   "16"
+  ],
+  "unsourced": [
+   "5090",
+   "16"
+  ],
+  "text": "into production (promotion path defined below) · **Hardware:** one RTX 5090, LoRA r=16 on",
+  "page_artifacts": []
+ },
+ {
+  "page": "EMBED_SPECIALIZE.md",
+  "line": 17,
+  "nums": [
+   "16",
+   "3"
+  ],
+  "unsourced": [
+   "16"
+  ],
+  "text": "LoRA r=16 on qkv+dense, 3 epochs, bf16.",
+  "page_artifacts": []
+ },
+ {
+  "page": "EMBED_SPECIALIZE.md",
+  "line": 18,
+  "nums": [
+   "59",
+   "600"
+  ],
+  "unsourced": [
+   "59"
+  ],
+  "text": "- **Frozen eval**, identical across all rounds: 59 held-out lifecycle twin pairs vs 600",
+  "page_artifacts": []
+ },
+ {
+  "page": "EMBED_SPECIALIZE.md",
+  "line": 35,
+  "nums": [
+   "1",
+   "548",
+   "148",
+   "400"
+  ],
+  "unsourced": [
+   "548"
+  ],
+  "text": "**Round 1** (548 pairs: 148 lifecycle - supersede chains + slug twins - plus 400",
+  "page_artifacts": []
+ },
+ {
+  "page": "EMBED_SPECIALIZE.md",
+  "line": 39,
+  "nums": [
+   "5",
+   "0.990"
+  ],
+  "unsourced": [
+   "0.990"
+  ],
+  "text": "verbatim-substring queries (R@5 intact at 0.990; production fusion carries BM25 for",
+  "page_artifacts": []
+ },
+ {
+  "page": "EMBED_SPECIALIZE.md",
+  "line": 42,
+  "nums": [
+   "2",
+   "719",
+   "119",
+   "24",
+   "300"
+  ],
+  "unsourced": [
+   "719",
+   "119"
+  ],
+  "text": "**Round 2** (719 pairs: 119 lifecycle + 24 reconstructed consolidation pairs + 300",
+  "page_artifacts": []
+ },
+ {
+  "page": "EMBED_SPECIALIZE.md",
+  "line": 47,
+  "nums": [
+   "119",
+   "148"
+  ],
+  "unsourced": [
+   "119"
+  ],
+  "text": "stricter test-exclusion left fewer of the signal-bearing lifecycle pairs (119 vs 148).",
+  "page_artifacts": []
+ },
+ {
+  "page": "EMBED_SPECIALIZE.md",
+  "line": 57,
+  "nums": [
+   "1.000",
+   "0.852"
+  ],
+  "unsourced": [
+   "0.852"
+  ],
+  "text": "classifier already delivers precision 1.000 / twin-recall 0.852 on top of BASE embeddings.",
+  "page_artifacts": []
+ },
+ {
+  "page": "EXTERNAL_RETRIEVAL.md",
+  "line": 56,
+  "nums": [
+   "2,000"
+  ],
+  "unsourced": [
+   "2,000"
+  ],
+  "text": "Against the run that embedded only the first 2,000 characters of each session, the semantic arm",
+  "page_artifacts": [
+   "research/results/longmem_oracle.json"
+  ]
+ },
+ {
+  "page": "EXTERNAL_RETRIEVAL.md",
+  "line": 112,
+  "nums": [
+   "623",
+   "19,829"
+  ],
+  "unsourced": [
+   "623",
+   "19,829"
+  ],
+  "text": "**623 of the 19,829 sessions carry no text at all** in the published corpus and are skipped,",
+  "page_artifacts": [
+   "research/results/longmem_oracle.json"
+  ]
+ },
+ {
+  "page": "EXTERNAL_RETRIEVAL.md",
+  "line": 167,
+  "nums": [
+   "2,000"
+  ],
+  "unsourced": [
+   "2,000"
+  ],
+  "text": "2,000 characters before calling the embedder. That is a latency guard for the per-prompt",
+  "page_artifacts": [
+   "research/results/longmem_oracle.json"
+  ]
+ },
+ {
+  "page": "EXTERNAL_RETRIEVAL.md",
+  "line": 169,
+  "nums": [
+   "14,386",
+   "936",
+   "940"
+  ],
+  "unsourced": [
+   "14,386"
+  ],
+  "text": "the oracle pool's median is 14,386 characters, 936 of its 940 sessions are longer than the",
+  "page_artifacts": [
+   "research/results/longmem_oracle.json"
+  ]
+ },
+ {
+  "page": "LOCOMO.md",
+  "line": 89,
+  "nums": [
+   "0.037"
+  ],
+  "unsourced": [
+   "0.037"
+  ],
+  "text": "The first run of this file reported semantic recall of **0.037** - near enough to noise that it",
+  "page_artifacts": [
+   "research/results/locomo.json"
+  ]
+ },
+ {
+  "page": "LOCOMO.md",
+  "line": 100,
+  "nums": [
+   "0.037",
+   "0.182"
+  ],
+  "unsourced": [
+   "0.037"
+  ],
+  "text": "Namespacing the ids with the conversation moved semantic recall from 0.037 to 0.182.",
+  "page_artifacts": [
+   "research/results/locomo.json"
+  ]
+ },
+ {
+  "page": "POSTERIOR_MODEL.md",
+  "line": 4,
+  "nums": [
+   "2.4"
+  ],
+  "unsourced": [
+   "2.4"
+  ],
+  "text": "(CPU, seeded, ~2.4 s). Fit on the longitudinal benchmark world (`LONGITUDINAL_BENCH.md`), train",
+  "page_artifacts": []
+ },
+ {
+  "page": "POSTERIOR_MODEL.md",
+  "line": 5,
+  "nums": [
+   "0,1",
+   "2,3"
+  ],
+  "unsourced": [
+   "0,1",
+   "2,3"
+  ],
+  "text": "seeds {0,1,2,3}, held-out test",
+  "page_artifacts": []
+ },
+ {
+  "page": "POSTERIOR_MODEL.md",
+  "line": 6,
+  "nums": [
+   "4,5"
+  ],
+  "unsourced": [
+   "4,5"
+  ],
+  "text": "seeds {4,5}; relevance = semantic cosine (no lexical/RRF - this isolates the salience stack).*",
+  "page_artifacts": []
+ },
+ {
+  "page": "POSTERIOR_MODEL.md",
+  "line": 42,
+  "nums": [
+   "1.75",
+   "1.02"
+  ],
+  "unsourced": [
+   "1.75",
+   "1.02"
+  ],
+  "text": "**Fitted weights (standardized).** `cos +1.75` (relevance dominant), `log_recurrence +1.02`",
+  "page_artifacts": []
+ },
+ {
+  "page": "POSTERIOR_MODEL.md",
+  "line": 44,
+  "nums": [
+   "0.02",
+   "0.10"
+  ],
+  "unsourced": [
+   "0.10"
+  ],
+  "text": "shipped fixed 365-day half-life), `confidence −0.02` and `resolved +0.10` (near-zero **here**).",
+  "page_artifacts": []
+ },
+ {
+  "page": "POSTERIOR_MODEL.md",
+  "line": 65,
+  "nums": [
+   "0.004"
+  ],
+  "unsourced": [
+   "0.004"
+  ],
+  "text": "**Calibration (ECE = 0.004).** The predicted P(target│pool) matches the empirical target rate",
+  "page_artifacts": []
+ },
+ {
+  "page": "QA_ACCURACY.md",
+  "line": 53,
+  "nums": [
+   "0.898"
+  ],
+  "unsourced": [
+   "0.898"
+  ],
+  "text": "held fixed (the proof the store is not the bottleneck), against memanto's 0.898 reference.",
+  "page_artifacts": [
+   "qa_cache_deepseek.json",
+   "qa_cache_reasoner.json",
+   "qa_results_deepseek_cot.json",
+   "qa_results_reasoner.json"
+  ]
+ },
+ {
+  "page": "QA_ACCURACY.md",
+  "line": 72,
+  "nums": [
+   "0.064"
+  ],
+  "unsourced": [
+   "0.064"
+  ],
+  "text": "- **A stronger chat judge alone adds little** (+0.064, qwen→deepseek-chat): the local-model",
+  "page_artifacts": [
+   "qa_cache_deepseek.json",
+   "qa_cache_reasoner.json",
+   "qa_results_deepseek_cot.json",
+   "qa_results_reasoner.json"
+  ]
+ },
+ {
+  "page": "QA_ACCURACY.md",
+  "line": 74,
+  "nums": [
+   "0.070",
+   "0.040"
+  ],
+  "unsourced": [
+   "0.040"
+  ],
+  "text": "- **Letting the model reason is the unlock** (+0.070 with CoT, +0.040 more with a true",
+  "page_artifacts": [
+   "qa_cache_deepseek.json",
+   "qa_cache_reasoner.json",
+   "qa_results_deepseek_cot.json",
+   "qa_results_reasoner.json"
+  ]
+ },
+ {
+  "page": "QA_ACCURACY.md",
+  "line": 96,
+  "nums": [
+   "1",
+   "0.55",
+   "0.61",
+   "0.464",
+   "0.468"
+  ],
+  "unsourced": [
+   "0.468"
+  ],
+  "text": "recall@1 0.55 → 0.61) before answering - and end-to-end accuracy is **flat: 0.464 → 0.468",
+  "page_artifacts": [
+   "qa_cache_deepseek.json",
+   "qa_cache_reasoner.json",
+   "qa_results_deepseek_cot.json",
+   "qa_results_reasoner.json"
+  ]
+ },
+ {
+  "page": "QA_ACCURACY.md",
+  "line": 97,
+  "nums": [
+   "0.004"
+  ],
+  "unsourced": [
+   "0.004"
+  ],
+  "text": "(+0.004)**, a wash that helps some categories and hurts others:",
+  "page_artifacts": [
+   "qa_cache_deepseek.json",
+   "qa_cache_reasoner.json",
+   "qa_results_deepseek_cot.json",
+   "qa_results_reasoner.json"
+  ]
+ },
+ {
+  "page": "QA_ACCURACY.md",
+  "line": 121,
+  "nums": [
+   "0.898",
+   "0.11"
+  ],
+  "unsourced": [
+   "0.898"
+  ],
+  "text": "mid-tier open *reasoning* reader (`deepseek-reasoner`). memanto reports 0.898 - a **~0.11",
+  "page_artifacts": [
+   "qa_cache_deepseek.json",
+   "qa_cache_reasoner.json",
+   "qa_results_deepseek_cot.json",
+   "qa_results_reasoner.json"
+  ]
+ },
+ {
+  "page": "RARE_EVENT.md",
+  "line": 54,
+  "nums": [
+   "0.477",
+   "0.221"
+  ],
+  "unsourced": [
+   "0.221"
+  ],
+  "text": "- Even gated, false alarms (0.477) exceed the relevance baseline (0.221): an **irreducible cost** -",
+  "page_artifacts": [
+   "evidence_manifest.json",
+   "research/evidence_manifest.json"
+  ]
+ },
+ {
+  "page": "REAL_TRACE.md",
+  "line": 6,
+  "nums": [
+   "328",
+   "11"
+  ],
+  "unsourced": [
+   "328"
+  ],
+  "text": "**328 embedded notes across 11 projects**; rerun on yours for your own figures.*",
+  "page_artifacts": []
+ },
+ {
+  "page": "REAL_TRACE.md",
+  "line": 37,
+  "nums": [
+   "1",
+   "0",
+   "328"
+  ],
+  "unsourced": [
+   "328"
+  ],
+  "text": "**Slug-based recurrence > 1 (what production actually recorded): `0` of 328 notes.**",
+  "page_artifacts": []
+ },
+ {
+  "page": "REAL_TRACE.md",
+  "line": 65,
+  "nums": [
+   "131"
+  ],
+  "unsourced": [
+   "131"
+  ],
+  "text": "**No weight beats relevance-only** (131 queries). Relevance alone is already at ceiling for",
+  "page_artifacts": []
+ },
+ {
+  "page": "REAL_TRACE.md",
+  "line": 108,
+  "nums": [
+   "86.5%",
+   "97.3%",
+   "50%",
+   "70%"
+  ],
+  "unsourced": [
+   "86.5%",
+   "97.3%"
+  ],
+  "text": "which preserves 86.5% / 97.3% of durable topics at 50% / 70% budget. The cap is therefore",
+  "page_artifacts": []
+ },
+ {
+  "page": "REAL_TRACE.md",
+  "line": 112,
+  "nums": [
+   "3.7",
+   "2.3"
+  ],
+  "unsourced": [
+   "3.7",
+   "2.3"
+  ],
+  "text": "**3.7 vs 2.3** members per topic: it stockpiles redundant copies of big clusters, *helping* at a",
+  "page_artifacts": []
+ },
+ {
+  "page": "REAL_TRACE.md",
+  "line": 138,
+  "nums": [
+   "328",
+   "11"
+  ],
+  "unsourced": [
+   "328"
+  ],
+  "text": "One real store (328 notes, 11 projects); absolute cluster counts and the retention numbers are",
+  "page_artifacts": []
+ },
+ {
+  "page": "W2_PRECISION.md",
+  "line": 71,
+  "nums": [
+   "3",
+   "0.542",
+   "0.168"
+  ],
+  "unsourced": [
+   "0.168"
+  ],
+  "text": "almost always - huge headroom), but reranked recall@3 = **0.542 (−0.168)**. The reranker *loses*.",
+  "page_artifacts": [
+   "evidence_manifest.json",
+   "research/evidence_manifest.json"
+  ]
+ },
+ {
+  "page": "W2_PRECISION.md",
+  "line": 141,
+  "nums": [
+   "1",
+   "0.418",
+   "0.572",
+   "37%",
+   "0.122"
+  ],
+  "unsourced": [
+   "0.418",
+   "0.572",
+   "0.122"
+  ],
+  "text": "This is the headline: **R@1 0.418 → 0.572 (+37% relative), MRR +0.122** - the exact top-1/top-3 reordering",
+  "page_artifacts": [
+   "evidence_manifest.json",
+   "research/evidence_manifest.json"
+  ]
+ },
+ {
+  "page": "W2_PRECISION.md",
+  "line": 142,
+  "nums": [
+   "0.418",
+   "0.770",
+   "10",
+   "0.770"
+  ],
+  "unsourced": [
+   "0.418"
+  ],
+  "text": "the 0.418→0.770 gap demanded. R@10 holds at 0.770 (it only reorders the top-10), the clean sanity check.",
+  "page_artifacts": [
+   "evidence_manifest.json",
+   "research/evidence_manifest.json"
+  ]
+ }
+]

@@ -55,6 +55,12 @@ claims = {c["id"]: c for c in json.loads(MANIFEST.read_text(encoding="utf-8"))["
 # The split is a diagnostic: WHICH repeats an arm catches. An arm that fires too often still has one.
 WANTED = (
     ("project", "recall", "project_recall", "arms.{arm}.project.recall"),
+    # The price of a project-class recall has to be quoted on the project class too. A sentence that
+    # pairs "catches 0.404 of project repeats" with the arm's all-calls false-alarm rate is two
+    # different denominators in one clause, and the register cannot hold the honest version of that
+    # sentence unless this claim exists for every arm the recall exists for.
+    ("project", "false_positive_rate", "project_fpr", "arms.{arm}.project.false_positive_rate"),
+    ("generic", "recall", "generic_recall", "arms.{arm}.generic.recall"),
     ("hard_negatives", "false_positive_rate", "hard_negative_fpr",
      "arms.{arm}.hard_negatives.false_positive_rate"),
 )

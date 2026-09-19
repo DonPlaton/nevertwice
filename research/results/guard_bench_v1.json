@@ -1136,7 +1136,7 @@
    "at_fpr_0.05": null,
    "at_zero_false_alarms": null,
    "tokens_per_call": 3.32,
-   "ms_per_call": 0.0187,
+   "ms_per_call": 0.0167,
    "split_at": {
     "threshold": 0.0,
     "false_positive_rate": 0.1786,
@@ -2354,7 +2354,7 @@
    },
    "at_zero_false_alarms": null,
    "tokens_per_call": 1.15,
-   "ms_per_call": 0.0072,
+   "ms_per_call": 0.008,
    "split_at": {
     "threshold": 0.0,
     "false_positive_rate": 0.0282,
@@ -2426,7 +2426,7 @@
      "m-yaml-load"
     ]
    },
-   "seconds": 0.9
+   "seconds": 1.0
   },
   "linter_or_test": {
    "n_calls": 230,
@@ -4739,7 +4739,7 @@
    },
    "at_zero_false_alarms": null,
    "tokens_per_call": 103.56,
-   "ms_per_call": 53.771,
+   "ms_per_call": 48.8368,
    "split_at": {
     "threshold": 1.0,
     "false_positive_rate": 0.0072,
@@ -4785,7 +4785,7 @@
     "notes_embedded": 45,
     "mode": "semantic + lexical"
    },
-   "seconds": 22.4
+   "seconds": 16.2
   },
   "never": {
    "n_calls": 230,
@@ -7086,7 +7086,7 @@
    "at_fpr_0.05": null,
    "at_zero_false_alarms": null,
    "tokens_per_call": 5.51,
-   "ms_per_call": 0.0263,
+   "ms_per_call": 0.0266,
    "split_at": {
     "threshold": 0.0,
     "false_positive_rate": 0.1549,
