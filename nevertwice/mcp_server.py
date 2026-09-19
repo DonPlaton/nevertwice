@@ -40,6 +40,7 @@ can never corrupt the protocol stream.
 import io
 import json
 import sys
+import uuid
 from datetime import datetime
 from pathlib import Path
 from types import SimpleNamespace
@@ -446,6 +447,9 @@ def _tool_memory_entities(args: dict) -> tuple[str, bool]:
         k = int(args.get("k") or 12)
     except (TypeError, ValueError):
         k = 12
+    # Every sibling tool clamps; this one passed the raw int, so a huge `k` returned every note
+    # carrying the tag in one response and `k=-1` returned all but the oldest (a negative slice).
+    k = max(1, min(k, 25))
     entity = (args.get("entity") or "").strip()
     try:
         if entity:
@@ -624,6 +628,12 @@ def _tool_memory_why(args: dict) -> tuple[str, bool]:
     return "\n".join(lines), False
 
 
+#: One stdio MCP server is one client session, so the session id the lifecycle counts is this
+#: process - not a string the client chooses. Derived once at import; see
+#: `tests/_test_client_cannot_forge_sessions.py`.
+_SESSION_ID = f"mcp-{uuid.uuid4().hex[:12]}"
+
+
 def _tool_memory_guard_feedback(args: dict) -> tuple[str, bool]:
     gid = (args.get("guard_id") or "").strip()
     outcome = (args.get("outcome") or "").strip()
@@ -632,8 +642,16 @@ def _tool_memory_guard_feedback(args: dict) -> tuple[str, bool]:
         return (f"error: 'guard_id' and outcome in "
                 f"{{{','.join(_outcomes.OUTCOMES)}}} required"), True
     try:
-        g = _guards.feedback(gid, outcome, session_id=(args.get("session_id") or None),
-                             reason=(args.get("reason") or None))
+        # The lifecycle turns on DISTINCT sessions, so the session may not be the client's to
+        # name: three strings from one caller promoted an advisory guard to blocking, and three
+        # more retired it. One stdio server is one client session, so the session is this
+        # process. What the caller sent is kept in the reason, where it is a note rather than a
+        # vote.
+        said = (args.get("session_id") or "").strip()[:64]
+        why = (args.get("reason") or "")
+        if said:
+            why = (why + f" (client session {said!r})").strip()
+        g = _guards.feedback(gid, outcome, session_id=_SESSION_ID, reason=why or None)
     except Exception as exc:
         return f"error: {type(exc).__name__}", True
     if not g:
@@ -654,6 +672,11 @@ def _tool_memory_anticipate_feedback(args: dict) -> tuple[str, bool]:
     outcome = (args.get("outcome") or "").strip()
     if not stem or outcome not in ("helped", "false_alarm"):
         return "error: 'stem' and outcome in {helped,false_alarm} required", True
+    # The stem becomes a permanent key in the anticipate state, so it has to name a real note.
+    # A typo used to return "recorded false_alarm for <typo>" - indistinguishable from a record
+    # that did something - and left an entry nothing would ever read again.
+    if m._note_meta_for_stem(stem) is None:
+        return f"no live note with stem {stem!r}", True
     try:
         s = _anticipate.feedback(stem, outcome)
     except Exception as exc:

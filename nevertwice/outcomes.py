@@ -106,6 +106,12 @@ def block(guard: dict) -> dict:
     return existing
 
 
+#: A session id is an identifier, not a payload: anything longer is truncated before it is stored.
+SESSION_ID_CAP = 64
+#: And the list of them is bounded - a ledger entry is not a log. Matches `guards.SEEN_SESSIONS_CAP`.
+SESSIONS_CAP = 50
+
+
 def record(guard: dict, outcome: str, *, session_id: str | None = None) -> str | None:
     """Record one outcome. Returns the canonical name, or None if it was not recognised.
 
@@ -121,12 +127,15 @@ def record(guard: dict, outcome: str, *, session_id: str | None = None) -> str |
     acc = block(guard)
     acc["counts"][name] = int(acc["counts"].get(name, 0)) + 1
 
-    sid = (session_id or "").strip()
+    # Bounded on both axes, because this list lives in `guards.json`, which the PreToolUse hook
+    # reads before every edit. Twenty MCP calls carrying 5 KB ids grew that file to 201 KB;
+    # `guards.py` already caps `delivered_sessions` the same way, and this is the same class.
+    sid = (session_id or "").strip()[:SESSION_ID_CAP]
     if sid:
-        if name in SUPPORT and sid not in acc["sessions"]["support"]:
-            acc["sessions"]["support"].append(sid)
-        elif name in AGAINST and sid not in acc["sessions"]["against"]:
-            acc["sessions"]["against"].append(sid)
+        for key, names in (("support", SUPPORT), ("against", AGAINST)):
+            if name in names and sid not in acc["sessions"][key]:
+                acc["sessions"][key].append(sid)
+                del acc["sessions"][key][:-SESSIONS_CAP]
     return name
 
 

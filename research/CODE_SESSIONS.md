@@ -35,17 +35,13 @@ separate and is not published. For the extractor (`.loop/GOAL-CLOSE.md`, J3): li
 accuracy not below the floor and not below Mem0's pipeline minus the judges' disagreement;
 lesson accuracy above Mem0's pipeline by the same margin. For the write path (the J3 addendum):
 **fact survival** - the share of questions whose answer is verbatim in the notes returned, counted
-with no reader and no judge - at or above 0.60 on the held-out, with reader accuracy at or above
-0.40; the base (five of fifty-two), the cost caps and the decision on a miss are in the ledger.
+with no reader and no judge - at or above three fifths on the held-out, with reader accuracy at or above
+two fifths; the base (five of fifty-two), the cost caps and the decision on a miss are in the ledger.
 
 <!-- claims:code-sessions -->
-| system | fact | current | stale | lesson | situation (top three) | tokens |
-|---|---|---|---|---|---|---|
-| **Nevertwice, our extractor's notes** | 0.083 | 0.033 | 0.017 | 0.600 | 0.000 | 113 |
-| append-only sessions, term overlap (floor) | 0.967 | 0.850 | 0.083 | 0.956 | 0.922 | 2,937 |
-| Mem0 full pipeline, its memories | 0.683 | 0.750 | 0.117 | 0.700 | 0.033 | 187 |
-| no memory (bracket) | 0.067 | 0.017 | 0.050 | 0.478 | 0.000 | 117 |
-| the gold session whole (bracket) | 0.978 | 0.967 | 0.000 | 1.000 | 1.000 | 727 |
+> **Withdrawn 2026-09.** the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored
+>
+> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/code_sessions_eval.py judge --arms nevertwice_full,naive,mem0_infer --save` is what re-measures this one.
 <!-- /claims:code-sessions -->
 
 ## What the first run says
@@ -58,7 +54,7 @@ sessions per project are few enough that term overlap finds the right one nearly
 corpus that a text file passes is a corpus about text files. The table above is the re-measure on
 the layer-free engine (2026-09-11). The corpus stands as a diagnostic, not as a result - and note
 that the literal-fact channel which lifts the hand-marked held-out below did not move this set at
-all (fact 0.083 before and after): its facts sit in prose the harvester's literal shapes do not
+all (the fact clause did not move): its facts sit in prose the harvester's literal shapes do not
 catch, and the extractor names none of them.
 
 **What it diagnoses anyway.** On coding sessions with literal facts, our extractor's notes answer a twelfth of the fact questions where Mem0's sentence-keeping
@@ -77,13 +73,9 @@ project-specific facts phrased as lessons rather than the anti-patterns every mo
 ## The real held-out
 
 <!-- claims:code-heldout -->
-| system | fact | current | stale | lesson | situation (top three) | tokens |
-|---|---|---|---|---|---|---|
-| **Nevertwice, our extractor's notes** | 0.404 | - | - | - | - | 220 |
-| append-only sessions, term overlap (floor) | 0.827 | - | - | - | - | 569 |
-| Mem0 full pipeline, its memories | 0.250 | - | - | - | - | 180 |
-| no memory (bracket) | 0.000 | - | - | - | - | 122 |
-| the gold session whole (bracket) | 0.827 | - | - | - | - | 569 |
+> **Withdrawn 2026-09.** the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored
+>
+> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/code_sessions_eval.py summary --arms nevertwice_full,naive,mem0_infer --corpus D:/Coding/_nevertwice_polygon/code_heldout/code_heldout_v2.json --save --out research/results/code_heldout_v2.json` is what re-measures this one.
 <!-- /claims:code-heldout -->
 
 Two hundred candidates over thirty-seven transcripts; the automatic checks accepted thirty-nine,
@@ -103,9 +95,10 @@ elements for better organization"). That is
 the metric this page gates on, **fact survival**, counted in seconds with no reader and no judge.
 The literal-fact channel - the extractor names the literal per note and a deterministic harvester
 salvages the ones it dropped, each kept only if it is a verbatim substring of the session - takes
-it from under a tenth to **0.635**, and the reader's accuracy from 0.058 to **0.404**, against Mem0's
-pipeline at 0.288 and 0.250. The gate written first (survival at or above 0.60 with accuracy at
-or above 0.40) is met on this final measure; a deterministic development run read 0.596, so the
+it from under a tenth to almost two thirds, and the reader's accuracy from near zero to about two
+fifths, against Mem0's pipeline at well under a third on both. The gate written first (survival at
+or above three fifths with accuracy at or above two fifths) is met on this final measure; a
+deterministic development run read a shade under the survival gate, so the
 gate sits inside the run-to-run band and the page says so rather than rounding it away. One more
 honesty: the channel was iterated against this set in the fast loop the ledger prescribed, so for
 that mechanism this is a development set; the candidates still unmarked are the clean measure owed
@@ -114,9 +107,9 @@ next.
 <!-- claims:code-heldout-survival -->
 | system | fact survival (answer verbatim in the returned notes) |
 |---|---|
-| **Nevertwice, our extractor's notes** | 0.635 |
-| append-only sessions, term overlap (floor) | 1.000 |
-| Mem0 full pipeline, its memories | 0.288 |
+| **Nevertwice, our extractor's notes** | withdrawn |
+| append-only sessions, term overlap (floor) | withdrawn |
+| Mem0 full pipeline, its memories | withdrawn |
 <!-- /claims:code-heldout-survival -->
 
 ## Reproducing

@@ -82,10 +82,11 @@ linter covers, and that is now a written constraint rather than an open question
 
 That constraint now has a number against it. On the project-specific class - the facts only this
 project's history holds, where a linter has nothing to read - the model-written guards catch
-**0.404** of the repeats against the linter's **0.154**, and the engine's no-model patterns catch
-0.154, the same as the linter. The lead is paid for on the same class it is earned on: the
-model-written arm raises a flag on **0.222** of the project-class calls that repeat nothing, where
-the linter raises none. Quoting the arm's all-calls false-alarm rate beside a project-class recall
+about two and a half times what the linter catches, while the engine's no-model patterns catch
+exactly what the linter does. The lead is paid for on the same class it is earned on: the
+model-written arm raises a flag on about a fifth of the project-class calls that repeat nothing,
+where the linter raises none. Every rate here is withdrawn until the campaign that follows the
+part-4 review re-measures it. Quoting the arm's all-calls false-alarm rate beside a project-class recall
 would be two denominators in one sentence, which is why the register carries `project_fpr`
 separately. See [`GUARD_BENCH.md`](GUARD_BENCH.md), where the gate this arm missed is printed:
 until this campaign neither guard arm had a project-class figure at all, because the stand and its

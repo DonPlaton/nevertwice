@@ -1,5 +1,13 @@
 # Real-trace recurrence validation (results & findings)
 
+<!-- withdrawn-banner -->
+> **Withdrawn: figures on this page must not be quoted.** They were retracted and remain
+> here because deleting a result one was wrong about destroys the record of having been
+> wrong. The design, the method and the caveats stand; the numbers do not. Each figure's
+> own reason and date are in
+> [`research/evidence_manifest.json`](evidence_manifest.json), and
+> `python tools/check_freshness.py --list-stale` lists every one.
+
 *Companion to `research/real_trace_bench.py`. Reproduce on any populated store:
 `NEVERTWICE_VAULT=/path/to/vault python research/real_trace_bench.py --save` (CPU, no Ollama -
 reads the cached vectors only, ~3 s). Numbers below are from one real accumulated vault of

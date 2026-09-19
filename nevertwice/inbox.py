@@ -314,7 +314,15 @@ def confirm(stem: str) -> dict:
     if meta is None:
         return _result(False, f"no live note with stem {stem!r}")
     parsed = m.parse_typed_stem(stem)
-    path = m.VAULT / m.TYPE_FOLDER[parsed["ntype"]] / f"{stem}.md"
+    if parsed is None:
+        return _result(False, f"{stem!r} is not a note stem")
+    folder = m.VAULT / m.TYPE_FOLDER[parsed["ntype"]]
+    path = folder / f"{stem}.md"
+    # `parse_typed_stem` refuses a stem that is really a path, so this can only fail if some future
+    # caller builds one another way. It is two lines, and the thing on the other side of it is an
+    # arbitrary Markdown file on the user's disk.
+    if path.resolve().parent != folder.resolve():
+        return _result(False, f"{stem!r} does not name a note inside the store")
     text = path.read_text(encoding="utf-8", errors="replace")
     if not text.startswith("---"):
         return _result(False, f"{stem} has no frontmatter to record the review in")
@@ -324,8 +332,15 @@ def confirm(stem: str) -> dict:
 
     today = datetime.now().strftime("%Y-%m-%d")
     header = text[3:end]
+    # A single-line splice, as the docstring says: the previous `reviewed:` line goes, the new one
+    # arrives, and nothing else is touched. The second filter used to drop every blank line in the
+    # header too, so a note whose properties an editor had spaced out came back with its fields run
+    # together - a re-serialisation dressed as a splice.
     lines = [ln for ln in header.split("\n") if not ln.strip().startswith("reviewed:")]
-    lines = [ln for ln in lines if ln.strip() != ""]
+    while lines and lines[0].strip() == "":
+        lines.pop(0)
+    while lines and lines[-1].strip() == "":
+        lines.pop()
     lines.append(f"reviewed: {today}")
     m.write_atomic(path, "---" + "\n".join([""] + lines) + text[end:])
     return _result(True, f"{stem}: reviewed {today}", [path])

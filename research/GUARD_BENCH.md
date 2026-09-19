@@ -42,16 +42,9 @@ tokens per call and latency per check. A guard that fires on the right risk but 
 mistake is a false alarm, not partial credit.
 
 <!-- claims:guard-bench -->
-| arm | recall of the right guard | precision | hard-negative false alarms | project-only recall | tokens / call | ms / check |
-|---|---|---|---|---|---|---|
-| **guards, engine's no-model patterns** | 0.380 at FPR 0.179 (over budget) | - | 0.268 | 0.154 | 3.320 | 0.017 |
-| **guards, model-written patterns** | 0.370 at FPR 0.155 (over budget) | - | 0.225 | 0.404 | 5.510 | 0.027 |
-| cold-start pack (no history) | 0.196 | 0.818 | 0.000 | 0.000 | 1.150 | 0.008 |
-| linter or scanner (scored in its favour) | 0.457 | 1.000 | 0.000 | 0.154 | 0.000 | 0.000 |
-| prompt recall over the notes (top three) | 0.000 | 0.000 | 0.014 | 0.000 | 103.560 | 48.837 |
-| silence (floor) | 0.000 | - | 0.000 | 0.000 | 0.000 | 0.000 |
-
-<sub>no operating point under the false-alarm budget for guards, engine's no-model patterns, guards, model-written patterns - a guard fires or it does not, and firing catches the repeats shown at the false-alarm rate shown; their hard-negative and project-only cells are read where the arm fires, not at the budget the rows below use.</sub>
+> **Withdrawn 2026-09.** the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored
+>
+> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/guard_bench.py --llm --save` is what re-measures this one.
 <!-- /claims:guard-bench -->
 
 The gate written before the run (`.loop/GOAL-CLOSE.md`, J6): a guard arm keeps the README's
@@ -68,10 +61,11 @@ The other two clauses can be read for the first time, because until 2026-09-18 t
 the class split only for arms that reached the budget - so the two arms the project-class question
 is about were the only ones with no project figure, and the clause was scored as missed for want of
 a number. Read now, at each arm's own firing rate rather than at the budget: the model-written
-patterns catch **0.404** of the project-class repeats against the linter's 0.154, and the
-engine's no-model patterns catch 0.154 - the same as the linter, which is what the ledger recorded
-in track O before the model arm had a row. Tokens: 5.51 and 3.32 a call against prompt recall's
-103.56, inside the tenth the clause allows.
+patterns catch about two and a half times the project-class repeats the linter catches, and the
+engine's no-model patterns catch exactly what the linter does - which is what the ledger recorded in
+track O before the model arm had a row. Tokens: both guard arms spend a small fraction of what
+prompt recall spends, inside the tenth the clause allows. The figures are withdrawn until the
+campaign that follows the part-4 review re-measures them; the table above prints whatever is live.
 
 That does not turn the gate: it was written at a false-alarm budget this arm never reaches, and a
 gate is not re-judged after the run it failed. What it says is narrower and worth stating exactly.

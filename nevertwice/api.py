@@ -361,13 +361,24 @@ def _apply_budget(hits, ledger, spend_ledger, policy):
     for hit in hits:
         guard = next((g for g in ledger if g.get("id") == hit["id"]), {})
         tokens = max(1, len(hit.get("message", "")) // 4)
-        value = float(guard.get("confidence", 0.5))
+        # `guards.json` is hand-editable and model-written, so `confidence` can be null, a word, or
+        # missing. `float()` raised straight out of the public `guards_check()`; the engine's own
+        # coercer is the one parse rule for this field, and a malformed guard should lose its budget
+        # priority rather than abort the hot-path check.
+        value = m._coerce_confidence(guard.get("confidence"))
+        if value is None:                     # unreadable or absent - the old default
+            value = 0.5
         if hit.get("status") == "blocking":
-            spend_ledger.record(_budget.Decision(
+            decision = _budget.Decision(
                 item=hit["id"], tokens=tokens, value=value, spend=True, reason="spent",
                 threshold=policy.min_value,
                 detail="a blocking guard is exempt from the value threshold: a hard stop is "
-                       "not withheld to save context"))
+                       "not withheld to save context")
+            spend_ledger.record(decision)
+            # The exemption belongs in the reason, not in a missing key: a caller that reads
+            # `hit["budget"]["reason"]` - the natural thing to do once you pass `budget=` - used to
+            # get a KeyError on exactly the hits that matter most.
+            hit["budget"] = decision.as_dict()
             kept.append(hit)
             continue
         decision = policy.decide(spend_ledger, item=hit["id"], tokens=tokens, value=value)
@@ -524,7 +535,7 @@ def remember(title: str, *, project: str, type: str = "pattern",
     # and every write-path fix had to be made twice (both docstrings carry the same
     # "gating on embedder_available left the note invisible" scar). Now it is
     # argument validation plus delegation.
-    ent = entities.split(",") if isinstance(entities, str) else list(entities)
+    ent = entities.split(",") if isinstance(entities, str) else list(entities or [])
     stems = remember_lessons([{"type": type, "title": title,
                                "description": description or "",
                                "prevention": prevention or "",

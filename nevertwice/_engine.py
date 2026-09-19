@@ -343,11 +343,23 @@ CLOUD_ONLY_PROJECTS = {p.strip().lower() for p in
 def is_local_only(project) -> bool:
     """Decide if a project must stay local. Allowlist mode (CLOUD_ONLY set):
     only listed projects use cloud, everything else (incl. unknown/empty) is
-    local - fail-safe. Else denylist mode: listed projects are local."""
+    local - fail-safe. Else denylist mode: listed projects are local.
+
+    Both sides are normalised, which they were not. The sets are built from the environment with
+    `.strip().lower()` while every caller passes the output of `slug_project()` - which also
+    transliterates Cyrillic, folds spaces and punctuation to `_` and truncates at 40. So
+    `NEVERTWICE_LOCAL_ONLY=my-secret-research`, written exactly as `docs/CONFIG.md` describes it,
+    never matched the slug `my_secret_research`: the denylist failed OPEN and the transcript went to
+    the cloud with no warning, and the allowlist failed the other way and pinned every project local
+    forever. A privacy control that compares two different normalisations is not a control.
+
+    Each configured name is matched in both shapes, and so is the argument, because callers are not
+    consistent either: the engine passes a slug, a library user may pass the directory name."""
     p = (project or "").strip().lower()
+    forms = {p, slug_project(p)} if p else {p}
     if CLOUD_ONLY_PROJECTS:
-        return p not in CLOUD_ONLY_PROJECTS
-    return p in LOCAL_ONLY_PROJECTS
+        return not (forms & _normalise_project_set(CLOUD_ONLY_PROJECTS))
+    return bool(forms & _normalise_project_set(LOCAL_ONLY_PROJECTS))
 
 
 def local_routing_desc() -> str:
@@ -832,6 +844,22 @@ def slug_tag(t: str) -> str:
     return re.sub(r'[^\w\-/]', '', t)
 
 
+def _normalise_project_set(names) -> set:
+    """Configured project names in both shapes a caller can arrive in: as written, and as a slug.
+
+    Used by `is_local_only`, whose two sets come from the environment as the user typed them while
+    its callers pass `slug_project()` output. Cheap enough to run per call - the sets hold a handful
+    of names and the gate runs once per extraction, not per tool call."""
+    out = set()
+    for raw in names:
+        n = (raw or "").strip()
+        if not n:
+            continue
+        out.add(n.lower())
+        out.add(slug_project(n))
+    return out
+
+
 def slug_project(name: str) -> str:
     """Project slug: alnum + underscore, lowercase, never '-'. Hardened
     against '', '.', '..' and Windows reserved device names so an LLM- or
@@ -929,8 +957,27 @@ def reserve_session_stem(date: str, time_str: str, project: str, session_id: str
     return _unique_path(p, base).stem
 
 
+#: A stem names a note; callers build `VAULT/<folder>/<stem>.md` from it. Anything that makes it
+#: address a different file - a separator, a parent reference, a NUL - is not a stem, whoever sent
+#: it. `inbox.confirm` was reachable from the CLI and from `api.inbox_action` with a slug carrying
+#: `../`, and rewrote a Markdown file outside the store.
+_STEM_UNSAFE = ("/", chr(92), chr(0), ":")
+
+
+def _stem_is_safe(stem: str) -> bool:
+    """True when every part of a stem is a plain name rather than a path fragment."""
+    if not stem or any(ch in stem for ch in _STEM_UNSAFE):
+        return False
+    return all(part not in (".", "..") for part in stem.split("-"))
+
+
 def parse_typed_stem(stem: str) -> dict | None:
-    """Parse typed stem. Returns {date, project, ntype, slug} or None."""
+    """Parse typed stem. Returns {date, project, ntype, slug} or None.
+
+    None also for a stem that is really a path: the callers of this function turn what it returns
+    into a filesystem path, so the check belongs here rather than in each of them."""
+    if not _stem_is_safe(stem):
+        return None
     parts = stem.split("-", 5)
     if len(parts) < 6 or parts[4] not in TYPED_TYPES:
         return None
@@ -939,7 +986,10 @@ def parse_typed_stem(stem: str) -> dict | None:
 
 
 def parse_session_stem(stem: str) -> dict | None:
-    """Parse session stem. Returns {date, time, project, id8} or None."""
+    """Parse session stem. Returns {date, time, project, id8} or None - and None for a stem that is
+    really a path, for the same reason `parse_typed_stem` refuses one."""
+    if not _stem_is_safe(stem):
+        return None
     parts = stem.split("-", 6)
     if len(parts) < 7 or parts[5] != "session":
         return None
@@ -1722,11 +1772,23 @@ def register_written_notes(project: str, tags, links: dict) -> None:
     a sweep sees them without a full disk rescan (audit M-k). Only updates caches
     already built this run; an unbuilt cache will include the writes when first
     populated from disk."""
+    clean = [t for t in _norm_tags(tags) if not t.startswith("project/") and t not in _TAG_SKIP]
     if _TAG_COUNTS is not None:
-        for t in _norm_tags(tags):
-            if t.startswith("project/") or t in _TAG_SKIP:
-                continue
+        for t in clean:
             _TAG_COUNTS[t] = _TAG_COUNTS.get(t, 0) + 1
+    # The per-project counter is the one production reads: `collect_existing_tags(project=...)`
+    # returns the project's own vocabulary as soon as it has MIN_PROJECT_TAG_VOCAB entries and never
+    # consults the global one. Folding only into the global counter made this whole function inert
+    # for any project with a vocabulary of its own - the second session of a sweep was grounded on a
+    # list frozen at the first disk scan, and re-invented the tags the first session had just
+    # created, which is exactly what audit M-k added it to prevent.
+    if project and _TAG_COUNTS is not None:
+        # `_TAG_COUNTS is not None` is the signal that a scan has happened this run; the project's
+        # own slot may still be absent, because a project with no tags yet has nothing on disk -
+        # and that is exactly the project whose first session should ground the second.
+        slot = _TAG_COUNTS_BY_PROJECT.setdefault(project, {})
+        for t in clean:
+            slot[t] = slot.get(t, 0) + 1
     if project in _TITLE_SLUGS:
         slot = _TITLE_SLUGS[project]
         for nt, stems in (links or {}).items():
@@ -3440,8 +3502,18 @@ def mark_resolved(mistake_fp: Path, by_stem: str) -> bool:
         text = mistake_fp.read_text(encoding="utf-8", errors="replace")
     except OSError:
         return False
-    write_atomic(mistake_fp, _stamp_frontmatter(
-        text, {"status": "resolved", "resolved_by": by_stem}))
+    try:
+        write_atomic(mistake_fp, _stamp_frontmatter(
+            text, {"status": "resolved", "resolved_by": by_stem}))
+    except OSError as exc:
+        # The one deferred post-write call that raised instead of returning False, unlike its
+        # sibling `supersede_note`. It runs AFTER the new note is durably on disk and after the
+        # retirement loop, so on `api.remember` - where nothing catches it - the exception escaped
+        # with the note written, its predecessors retired, and `update_embeddings`, `rebuild_index`
+        # and `git_autocommit` all skipped: a note that exists, is invisible to recall, and is
+        # uncommitted, while the caller is told the write failed.
+        log(f"Could not mark {mistake_fp.stem} resolved: {exc}")
+        return False
     # Propagate the flag to the retrieval substrate NOW so the salience de-weight
     # actually applies - it was otherwise dead until the next full embed --rebuild,
     # because the live cache/index never carried `resolved` (critic round 3).
@@ -5094,7 +5166,11 @@ def _note_meta(p: Path, ntype: str, parsed: dict) -> dict | None:
         raw_tags = [t for t in re.split(r"[,\s]+", raw_tags) if t]
     resolved = bool(fm.get("resolved_by")) or str(fm.get("status", "")).lower() == "resolved"
     try:
-        rec = int(str(fm.get("recurrence", "1")).strip() or "1")
+        # `_coerce_recurrence` is THE one parse rule, and it carries RECUR_COUNT_CAP - the
+        # anti-poisoning ceiling. Reading the field raw here let one hand-edited or imported
+        # note claiming `recurrence: 999999999` outrank the whole store on every metadata
+        # surface: the project card's three slot sorts, its `x N` label, api.notes, causal.
+        rec = _coerce_recurrence(fm.get("recurrence", 1))
     except ValueError:
         rec = 1
     return {"stem": p.stem, "ntype": ntype, "date": parsed["date"],
@@ -6791,7 +6867,14 @@ def as_of(project: str | None, date: str) -> list[dict]:
     believed - `Superseded/` when a later fact replaced it, `Archive/` when it
     turned ninety days old. Asking for an old day is exactly when both have
     happened, and an importer of old transcripts archives its notes on the way
-    in, which is how the as-of bench read an empty history on 2026-09-08."""
+    in, which is how the as-of bench read an empty history on 2026-09-08.
+
+    The project is slugged here rather than at each caller. Every writer normalises through
+    `slug_project`, so a raw `My-App` matched nothing on disk and this returned an empty history for
+    a project that has one - the same shape `_iter_project_notes` fixed for the entity surfaces in
+    review 2026-08-C3, and `search_core` fixed for recall, while this one and the `--as-of` branch of
+    `memory_search` were left comparing raw against slugged."""
+    project = slug_project(project) if project else project
     out = []
     for ntype, folder in TYPE_FOLDER.items():
         base = VAULT / folder
@@ -7468,12 +7551,25 @@ def git_autocommit():
             if not _git("config", "user.email").stdout.strip():
                 _git("config", "user.email", "nevertwice@localhost")
                 _git("config", "user.name", "Nevertwice")
-            # an auto-init store never ran install.py → write the ignore list ourselves
-            # so caches / .logs / the index don't get committed (and possibly pushed).
-            _ensure_vault_gitignore()
+        # The ignore list is reconciled on EVERY run, not only on an auto-init. It used to sit
+        # inside the branch above, so its reconcile half could never run on a store that already
+        # had `.git` - which is every store `install.py` touched, and `install.py`'s own list has
+        # drifted from this one. Measured on a real store: `.embeddings_cache.json.prev` (84.9 MB)
+        # tracked across 13 commits, because `*.prev` reached `_VAULT_GITIGNORE` and never reached
+        # the store. Writing the file is cheap and idempotent; committing an 85 MB derived blob is
+        # not.
+        _ensure_vault_gitignore()
         _git("add", "-A")
-        _git("commit", "-q", "-m",
-             f"auto: memory update {datetime.now():%Y-%m-%d %H:%M}")
+        commit = _git("commit", "-q", "-m",
+                      f"auto: memory update {datetime.now():%Y-%m-%d %H:%M}")
+        # "nothing to commit" is the ordinary case and exits 1; anything else means the snapshot
+        # the audit promise rests on did not happen, and used to be discarded silently - a store
+        # with no git identity committed nothing, every run, with a clean log.
+        if commit.returncode != 0:
+            said = b"".join(x for x in (commit.stdout, commit.stderr) if x)
+            said = said.decode("utf-8", "replace") if isinstance(said, bytes) else str(said)
+            if "nothing to commit" not in said and "no changes added" not in said:
+                log(f"git commit failed: {said.strip()[:200]}")
         if os.environ.get("NEVERTWICE_GIT_PUSH", "0") == "1":
             has_remote = _git("remote").stdout.strip()
             if has_remote:
@@ -7757,21 +7853,42 @@ def main():
             return
 
         def finalize(swept_count: int):
-            rebuild_index()
-            archive_old_sessions()
-            archive_old_typed()
-            prune_processed_db(processed_db)
+            """The end-of-run stages. Each is guarded, because the enclosing `try` has only a
+            `finally: release_lock()` and no `except`: an OSError out of `rebuild_index` (Obsidian,
+            OneDrive or an AV scanner holding `Index.md` open past the replace retry) escaped
+            `main()` as a traceback after the notes were already written and marked, and took
+            `git_autocommit` with it - so the run that wrote the notes never snapshotted them.
+            A stage that fails is logged and the rest still run; the next run is idempotent."""
+            for stage in (rebuild_index, archive_old_sessions, archive_old_typed,
+                          lambda: prune_processed_db(processed_db)):
+                try:
+                    stage()
+                except Exception as exc:      # noqa: BLE001 - one stage may not sink the run
+                    log(f"finalize stage {getattr(stage, '__name__', 'prune')} failed: "
+                        f"{type(exc).__name__}: {exc}")
             if event in ("SessionEnd", "PreCompact"):
-                regen_graph_for_project(cwd)
+                try:
+                    regen_graph_for_project(cwd)
+                except Exception as exc:      # noqa: BLE001 - the graph is derived, not the store
+                    log(f"graph regen failed: {type(exc).__name__}: {exc}")
             try:                              # refresh the 'dump the whole store' price for the
                                               # savings ledger, at sleep-time so recall stays cheap
                 _st = _sibling("stats")
                 _st.refresh_store_tokens()
             except Exception:
                 pass
-            write_status(event, trigger, run_log, swept_count, session_id,
-                         degraded=_degraded_status())
-            git_autocommit()
+            try:
+                write_status(event, trigger, run_log, swept_count, session_id,
+                             degraded=_degraded_status())
+            except Exception as exc:          # noqa: BLE001 - a status line is not the store
+                log(f"status write failed: {type(exc).__name__}: {exc}")
+            # Last, and guarded like the rest: the snapshot is the thing the audit promise
+            # ("always recoverable from git history") rests on, so a failure here is logged
+            # rather than silent, and never prevents the ones before it.
+            try:
+                git_autocommit()
+            except Exception as exc:          # noqa: BLE001
+                log(f"git snapshot failed: {type(exc).__name__}: {exc}")
 
         if event == "SessionStart":
             # The session that's just starting has an empty transcript - skip it.

@@ -90,7 +90,14 @@ for arm, sc in sorted(arms.items()):
 
 print("# and a registered number reaches the page, or registering it changed nothing")
 PAGE = ROOT / "research" / "GUARD_BENCH.md"
-if PAGE.exists():
+# During a withdrawal window the family has no live claims, so the generated table says the stand
+# has not run at this HEAD rather than printing figures the register has retracted. That is the
+# register working; the invariant this suite holds is about LIVE numbers reaching the page.
+_live_guard = any(cid.startswith("guards.") and not claims[cid].get("stale")
+                  and not claims[cid].get("pending_remeasure") for cid in claims)
+if not _live_guard:
+    print("  --   every guard claim is withdrawn; the page check waits for the re-measure")
+elif PAGE.exists():
     body = PAGE.read_text(encoding="utf-8")
     block = body.split("<!-- claims:guard-bench -->")[-1].split("<!-- /claims:guard-bench -->")[0]
     LABEL = {"guards_deterministic": "engine's no-model patterns",

@@ -1,5 +1,13 @@
 # Does real LLM consolidation help retrieval? (results)
 
+<!-- withdrawn-banner -->
+> **Withdrawn: figures on this page must not be quoted.** They were retracted and remain
+> here because deleting a result one was wrong about destroys the record of having been
+> wrong. The design, the method and the caveats stand; the numbers do not. Each figure's
+> own reason and date are in
+> [`research/evidence_manifest.json`](evidence_manifest.json), and
+> `python tools/check_freshness.py --list-stale` lists every one.
+
 *Companion to `research/consolidation_eval.py`. Reproduce: `NEVERTWICE_VAULT=/path python
 research/consolidation_eval.py --save` (calls Ollama for synthesis + bge-m3 embedding; ~18 min for
 109 leave-one-out syntheses on the real store). Aggregate-only: reads the local cache + synthesises

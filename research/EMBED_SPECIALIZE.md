@@ -1,5 +1,13 @@
 # nevertwice-embed: lifecycle-supervised embedding specialization (stage 1)
 
+<!-- withdrawn-banner -->
+> **Withdrawn: figures on this page must not be quoted.** They were retracted and remain
+> here because deleting a result one was wrong about destroys the record of having been
+> wrong. The design, the method and the caveats stand; the numbers do not. Each figure's
+> own reason and date are in
+> [`research/evidence_manifest.json`](evidence_manifest.json), and
+> `python tools/check_freshness.py --list-stale` lists every one.
+
 **Date:** 2026-08-18 · **Status:** RESEARCH COMPLETE - positive result recorded, NOT wired
 into production (promotion path defined below) · **Hardware:** one RTX 5090, LoRA r=16 on
 bge-m3 (568M), training runtime ~19s per round

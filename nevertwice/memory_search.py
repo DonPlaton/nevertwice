@@ -318,7 +318,10 @@ def main():
             print("--as-of needs a project: memory_search.py <ignored> <project> --as-of=DATE",
                   file=sys.stderr)
             sys.exit(1)
-        snap = m.as_of(project, as_of_date)
+        # the same slug `search_core` applies 190 lines above, for the same reason: `as_of`
+        # compares against slugged stems, so a raw `My-App` reads zero beliefs for a project
+        # that has history (review 2026-08-C2, fixed there and not carried here)
+        snap = m.as_of(m.slug_project(project), as_of_date)
         if "--json" in flags:
             print(json.dumps(snap, ensure_ascii=False, indent=2))
             return

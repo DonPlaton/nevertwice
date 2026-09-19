@@ -227,7 +227,7 @@ def call_ollama(prompt: str) -> dict:
 
 def write_context(project_name: str, project_path: Path, ctx: dict):
     fp = VAULT / "Context" / f"{project_name}.md"
-    fp.parent.mkdir(exist_ok=True)
+    fp.parent.mkdir(parents=True, exist_ok=True)
     date = datetime.now().strftime("%Y-%m-%d")
     time_str = datetime.now().strftime("%H:%M")
 
@@ -308,8 +308,15 @@ def write_context(project_name: str, project_path: Path, ctx: dict):
             _h, entries = m._split_context(fp.read_text(encoding="utf-8", errors="replace"))
             if entries:
                 tail = "\n" + "\n".join(entries).strip() + "\n"
-        except OSError:
-            pass
+        except Exception as exc:               # noqa: BLE001 - `_split_context` can raise anything
+            # The guard above is the whole point of this branch, and the error arm used to undo
+            # it: a failed read left `tail` empty and fell through to a head-only write, which is
+            # the data loss the comment says critic R3 fixed, reached through the error path
+            # instead of the happy one. A history that cannot be read cannot be preserved, so
+            # nothing is written at all.
+            print(f"  [skip] Context/{project_name}.md - its history could not be read "
+                  f"({type(exc).__name__}: {exc}); refusing to re-seed over it")
+            return
     m.write_atomic(fp, head + tail)
     print(f"  [ok] Context/{project_name}.md" + (" (session history preserved)" if tail else ""))
 

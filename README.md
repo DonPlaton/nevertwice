@@ -84,11 +84,11 @@ What survived re-measurement at HEAD, and what it cost:
 
 | claim | result | evidence |
 |---|---|---|
-| external retrieval, one pool and one embedder for everyone | R@5 **0.800** on a hash-pinned LongMemEval corpus, whole sessions embedded on our side as on the competitors' (Mem0 0.758, LangMem 0.692, A-MEM 0.692) | [EXTERNAL_RETRIEVAL.md](research/EXTERNAL_RETRIEVAL.md) |
-| handing back a fact that has since been **retracted** | **0.017** of the time between nights and **0.017** after the weekly consolidation, against **0.933** for Mem0, **0.317** for Zep/Graphiti and **0.950** for an append-only file with term matching. The price this row used to carry - a fact that stayed true stops being served - is now **0.000** on the explicit corpus and **0.000** with the cue removed: nothing is retired unless a rule proves the replacement or the sleep-time judge rules on it, and an unproven pair is served whole, newest first ([the causes](research/SUPERSESSION.md#what-it-costs-us)) | [SUPERSESSION.md](research/SUPERSESSION.md) |
+| external retrieval, one pool and one embedder for everyone | ahead of Mem0, LangMem and A-MEM on a hash-pinned LongMemEval corpus, whole sessions embedded on our side as on theirs - the figures are withdrawn until the campaign that follows the part-4 review re-measures them | [EXTERNAL_RETRIEVAL.md](research/EXTERNAL_RETRIEVAL.md) |
+| handing back a fact that has since been **retracted** | rare between nights and rarer after the weekly consolidation, against a majority of the time for Mem0, a third for Zep/Graphiti and almost always for an append-only file with term matching. The price this row used to carry - a fact that stayed true stops being served - is now none on the explicit corpus and none with the cue removed: nothing is retired unless a rule proves the replacement or the sleep-time judge rules on it, and an unproven pair is served whole, newest first ([the causes](research/SUPERSESSION.md#what-it-costs-us)). Every rate here is withdrawn until the post-review campaign re-measures it | [SUPERSESSION.md](research/SUPERSESSION.md) |
 | acting vs *always-injecting* the same lesson | same error prevention for **31×** fewer memory tokens | [ACTIVE_MEMORY.md](research/ACTIVE_MEMORY.md) |
-| memory-poisoning acceptance attacks | **81%** blocked overall - **100%** of prompt injection, **25%** of plausible-false facts | [POISONING.md](research/POISONING.md) |
-| what being there costs | PreToolUse **55 ms** end to end - it fell by well over a third once the hook stopped recompiling the engine on every call - and zero context tokens until a guard fires | [BENCHMARKS.md](docs/BENCHMARKS.md) |
+| memory-poisoning acceptance attacks | most attacks blocked overall - every prompt injection, a quarter of plausible-false facts; the rates are withdrawn until the post-review campaign re-measures them | [POISONING.md](research/POISONING.md) |
+| what being there costs | PreToolUse fell by well over a third once the hook stopped recompiling the engine on every call, and costs zero context tokens until a guard fires; the millisecond figure is withdrawn until the post-review campaign re-measures it | [BENCHMARKS.md](docs/BENCHMARKS.md) |
 
 Every row was re-measured on 2026-09-11 on the engine as committed - the J1 evidence layer removed,
 an archive-aware reconcile and a write-path literal-fact channel added (ledger J2b and the J3
@@ -160,7 +160,7 @@ With no backend at all, extraction pauses loudly (sessions are kept and retried,
 recall runs on lexical search until an embedder shows up. The five-minute walkthrough is in
 [QUICKSTART.md](QUICKSTART.md); every environment variable is in [CONFIG.md](docs/CONFIG.md).
 
-Contributing: `pip install -e ".[dev]"`, then `python -m pytest -q`. One hundred sixty-nine hermetic suites -
+Contributing: `pip install -e ".[dev]"`, then `python -m pytest -q`. One hundred seventy-four hermetic suites -
 LLMs, embedders, the optional reranker, network and GPU execution are disabled or mocked, and a lint
 fails the build if a script reaches a memory store without declaring which store it means. CI runs
 them on Linux, Windows and macOS across four Python versions. One is a golden store - same sessions

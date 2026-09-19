@@ -36,6 +36,7 @@ tested - without a vault.
 """
 from __future__ import annotations
 
+import math
 import os
 import time
 from dataclasses import dataclass, field, asdict
@@ -62,15 +63,25 @@ VALUE_REASONS = ("below_value_threshold",)
 
 
 def _env_float(name: str, default: float) -> float:
+    """A setting, or the default - never a value the rest of the module cannot use.
+
+    `float()` accepts `nan`, `inf` and `1e400`, which are not settings: a NaN threshold compares
+    False against everything, so the gate stops refusing, and an infinite one refuses everything.
+    Both are worse than the default the user did not change."""
     try:
         raw = os.environ.get(name)
-        return float(raw) if raw not in (None, "") else default
+        value = float(raw) if raw not in (None, "") else default
     except (TypeError, ValueError):
         return default
+    return value if math.isfinite(value) else default
 
 
 def _env_int(name: str, default: int) -> int:
-    return int(_env_float(name, default))
+    """The same, as an integer. `int(nan)` raises `ValueError` and `int(inf)` `OverflowError`, so a
+    mistyped variable used to take `Policy()` - and with it `api.budget_policy()` and every
+    `guards_check(budget=...)` - down instead of falling back."""
+    value = _env_float(name, float(default))
+    return int(value) if math.isfinite(value) else int(default)
 
 
 @dataclass(frozen=True)
@@ -111,7 +122,11 @@ class Policy:
                 reason="nothing_to_spend_on", threshold=self.min_value,
                 detail="an item with no cost or no identity is not a spending decision"))
 
-        if value < self.min_value:
+        # A NaN compares False against everything, including this threshold, so an item whose
+        # expected value is unknown used to spend every time - the one input a fused or calibrated
+        # score actually produces, and the gate failing in the one direction it exists to prevent.
+        # "Unknown" is not "worth it".
+        if not math.isfinite(value) or value < self.min_value:
             return ledger.record(Decision(
                 item=item, tokens=tokens, value=value, spend=False,
                 reason="below_value_threshold", threshold=self.min_value,

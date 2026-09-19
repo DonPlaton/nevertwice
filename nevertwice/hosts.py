@@ -298,7 +298,7 @@ class ClaudeCodeAdapter(HostAdapter):
                     "detail": "no Claude Code settings file - nothing to undo",
                     "dry_run": dry_run}
         try:
-            data = json.loads(settings.read_text(encoding="utf-8"))
+            data = json.loads(settings.read_text(encoding="utf-8-sig"))
         except (OSError, ValueError) as exc:
             return {"host": self.name, "ok": False, "changed": [],
                     "detail": f"could not read {settings}: {exc}", "dry_run": dry_run}
@@ -329,7 +329,7 @@ class ClaudeCodeAdapter(HostAdapter):
 
         if removed and not dry_run:
             backup = settings.with_suffix(".json.nevertwice-backup")
-            backup.write_text(settings.read_text(encoding="utf-8"), encoding="utf-8")
+            backup.write_text(settings.read_text(encoding="utf-8-sig"), encoding="utf-8")
             m.write_atomic(settings, json.dumps(data, indent=2) + "\n")
             return {"host": self.name, "ok": True, "changed": [str(settings), str(backup)],
                     "detail": f"removed {len(removed)} hook entry(ies); "
@@ -374,7 +374,7 @@ def _is_a_foreign_copy(entry) -> bool:
 def _claude_hooks(settings: Path) -> tuple[list[str], list[str]]:
     """(ours, foreign copies of our scripts) - the two are never conflated."""
     try:
-        data = json.loads(settings.read_text(encoding="utf-8"))
+        data = json.loads(settings.read_text(encoding="utf-8-sig"))
     except (OSError, ValueError):
         return [], []
     ours, foreign = [], []

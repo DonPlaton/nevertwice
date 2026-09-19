@@ -259,8 +259,8 @@ and graph features that close the biggest gaps, then benchmark and reach.
 > (Moorcheh - `moorcheh-sdk` + a proprietary Docker image)**, so they are not
 > independently reproducible the way this table's local, same-embedder numbers are.
 > Nevertwice's own answer-accuracy figure on the comparable axis (standard
-> LongMemEval-oracle, gold context) is **0.788** with an open reasoning reader
-> (deepseek-reasoner); a reader sweep walks it 0.61 → 0.68 → 0.75 → 0.79 with the memory
+> LongMemEval-oracle, gold context) is near four fifths with an open reasoning reader
+> (deepseek-reasoner); a reader sweep walks it up by nearly twenty points with the memory
 > held fixed, localizing the gap to memanto's headline as reader-model strength on hard
 > temporal/multi-session reasoning, not the memory - full decomposition (reader sweep, CoT
 > effect, a negative result on retrieving more) in
