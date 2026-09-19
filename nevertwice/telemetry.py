@@ -38,8 +38,12 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-import memory_hook as m         # noqa: E402
-import outcomes                 # noqa: E402 - the closed outcome vocabulary, and
+try:
+    from . import memory_hook as m
+    from . import outcomes
+except ImportError:                 # run as a script, not as a package
+    import memory_hook as m  # noqa: E402
+    import outcomes  # noqa: E402 - the closed outcome vocabulary, and
 #                                 nothing else: it imports only `math`.
 
 try:

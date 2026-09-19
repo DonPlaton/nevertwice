@@ -64,14 +64,25 @@ except Exception:
 sys.stdout = sys.stderr        # any stray print() from imported modules → stderr
 
 sys.path.insert(0, str(Path(__file__).parent))
-import memory_hook as m          # noqa: E402
-import api as _api               # noqa: E402  (the one capture/write path)
-import memory_search             # noqa: E402  (search_core, shared ranker)
+try:
+    from . import memory_hook as m
+    from . import api as _api
+    from . import memory_search
+except ImportError:                 # run as a script, not as a package
+    import memory_hook as m  # noqa: E402
+    import api as _api  # noqa: E402  (the one capture/write path)
+    import memory_search  # noqa: E402  (search_core, shared ranker)
 import remember as _remember     # noqa: E402  (do_remember validation/lock path)
-import digest as _digest         # noqa: E402  (conflicts + digest review commands)
-import guards as _guards         # noqa: E402  (active memory A - executable guards)
-import anticipate as _anticipate # noqa: E402  (active memory B - anticipatory warning)
-import causal as _causal         # noqa: E402  (active memory C - counterfactual)
+try:
+    from . import digest as _digest
+    from . import guards as _guards
+    from . import anticipate as _anticipate
+    from . import causal as _causal
+except ImportError:                 # run as a script, not as a package
+    import digest as _digest  # noqa: E402  (conflicts + digest review commands)
+    import guards as _guards  # noqa: E402  (active memory A - executable guards)
+    import anticipate as _anticipate  # noqa: E402  (active memory B - anticipatory warning)
+    import causal as _causal  # noqa: E402  (active memory C - counterfactual)
 
 import config as _cfg            # noqa: E402
 SERVER_NAME = "nevertwice"

@@ -41,7 +41,10 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-import guards as _guards            # noqa: E402 - the ledger and the policy constants
+try:
+    from . import guards as _guards
+except ImportError:                 # run as a script, not as a package
+    import guards as _guards  # noqa: E402 - the ledger and the policy constants
 
 # The shape this module returns is declared in `schemas.WhyFired`, not imported here: the
 # declaration is a contract for readers and tests, and making the hot-adjacent path import it

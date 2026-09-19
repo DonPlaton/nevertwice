@@ -26,7 +26,10 @@ except Exception:
     pass
 
 sys.path.insert(0, str(Path(__file__).parent))
-import memory_hook as _mh  # noqa: E402  (single import style; everything is _mh.<name>)
+try:
+    from . import memory_hook as _mh
+except ImportError:                 # run as a script, not as a package
+    import memory_hook as _mh  # noqa: E402  (single import style; everything is _mh.<name>)
 
 BAR = "=" * 72
 

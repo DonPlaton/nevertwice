@@ -15,7 +15,10 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
-import memory_hook as m
+try:
+    from . import memory_hook as m
+except ImportError:                 # run as a script, not as a package
+    import memory_hook as m
 
 try:                                      # never crash printing → / Cyrillic on a cp1251 console
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")

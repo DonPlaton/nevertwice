@@ -43,7 +43,10 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-import memory_hook as m         # noqa: E402
+try:
+    from . import memory_hook as m
+except ImportError:                 # run as a script, not as a package
+    import memory_hook as m  # noqa: E402
 
 SCHEMA_VERSION = 1
 

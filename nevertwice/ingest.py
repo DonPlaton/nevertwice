@@ -50,7 +50,10 @@ except Exception:
     pass
 
 sys.path.insert(0, str(Path(__file__).parent))
-import memory_hook as m
+try:
+    from . import memory_hook as m
+except ImportError:                 # run as a script, not as a package
+    import memory_hook as m
 import docparse                  # .pdf/.docx/.html/.md → text, so any document is ingestible
 
 # DoS guard for --dir sweeps: skip files larger than this (a swept dir could hold a

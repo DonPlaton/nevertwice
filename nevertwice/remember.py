@@ -27,8 +27,12 @@ except Exception:
     pass
 
 sys.path.insert(0, str(Path(__file__).parent))
-import memory_hook as m
-import api
+try:
+    from . import memory_hook as m
+    from . import api
+except ImportError:                 # run as a script, not as a package
+    import memory_hook as m
+    import api
 
 
 def _find_note(stem: str):

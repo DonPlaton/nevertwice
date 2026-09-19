@@ -24,7 +24,10 @@ except Exception:
     pass
 
 sys.path.insert(0, str(Path(__file__).parent))
-import memory_hook as m
+try:
+    from . import memory_hook as m
+except ImportError:                 # run as a script, not as a package
+    import memory_hook as m
 import reranker_ce as _ce          # opt-in trained cross-encoder (lazy heavy deps)
 
 ICON = m.TYPE_ICON        # the one type→icon map (write_typed_note stamps these into headings)

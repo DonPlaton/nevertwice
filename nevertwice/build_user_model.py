@@ -21,7 +21,10 @@ except Exception:
     pass
 
 sys.path.insert(0, str(Path(__file__).parent))
-import memory_hook as m
+try:
+    from . import memory_hook as m
+except ImportError:                 # run as a script, not as a package
+    import memory_hook as m
 
 # A small function-word stoplist; the real generic-word filter is the document-
 # frequency ceiling in main() (language-agnostic: any token in >DF_CEIL of notes

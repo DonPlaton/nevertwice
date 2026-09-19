@@ -25,19 +25,36 @@ from datetime import datetime
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-import memory_hook as m
-import memory_search as _search
-import digest as _digest
-import dashboard as _dashboard
-import guards as _guards
-import budget as _budget
-import outcomes as _outcomes
-import why_fired as _why
+try:
+    from . import memory_hook as m
+    from . import memory_search as _search
+    from . import digest as _digest
+    from . import dashboard as _dashboard
+    from . import guards as _guards
+    from . import budget as _budget
+    from . import outcomes as _outcomes
+    from . import why_fired as _why
+except ImportError:                 # run as a script, not as a package
+    import memory_hook as m
+    import memory_search as _search
+    import digest as _digest
+    import dashboard as _dashboard
+    import guards as _guards
+    import budget as _budget
+    import outcomes as _outcomes
+    import why_fired as _why
 import inbox as _inbox
-import anticipate as _anticipate
-import causal as _causal
+try:
+    from . import anticipate as _anticipate
+    from . import causal as _causal
+except ImportError:                 # run as a script, not as a package
+    import anticipate as _anticipate
+    import causal as _causal
 import integrity as _integrity
-import lenses as _lenses
+try:
+    from . import lenses as _lenses
+except ImportError:                 # run as a script, not as a package
+    import lenses as _lenses
 import emit as _emit
 
 

@@ -19,7 +19,10 @@ except Exception:
 # Prefer the shared Gemini→Ollama backend from memory_hook (fast, off-GPU);
 # fall back to this script's own Ollama call if it can't be imported.
 sys.path.insert(0, str(Path(__file__).parent))
-import memory_hook as m               # the one source for slug/split/atomic-write/index helpers
+try:
+    from . import memory_hook as m
+except ImportError:                 # run as a script, not as a package
+    import memory_hook as m  # the one source for slug/split/atomic-write/index helpers
 try:
     _shared_generate = m.generate_json     # access via the module handle (already imported above)
     redact_secrets = m.redact_secrets

@@ -45,8 +45,12 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-import api                      # noqa: E402
-import memory_hook as m         # noqa: E402
+try:
+    from . import api
+    from . import memory_hook as m
+except ImportError:                 # run as a script, not as a package
+    import api  # noqa: E402
+    import memory_hook as m  # noqa: E402
 
 try:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")

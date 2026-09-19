@@ -52,11 +52,18 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-import memory_hook as m         # noqa: E402
-import guards as _guards        # noqa: E402
-import outcomes as _outcomes    # noqa: E402
-import digest as _digest        # noqa: E402
-import why_fired as _why        # noqa: E402
+try:
+    from . import memory_hook as m
+    from . import guards as _guards
+    from . import outcomes as _outcomes
+    from . import digest as _digest
+    from . import why_fired as _why
+except ImportError:                 # run as a script, not as a package
+    import memory_hook as m  # noqa: E402
+    import guards as _guards  # noqa: E402
+    import outcomes as _outcomes  # noqa: E402
+    import digest as _digest  # noqa: E402
+    import why_fired as _why  # noqa: E402
 
 try:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")

@@ -27,7 +27,10 @@ from pathlib import Path
 import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-import api as _api
+try:
+    from . import api as _api
+except ImportError:                 # run as a script, not as a package
+    import api as _api
 recall, remember = _api.recall, _api.remember   # re-export the read/write helpers
 
 __all__ = ["MemorySession", "capture_chat", "auto_capture", "recall", "remember"]
