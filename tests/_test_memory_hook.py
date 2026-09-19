@@ -268,6 +268,16 @@ def test_has_unprocessed_gate():
             mh.PROJECTS_ROOT = old_root
 
 
+def test_zz_every_check_passed() -> None:
+    """Bare pytest must reach the same verdict as this suite's exit code.
+
+    Without this, `python -m pytest <this file>` collects the checks above, runs them,
+    and reports them passed while `check()` printed FAIL and the script would exit 1.
+    Enforced for every counting suite by `tests/_test_the_harness_agrees_with_itself.py`.
+    """
+    assert not failures, f"{len(failures)} check(s) failed: " + ", ".join(failures[:6])
+
+
 if __name__ == "__main__":
     print("=== memory_hook unit tests (sandbox: %s) ===" % mh.VAULT)
     for fn in [test_slug_helpers, test_stem_parse, test_project_filter,

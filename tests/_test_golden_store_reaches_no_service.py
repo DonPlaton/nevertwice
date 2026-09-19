@@ -16,8 +16,12 @@ is not a hypothetical: a full `tests/test_self_checks.py` run the same day faile
 `Embed failed: TimeoutError` - the service was busy, the note went unembedded, and the golden
 snapshot did not match.
 
-The fix is one door: the ollama branch posts through `_embed_http` like every other provider, so
-patching that one function covers them all. This suite holds the door shut.
+The fix is one EMBEDDING door: the ollama branch posts through `_embed_http` like every other
+provider, so patching that one function covers every embedder. It is not a claim about the
+engine - `ollama_alive` and `_json_api_call` still open sockets of their own, behind their own
+stubs. What covers the engine as a whole is the tripwire: `install()` refuses every `urlopen`
+for the length of the golden run, so a door nobody has thought of yet fails loudly instead of
+quietly borrowing the machine. This suite holds both shut.
 
     python tests/_test_golden_store_reaches_no_service.py
 """
@@ -124,7 +128,7 @@ def _engine_source(name: str) -> str:
 
 def test_there_is_one_http_door() -> None:
     """Structural, so the branch cannot come back without this suite noticing."""
-    print("\n- every provider posts through the same function -")
+    print("\n- every EMBEDDING provider posts through the same function -")
     src = _engine_source("embed_text")
     check("embed_text was found in the engine source", bool(src))
     check("embed_text builds no request of its own", "urlopen" not in src,
@@ -133,6 +137,22 @@ def test_there_is_one_http_door() -> None:
     check("and it does not construct a urllib Request", "urllib.request.Request" not in src)
     check("the ollama branch goes through the shared door", "_embed_http(" in src,
           "no call to _embed_http; which door does ollama use now?")
+
+    # The scope of the claim, measured rather than asserted: the engine opens sockets in three
+    # places, one of them the shared embedding door. The other two are their own doors with their
+    # own stubs, so "one door" must never be read as a statement about the engine.
+    owners = sorted({fn.name for fn in ast.walk(ast.parse(ENGINE_SRC))
+                     if isinstance(fn, ast.FunctionDef)
+                     and "urlopen" in (ast.get_source_segment(ENGINE_SRC, fn) or "")})
+    check("the engine's socket sites are exactly the three known doors",
+          owners == ["_embed_http", "_json_api_call", "ollama_alive"], ", ".join(owners))
+    # Behavioural, and it only works because the tripwire is already armed: if `ollama_alive`
+    # were still the engine's own, it would reach the tags endpoint and the tripwire would raise.
+    try:
+        alive, why = m.ollama_alive(1) is True, ""
+    except AssertionError as exc:
+        alive, why = False, str(exc)
+    check("and the health-check door answers without a socket under the harness", alive, why)
 
     door = _engine_source("_embed_http")
     check("the shared door ascii-escapes the error text", "!a}" in door,

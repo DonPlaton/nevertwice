@@ -23,7 +23,6 @@ the guard is what turns the false green red.
 from __future__ import annotations
 
 import ast
-import re
 import subprocess
 import sys
 import tempfile
@@ -39,8 +38,6 @@ GUARD = "test_zz_every_check_passed"
 SUITES = tuple(sorted((ROOT / "tests").glob("_test_*.py"))) + tuple(
     sorted((ROOT / "tests" / "research").glob("_test_*.py"))
 )
-#: How a counting suite spells its verdict: the expression its exit code is built from.
-VERDICT = re.compile(r"(?:SystemExit|sys\.exit|return)\(?\s*1 if (\w+) else 0")
 
 PASSED = 0
 FAILED = 0
@@ -54,34 +51,139 @@ def check(name: str, condition: bool, detail: str = "") -> None:
     FAILED += int(not condition)
 
 
+def _is_main_guard(node: ast.AST) -> bool:
+    """`if __name__ == "__main__":` - the block pytest never runs."""
+    if not isinstance(node, ast.If) or not isinstance(node.test, ast.Compare):
+        return False
+    left = node.test.left
+    return isinstance(left, ast.Name) and left.id == "__name__"
+
+
+def _names(node: ast.AST | None) -> set[str]:
+    return {n.id for n in ast.walk(node) if isinstance(n, ast.Name)} if node else set()
+
+
+def _depends_on(value: ast.AST | None, tests: tuple[ast.AST, ...]) -> set[str]:
+    """The names an exit rests on: those in its value, plus those in every `if` guarding it."""
+    out = _names(value)
+    for t in tests:
+        out |= _names(t)
+    return out
+
+
+def _assigned_outside_main(body: list[ast.stmt]) -> set[str]:
+    """Module-level names that exist when pytest merely imports the file.
+
+    A counter assigned inside `if __name__ == "__main__":` does not exist under pytest, so a
+    suite whose verdict rests on one cannot be guarded by asserting it - and does not need to
+    be: such a suite reports failures by raising, which pytest already catches.
+    """
+    out: set[str] = set()
+    for stmt in body:
+        if _is_main_guard(stmt):
+            continue
+        for node in ast.walk(stmt):
+            if isinstance(node, ast.Assign):
+                out |= {t.id for t in node.targets if isinstance(t, ast.Name)}
+            elif isinstance(node, (ast.AnnAssign, ast.AugAssign)):
+                if isinstance(node.target, ast.Name):
+                    out.add(node.target.id)
+    return out
+
+
+def _nonzero_exits(tree: ast.Module) -> list[tuple[ast.AST | None, set[str]]]:
+    """Every way the module can leave with a nonzero code, and what that depends on.
+
+    Classification is by the EXIT PATH, not by how the verdict is spelled. The first version of
+    this suite matched `(sys.exit|return)(1 if X else 0)` and demanded `global X`, which declared
+    `tests/_test_memory_hook.py` - module-level `failures: list[str]`, `if failures: sys.exit(1)`
+    - not a counting suite at all. It was: 13 collectible functions, `13 passed` under bare
+    pytest on a file whose script exits 1. Matching a second spelling would have been the sixth
+    round of chasing shapes (T1 row 162 records the fifth); the basis has to be the exit itself.
+
+    So: find each `sys.exit` / `SystemExit` / `return`-from-the-function-that-feeds-them, take
+    the names its value depends on, and add the names in every `if` that guards it - because
+    `if failures: sys.exit(1)` puts the verdict in the condition, not in the code.
+    """
+    exits: list[tuple[ast.AST | None, set[str]]] = []
+    funcs = {n.name: n for n in tree.body if isinstance(n, ast.FunctionDef)}
+    expanded: set[str] = set()
+
+    def walk(node: ast.AST, tests: tuple[ast.AST, ...]) -> None:
+        for child in ast.iter_child_nodes(node):
+            deeper = tests + (child.test,) if isinstance(child, ast.If) else tests
+            value: ast.AST | None = None
+            found = False
+            if isinstance(child, ast.Raise):
+                exc = child.exc
+                if isinstance(exc, ast.Call) and _names(exc.func) & {"SystemExit"}:
+                    value, found = (exc.args[0] if exc.args else None), True
+                elif isinstance(exc, ast.Name) and exc.id == "SystemExit":
+                    found = True
+            elif isinstance(child, ast.Expr) and isinstance(child.value, ast.Call):
+                call = child.value
+                target = call.func
+                name = target.attr if isinstance(target, ast.Attribute) else getattr(
+                    target, "id", "")
+                if name == "exit":
+                    value, found = (call.args[0] if call.args else None), True
+            if found:
+                # `sys.exit(main())` - the verdict lives in main's returns, so follow it once.
+                if isinstance(value, ast.Call) and getattr(value.func, "id", "") in funcs:
+                    callee = value.func.id
+                    if callee not in expanded:
+                        expanded.add(callee)
+                        walk_returns(funcs[callee])
+                elif value is None or not (isinstance(value, ast.Constant)
+                                           and value.value in (0, None)):
+                    exits.append((value, _depends_on(value, deeper)))
+            walk(child, deeper)
+
+    def walk_returns(fn: ast.FunctionDef) -> None:
+        def inner(node: ast.AST, tests: tuple[ast.AST, ...]) -> None:
+            for child in ast.iter_child_nodes(node):
+                deeper = tests + (child.test,) if isinstance(child, ast.If) else tests
+                if isinstance(child, ast.Return):
+                    v = child.value
+                    if v is None or not (isinstance(v, ast.Constant) and v.value in (0, None)):
+                        exits.append((v, _depends_on(v, deeper)))
+                inner(child, deeper)
+        inner(fn, ())
+
+    walk(tree, ())
+    return exits
+
+
 def classify(path: Path) -> dict:
     """What kind of suite is this, and can bare pytest see its failures?
 
-    A suite is *counting* when it records failures in a module-level counter that its exit code
-    reads, rather than by raising. Only a counting suite with collectible `test_*` functions can
-    go falsely green: a suite whose checks are plain `assert`s fails pytest on its own, and a
-    suite with no module-level `test_*` function is not collected at all - naming it on the
-    command line runs its module body, and its `sys.exit` becomes a collection error, which is
-    noisy but never a passing report.
+    A suite is *counting* when its nonzero exit depends on module-level state rather than on an
+    exception. Only a counting suite with collectible `test_*` functions can go falsely green: a
+    suite whose checks are plain `assert`s fails pytest on its own, and a suite with no
+    module-level `test_*` function is not collected at all - naming it on the command line runs
+    its module body, and its `sys.exit` becomes a collection error, which is noisy but never a
+    passing report.
     """
     src = path.read_text(encoding="utf-8")
     tree = ast.parse(src)
     tests = [n.name for n in tree.body
              if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))
              and n.name.startswith("test_")]
-    declared: set[str] = set()
-    for node in ast.walk(tree):
-        if isinstance(node, ast.Global):
-            declared.update(node.names)
-    hit = VERDICT.search(src)
-    counter = hit.group(1) if hit else None
+    live = _assigned_outside_main(tree.body)
+    verdict: set[str] = set()
+    for _value, names in _nonzero_exits(tree):
+        verdict |= names & live
+    guard_asserts: set[str] = set()
     guard_src = ""
     for node in tree.body:
         if isinstance(node, ast.FunctionDef) and node.name == GUARD:
             guard_src = ast.get_source_segment(src, node) or ""
-    return {"path": path, "tests": tests, "declared": declared, "counter": counter,
-            "counting": bool(tests and declared and counter and counter in declared),
-            "guard_src": guard_src}
+            for sub in ast.walk(node):
+                if isinstance(sub, ast.Assert):
+                    guard_asserts |= _names(sub.test)
+    return {"path": path, "tests": tests, "verdict": verdict,
+            "counting": bool(tests and verdict),
+            "guard_asserts": guard_asserts, "guard_src": guard_src}
 
 
 REPORT = [classify(p) for p in SUITES]
@@ -102,10 +204,11 @@ def test_every_counting_suite_guards_its_counter() -> None:
     check(f"every counting suite defines {GUARD}()", not missing,
           f"{len(missing)} without it: " + ", ".join(sorted(missing)[:6]))
 
-    wrong = [r["path"].name for r in COUNTING
-             if GUARD in r["tests"] and r["counter"] not in r["guard_src"]]
-    check("and the guard asserts the same counter the exit code reads", not wrong,
-          ", ".join(sorted(wrong)[:6]))
+    wrong = [f"{r['path'].name} (exit rests on {', '.join(sorted(r['verdict']))})"
+             for r in COUNTING
+             if GUARD in r["tests"] and not r["verdict"] <= r["guard_asserts"]]
+    check("and the guard ASSERTS on every name the nonzero exit rests on", not wrong,
+          "; ".join(sorted(wrong)[:6]))
 
     late = [r["path"].name for r in COUNTING
             if GUARD in r["tests"] and r["tests"][-1] != GUARD]
@@ -116,11 +219,52 @@ def test_every_counting_suite_guards_its_counter() -> None:
 def test_a_suite_that_does_not_count_needs_no_guard() -> None:
     """The rule is scoped, not universal - a suite whose checks raise is already honest."""
     print("\n- the rule does not fire on suites that raise -")
-    raising = [r for r in REPORT if r["tests"] and not r["declared"]]
-    check("some suites check by raising", bool(raising), "none found")
+    raising = [r for r in REPORT if r["tests"] and not r["verdict"]]
+    check("some collectible suites report failures by raising", bool(raising), "none found")
     check("none of them was asked for a guard",
           not any(GUARD in r["tests"] for r in raising),
           "a raising suite carries a counter guard it does not need")
+    print(f"       ({len(COUNTING)} counting, {len(raising)} raising, "
+          f"{len(REPORT) - len(COUNTING) - len(raising)} not collected by bare pytest)")
+
+
+def test_the_classifier_reads_the_exit_path_not_the_spelling() -> None:
+    """The regression the owner caught: two spellings of the same verdict, one rule.
+
+    `1 if FAILED else 0` and `if failures: sys.exit(1)` are the same statement about the same
+    kind of state. A classifier keyed on the first misses the second, which is how
+    `tests/_test_memory_hook.py` - the suite guarding all five hook events - sat outside the
+    rule while reporting `13 passed` on a file whose script exits 1.
+    """
+    print("\n- one rule, whatever the verdict is spelled like -")
+    spellings = {
+        "ternary in sys.exit":
+            "import sys\nFAILED = 1\ndef test_x():\n    pass\nsys.exit(1 if FAILED else 0)\n",
+        "ternary returned from main":
+            "import sys\nFAILED = 1\ndef test_x():\n    pass\ndef main():\n    return 1 if FAILED"
+            " else 0\nraise SystemExit(main())\n",
+        "a list tested by an if":
+            "import sys\nfailures = []\ndef test_x():\n    pass\nif failures:\n    sys.exit(1)\n",
+        "a list tested inside main":
+            "import sys\nfailures = []\ndef test_x():\n    pass\ndef main():\n    if failures:\n"
+            "        return 1\n    return 0\nsys.exit(main())\n",
+    }
+    for label, body in spellings.items():
+        tree = ast.parse(body)
+        live = _assigned_outside_main(tree.body)
+        verdict = set().union(*(n & live for _v, n in _nonzero_exits(tree))) \
+            if _nonzero_exits(tree) else set()
+        check(f"{label}: the verdict name is found", bool(verdict), str(verdict))
+
+    # The other side of the rule: a counter that only exists in the script block is NOT a
+    # counting suite, because pytest never runs that block and such a suite raises instead.
+    only_in_main = ("import sys\ndef test_x():\n    assert True\n"
+                    "if __name__ == '__main__':\n    failed = 0\n    sys.exit(1 if failed"
+                    " else 0)\n")
+    tree = ast.parse(only_in_main)
+    live = _assigned_outside_main(tree.body)
+    check("a counter that lives only in the __main__ block is not counted",
+          not any(n & live for _v, n in _nonzero_exits(tree)), str(live))
 
 
 # ------------------------------------------------------------------ behaviour
@@ -216,6 +360,7 @@ def main() -> int:
     for fn in (test_the_repository_still_has_counting_suites,
                test_every_counting_suite_guards_its_counter,
                test_a_suite_that_does_not_count_needs_no_guard,
+               test_the_classifier_reads_the_exit_path_not_the_spelling,
                test_the_defect_is_real_and_the_guard_closes_it,
                test_a_green_suite_stays_green_under_both_channels):
         fn()

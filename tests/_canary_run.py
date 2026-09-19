@@ -10,7 +10,12 @@ statement of the named function, runs the same corpus against the copy, and exit
 the proof correctly fails. Exit 0 here means the injection went unnoticed - the proof is empty for
 that function, and the caller reports it as a failure.
 
-    python tests/_canary_run.py as_of
+A second mode moves a number instead of raising: `--nudge=E` wraps the named function so one of
+the scores it returns shifts by E. That is the ranking mutation - nothing crashes, one order
+changes - and it is the one a refactor of the ranker would produce.
+
+    python tests/_canary_run.py as_of                             # inject a raise
+    python tests/_canary_run.py _calibrated_fusion --nudge=0.05    # move one score
 """
 from __future__ import annotations
 
@@ -45,11 +50,48 @@ def injected(src: str, func: str) -> str:
     return "".join(lines)
 
 
+def nudged(src: str, func: str, epsilon: float) -> str:
+    """Return `src` with `func` wrapped so ONE of the scores it returns moves by `epsilon`.
+
+    A `raise` proves the proof entered a function. It does not prove the proof can see a change
+    in what that function *returns* - and ranking is exactly that: nothing crashes, one number
+    moves, an order changes. The distinction became load-bearing when the embedder stub started
+    carrying signal: the fixture got less generous (two queries fell from two notes to one), so
+    its discriminating power had to be measured rather than assumed.
+
+    The wrapper adds `epsilon` to the alphabetically first key of the returned mapping - one
+    score, deterministically chosen, no crash.
+    """
+    if f"def {func}(" not in src:
+        raise SystemExit(f"{func}: not a function of the engine")
+    body = [
+        "",
+        "",
+        f"_canary_original_{func} = {func}",
+        "",
+        "",
+        f"def {func}(*a, **k):",
+        f"    out = _canary_original_{func}(*a, **k)",
+        "    if isinstance(out, dict) and out:",
+        "        first = sorted(out)[0]",
+        f"        out[first] = out[first] + {epsilon!r}",
+        "    return out",
+        "",
+    ]
+    return src + "\n".join(body)
+
+
 def main() -> int:
     if len(sys.argv) < 2:
         print(__doc__)
         return 2
-    func = sys.argv[1]
+    positional = [a for a in sys.argv[1:] if not a.startswith("--")]
+    if not positional:
+        print(__doc__)
+        return 2
+    func = positional[0]
+    flag = next((a for a in sys.argv[1:] if a.startswith("--nudge")), None)
+    epsilon = float(flag.split("=", 1)[1]) if flag and "=" in flag else 0.05
     work = Path(tempfile.mkdtemp(prefix=f"canary_{func}_"))
     pkg = work / "nevertwice"
     pkg.mkdir(parents=True)
@@ -67,8 +109,9 @@ def main() -> int:
         shutil.copy2(HERE / "_golden_store_fixture.json", tests / "_golden_store_fixture.json")
 
     engine = pkg / "_engine.py"
-    engine.write_text(injected(engine.read_text(encoding="utf-8"), func),
-                      encoding="utf-8", newline="\n")
+    source = engine.read_text(encoding="utf-8")
+    mutated = nudged(source, func, epsilon) if flag else injected(source, func)
+    engine.write_text(mutated, encoding="utf-8", newline="\n")
 
     #: `--no-canary` so the copy checks only stability and the fixture; recursing would fork
     #: one process per function per level.
@@ -77,7 +120,8 @@ def main() -> int:
                        capture_output=True, text=True, cwd=work, env=env, timeout=600)
     noticed = r.returncode != 0
     if not noticed:
-        sys.stdout.write(f"{func}: the proof did NOT notice the injection\n")
+        what = f"a nudge of {epsilon}" if flag else "the injection"
+        sys.stdout.write(f"{func}: the proof did NOT notice {what}\n")
         sys.stdout.write(r.stdout[-1500:])
     return 1 if noticed else 0
 

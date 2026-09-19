@@ -157,14 +157,34 @@ with tempfile.TemporaryDirectory() as tmp:
     man.write_text(json.dumps({"claims": seeded, "datasets": {"d": {"path": "x"}}}), encoding="utf-8")
     art_dup = Path(tmp) / "art.json"
     art_dup.write_text(json.dumps(ART), encoding="utf-8")
-    rc = rs.main(["--family", "f", "--artifact", str(art_dup), "--dataset", "d",
-                  "--command", "python research/supersession_bench.py", "--manifest", str(man)])
-    check("a real run with nothing new to register exits non-zero, not 0 (the bug this fixes)",
-          rc == 1, rc)
-    check("...but --dry-run with nothing new still exits 0 (it never claimed to register anything)",
-          rs.main(["--family", "f", "--artifact", str(art_dup), "--dataset", "d",
-                  "--command", "python research/supersession_bench.py", "--manifest", str(man),
-                  "--dry-run"]) == 0)
+
+    # The registrar refuses outright when any file in the claim's closure is uncommitted, and
+    # that closure reaches `nevertwice/_engine.py`. So these two checks - which are about the
+    # exit code of a run that finds nothing new - were unreachable the moment anyone edited the
+    # engine: they returned 2 (refused) instead of 1, and this suite went red on every working
+    # tree in which work was being done. Measured twice on 2026-09-19. The guard is stubbed for
+    # them, and exercised on its own immediately below, so coverage goes up rather than down.
+    real_dirty = rs._dirty_files
+    rs._dirty_files = lambda: set()
+    try:
+        rc = rs.main(["--family", "f", "--artifact", str(art_dup), "--dataset", "d",
+                      "--command", "python research/supersession_bench.py", "--manifest", str(man)])
+        check("a real run with nothing new to register exits non-zero, not 0 (the bug this fixes)",
+              rc == 1, rc)
+        check("...but --dry-run with nothing new still exits 0 (it never claimed to register anything)",
+              rs.main(["--family", "f", "--artifact", str(art_dup), "--dataset", "d",
+                      "--command", "python research/supersession_bench.py", "--manifest", str(man),
+                      "--dry-run"]) == 0)
+    finally:
+        rs._dirty_files = real_dirty
+
+    rs._dirty_files = lambda: {"nevertwice/_engine.py"}
+    try:
+        rc = rs.main(["--family", "f", "--artifact", str(art_dup), "--dataset", "d",
+                      "--command", "python research/supersession_bench.py", "--manifest", str(man)])
+        check("an uncommitted file in the closure is refused with 2, not registered", rc == 2, rc)
+    finally:
+        rs._dirty_files = real_dirty
 
 print(f"\n{'ALL OK' if not FAILS else f'{FAILS} FAILED'}")
 sys.exit(1 if FAILS else 0)

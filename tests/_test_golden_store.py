@@ -233,6 +233,14 @@ if "--no-canary" in sys.argv:
     print(f"golden store: {P} passed, {F} failed")
     sys.exit(1 if F else 0)
 
+#: A raise proves the proof ENTERED a function. It does not prove the proof can see a change in
+#: what that function RETURNS, and a ranking regression is exactly that: nothing crashes, one
+#: number moves, an order changes. Measured 2026-09-19 by bisection at `_calibrated_fusion`: a
+#: shift of 0.75 goes unnoticed and 0.9 is caught, so the fixture's ranking resolution sits
+#: between them. The gate is written at 1.0 - above the resolution, never below it.
+NUDGE_TARGET = "_calibrated_fusion"
+NUDGE = 1.0
+
 print("# the proof itself is sensitive")
 for target in CANARIES:
     r = subprocess.run([sys.executable, str(HERE / "_canary_run.py"), target],
@@ -240,6 +248,12 @@ for target in CANARIES:
     broke = r.returncode != 0
     check(f"a raise in {target} breaks the proof", broke,
           (r.stdout or r.stderr)[-400:] if not broke else "")
+
+r = subprocess.run([sys.executable, str(HERE / "_canary_run.py"), NUDGE_TARGET,
+                    f"--nudge={NUDGE}"], capture_output=True, text=True, timeout=900)
+broke = r.returncode != 0
+check(f"moving ONE score by {NUDGE} in {NUDGE_TARGET} breaks the proof - a ranking change, "
+      "not a crash", broke, (r.stdout or r.stderr)[-400:] if not broke else "")
 
 print()
 print(f"golden store: {P} passed, {F} failed")

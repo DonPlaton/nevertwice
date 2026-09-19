@@ -2896,7 +2896,9 @@ def embed_text(text: str, kind: str | None = None, timeout: int | None = None,
     #: `urllib` request here, which meant a harness that stubs `_embed_http` - the golden
     #: store - did not cover the configured provider, and its "deterministic" proof was
     #: ranked by the live model on 127.0.0.1 (measured 2026-09-19: 1024 real dimensions
-    #: where the stub returns 48). One door, one place to stub, one place to log.
+    #: where the stub returns 48). One EMBEDDING door - the engine still opens sockets of
+    #: its own for `ollama_alive` and `_json_api_call`, which are separate doors with
+    #: separate stubs; this comment is not a claim about the engine as a whole.
     data = _embed_http(OLLAMA_EMBED_URL,
                        {"model": EMBED_MODEL, "input": _embed_prefix(kind) + raw},
                        {}, timeout)

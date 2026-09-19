@@ -126,7 +126,9 @@ def install(m, table: dict[str, dict], *, judge=None) -> Extractor:
     m.call_cloud = extractor
     m.llm_available = lambda: True
     m.ollama_alive = lambda timeout_s=4: True
-    #: the one embedder door: `embed_text` still runs - prefixes, cache keys, signature, the lot
+    #: the one EMBEDDING door: `embed_text` still runs - prefixes, cache keys, signature, the
+    #: lot. The model door above and `ollama_alive` are separate doors with separate stubs;
+    #: `_refuse_every_socket` below is what covers the engine as a whole.
     m._embed_http = lambda url, payload, headers, timeout=None: {
         "embeddings": [_vec(payload.get("input") or payload.get("prompt") or "")]}
     m._embed_cloud = lambda text, kind=None, timeout=None: _vec(text)
