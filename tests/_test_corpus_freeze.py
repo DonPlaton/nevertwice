@@ -289,6 +289,16 @@ def test_the_allowlist_cannot_be_emptied_by_accident() -> None:
           str([n for n in C.HELDOUT_READERS if not (LAB / n).exists()]))
 
 
+def test_zz_every_check_passed() -> None:
+    """Bare pytest must reach the same verdict as this suite's exit code.
+
+    Without this, `python -m pytest <this file>` collects the checks above, runs them,
+    and reports them passed while `check()` printed FAIL and the script would exit 1.
+    Enforced for every counting suite by `tests/_test_the_harness_agrees_with_itself.py`.
+    """
+    assert FAILED == 0, f"{FAILED} check(s) failed - see the FAIL lines above"
+
+
 def main() -> int:
     for fn in (test_the_development_set_is_eight_named_repositories,
                test_the_freeze_agrees_with_the_answer_key_it_describes,

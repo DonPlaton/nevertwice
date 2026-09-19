@@ -285,6 +285,16 @@ def test_no_budget_argument_changes_nothing() -> None:
           str([sorted(h) for h in hits]))
 
 
+def test_zz_every_check_passed() -> None:
+    """Bare pytest must reach the same verdict as this suite's exit code.
+
+    Without this, `python -m pytest <this file>` collects the checks above, runs them,
+    and reports them passed while `check()` printed FAIL and the script would exit 1.
+    Enforced for every counting suite by `tests/_test_the_harness_agrees_with_itself.py`.
+    """
+    assert FAILED == 0, f"{FAILED} check(s) failed - see the FAIL lines above"
+
+
 def main() -> int:
     for fn in (test_an_affordable_item_can_still_be_refused,
                test_two_items_of_the_same_size_get_different_answers,

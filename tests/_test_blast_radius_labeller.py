@@ -166,6 +166,16 @@ def test_the_census_actually_used_these_rules() -> None:
           all(s["why"] for s in sites if s["source"] == "manual"))
 
 
+def test_zz_every_check_passed() -> None:
+    """Bare pytest must reach the same verdict as this suite's exit code.
+
+    Without this, `python -m pytest <this file>` collects the checks above, runs them,
+    and reports them passed while `check()` printed FAIL and the script would exit 1.
+    Enforced for every counting suite by `tests/_test_the_harness_agrees_with_itself.py`.
+    """
+    assert FAILED == 0, f"{FAILED} check(s) failed - see the FAIL lines above"
+
+
 def main() -> int:
     for fn in (test_arity_reports_a_genuine_break,
                test_resolvability_reports_a_genuine_break,

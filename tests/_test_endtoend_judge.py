@@ -109,6 +109,16 @@ def test_an_unparseable_answer_is_unusable() -> None:
     check("a syntax error is unusable", ok is None, str((ok, why)))
 
 
+def test_zz_every_check_passed() -> None:
+    """Bare pytest must reach the same verdict as this suite's exit code.
+
+    Without this, `python -m pytest <this file>` collects the checks above, runs them,
+    and reports them passed while `check()` printed FAIL and the script would exit 1.
+    Enforced for every counting suite by `tests/_test_the_harness_agrees_with_itself.py`.
+    """
+    assert FAILED == 0, f"{FAILED} check(s) failed - see the FAIL lines above"
+
+
 def main() -> int:
     for fn in (test_a_file_with_no_definitions_is_still_gradeable,
                test_deleting_the_call_sites_is_not_a_fix,

@@ -217,6 +217,16 @@ def test_the_citation_agrees_with_the_package() -> None:
     check("the contract reports on CITATION.cff", "CITATION.cff" in proc.stdout)
 
 
+def test_zz_every_check_passed() -> None:
+    """Bare pytest must reach the same verdict as this suite's exit code.
+
+    Without this, `python -m pytest <this file>` collects the checks above, runs them,
+    and reports them passed while `check()` printed FAIL and the script would exit 1.
+    Enforced for every counting suite by `tests/_test_the_harness_agrees_with_itself.py`.
+    """
+    assert FAILED == 0, f"{FAILED} check(s) failed - see the FAIL lines above"
+
+
 if __name__ == "__main__":
     for _name, _fn in sorted(globals().items()):
         if _name.startswith("test_") and callable(_fn):

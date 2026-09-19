@@ -188,6 +188,16 @@ def test_the_rule_bites() -> None:
               [(t, ln) for t, ln in found] == [(drifted, 1)], str(found))
 
 
+def test_zz_every_check_passed() -> None:
+    """Bare pytest must reach the same verdict as this suite's exit code.
+
+    Without this, `python -m pytest <this file>` collects the checks above, runs them,
+    and reports them passed while `check()` printed FAIL and the script would exit 1.
+    Enforced for every counting suite by `tests/_test_the_harness_agrees_with_itself.py`.
+    """
+    assert FAILED == 0, f"{FAILED} check(s) failed - see the FAIL lines above"
+
+
 if __name__ == "__main__":
     test_no_stand_page_prints_a_decimal_the_register_lost()
     test_the_rule_bites()

@@ -233,6 +233,16 @@ def test_an_unknown_surface_is_an_error() -> None:
     check("apply() raises ValueError", isinstance(raised, ValueError), repr(raised))
 
 
+def test_zz_every_check_passed() -> None:
+    """Bare pytest must reach the same verdict as this suite's exit code.
+
+    Without this, `python -m pytest <this file>` collects the checks above, runs them,
+    and reports them passed while `check()` printed FAIL and the script would exit 1.
+    Enforced for every counting suite by `tests/_test_the_harness_agrees_with_itself.py`.
+    """
+    assert FAILED == 0, f"{FAILED} check(s) failed - see the FAIL lines above"
+
+
 def main() -> int:
     for fn in (test_everything_changes_nothing,
                test_a_private_symbol_is_dropped_by_convention,

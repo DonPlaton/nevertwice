@@ -238,6 +238,16 @@ def test_the_power_calculation_is_exact_not_approximate() -> None:
           PW.n_for_one_prop(0.9, 0.95) > 10 * PW.n_for_one_prop(0.5, 0.8))
 
 
+def test_zz_every_check_passed() -> None:
+    """Bare pytest must reach the same verdict as this suite's exit code.
+
+    Without this, `python -m pytest <this file>` collects the checks above, runs them,
+    and reports them passed while `check()` printed FAIL and the script would exit 1.
+    Enforced for every counting suite by `tests/_test_the_harness_agrees_with_itself.py`.
+    """
+    assert FAILED == 0, f"{FAILED} check(s) failed - see the FAIL lines above"
+
+
 def main() -> int:
     for fn in (test_the_key_reports_a_real_type_error,
                test_the_key_accepts_what_still_fits,

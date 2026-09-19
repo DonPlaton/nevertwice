@@ -70,7 +70,10 @@ def main() -> int:
     for key, d in rec["artifacts"].items():
         print(f"  {key:42} {d['diverging']:3} of {d['cases']}  ({d['rate']})")
     OUT.parent.mkdir(parents=True, exist_ok=True)
-    OUT.write_text(json.dumps(rec, indent=1) + chr(10), encoding="utf-8")
+    #: newline="\n" is not cosmetic: without it this command rewrites the artifact
+    #: with CRLF on Windows, so the documented reproduction step leaves a modified file in
+    #: `git status` while `git diff` is empty. `tools/produced_by.py` pays the same tax.
+    OUT.write_text(json.dumps(rec, indent=1) + chr(10), encoding="utf-8", newline="\n")
     print(f"artifact: {OUT}")
     return 0
 

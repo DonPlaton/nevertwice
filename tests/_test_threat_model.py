@@ -169,6 +169,16 @@ def test_the_document_is_reachable_and_governed() -> None:
     print(f"       (linked from: {', '.join(linked_from) or 'nowhere'})")
 
 
+def test_zz_every_check_passed() -> None:
+    """Bare pytest must reach the same verdict as this suite's exit code.
+
+    Without this, `python -m pytest <this file>` collects the checks above, runs them,
+    and reports them passed while `check()` printed FAIL and the script would exit 1.
+    Enforced for every counting suite by `tests/_test_the_harness_agrees_with_itself.py`.
+    """
+    assert FAILED == 0, f"{FAILED} check(s) failed - see the FAIL lines above"
+
+
 def main() -> int:
     for fn in (test_the_document_exists_and_has_boundaries,
                test_every_boundary_names_an_owner_that_exists,

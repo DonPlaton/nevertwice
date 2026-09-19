@@ -92,6 +92,16 @@ def test_broken_ledger_never_raises():
         check("recall_saving on empty ledger is 0", st.recall_saving("abc") == 0)
 
 
+def test_zz_every_check_passed() -> None:
+    """Bare pytest must reach the same verdict as this suite's exit code.
+
+    Without this, `python -m pytest <this file>` collects the checks above, runs them,
+    and reports them passed while `check()` printed FAIL and the script would exit 1.
+    Enforced for every counting suite by `tests/_test_the_harness_agrees_with_itself.py`.
+    """
+    assert F == 0, f"{F} check(s) failed - see the FAIL lines above"
+
+
 if __name__ == "__main__":
     print("=== stats self-checks ===")
     test_record_accumulates()

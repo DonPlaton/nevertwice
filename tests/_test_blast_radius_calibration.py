@@ -229,6 +229,16 @@ def test_facades_did_not_silence_everything() -> None:
           == summary["commits_with_a_dependency_finding"])
 
 
+def test_zz_every_check_passed() -> None:
+    """Bare pytest must reach the same verdict as this suite's exit code.
+
+    Without this, `python -m pytest <this file>` collects the checks above, runs them,
+    and reports them passed while `check()` printed FAIL and the script would exit 1.
+    Enforced for every counting suite by `tests/_test_the_harness_agrees_with_itself.py`.
+    """
+    assert FAILED == 0, f"{FAILED} check(s) failed - see the FAIL lines above"
+
+
 def main() -> int:
     for fn in (test_the_set_is_what_was_declared,
                test_t1_the_flag_rate_is_under_the_declared_ceiling,

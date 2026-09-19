@@ -93,6 +93,16 @@ def test_the_binder_still_decides_the_cases_it_could_before() -> None:
     check("an unknown one does not", not V._binds(sig, 2, ("zzz",)))
 
 
+def test_zz_every_check_passed() -> None:
+    """Bare pytest must reach the same verdict as this suite's exit code.
+
+    Without this, `python -m pytest <this file>` collects the checks above, runs them,
+    and reports them passed while `check()` printed FAIL and the script would exit 1.
+    Enforced for every counting suite by `tests/_test_the_harness_agrees_with_itself.py`.
+    """
+    assert FAILED == 0, f"{FAILED} check(s) failed - see the FAIL lines above"
+
+
 def main() -> int:
     for fn in (test_every_result_row_carries_a_verdict,
                test_the_source_sets_agrees_on_every_path,
