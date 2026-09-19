@@ -260,6 +260,12 @@ def test_bounded_repeat_redos_rejected():
     # (many adjacent quantified atoms - exponential) regardless of shape, INCLUDING the paren-less
     # a+a+...b and \w+\w+... shapes the static denylist kept missing, while correctly ACCEPTING
     # merely-linear cases like (a+)(a+)b (2 groups = 63 splits, fast) that a static count over-rejected
+    # Round 5 (part 4.1, 2026-09) changed the UNIT rather than the list. Backtracking cost is
+    # quadratic in the string a pattern runs against, and `check()` used to run each pattern
+    # against one 20,000-character blob: `(a+)(a+)b` measured past 120 SECONDS there, and even
+    # `\w+\s*=\s*\w+` - a perfectly good guard - took 2.5 s. `check()` now matches line by line
+    # with each line capped at `MAX_LINE_CHARS`, and the probe builds its inputs at that same
+    # size, so both lists below mean what they always said they meant.
     for pat in (r"(a{1,2}){38}b", r"(a{1,2}){60}b", r"(a+){20}", r"(.*a){20}", r"(a?)+$",
                 r"(a+)(a+)(a+)(a+)(a+)(a+)(a+)(a+)(a+)(a+)b",
                 r"a+a+a+a+a+a+a+a+a+a+b", r"\w+\w+\w+\w+\w+\w+\w+\w+!"):

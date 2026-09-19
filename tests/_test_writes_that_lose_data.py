@@ -114,6 +114,39 @@ check("every finalize stage runs under its own guard", seg.count("except Excepti
       f"{seg.count('except Exception')} guard(s) in finalize")
 check("and the git snapshot is one of the guarded stages", "git snapshot failed" in seg)
 
+print("# a transcript rewritten in place at the same byte count is mined again")
+import time  # noqa: E402
+
+import ingest  # noqa: E402
+
+make_sandbox(m, offline=True)
+mined = []
+
+
+def _fake_process(sid, cwd, path, trigger, db, **kw):
+    mined.append(sid)
+    db[sid] = {"ok": True}
+    return True
+
+
+m.process_session = _fake_process
+docs = m.VAULT / "docs"
+docs.mkdir(parents=True, exist_ok=True)
+doc = docs / "rollout.txt"
+db: dict = {}
+doc.write_text("A" * 400, encoding="utf-8")
+ingest.ingest_files([doc], "demo", "agent", db, settle_s=0)
+first = len(mined)
+ingest.ingest_files([doc], "demo", "agent", db, settle_s=0)
+check("an unchanged file is still skipped without a read", len(mined) == first,
+      f"{len(mined) - first} extra mine(s)")
+time.sleep(0.02)
+doc.write_text("B" * 400, encoding="utf-8")       # same size, different bytes
+ingest.ingest_files([doc], "demo", "agent", db, settle_s=0)
+check("a same-size rewrite reaches the prefix-hash proof and is mined", len(mined) == first + 1,
+      "the size-only fast-skip continued before the proof could run, so the new content was "
+      "never mined again")
+
 print()
 print(f"writes that lose data: {P} passed, {F} failed")
 sys.exit(1 if F else 0)

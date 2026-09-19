@@ -55,6 +55,8 @@ SEEN_SESSIONS_CAP = m.env_int("NEVERTWICE_GUARD_SEEN_CAP", 50)  # bounded: a led
 M_RETIRE = m.env_int("NEVERTWICE_GUARD_RETIRE", 3)     # false positives → demote/retire
 MAX_PATTERN = 200            # ReDoS guard: cap LLM-authored pattern length
 MAX_CHECK_CHARS = 20000      # cap the text we scan, so a huge diff can't stall the hot path
+MAX_LINE_CHARS = 200         # and cap each LINE: backtracking is quadratic in the string a
+                             # pattern runs against, so the line is the real unit of cost
 STATUSES = ("advisory", "blocking", "retired")
 
 
@@ -113,14 +115,44 @@ _NESTED_QUANT = re.compile(
 )
 
 
-_REDOS_PROBE = (
-    "import re,sys\n"
-    "p=sys.stdin.buffer.read().decode('utf-8','replace')\n"
-    "rx=re.compile(p)\n"
-    # adversarial inputs that force maximal backtracking (long runs + a final mismatch)\n"
-    "for s in ('a'*64+'!','ab'*48+'!','0'*64+'!',' '*64+'x','x'*96,'a'*40+' '*40,'a '*40+'!'):\n"
-    "    rx.search(s)\n"
-)
+#: The probe builds its inputs at the size `check()` actually scans, not at 96 characters.
+#: Exponential backtracking shows up at any length; POLYNOMIAL backtracking does not - it is
+#: invisible at 96 and fatal at twenty thousand. `open\(.*\).*encoding`, an ordinary shape for a
+#: model-written guard, passed at 96 characters and then took 16.46 seconds inside `check()` on one
+#: full-length line, with `emit_pretooluse_guard` looping every guard in the ledger before every
+#: Edit, Write, MultiEdit and Bash. Four rounds of this file chased new SHAPES; the mismatch was
+#: this number.
+_REDOS_PROBE = r"""
+import re, sys
+p = sys.stdin.buffer.read().decode("utf-8", "replace")
+rx = re.compile(p)
+N = {cap}
+SHORT = {line}
+# Two families of input, at two sizes, because they fail differently.
+#
+# A uniform run of one character is the classic exponential trigger, and it is NOT what the hot
+# path scans - real text breaks every eighty characters or so. Run at the full cap it condemns
+# ordinary patterns: `\w+\s*=\s*\w+` takes 2.5 seconds on twenty thousand "a"s and is a
+# perfectly good guard on code. So the uniform runs stay short, where an exponential shape still
+# blows up and a linear one costs nothing.
+#
+# The realistic killer is made OF the pattern: many repetitions of a near-match whose last piece
+# is missing, so every repetition is a fresh starting position that scans on and fails.
+# `open\(.*\).*encoding` is instant on one long line and takes forty seconds on
+# "open(x)" * 2857. A literal seed is recovered from the pattern - regex constructs dropped,
+# ESCAPED characters kept, because the escaped parens are what make the near-match - and repeated
+# to the full cap along with two truncations of it. The probe still never needs to know which
+# construct is slow.
+seed = re.sub(r"\\(.)|[(){}|^$?*+\[\]]", lambda mo: mo.group(1) or "", p)
+seed = (seed.replace(".", "x").strip() or "ax")[:64]
+cases = ["a" * SHORT + "!", "ab" * (SHORT // 2) + "!", "0" * SHORT + "!", " " * SHORT + "x",
+         "x" * SHORT, "a" * (SHORT // 2) + " " * (SHORT // 2), "a " * (SHORT // 2) + "!"]
+for h in (seed, seed[: max(1, len(seed) // 2)], seed[: max(1, 2 * len(seed) // 3)]):
+    cases.append(h * (SHORT // len(h)))
+    cases.append((h + " ") * (SHORT // (len(h) + 1)))
+for s in cases:
+    rx.search(s[:SHORT])
+""".replace("{cap}", str(MAX_CHECK_CHARS)).replace("{line}", str(MAX_LINE_CHARS))
 
 
 #: What the MATCH is allowed to take, once the child interpreter is actually running. This is
@@ -189,6 +221,32 @@ def _redos_safe(pat: str) -> bool:
         return True                              # a spawn hiccup must not block guard creation
 
 
+#: The smallest possible texts. A pattern that fires on one of these carries no information: it
+#: says nothing about what it matched. A guard is allowed to fire often - `\w+\s*=\s*\w+`
+#: matches every assignment and that is a real guard - so the check is deliberately narrow:
+#: match-anything, not match-frequently.
+_NEUTRAL_CONTROLS = (" ", "\n", "x", "\t")
+
+
+def _too_broad(pat: str) -> bool:
+    """True when the pattern fires on text that carries no mistake at all.
+
+    `safe_pattern` checked length, ReDoS shape and compilability, and nothing about what the
+    pattern SAYS: a match-anything dot-star, a bare dot, a whitespace class and an
+    empty group all passed. `propose_from_mistake` accepts whatever
+    the model returns, so one generation emitting `.*` instead of the documented empty-pattern
+    escape hatch mints a project-scoped guard that fires on every tool call, spends a context line
+    each time, and promotes itself to `blocking` after three distinct sessions - which under
+    `NEVERTWICE_GUARD_ENFORCE=1` denies every edit in the project."""
+    try:
+        rx = re.compile(pat)
+    except re.error:
+        return True
+    if rx.search(""):                    # matches the empty string, so it matches anything
+        return True
+    return any(rx.search(ctrl) for ctrl in _NEUTRAL_CONTROLS)
+
+
 def safe_pattern(pat: str) -> bool:
     if not pat or len(pat) > MAX_PATTERN:
         return False
@@ -197,6 +255,9 @@ def safe_pattern(pat: str) -> bool:
     try:
         re.compile(pat)
     except re.error:
+        return False
+    if _too_broad(pat):
+        m.log(f"guard pattern rejected: it fires on ordinary text: {pat[:60]!r}")
         return False
     return _redos_safe(pat)              # authoritative, shape-agnostic: reject any real backtracker
 
@@ -276,6 +337,15 @@ def check(action_text: str, *, project=None, path=None, tool=None,
     if not action_text:
         return []
     text = action_text[:MAX_CHECK_CHARS]
+    # Matched line by line, each line capped. Backtracking cost is quadratic in the length of the
+    # string a pattern is run against, not in the total, so scanning one 20,000-character blob let
+    # an ordinary pattern cost seconds: `open\(.*\).*encoding` measured 16 s on a long line, and
+    # even `\w+\s*=\s*\w+` - a perfectly good guard - takes 2.5 s on twenty thousand word
+    # characters. Per line, the same patterns cost a millisecond or two, and the worst case is
+    # bounded by MAX_LINE_CHARS x MAX_CHECK_CHARS instead of MAX_CHECK_CHARS squared. A guard
+    # pattern describes a construct, which lives on a line; a pattern that needs to span lines
+    # would have to say so, and none of the generated ones do.
+    lines = [ln[:MAX_LINE_CHARS] for ln in text.splitlines()] or [""]
     if project:
         project = m.slug_project(project)      # guards are stored under the slugged project name;
                                                # slug the arg so a raw name ("svc-000") still matches
@@ -288,7 +358,7 @@ def check(action_text: str, *, project=None, path=None, tool=None,
         if not _scope_matches(g, project, path, tool):
             continue
         try:
-            if re.search(g["pattern"], text):
+            if any(re.search(g["pattern"], ln) for ln in lines):
                 hits.append({"id": g["id"], "status": g["status"],
                              "message": g["message"], "scope": g["scope"]})
         except re.error:

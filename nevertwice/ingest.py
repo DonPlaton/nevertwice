@@ -229,8 +229,12 @@ def ingest_files(files, project, agent, db, *, trigger="ingest-sweep",
         file may have grown during extraction and a late stat would make the size
         fast-skip below hide that growth (review 2026-08)."""
         nonlocal wm_dirty
+        try:
+            mtime = round(path.stat().st_mtime, 3)
+        except OSError:
+            mtime = None
         watermarks[hp] = {"chars": len(consumed), "hash8": _text_hash(consumed),
-                          "bytes": size, "path": str(path),
+                          "bytes": size, "mtime": mtime, "path": str(path),
                           "last": datetime.now().isoformat(timespec="seconds")}
         wm_dirty = True
 
@@ -249,7 +253,18 @@ def ingest_files(files, project, agent, db, *, trigger="ingest-sweep",
         # READ and prefix-HASHED the whole file every sweep - a 40MB rollout was fully
         # decoded every 4 hours just to be skipped. An unchanged byte size now skips
         # without a read; any change falls through to the prefix-hash proof.
-        if rec and rec.get("bytes") == st_size and rec.get("chars"):
+        try:
+            st_mtime = round(f.stat().st_mtime, 3)
+        except OSError:
+            st_mtime = None
+        # The fast-skip needs a second term. Size alone let a file rewritten IN PLACE at the same
+        # byte count skip forever: the prefix-hash proof further down - the thing that detects a
+        # rewrite - sits after this `continue` and never ran. A rollout edited in place, or any
+        # export regenerated to the same length, was silently never mined again. `mtime` is not a
+        # proof either, which is why it only opens the door: a change in size OR mtime falls
+        # through to the hash, and a record written before this field existed also falls through.
+        if (rec and rec.get("bytes") == st_size and rec.get("chars")
+                and rec.get("mtime") is not None and rec.get("mtime") == st_mtime):
             skipped += 1
             continue
         try:
