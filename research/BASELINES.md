@@ -83,11 +83,13 @@ linter covers, and that is now a written constraint rather than an open question
 That constraint now has a number against it. On the project-specific class - the facts only this
 project's history holds, where a linter has nothing to read - the model-written guards catch
 **0.404** of the repeats against the linter's **0.154**, and the engine's no-model patterns catch
-0.154, the same as the linter. The lead is paid for: it is measured where the arm fires, a false
-alarm on 0.155 of the clean calls, against the linter's zero. See
-[`GUARD_BENCH.md`](GUARD_BENCH.md); until 2026-09-19 neither guard arm had a project-class figure
-anywhere, because the stand and its registrar both computed the split only for arms that reached
-the false-alarm budget.
+0.154, the same as the linter. The lead is paid for on the same class it is earned on: the
+model-written arm raises a flag on **0.222** of the project-class calls that repeat nothing, where
+the linter raises none. Quoting the arm's all-calls false-alarm rate beside a project-class recall
+would be two denominators in one sentence, which is why the register carries `project_fpr`
+separately. See [`GUARD_BENCH.md`](GUARD_BENCH.md), where the gate this arm missed is printed:
+until this campaign neither guard arm had a project-class figure at all, because the stand and its
+registrar both computed the split only for arms that reached the false-alarm budget.
 
 **And the cheapest arm of all is not yet beaten.** Raw lexical recall is not distinguished from
 the memory arm on this corpus, and at zero false alarms it is nominally ahead. See
