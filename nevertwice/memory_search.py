@@ -30,12 +30,29 @@ except ImportError:                 # run as a script, not as a package
     import memory_hook as m
 import reranker_ce as _ce          # opt-in trained cross-encoder (lazy heavy deps)
 
-ICON = m.TYPE_ICON        # the one type→icon map (write_typed_note stamps these into headings)
 # Adaptive abstention lives in the core (memory_hook._low_confidence) so the CLI and the
 # SessionStart/per-prompt hook gate identically (DRY). CONFIDENT_SIM kept as the absolute-floor
 # alias for back-compat; the relative margin is NEVERTWICE_CONFIDENT_MARGIN.
-CONFIDENT_SIM = m.RETRIEVAL_SIM_FLOOR
-_low_confidence = m._low_confidence
+
+
+def __getattr__(name):
+    """`ICON`, `CONFIDENT_SIM` and `_low_confidence` are the ENGINE's, resolved on each access.
+
+    They were captured at import under the comment above, which promises the CLI and the
+    hook "gate identically (DRY)". A snapshot is the opposite of DRY: the moment anything
+    rebinds the engine's floor or its gate - an env re-read, a sandbox rebase, a caller
+    tightening abstention - this module kept gating by whatever it happened to import with,
+    and nothing said so. A module-level __getattr__ (PEP 562) keeps both public names and
+    reads them live. It fires only for attribute access on the MODULE, so every use inside
+    this file goes through `m.` explicitly.
+    """
+    if name == "ICON":                 # the one type→icon map write_typed_note stamps
+        return m.TYPE_ICON
+    if name == "CONFIDENT_SIM":
+        return m.RETRIEVAL_SIM_FLOOR
+    if name == "_low_confidence":
+        return m._low_confidence
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
 def _linked(stem: str, ntype: str, limit: int = 6) -> list[str]:
@@ -121,6 +138,11 @@ def search_core(query: str, project: str | None = None, k: int = 10,
     - rerank (I-3, NEVERTWICE_RERANK=1): a free cloud model reorders the top-k -
       higher precision at the cost of cloud latency.
     Never used on the hot hook paths."""
+    # `scored[:k]` with a negative k means "every hit but the last n" - it silently
+    # returned a truncated list for `--k=-3` instead of refusing an impossible request.
+    # Clamped HERE because this is the one funnel the CLI, the MCP server and api.recall
+    # all reach (mcp_server.py clamps at its own door as well, for its 25-result ceiling).
+    k = max(1, int(k))
     if rerank is None:
         rerank = m.RERANK_ENABLED
     if xrerank is None:
@@ -177,7 +199,7 @@ def search_core(query: str, project: str | None = None, k: int = 10,
                 fsc *= m._salience_mult(s, r)
                 scored.append((fsc, s, r))
             mode = "hybrid"
-        if _low_confidence(raw):
+        if m._low_confidence(raw):
             mode = mode + " (low-confidence)"
     else:
         # embedder pinged OK but the query embed failed → weak token-overlap ranking. Mark it
@@ -247,10 +269,16 @@ def main():
     as_of_date = None
     for a in flags:
         if a.startswith("--k="):
+            # A typo used to fall through to the default 10 without a word, so the results
+            # a caller read were answering a different question than the one they asked.
+            raw_k = a.split("=", 1)[1]
             try:
-                k = int(a.split("=", 1)[1])
+                k = int(raw_k)
             except ValueError:
-                pass
+                k = 0
+            if k < 1:
+                print(f"--k= needs a positive integer, got {raw_k!r}", file=sys.stderr)
+                sys.exit(2)
         elif a.startswith("--as-of="):
             as_of_date = a.split("=", 1)[1].strip()
 
@@ -278,7 +306,7 @@ def main():
             else:
                 print(f"{len(notes)} note(s) tagged {entity!r}" + (f" [{proj}]" if proj else "") + ":")
                 for n in notes:
-                    print(f"  {ICON.get(n['ntype'], '·')} {n['title']}  ({n['stem']})")
+                    print(f"  {m.TYPE_ICON.get(n['ntype'], '·')} {n['title']}  ({n['stem']})")
                 if co:
                     print("  co-occurs: " + ", ".join(f"{e} x{c}" for e, c in co))
                 if edges:
@@ -331,7 +359,7 @@ def main():
         print(f"As of {as_of_date}, project {project} held {len(snap)} belief(s):")
         for r in snap:
             span = f"{r['valid_from']}…{r['valid_to'] or 'now'}"
-            print(f"  {ICON.get(r['ntype'], '·')} {r['title']}  ({span})  {r['stem']}")
+            print(f"  {m.TYPE_ICON.get(r['ntype'], '·')} {r['title']}  ({span})  {r['stem']}")
         return
 
     top, mode = search_core(query, project, k, rerank=("--rerank" in flags) or None,
@@ -372,7 +400,7 @@ def main():
         nt = r.get("ntype", "")
         title = m._strip_lead_icon(r.get("title") or r.get("stem", ""))
         via = f"  (via {r['via']})" if r.get("via") else ""    # Phase 2b graph-expansion marker
-        print(f"  {r['score']:5.2f} {ICON.get(nt, '·')} [{r.get('project')}] {title}{via}")
+        print(f"  {r['score']:5.2f} {m.TYPE_ICON.get(nt, '·')} [{r.get('project')}] {title}{via}")
         if "--brief" not in flags:
             snip = m._note_snippet(r["stem"], nt, max_chars=300) or r.get("description", "")
             if snip:
