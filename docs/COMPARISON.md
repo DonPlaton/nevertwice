@@ -96,8 +96,8 @@ reruns the whole stand, on the competitors' own packages, with one command.
 
 > **WITHDRAWN 2026-08.** Every number in the two tables below must not be quoted.
 > The run happened and Nevertwice led every column, but the LongMemEval-oracle
-> corpus it stood on is third-party, uncommitted and unhashed — `research/data/longmemeval_oracle.json`
-> is absent here and no content hash was recorded — so **nobody, including us, can
+> corpus it stood on is third-party, uncommitted and unhashed: `research/data/longmemeval_oracle.json`
+> is absent here and no content hash was recorded, so **nobody, including us, can
 > reproduce or even pin it**. 130 of 154 registered claims are withdrawn for the same
 > reason; `research/evidence_manifest.json` carries each one with its cause.
 >
