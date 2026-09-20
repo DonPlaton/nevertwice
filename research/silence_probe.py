@@ -124,7 +124,7 @@ def main() -> int:
                "dataset": {"name": data["name"], "sha256": hashlib.sha256(raw).hexdigest()},
                "llm": sb.LLM, "extract_temperature": os.environ.get("NEVERTWICE_EXTRACT_TEMP"),
                "silent_cases": len(ids), "by_kind": kinds, "rows": rows}
-        Path(args.out).write_text(json.dumps(out, indent=1, ensure_ascii=False), encoding="utf-8")
+        Path(args.out).write_text(json.dumps(out, indent=1, ensure_ascii=False), encoding="utf-8", newline="\n")
         print("wrote", args.out)
     return 0
 

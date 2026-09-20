@@ -186,7 +186,7 @@ def main():
                           "queries_per_fact": QUERIES_PER_FACT, "seeds": SEEDS},
                "by_revision": by_rev, "by_query_age": by_age}
         p = Path(__file__).resolve().parent / "bitemporal_ablation.json"
-        p.write_text(json.dumps(out, ensure_ascii=False, indent=1), encoding="utf-8")
+        p.write_text(json.dumps(out, ensure_ascii=False, indent=1), encoding="utf-8", newline="\n")
         print(f"\n  saved → {p}")
         fig = make_figure(by_rev, by_age,
                           str(Path(__file__).resolve().parent / "bitemporal_ablation.png"))

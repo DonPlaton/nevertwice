@@ -218,7 +218,7 @@ def main():
         out = {"attacks": succ, "false_quarantine": fq, "precision": prec, "recall": rec,
                "benign": len(BENIGN), "provenance_gate": prov_gate}
         p = HERE / "poisoning.json"
-        p.write_text(json.dumps(out, ensure_ascii=False, indent=1), encoding="utf-8")
+        p.write_text(json.dumps(out, ensure_ascii=False, indent=1), encoding="utf-8", newline="\n")
         print(f"\n  saved → {p}")
     print(bar)
 

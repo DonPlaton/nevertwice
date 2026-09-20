@@ -408,7 +408,7 @@ def main() -> int:
     cache = json.loads(CACHE.read_text(encoding="utf-8")) if CACHE.exists() else {}
     data = build(args.projects, args.sessions, cache, verbose=not args.check)
     CACHE.parent.mkdir(parents=True, exist_ok=True)
-    CACHE.write_text(json.dumps(cache, indent=0, ensure_ascii=False), encoding="utf-8")
+    CACHE.write_text(json.dumps(cache, indent=0, ensure_ascii=False), encoding="utf-8", newline="\n")
     raw = dump(data)
     digest = hashlib.sha256(raw).hexdigest()
     if args.check:

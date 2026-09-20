@@ -286,14 +286,14 @@ def embed_all():
                 cache["shrunk"][sid] = LAST_EMBED_CHARS
         if (i + 1) % 50 == 0:
             print(f"  sessions {i+1}/{len(sids)}  ({time.time()-t0:.0f}s)", file=sys.stderr)
-            EMB.write_text(json.dumps(cache), encoding="utf-8")   # checkpoint
+            EMB.write_text(json.dumps(cache), encoding="utf-8", newline="\n")   # checkpoint
     for i, e in enumerate(qs):
         v = embed_full(e["question"], kind=m.query_embed_kind())
         if v:
             cache["questions"][e["question_id"]] = v
         if (i + 1) % 100 == 0:
             print(f"  questions {i+1}/{len(qs)}  ({time.time()-t0:.0f}s)", file=sys.stderr)
-    EMB.write_text(json.dumps(cache), encoding="utf-8")
+    EMB.write_text(json.dumps(cache), encoding="utf-8", newline="\n")
     print(f"[embed] done in {time.time()-t0:.0f}s → {EMB.name}", file=sys.stderr)
 
 
@@ -468,7 +468,7 @@ def evaluate():
         if xrerank_cost:
             res["xrerank"] = xrerank_cost
         target = Path(OUT) if OUT else (HERE / "longmem_results.json")
-        target.write_text(json.dumps(res, ensure_ascii=False, indent=1), encoding="utf-8")
+        target.write_text(json.dumps(res, ensure_ascii=False, indent=1), encoding="utf-8", newline="\n")
         print(f"  saved → {target}")
     print("=" * 74)
     return out

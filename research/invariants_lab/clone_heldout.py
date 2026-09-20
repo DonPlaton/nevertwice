@@ -161,8 +161,8 @@ def run(plan_only: bool) -> dict:
         "disk_gb": corpora.disk_gb(root),
         "meets_h2_targets": len(kept) >= 25 and len({r["domain"] for r in kept}) >= 6,
     }
-    MANIFEST.write_text(json.dumps(payload, indent=1) + "\n", encoding="utf-8")
-    ARTIFACT.write_text(json.dumps(payload, indent=1) + "\n", encoding="utf-8")
+    MANIFEST.write_text(json.dumps(payload, indent=1) + "\n", encoding="utf-8", newline="\n")
+    ARTIFACT.write_text(json.dumps(payload, indent=1) + "\n", encoding="utf-8", newline="\n")
     return payload
 
 

@@ -274,7 +274,7 @@ def main():
                "leave_one_out_r1_drop": loo, "calibration_ece": ece,
                "calibration": {"predicted": pred, "empirical": emp, "count": cnt}}
         p = HERE / "posterior_model.json"
-        p.write_text(json.dumps(out, ensure_ascii=False, indent=1), encoding="utf-8")
+        p.write_text(json.dumps(out, ensure_ascii=False, indent=1), encoding="utf-8", newline="\n")
         print(f"\n  saved → {p}")
         _figure(w, loo, pred, emp, cnt, HERE / "posterior_model.png")
     print(bar)

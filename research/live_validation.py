@@ -391,7 +391,7 @@ def main():
                     "live_validation_results.json")
         p = HERE / name
         p.write_text(json.dumps({"model": model, "trials": trials, "tasks": results,
-                                 "summary": summ}, ensure_ascii=False, indent=1), encoding="utf-8")
+                                 "summary": summ}, ensure_ascii=False, indent=1), encoding="utf-8", newline="\n")
         print(f"  saved → {p}")
     print("=" * 74)
     return results

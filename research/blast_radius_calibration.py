@@ -430,7 +430,7 @@ def main(argv: list[str] | None = None) -> int:
         "arms": arms,
         "proposed_budgets": proposed_budgets(arms["declared"]["summary"]),
     }
-    Path(args.out).write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    Path(args.out).write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8", newline="\n")
     report(payload)
     return 0
 

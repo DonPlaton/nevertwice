@@ -88,7 +88,7 @@ def main() -> int:
             for w, row in res["points"][s].items():
                 row["delta_recall@5_vs_0.5"] = round(row["recall@5"] - base[s]["recall@5"], 4)
     if args.save:
-        Path(args.out).write_text(json.dumps(res, indent=1), encoding="utf-8")
+        Path(args.out).write_text(json.dumps(res, indent=1), encoding="utf-8", newline="\n")
         print(f"  saved -> {args.out}")
     return 0
 

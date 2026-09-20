@@ -131,7 +131,7 @@ if (POLY / "model_tuned").exists():
 if (HERE / "models" / "universal_v1").exists():
     models.append(("universal v1", HERE / "models" / "universal_v1"))
 results = {tag: evaluate(tag, path) for tag, path in models}
-(HERE / "results.json").write_text(json.dumps(results, indent=1), encoding="utf-8")
+(HERE / "results.json").write_text(json.dumps(results, indent=1), encoding="utf-8", newline="\n")
 
 print("\n=== SUMMARY TABLE ===")
 rows = [("real twin AUC", "real_twin", "auc"), ("real twin R@1%FPR", "real_twin", "recall_1fpr"),

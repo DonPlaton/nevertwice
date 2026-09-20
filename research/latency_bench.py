@@ -211,7 +211,7 @@ def main() -> None:
                          "least-contended observation, so a busy host can only push these "
                          "numbers up - which is the direction an honest latency claim should "
                          "err in. Nothing here pins CPU affinity or waits for an idle stand.",
-        }, indent=1) + "\n", encoding="utf-8")
+        }, indent=1) + "\n", encoding="utf-8", newline="\n")
         print(f"\n  saved -> {out}")
 
 

@@ -95,7 +95,7 @@ def main():
     out_json = HERE / "embedder_ab.json"
     out_json.write_text(
         json.dumps({"baseline": "bge-m3", "models": summary}, ensure_ascii=False, indent=1),
-        encoding="utf-8")
+        encoding="utf-8", newline="\n")
     print("=" * 92)
     print(f"  saved → {out_json}")
 

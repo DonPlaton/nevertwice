@@ -211,7 +211,7 @@ def main():
                "metrics": {meth: {str(b): {k: _ci(agg[meth][b][k])[0] for k in METRICS}
                                   for b in BUDGETS} for meth in METHODS}}
         p = HERE / "forgetting.json"
-        p.write_text(json.dumps(out, ensure_ascii=False, indent=1), encoding="utf-8")
+        p.write_text(json.dumps(out, ensure_ascii=False, indent=1), encoding="utf-8", newline="\n")
         print(f"\n  saved → {p}")
         _figure(agg, full, HERE / "forgetting.png")
     print(bar)

@@ -183,7 +183,7 @@ def main():
                                           "novelty": _m(agg["bridge"][d]["nov"]),
                                           "cross": _m(agg["bridge"][d]["cross"])} for d in DIVS}}
         p = HERE / "divergent.json"
-        p.write_text(json.dumps(out, ensure_ascii=False, indent=1), encoding="utf-8")
+        p.write_text(json.dumps(out, ensure_ascii=False, indent=1), encoding="utf-8", newline="\n")
         print(f"\n  saved → {p}")
         _figure(agg, HERE / "divergent.png")
     print(bar)

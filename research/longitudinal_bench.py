@@ -473,7 +473,7 @@ def main():
     if EMIT_FEEDBACK and feedback is not None:
         out = HERE / "data" / "longitudinal_feedback.jsonl"      # gitignored
         out.parent.mkdir(parents=True, exist_ok=True)
-        out.write_text("\n".join(json.dumps(r) for r in feedback), encoding="utf-8")
+        out.write_text("\n".join(json.dumps(r) for r in feedback), encoding="utf-8", newline="\n")
         print(f"\n  implicit-feedback log → {out}  ({len(feedback)} query events, for 1B)")
 
     if SAVE:
@@ -489,7 +489,7 @@ def main():
                "recur_coef_optimum": cbest, "recur_coef_shipped": SHIPPED_COEF,
                "adaptive_max_delta_coef": best_delta}
         p = HERE / "longitudinal_bench.json"
-        p.write_text(json.dumps(res, ensure_ascii=False, indent=1), encoding="utf-8")
+        p.write_text(json.dumps(res, ensure_ascii=False, indent=1), encoding="utf-8", newline="\n")
         print(f"\n  saved → {p}")
         _figure(lead, strat, binvals, sweep, HERE / "longitudinal_bench.png")
     print(bar)

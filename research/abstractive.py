@@ -250,7 +250,7 @@ def main():
             except (OSError, ValueError):
                 previous = {}
         out["real_candidates"] = real if real else previous.get("real_candidates")
-        p.write_text(json.dumps(out, ensure_ascii=False, indent=1), encoding="utf-8")
+        p.write_text(json.dumps(out, ensure_ascii=False, indent=1), encoding="utf-8", newline="\n")
         print(f"\n  saved → {p}")
         try:
             _figure(by_beta, by_k, HERE / "abstractive.png")

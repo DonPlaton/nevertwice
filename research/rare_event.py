@@ -180,7 +180,7 @@ def main():
         out = {"normal_clusters": N_NORMAL, "precursors": N_PREC, "k": K, "W": W,
                "metrics": {md: {kk: _m(M[md][kk]) for kk in M[md]} for md in M}}
         p = HERE / "rare_event.json"
-        p.write_text(json.dumps(out, ensure_ascii=False, indent=1), encoding="utf-8")
+        p.write_text(json.dumps(out, ensure_ascii=False, indent=1), encoding="utf-8", newline="\n")
         print(f"\n  saved → {p}")
         _figure(M, HERE / "rare_event.png")
     print(bar)

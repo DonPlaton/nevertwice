@@ -238,7 +238,7 @@ def main():
                "weight_recovery": {"early": early, "late": late},
                "theta_star": {pm.FEATURES[i]: float(theta_star[i]) for i in range(D)}}
         p = HERE / "bandit.json"
-        p.write_text(json.dumps(out, ensure_ascii=False, indent=1), encoding="utf-8")
+        p.write_text(json.dumps(out, ensure_ascii=False, indent=1), encoding="utf-8", newline="\n")
         print(f"\n  saved → {p}")
         _figure(bc, hc, rc, oc, bandit_c, HERE / "bandit.png")
     print(bar)

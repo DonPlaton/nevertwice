@@ -267,7 +267,7 @@ def build(save: bool = False) -> dict:
         "status": _status(rows),
     }
     if save:
-        OUT.write_text(json.dumps(payload, ensure_ascii=False, indent=1), encoding="utf-8")
+        OUT.write_text(json.dumps(payload, ensure_ascii=False, indent=1), encoding="utf-8", newline="\n")
     return payload
 
 

@@ -342,7 +342,7 @@ def write_page(cands: list[dict], target: int) -> None:
             .replace("__DATA__", json.dumps(cands, ensure_ascii=False))
             .replace("__TARGET__", str(target)))
     PAGE.parent.mkdir(parents=True, exist_ok=True)
-    PAGE.write_text(html, encoding="utf-8")
+    PAGE.write_text(html, encoding="utf-8", newline="\n")
 
 
 def collect(marks_path: Path) -> dict:
@@ -374,7 +374,7 @@ def collect(marks_path: Path) -> dict:
               "generator_model": "glm-4.7-flash + owner review", "seed": SEED,
               "purpose": "held-out questions over the owner's own sessions, accepted by hand",
               "projects": projects}
-    CORPUS.write_text(json.dumps(corpus, ensure_ascii=False, indent=1), encoding="utf-8")
+    CORPUS.write_text(json.dumps(corpus, ensure_ascii=False, indent=1), encoding="utf-8", newline="\n")
     verdicts: dict = {}
     for mk in marks.values():
         verdicts[mk.get("verdict", "?")] = verdicts.get(mk.get("verdict", "?"), 0) + 1
@@ -388,7 +388,7 @@ def collect(marks_path: Path) -> dict:
                  "rephrasing a sentence it read correctly is a drop the reviewer repairs. "
                  "Neither the questions nor the transcripts are in the repository."),
     }
-    MANIFEST.write_text(json.dumps(manifest, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+    MANIFEST.write_text(json.dumps(manifest, ensure_ascii=False, indent=1) + "\n", encoding="utf-8", newline="\n")
     return manifest
 
 
@@ -430,7 +430,7 @@ def main() -> int:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     CANDIDATES.write_text(json.dumps({"built_at": time.strftime("%Y-%m-%dT%H:%M:%S"),
                                       "seed": SEED, "candidates": cands}, ensure_ascii=False),
-                          encoding="utf-8")
+                          encoding="utf-8", newline="\n")
     write_page(cands, args.target)
     auto = sum(1 for c in cands if c["auto_accepted"])
     print(f"\ncandidates {len(cands)}  auto-accepted {auto}  "

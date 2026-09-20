@@ -250,7 +250,7 @@ def main() -> int:
     raw = gcs.dump(corpus)
     out.write_bytes(raw)
     manifest["private_file_sha256"] = hashlib.sha256(raw).hexdigest()
-    MANIFEST.write_text(json.dumps(manifest, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
+    MANIFEST.write_text(json.dumps(manifest, indent=1, ensure_ascii=False) + "\n", encoding="utf-8", newline="\n")
     print(f"wrote {out}  questions {manifest['questions_kept']}  drops {manifest['drops']}\nmanifest -> {MANIFEST}")
     return 0
 

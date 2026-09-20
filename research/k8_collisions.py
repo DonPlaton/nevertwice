@@ -198,7 +198,7 @@ def main() -> int:
     print(json.dumps({k: v for k, v in out.items() if k not in ("pairs", "rows")}, indent=1)[:2000])
     if a.out:
         Path(a.out).parent.mkdir(parents=True, exist_ok=True)
-        Path(a.out).write_text(json.dumps(out, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
+        Path(a.out).write_text(json.dumps(out, indent=1, ensure_ascii=False) + "\n", encoding="utf-8", newline="\n")
         print("written", a.out)
     return 0
 

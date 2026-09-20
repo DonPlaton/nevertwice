@@ -297,7 +297,7 @@ def main() -> int:
             _print_sweep(f"C2  session start - capped at {args.inject_budget} chars", rows)
 
     if args.out:
-        Path(args.out).write_text(json.dumps(out, indent=1, ensure_ascii=False), encoding="utf-8")
+        Path(args.out).write_text(json.dumps(out, indent=1, ensure_ascii=False), encoding="utf-8", newline="\n")
         print("\nwrote", args.out)
     return 0
 

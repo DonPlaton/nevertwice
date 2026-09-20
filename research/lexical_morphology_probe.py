@@ -185,7 +185,7 @@ def main() -> int:
                 print(f"    {v:5s} " + "  ".join(f"R@{k} {h[v][f'recall@{k}']:.3f}" for k in KS)
                       + f"  MRR {h[v]['mrr']:.3f}")
     if args.out:
-        Path(args.out).write_text(json.dumps(res, indent=1, ensure_ascii=False), encoding="utf-8")
+        Path(args.out).write_text(json.dumps(res, indent=1, ensure_ascii=False), encoding="utf-8", newline="\n")
         print("wrote", args.out)
     return 0
 

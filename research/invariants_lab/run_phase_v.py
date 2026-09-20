@@ -144,7 +144,7 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     data = run(args.plan)
     if not args.plan:
-        ARTIFACT.write_text(json.dumps(data, indent=1) + "\n", encoding="utf-8")
+        ARTIFACT.write_text(json.dumps(data, indent=1) + "\n", encoding="utf-8", newline="\n")
     _print(data)
     return 0 if data.get("completed") or args.plan else 1
 

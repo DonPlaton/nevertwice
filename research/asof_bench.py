@@ -430,7 +430,7 @@ def main() -> int:
                                       "search has no as-of filter; facts cannot be placed in the past without "
                                       "patching the product"}
     if args.out:
-        Path(args.out).write_text(json.dumps(out, indent=1, ensure_ascii=False), encoding="utf-8")
+        Path(args.out).write_text(json.dumps(out, indent=1, ensure_ascii=False), encoding="utf-8", newline="\n")
         print("wrote", args.out)
     return 0
 

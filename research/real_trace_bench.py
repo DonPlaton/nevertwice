@@ -157,7 +157,7 @@ def main():
                "semantic_recurrence": sweep,
                "recall_at_k": K, "recall_queries": q, "recall_vs_prior_weight": recall}
         p = HERE / "real_trace_bench.json"      # aggregate only - safe to keep
-        p.write_text(json.dumps(out, ensure_ascii=False, indent=1), encoding="utf-8")
+        p.write_text(json.dumps(out, ensure_ascii=False, indent=1), encoding="utf-8", newline="\n")
         print(f"\n  saved aggregate metrics → {p}")
     print(bar)
 

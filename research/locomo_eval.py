@@ -106,14 +106,14 @@ def embed_all(convs: list[dict]) -> dict:
             cache["turns"][did] = v
         if i % 500 == 0:
             print(f"  turns {i}/{len(todo_t)}  ({time.time() - t0:.0f}s)", flush=True)
-            EMB.write_text(json.dumps(cache), encoding="utf-8")
+            EMB.write_text(json.dumps(cache), encoding="utf-8", newline="\n")
     for i, q in enumerate(dict.fromkeys(todo_q), 1):
         v = le.embed_full(q, kind=m.query_embed_kind())
         if v:
             cache["questions"][q] = v
         if i % 500 == 0:
             print(f"  questions {i}  ({time.time() - t0:.0f}s)", flush=True)
-    EMB.write_text(json.dumps(cache), encoding="utf-8")
+    EMB.write_text(json.dumps(cache), encoding="utf-8", newline="\n")
     print(f"[embed] done in {time.time() - t0:.0f}s -> {EMB.name}")
     return cache
 
@@ -225,7 +225,7 @@ def main() -> int:
                "provenance": corpus_pin.record(CORPUS)}
         target = Path(args.out) if args.out else (HERE / "results" / "locomo.json")
         target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_text(json.dumps(res, ensure_ascii=False, indent=1), encoding="utf-8")
+        target.write_text(json.dumps(res, ensure_ascii=False, indent=1), encoding="utf-8", newline="\n")
         print(f"\n  saved -> {target}")
     print("=" * 74)
     return 0

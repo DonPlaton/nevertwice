@@ -299,7 +299,7 @@ def main():
             except Exception:
                 prev = {}
         prev.update(out)
-        p.write_text(json.dumps(prev, ensure_ascii=False, indent=1), encoding="utf-8")
+        p.write_text(json.dumps(prev, ensure_ascii=False, indent=1), encoding="utf-8", newline="\n")
         print(f"\n  saved aggregate metrics -> {p}")
     print(bar)
 

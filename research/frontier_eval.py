@@ -113,7 +113,7 @@ def _load(p: Path) -> dict:
 
 def _save(p: Path, d: dict) -> None:
     tmp = p.with_suffix(".tmp")
-    tmp.write_text(json.dumps(d, ensure_ascii=False), encoding="utf-8")
+    tmp.write_text(json.dumps(d, ensure_ascii=False), encoding="utf-8", newline="\n")
     os.replace(tmp, p)
 
 
@@ -547,7 +547,7 @@ def main() -> int:
         print(f"  {b:20s}      acc {pt['accuracy']:.3f} {pt['ci']}  tokens {pt['mean_prompt_tokens']:.0f}")
     print(f"  judge agreement: {res['judge_agreement']}")
     if args.save:
-        Path(args.out).write_text(json.dumps(res, indent=1), encoding="utf-8")
+        Path(args.out).write_text(json.dumps(res, indent=1), encoding="utf-8", newline="\n")
         print(f"  saved -> {args.out}")
     return 0
 

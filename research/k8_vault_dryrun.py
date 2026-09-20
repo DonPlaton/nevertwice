@@ -144,7 +144,7 @@ def main() -> int:
            "events": events}
     print(json.dumps({k: v for k, v in out.items() if k != "events"}, indent=1, ensure_ascii=False))
     if a.out:
-        Path(a.out).write_text(json.dumps(out, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
+        Path(a.out).write_text(json.dumps(out, indent=1, ensure_ascii=False) + "\n", encoding="utf-8", newline="\n")
         print("written", a.out)
     return 0
 

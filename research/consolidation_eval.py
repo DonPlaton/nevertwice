@@ -246,7 +246,7 @@ def main():
                "synthesis_calls": stats["calls"], "errors": stats["errors"],
                "wall_s": round(dt, 1), "ship_supported": bool(verdict_ship)}
         p = HERE / "consolidation_eval.json"
-        p.write_text(json.dumps(out, ensure_ascii=False, indent=1), encoding="utf-8")
+        p.write_text(json.dumps(out, ensure_ascii=False, indent=1), encoding="utf-8", newline="\n")
         print(f"\n  saved aggregate metrics -> {p}")
     print(bar)
 

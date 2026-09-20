@@ -89,7 +89,7 @@ def _save_distill_cache(cache: dict) -> None:
     lose every distillation done so far (audit 2026-06-18)."""
     import os
     tmp = DISTILL_CACHE.with_suffix(".json.tmp")
-    tmp.write_text(json.dumps(cache), encoding="utf-8")
+    tmp.write_text(json.dumps(cache), encoding="utf-8", newline="\n")
     os.replace(tmp, DISTILL_CACHE)
 
 
@@ -422,7 +422,7 @@ def main():
                "note": "modeled net (escalate-on-miss) + measured distillation ratio + a live "
                        "two-arm run with real Ollama prompt-token counts (small sample)"}
         target = HERE / "token_ab.json"
-        target.write_text(json.dumps(out, ensure_ascii=False, indent=1), encoding="utf-8")
+        target.write_text(json.dumps(out, ensure_ascii=False, indent=1), encoding="utf-8", newline="\n")
         print(f"  saved → {target}")
 
 

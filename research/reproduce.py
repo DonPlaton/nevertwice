@@ -930,7 +930,7 @@ def main(argv: list | None = None) -> int:
 
     payload = build(regenerate=not args.verify)
     if args.save:
-        OUT.write_text(json.dumps(payload, ensure_ascii=False, indent=1), encoding="utf-8")
+        OUT.write_text(json.dumps(payload, ensure_ascii=False, indent=1), encoding="utf-8", newline="\n")
     if args.json:
         print(json.dumps(payload, ensure_ascii=False, indent=1))
     else:

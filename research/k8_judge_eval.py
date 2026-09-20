@@ -146,7 +146,7 @@ def main() -> int:
     print(json.dumps({"pooled": out["pooled"], "per_stand": {k: {kk: vv for kk, vv in v.items() if kk != "confusion"}
                                                              for k, v in per_stand.items()}}, indent=1))
     if a.out:
-        Path(a.out).write_text(json.dumps(out, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
+        Path(a.out).write_text(json.dumps(out, indent=1, ensure_ascii=False) + "\n", encoding="utf-8", newline="\n")
         print("written", a.out)
     return 0
 

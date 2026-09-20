@@ -285,7 +285,7 @@ def main():
                "coeff_sweep_mid_sigma": {"sigma": sigma_mid,
                                          "w_recall1": [(w, v) for w, v, _ in sweep_mid]}}
         p = Path(__file__).resolve().parent / "recurrence_ablation.json"
-        p.write_text(json.dumps(out, ensure_ascii=False, indent=1), encoding="utf-8")
+        p.write_text(json.dumps(out, ensure_ascii=False, indent=1), encoding="utf-8", newline="\n")
         print(f"\n  saved → {p}")
         fig = make_figure(rows, sweep_mid, sigma_mid,
                           str(Path(__file__).resolve().parent / "recurrence_ablation.png"))

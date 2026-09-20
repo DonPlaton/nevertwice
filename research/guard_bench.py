@@ -166,7 +166,7 @@ def arm_guards_llm(corpus: dict, notes: list[dict]) -> tuple[list, dict]:
         g = G.make_guard(pat, msg, project=n["project"], born_from=[n["stem"]])
         if g and G.register(ledger, g):
             born[g["id"]] = n["stem"]
-    LLM_CACHE.write_text(json.dumps(cache, indent=1, ensure_ascii=False), encoding="utf-8")
+    LLM_CACHE.write_text(json.dumps(cache, indent=1, ensure_ascii=False), encoding="utf-8", newline="\n")
     info = {"llm": m.OLLAMA_MODEL, "n_guards": len(ledger), "empty_patterns": empty, "unsafe_patterns": unsafe,
             "fresh_generations": fresh, "patterns": {born[g["id"]]: g["pattern"] for g in ledger}}
     if notes and len(empty) > 0.10 * len(notes):
@@ -366,7 +366,7 @@ def main() -> int:
         print(f"  tokens/call {sc['tokens_per_call']}  ms/call {sc['ms_per_call']}  "
               + (f"guards {info.get('n_guards')}" if "n_guards" in info else "") + "\n")
     if args.save:
-        Path(args.out).write_text(json.dumps(out, indent=1, ensure_ascii=False), encoding="utf-8")
+        Path(args.out).write_text(json.dumps(out, indent=1, ensure_ascii=False), encoding="utf-8", newline="\n")
         print("wrote", args.out)
     return 0
 

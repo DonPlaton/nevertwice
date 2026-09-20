@@ -514,7 +514,7 @@ def main(argv: list[str] | None = None) -> int:
     decided = payload["summary"]["grep_labels"]["true"] + payload["summary"]["grep_labels"]["false"]
     payload["summary"]["grep_precision"] = (
         round(payload["summary"]["grep_labels"]["true"] / decided, 4) if decided else None)
-    Path(args.out).write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    Path(args.out).write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8", newline="\n")
     report(payload)
     return 0
 

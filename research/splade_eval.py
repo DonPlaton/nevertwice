@@ -101,7 +101,7 @@ def main():
         s_sparse = {pool_ids[i]: sv[i] for i in range(len(pool_ids))}
         q_sparse = {used[i]["question_id"]: qv[i] for i in range(len(used))}
         SP_CACHE.write_text(json.dumps({
-            "sessions": s_sparse, "questions": q_sparse, "model": MODEL}))
+            "sessions": s_sparse, "questions": q_sparse, "model": MODEL}), newline="\n")
         print(f"[splade] cached → {SP_CACHE.name}", file=sys.stderr)
 
     # SPLADE score matrix aligned to rnd_launch's pool order
@@ -132,7 +132,7 @@ def main():
                "NO WIN - BM25 matches/beats SPLADE here; keep stdlib BM25 (honest negative)")
     print(f"\n  → R@5 SPLADE {spl:.3f} vs BM25 {base:.3f} ({spl-base:+.3f}) - {verdict}")
     (HERE / "splade_eval.json").write_text(json.dumps(
-        {"model": MODEL, "maxlen": MAXLEN, "rows": rows, "verdict": verdict}, indent=1))
+        {"model": MODEL, "maxlen": MAXLEN, "rows": rows, "verdict": verdict}, indent=1), newline="\n")
     print("=" * 74)
 
 

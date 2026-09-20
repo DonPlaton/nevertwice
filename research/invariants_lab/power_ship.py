@@ -152,7 +152,7 @@ def main(argv: list[str] | None = None) -> int:
         _print(json.loads(ARTIFACT.read_text(encoding="utf-8")))
         return 0
     data = run()
-    ARTIFACT.write_text(json.dumps(data, indent=1) + "\n", encoding="utf-8")
+    ARTIFACT.write_text(json.dumps(data, indent=1) + "\n", encoding="utf-8", newline="\n")
     _print(data)
     return 0
 

@@ -184,7 +184,7 @@ def main():
                "topic_retention": out,
                "members_per_topic": {"coverage": red_cov, "semantic": red_sem}}
         p = HERE / "retention_bench.json"
-        p.write_text(json.dumps(agg, ensure_ascii=False, indent=1), encoding="utf-8")
+        p.write_text(json.dumps(agg, ensure_ascii=False, indent=1), encoding="utf-8", newline="\n")
         print(f"\n  saved aggregate metrics → {p}")
     print(bar)
 

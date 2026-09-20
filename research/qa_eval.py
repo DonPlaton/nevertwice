@@ -176,7 +176,7 @@ def _load_cache() -> dict:
 def _save_cache(c: dict) -> None:
     DATA.mkdir(exist_ok=True)
     tmp = CACHE.with_suffix(".json.tmp")
-    tmp.write_text(json.dumps(c), encoding="utf-8")
+    tmp.write_text(json.dumps(c), encoding="utf-8", newline="\n")
     tmp.replace(CACHE)             # atomic on same volume (Windows + POSIX)
 
 
@@ -438,7 +438,7 @@ def run():
             "settings": results,
         }
         out = HERE / OUTNAME
-        out.write_text(json.dumps(summary, ensure_ascii=False, indent=1), encoding="utf-8")
+        out.write_text(json.dumps(summary, ensure_ascii=False, indent=1), encoding="utf-8", newline="\n")
         print(f"  saved → {out}")
     return results
 

@@ -221,7 +221,7 @@ def main() -> int:
                "gate": {"worse_at_least": GATE_WORSE_AT_LEAST, "better_at_most": GATE_BETTER_AT_MOST,
                         "written": ".loop/GOAL-CLOSE.md item K1, before the run"},
                "named": named_summary, "all_controls": all_summary, "verdict": verdict, "rows": rows}
-        Path(args.out).write_text(json.dumps(out, indent=1, ensure_ascii=False), encoding="utf-8")
+        Path(args.out).write_text(json.dumps(out, indent=1, ensure_ascii=False), encoding="utf-8", newline="\n")
         print("wrote", args.out)
     return 0
 

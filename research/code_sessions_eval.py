@@ -410,7 +410,7 @@ def main() -> int:
         if args.save:
             out = Path(args.out) if args.out else ROOT / "research" / "results" / f"{CORPUS_NAME}_fact_survival.json"
             out.write_text(json.dumps({"corpus": corpus["name"], "sha256": corpus["sha256"],
-                                       "extractor": EXTRACTOR, "arms": rows}, indent=1, ensure_ascii=False), encoding="utf-8")
+                                       "extractor": EXTRACTOR, "arms": rows}, indent=1, ensure_ascii=False), encoding="utf-8", newline="\n")
             print(f"  saved -> {out}")
         return 0
     if args.stage == "answer":
@@ -426,7 +426,7 @@ def main() -> int:
     print(f"  corpus gates: {res['corpus_gates']}")
     if args.save:
         out = Path(args.out) if args.out else ROOT / "research" / "results" / f"{CORPUS_NAME}.json"
-        out.write_text(json.dumps(res, indent=1, ensure_ascii=False), encoding="utf-8")
+        out.write_text(json.dumps(res, indent=1, ensure_ascii=False), encoding="utf-8", newline="\n")
         print(f"  saved -> {out}")
     return 0
 

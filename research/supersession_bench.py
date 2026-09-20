@@ -891,7 +891,7 @@ def main() -> int:
                   f"mem0-only {pr['mem0_only']}")
         if args.out:
             Path(args.out).write_text(json.dumps(res, indent=1, ensure_ascii=False),
-                                      encoding="utf-8")
+                                      encoding="utf-8", newline="\n")
             print("wrote", args.out)
         return 0
 
@@ -899,7 +899,7 @@ def main() -> int:
         res = compare([Path(f) for f in args.compare])
         print(json.dumps(res, indent=1))
         if args.out:
-            Path(args.out).write_text(json.dumps(res, indent=1), encoding="utf-8")
+            Path(args.out).write_text(json.dumps(res, indent=1), encoding="utf-8", newline="\n")
             print("wrote", args.out)
         return 0
 
@@ -962,7 +962,7 @@ def main() -> int:
         print()
 
     if args.out:
-        Path(args.out).write_text(json.dumps(out, indent=1, ensure_ascii=False), encoding="utf-8")
+        Path(args.out).write_text(json.dumps(out, indent=1, ensure_ascii=False), encoding="utf-8", newline="\n")
         print("wrote", args.out)
     return 0
 

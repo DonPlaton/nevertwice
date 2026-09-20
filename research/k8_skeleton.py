@@ -356,7 +356,7 @@ def main() -> int:
                   f" replaces kept apart {v['replaces_kept_apart']}/{v['replaces_total']}")
     print("\nboilerplate by document frequency:", report["boilerplate_top_df"][:30])
     if a.out:
-        Path(a.out).write_text(json.dumps(report, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
+        Path(a.out).write_text(json.dumps(report, indent=1, ensure_ascii=False) + "\n", encoding="utf-8", newline="\n")
         print("written", a.out)
     return 0
 

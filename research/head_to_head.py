@@ -872,7 +872,7 @@ def main():
             except (json.JSONDecodeError, OSError):
                 merged = {}
         merged.update(results)
-        out_path.write_text(json.dumps(merged, ensure_ascii=False, indent=1), encoding="utf-8")
+        out_path.write_text(json.dumps(merged, ensure_ascii=False, indent=1), encoding="utf-8", newline="\n")
         print(f"  saved → {out_path}")
 
 

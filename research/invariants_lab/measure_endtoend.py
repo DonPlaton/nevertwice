@@ -444,7 +444,7 @@ def main(argv: list[str] | None = None) -> int:
         ap.error("pass --probe or --trials N")
     data = summarise(run(args.model, trials, harm),
                      "probe" if args.probe else f"stand ({trials} trials)")
-    ARTIFACT.write_text(json.dumps(data, indent=1) + "\n", encoding="utf-8")
+    ARTIFACT.write_text(json.dumps(data, indent=1) + "\n", encoding="utf-8", newline="\n")
     _print(data)
     return 0
 

@@ -80,7 +80,7 @@ def build():
     B = np.array(rows_B)
     np.save(COS_NPY, C)
     np.save(BM_NPY, B)
-    META.write_text(json.dumps({"pool_ids": pool_ids, "qrel": qrel, "qids": qids}))
+    META.write_text(json.dumps({"pool_ids": pool_ids, "qrel": qrel, "qids": qids}), newline="\n")
     # also save the raw (un-normalised pre-truncation) session matrix for matryoshka tests
     np.save(DATA / "_rnd_S.npy", np.array([svec[s] for s in pool_ids], dtype=np.float64))
     np.save(DATA / "_rnd_Q.npy", np.array([qvec[q] for q in qids], dtype=np.float64))
@@ -306,7 +306,7 @@ def main():
     # save
     out = {"stand": "longmemeval-oracle", "n_q": C.shape[0], "n_sess": len(pool_ids),
            "results": results}
-    (HERE / "rnd_launch.json").write_text(json.dumps(out, indent=1), encoding="utf-8")
+    (HERE / "rnd_launch.json").write_text(json.dumps(out, indent=1), encoding="utf-8", newline="\n")
     print(f"  saved → research/rnd_launch.json")
     print("=" * 74)
 
