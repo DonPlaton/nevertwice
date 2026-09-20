@@ -15,9 +15,14 @@ required, no cron to configure.
     python -m nevertwice.watch --no-auto --dir ~/logs --agent mybot          # ONLY explicit targets
 
 Idempotency is inherited from the `--dir` sweep: a file is keyed by path+content hash, so
-an unchanged transcript is never mined twice and a changed one is re-mined once. The whole
-cycle takes ONE vault lock with a short timeout and yields immediately if Claude Code's
-hook is mid-write, so the daemon never starves the live agent.
+an unchanged transcript is never mined twice and a changed one is re-mined once.
+
+The daemon yields to the live agent in three ways, and the third is the one that was missing:
+it discovers files BEFORE taking the vault lock, it gives up acquiring after 30 s if Claude
+Code's hook is mid-write, and it gives the lock BACK within MAX_LOCK_S plus the one extraction
+already running. A cap on the count of transcripts is not a cap on the duration - 40 of them at
+~33 s each is twenty minutes, and a hook waiting on that lock gives up after 180 s and logs
+"Aborting", losing the session. What the budget defers, the next cycle mines.
 
 Why polling, not native file events: zero dependencies and identical behaviour on every
 OS. A finished session is captured within one interval - that is the honest scope.
@@ -50,6 +55,13 @@ Target = namedtuple("Target", "agent dir globs recursive project")
 # Cap new transcripts mined per cycle so the daemon never holds the vault lock for minutes
 # on a first run over a huge log dir - the remainder is caught on the next sweep.
 MAX_PER_CYCLE = m.env_int("NEVERTWICE_WATCH_MAX_PER_CYCLE", 40)
+# ...and cap it in the unit that actually matters. A COUNT is not a duration: 40 transcripts at
+# up to ~33 s each on the Ollama fallback is a twenty-minute hold, while a SessionEnd or
+# PreCompact hook waits 180 s for that lock and then logs "Aborting" - the cost of which is the
+# whole session's knowledge. The budget is checked before each transcript is started, so the
+# worst hold is this plus the one extraction already running; 120 s leaves room for that
+# extraction inside the hook's own wait. What the budget defers, the next cycle mines.
+MAX_LOCK_S = m.env_float("NEVERTWICE_WATCH_MAX_LOCK_S", 120.0)
 # A transcript is only mined once its mtime has settled: a LIVE session file grows on every
 # poll, and since the content hash keys the processed-db, each growth would mint a fresh
 # session id → one new Session note + one LLM extraction per poll interval for an hours-long
@@ -143,38 +155,47 @@ def _mtime_ok(f: Path, now: float) -> bool:
 
 
 def poll_cycle(targets: list[Target]) -> int:
-    """One sweep over every target, idempotent, in a single short-held vault lock.
-    Returns the number of newly-mined transcripts. Yields (returns 0) immediately if no
-    LLM backend is up or the vault is busy - the live agent always wins the lock."""
+    """One sweep over every target, idempotent, in a single BOUNDED vault lock.
+
+    Returns the number of newly-mined transcripts. Yields (returns 0) immediately if no LLM
+    backend is up or the vault is busy, and gives the lock back within MAX_LOCK_S plus the one
+    extraction already running - so a hook waiting on it is delayed, never starved. Discovery
+    runs BEFORE the lock: it reads the agents' log directories, not the store."""
     if not targets:
         return 0
     if not m.llm_available():
+        return 0
+    # Read-only over the agents' log dirs, and on a large one the slowest thing in the cycle
+    # that is not an extraction. It has no business inside the store's lock.
+    work: list[tuple[Target, list]] = []
+    for t in targets:
+        if not t.dir.is_dir():
+            continue
+        files = ig.collect_transcripts(t.dir, t.globs, t.recursive)
+        if SETTLE_S:                           # skip files still being written (see SETTLE_S)
+            now = time.time()
+            files = [f for f in files if _mtime_ok(f, now)]
+        if files:
+            work.append((t, files))
+    if not work:
         return 0
     if not m.acquire_lock(timeout_s=30):       # short: never starve the Claude Code hook
         return 0
     total_new = 0
     try:
         m.VAULT.mkdir(parents=True, exist_ok=True)
+        deadline = time.monotonic() + MAX_LOCK_S
         db = m.load_processed()
-        for t in targets:
-            if not t.dir.is_dir():
-                continue
-            files = ig.collect_transcripts(t.dir, t.globs, t.recursive)
-            if SETTLE_S:                       # skip files still being written (see SETTLE_S)
-                now = time.time()
-                files = [f for f in files
-                         if _mtime_ok(f, now)]
-            if not files:
-                continue
+        for t, files in work:
             budget = MAX_PER_CYCLE - total_new  # share the per-cycle cap across targets
-            if budget <= 0:                     # cap spent - later targets wait for the
-                break                           # next cycle (the cap bounds lock time)
+            if budget <= 0 or time.monotonic() >= deadline:
+                break                           # spent - the rest waits for the next cycle
             # settle_s=0: the SETTLE_S filter above already dropped still-being-written
             # files, so ingest_files must not re-apply its own live-flush heuristic
             # (it would defer a settled file's final unterminated line)
             new, skipped, stored, errors = ig.ingest_files(files, t.project, t.agent, db,
                                                            trigger="watch", max_new=budget,
-                                                           settle_s=0)
+                                                           settle_s=0, deadline=deadline)
             if new or errors:
                 total_new += new
                 print(f"[watch] {t.agent}: {new} new, {stored} produced memory"

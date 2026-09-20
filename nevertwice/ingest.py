@@ -209,14 +209,21 @@ def collect_transcripts(d: Path, globs, recursive: bool) -> list[Path]:
 
 
 def ingest_files(files, project, agent, db, *, trigger="ingest-sweep",
-                 max_new=None, settle_s: int | None = None) -> tuple[int, int, int, int]:
+                 max_new=None, settle_s: int | None = None,
+                 deadline: float | None = None) -> tuple[int, int, int, int]:
     """Idempotently mine each transcript into memory against an ALREADY-LOADED
     processed-db, INSIDE an already-held vault lock. Returns (new, skipped, stored, errors).
     The caller owns the lock and the post-pass (rebuild_index / archive / commit) so a
     multi-directory sweep does one lock + one commit. Shared by `--dir` and `watch`,
     so both get the same DoS guard, content-hash idempotency and de-dup - no second copy
     of the logic to drift. A single bad file (exception in the extraction pipeline) is
-    counted and skipped, never allowed to abort the rest of the sweep (audit 2026-06-18)."""
+    counted and skipped, never allowed to abort the rest of the sweep (audit 2026-06-18).
+
+    `deadline` (a `time.monotonic()` value) bounds how long the CALLER's lock is held: checked
+    before each transcript is started, so the hold is the deadline plus the one extraction
+    already running. `max_new` caps the COUNT, which is not a duration - 40 transcripts at ~33 s
+    each is twenty minutes, and a hook waiting on that lock gives up after 180 s. What the
+    deadline defers is mined by the next sweep; nothing is dropped."""
     new = skipped = stored = errors = 0
     if settle_s is None:                       # watch pre-filters by mtime and passes 0
         settle_s = m.env_int("NEVERTWICE_SWEEP_SETTLE_S", 120)
@@ -239,6 +246,8 @@ def ingest_files(files, project, agent, db, *, trigger="ingest-sweep",
         wm_dirty = True
 
     for f in files:
+        if deadline is not None and time.monotonic() >= deadline:
+            break                              # the caller's lock has been held long enough
         suffix = f.suffix.lower()
         delta_capable = suffix in _WATERMARK_SUFFIXES
         hp = _path_hash(f)

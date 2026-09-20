@@ -117,6 +117,96 @@ def test_watch_yields_when_no_backend_or_lock_busy():
         assert watch.poll_cycle(targets) == 0                   # vault busy → yields to the hook
 
 
+def test_watch_bounds_how_long_it_holds_the_vault_lock():
+    """The daemon's own promise: it "never starves the live agent".
+
+    The cycle took ONE lock and then mined up to MAX_PER_CYCLE transcripts inside it - 40 by
+    default, at up to ~33 s each on the Ollama fallback, so the hold reached twenty minutes
+    while the cap's own comment said it existed so the lock was never held "for minutes". A
+    SessionEnd hook waits 180 s for that lock and then logs "Aborting", which costs the whole
+    session's knowledge.
+
+    The hold is bounded by wall clock now, checked before each transcript is started, so the
+    worst case is the budget plus the one extraction already running. Nothing is lost: what the
+    budget defers is mined by the next cycle.
+    """
+    import time
+    with tempfile.TemporaryDirectory() as d:
+        tmp = Path(d)
+        for i in range(10):
+            (tmp / f"s{i}.jsonl").write_text(
+                f"user: hi\nassistant: lesson number {i} about the batch size",
+                encoding="utf-8")
+        db, seen = {}, []
+
+        def fake_ps(sid, cwd, path, trig, dbarg, run_log=None, agent=None,
+                    transcript_text=None, project_override=None):
+            time.sleep(0.05)                     # stands in for one LLM extraction
+            seen.append(sid)
+            dbarg[sid] = {"processed_at": "x"}
+            return True
+
+        targets = [watch.Target("mybot", tmp, ["*.jsonl"], False, "proj")]
+        patches = _vault_mocks(db, fake_ps)
+        for p_ in patches:
+            p_.start()
+        saved = watch.MAX_LOCK_S
+        watch.MAX_LOCK_S = 0.12
+        try:
+            t0 = time.monotonic()
+            first = watch.poll_cycle(targets)
+            held = time.monotonic() - t0
+            rest = 0
+            for _ in range(12):                  # the remainder, over later cycles
+                rest += watch.poll_cycle(targets)
+        finally:
+            watch.MAX_LOCK_S = saved
+            for p_ in patches:
+                p_.stop()
+
+        assert first < 10, f"the budget deferred nothing: {first} of 10 in one cycle"
+        assert held < watch.MAX_LOCK_S + 0.05 * 3, f"held {held:.3f}s on a {0.12}s budget"
+        assert first + rest == 10, f"the deferred transcripts were lost: {first} + {rest}"
+        assert len(set(seen)) == 10, f"each transcript mined once: {len(set(seen))}"
+
+
+def test_watch_discovers_transcripts_outside_the_vault_lock():
+    """Finding the files is read-only over the AGENTS' log directories, not over the store, so
+    it has no business inside the lock - and on a large log dir it is the slowest thing in the
+    cycle that is not an extraction."""
+    import ingest as ig
+    with tempfile.TemporaryDirectory() as d:
+        tmp = Path(d)
+        (tmp / "a.jsonl").write_text("user: hi\nassistant: a lesson", encoding="utf-8")
+        db, order = {}, []
+
+        def fake_ps(sid, cwd, path, trig, dbarg, run_log=None, agent=None,
+                    transcript_text=None, project_override=None):
+            dbarg[sid] = {"processed_at": "x"}
+            return True
+
+        real_collect = ig.collect_transcripts
+
+        def spy_collect(*a, **kw):
+            order.append("collect")
+            return real_collect(*a, **kw)
+
+        targets = [watch.Target("mybot", tmp, ["*.jsonl"], False, "proj")]
+        patches = _vault_mocks(db, fake_ps)
+        patches[1] = mock.patch.object(m, "acquire_lock",
+                                       side_effect=lambda *a, **k: order.append("lock") or True)
+        for p_ in patches:
+            p_.start()
+        ig.collect_transcripts = spy_collect
+        try:
+            watch.poll_cycle(targets)
+        finally:
+            ig.collect_transcripts = real_collect
+            for p_ in patches:
+                p_.stop()
+        assert order[:2] == ["collect", "lock"], order
+
+
 def test_known_targets_is_a_list_of_existing_dirs():
     ts = watch.known_targets()
     assert isinstance(ts, list)
