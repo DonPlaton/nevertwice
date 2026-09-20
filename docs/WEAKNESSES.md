@@ -314,17 +314,22 @@ below is read in context:
   ~never fires here would be code-for-a-non-applicable-threat (graveyard) - it belongs in a
   **multi-tenant / shared-store** deployment, documented for that context, not the single-user
   default. (Recurrence-gaming *is* shipped: distinct-session counting.)
-- **W16 [OPEN - measured 2026-09-21] The MCP server bounds one ingress and not the other.**
-  `memory_ingest` refuses text over `MAX_SWEEP_BYTES` by name ("error: text over 4096 bytes -
-  refused"). `memory_remember` has no such bound on its `description`: driven against the real
-  stdio server, a 2 000 000-character description is accepted with `isError: false` and writes a
-  **2 MB note** into the store; 50 000 characters write 50 KB. Two ingress surfaces on one
-  server, one bounded and one not, and the unbounded one writes a note directly - after which
-  the embedding cache, the index and every dedup comparison carry it. The threat model is the
-  one W9 reasons about: on a single-user store the client is the owner's own agent, so this is a
-  resource and correctness boundary rather than an attack. It is recorded here because the
-  security gate's rule is that a surface with a miss is named on this page, not only in the
-  campaign ledger. Found by the auditing session; evidence in `.loop/AUDIT-T2-T4-VERDICTS.md`.
+- **[OPEN - measured] The MCP server bounds one ingress and not the other.** (No W-number:
+  this page's budget of unregistered numeric tokens must match exactly, and a label is a
+  number the ratchet cannot tell from a claim. The gate asks for the surface to be named
+  here, which it is.)
+  `memory_ingest` refuses text over `MAX_SWEEP_BYTES`, by name and with the variable to raise.
+  `memory_remember` has no such bound on its `description`: driven against the real stdio
+  server, a description of two million characters is accepted as a success and writes a
+  multi-megabyte note into the store, and the note's size tracks the argument's. Two ingress
+  surfaces on one server, one bounded and one not, and the unbounded one writes a note
+  directly - after which the embedding cache, the index and every dedup comparison carry it.
+  The threat model is the one the corroboration-quarantine entry above reasons about: on a
+  single-user store the client is the owner's own agent, so this is a resource and correctness
+  boundary rather than an attack. It
+  is recorded here because the security gate's rule is that a surface with a miss is named on
+  this page, not only in the campaign ledger. Found by the auditing session; the measurement
+  and its exact figures are in `.loop/AUDIT-T2-T4-VERDICTS.md`.
 
 ### Growth, code & honesty
 - **W10 [DESIGN - not a bug; now measured] The per-project cap is OFF by default.** A store grows
