@@ -116,7 +116,10 @@ def detect(vault: Path) -> int:
     return version if isinstance(version, int) else 0
 
 
-def stamp(vault: Path, version: int = SCHEMA_VERSION, *, note: str = "") -> Path:
+def stamp(vault: Path, version: int | None = None, *, note: str = "") -> Path:
+    # Resolved HERE, not in the signature: a default argument is evaluated once at
+    # def time, so a module constant frozen there stops answering to the module.
+    version = SCHEMA_VERSION if version is None else version
     path = marker_path(vault)
     payload = {"schema_version": version,
                "stamped": datetime.now().strftime("%Y-%m-%d %H:%M"),

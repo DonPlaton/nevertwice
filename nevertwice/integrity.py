@@ -274,8 +274,11 @@ def _example_cycle(graph: dict, comp: list) -> list:
     return comp   # unreachable for a true SCC; degrade to listing the region
 
 
-def find_cycles(graph: dict, cap: int = CYCLE_CAP) -> list[list]:
+def find_cycles(graph: dict, cap: int | None = None) -> list[list]:
     """One example cycle per cyclic region (SCC), capped. O(V+E) regardless of density."""
+    # Resolved HERE, not in the signature: a default argument is evaluated once at
+    # def time, so a module constant frozen there stops answering to the module.
+    cap = CYCLE_CAP if cap is None else cap
     return [_example_cycle(graph, c) for c in _sccs(graph)[:cap]]
 
 
@@ -366,7 +369,7 @@ FINDING_CAP = 50
 
 
 def check(notes, bodies: dict | None = None, resolvable: set | None = None,
-          cap: int = FINDING_CAP, entity_universe: set | None = None) -> dict:
+          cap: int | None = None, entity_universe: set | None = None) -> dict:
     """Run every law over `notes` (a list of note metadata dicts). `bodies`/`resolvable` are
     optional - omit them and LAW 5 is skipped, which is what a graph-only fixture wants.
     `entity_universe` widens LAW 1 resolution beyond the notes' own entities (check_edges).
@@ -374,6 +377,9 @@ def check(notes, bodies: dict | None = None, resolvable: set | None = None,
     Findings are capped per law so one endemic violation cannot bury the rare, sharp ones -
     but `totals` always reports the TRUE count, because a checker that silently truncates its
     own output is the exact failure mode it exists to catch."""
+    # Resolved HERE, not in the signature: a default argument is evaluated once at
+    # def time, so a module constant frozen there stops answering to the module.
+    cap = FINDING_CAP if cap is None else cap
     findings = check_edges(notes, entity_universe) + check_acyclicity(notes)
     if bodies:
         findings += check_wikilinks(bodies, resolvable or set())

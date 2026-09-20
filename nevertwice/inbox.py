@@ -142,8 +142,11 @@ def _reviewed_on(note: dict) -> str:
         return ""
 
 
-def _unconfirmed(project=None, *, days: int = STALE_DAYS, limit: int = 20) -> list[dict]:
+def _unconfirmed(project=None, *, days: int | None = None, limit: int = 20) -> list[dict]:
     """Live notes older than `days` that never recurred and were never reviewed."""
+    # Resolved HERE, not in the signature: a default argument is evaluated once at
+    # def time, so a module constant frozen there stops answering to the module.
+    days = STALE_DAYS if days is None else days
     cutoff = (datetime.now() - timedelta(days=max(0, days))).strftime("%Y-%m-%d")
     out = []
     for note in m._iter_all_notes():

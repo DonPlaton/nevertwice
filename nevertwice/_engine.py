@@ -2015,7 +2015,10 @@ def _archive_dest(arch: Path, name: str) -> Path:
     return arch / name
 
 
-def archive_old_sessions(days: int = ARCHIVE_AFTER_DAYS) -> int:
+def archive_old_sessions(days: int | None = None) -> int:
+    # Resolved HERE, not in the signature: a default argument is evaluated once at
+    # def time, so a module constant frozen there stops answering to the module.
+    days = ARCHIVE_AFTER_DAYS if days is None else days
     sess = VAULT / "Sessions"
     if not sess.exists():
         return 0
@@ -2043,12 +2046,15 @@ def archive_old_sessions(days: int = ARCHIVE_AFTER_DAYS) -> int:
     return moved
 
 
-def archive_old_typed(days: int = TYPED_ARCHIVE_AFTER_DAYS) -> int:
+def archive_old_typed(days: int | None = None) -> int:
     """Move typed notes (Patterns/Mistakes/Decisions) older than `days` into a
     per-folder Archive/ subdir. Knowledge is preserved (moved, never deleted),
     but the live folders - and the dedup-grounding glob that scans them - stop
     growing without bound (audit F24). Obsidian resolves [[stem]] regardless of
     folder, so existing wikilinks keep working after the move."""
+    # Resolved HERE, not in the signature: a default argument is evaluated once at
+    # def time, so a module constant frozen there stops answering to the module.
+    days = TYPED_ARCHIVE_AFTER_DAYS if days is None else days
     moved = 0
     archived_stems = []
     cutoff = (datetime.now() - timedelta(days=days)).date()
@@ -2085,7 +2091,10 @@ def archive_old_typed(days: int = TYPED_ARCHIVE_AFTER_DAYS) -> int:
     return moved
 
 
-def prune_processed_db(db: dict, days: int = PRUNE_DB_AFTER_DAYS) -> int:
+def prune_processed_db(db: dict, days: int | None = None) -> int:
+    # Resolved HERE, not in the signature: a default argument is evaluated once at
+    # def time, so a module constant frozen there stops answering to the module.
+    days = PRUNE_DB_AFTER_DAYS if days is None else days
     cutoff = datetime.now() - timedelta(days=days)
     pruned = 0
     stamped = 0
@@ -4042,11 +4051,14 @@ def _contested_of(fm: dict) -> list[str]:
     return [cur] if isinstance(cur, str) else [str(x) for x in cur if x]
 
 
-def _iter_contested(project: str | None = None, key: str = CONTESTED_KEY) -> list[dict]:
+def _iter_contested(project: str | None = None, key: str | None = None) -> list[dict]:
     """Every live or archived typed note carrying a `contested` stamp (or, with `key`, a `disputed`
     one), with the sibling stems it names: `[{stem, path, project, ntype, date, title, archived,
     new_stems}]`. A header-only scan of the type folders (Superseded/ skipped - a retired note's
     stamp is settled)."""
+    # Resolved HERE, not in the signature: a default argument is evaluated once at
+    # def time, so a module constant frozen there stops answering to the module.
+    key = CONTESTED_KEY if key is None else key
     out = []
     for ntype, folder in TYPE_FOLDER.items():
         base = VAULT / folder
@@ -4800,7 +4812,10 @@ def write_typed_note(folder: str, item, project: str, date: str,
 def write_session_note(project: str, date: str, time_str: str, summary: str,
                        cwd: str, session_id: str, tags: list,
                        links: dict[str, list[str]], trigger: str,
-                       agent: str = DEFAULT_AGENT, stem: str | None = None) -> str:
+                       agent: str | None = None, stem: str | None = None) -> str:
+    # Resolved HERE, not in the signature: a default argument is evaluated once at
+    # def time, so a module constant frozen there stops answering to the module.
+    agent = DEFAULT_AGENT if agent is None else agent
     p = VAULT / "Sessions"
     p.mkdir(exist_ok=True)
     if stem:
@@ -5969,12 +5984,15 @@ def _retry_if_silent(extraction: dict, prompt: str, body: str, project_hint: str
 
 def process_session(session_id: str, cwd: str, transcript_path: str,
                     trigger: str, processed_db: dict,
-                    run_log: list | None = None, agent: str = DEFAULT_AGENT,
+                    run_log: list | None = None, agent: str | None = None,
                     transcript_text: str | None = None,
                     project_override: str | None = None,
                     timestamp: str | None = None) -> bool:
     refresh_lock()      # every long lock holder runs per-transcript through here:
     #                     keep the mtime fresh so a live sweep is never "stale-stolen"
+    # Resolved HERE, not in the signature: a default argument is evaluated once at
+    # def time, so a module constant frozen there stops answering to the module.
+    agent = DEFAULT_AGENT if agent is None else agent
     prior = processed_db.get(session_id)
     if prior is not None:
         # Growth check (review 2026-08 / B1): a PreCompact-marked session continues
@@ -7017,7 +7035,7 @@ def as_of(project: str | None, date: str) -> list[dict]:
     return sorted(out, key=lambda r: (r["ntype"], r["stem"]))
 
 
-def retrieve_cross_project(project: str, query: str, k: int = CROSS_PROJECT_K,
+def retrieve_cross_project(project: str, query: str, k: int | None = None,
                            cache: dict | None = None, embed_timeout: int | None = None,
                            alive_timeout: int = 2) -> list[dict]:
     """Lessons from OTHER projects relevant to this one - transferable gotchas
@@ -7028,6 +7046,7 @@ def retrieve_cross_project(project: str, query: str, k: int = CROSS_PROJECT_K,
     and stay within a tight budget. Returns hits annotated with their project."""
     if embed_timeout is None:
         embed_timeout = RETRIEVAL_EMBED_TIMEOUT
+    k = CROSS_PROJECT_K if k is None else k
     cands = _retrieval_candidates(project, cross=True, cache=cache, query=query)
     if not cands:
         return []
@@ -7071,7 +7090,7 @@ def retrieve_cross_project(project: str, query: str, k: int = CROSS_PROJECT_K,
     return paired[:k]
 
 
-def rerank_notes(query: str, results: list[dict], k: int = RETRIEVAL_TOP_K,
+def rerank_notes(query: str, results: list[dict], k: int | None = None,
                  project: str | None = None) -> list[dict]:
     """Cloud-as-judge rerank (audit I-3): reorder retrieval candidates by a free
     cloud model's relevance judgement, then take top-k. Deliberately OFF the hot
@@ -7079,6 +7098,7 @@ def rerank_notes(query: str, results: list[dict], k: int = RETRIEVAL_TOP_K,
     matters more than speed. Falls back to the input order on any failure or empty
     backend, so it never drops or reorders worse than the retriever did. Each
     result dict needs at least `stem`; `title`/`description` improve the judgement."""
+    k = RETRIEVAL_TOP_K if k is None else k
     if not results or len(results) <= 1:
         return results[:k]
     items = "\n".join(

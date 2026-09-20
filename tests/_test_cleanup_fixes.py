@@ -15,6 +15,7 @@ Pure logic + disk; the LLM/embedder/GPU are mocked. No network.
 
     python _test_cleanup_fixes.py
 """
+import ast
 import json
 import os
 import subprocess
@@ -121,6 +122,52 @@ check("absent primary logs no false recovery",
 m.save_processed({"sid": {"transcript": "t"}})
 check("processed-DB round trip through the helpers",
       m.load_processed() == {"sid": {"transcript": "t"}})
+
+# ── a constant is read where it is used, not frozen at def time ───────────────────────
+# Python evaluates default arguments once, at def time, so `k=RETRIEVAL_TOP_K` freezes the
+# value this module had at import. The SAME name is read at call time by the injection path,
+# so the two disagreed: `m.RETRIEVAL_TOP_K = 2` changed how many facts were injected and not
+# how many `rerank_notes` returned. Every `m.X = ...` in this project's tests, and every
+# embedder that repoints a constant after import, meets that silence.
+print("# module constants are read at call time, not baked into defaults")
+_sk = (m.RETRIEVAL_TOP_K, m.CROSS_PROJECT_K, m.generate_json, m._retrieval_candidates)
+try:
+    def _no_backend(*a, **kw):
+        raise RuntimeError("no backend")
+
+    m.generate_json = _no_backend
+    rows = [{"stem": "s" + str(i), "title": "t" + str(i), "description": "d"} for i in range(5)]
+    m.RETRIEVAL_TOP_K = 2
+    check("rerank_notes honours a rebound RETRIEVAL_TOP_K",
+          len(m.rerank_notes("q", rows)) == 2)
+
+    m._retrieval_candidates = lambda project, cross=False, cache=None, query="": [
+        ("2026-06-0" + str(i) + "-other-mistake-x" + str(i),
+         {"ntype": "mistake", "project": "other", "title": "shared stack token lesson",
+          "desc": "a shared stack token lesson", "vec": []}) for i in range(1, 5)]
+    m.CROSS_PROJECT_K = 1
+    check("retrieve_cross_project honours a rebound CROSS_PROJECT_K",
+          len(m.retrieve_cross_project("mine", "shared stack token", alive_timeout=0)) == 1)
+finally:
+    m.RETRIEVAL_TOP_K, m.CROSS_PROJECT_K, m.generate_json, m._retrieval_candidates = _sk
+
+# The rule, over every module: no module-level constant may be captured in a default.
+_frozen = []
+for _f in sorted(Path(m.__file__).resolve().parent.glob("*.py")):
+    _tree = ast.parse(_f.read_text(encoding="utf-8"))
+    _consts = {n.targets[0].id for n in _tree.body
+               if isinstance(n, ast.Assign) and len(n.targets) == 1
+               and isinstance(n.targets[0], ast.Name)}
+    for _fn in ast.walk(_tree):
+        if not isinstance(_fn, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            continue
+        for _d in list(_fn.args.defaults) + [x for x in _fn.args.kw_defaults if x]:
+            for _nm in ast.walk(_d):
+                if isinstance(_nm, ast.Name) and _nm.id in _consts:
+                    _frozen.append(_f.name + ":" + str(_fn.lineno) + " " + _fn.name
+                                   + " <- " + _nm.id)
+check("no module constant is frozen into a default argument: " + "; ".join(_frozen[:4]),
+      not _frozen)
 
 # ── twin-gate calibration ─────────────────────────────────────────────
 print("# twin calibration - data file, bounds, space label")
