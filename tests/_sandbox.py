@@ -25,6 +25,16 @@ def make_sandbox(m, prefix: str = "nwtest_", offline: bool = False) -> Path:
     long as nobody's shell exports the matching NEVERTWICE_* var. Pinned here, every time, so
     the suites that assert these defaults test the code's default, not the machine's env."""
     d = Path(tempfile.mkdtemp(prefix=prefix))
+    # The TRANSCRIPT root, before the rebase that derives `_PROJECTS_ROOT_NORM` from it.
+    # `_rebase_vault` moves every vault-derived constant and this is not one of them - it is
+    # a separate setting - so a sandboxed suite kept the machine's real `~/.claude/projects`,
+    # 758 live transcripts on the owner's box. The env scrub does not close that: removing
+    # `NEVERTWICE_PROJECTS_ROOT` sends the resolver to its DEFAULT, and the default is the
+    # real directory. Read, not write - but `sweep_unprocessed` reads, and would have mined
+    # the owner's sessions into a throwaway vault (found 2026-09-21).
+    transcripts = d / "transcripts"
+    transcripts.mkdir(parents=True, exist_ok=True)
+    m.PROJECTS_ROOT = transcripts
     m._rebase_vault(d)
     m.collect_existing_titles.cache_clear()
     m.collect_existing_tags.cache_clear()

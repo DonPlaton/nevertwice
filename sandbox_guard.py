@@ -49,6 +49,7 @@ from pathlib import Path
 __all__ = [
     "SandboxEscape", "isolate", "allow_live", "verify", "store", "mode", "live_reason",
     "LOCATION_VARS", "STORE_ROOT_VARS", "SIDE_CHANNEL_VARS", "PROJECT_MODULES",
+    "TRANSCRIPT_ROOT_VARS",
 ]
 
 ROOT = Path(__file__).resolve().parent
@@ -122,13 +123,26 @@ def _inside(path, root) -> bool:
     return a == b or a.startswith(b + os.sep)
 
 
-def _real_store_candidates() -> tuple:
-    """Where a real store could be on this machine, captured BEFORE scrubbing.
+#: Variables that name the host agent's TRANSCRIPT root, and the default it falls back to.
+#: Not a store - nothing is written there - but a real directory of the owner's sessions, and
+#: `sweep_unprocessed` READS it. Listed here so it counts as a live path for check 3.
+TRANSCRIPT_ROOT_VARS = ("NEVERTWICE_PROJECTS_ROOT", "CLAUDE_PROJECTS_ROOT")
 
-    Two sources: whatever the ambient environment currently points at (the live store on a
-    developer's machine), and the defaults `config._default_vault` would fall back to. A
-    value that lives only in `.env`/`.secrets.env` is deliberately not read here - that file
-    is off-limits - and it does not need to be: check 1 below pins the resolved VAULT itself.
+
+def _real_store_candidates() -> tuple:
+    """Where a real store or transcript root could be on this machine, captured BEFORE
+    scrubbing.
+
+    Three sources: whatever the ambient environment currently points at (the live store on a
+    developer's machine), the defaults `config._default_vault` would fall back to, and the
+    host agent's transcript root. A value that lives only in `.env`/`.secrets.env` is
+    deliberately not read here - that file is off-limits - and it does not need to be: check 1
+    below pins the resolved VAULT itself.
+
+    The transcript root is here because scrubbing does not protect it - it OPENS it. Removing
+    `NEVERTWICE_PROJECTS_ROOT` sends `config` to its default, and the default is the real
+    `~/.claude/projects`; a sandboxed suite could therefore see every live transcript on the
+    machine while this list, which held only store roots, said nothing (found 2026-09-21).
     """
     found = []
     for var in STORE_ROOT_VARS:
@@ -137,6 +151,11 @@ def _real_store_candidates() -> tuple:
             found.append(Path(os.path.expanduser(os.path.expandvars(raw))))
     home = Path.home()
     found += [home / ".nevertwice", home / ".anamnesis"]
+    for var in TRANSCRIPT_ROOT_VARS:
+        raw = os.environ.get(var)
+        if raw:
+            found.append(Path(os.path.expanduser(os.path.expandvars(raw))))
+    found.append(home / ".claude" / "projects")
     seen, out = set(), []
     for p in found:
         key = _norm(p)
@@ -197,6 +216,13 @@ def isolate(prefix: str = "nevertwice-sandbox-") -> Path:
     os.environ["NEVERTWICE_VAULT"] = str(_STORE)
     os.environ["NEVERTWICE_CLOUD"] = "none"     # no key, no network
     os.environ["NEVERTWICE_XRERANK"] = "0"      # never pull a cached cross-encoder
+    # The TRANSCRIPT root, pinned like the store and for the same reason. Scrubbing it alone
+    # does not isolate it - it OPENS it: with no variable, `config` falls back to the real
+    # `~/.claude/projects`, so an isolated process could read every live transcript on the
+    # machine (found 2026-09-21; 758 of them here). Nothing writes there, but
+    # `sweep_unprocessed` reads, and would mine the owner's sessions into a throwaway vault.
+    (_STORE / "transcripts").mkdir(parents=True, exist_ok=True)
+    os.environ["NEVERTWICE_PROJECTS_ROOT"] = str(_STORE / "transcripts")
     _MODE = "sandbox"
     atexit.register(_cleanup)
     verify()

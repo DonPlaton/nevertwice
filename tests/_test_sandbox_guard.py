@@ -408,6 +408,59 @@ def test_the_baked_path_check_runs_when_there_is_something_to_check() -> None:
     _sandbox.make_sandbox(_m, prefix="nwguard_")
     check("a clean sandbox passes it", True)
 
+def test_the_sandbox_pins_the_transcript_root_too() -> None:
+    """`make_sandbox` moved the store and left the TRANSCRIPT root where it was.
+
+    `_rebase_vault` moves every vault-derived constant and recomputes
+    `_PROJECTS_ROOT_NORM` from `PROJECTS_ROOT` - but it does not move `PROJECTS_ROOT`
+    itself, because that is a different setting, not a vault-derived one. And the scrub in
+    `isolate()` does not close this: removing `NEVERTWICE_PROJECT_ROOTS` sends the resolver
+    to its DEFAULT, and the default is the real `~/.claude/projects`. Measured on this
+    machine before the fix: a sandboxed suite could see 758 live transcripts, and the guard
+    said nothing, because `_REAL_STORES` lists store roots and the transcript root is not
+    one of them.
+
+    Read, not write - `has_unprocessed` only stats - but `sweep_unprocessed` READS, and
+    would have mined the owner's real sessions into a temporary vault. Same class as the
+    three recorded incidents, one door along.
+    """
+    print("\n- the sandbox pins where transcripts come from -")
+    import memory_hook as _m                                      # noqa: PLC0415
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    import _sandbox                                               # noqa: PLC0415
+
+    d = _sandbox.make_sandbox(_m, "proot_")
+    check("PROJECTS_ROOT lands inside the sandbox",
+          sandbox_guard._inside(_m.PROJECTS_ROOT, d), str(_m.PROJECTS_ROOT))
+    check("and it is not the machine's real transcript root",
+          not sandbox_guard._inside(_m.PROJECTS_ROOT, Path.home() / ".claude" / "projects"),
+          str(_m.PROJECTS_ROOT))
+    check("the exclusion prefixes were rebuilt from the pinned root",
+          sandbox_guard._norm(_m.PROJECTS_ROOT) in [sandbox_guard._norm(x)
+                                                    for x in _m._EXCLUDE_PREFIXES],
+          str(_m._EXCLUDE_PREFIXES[-3:]))
+    check("so an empty sandbox has no backlog", _m.has_unprocessed({}) is False,
+          str(_m.PROJECTS_ROOT))
+
+    # ... and the guard now knows a transcript root is a real path, so the next constant
+    # that keeps one is caught rather than passed over.
+    _live = Path.home() / ".claude" / "projects"
+    check("the real transcript root is among the paths the guard calls real",
+          any(sandbox_guard._inside(_live, r) for r in sandbox_guard._REAL_STORES),
+          str([str(x) for x in sandbox_guard._REAL_STORES]))
+    _m.PROBE_TRANSCRIPT_PATH = _live / "probe.jsonl"
+    try:
+        _sandbox.make_sandbox(_m, "proot2_")
+        check("a constant pointing at the live transcript root is refused", False,
+              "make_sandbox returned instead of raising")
+    except sandbox_guard.SandboxEscape as exc:
+        check("a constant pointing at the live transcript root is refused",
+              "PROBE_TRANSCRIPT_PATH" in str(exc), str(exc)[:200])
+    finally:
+        _m.__dict__.pop("PROBE_TRANSCRIPT_PATH", None)
+    check("and a clean sandbox still passes", _sandbox.make_sandbox(_m, "proot3_").is_dir())
+
+
 def test_zz_every_check_passed() -> None:
     """Bare pytest must reach the same verdict as this suite's exit code.
 
