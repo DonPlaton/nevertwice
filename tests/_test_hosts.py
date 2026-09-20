@@ -213,7 +213,10 @@ def test_cursoring_is_incremental() -> None:
                               + json.dumps({"speaker": "user", "text": "and now?"}) + "\n",
                               encoding="utf-8")
             third = adapter.read(second["cursor"])
-            check("a changed file is read again", len(third["events"]) == 3, str(third["new"]))
+            # ONE event, not three. This check used to require the whole file back - the
+            # behaviour the method's own first line ("Events since `cursor`") denies.
+            check("an appended file yields only what was appended",
+                  [e.get("prompt") for e in third["events"]] == ["and now?"], str(third["events"]))
 
             gone = Path(tmp) / "session-b.jsonl"
             gone.write_text('{"speaker":"user","text":"hi"}\n', encoding="utf-8")
@@ -234,6 +237,77 @@ def test_a_truncated_tail_does_not_lose_the_session() -> None:
     check("the earlier turns survive", len(events) >= 1, str(events))
     check("the prompt is still there",
           any(e.get("prompt") == PROMPT for e in events), str(events))
+
+
+def test_the_cursor_carries_what_it_did_not_look_at() -> None:
+    """Two halves of one defect in `read()`.
+
+    * It re-emitted the WHOLE file whenever the file changed, though its first line promises
+      "Events since `cursor`". On a jsonl transcript that grows by one turn, every earlier
+      turn arrived again - and the module's own comment elsewhere says double-mining one
+      session is how a conversation became two contradictory notes.
+    * The returned cursor was built ONLY from the files this call looked at, so an entry for a
+      file that still exists but fell outside the `limit` window was dropped. The comment
+      claimed vanished files drop out; a quiet file dropped out too, and came back as new.
+
+    `read()` has no caller in the package yet - it is the published adapter contract - so this
+    is a latent defect on a surface, not a live duplicate stream.
+    """
+    print("\n- since the cursor means since the cursor -")
+    with tempfile.TemporaryDirectory() as tmp:
+        os.environ["NEVERTWICE_GENERIC_JSONL"] = tmp
+        try:
+            a = Path(tmp) / "a.jsonl"
+            a.write_text('{"speaker":"user","text":"one"}' + "\n", encoding="utf-8", newline="")
+            adapter = hosts.get("generic-jsonl")
+            first = adapter.read()
+            check("the first read takes the file whole", len(first["events"]) == 1,
+                  str(first["events"]))
+
+            time.sleep(0.01)
+            with a.open("a", encoding="utf-8", newline="") as fh:
+                fh.write('{"speaker":"user","text":"two"}' + "\n")
+                fh.write('{"speaker":"user","text":"three"}' + "\n")
+            second = adapter.read(first["cursor"])
+            check("an append yields the appended turns only",
+                  [e.get("prompt") for e in second["events"]] == ["two", "three"],
+                  str(second["events"]))
+
+            # A REWRITE is not an append: the prefix no longer matches, so the file comes
+            # back whole rather than being sliced at a count that means nothing now.
+            time.sleep(0.01)
+            a.write_text('{"speaker":"user","text":"other"}' + "\n"
+                         + '{"speaker":"user","text":"content"}' + "\n",
+                         encoding="utf-8", newline="")
+            third = adapter.read(second["cursor"])
+            check("a rewritten file comes back whole",
+                  [e.get("prompt") for e in third["events"]] == ["other", "content"],
+                  str(third["events"]))
+
+            # Now a second, newer file pushes the first out of a limit=1 window.
+            time.sleep(0.01)
+            b = Path(tmp) / "b.jsonl"
+            b.write_text('{"speaker":"user","text":"beta"}' + "\n", encoding="utf-8", newline="")
+            narrow = adapter.read(third["cursor"], limit=1)
+            check("the narrow read only looks at the newest file",
+                  [e.get("prompt") for e in narrow["events"]] == ["beta"], str(narrow["events"]))
+            check("but the quiet file keeps its cursor entry",
+                  str(a) in narrow["cursor"], str(sorted(narrow["cursor"])))
+            after = adapter.read(narrow["cursor"])
+            check("so it is not mined again when the window widens",
+                  after["events"] == [], str(after["events"]))
+
+            # A cursor from the older shape is accepted, not treated as a fresh store.
+            legacy = {str(a): [a.stat().st_mtime, a.stat().st_size],
+                      str(b): [b.stat().st_mtime, b.stat().st_size]}
+            check("a pre-existing cursor shape still means unchanged",
+                  adapter.read(legacy)["events"] == [], str(adapter.read(legacy)["events"]))
+
+            b.unlink()
+            check("and a vanished file still drops out",
+                  str(b) not in adapter.read(after["cursor"])["cursor"])
+        finally:
+            os.environ.pop("NEVERTWICE_GENERIC_JSONL", None)
 
 
 def test_the_read_cap_is_the_bytes_it_is_named_for() -> None:
@@ -434,6 +508,7 @@ def main() -> int:
                test_four_hosts_produce_equivalent_events,
                test_codex_scaffolding_is_skipped,
                test_cursoring_is_incremental,
+               test_the_cursor_carries_what_it_did_not_look_at,
                test_a_truncated_tail_does_not_lose_the_session,
                test_the_read_cap_is_the_bytes_it_is_named_for,
                test_claude_code_install_status_and_reversible_uninstall,

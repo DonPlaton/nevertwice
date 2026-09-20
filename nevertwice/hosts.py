@@ -37,6 +37,7 @@ from __future__ import annotations
 
 import json
 import os
+import hashlib
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -168,21 +169,43 @@ class HostAdapter:
     def read(self, cursor: dict | None = None, *, limit: int = 50) -> dict:
         """Events since `cursor`, and the cursor to pass next time.
 
-        The cursor is `{path: (mtime, size)}`. Not a timestamp: clocks jump, and a file
-        rewritten in place within the same second is invisible to a mtime-only cursor. Not a
-        byte offset either, because these hosts rewrite whole files rather than appending.
-        It is opaque to callers by contract, so it can change shape without breaking them.
+        The cursor is `{path: {mtime, size, chars, hash, events}}`. Not a timestamp: clocks
+        jump, and a file rewritten in place within the same second is invisible to a
+        mtime-only cursor. Not a byte offset either, because some of these hosts rewrite
+        whole files rather than appending. It is opaque to callers by contract, so it can
+        change shape without breaking them - the earlier `[mtime, size]` pair is still
+        accepted and means "unchanged", it just carries no knowledge of the prefix.
+
+        **Since the cursor means since the cursor.** A changed file used to come back WHOLE:
+        a jsonl transcript that grew by one turn re-delivered every earlier turn, and
+        double-mining one session is how a conversation became two contradictory notes
+        (the same reason `hook_captured` exists). When the stored prefix still hashes the
+        same, only the tail is emitted; when it does not, the file was rewritten rather than
+        appended to and the whole of it is the honest answer. A file over `MAX_BYTES` is
+        capped, so an append past the cap is invisible here as it is everywhere else.
+
+        **A quiet file keeps its place.** The returned cursor used to be built only from the
+        files this call looked at, so an entry for a file that still exists but fell outside
+        the `limit` window was dropped - and came back as new on the next call, whole. Only a
+        file that has actually vanished leaves the cursor.
         """
         cursor = dict(cursor or {})
-        events, seen = [], {}
-        for path in self.sessions()[-limit:]:
+        sessions = self.sessions()
+        alive = {str(p) for p in sessions}
+        seen = {k: v for k, v in cursor.items() if k in alive}
+        events = []
+        for path in sessions[-limit:]:
             key = str(path)
-            stamp = [_mtime(path), _size(path)]
-            seen[key] = stamp
-            if cursor.get(key) == stamp:
-                continue                      # unchanged since the last read
-            events += self.normalize(_read_capped(path), source=path)
-        # Files that vanished drop out of the cursor rather than being remembered forever.
+            mtime, size = _mtime(path), _size(path)
+            prev = cursor.get(key)
+            if _stamp_matches(prev, mtime, size):
+                continue                      # unchanged since the last read; entry carried
+            raw = _read_capped(path)
+            fired = self.normalize(raw, source=path)
+            keep = _consumed(prev, raw)
+            events += fired[keep:]
+            seen[key] = {"mtime": mtime, "size": size, "chars": len(raw),
+                         "hash": _text_digest(raw), "events": len(fired)}
         return {"events": events, "cursor": seen,
                 "read": len(seen), "new": len([k for k, v in seen.items()
                                                if cursor.get(k) != v])}
@@ -212,6 +235,46 @@ class HostAdapter:
         return {"host": self.name, "ok": True, "changed": [],
                 "detail": f"{self.name} is sweep-only - nothing was installed, nothing to undo",
                 "dry_run": dry_run}
+
+
+def _text_digest(text: str) -> str:
+    """A short digest of what was already consumed from one transcript.
+
+    Cheap because `_read_capped` has the text in hand anyway - no second read - and short
+    because this lives in a cursor a caller stores and passes back.
+    """
+    return hashlib.sha1(text.encode("utf-8", "replace")).hexdigest()[:16]
+
+
+def _stamp_matches(prev, mtime: float, size: int) -> bool:
+    """True when the cursor entry says this file has not moved since it was read.
+
+    Both cursor shapes: the current mapping, and the `[mtime, size]` pair that came before
+    it - a caller holding an old cursor gets "unchanged", not a fresh mining of the store.
+    """
+    if isinstance(prev, dict):
+        return prev.get("mtime") == mtime and prev.get("size") == size
+    if isinstance(prev, (list, tuple)) and len(prev) == 2:
+        return list(prev) == [mtime, size]
+    return False
+
+
+def _consumed(prev, raw: str) -> int:
+    """How many of this file's events the caller has already been given.
+
+    Zero unless the stored prefix is still a prefix - proved by hashing it, not assumed from
+    the size, because a host that rewrites a file to a longer one would otherwise have its
+    new opening turns silently skipped. An old-shape cursor knows nothing about the prefix
+    and therefore consumed nothing.
+    """
+    if not isinstance(prev, dict):
+        return 0
+    chars = int(prev.get("chars") or 0)
+    if not chars or len(raw) < chars:
+        return 0
+    if _text_digest(raw[:chars]) != prev.get("hash"):
+        return 0                              # rewritten, not appended to
+    return int(prev.get("events") or 0)
 
 
 def _mtime(path: Path) -> float:
