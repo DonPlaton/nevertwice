@@ -303,3 +303,9 @@ if FAILS:
         print(f"  - {n}: {d_}")
 else:
     print("all probes nominal")
+
+# `tests/test_self_checks.py` runs this file as a script and reads its RETURN CODE. Without
+# this line the process exited 0 after printing "PROBE FAILURES: N" and the registrar recorded
+# a pass - nine probes and 31 checks that could report a failure but never act on one. Pinned
+# for every suite by `_test_the_harness_agrees_with_itself.py::test_every_suite_can_go_red_at_all`.
+sys.exit(1 if FAILS else 0)

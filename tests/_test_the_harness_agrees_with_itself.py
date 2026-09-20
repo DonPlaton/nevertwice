@@ -154,6 +154,53 @@ def _nonzero_exits(tree: ast.Module) -> list[tuple[ast.AST | None, set[str]]]:
     return exits
 
 
+def _reachable_asserts(body: list[ast.stmt], in_try: bool = False) -> bool:
+    """Is there an `assert` here whose failure would reach the process?
+
+    `assert`, not `raise`: in these suites a bare `raise` is almost always an INJECTION - a
+    stub that fails on purpose so the code under test can be watched handling it - while an
+    `assert` is a check. `_test_failure_injection.py` is the case that settles it: the only
+    `raise` in the file is inside `fake_urlopen`, the fault it injects.
+
+    An assert inside a `try` body does not count: the suite may be catching it. One in an
+    `except` or `finally` does. A nested `def` is not descended into - it is a stub or a
+    callback, and whether it ever runs is not visible here.
+    """
+    for n in body:
+        if isinstance(n, ast.Assert) and not in_try:
+            return True
+        if isinstance(n, ast.Try):
+            if any(_reachable_asserts(h.body) for h in n.handlers):
+                return True
+            if _reachable_asserts(n.finalbody):
+                return True
+            continue
+        if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+            continue
+        for field in ("body", "orelse"):
+            sub = getattr(n, field, None)
+            if isinstance(sub, list) and _reachable_asserts(sub, in_try):
+                return True
+    return False
+
+
+def can_go_red(path: Path) -> bool:
+    """Can this suite fail AT ALL - as `tests/test_self_checks.py` runs it, by return code?
+
+    The counter guard answers a narrower question: a suite that DOES exit nonzero must not
+    look green to bare pytest. It is scoped to suites with collectible `test_*` functions and
+    a verdict-dependent exit, and a suite with neither falls through it untouched - which is
+    how `_test_failure_injection.py` sat in the battery printing "PROBE FAILURES: N" from a
+    process that always exited 0. Nine probes, 31 checks, no `sys.exit` anywhere in the file:
+    the registrar reads the return code, and read 0 whatever the probes found.
+    """
+    tree = ast.parse(path.read_text(encoding="utf-8"))
+    if _nonzero_exits(tree):
+        return True
+    return _reachable_asserts(tree.body) or any(
+        _reachable_asserts(n.body) for n in tree.body
+        if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef)))
+
 def classify(path: Path) -> dict:
     """What kind of suite is this, and can bare pytest see its failures?
 
@@ -227,6 +274,40 @@ def test_a_suite_that_does_not_count_needs_no_guard() -> None:
     print(f"       ({len(COUNTING)} counting, {len(raising)} raising, "
           f"{len(REPORT) - len(COUNTING) - len(raising)} not collected by bare pytest)")
 
+
+def test_every_suite_can_go_red_at_all() -> None:
+    """The counter guard asks whether a red suite can look green. This asks the question
+    under it: can the suite go red? A file with no nonzero exit and no reachable assert is
+    not a weak test, it is a decoration - `tests/test_self_checks.py` judges by return code,
+    and such a file returns 0 whatever it found."""
+    print("\n- every suite has some way to fail -")
+    mute = sorted(p.name for p in SUITES if not can_go_red(p))
+    check("no suite reports failures it cannot act on", not mute,
+          f"{len(mute)} always exit 0: " + ", ".join(mute[:6]))
+
+
+def test_the_muteness_rule_bites() -> None:
+    """A rule that has never refused anything is indistinguishable from one that cannot."""
+    print("\n- and the rule refuses the shape it is for -")
+    with tempfile.TemporaryDirectory() as tmp:
+        d = Path(tmp)
+        (d / "_test_mute.py").write_text(
+            "FAILS = []\ndef check(n, c):\n    if not c:\n        FAILS.append(n)\ncheck('x', True)\nprint(len(FAILS))\n", encoding="utf-8")
+        check("a suite that only counts is refused", not can_go_red(d / "_test_mute.py"))
+
+        # ...and both honest shapes are accepted, so the rule is not simply "no".
+        (d / "_test_exits.py").write_text(
+            'import sys\nFAILS = []\nsys.exit(1 if FAILS else 0)\n', encoding="utf-8")
+        check("one that exits on its verdict passes", can_go_red(d / "_test_exits.py"))
+        (d / "_test_asserts.py").write_text(
+            'def test_x():\n    assert 1 == 1\n', encoding="utf-8")
+        check("one whose checks assert passes", can_go_red(d / "_test_asserts.py"))
+
+        # The distinction the rule rests on: an injected fault is not a check.
+        (d / "_test_injects.py").write_text(
+            "FAILS = []\ndef boom(*a):\n    raise OSError('injected')\ntry:\n    boom()\nexcept OSError:\n    FAILS.append(1)\n", encoding="utf-8")
+        check("a raise that is the fault under test is not a check",
+              not can_go_red(d / "_test_injects.py"))
 
 def test_the_classifier_reads_the_exit_path_not_the_spelling() -> None:
     """The regression the owner caught: two spellings of the same verdict, one rule.
@@ -360,6 +441,8 @@ def main() -> int:
     for fn in (test_the_repository_still_has_counting_suites,
                test_every_counting_suite_guards_its_counter,
                test_a_suite_that_does_not_count_needs_no_guard,
+               test_every_suite_can_go_red_at_all,
+               test_the_muteness_rule_bites,
                test_the_classifier_reads_the_exit_path_not_the_spelling,
                test_the_defect_is_real_and_the_guard_closes_it,
                test_a_green_suite_stays_green_under_both_channels):
