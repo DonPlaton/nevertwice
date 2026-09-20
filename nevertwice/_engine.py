@@ -2117,8 +2117,9 @@ def acquire_lock(timeout_s: float = 30) -> bool:
     return False
 
 
-def _lock_holder_pid() -> str:
-    """The pid the lock file records, or "" when it does not record one.
+def _lock_holder_pid() -> str | None:
+    """The pid the lock file records: "" when there is no file or it is empty, None when it
+    holds something that is not a pid.
 
     One reader for the three that ask - `holds_lock`, `release_lock`, `refresh_lock`. Each
     called a bare `read_text()` under `except OSError`, and `UnicodeDecodeError` is a
@@ -2130,16 +2131,25 @@ def _lock_holder_pid() -> str:
     catches. `acquire_lock` writes only ASCII, so such a file has an outside cause: a write
     cut short, a syncing folder, another tool.
 
-    Anything that is not digits is not a pid, so it reads as "" - which each caller already
-    handles, and handles the way it did before: not ours for `holds_lock`, and the old
-    unlink/utime path for the other two. A rule in one place rather than three patches, so
-    the fourth reader gets it.
+    Three answers, not two, because the doors that ask mean different things by them. "" is
+    an ABSENT or EMPTY file, which `release_lock` and `refresh_lock` tolerate for the reason
+    written beside them: a holder can crash between creating the file and writing its pid.
+    None is a file that is there and is not a pid - not ours, and not to be touched. Folding
+    the second onto the first put a file that is neither empty nor ours into the tolerant
+    branch, so a process holding no lock UNLINKED it: two writers in one critical section,
+    which is the failure the ownership rules exist to prevent, reached through a different
+    door than the stale-steal of review 2026-08. The stale ceiling frees such a file, which
+    is what that ceiling is for.
+
+    A rule in one place rather than three patches, so the fourth reader gets it.
     """
     try:
         text = (_lock_file().read_text(encoding="utf-8", errors="replace") or "").strip()
     except OSError:
+        return ""                    # absent, or unreadable at the OS level: as before
+    if not text:
         return ""
-    return text if text.isdigit() else ""
+    return text if text.isdigit() else None
 
 
 def holds_lock() -> bool:
@@ -2162,7 +2172,8 @@ def release_lock():
         # the new holder, and the old holder's unconditional unlink admitted a third
         # writer into the critical section (review 2026-08). A positively-foreign
         # pid means back off; an unreadable file keeps the old unlink behavior.
-        if _lock_holder_pid() not in ("", str(os.getpid())):
+        held = _lock_holder_pid()
+        if held is None or held not in ("", str(os.getpid())):
             return
     except OSError:
         pass
@@ -2188,7 +2199,8 @@ def refresh_lock() -> None:
     a DRY RUN, holding no lock at all."""
     lock = _lock_file()
     try:
-        if _lock_holder_pid() not in ("", str(os.getpid())):
+        held = _lock_holder_pid()
+        if held is None or held not in ("", str(os.getpid())):
             return
     except OSError:
         pass

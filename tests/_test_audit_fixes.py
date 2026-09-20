@@ -1067,6 +1067,29 @@ _landed = []
 _ok = _g.persist_under_lock(lambda rows: (_landed.append(len(rows)), True)[-1], 2.0)
 check("with the lock gone the write lands", bool(_ok) and _landed == [0])
 
+# An undecodable file is not an EMPTY one, and the two doors must say the same thing about
+# it. `holds_lock` is strict by design - missing or unreadable is not ours - while
+# `release_lock` and `refresh_lock` tolerate an empty file, for the reason written beside
+# them: a holder can crash between creating the file and writing its pid. Folding
+# "unreadable" into "empty" put a file that is neither empty nor ours into the tolerant
+# branch, so a process holding no lock UNLINKED it - the two-writers-in-one-critical-section
+# failure the ownership rules exist to prevent, reached through a different door than the
+# stale-steal fixed in review 2026-08. The stale ceiling is what frees such a file.
+_lk.write_bytes(bytes([0xFF, 0xFE, 0x98, 0x99]))
+m.release_lock()
+check("release_lock leaves a lock it cannot read", _lk.exists())
+_lk.write_bytes(bytes([0xFF, 0xFE, 0x98, 0x99]))
+_before = _lk.stat().st_mtime - 600
+os.utime(_lk, (_before, _before))
+m.refresh_lock()
+check("refresh_lock does not keep a lock it cannot read alive",
+      abs(_lk.stat().st_mtime - _before) < 1.0)
+
+# ... while an EMPTY one stays tolerated, which is what that branch was written for.
+_lk.write_text("", encoding="utf-8", newline="")
+m.release_lock()
+check("an empty lock is still released", not _lk.exists())
+
 # The control: a positively FOREIGN pid must still mean back off, or the fix would have
 # traded a traceback for a lock two processes think they hold.
 _lk.write_text(str(os.getpid() + 1), encoding="utf-8", newline="")
