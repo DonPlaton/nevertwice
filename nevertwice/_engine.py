@@ -1337,6 +1337,48 @@ _TWIN_WORD_RE = re.compile(r"[a-zа-я0-9]{3,}")
 _TWIN_BAKED_SPACE = "bge-m3"
 _TWIN_SD_MIN = 1e-6      # sd is a divisor: a near-zero one saturates the sigmoid
 _TWIN_ABS_MAX = 1e3      # sane magnitude for weights/means of five [0,1]-ish features
+#: The logit clamp `_twin_probability` applies. Named, because the bounds check below is
+#: written against it: a calibration whose logit cannot fit inside the clamp is one where the
+#: clamp, not the weights, decides the answer at the edges of the feature box.
+_TWIN_LOGIT_CLAMP = 60.0
+
+
+def _twin_logit_range(w, b, mu, sd) -> tuple[float, float]:
+    """The logit's range over the feature box [0,1]^5 - exact, because the logit is monotone
+    in each feature, so both extremes sit at corners. All five features are ratios in [0,1]
+    by construction (`_twin_probability`), and the cosine is additionally floored by the
+    prefilter."""
+    lo = hi = float(b)
+    for wi, mi, si in zip(w, mu, sd):
+        a, z = wi * (0.0 - mi) / si, wi * (1.0 - mi) / si
+        lo += min(a, z)
+        hi += max(a, z)
+    return lo, hi
+
+
+def _twin_calibration_usable(w, b, mu, sd) -> bool:
+    """Is this calibration a probability over the feature box, or a switch wearing one?
+
+    The per-parameter bounds were each satisfiable while their combination produced exactly
+    the failure their own docstring described. `sd >= 1e-6` and `|w| <= 1e3` admit sd=1e-6
+    with w=1e3: the standardized feature reaches 1e6, the logit spans +-2e9, the sigmoid is
+    pinned at 1.0 for every candidate that clears the cosine prefilter, and up to
+    WRITE_DEDUP_MAX_RETIRE live notes are retired per write. `|b| <= 1e3` reaches the same
+    place with no weights at all. The bounds have to be joint, because the harm is.
+
+    Two rules, both about what the gate can SAY rather than what its numbers look like:
+
+    * It fits the clamp. The shipped bge-m3 calibration spans 48.7 (-31.9 to +16.9) of the
+      120 the implementation allows - 41%, so a retrained gate has real room - while the
+      degenerate above spans 5e9 and is a step function the clamp is rendering.
+    * It can refuse. A gate whose minimum probability over the whole feature box is already
+      >= 0.5 has no input it would call "not a twin"; it is a note-retiring gate that always
+      says yes, which is the one outcome this whole check exists to prevent.
+    """
+    lo, hi = _twin_logit_range(w, b, mu, sd)
+    if not (math.isfinite(lo) and math.isfinite(hi)):
+        return False
+    return (hi - lo) <= 2 * _TWIN_LOGIT_CLAMP and lo < 0.0
 
 
 def _load_twin_calibration() -> tuple:
@@ -1378,13 +1420,16 @@ def _load_twin_calibration() -> tuple:
             if (len(cw) == len(cmu) == len(csd) == 5
                     and all(math.isfinite(v) for v in (*cw, *cmu, *csd, cb))
                     and all(v >= _TWIN_SD_MIN for v in csd)
-                    and all(abs(v) <= _TWIN_ABS_MAX for v in (*cw, *cmu, cb))):
+                    and all(abs(v) <= _TWIN_ABS_MAX for v in (*cw, *cmu, cb))
+                    and _twin_calibration_usable(cw, cb, cmu, csd)):
                 space, w, b, mu, sd, from_file = cspace, cw, cb, cmu, csd, True
             else:
                 _EARLY_WARNINGS.append(
                     f"twin_calibration.json out of bounds ({fp}) - using baked "
                     f"{_TWIN_BAKED_SPACE} weights (need 5 finite w/mu/sd, "
-                    f"sd >= {_TWIN_SD_MIN}, |w|,|mu|,|b| <= {_TWIN_ABS_MAX:g})")
+                    f"sd >= {_TWIN_SD_MIN}, |w|,|mu|,|b| <= {_TWIN_ABS_MAX:g}, and a logit "
+                    f"that spans no more than {2 * _TWIN_LOGIT_CLAMP:g} over [0,1]^5 with "
+                    f"some input it would call not-a-twin)")
     except (OSError, ValueError, KeyError, TypeError) as e:
         # _EARLY_WARNINGS, not log(): this runs at IMPORT, and log() mkdirs the store -
         # a read-only consumer (install.py --print) must not materialize a vault as a
@@ -1446,7 +1491,7 @@ def _twin_probability(cos_sim: float, title_a: str, desc_a: str, ents_a,
              max(1, len(title_a) + len(desc_a)), max(1, len(title_b) + len(desc_b))))
     zsum = _TWIN_B + sum(w * (v - mu) / sd for w, v, mu, sd
                          in zip(_TWIN_W, x, _TWIN_MU, _TWIN_SD))
-    return 1.0 / (1.0 + math.exp(-max(-60.0, min(60.0, zsum))))
+    return 1.0 / (1.0 + math.exp(-max(-_TWIN_LOGIT_CLAMP, min(_TWIN_LOGIT_CLAMP, zsum))))
 
 
 _YAML_NEEDS_QUOTE = re.compile(r'[:#&*!|>\'"%@`{}\[\],]|^\s|\s$')

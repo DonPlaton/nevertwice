@@ -172,7 +172,11 @@ check("no module constant is frozen into a default argument: " + "; ".join(_froz
 # ── twin-gate calibration ─────────────────────────────────────────────
 print("# twin calibration - data file, bounds, space label")
 tf = d / "twin.json"
-GOOD = {"space": "test-embed", "w": [1, 2, 3, 4, 5], "b": 0.5,
+# The intercept is NEGATIVE, as every real calibration's is (the shipped one is -3.06):
+# most candidate pairs are not twins. With b=+0.5 and five positive weights this fixture
+# had no input anywhere in the feature box it would call not-a-twin - a gate that always
+# says yes, which is what the joint bounds check refuses.
+GOOD = {"space": "test-embed", "w": [1, 2, 3, 4, 5], "b": -0.5,
         "mu": [0, 0, 0, 0, 0], "sd": [1, 1, 1, 1, 1]}
 tf.write_text(json.dumps(GOOD), encoding="utf-8")
 
@@ -192,7 +196,7 @@ os.environ["NEVERTWICE_TWIN_FILE"] = str(tf)
 os.environ.pop("NEVERTWICE_TWIN_SPACE", None)
 space, w, b, mu, sd = m._load_twin_calibration()
 check("valid file overrides space + weights",
-      space == "test-embed" and w == (1, 2, 3, 4, 5) and b == 0.5)
+      space == "test-embed" and w == (1, 2, 3, 4, 5) and b == -0.5)
 
 for label, bad in (("zero sd", {"sd": [0, 1, 1, 1, 1]}),
                    ("near-zero sd saturates the sigmoid", {"sd": [1e-12, 1, 1, 1, 1]}),
@@ -200,9 +204,40 @@ for label, bad in (("zero sd", {"sd": [0, 1, 1, 1, 1]}),
                    ("absurd weight", {"w": [1e9, 2, 3, 4, 5]}),
                    ("absurd bias", {"b": 1e9}),
                    ("wrong length", {"w": [1, 2, 3]}),
-                   ("non-numeric", {"mu": ["x", 0, 0, 0, 0]})):
+                   ("non-numeric", {"mu": ["x", 0, 0, 0, 0]}),
+                   # Each bound held on its own and the pair defeated both. `sd >= 1e-6` and
+                   # `|w| <= 1e3` are satisfied by sd=1e-6 with w=1e3, and the standardized
+                   # feature then reaches 1e6: the logit spans +-2e9 over the whole feature
+                   # box, the sigmoid is pinned, and every candidate clearing the cosine
+                   # prefilter is a "twin" - up to WRITE_DEDUP_MAX_RETIRE live notes retired
+                   # per write. The bias has the same reach with no weights at all.
+                   ("a tiny sd and a large weight, each within its own bound",
+                    {"sd": [1e-6, 1, 1, 1, 1], "w": [1e3, 1, 1, 1, 1]}),
+                   ("a bias at the cap, which needs no weights to pin p=1.0",
+                    {"b": 1e3, "w": [0.1, 0.1, 0.1, 0.1, 0.1]})):
     tf.write_text(json.dumps({**GOOD, **bad}), encoding="utf-8")
     check(f"rejected: {label}", m._load_twin_calibration()[1][0] == 3.684473)
+
+# What the bound is FOR, measured on the gate rather than on the file: two notes with nothing
+# in common except a cosine above the prefilter.
+DISTINCT = dict(cos_sim=0.72, title_a="lock reclaimed from a live holder",
+                desc_a="The age ceiling broke the PID-reuse wedge.", ents_a=("acquire_lock",),
+                title_b="readme count read from the worktree",
+                desc_b="git ls-files is the instrument for the tracked tree.",
+                ents_b=("README.md",))
+_baked = (m._TWIN_W, m._TWIN_B, m._TWIN_MU, m._TWIN_SD)
+tf.write_text(json.dumps({**GOOD, "sd": [1e-6, 1, 1, 1, 1], "w": [1e3, 1, 1, 1, 1]}),
+              encoding="utf-8")
+_sp, m._TWIN_W, m._TWIN_B, m._TWIN_MU, m._TWIN_SD = m._load_twin_calibration()
+check("a refused calibration cannot pin an unrelated pair at p=1.0",
+      m._twin_probability(**DISTINCT) < m.WRITE_DEDUP_TWIN_P)
+m._TWIN_W, m._TWIN_B, m._TWIN_MU, m._TWIN_SD = _baked
+
+# The rule has to admit the gate this project ships, or it is not a bound but a ban.
+tf.write_text(json.dumps({"space": "test-embed", "w": list(m._TWIN_W), "b": m._TWIN_B,
+                          "mu": list(m._TWIN_MU), "sd": list(m._TWIN_SD)}), encoding="utf-8")
+check("and the shipped calibration is not itself refused",
+      m._load_twin_calibration()[0] == "test-embed")
 tf.write_text("not json", encoding="utf-8")
 check("rejected: unreadable file", m._load_twin_calibration()[0] == "bge-m3")
 
