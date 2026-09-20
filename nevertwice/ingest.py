@@ -145,6 +145,55 @@ def _text_hash(text: str) -> str:
     return hashlib.sha1(text.encode("utf-8", "replace")).hexdigest()[:8]
 
 
+def _digest_with(running, extra: str) -> str:
+    """`_text_hash` of (whatever `running` has absorbed) + `extra`, without joining them."""
+    h = running.copy()
+    h.update(extra.encode("utf-8", "replace"))
+    return h.hexdigest()[:8]
+
+
+def _read_watermarked(path: Path, prefix_chars: int, tail_cap: int,
+                      chunk: int = 1 << 16) -> tuple[int, object, str, bool]:
+    """Stream a watermarked transcript: prove the prefix, return only the tail.
+
+    `(chars_seen, running sha1 over them, tail, tail_was_truncated)`. The prefix is read in
+    chunks and hashed as it goes - it exists only to prove the old content is unchanged, and a
+    hash does not need its input in one piece. The tail is read to `tail_cap` + 1 characters so
+    an over-cap delta is detectable without holding it.
+
+    The read that this replaces pulled the WHOLE file into memory before the delta was even
+    computed, and `_text_hash(consumed)` then materialised it a second time: measured at 23.6 MB
+    of peak allocation for a one-line delta on a 7.7 MB rollout, with the vault lock held. The
+    cap above bounds what is MINED; nothing bounded what was READ. Same case here: 0.5 MB.
+
+    The chunk is 64 KB rather than a megabyte because `read(n)` allocates n characters up
+    front - measured 3.5 MB of peak for the prefix loop at a 1 MB chunk, 0.4 MB at 64 KB, for
+    the same 117 iterations' worth of I/O.
+    """
+    h = hashlib.sha1()
+    seen = 0
+    with open(path, encoding="utf-8", errors="replace") as fh:
+        while seen < prefix_chars:
+            part = fh.read(min(chunk, prefix_chars - seen))
+            if not part:
+                break                          # the file is shorter than the watermark claims
+            h.update(part.encode("utf-8", "replace"))
+            seen += len(part)
+        # Chunked here too, and for a reason that only a measurement shows: CPython's
+        # `TextIOWrapper.read(n)` allocates a buffer of n characters up front, so asking for
+        # "the tail, up to the cap" cost the whole 10 MB cap even when the tail was five
+        # characters (10.8 MB of peak, against 0.4 MB for the prefix loop beside it).
+        parts, got = [], 0
+        while got <= tail_cap:
+            part = fh.read(min(chunk, tail_cap + 1 - got))
+            if not part:
+                break
+            parts.append(part)
+            got += len(part)
+    tail = "".join(parts)
+    return seen, h, tail, len(tail) > tail_cap
+
+
 def sweep_session_id(path: Path, text: str) -> str:
     """The processed-db id for a FULL-file mine in --dir sweeps: path-hash + content-hash,
     so re-running a sweep over the same file state is idempotent. This id alone is NOT
@@ -230,8 +279,10 @@ def ingest_files(files, project, agent, db, *, trigger="ingest-sweep",
     watermarks = load_watermarks()
     wm_dirty = False
 
-    def _advance(hp: str, consumed: str, path: Path, size: int) -> None:
-        """Record that `consumed` (a PREFIX of the file's text) has been mined.
+    def _advance(hp: str, chars: int, hash8: str, path: Path, size: int) -> None:
+        """Record that the first `chars` characters, hashing to `hash8`, have been mined.
+        Takes the MEASUREMENTS rather than the text: the consumed prefix can be the whole of a
+        multi-megabyte rollout, and hashing it here meant holding a second copy of it.
         `size` is the file's byte size statted BEFORE reading - never stat here, the
         file may have grown during extraction and a late stat would make the size
         fast-skip below hide that growth (review 2026-08)."""
@@ -240,7 +291,7 @@ def ingest_files(files, project, agent, db, *, trigger="ingest-sweep",
             mtime = round(path.stat().st_mtime, 3)
         except OSError:
             mtime = None
-        watermarks[hp] = {"chars": len(consumed), "hash8": _text_hash(consumed),
+        watermarks[hp] = {"chars": chars, "hash8": hash8,
                           "bytes": size, "mtime": mtime, "path": str(path),
                           "last": datetime.now().isoformat(timespec="seconds")}
         wm_dirty = True
@@ -276,6 +327,10 @@ def ingest_files(files, project, agent, db, *, trigger="ingest-sweep",
                 and rec.get("mtime") is not None and rec.get("mtime") == st_mtime):
             skipped += 1
             continue
+        raw = None                                 # the whole file - UNWATERMARKED path only
+        head_chars, tail, over_cap = 0, "", False  # the streamed prefix proof and the delta
+        head_h = hashlib.sha1()                    # running hash over everything consumed
+        want = 0
         try:
             if st_size > MAX_SWEEP_BYTES and not rec:
                 # DoS guard: skip a huge UNWATERMARKED file (mining it whole would block the
@@ -292,18 +347,20 @@ def ingest_files(files, project, agent, db, *, trigger="ingest-sweep",
                 # docparse's separate MAX_DOC_BYTES gate raised DocError BEFORE the
                 # delta logic could run - past 50MB the appended tail became permanently
                 # invisible, with the skip message naming a different env var than the
-                # one that could fix it (review 2026-08 D2). Read directly (same
-                # utf-8/replace read docparse uses for text).
-                raw = f.read_text(encoding="utf-8", errors="replace")
+                # one that could fix it (review 2026-08 D2). Read directly, and STREAM:
+                # the prefix is proof, not content, so only the tail is held.
+                want = rec.get("chars", 0)
+                want = want if isinstance(want, int) and want > 0 else 0
+                head_chars, head_h, tail, over_cap = _read_watermarked(f, want,
+                                                                       MAX_SWEEP_BYTES)
             else:
                 raw = docparse.extract_text(f)            # .pdf/.docx/.html → text; else raw read
+                tail = raw
         except docparse.DocError as e:                    # missing PDF dep / corrupt doc - skip, don't abort
             print(f"[ingest] skip {f.name}: {e}", file=sys.stderr)
             skipped += 1
             continue
         except OSError:
-            continue
-        if not raw.strip():
             continue
 
         # ── Watermark tier (review 2026-08): a grown text file mines ONLY its appended
@@ -312,14 +369,22 @@ def ingest_files(files, project, agent, db, *, trigger="ingest-sweep",
         # re-mines in full once (under the normal unwatermarked size cap).
         delta_from = 0
         if rec:
-            chars = rec.get("chars", 0)
-            if (isinstance(chars, int) and 0 < chars <= len(raw)
-                    and _text_hash(raw[:chars]) == rec.get("hash8")):
-                if chars == len(raw):                     # unchanged content
-                    _advance(hp, raw, f, st_size)         # refresh the byte size for the fast-skip
+            # `want > 0` is load-bearing: a record claiming zero characters would otherwise
+            # "prove" itself against the empty hash and take the delta path with no `raw`.
+            if want > 0 and head_chars == want and _digest_with(head_h, "") == rec.get("hash8"):
+                if over_cap:
+                    # The delta alone is past the cap. Say so and do NOT advance: the content
+                    # stays minable once the cap is raised, which is the same contract the
+                    # byte-exact check below keeps for a delta we were able to hold.
+                    print(f"[ingest] skip {f.name}: delta > cap {MAX_SWEEP_BYTES} "
+                          f"(raise NEVERTWICE_MAX_SWEEP_BYTES)", file=sys.stderr)
                     skipped += 1
                     continue
-                delta_from = chars
+                if not tail:                              # unchanged content
+                    _advance(hp, head_chars, _digest_with(head_h, ""), f, st_size)
+                    skipped += 1                          # refresh the byte size for the fast-skip
+                    continue
+                delta_from = want
             else:
                 # rotation/truncation: abandon the watermark as documented - the stale
                 # entry otherwise forced a full read + silent skip forever (D2)
@@ -331,7 +396,14 @@ def ingest_files(files, project, agent, db, *, trigger="ingest-sweep",
                           f"{MAX_SWEEP_BYTES} (raise NEVERTWICE_MAX_SWEEP_BYTES)", file=sys.stderr)
                     skipped += 1
                     continue
-        mine_raw = raw[delta_from:]
+                try:                                      # the proof failed: read it as new
+                    raw = f.read_text(encoding="utf-8", errors="replace")
+                except OSError:
+                    continue
+                head_chars, head_h, tail, over_cap = 0, hashlib.sha1(), raw, False
+        if raw is not None and not raw.strip():
+            continue                                      # an empty file has nothing to mine
+        mine_raw = tail
         if suffix == ".jsonl" and mine_raw and not mine_raw.endswith("\n"):
             # A LIVE writer may be mid-flush: consume only COMPLETE lines. The old code
             # recorded the watermark mid-line, so the head of the split line was dropped
@@ -350,13 +422,15 @@ def ingest_files(files, project, agent, db, *, trigger="ingest-sweep",
                     skipped += 1                          # nothing complete yet; no advance
                     continue
                 mine_raw = mine_raw[:cut + 1]
-        consumed = raw[:delta_from + len(mine_raw)]
+        consumed_chars = delta_from + len(mine_raw)
+        consumed_hash = _digest_with(head_h, mine_raw)
+        total_chars = head_chars + len(tail)              # what the file holds right now
         # When the live-flush cut left a partial tail unconsumed, the stored byte size
         # must NOT equal the on-disk size: the size fast-skip would otherwise skip the
         # file forever if the writer never appends another byte (dies mid-flush), and
         # the final line would never mine even after settling. -1 forces the next sweep
         # through the prefix-hash path, which mines the tail once the file settles.
-        wm_size = st_size if len(consumed) == len(raw) else -1
+        wm_size = st_size if consumed_chars == total_chars else -1
         # The cap is in BYTES; comparing len() (chars) let a Russian-language delta
         # through at nearly double the cap (review 2026-08 D2). Encode only when the
         # char lower-bound cannot prove the text is under it.
@@ -376,7 +450,7 @@ def ingest_files(files, project, agent, db, *, trigger="ingest-sweep",
                 pass                                      # a malformed line must not abort the sweep
         if not txt.strip():                               # grew by non-content only (metadata lines,
             if delta_capable:                             # whitespace) - advance and move on, no LLM
-                _advance(hp, consumed, f, wm_size)
+                _advance(hp, consumed_chars, consumed_hash, f, wm_size)
             skipped += 1
             continue
 
@@ -392,8 +466,8 @@ def ingest_files(files, project, agent, db, *, trigger="ingest-sweep",
             skipped += 1
             # Migration + belt-and-braces: a previously-mined file without a (current)
             # watermark gets one now, so its NEXT growth delta-mines instead of re-mining.
-            if delta_capable and (not rec or rec.get("chars", 0) != len(raw)):
-                _advance(hp, raw, f, st_size)
+            if delta_capable and (not rec or rec.get("chars", 0) != total_chars):
+                _advance(hp, total_chars, _digest_with(head_h, tail), f, st_size)
             continue
         run_log: list[dict] = []
         try:
@@ -410,7 +484,7 @@ def ingest_files(files, project, agent, db, *, trigger="ingest-sweep",
         # marks the db on success and on deliberate skips, but an extraction failure leaves
         # the sid unmarked for retry, and the watermark must retry with it.
         if delta_capable and sid in db:
-            _advance(hp, consumed, f, wm_size)
+            _advance(hp, consumed_chars, consumed_hash, f, wm_size)
         if max_new and new >= max_new:         # bound lock-hold per cycle; rest caught next sweep
             break
     if wm_dirty:

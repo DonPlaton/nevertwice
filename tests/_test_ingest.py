@@ -208,6 +208,53 @@ def test_watermark_branches():
         assert "corrupt.jsonl" not in reads, reads
 
 
+def test_a_watermarked_file_is_not_read_whole_into_memory():
+    """The delta cap bounds what is MINED. Nothing bounded what was READ.
+
+    `raw = f.read_text(...)` pulled the entire file into RAM before the delta was computed, and
+    the comment above the size gate said a watermarked file was exempt from it because "only its
+    DELTA is mined, and the delta gets its own cap below". Both halves are true and neither is
+    about the read: a months-old rollout that grows by one line costs its whole size in memory,
+    with the vault lock held - and `_text_hash(consumed)` then materialised it a second time.
+
+    The prefix is only needed to PROVE the old content is unchanged, and a hash does not need
+    its input in one piece.
+    """
+    import tracemalloc
+    with tempfile.TemporaryDirectory() as d:
+        tmp = Path(d)
+        vault = tmp / "vault"
+        vault.mkdir()
+        sw = _Sweep(vault)
+
+        f = tmp / "rollout.jsonl"
+        body = ('{"role": "user", "content": "an old turn about the batch size"}' + "\n") * 120000
+        f.write_text(body, encoding="utf-8")
+        assert len(body) > 7 * 1024 * 1024, len(body)
+        sw.set_wm(f, {"chars": len(body), "hash8": ingest._text_hash(body),
+                      "bytes": -1, "mtime": None, "last": "2026-01-01T00:00:00"})
+        with f.open("a", encoding="utf-8") as fh:        # one new line, the whole delta
+            fh.write('{"role": "user", "content": "the new turn about num_workers"}' + "\n")
+        del body
+
+        tracemalloc.start()
+        try:
+            new, _, _, _ = sw.run([f])
+            peak = tracemalloc.get_traced_memory()[1]
+        finally:
+            tracemalloc.stop()
+
+        assert new == 1, new
+        assert "num_workers" in sw.mined[-1][1] and "an old turn" not in sw.mined[-1][1]
+        assert peak < 4 * 1024 * 1024, (
+            f"read {peak / 1e6:.1f} MB into memory for a one-line delta on an "
+            f"{len(f.read_text(encoding='utf-8')) / 1e6:.1f} MB file")
+        # and the watermark still describes the whole file, so the next sweep skips it
+        assert sw.wm(f)["chars"] == len(f.read_text(encoding="utf-8")), sw.wm(f)
+        new, skipped, _, _ = sw.run([f])
+        assert (new, skipped) == (0, 1), (new, skipped)
+
+
 if __name__ == "__main__":
     fns = [v for k, v in sorted(globals().items()) if k.startswith("test_") and callable(v)]
     failed = 0
