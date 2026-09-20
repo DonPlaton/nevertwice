@@ -147,6 +147,52 @@ check("a same-size rewrite reaches the prefix-hash proof and is mined", len(mine
       "the size-only fast-skip continued before the proof could run, so the new content was "
       "never mined again")
 
+print("# a stamp over a block-style list takes the list with it")
+#: `_stamp_frontmatter` replaced the line whose key matched and moved on. A block-style list -
+#: what Obsidian writes when a human edits a note's properties by hand, and what an import can
+#: carry in - lives on the lines UNDER its key, so replacing `entities:` with an inline value
+#: left `  - alpha` and `  - beta` sitting under a key that no longer describes them. The result
+#: is YAML no parser accepts: a strict reader rejects the whole block, which costs the note every
+#: other field in it, not just the list. The engine's own reader skips any line without a colon,
+#: which is exactly why nothing here ever noticed.
+NL = chr(10)
+BLOCK = ("---" + NL + "title: a note" + NL + "entities:" + NL + "  - alpha" + NL +
+         "  - beta" + NL + "recurrence: 1" + NL + "---" + NL + NL + "body text" + NL)
+
+
+def _head(text: str) -> list[str]:
+    return text.split(NL + "---", 1)[0].split(NL)
+
+
+stamped = m._stamp_frontmatter(BLOCK, {"entities": ["gamma"]})
+orphans = [ln for ln in _head(stamped) if ln.lstrip().startswith("- ")]
+check("replacing a block list leaves none of its items behind", not orphans, repr(orphans))
+fm, body = m._read_frontmatter(stamped)
+check("the replaced key holds the new value", fm.get("entities") == ["gamma"], repr(fm))
+check("and every other key survives", fm.get("title") == "a note" and fm.get("recurrence") == "1",
+      repr(fm))
+check("the body is untouched", body.strip() == "body text", repr(body))
+keys = [ln.split(":", 1)[0] for ln in _head(stamped) if ":" in ln and ln[:1].strip()]
+check("no key is written twice", len(keys) == len(set(keys)), repr(keys))
+
+#: The collateral half: stamping a scalar must not disturb a block list it never named.
+kept = m._stamp_frontmatter(BLOCK, {"recurrence": 2})
+check("a scalar stamp leaves an untouched block list alone",
+      [ln for ln in _head(kept) if ln.lstrip().startswith("- ")] == ["  - alpha", "  - beta"],
+      repr(_head(kept)))
+check("while still doing its own job", m._read_frontmatter(kept)[0].get("recurrence") == "2")
+
+#: And a nested mapping is not a top-level key, whatever it is called. `_stamp_frontmatter`
+#: documents itself as replacing TOP-LEVEL keys; matching on any indented line would let a
+#: stamp rewrite a value inside somebody else's block.
+NESTED = ("---" + NL + "title: a note" + NL + "entity_types:" + NL + "  recurrence: method" + NL +
+          "recurrence: 1" + NL + "---" + NL + NL + "body text" + NL)
+deep = m._stamp_frontmatter(NESTED, {"recurrence": 7})
+check("a stamp does not reach inside a nested block",
+      "  recurrence: method" in _head(deep), repr(_head(deep)))
+check("it changes the top-level key instead",
+      m._read_frontmatter(deep)[0].get("recurrence") == "7", repr(_head(deep)))
+
 print()
 print(f"writes that lose data: {P} passed, {F} failed")
 sys.exit(1 if F else 0)

@@ -3240,12 +3240,29 @@ def _stamp_frontmatter(text: str, fields: dict) -> str:
     body = text[end:]
     pending = dict(fields)
     out = []
-    for ln in text[:end].split("\n"):
-        key = ln.split(":", 1)[0].strip() if ":" in ln else ""
-        if key in pending:
-            out.append(f"{key}: {_yaml_scalar(pending.pop(key))}")
-        else:
+    lines = text[:end].split("\n")
+    i = 0
+    while i < len(lines):
+        ln = lines[i]
+        i += 1
+        # TOP-LEVEL only, as the docstring says. Matching an indented line too meant a stamp of
+        # `recurrence` rewrote `  recurrence: method` INSIDE an `entity_types:` block - losing the
+        # nested value, and leaving the real top-level key untouched, so the write silently did
+        # nothing it was asked to do and one thing it was not (T1).
+        indented = ln[:1] in (" ", "\t")
+        key = ln.split(":", 1)[0].strip() if ":" in ln and not indented else ""
+        if key not in pending:
             out.append(ln)
+            continue
+        out.append(f"{key}: {_yaml_scalar(pending.pop(key))}")
+        # A block-style value lives on the lines UNDER its key - what Obsidian writes when a
+        # human edits a note's properties, and what an import can carry in. Replacing only the
+        # key line left `  - alpha` orphaned under a key that no longer described it, and the
+        # result was YAML no parser accepts: a strict reader rejects the whole block, which costs
+        # the note every other field, not just the list.
+        while i < len(lines) and (lines[i][:1] in (" ", "\t")
+                                  or lines[i].lstrip().startswith("- ")):
+            i += 1
     for k, v in pending.items():
         out.append(f"{k}: {_yaml_scalar(v)}")
     return bom + "\n".join(out) + body

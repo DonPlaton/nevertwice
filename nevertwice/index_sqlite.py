@@ -225,10 +225,14 @@ def build(verbose: bool = False) -> int:
         # Brain F5: salience lives in note frontmatter (stamped sleep-time), not the embed cache,
         # so source it from the markdown here. ONE scan, reused for the graph rebuild below;
         # {} → every row salience 0 (inert).
-        try:
-            all_notes = m._iter_all_notes()
-        except Exception:
-            all_notes = []
+        # This scan feeds TWO things: salience for the rows below, and the full graph rebuild at
+        # the end. Swallowing a failure into `[]` told both of them the store is empty - salience
+        # 0 everywhere, and reindex_graph(..., full=True) deleting every graph row and stamping
+        # graph_built=1, so the graph came out empty AND authoritative and no consumer fell back
+        # to the markdown scan. An unreadable vault is not an empty one; let it out, and the
+        # transaction opened above rolls back on the way, which is what this function's own
+        # docstring promises. Every caller already logs and carries on (T1).
+        all_notes = m._iter_all_notes()
         sal_map = {nt["stem"]: nt.get("salience", 0.0) for nt in all_notes}
         n = dim = 0
         for stem, r in cache.items():

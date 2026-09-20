@@ -488,11 +488,17 @@ def _stamp(stem: str, rec: dict, batch: str) -> bool:
         return False
     lines = [ln for ln in text[3:end].split("\n")
              if ln.strip() and not any(ln.strip().startswith(f"{k}:") for k in PROVENANCE_KEYS)]
-    lines += [f"imported_from: {rec['source']}",
-              f"source_author: {rec['author']}",
-              f"source_created: {rec['created']}",
-              f"source_ref: {rec['ref']}",
-              f"import_batch: {batch}"]
+    # Every one of these five values comes out of somebody else's export file. Spliced raw, a
+    # newline in any of them closes its line and opens a top-level key of the export's choosing -
+    # `confidence: 1.0` puts an imported note ahead of everything the owner wrote. `_yaml_scalar`
+    # is the engine's own single-line-and-quote rule, the same one every other frontmatter writer
+    # goes through; this path was written without it (T1, proved in
+    # tests/_test_migrate_keeps_its_word.py).
+    lines += [f"imported_from: {m._yaml_scalar(rec['source'])}",
+              f"source_author: {m._yaml_scalar(rec['author'])}",
+              f"source_created: {m._yaml_scalar(rec['created'])}",
+              f"source_ref: {m._yaml_scalar(rec['ref'])}",
+              f"import_batch: {m._yaml_scalar(batch)}"]
     m.write_atomic(path, "---" + "\n".join([""] + lines) + text[end:])
     return True
 

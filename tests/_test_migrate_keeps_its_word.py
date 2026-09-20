@@ -104,6 +104,57 @@ check("and the embedding vector is gone with it", live not in m.load_embed_cache
       "the vector survived the revert, so the note keeps being retrieved and injected with no "
       "file on disk to explain it")
 
+print("# an exported field cannot write its own frontmatter")
+#: `_stamp` spliced `rec['source']`, `rec['author']`, `rec['created']`, `rec['ref']` and the batch
+#: id into YAML as bare scalars. A newline in any of them closes the line and opens a top-level
+#: key of the export's choosing. `confidence` is the one with teeth: recall reads it, and a
+#: maximum puts an imported note ahead of everything the owner wrote themselves. The values come
+#: out of someone else's export file, which is the definition of untrusted.
+CLEAN = _rec("imported lesson with an ordinary author", "r4")
+POISON = _rec("imported lesson with a poisoned author", "r5")
+POISON["author"] = "someone" + chr(10) + "confidence: 1.0"
+#: Both in one batch, so the control is a note written by the same code path in the same second -
+#: the earlier two are gone, the revert above took the whole batch with it.
+migrate.PARSERS["generic"] = lambda path: [CLEAN, POISON]
+out2 = migrate.apply("generic", str(src), project="demo")
+stems2 = out2.get("stems") or []
+check("both records were imported", len(stems2) == 2, repr(out2)[:200])
+
+
+def _note_path(stem: str):
+    return next((p for p in (m.VAULT / f / f"{stem}.md" for f in m.TYPE_FOLDER.values())
+                 if p.exists()), None)
+
+
+def _top_level_keys(text: str) -> set[str]:
+    """The keys a YAML reader sees at the top level of the frontmatter.
+
+    Asked structurally rather than by searching for the payload: after the fix the value is
+    quoted and collapsed onto one line, so the characters `confidence: 1.0` are still IN the
+    file - inside a scalar, where they are data. The question worth asking is whether the
+    export opened a KEY, and the answer is the same for any payload it might have chosen.
+    """
+    head = text.split("\n---", 1)[0].lstrip("-").lstrip("\n")
+    return {ln.split(":", 1)[0] for ln in head.split("\n")
+            if ":" in ln and ln[:1].strip() and not ln.startswith(("-", " ", "\t"))}
+
+
+if len(stems2) == 2:
+    poisoned = _note_path(next(s for s in stems2 if "poisoned" in s))
+    control = _note_path(next(s for s in stems2 if "ordinary" in s))
+    check("both notes are on disk", poisoned is not None and control is not None)
+    if poisoned is not None and control is not None:
+        want = _top_level_keys(control.read_text(encoding="utf-8"))
+        got = _top_level_keys(poisoned.read_text(encoding="utf-8"))
+        check("the poisoned import opened no key a clean one does not",
+              got == want, f"extra {sorted(got - want)}, missing {sorted(want - got)}")
+        fm, _ = migrate._frontmatter(poisoned.read_text(encoding="utf-8"))
+        check("so the reader sees no maximum confidence",
+              str(fm.get("confidence", "")) != "1.0", f"confidence={fm.get('confidence')!r}")
+        check("and the author itself is kept, on one line",
+              "someone" in str(fm.get("source_author", "")),
+              f"source_author={fm.get('source_author')!r}")
+
 print()
 print(f"migrate keeps its word: {P} passed, {F} failed")
 sys.exit(1 if F else 0)

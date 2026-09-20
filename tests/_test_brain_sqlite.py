@@ -94,6 +94,35 @@ with tempfile.TemporaryDirectory() as td:
     sx.delete([new])
     check("delete prunes the graph rows", "lora" not in sx.sql_etype_index())
 
+    # ── a failed scan is not an empty store ─────────────────────────────────────
+    # build() reads the vault once, for salience and for the graph rebuild, and swallowed any
+    # failure into `all_notes = []`. The empty list then went to reindex_graph(..., full=True),
+    # which DELETEs every graph row and stamps graph_built=1: the graph becomes empty AND
+    # authoritative, so every consumer stops falling back to the markdown scan and gets nothing.
+    # build()'s own docstring promises the opposite - "a crash mid-build rolls back, leaving the
+    # previous index intact" - which is the contract this restores.
+    print("a vault that cannot be read is not a vault with nothing in it")
+    sx.reindex_graph()
+    before = dict(sx.sql_etype_index())
+    check("the graph has rows to lose", len(before) > 0)
+    real_iter = m._iter_all_notes
+
+    def _unreadable(*a, **k):
+        raise OSError("vault unreadable")
+
+    m._iter_all_notes = _unreadable
+    raised = None
+    try:
+        sx.build()
+    except Exception as exc:                          # noqa: BLE001 - that is the check
+        raised = exc
+    finally:
+        m._iter_all_notes = real_iter
+    check("build refuses instead of building from an empty scan", raised is not None)
+    check("the graph rows survive the failed build", dict(sx.sql_etype_index()) == before)
+    check("and the graph is still the one the last good scan stamped", sx.graph_index_ready())
+    check("a readable vault still builds", sx.build() >= 0)
+
     # ── scale smoke-test (5000 synthetic notes) ─────────────────────────────────
     print("scale (5000 synthetic notes)")
     big = [{"stem": f"2026-06-01-proj{i % 10}-pattern-syn-{i}", "project": f"proj{i % 10}",
