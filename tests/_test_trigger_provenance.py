@@ -51,7 +51,14 @@ print("\n- neither present still yields something -")
 check("the last resort is 'manual'", resolve({}, "") == "manual")
 
 print("\n- the payload value is kept, not discarded -")
-check("hook_trigger is captured separately", "hook_trigger = (session.get(" in SRC)
+# The payload value must be READ, into a name of its own. Matched on the name rather than on
+# the spelling of the read: the fields are coerced through `_payload_str` now, because an
+# explicit JSON null crashed the log line below them, and a check that pins how the value is
+# fetched goes red on a fix that changes nothing about this property.
+check("hook_trigger is captured separately",
+      re.search(r"^[ ]*hook_trigger = .*trigger", SRC, re.M) is not None)
+check("and it is read from the payload, not invented",
+      re.search(r'^\s*hook_trigger = .*"trigger".*"reason"', SRC, re.M | re.S) is not None)
 check("and trigger no longer reads the payload first",
       'trigger = session.get("trigger")' not in SRC)
 

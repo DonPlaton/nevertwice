@@ -2089,6 +2089,31 @@ def acquire_lock(timeout_s: float = 30) -> bool:
     return False
 
 
+def _lock_holder_pid() -> str:
+    """The pid the lock file records, or "" when it does not record one.
+
+    One reader for the three that ask - `holds_lock`, `release_lock`, `refresh_lock`. Each
+    called a bare `read_text()` under `except OSError`, and `UnicodeDecodeError` is a
+    ValueError, not an OSError: a lock file holding bytes the platform codec cannot decode
+    (the cp1251 default on Windows/RU, the same trap already fixed for stdin) escaped all
+    three. The cost is not a bad log line - `guards.persist_under_lock` opens with
+    `mine = not holds_lock()`, so every serialised ledger write died there before attempting
+    anything, and died as a UnicodeDecodeError rather than the `LedgerBusy` each surface
+    catches. `acquire_lock` writes only ASCII, so such a file has an outside cause: a write
+    cut short, a syncing folder, another tool.
+
+    Anything that is not digits is not a pid, so it reads as "" - which each caller already
+    handles, and handles the way it did before: not ours for `holds_lock`, and the old
+    unlink/utime path for the other two. A rule in one place rather than three patches, so
+    the fourth reader gets it.
+    """
+    try:
+        text = (_lock_file().read_text(encoding="utf-8", errors="replace") or "").strip()
+    except OSError:
+        return ""
+    return text if text.isdigit() else ""
+
+
 def holds_lock() -> bool:
     """Does THIS process hold the vault lock right now?
 
@@ -2099,10 +2124,7 @@ def holds_lock() -> bool:
     `release_lock`/`refresh_lock`, which tolerate an empty file to stay compatible with a holder
     that crashed between create and pid-write.
     """
-    try:
-        return (_lock_file().read_text() or "").strip() == str(os.getpid())
-    except OSError:
-        return False
+    return _lock_holder_pid() == str(os.getpid())
 
 
 def release_lock():
@@ -2112,7 +2134,7 @@ def release_lock():
         # the new holder, and the old holder's unconditional unlink admitted a third
         # writer into the critical section (review 2026-08). A positively-foreign
         # pid means back off; an unreadable file keeps the old unlink behavior.
-        if (lock.read_text() or "").strip() not in ("", str(os.getpid())):
+        if _lock_holder_pid() not in ("", str(os.getpid())):
             return
     except OSError:
         pass
@@ -2138,7 +2160,7 @@ def refresh_lock() -> None:
     a DRY RUN, holding no lock at all."""
     lock = _lock_file()
     try:
-        if (lock.read_text() or "").strip() not in ("", str(os.getpid())):
+        if _lock_holder_pid() not in ("", str(os.getpid())):
             return
     except OSError:
         pass
@@ -8052,6 +8074,31 @@ def _warn_if_store_relocated() -> None:
         pass
 
 
+def _payload_str(session: dict, key: str, default: str = "") -> str:
+    """One hook-payload field, as the string every reader of it is typed for.
+
+    `dict.get(key, default)` returns the default only when the key is ABSENT. An explicit
+    JSON `null` - which is exactly how a host with no session writes "no value" - comes back
+    as None, and `session_id[:8]` in `main()`'s very first log line then raised TypeError
+    outside any try: exit 1 on EVERY event, PreToolUse included. The whole premise of
+    `hosts.py` is that hosts are other people's, so one adapter sending `"session_id": null`
+    turned every Edit, Write and Bash of that agent into an error. Memory being unavailable
+    costs memory, never the agent's tool call - the third place this project has had to write
+    that rule down.
+
+    Coerced here, where the payload is parsed, rather than guarded at the log line: a try
+    around the line would hide the next reader that slices the same field, and `sid8`,
+    `_prompt_recall_state_path` and the processed-db key all take it from here. A non-string
+    is rendered rather than refused - five of the seven JSON types crashed and two (a string,
+    a list) passed, so refusing would have to decide which of them is "really" invalid, and a
+    hook is not the place for that. Path and db uses sanitise this value themselves.
+    """
+    value = session.get(key)
+    if value is None or value == "":
+        return default
+    return value if isinstance(value, str) else str(value)
+
+
 def main():
     try:
         # Claude Code writes the hook payload in UTF-8; on a cp1251 console (the
@@ -8070,25 +8117,28 @@ def main():
         log(f"hook payload unreadable ({type(e).__name__}: {e}) - degrading to empty event")
         session = {}
 
-    session_id = session.get("session_id", "unknown")
-    cwd = session.get("cwd", os.getcwd())
-    transcript_path = session.get("transcript_path", "")
-    event = session.get("hook_event_name", "")
+    session_id = _payload_str(session, "session_id", "unknown")
+    cwd = _payload_str(session, "cwd", os.getcwd())
+    transcript_path = _payload_str(session, "transcript_path", "")
+    event = _payload_str(session, "hook_event_name", "")
     # `trigger` records WHICH PIPELINE PATH wrote this note, so the hook event wins. The
     # payload's own `trigger`/`reason` is a different vocabulary - PreCompact sends
     # auto|manual, SessionStart sends a source - and reading it first mixed the two in one
     # field: vault-wide it carries watch=578 and process_now=498 beside auto=3, manual=1,
     # clear=1, and it flipped in OPPOSITE directions for two session notes in one batch
     # (review 2026-09). The payload value is kept separately rather than discarded.
-    hook_trigger = (session.get("trigger") or session.get("reason") or "").strip()
+    hook_trigger = (_payload_str(session, "trigger")
+                    or _payload_str(session, "reason")).strip()
     trigger = event or hook_trigger or "manual"
     # Generic-ingestion fields (any agent): agent label, explicit project, and a
     # raw transcript passed inline instead of a Claude Code JSONL file.
-    agent = (session.get("agent") or DEFAULT_AGENT).strip() or DEFAULT_AGENT
-    project_override = session.get("project") or None
+    agent = _payload_str(session, "agent", DEFAULT_AGENT).strip() or DEFAULT_AGENT
+    project_override = _payload_str(session, "project") or None
     transcript_text = session.get("transcript_text")
     if transcript_text is None:
         transcript_text = session.get("text")
+    if transcript_text is not None and not isinstance(transcript_text, str):
+        transcript_text = str(transcript_text)
 
     log(f"Event={event} | id={session_id[:8]} | agent={agent} | dir={cwd} | "
         f"trigger={trigger} | model={OLLAMA_MODEL}")

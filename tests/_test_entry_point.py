@@ -189,6 +189,59 @@ for event in ("SessionStart", "UserPromptSubmit", "PreToolUse", "SessionEnd", "P
     check(event + ": and nothing raises out of the hook", "Traceback" not in r.stderr,
           r.stderr[-400:])
 
+
+# ── a payload field that is present and null ──────────────────────────
+#
+# `session.get("session_id", "unknown")` returns the DEFAULT only when the key is ABSENT. An
+# explicit JSON `null` - which is exactly how a host with no session writes "no value" - comes
+# back as None, and `session_id[:8]` in main()'s very first log line raised TypeError before
+# any try. The whole point of `hosts.py` is that hosts are other people's, so an adapter that
+# sends `"session_id": null` turned every Edit, Write and Bash of that agent into an error:
+# the rule this project has now written in three places is that memory being unavailable
+# costs memory, never the agent's tool call.
+#
+# Every type, not one: a list survives the slice and a string is the normal case, so a check
+# on a single value would have reported this closed.
+print()
+print("# a payload field of any JSON type costs memory, never the tool call")
+
+good = Path(tempfile.mkdtemp(prefix="payloadstore_"))
+genv = dict(os.environ)
+genv.update({"NEVERTWICE_HOME": str(good), "NEVERTWICE_VAULT": str(good),
+             "NEVERTWICE_CLOUD": "none"})
+gtranscript = good / "t.jsonl"
+gtranscript.write_text(
+    json.dumps({"type": "user", "message": {"role": "user", "content": "remember this"}})
+    + "\n", encoding="utf-8", newline="")
+
+for label, value in (("a string", "abcdef12"), ("null", None), ("an int", 7),
+                     ("a float", 1.5), ("a bool", True), ("a list", ["a", "b"]),
+                     ("a dict", {"id": "x"})):
+    for event in ("PreToolUse", "SessionStart"):
+        payload = {"hook_event_name": event, "session_id": value, "cwd": str(good),
+                   "transcript_path": str(gtranscript)}
+        if event == "PreToolUse":
+            payload |= {"tool_name": "Edit",
+                        "tool_input": {"file_path": "a.py", "new_string": "x = 1"}}
+        r = subprocess.run([sys.executable, str(entry)], input=json.dumps(payload),
+                           capture_output=True, text=True, env=genv, timeout=180)
+        check(f"session_id as {label} ({event}): exit 0", r.returncode == 0,
+              f"exit {r.returncode}: {r.stderr[-300:]}")
+        check(f"session_id as {label} ({event}): no traceback",
+              "Traceback" not in r.stderr, r.stderr[-300:])
+
+# The other fields of that same log line, each one null - none of them is more trusted than
+# the one that crashed.
+for field in ("cwd", "transcript_path", "hook_event_name", "tool_name", "prompt", "agent"):
+    payload = {"hook_event_name": "PreToolUse", "session_id": "abcdef12", "cwd": str(good),
+               "transcript_path": str(gtranscript), "tool_name": "Edit",
+               "tool_input": {"file_path": "a.py", "new_string": "x = 1"}}
+    payload[field] = None
+    r = subprocess.run([sys.executable, str(entry)], input=json.dumps(payload),
+                       capture_output=True, text=True, env=genv, timeout=180)
+    check(f"{field}=null: exit 0", r.returncode == 0, f"exit {r.returncode}: {r.stderr[-300:]}")
+    check(f"{field}=null: no traceback", "Traceback" not in r.stderr, r.stderr[-300:])
+
 print()
 print(f"entry point: {P} passed, {F} failed")
 sys.exit(1 if F else 0)

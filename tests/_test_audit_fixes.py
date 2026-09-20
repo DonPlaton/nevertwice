@@ -996,6 +996,84 @@ check("and still does its job for the holder",
                                                    _lock.stat().st_mtime > t0 + 1)[-1])(_old))
 m.release_lock()
 
+
+# ── a lock file that does not decode ───────────────────────────────────
+#
+# All three readers of the lock file - `holds_lock`, `release_lock`, `refresh_lock` - called a
+# bare `read_text()` under `except OSError`. `UnicodeDecodeError` is a ValueError, not an
+# OSError, so a lock holding bytes that are not the platform codec escaped every one of them.
+# The cost is not a bad log line: `guards.persist_under_lock` opens with
+# `mine = not m.holds_lock()`, so EVERY serialised ledger write - feedback, record_fired,
+# forget_delivery, inbox retire/edit/approve/override, the generation pass - died there with a
+# traceback, before it even tried to write, and died as a UnicodeDecodeError rather than the
+# `LedgerBusy` every surface catches.
+#
+# `acquire_lock` writes only ASCII, so such a file has an outside cause - a write cut short, a
+# syncing folder, another tool - but the price is a traceback in front of a tool call and a
+# decision that was never recorded.
+print()
+print("# a lock file that does not decode is not ours, and does not raise")
+
+import guards as _g  # noqa: E402
+
+_lk = m._lock_file()
+m.VAULT.mkdir(parents=True, exist_ok=True)
+_lk.write_bytes(bytes([0xFF, 0xFE, 0x98, 0x99]))
+for _name in ("holds_lock", "release_lock", "refresh_lock"):
+    _lk.write_bytes(bytes([0xFF, 0xFE, 0x98, 0x99]))
+    try:
+        getattr(m, _name)()
+        _raised = ""
+    except Exception as _e:                     # noqa: BLE001 - the finding
+        _raised = f"{type(_e).__name__}: {_e}"
+    if _raised:
+        print("    " + _name + " raised " + _raised)
+    check(f"{_name} survives an undecodable lock", not _raised)
+
+try:
+    _mine = m.holds_lock()
+except Exception:                               # noqa: BLE001 - reported by the check above
+    _mine = "raised"
+check("and an undecodable lock is not read as ours", _mine is False)
+
+# The door every serialised ledger write goes through. It opens with
+# `mine = not m.holds_lock()`, so this is where the escaped decode error actually landed.
+_lk.write_bytes(bytes([0xFF, 0xFE, 0x98, 0x99]))
+_landed = []
+try:
+    _ok = _g.persist_under_lock(lambda rows: (_landed.append(len(rows)), True)[-1], 2.0)
+    _raised = ""
+except Exception as _e:                         # noqa: BLE001
+    _ok, _raised = False, f"{type(_e).__name__}: {_e}"
+if _raised:
+    print("    persist_under_lock raised " + _raised)
+check("persist_under_lock does not raise on an undecodable lock", not _raised)
+# It reports BUSY rather than writing: a file that is not a pid is still a file `acquire_lock`
+# did not write, and stealing a lock that might belong to a live holder mid-write is the
+# failure the ownership rules above exist to prevent. The stale ceiling frees it. What matters
+# is that the caller is told, in the vocabulary every surface catches.
+check("it reports the lock as busy instead", _ok is False and _landed == [])
+try:
+    _g.persist_under_lock(lambda rows: True, 2.0, required=True)
+    _kind = "no exception"
+except _g.LedgerBusy:
+    _kind = "LedgerBusy"
+except Exception as _e:                         # noqa: BLE001
+    _kind = type(_e).__name__
+check("and a required write raises LedgerBusy, not a decode error", _kind == "LedgerBusy")
+# ... and once the lock is gone the same write lands, so nothing was wedged by the fix.
+_lk.unlink(missing_ok=True)
+_landed = []
+_ok = _g.persist_under_lock(lambda rows: (_landed.append(len(rows)), True)[-1], 2.0)
+check("with the lock gone the write lands", bool(_ok) and _landed == [0])
+
+# The control: a positively FOREIGN pid must still mean back off, or the fix would have
+# traded a traceback for a lock two processes think they hold.
+_lk.write_text(str(os.getpid() + 1), encoding="utf-8", newline="")
+m.release_lock()
+check("a foreign pid is still left alone", _lk.exists())
+_lk.unlink(missing_ok=True)
+
 print()
 print(f"audit-fixes: {P} passed, {F} failed")
 sys.exit(1 if F else 0)
