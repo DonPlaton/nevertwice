@@ -169,6 +169,72 @@ for _f in sorted(Path(m.__file__).resolve().parent.glob("*.py")):
 check("no module constant is frozen into a default argument: " + "; ".join(_frozen[:4]),
       not _frozen)
 
+# The rule, over every module: a CLI's exit code is what main() returned.
+# `python -m nevertwice.<mod>` runs the module as __main__, so whatever the guard does with
+# main()'s return value IS the process's exit code. A bare `main()` discards it - `guards
+# feedback <id> accepted` on a busy lock printed "NOT updated" and exited 0, and a script
+# branching on $? read that as written. The in-process suites call main() and read its return,
+# so none of them can see this; only a real process can, and only this rule can see it cheaply
+# for every module at once. Second property, same guard: it must be the LAST statement in the
+# file. guards.py's sat above `already_delivered` and `forget_delivery`, so a script's main()
+# ran in a module where those two did not exist yet.
+
+def _main_guard_audit(src: str, name: str) -> tuple[list, list]:
+    tree = ast.parse(src)
+    guards = [n for n in tree.body
+              if isinstance(n, ast.If) and "__main__" in ast.dump(n.test)]
+    if not guards:
+        return [], []
+    g = guards[0]
+    not_last = [] if g is tree.body[-1] else [
+        name + ": the __main__ guard at line " + str(g.lineno) + " is followed by "
+        + ", ".join(sorted(getattr(n, "name", type(n).__name__)
+                           for n in tree.body[tree.body.index(g) + 1:]))]
+    call = ast.unparse(g.body[0]) if g.body else ""
+    propagates = "sys.exit(" in call or "SystemExit(" in call
+    # The name the guard actually calls, read off the tree rather than off the text:
+    # `main()` and `sys.exit(main())` differ by one paren and string surgery gets it wrong.
+    target = ""
+    for c in ast.walk(g):
+        if isinstance(c, ast.Call) and isinstance(c.func, ast.Name) and c.func.id != "exit":
+            target = c.func.id
+    fns = {n.name: n for n in tree.body
+           if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))}
+    fn = fns.get(target)
+    dropped = []
+    if fn is not None and not propagates:
+        nested = {c for d in ast.walk(fn)
+                  if isinstance(d, (ast.FunctionDef, ast.AsyncFunctionDef, ast.Lambda))
+                  and d is not fn for c in ast.walk(d)}
+        for n in ast.walk(fn):
+            if n in nested or not isinstance(n, ast.Return) or n.value is None:
+                continue
+            if isinstance(n.value, ast.Constant) and n.value.value in (0, None):
+                continue
+            dropped.append(name + ":" + str(n.lineno) + " " + target
+                           + "() returns a non-zero code the guard throws away")
+    return dropped, not_last
+
+
+_dropped, _not_last = [], []
+for _f in sorted(Path(m.__file__).resolve().parent.glob("*.py")):
+    _a, _b = _main_guard_audit(_f.read_text(encoding="utf-8"), _f.name)
+    _dropped += _a
+    _not_last += _b
+check("every module's __main__ guard propagates main()'s exit code: " + "; ".join(_dropped[:3]),
+      not _dropped)
+check("and is the last statement in its file: " + "; ".join(_not_last[:3]), not _not_last)
+
+# ... and the rule bites. Both shapes, on sources written to be caught: a rule that has
+# never refused anything is indistinguishable from one that cannot.
+_BARE = "import sys\ndef main():\n    return 1\nif __name__ == '__main__':\n    main()\n"
+_MID = ("import sys\ndef main():\n    return 0\nif __name__ == '__main__':\n"
+        "    sys.exit(main())\ndef later():\n    return 2\n")
+_OK = "import sys\ndef main():\n    return 1\nif __name__ == '__main__':\n    sys.exit(main())\n"
+check("the rule catches a dropped exit code", _main_guard_audit(_BARE, "x.py")[0] != [])
+check("the rule catches a guard that is not last", _main_guard_audit(_MID, "x.py")[1] != [])
+check("and passes the correct shape", _main_guard_audit(_OK, "x.py") == ([], []))
+
 # ── twin-gate calibration ─────────────────────────────────────────────
 print("# twin calibration - data file, bounds, space label")
 tf = d / "twin.json"

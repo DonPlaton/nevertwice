@@ -930,10 +930,6 @@ def main():
         print(f"unknown command: {cmd}")
 
 
-if __name__ == "__main__":
-    main()
-
-
 def already_delivered(guard: dict, session: str | None) -> bool:
     """True when this guard already fired for this session.
 
@@ -971,3 +967,13 @@ def forget_delivery(session: str | None, guards=None, persist=True) -> int:
     if changed and persist:
         persist_under_lock(_drop, FORGET_LOCK_S)
     return changed
+
+
+# The guard is the LAST statement in the file on purpose: run as a script it used to
+# sit above `already_delivered`/`forget_delivery`, so `main()` ran in a module whose
+# last two functions did not exist yet - a NameError waiting for the first command
+# that reached them. `sys.exit` and not a bare call: every non-zero return here is a
+# write that did NOT happen (a busy vault lock), and a return value main() drops is an
+# exit code of 0 - a script branching on $? reads "written" from a run that wrote nothing.
+if __name__ == "__main__":
+    sys.exit(main())

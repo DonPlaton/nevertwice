@@ -302,6 +302,28 @@ res = IB.confirm(stem)
 check("while a free lock still records the review", res.get("ok") is True, str(res))
 check("and the note carries it", "reviewed:" in path.read_text(encoding="utf-8"))
 
+print("# and a busy lock is an exit code the SHELL sees, not a return value main() drops")
+# `guards pack` and `guards feedback` return 1 on a busy lock - and the module's
+# `if __name__ == "__main__": main()` threw that value away, so `python -m nevertwice.guards`
+# exited 0 and any script branching on `$?` read "written" from a run that wrote nothing.
+# The in-process checks above call `G.main()` and read its return, so they could never see
+# this: the only instrument for a process's exit code is a real process.
+import os as _os                    # noqa: E402
+import subprocess as _sp            # noqa: E402
+
+_blocked = Path(m.VAULT) / "not-a-directory"
+_blocked.write_text("a regular file: no store can be created under it", encoding="utf-8")
+_env = dict(_os.environ)
+_env["NEVERTWICE_VAULT"] = str(_blocked / "store")
+_env["NEVERTWICE_HOME"] = str(_blocked / "store")
+_proc = _sp.run([sys.executable, "-m", "nevertwice.guards", "pack"],
+                cwd=str(ROOT), env=_env, capture_output=True,
+                encoding="utf-8", errors="replace", timeout=180)
+check("guards pack: a busy lock exits non-zero from the real process",
+      _proc.returncode == 1,
+      "rc=" + str(_proc.returncode) + " out=" + repr(_proc.stdout) + " err=" + repr(_proc.stderr))
+check("guards pack: and says why on stderr", "busy" in _proc.stderr.lower(), repr(_proc.stderr))
+
 print()
 print("every ledger write is serialised: " + str(P) + " passed, " + str(F) + " failed")
 sys.exit(1 if F else 0)
