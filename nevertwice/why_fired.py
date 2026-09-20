@@ -167,6 +167,16 @@ def _policy(guard: dict) -> dict:
     status = guard.get("status", "advisory")
     corroborations = int(guard.get("corroborations") or 0)
     false_positives = int(guard.get("false_positives") or 0)
+    # The demotion rule counts distinct OPPOSING SESSIONS - `outcomes.verdict` demotes at
+    # `M_RETIRE` of them - while `false_positives` is the raw event tally. Three overrides from
+    # one session made this object say "0 more false positive(s) demote this" beside its own
+    # `precision.verdict` reporting one opposing session of three. The promotion half was never
+    # wrong: `corroborations` is maintained AS a distinct-session count, which is exactly what
+    # hid the asymmetry. Without outcomes.py there is no session record, so the legacy tally is
+    # the only number there is and the lifecycle uses it too (`_legacy_feedback`).
+    _oc = _sibling("outcomes")
+    opposing = _oc.against_sessions(guard) if _oc is not None else false_positives
+    unit = "distinct session(s) calling it a false positive" if _oc is not None         else "false positive(s)"
     pack = bool(guard.get("pack"))
     if pack:
         promotion = ("never - pack guards are cold-start heuristics and are pinned advisory "
@@ -185,13 +195,14 @@ def _policy(guard: dict) -> dict:
         "promote_at": _guards.K_PROMOTE,
         "promotion": promotion,
         "false_positives": false_positives,
+        "opposing_sessions": opposing,
         "retire_at": _guards.M_RETIRE,
-        "demotion": (f"{max(0, _guards.M_RETIRE - false_positives)} more false positive(s) "
+        "demotion": (f"{max(0, _guards.M_RETIRE - opposing)} more {unit} "
                      f"demote this a rung ("
                      f"{'blocking -> advisory' if status == 'blocking' else 'advisory -> retired'})"),
         "overrides": list(guard.get("overrides") or []),
-        "rule": ("K distinct-session corroborations promote, M false positives demote one rung; "
-                 "the counts decide, never the confidence estimate"),
+        "rule": ("K distinct-session corroborations promote, M distinct opposing sessions "
+                 "demote one rung; the counts decide, never the confidence estimate"),
     }
 
 
@@ -209,17 +220,58 @@ def _signals(guard: dict, deep: bool) -> dict:
                                   "which reads the whole store")
         return out
     causal = _sibling("causal")
-    entity = (guard.get("scope") or {}).get("project")
-    if causal is None or not entity:
-        out["graph_path_note"] = ("no causal path: this guard is not scoped to a project, so "
-                                  "there is no entity to walk from" if causal is not None
-                                  else "the causal module is not present in this install")
+    if causal is None:
+        out["graph_path_note"] = "the causal module is not present in this install"
+        return out
+    # A guard is scoped to a PROJECT, and the impact graph is keyed by note entities, so the
+    # old `causal.why(project_slug, project_slug)` could not return a path for any guard that
+    # has ever existed - and wrote the empty result into `graph_path`, where every surface
+    # rendered it as the answer. What a guard does have is the notes it was born from; their
+    # entities are nodes. When there are none, or the walk finds nothing, that is a reason and
+    # it is reported as one - which is this module's stated contract for an absent signal.
+    project = (guard.get("scope") or {}).get("project")
+    entities = _born_from_entities(guard)
+    if not entities:
+        out["graph_path_note"] = ("no causal path: a guard is scoped to a project rather than to "
+                                  "an entity, and no note this guard was born from names one to "
+                                  "walk from")
         return out
     try:
-        out["graph_path"] = causal.why(entity, entity)
+        for entity in entities:
+            walk = causal.why(entity, project)
+            if walk.get("causes"):
+                out["graph_path"] = walk
+                break
+        else:
+            out["graph_path_note"] = ("no causal path: nothing upstream of "
+                                      + ", ".join(entities[:4]) + " in the impact graph")
     except Exception as exc:        # noqa: BLE001 - an explanation must not raise
         out["graph_path_note"] = f"the causal walk failed: {exc}"
     return out
+
+
+def _born_from_entities(guard: dict) -> list[str]:
+    """The entities named by the notes this guard was distilled from, first-seen order.
+
+    Reads the store, so it is only ever reached from the `deep=True` branch, whose own note
+    already says it walks the whole store.
+    """
+    stems = {s for s in (guard.get("born_from") or []) if s}
+    if not stems:
+        return []
+    engine = _sibling("memory_hook")
+    if engine is None:
+        return []
+    seen: list[str] = []
+    try:
+        for note in engine._iter_all_notes():
+            if note.get("stem") in stems:
+                for entity in note.get("entities") or []:
+                    if entity and entity not in seen:
+                        seen.append(entity)
+    except Exception:               # noqa: BLE001 - an explanation must not raise
+        return seen
+    return seen
 
 
 def _cost(guard: dict, sources: dict) -> dict:

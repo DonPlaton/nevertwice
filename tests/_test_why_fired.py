@@ -281,6 +281,79 @@ def test_mutations_turn_it_red() -> None:
           str((why or {}).get("policy", {}).get("promotion")))
 
 
+def test_the_countdown_counts_what_the_demotion_rule_counts() -> None:
+    """One object may not hold two answers to the same question.
+
+    The rule is distinct opposing SESSIONS: `outcomes.verdict` demotes at `M_RETIRE` of them.
+    `_policy` subtracted `guard["false_positives"]`, which is the raw EVENT tally - three
+    overrides from one session. So the same explanation told the agent "0 more false positive(s)
+    demote this" while its own `precision.verdict` beside it said one opposing session of three.
+    The promotion half was already right: `corroborations` is maintained as a distinct-session
+    count, which is what made the asymmetry invisible.
+    """
+    print("\n- the countdown and the rule count the same thing -")
+    import outcomes as O
+    guard = G.make_guard(PATTERN, "past mistake: never build SQL by f-string",
+                         project="acme", born_from=[STEM])
+    for _ in range(3):
+        O.record(guard, "overridden", session_id="s-one")
+    check("the fixture is three events from one session",
+          guard["outcomes"]["counts"]["overridden"] == 3
+          and O.against_sessions(guard) == 1,
+          str(guard["outcomes"]["sessions"]))
+    G._mirror_legacy_counters(guard, O)
+
+    policy = W._policy(guard)
+    rule = O.verdict(guard, promote_at=G.K_PROMOTE, retire_at=G.M_RETIRE)
+    check("the rule still holds, one opposing session of three",
+          rule["action"] == "hold", str(rule))
+    remaining = G.M_RETIRE - O.against_sessions(guard)
+    check("and the countdown says the same number of steps are left",
+          str(remaining) in policy["demotion"],
+          policy["demotion"] + " | rule: " + rule["because"])
+    check("the countdown names sessions, which is what demotes",
+          "session" in policy["demotion"], policy["demotion"])
+    check("the raw event tally is still reported, under its own name",
+          policy["false_positives"] == 3, str(policy.get("false_positives")))
+
+
+def test_an_empty_causal_walk_is_not_an_answer() -> None:
+    """`deep=True` walked `causal.why(entity, entity)` with the guard's PROJECT SLUG as both the
+    entity and the project. A project slug is not a node in the impact graph, so the walk could
+    not return a path for any guard ever - and the empty result was written into `graph_path`
+    and rendered as the answer, in the module whose stated contract is that a signal which does
+    not apply says so instead of reporting a zero."""
+    print("\n- a causal walk starts from something that can be walked -")
+    why = api.why_fired(GUARD_ID, ACTION, project="acme", deep=True)
+    signals = why["signals"]
+    path = signals.get("graph_path")
+    check("the walk does not start from the project slug",
+          not (isinstance(path, dict) and path.get("entity") == "acme"), str(path))
+    check("an empty walk is reported as a reason, not as a path",
+          bool(path) or bool(signals.get("graph_path_note")),
+          str(signals.get("graph_path_note")))
+    check("with nothing upstream in this store, the reason names what it walked from",
+          path is None and "upstream of" in str(signals.get("graph_path_note")),
+          str(signals.get("graph_path_note")))
+
+    # And the other half: give the store a causal edge into one of the guard's entities and the
+    # walk has to find it. Without this the fix would be indistinguishable from replacing one
+    # empty answer with a sentence.
+    api.remember_lessons([{"type": "pattern", "title": "parameterised queries close it",
+                           "description": "Query parameters remove the interpolation hole.",
+                           "entities": ["query-parameters", "database"],
+                           "relations": [{"rel": "fixes", "target": "database"}]}],
+                         project="acme", embed=False)
+    deep = api.why_fired(GUARD_ID, ACTION, project="acme", deep=True)["signals"]
+    found = deep.get("graph_path")
+    check("a real upstream edge into the guard's own entity is found",
+          isinstance(found, dict) and bool(found.get("causes")),
+          str(found) + " | " + str(deep.get("graph_path_note")))
+    check("and it is reported against that entity, not the project",
+          isinstance(found, dict) and found.get("entity") in ("database", "security"),
+          str(found))
+
+
 def test_zz_every_check_passed() -> None:
     """Bare pytest must reach the same verdict as this suite's exit code.
 
@@ -296,7 +369,9 @@ def main() -> int:
                test_an_inapplicable_signal_says_so_rather_than_reporting_zero,
                test_all_four_surfaces_render_the_same_object,
                test_the_hot_path_is_unchanged,
-               test_mutations_turn_it_red):
+               test_mutations_turn_it_red,
+               test_the_countdown_counts_what_the_demotion_rule_counts,
+               test_an_empty_causal_walk_is_not_an_answer):
         fn()
     print(f"\nwhy_fired: {PASSED} passed, {FAILED} failed")
     return 1 if FAILED else 0
