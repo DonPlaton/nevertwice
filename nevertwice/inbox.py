@@ -231,8 +231,11 @@ def approve(guard_id: str, *, session_id: str | None = None, promote: bool = Fal
     reason, so a human decision is recorded as a human decision instead of as evidence the
     guard never earned.
     """
-    guard = _guards.feedback(guard_id, "accepted",
-                             session_id=session_id or f"inbox:{datetime.now():%Y-%m-%d}")
+    try:
+        guard = _guards.feedback(guard_id, "accepted",
+                                 session_id=session_id or f"inbox:{datetime.now():%Y-%m-%d}")
+    except _guards.LedgerBusy as exc:
+        return _result(False, str(exc))
     if guard is None:
         return _result(False, f"no such guard: {guard_id}")
     if promote:
@@ -242,7 +245,10 @@ def approve(guard_id: str, *, session_id: str | None = None, promote: bool = Fal
         guard["status"] = "blocking"
         guard["promoted_by"] = {"who": "operator", "when": datetime.now().strftime("%Y-%m-%d"),
                                 "reason": (reason or "approved in the inbox")[:200]}
-        _persist(guard)
+        try:
+            _persist(guard)
+        except _guards.LedgerBusy as exc:
+            return _result(False, str(exc))
     return _result(True, f"{guard_id}: accepted recorded"
                          + (" and promoted to blocking by the operator" if promote else "")
                          + f"; status={guard['status']}", [_ledger()])
@@ -257,8 +263,11 @@ def override(guard_id: str, reason: str, *, session_id: str | None = None) -> di
     if not (reason or "").strip():
         return _result(False, "an override needs a reason - it is the learned exception that "
                               "narrows the guard, and without one the feedback teaches nothing")
-    guard = _guards.feedback(guard_id, "overridden", reason=reason,
-                             session_id=session_id or f"inbox:{datetime.now():%Y-%m-%d}")
+    try:
+        guard = _guards.feedback(guard_id, "overridden", reason=reason,
+                                 session_id=session_id or f"inbox:{datetime.now():%Y-%m-%d}")
+    except _guards.LedgerBusy as exc:
+        return _result(False, str(exc))
     if guard is None:
         return _result(False, f"no such guard: {guard_id}")
     return _result(True, f"{guard_id}: override recorded; status={guard['status']}", [_ledger()])
@@ -266,16 +275,25 @@ def override(guard_id: str, reason: str, *, session_id: str | None = None) -> di
 
 def retire(guard_id: str, *, reason: str | None = None) -> dict:
     """Retire a guard outright. The operator overruling the lifecycle, recorded as such."""
-    guards = _guards.load_guards()
-    guard = next((g for g in guards if g.get("id") == guard_id), None)
-    if guard is None:
+    was: dict = {}
+
+    def _mutate(rows) -> bool:
+        guard = next((g for g in rows if g.get("id") == guard_id), None)
+        if guard is None:
+            return False
+        was["status"] = guard.get("status")
+        guard["status"] = "retired"
+        guard["retired_by"] = {"who": "operator", "when": datetime.now().strftime("%Y-%m-%d"),
+                               "reason": (reason or "retired in the inbox")[:200]}
+        return True
+
+    try:
+        _guards.persist_under_lock(_mutate, _guards.LIFECYCLE_LOCK_S, required=True)
+    except _guards.LedgerBusy as exc:
+        return _result(False, str(exc))
+    if not was:
         return _result(False, f"no such guard: {guard_id}")
-    was = guard.get("status")
-    guard["status"] = "retired"
-    guard["retired_by"] = {"who": "operator", "when": datetime.now().strftime("%Y-%m-%d"),
-                           "reason": (reason or "retired in the inbox")[:200]}
-    _guards.save_guards(guards)
-    return _result(True, f"{guard_id}: {was} -> retired by the operator", [_ledger()])
+    return _result(True, f"{guard_id}: {was['status']} -> retired by the operator", [_ledger()])
 
 
 def edit(guard_id: str, message: str) -> dict:
@@ -289,15 +307,25 @@ def edit(guard_id: str, message: str) -> dict:
     message = (message or "").strip()
     if not message:
         return _result(False, "a guard with no message is a warning that says nothing")
-    guards = _guards.load_guards()
-    guard = next((g for g in guards if g.get("id") == guard_id), None)
-    if guard is None:
+    found: list = []
+
+    def _mutate(rows) -> bool:
+        guard = next((g for g in rows if g.get("id") == guard_id), None)
+        if guard is None:
+            return False
+        found.append(guard)
+        before = guard.get("message", "")
+        guard["message"] = message[:240]
+        guard.setdefault("edits", []).append(
+            {"when": datetime.now().strftime("%Y-%m-%d"), "was": before[:240]})
+        return True
+
+    try:
+        _guards.persist_under_lock(_mutate, _guards.LIFECYCLE_LOCK_S, required=True)
+    except _guards.LedgerBusy as exc:
+        return _result(False, str(exc))
+    if not found:
         return _result(False, f"no such guard: {guard_id}")
-    before = guard.get("message", "")
-    guard["message"] = message[:240]
-    guard.setdefault("edits", []).append(
-        {"when": datetime.now().strftime("%Y-%m-%d"), "was": before[:240]})
-    _guards.save_guards(guards)
     return _result(True, f"{guard_id}: message rewritten", [_ledger()])
 
 
@@ -310,6 +338,19 @@ def confirm(stem: str) -> dict:
     here is deliberately tolerant and lossy - round-tripping it would quietly drop whatever it
     did not understand.
     """
+    # A human decision spliced into a live note is a read-modify-write on a file the hook also
+    # writes, so it takes the vault lock like every other note writer in the store - and the
+    # READ is inside it too, or the splice is computed from bytes another writer has replaced.
+    if not m.acquire_lock(timeout_s=_guards.LIFECYCLE_LOCK_S):
+        return _result(False, "vault lock busy - the review was not recorded; another writer "
+                              "is active")
+    try:
+        return _confirm_locked(stem)
+    finally:
+        m.release_lock()
+
+
+def _confirm_locked(stem: str) -> dict:
     meta = m._note_meta_for_stem(stem)
     if meta is None:
         return _result(False, f"no live note with stem {stem!r}")
@@ -352,13 +393,19 @@ def trace(guard_id: str, *, action_text: str = "", deep: bool = False) -> dict |
 
 
 def _persist(guard: dict) -> None:
-    """Write one already-mutated guard back into the ledger by id."""
-    guards = _guards.load_guards()
-    for i, existing in enumerate(guards):
-        if existing.get("id") == guard.get("id"):
-            guards[i] = guard
-            break
-    _guards.save_guards(guards)
+    """Write one already-mutated guard back into the ledger by id, under the vault lock.
+
+    Re-loading inside the lock is what lets a concurrent change to any OTHER guard survive;
+    raising `LedgerBusy` is what stops the caller reporting a write that never happened.
+    """
+    def _put_back(rows) -> bool:
+        for i, existing in enumerate(rows):
+            if existing.get("id") == guard.get("id"):
+                rows[i] = guard
+                return True
+        return False
+
+    _guards.persist_under_lock(_put_back, _guards.LIFECYCLE_LOCK_S, required=True)
 
 
 # ── rendering ───────────────────────────────────────────────────────────

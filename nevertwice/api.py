@@ -440,8 +440,10 @@ def guard_feedback(guard_id: str, outcome: str, *, session_id: str | None = None
     one caller repeating itself could promote or retire a guard on its own. A `reason` is
     stored as a learned exception that narrows the guard.
 
-    Returns the updated guard, or None if the id is unknown. This is how reality falsifies a
-    wrong guard - memory proposes, reality disposes."""
+    Returns the updated guard, or None if the id is unknown. Raises `guards.LedgerBusy` when the
+    vault lock could not be taken, because a lifecycle decision that was not written must not be
+    reported as one. This is how reality falsifies a wrong guard - memory proposes, reality
+    disposes."""
     return _guards.feedback(guard_id, outcome, session_id=session_id, reason=reason)
 
 

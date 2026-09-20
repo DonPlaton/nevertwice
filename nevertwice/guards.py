@@ -435,7 +435,20 @@ def feedback(guard_id: str, outcome: str, *, session_id=None, reason=None,
 
     g["confidence"] = _confidence(g)
     if persist and owns:
-        save_guards(guards)
+        # The LIFECYCLE write - an outcome, a promotion, a demotion - went straight to
+        # `save_guards`, so the one writer in this module whose loss is a lost decision was the
+        # one writer not serialised. Re-load inside the lock and put this guard back by id, so a
+        # concurrent change to any OTHER guard survives; `LedgerBusy` reaches the surface rather
+        # than letting it report a write that did not happen.
+        def _put_back(rows) -> bool:
+            target = _find(rows, guard_id)
+            if target is None:
+                return False
+            target.clear()
+            target.update(g)
+            return True
+
+        persist_under_lock(_put_back, LIFECYCLE_LOCK_S, required=True)
     return g
 
 
@@ -515,9 +528,21 @@ def _confidence(g: dict) -> float:
 #: `forget_delivery` runs at PreCompact, off the hot path, and can afford to wait.
 FIRED_LOCK_S = 2.0
 FORGET_LOCK_S = 15.0
+#: The lifecycle and the inbox: a human or an agent recording a decision, never the hot path.
+#: A lost write here is a lost decision, so these callers pass `required=True` and are told.
+LIFECYCLE_LOCK_S = 15.0
 
 
-def _persist_under_lock(mutate, timeout_s: float) -> bool:
+class LedgerBusy(RuntimeError):
+    """The vault lock could not be taken, so a write that must not be lost was not attempted.
+
+    Raised only for `required=True` callers - the ones whose write is a decision rather than
+    telemetry. `record_fired` keeps the boolean: a counter that is one low beats blocking the
+    agent before every tool call.
+    """
+
+
+def persist_under_lock(mutate, timeout_s: float, *, required: bool = False) -> bool:
     """Apply `mutate` to a FRESHLY loaded ledger and write it, holding the vault lock.
 
     Every writer here was a read-modify-write over one JSON file with no lock: the caller loaded
@@ -527,10 +552,13 @@ def _persist_under_lock(mutate, timeout_s: float) -> bool:
     survive; mutating the caller's copy as well is what keeps the value it already holds correct.
 
     Returns False when the lock could not be taken in time, so the caller can say nothing was
-    persisted rather than assume it was.
+    persisted rather than assume it was - or raises `LedgerBusy` when `required=True`, because a
+    caller recording a DECISION must not report success for a write that never happened.
     """
     if not m.acquire_lock(timeout_s=timeout_s):
-        m.log("guards ledger: vault lock busy, counters not persisted this call")
+        m.log("guards ledger: vault lock busy, nothing persisted this call")
+        if required:
+            raise LedgerBusy("vault lock busy - nothing was recorded; another writer is active")
         return False
     try:
         fresh = load_guards()
@@ -579,7 +607,7 @@ def record_fired(guard_ids, guards=None, persist=True, session=None) -> None:
         # ledger it already read (one load per event, critic 2026-07), and none of them
         # writes it back themselves - pass persist=False to batch externally. The write
         # re-reads under the lock so a concurrent tool call's delivery record is not lost.
-        _persist_under_lock(_bump, FIRED_LOCK_S)
+        persist_under_lock(_bump, FIRED_LOCK_S)
 
 
 # ── generation from mistakes (sleep-time, off the hot path) ───────────
@@ -889,5 +917,5 @@ def forget_delivery(session: str | None, guards=None, persist=True) -> int:
 
     changed = _drop(guards)             # the caller's own copy
     if changed and persist:
-        _persist_under_lock(_drop, FORGET_LOCK_S)
+        persist_under_lock(_drop, FORGET_LOCK_S)
     return changed
