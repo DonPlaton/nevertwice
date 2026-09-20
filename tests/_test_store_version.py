@@ -27,7 +27,9 @@ The rest guards the ways a rebuild could quietly cost someone something:
 from __future__ import annotations
 
 import json
+import os
 import shutil
+import subprocess
 import sys
 import tempfile
 from pathlib import Path
@@ -345,6 +347,129 @@ def test_a_rebuild_dry_run_writes_nothing() -> None:
     check("the digest is unchanged", SV.digest(VAULT) == before)
 
 
+def test_the_migration_writes_the_ledger_the_way_the_ledger_is_read() -> None:
+    """A two-generation file written in one generation is a rollback that silently undoes itself.
+
+    `guards.json` is loaded by `_load_json_generations`: primary, then `.bak`. The migration
+    wrote it with a plain `write_atomic`, so `.bak` kept the PRE-migration ledger - and any
+    later corruption of the primary recovers a store to before the migration, loudly announcing
+    a successful recovery. The `.prev` generation, the one a rollback actually needs, was never
+    written at all. Both are free: the writer the rest of the codebase uses does it.
+    """
+    print("\n- the migration writes both generations -")
+    make_22_era_store()
+    ledger = VAULT / "guards.json"
+    m._save_json_generations(ledger, ledger.read_text(encoding="utf-8"))   # a real 2.2 store
+    before = ledger.read_text(encoding="utf-8")
+    for suffix in (".bak", ".prev"):
+        ledger.with_name(ledger.name + suffix).unlink(missing_ok=True)
+    m._save_json_generations(ledger, before)
+    check("the fixture has the ledger as a store really carries it",
+          ledger.with_name("guards.json.bak").is_file())
+
+    result = SV.migrate(VAULT, dry_run=False)
+    check("the migration succeeded", result["ok"], str(result.get("detail")))
+    check("the primary gained the outcome block", "outcomes" in ledger.read_text(encoding="utf-8"))
+    check("and so did the generation the loader falls back to",
+          "outcomes" in ledger.with_name("guards.json.bak").read_text(encoding="utf-8"),
+          "a corrupt primary would recover the store to before the migration")
+    prev = ledger.with_name("guards.json.prev")
+    check("the pre-migration ledger is kept as the rollback generation",
+          prev.is_file() and "outcomes" not in prev.read_text(encoding="utf-8"),
+          "present" if prev.is_file() else "no .prev was written")
+    shutil.rmtree(result["backup"], ignore_errors=True, onexc=_force_remove)
+
+
+def test_a_rebuild_promises_only_what_it_rebuilds() -> None:
+    """`graph.json` was on the list of things a rebuild deletes and rebuilds. Nothing in the
+    store pipeline writes one - `graphify` writes it at a PROJECT root - so the rebuild deleted
+    it and moved on, while the dry run named it among `would_rebuild`. A store that is also a
+    checkout (the vault is a git repository, so this is not exotic) lost a file this tool cannot
+    make again, on the strength of a promise to make it again."""
+    print("\n- a rebuild rebuilds what it removes -")
+    seed_notes()
+    (VAULT / "graph.json").write_text('{"files": {}}', encoding="utf-8")
+    dry = SV.rebuild(VAULT, dry_run=True)
+    check("the dry run does not promise to rebuild what nothing writes",
+          "graph.json" not in dry["would_rebuild"], str(dry["would_rebuild"]))
+    SV.rebuild(VAULT, dry_run=False)
+    check("and a real rebuild leaves it where it found it",
+          (VAULT / "graph.json").is_file(),
+          "deleted by a rebuild that had no way to put it back")
+    (VAULT / "graph.json").unlink(missing_ok=True)
+
+
+def test_a_filename_inside_a_comment_is_not_an_ignore_rule() -> None:
+    """`name not in existing` is a substring test over the whole file, so a line explaining why
+    something is NOT ignored counts as ignoring it - and the step reports the store already
+    covered. The sibling that writes the live store's ignore list compares stripped LINES; this
+    one is the copy that drifted."""
+    print("\n- an ignore rule is a line, not a mention -")
+    make_22_era_store()
+    (VAULT / ".gitignore").write_text(
+        "# .index.sqlite is deliberately committed in this store\n*.tmp\n",
+        encoding="utf-8")
+    step = SV._step_ignore_derived(VAULT, dry_run=True)
+    check("a commented mention does not pass for a rule", step["applies"],
+          str(step["detail"]))
+    SV._step_ignore_derived(VAULT, dry_run=False)
+    lines = {ln.strip() for ln in (VAULT / ".gitignore").read_text(encoding="utf-8").splitlines()}
+    check("and the rule is written as its own line", ".index.sqlite" in lines, str(sorted(lines)))
+
+
+def _force_remove(func, path, exc) -> None:
+    """Clear the read-only bit git puts on its objects, then retry (Windows)."""
+    os.chmod(path, 0o700)
+    func(path)
+
+
+def test_the_documented_rollback_does_not_destroy_what_it_restores() -> None:
+    """A backup you are told to swap in must contain what the swap deletes.
+
+    `backup()` copied the store with `ignore_patterns(".git")`, and `rollback_instructions`
+    says to remove the vault and rename the backup back into its place. Every nevertwice store
+    is a git repository - `git_autocommit` makes one on first write - so the two together read
+    as a safe procedure and perform an unrecoverable one: the notes come back, and every commit
+    that says how they got that way does not. The reassurance in the same sentence ("the
+    Markdown notes were never modified") is exactly what makes it sound safe to follow.
+
+    The test follows the instruction literally, because that is what a person does with it.
+    """
+    print("\n- the rollback restores the store, history included -")
+    with tempfile.TemporaryDirectory() as td:
+        store = Path(td) / "store"
+        (store / "Mistakes").mkdir(parents=True)
+        (store / "Mistakes" / "note.md").write_text(
+            "---\ntype: mistake\n---\n\nbody\n", encoding="utf-8")
+        env = {"GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@t", "GIT_COMMITTER_NAME": "t",
+               "GIT_COMMITTER_EMAIL": "t@t", "PATH": os.environ.get("PATH", "")}
+
+        def git(*args: str) -> str:
+            return subprocess.run(["git", *args], cwd=store, capture_output=True, text=True,
+                                  env=env).stdout
+
+        git("init", "-q")
+        git("add", "-A")
+        git("commit", "-qm", "the history this rollback must not cost")
+        before = git("rev-parse", "HEAD").strip()
+        check("the fixture store has a history to lose", len(before) == 40, before)
+
+        backup_path = SV.backup(store)
+        check("the backup carries the repository, not just the working tree",
+              (backup_path / ".git").is_dir(),
+              str(sorted(q.name for q in backup_path.iterdir())))
+
+        # Exactly what the instruction says to do. `onexc` is a Windows detail, not a
+        # concession: git marks its object files read-only, so a plain rmtree stops halfway.
+        shutil.rmtree(store, onexc=_force_remove)
+        backup_path.rename(store)
+        after = git("rev-parse", "HEAD").strip()
+        check("and the rolled-back store is still the same repository", after == before,
+              f"{before[:8]} -> {after[:8] or 'no repository'}")
+        check("with the note it was taken for",
+              (store / "Mistakes" / "note.md").is_file())
+
+
 def test_zz_every_check_passed() -> None:
     """Bare pytest must reach the same verdict as this suite's exit code.
 
@@ -363,7 +488,11 @@ def main() -> int:
                test_a_fresh_clone_rebuilds_a_byte_identical_index,
                test_a_build_over_an_existing_index_still_lands_on_the_canonical_bytes,
                test_a_rebuild_never_costs_the_embeddings,
-               test_a_rebuild_dry_run_writes_nothing):
+               test_a_rebuild_dry_run_writes_nothing,
+               test_the_documented_rollback_does_not_destroy_what_it_restores,
+               test_the_migration_writes_the_ledger_the_way_the_ledger_is_read,
+               test_a_rebuild_promises_only_what_it_rebuilds,
+               test_a_filename_inside_a_comment_is_not_an_ignore_rule):
         fn()
     print(f"\nstore version: {PASSED} passed, {FAILED} failed")
     return 1 if FAILED else 0

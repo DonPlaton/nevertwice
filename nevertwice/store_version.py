@@ -75,7 +75,13 @@ MARKER = ".nevertwice_schema.json"
 
 #: Derived artifacts a rebuild reconstructs from the notes. Every one of these is a cache of
 #: something the Markdown already says, so losing one costs time and nothing else.
-REBUILDABLE = (".index.sqlite", "graph.json", "Index.md")
+REBUILDABLE = (".index.sqlite", "Index.md")
+
+#: Derived and machine-local, so it belongs in the ignore list - but NOT written by anything in
+#: the store pipeline: `graphify` writes `graph.json` at a PROJECT root. It was in REBUILDABLE,
+#: which meant a rebuild deleted it, had no way to put it back, and said `would_rebuild` in the
+#: dry run that preceded it. The two lists answer different questions and are now two lists.
+NOT_OURS_TO_REBUILD = ("graph.json",)
 
 #: Derived in principle, and NOT rebuilt by default: reconstructing it needs an embedding model,
 #: and on a machine without one, deleting it would destroy work that cannot be recreated. A
@@ -152,7 +158,11 @@ def _step_materialise_outcomes(vault: Path, *, dry_run: bool) -> dict:
     import outcomes as _outcomes
     for guard in pending:
         _outcomes.block(guard)               # back-fills from the pre-D4 counters
-    m.write_atomic(ledger, json.dumps(guards, ensure_ascii=False, indent=1))
+    # Two generations, because that is how `guards.load_guards` reads it: primary, then `.bak`.
+    # A plain atomic write left `.bak` holding the PRE-migration ledger, so a later corruption
+    # of the primary recovered the store to before the migration and announced the recovery as
+    # a success - and no `.prev`, which is the generation a rollback needs.
+    m._save_json_generations(ledger, json.dumps(guards, ensure_ascii=False, indent=1))
     return {"step": "materialise_guard_outcomes", "applies": True, "count": len(pending),
             "detail": f"{len(pending)} guard(s) gained a materialised outcome block"}
 
@@ -166,8 +176,14 @@ def _step_ignore_derived(vault: Path, *, dry_run: bool) -> dict:
     """
     path = Path(vault) / ".gitignore"
     existing = path.read_text(encoding="utf-8") if path.is_file() else ""
-    missing = [name for name in REBUILDABLE + EXPENSIVE
-               if name not in existing and name != "Index.md"]
+    # An ignore rule is a LINE. `name not in existing` was a substring test over the whole
+    # file, so a comment saying a file is deliberately committed read as a rule ignoring it,
+    # and the step reported the store already covered. `_ensure_vault_gitignore` - the writer
+    # that maintains the live store's list - has always compared stripped lines; this is the
+    # copy that drifted.
+    have = {ln.strip() for ln in existing.splitlines()}
+    missing = [name for name in REBUILDABLE + NOT_OURS_TO_REBUILD + EXPENSIVE
+               if name not in have and name != "Index.md"]
     if not missing:
         return {"step": "ignore_derived_artifacts", "applies": False,
                 "detail": "the store already ignores its derived artifacts"}
@@ -208,11 +224,17 @@ def backup(vault: Path) -> Path:
 
     Copied, not moved, and never into the store: a backup inside the thing being migrated is
     swept up by the next rebuild.
+
+    `.git` is copied with everything else. It used to be excluded - the only thing that was -
+    while `rollback_instructions` told the reader to REMOVE the vault and rename this copy into
+    its place. Every nevertwice store is a repository (`git_autocommit` makes one on first
+    write), so following that instruction restored the notes and destroyed every commit behind
+    them, and the sentence that said the notes were never modified is what made it read as
+    safe. A backup has to contain what the rollback deletes, or the rollback is not one.
     """
     vault = Path(vault)
     target = vault.parent / f"{vault.name}.backup-{datetime.now():%Y%m%d-%H%M%S}"
-    shutil.copytree(vault, target, dirs_exist_ok=False,
-                    ignore=shutil.ignore_patterns(".git"))
+    shutil.copytree(vault, target, dirs_exist_ok=False)
     return target
 
 
