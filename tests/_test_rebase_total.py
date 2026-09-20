@@ -77,15 +77,18 @@ for folder in ("Mistakes", "Patterns", "Decisions"):
     (first / folder).mkdir(parents=True, exist_ok=True)
 for n in (1, 2):
     (first / "Mistakes" / f"2026-05-0{n}-alpha-mistake-only-in-the-first-store-{n}.md").write_text(
-        "---\ntype: mistake\nproject: alpha\ndate: 2026-05-0" + str(n) + "\n---\n\n"
-        "# only in the first store\n\n#tag-only-in-the-first-store\n", encoding="utf-8")
+        "---\nproject: alpha\ndate: 2026-05-0" + str(n) + "\n"
+        # the tag vocabulary is built from what a note DECLARES, as every engine-written
+        # note does - the body line is rendered from this list, not the other way round.
+        + 'tags: ["only_in_the_first_store"]\ntype: mistake\n---\n\n'
+        "# only in the first store\n\n#only_in_the_first_store\n", encoding="utf-8")
 
 tags_a = m.collect_existing_tags()
 titles_a = m.collect_existing_titles("alpha")
 m._NDUP_MEMO[0] = 1234.5
 m._NDUP_MEMO[1] = {"a-stem-from-the-first-store": {"vec": [0.0]}}
 check("the first store grounded the tag vocabulary",
-      any("only-in-the-first-store" in t for t in tags_a))
+      any("only_in_the_first_store" in t for t in tags_a))
 check("and the title window", any("only-in-the-first-store" in s
                                  for slugs in titles_a.values() for s in slugs))
 
@@ -94,7 +97,7 @@ for folder in ("Mistakes", "Patterns", "Decisions"):
     (second / folder).mkdir(parents=True, exist_ok=True)
 m._rebase_vault(second)
 check("the tag vocabulary stops naming the store we left",
-      not any("only-in-the-first-store" in t for t in m.collect_existing_tags()))
+      not any("only_in_the_first_store" in t for t in m.collect_existing_tags()))
 check("the title window stops naming it too",
       not any("only-in-the-first-store" in s
               for slugs in m.collect_existing_titles("alpha").values() for s in slugs))

@@ -58,6 +58,41 @@ print("\n- the cap still holds -")
 check("scoped results respect top_k",
       len(m.collect_existing_tags(project="newbie", top_k=3)) <= 3)
 
+# ── the vocabulary comes from what the notes DECLARE as tags ──────────────────────────
+# The harvest ran `#([\w/-]+)` over the whole note text, so anything a session quoted that
+# began with a hash became part of the vocabulary the extractor is grounded on: `#include` and
+# `#define` from C, `#ff00aa` from CSS, `#1234` from an issue reference. Those then came back
+# as tags on new notes. Every note already declares its tags in frontmatter - that is the list
+# `_note_meta` reads and the one the body line is rendered FROM - so the harvest reads it.
+print()
+print("- the vocabulary is the declared tags, not everything that starts with a hash -")
+import tempfile  # noqa: E402
+
+_d = Path(tempfile.mkdtemp(prefix="tagvocab_"))
+_v, m.VAULT = m.VAULT, _d
+m._TAG_COUNTS, m._TAG_COUNTS_BY_PROJECT = None, {}
+try:
+    (_d / "Mistakes").mkdir(parents=True)
+    for _i in (1, 2):
+        (_d / "Mistakes" / f"2026-06-0{_i}-proj-mistake-a-build-lesson-{_i}.md").write_text(
+            "---\n"
+            'date: 2026-06-0' + str(_i) + '\nproject: proj\ntags: ["cuda", "build"]\n'
+            "type: mistake\n---\n\n"
+            "# a build lesson\n\n"
+            "The header guard was missing:\n\n"
+            "```c\n#include <stdio.h>\n#define GUARD 1\n#ifdef GUARD\n```\n\n"
+            "The badge was #ff00aa and the report is #1234.\n\n"
+            "#cuda #build #project/proj #mistake\n", encoding="utf-8")
+    _vocab = set(m.collect_existing_tags(min_count=2, top_k=30))
+    check("the declared tags are in the vocabulary", {"cuda", "build"} <= _vocab, str(_vocab))
+    check("a C preprocessor directive is not a tag",
+          not ({"include", "define", "ifdef"} & _vocab), str(_vocab))
+    check("a hex colour is not a tag", "ff00aa" not in _vocab, str(_vocab))
+    check("an issue reference is not a tag", "1234" not in _vocab, str(_vocab))
+finally:
+    m.VAULT = _v
+    m._TAG_COUNTS, m._TAG_COUNTS_BY_PROJECT = None, {}
+
 m._TAG_COUNTS, m._TAG_COUNTS_BY_PROJECT = None, {}
 print(f"\ntag scoping: {len(RUN) - len(FAILED)} passed, {len(FAILED)} failed")
 sys.exit(1 if FAILED else 0)

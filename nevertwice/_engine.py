@@ -1686,14 +1686,20 @@ def collect_existing_tags(min_count: int = 2, top_k: int = 30,
             if not d.exists():
                 continue
             for p in d.glob("*.md"):
-                try:
-                    txt = p.read_text(encoding="utf-8", errors="ignore")
-                except OSError:
-                    continue
+                # The note's DECLARED tags, from its frontmatter - not every hash-prefixed token
+                # in its text. `#([\w/-]+)` over the whole file swept up whatever a session
+                # quoted: `#include` and `#define` from C, `#ff00aa` from CSS, `#1234` from an
+                # issue reference. Those became part of the vocabulary the extraction prompt is
+                # grounded on, and came back as tags on new notes. Frontmatter is the list
+                # `_note_meta` reads and the one the body line is rendered FROM, so this is the
+                # same set without the noise - and a header-only read instead of a whole-file one.
+                fm = _read_frontmatter_file(p)
                 owner = (parse_typed_stem(p.stem) or {}).get("project") or ""
-                for tag in re.findall(r"#([\w/\-]+)", txt):
-                    t = tag.lower()
-                    if t.startswith("project/") or t in _TAG_SKIP:
+                for tag in (fm.get("tags") or []):
+                    if not isinstance(tag, str):
+                        continue
+                    t = slug_tag(tag).lower()
+                    if not t or t.startswith("project/") or t in _TAG_SKIP:
                         continue
                     counter[t] = counter.get(t, 0) + 1
                     if owner:
