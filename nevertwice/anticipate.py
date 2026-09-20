@@ -265,7 +265,7 @@ def main():
         return
     traj = argv[0]
     hits = anticipate(traj, project=m.argval(argv, "project"),
-                      k=int(m.argval(argv, "k", "1")), use_embeddings="--embed" in argv)
+                      k=m.argint(argv, "k", 1), use_embeddings="--embed" in argv)
     if not hits:
         print("ok - no anticipated failure above threshold (0 tokens spent).")
         return

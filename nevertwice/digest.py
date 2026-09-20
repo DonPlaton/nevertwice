@@ -219,8 +219,8 @@ def _print_digest(d):
 def main():
     argv = sys.argv[1:]
     project = m.argval(argv, "project")
-    days = int(m.argval(argv, "days", "7"))
-    limit = int(m.argval(argv, "limit", "50"))
+    days = m.argint(argv, "days", 7)
+    limit = m.argint(argv, "limit", 50)
     as_json = "--json" in argv
     if "--conflicts" in argv:
         rows = compute_conflicts(m.slug_project(project) if project else None, limit=limit)

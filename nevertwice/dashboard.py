@@ -372,7 +372,7 @@ def build_html(project=None, days=30, conflicts_limit=40) -> str:
 def main():
     argv = sys.argv[1:]
     project = m.argval(argv, "project")
-    days = int(m.argval(argv, "days", "30"))
+    days = m.argint(argv, "days", 30)
     out = m.argval(argv, "out", "memory_dashboard.html")
     no_open = "--no-open" in argv
     htmls = build_html(project, days=days)

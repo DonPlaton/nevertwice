@@ -226,6 +226,71 @@ def _main_guard_audit(src: str, name: str) -> tuple[list, list]:
     return dropped, not_last
 
 
+
+def _rc_of_argint(raw: str) -> int:
+    """`m.argint` exits; run it for its code, with the usage line off the transcript.
+
+    A missing `argint` is reported as a failed CHECK (-1), not as a traceback: a revert that
+    crashes tells you the function is gone, which you already knew, and says nothing about
+    what the check measures.
+    """
+    import contextlib
+    import io
+    try:
+        with contextlib.redirect_stderr(io.StringIO()):
+            m.argint([f"--days={raw}"], "days", 7)
+    except SystemExit as e:
+        return int(e.code or 0)
+    except AttributeError:
+        return -1
+    return 0
+
+
+# ── a CLI flag that must be a number is read through one reader ────────
+#
+# Four satellite CLIs wrapped `argval` in a bare `int()`: `--days=last-week` came out of
+# `main()` as a ValueError traceback - the one output that tells a user nothing about what to
+# type instead - and `--days=-5` was accepted into arithmetic that answered a different
+# question in silence. `m.argint` refuses at the door with the flag named and exit 2, and this
+# rule keeps the fifth CLI from re-inventing the wrong one.
+_bare_int = []
+for _f in sorted(Path(m.__file__).resolve().parent.glob("*.py")):
+    _t = ast.parse(_f.read_text(encoding="utf-8"))
+    for _n in ast.walk(_t):
+        if not (isinstance(_n, ast.Call) and isinstance(_n.func, ast.Name)
+                and _n.func.id == "int" and _n.args):
+            continue
+        _inner = _n.args[0]
+        _name = (_inner.func.attr if isinstance(_inner, ast.Call)
+                 and isinstance(_inner.func, ast.Attribute) else
+                 _inner.func.id if isinstance(_inner, ast.Call)
+                 and isinstance(_inner.func, ast.Name) else "")
+        if _name == "argval":
+            _bare_int.append(_f.name + ":" + str(_n.lineno))
+check("no CLI wraps argval in a bare int(): " + ", ".join(_bare_int), not _bare_int)
+
+
+def _argint_audit(src: str) -> list:
+    out = []
+    for n in ast.walk(ast.parse(src)):
+        if (isinstance(n, ast.Call) and isinstance(n.func, ast.Name) and n.func.id == "int"
+                and n.args and isinstance(n.args[0], ast.Call)):
+            f = n.args[0].func
+            if getattr(f, "attr", getattr(f, "id", "")) == "argval":
+                out.append(str(n.lineno))
+    return out
+
+
+check("the rule catches the bare form", _argint_audit('d = int(m.argval(a, "days", "7"))') == ["1"])
+check("and passes the reader", _argint_audit('d = m.argint(a, "days", 7)') == [])
+check("argint refuses a word", _rc_of_argint("abc") == 2)
+check("argint refuses a number below the minimum", _rc_of_argint("-5") == 2)
+check("and a good value comes through",
+      getattr(m, "argint", lambda *a, **k: None)(["--days=12"], "days", 7) == 12)
+check("an absent flag is the default",
+      getattr(m, "argint", lambda *a, **k: None)([], "days", 7) == 7)
+
+
 _dropped, _not_last = [], []
 for _f in sorted(Path(m.__file__).resolve().parent.glob("*.py")):
     _a, _b = _main_guard_audit(_f.read_text(encoding="utf-8"), _f.name)

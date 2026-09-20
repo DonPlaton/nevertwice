@@ -61,6 +61,34 @@ def test_title_is_escaped():
     print("ok test_title_is_escaped")
 
 
+def test_a_bad_days_is_a_usage_error_not_a_traceback():
+    """`int(m.argval(argv, "days", "30"))` raised ValueError straight out of main(), so
+    `nevertwice-dashboard --days=last-week` printed a traceback: the one output that tells a
+    user nothing about what to type instead. Every other CLI in the package answers a bad
+    flag with a line and an exit code."""
+    import io
+    from contextlib import redirect_stderr
+
+    for bad in ("abc", "", "-5", "0", "3.5"):
+        err = io.StringIO()
+        argv = sys.argv
+        sys.argv = ["nevertwice-dashboard", f"--days={bad}", "--no-open"]
+        try:
+            with redirect_stderr(err):
+                dash.main()
+        except SystemExit as e:
+            rc = int(e.code or 0)
+        except BaseException as e:                 # noqa: BLE001 - a traceback IS the defect
+            raise AssertionError(f"--days={bad!r} raised {type(e).__name__}: {e}") from None
+        else:
+            rc = 0
+        finally:
+            sys.argv = argv
+        assert rc == 2, f"--days={bad!r} exited {rc}"
+        assert "--days" in err.getvalue(), (bad, err.getvalue())
+    print("ok test_a_bad_days_is_a_usage_error_not_a_traceback")
+
+
 def test_api_surface():
     _install()
     import api
@@ -73,5 +101,6 @@ if __name__ == "__main__":
     test_html_is_wellformed_and_selfcontained()
     test_counts_and_sections_present()
     test_title_is_escaped()
+    test_a_bad_days_is_a_usage_error_not_a_traceback()
     test_api_surface()
     print("\nall dashboard self-checks passed")

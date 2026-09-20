@@ -755,6 +755,28 @@ def argval(argv, name: str, default=None):
     return default
 
 
+def argint(argv, name: str, default: int, *, minimum: int = 1) -> int:
+    """`argval` for a flag that must be a whole number, refusing at the door.
+
+    Four satellite CLIs wrapped `argval` in a bare `int()`, so `--days=last-week` came out
+    of `main()` as a ValueError traceback - the one output that tells a user nothing about
+    what to type instead - and `--days=-5` was accepted into arithmetic that silently
+    answered a different question. Exit 2 with the flag named, like every other usage error
+    in the package.
+    """
+    raw = argval(argv, name, None)
+    if raw is None:
+        return default
+    try:
+        value = int(str(raw))
+    except ValueError:
+        value = minimum - 1
+    if value < minimum:
+        print(f"--{name}= needs an integer >= {minimum}, got {str(raw)!r}", file=sys.stderr)
+        sys.exit(2)
+    return value
+
+
 # ── Shared low-level helpers ──────────────────────────────────────────
 
 # Extracted to `store_state.py` (GOAL E4, seam `store/state`) and re-exported here so every
