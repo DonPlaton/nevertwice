@@ -180,29 +180,38 @@ check("no module constant is frozen into a default argument: " + "; ".join(_froz
 # ran in a module where those two did not exist yet.
 
 def _main_guard_audit(src: str, name: str) -> tuple[list, list]:
+    """(exit codes dropped, guards that are not last) for one module source.
+
+    EVERY `if __name__ == "__main__"` block, not the first: nothing forbids a module from
+    having two, and a rule that stops at guards[0] reports such a file clean while its
+    second block throws an exit code away. Only the LAST top-level statement can be last,
+    so with two guards the earlier one is reported by the same walk that reports a guard
+    followed by a def.
+    """
     tree = ast.parse(src)
     guards = [n for n in tree.body
               if isinstance(n, ast.If) and "__main__" in ast.dump(n.test)]
-    if not guards:
-        return [], []
-    g = guards[0]
-    not_last = [] if g is tree.body[-1] else [
-        name + ": the __main__ guard at line " + str(g.lineno) + " is followed by "
-        + ", ".join(sorted(getattr(n, "name", type(n).__name__)
-                           for n in tree.body[tree.body.index(g) + 1:]))]
-    call = ast.unparse(g.body[0]) if g.body else ""
-    propagates = "sys.exit(" in call or "SystemExit(" in call
-    # The name the guard actually calls, read off the tree rather than off the text:
-    # `main()` and `sys.exit(main())` differ by one paren and string surgery gets it wrong.
-    target = ""
-    for c in ast.walk(g):
-        if isinstance(c, ast.Call) and isinstance(c.func, ast.Name) and c.func.id != "exit":
-            target = c.func.id
     fns = {n.name: n for n in tree.body
            if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))}
-    fn = fns.get(target)
-    dropped = []
-    if fn is not None and not propagates:
+    dropped, not_last = [], []
+    for g in guards:
+        if g is not tree.body[-1]:
+            not_last.append(
+                name + ": the __main__ guard at line " + str(g.lineno) + " is followed by "
+                + ", ".join(sorted(getattr(n, "name", type(n).__name__)
+                                   for n in tree.body[tree.body.index(g) + 1:])))
+        call = ast.unparse(g.body[0]) if g.body else ""
+        if "sys.exit(" in call or "SystemExit(" in call:
+            continue
+        # The name the guard actually calls, read off the tree rather than off the text:
+        # `main()` and `sys.exit(main())` differ by one paren and string surgery gets it wrong.
+        target = ""
+        for c in ast.walk(g):
+            if isinstance(c, ast.Call) and isinstance(c.func, ast.Name) and c.func.id != "exit":
+                target = c.func.id
+        fn = fns.get(target)
+        if fn is None:
+            continue
         nested = {c for d in ast.walk(fn)
                   if isinstance(d, (ast.FunctionDef, ast.AsyncFunctionDef, ast.Lambda))
                   and d is not fn for c in ast.walk(d)}
@@ -212,7 +221,8 @@ def _main_guard_audit(src: str, name: str) -> tuple[list, list]:
             if isinstance(n.value, ast.Constant) and n.value.value in (0, None):
                 continue
             dropped.append(name + ":" + str(n.lineno) + " " + target
-                           + "() returns a non-zero code the guard throws away")
+                           + "() returns a non-zero code the guard at line "
+                           + str(g.lineno) + " throws away")
     return dropped, not_last
 
 
@@ -234,6 +244,22 @@ _OK = "import sys\ndef main():\n    return 1\nif __name__ == '__main__':\n    sy
 check("the rule catches a dropped exit code", _main_guard_audit(_BARE, "x.py")[0] != [])
 check("the rule catches a guard that is not last", _main_guard_audit(_MID, "x.py")[1] != [])
 check("and passes the correct shape", _main_guard_audit(_OK, "x.py") == ([], []))
+# A module may hold more than one `if __name__ == "__main__"` block - nothing forbids it,
+# and the first cut read guards[0] and stopped, so a second block could drop its exit code
+# under a rule that reported the file clean. The rule now audits EVERY guard; the census
+# over the package is unchanged only because no module currently has two.
+_TWO = """import sys
+def main():
+    return 0
+if __name__ == '__main__':
+    sys.exit(main())
+def other():
+    return 3
+if __name__ == '__main__':
+    other()
+"""
+check("the rule reads every __main__ guard, not just the first",
+      any("other()" in x for x in _main_guard_audit(_TWO, "x.py")[0]))
 
 # ── twin-gate calibration ─────────────────────────────────────────────
 print("# twin calibration - data file, bounds, space label")
