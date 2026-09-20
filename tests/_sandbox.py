@@ -5,8 +5,12 @@ paths kept pointing wherever the previous test left them).
 Uses m._rebase_vault - the structural fix from the 2026-08 live-cache incidents -
 so EVERY vault-derived module constant moves to the temp dir in one call.
 """
+import sys
 import tempfile
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+import sandbox_guard  # noqa: E402 - the path insert above is what makes it importable
 
 
 def make_sandbox(m, prefix: str = "nwtest_", offline: bool = False) -> Path:
@@ -38,4 +42,9 @@ def make_sandbox(m, prefix: str = "nwtest_", offline: bool = False) -> Path:
         m.embed_text = lambda *a, **k: None
         m.embedder_available = lambda *a, **k: False
         m.embed_cache_usable = lambda: False
+    # The one moment sandbox_guard's baked-path check has something to look at. It runs at
+    # isolate(), with a single project module loaded; by here the imports are done and the
+    # vault has just moved again - which is exactly the 2026-08-18 shape, where a derived
+    # constant kept the live path the rebase did not reach.
+    sandbox_guard.verify_no_live_paths()
     return d

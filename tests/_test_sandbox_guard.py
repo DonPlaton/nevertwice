@@ -363,6 +363,51 @@ def test_the_lint_is_green_and_catches_a_planted_violation() -> None:
         check("the lint is green again once the plants are removed", mod.main([]) == 0)
 
 
+def test_the_baked_path_check_runs_when_there_is_something_to_check() -> None:
+    """`verify()`'s third check - no project module holds a Path inside a real store - is
+    the one written for the 2026-08-18 incident, where the store moved but a DERIVED constant
+    had already baked the live path. It runs when `_env_guard` isolates the process, and at
+    that moment one project module is loaded. After `import memory_hook` there are five, with
+    path constants apiece, and nothing re-arms it. What has kept the live store clean is the
+    IMPORT ORDER, not this check.
+
+    So `make_sandbox` - the fixture every suite gets its vault from, after the imports are
+    done - runs it. Measured here as the gap it closes, then as the escape it catches."""
+    print("\n- the third check has something to check by the time it runs -")
+    store = sandbox_guard.store()
+    check("this process is isolated", store is not None)
+    if store is None:
+        return
+    real = sandbox_guard._REAL_STORES
+    check("this machine has a real store to be caught escaping to", bool(real),
+          "no candidate: the check cannot be exercised here")
+    if not real:
+        return
+
+    import memory_hook as _m                                      # noqa: PLC0415
+    loaded = sandbox_guard._loaded_project_modules()
+    check("more than one project module is loaded once the suites have imported",
+          len(loaded) > 1, f"{len(loaded)} loaded")
+
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    import _sandbox                                               # noqa: PLC0415
+    planted = Path(real[0]) / ".embed_cache.json"
+    _m.PROBE_BAKED_PATH = planted
+    try:
+        try:
+            _sandbox.make_sandbox(_m, prefix="nwguard_")
+            check("a constant baked into a real store stops the fixture", False,
+                  "make_sandbox returned a vault with " + str(planted) + " still on the module")
+        except sandbox_guard.SandboxEscape as exc:
+            check("a constant baked into a real store stops the fixture", True)
+            check("and the error names the attribute that held it",
+                  "PROBE_BAKED_PATH" in str(exc), str(exc)[:200])
+    finally:
+        delattr(_m, "PROBE_BAKED_PATH")
+    # ...and the fixture is otherwise silent: the check must not fire on a clean sandbox.
+    _sandbox.make_sandbox(_m, prefix="nwguard_")
+    check("a clean sandbox passes it", True)
+
 def test_zz_every_check_passed() -> None:
     """Bare pytest must reach the same verdict as this suite's exit code.
 

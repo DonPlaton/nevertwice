@@ -227,6 +227,46 @@ def allow_live(reason: str, *, quiet: bool = False) -> None:
 
 # -- the assertion -----------------------------------------------------
 
+def _live_store_paths() -> list:
+    """Every `Path` on a loaded project module that points inside a real store on this
+    machine - the 2026-08-18 shape, where the store moved but a derived constant
+    (`EMBED_CACHE`, `EMBED_META`, ...) had already baked the live path."""
+    found = []
+    for name, mod in _loaded_project_modules().items():
+        for attr, value in list(vars(mod).items()):
+            if attr.startswith("_") or not isinstance(value, Path):
+                continue
+            for real in _REAL_STORES:
+                if _inside(value, real):
+                    found.append(f"{name}.{attr}={value} is inside a real store")
+                    break
+    return found
+
+
+def verify_no_live_paths() -> None:
+    """The third check of `verify()`, on its own, for callers that move the store again.
+
+    `verify()` runs at `isolate()`, when one project module is loaded and this check has
+    almost nothing to look at; the imports that bake path constants happen after. A fixture
+    that re-bases the vault later (tests/_sandbox.make_sandbox) is the moment there IS
+    something to check, and it cannot call `verify()` itself - its vault is a fresh temp dir,
+    not the one `isolate()` pinned, so checks one and two would refuse it. This check does
+    not depend on which sandbox is in force: it asks only whether a constant points at a
+    store that is real.
+    """
+    if _STORE is None:
+        return
+    problems = _live_store_paths()
+    if problems:
+        raise SandboxEscape(
+            "a module constant points inside a real store:\n  - "
+            + "\n  - ".join(problems)
+            + "\n\nThis is the 2026-08-18 failure class - the store moved after a"
+              " derived constant had already baked the live path. Nothing was written:"
+              " the process is stopping first."
+        )
+
+
 def verify() -> None:
     """Assert that the store actually landed in the sandbox. Raises `SandboxEscape`.
 
@@ -262,13 +302,7 @@ def verify() -> None:
         vault = getattr(mod, "VAULT", None)
         if vault is not None and not _inside(vault, store_dir):
             problems.append(f"{name}.VAULT={vault} is outside the sandbox")
-        for attr, value in list(vars(mod).items()):
-            if attr.startswith("_") or not isinstance(value, Path):
-                continue
-            for real in _REAL_STORES:
-                if _inside(value, real):
-                    problems.append(f"{name}.{attr}={value} is inside a real store")
-                    break
+    problems += _live_store_paths()
 
     if problems:
         raise SandboxEscape(
