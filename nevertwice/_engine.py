@@ -8072,6 +8072,29 @@ def emit_pretooluse_guard(session: dict, cwd: str) -> None:
     print(json.dumps(payload))                              # ascii-safe: json.dumps escapes non-ASCII
 
 
+def _detach_kwargs(osname: str = "") -> dict:
+    """The Popen arguments that let the child outlive this process, per platform.
+
+    Only the Windows half existed: `creationflags` under `os.name == "nt"`, and nothing at
+    all otherwise. On POSIX the child therefore stayed in the agent's process group and
+    session, so a Ctrl-C at the terminal - or closing it - killed a catch-up that holds the
+    vault lock and writes notes, in the middle of its work. The function says DETACHED in
+    its name and in its first line, and outliving its parent is the whole point: the stall
+    it exists to remove is a SessionStart stall.
+
+    Split out from the spawn so both branches can be exercised on either platform; a check
+    that only ran where it already worked is how this stayed open.
+    """
+    import subprocess
+    if (osname or os.name) == "nt":
+        # getattr: these two names do not exist in `subprocess` on POSIX, so asking for the
+        # Windows answer from a POSIX machine - which is what the check beside this does -
+        # would raise rather than answer.
+        return {"creationflags": (getattr(subprocess, "DETACHED_PROCESS", 0)
+                                  | getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0))}
+    return {"start_new_session": True}      # setsid(2): its own session and process group
+
+
 def _spawn_detached_catchup() -> None:
     """Run process_now.py as a DETACHED background process. Stdio must go to
     DEVNULL: an inherited stdout pipe would make Claude Code wait for its EOF and
@@ -8080,14 +8103,11 @@ def _spawn_detached_catchup() -> None:
     progress lands in the vault log/status.txt, not on any console."""
     import subprocess
     script = Path(__file__).resolve().parent / "process_now.py"
-    flags = 0
-    if os.name == "nt":
-        flags = subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP
     try:
         subprocess.Popen([sys.executable, str(script)],
                          stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
-                         stderr=subprocess.DEVNULL, creationflags=flags,
-                         close_fds=True)
+                         stderr=subprocess.DEVNULL, close_fds=True,
+                         **_detach_kwargs())
         log("SessionStart - backlog found, catch-up detached (process_now.py)")
     except Exception as e:
         log(f"detached catch-up spawn failed: {e}")

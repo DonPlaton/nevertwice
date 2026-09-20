@@ -773,5 +773,65 @@ for _fn in ("archive_old_sessions", "archive_old_typed", "prune_processed_db"):
         _defaults.append(_fn)
 check("no day count is frozen in a default argument: " + ", ".join(_defaults), not _defaults)
 
+
+# -- a catch-up that is detached on one platform only -------------------
+#
+# `_spawn_detached_catchup` says DETACHED in its name and in its first line, and set the
+# detaching flags only under `os.name == "nt"`. On POSIX the child stayed in the agent's
+# process group and session, so a Ctrl-C at the terminal, or closing it, killed the catch-up
+# - which takes the vault lock and writes notes - in the middle of its work. The stall this
+# function exists to remove is a SessionStart stall, so the child outliving its parent is the
+# whole point of it.
+#
+# Both branches are exercised here rather than the one this machine happens to be: a check
+# that only runs on the platform that already worked is how this stayed open.
+print("# the catch-up detaches on both platforms")
+
+import subprocess as _subprocess  # noqa: E402
+
+# Reached through getattr so a revert of the engine reports a named failure rather than an
+# AttributeError: a run that crashes tells you the function is gone, which you already knew,
+# and nothing about the property.
+_detach = getattr(m, "_detach_kwargs", None)
+check("the platform branch is reachable without faking os.name", callable(_detach))
+_posix = _detach("posix") if callable(_detach) else {}
+_nt = _detach("nt") if callable(_detach) else {}
+check("on POSIX the child gets its own session", _posix.get("start_new_session") is True)
+check("and no Windows-only flag is passed there", "creationflags" not in _posix)
+# getattr on both sides: the constants are Windows-only, and this check has to be able to
+# ask the Windows question from a POSIX machine - that is the whole point of it.
+_DP = getattr(_subprocess, "DETACHED_PROCESS", 0x08)
+_NG = getattr(_subprocess, "CREATE_NEW_PROCESS_GROUP", 0x200)
+check("on Windows it is detached and in its own process group",
+      bool(_nt.get("creationflags", 0) & _DP) and bool(_nt.get("creationflags", 0) & _NG))
+check("and it does not also ask for a POSIX session", "start_new_session" not in _nt)
+
+# ... and the spawn actually passes them, on whichever platform this is.
+_seen = {}
+
+
+class _RecordingPopen:
+    def __init__(self, argv, **kwargs):
+        _seen.clear()
+        _seen.update(kwargs)
+        _seen["argv"] = argv
+
+
+_real_popen = _subprocess.Popen
+try:
+    _subprocess.Popen = _RecordingPopen
+    m._spawn_detached_catchup()
+    _here = _detach() if callable(_detach) else {}
+    check("the spawn passes the detaching arguments for this platform",
+          bool(_here) and all(_seen.get(k) == v for k, v in _here.items()))
+    check("its stdio is detached from the agent's pipes",
+          _seen.get("stdin") == _subprocess.DEVNULL
+          and _seen.get("stdout") == _subprocess.DEVNULL
+          and _seen.get("stderr") == _subprocess.DEVNULL)
+    check("and it spawns the catch-up script",
+          str(_seen.get("argv", ["", ""])[1]).endswith("process_now.py"))
+finally:
+    _subprocess.Popen = _real_popen
+
 print(f"\n{P} passed, {F} failed")
 sys.exit(1 if F else 0)
