@@ -3,6 +3,8 @@
 threshold, firing on trajectory-similarity, top-1 discipline, recurrence weighting, and the
 Popperian adaptive threshold (false alarms raise the bar until a predictor goes quiet).
 Synthetic signatures + a temp state dir - no vault, no embedder, no network."""
+import contextlib
+import io
 import sys
 import tempfile
 from pathlib import Path
@@ -89,10 +91,65 @@ def test_feedback_persists_and_effective_tau():
     print("ok test_feedback_persists_and_effective_tau")
 
 
+def test_an_unrecognised_outcome_is_refused_not_swallowed():
+    """`feedback` used to fall through BOTH arms on an unrecognised outcome: nothing was
+    counted, the state was saved anyway, `setdefault` minted a permanent entry for the stem,
+    and the return value was `{"helped": 0, "false_alarms": 0}` - which is exactly what a
+    caller sees before a real record increments. Every surface therefore reported a success
+    for feedback that went nowhere. `guards.feedback` closed the same gap by recording
+    nothing and saying so; here there is no `unknown` bucket to file it under, so the only
+    answer a caller cannot read as success is a refusal."""
+    with tempfile.TemporaryDirectory() as t:
+        m.VAULT = Path(t)
+        for bad in ("helpful", "HELPED", "false alarm", "", "unknown"):
+            try:
+                A.feedback("m-cpu", bad)
+            except ValueError as e:
+                assert bad in str(e) or not bad, (bad, str(e))
+            else:
+                raise AssertionError(f"{bad!r} was accepted as an outcome")
+        # and it wrote NOTHING: no file, no entry minted for the stem it was handed
+        assert A.load_state() == {}, A.load_state()
+    print("ok test_an_unrecognised_outcome_is_refused_not_swallowed")
+
+
+def test_the_cli_reports_a_refused_outcome_and_exits_nonzero():
+    """The CLI printed the usual `stem: helped=0 false_alarms=0` line and returned 0 - a
+    typo at the terminal was indistinguishable from a recorded false alarm."""
+    with tempfile.TemporaryDirectory() as t:
+        m.VAULT = Path(t)
+        err = io.StringIO()
+        argv = sys.argv
+        sys.argv = ["anticipate", "feedback", "m-cpu", "helpd"]
+        try:
+            with contextlib.redirect_stderr(err):
+                rc = A.main()
+        finally:
+            sys.argv = argv
+        assert rc == 1, rc
+        assert "helpd" in err.getvalue(), err.getvalue()
+        assert A.load_state() == {}, A.load_state()
+    print("ok test_the_cli_reports_a_refused_outcome_and_exits_nonzero")
+
+
+def test_every_surface_reads_one_list_of_outcomes():
+    """The MCP tool held its own literal tuple of the two names. Two lists is how a third
+    outcome lands in the library and is refused at the door for a release."""
+    assert A.OUTCOMES == ("helped", "false_alarm"), A.OUTCOMES
+    mcp = (Path(__file__).resolve().parent.parent / "nevertwice" / "mcp_server.py").read_text(
+        encoding="utf-8")
+    assert '("helped", "false_alarm")' not in mcp, "mcp_server.py still holds its own copy"
+    assert "_anticipate.OUTCOMES" in mcp, "mcp_server.py does not read the library's list"
+    print("ok test_every_surface_reads_one_list_of_outcomes")
+
+
 if __name__ == "__main__":
     test_silent_below_threshold_costs_zero()
     test_fires_on_resemblance_top1()
     test_recurrence_weights_risk()
     test_adaptive_threshold_silences_crywolf()
     test_feedback_persists_and_effective_tau()
+    test_an_unrecognised_outcome_is_refused_not_swallowed()
+    test_the_cli_reports_a_refused_outcome_and_exits_nonzero()
+    test_every_surface_reads_one_list_of_outcomes()
     print("\nall anticipate self-checks passed")

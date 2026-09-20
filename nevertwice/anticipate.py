@@ -51,6 +51,12 @@ def _state_path() -> Path:
     return m.VAULT / "anticipate.json"
 
 
+#: The outcomes `feedback` records. One tuple, read by the CLI and by the MCP tool rather
+#: than restated by each of them - two lists is how a third outcome lands in the library and
+#: is refused at the door by a surface nobody remembered to update.
+OUTCOMES = ("helped", "false_alarm")
+
+
 def load_state() -> dict:
     """Two-generation load, loudly on recovery (review 2026-08 I3): a silently-reset
     state also resets the adaptive false-alarm thresholds, so a corrupt file
@@ -210,7 +216,20 @@ def feedback(stem: str, outcome: str, *, state=None, persist: bool = True) -> di
     """Adapt the predictor. `outcome`: 'helped' (a real, avoided failure - keep it sensitive)
     or 'false_alarm' (fired but the situation was fine - raise its bar). Returns the updated
     per-failure state. This is how a cry-wolf predictor goes quiet without a human editing a
-    threshold."""
+    threshold.
+
+    An outcome outside `OUTCOMES` raises ValueError, and nothing is counted, minted or
+    written. It used to fall through BOTH arms: the state was saved anyway, `setdefault` left
+    a permanent entry for the stem, and the return value was `{"helped": 0,
+    "false_alarms": 0}` - which is exactly what a caller sees before a real record increments,
+    so the CLI, the API and any script reported a success for feedback that went nowhere.
+    `guards.feedback` closed the same gap by recording nothing and returning the guard
+    unchanged; there is no `unknown` bucket here to file a stray outcome under, so the only
+    answer a caller cannot read as success is a refusal.
+    """
+    if outcome not in OUTCOMES:
+        raise ValueError(f"unknown outcome {outcome!r}: expected one of "
+                         + ", ".join(OUTCOMES))
     owns = state is None
     state = load_state() if owns else state
     s = state.setdefault(stem, {"helped": 0, "false_alarms": 0})
@@ -234,7 +253,13 @@ def main():
     if argv[0] == "feedback":
         stem = argv[1] if len(argv) > 1 else ""
         outcome = argv[2] if len(argv) > 2 else ""
-        s = feedback(stem, outcome)
+        try:
+            s = feedback(stem, outcome)
+        except ValueError as e:
+            # A typo at the terminal used to print the same success line as a recorded false
+            # alarm, with a 0 exit code for a script to read as "done".
+            print(f"{e}", file=sys.stderr)
+            return 1
         print(f"{stem}: helped={s['helped']} false_alarms={s['false_alarms']} "
               f"→ effective_tau={_effective_tau(load_state(), stem):.2f}")
         return
@@ -250,4 +275,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

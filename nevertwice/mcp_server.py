@@ -670,8 +670,9 @@ def _tool_memory_guard_feedback(args: dict) -> tuple[str, bool]:
 def _tool_memory_anticipate_feedback(args: dict) -> tuple[str, bool]:
     stem = (args.get("stem") or "").strip()
     outcome = (args.get("outcome") or "").strip()
-    if not stem or outcome not in ("helped", "false_alarm"):
-        return "error: 'stem' and outcome in {helped,false_alarm} required", True
+    if not stem or outcome not in _anticipate.OUTCOMES:
+        return ("error: 'stem' and outcome in {"
+                + ",".join(_anticipate.OUTCOMES) + "} required"), True
     # The stem becomes a permanent key in the anticipate state, so it has to name a real note.
     # A typo used to return "recorded false_alarm for <typo>" - indistinguishable from a record
     # that did something - and left an entry nothing would ever read again.

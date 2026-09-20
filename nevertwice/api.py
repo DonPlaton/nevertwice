@@ -524,7 +524,8 @@ def anticipate(trajectory: str, project: str | None = None, *, k: int = 1,
 def anticipate_feedback(mistake_stem: str, outcome: str) -> dict:
     """Adapt axis B: `outcome` ∈ {'helped','false_alarm'}. A false alarm raises that failure
     mode's firing bar (Popperian - a cry-wolf predictor goes quiet); 'helped' keeps it
-    sensitive. Returns the updated per-failure state."""
+    sensitive. Returns the updated per-failure state; anything else raises ValueError rather
+    than returning the zeroed state a caller reads as a successful first record."""
     return _anticipate.feedback(mistake_stem, outcome)
 
 
