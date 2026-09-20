@@ -4482,7 +4482,13 @@ def pair_siblings(hits: list[dict], attach: bool = False) -> list[dict]:
         key = _sibling_key(h.get("stem", ""))
         if key:
             groups.setdefault(key, []).append(i)
-    if not any(len(v) > 1 for v in groups.values()):
+    if not attach and not any(len(v) > 1 for v in groups.values()):
+        # `not attach`: with nothing to fold there is nothing to do and the list is handed
+        # back untouched - but the `attach` pass also serves each hit through `_served_text`,
+        # and returning early skipped that for EVERY hit whenever no group happened to have
+        # two members. So one unrelated sibling pair anywhere in the result changed the text
+        # a reader got for notes that had nothing to do with it, and track N's switch was
+        # measuring the kinship of the rest of the result rather than the change it names.
         return hits
     lead_of, drop = {}, set()
     for idxs in groups.values():

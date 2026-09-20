@@ -146,5 +146,61 @@ check("with the pairing removed both siblings take a slot each - the check would
       old in [h["stem"] for h in hits] and new in [h["stem"] for h in hits])
 m.pair_siblings = _real
 
+
+# ── what a hit is served must not depend on whom it was served with ────
+#
+# `pair_siblings` returns `hits` UNTOUCHED when no group has two members, so the whole
+# `attach` pass - and with it `_served_text` - never runs on a result that happens to contain
+# no siblings. One unrelated pair anywhere in the result turns it on for everybody. So the
+# text a reader gets for a given note depended on the kinship of the OTHER hits beside it,
+# and track N's switch was measuring that rather than the change it names.
+#
+# Two traps this check has to respect, both paid for: `_served_text` only strips the block
+# when the sentence already carries its values (`need <= have`) - otherwise stripping would
+# lose a fact - so the fixture puts them in both halves; and siblings do not fold on the name
+# alone, which is why A0 above is a real file on disk.
+print("\n- the served text does not depend on the company -")
+
+NL = chr(10)
+# The sandbox was rebuilt further up, so the base A0 folds against has to exist in the store
+# that is current NOW - `_sibling_key`'s legacy fallback reads the stripped base's path.
+(m.VAULT / "Decisions").mkdir(parents=True, exist_ok=True)
+(m.VAULT / "Decisions" / (A0 + ".md")).write_text(
+    "---" + NL + "date: 2026-06-01" + NL + "project: p" + NL + "type: decision" + NL
+    + "---" + NL + NL + "# timeout" + NL + NL + "placeholder" + NL,
+    encoding="utf-8", newline="")
+
+_serve = m.SERVE_FACTS_BLOCK
+try:
+    m.SERVE_FACTS_BLOCK = False                  # track N: serve the sentence, not the block
+    DESC = "pool_size=5 on port=5432" + m._FACTS_MARK + "pool_size=5, port=5432"
+    _alone = m.pair_siblings([H(B0, description=DESC)], attach=True)
+    _beside = m.pair_siblings([H(B0, description=DESC), H(A0), H(A1)], attach=True)
+    _a = _alone[0]["description"]
+    _b = next(h["description"] for h in _beside if h["stem"] == B0)
+    check("an unrelated pair in the result folds", len(_beside) == 2, str(len(_beside)))
+    check("the same hit is served the same text either way", _a == _b, f"{_a!r} vs {_b!r}")
+    check("and the switch is honoured when it is alone in the result",
+          m._FACTS_MARK.strip() not in _a, repr(_a))
+    check("as it already was beside a pair", m._FACTS_MARK.strip() not in _b, repr(_b))
+
+    # ... and the switch still has an off position, or the checks above would pass on a
+    # function that strips unconditionally.
+    m.SERVE_FACTS_BLOCK = True
+    _on_alone = m.pair_siblings([H(B0, description=DESC)], attach=True)[0]["description"]
+    _on_beside = next(h["description"] for h in
+                      m.pair_siblings([H(B0, description=DESC), H(A0), H(A1)], attach=True)
+                      if h["stem"] == B0)
+    check("with the block served, it is served in both shapes",
+          m._FACTS_MARK.strip() in _on_alone and m._FACTS_MARK.strip() in _on_beside,
+          f"{_on_alone!r} vs {_on_beside!r}")
+
+    # attach=False keeps the fast path: nothing to attach, nothing to walk.
+    _untouched = m.pair_siblings([H(B0, description=DESC)])
+    check("without attach the list is handed back as it came",
+          _untouched[0]["description"] == DESC, repr(_untouched[0]["description"]))
+finally:
+    m.SERVE_FACTS_BLOCK = _serve
+
 print(f"\nK8 layer 2: {len(RUN) - len(FAILED)} passed, {len(FAILED)} failed")
 sys.exit(1 if FAILED else 0)
