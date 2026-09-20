@@ -704,5 +704,74 @@ for _k in ("undated", "unparseable"):
 check("so the ordinary rule can reach it", m.prune_processed_db(_db, days=-1) >= 2
       and "undated" not in _db and "unparseable" not in _db)
 
+
+# -- two values captured at import that a rebind cannot reach ----------
+#
+# T1 names three in one row. One is already closed: `archive_old_sessions`,
+# `archive_old_typed` and `prune_processed_db` took their day counts as DEFAULT ARGUMENTS,
+# evaluated once at def time, and now resolve the module constant on call. Two were open.
+print("# values captured at import")
+
+# 1. The cloud key. Free on the hook path - a process per event - but `mcp_server` is a stdio
+# server that lives for the whole client session and `watch` is a daemon: on those, a key
+# exported after start, or rotated, silently kept doing nothing until a restart. Same reason
+# `_twin_file_path` and `_lock_file` resolve on call.
+import os as _os  # noqa: E402
+
+_saved_env = {k: _os.environ.get(k) for k in ("CEREBRAS_API_KEY", "GROQ_API_KEY")}
+_saved_active = m.ACTIVE_CLOUD
+try:
+    m.ACTIVE_CLOUD = "cerebras"
+    _os.environ["CEREBRAS_API_KEY"] = "sk-EXPORTED-AFTER-IMPORT"
+    check("a key exported after import is the key that is used",
+          m.cloud_key() == "sk-EXPORTED-AFTER-IMPORT")
+    _os.environ["CEREBRAS_API_KEY"] = "sk-ROTATED"
+    check("and a rotated key takes effect without a restart", m.cloud_key() == "sk-ROTATED")
+    _os.environ["CEREBRAS_API_KEY"] = ""
+    check("an unset key reads as absent, not as the one from start-up", m.cloud_key() == "")
+    m.ACTIVE_CLOUD = "groq"
+    _os.environ["GROQ_API_KEY"] = "gsk-ANOTHER"
+    check("each provider reads its own variable", m.cloud_key() == "gsk-ANOTHER")
+    m.ACTIVE_CLOUD = "none"
+    check("and a provider with no variable reads empty", m.cloud_key() == "")
+finally:
+    m.ACTIVE_CLOUD = _saved_active
+    for _k, _v in _saved_env.items():
+        if _v is None:
+            _os.environ.pop(_k, None)
+        else:
+            _os.environ[_k] = _v
+
+# 2. `cache_clear` bound to the dict OBJECT rather than to the name. `_clear_tag_counts` is
+# the sibling done right - a function with `global` - and the titles cache got `dict.clear`
+# of whichever dict existed at import, so any rebinding of the name (a reset written the
+# obvious way, a test monkeypatching the cache) left `cache_clear` scrubbing a dict nobody
+# reads any more, silently.
+_old_slugs = m._TITLE_SLUGS
+try:
+    m._TITLE_SLUGS = {"probe": {"pattern": [("2026-01-01", "a-title")]}}
+    m.collect_existing_titles.cache_clear()
+    check("cache_clear clears the cache the module is reading now", m._TITLE_SLUGS == {})
+finally:
+    m._TITLE_SLUGS = _old_slugs
+
+_bound = type({}.clear)
+check("neither cache_clear is bound to a container object",
+      not isinstance(getattr(m.collect_existing_tags, "cache_clear", None), _bound)
+      and not isinstance(getattr(m.collect_existing_titles, "cache_clear", None), _bound))
+check("and both are still there for the callers that use them",
+      callable(getattr(m.collect_existing_tags, "cache_clear", None))
+      and callable(getattr(m.collect_existing_titles, "cache_clear", None)))
+
+# The third of the row, held so it cannot come back: a day count read on call, not at def.
+import inspect as _inspect  # noqa: E402
+
+_defaults = []
+for _fn in ("archive_old_sessions", "archive_old_typed", "prune_processed_db"):
+    _sig = _inspect.signature(getattr(m, _fn))
+    if _sig.parameters["days"].default not in (None, _inspect.Parameter.empty):
+        _defaults.append(_fn)
+check("no day count is frozen in a default argument: " + ", ".join(_defaults), not _defaults)
+
 print(f"\n{P} passed, {F} failed")
 sys.exit(1 if F else 0)

@@ -267,7 +267,10 @@ print("\n# PROBE 9: local-only routing never leaks to cloud (both modes)")
 import importlib
 importlib.reload(m)  # restore the REAL generate_json (earlier probes mocked it)
 m.ACTIVE_CLOUD = "cerebras"
-m._CLOUD_KEYS = {"cerebras": "x", "groq": "", "gemini": ""}  # cloud key present
+# A key is READ on call now, not captured into a dict at import (a long-lived
+# mcp_server/watch could not see a rotated one), so the probe sets the accessor -
+# the same door `_test_brain_invariants.py` uses.
+m.cloud_key = lambda: "x"                                   # cloud key present
 m._CLOUD_DEAD = False
 m._OLLAMA_DOWN = False
 hit = {"cloud": 0}

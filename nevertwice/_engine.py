@@ -337,14 +337,31 @@ def _resolve_cloud() -> str:
 
 
 ACTIVE_CLOUD = _resolve_cloud()
-_CLOUD_KEYS = {"cerebras": CEREBRAS_API_KEY, "groq": GROQ_API_KEY,
-               "gemini": GEMINI_API_KEY, "deepseek": DEEPSEEK_API_KEY}
+#: Which environment variable each provider's key comes from. The names, not the values: a
+#: key is a credential that rotates, and it is read on every call (see `provider_key`).
+#: `ACTIVE_CLOUD` stays resolved once on purpose - choosing a backend is a configuration
+#: decision taken at start-up, not something that changes under a running process.
+_CLOUD_KEY_ENV = {"cerebras": "CEREBRAS_API_KEY", "groq": "GROQ_API_KEY",
+                  "gemini": "GEMINI_API_KEY", "deepseek": "DEEPSEEK_API_KEY"}
 _CLOUD_MODELS = {"cerebras": CEREBRAS_MODEL, "groq": GROQ_MODEL,
                  "gemini": GEMINI_MODEL, "deepseek": DEEPSEEK_MODEL}
 
 
+def provider_key(provider: str) -> str:
+    """One provider's API key, read from the environment on this call.
+
+    The four keys were captured into a dict at import, so a key exported AFTER the module was
+    imported was invisible and a rotated one kept its old value until the process restarted.
+    On the hook path that costs nothing - a process per event - but `mcp_server` is a stdio
+    server that lives for the whole client session and `watch` is a daemon, and on those
+    rotation silently did nothing and said nothing. The same reason `_twin_file_path` and
+    `_lock_file` resolve on call rather than at import.
+    """
+    return os.environ.get(_CLOUD_KEY_ENV.get(provider, ""), "").strip()
+
+
 def cloud_key() -> str:
-    return _CLOUD_KEYS.get(ACTIVE_CLOUD, "")
+    return provider_key(ACTIVE_CLOUD)
 
 # Projects that must NEVER use a cloud backend (sensitive/novel research). Their
 # transcripts are extracted ONLY by local Ollama, nothing leaves the machine.
@@ -1919,7 +1936,18 @@ def collect_existing_titles(project: str, for_date: str | None = None
     return picked
 
 
-collect_existing_titles.cache_clear = _TITLE_SLUGS.clear   # back-compat with callers
+def _clear_title_slugs():
+    """Clear the title-grounding cache by NAME, the way `_clear_tag_counts` beside it does.
+
+    This was `_TITLE_SLUGS.clear` - a bound method of whichever dict existed at import - so
+    rebinding the name (a reset written the obvious way, a test monkeypatching the cache)
+    left `cache_clear` scrubbing a dict nobody reads any more, and said nothing about it.
+    """
+    global _TITLE_SLUGS
+    _TITLE_SLUGS = {}
+
+
+collect_existing_titles.cache_clear = _clear_title_slugs   # back-compat with callers
 
 
 def _unregister_slug(stem: str) -> None:
@@ -2754,7 +2782,8 @@ def call_gemini(prompt: str) -> dict:
                              "responseMimeType": "application/json"},
     }).encode("utf-8")
     # key in a header, never the URL, so it can't leak via HTTPError.url / logs
-    headers = {"Content-Type": "application/json", "x-goog-api-key": GEMINI_API_KEY}
+    headers = {"Content-Type": "application/json",
+               "x-goog-api-key": provider_key("gemini")}
 
     def _extract(data, last):
         cands = data.get("candidates") or []
@@ -2823,16 +2852,16 @@ def _call_openai_chat(prompt: str, base_url: str, api_key: str, model: str,
 
 
 def call_cerebras(prompt: str) -> dict:
-    return _call_openai_chat(prompt, CEREBRAS_URL, CEREBRAS_API_KEY,
+    return _call_openai_chat(prompt, CEREBRAS_URL, provider_key("cerebras"),
                              CEREBRAS_MODEL, "Cerebras")
 
 
 def call_groq(prompt: str) -> dict:
-    return _call_openai_chat(prompt, GROQ_URL, GROQ_API_KEY, GROQ_MODEL, "Groq")
+    return _call_openai_chat(prompt, GROQ_URL, provider_key("groq"), GROQ_MODEL, "Groq")
 
 
 def call_deepseek(prompt: str) -> dict:
-    return _call_openai_chat(prompt, DEEPSEEK_URL, DEEPSEEK_API_KEY,
+    return _call_openai_chat(prompt, DEEPSEEK_URL, provider_key("deepseek"),
                              DEEPSEEK_MODEL, "DeepSeek")
 
 
