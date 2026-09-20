@@ -150,12 +150,19 @@ check("exit code stays 0 so the agent's tool call is not blocked", r.returncode 
 check("the reason is printed", "_engine.py" in r.stderr and "missing" in r.stderr.lower())
 
 # ── a store that cannot be created is the same kind of failure ────────────────────
-# `main()` calls `VAULT.mkdir(parents=True, exist_ok=True)` on EVERY event, unguarded, right
-# after the check that warns when the store has moved. An unreachable store - an unplugged
-# drive, a synced folder mid-repair, a permission change - raises OSError out of the hook, and
-# on PreToolUse that is an error before every Edit, Write and Bash the agent tries. Memory being
-# unavailable must cost memory, never the agent's tool call.
-print("# a store that cannot be created is reported, not crashed")
+# `main()` calls `VAULT.mkdir(parents=True, exist_ok=True)` on EVERY event, and so does
+# `acquire_lock` one layer down. An unreachable store - an unplugged drive, a synced folder
+# mid-repair, a permission change - raises OSError out of the hook, and on PreToolUse that is an
+# error before every Edit, Write and Bash the agent tries. Memory being unavailable must cost
+# memory, never the agent's tool call.
+#
+# The first version of this check ran PreToolUse only and passed while SessionEnd and PreCompact
+# still exited 1 with a traceback: guarding `main()`'s own mkdir left the one inside
+# `acquire_lock` - and the comment on the guard named `acquire_lock` among the callers that
+# "already create what they need", which is exactly the line that throws. PreToolUse never
+# reaches it, because on an unreachable store no guard fires and nothing is recorded. Every
+# event the hook is wired to is exercised here, for that reason.
+print("# a store that cannot be created is reported, not crashed - on every wired event")
 
 blocked = Path(tempfile.mkdtemp(prefix="blockedstore_"))
 (blocked / "afile").write_text("not a directory", encoding="utf-8")
@@ -163,14 +170,24 @@ env = dict(os.environ)
 env.update({"NEVERTWICE_HOME": str(blocked / "afile" / "store"),
             "NEVERTWICE_VAULT": str(blocked / "afile" / "store"),
             "NEVERTWICE_CLOUD": "none"})
-r = subprocess.run([sys.executable, str(entry)],
-                   input=json.dumps({"hook_event_name": "PreToolUse", "session_id": "b",
-                                     "cwd": str(blocked), "tool_name": "Edit",
-                                     "tool_input": {"file_path": "a.py", "new_string": "x = 1"}}),
-                   capture_output=True, text=True, env=env, timeout=120)
-check("exit code stays 0 so the agent's tool call is not blocked", r.returncode == 0,
-      f"exit {r.returncode}: {r.stderr[-400:]}")
-check("and nothing raises out of the hook", "Traceback" not in r.stderr, r.stderr[-400:])
+transcript = blocked / "t.jsonl"
+transcript.write_text(
+    json.dumps({"type": "user", "message": {"role": "user", "content": "remember this"}})
+    + "\n", encoding="utf-8")
+for event in ("SessionStart", "UserPromptSubmit", "PreToolUse", "SessionEnd", "PreCompact"):
+    payload = {"hook_event_name": event, "session_id": "b", "cwd": str(blocked),
+               "transcript_path": str(transcript)}
+    if event == "PreToolUse":
+        payload |= {"tool_name": "Edit", "tool_input": {"file_path": "a.py",
+                                                        "new_string": "x = 1"}}
+    if event == "UserPromptSubmit":
+        payload["prompt"] = "what did we decide"
+    r = subprocess.run([sys.executable, str(entry)], input=json.dumps(payload),
+                       capture_output=True, text=True, env=env, timeout=180)
+    check(event + ": exit code stays 0 so the agent is not blocked", r.returncode == 0,
+          f"exit {r.returncode}: {r.stderr[-400:]}")
+    check(event + ": and nothing raises out of the hook", "Traceback" not in r.stderr,
+          r.stderr[-400:])
 
 print()
 print(f"entry point: {P} passed, {F} failed")

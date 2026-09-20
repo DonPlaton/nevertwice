@@ -1865,7 +1865,15 @@ def _lock_file() -> Path:
 
 
 def acquire_lock(timeout_s: float = 30) -> bool:
-    VAULT.mkdir(parents=True, exist_ok=True)
+    try:
+        VAULT.mkdir(parents=True, exist_ok=True)
+    except OSError as e:
+        # An unreachable store cannot be locked, and this mkdir - not the guarded one in
+        # `main()` - is the line that threw OSError out of SessionEnd and PreCompact when the
+        # drive was gone. A lock we cannot take is already a "no" every caller handles, so say
+        # no: the event ends with "could not acquire", the agent's tool call is untouched.
+        log(f"vault lock: store unreachable ({type(e).__name__}: {e})")
+        return False
     lock = _lock_file()
     deadline = time.monotonic() + timeout_s
     while time.monotonic() < deadline:
@@ -7856,9 +7864,13 @@ def main():
     # Unguarded, this was an error before every Edit, Write and Bash the moment the store became
     # unreachable - an unplugged drive, a synced folder mid-repair, a path whose parent is now a
     # file. The hook's standing rule, the same one `memory_hook.py` applies to a missing engine,
-    # is that memory being unavailable costs memory and never the agent's tool call. Everything
-    # downstream already creates what it needs before writing (`save_guards`, `write_atomic`,
-    # `acquire_lock`), so a failure here is reported and the event continues as far as it can.
+    # is that memory being unavailable costs memory and never the agent's tool call.
+    #
+    # This guard alone covered three of the five wired events. The write paths downstream create
+    # what they need before writing, and this comment used to name `acquire_lock` among them -
+    # but its mkdir is the line that threw, one layer down, on SessionEnd and PreCompact, which
+    # are the two events that reach it. It answers False on an unreachable store now, so the
+    # event ends the same way it ends for a lock somebody else is holding.
     try:
         VAULT.mkdir(parents=True, exist_ok=True)
     except OSError as e:
