@@ -236,6 +236,37 @@ def test_a_truncated_tail_does_not_lose_the_session() -> None:
           any(e.get("prompt") == PROMPT for e in events), str(events))
 
 
+def test_the_read_cap_is_the_bytes_it_is_named_for() -> None:
+    """MAX_BYTES is documented in bytes, `_jsonl` says the cut lands on a byte boundary, and
+    the read passed it to `TextIOWrapper.read()`, which counts CHARACTERS. A Russian
+    transcript therefore held twice the cap and a CJK one three times - the same class
+    `ingest.py` fixed in its own sweep (review 2026-08 D2), on the module that reads the
+    biggest files in the project."""
+    print("\n- the cap is in bytes, on a file that is not ASCII -")
+    with tempfile.TemporaryDirectory() as tmp:
+        path = Path(tmp) / "ru.jsonl"
+        # 2 bytes per character in UTF-8: 400 characters, 800 bytes.
+        path.write_bytes(("\u0438" * 400).encode("utf-8"))
+        cap, hosts.MAX_BYTES = hosts.MAX_BYTES, 200
+        try:
+            got = hosts._read_capped(path)
+        finally:
+            hosts.MAX_BYTES = cap
+        size = len(got.encode("utf-8", "replace"))
+        check("a 200-byte cap reads at most 200 bytes", size <= 200, f"{size} bytes")
+        check("and reads what fits, not nothing", size >= 190, f"{size} bytes")
+        # A cap that lands mid-codepoint is normal - `_jsonl` already discards the clipped
+        # final line - so it must decode rather than raise.
+        odd = Path(tmp) / "odd.jsonl"
+        odd.write_bytes(('{"x": "' + "\u0438" * 40 + '"}').encode("utf-8"))
+        hosts.MAX_BYTES = 11                     # 7 ASCII + half of the 3rd Cyrillic pair
+        try:
+            check("a cut inside a character decodes instead of raising",
+                  isinstance(hosts._read_capped(odd), str))
+        finally:
+            hosts.MAX_BYTES = cap
+
+
 # -------------------------------------------------- install / uninstall
 
 
@@ -385,6 +416,7 @@ def main() -> int:
                test_codex_scaffolding_is_skipped,
                test_cursoring_is_incremental,
                test_a_truncated_tail_does_not_lose_the_session,
+               test_the_read_cap_is_the_bytes_it_is_named_for,
                test_claude_code_install_status_and_reversible_uninstall,
                test_claude_code_is_not_swept_as_well_as_hooked,
                test_cursor_explains_itself_instead_of_returning_nothing,

@@ -55,8 +55,9 @@ SCHEMA_VERSION = 1
 #: `not_wired`, which means the host is here and Nevertwice is not attached to it.
 STATES = ("wired", "not_wired", "unavailable")
 
-#: Cap on how much of one transcript is read. A rollout log can be tens of megabytes, and the
-#: measured failure was a single 25KB scaffolding line eating the whole budget.
+#: Cap on how much of one transcript is read, in BYTES - `_read_capped` reads binary so the
+#: name is the truth on a transcript that is not ASCII. A rollout log can be tens of
+#: megabytes, and the measured failure was a single 25KB scaffolding line eating the budget.
 MAX_BYTES = m.env_int("NEVERTWICE_HOST_MAX_BYTES", 2_000_000)
 
 
@@ -90,9 +91,20 @@ def _text(value) -> str:
 
 
 def _read_capped(path: Path) -> str:
+    """The first `MAX_BYTES` BYTES of the file, decoded.
+
+    Read in binary, because `TextIOWrapper.read(n)` caps n CHARACTERS: the cap is named in
+    bytes, `MAX_BYTES` is documented in bytes and `_jsonl` below already says the cut lands
+    on a byte boundary, but a Russian transcript read through a 2 MB cap held 4 MB and a CJK
+    one 6 MB - on the module that reads the largest files in the project. `ingest.py` fixed
+    the same class in its own sweep (review 2026-08 D2) and left a comment saying so.
+
+    A cut landing mid-codepoint is normal and costs nothing: `errors="replace"` decodes it,
+    and it lands in the clipped final line that `_jsonl` discards by design.
+    """
     try:
-        with path.open("r", encoding="utf-8", errors="replace") as fh:
-            return fh.read(MAX_BYTES)
+        with path.open("rb") as fh:
+            return fh.read(MAX_BYTES).decode("utf-8", errors="replace")
     except OSError:
         return ""
 
