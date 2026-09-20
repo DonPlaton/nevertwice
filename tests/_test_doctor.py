@@ -293,6 +293,71 @@ def test_the_entry_point_is_registered() -> None:
           'nevertwice-doctor = "nevertwice.doctor:main"' in text)
 
 
+def test_the_oldest_temp_file_is_the_oldest_one() -> None:
+    """`min(p.name for p in orphans)` is the alphabetically first name, reported as "oldest".
+
+    The repair says to review them and delete - so the one the operator is pointed at should be
+    the one that has been sitting there longest, not the one whose name happens to sort first.
+    """
+    print("\n- oldest means oldest -")
+    with tempfile.TemporaryDirectory() as tmp:
+        vault = Path(tmp) / "store"
+        vault.mkdir()
+        old = vault / "zzz-note.md.tmp"
+        new = vault / "aaa-note.md.tmp"
+        old.write_text("x", encoding="utf-8")
+        new.write_text("x", encoding="utf-8")
+        long_ago = time.time() - 86400 * 9
+        os.utime(old, (long_ago, long_ago))
+        result = doctor.check_orphaned_temp(vault)
+        check("both files are reported", "2 temporary files" in result["detail"], result["detail"])
+        check("and the one named is the one that has been there longest",
+              old.name in result["detail"], result["detail"])
+
+
+def test_a_note_archived_mid_run_does_not_crash_the_diagnostic() -> None:
+    """The freshness and index checks glob the note folders, then `stat()` what the glob found.
+
+    A sweep archiving a note between those two steps raises `FileNotFoundError` out of a
+    generator inside `max(...)`, and it escapes the check - so a diagnostic run concurrent with
+    the maintenance it exists to watch reports nothing at all. A note that moved while we
+    counted is the store working, not a fault to crash on.
+    """
+    print("\n- a diagnostic survives the store moving under it -")
+    import pathlib
+    with tempfile.TemporaryDirectory() as tmp:
+        vault = healthy_store(Path(tmp) / "store", now=time.time())
+        # More than one note, or "every listed note vanished" is the honest answer and the
+        # check never reaches the branch this test is about.
+        for i in range(2):
+            (vault / "Patterns" / f"2026-08-2{i}-demo-pattern-survivor-{i}.md").write_text(
+                "---\ntype: pattern\n---\n\nbody\n", encoding="utf-8")
+        gone = sorted((vault / "Mistakes").glob("*.md"))[0].name
+        real_stat = pathlib.Path.stat
+
+        def flaky(self, *a, **k):
+            if self.name == gone:
+                raise FileNotFoundError(2, "archived between the glob and the stat", str(self))
+            return real_stat(self, *a, **k)
+
+        pathlib.Path.stat = flaky
+        try:
+            fresh = doctor.check_capture_freshness(vault)
+            age = doctor.check_index_age(vault)
+        except Exception as exc:                  # noqa: BLE001 - that is the defect
+            fresh = age = None
+            check("the freshness check survives it", False, f"{type(exc).__name__}: {exc}")
+        finally:
+            pathlib.Path.stat = real_stat
+        if fresh is not None:
+            check("the freshness check survives it", fresh["status"] in
+                  (doctor.OK, doctor.WARN), str(fresh))
+            check("and still counts the notes that are there",
+                  "notes" in fresh["detail"], str(fresh))
+            check("the index-age check survives it too", age["status"] in
+                  (doctor.OK, doctor.WARN, doctor.SKIP), str(age))
+
+
 def test_zz_every_check_passed() -> None:
     """Bare pytest must reach the same verdict as this suite's exit code.
 

@@ -503,6 +503,38 @@ def test_duplicate_and_reordered_events_replay_idempotently() -> None:
               "a second pass must not re-mangle already-flattened text")
 
 
+def test_a_truncation_reports_the_cap_that_bound_it() -> None:
+    """A count an agent reads has to be the count that happened.
+
+    `graphify` stops adding files on EITHER the file cap or the byte cap, and then reported
+    `truncated_to: MAX_FILES` unconditionally. A graph cut short at 210 files by a 120 KB budget
+    announced itself as truncated to 800 - a number no part of the run used - so the agent
+    reading `graph.json` to decide whether to open the files directly was told the wrong reason
+    and the wrong size. The renderer prints the same object.
+    """
+    print("\n- a truncation names the cap that bound it -")
+    import graphify
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        # Well under the file cap, well over the byte cap: only the byte cap can bind here.
+        for i in range(300):
+            (root / f"mod_{i:03d}.py").write_text(
+                "\n".join("def function_with_a_long_enough_name_%03d_%03d(): pass" % (i, j)
+                            for j in range(40)) + "\n", encoding="utf-8")
+        graph = graphify.build(root)
+        stats = graph["stats"]
+        kept = len(graph["files"])
+        check("the fixture is cut short", stats.get("truncated_to") is not None
+              and kept < stats.get("full_file_count", 0),
+              f"kept {kept} of {stats.get('full_file_count')}")
+        check("and the file cap is not what did it", kept < graphify.MAX_FILES,
+              f"{kept} kept against a file cap of {graphify.MAX_FILES}")
+        check("the reported size is the number of files that survived",
+              stats.get("truncated_to") == kept, str(stats.get("truncated_to")))
+        check("and the cap that bound it is named", stats.get("truncated_by") == "byte cap",
+              str(stats.get("truncated_by")))
+
+
 def test_zz_every_check_passed() -> None:
     """Bare pytest must reach the same verdict as this suite's exit code.
 
@@ -525,7 +557,8 @@ def main() -> int:
                test_a_symlinked_or_junctioned_store_is_refused,
                test_jsonrpc_fuzzing_never_crashes_and_never_answers_a_notification,
                test_a_clock_jump_does_not_break_anything,
-               test_duplicate_and_reordered_events_replay_idempotently):
+               test_duplicate_and_reordered_events_replay_idempotently,
+               test_a_truncation_reports_the_cap_that_bound_it):
         fn()
     print(f"\nproperties: {PASSED} passed, {FAILED} failed"
           + ("" if HAVE_HYPOTHESIS else "  (hypothesis absent - deterministic corpus)"))

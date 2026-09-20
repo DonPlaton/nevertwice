@@ -126,6 +126,23 @@ def check_hook_registration(settings: Path) -> dict:
                   f"{len(wired)} events: {', '.join(wired)}")
 
 
+def _mtimes(paths) -> list:
+    """`st_mtime` for the paths that are still there.
+
+    Every caller globs a folder and then stats what the glob returned. A sweep archiving a note
+    between those two steps raised `FileNotFoundError` out of a generator inside `max(...)`, and
+    it escaped the check - so a diagnostic run concurrent with the maintenance it exists to
+    watch reported nothing at all. A note that moved while we counted is the store working.
+    """
+    out = []
+    for p in paths:
+        try:
+            out.append(p.stat().st_mtime)
+        except OSError:
+            continue
+    return out
+
+
 def check_capture_freshness(vault: Path, now: float | None = None) -> dict:
     """Extraction stalling is invisible: nothing errors, the store simply stops growing."""
     now = time.time() if now is None else now
@@ -135,7 +152,12 @@ def check_capture_freshness(vault: Path, now: float | None = None) -> dict:
         return _check("capture_freshness", "the store is still being written to", WARN,
                       "no notes yet - nothing has been captured",
                       "nevertwice-ingest --help  # or start a session with the hooks wired")
-    newest = max(p.stat().st_mtime for p in notes)
+    stamps = _mtimes(notes)
+    if not stamps:
+        return _check("capture_freshness", "the store is still being written to", WARN,
+                      f"{len(notes)} note(s) were listed and none could be read",
+                      "nevertwice-doctor  # re-run: a sweep may have been moving them")
+    newest = max(stamps)
     days = (now - newest) / 86400
     if days > STALE_CAPTURE_DAYS:
         return _check("capture_freshness", "the store is still being written to", WARN,
@@ -224,7 +246,11 @@ def check_index_age(vault: Path, now: float | None = None) -> dict:
                       "python -m nevertwice.index_sqlite --rebuild")
     if not notes:
         return _check("index_age", "the search index is current", OK, "index present, no notes")
-    newest = max(p.stat().st_mtime for p in notes)
+    stamps = _mtimes(notes)
+    if not stamps:
+        return _check("index_age", "the search index is current", SKIP,
+                      "the notes moved while they were being read", "")
+    newest = max(stamps)
     lag = newest - index.stat().st_mtime
     if lag > INDEX_SLACK_S:
         return _check("index_age", "the search index is current", WARN,
@@ -269,9 +295,12 @@ def check_orphaned_temp(vault: Path) -> dict:
                for p in vault.rglob(pattern)]
     if not orphans:
         return _check("orphaned_temp", "no half-written files are left behind", OK, "none")
+    # "oldest" was `min(p.name ...)`, the alphabetically first name. The repair points the
+    # operator at one file to look at first; it should be the one that has been sitting there
+    # longest, not the one whose name happens to sort first.
+    oldest = min(orphans, key=lambda q: (_mtimes([q]) or [float("inf")])[0]).name
     return _check("orphaned_temp", "no half-written files are left behind", WARN,
-                  f"{len(orphans)} temporary files, oldest "
-                  f"{min(p.name for p in orphans)}",
+                  f"{len(orphans)} temporary files, oldest {oldest}",
                   "review them, then delete: they are writes that were interrupted, and the "
                   "real note was either written or retried")
 

@@ -229,7 +229,15 @@ def build(root: Path) -> dict:
     result["stats"]["savings_vs_full_read"] = round(total / graph_bytes, 1) if graph_bytes else None
     result["stats"]["savings_vs_code_only"] = round(code_bytes / graph_bytes, 1) if graph_bytes else None
     if truncated:
-        result["stats"]["truncated_to"] = MAX_FILES
+        # The loop stops on EITHER cap, and this reported the FILE cap whichever one bound -
+        # a graph cut short at 84 files by the 120 KB budget announced itself as truncated to
+        # 800, a number no part of the run used. The agent reading graph.json to decide whether
+        # to open the files directly got the wrong reason and the wrong size, and the renderer
+        # prints this same object. Report what survived, and which cap ended it: the loop keeps
+        # filling after a skip, so the file cap is what bound exactly when it was reached.
+        result["stats"]["truncated_to"] = len(files)
+        result["stats"]["truncated_by"] = ("file cap" if len(files) >= MAX_FILES else "byte cap")
+        result["stats"]["caps"] = {"max_files": MAX_FILES, "max_graph_bytes": MAX_GRAPH_BYTES}
         result["stats"]["full_file_count"] = full_count
     return result
 
@@ -278,7 +286,8 @@ def main():
     # with exception cleanup.
     m.write_atomic(out, json.dumps(graph, ensure_ascii=False))
     s = graph["stats"]
-    note = f" (truncated from {s['full_file_count']})" if s.get("truncated_to") else ""
+    note = (f" (truncated from {s['full_file_count']} by the {s['truncated_by']})"
+            if s.get("truncated_to") else "")
     print(f"[graphify] Done: {s['total_files']} files{note}, {s['graph_kb']} KB, "
           f"~{s['savings_vs_full_read']}x vs full read → graph.json", file=sys.stderr)
 
