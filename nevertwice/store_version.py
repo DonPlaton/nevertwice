@@ -20,8 +20,12 @@ returns the path; rollback is restoring that directory over the store, and it is
 than left to be inferred.
 
 **The notes are never touched.** Migration and rebuild operate on the *derived* artifacts and
-the state files. The Markdown is the source of truth and stays exactly as written - which is
-also what makes rollback cheap: the expensive half was never at risk.
+the state files. The Markdown is the source of truth and stays exactly as written.
+
+That is a statement about the migration, and not about rollback. Rollback restores a whole
+directory, so it rewinds the notes and the repository with everything else, and the sessions
+written since the backup go with them - `rollback_instructions` says so, and says to move the
+current store aside rather than delete it.
 
 **A rebuild is byte-reproducible, and the reason is measured rather than assumed.** Two clean
 rebuilds of the same store produce byte-identical indexes, and what makes that true is that
@@ -239,10 +243,21 @@ def backup(vault: Path) -> Path:
 
 
 def rollback_instructions(vault: Path, backup_path: Path) -> str:
-    return (f"To roll back: remove {vault} and rename {backup_path} back to {vault.name}. "
-            f"The Markdown notes were never modified, so a rollback only restores state files "
-            f"and derived artifacts - and `nevertwice-store --rebuild --apply` regenerates "
-            f"those from the notes at any time.")
+    """Describe the operation being asked for, not the one the migration performed.
+
+    "The notes are never touched" is true of the MIGRATION - it rewrites derived artifacts and
+    state files only. It was never true of the ROLLBACK, which restores a whole directory: now
+    that the backup carries the notes and the repository (it has to, or it does not restore what
+    it deletes), swapping it in rewinds the notes and the history to the moment of the backup
+    and every session written since is gone. The text conflated the two and read as cheap.
+    """
+    return (f"To roll back: move {vault} aside - do NOT delete it - and rename {backup_path} "
+            f"back to {vault.name}. This restores the WHOLE store as it stood when the backup "
+            f"was taken: notes, state files and git history alike. Anything written to the "
+            f"store after that moment is lost, which is why the current store is kept aside "
+            f"rather than deleted. If only the derived artifacts are wrong, "
+            f"`nevertwice-store --rebuild --apply` regenerates those from the notes with no "
+            f"rollback at all.")
 
 
 # ── migrate ─────────────────────────────────────────────────────────────

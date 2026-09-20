@@ -21,7 +21,8 @@ The rest guards the ways a rebuild could quietly cost someone something:
 
 * the embedding cache is **not** rebuilt by default, because reconstructing it needs a model and
   deleting it on a machine without one destroys work that cannot be recreated;
-* the notes are never touched, so a rollback only ever has to restore state files;
+* the notes are never touched by a MIGRATION - though a rollback restores the whole store,
+  history included, so the instruction has to say what it costs;
 * `guards.json` and the import ledgers are preserved - they record history, not derivation.
 """
 from __future__ import annotations
@@ -470,6 +471,61 @@ def test_the_documented_rollback_does_not_destroy_what_it_restores() -> None:
               (store / "Mistakes" / "note.md").is_file())
 
 
+def test_the_rollback_text_says_what_the_rollback_costs() -> None:
+    """The instruction has to describe the operation it asks for.
+
+    Putting `.git` into the backup fixed the first half: the rollback no longer destroys the
+    history. It also gave the sentence a second bottom. Swapping the backup in now rewinds the
+    NOTES and the history to the moment of the backup, so everything written to the store since
+    - notes from later sessions, their commits - is gone; and the text says the Markdown was
+    never modified, so a rollback only restores state files. A person reading that would not
+    think to save their week's notes first.
+
+    "The notes are never touched" is true of the MIGRATION, which only rewrites derived
+    artifacts. It is not true of the rollback, which restores a directory. The text conflated
+    the two.
+    """
+    print("\n- the rollback text describes the rollback -")
+    with tempfile.TemporaryDirectory() as td:
+        store = Path(td) / "store"
+        (store / "Mistakes").mkdir(parents=True)
+        (store / "Mistakes" / "before.md").write_text(
+            "---\ntype: mistake\n---\n\nold\n", encoding="utf-8")
+        env = {"GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@t", "GIT_COMMITTER_NAME": "t",
+               "GIT_COMMITTER_EMAIL": "t@t", "PATH": os.environ.get("PATH", "")}
+
+        def git(*args: str) -> str:
+            return subprocess.run(["git", *args], cwd=store, capture_output=True, text=True,
+                                  env=env).stdout
+
+        git("init", "-q")
+        git("add", "-A")
+        git("commit", "-qm", "before the migration")
+        backup_path = SV.backup(store)
+        text = SV.rollback_instructions(store, backup_path)
+
+        # A week of work after the migration - the case the sentence is read in.
+        (store / "Mistakes" / "after.md").write_text(
+            "---\ntype: mistake\n---\n\nlearned since\n", encoding="utf-8")
+        git("add", "-A")
+        git("commit", "-qm", "a week of sessions after the migration")
+
+        shutil.rmtree(store, onexc=_force_remove)
+        backup_path.rename(store)
+        check("following the instruction rewinds the notes too, not only state files",
+              not (store / "Mistakes" / "after.md").exists())
+        check("and the commits written since the backup are gone",
+              "after the migration" not in git("log", "--format=%s"))
+
+        low = text.lower()
+        check("so the text does not promise that a rollback leaves the notes alone",
+              "never modified" not in low and "only restores state files" not in low, text)
+        check("it names the cost: work written after the backup is lost",
+              "lost" in low and ("after" in low or "since" in low), text)
+        check("and it says to move the store aside rather than delete it, so the loss is not final",
+              "aside" in low and "remove " not in low.replace("do not remove", ""), text)
+
+
 def test_zz_every_check_passed() -> None:
     """Bare pytest must reach the same verdict as this suite's exit code.
 
@@ -490,6 +546,7 @@ def main() -> int:
                test_a_rebuild_never_costs_the_embeddings,
                test_a_rebuild_dry_run_writes_nothing,
                test_the_documented_rollback_does_not_destroy_what_it_restores,
+               test_the_rollback_text_says_what_the_rollback_costs,
                test_the_migration_writes_the_ledger_the_way_the_ledger_is_read,
                test_a_rebuild_promises_only_what_it_rebuilds,
                test_a_filename_inside_a_comment_is_not_an_ignore_rule):

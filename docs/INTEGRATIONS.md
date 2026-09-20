@@ -61,7 +61,9 @@ tools/check_freshness.py --list-stale` says why.
 `nevertwice-store` answers what layout a store is in and moves it forward. `--migrate` plans by
 default and writes nothing; `--apply` takes a backup *before the first write*, runs the steps,
 validates the result and prints how to roll back. **The Markdown is never modified** - migration
-touches derived artifacts and state files only, which is what makes a rollback cheap.
+touches derived artifacts and state files only. Rolling back is a different operation: it
+restores the backup directory whole, so the notes and the git history go back with it and
+anything written since the backup is lost - `migrate --apply` prints that with the path.
 `--rebuild` reconstructs every derived artifact from the notes; two rebuilds of the same store
 produce a **byte-identical** index, because the index is removed before it is rebuilt. The
 embedding cache is deliberately *not* rebuilt without `--include-embeddings`: recreating it
