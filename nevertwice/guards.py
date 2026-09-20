@@ -468,27 +468,68 @@ def _mirror_legacy_counters(g: dict, _outcomes) -> None:
     g["seen_sessions"] = list(acc["sessions"]["support"])
 
 
+def _legacy_decision(g, sid: str, side: str) -> dict:
+    """What the pre-D4 arm just decided, in the shape the modern arm writes.
+
+    One shape, because `why_fired`, the CLI listing and the dashboard read `last_decision`
+    without knowing which arm produced it - and because an outcome that moved neither
+    threshold should be visible to the caller rather than accepted in silence.
+    """
+    if not sid:
+        return {"action": "hold", "to": None,
+                "because": ("an outcome with no session id: counted in the totals, but it "
+                            "moves neither threshold - falsification and confirmation are "
+                            "both calibrated on distinct sessions")}
+    return {"action": "hold", "to": g["status"],
+            "because": (f"{g['corroborations']}/{K_PROMOTE} distinct supporting session(s), "
+                        f"{len(g.get('retire_sessions') or [])}/{M_RETIRE} opposing "
+                        f"({side} outcome recorded)")}
+
+
 def _legacy_feedback(g, outcome, session_id, reason, guards, persist):
-    """The pre-D4 lifecycle, kept for an install that ships guards.py without outcomes.py."""
-    sid = session_id or ""
+    """The pre-D4 lifecycle, kept for an install that ships guards.py without outcomes.py.
+
+    Pre-D4 in its SHAPE - two counters and a session list instead of an outcome block - not
+    in its RULE. `feedback`'s docstring says both directions are calibrated on distinct
+    sessions and that a caller passing no session id can move neither; this arm counted an
+    anonymous outcome toward the threshold in both directions. On a flat install any
+    repetition - a loop, a retry, a script, a button pressed twice - therefore promoted an
+    advisory guard to `blocking`, which is the status that stops an agent's tool call, and
+    one frustrated caller could retire a guard the same way.
+
+    The raw totals still count every outcome: `helped` and `false_positives` are what the
+    confidence estimate, the CLI listing and the dashboard read, and anonymous feedback is
+    still worth having. Only the THRESHOLDS are gated on distinct sessions, and
+    `last_decision` - the same field the modern arm writes - says so, so an outcome that
+    moved nothing is visible instead of silent.
+    """
+    sid = (session_id or "").strip()
+    g.setdefault("retire_sessions", [])
     if outcome in ("helped", "corroborated", "accepted", "prevented_failure"):
         g["helped"] += 1 if outcome != "corroborated" else 0
         if sid and sid not in g["seen_sessions"]:
             g["seen_sessions"].append(sid)
             g["corroborations"] += 1
-        elif not sid:
-            g["corroborations"] += 1
         if (g["status"] == "advisory" and g["corroborations"] >= K_PROMOTE
                 and not g.get("pack")):
             g["status"] = "blocking"
+        g["last_decision"] = _legacy_decision(g, sid, "supporting")
     elif outcome in ("false_positive", "overridden"):
         g["false_positives"] += 1
         if reason:
             g["overrides"].append(reason.strip()[:200])
-        if g["false_positives"] >= M_RETIRE:
+        if sid and sid not in g["retire_sessions"]:
+            g["retire_sessions"].append(sid)
+        if len(g["retire_sessions"]) >= M_RETIRE:
             g["status"] = {"blocking": "advisory",
                            "advisory": "retired"}.get(g["status"], "retired")
+            # Demotion consumes the evidence on both sides here too, as it does on the modern
+            # arm: a guard that proved it did not deserve that rung re-earns it from zero.
+            g["retire_sessions"] = []
+            g["seen_sessions"] = []
+            g["corroborations"] = 0
             g["false_positives"] = 0
+        g["last_decision"] = _legacy_decision(g, sid, "opposing")
     else:
         return g
     g["confidence"] = _confidence(g)

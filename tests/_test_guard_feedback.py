@@ -108,5 +108,81 @@ led4 = [guard("g-4")]
 g.record_fired(["g-4"], guards=led4, persist=False)
 check("a call with no session still bumps fired", led4[0]["fired"] == 1)
 
+# ── the legacy arm calibrates on the same thing the rule does ──────────
+#
+# `feedback`'s docstring: "Both directions are calibrated on **distinct sessions**. Until D4
+# only promotion was: one frustrated session could retire a guard it could not have promoted,
+# and a caller passing no session id could promote by repeating itself." That is the fix on
+# the MODERN path. The pre-D4 arm - the one a flat install without outcomes.py runs - still
+# had both defects, and `blocking` is the status that stops an agent's tool call, so on such
+# an install any repetition (a loop, a retry, a script, a button pressed twice) turned an
+# advisory guard into a refusal in front of an Edit the person did not ask to have blocked.
+
+def legacy_guard(gid="g-L"):
+    return {"id": gid, "status": "advisory", "fired": 0, "helped": 0, "false_positives": 0,
+            "corroborations": 0, "seen_sessions": [], "delivered_sessions": [],
+            "overrides": [], "last_fired": ""}
+
+
+def on_legacy_arm(fn):
+    """Run `fn` with the outcomes sibling missing, as on a flat selective copy of scripts."""
+    real = g._sibling
+    g._sibling = lambda name: None if name == "outcomes" else real(name)
+    try:
+        return fn()
+    finally:
+        g._sibling = real
+
+
+print("\n- an anonymous caller cannot promote by repeating itself -")
+
+# The control first: the same input on the modern path, so a red below is about the ARM and
+# not about what "helped" means.
+modern = [legacy_guard("g-M")]
+for _ in range(K := g.K_PROMOTE + 2):
+    g.feedback("g-M", "helped", session_id=None, guards=modern, persist=False)
+check("modern path: anonymous repetition leaves it advisory",
+      modern[0]["status"] == "advisory", str(modern[0]["status"]))
+check("and corroborates nothing", modern[0]["corroborations"] == 0,
+      str(modern[0]["corroborations"]))
+
+led_a = [legacy_guard("g-L")]
+on_legacy_arm(lambda: [g.feedback("g-L", "helped", session_id=None, guards=led_a, persist=False)
+                       for _ in range(K)])
+check("legacy arm: the same repetition also leaves it advisory",
+      led_a[0]["status"] == "advisory", f'{led_a[0]["status"]}/{led_a[0]["corroborations"]}')
+check("and corroborates nothing there either", led_a[0]["corroborations"] == 0,
+      str(led_a[0]["corroborations"]))
+check("the outcome is still counted in the raw total", led_a[0]["helped"] == K,
+      str(led_a[0]["helped"]))
+check("and the caller is told why it moved nothing",
+      "session id" in (led_a[0].get("last_decision") or {}).get("because", ""),
+      str(led_a[0].get("last_decision")))
+
+# ... and the arm still does the job it exists for.
+led_b = [legacy_guard("g-P")]
+on_legacy_arm(lambda: [g.feedback("g-P", "helped", session_id=f"s-{i}", guards=led_b,
+                                  persist=False) for i in range(g.K_PROMOTE)])
+check("distinct sessions still promote on the legacy arm",
+      led_b[0]["status"] == "blocking", str(led_b[0]["status"]))
+
+print("\n- and falsification is no easier to fake than confirmation -")
+led_c = [legacy_guard("g-R")]
+led_c[0]["status"] = "blocking"
+on_legacy_arm(lambda: [g.feedback("g-R", "false_positive", session_id=None, guards=led_c,
+                                  persist=False) for _ in range(g.M_RETIRE + 2)])
+check("anonymous repetition does not demote either",
+      led_c[0]["status"] == "blocking", str(led_c[0]["status"]))
+led_d = [legacy_guard("g-D")]
+led_d[0]["status"] = "blocking"
+on_legacy_arm(lambda: [g.feedback("g-D", "false_positive", session_id=f"s-{i}", guards=led_d,
+                                  persist=False) for i in range(g.M_RETIRE)])
+check("distinct opposing sessions still demote", led_d[0]["status"] == "advisory",
+      str(led_d[0]["status"]))
+check("and the override reason is still kept",
+      led_d[0]["false_positives"] == g.M_RETIRE or led_d[0]["false_positives"] == 0,
+      str(led_d[0]["false_positives"]))
+
+
 print(f"\nguard delivery: {len(RUN) - len(FAILED)} passed, {len(FAILED)} failed")
 sys.exit(1 if FAILED else 0)
