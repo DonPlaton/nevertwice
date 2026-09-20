@@ -212,6 +212,30 @@ def test_the_daemon_says_when_its_hold_can_outlast_the_hooks_wait():
     assert "longer" not in fits.lower() and "exceed" not in fits.lower(), fits
 
 
+def test_the_remedy_it_names_is_one_that_actually_subtracts():
+    """The startup line offered NEVERTWICE_WATCH_MAX_LOCK_S first. On the shipped timeouts
+    the extraction ceiling ALONE is twice the hook's wait, so no value of that variable -
+    zero included - closes the gap, and an operator who lowers it has traded mining for
+    nothing. A remedy printed where it cannot work is worse than no remedy: it ends the
+    search. Only when the extraction fits inside the wait is there a budget to lower, and
+    then the line says how far."""
+    wait = m.HOOK_LOCK_WAIT_S
+    with mock.patch.object(m, "extraction_ceiling_s", return_value=wait * 2):
+        hopeless = watch.lock_budget_report()
+    assert "MAX_LOCK_S" not in hopeless, hopeless
+    assert "NEVERTWICE_TIMEOUT" in hopeless, hopeless
+    # ...and it says WHY lowering the budget is not on the list, in the same numbers.
+    assert f"{wait * 2:.0f}s" in hopeless and f"{wait:.0f}s" in hopeless, hopeless
+
+    # The other side of the branch: a short extraction leaves a real budget, and the line
+    # names the bound rather than the variable alone.
+    room = wait / 4
+    with mock.patch.object(m, "extraction_ceiling_s", return_value=room),             mock.patch.object(watch, "MAX_LOCK_S", wait):
+        fixable = watch.lock_budget_report()
+    assert "MAX_LOCK_S" in fixable, fixable
+    assert f"{wait - room:.0f}s" in fixable, fixable
+
+
 def test_the_housekeeping_after_the_loop_is_inside_the_budget_too():
     """The index rebuild, the two archive passes and the git commit ran AFTER the deadline
     was spent, under the same lock, with nothing bounding them - so the budget described a

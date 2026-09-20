@@ -182,20 +182,34 @@ def lock_budget_report() -> str:
 
     A hook that waits out `acquire_lock` does not crash: it logs "Aborting" and continues
     read-only, so that session's writes are simply never made. Whether that can happen is a
-    subtraction between three numbers this module and the engine both already hold, and the
-    operator is the one who can act on it - by lowering NEVERTWICE_WATCH_MAX_LOCK_S, by
-    lowering NEVERTWICE_TIMEOUT/NEVERTWICE_RETRIES, or by running the daemon on a schedule
-    rather than continuously.
+    subtraction between three numbers this module and the engine both already hold.
+
+    The remedy it names is the one that SUBTRACTS. The first version offered
+    NEVERTWICE_WATCH_MAX_LOCK_S first, and on the shipped timeouts that is advice that
+    cannot work: the extraction ceiling alone is twice the hook's wait, so the gap survives
+    a budget of zero and the operator has traded mining for nothing. A remedy printed where
+    it has no effect is worse than none - it ends the search. So the mining budget is offered
+    only when there is a budget to lower, with the bound it has to clear.
     """
-    ceiling, wait = lock_hold_ceiling_s(), m.HOOK_LOCK_WAIT_S
+    # The ceiling comes from lock_hold_ceiling_s() and nowhere else, so the line printed and
+    # the number tested can never disagree; the extraction term is named separately because
+    # it is the one the operator cannot subtract from by changing this module's budget.
+    ceiling, extraction, wait = (lock_hold_ceiling_s(), m.extraction_ceiling_s(),
+                                 m.HOOK_LOCK_WAIT_S)
     head = (f"vault lock: up to {MAX_LOCK_S:.0f}s of mining + one extraction "
-            f"(worst case {m.extraction_ceiling_s():.0f}s) = {ceiling:.0f}s; "
+            f"(worst case {extraction:.0f}s) = {ceiling:.0f}s; "
             f"a SessionEnd hook waits {wait:.0f}s for it")
     if ceiling <= wait:
         return head
-    return (head + f" - so a cycle can hold it LONGER than the hook will wait, and that "
-                   f"session's writes are skipped. Lower NEVERTWICE_WATCH_MAX_LOCK_S or "
-                   f"NEVERTWICE_TIMEOUT/NEVERTWICE_RETRIES, or poll less often.")
+    head += (" - so a cycle can hold it LONGER than the hook will wait, and that session's "
+             "writes are skipped.")
+    if extraction >= wait:
+        return head + (f" Lowering the mining budget cannot close this: the extraction alone "
+                       f"is {extraction:.0f}s against a {wait:.0f}s wait, and it is not "
+                       f"interruptible. Only NEVERTWICE_TIMEOUT/NEVERTWICE_RETRIES subtract "
+                       f"from that term - or run the daemon when no agent is live.")
+    return head + (f" Lower NEVERTWICE_WATCH_MAX_LOCK_S below {wait - extraction:.0f}s, or "
+                   f"lower NEVERTWICE_TIMEOUT/NEVERTWICE_RETRIES, or poll less often.")
 
 
 def poll_cycle(targets: list[Target]) -> int:
