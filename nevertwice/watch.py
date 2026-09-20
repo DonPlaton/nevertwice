@@ -24,6 +24,15 @@ already running. A cap on the count of transcripts is not a cap on the duration 
 ~33 s each is twenty minutes, and a hook waiting on that lock gives up after 180 s and logs
 "Aborting", losing the session. What the budget defers, the next cycle mines.
 
+That second term is not small and this module does not pretend it is: `lock_budget_report()`
+adds MAX_LOCK_S to `memory_hook.extraction_ceiling_s()` - the worst case of the cloud chain
+followed by the Ollama chain, both with retries - and compares the sum to the hook's own wait.
+On the shipped timeouts the sum is larger, so the daemon says so at startup and prints what
+each cycle actually held whenever it overran its budget. Bounding an extraction that is
+already running would mean either cutting it (the transcript defers; nothing is lost, but a
+slow one never mines) or moving extraction out of the lock entirely. Neither is this module's
+call to make, and neither is served by a comment asserting a bound that is not there.
+
 Why polling, not native file events: zero dependencies and identical behaviour on every
 OS. A finished session is captured within one interval - that is the honest scope.
 """
@@ -59,9 +68,16 @@ MAX_PER_CYCLE = m.env_int("NEVERTWICE_WATCH_MAX_PER_CYCLE", 40)
 # up to ~33 s each on the Ollama fallback is a twenty-minute hold, while a SessionEnd or
 # PreCompact hook waits 180 s for that lock and then logs "Aborting" - the cost of which is the
 # whole session's knowledge. The budget is checked before each transcript is started, so the
-# worst hold is this plus the one extraction already running; 120 s leaves room for that
-# extraction inside the hook's own wait. What the budget defers, the next cycle mines.
+# worst hold is this plus the one extraction already running - which is NOT bounded by it, and
+# on the shipped timeouts exceeds the hook's whole wait on its own (see `lock_budget_report`).
+# What the budget defers, the next cycle mines.
 MAX_LOCK_S = m.env_float("NEVERTWICE_WATCH_MAX_LOCK_S", 120.0)
+# The index rebuild, the two archive passes and the git commit run under the same lock AFTER
+# the mining loop. They used to run after the budget was already spent, so MAX_LOCK_S described
+# a part of the hold and the rest was whatever it was. The mining deadline now stops this much
+# early to leave them room inside it. Never more than a fifth of the budget: you cannot reserve
+# what you do not have, and a tiny budget (tests) must still mine something.
+HOUSEKEEPING_RESERVE_S = m.env_float("NEVERTWICE_WATCH_HOUSEKEEPING_S", 20.0)
 # A transcript is only mined once its mtime has settled: a LIVE session file grows on every
 # poll, and since the content hash keys the processed-db, each growth would mint a fresh
 # session id → one new Session note + one LLM extraction per poll interval for an hours-long
@@ -154,13 +170,45 @@ def _mtime_ok(f: Path, now: float) -> bool:
         return False
 
 
+def lock_hold_ceiling_s() -> float:
+    """Worst case for how long ONE cycle can hold the vault lock: the mining budget plus the
+    one extraction the budget cannot interrupt, whose ceiling the engine derives from its own
+    timeouts. Not an estimate of the usual cycle - the usual cycle is a few seconds."""
+    return MAX_LOCK_S + m.extraction_ceiling_s()
+
+
+def lock_budget_report() -> str:
+    """One line of arithmetic, printed at startup, instead of a docstring's assurance.
+
+    A hook that waits out `acquire_lock` does not crash: it logs "Aborting" and continues
+    read-only, so that session's writes are simply never made. Whether that can happen is a
+    subtraction between three numbers this module and the engine both already hold, and the
+    operator is the one who can act on it - by lowering NEVERTWICE_WATCH_MAX_LOCK_S, by
+    lowering NEVERTWICE_TIMEOUT/NEVERTWICE_RETRIES, or by running the daemon on a schedule
+    rather than continuously.
+    """
+    ceiling, wait = lock_hold_ceiling_s(), m.HOOK_LOCK_WAIT_S
+    head = (f"vault lock: up to {MAX_LOCK_S:.0f}s of mining + one extraction "
+            f"(worst case {m.extraction_ceiling_s():.0f}s) = {ceiling:.0f}s; "
+            f"a SessionEnd hook waits {wait:.0f}s for it")
+    if ceiling <= wait:
+        return head
+    return (head + f" - so a cycle can hold it LONGER than the hook will wait, and that "
+                   f"session's writes are skipped. Lower NEVERTWICE_WATCH_MAX_LOCK_S or "
+                   f"NEVERTWICE_TIMEOUT/NEVERTWICE_RETRIES, or poll less often.")
+
+
 def poll_cycle(targets: list[Target]) -> int:
     """One sweep over every target, idempotent, in a single BOUNDED vault lock.
 
     Returns the number of newly-mined transcripts. Yields (returns 0) immediately if no LLM
-    backend is up or the vault is busy, and gives the lock back within MAX_LOCK_S plus the one
-    extraction already running - so a hook waiting on it is delayed, never starved. Discovery
-    runs BEFORE the lock: it reads the agents' log directories, not the store."""
+    backend is up or the vault is busy. Discovery runs BEFORE the lock: it reads the agents'
+    log directories, not the store.
+
+    The hold is MAX_LOCK_S - mining and housekeeping together - plus the one extraction that
+    was already running when the budget ran out, which nothing here can interrupt. When the
+    sum exceeds the budget the cycle says so on stderr with both terms, because a hook that
+    waits out this lock skips that session's writes and logs only "Aborting"."""
     if not targets:
         return 0
     if not m.llm_available():
@@ -182,9 +230,12 @@ def poll_cycle(targets: list[Target]) -> int:
     if not m.acquire_lock(timeout_s=30):       # short: never starve the Claude Code hook
         return 0
     total_new = 0
+    took = time.monotonic()
     try:
         m.VAULT.mkdir(parents=True, exist_ok=True)
-        deadline = time.monotonic() + MAX_LOCK_S
+        # The mining loop stops early enough for the housekeeping below to run inside the
+        # budget: the budget is a promise about the HOLD, and the tail is part of the hold.
+        deadline = took + max(0.0, MAX_LOCK_S - min(HOUSEKEEPING_RESERVE_S, MAX_LOCK_S * 0.2))
         db = m.load_processed()
         for t, files in work:
             budget = MAX_PER_CYCLE - total_new  # share the per-cycle cap across targets
@@ -208,6 +259,14 @@ def poll_cycle(targets: list[Target]) -> int:
             m.git_autocommit()
     finally:
         m.release_lock()
+        held = time.monotonic() - took
+        if held > MAX_LOCK_S:
+            # Say what it cost, with the term that is not bounded by the budget named. The
+            # alternative is a silent overrun and an operator who finds out from a hook log
+            # that a session was skipped, with nothing to connect the two.
+            print(f"[watch] held the vault lock {held:.1f}s over a {MAX_LOCK_S:.1f}s budget "
+                  f"- the extraction in flight is not interruptible by it "
+                  f"(worst case {m.extraction_ceiling_s():.0f}s)", file=sys.stderr, flush=True)
     return total_new
 
 
@@ -267,6 +326,7 @@ def main() -> int:
         return 1
 
     print(f"[watch] watching {len(targets)} dir(s); backend: {m.llm_backend_desc()}", flush=True)
+    print(f"        {lock_budget_report()}", flush=True)
     for t in targets:
         print(f"        • {t.agent}: {t.dir}", flush=True)
 

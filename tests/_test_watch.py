@@ -170,6 +170,134 @@ def test_watch_bounds_how_long_it_holds_the_vault_lock():
         assert len(set(seen)) == 10, f"each transcript mined once: {len(set(seen))}"
 
 
+def test_the_lock_hold_ceiling_is_derived_from_the_timeouts_themselves():
+    """MAX_LOCK_S bounds the LOOP, not the hold: the check runs before a transcript is
+    started, so the hold is the budget plus however long that one extraction takes - and
+    nothing bounded that. A transcript that times out everywhere pays the cloud chain and
+    then the Ollama chain in series, both with their retries and linear backoff. The number
+    is derived from the constants rather than written into a comment, because a number in a
+    comment is wrong the day either timeout is tuned."""
+    saved = (m.OLLAMA_TIMEOUT, m.OLLAMA_RETRIES, m.OLLAMA_RETRY_BACKOFF)
+    try:
+        m.OLLAMA_TIMEOUT, m.OLLAMA_RETRIES, m.OLLAMA_RETRY_BACKOFF = 10, 0, 0.0
+        with mock.patch.object(m, "cloud_key", return_value=""):
+            assert m.extraction_ceiling_s() == 10.0, m.extraction_ceiling_s()
+            m.OLLAMA_RETRIES = 2                      # three tries, two linear backoffs
+            m.OLLAMA_RETRY_BACKOFF = 1.0
+            assert m.extraction_ceiling_s() == 33.0, m.extraction_ceiling_s()
+        with mock.patch.object(m, "cloud_key", return_value="k"), \
+             mock.patch.object(m, "ACTIVE_CLOUD", "gemini"):
+            both = m.extraction_ceiling_s()
+        assert both > 33.0, both                      # the cloud chain is paid first, in series
+    finally:
+        m.OLLAMA_TIMEOUT, m.OLLAMA_RETRIES, m.OLLAMA_RETRY_BACKOFF = saved
+
+    assert watch.lock_hold_ceiling_s() == watch.MAX_LOCK_S + m.extraction_ceiling_s()
+    report = watch.lock_budget_report()
+    assert str(int(watch.MAX_LOCK_S)) in report, report
+    assert str(int(m.HOOK_LOCK_WAIT_S)) in report, report
+
+
+def test_the_daemon_says_when_its_hold_can_outlast_the_hooks_wait():
+    """A hook that waits out `acquire_lock` does not crash - it logs "Aborting" and continues
+    read-only, and that session's writes are simply not made. So the arithmetic that decides
+    whether that happens has to be visible, not asserted in a docstring."""
+    with mock.patch.object(m, "extraction_ceiling_s", return_value=1.0):
+        fits = watch.lock_budget_report()
+    with mock.patch.object(m, "extraction_ceiling_s",
+                           return_value=m.HOOK_LOCK_WAIT_S * 4):
+        over = watch.lock_budget_report()
+    assert "waits" in fits and "waits" in over
+    assert "longer" in over.lower() or "exceed" in over.lower(), over
+    assert "longer" not in fits.lower() and "exceed" not in fits.lower(), fits
+
+
+def test_the_housekeeping_after_the_loop_is_inside_the_budget_too():
+    """The index rebuild, the two archive passes and the git commit ran AFTER the deadline
+    was spent, under the same lock, with nothing bounding them - so the budget described a
+    part of the hold and the rest was whatever it was. The mining deadline now leaves them
+    room inside MAX_LOCK_S, and an overrun is printed with its parts rather than absorbed."""
+    import io
+    import time
+    import contextlib
+    import ingest as ig
+    with tempfile.TemporaryDirectory() as d:
+        tmp = Path(d)
+        for i in range(3):
+            (tmp / f"h{i}.jsonl").write_text(f"user: hi\nassistant: lesson {i}", encoding="utf-8")
+        db, seen_deadline = {}, []
+
+        def fake_ps(sid, cwd, path, trig, dbarg, run_log=None, agent=None,
+                    transcript_text=None, project_override=None):
+            dbarg[sid] = {"processed_at": "x"}
+            return True
+
+        real_ingest = ig.ingest_files
+
+        def spy_ingest(*a, **kw):
+            seen_deadline.append(kw.get("deadline"))
+            return real_ingest(*a, **kw)
+
+        targets = [watch.Target("mybot", tmp, ["*.jsonl"], False, "proj")]
+        patches = _vault_mocks(db, fake_ps)
+        patches[6] = mock.patch.object(m, "rebuild_index", side_effect=lambda *a, **k: time.sleep(0.2))
+        for p_ in patches:
+            p_.start()
+        ig.ingest_files = spy_ingest
+        saved = (watch.MAX_LOCK_S, watch.HOUSEKEEPING_RESERVE_S)
+        watch.MAX_LOCK_S, watch.HOUSEKEEPING_RESERVE_S = 1.0, 0.5
+        err = io.StringIO()
+        try:
+            t0 = time.monotonic()
+            with contextlib.redirect_stderr(err):
+                watch.poll_cycle(targets)
+            held = time.monotonic() - t0
+        finally:
+            watch.MAX_LOCK_S, watch.HOUSEKEEPING_RESERVE_S = saved
+            ig.ingest_files = real_ingest
+            for p_ in patches:
+                p_.stop()
+        assert seen_deadline and seen_deadline[0] is not None, seen_deadline
+        # the mining loop was given 0.5s of the 1.0s budget, so the 0.2s tail fits inside it
+        assert held < 1.0, f"held {held:.3f}s on a 1.0s budget with a 0.2s tail"
+        assert err.getvalue() == "", err.getvalue()   # inside the budget: nothing to report
+
+
+def test_an_overrun_names_what_it_cost():
+    import io
+    import time
+    import contextlib
+    with tempfile.TemporaryDirectory() as d:
+        tmp = Path(d)
+        (tmp / "slow.jsonl").write_text("user: hi\nassistant: one slow lesson", encoding="utf-8")
+        db = {}
+
+        def fake_ps(sid, cwd, path, trig, dbarg, run_log=None, agent=None,
+                    transcript_text=None, project_override=None):
+            time.sleep(0.4)                       # one extraction, longer than the whole budget
+            dbarg[sid] = {"processed_at": "x"}
+            return True
+
+        targets = [watch.Target("mybot", tmp, ["*.jsonl"], False, "proj")]
+        patches = _vault_mocks(db, fake_ps)
+        for p_ in patches:
+            p_.start()
+        saved = watch.MAX_LOCK_S
+        watch.MAX_LOCK_S = 0.1
+        err = io.StringIO()
+        try:
+            with contextlib.redirect_stderr(err):
+                watch.poll_cycle(targets)
+        finally:
+            watch.MAX_LOCK_S = saved
+            for p_ in patches:
+                p_.stop()
+        out = err.getvalue()
+        assert "held the vault lock" in out, out
+        assert "0.1" in out, out                  # the budget it overran
+        assert "extraction" in out, out           # and the term that is not bounded by it
+
+
 def test_watch_discovers_transcripts_outside_the_vault_lock():
     """Finding the files is read-only over the AGENTS' log directories, not over the store, so
     it has no business inside the lock - and on a large log dir it is the slowest thing in the

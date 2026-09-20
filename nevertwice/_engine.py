@@ -280,6 +280,11 @@ OLLAMA_TIMEOUT = env_int("NEVERTWICE_TIMEOUT", 120)
 EMBED_TIMEOUT = env_int("NEVERTWICE_EMBED_TIMEOUT", 20)
 OLLAMA_RETRIES = env_int("NEVERTWICE_RETRIES", 2)
 OLLAMA_RETRY_BACKOFF = env_float("NEVERTWICE_RETRY_BACKOFF", 1.5)
+# How long a hook waits for the vault lock before giving up and continuing read-only. Not a
+# crash: that session's writes are simply not made, which is why anything that holds the lock
+# across an extraction has to be able to compare its own hold against these two numbers.
+HOOK_LOCK_WAIT_S = env_float("NEVERTWICE_HOOK_LOCK_WAIT_S", 180.0)       # SessionEnd/PreCompact
+HOOK_LOCK_WAIT_HOT_S = env_float("NEVERTWICE_HOOK_LOCK_WAIT_HOT_S", 30.0)  # every other event
 
 # Cloud API keys are loaded from .env by _cfg.load_dotenv() above (kept out of
 # git/code). See .env.example for the supported keys.
@@ -2784,6 +2789,28 @@ def generate_json(prompt: str, project: str | None = None) -> dict:
     else:
         _LLM_STATS["fail"] += 1
     return res
+
+
+def extraction_ceiling_s() -> float:
+    """Worst-case wall clock of ONE `generate_json` call, derived from this module's own
+    timeouts rather than written into a comment somewhere.
+
+    Anything that holds the vault lock across an extraction needs this number to say what its
+    hold can cost: `watch` bounds its mining LOOP by wall clock, but the check runs before a
+    transcript is started, so the hold is that budget plus however long the extraction already
+    running takes - and the only honest bound on that term is this one. A call that times out
+    everywhere pays the cloud chain and then the Ollama chain in series, each with its retries
+    and its linear backoff (`_json_api_call` sleeps `backoff * (attempt + 1)` between tries).
+    Both cloud backends share the GEMINI_* timeout constants, so one term covers either.
+    """
+    def _chain(timeout: float, retries: int, backoff: float) -> float:
+        tries = max(1, int(retries) + 1)
+        return timeout * tries + backoff * sum(range(1, tries))
+
+    local = _chain(OLLAMA_TIMEOUT, OLLAMA_RETRIES, OLLAMA_RETRY_BACKOFF)
+    if not (cloud_key() and ACTIVE_CLOUD != "none"):
+        return float(local)
+    return float(_chain(GEMINI_TIMEOUT, GEMINI_RETRIES, GEMINI_RETRY_BACKOFF) + local)
 
 
 def llm_available() -> bool:
@@ -8091,7 +8118,8 @@ def main():
     # WITHOUT taking it, and context-summary compaction is off this path entirely
     # (GPU-free here; the LLM summary runs in scheduled maintenance) - so no model
     # call other than the one extraction is ever made under the lock (audit C4).
-    lock_timeout = 180 if event in ("SessionEnd", "PreCompact") else 30
+    lock_timeout = (HOOK_LOCK_WAIT_S if event in ("SessionEnd", "PreCompact")
+                    else HOOK_LOCK_WAIT_HOT_S)
     if not acquire_lock(timeout_s=lock_timeout):
         log("Could not acquire vault lock - another process is busy. Aborting.")
         return
