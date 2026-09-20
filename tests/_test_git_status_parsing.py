@@ -158,10 +158,107 @@ def test_against_a_real_repository() -> None:
           sorted(p for p in closure if p in got) == sorted(closure), repr(got))
 
 
-REGISTRARS = tuple(sorted(p.stem for p in (ROOT / "tools").glob("register_*.py")))
-TOOLS = REGISTRARS + ("remeasure",)
 DOORS = {"_dirty_files", "dirty_files"}
 SENTINEL = {"a/path/no/repository/has/ever/held.py"}
+DOOR_MODULE = "git_status"
+#: The git subcommands that answer "what in this tree is dirty" - the question the door exists
+#: to answer once. `ls-files` is a listing and `rev-parse` an identity, so neither is here.
+TREE_STATE = {"status", "diff-index", "diff-files"}
+#: The one tool whose refusal is not an exit code, named together with the check that asks it
+#: its own way. An exemption is a declared debt, not a silent gap: the name must still be a
+#: discovered tool, and the check that stands in for the rule must exist.
+EXIT_CODE_EXEMPT = {"remeasure": "test_remeasure_refuses_per_claim_rather_than_per_process"}
+
+
+def _imports_the_door(path: Path) -> bool:
+    tree = ast.parse(path.read_text(encoding="utf-8"))
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import) and any(a.name == DOOR_MODULE for a in node.names):
+            return True
+        if isinstance(node, ast.ImportFrom) and node.module == DOOR_MODULE:
+            return True
+    return False
+
+
+def _git_argvs(path: Path) -> list[list[str]]:
+    """The literal words of every call that is plainly an invocation of git.
+
+    Both shapes in this repository: `subprocess.run(["git", "status", ...])`, where the
+    program names itself in the argv, and a module's own `_git("status", ...)` helper, where
+    it names itself in the callee. A subcommand is data the program hands to git, so asking
+    which one it hands over is a question about the program and not about its spelling.
+    """
+    out: list[list[str]] = []
+    for node in ast.walk(ast.parse(path.read_text(encoding="utf-8"))):
+        if not isinstance(node, ast.Call):
+            continue
+        words: list[str] = []
+        for arg in node.args:
+            if isinstance(arg, ast.Constant) and isinstance(arg.value, str):
+                words.append(arg.value)
+            elif isinstance(arg, (ast.List, ast.Tuple)):
+                words += [e.value for e in arg.elts
+                          if isinstance(e, ast.Constant) and isinstance(e.value, str)]
+        callee = getattr(node.func, "id", None) or getattr(node.func, "attr", "") or ""
+        if words and ("git" in words or "git" in callee):
+            out.append(words)
+    return out
+
+
+#: Discovered, not listed. The first version of this line was `glob("register_*.py")` plus the
+#: string "remeasure", so a tool that needed the door under any other name fell outside the
+#: question entirely - the owner's third remark on `8f9c94b`. A module joins this set by
+#: importing the door, which is a fact about the program rather than about its name; a module
+#: that wants the tree's state WITHOUT importing the door is caught by
+#: `test_nothing_else_asks_git_what_is_dirty`. Together the two are a cover. Either alone is
+#: a list.
+TOOLS = tuple(sorted(p.stem for p in (ROOT / "tools").glob("*.py")
+                     if p.stem != DOOR_MODULE and _imports_the_door(p)))
+REGISTRARS = tuple(n for n in TOOLS if n not in EXIT_CODE_EXEMPT)
+
+
+def test_the_set_of_tools_is_discovered_and_not_spelled() -> None:
+    """A rule over an empty set passes. Ask what the discovery found before trusting it.
+
+    This suite learned that lesson from its own exit-path rule, which was vacuous for an hour
+    and said so only under mutation. So: the discovery must find something, it must find
+    everything that looks like a registrar, and every exemption must name a tool that exists
+    and a check that exists.
+    """
+    print("\n- the tools are found, not listed -")
+    named = sorted(p.stem for p in (ROOT / "tools").glob("register_*.py"))
+    check(f"the discovery found tools at all ({len(TOOLS)})", len(TOOLS) >= 11, str(TOOLS))
+    missed = [n for n in named if n not in TOOLS]
+    check("and every register_*.py is among them - none escaped the door", not missed,
+          str(missed))
+    for name, replacement in sorted(EXIT_CODE_EXEMPT.items()):
+        check(f"the exemption for {name} names a tool that exists", name in TOOLS, str(TOOLS))
+        check(f"and {replacement} is a check in this suite", replacement in globals())
+
+
+def test_nothing_else_asks_git_what_is_dirty() -> None:
+    """The other half of the cover: a second parser cannot exist to be forgotten.
+
+    Ten copies of one parser is what this suite was written for, and the copies were found
+    because they shared a name prefix. The durable form of that question is not "did every
+    registrar go through the door" but "did anything else ask git the question at all".
+    Scoped to the evidence-producing side, `tools/` and `research/`.
+
+    `nevertwice/sync.py` runs `git status --porcelain` and is deliberately out of scope: it
+    tests the whole output for emptiness before committing the store and never takes a path
+    out of it, so no parser lives there to go wrong.
+    """
+    print("\n- and nobody else asks git the question -")
+    offenders = []
+    for path in sorted((ROOT / "tools").glob("*.py")) + sorted((ROOT / "research").glob("*.py")):
+        if path.stem == DOOR_MODULE:
+            continue
+        for argv in _git_argvs(path):
+            hit = TREE_STATE & set(argv)
+            if hit:
+                offenders.append(f"{path.name}: git {sorted(hit)[0]}")
+    check(f"only tools/{DOOR_MODULE}.py asks git for the state of the tree", not offenders,
+          "; ".join(offenders[:6]))
 
 
 def test_every_tool_answers_through_the_shared_door() -> None:
@@ -278,6 +375,84 @@ def _reaches(seed: set[str], deps: dict[str, set[str]]) -> set[str]:
     return seen
 
 
+def _refuses_on_a_dirty_tree(tree: ast.AST) -> bool:
+    """Does some exit that can be nonzero depend on the dirty set? The whole rule, in one place.
+
+    Module-wide dependencies on purpose: the refusal may be raised from a nested helper two
+    assignments away from the door.
+    """
+    deps = _assignment_deps(tree)
+    return any(DOORS & _reaches(cond, deps)
+               for fn in ast.walk(tree)
+               if isinstance(fn, (ast.FunctionDef, ast.AsyncFunctionDef))
+               for cond in _nonzero_exit_conditions(fn))
+
+
+#: Fixtures for the rule itself. Written as sources rather than files because the property
+#: being checked is the rule's own behaviour, and a rule tested only against code that
+#: satisfies it is a rule that has never been observed to say no.
+RULE_FIXTURES = (
+    ("a constant nonzero return under a check on the dirty set", True, """
+def main():
+    dirty = sorted(p for p in closure(COMMAND) if p in _dirty_files())
+    if dirty:
+        print("working tree modifies " + dirty[0])
+        return 2
+    return 0
+"""),
+    ("the same tool with its refusal removed", False, """
+def main():
+    dirty = sorted(p for p in closure(COMMAND) if p in _dirty_files())
+    print(dirty)
+    return 0
+"""),
+    ("a SystemExit raised from a nested helper", True, """
+def _load():
+    bad = [p for p in closure(COMMAND) if p in _dirty_files()]
+    if bad:
+        raise SystemExit("commit first: " + bad[0])
+
+def main():
+    _load()
+    return 0
+"""),
+    ("a return whose value is computed, not constant", False, """
+def _dirty_files():
+    return git_status.dirty_files(ROOT)
+
+def main():
+    return _dirty_files()
+"""),
+    ("a refusal that has nothing to do with the tree", False, """
+def main():
+    if not ARTIFACT.exists():
+        return 2
+    return 0
+"""),
+)
+
+
+def test_the_exit_path_rule_errs_on_the_red_side() -> None:
+    """The rule's conservatism, stated as a property instead of surviving as a side effect.
+
+    `_nonzero_exit_conditions` counts only a CONSTANT nonzero return. That word arrived as a
+    repair - without it the rule matched `_dirty_files`' own `return git_status.dirty_files(
+    ROOT)` and passed every registrar, guarded or not - and a repair nobody wrote down is a
+    repair the next edit removes. So it is written down here, in the direction it errs:
+
+      a tool that refuses in a way this rule cannot see is reported UNGUARDED and read by a
+      human, which costs an argument; a tool that does not refuse at all must never be
+      reported guarded, which would cost a claim recorded against a tree nobody checked.
+
+    The second fixture is the mutation that exposed the vacuous version, kept standing rather
+    than performed by hand once.
+    """
+    print("\n- the rule says no when it should, including to itself -")
+    for label, want, src in RULE_FIXTURES:
+        got = _refuses_on_a_dirty_tree(ast.parse(src))
+        check(f"{label} -> {'guarded' if want else 'not guarded'}", got == want, repr(got))
+
+
 def test_a_dirty_closure_can_reach_a_nonzero_exit() -> None:
     """The exit-path question, asked of the guard instead of the word "dirty".
 
@@ -290,14 +465,9 @@ def test_a_dirty_closure_can_reach_a_nonzero_exit() -> None:
     """
     print("\n- a dirty closure reaches a nonzero exit, in every registrar -")
     for name in REGISTRARS:
-        path = ROOT / "tools" / f"{name}.py"
-        tree = ast.parse(path.read_text(encoding="utf-8"))
-        deps = _assignment_deps(tree)      # module-wide: the refusal may be in a nested helper
-        ok = any(DOORS & _reaches(cond, deps)
-                 for fn in ast.walk(tree)
-                 if isinstance(fn, (ast.FunctionDef, ast.AsyncFunctionDef))
-                 for cond in _nonzero_exit_conditions(fn))
-        check(f"{name}: a nonzero exit depends on the dirty set", ok,
+        tree = ast.parse((ROOT / "tools" / f"{name}.py").read_text(encoding="utf-8"))
+        check(f"{name}: a nonzero exit depends on the dirty set",
+              _refuses_on_a_dirty_tree(tree),
               "no exit that can be nonzero is guarded by anything derived from it")
 
 
@@ -407,7 +577,10 @@ def main() -> int:
                test_a_rename_is_two_paths,
                test_paths_arrive_raw,
                test_against_a_real_repository,
+               test_the_set_of_tools_is_discovered_and_not_spelled,
+               test_nothing_else_asks_git_what_is_dirty,
                test_every_tool_answers_through_the_shared_door,
+               test_the_exit_path_rule_errs_on_the_red_side,
                test_a_dirty_closure_can_reach_a_nonzero_exit,
                test_remeasure_refuses_per_claim_rather_than_per_process,
                test_and_one_of_them_is_driven_all_the_way,
