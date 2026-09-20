@@ -289,7 +289,7 @@ def export(path: Path | str) -> dict:
     destination = Path(path)
     destination.parent.mkdir(parents=True, exist_ok=True)
     destination.write_text(json.dumps(payload, indent=1, ensure_ascii=False) + "\n",
-                           encoding="utf-8")
+                           encoding="utf-8", newline="")
     return payload
 
 

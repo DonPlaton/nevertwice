@@ -155,11 +155,13 @@ def _driver(base_path, ours_path, theirs_path) -> int:
     base, ours, theirs = _read(base_path), _read(ours_path), _read(theirs_path)
     merged = merge_note(base, ours, theirs)
     if merged is None:
+        # newline="" on both writes: git compares the conflict markers it documents, and a
+        # merged note must land as the merge produced it (same class as store_state.py).
         Path(ours_path).write_text(
             "<<<<<<< ours\n" + ours.rstrip("\n") + "\n=======\n"
-            + theirs.rstrip("\n") + "\n>>>>>>> theirs\n", encoding="utf-8")
+            + theirs.rstrip("\n") + "\n>>>>>>> theirs\n", encoding="utf-8", newline="")
         return 1
-    Path(ours_path).write_text(merged, encoding="utf-8")
+    Path(ours_path).write_text(merged, encoding="utf-8", newline="")
     return 0
 
 
@@ -194,7 +196,7 @@ def register(vault: Path) -> bool:
         # so git can invoke it as a bare merge driver.)
         tmp = ga.with_name(f"{ga.name}.tmp{os.getpid()}")
         try:
-            tmp.write_text(text, encoding="utf-8")
+            tmp.write_text(text, encoding="utf-8", newline="")
             os.replace(tmp, ga)
         except OSError:
             try:

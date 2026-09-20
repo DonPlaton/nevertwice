@@ -77,7 +77,13 @@ def write_atomic(path: Path, text: str, encoding: str = "utf-8") -> None:
     # Cleanup on failure leaves no orphaned .tmp in the synced vault (audit D3).
     tmp = path.with_name(f"{path.name}.{os.getpid()}.{_thread.get_ident()}.tmp")
     try:
-        tmp.write_text(text, encoding=encoding)
+        # newline="": `write_text` otherwise translates every "\n" to os.linesep, so on Windows
+        # every note, ledger and index this publishes grew a "\r" per line - and a body that
+        # ALREADY held CRLF (a transcript mined from a Windows host, a note from a CRLF editor)
+        # landed as "\r\r\n", which reads back through universal newlines as a BLANK LINE.
+        # Each consolidation rewrite added another, so the growth compounded. A crash-safe
+        # write that changes the bytes it was handed is not one.
+        tmp.write_text(text, encoding=encoding, newline="")
         _replace_with_retry(tmp, path)
     except BaseException:
         try:

@@ -349,7 +349,8 @@ class ClaudeCodeAdapter(HostAdapter):
 
         if removed and not dry_run:
             backup = settings.with_suffix(".json.nevertwice-backup")
-            backup.write_text(raw, encoding="utf-8")
+            # newline="": a backup whose bytes differ from what it is a backup OF is not one.
+            backup.write_text(raw, encoding="utf-8", newline="")
             m.write_atomic(settings, json.dumps(data, indent=2) + "\n")
             return {"host": self.name, "ok": True, "changed": [str(settings), str(backup)],
                     "detail": f"removed {len(removed)} hook entry(ies); "

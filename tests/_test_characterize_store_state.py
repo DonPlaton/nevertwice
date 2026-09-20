@@ -90,6 +90,30 @@ def test_write_atomic_publishes_all_or_nothing() -> None:
           path.read_text(encoding="utf-8") == "ünïcode ✓ and a\nnewline")
 
 
+def test_the_bytes_on_disk_are_the_bytes_it_was_handed() -> None:
+    """`Path.write_text` translates "\n" to `os.linesep`, so on Windows every file the engine
+    publishes grows a "\r" per line - and a body that ALREADY holds CRLF (a transcript mined
+    from a Windows host, a note someone edited with an editor that writes CRLF) lands as
+    "\r\r\n". Read back with universal newlines that is a BLANK LINE, and the body gains one
+    per line on every save; `write_atomic` is how almost every note, ledger and index in the
+    project is published, so the growth compounds across consolidation rewrites.
+
+    Every other check here reads back through universal newlines, which hides the whole
+    class - only the bytes show it. (Same defect, same week, as the CRLF the repo's own
+    `.gitattributes` refuses: `write_text` without `newline=""`.)
+    """
+    print("\n- what it was handed is what lands -")
+    path = fresh("eol.txt")
+    m.write_atomic(path, "one\ntwo\n")
+    check("LF is written as LF", path.read_bytes() == b"one\ntwo\n", repr(path.read_bytes()))
+    m.write_atomic(path, "one\r\ntwo\r\n")
+    check("CRLF is written once, not doubled",
+          path.read_bytes() == b"one\r\ntwo\r\n", repr(path.read_bytes()))
+    check("so a CRLF body does not grow a blank line per line",
+          path.read_text(encoding="utf-8") == "one\ntwo\n",
+          repr(path.read_text(encoding="utf-8")))
+
+
 def test_a_failed_write_leaves_no_orphan_tmp() -> None:
     """audit D3: an orphaned .tmp in a synced vault propagates to every machine.
 
@@ -426,6 +450,7 @@ def test_zz_every_check_passed() -> None:
 
 def main() -> int:
     for fn in (test_write_atomic_publishes_all_or_nothing,
+               test_the_bytes_on_disk_are_the_bytes_it_was_handed,
                test_a_failed_write_leaves_no_orphan_tmp,
                test_the_replace_retry_gives_up_rather_than_hanging,
                test_concurrent_writers_in_one_process_do_not_race,

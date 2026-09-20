@@ -193,6 +193,61 @@ check("a stamp does not reach inside a nested block",
 check("it changes the top-level key instead",
       m._read_frontmatter(deep)[0].get("recurrence") == "7", repr(_head(deep)))
 
+
+# ── the fifth: a write that changes the bytes it was handed ────────────
+#
+# `Path.write_text` translates every "\n" to `os.linesep`, so on Windows every file the engine
+# published grew a "\r" per line, and text that ALREADY held CRLF - a transcript mined from a
+# Windows host, a note from a CRLF editor - landed as "\r\r\n". Read back through universal
+# newlines that is a BLANK LINE, so a body gained one per line on every consolidation rewrite.
+# `write_atomic` is how almost every note, ledger and index in the project is published, and a
+# read-back round-trip hides the whole class: only the bytes show it.
+#
+# A rule rather than five separate fixes, because the shape recurs in files that never call each
+# other - `merge.py` keeps its own copy of the atomic write so git can invoke it import-free, and
+# `hosts.py` writes a BACKUP of the user's settings. Two sites are exempt, each for a reason a
+# reader can check: they generate a file rather than publish a caller's text.
+import ast  # noqa: E402
+
+_EXEMPT = {
+    "dashboard.py": "generated HTML, never read back as the text it was handed",
+    "doctor.py": "a four-byte liveness probe, deleted immediately",
+}
+_unguarded = []
+for _f in sorted(Path(m.__file__).resolve().parent.glob("*.py")):
+    for _n in ast.walk(ast.parse(_f.read_text(encoding="utf-8"))):
+        if (isinstance(_n, ast.Call) and isinstance(_n.func, ast.Attribute)
+                and _n.func.attr == "write_text"
+                and not any(k.arg == "newline" for k in _n.keywords)
+                and _f.name not in _EXEMPT):
+            _unguarded.append(_f.name + ":" + str(_n.lineno))
+check("every published file holds the bytes it was handed: " + ", ".join(_unguarded),
+      not _unguarded)
+check("and the two exempt sites still exist to be exempt",
+      all((Path(m.__file__).resolve().parent / _e).is_file() for _e in _EXEMPT))
+
+# ... and the rule bites, on a source written to be caught. A rule that has never refused
+# anything is indistinguishable from one that cannot.
+def _audit(src: str) -> list:
+    return [str(n.lineno) for n in ast.walk(ast.parse(src))
+            if isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute)
+            and n.func.attr == "write_text"
+            and not any(k.arg == "newline" for k in n.keywords)]
+
+
+check("the rule catches an unguarded write_text",
+      _audit('p.write_text(t, encoding="utf-8")') == ["1"])
+check("and passes the guarded one",
+      _audit('p.write_text(t, encoding="utf-8", newline="")') == [])
+
+# The property itself, end to end, through the facade every caller uses.
+_eol = make_sandbox(m) / "eol.md"
+m.write_atomic(_eol, "one\ntwo\n")
+check("LF is published as LF", _eol.read_bytes() == b"one\ntwo\n", repr(_eol.read_bytes()))
+m.write_atomic(_eol, "one\r\ntwo\r\n")
+check("and CRLF is published once, not doubled",
+      _eol.read_bytes() == b"one\r\ntwo\r\n", repr(_eol.read_bytes()))
+
 print()
 print(f"writes that lose data: {P} passed, {F} failed")
 sys.exit(1 if F else 0)
