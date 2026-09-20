@@ -377,7 +377,7 @@ def main():
     no_open = "--no-open" in argv
     htmls = build_html(project, days=days)
     p = Path(out).expanduser().resolve()
-    p.write_text(htmls, encoding="utf-8")
+    p.write_text(htmls, encoding="utf-8", newline="")
     print(f"[dashboard] wrote {p}  ({len(htmls)//1024} KB, self-contained, no server)")
     if not no_open:
         try:

@@ -194,7 +194,7 @@ check("it changes the top-level key instead",
       m._read_frontmatter(deep)[0].get("recurrence") == "7", repr(_head(deep)))
 
 
-# ── the fifth: a write that changes the bytes it was handed ────────────
+# ── the fifth: a write that changes the bytes it was handed ────────
 #
 # `Path.write_text` translates every "\n" to `os.linesep`, so on Windows every file the engine
 # published grew a "\r" per line, and text that ALREADY held CRLF - a transcript mined from a
@@ -203,42 +203,77 @@ check("it changes the top-level key instead",
 # `write_atomic` is how almost every note, ledger and index in the project is published, and a
 # read-back round-trip hides the whole class: only the bytes show it.
 #
-# A rule rather than five separate fixes, because the shape recurs in files that never call each
-# other - `merge.py` keeps its own copy of the atomic write so git can invoke it import-free, and
-# `hosts.py` writes a BACKUP of the user's settings. Two sites are exempt, each for a reason a
-# reader can check: they generate a file rather than publish a caller's text.
+# A rule rather than separate fixes, because the shape recurs in files that never call each
+# other - `merge.py` keeps its own copy of the atomic write so git can invoke it import-free,
+# and `hosts.py` writes a BACKUP of the user's settings.
+#
+# Two things the first cut of this rule got wrong, both found by review:
+#   * it exempted two FILES by name, so a second, unrelated `write_text` in either of them went
+#     unaudited - the exemption was true only while each file held exactly one call. There is no
+#     exemption now: a generated file costs nothing to write faithfully, and a list of allowed
+#     sites is a maintenance surface that silently widens.
+#   * it keyed on the SPELLING `write_text`, and text-mode `open(..., "a")` is the same door -
+#     `_engine.py`'s rotating hook log was writing CRLF through it. The project has already
+#     recorded one detector that saw a single spelling (T1: ten copies of the git-status
+#     parser), so both doors are audited here by MODE, not by name.
 import ast  # noqa: E402
 
-_EXEMPT = {
-    "dashboard.py": "generated HTML, never read back as the text it was handed",
-    "doctor.py": "a four-byte liveness probe, deleted immediately",
-}
+
+def _mode_of(call) -> str:
+    """The mode an `open()` call asks for - positional second argument or `mode=`."""
+    if len(call.args) >= 2 and isinstance(call.args[1], ast.Constant):
+        return str(call.args[1].value)
+    for k in call.keywords:
+        if k.arg == "mode" and isinstance(k.value, ast.Constant):
+            return str(k.value.value)
+    return ""
+
+
+def _audit(src: str) -> list:
+    """Every text write in `src` that lets the platform rewrite its newlines.
+
+    Both doors: `write_text` and a text-mode `open` in a writing mode. Binary is exempt by
+    construction - it cannot translate - and so is a read.
+    """
+    out = []
+    for n in ast.walk(ast.parse(src)):
+        if not isinstance(n, ast.Call):
+            continue
+        name = getattr(n.func, "attr", getattr(n.func, "id", ""))
+        if name not in ("open", "write_text"):
+            continue
+        if any(k.arg == "newline" for k in n.keywords):
+            continue
+        if name == "open":
+            mode = _mode_of(n) or "r"
+            if "b" in mode or not any(c in mode for c in "wax"):
+                continue
+        out.append(str(n.lineno))
+    return out
+
+
 _unguarded = []
 for _f in sorted(Path(m.__file__).resolve().parent.glob("*.py")):
-    for _n in ast.walk(ast.parse(_f.read_text(encoding="utf-8"))):
-        if (isinstance(_n, ast.Call) and isinstance(_n.func, ast.Attribute)
-                and _n.func.attr == "write_text"
-                and not any(k.arg == "newline" for k in _n.keywords)
-                and _f.name not in _EXEMPT):
-            _unguarded.append(_f.name + ":" + str(_n.lineno))
+    _unguarded += [_f.name + ":" + ln for ln in _audit(_f.read_text(encoding="utf-8"))]
 check("every published file holds the bytes it was handed: " + ", ".join(_unguarded),
       not _unguarded)
-check("and the two exempt sites still exist to be exempt",
-      all((Path(m.__file__).resolve().parent / _e).is_file() for _e in _EXEMPT))
 
-# ... and the rule bites, on a source written to be caught. A rule that has never refused
-# anything is indistinguishable from one that cannot.
-def _audit(src: str) -> list:
-    return [str(n.lineno) for n in ast.walk(ast.parse(src))
-            if isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute)
-            and n.func.attr == "write_text"
-            and not any(k.arg == "newline" for k in n.keywords)]
-
-
-check("the rule catches an unguarded write_text",
+# ... and the rule bites, on sources written to be caught. A rule that has never refused
+# anything is indistinguishable from one that cannot - and each shape is refused separately,
+# so a rule that lost one of the two doors could not pass this block.
+check("it catches an unguarded write_text",
       _audit('p.write_text(t, encoding="utf-8")') == ["1"])
-check("and passes the guarded one",
+check("and the guarded one passes",
       _audit('p.write_text(t, encoding="utf-8", newline="")') == [])
+check("it catches a text-mode append",
+      _audit('f = open(P, "a", encoding="utf-8")') == ["1"])
+check("and a text-mode write, named or positional",
+      _audit('open(P, mode="w")' + chr(10) + 'open(P, "x")') == ["1", "2"])
+check("binary is exempt by construction, not by a list",
+      _audit('open(P, "wb")' + chr(10) + 'open(P, "rb")') == [])
+check("and so is a read", _audit('open(P)' + chr(10) + 'open(P, "r")') == [])
+check("a second call in an exempt-looking file is still audited",
+      _audit('p.write_text(a, newline="")' + chr(10) + 'q.write_text(b)') == ["2"])
 
 # The property itself, end to end, through the facade every caller uses.
 _eol = make_sandbox(m) / "eol.md"

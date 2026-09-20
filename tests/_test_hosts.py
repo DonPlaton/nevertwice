@@ -241,21 +241,40 @@ def test_the_read_cap_is_the_bytes_it_is_named_for() -> None:
     the read passed it to `TextIOWrapper.read()`, which counts CHARACTERS. A Russian
     transcript therefore held twice the cap and a CJK one three times - the same class
     `ingest.py` fixed in its own sweep (review 2026-08 D2), on the module that reads the
-    biggest files in the project."""
-    print("\n- the cap is in bytes, on a file that is not ASCII -")
+    biggest files in the project.
+
+    The property is asserted as an IDENTITY - what comes back is the decode of the file's
+    first MAX_BYTES bytes - not as a size of the returned text. The first cut of this check
+    measured `len(got.encode())` against the cap, which is the wrong quantity in both
+    directions: a cut inside a character replaces one or two source bytes with a three-byte
+    U+FFFD, so a correct read of 103 bytes returns 105, and the check passed only because the
+    fixture's cap happened to divide by its character width (review 2026-09-21).
+    """
+    print("\n- the cap is in bytes, on files that are not ASCII -")
     with tempfile.TemporaryDirectory() as tmp:
-        path = Path(tmp) / "ru.jsonl"
-        # 2 bytes per character in UTF-8: 400 characters, 800 bytes.
-        path.write_bytes(("\u0438" * 400).encode("utf-8"))
-        cap, hosts.MAX_BYTES = hosts.MAX_BYTES, 200
+        cap = hosts.MAX_BYTES
         try:
-            got = hosts._read_capped(path)
+            for label, ch, width, caps in (("Russian", "\u0438", 2, (200, 103)),
+                                           ("CJK", "\u4e2d", 3, (200, 103))):
+                path = Path(tmp) / f"{label}.jsonl"
+                path.write_bytes((ch * 400).encode("utf-8"))
+                raw = path.read_bytes()
+                check(f"the {label} fixture really is {width} bytes per character",
+                      len(raw) == 400 * width, f"{len(raw)} bytes")
+                for n in caps:
+                    hosts.MAX_BYTES = n
+                    got = hosts._read_capped(path)
+                    # an even cap and an odd one: the odd one lands inside a character, which
+                    # is the case a size-based assertion gets wrong.
+                    check(f"{label} at a {n}-byte cap returns exactly those bytes, decoded",
+                          got == raw[:n].decode("utf-8", errors="replace"),
+                          f"{len(got)} chars, {len(got.encode('utf-8', 'replace'))} bytes out")
+                    check(f"{label} at {n} reads no more than the cap",
+                          len(got) <= n and len(got) >= (n // width) - 1,
+                          f"{len(got)} chars for {n} bytes")
         finally:
             hosts.MAX_BYTES = cap
-        size = len(got.encode("utf-8", "replace"))
-        check("a 200-byte cap reads at most 200 bytes", size <= 200, f"{size} bytes")
-        check("and reads what fits, not nothing", size >= 190, f"{size} bytes")
-        # A cap that lands mid-codepoint is normal - `_jsonl` already discards the clipped
+        # A cut that lands mid-codepoint is normal - `_jsonl` already discards the clipped
         # final line - so it must decode rather than raise.
         odd = Path(tmp) / "odd.jsonl"
         odd.write_bytes(('{"x": "' + "\u0438" * 40 + '"}').encode("utf-8"))

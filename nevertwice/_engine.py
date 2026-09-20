@@ -735,7 +735,9 @@ def log(msg):
         LOG_FILE.parent.mkdir(parents=True, exist_ok=True)
         if LOG_FILE.exists() and LOG_FILE.stat().st_size > LOG_MAX_BYTES:
             LOG_FILE.replace(LOG_FILE.with_name("memory_hook.log.1"))
-        with open(LOG_FILE, "a", encoding="utf-8") as f:
+        # newline="" here too: text mode rewrote every line of the hook log as CRLF, which
+        # is the same door as `write_text` one spelling further on (review 2026-09-21).
+        with open(LOG_FILE, "a", encoding="utf-8", newline="") as f:
             f.write(line + "\n")
     except OSError:
         pass

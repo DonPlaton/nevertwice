@@ -71,7 +71,7 @@ def check_store_writable(vault: Path) -> dict:
                       f"mkdir -p {vault}  # or set NEVERTWICE_VAULT to your real store")
     probe = vault / ".nevertwice-doctor-probe"
     try:
-        probe.write_text("probe", encoding="utf-8")
+        probe.write_text("probe", encoding="utf-8", newline="")
         probe.unlink()
     except OSError as exc:
         return _check("store_writable", "store exists and is writable", FAIL,
