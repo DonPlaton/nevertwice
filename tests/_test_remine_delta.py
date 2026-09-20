@@ -17,7 +17,9 @@ import sys, tempfile, json, os
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "nevertwice"))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 import memory_hook as m  # noqa: E402
+from _sandbox import make_sandbox  # noqa: E402
 
 RUN, FAILED = [], []
 
@@ -74,6 +76,64 @@ with tempfile.TemporaryDirectory() as td:
     print("\n- a watermark landing mid-line yields whole events only -")
     mid = m.read_transcript(str(p), from_byte=first + 7)["body"]
     check("a mid-line offset does not produce a partial event", "{" not in mid.split("\n")[0])
+
+# ── a watermark is a size that was READ, never a fabricated zero ───────────────────────
+# `_transcript_grew` measures a file against the size recorded when its content was read, so a
+# recorded 0 means "we read an empty file" and every later byte is growth. Two callers wrote a 0
+# they had not measured: the generic-ingestion path ("sid is a content hash - growth cannot
+# occur", which is true of the sid and not of the PATH recorded beside it, and ingest's sweep
+# passes a real file there), and the OSError arm of the pre-read stat - where `mark_processed`'s
+# own rule is to record NO watermark. Either one marks a live transcript as processed-at-zero,
+# and then every event re-mines the whole session through the extractor, for good.
+print("\n- a watermark is a size that was read -")
+_d = make_sandbox(m, "rmd_", offline=True)
+m.update_embeddings = lambda notes: None
+m.generate_json = lambda prompt, project=None: {
+    "project_relevant": True, "patterns": [], "mistakes": [], "decisions": [],
+    "session_summary": "a short session", "context_update": ""}
+
+with tempfile.TemporaryDirectory() as td:
+    tp = Path(td) / "grown.jsonl"
+    tp.write_text("".join(evt(f"line {i}") for i in range(20)), encoding="utf-8")
+    real_size = tp.stat().st_size
+
+    db: dict = {}
+    m.process_session("w-text", r"D:\Coding\x", str(tp), "ingest", db,
+                      transcript_text=tp.read_text(encoding="utf-8"),
+                      project_override="rmdproj")
+    entry = db.get("w-text") or {}
+    check("text supplied with a real path does not record a zero watermark for it",
+          entry.get("bytes") != 0, json.dumps(entry))
+    check("so the same transcript does not read as grown forever",
+          m._transcript_grew(entry, str(tp)) is False, json.dumps(entry))
+
+    db = {}
+    real_getsize = os.path.getsize
+
+    def _stat_fails(path):
+        raise OSError("transient")
+
+    os.path.getsize = _stat_fails
+    try:
+        m.process_session("w-stat", r"D:\Coding\x", str(tp), "ingest", db,
+                          project_override="rmdproj")
+    finally:
+        os.path.getsize = real_getsize
+    entry = db.get("w-stat") or {}
+    check("a transcript whose size could not be read records no watermark, not a zero",
+          entry.get("bytes") != 0, json.dumps(entry))
+    check("and it does not re-mine itself on every later event",
+          m._transcript_grew(entry, str(tp)) is False, json.dumps(entry))
+    db = {}
+    m.process_session("w-ok", r"D:\Coding\x", str(tp), "ingest", db,
+                      project_override="rmdproj")
+    entry = db.get("w-ok") or {}
+    check("while a size that WAS read is still recorded", entry.get("bytes") == real_size,
+          json.dumps(entry))
+    with tp.open("a", encoding="utf-8") as f:
+        f.write(evt("a post-compaction tail"))
+    check("and still detects the growth it exists for",
+          m._transcript_grew(entry, str(tp)) is True)
 
 print(f"\nremine delta: {len(RUN) - len(FAILED)} passed, {len(FAILED)} failed")
 sys.exit(1 if FAILED else 0)

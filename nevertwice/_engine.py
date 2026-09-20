@@ -6007,14 +6007,22 @@ def process_session(session_id: str, cwd: str, transcript_path: str,
         # `timestamp` lets an importer of old transcripts - or a bench placing facts in time -
         # say when the session happened; without it the ingest is dated today (ledger I6).
         parsed = {"body": transcript_text.strip(), "cwd": cwd, "timestamp": timestamp}
-        t_size = 0                         # sid is a content hash - growth cannot occur
+        # No watermark of our own: this run read no file. The sid is a content hash, so growth
+        # cannot re-trigger it - but the PATH recorded beside it is a real transcript on
+        # ingest's sweep, and a fabricated 0 there means every later event sees the whole file
+        # as growth and re-mines the session through the extractor for good. None lets
+        # `mark_processed` stat the path it was given, which is the size actually on disk.
+        t_size = None
     else:
         # Size BEFORE reading: if the transcript grows during extraction, the smaller
         # recorded size makes the tail re-processable rather than silently skipped.
         try:
             t_size = os.path.getsize(transcript_path)
         except OSError:
-            t_size = 0
+            # `mark_processed`'s own rule for a file it cannot read is to record NO watermark;
+            # a 0 invented here overrides that with "we read an empty file", and every byte
+            # already on disk becomes growth.
+            t_size = None
         # On a re-mine, read only what was added since the watermark. Reading from zero
         # is what let a slid window re-title the same session's notes (vault review 2026-09).
         _from = 0
