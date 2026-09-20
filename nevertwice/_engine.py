@@ -1393,23 +1393,61 @@ def _twin_file_path() -> Path:
                 or Path(__file__).resolve().parent / "twin_calibration.json")
 
 
+def _twin_field_fault(d) -> str:
+    """Why this JSON document is not a calibration - by KEY and TYPE, never by value.
+
+    `float("<the value>")` puts the value INTO the ValueError, and the reason string ends up
+    in `nevertwice-doctor` output: reporting the exception text publishes the very file this
+    module refuses to echo. The bounds branch below quotes only its own constants, so it was
+    leak-free by accident; this path was the one where a malformed file spoke for itself.
+    A type name cannot carry a value, so the fault is described with one.
+
+    A numeric STRING still converts, as it always did: this is a fix to what is said about a
+    refusal, not a tightening of what is accepted. The one exception is `space`, which IS
+    echoed by design as the label the weights are keyed to - so it has to be a string, or
+    a dict parked there would be printed as the gate's embedding space.
+    """
+    if not isinstance(d, dict):
+        return f"top level is a {type(d).__name__}, not an object"
+    for k in ("w", "mu", "sd", "b"):
+        seq = d.get(k) if k != "b" else [d.get("b")]
+        if k != "b" and not isinstance(seq, (list, tuple)):
+            return f"{k} is a {type(seq).__name__}, not a list of numbers"
+        for x in seq:
+            if not isinstance(x, (int, float, str)):
+                return f"{k} holds a {type(x).__name__} where a number belongs"
+            try:
+                float(x)
+            except ValueError:
+                return f"{k} holds a str that is not a number"
+    sp = d.get("space")
+    if sp is not None and not isinstance(sp, str):
+        return f"space is a {type(sp).__name__}, not a string"
+    return ""
+
+
 def _twin_file_verdict(fp: Path) -> tuple:
     """(present, (space, w, b, mu, sd) or None, reason) for the calibration file.
 
     The one place the file is validated, so the loader and `twin_calibration_status` cannot
     grow two opinions about the same file. `reason` is empty on acceptance and NEVER carries
     a value read from the file: the calibration is machine-local data, and a diagnostic that
-    echoes it publishes it.
+    echoes it publishes it. See `_twin_field_fault` for how that promise is kept on the path
+    where the file's own contents would otherwise do the explaining.
     """
     try:
         if not fp.is_file():
             return False, None, f"no calibration file at {fp}"
         d = json.loads(fp.read_text(encoding="utf-8"))
-        cw, cmu, csd = (tuple(float(x) for x in d[k]) for k in ("w", "mu", "sd"))
-        cb = float(d["b"])
-        cspace = str(d.get("space") or "").strip() or _TWIN_BAKED_SPACE
-    except (OSError, ValueError, KeyError, TypeError) as e:
-        return True, None, f"unreadable ({fp}): {type(e).__name__}: {e}"
+    except (OSError, ValueError) as e:
+        return True, None, f"unreadable ({fp}): {type(e).__name__}"
+    fault = _twin_field_fault(d)
+    if fault:
+        return True, None, f"malformed ({fp}): {fault}"
+    # Total after the fault gate: every value here is an int, a float, or a numeric string.
+    cw, cmu, csd = (tuple(float(x) for x in d[k]) for k in ("w", "mu", "sd"))
+    cb = float(d["b"])
+    cspace = (d.get("space") or "").strip() or _TWIN_BAKED_SPACE
     if (len(cw) == len(cmu) == len(csd) == 5
             and all(math.isfinite(v) for v in (*cw, *cmu, *csd, cb))
             and all(v >= _TWIN_SD_MIN for v in csd)

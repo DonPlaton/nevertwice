@@ -242,6 +242,21 @@ def test_it_says_which_twin_gate_this_install_is_running() -> None:
                   "812.5" not in json.dumps(result) and "3.3e-06" not in json.dumps(result)
                   and "0.777" not in json.dumps(result), json.dumps(result))
 
+            # A value of the WRONG TYPE took a different path out of the validator: the
+            # float() conversion raised, and the exception text - which contains the value -
+            # was what the reason carried and this check printed. The bounds case above was
+            # the only leak shape covered, and it is the one shape where the message holds
+            # no file content to begin with.
+            mark = "ZZ-not-a-number-ZZ"
+            tf.write_text(json.dumps({**good, "w": [mark, 2, 3, 4, 5]}), encoding="utf-8")
+            result = doctor.check_twin_calibration()
+            check("a calibration with a string where a number belongs is refused",
+                  result["status"] == doctor.WARN, result["status"])
+            check("and the doctor prints no part of it",
+                  mark not in json.dumps(result), json.dumps(result))
+            check("while still naming the field that refused it",
+                  "w" in result["detail"] and "str" in result["detail"], result["detail"])
+
             tf.write_text("{", encoding="utf-8")
             result = doctor.check_twin_calibration()
             check("an unreadable file is a warning that names the error",

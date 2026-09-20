@@ -381,6 +381,32 @@ check("a refused file is reported as present but not in use",
       _st["present"] and _st["accepted"] is False and _st["source"] == "baked")
 check("and the reason says what the bound was", "bounds" in _st["reason"].lower())
 
+# The promise above is "never the calibration", and the first cut kept it only for files
+# that parsed. `float("<value>")` puts the VALUE into the ValueError text, which the reason
+# carried verbatim and `doctor` printed - so a calibration with a string where a number
+# belongs published that string on both surfaces. The reason names the KEY and the TYPE; a
+# type name cannot carry a value.
+_MARK = "ZZ-not-a-number-ZZ"
+for _field, _doc in (("w", {"w": [_MARK, 2, 3, 4, 5]}),
+                     ("mu", {"mu": [0, _MARK, 0, 0, 0]}),
+                     ("sd", {"sd": [1, 1, _MARK, 1, 1]}),
+                     ("b", {"b": _MARK}),
+                     ("space", {"space": {"secret": _MARK}})):
+    tf.write_text(json.dumps({**GOOD, **_doc}), encoding="utf-8")
+    _st = m.twin_calibration_status()
+    check(f"a non-numeric {_field} is refused, not crashed on",
+          _st["present"] and _st["accepted"] is False and _st["source"] == "baked")
+    check(f"and the {_field} value never reaches the status",
+          _MARK not in json.dumps(_st))
+    check(f"while the reason still names the field: {_field}",
+          _field in _st["reason"] and "str" in _st["reason"])
+# The same file must not reach the gate either: a refused calibration falls back to baked.
+tf.write_text(json.dumps({**GOOD, "w": [_MARK, 2, 3, 4, 5]}), encoding="utf-8")
+check("and the loader falls back to the baked weights on it",
+      m._load_twin_calibration()[1][0] == 3.684473)
+check("with the early warning carrying no value either",
+      not any(_MARK in x for x in m._EARLY_WARNINGS))
+
 tf.write_text("not json", encoding="utf-8")
 _st = m.twin_calibration_status()
 check("an unreadable file names the error rather than the contents",
