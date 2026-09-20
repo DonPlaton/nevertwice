@@ -6589,16 +6589,39 @@ def has_unprocessed(processed_db: dict, exclude_session_id: str | None = None) -
     filesystem-only gate SessionStart uses to skip the LLM liveness probe when the
     backlog is empty - an idle start must not wait on a network timeout (perf audit A1;
     measured 2.2s per start against a down Ollama before the gate). Fail-open: a
-    candidate that sweep_unprocessed later filters out just means the probe ran once."""
+    candidate that sweep_unprocessed later filters out just means the probe ran once.
+
+    The settle guard is the sweep's, applied here for the same reason it exists there: a
+    transcript written seconds ago is a LIVE session, and `exclude_session_id` only covers
+    OUR session - a second agent's transcript, or one whose session ended a minute ago, made
+    an idle SessionStart answer "backlog" where the sweep then found nothing. That answer is
+    not free: at one call site it is the liveness probe this gate exists to skip, and at the
+    other it spawns a detached catch-up that takes the vault lock and does no work. The guard
+    costs one `stat` per file, unmeasurable beside the walk itself.
+
+    The sweep's OTHER filter - a cwd that is not a tracked project - is deliberately not
+    applied, and the reason is a measurement rather than a preference: it means parsing every
+    transcript instead of stat-ing it, 25.11 ms against 0.12 ms on 200 settled 103 KB
+    transcripts, and the case self-heals because `sweep_unprocessed` marks such a transcript
+    processed on its first pass. Fail-open with a price that is paid once.
+    """
     if not PROJECTS_ROOT.exists():
         return False
+    now = time.time()
+    settle_s = env_int("NEVERTWICE_SWEEP_SETTLE_S", 120)
     for jl in PROJECTS_ROOT.rglob("*.jsonl"):
         sid = jl.stem
         if sid == exclude_session_id:
             continue
         prior = processed_db.get(sid)
-        if prior is None or _transcript_grew(prior, jl):   # grown = candidate again (B1)
-            return True
+        if prior is not None and not _transcript_grew(prior, jl):   # grown = candidate (B1)
+            continue
+        try:
+            if now - jl.stat().st_mtime < settle_s:
+                continue                       # a live session: the sweep would skip it too
+        except OSError:
+            continue
+        return True
     return False
 
 

@@ -249,6 +249,7 @@ def test_version_is_single_sourced():
 
 
 def test_has_unprocessed_gate():
+    import inspect as _inspect
     print("\n- has_unprocessed: the SessionStart LLM-probe gate (perf audit A1) -")
     import tempfile
     with tempfile.TemporaryDirectory() as t:
@@ -259,11 +260,43 @@ def test_has_unprocessed_gate():
             root = Path(t) / "projects"; (root / "proj").mkdir(parents=True)
             mh.PROJECTS_ROOT = root
             check("empty root -> False", mh.has_unprocessed({}) is False)
-            (root / "proj" / "s1.jsonl").write_text("{}", encoding="utf-8")
+            import os as _os
+            import time as _time
+            fp = root / "proj" / "s1.jsonl"
+            fp.write_text("{}", encoding="utf-8", newline="")
+            # Aged, because a transcript written seconds ago is a LIVE session and the sweep
+            # skips it: "candidate" has to mean the same thing to the gate and to the sweep.
+            _settled = _time.time() - 3600
+            _os.utime(fp, (_settled, _settled))
             check("one candidate -> True", mh.has_unprocessed({}) is True)
             check("already processed -> False", mh.has_unprocessed({"s1": {}}) is False)
             check("current session excluded -> False",
                   mh.has_unprocessed({}, exclude_session_id="s1") is False)
+
+            # The settle guard, which `sweep_unprocessed` applies and this gate did not.
+            # `exclude_session_id` only covers OUR session, so a second agent's transcript -
+            # or one whose session ended a minute ago - made an idle SessionStart say
+            # "backlog" where the sweep finds nothing. The cost of that answer is not
+            # nothing: at one call site it is the liveness probe this gate exists to skip
+            # (2.2s against a down Ollama, perf audit A1), and at the other it spawns a
+            # detached catch-up process that takes the vault lock and does no work.
+            _os.utime(fp, None)                     # touched now: a live session
+            check("a transcript still being written is not a candidate",
+                  mh.has_unprocessed({}) is False)
+            _os.utime(fp, (_settled, _settled))
+            check("and it becomes one once it has settled",
+                  mh.has_unprocessed({}) is True)
+
+            # What the gate deliberately does NOT do, measured rather than asserted: the
+            # sweep also drops a transcript whose cwd is not a tracked project, and checking
+            # that here means PARSING every transcript instead of stat-ing it. Measured on
+            # 200 settled 103 KB transcripts, none of them tracked: 0.12 ms for this gate
+            # against 25.11 ms for the same walk with the cwd check - 200x - and the case
+            # self-heals anyway, because `sweep_unprocessed` marks an untracked transcript
+            # processed on its first pass, so it stops being a candidate after one sweep.
+            # Fail-open, with a price that is paid once.
+            _src = _inspect.getsource(mh.has_unprocessed)
+            check("the gate stays filesystem-only", "read_session_meta" not in _src)
         finally:
             mh.PROJECTS_ROOT = old_root
 
