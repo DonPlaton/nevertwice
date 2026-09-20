@@ -3516,6 +3516,15 @@ def _slug_family(p: Path, parsed: dict, slug: str, folder_path: Path) -> bool:
     `python-3` is not a sibling of `python` merely by looking like one."""
     if parsed["slug"] == slug:
         return True
+    # Exact reject BEFORE any I/O. `_unique_path` builds a sibling's stem as the base stem plus
+    # a suffix and `write_typed_note` stamps it in the same breath, so a stamped sibling's slug
+    # always STARTS with the base slug. A note whose slug is not an extension of this one is
+    # therefore not in its family, whatever its frontmatter says - and saying so costs nothing.
+    # Without this the stamp check opened and parsed every note in the folder with a matching
+    # project and type: ~3000 opens per `write_typed_note` in a 1500-note folder, under the
+    # vault lock. The test does not weaken: the stamp still decides every candidate that passes.
+    if not parsed["slug"].startswith(slug + "-"):
+        return False
     stamped = _read_frontmatter_file(p).get(SIBLING_KEY)
     if stamped:
         base_parsed = parse_typed_stem(str(stamped))

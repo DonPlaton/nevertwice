@@ -461,6 +461,40 @@ check("with the old pattern-only rule restored, the unrelated titles collide (th
       or contested(p3c, "pattern") is not None)
 m._slug_family = _real_slug_family
 
+print("\n- F7: family membership is a name test before it is a file read -")
+# The stamp made the rule correct and made it expensive: `_slug_family` opened and parsed the
+# frontmatter of EVERY note in the folder whose project and type matched, to ask a note with an
+# unrelated slug whether it was a sibling. `write_typed_note` walks the live folder and the
+# archive, so a 1500-note folder cost ~3000 opens per write, under the vault lock.
+#
+# A stamped sibling's stem is its base stem plus a suffix (`_unique_path` builds it that way and
+# `write_typed_note` stamps it in the same breath), so its slug always starts with the base
+# slug. That is an exact test, not a heuristic: a note whose slug is not an extension of this
+# one cannot be in its family, whatever its frontmatter says - and it costs no I/O.
+d = fresh()
+for _i in range(30):
+    write(f"Lesson number {_i} about an unrelated topic.", S1,
+          title=f"unrelated lesson {_i}", ntype="pattern")
+_base = write("The base lesson.", S1, title="base lesson", ntype="pattern")
+_sib = write("Another base lesson entirely, with quite different wording.", S2,
+             title="base lesson", ntype="pattern")
+check("setup: 32 notes in one folder, two of them one family", _sib == _base + "-2", _sib)
+
+_folder = m.VAULT / m.TYPE_FOLDER["pattern"]
+_reads: list[str] = []
+_real_rff = m._read_frontmatter_file
+m._read_frontmatter_file = lambda fp: (_reads.append(Path(fp).name), _real_rff(fp))[1]
+try:
+    _hits = m._live_typed_paths(_folder, PROJ, "pattern", "base-lesson")
+finally:
+    m._read_frontmatter_file = _real_rff
+check("the family is still found whole",
+      sorted(h.stem for h in _hits) == sorted([_base, _sib]), str([h.stem for h in _hits]))
+check("and deciding it opened no unrelated note",
+      not [r for r in _reads if "unrelated" in r], str(_reads[:4]))
+check("one read at most per candidate whose slug extends this one",
+      len(_reads) <= 2, str(len(_reads)))
+
 # ── F8: `resolves:` targets the exact slug only ─────────────────────────────────────────────
 print("\n- F8: `resolves:` resolves the exact slug, not the whole slug family -")
 d = fresh()
