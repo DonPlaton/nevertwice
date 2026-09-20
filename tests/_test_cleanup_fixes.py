@@ -370,5 +370,34 @@ res, n = _run_backend(lambda: m.call_ollama("p"), {"response": '{"ok": 1}'})
 check("ollama happy path parses JSON", res == {"ok": 1} and n == 1)
 m._OLLAMA_DOWN = m._CLOUD_DEAD = False
 
+# -- an entry with no date is unprunable, not immortal ----------------------------
+# `prune_processed_db` drops a corrupt non-dict entry and ages out a dated one. An entry that
+# IS a dict but carries no parseable `processed_at` hit `except (ValueError, TypeError):
+# continue` and was kept forever - so the records that survive a store's whole life are exactly
+# the ones nothing can reason about, and the DB the hook reads before every session grows
+# without bound. It cannot be aged out on evidence it does not carry, so it is given today's
+# date the first time it is seen: kept now, and ordinary from here on.
+print("# an entry with no date starts ageing rather than living forever")
+_db = {"dated": {"processed_at": "2000-01-01T00:00:00", "ok": True},
+       "fresh": {"processed_at": m.datetime.now().isoformat(timespec="seconds"), "ok": True},
+       "undated": {"ok": True},
+       "unparseable": {"processed_at": "last tuesday", "ok": True},
+       "corrupt": "not a dict"}
+m.prune_processed_db(_db, days=30)
+check("the old entry is pruned", "dated" not in _db)
+check("the corrupt value is dropped", "corrupt" not in _db)
+check("the fresh entry is kept", "fresh" in _db)
+check("an entry with no date is KEPT this pass", "undated" in _db)
+for _k in ("undated", "unparseable"):
+    _stamp = _db.get(_k, {}).get("processed_at", "")
+    try:
+        m.datetime.fromisoformat(_stamp)
+        _ok = True
+    except (ValueError, TypeError):
+        _ok = False
+    check("and " + _k + " now carries a date it can be aged by", _ok)
+check("so the ordinary rule can reach it", m.prune_processed_db(_db, days=-1) >= 2
+      and "undated" not in _db and "unparseable" not in _db)
+
 print(f"\n{P} passed, {F} failed")
 sys.exit(1 if F else 0)

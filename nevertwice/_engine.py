@@ -133,7 +133,11 @@ def _rebase_vault(path) -> None:
     went to the sandbox while every *question* about a path was still answered about the store
     the process imported with, so `_is_excluded_path` kept the real store excluded and the
     sandbox merely tracked. Same incident shape, one layer up - pinned by
-    `tests/_test_entry_and_rebase.py`."""
+    `tests/_test_entry_and_rebase.py`.
+
+    The third repeat, 2026-09-20, was the grounding CACHES rather than the constants: the tag
+    vocabulary, the title window and the near-duplicate memo are the previous store's content
+    and were still answering after the move. Constants and caches both, in this one call."""
     global VAULT, PROCESSED_DB, STATUS_FILE, EMBED_CACHE, EMBED_META, LOG_FILE, \
         PROMPT_RECALL_STATE_DIR, _VAULT_NORM, _PROJECTS_ROOT_NORM, _EXCLUDE_PREFIXES
     VAULT = Path(path)
@@ -150,6 +154,16 @@ def _rebase_vault(path) -> None:
                          (*_SYS_DIRS, _VAULT_NORM, _PROJECTS_ROOT_NORM) if p]
     _EMBED_CACHE_MEMO["sig"] = None
     _EMBED_CACHE_MEMO["data"] = None
+    # The constants above answer "where"; the caches below answer "what is in there", and they
+    # are built from the notes of whatever store was mounted when they were first asked. Left
+    # standing, all three describe the store we just left: the extractor is grounded on the old
+    # vault's tag vocabulary, shown the old vault's recent titles as its dedup window, and
+    # near-duplicate detection compares against the old vault's embedding cache. Same incident
+    # shape as the two this docstring names, one layer further in.
+    _clear_tag_counts()
+    _TITLE_SLUGS.clear()
+    _NDUP_MEMO[0] = None
+    _NDUP_MEMO[1] = None
 
 
 def _split_roots(raw: str) -> list[str]:
@@ -2050,6 +2064,7 @@ def archive_old_typed(days: int = TYPED_ARCHIVE_AFTER_DAYS) -> int:
 def prune_processed_db(db: dict, days: int = PRUNE_DB_AFTER_DAYS) -> int:
     cutoff = datetime.now() - timedelta(days=days)
     pruned = 0
+    stamped = 0
     for sid in list(db.keys()):
         entry = db[sid]
         if not isinstance(entry, dict):  # corrupt/legacy value - drop it
@@ -2065,13 +2080,20 @@ def prune_processed_db(db: dict, days: int = PRUNE_DB_AFTER_DAYS) -> int:
                 t = t.astimezone().replace(tzinfo=None)
             stale = t < cutoff
         except (ValueError, TypeError):
+            # No parseable date, so this entry cannot be aged out on evidence it does not
+            # carry - and `continue` made it immortal, so the records that outlive a store are
+            # exactly the ones nothing can reason about, in the DB the hook reads before every
+            # session. Give it today's: kept this pass, ordinary from here on.
+            entry["processed_at"] = datetime.now().isoformat(timespec="seconds")
+            stamped += 1
             continue
         if stale:
             del db[sid]
             pruned += 1
-    if pruned:
+    if pruned or stamped:
         save_processed(db)
-        log(f"Pruned {pruned} old DB entries (>{days}d)")
+        log(f"Pruned {pruned} old DB entries (>{days}d)"
+            + (f"; dated {stamped} entry(ies) that carried none" if stamped else ""))
     return pruned
 
 
@@ -7831,7 +7853,17 @@ def main():
         f"trigger={trigger} | model={OLLAMA_MODEL}")
     _warn_if_store_relocated()
 
-    VAULT.mkdir(parents=True, exist_ok=True)
+    # Unguarded, this was an error before every Edit, Write and Bash the moment the store became
+    # unreachable - an unplugged drive, a synced folder mid-repair, a path whose parent is now a
+    # file. The hook's standing rule, the same one `memory_hook.py` applies to a missing engine,
+    # is that memory being unavailable costs memory and never the agent's tool call. Everything
+    # downstream already creates what it needs before writing (`save_guards`, `write_atomic`,
+    # `acquire_lock`), so a failure here is reported and the event continues as far as it can.
+    try:
+        VAULT.mkdir(parents=True, exist_ok=True)
+    except OSError as e:
+        log(f"store unreachable ({type(e).__name__}: {e}) - continuing read-only")
+        print(f"[nevertwice] store unreachable at {VAULT}: {e}", file=sys.stderr)
 
     # SessionStart: inject recall context to stdout FIRST - read-only, no lock
     # needed (atomic writes guarantee reads see a complete file).

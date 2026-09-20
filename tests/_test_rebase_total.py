@@ -63,6 +63,44 @@ m._rebase_vault(sandbox)
 check("_PROJECTS_ROOT_NORM follows PROJECTS_ROOT",
       m._PROJECTS_ROOT_NORM == m._norm_path(str(other)))
 
+# ── and the grounding caches, which are the store's CONTENT rather than its paths ─────
+# The constants above answer "where"; these three answer "what is in there", and they are built
+# from the notes of whatever store was mounted when they were first asked. A rebase left all
+# three describing the store we just left: the extractor was shown the old vault's tag
+# vocabulary and its recent titles as the dedup window, and near-duplicate detection compared
+# against the old vault's embedding cache. Same incident shape as the two the docstring names,
+# one layer further in - the previous store's content is not this store's content.
+print("# the grounding caches are the store's content, and they move with it")
+first = Path(tempfile.mkdtemp(prefix="rebase_ground_a_"))
+m._rebase_vault(first)
+for folder in ("Mistakes", "Patterns", "Decisions"):
+    (first / folder).mkdir(parents=True, exist_ok=True)
+for n in (1, 2):
+    (first / "Mistakes" / f"2026-05-0{n}-alpha-mistake-only-in-the-first-store-{n}.md").write_text(
+        "---\ntype: mistake\nproject: alpha\ndate: 2026-05-0" + str(n) + "\n---\n\n"
+        "# only in the first store\n\n#tag-only-in-the-first-store\n", encoding="utf-8")
+
+tags_a = m.collect_existing_tags()
+titles_a = m.collect_existing_titles("alpha")
+m._NDUP_MEMO[0] = 1234.5
+m._NDUP_MEMO[1] = {"a-stem-from-the-first-store": {"vec": [0.0]}}
+check("the first store grounded the tag vocabulary",
+      any("only-in-the-first-store" in t for t in tags_a))
+check("and the title window", any("only-in-the-first-store" in s
+                                 for slugs in titles_a.values() for s in slugs))
+
+second = Path(tempfile.mkdtemp(prefix="rebase_ground_b_"))
+for folder in ("Mistakes", "Patterns", "Decisions"):
+    (second / folder).mkdir(parents=True, exist_ok=True)
+m._rebase_vault(second)
+check("the tag vocabulary stops naming the store we left",
+      not any("only-in-the-first-store" in t for t in m.collect_existing_tags()))
+check("the title window stops naming it too",
+      not any("only-in-the-first-store" in s
+              for slugs in m.collect_existing_titles("alpha").values() for s in slugs))
+check("and the near-duplicate memo is not the previous store's cache",
+      m._NDUP_MEMO[0] is None and m._NDUP_MEMO[1] is None)
+
 print()
 print(f"rebase: {P} passed, {F} failed")
 sys.exit(1 if F else 0)
