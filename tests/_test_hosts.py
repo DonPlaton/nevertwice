@@ -502,6 +502,62 @@ def test_zz_every_check_passed() -> None:
     assert FAILED == 0, f"{FAILED} check(s) failed - see the FAIL lines above"
 
 
+def test_an_uninstall_that_cannot_write_answers_instead_of_raising() -> None:
+    """Every other path out of `uninstall` hands the caller a dict; the two writes did not.
+
+    The read above them already answers a failure with `ok: False` and a detail. The backup
+    and the settings rewrite were bare, so a read-only directory or a full disk raised OSError
+    out of a method whose callers - `install_status` among them - are written on the promise
+    that they work when something is wrong. Both branches are driven, because which write
+    failed decides what is on disk and therefore what the answer has to say.
+    """
+    print("\n- an uninstall that cannot write says so -")
+    for label, break_it in (("the backup cannot be written", "backup"),
+                            ("the settings rewrite fails", "atomic")):
+        with tempfile.TemporaryDirectory() as tmp:
+            settings = Path(tmp) / "settings.json"
+            projects = Path(tmp) / "projects"
+            projects.mkdir()
+            os.environ["NEVERTWICE_CLAUDE_SETTINGS"] = str(settings)
+            os.environ["NEVERTWICE_CLAUDE_PROJECTS"] = str(projects)
+            try:
+                mine = {"type": "command",
+                        "command": "python .../nevertwice/memory_hook.py"}
+                before = json.dumps({"hooks": {"PreToolUse": [{"hooks": [mine]}]}})
+                settings.write_text(before, encoding="utf-8")
+                adapter = hosts.get("claude-code")
+                real_atomic = hosts.m.write_atomic
+                if break_it == "backup":
+                    # A directory where the backup file belongs: the write raises OSError the
+                    # way a read-only parent or a full disk does, without needing either.
+                    settings.with_suffix(".json.nevertwice-backup").mkdir()
+                else:
+                    def _boom(*a, **k):
+                        raise OSError(28, "No space left on device")
+                    hosts.m.write_atomic = _boom
+                try:
+                    result = adapter.uninstall(dry_run=False)
+                except Exception as exc:                       # noqa: BLE001 - the finding
+                    check(f"{label}: answers instead of raising", False,
+                          f"{type(exc).__name__}: {exc}")
+                    continue
+                finally:
+                    hosts.m.write_atomic = real_atomic
+                check(f"{label}: answers instead of raising", True)
+                check(f"{label}: and the answer is not ok", result.get("ok") is False,
+                      str(result)[:120])
+                check(f"{label}: and it names what is still on disk",
+                      "unchanged" in result.get("detail", "")
+                      or "still holds" in result.get("detail", ""),
+                      result.get("detail", "")[:120])
+                check(f"{label}: the settings file was not half-written",
+                      settings.read_text(encoding="utf-8") == before,
+                      settings.read_text(encoding="utf-8")[:80])
+            finally:
+                os.environ.pop("NEVERTWICE_CLAUDE_SETTINGS", None)
+                os.environ.pop("NEVERTWICE_CLAUDE_PROJECTS", None)
+
+
 def main() -> int:
     for fn in (test_every_adapter_answers_all_five_questions,
                test_discovery_never_needs_a_live_agent,
@@ -514,7 +570,8 @@ def main() -> int:
                test_claude_code_install_status_and_reversible_uninstall,
                test_claude_code_is_not_swept_as_well_as_hooked,
                test_cursor_explains_itself_instead_of_returning_nothing,
-               test_the_status_report_covers_every_host):
+               test_the_status_report_covers_every_host,
+               test_an_uninstall_that_cannot_write_answers_instead_of_raising):
         fn()
     print(f"\nhosts: {PASSED} passed, {FAILED} failed")
     return 1 if FAILED else 0

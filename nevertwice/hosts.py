@@ -412,9 +412,25 @@ class ClaudeCodeAdapter(HostAdapter):
 
         if removed and not dry_run:
             backup = settings.with_suffix(".json.nevertwice-backup")
-            # newline="": a backup whose bytes differ from what it is a backup OF is not one.
-            backup.write_text(raw, encoding="utf-8", newline="")
-            m.write_atomic(settings, json.dumps(data, indent=2) + "\n")
+            try:
+                # newline="": a backup whose bytes differ from what it is a backup OF is not one.
+                backup.write_text(raw, encoding="utf-8", newline="")
+                m.write_atomic(settings, json.dumps(data, indent=2) + "\n")
+            except OSError as exc:
+                # The read above answers a failure with `ok: False` and a detail; these two
+                # writes did not, so a read-only directory or a full disk left this method
+                # RAISING at a caller that is handed a dict on every other path. Which write
+                # failed decides what is on disk, so the answer says so: with no backup on
+                # disk nothing was touched at all, and with one, the settings file is still
+                # the version that backup holds.
+                wrote_backup = backup.exists()
+                return {"host": self.name, "ok": False,
+                        "changed": [str(backup)] if wrote_backup else [],
+                        "detail": (f"could not complete the uninstall - "
+                                   f"{'the settings rewrite' if wrote_backup else 'the backup'}"
+                                   f" failed ({type(exc).__name__}: {exc}); {settings} still "
+                                   f"holds the hooks this call would have removed"),
+                        "removed": [], "dry_run": False}
             return {"host": self.name, "ok": True, "changed": [str(settings), str(backup)],
                     "detail": f"removed {len(removed)} hook entry(ies); "
                               f"previous settings kept at {backup.name}",
