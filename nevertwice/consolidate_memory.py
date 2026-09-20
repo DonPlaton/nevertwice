@@ -362,8 +362,14 @@ def merge_into_keeper(keep_fp: Path, dup_fps: list[Path]) -> list[str]:
     # M-i): the round-1 `frag not in ktext` dropped a unique fragment whenever it
     # happened to occur as a substring of an unrelated line (e.g. inside a wikilink
     # stem), silently losing content during dedup.
+    # ... and strip the list marker on BOTH sides. The keeper stores a merged fragment as the
+    # rendered bullet `- <frag>`, while the next pass offers the bare `<frag>`, so no fragment
+    # this function ever merged was recognised on the pass after - and the docstring above
+    # promises the opposite. Each consolidation appended the same lesson again, and the caller,
+    # told the fragment was new, folded another " | merged: ..." tail into the keeper's indexed
+    # description, whose 800-character cap then evicted real content to hold the repeat.
     def _norm(s: str) -> str:
-        return re.sub(r"\s+", " ", s).strip().lower()
+        return re.sub(r"^\s*[-*]\s+", "", re.sub(r"\s+", " ", s).strip()).lower()
 
     existing = {_norm(ln) for ln in ktext.splitlines() if ln.strip()}
     extra = []
@@ -615,6 +621,7 @@ def distill_patterns(cache: dict, apply: bool, max_distill: int = 3) -> int:
                   f"MISTAKE (recurred {r.get('recurrence')}x): {r.get('title','')} - "
                   f"{r.get('desc','')} {r.get('prevention','')}")
         res = m.generate_json(prompt, project=r.get("project"))
+        m.refresh_lock()    # F6, per unit: this runs under the same lock as the judge loop
         title = (res.get("title") or "").strip() if isinstance(res, dict) else ""
         desc = (res.get("description") or "").strip() if isinstance(res, dict) else ""
         # Quality gate (audit M-e): only accept a REAL distilled rule, not model

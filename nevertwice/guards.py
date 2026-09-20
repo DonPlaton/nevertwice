@@ -744,6 +744,12 @@ def generate_from_vault(project=None, *, min_recurrence=1, limit=None, use_llm=T
         if any(n.get("stem", "") in g.get("born_from", []) for g in guards):
             continue                                  # already distilled this mistake
         g = propose_from_mistake(n, use_llm=use_llm)
+        # F6, per unit of work: consolidate --apply runs this whole loop under the vault lock
+        # and one call can cost ~33 s on the Ollama fallback, so a store with a large
+        # undistilled backlog crosses the LOCK_STALE_S*10 ceiling and a concurrent hook
+        # reclaims a lock whose holder is still working. refresh_lock() is a no-op when we
+        # do not hold the lock, so the hot-path and CLI callers are unaffected.
+        m.refresh_lock()
         if register(guards, g):
             added += 1
     if added:

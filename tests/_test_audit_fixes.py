@@ -305,6 +305,17 @@ ktext = keep.read_text(encoding="utf-8")
 check("unique short fragment merged despite being a substring elsewhere",
       "## Merged from duplicates" in ktext and "- cache" in ktext)
 
+# The docstring says "Idempotent: fragments already present are skipped". It compares the
+# keeper's LINES - which hold the fragment as a rendered bullet, `- cache` - against the BARE
+# fragment, `cache`, so nothing merged is ever recognised again and every consolidation pass
+# appends the same lesson afresh. The caller then treats the re-added fragment as new: it folds
+# another " | merged: ..." tail into the keeper's indexed description, whose 800-character cap
+# evicts real content to make room for the repeat.
+again = cons.merge_into_keeper(keep, [dup])
+check("a second pass over the same duplicate adds nothing", again == [])
+check("and leaves the keeper byte-identical",
+      keep.read_text(encoding="utf-8") == ktext)
+
 
 # ── M-h: build_user_model parses unquoted YAML tags ────────────────────
 print("# M-h - unquoted YAML tags")
@@ -962,6 +973,28 @@ check("consolidate _int1 degrades on junk", _con._int1("abc") == 1 and _con._int
 import inspect as _insp
 import embed_index as _ei
 check("embed_index acquires the vault lock", "acquire_lock" in _insp.getsource(_ei))
+
+# refresh_lock() touches the vault lock's mtime unconditionally. `release_lock()`, fifteen lines
+# above it in the same file, already refuses to act on a lock it does not own - after a stale-steal
+# the file belongs to somebody else. refresh_lock() kept the sibling's job and not its check, so any
+# process could hold a lock it never took: acquire_lock reclaims a dead holder's lock at once by
+# PID, but a crashed holder whose PID has been RE-USED by an unrelated live process is freed only by
+# the `age > LOCK_STALE_S * 10` ceiling, and a foreign refresh resets that clock forever. The caller
+# that reaches it is consolidate_memory's judge loop, which runs on a DRY RUN too.
+import time as _time
+_lock = m._lock_file()
+m.VAULT.mkdir(parents=True, exist_ok=True)
+_lock.write_text(str(os.getpid() + 1), encoding="utf-8")       # somebody else's lock
+_old = _time.time() - 600
+os.utime(_lock, (_old, _old))
+m.refresh_lock()
+check("refresh_lock leaves a lock it does not own alone",
+      abs(_lock.stat().st_mtime - _old) < 1.0)
+_lock.unlink(missing_ok=True)
+check("and still does its job for the holder",
+      m.acquire_lock(timeout_s=5) and (lambda t0: (os.utime(_lock, (t0, t0)), m.refresh_lock(),
+                                                   _lock.stat().st_mtime > t0 + 1)[-1])(_old))
+m.release_lock()
 
 print()
 print(f"audit-fixes: {P} passed, {F} failed")

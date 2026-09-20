@@ -1933,12 +1933,27 @@ def release_lock():
 
 
 def refresh_lock() -> None:
-    """Touch the lock's mtime. Long LEGITIMATE holds exist (a 25-transcript sweep on
-    the Ollama fallback, process_now over a big backlog) and the holder never updated
-    the mtime, so past the 10x-stale ceiling a concurrent hook STOLE the lock from a
-    live process (review 2026-08). Every per-transcript unit calls this."""
+    """Touch the lock's mtime, but ONLY while we still own it.
+
+    Long LEGITIMATE holds exist (a 25-transcript sweep on the Ollama fallback, process_now over
+    a big backlog) and the holder never updated the mtime, so past the 10x-stale ceiling a
+    concurrent hook STOLE the lock from a live process (review 2026-08). Every per-transcript
+    unit calls this.
+
+    The ownership test is `release_lock`'s, and for the same reason: touching a lock we do not
+    hold keeps somebody else's alive. `acquire_lock` frees a dead holder immediately by PID, so
+    the one wedge a foreign refresh can create is also the one the `LOCK_STALE_S * 10` ceiling
+    exists to break - a crashed holder whose PID has been re-used by an unrelated live process.
+    A stray refresh resets that clock forever. `consolidate_memory`'s judge loop reaches this on
+    a DRY RUN, holding no lock at all."""
+    lock = _lock_file()
     try:
-        os.utime(_lock_file())
+        if (lock.read_text() or "").strip() not in ("", str(os.getpid())):
+            return
+    except OSError:
+        pass
+    try:
+        os.utime(lock)
     except OSError:
         pass
 
@@ -5077,6 +5092,7 @@ def maintain_contexts(allow_llm: bool = True) -> None:
             refresh_project_card(proj, cf)
         except Exception as e:
             log(f"context maintenance skipped for {proj}: {e}")
+        refresh_lock()      # F6, per unit: consolidate --apply holds the lock across every file
 
 
 # ── Structured project card (audit I-15) ──────────────────────────────
