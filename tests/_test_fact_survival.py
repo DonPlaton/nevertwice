@@ -11,6 +11,7 @@ harvester salvages it from the session text near the note's topic. Pure logic; n
     python _test_fact_survival.py
 """
 import sys
+import time
 from pathlib import Path
 
 try:
@@ -101,6 +102,51 @@ check("the salvaged command is on disk in the note", "sm_120" in note)
 _, parsed_desc, _ = m._parse_note_body(note.split("\n"))
 check("the literal parses back inside the description (so recall returns it)",
       "sm_120" in parsed_desc)
+
+# ── the harvester's cost is linear in the session, not quadratic ──────────────────────
+# `_harvest_literals` runs on the WRITE path, under the vault lock, over text the session
+# supplied. The image-tag pattern `[A-Za-z0-9_./-]+/[A-Za-z0-9_.-]+:...` has a class containing
+# the `/` it then requires, so every start position in a run of path-like characters is
+# re-split every way that could reach a `:` - and on ordinary path-heavy text with no colon at
+# all, that is the whole run, from every start. Measured: 0.26 s at 12 kB, 4.09 s at 48 kB,
+# 16.3 s at 96 kB - four times the cost for twice the text, with the lock held throughout.
+#
+# The ratio is the assertion, not the seconds: it is what separates quadratic from linear on
+# any machine, at any load. A doubling of the input costs a quadratic scan four times as much
+# and a linear one twice; the gate sits between, at eight times for a FOURfold input.
+print()
+print("- the literal harvest is linear in the size of the session -")
+_small = "a/b.c-d" * 1700          # ~12 kB of ordinary path-like text, no colon anywhere
+_big = "a/b.c-d" * 6800            # ~48 kB of the same
+
+
+def _harvest_cost(src: str) -> float:
+    t0 = time.perf_counter()
+    m._harvest_literals(src, "a build note about paths", want=10, exclude=set())
+    return time.perf_counter() - t0
+
+
+_t_small, _t_big = _harvest_cost(_small), _harvest_cost(_big)
+check("four times the text costs less than eight times the work"
+      f" ({_t_small:.3f}s -> {_t_big:.3f}s)", _t_big < 8 * max(_t_small, 1e-4))
+check(f"and 48 kB of it stays under a second ({_t_big:.3f}s)", _t_big < 1.0)
+
+# The rule for every pattern, so the next one added cannot be quadratic either.
+_slow = []
+for _rx in m._LIT_PATTERNS:
+    _a = time.perf_counter(); _rx.findall(_small); _a = time.perf_counter() - _a
+    _b = time.perf_counter(); _rx.findall(_big); _b = time.perf_counter() - _b
+    if _b > 8 * max(_a, 1e-4):
+        _slow.append(f"{_rx.pattern[:40]} {_a:.3f}->{_b:.3f}")
+check("no literal pattern is superlinear: " + "; ".join(_slow[:3]), not _slow)
+
+# And it still finds what it exists for.
+_IMG = m._LIT_PATTERNS[2]
+for _s, _want in (("ghcr.io/owner/repo:1.2", ["ghcr.io/owner/repo:1.2"]),
+                  ("/usr/lib/foo:bar", ["/usr/lib/foo:bar"]),
+                  ("docker pull nvidia/cuda:12.4.0-devel now", ["nvidia/cuda:12.4.0-devel"]),
+                  ("no-slash:tag", [])):
+    check("the image-tag pattern still reads " + repr(_s), _IMG.findall(_s) == _want)
 
 print(f"\n{P} passed, {F} failed")
 sys.exit(1 if F else 0)

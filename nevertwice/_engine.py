@@ -3783,7 +3783,13 @@ _FACTS_MIN_LEN = 2               # a one-char "fact" carries nothing and matches
 _LIT_PATTERNS = [re.compile(p) for p in (
     r"`[^`\n]{2,60}`",
     r"\b[0-9a-f]{7,40}\b",
-    r"[A-Za-z0-9_./-]+/[A-Za-z0-9_.-]+:[A-Za-z0-9_.-]+",
+    # Segment-by-segment, and BOUNDED. The first class used to contain the `/` it then
+    # required, so on path-like text with no colon the engine re-split the whole run from
+    # every start position: 0.26 s at 12 kB, 4.09 s at 48 kB, 16.3 s at 96 kB - quadratic,
+    # on the write path, under the vault lock. Slashes are explicit here and each segment
+    # is capped, so the work per start position is bounded and the scan is linear (0.031 s
+    # at 48 kB). No real image reference is longer than this; the probes pin the shapes.
+    r"/?[A-Za-z0-9_.-]{1,60}(?:/[A-Za-z0-9_.-]{1,60}){1,6}:[A-Za-z0-9_.-]{1,60}",
     r"\bpython [\w./-]+\.py[\w\s./=-]{0,40}",
     r"\b(?:nvcc|docker|git|pip|npm|cargo|make|cmake|gcc|claude|ollama|kubectl|curl|wget)\b[^\n]{0,50}",
     r"--?[A-Za-z][\w-]*=[^\s]+",
