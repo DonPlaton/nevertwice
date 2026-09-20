@@ -170,6 +170,39 @@ try:
 finally:
     G.propose_from_mistake = real_propose
 
+print("# and the pass reports what LANDED, not what its snapshot would have added")
+# The merge runs against the ledger as it is at write time, so another writer can install part
+# of what this pass minted while the pass was still in the model. `register` dedups by id and
+# says so by returning False; counting the in-memory snapshot instead reports guards this call
+# did not add. Same defect, same shape, as `main()`'s `pack` - fixed there in this batch.
+
+
+def _propose_racing(note, use_llm=True):
+    minted.append(1)
+    n = len(minted)
+    g = {"id": "race" + str(n), "pattern": "yyy" + str(n), "message": "generated",
+         "scope": {"project": "demo"}, "status": "advisory",
+         "born_from": [note.get("stem", "")], "born_date": "2026-05-01",
+         "corroborations": 0, "fired": 0, "helped": 0, "false_positives": 0,
+         "seen_sessions": [], "overrides": []}
+    if n == 2:                       # another writer installs the FIRST one while we are here
+        _first = dict(g, id="race1", pattern="yyy1", born_from=[])
+        G.persist_under_lock(lambda rows: G.register(rows, _first), 5.0)
+    return g
+
+
+seed()
+minted.clear()
+G.propose_from_mistake = _propose_racing
+try:
+    landed = G.generate_from_vault(use_llm=False)
+finally:
+    G.propose_from_mistake = real_propose
+after = ledger()
+check("both guards are in the ledger", "race1" in after and "race2" in after, str(sorted(after)))
+check("and the pass reports the one it actually added", landed == 1, str(landed))
+
+
 def _cli_pack() -> None:
     """`guards pack` installs the shipped pack into the LIVE ledger - a load-mutate-save with
     no lock, like the pass above."""

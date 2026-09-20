@@ -776,8 +776,10 @@ def propose_from_mistake(note: dict, *, use_llm: bool = True) -> dict | None:
 
 def generate_from_vault(project=None, *, min_recurrence=1, limit=None, use_llm=True) -> int:
     """Build guards from the vault's mistake notes (highest-recurrence first) and add any new
-    ones to the ledger. Returns the count added. Idempotent (dedup by id). This is the
-    sleep-time pass; the hot-path `check()` only ever reads the resulting ledger."""
+    ones to the ledger. Returns how many guards this call actually WROTE - not how many it
+    minted, which is the same number only while nothing else writes the ledger meanwhile.
+    Idempotent (dedup by id). This is the sleep-time pass; the hot-path `check()` only ever
+    reads the resulting ledger."""
     notes = m._iter_project_notes(m.slug_project(project)) if project else m._iter_all_notes()
     mistakes = [n for n in notes if n.get("ntype") == "mistake"
                 and n.get("recurrence", 1) >= min_recurrence
@@ -810,15 +812,22 @@ def generate_from_vault(project=None, *, min_recurrence=1, limit=None, use_llm=T
         # minted into a freshly loaded ledger instead; `register` dedups by id, so nothing
         # this pass added is lost and nothing another writer recorded is.
         minted = [g for g in guards if g["id"] not in known]
+        landed = [0]
 
         def _merge(rows) -> bool:
-            return sum(1 for g in minted if register(rows, g)) > 0
+            # What LANDED, not what the snapshot would have added: the merge runs against the
+            # ledger as it is at write time, so another writer can install part of this pass's
+            # work while this pass is still in the model, and `register` refuses that id by
+            # returning False. Counting `added` reported guards this call did not add.
+            landed[0] = sum(1 for g in minted if register(rows, g))
+            return landed[0] > 0
 
         if not persist_under_lock(_merge, GENERATE_LOCK_S):
             # Idempotent by construction: nothing was written, so say so rather than report a
             # count that is only in memory. The next pass regenerates these from the notes.
             m.log(f"guards: {added} generated but not persisted (vault lock busy)")
             return 0
+        return landed[0]
     return added
 
 

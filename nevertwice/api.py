@@ -530,8 +530,9 @@ def anticipate_feedback(mistake_stem: str, outcome: str) -> dict:
 
 def guards_generate(project: str | None = None, *, limit: int | None = None) -> int:
     """Distill guards from the vault's mistake notes (sleep-time, off the hot path); returns
-    how many new guards were added. Idempotent. Uses the cloud/Ollama router for precise
-    patterns with a deterministic fallback."""
+    how many new guards were actually WRITTEN to the ledger - 0 when the vault lock was busy,
+    and fewer than minted when another writer installed part of them meanwhile. Idempotent.
+    Uses the cloud/Ollama router for precise patterns with a deterministic fallback."""
     return _guards.generate_from_vault(project, limit=limit)
 
 
