@@ -221,14 +221,19 @@ def as_of(query: str, date: str, project: str | None = None, k: int = 5) -> list
     held = m.as_of(proj, date)
     if not held:
         return []
-    cands = [(h["stem"], {"title": h["title"], "desc": _note_description(h["path"])}) for h in held]
+    # Read each note once. `_note_description` opens the file, and the top-k were being read
+    # a second time to fill the result - the same bytes, parsed again, for every row a caller
+    # actually sees (T1 review). The ranking and the answer want the same string, so they
+    # take it from the same read.
+    descriptions = {h["stem"]: _note_description(h["path"]) for h in held}
+    cands = [(h["stem"], {"title": h["title"], "desc": descriptions[h["stem"]]}) for h in held]
     scores = m._bm25_scores(m._tokens(query), cands)
     by_stem = {h["stem"]: h for h in held}
     out = []
     for stem in sorted(scores, key=lambda s: (-scores[s], s))[:k]:
         h = by_stem[stem]
         out.append({"stem": stem, "ntype": h["ntype"], "project": h["project"],
-                    "title": h["title"], "description": _note_description(h["path"]),
+                    "title": h["title"], "description": descriptions[stem],
                     "valid_from": h["valid_from"], "valid_to": h["valid_to"],
                     "score": round(scores[stem], 4)})
     return out

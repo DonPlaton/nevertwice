@@ -301,6 +301,32 @@ def test_recall_says_which_rerankers_can_run_and_lets_the_caller_say_no():
     assert "xrerank" in doc, "the docstring does not name the parameter that turns it off"
 
 
+def test_as_of_reads_each_note_once():
+    """`_note_description` opens the note. It was called once per candidate to rank, and then
+    again for each row of the answer, so every note a caller actually sees was read twice -
+    the same bytes, parsed twice, on a path whose whole point is that a retired note has no
+    vector and has to be read (T1 review)."""
+    held = [{"stem": f"2026-01-0{i}-p-mistake-n{i}", "ntype": "mistake", "project": "p",
+             "title": f"note {i}", "path": f"/nowhere/n{i}.md",
+             "valid_from": "2026-01-01", "valid_to": None} for i in range(1, 6)]
+    reads = []
+
+    def counting(path, limit=1200):
+        reads.append(path)
+        return "the cache bug was a connection pool exhausted by a missing close"
+
+    with mock.patch.object(m, "as_of", return_value=held), \
+         mock.patch.object(api, "_note_description", side_effect=counting):
+        out = api.as_of("cache bug", "2026-01-03", project="p", k=3)
+
+    assert len(out) == 3, f"expected the top 3, got {len(out)}"
+    assert len(reads) == len(held), (
+        f"{len(held)} notes held, {len(reads)} reads - the answer re-read what ranking "
+        f"already had: {reads}")
+    assert len(set(reads)) == len(reads), f"a note was read twice: {reads}"
+    assert all(r["description"] for r in out), "the descriptions did not survive the dedup"
+
+
 if __name__ == "__main__":
     fns = [v for k, v in sorted(globals().items()) if k.startswith("test_") and callable(v)]
     failed = 0
