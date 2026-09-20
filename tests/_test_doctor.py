@@ -38,7 +38,7 @@ import doctor  # noqa: E402
 # or removing a check is a deliberate edit to this list, not a silent break for a consumer.
 REPORT_KEYS = {"schema_version", "vault", "probed", "checks", "summary"}
 CHECK_IDS = ["store_writable", "store_schema", "hook_registration", "capture_freshness",
-             "extractor", "embedding_space", "index_age", "scheduler", "graph_generator",
+             "extractor", "embedding_space", "twin_calibration", "index_age", "scheduler", "graph_generator",
              "orphaned_temp", "package_source"]
 
 # A repair is printed for a human to run. These are the things it must never be.
@@ -197,6 +197,61 @@ def test_it_catches_the_embedding_space_mismatch() -> None:
                 os.environ.pop("NEVERTWICE_EMBED_MODEL", None)
             else:
                 os.environ["NEVERTWICE_EMBED_MODEL"] = saved
+
+
+def test_it_says_which_twin_gate_this_install_is_running() -> None:
+    """The twin gate RETIRES live notes. A machine-local calibration that falls out of
+    bounds - after an update tightened them, say - silently reverts it to the baked weights,
+    and the only trace is one line written into the hook's log at import. An operator
+    updating an install has to be able to ask."""
+    print("\n- which twin calibration is in force -")
+    saved = os.environ.get("NEVERTWICE_TWIN_FILE")
+    with tempfile.TemporaryDirectory(prefix="nevertwice_doc_twin_") as tmp:
+        tf = Path(tmp) / "twin_calibration.json"
+        good = {"space": "test-embed", "w": [0.98725, 2, 3, 4, 5], "b": -0.5,
+                "mu": [0, 0, 0, 0, 0], "sd": [0.777, 1, 1, 1, 1]}
+        try:
+            os.environ["NEVERTWICE_TWIN_FILE"] = str(tf)
+            result = doctor.check_twin_calibration()
+            check("no file is not a problem", result["status"] == doctor.SKIP,
+                  result["status"] + " " + result["detail"])
+            check("and it says the baked weights are what runs",
+                  "baked" in result["detail"], result["detail"])
+
+            tf.write_text(json.dumps(good), encoding="utf-8")
+            result = doctor.check_twin_calibration()
+            check("an accepted calibration is ok", result["status"] == doctor.OK,
+                  result["status"] + " " + result["detail"])
+            check("and it names the space it is keyed to",
+                  "test-embed" in result["detail"], result["detail"])
+
+            # Degenerate, and with values that do not collide with the BOUNDS the message
+            # quotes: the point of the next check is that nothing from the FILE is echoed.
+            tf.write_text(json.dumps({**good, "sd": [3.3e-6, 1, 1, 1, 1],
+                                      "w": [812.5, 1, 1, 1, 1]}), encoding="utf-8")
+            result = doctor.check_twin_calibration()
+            check("a refused calibration is a warning, not a failure",
+                  result["status"] == doctor.WARN, result["status"])
+            check("it says the gate fell back rather than that it is broken",
+                  "baked" in result["detail"], result["detail"])
+            check("it gives the bound that refused it",
+                  "out of bounds" in result["detail"], result["detail"])
+            check("and the repair points at the retraining procedure",
+                  "TWIN_GATE" in result["repair"], result["repair"])
+            check("no calibration value is echoed anywhere in the check",
+                  "812.5" not in json.dumps(result) and "3.3e-06" not in json.dumps(result)
+                  and "0.777" not in json.dumps(result), json.dumps(result))
+
+            tf.write_text("{", encoding="utf-8")
+            result = doctor.check_twin_calibration()
+            check("an unreadable file is a warning that names the error",
+                  result["status"] == doctor.WARN and "Error" in result["detail"],
+                  result["detail"])
+        finally:
+            if saved is None:
+                os.environ.pop("NEVERTWICE_TWIN_FILE", None)
+            else:
+                os.environ["NEVERTWICE_TWIN_FILE"] = saved
 
 
 def test_the_json_shape_is_a_contract() -> None:

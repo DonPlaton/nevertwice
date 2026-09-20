@@ -235,6 +235,38 @@ def check_embedding_space(vault: Path) -> dict:
                   f"built by {built}")
 
 
+def check_twin_calibration() -> dict:
+    """Which twin-gate weights this install runs on - the shipped calibration, or the baked
+    fallback because the file was refused.
+
+    The twin gate RETIRES live notes, so a calibration silently reverting to the baked bge-m3
+    weights changes what the store forgets. The fallback is announced once, at import, into
+    the hook's log; an operator updating an install has no reason to be reading log tails at
+    that moment. Verdict only: no weight, mean or deviation is ever printed here - the file is
+    machine-local data, and a diagnostic that echoes it publishes it.
+    """
+    title = "the twin gate is running the calibration you shipped"
+    try:
+        import memory_hook as _m                        # noqa: PLC0415 - CLI-only, not hot
+        status = _m.twin_calibration_status()
+    except Exception as exc:                            # noqa: BLE001 - any failure is one
+        return _check("twin_calibration", title, SKIP,
+                      f"could not read the gate's state: {type(exc).__name__}", "")
+    if not status["present"]:
+        return _check("twin_calibration", title, SKIP,
+                      f"no calibration file; the baked {status['space']} weights are in force",
+                      "")
+    if status["accepted"]:
+        return _check("twin_calibration", title, OK,
+                      f"{status['path']} accepted, keyed to {status['space']}", "")
+    return _check("twin_calibration", title, WARN,
+                  f"the calibration file was refused ({status['reason']}) - the gate fell "
+                  f"back to the baked {status['space']} weights, so it retires on different "
+                  f"evidence than the file you shipped",
+                  "retrain per research/TWIN_GATE.md, or remove the file to make the "
+                  "fallback deliberate")
+
+
 def check_index_age(vault: Path, now: float | None = None) -> dict:
     now = time.time() if now is None else now
     index = vault / ".index.sqlite"
@@ -348,6 +380,7 @@ def run(vault=None, *, settings=None, probe: bool = False, now: float | None = N
         check_capture_freshness(store, now),
         check_extractor(probe),
         check_embedding_space(store),
+        check_twin_calibration(),
         check_index_age(store, now),
         check_scheduler(store, now),
         check_graph_generator(),

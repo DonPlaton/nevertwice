@@ -324,6 +324,46 @@ check("no file + pinned label -> baked space, gate degrades to cosine",
       space == "bge-m3" and w[0] == 3.684473)
 check("the mismatch is announced (it used to be silent)",
       any("NEVERTWICE_TWIN_SPACE" in x for x in m._EARLY_WARNINGS[_n:]))
+
+# A refusal that only reaches _EARLY_WARNINGS is a refusal nobody sees: the line is written
+# once, at import, into the hook's log - so an operator updating an install learns that the
+# gate silently fell back to the baked weights only by reading log tails. `twin_calibration_status`
+# is the same verdict as an answer, for `doctor` to print. It reports the VERDICT and never the
+# calibration: the file is machine-local data and is not to be echoed anywhere.
+os.environ.pop("NEVERTWICE_TWIN_SPACE", None)
+os.environ.pop("NEVERTWICE_TWIN_FILE", None)
+_st = m.twin_calibration_status()
+check("no file: the status says the baked weights are in force",
+      _st["present"] is False and _st["accepted"] is False and _st["source"] == "baked"
+      and _st["space"] == "bge-m3")
+
+os.environ["NEVERTWICE_TWIN_FILE"] = str(tf)
+# Two values picked to be unmistakable if they ever escaped into the status.
+tf.write_text(json.dumps({**GOOD, "w": [0.98725, 2, 3, 4, 5], "sd": [0.777, 1, 1, 1, 1]}),
+              encoding="utf-8")
+_st = m.twin_calibration_status()
+check("an accepted file is reported as in use",
+      _st["present"] and _st["accepted"] and _st["source"] == "file"
+      and _st["space"] == "test-embed")
+check("and the status carries no calibration values",
+      "0.98725" not in json.dumps(_st) and "0.777" not in json.dumps(_st))
+
+tf.write_text(json.dumps({**GOOD, "sd": [1e-6, 1, 1, 1, 1], "w": [1e3, 1, 1, 1, 1]}),
+              encoding="utf-8")
+_st = m.twin_calibration_status()
+check("a refused file is reported as present but not in use",
+      _st["present"] and _st["accepted"] is False and _st["source"] == "baked")
+check("and the reason says what the bound was", "bounds" in _st["reason"].lower())
+
+tf.write_text("not json", encoding="utf-8")
+_st = m.twin_calibration_status()
+check("an unreadable file names the error rather than the contents",
+      _st["present"] and _st["accepted"] is False
+      and "JSONDecodeError" in _st["reason"])
+check("the status never contradicts the loader",
+      _st["space"] == m._load_twin_calibration()[0])
+os.environ.pop("NEVERTWICE_TWIN_FILE", None)
+
 for k, v in _saved.items():
     os.environ.pop(k, None) if v is None else os.environ.__setitem__(k, v)
 

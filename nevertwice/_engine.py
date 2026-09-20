@@ -1381,6 +1381,58 @@ def _twin_calibration_usable(w, b, mu, sd) -> bool:
     return (hi - lo) <= 2 * _TWIN_LOGIT_CLAMP and lo < 0.0
 
 
+def _twin_file_path() -> Path:
+    """Where the machine-local calibration lives: $NEVERTWICE_TWIN_FILE, or next to this
+    module. Read at call time, not baked, so a probe and the loader agree about the file."""
+    return Path(os.environ.get("NEVERTWICE_TWIN_FILE", "").strip()
+                or Path(__file__).resolve().parent / "twin_calibration.json")
+
+
+def _twin_file_verdict(fp: Path) -> tuple:
+    """(present, (space, w, b, mu, sd) or None, reason) for the calibration file.
+
+    The one place the file is validated, so the loader and `twin_calibration_status` cannot
+    grow two opinions about the same file. `reason` is empty on acceptance and NEVER carries
+    a value read from the file: the calibration is machine-local data, and a diagnostic that
+    echoes it publishes it.
+    """
+    try:
+        if not fp.is_file():
+            return False, None, f"no calibration file at {fp}"
+        d = json.loads(fp.read_text(encoding="utf-8"))
+        cw, cmu, csd = (tuple(float(x) for x in d[k]) for k in ("w", "mu", "sd"))
+        cb = float(d["b"])
+        cspace = str(d.get("space") or "").strip() or _TWIN_BAKED_SPACE
+    except (OSError, ValueError, KeyError, TypeError) as e:
+        return True, None, f"unreadable ({fp}): {type(e).__name__}: {e}"
+    if (len(cw) == len(cmu) == len(csd) == 5
+            and all(math.isfinite(v) for v in (*cw, *cmu, *csd, cb))
+            and all(v >= _TWIN_SD_MIN for v in csd)
+            and all(abs(v) <= _TWIN_ABS_MAX for v in (*cw, *cmu, cb))
+            and _twin_calibration_usable(cw, cb, cmu, csd)):
+        return True, (cspace, cw, cb, cmu, csd), ""
+    return True, None, (
+        f"out of bounds ({fp}) - need 5 finite w/mu/sd, sd >= {_TWIN_SD_MIN}, "
+        f"|w|,|mu|,|b| <= {_TWIN_ABS_MAX:g}, and a logit that spans no more than "
+        f"{2 * _TWIN_LOGIT_CLAMP:g} over [0,1]^5 with some input it would call not-a-twin")
+
+
+def twin_calibration_status() -> dict:
+    """Which twin-gate weights a fresh load would use, and why not the file's when not.
+
+    The fallback to the baked weights is announced once, at import, into `_EARLY_WARNINGS`
+    and from there into the hook's log - so an operator updating an install learns that a
+    note-RETIRING gate quietly changed by reading log tails, if at all. `doctor` prints this
+    instead. The verdict only: no weight, mean or deviation ever appears in the result.
+    """
+    fp = _twin_file_path()
+    present, vals, why = _twin_file_verdict(fp)
+    return {"path": str(fp), "present": present, "accepted": vals is not None,
+            "source": "file" if vals is not None else "baked",
+            "space": vals[0] if vals is not None else _TWIN_BAKED_SPACE,
+            "reason": why or "accepted"}
+
+
 def _load_twin_calibration() -> tuple:
     """(space, w, b, mu, sd) for the twin gate: the baked bge-m3 calibration unless a
     machine-local `twin_calibration.json` overrides it ($NEVERTWICE_TWIN_FILE, or next
@@ -1409,33 +1461,15 @@ def _load_twin_calibration() -> tuple:
     b = -3.057724
     mu = (0.621251, 0.196803, 0.183766, 0.095122, 0.88883)
     sd = (0.133751, 0.145667, 0.364025, 0.250373, 0.086981)
-    fp = Path(os.environ.get("NEVERTWICE_TWIN_FILE", "").strip()
-              or Path(__file__).resolve().parent / "twin_calibration.json")
-    try:
-        if fp.is_file():
-            d = json.loads(fp.read_text(encoding="utf-8"))
-            cw, cmu, csd = (tuple(float(x) for x in d[k]) for k in ("w", "mu", "sd"))
-            cb = float(d["b"])
-            cspace = str(d.get("space") or "").strip() or _TWIN_BAKED_SPACE
-            if (len(cw) == len(cmu) == len(csd) == 5
-                    and all(math.isfinite(v) for v in (*cw, *cmu, *csd, cb))
-                    and all(v >= _TWIN_SD_MIN for v in csd)
-                    and all(abs(v) <= _TWIN_ABS_MAX for v in (*cw, *cmu, cb))
-                    and _twin_calibration_usable(cw, cb, cmu, csd)):
-                space, w, b, mu, sd, from_file = cspace, cw, cb, cmu, csd, True
-            else:
-                _EARLY_WARNINGS.append(
-                    f"twin_calibration.json out of bounds ({fp}) - using baked "
-                    f"{_TWIN_BAKED_SPACE} weights (need 5 finite w/mu/sd, "
-                    f"sd >= {_TWIN_SD_MIN}, |w|,|mu|,|b| <= {_TWIN_ABS_MAX:g}, and a logit "
-                    f"that spans no more than {2 * _TWIN_LOGIT_CLAMP:g} over [0,1]^5 with "
-                    f"some input it would call not-a-twin)")
-    except (OSError, ValueError, KeyError, TypeError) as e:
+    present, vals, why = _twin_file_verdict(_twin_file_path())
+    if vals is not None:
+        space, w, b, mu, sd, from_file = (*vals, True)
+    elif present:
         # _EARLY_WARNINGS, not log(): this runs at IMPORT, and log() mkdirs the store -
         # a read-only consumer (install.py --print) must not materialize a vault as a
-        # side effect of a half-written calibration file (review 2026-08-24).
-        _EARLY_WARNINGS.append(f"twin_calibration.json unreadable ({fp}): "
-                               f"{type(e).__name__}: {e} - using baked "
+        # side effect of a half-written calibration file (review 2026-08-24). One line in a
+        # log is also the whole reason `twin_calibration_status` exists: see it there.
+        _EARLY_WARNINGS.append(f"twin_calibration.json {why} - using baked "
                                f"{_TWIN_BAKED_SPACE} weights")
     env_space = os.environ.get("NEVERTWICE_TWIN_SPACE", "").strip()
     if env_space and env_space != space:
