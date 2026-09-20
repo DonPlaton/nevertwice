@@ -120,24 +120,64 @@ _small = "a/b.c-d" * 1700          # ~12 kB of ordinary path-like text, no colon
 _big = "a/b.c-d" * 6800            # ~48 kB of the same
 
 
+def _cost(fn) -> float:
+    """Seconds per call: the cheapest of five runs of enough calls to clear the timer.
+
+    A single `perf_counter` pair measures the machine as much as the code, and the gate below
+    leaves only TWO times of headroom by construction - the input is four times bigger and the
+    bound is eight, so a correctly LINEAR scan sits at exactly 8/4. One scheduler pause that
+    doubles either half therefore fails a linear pattern. Measured on this tree: fifteen of the
+    eighteen patterns had less than four times of headroom, and the whole harvest 2.07x. The
+    comment above says the ratio holds "on any machine, at any load"; two times is not any
+    load, and this suite failed once in a full battery with two others running beside it
+    (2026-09-21, not reproduced).
+
+    The minimum is the run that was interrupted least. It cannot be faster than the true cost,
+    so it does not weaken the assertion - it removes the noise that was being asserted about.
+    Repeating the call until the pair spans a millisecond is what lets the floor below drop
+    from 1e-4 to 1e-6. At 1e-4, five of the eighteen small measurements came in underneath it,
+    and the floor silently replaced the RATIO this block is about with an absolute bound of
+    0.8 ms - handing those five between four and eighty-five times of headroom that was not a
+    measurement of anything. Measured with the floor at 1e-6: every pattern's true b/a is
+    between 3.0 and 4.2, i.e. linear, and the thinnest headroom is 1.90x, so the tighter floor
+    reddens nothing and every pattern is judged by its ratio. A floor is still there because a
+    measurement of exactly zero must not divide.
+    """
+    n = 1
+    while True:
+        t0 = time.perf_counter()
+        for _ in range(n):
+            fn()
+        span = time.perf_counter() - t0
+        if span >= 0.001 or n >= 512:
+            break
+        n *= 8
+    best = span / n
+    for _ in range(4):
+        t0 = time.perf_counter()
+        for _ in range(n):
+            fn()
+        best = min(best, (time.perf_counter() - t0) / n)
+    return best
+
+
 def _harvest_cost(src: str) -> float:
-    t0 = time.perf_counter()
-    m._harvest_literals(src, "a build note about paths", want=10, exclude=set())
-    return time.perf_counter() - t0
+    return _cost(lambda: m._harvest_literals(src, "a build note about paths",
+                                             want=10, exclude=set()))
 
 
 _t_small, _t_big = _harvest_cost(_small), _harvest_cost(_big)
 check("four times the text costs less than eight times the work"
-      f" ({_t_small:.3f}s -> {_t_big:.3f}s)", _t_big < 8 * max(_t_small, 1e-4))
+      f" ({_t_small:.3f}s -> {_t_big:.3f}s)", _t_big < 8 * max(_t_small, 1e-6))
 check(f"and 48 kB of it stays under a second ({_t_big:.3f}s)", _t_big < 1.0)
 
 # The rule for every pattern, so the next one added cannot be quadratic either.
 _slow = []
 for _rx in m._LIT_PATTERNS:
-    _a = time.perf_counter(); _rx.findall(_small); _a = time.perf_counter() - _a
-    _b = time.perf_counter(); _rx.findall(_big); _b = time.perf_counter() - _b
-    if _b > 8 * max(_a, 1e-4):
-        _slow.append(f"{_rx.pattern[:40]} {_a:.3f}->{_b:.3f}")
+    _a = _cost(lambda rx=_rx: rx.findall(_small))
+    _b = _cost(lambda rx=_rx: rx.findall(_big))
+    if _b > 8 * max(_a, 1e-6):
+        _slow.append(f"{_rx.pattern[:40]} {_a:.4f}->{_b:.4f}")
 check("no literal pattern is superlinear: " + "; ".join(_slow[:3]), not _slow)
 
 # And it still finds what it exists for.
