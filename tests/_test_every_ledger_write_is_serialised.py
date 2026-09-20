@@ -119,6 +119,113 @@ under_lock("inbox.approve(promote)",
            lambda: IB.approve("gA", session_id="s1", promote=True, reason="operator"),
            lambda after: after["gA"]["status"] == "blocking")
 
+print("# a generating pass does not overwrite decisions made while it ran")
+# `generate_from_vault` loads the ledger, spends up to ~33 s per mistake in the model, and then
+# saves its own snapshot whole. Its window is therefore the WHOLE loop - 6105 s for a
+# 185-mistake backlog - and every decision recorded inside it was overwritten on the way out.
+# This is the one writer for which "a concurrent change survives" IS the measurement: the
+# others re-load the ledger themselves, which is why that same assertion measured nothing when
+# this suite first tried it on them. `main()`'s `pack` has the same shape over a shorter window.
+for title in ("a repeated slip", "another repeated slip"):
+    m.write_typed_note("Mistakes", {"title": title, "description": "It happened twice.",
+                                    "prevention": "Do not do it again."},
+                       "demo", "2026-01-01", [], "mistake")
+
+minted: list[int] = []
+
+
+def _propose(note, use_llm=True):
+    """Stands in for the model call the pass spends its minutes in - the window a decision
+    arrives in."""
+    minted.append(1)
+    n = len(minted)
+    if n == 1:
+        G.feedback("gA", "accepted", session_id="s-during-the-pass")
+    return {"id": "gen" + str(n), "pattern": "zzz" + str(n), "message": "generated",
+            "scope": {"project": "demo"}, "status": "advisory",
+            "born_from": [note.get("stem", "")], "born_date": "2026-05-01",
+            "corroborations": 0, "fired": 0, "helped": 0, "false_positives": 0,
+            "seen_sessions": [], "overrides": []}
+
+
+seed()
+real_propose = G.propose_from_mistake
+G.propose_from_mistake = _propose
+try:
+    added = G.generate_from_vault(use_llm=False)
+finally:
+    G.propose_from_mistake = real_propose
+after = ledger()
+check("the pass adds the guards it generated", added == 2 and "gen1" in after and "gen2" in after,
+      str(sorted(after)))
+check("and the decision recorded while it ran survives the pass",
+      ((after.get("gA") or {}).get("outcomes") or {}).get("counts", {}).get("accepted") == 1,
+      json.dumps((after.get("gA") or {}).get("outcomes"), ensure_ascii=False))
+
+G.propose_from_mistake = _propose
+try:
+    under_lock("generate_from_vault",
+               lambda: G.generate_from_vault(use_llm=False),
+               lambda a: "gen3" in a or "gen4" in a)
+finally:
+    G.propose_from_mistake = real_propose
+
+def _cli_pack() -> None:
+    """`guards pack` installs the shipped pack into the LIVE ledger - a load-mutate-save with
+    no lock, like the pass above."""
+    argv = sys.argv[:]
+    sys.argv = ["guards", "pack"]
+    try:
+        G.main()
+    finally:
+        sys.argv = argv
+
+
+under_lock("guards pack", _cli_pack, lambda a: any(g.get("pack") for g in a.values()))
+
+print("# the door works from inside a lock this process already holds")
+# `consolidate --apply` runs the generating pass under the vault lock it took itself, and
+# `acquire_lock` is not reentrant: a writer that re-takes the lock from inside a holder spins
+# out its timeout and writes nothing, and a writer that releases on the way out hands the
+# caller's critical section to somebody else. The door has to notice it is already inside.
+seed()
+check("the lock is free before we take it", not _held_by_us())
+assert m.acquire_lock(timeout_s=10)
+try:
+    ok = G.persist_under_lock(lambda rows: bool(rows.append(
+        {"id": "gInside", "pattern": "i", "message": "written from inside", "scope": {},
+         "status": "advisory", "born_from": [], "born_date": "2026-05-01", "corroborations": 0,
+         "fired": 0, "helped": 0, "false_positives": 0, "seen_sessions": [],
+         "overrides": []}) or True), 5.0)
+    check("a write from inside the holder goes through", ok is True)
+    check("and the lock is still ours afterwards", _held_by_us())
+finally:
+    m.release_lock()
+check("the write landed", "gInside" in ledger())
+
+seed()
+G.propose_from_mistake = _propose
+assert m.acquire_lock(timeout_s=10)
+try:
+    added = G.generate_from_vault(use_llm=False)
+    check("the generating pass still writes under an outer lock (consolidate --apply)",
+          added > 0 and any(k.startswith("gen") for k in ledger()), str(sorted(ledger())))
+    check("and it did not release the outer lock", _held_by_us())
+finally:
+    m.release_lock()
+    G.propose_from_mistake = real_propose
+
+print("# a flat install without outcomes.py writes through the same door")
+seed()
+real_sibling = G._sibling
+G._sibling = lambda name: None if name == "outcomes" else real_sibling(name)
+try:
+    under_lock("feedback (legacy lifecycle)",
+               lambda: G.feedback("gA", "false_positive", session_id="s9", reason="noisy"),
+               lambda a: a["gA"]["false_positives"] == 1)
+finally:
+    G._sibling = real_sibling
+
 print("# a busy lock is reported, and nothing is written")
 real_acquire = m.acquire_lock
 m.acquire_lock = lambda *a, **k: False
@@ -136,6 +243,47 @@ try:
               json.dumps(G.load_guards(), sort_keys=True) == before)
 finally:
     m.acquire_lock = real_acquire
+
+print("# including the CLI, which is where a person reads the answer")
+# `guards feedback` called `feedback` bare. Once the lifecycle write became required, a busy
+# lock raised `LedgerBusy` out of the console script: a traceback where the two words that
+# matter are "nothing was recorded", and an exit code of 1 that says "crashed" rather than
+# "try again".
+import contextlib  # noqa: E402
+import io as _io  # noqa: E402
+
+
+def cli(*args) -> tuple[int, str, str]:
+    argv, out, err = sys.argv[:], _io.StringIO(), _io.StringIO()
+    sys.argv = ["guards", *args]
+    try:
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            code = G.main()
+    finally:
+        sys.argv = argv
+    return (code or 0), out.getvalue(), err.getvalue()
+
+
+for name, args in (("guards feedback", ("feedback", "gA", "accepted")),
+                   ("guards pack", ("pack",))):
+    seed()
+    before = json.dumps(G.load_guards(), sort_keys=True)
+    m.acquire_lock = lambda *a, **k: False
+    try:
+        code, out, err = cli(*args)
+    except Exception as exc:                                # noqa: BLE001 - that is the finding
+        check(name + ": a busy lock is an answer, not a traceback", False,
+              type(exc).__name__ + ": " + str(exc))
+        code, out, err = 0, "", ""
+    else:
+        check(name + ": a busy lock is an answer, not a traceback", True)
+    finally:
+        m.acquire_lock = real_acquire
+    check(name + ": it says nothing was recorded",
+          "busy" in (out + err).lower() and "not" in (out + err).lower(), repr(out + err))
+    check(name + ": and exits non-zero so a script can retry", code != 0, str(code))
+    check(name + ": and the ledger on disk is untouched",
+          json.dumps(G.load_guards(), sort_keys=True) == before)
 
 print("# and a human decision written into a note takes the same lock")
 m.write_typed_note("Mistakes", {"title": "a stale lesson", "description": "It was true once."},

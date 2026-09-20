@@ -493,7 +493,17 @@ def _legacy_feedback(g, outcome, session_id, reason, guards, persist):
         return g
     g["confidence"] = _confidence(g)
     if persist:
-        save_guards(guards)
+        gid = g["id"]
+
+        def _put_back(rows) -> bool:
+            target = _find(rows, gid)
+            if target is None:
+                return False
+            target.clear()
+            target.update(g)
+            return True
+
+        persist_under_lock(_put_back, LIFECYCLE_LOCK_S, required=True)
     return g
 
 
@@ -531,6 +541,9 @@ FORGET_LOCK_S = 15.0
 #: The lifecycle and the inbox: a human or an agent recording a decision, never the hot path.
 #: A lost write here is a lost decision, so these callers pass `required=True` and are told.
 LIFECYCLE_LOCK_S = 15.0
+#: The sleep-time generating pass and the CLI pack install: both merge a small set of new
+#: guards into whatever the ledger holds now, so a short wait is enough.
+GENERATE_LOCK_S = 15.0
 
 
 class LedgerBusy(RuntimeError):
@@ -554,8 +567,15 @@ def persist_under_lock(mutate, timeout_s: float, *, required: bool = False) -> b
     Returns False when the lock could not be taken in time, so the caller can say nothing was
     persisted rather than assume it was - or raises `LedgerBusy` when `required=True`, because a
     caller recording a DECISION must not report success for a write that never happened.
+
+    Reentrant, because `acquire_lock` is not: `consolidate --apply` takes the vault lock and then
+    runs writers that reach this door, and re-taking the lock against our own live pid can only
+    spin out the timeout and write nothing. When we already hold it we do the work in place and
+    leave the release to whoever opened the critical section - releasing here would hand it to
+    another process mid-pass.
     """
-    if not m.acquire_lock(timeout_s=timeout_s):
+    mine = not m.holds_lock()
+    if mine and not m.acquire_lock(timeout_s=timeout_s):
         m.log("guards ledger: vault lock busy, nothing persisted this call")
         if required:
             raise LedgerBusy("vault lock busy - nothing was recorded; another writer is active")
@@ -566,7 +586,8 @@ def persist_under_lock(mutate, timeout_s: float, *, required: bool = False) -> b
             save_guards(fresh)
         return True
     finally:
-        m.release_lock()
+        if mine:
+            m.release_lock()
 
 
 def record_fired(guard_ids, guards=None, persist=True, session=None) -> None:
@@ -765,6 +786,7 @@ def generate_from_vault(project=None, *, min_recurrence=1, limit=None, use_llm=T
     if limit:
         mistakes = mistakes[:limit]
     guards = load_guards()
+    known = {g["id"] for g in guards}
     added = 0
     if os.environ.get("NEVERTWICE_GUARD_PACK", "").strip() not in ("", "0", "false", "no"):
         added += ensure_universal_pack(guards)        # opt-in cold-start pack (weak-PC / no model)
@@ -781,7 +803,22 @@ def generate_from_vault(project=None, *, min_recurrence=1, limit=None, use_llm=T
         if register(guards, g):
             added += 1
     if added:
-        save_guards(guards)
+        # This pass loads the ledger, spends up to ~33 s per mistake in the model, and used to
+        # save its own snapshot whole - so its write window was the WHOLE loop (6105 s for a
+        # 185-mistake backlog) and every decision recorded inside it, a promotion or a retire
+        # or a delivery record, was overwritten on the way out. Merge only what this pass
+        # minted into a freshly loaded ledger instead; `register` dedups by id, so nothing
+        # this pass added is lost and nothing another writer recorded is.
+        minted = [g for g in guards if g["id"] not in known]
+
+        def _merge(rows) -> bool:
+            return sum(1 for g in minted if register(rows, g)) > 0
+
+        if not persist_under_lock(_merge, GENERATE_LOCK_S):
+            # Idempotent by construction: nothing was written, so say so rather than report a
+            # count that is only in memory. The next pass regenerates these from the notes.
+            m.log(f"guards: {added} generated but not persisted (vault lock busy)")
+            return 0
     return added
 
 
@@ -831,11 +868,19 @@ def main():
         print(len(_UNIVERSAL_GUARDS))
         return
     if cmd == "pack":
-        guards = load_guards()
-        n = ensure_universal_pack(guards)
-        if n:
-            save_guards(guards)
-        print(f"universal guard pack: {n} added, {len(_UNIVERSAL_GUARDS)} total "
+        # Report what LANDED, not what a snapshot would have added: the merge runs against the
+        # ledger as it is at write time, so another writer may have installed part of the pack
+        # between the two.
+        landed = [0]
+
+        def _install(rows) -> bool:
+            landed[0] = ensure_universal_pack(rows)
+            return landed[0] > 0
+
+        if not persist_under_lock(_install, GENERATE_LOCK_S):
+            print("vault lock busy - the pack was not installed; try again.", file=sys.stderr)
+            return 1
+        print(f"universal guard pack: {landed[0]} added, {len(_UNIVERSAL_GUARDS)} total "
               f"(advisory, global) → {_ledger_path()}")
         return
     if cmd == "check":
@@ -866,7 +911,14 @@ def main():
     elif cmd == "feedback":
         gid = argv[1] if len(argv) > 1 else ""
         outcome = argv[2] if len(argv) > 2 else ""
-        g = feedback(gid, outcome, reason=m.argval(argv, "reason"))
+        try:
+            g = feedback(gid, outcome, reason=m.argval(argv, "reason"))
+        except LedgerBusy as e:
+            # The lifecycle write is `required`, so a busy lock raises rather than let any
+            # surface report a decision that was not written. For a person at a terminal the
+            # answer is that sentence and an exit code to retry on - not a traceback.
+            print(f"vault lock busy - {gid} was NOT updated: {e}", file=sys.stderr)
+            return 1
         print(f"updated {gid}: status={g['status']} corroborations={g['corroborations']} "
               f"fp={g['false_positives']}" if g else f"no such guard: {gid}")
     elif cmd == "generate":

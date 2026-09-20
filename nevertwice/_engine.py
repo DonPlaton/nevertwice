@@ -1937,6 +1937,22 @@ def acquire_lock(timeout_s: float = 30) -> bool:
     return False
 
 
+def holds_lock() -> bool:
+    """Does THIS process hold the vault lock right now?
+
+    `acquire_lock` is not reentrant - it spins out its timeout against our own live pid - so a
+    writer reached from inside a holder (the guard-generating pass under `consolidate --apply`)
+    must take the lock only when it does not already have it, and must not release a critical
+    section it did not open. Strict on purpose: a missing or unreadable lock is not ours, unlike
+    `release_lock`/`refresh_lock`, which tolerate an empty file to stay compatible with a holder
+    that crashed between create and pid-write.
+    """
+    try:
+        return (_lock_file().read_text() or "").strip() == str(os.getpid())
+    except OSError:
+        return False
+
+
 def release_lock():
     lock = _lock_file()
     try:
