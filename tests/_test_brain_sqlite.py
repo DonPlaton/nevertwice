@@ -123,6 +123,40 @@ with tempfile.TemporaryDirectory() as td:
     check("and the graph is still the one the last good scan stamped", sx.graph_index_ready())
     check("a readable vault still builds", sx.build() >= 0)
 
+    # ── the sixth build() call is a reader, not a measurement ───────────────────
+    # search() self-migrates a stale-format index before _unpack reads it. Its guard named
+    # sqlite3.Error, which was the whole of build()'s failure surface while build() swallowed
+    # everything else; now that an unreadable vault is allowed out, that OSError would leave
+    # search() - a read path whose own comment promises the opposite: "If we can't migrate,
+    # skip the (garbage) semantic branch and let the format-independent FTS lexical fallback
+    # answer". Nothing is written here and the failed build already rolled itself back, so the
+    # only thing a narrow guard buys is a crash in the CLI instead of an answer.
+    print("a self-migration that cannot read the vault falls back instead of crashing the reader")
+    con = sx._connect()
+    sx._create_schema(con)
+    con.execute("INSERT OR REPLACE INTO meta(key, value) VALUES('vec_format', 'ancient')")
+    con.commit()
+    con.close()
+    check("the index is present and its format is stale",
+          sx.index_exists() and sx.index_meta().get("vec_format") != sx.VEC_FORMAT)
+    real_cache = m.load_embed_cache
+    m.load_embed_cache = lambda *a, **k: {"a-note": [0.0, 1.0]}   # migration is worth trying
+    m._iter_all_notes = _unreadable
+    hits = mode = None
+    raised = None
+    try:
+        hits, mode = sx.search("resnet")
+    except Exception as exc:                          # noqa: BLE001 - that is the check
+        raised = exc
+    finally:
+        m._iter_all_notes = real_iter
+        m.load_embed_cache = real_cache
+    check("search answers instead of raising", raised is None)
+    check("and the answer comes from the format-independent lexical path",
+          str(mode).startswith("lexical"))
+    check("the stale format is still stale, so nothing was stamped on the way out",
+          sx.index_meta().get("vec_format") != sx.VEC_FORMAT)
+
     # ── scale smoke-test (5000 synthetic notes) ─────────────────────────────────
     print("scale (5000 synthetic notes)")
     big = [{"stem": f"2026-06-01-proj{i % 10}-pattern-syn-{i}", "project": f"proj{i % 10}",

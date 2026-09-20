@@ -397,8 +397,11 @@ def reindex_graph(metas: list | None = None, full: bool = False) -> int:
     """(Re)build the entity/relation graph tables from note frontmatter (the truth).
     metas=None → FULL scan of every live note (clears + repopulates). metas given + full=True →
     FULL rebuild from the GIVEN notes (lets build() reuse its single vault scan). metas given +
-    full=False → incremental (replace rows for just those stems). Derived & rebuildable - any
-    failure is logged and swallowed, leaving the markdown scan as the correct fallback. Returns
+    full=False → incremental (replace rows for just those stems). Derived & rebuildable - a
+    SQLITE failure is logged and swallowed, leaving the markdown scan as the correct fallback.
+    A metas=None scan that cannot read the vault is NOT swallowed: it happens before the first
+    DELETE, so letting it out costs nothing and hides nothing, where swallowing it would hand
+    the rebuild an empty store to be authoritative about (the defect build() carried). Returns
     rows written."""
     con = _connect()
     try:
@@ -657,8 +660,14 @@ def search(query: str, project: str | None = None, k: int = 10):
         try:
             build()
             stale = False
-        except sqlite3.Error as e:     # a concurrent writer past busy_timeout must not
-            print(f"[index] migrate skipped ({e}) - lexical fallback", file=sys.stderr)
+        except Exception as e:         # noqa: BLE001 - a concurrent writer past busy_timeout,
+            # an unreadable vault, a full disk: this is an opportunistic READ-path migration,
+            # it writes nothing (the failed build rolled its own transaction back) and the
+            # fallback below is format-independent. Naming sqlite3.Error here only worked
+            # while build() swallowed everything else; it turned every other failure into a
+            # crash in the caller instead of the answer this branch exists to give.
+            print(f"[index] migrate skipped ({type(e).__name__}: {e}) - lexical fallback",
+                  file=sys.stderr)
     # project= so the local-only privacy gate applies to the query text too (a cloud
     # embed provider must never see a local-only project's queries).
     qvec = (m.embed_text(query, kind=m.query_embed_kind(), project=project)

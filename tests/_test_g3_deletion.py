@@ -116,23 +116,70 @@ def _is_digest(value: object) -> bool:
             and all(c in "0123456789abcdef" for c in value))
 
 
-def _digests_this_seal_ever_recorded() -> dict[str, set[str]]:
-    """Every digest any COMMITTED version of the seal has held, per frozen file.
+def _seal_history() -> list[dict]:
+    """Every COMMITTED version of the seal, oldest first."""
+    revs = _git("log", "--format=%H", "--", SEAL_REL).decode().split()
+    return [json.loads(_git("show", rev + ":" + SEAL_REL).decode("utf-8"))
+            for rev in reversed(revs)]
+
+
+def _digests_available_to(entry: dict, history: list[dict]) -> set[str]:
+    """Digests the seal is allowed to say this amendment replaced.
 
     The `from` at the head of a file's amendment chain has nothing in the current seal to
     link it to, so it is the one digest a fabricated entry could name freely. History knows:
     the seal is a tracked file, and a digest no revision of it ever recorded was never
     replaced by anything.
     """
-    ever: dict[str, set[str]] = {}
-    for rev in _git("log", "--format=%H", "--", SEAL_REL).decode().split():
-        old = json.loads(_git("show", rev + ":" + SEAL_REL).decode("utf-8"))
-        for name, digest in (old.get("frozen_code") or {}).items():
-            ever.setdefault(name, set()).add(digest)
-        for entry in old.get("amendments") or []:
-            ever.setdefault(str(entry.get("file")), set()).update(
-                {entry.get("from"), entry.get("to")})
-    return ever
+    name = str(entry.get("file"))
+    written = (name, entry.get("from"), entry.get("to"))
+    available: set[str] = set()
+    for doc in history:
+        if any((str(o.get("file")), o.get("from"), o.get("to")) == written
+               for o in doc.get("amendments") or []):
+            break                     # from here on the entry is its own evidence
+        digest = (doc.get("frozen_code") or {}).get(name)
+        if digest:
+            available.add(digest)
+    return available
+
+
+#: What a `from` may be measured against - stated as fixtures, because the answer is not
+#: obvious and the wrong answer is invisible. A seal revision carries BOTH the freeze and the
+#: amendments, so reading the amendments of every revision lets a forged entry witness itself
+#: the moment it is committed: red in the worktree, green one commit later, with its own
+#: revision as its only evidence. A digest is confirmed by what the FREEZE recorded before the
+#: entry claiming to replace it was written, and by nothing else.
+A, B, C = "a" * 64, "b" * 64, "c" * 64
+
+
+def _rev(frozen: str, *amendments: tuple[str, str]) -> dict:
+    return {"frozen_code": {"f.py": frozen},
+            "amendments": [{"file": "f.py", "from": f, "to": t} for f, t in amendments]}
+
+
+HEAD_FIXTURES: tuple[tuple[str, dict, list[dict], bool], ...] = (
+    ("a digest the freeze recorded before the amendment was written",
+     {"file": "f.py", "from": A, "to": B}, [_rev(A), _rev(B, (A, B))], True),
+    ("a digest whose only witness is the revision that carries the amendment",
+     {"file": "f.py", "from": C, "to": B}, [_rev(A), _rev(B, (C, B))], False),
+    ("a revert, whose head is a value the freeze held two revisions ago",
+     {"file": "f.py", "from": A, "to": B}, [_rev(A), _rev(B, (A, B)), _rev(A, (A, B), (B, A))],
+     True),
+    ("an uncommitted forgery, judged against the whole committed history",
+     {"file": "f.py", "from": C, "to": B}, [_rev(A), _rev(B, (A, B))], False),
+    ("a head the freeze never recorded for this file, whatever it held for another",
+     {"file": "f.py", "from": A, "to": B},
+     [{"frozen_code": {"g.py": A}}, _rev(B, (A, B))], False),
+)
+
+
+def test_a_from_is_confirmed_by_the_freeze_and_not_by_its_own_entry() -> None:
+    print("\n- what a replaced digest may be measured against -")
+    for label, entry, history, admissible in HEAD_FIXTURES:
+        got = entry.get("from") in _digests_available_to(entry, history)
+        check(("accepted: " if admissible else "refused: ") + label, got is admissible,
+              "accepted" if got else "refused")
 
 
 def test_every_amendment_answers_to_the_files_and_not_to_itself() -> None:
@@ -145,8 +192,11 @@ def test_every_amendment_answers_to_the_files_and_not_to_itself() -> None:
     Four properties are measurable, so they are measured:
 
       * the chain - each amendment's `from` is the previous amendment's `to` for that file;
-      * the head of the chain - the first `from` for a file is a digest some committed version
-        of this seal really held, which is what makes an invented one visible;
+      * the head of the chain - the first `from` for a file is a digest the FREEZE recorded
+        before this entry was written, which is what makes an invented one visible. Not "any
+        digest any revision ever mentions": a revision carries the freeze and the amendments
+        together, so reading the amendments too lets a forged entry witness itself the moment
+        it is committed - red in the worktree, green one commit later, on its own evidence;
       * the end of the chain - the last `to` is what `frozen_code` now records;
       * portability - `frozen_code` is the sha256 of the bytes GIT holds, not of a worktree
         copy. That is not academic: 23 of these 29 digests were the hash of a CRLF worktree,
@@ -166,6 +216,12 @@ def test_every_amendment_answers_to_the_files_and_not_to_itself() -> None:
     check("every recorded digest is a sha256 rather than a sentence", not malformed,
           str(malformed))
 
+    # An amendment records that the frozen bytes changed. `from == to` records that they did
+    # not, and the head rule above would accept it - the freeze really did hold that digest
+    # before the entry was written. There is no edit it could describe, so it is malformed.
+    inert = [str(e.get("file")) for e in amendments if e.get("from") == e.get("to")]
+    check("and no amendment claims to replace a digest with itself", not inert, str(inert))
+
     chains: dict[str, list[dict]] = {}
     for entry in amendments:
         chains.setdefault(str(entry.get("file")), []).append(entry)
@@ -175,9 +231,9 @@ def test_every_amendment_answers_to_the_files_and_not_to_itself() -> None:
     check("each amendment starts where the previous one for that file ended", not broken,
           str(broken))
 
-    ever = _digests_this_seal_ever_recorded()
+    history = _seal_history()
     invented = [name for name, chain in sorted(chains.items())
-                if chain[0].get("from") not in ever.get(name, set())]
+                if chain[0].get("from") not in _digests_available_to(chain[0], history)]
     check("and the first one replaces a digest this seal really held", not invented,
           str(invented))
 
@@ -214,7 +270,8 @@ def main() -> int:
                test_no_mechanism_module_moved_into_the_package,
                test_the_verdict_is_written_down_and_says_no_go,
                test_the_seal_records_what_was_frozen_and_every_amendment,
-               test_every_amendment_answers_to_the_files_and_not_to_itself):
+               test_every_amendment_answers_to_the_files_and_not_to_itself,
+               test_a_from_is_confirmed_by_the_freeze_and_not_by_its_own_entry):
         fn()
     print("\nG3, the deletion pinned: " + str(PASSED) + " passed, "
           + str(FAILED) + " failed")
