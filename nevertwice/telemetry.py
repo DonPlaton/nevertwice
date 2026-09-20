@@ -30,6 +30,7 @@ Standard library only.
 from __future__ import annotations
 
 import argparse
+import functools
 import json
 import sys
 import time
@@ -106,18 +107,81 @@ def _blank() -> dict:
     }
 
 
+def _best_effort(fallback=None):
+    """This module's own sentence as a mechanism: a failure here must never affect recall.
+
+    It was being kept by the three callers on the hot path, each with its own try/except - so
+    a fourth caller would get nothing, and `main()`, which calls both refreshers, was getting
+    nothing already. The sentence belongs in the module that states it.
+
+    `fallback` is what a refresher returns when it could not measure, so a caller indexing the
+    result still finds the section it asked for instead of `None`.
+    """
+    def wrap(fn):
+        @functools.wraps(fn)
+        def guarded(*args, **kwargs):
+            try:
+                return fn(*args, **kwargs)
+            except Exception:   # noqa: BLE001 - best-effort by contract, stated above
+                return fallback() if callable(fallback) else fallback
+        return guarded
+    return wrap
+
+
+def _shaped(value, blank):
+    """`value` when it is the same KIND of thing as `blank`, otherwise `blank`.
+
+    `setdefault` fills a MISSING key and cannot repair a present one that holds the wrong
+    type - and a telemetry.json that parses as JSON with `search_latency: []` in it survived
+    `load()` and raised out of the recorder that indexed into it. Recursion is into the
+    blank's own keys only, because `by_reason` and `intervention_outcomes` hold reason and
+    outcome names this function has no list of. A blank value of `None` is a leaf whose type
+    legitimately varies (`last_session` is a string or None), so anything is accepted there.
+    """
+    if blank is None:
+        return value
+    if isinstance(blank, dict):
+        if not isinstance(value, dict):
+            return dict(blank)
+        return {**value, **{k: _shaped(value.get(k, b), b) for k, b in blank.items()}}
+    if isinstance(blank, bool) or not isinstance(value, type(blank)) or isinstance(value, bool):
+        return blank if not isinstance(value, type(blank)) else value
+    return value
+
+
+def _numbers(values) -> list:
+    """Latency samples, keeping only the ones that are measurements.
+
+    A `samples` of `"nope"` is a list by the shape rule once it is one, and iterating a string
+    turned four characters into four "measurements" - no exception, and percentiles computed
+    over letters. Silent is worse than loud here.
+    """
+    return [v for v in (values if isinstance(values, list) else [])
+            if isinstance(v, (int, float)) and not isinstance(v, bool)]
+
+
+def _counts(mapping) -> dict:
+    """A counter section, keeping only entries that are counts."""
+    return {k: v for k, v in (mapping or {}).items()
+            if isinstance(v, int) and not isinstance(v, bool)} if isinstance(mapping, dict) else {}
+
+
+@_best_effort(_blank)
 def load() -> dict:
     """The ledger, or a blank one. Never raises: telemetry that can break the hook is worse
-    than no telemetry."""
+    than no telemetry. A section of the wrong SHAPE is replaced by the blank one rather than
+    inherited, so recording continues instead of being lost until someone deletes the file."""
     try:
         data = m._load_json_generations(_path(), "telemetry")
     except Exception:           # noqa: BLE001 - see above
         data = None
     if not isinstance(data, dict):
         return _blank()
-    blank = _blank()
-    for key, value in blank.items():
-        data.setdefault(key, value)
+    data = _shaped(data, _blank())
+    data["search_latency"]["samples"] = _numbers(data["search_latency"].get("samples"))
+    data["extraction_failures"]["by_reason"] = _counts(
+        data["extraction_failures"].get("by_reason"))
+    data["intervention_outcomes"] = _counts(data["intervention_outcomes"])
     return data
 
 
@@ -131,6 +195,7 @@ def _save(data: dict) -> None:
 
 # ── recording ───────────────────────────────────────────────────────────
 
+@_best_effort()
 def record_search(ms: float) -> None:
     """One search's latency. Kept as a bounded sample so percentiles stay meaningful.
 
@@ -154,6 +219,7 @@ def record_search(ms: float) -> None:
     _save(data)
 
 
+@_best_effort()
 def record_extraction_failure(reason: str) -> None:
     """One extraction that produced nothing usable, and why.
 
@@ -168,6 +234,7 @@ def record_extraction_failure(reason: str) -> None:
     _save(data)
 
 
+@_best_effort()
 def record_outcome(outcome: str) -> None:
     """One intervention outcome, using D4's vocabulary and only D4's vocabulary.
 
@@ -183,6 +250,7 @@ def record_outcome(outcome: str) -> None:
     _save(data)
 
 
+@_best_effort(lambda: _blank()["capture_lag"])
 def refresh_capture_lag(now: float | None = None) -> dict:
     """How far behind the newest note is from the newest session.
 
@@ -210,6 +278,7 @@ def refresh_capture_lag(now: float | None = None) -> dict:
     return data["capture_lag"]
 
 
+@_best_effort(lambda: _blank()["store_size"])
 def refresh_store_size() -> dict:
     """Notes, bytes and projects. The slowest counter, and the one that answers 'still growing'."""
     notes = bytes_ = 0

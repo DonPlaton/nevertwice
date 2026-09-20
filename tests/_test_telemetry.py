@@ -89,9 +89,12 @@ def test_the_module_contains_no_transport() -> None:
             if name in ("import_module", "__import__"):
                 dynamic.append(name)
     check("it performs no dynamic import", not dynamic, str(dynamic))
+    # An allowlist, not a count: the point is that a reader can check every name here in one
+    # sitting and see that none of them can send. `functools` earns its place by holding the
+    # `_best_effort` decorator that keeps this module's "never affects recall" contract.
     check("its imports are a small, readable set",
-          imported <= {"__future__", "argparse", "json", "sys", "time", "datetime",
-                       "pathlib", "memory_hook", "outcomes"}, str(sorted(imported)))
+          imported <= {"__future__", "argparse", "functools", "json", "sys", "time",
+                       "datetime", "pathlib", "memory_hook", "outcomes"}, str(sorted(imported)))
 
     text = MODULE.read_text(encoding="utf-8")
     check("and it says so where a reader will see it",
@@ -326,6 +329,106 @@ def test_recording_never_breaks_the_caller() -> None:
     check("a corrupt ledger yields a blank snapshot rather than an exception", ok, str(snap))
 
 
+def test_a_ledger_of_the_right_shape_is_not_the_same_as_valid_json() -> None:
+    """The uncovered half of "never raises": a file that PARSES but holds the wrong types.
+
+    `load()` filled missing keys with `setdefault`, which cannot repair a key that is present
+    and wrong - and every recorder then indexed into it. A `search_latency` that is a list,
+    a `by_reason` that is a string, an `intervention_outcomes` that is a number: each is
+    valid JSON, survives `load()`, and raises out of the recorder. The three hot-path callers
+    each wrap the call in their own try/except, so the contract this module states in its own
+    docstring was being kept by three other files - and `main()`, which calls the two
+    refreshers unguarded, was keeping it nowhere.
+
+    A corrupt SECTION is replaced by the blank one, so recording continues rather than being
+    lost until someone deletes the file by hand.
+    """
+    print("\n- a wrong type is not a missing key -")
+    path = T._path()
+    corrupt = [
+        ("search_latency is a list", {"search_latency": []}, T.record_search, 12.5),
+        ("extraction_failures is a number", {"extraction_failures": 7},
+         T.record_extraction_failure, "no_extraction"),
+        ("by_reason is a string", {"extraction_failures": {"total": 1, "by_reason": "x"}},
+         T.record_extraction_failure, "no_extraction"),
+        ("intervention_outcomes is a list", {"intervention_outcomes": []},
+         T.record_outcome, "accepted"),
+    ]
+    for label, broken, call, arg in corrupt:
+        path.write_text(json.dumps({**T._blank(), **broken}), encoding="utf-8", newline="")
+        try:
+            call(arg)
+            raised = ""
+        except Exception as exc:                # noqa: BLE001 - the finding
+            raised = f"{type(exc).__name__}: {exc}"
+        check(f"{label}: the recorder does not raise", not raised, raised)
+
+    # ... and the record still lands, rather than being lost until the file is deleted.
+    path.write_text(json.dumps({**T._blank(), "search_latency": []}), encoding="utf-8",
+                    newline="")
+    try:
+        T.record_search(42.0)
+        bucket = T.load()["search_latency"]
+        landed = isinstance(bucket, dict) and bucket.get("count") == 1
+        detail = json.dumps(bucket)
+    except Exception as exc:                    # noqa: BLE001 - reported, not raised
+        landed, detail = False, f"{type(exc).__name__}: {exc}"
+    check("and the measurement is recorded into the repaired section", landed, detail)
+
+    # A section of the right kind but the wrong CONTENT is repaired too: a string `samples`
+    # iterates into one-character "measurements" without raising, which is worse than raising.
+    path.write_text(json.dumps({**T._blank(),
+                                "search_latency": {"samples": "nope", "count": 0}}),
+                    encoding="utf-8", newline="")
+    try:
+        T.record_search(7.5)
+        samples = T.load()["search_latency"].get("samples")
+        clean = isinstance(samples, list) and all(isinstance(x, (int, float)) for x in samples)
+        detail = repr(samples)
+    except Exception as exc:                    # noqa: BLE001
+        clean, detail = False, f"{type(exc).__name__}: {exc}"
+    check("a string where the samples belong does not become measurements", clean, detail)
+
+    # The two refreshers run from `main()` with no guard of their own.
+    for name in ("refresh_capture_lag", "refresh_store_size"):
+        path.write_text(json.dumps({**T._blank(), "capture_lag": 3, "store_size": "big"}),
+                        encoding="utf-8", newline="")
+        try:
+            out = getattr(T, name)()
+            raised = "" if isinstance(out, dict) else f"returned {type(out).__name__}"
+        except Exception as exc:                # noqa: BLE001
+            raised = f"{type(exc).__name__}: {exc}"
+        check(f"{name} survives a corrupt section", not raised, raised)
+
+
+def test_the_contract_is_in_the_module_that_states_it() -> None:
+    """Every public recorder carries the guard, read off the AST rather than promised.
+
+    The three callers on the hot path each wrap their call; a fourth caller would get nothing,
+    and the module is where the sentence "a failure here must never affect recall" is written.
+    """
+    src = (ROOT / "nevertwice" / "telemetry.py").read_text(encoding="utf-8")
+    tree = ast.parse(src)
+    unguarded = []
+    for node in tree.body:
+        if not isinstance(node, ast.FunctionDef):
+            continue
+        if not (node.name.startswith("record_") or node.name.startswith("refresh_")):
+            continue
+        def _root(d):                       # @x, @a.x and @x(...) all name x
+            d = d.func if isinstance(d, ast.Call) else d
+            return getattr(d, "id", getattr(d, "attr", ""))
+
+        decorated = any(_root(d) == "_best_effort" for d in node.decorator_list)
+        wholly_tried = len(node.body) and isinstance(node.body[-1], ast.Try)
+        if not decorated and not wholly_tried:
+            unguarded.append(node.name)
+    check("every public recorder carries the contract: " + ", ".join(unguarded), not unguarded)
+    check("and there are recorders to carry it",
+          len([n for n in tree.body if isinstance(n, ast.FunctionDef)
+               and (n.name.startswith("record_") or n.name.startswith("refresh_"))]) == 5)
+
+
 def test_zz_every_check_passed() -> None:
     """Bare pytest must reach the same verdict as this suite's exit code.
 
@@ -344,7 +447,9 @@ def main() -> int:
                test_capture_lag_is_the_counter_that_would_have_shown_the_stall,
                test_store_size_is_measured_from_the_store,
                test_the_export_is_documented_and_carries_nothing_private,
-               test_recording_never_breaks_the_caller):
+               test_recording_never_breaks_the_caller,
+               test_a_ledger_of_the_right_shape_is_not_the_same_as_valid_json,
+               test_the_contract_is_in_the_module_that_states_it):
         fn()
     print(f"\ntelemetry: {PASSED} passed, {FAILED} failed")
     return 1 if FAILED else 0
