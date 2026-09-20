@@ -111,7 +111,10 @@ def search_core(query: str, project: str | None = None, k: int = 10,
     CLI and the MCP server (I-8) so both rank identically and stay DRY. The same fusion the
     hook injection path uses; NEVERTWICE_FUSION=rrf restores the legacy semantic-primary path.
 
-    Two opt-in rerankers over an over-fetched candidate pool, both off by default:
+    Two opt-in rerankers over an over-fetched candidate pool. `rerank` is off by default;
+    `xrerank` resolves through `reranker_ce.enabled()`, which is off until the weights are
+    cached and on by itself afterwards - so "both off by default" was true only of a
+    machine that had never run it:
     - xrerank (NEVERTWICE_XRERANK=1): a trained cross-encoder (bge-reranker-v2-m3) -
       the measured precision win (LongMemEval R@1 0.55→0.61, MRR +0.06). Local GPU,
       needs the [reranker] extra. Takes precedence when both are set.

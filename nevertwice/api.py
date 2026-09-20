@@ -60,12 +60,20 @@ import emit as _emit
 
 
 def recall(query: str, project: str | None = None, k: int = 5,
-           *, rerank: bool = False, expand_relations: bool = False,
-           max_expand: int = 5) -> list[dict]:
+           *, rerank: bool = False, xrerank: bool | None = None,
+           expand_relations: bool = False, max_expand: int = 5) -> list[dict]:
     """Rank memory notes for `query`. Returns a list of dicts with keys:
     `score, ntype, project, title, stem, description, prevention`. Empty list
     when nothing is embedded or matches. Semantic (embedding cosine) with a GPU-free
     lexical fallback when Ollama is busy; `rerank=True` adds an opt-in cloud rerank.
+
+    There are TWO rerankers and only one of them is off by default. `xrerank` is the trained
+    cross-encoder (bge-reranker-v2-m3): left as None it resolves through `reranker_ce.enabled()`,
+    which is OFF until the weights are cached and ON by itself afterwards - deliberate, so one
+    `NEVERTWICE_XRERANK=1` run keeps paying off, and the reason this parameter exists is that
+    the docstring used to offer one opt-in reranker while a second could already be reordering
+    the caller's results with no way to say no. Pass `xrerank=False` to refuse it, True to
+    require it; it takes precedence over `rerank` when both are on.
 
     `expand_relations=True` is relation-aware retrieval (Phase 2b): after the direct
     hits, it appends up to `max_expand` graph-connected lessons reached by the hits'
@@ -74,7 +82,7 @@ def recall(query: str, project: str | None = None, k: int = 5,
     if not query or not query.strip():
         return []
     started = time.perf_counter()
-    results, _mode = _search.search_core(query, project, k, rerank=rerank)
+    results, _mode = _search.search_core(query, project, k, rerank=rerank, xrerank=xrerank)
     if expand_relations and results:
         results = results + m.relation_expand(results, project, max_add=max_expand)
     # `search_latency` had no caller, so its percentiles were computed over an empty sample for

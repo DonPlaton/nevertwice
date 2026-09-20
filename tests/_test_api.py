@@ -55,7 +55,7 @@ def test_recall_passes_args_and_returns_results():
     with mock.patch.object(ms, "search_core", fake):
         out = api.recall("hello", "proj", 3, rerank=True)
     assert out == [{"title": "X", "score": 0.9}]
-    fake.assert_called_once_with("hello", "proj", 3, rerank=True)
+    fake.assert_called_once_with("hello", "proj", 3, rerank=True, xrerank=None)
 
 
 # ── remember ────────────────────────────────────────────────────────────────────
@@ -268,6 +268,37 @@ def test_remember_is_recallable_with_no_embedder():
         assert hits and any("CUDA OOM" in (h.get("title") or "") for h in hits), \
             f"note invisible to recall on a no-embedder box: {hits!r}"
         assert all((h.get("score") or 0) > 0 for h in hits), f"zero-score hit: {hits!r}"
+
+
+def test_recall_says_which_rerankers_can_run_and_lets_the_caller_say_no():
+    """The docstring offered one opt-in reranker. A second one turns itself on.
+
+    `search_core(xrerank=None)` resolves to `reranker_ce.enabled()`, which is ON by default once
+    the 2 GB cross-encoder is cached - by design, so one deliberate run keeps paying off. But
+    `recall()` documented only "`rerank=True` adds an opt-in cloud rerank", and had no parameter
+    for the other one, so an API caller could neither learn that a cross-encoder was reordering
+    their results nor stop it.
+    """
+    seen = {}
+    real = api._search.search_core
+
+    def spy(query, project=None, k=5, **kw):
+        seen.update(kw)
+        return [], "stub"
+
+    api._search.search_core = spy
+    try:
+        api.recall("a query")
+        assert "xrerank" in seen, f"recall does not pass xrerank at all: {seen}"
+        assert seen["xrerank"] is None, f"default must leave the switch to resolve: {seen}"
+        api.recall("a query", xrerank=False)
+        assert seen["xrerank"] is False, f"an explicit refusal must reach search_core: {seen}"
+    finally:
+        api._search.search_core = real
+
+    doc = api.recall.__doc__ or ""
+    assert "cross-encoder" in doc, "the docstring does not mention the reranker that self-enables"
+    assert "xrerank" in doc, "the docstring does not name the parameter that turns it off"
 
 
 if __name__ == "__main__":
