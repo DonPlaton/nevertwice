@@ -19,6 +19,7 @@ ROOT = HERE.parent
 sys.path.insert(0, str(HERE))
 
 import _env_guard  # noqa: F401,E402  hermetic: scrub store env before any project import
+from _untracked import Gate  # noqa: E402  an untracked artifact is abstained, never failed
 
 ART = ROOT / "research" / "embed_universal" / "heldout" / "capacity_sweep.json"
 THRESHOLD = ROOT / "research" / "EMBED_M5_THRESHOLD.md"
@@ -29,6 +30,17 @@ ARMS = ("r1", "r4", "r16", "r64")
 
 PASSED = 0
 FAILED = 0
+
+
+#: The shipped embedder's weights are gigabytes and deliberately not in git
+#: (`research/embed_universal/models/.gitignore`), so the directory exists on the machine that
+#: trained them and nowhere else. Asserting on it there and FAILING everywhere else would claim
+#: the property was tested and does not hold, when it was not testable; skipping would report
+#: green for having done nothing. The abstention is loud and counted instead - see _untracked.py.
+_MODELS_GATE = Gate("the trained embedder",
+                    ROOT / "research" / "embed_universal" / "models" / "universal_v1_merged",
+                    "gigabytes of weights, ignored by "
+                    "research/embed_universal/models/.gitignore")
 
 
 def check(name: str, condition: bool, detail: str = "") -> None:
@@ -61,7 +73,10 @@ def test_nothing_was_promoted_and_nothing_was_kept() -> None:
               block["checkpoint"] == "deleted", block["checkpoint"])
     models = ROOT / "research" / "embed_universal" / "models"
     check("the sweep left no checkpoints on disk", not (models / "_sweep").exists())
-    check("the shipped model is untouched", (models / "universal_v1_merged").is_dir())
+    if _MODELS_GATE.present:
+        check("the shipped model is untouched", _MODELS_GATE.path.is_dir())
+    else:
+        _MODELS_GATE.abstain("the shipped model is untouched")
 
 
 def test_the_curve_points_down() -> None:
@@ -158,7 +173,8 @@ def main() -> int:
                test_the_unrunnable_half_is_declared_not_hidden,
                test_the_claims_resolve_into_the_artifact):
         fn()
-    print(f"\ncapacity sweep: {PASSED} passed, {FAILED} failed")
+    print(f"\ncapacity sweep: {PASSED} passed, {FAILED} failed"
+          f"{_MODELS_GATE.summary}")
     return 1 if FAILED else 0
 
 
