@@ -48,13 +48,26 @@ def test_xrerank_resolution():
          mock.patch.object(rc, "_model_cached", lambda: False):
         check("auto + deps present but model not downloaded -> off (no surprise 2 GB)",
               rc.enabled() is False)
+    # `auto` gained a third condition in September: torch has to have been built for a GPU.
+    # Off a GPU the rerank costs hundreds of times what it costs on one, and the old switch
+    # decided "is this worth it" from the presence of torch alone - a premise about cost that
+    # never looked at the thing the cost depends on. `tests/_test_xrerank_auto_needs_a_gpu.py`
+    # is where that condition is pinned in detail; here it is only stubbed so these two checks
+    # keep asking what they came to ask.
     with mock.patch.dict(os.environ, {"NEVERTWICE_XRERANK": "auto"}), \
          mock.patch.object(rc.importlib.util, "find_spec", lambda name: object()), \
+         mock.patch.object(rc, "_torch_has_gpu_build", lambda: True), \
          mock.patch.object(rc, "_model_cached", lambda: True):
-        check("auto + deps + model cached -> on", rc.enabled() is True)
+        check("auto + deps + a GPU build + model cached -> on", rc.enabled() is True)
+    with mock.patch.dict(os.environ, {"NEVERTWICE_XRERANK": "auto"}), \
+         mock.patch.object(rc.importlib.util, "find_spec", lambda name: object()), \
+         mock.patch.object(rc, "_torch_has_gpu_build", lambda: False), \
+         mock.patch.object(rc, "_model_cached", lambda: True):
+        check("auto + deps + model cached but a CPU-only build -> off", rc.enabled() is False)
     env_no = {k: v for k, v in os.environ.items() if k != "NEVERTWICE_XRERANK"}
     with mock.patch.dict(os.environ, env_no, clear=True), \
          mock.patch.object(rc.importlib.util, "find_spec", lambda name: object()), \
+         mock.patch.object(rc, "_torch_has_gpu_build", lambda: True), \
          mock.patch.object(rc, "_model_cached", lambda: True):
         check("unset behaves as auto", rc.enabled() is True)
 

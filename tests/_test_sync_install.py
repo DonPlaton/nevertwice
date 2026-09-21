@@ -8,6 +8,7 @@ files diverged, ELEVEN of them modules absent there entirely, so this is not a s
 operation and the tool is built to be distrusted.
 """
 import _env_guard  # noqa: F401
+import shutil
 import sys, tempfile, subprocess
 from pathlib import Path
 
@@ -57,6 +58,33 @@ with tempfile.TemporaryDirectory() as td:
     check("no file was modified", before == after)
     check("no backup directory was created",
           not any(p.name.startswith("scripts-backup-") for p in Path(td).iterdir()))
+
+print("\n- an install that does not run is not a PASS -")
+#: The verdict is the marker on stdout, never the exit code. A half-copied install exits 0 by
+#: design - the hooks run the entry point before every tool call, so memory being unavailable
+#: must cost memory and never the agent's Edit - which means a directory missing one engine part
+#: returns 0 with an explanation on stderr and nothing on stdout. Reading the exit code alone,
+#: `_verify` reported PASS on an install that does not answer a recall at all, which is the one
+#: thing its own docstring says it exists to prevent.
+sys.path.insert(0, str(ROOT / "tools"))
+import sync_install as si  # noqa: E402
+
+with tempfile.TemporaryDirectory() as td:
+    whole = Path(td) / "whole"
+    shutil.copytree(ROOT / "nevertwice", whole, ignore=shutil.ignore_patterns("__pycache__"))
+    ok, detail = si._verify(whole)
+    check("a complete copy verifies", ok, detail)
+
+    broken = Path(td) / "broken"
+    shutil.copytree(whole, broken, ignore=shutil.ignore_patterns("__pycache__"))
+    parts = sorted(broken.glob("_engine_*.py"))
+    missing = parts[len(parts) // 2]
+    missing.unlink()
+    ok, detail = si._verify(broken)
+    check(f"a copy missing {missing.name} does NOT verify", not ok, detail)
+    check("and the reason names the quiet exit rather than a bare code",
+          "half-copied" in detail or "missing" in detail, detail)
+
 
 print("\n- machine-local state is never in the copy set -")
 src = TOOL.read_text(encoding="utf-8")

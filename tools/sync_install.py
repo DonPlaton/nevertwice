@@ -79,6 +79,19 @@ def _verify(target: Path) -> tuple[bool, str]:
 
     Run in a subprocess with a sandbox vault: the check must never touch the real store,
     and importing an engine into this process would leave its module state behind.
+
+    The verdict is the MARKER on stdout, not the exit code, and the difference is the whole
+    point of this function. The engine's entry point answers a half-copied install with
+    `SystemExit(0)` - deliberately, because the hooks run it before every tool call and memory
+    being unavailable must never cost the agent its Edit - so a directory missing one file exits
+    0 with an explanation on stderr and nothing on stdout. Reading the exit code alone, this
+    function reported PASS on an install that does not run at all. Measured on a copy of
+    `72f7fb8` with `_engine_recall.py` removed: returncode 0, stdout empty, stderr naming the
+    missing part; the old check said PASS.
+
+    The hole is older than the split - the loader answered a missing `_engine.py` the same way -
+    but the split raises the stakes from "one file has to arrive" to "ten files have to arrive",
+    and this is the step where a wrong PASS costs the most.
     """
     with tempfile.TemporaryDirectory() as td:
         env = dict(os.environ, NEVERTWICE_VAULT=td, NEVERTWICE_EMBED_PROVIDER="none")
@@ -94,7 +107,12 @@ def _verify(target: Path) -> tuple[bool, str]:
                                text=True, timeout=180, env=env, cwd=td)
         except subprocess.TimeoutExpired:
             return False, "the installed engine did not answer a recall within 180 s"
-    return (r.returncode == 0), (r.stdout or r.stderr).strip()[-500:]
+    ok = r.returncode == 0 and r.stdout.startswith("OK")
+    detail = (r.stdout or r.stderr).strip()[-500:]
+    if r.returncode == 0 and not r.stdout.startswith("OK"):
+        detail = ("the installed engine exited 0 without completing the recall - a half-copied "
+                  "install degrades quietly by design: " + detail)
+    return ok, detail
 
 
 def main(argv: list[str] | None = None) -> int:

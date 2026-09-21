@@ -139,6 +139,35 @@ they cannot lag the artifact.
 > The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/code_sessions_eval.py judge --arms nevertwice_full,naive,mem0_infer --save` is what re-measures this one.
 <!-- /claims:code-sessions -->
 
+- **[FIXED in September - the auto switch decided on a premise it never measured] The cross-encoder
+  turned itself on without asking whether there was a GPU.** `reranker_ce.enabled()` in its default
+  `auto` mode meant "torch and transformers import, and the model is already cached". The premise
+  underneath is that a machine with those deps will find the reranker worth what it costs - and what
+  decides the cost is a GPU the check never looked at. On the CPU a rerank at the shipped pool takes
+  hundreds of times longer than on a GPU; `pip install torch` hands out CPU-only wheels on many
+  platforms, so a user who ran once with `NEVERTWICE_XRERANK=1` to see what it did was left with a
+  multi-second wait on every query, by default, with nothing said. `auto` now also requires that torch
+  was built against CUDA - read out of `torch/version.py` rather than by importing torch, which would
+  put a second on the recall path of exactly the machines this keeps it off for - and a run that lands
+  on the CPU anyway says so on stderr with the measured cost. `NEVERTWICE_XRERANK=1` still forces it,
+  which is the documented way to use it on a CPU. The measurements are in the module's own docstring
+  (`nevertwice/reranker_ce.py`) and are not registered claims, so they are not quoted on this page.
+
+  The same measurement settles the shape of the option and not only its default: loading the weights
+  costs seconds on either device, so a process that lives for one query cannot use the reranker at
+  all. It needs a resident process **and** a GPU. That is an architecture rather than a setting, and
+  it is the same architecture that would remove the interpreter floor under every hook - one obstacle
+  wearing two names, and deciding the two separately risks rejecting a lever that a resident process
+  would make the best one available.
+
+- **[OPEN - hygiene, no fix shipped] Measuring the reranker's latency switches it on.** Because `auto`
+  keys on the model being present in the HuggingFace cache, anyone who benchmarks the reranker - an
+  auditor, a contributor, a curious user - downloads the weights and thereby enables the feature on
+  that machine from then on. That is the intended behaviour for someone opting in, and it also means a
+  measurement changes the thing it measures. The September audit worked around it with an isolated
+  `HF_HUB_CACHE`, which is the advice for anyone repeating it; there is no in-product fix here yet, and
+  naming the trap is the whole mitigation.
+
 ## Launch-state update (2026-06-20)
 
 This audit was written on 2026-06-17. Several items it lists as open were closed in the
