@@ -28,12 +28,17 @@ mistakes uses the same cloud/Ollama router as extraction, with a deterministic f
 runs at consolidation time (sleep-time) - never on the hot path.
 """
 import fnmatch
-import hashlib
 import json
 import re
-import subprocess
 import sys
 import time
+#: `subprocess` and `hashlib` are imported inside the three functions that use them, and
+#: nowhere else. This module is loaded on PreToolUse, before every Edit, Write and Bash the
+#: agent runs, and the four functions that path actually calls - `load_guards`, `check`,
+#: `already_delivered`, `record_fired` - use neither: `subprocess` belongs to `_redos_safe`
+#: and `_startup_cost` (pattern validation, which spawns a child interpreter of its own and
+#: therefore cannot be on any hot path), `hashlib` to `_guard_id` (minting a rule's name).
+#: A call-graph walk from those four entries reaches nine functions and none of the three.
 from datetime import datetime
 from pathlib import Path
 
@@ -178,6 +183,7 @@ def _startup_cost() -> float:
     global _STARTUP_COST
     if _STARTUP_COST is None:
         best = None
+        import subprocess                        # noqa: PLC0415 - off the hot path by design
         for _ in range(2):                       # best of two: one may hit a scheduling hiccup
             started = time.perf_counter()
             try:
@@ -207,6 +213,7 @@ def _redos_safe(pat: str) -> bool:
     A rejection is LOGGED, because "your guard was silently not created" is the failure this
     whole function is supposed to prevent, not cause.
     """
+    import subprocess                            # noqa: PLC0415 - off the hot path by design
     budget = _startup_cost() + REDOS_MATCH_BUDGET_S
     try:
         r = subprocess.run([sys.executable, "-c", _REDOS_PROBE], input=pat.encode("utf-8"),
@@ -263,6 +270,7 @@ def safe_pattern(pat: str) -> bool:
 
 
 def _guard_id(pattern: str, scope: dict) -> str:
+    import hashlib                               # noqa: PLC0415 - off the hot path by design
     h = hashlib.sha1(f"{pattern}|{scope.get('project','')}|{scope.get('path_glob','')}"
                      .encode("utf-8", "replace")).hexdigest()[:8]
     return f"g-{h}"
