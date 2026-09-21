@@ -35,55 +35,27 @@ except Exception:                      # noqa: BLE001 - a redirected stream may 
     pass
 
 ROOT = Path(__file__).resolve().parent.parent
-MANIFEST_PATH = ROOT / "research" / "evidence_manifest.json"
+#: The manifest reader, the withdrawal exception and the figure footer live in
+#: `tools/claims_footer.py` and are re-exported here, because every caller in this repository
+#: already says `render_claims.Claims` and `render_claims.footer`.
+#:
+#: They were moved out for `research/_figstyle.py`. A figure needs `footer()`, and importing
+#: this module to get it put all 1,200 lines of page renderers into the produced_by closure of
+#: every command that saves a chart - so adding a renderer for an unrelated region marked those
+#: claims stale. `forgetting.coverage_gain_at_20pct` was re-stamped by hand seven times for
+#: that reason. The dependency now points at the stable half only.
+from claims_footer import (  # noqa: F401 - re-exported for callers that name this module
+    MANIFEST_PATH,
+    Claims,
+    Withdrawn,
+    footer,
+    load_manifest,
+)
 
+#: The markers a generated region is fenced with. They stay here: they are the page format, not
+#: the manifest's shape, and a figure has no use for them.
 REGION = "<!-- claims:{id} -->"
 REGION_END = "<!-- /claims:{id} -->"
-
-
-def load_manifest() -> dict:
-    return json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
-
-
-class Withdrawn(Exception):
-    """A renderer asked for a number that is no longer published.
-
-    Raised rather than returned so that withdrawal cannot be forgotten: any renderer that
-    touches a stale claim aborts, and the region it was building is replaced by the notice
-    below. Task B8 withdrew 118 of 133 claims at once; a design where publishing a withdrawn
-    number requires only *forgetting* a check would not have survived that.
-    """
-
-    def __init__(self, claim_id: str, reason: str):
-        super().__init__(f"{claim_id} is withdrawn: {reason}")
-        self.claim_id = claim_id
-        self.reason = reason
-
-
-class Claims:
-    """Lookup over the manifest, so a renderer names a claim id, never a number."""
-
-    def __init__(self, manifest: dict):
-        self.manifest = manifest
-        self._by_id = {c["id"]: c for c in manifest["claims"]}
-
-    def value(self, claim_id: str):
-        claim = self.get(claim_id)
-        if claim.get("stale"):
-            raise Withdrawn(claim_id, claim["stale"])
-        return claim["value"]
-
-    def is_withdrawn(self, claim_id: str) -> bool:
-        return bool(self.get(claim_id).get("stale"))
-
-    def has(self, claim_id: str) -> bool:
-        return claim_id in self._by_id
-
-    def get(self, claim_id: str) -> dict:
-        try:
-            return self._by_id[claim_id]
-        except KeyError:
-            raise KeyError(f"no claim {claim_id!r} in the manifest") from None
 
 
 def _table(header: list[str], rows: list[list[str]]) -> str:
@@ -1056,34 +1028,6 @@ RENDERERS = {
 
 
 # ------------------------------------------------------------------ footers
-
-def footer(c: Claims, claim_id: str) -> str:
-    """One evidence line for a chart caption: n, dataset, model, commit, command.
-
-    Task C5 puts one of these under every published figure; the renderer lives here
-    so a caption cannot say something the manifest does not.
-    """
-    claim = c.get(claim_id)
-    manifest = load_manifest()
-    bits = []
-    if claim["n"]:
-        bits.append(f"n={claim['n']}")
-    if claim["dataset"]:
-        bits.append(manifest["datasets"][claim["dataset"]]["name"])
-    bits.append(claim["unit"])
-    env = manifest["environments"].get(claim["environment"] or "", {})
-    for key in ("reader", "embedder"):
-        if env.get(key):
-            bits.append(f"{key}: {env[key]}")
-    if claim["ci"]:
-        bits.append(f"95% CI {claim['ci']['low']:.3f}-{claim['ci']['high']:.3f}")
-    bits.append(f"commit {claim['commit'][:7]}" if claim["commit"]
-                else "commit unrecorded")
-    bits.append(f"`{claim['command']}`")
-    if claim.get("stale"):
-        bits.append(f"**withdrawn** - {claim['stale']}")
-    return " · ".join(bits)
-
 
 # ------------------------------------------------------------- region logic
 

@@ -3196,7 +3196,7 @@
     "research/_figstyle.py",
     "research/longitudinal_bench.py",
     "sandbox_guard.py",
-    "tools/render_claims.py"
+    "tools/claims_footer.py"
    ],
    "note": "Re-run on CPU at 2e9e79e (2026-09-10) after the renderer tool entered its closure; the artifact reproduced byte-identically, so the value stands and the commit is restamped by hand. Restored by hand at 9262543 (2026-09-11): no pointer to read it through, so the value was re-checked against the campaign artifact - research/forgetting.json: coreset.0.2.cov - salience.0.2.cov - and the commit restamped. Re-run again at b1bffab (2026-09-11) after the renderer moved for the as-of verdict; byte-identical artifact, value re-checked, commit restamped by hand. Re-run at 74cfcd4 (2026-09-11, the renderer moved again for the cause table); byte-identical, restamped by hand. Re-run at 27b5b09 (2026-09-11, the renderer moved for the absorbed kind); byte-identical, restamped by hand. Re-run at 81dc960 (2026-09-12, the renderer's cause caption reworded); byte-identical, restamped by hand. Re-run at b72a1ff (campaign B, the K5/K6/K7 engine package); byte-identical, restamped by hand. Restored by hand at 32796e8 (2026-09-18, campaign K8-C): coreset coverage at a fifth of the budget 0.8541666666666666 minus salience's 0.7166666666666667 Re-run at 4879a8c (2026-09-18, the renderer moved for the K8-C campaign); byte-identical, restamped by hand. Restored by hand at 71f83a1 (2026-09-19, the campaign at 71f83a1): coreset coverage at a fifth of the budget 0.8541666666666666 minus salience's 0.7166666666666667 Restamped at 8fd91c9 (2026-09-19): the renderer moved in its closure, the difference was re-read from research/forgetting.json and is unchanged at 0.1375.",
    "cited_in_pending": [],

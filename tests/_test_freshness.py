@@ -29,6 +29,7 @@ from __future__ import annotations
 import json
 import subprocess
 import re
+import pathlib
 import sys
 from pathlib import Path
 
@@ -121,6 +122,38 @@ def test_the_closure_is_current() -> None:
         if cache[command] and claim.get("produced_by") != cache[command]:
             drifted.append(f"{claim['id']}: stored closure differs from the resolver")
     check("no stored closure has drifted", not drifted, "; ".join(drifted[:4]))
+
+
+def test_a_figure_does_not_depend_on_the_page_renderer() -> None:
+    """A chart's closure names the manifest reader, never the 1,150 lines of page renderers.
+
+    `research/_figstyle.py` needs one thing from `tools/render_claims.py`: `footer()`, so that a
+    caption under a chart cannot say something a table does not. Importing the whole renderer to
+    get it put every page renderer into the closure of every command that saves a figure, and a
+    closure is what freshness compares a claim's commit against - so adding a renderer for an
+    unrelated region marked those claims stale. `forgetting.coverage_gain_at_20pct` was
+    re-stamped by hand seven times on that basis, and a freshness failure people learn to
+    overrule has stopped being a check.
+
+    This is a structural check rather than a behavioural one because the failure is structural:
+    the dependency either exists in the import graph or it does not, and by the time a claim has
+    gone stale the cost has already been paid.
+    """
+    print("\n- a figure's closure names the stable half of the renderer -")
+    fig = ROOT / "research" / "_figstyle.py"
+    if not fig.exists():                                   # pragma: no cover - the file is tracked
+        check("research/_figstyle.py exists", False)
+        return
+    reached = {str(pathlib.PurePosixPath(p)) for p in pb.closure("python research/forgetting.py")}
+    check("the figure helper still reaches the manifest reader",
+          "tools/claims_footer.py" in reached, sorted(x for x in reached if "tools/" in x))
+    check("and no longer reaches the page renderer",
+          "tools/render_claims.py" not in reached,
+          "render_claims is back in the closure; every figure claim now goes stale whenever a "
+          "generated region is edited")
+    check("the page renderer still serves the same three names to its own callers",
+          all(n in (ROOT / "tools" / "render_claims.py").read_text(encoding="utf-8")
+              for n in ("Claims", "Withdrawn", "footer", "load_manifest")))
 
 
 # ------------------------------------------------------------- the ratchet
@@ -302,6 +335,7 @@ def main() -> int:
     for fn in (test_the_closure_reaches_the_engine,
                test_every_claim_declares_its_closure,
                test_the_closure_is_current,
+               test_a_figure_does_not_depend_on_the_page_renderer,
                test_no_published_number_outlives_its_code,
                test_withdrawal_costs_something,
                test_mutations_turn_it_red):

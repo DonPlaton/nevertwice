@@ -93,12 +93,20 @@ def apply() -> None:
 def footer_for(claim_id: str) -> str:
     """The manifest's own evidence line for a registered claim.
 
-    Delegates to `tools/render_claims.py`, which is the single renderer for these strings, so
+    Delegates to `tools/claims_footer.py`, which is the single renderer for these strings, so
     a caption and a chart footer can never disagree about what a number means.
+
+    It used to delegate to `tools/render_claims.py`, which re-exports the same three names and
+    also holds 1,150 lines of page renderers. That put the whole renderer into the produced_by
+    closure of every command that saves a figure, so adding a renderer for an unrelated region
+    marked those claims stale - `forgetting.coverage_gain_at_20pct` was re-stamped by hand
+    seven times for exactly that, and a freshness failure people learn to overrule is not a
+    check any more. The import names the stable half, which changes when the manifest's shape
+    changes and at no other time.
     """
     sys.path.insert(0, str(ROOT / "tools"))
-    import render_claims                                # noqa: PLC0415 - deliberately late
-    return render_claims.footer(render_claims.Claims(render_claims.load_manifest()), claim_id)
+    import claims_footer                                # noqa: PLC0415 - deliberately late
+    return claims_footer.footer(claims_footer.Claims(claims_footer.load_manifest()), claim_id)
 
 
 def save(fig, path, *, claim: str | None = None, evidence: str | None = None,
