@@ -679,6 +679,44 @@ _CLOUD_DEAD = False   # set when the active cloud backend exhausts this run → 
 _LLM_STATS = {"cloud": 0, "ollama": 0, "fail": 0}  # backend usage this run
 
 
+def _record_usage(data: dict) -> None:
+    """Add one response's reported token counts to this run's totals, in whichever shape it
+    came in.
+
+    The sleep-time judge spends a budget in TOKENS, because that is the unit the price is
+    quoted in, and it charges each verdict the difference these counters moved across the
+    call. Only `call_ollama` ever moved them: Gemini and the OpenAI-compatible backends return
+    their counts in the same body the extractor already parses, and nobody read them. So every
+    cloud verdict fell through to `TOKENS_PER_PAIR_EST = 415` - the documented estimate - and a
+    run reporting "38,180 of 100,000 tokens" was reporting 92 x 415 with no measurement in it.
+    `estimated_calls` was the honest half and was equal to `judged` on every cloud run.
+
+    Recorded before the response's shape is checked, exactly as the Ollama path does it: a
+    provider bills for an answer it then truncated or blocked, and a counter that only counts
+    the calls that went well understates what was spent.
+
+    An absent block adds nothing, which keeps "the backend did not say" distinguishable from
+    "the backend said zero" - the estimate stays the fallback for providers that really are
+    silent, rather than becoming the path.
+    """
+    if not isinstance(data, dict):
+        return
+    gem = data.get("usageMetadata")
+    if isinstance(gem, dict):                                # Gemini generateContent
+        _LLM_STATS["prompt_tokens"] = (_LLM_STATS.get("prompt_tokens", 0)
+                                       + int(gem.get("promptTokenCount") or 0))
+        _LLM_STATS["eval_tokens"] = (_LLM_STATS.get("eval_tokens", 0)
+                                     + int(gem.get("candidatesTokenCount") or 0)
+                                     + int(gem.get("thoughtsTokenCount") or 0))
+        return
+    oai = data.get("usage")
+    if isinstance(oai, dict):                                # Cerebras, Groq, DeepSeek
+        _LLM_STATS["prompt_tokens"] = (_LLM_STATS.get("prompt_tokens", 0)
+                                       + int(oai.get("prompt_tokens") or 0))
+        _LLM_STATS["eval_tokens"] = (_LLM_STATS.get("eval_tokens", 0)
+                                     + int(oai.get("completion_tokens") or 0))
+
+
 def ollama_alive(timeout_s: float = 4) -> bool:
     """Cheap liveness ping so the hook fails loudly instead of silently
     dropping a session when Ollama is down / reloading a model (audit F29)."""
@@ -813,6 +851,7 @@ def call_gemini(prompt: str) -> dict:
                "x-goog-api-key": provider_key("gemini")}
 
     def _extract(data, last):
+        _record_usage(data)                      # what this call cost, in the market's units
         cands = data.get("candidates") or []
         if not cands:
             block = (data.get("promptFeedback") or {}).get("blockReason")
@@ -855,6 +894,7 @@ def _call_openai_chat(prompt: str, base_url: str, api_key: str, model: str,
                "Authorization": f"Bearer {api_key}", "User-Agent": _UA}
 
     def _extract(data, last):
+        _record_usage(data)                      # what this call cost, in the market's units
         choices = data.get("choices") or []
         if not choices:
             if not last:

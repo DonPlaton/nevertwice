@@ -224,6 +224,61 @@ check("errors are counted across the whole set, not the capped view",
       ig.check(three)["stats"]["errors"] >= 1)
 check("the cycle cap is surfaced, never silent", "cycles_capped" in ig.check(notes)["stats"])
 
+print("one walk for both stamps")
+# `_iter_contested` walks every type folder and reads the frontmatter of every live note.
+# `integrity()` wanted two numbers out of that same frontmatter and called it twice, so a single
+# report walked the store twice for contested and disputed. `digest.py` was moved to
+# `_iter_contested_both` for exactly this reason and this call site was missed.
+#
+# Both halves are checked, because either alone is satisfiable by the wrong code: the counts
+# alone pass if someone calls the one-walk helper twice, and the call count alone passes if the
+# helper returns the wrong rows.
+import tempfile  # noqa: E402
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from _sandbox import make_sandbox  # noqa: E402
+import memory_hook as mh  # noqa: E402
+
+_saved_vault = mh.VAULT
+try:
+    make_sandbox(mh, prefix="integrity_walk_")
+    _folder = mh.VAULT / mh.TYPE_FOLDER["decision"]
+    _folder.mkdir(parents=True, exist_ok=True)
+    for _stem, _key, _other in (
+            ("2026-03-01-p-decision-a", mh.CONTESTED_KEY, "2026-03-09-p-decision-z"),
+            ("2026-03-02-p-decision-b", mh.DISPUTED_KEY, "2026-03-08-p-decision-y"),
+            ("2026-03-03-p-decision-c", mh.CONTESTED_KEY, "2026-03-07-p-decision-x")):
+        (_folder / f"{_stem}.md").write_text(
+            f"---\nproject: p\ntype: decision\ndate: {_stem[:10]}\n{_key}: [{_other}]\n---\n"
+            "\n# t\n\nd\n", encoding="utf-8", newline="")
+
+    _two = (sum(len(c["new_stems"]) for c in mh._iter_contested("p")),
+            sum(len(c["new_stems"]) for c in mh._iter_contested("p", key=mh.DISPUTED_KEY)))
+    _rc, _rd = mh._iter_contested_both("p")
+    _one = (sum(len(c["new_stems"]) for c in _rc), sum(len(c["new_stems"]) for c in _rd))
+    check("the fixture actually carries both stamps", _two == (2, 1))
+    check("one walk reports what two walks reported", _one == _two)
+
+    _calls = {"n": 0}
+    _orig = mh._read_frontmatter_file
+    mh._read_frontmatter_file = lambda p: (_calls.__setitem__("n", _calls["n"] + 1), _orig(p))[1]
+    try:
+        mh._iter_contested("p")
+        mh._iter_contested("p", key=mh.DISPUTED_KEY)
+        _reads_two = _calls["n"]
+        _calls["n"] = 0
+        mh._iter_contested_both("p")
+        _reads_one = _calls["n"]
+    finally:
+        mh._read_frontmatter_file = _orig
+    check(f"and reads each note once, not twice ({_reads_two} -> {_reads_one})",
+          _reads_one * 2 == _reads_two and _reads_one > 0)
+    check("integrity() takes the one-walk path",
+          "_iter_contested_both" in (Path(__file__).resolve().parents[1] / "nevertwice"
+                                     / "integrity.py").read_text(encoding="utf-8"))
+finally:
+    mh._rebase_vault(_saved_vault)
+
 print("surfaces")
 check("api.integrity is exported", callable(getattr(api, "integrity", None)))
 check("render produces a human report", "graph laws:" in ig.render(ig.check(notes)))

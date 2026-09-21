@@ -44,8 +44,10 @@ SIM_THRESHOLD = m.env_float("NEVERTWICE_DEDUP_SIM", 0.86)   # safe-cast: a misty
 # memory without being told to. When >0, the lowest-salience excess is archived.
 MAX_LIVE_PER_PROJECT = m.env_int("NEVERTWICE_MAX_LIVE_PER_PROJECT", 0)  # degrades, never crashes
 # K8 layer 3: the judge's budget per consolidation run over the `contested` same-slug pairs the write
-# path kept apart - in tokens (prompt + answer as the backend reports them; a call that reports none is
-# charged the measured mean), not in calls. 100k tokens is ~240 pairs at the 415 measured on the K7
+# path kept apart - in tokens (prompt + answer as the backend reports them - Ollama's
+# prompt_eval_count/eval_count, Gemini's usageMetadata, an OpenAI-compatible usage block; a call
+# that reports none is charged the measured mean), not in calls. 100k tokens is ~240 pairs at
+# the 415 measured on the K7
 # store (research/results/k8_judge_eval.json) - three times the 73 pairs a week the owner's vault
 # produces (k8_vault_dryrun.json), so a weekly run empties the queue. A cap of 50 calls (the first
 # fast cycles, ledger K8) left 15-19 pairs a stand run and would have left ~23 a week on the vault
@@ -54,8 +56,17 @@ MAX_LIVE_PER_PROJECT = m.env_int("NEVERTWICE_MAX_LIVE_PER_PROJECT", 0)  # degrad
 # calls for a stand that wants one.
 CONTESTED_BUDGET = m.env_int("NEVERTWICE_CONTESTED_BUDGET", 100_000)
 CONTESTED_CAP = m.env_int("NEVERTWICE_CONTESTED_CAP", 0)
-#: what one pair is charged when the backend reports no token counts (a cloud backend, a stub): the
-#: K7 store's mean, prompt 375 + answer 40
+#: What one pair is charged when the backend reports no token counts at all: the K7 store's mean,
+#: prompt 375 + answer 40.
+#:
+#: "A cloud backend" used to be on that list, and that was the defect rather than the design.
+#: Gemini returns `usageMetadata` and every OpenAI-compatible provider returns `usage`, both in
+#: the body the extractor already parses, and neither was read - so on cloud EVERY verdict fell
+#: through to this constant and a run reporting "38,180 of 100,000 tokens" was reporting 92 x 415.
+#: `_record_usage` reads both shapes now, and `estimated_calls` (printed below, and equal to
+#: `judged` on every cloud run before this) is what says whether a given run leaned on the
+#: estimate at all. The fallback stays for a provider that genuinely reports nothing: a gateway
+#: that strips the field, a stub, an older API version.
 TOKENS_PER_PAIR_EST = 415
 # F6 (xhigh review): a wall-clock ceiling on the judge step itself, independent of the token
 # budget above - Ollama hanging on /api/generate can cost 364s a pair (retries x timeout), and

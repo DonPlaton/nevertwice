@@ -274,14 +274,6 @@ def _example_cycle(graph: dict, comp: list) -> list:
     return comp   # unreachable for a true SCC; degrade to listing the region
 
 
-def find_cycles(graph: dict, cap: int | None = None) -> list[list]:
-    """One example cycle per cyclic region (SCC), capped. O(V+E) regardless of density."""
-    # Resolved HERE, not in the signature: a default argument is evaluated once at
-    # def time, so a module constant frozen there stops answering to the module.
-    cap = CYCLE_CAP if cap is None else cap
-    return [_example_cycle(graph, c) for c in _sccs(graph)[:cap]]
-
-
 # Relation family split for cycle severity: a cycle mixing a fix-edge with a cause-edge can
 # encode a CONSISTENT note pair ("retry-logic exists because of flaky-api AND fixes it":
 # caused-by orients flaky-api -> retry-logic, fixes orients retry-logic -> flaky-api), so it
@@ -441,8 +433,13 @@ def check_store(project: str | None = None, links: bool = True) -> dict:
     # K8: the same-title pairs the write path kept apart and the sleep-time judge has not ruled on -
     # two live statements under one title, both served; a human sees them here and in conflicts()
     proj = mh.slug_project(project) if project else None
-    report["totals"]["contested_pairs"] = sum(len(c["new_stems"]) for c in mh._iter_contested(proj))
-    report["totals"]["disputed_pairs"] = sum(len(c["new_stems"]) for c in mh._iter_contested(proj, key=mh.DISPUTED_KEY))
+    # One filesystem walk for both stamps. `_iter_contested` walks every type folder and reads
+    # the frontmatter of every live note; calling it once per key made `integrity()` do that
+    # twice over the same files for two numbers read out of the same frontmatter. `digest.py`
+    # was moved to `_iter_contested_both` for exactly this and this call site was missed.
+    contested_rows, disputed_rows = mh._iter_contested_both(proj)
+    report["totals"]["contested_pairs"] = sum(len(c["new_stems"]) for c in contested_rows)
+    report["totals"]["disputed_pairs"] = sum(len(c["new_stems"]) for c in disputed_rows)
     return report
 
 
