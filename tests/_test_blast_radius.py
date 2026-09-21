@@ -215,13 +215,15 @@ class LargeFiles(unittest.TestCase):
 
     def test_the_cap_is_high_enough_for_real_source(self):
         """No Python file in this repository comes close to the cap."""
-        biggest = max(
-            len(p.read_text(encoding="utf-8", errors="replace").splitlines())
-            for p in (ROOT / "nevertwice").rglob("*.py")
-        )
+        longest = max((ROOT / "nevertwice").rglob("*.py"),
+                      key=lambda p: len(p.read_text(encoding="utf-8",
+                                                    errors="replace").splitlines()))
+        biggest = len(longest.read_text(encoding="utf-8", errors="replace").splitlines())
         self.assertLess(biggest * 4, br.MAX_DIFF_LINES)
-        source = (ROOT / "nevertwice" / "_engine.py").read_text(
-            encoding="utf-8", errors="replace").splitlines()
+        #: Found, not named. This used to spell `_engine.py`, and `_engine.py` is now a 70-line
+        #: index over the parts that hold the body - the check would have gone on passing while
+        #: measuring the smallest file in the package instead of the largest.
+        source = longest.read_text(encoding="utf-8", errors="replace").splitlines()
         self.assertFalse(br._too_costly(source, source),
                          "the longest module in this repository must still be diffed")
 

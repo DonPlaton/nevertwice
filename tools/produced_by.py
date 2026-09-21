@@ -102,6 +102,15 @@ def _module_file(dotted: str, near: Path | None = None) -> Path | None:
 # catch, so the mechanism that hides it has to be taught, not worked around.
 DEFERRED_IMPORTERS = ("_sibling", "import_module", "spec_from_file_location")
 
+# The engine's body is not imported either. `nevertwice/_engine.py` is an index that compiles and
+# execs eight part files into `memory_hook`'s namespace - `_engine_config.py`, `_engine_text.py`
+# and so on - by opening them from a tuple of file names. There is no `import` statement and no
+# deferred-importer call to walk, so a closure built from calls alone stops at the index and
+# declares every retrieval number independent of the 8,426 lines that produce it. That is the
+# same silence `spec_from_file_location` was added for, one layer further down, so it is taught
+# the same way: a module-level assignment to this name contributes each of its strings.
+PART_LIST_NAMES = ("ENGINE_PARTS",)
+
 
 def _imports(path: Path) -> list[tuple[str, int]]:
     """Every imported module name in `path`, as (dotted name, relative level).
@@ -132,6 +141,13 @@ def _imports(path: Path) -> list[tuple[str, int]]:
                 first = node.args[0]
                 if isinstance(first, ast.Constant) and isinstance(first.value, str):
                     found.append((first.value.lstrip("."), 0))
+        elif isinstance(node, ast.Assign) and any(
+                isinstance(t, ast.Name) and t.id in PART_LIST_NAMES for t in node.targets):
+            try:
+                names = ast.literal_eval(node.value)
+            except (ValueError, TypeError, SyntaxError):
+                continue
+            found += [(str(n).removesuffix(".py"), 0) for n in names if isinstance(n, str)]
     return found
 
 

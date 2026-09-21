@@ -28,6 +28,7 @@ sys.path.insert(0, str(ROOT / "nevertwice"))
 
 import _env_guard  # noqa: F401,E402  hermetic: scrub store env before the engine bakes its paths
 import memory_hook as m  # noqa: E402
+import _engine_source  # noqa: E402  the engine's text, one path for every suite
 
 from _sandbox import make_sandbox  # noqa: E402
 
@@ -80,8 +81,9 @@ check("and older notes fill the rest", len([s for s in picked if s.startswith("o
       repr(picked[:3]))
 
 print("# a retracted note does not come back through the cross-project path")
-#: `m.__file__` is the 3 KB loader; the body it execs lives in `_engine.py`.
-src = (ROOT / "nevertwice" / "_engine.py").read_text(encoding="utf-8")
+#: `m.__file__` is the 3 KB loader and `_engine.py` is only the index over its parts; the
+#: body itself is reassembled from them in one place, so this suite does not spell any of it.
+src = _engine_source.SRC
 seg = src[src.index("def retrieve_cross_project("):]
 seg = seg[:seg.index("\ndef ", 1)]
 check("cross-project retrieval filters on the note still existing",

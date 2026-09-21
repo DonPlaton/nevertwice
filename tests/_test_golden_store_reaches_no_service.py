@@ -43,7 +43,9 @@ import memory_hook as m  # noqa: E402
 import _golden_store as golden  # noqa: E402
 from _sandbox import make_sandbox  # noqa: E402
 
-ENGINE_SRC = (ROOT / "nevertwice" / "_engine.py").read_text(encoding="utf-8")
+import _engine_source  # noqa: E402  the engine's text, reassembled from its parts in one place
+
+ENGINE_SRC = _engine_source.SRC
 
 PASSED = 0
 FAILED = 0
@@ -111,7 +113,7 @@ def test_no_socket_is_opened() -> None:
     check("and the tripwire names the url it caught", fired and "11434" in msg, msg[:120])
 
 
-def _engine_source(name: str) -> str:
+def _function_source(name: str) -> str:
     """The function as it is written in `nevertwice/_engine.py`.
 
     Not `inspect.getsource(getattr(m, name))`: `memory_hook` is a loader that execs the engine
@@ -129,7 +131,7 @@ def _engine_source(name: str) -> str:
 def test_there_is_one_http_door() -> None:
     """Structural, so the branch cannot come back without this suite noticing."""
     print("\n- every EMBEDDING provider posts through the same function -")
-    src = _engine_source("embed_text")
+    src = _function_source("embed_text")
     check("embed_text was found in the engine source", bool(src))
     check("embed_text builds no request of its own", "urlopen" not in src,
           "embed_text calls urlopen directly again; a harness that patches _embed_http "
@@ -154,7 +156,7 @@ def test_there_is_one_http_door() -> None:
         alive, why = False, str(exc)
     check("and the health-check door answers without a socket under the harness", alive, why)
 
-    door = _engine_source("_embed_http")
+    door = _function_source("_embed_http")
     check("the shared door ascii-escapes the error text", "!a}" in door,
           "an OS-localized error (a Russian WinError) will be written in the log reader's "
           "codepage again - the incident the ollama branch carried a comment about")
@@ -169,9 +171,9 @@ def test_the_harness_still_runs_the_real_path() -> None:
     second = m.embed_text(PROBE, kind="query")
     check("the one-slot memo still answers the second call", first == second)
     check("the nomic task prefix is still applied by the engine",
-          "_embed_prefix" in _engine_source("embed_text"))
+          "_embed_prefix" in _function_source("embed_text"))
     check("a cloud provider is still gated on its key",
-          "_embed_key" in _engine_source("_embed_cloud"))
+          "_embed_key" in _function_source("_embed_cloud"))
 
 
 def _cos(a, b) -> float:

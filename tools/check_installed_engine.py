@@ -67,6 +67,31 @@ def installed_hook_path(settings: Path = SETTINGS) -> Path | None:
     return None
 
 
+def repo_engine_files() -> list[Path]:
+    """Every file in the repository that carries engine code, loader and parts alike.
+
+    The body is no longer one file. `_engine.py` is an ordered index that execs
+    `_engine_config.py`, `_engine_text.py` and six more into `memory_hook`'s namespace, and a
+    feature census that reads only the index would find an empty file and report every feature
+    in this repository as missing from the install - the probe would say the install is a month
+    behind for the wrong reason, which is worse than saying nothing. The list is read from the
+    loader's own `ENGINE_PARTS` so a ninth part is covered the day it is added.
+    """
+    import ast
+
+    pkg = ROOT / "nevertwice"
+    loader = pkg / "_engine.py"
+    files = [f for f in (loader, pkg / "memory_hook.py") if f.exists()]
+    if not loader.exists():
+        return files
+    for node in ast.parse(loader.read_text(encoding="utf-8", errors="replace")).body:
+        if isinstance(node, ast.Assign) and any(
+                isinstance(t, ast.Name) and t.id == "ENGINE_PARTS" for t in node.targets):
+            files += [pkg / n for n in ast.literal_eval(node.value) if (pkg / n).exists()]
+            break
+    return files
+
+
 def features_in(source: str) -> dict:
     """Which of FEATURES the given source carries. A marker present anywhere counts."""
     return {name: (name in source) for name in FEATURES}
@@ -199,9 +224,7 @@ def probe() -> dict:
     rec.update(sync_commit(path))
 
     carried = features_in(source)
-    repo_src = "".join((ROOT / "nevertwice" / f).read_text(encoding="utf-8", errors="replace")
-                       for f in ("_engine.py", "memory_hook.py")
-                       if (ROOT / "nevertwice" / f).exists())
+    repo_src = "".join(f.read_text(encoding="utf-8", errors="replace") for f in repo_engine_files())
     in_repo = features_in(repo_src)
 
     rec["features"] = {

@@ -70,8 +70,8 @@ def nudged(src: str, func: str, epsilon: float) -> str:
 
     The target is the minimum by score, ties broken alphabetically - deterministic, no crash.
     """
-    if f"def {func}(" not in src:
-        raise SystemExit(f"{func}: not a function of the engine")
+    #: `src` is the part the wrapper is APPENDED to, which is not necessarily the part that
+    #: defines `func`; the caller has already checked that some part does.
     body = [
         "",
         "",
@@ -116,10 +116,21 @@ def main() -> int:
     if (HERE / "_golden_store_fixture.json").exists():
         shutil.copy2(HERE / "_golden_store_fixture.json", tests / "_golden_store_fixture.json")
 
-    engine = pkg / "_engine.py"
-    source = engine.read_text(encoding="utf-8")
+    #: The body is eight part files executed in order into one namespace, so "the engine" is no
+    #: longer one path to open. A raise has to land in the part that DEFINES the function - the
+    #: others do not contain it - while the nudge, which rebinds the name over the original, has
+    #: to land in the part that runs LAST, or a later part's own module-level code would be
+    #: running before the wrapper exists.
+    import _engine_source  # the load order, read off the loader rather than restated here
+
+    parts = [pkg / n for n in _engine_source.PART_NAMES]
+    home = next((p for p in parts if f"\ndef {func}(" in p.read_text(encoding="utf-8")), None)
+    if home is None:
+        raise SystemExit(f"{func}: not a top-level function of any engine part")
+    target = parts[-1] if flag else home
+    source = target.read_text(encoding="utf-8")
     mutated = nudged(source, func, epsilon) if flag else injected(source, func)
-    engine.write_text(mutated, encoding="utf-8", newline="\n")
+    target.write_text(mutated, encoding="utf-8", newline="\n")
 
     #: `--no-canary` so the copy checks only stability and the fixture; recursing would fork
     #: one process per function per level.

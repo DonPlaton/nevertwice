@@ -32,6 +32,7 @@ sys.path.insert(0, str(ROOT / "nevertwice"))
 
 import _env_guard  # noqa: F401,E402  hermetic: scrub store env before the engine bakes its paths
 import memory_hook as m  # noqa: E402
+import _engine_source  # noqa: E402  the engine's text, one path for every suite
 
 from _sandbox import make_sandbox  # noqa: E402
 
@@ -107,7 +108,7 @@ check("a trimmed ignore list is reconciled on the next run", "*.prev" in text,
 check("and the caller's own lines are kept", ".logs/" in text)
 
 print("# finalize survives a stage that fails, and still reaches the git snapshot")
-src = (ROOT / "nevertwice" / "_engine.py").read_text(encoding="utf-8")
+src = _engine_source.SRC
 seg = src[src.index("def finalize(swept_count: int):"):]
 seg = seg[:seg.index("if event == \"SessionStart\"")]
 check("every finalize stage runs under its own guard", seg.count("except Exception") >= 3,
