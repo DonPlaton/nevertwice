@@ -218,7 +218,7 @@ python research/head_to_head.py --only=nevertwice,mem0,langmem,amem --save \
 ### The 2026-07 run, which stays withdrawn
 
 <!-- claims:longmem-benchmarks -->
-> **Withdrawn 2026-08.** the LongMemEval-oracle dataset is third-party and not committed (research/data/longmemeval_oracle.json is absent here), and no content hash was recorded when the number was produced, so the run cannot be reproduced or even pinned to a revision
+> **Withdrawn 2026-08.** the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the re-measurement is queued: the campaign runs this command and `tools/remeasure.py --restore` reads the number out of the artifact it writes
 >
 > The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/longmem_eval.py` is what re-measures this one.
 <!-- /claims:longmem-benchmarks -->
@@ -296,7 +296,7 @@ on *what it replaces*, so we reported both honest bounds - the curated small hay
 accumulated history - rather than cherry-picking the flattering one:
 
 <!-- claims:token-ab-raw -->
-> **Withdrawn 2026-08.** the LongMemEval-oracle dataset is third-party and not committed (research/data/longmemeval_oracle.json is absent here), and no content hash was recorded when the number was produced, so the run cannot be reproduced or even pinned to a revision
+> **Withdrawn 2026-08.** the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again, and nothing re-runs it yet: the campaign's block B3 runs `token_ab.py --save` for the injection-budget measurement, which does not fill the pointers these claims read. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the run is possible the moment someone schedules it
 >
 > The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/token_ab.py` is what re-measures this one.
 <!-- /claims:token-ab-raw -->
@@ -317,7 +317,7 @@ distil each retrieved session into a compact note via local Ollama, then recompu
 sessions by more than an order of magnitude, and the per-hit cost collapsed:
 
 <!-- claims:token-ab-distill -->
-> **Withdrawn 2026-08.** the LongMemEval-oracle dataset is third-party and not committed (research/data/longmemeval_oracle.json is absent here), and no content hash was recorded when the number was produced, so the run cannot be reproduced or even pinned to a revision
+> **Withdrawn 2026-08.** the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again, and nothing re-runs it yet: the campaign's block B3 runs `token_ab.py --save` for the injection-budget measurement, which does not fill the pointers these claims read. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the run is possible the moment someone schedules it
 >
 > The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/token_ab.py --distill` is what re-measures this one.
 <!-- /claims:token-ab-distill -->
@@ -335,7 +335,7 @@ fed the full curated haystack (no memory), once fed only the top-3 **distilled n
 Ollama's own `prompt_eval_count` (actual input tokens) for each:
 
 <!-- claims:token-ab-live -->
-> **Withdrawn 2026-08.** the LongMemEval-oracle dataset is third-party and not committed (research/data/longmemeval_oracle.json is absent here), and no content hash was recorded when the number was produced, so the run cannot be reproduced or even pinned to a revision
+> **Withdrawn 2026-08.** the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again, and the `--live` arm needs a working local backend, which the campaign does not stand up - it replays recorded sessions. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read
 >
 > The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/token_ab.py --distill --live` is what re-measures this one.
 <!-- /claims:token-ab-live -->

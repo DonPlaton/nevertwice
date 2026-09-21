@@ -978,8 +978,9 @@
     "research/corpus_pin.py",
     "sandbox_guard.py"
    ],
-   "stale": "the LongMemEval-oracle dataset is third-party and not committed (research/data/longmemeval_oracle.json is absent here), and no content hash was recorded when the number was produced, so the run cannot be reproduced or even pinned to a revision",
-   "withdrawn_on": "2026-08-25"
+   "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the re-measurement is queued: the campaign runs this command and `tools/remeasure.py --restore` reads the number out of the artifact it writes",
+   "withdrawn_on": "2026-08-25",
+   "pending_remeasure": true
   },
   {
    "id": "longmem.semantic.recall_at_5",
@@ -1035,8 +1036,9 @@
     "research/corpus_pin.py",
     "sandbox_guard.py"
    ],
-   "stale": "the LongMemEval-oracle dataset is third-party and not committed (research/data/longmemeval_oracle.json is absent here), and no content hash was recorded when the number was produced, so the run cannot be reproduced or even pinned to a revision",
-   "withdrawn_on": "2026-08-25"
+   "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the re-measurement is queued: the campaign runs this command and `tools/remeasure.py --restore` reads the number out of the artifact it writes",
+   "withdrawn_on": "2026-08-25",
+   "pending_remeasure": true
   },
   {
    "id": "longmem.semantic.recall_at_10",
@@ -1092,8 +1094,9 @@
     "research/corpus_pin.py",
     "sandbox_guard.py"
    ],
-   "stale": "the LongMemEval-oracle dataset is third-party and not committed (research/data/longmemeval_oracle.json is absent here), and no content hash was recorded when the number was produced, so the run cannot be reproduced or even pinned to a revision",
-   "withdrawn_on": "2026-08-25"
+   "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the re-measurement is queued: the campaign runs this command and `tools/remeasure.py --restore` reads the number out of the artifact it writes",
+   "withdrawn_on": "2026-08-25",
+   "pending_remeasure": true
   },
   {
    "id": "longmem.semantic.mrr",
@@ -1145,8 +1148,9 @@
     "research/corpus_pin.py",
     "sandbox_guard.py"
    ],
-   "stale": "the LongMemEval-oracle dataset is third-party and not committed (research/data/longmemeval_oracle.json is absent here), and no content hash was recorded when the number was produced, so the run cannot be reproduced or even pinned to a revision",
-   "withdrawn_on": "2026-08-25"
+   "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the re-measurement is queued: the campaign runs this command and `tools/remeasure.py --restore` reads the number out of the artifact it writes",
+   "withdrawn_on": "2026-08-25",
+   "pending_remeasure": true
   },
   {
    "id": "longmem.lexical.recall_at_1",
@@ -1202,8 +1206,9 @@
     "research/corpus_pin.py",
     "sandbox_guard.py"
    ],
-   "stale": "the LongMemEval-oracle dataset is third-party and not committed (research/data/longmemeval_oracle.json is absent here), and no content hash was recorded when the number was produced, so the run cannot be reproduced or even pinned to a revision",
-   "withdrawn_on": "2026-08-25"
+   "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the re-measurement is queued: the campaign runs this command and `tools/remeasure.py --restore` reads the number out of the artifact it writes",
+   "withdrawn_on": "2026-08-25",
+   "pending_remeasure": true
   },
   {
    "id": "longmem.lexical.recall_at_5",
@@ -1259,8 +1264,9 @@
     "research/corpus_pin.py",
     "sandbox_guard.py"
    ],
-   "stale": "the LongMemEval-oracle dataset is third-party and not committed (research/data/longmemeval_oracle.json is absent here), and no content hash was recorded when the number was produced, so the run cannot be reproduced or even pinned to a revision",
-   "withdrawn_on": "2026-08-25"
+   "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the re-measurement is queued: the campaign runs this command and `tools/remeasure.py --restore` reads the number out of the artifact it writes",
+   "withdrawn_on": "2026-08-25",
+   "pending_remeasure": true
   },
   {
    "id": "longmem.lexical.recall_at_10",
@@ -1316,8 +1322,9 @@
     "research/corpus_pin.py",
     "sandbox_guard.py"
    ],
-   "stale": "the LongMemEval-oracle dataset is third-party and not committed (research/data/longmemeval_oracle.json is absent here), and no content hash was recorded when the number was produced, so the run cannot be reproduced or even pinned to a revision",
-   "withdrawn_on": "2026-08-25"
+   "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the re-measurement is queued: the campaign runs this command and `tools/remeasure.py --restore` reads the number out of the artifact it writes",
+   "withdrawn_on": "2026-08-25",
+   "pending_remeasure": true
   },
   {
    "id": "longmem.lexical.mrr",
@@ -1369,8 +1376,9 @@
     "research/corpus_pin.py",
     "sandbox_guard.py"
    ],
-   "stale": "the LongMemEval-oracle dataset is third-party and not committed (research/data/longmemeval_oracle.json is absent here), and no content hash was recorded when the number was produced, so the run cannot be reproduced or even pinned to a revision",
-   "withdrawn_on": "2026-08-25"
+   "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the re-measurement is queued: the campaign runs this command and `tools/remeasure.py --restore` reads the number out of the artifact it writes",
+   "withdrawn_on": "2026-08-25",
+   "pending_remeasure": true
   },
   {
    "id": "longmem.hybrid.recall_at_1",
@@ -1426,8 +1434,9 @@
     "research/corpus_pin.py",
     "sandbox_guard.py"
    ],
-   "stale": "the LongMemEval-oracle dataset is third-party and not committed (research/data/longmemeval_oracle.json is absent here), and no content hash was recorded when the number was produced, so the run cannot be reproduced or even pinned to a revision",
-   "withdrawn_on": "2026-08-25"
+   "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the re-measurement is queued: the campaign runs this command and `tools/remeasure.py --restore` reads the number out of the artifact it writes",
+   "withdrawn_on": "2026-08-25",
+   "pending_remeasure": true
   },
   {
    "id": "longmem.hybrid.recall_at_5",
@@ -1515,8 +1524,9 @@
     "research/corpus_pin.py",
     "sandbox_guard.py"
    ],
-   "stale": "the LongMemEval-oracle dataset is third-party and not committed (research/data/longmemeval_oracle.json is absent here), and no content hash was recorded when the number was produced, so the run cannot be reproduced or even pinned to a revision",
-   "withdrawn_on": "2026-08-25"
+   "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the re-measurement is queued: the campaign runs this command and `tools/remeasure.py --restore` reads the number out of the artifact it writes",
+   "withdrawn_on": "2026-08-25",
+   "pending_remeasure": true
   },
   {
    "id": "longmem.hybrid.recall_at_10",
@@ -1572,8 +1582,9 @@
     "research/corpus_pin.py",
     "sandbox_guard.py"
    ],
-   "stale": "the LongMemEval-oracle dataset is third-party and not committed (research/data/longmemeval_oracle.json is absent here), and no content hash was recorded when the number was produced, so the run cannot be reproduced or even pinned to a revision",
-   "withdrawn_on": "2026-08-25"
+   "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the re-measurement is queued: the campaign runs this command and `tools/remeasure.py --restore` reads the number out of the artifact it writes",
+   "withdrawn_on": "2026-08-25",
+   "pending_remeasure": true
   },
   {
    "id": "longmem.hybrid.mrr",
@@ -1625,8 +1636,9 @@
     "research/corpus_pin.py",
     "sandbox_guard.py"
    ],
-   "stale": "the LongMemEval-oracle dataset is third-party and not committed (research/data/longmemeval_oracle.json is absent here), and no content hash was recorded when the number was produced, so the run cannot be reproduced or even pinned to a revision",
-   "withdrawn_on": "2026-08-25"
+   "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the re-measurement is queued: the campaign runs this command and `tools/remeasure.py --restore` reads the number out of the artifact it writes",
+   "withdrawn_on": "2026-08-25",
+   "pending_remeasure": true
   },
   {
    "id": "longmem.hybrid_xrerank.recall_at_1",
@@ -1682,8 +1694,9 @@
     "research/corpus_pin.py",
     "sandbox_guard.py"
    ],
-   "stale": "the LongMemEval-oracle dataset is third-party and not committed (research/data/longmemeval_oracle.json is absent here), and no content hash was recorded when the number was produced, so the run cannot be reproduced or even pinned to a revision",
-   "withdrawn_on": "2026-08-25"
+   "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the re-measurement is queued: the campaign runs this command and `tools/remeasure.py --restore` reads the number out of the artifact it writes",
+   "withdrawn_on": "2026-08-25",
+   "pending_remeasure": true
   },
   {
    "id": "longmem.hybrid_xrerank.recall_at_5",
@@ -1739,8 +1752,9 @@
     "research/corpus_pin.py",
     "sandbox_guard.py"
    ],
-   "stale": "the LongMemEval-oracle dataset is third-party and not committed (research/data/longmemeval_oracle.json is absent here), and no content hash was recorded when the number was produced, so the run cannot be reproduced or even pinned to a revision",
-   "withdrawn_on": "2026-08-25"
+   "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the re-measurement is queued: the campaign runs this command and `tools/remeasure.py --restore` reads the number out of the artifact it writes",
+   "withdrawn_on": "2026-08-25",
+   "pending_remeasure": true
   },
   {
    "id": "longmem.hybrid_xrerank.recall_at_10",
@@ -1796,8 +1810,9 @@
     "research/corpus_pin.py",
     "sandbox_guard.py"
    ],
-   "stale": "the LongMemEval-oracle dataset is third-party and not committed (research/data/longmemeval_oracle.json is absent here), and no content hash was recorded when the number was produced, so the run cannot be reproduced or even pinned to a revision",
-   "withdrawn_on": "2026-08-25"
+   "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the re-measurement is queued: the campaign runs this command and `tools/remeasure.py --restore` reads the number out of the artifact it writes",
+   "withdrawn_on": "2026-08-25",
+   "pending_remeasure": true
   },
   {
    "id": "longmem.hybrid_xrerank.mrr",
@@ -1849,8 +1864,9 @@
     "research/corpus_pin.py",
     "sandbox_guard.py"
    ],
-   "stale": "the LongMemEval-oracle dataset is third-party and not committed (research/data/longmemeval_oracle.json is absent here), and no content hash was recorded when the number was produced, so the run cannot be reproduced or even pinned to a revision",
-   "withdrawn_on": "2026-08-25"
+   "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the re-measurement is queued: the campaign runs this command and `tools/remeasure.py --restore` reads the number out of the artifact it writes",
+   "withdrawn_on": "2026-08-25",
+   "pending_remeasure": true
   },
   {
    "id": "longmem.dataset.sessions",
@@ -1900,8 +1916,9 @@
     "research/corpus_pin.py",
     "sandbox_guard.py"
    ],
-   "stale": "the LongMemEval-oracle dataset is third-party and not committed (research/data/longmemeval_oracle.json is absent here), and no content hash was recorded when the number was produced, so the run cannot be reproduced or even pinned to a revision",
-   "withdrawn_on": "2026-08-25"
+   "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the re-measurement is queued: the campaign runs this command and `tools/remeasure.py --restore` reads the number out of the artifact it writes",
+   "withdrawn_on": "2026-08-25",
+   "pending_remeasure": true
   },
   {
    "id": "longmem.dataset.questions",
@@ -1951,8 +1968,9 @@
     "research/corpus_pin.py",
     "sandbox_guard.py"
    ],
-   "stale": "the LongMemEval-oracle dataset is third-party and not committed (research/data/longmemeval_oracle.json is absent here), and no content hash was recorded when the number was produced, so the run cannot be reproduced or even pinned to a revision",
-   "withdrawn_on": "2026-08-25"
+   "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the re-measurement is queued: the campaign runs this command and `tools/remeasure.py --restore` reads the number out of the artifact it writes",
+   "withdrawn_on": "2026-08-25",
+   "pending_remeasure": true
   },
   {
    "id": "longmem.rrf_old_default.recall_at_5",
@@ -2009,7 +2027,7 @@
     "research/corpus_pin.py",
     "sandbox_guard.py"
    ],
-   "stale": "the LongMemEval-oracle dataset is third-party and not committed (research/data/longmemeval_oracle.json is absent here), and no content hash was recorded when the number was produced, so the run cannot be reproduced or even pinned to a revision",
+   "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again, and this claim records no raw artifact and no pointer, so `tools/remeasure.py --restore` cannot reach it even after a fresh run - it has to be re-registered by hand. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read",
    "withdrawn_on": "2026-08-25"
   },
   {
@@ -2069,8 +2087,9 @@
     "research/longmem_eval.py",
     "sandbox_guard.py"
    ],
-   "stale": "the LongMemEval-oracle dataset is third-party and not committed (research/data/longmemeval_oracle.json is absent here), and no content hash was recorded when the number was produced, so the run cannot be reproduced or even pinned to a revision",
-   "withdrawn_on": "2026-08-25"
+   "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the re-measurement is queued: the campaign runs this command and `tools/remeasure.py --restore` reads the number out of the artifact it writes",
+   "withdrawn_on": "2026-08-25",
+   "pending_remeasure": true
   },
   {
    "id": "head_to_head.nevertwice.recall_at_5",
@@ -2129,8 +2148,9 @@
     "research/longmem_eval.py",
     "sandbox_guard.py"
    ],
-   "stale": "the LongMemEval-oracle dataset is third-party and not committed (research/data/longmemeval_oracle.json is absent here), and no content hash was recorded when the number was produced, so the run cannot be reproduced or even pinned to a revision",
-   "withdrawn_on": "2026-08-25"
+   "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the re-measurement is queued: the campaign runs this command and `tools/remeasure.py --restore` reads the number out of the artifact it writes",
+   "withdrawn_on": "2026-08-25",
+   "pending_remeasure": true
   },
   {
    "id": "head_to_head.mem0.recall_at_1",
@@ -2189,8 +2209,9 @@
     "research/longmem_eval.py",
     "sandbox_guard.py"
    ],
-   "stale": "the LongMemEval-oracle dataset is third-party and not committed (research/data/longmemeval_oracle.json is absent here), and no content hash was recorded when the number was produced, so the run cannot be reproduced or even pinned to a revision",
-   "withdrawn_on": "2026-08-25"
+   "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the re-measurement is queued: the campaign runs this command and `tools/remeasure.py --restore` reads the number out of the artifact it writes",
+   "withdrawn_on": "2026-08-25",
+   "pending_remeasure": true
   },
   {
    "id": "head_to_head.mem0.recall_at_5",
@@ -2249,8 +2270,9 @@
     "research/longmem_eval.py",
     "sandbox_guard.py"
    ],
-   "stale": "the LongMemEval-oracle dataset is third-party and not committed (research/data/longmemeval_oracle.json is absent here), and no content hash was recorded when the number was produced, so the run cannot be reproduced or even pinned to a revision",
-   "withdrawn_on": "2026-08-25"
+   "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the re-measurement is queued: the campaign runs this command and `tools/remeasure.py --restore` reads the number out of the artifact it writes",
+   "withdrawn_on": "2026-08-25",
+   "pending_remeasure": true
   },
   {
    "id": "head_to_head.langmem.recall_at_1",
@@ -2309,8 +2331,9 @@
     "research/longmem_eval.py",
     "sandbox_guard.py"
    ],
-   "stale": "the LongMemEval-oracle dataset is third-party and not committed (research/data/longmemeval_oracle.json is absent here), and no content hash was recorded when the number was produced, so the run cannot be reproduced or even pinned to a revision",
-   "withdrawn_on": "2026-08-25"
+   "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the re-measurement is queued: the campaign runs this command and `tools/remeasure.py --restore` reads the number out of the artifact it writes",
+   "withdrawn_on": "2026-08-25",
+   "pending_remeasure": true
   },
   {
    "id": "head_to_head.langmem.recall_at_5",
@@ -2369,8 +2392,9 @@
     "research/longmem_eval.py",
     "sandbox_guard.py"
    ],
-   "stale": "the LongMemEval-oracle dataset is third-party and not committed (research/data/longmemeval_oracle.json is absent here), and no content hash was recorded when the number was produced, so the run cannot be reproduced or even pinned to a revision",
-   "withdrawn_on": "2026-08-25"
+   "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the re-measurement is queued: the campaign runs this command and `tools/remeasure.py --restore` reads the number out of the artifact it writes",
+   "withdrawn_on": "2026-08-25",
+   "pending_remeasure": true
   },
   {
    "id": "head_to_head.amem.recall_at_1",
@@ -2429,8 +2453,9 @@
     "research/longmem_eval.py",
     "sandbox_guard.py"
    ],
-   "stale": "the LongMemEval-oracle dataset is third-party and not committed (research/data/longmemeval_oracle.json is absent here), and no content hash was recorded when the number was produced, so the run cannot be reproduced or even pinned to a revision",
-   "withdrawn_on": "2026-08-25"
+   "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the re-measurement is queued: the campaign runs this command and `tools/remeasure.py --restore` reads the number out of the artifact it writes",
+   "withdrawn_on": "2026-08-25",
+   "pending_remeasure": true
   },
   {
    "id": "head_to_head.amem.recall_at_5",
@@ -2489,8 +2514,9 @@
     "research/longmem_eval.py",
     "sandbox_guard.py"
    ],
-   "stale": "the LongMemEval-oracle dataset is third-party and not committed (research/data/longmemeval_oracle.json is absent here), and no content hash was recorded when the number was produced, so the run cannot be reproduced or even pinned to a revision",
-   "withdrawn_on": "2026-08-25"
+   "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the re-measurement is queued: the campaign runs this command and `tools/remeasure.py --restore` reads the number out of the artifact it writes",
+   "withdrawn_on": "2026-08-25",
+   "pending_remeasure": true
   },
   {
    "id": "live_validation.rate_without_memory",
@@ -2923,7 +2949,7 @@
     "research/longmem_eval.py",
     "sandbox_guard.py"
    ],
-   "stale": "the LongMemEval-oracle dataset is third-party and not committed (research/data/longmemeval_oracle.json is absent here), and no content hash was recorded when the number was produced, so the run cannot be reproduced or even pinned to a revision; on top of that the reader is a paid frontier API (owner gate G8)",
+   "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again, and the reasoner arm needs a paid frontier API (owner gate G8), which the campaign does not spend. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read",
    "withdrawn_on": "2026-08-25"
   },
   {
@@ -3306,7 +3332,7 @@
     "research/longmem_eval.py",
     "sandbox_guard.py"
    ],
-   "stale": "the LongMemEval-oracle dataset is third-party and not committed (research/data/longmemeval_oracle.json is absent here), and no content hash was recorded when the number was produced, so the run cannot be reproduced or even pinned to a revision",
+   "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again, and nothing re-runs it yet: the campaign's block B3 runs `token_ab.py --save` for the injection-budget measurement, which does not fill the pointers these claims read. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the run is possible the moment someone schedules it",
    "withdrawn_on": "2026-08-25"
   },
   {
@@ -3364,7 +3390,7 @@
     "research/longmem_eval.py",
     "sandbox_guard.py"
    ],
-   "stale": "the LongMemEval-oracle dataset is third-party and not committed (research/data/longmemeval_oracle.json is absent here), and no content hash was recorded when the number was produced, so the run cannot be reproduced or even pinned to a revision",
+   "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again, and nothing re-runs it yet: the campaign's block B3 runs `token_ab.py --save` for the injection-budget measurement, which does not fill the pointers these claims read. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the run is possible the moment someone schedules it",
    "withdrawn_on": "2026-08-25"
   },
   {
@@ -3418,7 +3444,7 @@
     "research/longmem_eval.py",
     "sandbox_guard.py"
    ],
-   "stale": "the LongMemEval-oracle dataset is third-party and not committed (research/data/longmemeval_oracle.json is absent here), and no content hash was recorded when the number was produced, so the run cannot be reproduced or even pinned to a revision",
+   "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again, and nothing re-runs it yet: the campaign's block B3 runs `token_ab.py --save` for the injection-budget measurement, which does not fill the pointers these claims read. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the run is possible the moment someone schedules it",
    "withdrawn_on": "2026-08-25"
   },
   {
@@ -3473,7 +3499,7 @@
     "research/longmem_eval.py",
     "sandbox_guard.py"
    ],
-   "stale": "the LongMemEval-oracle dataset is third-party and not committed (research/data/longmemeval_oracle.json is absent here), and no content hash was recorded when the number was produced, so the run cannot be reproduced or even pinned to a revision",
+   "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again, and nothing re-runs it yet: the campaign's block B3 runs `token_ab.py --save` for the injection-budget measurement, which does not fill the pointers these claims read. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the run is possible the moment someone schedules it",
    "withdrawn_on": "2026-08-25"
   },
   {
@@ -3527,7 +3553,7 @@
     "research/longmem_eval.py",
     "sandbox_guard.py"
    ],
-   "stale": "the LongMemEval-oracle dataset is third-party and not committed (research/data/longmemeval_oracle.json is absent here), and no content hash was recorded when the number was produced, so the run cannot be reproduced or even pinned to a revision",
+   "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again, and nothing re-runs it yet: the campaign's block B3 runs `token_ab.py --save` for the injection-budget measurement, which does not fill the pointers these claims read. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the run is possible the moment someone schedules it",
    "withdrawn_on": "2026-08-25"
   },
   {
@@ -3585,7 +3611,7 @@
     "research/longmem_eval.py",
     "sandbox_guard.py"
    ],
-   "stale": "the LongMemEval-oracle dataset is third-party and not committed (research/data/longmemeval_oracle.json is absent here), and no content hash was recorded when the number was produced, so the run cannot be reproduced or even pinned to a revision",
+   "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again, and nothing re-runs it yet: the campaign's block B3 runs `token_ab.py --save` for the injection-budget measurement, which does not fill the pointers these claims read. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the run is possible the moment someone schedules it",
    "withdrawn_on": "2026-08-25"
   },
   {
@@ -3639,7 +3665,7 @@
     "research/longmem_eval.py",
     "sandbox_guard.py"
    ],
-   "stale": "the LongMemEval-oracle dataset is third-party and not committed (research/data/longmemeval_oracle.json is absent here), and no content hash was recorded when the number was produced, so the run cannot be reproduced or even pinned to a revision",
+   "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again, and nothing re-runs it yet: the campaign's block B3 runs `token_ab.py --save` for the injection-budget measurement, which does not fill the pointers these claims read. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the run is possible the moment someone schedules it",
    "withdrawn_on": "2026-08-25"
   },
   {
@@ -3694,7 +3720,7 @@
     "research/longmem_eval.py",
     "sandbox_guard.py"
    ],
-   "stale": "the LongMemEval-oracle dataset is third-party and not committed (research/data/longmemeval_oracle.json is absent here), and no content hash was recorded when the number was produced, so the run cannot be reproduced or even pinned to a revision",
+   "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again, and nothing re-runs it yet: the campaign's block B3 runs `token_ab.py --save` for the injection-budget measurement, which does not fill the pointers these claims read. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the run is possible the moment someone schedules it",
    "withdrawn_on": "2026-08-25"
   },
   {
@@ -3748,7 +3774,7 @@
     "research/longmem_eval.py",
     "sandbox_guard.py"
    ],
-   "stale": "the LongMemEval-oracle dataset is third-party and not committed (research/data/longmemeval_oracle.json is absent here), and no content hash was recorded when the number was produced, so the run cannot be reproduced or even pinned to a revision",
+   "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again, and nothing re-runs it yet: the campaign's block B3 runs `token_ab.py --save` for the injection-budget measurement, which does not fill the pointers these claims read. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the run is possible the moment someone schedules it",
    "withdrawn_on": "2026-08-25"
   },
   {
@@ -3806,7 +3832,7 @@
     "research/longmem_eval.py",
     "sandbox_guard.py"
    ],
-   "stale": "the LongMemEval-oracle dataset is third-party and not committed (research/data/longmemeval_oracle.json is absent here), and no content hash was recorded when the number was produced, so the run cannot be reproduced or even pinned to a revision",
+   "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again, and nothing re-runs it yet: the campaign's block B3 runs `token_ab.py --save` for the injection-budget measurement, which does not fill the pointers these claims read. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the run is possible the moment someone schedules it",
    "withdrawn_on": "2026-08-25"
   },
   {
@@ -3860,7 +3886,7 @@
     "research/longmem_eval.py",
     "sandbox_guard.py"
    ],
-   "stale": "the LongMemEval-oracle dataset is third-party and not committed (research/data/longmemeval_oracle.json is absent here), and no content hash was recorded when the number was produced, so the run cannot be reproduced or even pinned to a revision",
+   "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again, and nothing re-runs it yet: the campaign's block B3 runs `token_ab.py --save` for the injection-budget measurement, which does not fill the pointers these claims read. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the run is possible the moment someone schedules it",
    "withdrawn_on": "2026-08-25"
   },
   {
@@ -3915,7 +3941,7 @@
     "research/longmem_eval.py",
     "sandbox_guard.py"
    ],
-   "stale": "the LongMemEval-oracle dataset is third-party and not committed (research/data/longmemeval_oracle.json is absent here), and no content hash was recorded when the number was produced, so the run cannot be reproduced or even pinned to a revision",
+   "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again, and nothing re-runs it yet: the campaign's block B3 runs `token_ab.py --save` for the injection-budget measurement, which does not fill the pointers these claims read. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the run is possible the moment someone schedules it",
    "withdrawn_on": "2026-08-25"
   },
   {
@@ -3969,7 +3995,7 @@
     "research/longmem_eval.py",
     "sandbox_guard.py"
    ],
-   "stale": "the LongMemEval-oracle dataset is third-party and not committed (research/data/longmemeval_oracle.json is absent here), and no content hash was recorded when the number was produced, so the run cannot be reproduced or even pinned to a revision",
+   "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again, and nothing re-runs it yet: the campaign's block B3 runs `token_ab.py --save` for the injection-budget measurement, which does not fill the pointers these claims read. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the run is possible the moment someone schedules it",
    "withdrawn_on": "2026-08-25"
   },
   {
@@ -4055,7 +4081,7 @@
     "research/longmem_eval.py",
     "sandbox_guard.py"
    ],
-   "stale": "the LongMemEval-oracle dataset is third-party and not committed (research/data/longmemeval_oracle.json is absent here), and no content hash was recorded when the number was produced, so the run cannot be reproduced or even pinned to a revision",
+   "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again, and nothing re-runs it yet: the campaign's block B3 runs `token_ab.py --save` for the injection-budget measurement, which does not fill the pointers these claims read. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the run is possible the moment someone schedules it",
    "withdrawn_on": "2026-08-25"
   },
   {
@@ -4108,7 +4134,7 @@
     "research/longmem_eval.py",
     "sandbox_guard.py"
    ],
-   "stale": "the LongMemEval-oracle dataset is third-party and not committed (research/data/longmemeval_oracle.json is absent here), and no content hash was recorded when the number was produced, so the run cannot be reproduced or even pinned to a revision",
+   "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again, and nothing re-runs it yet: the campaign's block B3 runs `token_ab.py --save` for the injection-budget measurement, which does not fill the pointers these claims read. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the run is possible the moment someone schedules it",
    "withdrawn_on": "2026-08-25"
   },
   {
@@ -4161,7 +4187,7 @@
     "research/longmem_eval.py",
     "sandbox_guard.py"
    ],
-   "stale": "the LongMemEval-oracle dataset is third-party and not committed (research/data/longmemeval_oracle.json is absent here), and no content hash was recorded when the number was produced, so the run cannot be reproduced or even pinned to a revision",
+   "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again, and nothing re-runs it yet: the campaign's block B3 runs `token_ab.py --save` for the injection-budget measurement, which does not fill the pointers these claims read. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the run is possible the moment someone schedules it",
    "withdrawn_on": "2026-08-25"
   },
   {
@@ -4213,7 +4239,7 @@
     "research/longmem_eval.py",
     "sandbox_guard.py"
    ],
-   "stale": "the LongMemEval-oracle dataset is third-party and not committed (research/data/longmemeval_oracle.json is absent here), and no content hash was recorded when the number was produced, so the run cannot be reproduced or even pinned to a revision",
+   "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again, and nothing re-runs it yet: the campaign's block B3 runs `token_ab.py --save` for the injection-budget measurement, which does not fill the pointers these claims read. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the run is possible the moment someone schedules it",
    "withdrawn_on": "2026-08-25"
   },
   {
@@ -4265,7 +4291,7 @@
     "research/longmem_eval.py",
     "sandbox_guard.py"
    ],
-   "stale": "the LongMemEval-oracle dataset is third-party and not committed (research/data/longmemeval_oracle.json is absent here), and no content hash was recorded when the number was produced, so the run cannot be reproduced or even pinned to a revision",
+   "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again, and nothing re-runs it yet: the campaign's block B3 runs `token_ab.py --save` for the injection-budget measurement, which does not fill the pointers these claims read. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the run is possible the moment someone schedules it",
    "withdrawn_on": "2026-08-25"
   },
   {
@@ -4318,7 +4344,7 @@
     "research/longmem_eval.py",
     "sandbox_guard.py"
    ],
-   "stale": "the LongMemEval-oracle dataset is third-party and not committed (research/data/longmemeval_oracle.json is absent here), and no content hash was recorded when the number was produced, so the run cannot be reproduced or even pinned to a revision",
+   "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again, and nothing re-runs it yet: the campaign's block B3 runs `token_ab.py --save` for the injection-budget measurement, which does not fill the pointers these claims read. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the run is possible the moment someone schedules it",
    "withdrawn_on": "2026-08-25"
   },
   {
@@ -4376,7 +4402,7 @@
     "research/longmem_eval.py",
     "sandbox_guard.py"
    ],
-   "stale": "the LongMemEval-oracle dataset is third-party and not committed (research/data/longmemeval_oracle.json is absent here), and no content hash was recorded when the number was produced, so the run cannot be reproduced or even pinned to a revision",
+   "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again, and nothing re-runs it yet: the campaign's block B3 runs `token_ab.py --save` for the injection-budget measurement, which does not fill the pointers these claims read. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the run is possible the moment someone schedules it",
    "withdrawn_on": "2026-08-25"
   },
   {
@@ -4430,7 +4456,7 @@
     "research/longmem_eval.py",
     "sandbox_guard.py"
    ],
-   "stale": "the LongMemEval-oracle dataset is third-party and not committed (research/data/longmemeval_oracle.json is absent here), and no content hash was recorded when the number was produced, so the run cannot be reproduced or even pinned to a revision",
+   "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again, and nothing re-runs it yet: the campaign's block B3 runs `token_ab.py --save` for the injection-budget measurement, which does not fill the pointers these claims read. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the run is possible the moment someone schedules it",
    "withdrawn_on": "2026-08-25"
   },
   {
@@ -4483,7 +4509,7 @@
     "research/longmem_eval.py",
     "sandbox_guard.py"
    ],
-   "stale": "the LongMemEval-oracle dataset is third-party and not committed (research/data/longmemeval_oracle.json is absent here), and no content hash was recorded when the number was produced, so the run cannot be reproduced or even pinned to a revision",
+   "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again, and nothing re-runs it yet: the campaign's block B3 runs `token_ab.py --save` for the injection-budget measurement, which does not fill the pointers these claims read. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the run is possible the moment someone schedules it",
    "withdrawn_on": "2026-08-25"
   },
   {
@@ -4538,7 +4564,7 @@
     "research/longmem_eval.py",
     "sandbox_guard.py"
    ],
-   "stale": "the LongMemEval-oracle dataset is third-party and not committed (research/data/longmemeval_oracle.json is absent here), and no content hash was recorded when the number was produced, so the run cannot be reproduced or even pinned to a revision",
+   "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again, and nothing re-runs it yet: the campaign's block B3 runs `token_ab.py --save` for the injection-budget measurement, which does not fill the pointers these claims read. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the run is possible the moment someone schedules it",
    "withdrawn_on": "2026-08-25"
   },
   {
@@ -4592,7 +4618,7 @@
     "research/longmem_eval.py",
     "sandbox_guard.py"
    ],
-   "stale": "the LongMemEval-oracle dataset is third-party and not committed (research/data/longmemeval_oracle.json is absent here), and no content hash was recorded when the number was produced, so the run cannot be reproduced or even pinned to a revision",
+   "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again, and nothing re-runs it yet: the campaign's block B3 runs `token_ab.py --save` for the injection-budget measurement, which does not fill the pointers these claims read. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the run is possible the moment someone schedules it",
    "withdrawn_on": "2026-08-25"
   },
   {
@@ -4650,7 +4676,7 @@
     "research/longmem_eval.py",
     "sandbox_guard.py"
    ],
-   "stale": "the LongMemEval-oracle dataset is third-party and not committed (research/data/longmemeval_oracle.json is absent here), and no content hash was recorded when the number was produced, so the run cannot be reproduced or even pinned to a revision",
+   "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again, and nothing re-runs it yet: the campaign's block B3 runs `token_ab.py --save` for the injection-budget measurement, which does not fill the pointers these claims read. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the run is possible the moment someone schedules it",
    "withdrawn_on": "2026-08-25"
   },
   {
@@ -4704,7 +4730,7 @@
     "research/longmem_eval.py",
     "sandbox_guard.py"
    ],
-   "stale": "the LongMemEval-oracle dataset is third-party and not committed (research/data/longmemeval_oracle.json is absent here), and no content hash was recorded when the number was produced, so the run cannot be reproduced or even pinned to a revision",
+   "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again, and nothing re-runs it yet: the campaign's block B3 runs `token_ab.py --save` for the injection-budget measurement, which does not fill the pointers these claims read. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the run is possible the moment someone schedules it",
    "withdrawn_on": "2026-08-25"
   },
   {
@@ -4757,7 +4783,7 @@
     "research/longmem_eval.py",
     "sandbox_guard.py"
    ],
-   "stale": "the LongMemEval-oracle dataset is third-party and not committed (research/data/longmemeval_oracle.json is absent here), and no content hash was recorded when the number was produced, so the run cannot be reproduced or even pinned to a revision",
+   "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again, and nothing re-runs it yet: the campaign's block B3 runs `token_ab.py --save` for the injection-budget measurement, which does not fill the pointers these claims read. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the run is possible the moment someone schedules it",
    "withdrawn_on": "2026-08-25"
   },
   {
@@ -4812,7 +4838,7 @@
     "research/longmem_eval.py",
     "sandbox_guard.py"
    ],
-   "stale": "the LongMemEval-oracle dataset is third-party and not committed (research/data/longmemeval_oracle.json is absent here), and no content hash was recorded when the number was produced, so the run cannot be reproduced or even pinned to a revision",
+   "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again, and nothing re-runs it yet: the campaign's block B3 runs `token_ab.py --save` for the injection-budget measurement, which does not fill the pointers these claims read. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the run is possible the moment someone schedules it",
    "withdrawn_on": "2026-08-25"
   },
   {
@@ -4866,7 +4892,7 @@
     "research/longmem_eval.py",
     "sandbox_guard.py"
    ],
-   "stale": "the LongMemEval-oracle dataset is third-party and not committed (research/data/longmemeval_oracle.json is absent here), and no content hash was recorded when the number was produced, so the run cannot be reproduced or even pinned to a revision",
+   "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again, and nothing re-runs it yet: the campaign's block B3 runs `token_ab.py --save` for the injection-budget measurement, which does not fill the pointers these claims read. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the run is possible the moment someone schedules it",
    "withdrawn_on": "2026-08-25"
   },
   {
@@ -4924,7 +4950,7 @@
     "research/longmem_eval.py",
     "sandbox_guard.py"
    ],
-   "stale": "the LongMemEval-oracle dataset is third-party and not committed (research/data/longmemeval_oracle.json is absent here), and no content hash was recorded when the number was produced, so the run cannot be reproduced or even pinned to a revision",
+   "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again, and nothing re-runs it yet: the campaign's block B3 runs `token_ab.py --save` for the injection-budget measurement, which does not fill the pointers these claims read. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the run is possible the moment someone schedules it",
    "withdrawn_on": "2026-08-25"
   },
   {
@@ -4978,7 +5004,7 @@
     "research/longmem_eval.py",
     "sandbox_guard.py"
    ],
-   "stale": "the LongMemEval-oracle dataset is third-party and not committed (research/data/longmemeval_oracle.json is absent here), and no content hash was recorded when the number was produced, so the run cannot be reproduced or even pinned to a revision",
+   "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again, and nothing re-runs it yet: the campaign's block B3 runs `token_ab.py --save` for the injection-budget measurement, which does not fill the pointers these claims read. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the run is possible the moment someone schedules it",
    "withdrawn_on": "2026-08-25"
   },
   {
@@ -5032,7 +5058,7 @@
     "research/longmem_eval.py",
     "sandbox_guard.py"
    ],
-   "stale": "the LongMemEval-oracle dataset is third-party and not committed (research/data/longmemeval_oracle.json is absent here), and no content hash was recorded when the number was produced, so the run cannot be reproduced or even pinned to a revision",
+   "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again, and nothing re-runs it yet: the campaign's block B3 runs `token_ab.py --save` for the injection-budget measurement, which does not fill the pointers these claims read. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the run is possible the moment someone schedules it",
    "withdrawn_on": "2026-08-25"
   },
   {
@@ -5087,7 +5113,7 @@
     "research/longmem_eval.py",
     "sandbox_guard.py"
    ],
-   "stale": "the LongMemEval-oracle dataset is third-party and not committed (research/data/longmemeval_oracle.json is absent here), and no content hash was recorded when the number was produced, so the run cannot be reproduced or even pinned to a revision",
+   "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again, and nothing re-runs it yet: the campaign's block B3 runs `token_ab.py --save` for the injection-budget measurement, which does not fill the pointers these claims read. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the run is possible the moment someone schedules it",
    "withdrawn_on": "2026-08-25"
   },
   {
@@ -5141,7 +5167,7 @@
     "research/longmem_eval.py",
     "sandbox_guard.py"
    ],
-   "stale": "the LongMemEval-oracle dataset is third-party and not committed (research/data/longmemeval_oracle.json is absent here), and no content hash was recorded when the number was produced, so the run cannot be reproduced or even pinned to a revision",
+   "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again, and nothing re-runs it yet: the campaign's block B3 runs `token_ab.py --save` for the injection-budget measurement, which does not fill the pointers these claims read. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the run is possible the moment someone schedules it",
    "withdrawn_on": "2026-08-25"
   },
   {
@@ -5195,7 +5221,7 @@
     "research/longmem_eval.py",
     "sandbox_guard.py"
    ],
-   "stale": "the LongMemEval-oracle dataset is third-party and not committed (research/data/longmemeval_oracle.json is absent here), and no content hash was recorded when the number was produced, so the run cannot be reproduced or even pinned to a revision",
+   "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again, and the `--live` arm needs a working local backend, which the campaign does not stand up - it replays recorded sessions. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read",
    "withdrawn_on": "2026-08-25"
   },
   {
@@ -5248,7 +5274,7 @@
     "research/longmem_eval.py",
     "sandbox_guard.py"
    ],
-   "stale": "the LongMemEval-oracle dataset is third-party and not committed (research/data/longmemeval_oracle.json is absent here), and no content hash was recorded when the number was produced, so the run cannot be reproduced or even pinned to a revision",
+   "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again, and the `--live` arm needs a working local backend, which the campaign does not stand up - it replays recorded sessions. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read",
    "withdrawn_on": "2026-08-25"
   },
   {
@@ -5335,7 +5361,7 @@
     "research/longmem_eval.py",
     "sandbox_guard.py"
    ],
-   "stale": "the LongMemEval-oracle dataset is third-party and not committed (research/data/longmemeval_oracle.json is absent here), and no content hash was recorded when the number was produced, so the run cannot be reproduced or even pinned to a revision",
+   "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again, and the `--live` arm needs a working local backend, which the campaign does not stand up - it replays recorded sessions. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read",
    "withdrawn_on": "2026-08-25"
   },
   {
@@ -5390,7 +5416,7 @@
     "research/longmem_eval.py",
     "sandbox_guard.py"
    ],
-   "stale": "the LongMemEval-oracle dataset is third-party and not committed (research/data/longmemeval_oracle.json is absent here), and no content hash was recorded when the number was produced, so the run cannot be reproduced or even pinned to a revision",
+   "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again, and the `--live` arm needs a working local backend, which the campaign does not stand up - it replays recorded sessions. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read",
    "withdrawn_on": "2026-08-25"
   },
   {
@@ -5445,7 +5471,7 @@
     "research/longmem_eval.py",
     "sandbox_guard.py"
    ],
-   "stale": "the LongMemEval-oracle dataset is third-party and not committed (research/data/longmemeval_oracle.json is absent here), and no content hash was recorded when the number was produced, so the run cannot be reproduced or even pinned to a revision",
+   "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again, and the `--live` arm needs a working local backend, which the campaign does not stand up - it replays recorded sessions. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read",
    "withdrawn_on": "2026-08-25"
   },
   {
@@ -5498,7 +5524,7 @@
     "research/longmem_eval.py",
     "sandbox_guard.py"
    ],
-   "stale": "the LongMemEval-oracle dataset is third-party and not committed (research/data/longmemeval_oracle.json is absent here), and no content hash was recorded when the number was produced, so the run cannot be reproduced or even pinned to a revision",
+   "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again, and the `--live` arm needs a working local backend, which the campaign does not stand up - it replays recorded sessions. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read",
    "withdrawn_on": "2026-08-25"
   },
   {
@@ -7966,8 +7992,9 @@
     "research/longmem_eval.py",
     "sandbox_guard.py"
    ],
-   "stale": "the LongMemEval-oracle dataset is third-party and not committed (research/data/longmemeval_oracle.json is absent here), and no content hash was recorded when the number was produced, so the run cannot be reproduced or even pinned to a revision",
-   "withdrawn_on": "2026-08-25"
+   "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the re-measurement is queued: the campaign runs this command and `tools/remeasure.py --restore` reads the number out of the artifact it writes",
+   "withdrawn_on": "2026-08-25",
+   "pending_remeasure": true
   },
   {
    "id": "head_to_head.nevertwice.mrr",
@@ -8021,8 +8048,9 @@
     "research/longmem_eval.py",
     "sandbox_guard.py"
    ],
-   "stale": "the LongMemEval-oracle dataset is third-party and not committed (research/data/longmemeval_oracle.json is absent here), and no content hash was recorded when the number was produced, so the run cannot be reproduced or even pinned to a revision",
-   "withdrawn_on": "2026-08-25"
+   "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the re-measurement is queued: the campaign runs this command and `tools/remeasure.py --restore` reads the number out of the artifact it writes",
+   "withdrawn_on": "2026-08-25",
+   "pending_remeasure": true
   },
   {
    "id": "head_to_head.mem0.recall_at_10",
@@ -8081,8 +8109,9 @@
     "research/longmem_eval.py",
     "sandbox_guard.py"
    ],
-   "stale": "the LongMemEval-oracle dataset is third-party and not committed (research/data/longmemeval_oracle.json is absent here), and no content hash was recorded when the number was produced, so the run cannot be reproduced or even pinned to a revision",
-   "withdrawn_on": "2026-08-25"
+   "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the re-measurement is queued: the campaign runs this command and `tools/remeasure.py --restore` reads the number out of the artifact it writes",
+   "withdrawn_on": "2026-08-25",
+   "pending_remeasure": true
   },
   {
    "id": "head_to_head.mem0.mrr",
@@ -8136,8 +8165,9 @@
     "research/longmem_eval.py",
     "sandbox_guard.py"
    ],
-   "stale": "the LongMemEval-oracle dataset is third-party and not committed (research/data/longmemeval_oracle.json is absent here), and no content hash was recorded when the number was produced, so the run cannot be reproduced or even pinned to a revision",
-   "withdrawn_on": "2026-08-25"
+   "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the re-measurement is queued: the campaign runs this command and `tools/remeasure.py --restore` reads the number out of the artifact it writes",
+   "withdrawn_on": "2026-08-25",
+   "pending_remeasure": true
   },
   {
    "id": "head_to_head.langmem.recall_at_10",
@@ -8196,8 +8226,9 @@
     "research/longmem_eval.py",
     "sandbox_guard.py"
    ],
-   "stale": "the LongMemEval-oracle dataset is third-party and not committed (research/data/longmemeval_oracle.json is absent here), and no content hash was recorded when the number was produced, so the run cannot be reproduced or even pinned to a revision",
-   "withdrawn_on": "2026-08-25"
+   "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the re-measurement is queued: the campaign runs this command and `tools/remeasure.py --restore` reads the number out of the artifact it writes",
+   "withdrawn_on": "2026-08-25",
+   "pending_remeasure": true
   },
   {
    "id": "head_to_head.langmem.mrr",
@@ -8251,8 +8282,9 @@
     "research/longmem_eval.py",
     "sandbox_guard.py"
    ],
-   "stale": "the LongMemEval-oracle dataset is third-party and not committed (research/data/longmemeval_oracle.json is absent here), and no content hash was recorded when the number was produced, so the run cannot be reproduced or even pinned to a revision",
-   "withdrawn_on": "2026-08-25"
+   "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the re-measurement is queued: the campaign runs this command and `tools/remeasure.py --restore` reads the number out of the artifact it writes",
+   "withdrawn_on": "2026-08-25",
+   "pending_remeasure": true
   },
   {
    "id": "head_to_head.amem.recall_at_10",
@@ -8311,8 +8343,9 @@
     "research/longmem_eval.py",
     "sandbox_guard.py"
    ],
-   "stale": "the LongMemEval-oracle dataset is third-party and not committed (research/data/longmemeval_oracle.json is absent here), and no content hash was recorded when the number was produced, so the run cannot be reproduced or even pinned to a revision",
-   "withdrawn_on": "2026-08-25"
+   "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the re-measurement is queued: the campaign runs this command and `tools/remeasure.py --restore` reads the number out of the artifact it writes",
+   "withdrawn_on": "2026-08-25",
+   "pending_remeasure": true
   },
   {
    "id": "head_to_head.amem.mrr",
@@ -8366,8 +8399,9 @@
     "research/longmem_eval.py",
     "sandbox_guard.py"
    ],
-   "stale": "the LongMemEval-oracle dataset is third-party and not committed (research/data/longmemeval_oracle.json is absent here), and no content hash was recorded when the number was produced, so the run cannot be reproduced or even pinned to a revision",
-   "withdrawn_on": "2026-08-25"
+   "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the re-measurement is queued: the campaign runs this command and `tools/remeasure.py --restore` reads the number out of the artifact it writes",
+   "withdrawn_on": "2026-08-25",
+   "pending_remeasure": true
   },
   {
    "id": "blast_radius.shipped.flag_rate",
