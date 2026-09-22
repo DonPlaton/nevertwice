@@ -105,5 +105,55 @@ check("with the retry off, one call", len(CALLS) == 1, str(len(CALLS)))
 check("and the fact is lost - the K3 silence", not list((d / "Decisions").glob("*.md")))
 m.EXTRACT_RETRY = 1
 
+print("")
+print("- 'nothing was produced' and 'everything produced was refused' are different zeros -")
+#: The run log carried only what was WRITTEN, so both cases reported `P=0 M=0 D=0` and a caller
+#: could not tell them apart. They lead to opposite conclusions: the first is a property of the
+#: workload - this transcript held no lesson - and the second is a defect in the write path. A
+#: stand measuring the cost of memory prints zero only when it can say which; a zero it cannot
+#: explain sells a bug as a design. Asked for by the auditing session while writing
+#: `research/token_floor.py`, whose first run printed "0 chars, 0 found" and looked like free.
+
+
+def _run(sid, extraction, refuse_writes):
+    """One session through the real write path, with the model and the writer stubbed."""
+    fresh()
+    m.generate_json = lambda *a, **k: dict(extraction)
+    real_write = m.write_typed_note
+    if refuse_writes:
+        m.write_typed_note = lambda *a, **k: ""      # every proposal refused, as M-10 does
+    try:
+        log: list[dict] = []
+        m.process_session(sid, CWD_FOR_ZEROS, "", "ingest", {}, run_log=log,
+                          transcript_text=TRANSCRIPT_FOR_ZEROS, project_override="zerosproj")
+        return log[-1] if log else {}
+    finally:
+        m.write_typed_note = real_write
+
+
+CWD_FOR_ZEROS = "D:" + chr(92) + "Coding" + chr(92) + "x"
+TRANSCRIPT_FOR_ZEROS = ("user: fix the loader\n"
+                        "assistant: pinned the temperature, it was sampling\n") * 20
+_TWO = {"patterns": [{"title": "pin the temperature", "description": "sampling was on"}],
+        "mistakes": [{"title": "read the page", "description": "asked the doc not the source"}],
+        "decisions": []}
+
+_none = _run("zeros-a", {"patterns": [], "mistakes": [], "decisions": []}, False)
+_ref = _run("zeros-b", _TWO, True)
+
+_written = ("patterns", "mistakes", "decisions")
+check("both cases write nothing, which is why the old log could not tell them apart",
+      all(_none.get(k) == 0 for k in _written) and all(_ref.get(k) == 0 for k in _written),
+      f"none {[_none.get(k) for k in _written]} refused {[_ref.get(k) for k in _written]}")
+check("the run log says how many the extractor PROPOSED",
+      sum((_none.get("proposed") or {}).values()) == 0
+      and sum((_ref.get("proposed") or {}).values()) == 2,
+      f"none {_none.get('proposed')} refused {_ref.get('proposed')}")
+check("and how many the write path REFUSED",
+      sum((_none.get("refused") or {}).values()) == 0
+      and sum((_ref.get("refused") or {}).values()) == 2,
+      f"none {_none.get('refused')} refused {_ref.get('refused')}")
+check("so the two zeros are distinguishable by a number, not by reading the log",
+      (_none.get("proposed") or {}) != (_ref.get("proposed") or {}))
 print(f"\nextraction retry: {len(RUN) - len(FAILED)} passed, {len(FAILED)} failed")
 sys.exit(1 if FAILED else 0)

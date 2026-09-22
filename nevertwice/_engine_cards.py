@@ -1090,14 +1090,26 @@ def process_session(session_id: str, cwd: str, transcript_path: str,
     register_written_notes(project, tags, links)
 
     counts = {nt: len(links[nt]) for nt in TYPED_TYPES}
+    #: What the extractor PROPOSED, beside what was written. Without it a caller cannot tell
+    #: "the extractor returned nothing" from "it returned items and every one was refused", and
+    #: those lead to opposite conclusions: the first is a property of the workload, the second is
+    #: a defect. A stand measuring the cost of memory has to print zero only when it can say
+    #: which - a zero it cannot explain sells a bug as a design (asked for by the auditing
+    #: session while writing `research/token_floor.py`, 2026-09-22).
+    proposed = {nt: len(items_of(nt)) for nt in TYPED_TYPES}
+    refused = {nt: proposed[nt] - counts[nt] for nt in TYPED_TYPES}
     log(f"Done {session_id[:8]} | P={counts['pattern']} "
-        f"M={counts['mistake']} D={counts['decision']}")
+        f"M={counts['mistake']} D={counts['decision']}"
+        + (f" | refused {sum(refused.values())} of {sum(proposed.values())}"
+           if sum(refused.values()) else ""))
     if run_log is not None:
         run_log.append({
             "session_id": session_id, "project": project, "time": time_str,
             "patterns": counts["pattern"],
             "mistakes": counts["mistake"],
             "decisions": counts["decision"],
+            "proposed": dict(proposed),
+            "refused": dict(refused),
         })
     return True
 

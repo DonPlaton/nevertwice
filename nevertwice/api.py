@@ -689,6 +689,12 @@ def capture_session(text: str, *, project: str | None = None,
         return {"stored": bool(ok), "project": r.get("project", project),
                 "agent": agent, "patterns": r.get("patterns", 0),
                 "mistakes": r.get("mistakes", 0), "decisions": r.get("decisions", 0),
+                #: What the extractor proposed, and how much of it the write path refused.
+                #: A caller that sees three zeros cannot otherwise tell "nothing was produced"
+                #: from "everything produced was rejected", and a measurement built on the
+                #: first when the second is true reports a property of the workload where
+                #: there is a defect.
+                "proposed": r.get("proposed", {}), "refused": r.get("refused", {}),
                 "session_id": sid}
     finally:
         m.release_lock()
