@@ -335,5 +335,85 @@ ok, calls = counting_saves(lambda: m.supersede_note(m.VAULT / "Decisions" / f"{o
 check("a lone supersede (the write path's call) still drops the stem and saves once",
       ok and len(calls) == 1 and o not in m.load_embed_cache(), f"ok={ok} writes={len(calls)}")
 
+print("\n- a run that dies mid-queue leaves no retired note in the cache FILE -")
+#: The one-write-per-run change (c929fe3) opened a window: notes moved into Superseded/ one pair
+#: at a time while their vectors stayed in memory until the final write. Anything that ended the
+#: loop other than an OSError - an exception, Ctrl+C, the OS killing the weekly job - left the
+#: file naming notes that were no longer live. Before it, each retirement wrote at once and the
+#: window was one pair. Found by the auditing session with a judge that raises on the third call.
+#:
+#: Read from the FILE, never through `load_embed_cache`: that is memoised by the file's signature
+#: and returns the very dict the loop popped from, so after a crash in the same process it
+#: reports "clean" about a file that is not. The first reading of this probe said zero ghosts on
+#: both versions for exactly that reason.
+import json as _json  # noqa: E402
+
+
+def cache_file():
+    return _json.loads(m.EMBED_CACHE.read_text(encoding="utf-8"))
+
+
+def retired_stems():
+    return sorted(q.stem for q in (m.VAULT / "Decisions" / "Superseded").glob("*.md"))
+
+
+def dies_on(n_call):
+    calls = {"n": 0}
+
+    def judge_(old_title, old_desc, new_desc, project):
+        calls["n"] += 1
+        if calls["n"] == n_call:
+            raise RuntimeError("the process dies here")
+        return True
+    return judge_
+
+
+for label, pass_cache in (("standalone", False), ("with the consolidator's cache", True)):
+    d = fresh()
+    seeded_pairs(N_PAIRS)
+    kw = {"cache": m.load_embed_cache()} if pass_cache else {}
+    died = None
+    try:
+        cm.adjudicate_contested(apply=True, has_llm=True, judge=dies_on(3), **kw)
+    except RuntimeError as e:
+        died = e
+    gone = retired_stems()
+    ghosts = [s for s in gone if s in cache_file()]
+    check(f"{label}: the run really died after retiring two notes",
+          died is not None and len(gone) == 2, f"died={died!r} retired={gone}")
+    check(f"{label}: and none of them is still in the cache file", ghosts == [], str(ghosts))
+
+print("\n- a ghost a killed run left behind is cleared by the next run -")
+#: A killed process runs no `except` and no `finally`, so the write above cannot cover it. What
+#: covers it is the next run: a vector whose note sits in Superseded/ and is not live anywhere is
+#: dropped before judging. Recall already refuses such a note at delivery (one stat a hit), so a
+#: ghost is never served - this keeps it from occupying the cache until a full rebuild.
+d = fresh()
+made = seeded_pairs(N_PAIRS)
+ghost_old, ghost_new = made[0]
+m.supersede_note(m.VAULT / "Decisions" / f"{ghost_old}.md", ghost_new)
+planted = cache_file()
+planted[ghost_old] = {"title": ghost_old, "desc": "d", "vec": [0.1, 0.2]}   # what a kill leaves
+m.EMBED_CACHE.write_text(_json.dumps(planted), encoding="utf-8")
+check("the ghost is planted: its note is retired and its vector is in the file",
+      ghost_old in retired_stems() and ghost_old in cache_file())
+res = cm.adjudicate_contested(apply=True, has_llm=True, judge=judge(True))
+check("the next run clears it from the file", ghost_old not in cache_file(), str(res))
+check("and says how many it cleared", res.get("healed") == 1, str(res.get("healed")))
+
+#: A basename can exist live AND in Superseded/ at once (the 2026-09 review found five). The
+#: live one's vector must survive: the rule is "retired and not live", never "has a copy in
+#: Superseded/".
+d = fresh()
+made = seeded_pairs(N_PAIRS)
+twin_old, twin_new = made[0]
+sup = m.VAULT / "Decisions" / "Superseded"
+sup.mkdir(parents=True, exist_ok=True)
+(sup / f"{twin_old}.md").write_text((m.VAULT / "Decisions" / f"{twin_old}.md").read_text(
+    encoding="utf-8"), encoding="utf-8")                  # a retired copy beside the live note
+res = cm.adjudicate_contested(apply=True, has_llm=True, judge=judge(False))
+check("a note live in its folder keeps its vector even with a copy in Superseded/",
+      twin_old in cache_file() and not res.get("healed"), f"healed={res.get('healed')}")
+
 print(f"\nK8 layer 3: {len(RUN) - len(FAILED)} passed, {len(FAILED)} failed")
 sys.exit(1 if FAILED else 0)

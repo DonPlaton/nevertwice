@@ -1283,6 +1283,16 @@ def embed_text(text: str, kind: str | None = None, timeout: int | None = None,
 # measured) though the vault lock makes this process the only writer. Keyed by
 # (path, mtime_ns, size) so an external change - another process between our runs -
 # still forces a real reload. save_embed_cache refreshes the memo after writing.
+#
+# CONTRACT: load_embed_cache returns the memo's own dict, not a copy. The signature proves the
+# FILE has not changed; it proves nothing about the dict, which callers mutate in place. So a
+# caller that pops or edits the returned cache must write it with save_embed_cache before
+# anything else in this process reads it - or the next load hands back a state that is on no
+# disk. It was harmless while every pop was followed by its own save; once the consolidator
+# started writing the cache once a run (c929fe3), a crash between the pops and the write left
+# the file naming retired notes while load_embed_cache, reading the memo, reported them gone.
+# The auditing session's first probe said "zero ghosts" for exactly that reason. The judge loop
+# now writes on every exit but a kill; readers that must know what is ON DISK read the file.
 _EMBED_CACHE_MEMO: dict = {"sig": None, "data": None}
 
 

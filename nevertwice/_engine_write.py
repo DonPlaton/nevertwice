@@ -115,8 +115,12 @@ def _mark_contested(old_path: Path, new_stem: str) -> bool:
     try:
         text = old_path.read_text(encoding="utf-8", errors="replace")
         fm, _ = _read_frontmatter(text)
-        cur = fm.get(CONTESTED_KEY) or []
-        cur = [cur] if isinstance(cur, str) else [str(x) for x in cur]
+        #: Read through `_contested_of`, the one reader of this field - K9 listed "two stamp
+        #: writers" and the duplicated part was never the write (both go through
+        #: `_stamp_frontmatter`) but this line, a private copy of the reader that kept falsy items
+        #: the canonical one drops. Measured on every shape the frontmatter parser can yield, the
+        #: two agreed, so this removes a copy that could drift rather than a live divergence.
+        cur = _contested_of(fm)
         if new_stem in cur:
             return True
         write_atomic(old_path, _stamp_frontmatter(text, {CONTESTED_KEY: cur + [new_stem]}))
