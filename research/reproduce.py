@@ -594,12 +594,25 @@ ARTIFACTS = [
      "kind": HARDWARE, "task": "F3",
      "inputs": ["local Qwen2.5-Instruct weights", "a CUDA GPU", "torch", "transformers"],
      "note": "generates text with local models. Needs hardware a fresh clone does not carry."},
+    # `--xrerank --save`, and both flags are load-bearing. Without `--save` nothing is written
+    # at all (the write is gated at `longmem_eval.py:460`), which is how this entry stood until
+    # 2026-09-22 - it named a command that could not produce the file it claims. Without
+    # `--xrerank` the run emits four of the artifact's five method blocks and DELETES
+    # `hybrid+xrerank`, which four live claims point into: reproducing would destroy their
+    # evidence. Two registered commands write this one file, and a package entry can express
+    # one - so it carries the superset, and the split is recorded as a defect of the register
+    # rather than designed around.
     {"file": "research/longmem_results.json",
-     "command": ["python", "research/longmem_eval.py"],
+     "command": ["python", "research/longmem_eval.py", "--xrerank", "--save"],
      "kind": ABSENT_INPUT, "task": "prior",
-     "inputs": ["research/data/longmemeval_oracle.json"],
-     "note": "the LongMemEval-oracle dataset is third-party and not committed. Every claim "
-             "from this artifact is already withdrawn as stale in the evidence manifest."},
+     "inputs": ["research/data/longmemeval_oracle.json",
+                "research/data/longmem_embeds__c28000.json",
+                "a CUDA GPU for the cross-encoder"],
+     "note": "the LongMemEval-oracle dataset is third-party and not committed, and the vector "
+             "cache is a gitignored input rebuilt by `--embed`. Eighteen claims from this "
+             "artifact are LIVE as of 2f9e005 - fourteen from the plain run and four from the "
+             "cross-encoder block - so a reproduction that drops `--xrerank` withdraws four of "
+             "them by overwriting the block they read."},
 ]
 
 
