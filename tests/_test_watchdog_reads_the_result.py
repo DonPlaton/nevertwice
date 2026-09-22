@@ -111,14 +111,32 @@ for label, code in (("never run yet", 267011), ("running right now", 267009)):
     check(f"a task {label} ({code}) is not a failure",
           summary.startswith("4/4 ok") and not degrades, summary)
 
-#: A locale whose label we cannot match leaves the field unparsed. Reporting a failure there
-#: would be the same mistake pointed the other way: a watchdog that cries wolf on a language.
-UNKNOWN = ("TaskName: {name}\nStatus: Ready\nNext Run Time: 27.09.2026 3:00:00\n"
-           "Resultat vum leschte Laf: -2147020576\n")
-with mock.patch.object(mt, "_schtasks", _scheduler(HEALTHY, UNKNOWN)):
+#: A result we cannot read is unknown, not failing. Reporting a failure there would be the same
+#: mistake pointed the other way: a watchdog that cries wolf on a language.
+#:
+#: There are TWO ways to fail to read it, and covering one leaves the other's branch dead. The
+#: label can be one we do not recognise, so `_field` returns None and the `int()` is never
+#: reached; or the label can be recognised and the VALUE refuse to parse. The second matters
+#: because how `schtasks` prints this field depends on the code page, not only on the system:
+#: through PowerShell under `chcp 65001` the same task prints `Last Result:` in Latin script,
+#: through `subprocess` from Python it prints `Прошлый результат`. A field whose spelling moves
+#: with the console is not a field whose formatting can be assumed.
+UNKNOWN_LABEL = ("TaskName: {name}\nStatus: Ready\nNext Run Time: 27.09.2026 3:00:00\n"
+                 "Resultat vum leschte Laf: -2147020576\n")
+with mock.patch.object(mt, "_schtasks", _scheduler(HEALTHY, UNKNOWN_LABEL)):
     summary, degrades = mt.tasks_health()
-check("an unreadable result field is unknown, not failing",
+check("a result field whose LABEL we do not know is unknown, not failing",
       summary.startswith("4/4 ok") and not degrades, summary)
+
+for label, printed in (("hexadecimal", "0x800710E0"),
+                       ("grouped with a non-breaking space", "-2 147 020 576"),
+                       ("empty", "")):
+    tmpl = ("TaskName: {name}\nStatus: Ready\nNext Run Time: 27.09.2026 3:00:00\n"
+            "Last Result: " + printed + "\n")
+    with mock.patch.object(mt, "_schtasks", _scheduler(HEALTHY, tmpl.replace("{result}", ""))):
+        summary, degrades = mt.tasks_health()
+    check(f"a result printed {label} is unknown, not failing",
+          summary.startswith("4/4 ok") and not degrades, summary)
 
 
 print("# and the query asks for the verbose listing, which is what carries the field")
