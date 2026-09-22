@@ -215,6 +215,30 @@ def _pool_from(data) -> dict:
     return pool
 
 
+def named_or_raise(fn, *names) -> None:
+    """Refuse to call `fn` with keywords it does not have.
+
+    A library with `**kwargs` accepts any keyword and may ignore it in silence. `limit=10` was
+    passed to mem0's `Memory.search` for as long as this stand has existed; the parameter is
+    `top_k`, default 20, and `limit` went into `**kwargs` and was dropped - no exception, no
+    warning, and every run fetched twenty where the code said ten.
+
+    The diagnostic that catches this class: name the value at which the argument would change
+    the result. There is none, so the argument is not about the system - it is a word. This
+    asks the receiving signature instead of trusting the call, and it can only run where the
+    package is installed, which is exactly where the call happens.
+
+    It does not catch a keyword the library accepts and then ignores by its own logic; that
+    boundary is real and is why this refuses rather than certifies.
+    """
+    import inspect                                            # noqa: PLC0415
+    params = inspect.signature(fn).parameters
+    missing = [n for n in names if n not in params]
+    if missing:
+        raise TypeError(f"{fn.__qualname__} has no parameter(s) {missing} - it would swallow "
+                        f"them in **kwargs. Its signature is ({', '.join(params)}).")
+
+
 def _dedup(seq):
     seen, out = set(), []
     for s in seq:
@@ -279,7 +303,21 @@ def score(ranked_by_q: dict, data, pool_ids) -> dict:
             row[f"h{k}"] = int(in_k)
             if in_k:
                 hit[k] += 1
-        for i, s in enumerate(got):
+        #: MRR is taken over the SAME depth for every arm, and it was not. R@k truncates at k
+        #: just above; this loop walked the whole list, so the metric quietly depended on how
+        #: many candidates an arm happened to return. And they differ: `Memory.search` in mem0
+        #: 2.0.19 has no `limit` parameter at all - it is `top_k`, default 20 - so `limit=max(KS)`
+        #: below went into `**kwargs` and vanished, and Mem0 answered with twenty where our arm
+        #: and LangMem answered with ten. A hit at rank 11-20 then earned Mem0 up to 1/11 of a
+        #: point that the other arms could not earn at any quality, because they were never
+        #: allowed to look that deep. Found by the auditing session, in a stand that is ours.
+        #:
+        #: Truncating here is the fix that does not depend on remembering it again: whatever an
+        #: arm returns, the metric reads max(KS) of it, and an arm that returns more gains
+        #: nothing from the surplus. It changes no recorded number of ours - measured over the
+        #: three committed artifacts, our arm has ZERO hits past rank 10 out of 500, 1977 and
+        #: 500 questions, which is what an arm returning exactly ten must have.
+        for i, s in enumerate(got[:max(KS)]):
             if s in rel:
                 mrr += 1.0 / (i + 1)
                 row["rr"] = round(1.0 / (i + 1), 4)
@@ -412,10 +450,15 @@ def run_mem0(data, pool, infer=None) -> dict:
             if infer and not written:
                 silent += 1            # its extractor failed or extracted nothing: no memory
         ingest_s = time.time() - t0
+        named_or_raise(mem.search, "top_k", "filters")
         t1 = time.time()
         ranked = {}
         for e in data:
-            r = mem.search(e["question"], filters={"user_id": "lme"}, limit=max(KS))
+            #: `top_k`, not `limit`: mem0 2.0.19 takes `top_k` (default 20) and swallows
+            #: every other keyword in `**kwargs` without a word. `limit=max(KS)` was a
+            #: sentence, not an argument - there was no value of it at which this line
+            #: would have behaved differently.
+            r = mem.search(e["question"], filters={"user_id": "lme"}, top_k=max(KS))
             res = r.get("results", r) if isinstance(r, dict) else r
             ranked[e["question_id"]] = [(x.get("metadata") or {}).get("session_id") for x in res]
         query_s = time.time() - t1

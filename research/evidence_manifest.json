@@ -8592,7 +8592,7 @@
         "research/longmem_eval.py",
         "sandbox_guard.py"
       ],
-      "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the re-measurement is queued: the campaign runs this command and `tools/remeasure.py --restore` reads the number out of the artifact it writes",
+      "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the re-measurement is queued: the campaign runs this command and `tools/remeasure.py --restore` reads the number out of the artifact it writes And a second reason, found 2026-09-22: this MRR was computed over a deeper list than the arms it is compared with. `Memory.search` in mem0 2.0.19 takes `top_k` (default 20) and has no `limit`, so the stand's `limit=max(KS)` went into `**kwargs` and vanished - Mem0 answered with twenty candidates where our arm and LangMem answered with ten, and `score()` walked the whole list for MRR while truncating recall at k. A hit at rank 11-20 earned Mem0 up to 1/11 that no other arm could earn. Both halves are fixed (`top_k`, and MRR truncated at max(KS)); recall@k is untouched. The size of the correction is NOT known - competitor per-question rows were never saved, which is the same gap that blocks the paired McNemar - so the re-measured number must be read as a new measurement, not as drift.",
       "withdrawn_on": "2026-08-25",
       "pending_remeasure": true
     },
@@ -11618,7 +11618,7 @@
         "sandbox_guard.py"
       ],
       "cited_in_pending": [],
-      "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
+      "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored And a second reason, found 2026-09-22: this MRR was computed over a deeper list than the arms it is compared with. `Memory.search` in mem0 2.0.19 takes `top_k` (default 20) and has no `limit`, so the stand's `limit=max(KS)` went into `**kwargs` and vanished - Mem0 answered with twenty candidates where our arm and LangMem answered with ten, and `score()` walked the whole list for MRR while truncating recall at k. A hit at rank 11-20 earned Mem0 up to 1/11 that no other arm could earn. Both halves are fixed (`top_k`, and MRR truncated at max(KS)); recall@k is untouched. The size of the correction is NOT known - competitor per-question rows were never saved, which is the same gap that blocks the paired McNemar - so the re-measured number must be read as a new measurement, not as drift.",
       "withdrawn_on": "2026-09-19",
       "pending_remeasure": true
     },
@@ -19322,7 +19322,7 @@
       "cited_in_pending": [
         "docs/BENCHMARKS.md"
       ],
-      "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
+      "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored And a second reason, found 2026-09-22: this MRR was computed over a deeper list than the arms it is compared with. `Memory.search` in mem0 2.0.19 takes `top_k` (default 20) and has no `limit`, so the stand's `limit=max(KS)` went into `**kwargs` and vanished - Mem0 answered with twenty candidates where our arm and LangMem answered with ten, and `score()` walked the whole list for MRR while truncating recall at k. A hit at rank 11-20 earned Mem0 up to 1/11 that no other arm could earn. Both halves are fixed (`top_k`, and MRR truncated at max(KS)); recall@k is untouched. The size of the correction is NOT known - competitor per-question rows were never saved, which is the same gap that blocks the paired McNemar - so the re-measured number must be read as a new measurement, not as drift.",
       "withdrawn_on": "2026-09-19",
       "pending_remeasure": true
     },
@@ -20310,7 +20310,7 @@
       "cited_in_pending": [
         "docs/BENCHMARKS.md"
       ],
-      "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
+      "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored And a second reason, found 2026-09-22: this MRR was computed over a deeper list than the arms it is compared with. `Memory.search` in mem0 2.0.19 takes `top_k` (default 20) and has no `limit`, so the stand's `limit=max(KS)` went into `**kwargs` and vanished - Mem0 answered with twenty candidates where our arm and LangMem answered with ten, and `score()` walked the whole list for MRR while truncating recall at k. A hit at rank 11-20 earned Mem0 up to 1/11 that no other arm could earn. Both halves are fixed (`top_k`, and MRR truncated at max(KS)); recall@k is untouched. The size of the correction is NOT known - competitor per-question rows were never saved, which is the same gap that blocks the paired McNemar - so the re-measured number must be read as a new measurement, not as drift.",
       "withdrawn_on": "2026-09-19",
       "pending_remeasure": true
     },
@@ -20804,7 +20804,7 @@
       "cited_in_pending": [
         "docs/BENCHMARKS.md"
       ],
-      "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
+      "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored And a second reason, found 2026-09-22: this MRR was computed over a deeper list than the arms it is compared with. `Memory.search` in mem0 2.0.19 takes `top_k` (default 20) and has no `limit`, so the stand's `limit=max(KS)` went into `**kwargs` and vanished - Mem0 answered with twenty candidates where our arm and LangMem answered with ten, and `score()` walked the whole list for MRR while truncating recall at k. A hit at rank 11-20 earned Mem0 up to 1/11 that no other arm could earn. Both halves are fixed (`top_k`, and MRR truncated at max(KS)); recall@k is untouched. The size of the correction is NOT known - competitor per-question rows were never saved, which is the same gap that blocks the paired McNemar - so the re-measured number must be read as a new measurement, not as drift.",
       "withdrawn_on": "2026-09-19",
       "pending_remeasure": true
     },

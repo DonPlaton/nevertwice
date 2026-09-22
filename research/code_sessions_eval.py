@@ -172,6 +172,11 @@ def contexts_mem0_infer(corpus: dict) -> dict:
            "vector_store": {"provider": "qdrant", "config": {"collection_name": "codesess", "path": str(base / "qdrant"),
                                                              "on_disk": True, "embedding_model_dims": 1024}}}
     mem = Memory.from_config(cfg)
+    #: Once, before any work: `limit=10` stood here and mem0 2.0.19 has no `limit` - it is
+    #: `top_k`, default 20 - so the keyword went into `**kwargs` and every query fetched
+    #: twenty. See `head_to_head.named_or_raise`.
+    import head_to_head as hh                                    # noqa: PLC0415
+    hh.named_or_raise(mem.search, "top_k", "filters")
     out = {"_ingest": {"llm": EXTRACTOR, "llm_calls_per_session": 2, "sessions": 0, "errors": 0}}
     for i, p in enumerate(corpus["projects"]):
         for s in p["sessions"]:
@@ -181,7 +186,7 @@ def contexts_mem0_infer(corpus: dict) -> dict:
             except Exception:                                    # noqa: BLE001
                 out["_ingest"]["errors"] += 1
         for q in p["questions"]:
-            r = mem.search(q["question"], filters={"user_id": p["id"]}, limit=10)
+            r = mem.search(q["question"], filters={"user_id": p["id"]}, top_k=10)
             res = r.get("results", r) if isinstance(r, dict) else r
             out[q["id"]] = [{"id": x.get("id"), "text": x.get("memory") or x.get("text") or ""} for x in res]
         print(f"  [{i + 1}/{len(corpus['projects'])}] {p['slug']}", flush=True)

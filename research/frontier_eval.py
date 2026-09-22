@@ -214,8 +214,9 @@ def contexts_mem0_infer(data, pool) -> dict:
                                                              "on_disk": True}}}
     mem = Memory.from_config(cfg)
     out = {}
+    hh.named_or_raise(mem.search, "top_k", "filters")
     for e in data:
-        r = mem.search(e["question"], filters={"user_id": "lme"}, limit=10)
+        r = mem.search(e["question"], filters={"user_id": "lme"}, top_k=10)
         res = r.get("results", r) if isinstance(r, dict) else r
         out[e["question_id"]] = [{"id": (x.get("metadata") or {}).get("session_id") or x.get("id"),
                                   "text": x.get("memory") or x.get("text") or ""} for x in res]
