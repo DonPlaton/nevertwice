@@ -238,7 +238,8 @@ ARTIFACTS = [
              "the public path wrote - a diagnosis of the extractor's silence on a two-sentence session."},
     {"file": "research/results/supersession_v1_implicit.json",
      "command": ["python", "research/supersession_bench.py", "--dataset",
-                 "research/data/supersession_v1_implicit.json", "--arms", "nevertwice,naive"],
+                 "research/data/supersession_v1_implicit.json", "--arms", "nevertwice,naive",
+                 "--runs", "2", "--out", "research/results/supersession_v1_implicit.json"],
      "kind": HARDWARE, "task": "supersession",
      "inputs": ["research/data/supersession_v1_implicit.json",
                 "a local Ollama serving bge-m3 and the extraction model",
@@ -382,9 +383,13 @@ ARTIFACTS = [
                 "a local Ollama serving bge-m3 (the prompt_recall arm) and qwen3-coder:30b (the model-written patterns)"],
      "volatile": ["ms_per_call", "seconds", "latency"],
      "note": "every arm read at a matched false-alarm rate; the deterministic arms reproduce on CPU, the model arm needs the GPU"},
+    # `--runs 2` is load-bearing: without it the artifact pools one run, which
+    # `register_supersession.py` refuses (MIN_RUNS). Caught by
+    # `tests/_test_package_commands_match.py` on its first battery - the same shape as the
+    # longmem entry corrected in `bd7f0d4`, in a second place.
     {"file": "research/results/supersession_v1.json",
      "command": ["python", "research/supersession_bench.py",
-                 "--arms", "nevertwice,naive", "--out",
+                 "--arms", "nevertwice,naive", "--runs", "2", "--out",
                  "research/results/supersession_v1.json"],
      "kind": HARDWARE, "task": "supersession",
      "inputs": ["research/data/supersession_v1.json",
