@@ -116,15 +116,22 @@ print("# and the engine's own patterns are compiled only when something uses the
 #: path. `_lazy_re` compiles on first use. The property worth pinning is not that the proxy exists
 #: - that is one grep - but that the hot path still does not touch them, because moving one use
 #: onto that path costs the milliseconds back with nothing going red.
+#: `eager` is counted separately, and it is not decoration. The lazy population is found by
+#: `type(v).__name__ == '_lazy_re'`, which is the same predicate the checks below assert - so a
+#: pattern put back to `re.compile` leaves the sample and the suite goes on saying "all lazy
+#: patterns are lazy" while one is not. Counting the compiled `re.Pattern` objects on the module
+#: asks the question the error message already claims to be asking: has a pattern moved.
 probe = (
-    "import sys, json; sys.path.insert(0, %r)\n"
+    "import sys, json, re; sys.path.insert(0, %r)\n"
     "import memory_hook as m\n"
     "lazy = [v for v in vars(m).values() if type(v).__name__ == '_lazy_re']\n"
+    "eager = sum(1 for v in vars(m).values() if isinstance(v, re.Pattern))\n"
     "before = sum(1 for v in lazy if v._compiled is not None)\n"
     "m.emit_pretooluse_guard({'tool_name': 'Bash', 'tool_input': {'command': 'rm -rf /tmp/x'}},\n"
     "                        %r)\n"
     "after = sum(1 for v in lazy if v._compiled is not None)\n"
-    "print(json.dumps({'total': len(lazy), 'before': before, 'after': after}))\n"
+    "print(json.dumps({'total': len(lazy), 'eager': eager,\n"
+    "                  'before': before, 'after': after}))\n"
 ) % (str(PKG), str(ROOT))
 env = dict(os.environ)
 store = tempfile.mkdtemp(prefix="lazyre_")
@@ -143,6 +150,11 @@ if counts:
     check(f"all {counts['total']} engine patterns are lazy, none compiled at import",
           counts["total"] >= 20 and counts["before"] == 0,
           f"{counts['before']} were already compiled")
+    check("and no eagerly compiled pattern is left on the module at all",
+          counts.get("eager") == 0,
+          f"{counts.get('eager')} `re.Pattern` object(s) on the module - one went back to "
+          f"`re.compile` and so left the lazy sample, which is how this suite could otherwise "
+          f"keep reporting that every lazy pattern is lazy")
     check("and a PreToolUse guard forces none of them",
           counts["after"] == 0,
           f"{counts['after']} compiled during the guard - either the hot path grew or a pattern "
