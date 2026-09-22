@@ -110,11 +110,19 @@ check("reading the loader AND its parts finds them",
 
 #: And the live probe, on this machine's real install, must not report a lag it cannot name.
 _rec = probe.probe()
-check("the probe reads more than the loader from the install",
-      _rec.get("installed_engine_bytes", 0) > 4 * _rec.get("installed_bytes", 1),
-      f"engine {_rec.get('installed_engine_bytes')} vs loader {_rec.get('installed_bytes')}")
-check("and it names the files it read",
-      len(_rec.get("installed_parts") or []) >= 2, str(_rec.get("installed_parts"))[:90])
+#: On a clean clone there is no installed hook at all - CI's first matrix run reported
+#: "engine None vs loader None" for these two, which says nothing about the probe and everything
+#: about the runner. The property is about an install that EXISTS; where there is none, the
+#: answer is that there is none, and it is said rather than counted as a pass.
+if not _rec.get("installed_bytes"):
+    print("  SKIP  no hook is configured in this environment - these two are about an install "
+          f"that exists (status: {_rec.get('status')})")
+else:
+    check("the probe reads more than the loader from the install",
+          _rec.get("installed_engine_bytes", 0) > 4 * _rec.get("installed_bytes", 1),
+          f"engine {_rec.get('installed_engine_bytes')} vs loader {_rec.get('installed_bytes')}")
+    check("and it names the files it read",
+          len(_rec.get("installed_parts") or []) >= 2, str(_rec.get("installed_parts"))[:90])
 
 
 print()

@@ -104,8 +104,16 @@ for label, out in (("today", out_today), ("renamed", out_renamed), ("empty", out
     #: "swept=0". An earlier draft accepted `"swept" not in out`, which passes for any log that
     #: merely lacks the word: absence taken as evidence, and it would have survived a change of
     #: format (auditing session). Requiring one of the two named sentences is the positive form.
+    #: A THIRD wording, added 2026-09-22 after CI's first matrix run: on a runner with no model
+    #: at all the engine never reaches the sweep decision and closes with "No LLM backend
+    #: available (cloud key unset + Ollama down) - paused". That is the same statement in a
+    #: stronger form - nothing was swept, and the log says why - so it is named here rather
+    #: than the check being widened to "the run said something". The suite already closes the
+    #: Ollama port and strips the cloud keys; this machine still reaches a backend and CI does
+    #: not, which is exactly the difference the matrix exists to show.
     check(f"{label}: the run states that it swept nothing",
-          ("swept=0" in out) or ("no backlog (lock never taken)" in out),
+          ("swept=0" in out) or ("no backlog (lock never taken)" in out)
+          or ("No LLM backend available" in out and "paused" in out),
           out.strip()[-140:].replace("\n", " | "))
 
 print("\n- today's contract is recognised, and says which event it was -")

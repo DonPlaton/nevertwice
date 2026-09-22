@@ -42,7 +42,18 @@ TS_RE = re.compile(r"\d{4}-\d{2}-\d{2}(?:[T ]\d{2}:\d{2}(?::\d{2})?)?")
 SID_RE = re.compile(r"\b[0-9a-f]{8}\b")
 #: Bookkeeping files key on absolute transcript paths, and a sandbox lands somewhere new every
 #: run. Where the sandbox landed is a property of the host, not a decision the engine made.
-TMP_RE = re.compile(r"[A-Za-z]:\\\\?[^\"\n]*?[Tt]e?mp\\\\?[^\"\n]*|/tmp/[^\"\n]*")
+#: The mask knew two shapes of temporary path - a Windows one and `/tmp/` - and a GitHub runner
+#: uses a third, `/home/runner/work/_temp/...`. So the source transcript path survived the mask
+#: there, the hash of `.processed_sessions.json` differed from the recorded fixture, and the
+#: golden store read as changed on every Linux and macOS job of CI's first matrix run
+#: (2026-09-22) while being byte-identical twice in a row on each machine. A fixture that can
+#: only be verified where it was recorded is not a fixture; the third shape is named here, and
+#: the pattern now matches a temp segment anywhere in a POSIX path rather than a known prefix.
+TMP_RE = re.compile(
+    r'[A-Za-z]:\\\\?[^"\n]*?[Tt]e?mp\\\\?[^"\n]*'      # C:\...\Temp\... (escaped in JSON)
+    r'|/[^"\n]*?/(?:_temp|tmp|temp|Temp|TEMP)/[^"\n]*'  # /home/runner/work/_temp/..., any root
+    r'|/tmp/[^"\n]*'                                    # /tmp/... at the root
+)
 #: Byte offsets into those transcripts move with them, for the same reason.
 NUM_RE = re.compile(r'"(from_byte|size|bytes|mtime)":\s*-?\d+')
 

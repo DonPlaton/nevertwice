@@ -393,9 +393,28 @@ def _fixture(tmp: Path, name: str, *, guarded: bool, red: bool = True) -> Path:
     return path
 
 
+def _pytest_available() -> bool:
+    """Is there a pytest to measure? The core CI matrix installs nothing, so there is not.
+
+    The blocks below measure what BARE PYTEST does with a red suite - that is the whole defect
+    they exist for - and without pytest they measured an empty string and called the fixture
+    broken. On CI's first matrix run (2026-09-22) that read as "the fixture no longer
+    reproduces the defect", which is the worst available message: it blames the fixture for the
+    absence of the instrument. The `packaging` job installs `[dev]` and runs this for real.
+    """
+    try:
+        return subprocess.run([sys.executable, "-m", "pytest", "--version"],
+                              capture_output=True, timeout=120).returncode == 0
+    except (OSError, subprocess.SubprocessError):
+        return False
+
+
 def test_the_defect_is_real_and_the_guard_closes_it() -> None:
     """Two suites of the same shape, one guarded, run through a real pytest subprocess."""
     print("\n- measured through pytest itself -")
+    if not _pytest_available():
+        print("  SKIP  no pytest here - this block measures a property OF pytest; `packaging` installs it")
+        return
     with tempfile.TemporaryDirectory() as td:
         tmp = Path(td)
         bare = _fixture(tmp, "_test_bare_fixture.py", guarded=False)
@@ -424,6 +443,9 @@ def test_the_defect_is_real_and_the_guard_closes_it() -> None:
 def test_a_green_suite_stays_green_under_both_channels() -> None:
     """The guard must not invent failures: a suite with no FAIL passes both ways."""
     print("\n- the guard is silent when there is nothing to report -")
+    if not _pytest_available():
+        print("  SKIP  no pytest in this environment (see the block above)")
+        return
     with tempfile.TemporaryDirectory() as td:
         tmp = Path(td)
         path = _fixture(tmp, "_test_green_fixture.py", guarded=True, red=False)

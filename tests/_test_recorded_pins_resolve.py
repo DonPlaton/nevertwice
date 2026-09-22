@@ -146,7 +146,15 @@ foreign_n = sum(1 for _, dotted, key, v, is_foreign in pins
 #: resolve here; its `commit` (5687219) does not, and the subject it carries names a dev commit
 #: (bac8b79) that does. So the pin is honest and unfollowable from this repository - an inventory
 #: of one, which fails the moment a second such pin appears.
-KNOWN_ELSEWHERE = {"research/results/installed_engine.json"}
+#: A SECOND such pin appeared on 2026-09-22, exactly as the sentence above predicted it would.
+#: `head_to_head_locomo.json` pins `f0ed0809` for twelve of its arms; the commit resolves on this
+#: machine and on no clone, because it lives on `invariants/v3-preclean`, a branch that was never
+#: pushed. CI's first matrix run reported it as `(unknown)`. The pin is not wrong - it names a
+#: real commit - it is unverifiable by anyone else, which for a provenance pin is the same
+#: practical thing. The fix is to publish that ref or re-stamp the artifact, and both are the
+#: owner's call; recorded here so the state is counted rather than discovered again.
+KNOWN_ELSEWHERE = {"research/results/installed_engine.json",
+                   "research/results/head_to_head_locomo.json"}
 
 missing = []
 for rel, dotted, value in commitish:
@@ -159,8 +167,27 @@ for rel, dotted, value in commitish:
 check(f"{len(commitish) - len(KNOWN_ELSEWHERE)} commit pins here, and each names a commit that "
       "exists", not missing, " | ".join(missing[:3]))
 #: The exemption is an inventory, so it cannot grow quietly.
-check("exactly one artifact pins a commit from another checkout", len(KNOWN_ELSEWHERE) == 1)
+check("exactly two artifacts pin a commit no clone can follow", len(KNOWN_ELSEWHERE) == 2,
+      str(sorted(KNOWN_ELSEWHERE)))
 check("there were commit pins to resolve", len(commitish) >= 5, str(len(commitish)))
+
+#: And the condition itself, counted rather than left inside the inventory: a pin that resolves
+#: HERE but sits on no remote-tracking branch is provenance only this machine can check. Asked of
+#: every pin, so a third one is a number rather than a discovery.
+_unpublished = []
+for rel, dotted, value in commitish:
+    if subprocess.run(["git", "cat-file", "-t", value], cwd=ROOT, capture_output=True,
+                      text=True).stdout.strip() != "commit":
+        continue
+    on_remote = subprocess.run(["git", "branch", "-r", "--contains", value], cwd=ROOT,
+                               capture_output=True, text=True).stdout.strip()
+    if not on_remote:
+        _unpublished.append(f"{rel}:{dotted} = {value[:12]}")
+check(f"pins that resolve here but on no pushed branch are counted ({len(_unpublished)})",
+      len(_unpublished) <= 12, "; ".join(_unpublished[:3]))
+if _unpublished:
+    print(f"       ({len(_unpublished)} pin(s) name a commit that exists only on this machine - "
+          f"publish the ref or re-stamp the artifact)")
 print(f"       ({foreign_n} name another repository's history and are not asked of this one)")
 
 print("\n- every sha256 recorded beside a path matches that file, where the file is here -")
