@@ -585,10 +585,21 @@ def main(argv=None) -> int:
                 print(f"  {name:12s} REFUSED to print a zero cost: nothing beside it explains "
                       f"the zero (need both `answer_reachable` and `proposed`)")
                 continue
+            #: The CONDITION travels with the number, never in a footnote. Mem0's cost is a
+            #: function of how many memories it returns, and that is `top_k` -- left at its
+            #: own default here, but a reader who sees "11,566 characters per turn" without it
+            #: cannot tell whose setting produced the figure. The same line prints the mean
+            #: beside the median, because the two answer different questions: the median says
+            #: what a typical turn costs, the mean is what accumulates over a session, and a
+            #: curve built on the median made us six times cheaper than we are.
+            vals = [r.get("chars") or 0 for r in res["rows"]]
+            mean = sum(vals) / len(vals) if vals else 0.0
+            cond = f"   [top_k={res['rows'][0]['top_k']}, Mem0 default]" if (
+                res.get("rows") and "top_k" in res["rows"][0]) else ""
             print(f"  {name:12s} session start {start:6d} chars   "
-                  f"per turn median {pt['median_chars']:5d} chars   "
+                  f"per turn median {pt['median_chars']:5d} mean {mean:7.1f} chars   "
                   f"injected on {pt['turns_that_injected']}/{pt['n']} turns   "
-                  f"answer reachable {pt['answer_reachable']}/{pt['n']}")
+                  f"answer reachable {pt['answer_reachable']}/{pt['n']}{cond}")
             if ing:
                 wc = ing.get("write_cost_tokens") or {}
                 verdict = ("extractor produced nothing - a regime, not a refusal"
