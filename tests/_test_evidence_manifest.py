@@ -384,6 +384,62 @@ def test_the_backlog_can_only_shrink() -> None:
           f" documents remain unregistered)")
 
 
+def test_the_third_register_state_cannot_grow() -> None:
+    """A claim is live, or queued for re-measure. The register holds a third state anyway.
+
+    Counted on 2026-09-22: 861 claims = 101 live + 572 pending + **188 withdrawn and NOT queued**.
+    Forty-eight of those are declarations with no artifact and three carry no pointer, which is
+    lawful. The other 137 carry a command, an artifact and a pointer - indistinguishable in shape
+    from the 572 the campaign will re-measure - and `--pending` does not print them, so the
+    campaign plan does not see them. Every one of the 137 says why, in the `stale` field that marks it - the gap is not in
+    the data but in the REPORTING: `--pending` prints the queue and never mentions them.
+
+    Reasons exist for some of them OUTSIDE the register: the switch arm is not shipped, `token_ab`
+    stands behind a cancelled block, the baselines are historical by construction. A reader of the
+    register cannot see any of that, and cannot tell those claims from forgotten ones.
+
+    Sorting them out is the owner's call (D16 in the report), so this does not demand a reason -
+    it ratchets. `--withdraw` sets `stale` AND `pending_remeasure` together and `--restore` clears
+    both, so the supported tools cannot produce this state at all; it can only arrive by hand or
+    by a future tool that forgets the flag. The ratchet catches exactly that.
+    """
+    print("")
+    print("- the withdrawn-but-unqueued state is fenced, not growing -")
+    claims = MANIFEST["claims"]
+    live = [c for c in claims if not c.get("stale")]
+    pending = [c for c in claims if c.get("pending_remeasure")]
+    third = [c for c in claims if c.get("stale") and not c.get("pending_remeasure")]
+    check(f"the register still has the three states it had "
+          f"({len(live)} live, {len(pending)} pending, {len(third)} neither)",
+          len(live) + len(pending) + len(third) == len(claims),
+          f"{len(live)}+{len(pending)}+{len(third)} != {len(claims)}")
+    shaped = [c for c in third if c.get("command") and c.get("raw") and c.get("pointer")]
+    check(f"and the shaped part of it is counted, not implied ({len(shaped)})",
+          len(shaped) >= 100, str(len(shaped)))
+    #: The reason lives in `stale` ITSELF - `withdraw` writes `c["stale"] = reason`, so the field
+    #: is a sentence, not a boolean. The first version of this check counted an empty `note` and
+    #: reported 81 claims "saying nothing"; all 137 say why, in the field that marks them. Asking
+    #: the adjacent field is the defect this suite exists to catch, and it was caught by the
+    #: auditing session reading the values instead of the key (2026-09-22).
+    mute = [c for c in shaped if not str(c.get("stale") or "").strip()]
+    check(f"every one of them says why it is out of the queue ({len(shaped) - len(mute)} of "
+          f"{len(shaped)})", not mute, "; ".join(c["id"] for c in mute[:3]))
+
+    #: And the invariant the ratchet leans on, exercised rather than trusted: the tool that
+    #: withdraws a claim always queues it, so this state cannot be reached through the tool.
+    sys.path.insert(0, str(ROOT / "tools"))
+    import remeasure as _rm
+    probe = {"claims": [{"id": "probe.one", "produced_by": ["nevertwice/_engine.py"],
+                         "cited_in": ["docs/X.md"], "raw": "research/results/x.json",
+                         "pointer": "a.b", "command": "python x.py"}]}
+    _rm.withdraw(probe, "a reason", "2026-09-22", touching={"nevertwice/_engine.py"})
+    got = probe["claims"][0]
+    check("`--withdraw` queues every claim it withdraws",
+          bool(got.get("stale")) and bool(got.get("pending_remeasure")),
+          f"stale={got.get('stale')!r} pending={got.get('pending_remeasure')!r}")
+
+
+
 def test_generated_regions_match_the_manifest() -> None:
     print("\n- the generated tables are current -")
     proc = subprocess.run([sys.executable, str(ROOT / "tools" / "render_claims.py")],

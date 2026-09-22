@@ -256,6 +256,16 @@ with contextlib.redirect_stdout(_buf):
 _out = _buf.getvalue()
 check("the listing warns rather than printing the command bare",
       "cannot write that file as it stands" in _out)
+#: The queue is not the register. 188 withdrawn claims sit outside it with their reason in
+#: `stale`, and this listing used to print the queue and its size and never say they existed -
+#: so a campaign planned from "572 pending" would end with the register whole minus those.
+check("the listing names the withdrawn claims that are NOT in the queue",
+      "are NOT in this queue" in _out)
+_third = re.search(r"and (\d+) withdrawn claim\(s\) are NOT in this queue", _out)
+check(f"and counts them, so the number the campaign plans against is visible "
+      f"({_third.group(1) if _third else '?'})",
+      bool(_third) and int(_third.group(1)) >= 150, _out[-200:] if not _third else "")
+
 _tail = [ln for ln in _out.splitlines() if "declares incomplete" in ln]
 check("and it says how many claims stand behind such a command", bool(_tail),
       _out.splitlines()[-1] if _out else "(no output)")

@@ -458,6 +458,24 @@ def main(argv: list[str] | None = None) -> int:
         if how:
             flagged += len(ids)
             print(f"       ! this command cannot write that file as it stands: {how}")
+    #: The third state, which this listing used to hide. A claim is withdrawn AND queued, or
+    #: withdrawn and left out of the queue with its reason in `stale`. `--pending` printed the
+    #: queue and its size and never said the second group existed, so a campaign planned from
+    #: "572 pending" inherited the blindness: after a perfect campaign the register is not whole,
+    #: it is whole minus these. Counted here rather than stamped anywhere - the reasons are
+    #: already in the claims (2026-09-22).
+    third: dict[str, int] = {}
+    for c in manifest["claims"]:
+        if c.get("stale") and not c.get("pending_remeasure"):
+            third[str(c["stale"]).split(":")[0][:56]] = third.get(
+                str(c["stale"]).split(":")[0][:56], 0) + 1
+    if third:
+        t = sum(third.values())
+        print("")
+        print(f"  and {t} withdrawn claim(s) are NOT in this queue - re-measuring everything "
+              f"above leaves them where they are:")
+        for reason, k in sorted(third.items(), key=lambda kv: -kv[1])[:6]:
+            print(f"    {k:3d}  {reason}")
     if flagged:
         print("")
         print(f"  {flagged} of the {n} stand behind a command the package declares incomplete "
