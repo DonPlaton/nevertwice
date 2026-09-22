@@ -415,6 +415,15 @@ def ruff_complexity(path: Path) -> dict[str, int] | None:
         except (IndexError, ValueError):
             continue
         out[name] = number
+    #: The same three-way answer as `_ruff_diagnostics`: "did not run" is None, "ran and found
+    #: nothing" is an empty dict, and "ran, said something, and this parser could not read it"
+    #: must not borrow the second. Ruff exits 1 when it FOUND diagnostics, so output it printed
+    #: and this loop skipped is a format change, not a clean file. Measured 2026-09-22: the
+    #: research job installed ruff 0.16.8 against the 0.15 line this parses
+    #: (`cx.py:1:5: C901 `f` is too complex (2 > 0)`), and six checks read `{}` as numbers.
+    #: Found by the auditing session, reading the loop rather than the version.
+    if proc.returncode == 1 and not out and proc.stdout.strip():
+        return None
     return out
 
 
@@ -476,6 +485,14 @@ def _ruff_diagnostics(path: Path, rule: str, config: str) -> list[tuple[int, int
         except (IndexError, ValueError):
             continue
         out.append((int(match.group(1)), value))
+    #: Ruff spoke and this parser could not read it: exit 1 means diagnostics were FOUND, so
+    #: zero parsed lines is a format this code does not know, not agreement. Measured
+    #: 2026-09-22: the concise line is `path:L:C: error[RULE] msg (V > N)` in ruff 0.15 and the
+    #: research job installed 0.16.8, where it differs - four axes came back `{}` and the suite
+    #: read them as numbers. This is the same defect as the missing-module one two layers up,
+    #: and the same cure: absence gets its own answer instead of borrowing zero.
+    if proc.returncode == 1 and not out and proc.stdout.strip():
+        return None
     return out
 
 

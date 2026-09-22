@@ -43,7 +43,14 @@ research = ["networkx>=3", "numpy>=1.26", "scipy>=1.11", "statsmodels>=0.14",
             # second opinion its axes are checked against. An import sweep cannot see a
             # dependency invoked as a subprocess, which is why this one was found by CI
             # skipping five checks rather than by any sweep of the source.
-            "ruff>=0.15"]  # local checks, wheel
+            # Pinned BELOW 0.16: the concise line this parser reads is
+            # `path:L:C: error[RULE] msg (V > N)` in 0.15, and the research job installed
+            # 0.16.8, where it differs - four axes came back empty and were read as
+            # numbers. The parser now refuses an unreadable format instead of returning
+            # zero, so the pin is about keeping the control RUNNING, not about hiding a
+            # break: widen it by teaching the parser the new line and measuring, not by
+            # raising the bound.
+            "ruff>=0.15,<0.16"]  # local checks, wheel
 # hypothesis is used by tests/_test_properties.py when present and never required: the
 # core CI matrix installs nothing, so every property there also has a deterministic
 # corpus. A suite that only runs for people who installed an extra stops running.
