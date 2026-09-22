@@ -14,7 +14,7 @@
     "sigscan.py": "4da4b57f29c99d3ec8ce522446361bebee051ee63c9a8ea913dc524e1f54b6ad",
     "scale.py": "b35804f71fa92dd6979c5f55bc563582c16df0665ceb5ae79b2d24ff16d2ac37",
     "ratchet.py": "6c56e2c75edd679ffd19238dc9443a4c11b4327373f816c72f440ae3de5e8236",
-    "complexity.py": "eb3885598078fd9abbe0b61a0049f416db97509a2e276a2d75d9515bbfbedbd9",
+    "complexity.py": "8a28bc76937bd26194caf2ffd0671560842378ae99429adc08e08b18bec6ebd3",
     "invariant_notes.py": "cea9d064a6961801ac8bd4295210b124baf1ba213178bb7f1b0c2abc15609ce1",
     "preconfigured.py": "1567c6f5554a169373710771c46b2a0a1ea0aef760f72c87c116fdb0c1be5521",
     "db_authority.py": "ec5b511ce92e83358e441d1d41617c043330140f253d8f8e6c95e227cf3c7254",
@@ -302,6 +302,16 @@
       "change": "`_ruff_diagnostics` and `ruff_complexity` now ask `importlib.util.find_spec(\"ruff\")` before shelling out, and return None when it is absent.",
       "why": "The frozen control could not tell \"ruff did not run\" from \"ruff found nothing\", which its own docstring forbids: `python -m ruff` on a machine without ruff exits 1, and 1 is also ruff's code for \"diagnostics found\", so the return-code guard passed, stdout was empty, and zero diagnostics read as agreement. CI's first matrix run on a runner with no ruff turned seventeen checks red for a reason none of them named. The frozen code is edited rather than the suite, because the defect is in the instrument.",
       "harmless_because": "No measurement changes where ruff is present: the same file gives {'f': 2} before and after. Where ruff is absent the answer changes from a false zero to None, and the suite already skips on None with a named reason - measured by reporting ruff absent in a child process: 5 passed, 0 failed, 5 skipped."
+    },
+    {
+      "at": "2026-09-22T20:07:42",
+      "task": "CI-matrix",
+      "file": "complexity.py",
+      "from": "eb3885598078fd9abbe0b61a0049f416db97509a2e276a2d75d9515bbfbedbd9",
+      "to": "8a28bc76937bd26194caf2ffd0671560842378ae99429adc08e08b18bec6ebd3",
+      "change": "both ruff parsers return None when ruff printed diagnostics the parser could not read, instead of an empty dict.",
+      "why": "Exit 1 means ruff FOUND something, so a line this code skips is a format change and not a clean file. The research job installed ruff 0.16.8 against the 0.15 line these parse, and six checks read an empty dict as numbers. The frozen instrument is edited rather than the suite, because a control that reports agreement when it could not read the answer is the defect this file exists to measure.",
+      "harmless_because": "No measurement changes where the format is the one it parses: the same file gives {'f': 3} before and after on ruff 0.15.16. Where the format is unknown the answer changes from a false zero to None, and both suites already skip on None with a named reason."
     }
   ]
 }
