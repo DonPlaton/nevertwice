@@ -62,6 +62,19 @@ MANIFEST = ROOT / "research" / "evidence_manifest.json"
 
 #: Observed RANGE over five runs of one commit, not a standard error: with five draws the range
 #: is where a sixth may land, and it is the number a threshold has to clear.
+#: MEASURED BEFORE THE TEMPERATURE PIN, and that is not a footnote. These five runs sampled the
+#: extractor at 0.2; `f405891` pinned it to 0, and three runs of the same stand on one commit
+#: then gave a `chars` range of 1.30 against the 26.4 below, with 1 case in 80 differing between
+#: runs instead of 80 in 80. So every number here is an UPPER BOUND on today's resolution, not
+#: today's resolution. It is left un-rewritten rather than guessed: an upper bound only ever
+#: refuses a threshold that a smaller spread would also refuse.
+#: Measured consequence for the campaign this table plans (2026-09-22, over all 572 pending):
+#:     this table                                  A 188 · B 0 · C 45 · D 329 · E 10
+#:     with `mean_chars_returned` at the pinned 1.30   unchanged
+#:     with every field reduced in that proportion  A 188 · B 4 · C 41 · D 329 · E 10
+#: - four claims recorded as "printed finer than the stand resolves" print as they are on the pin.
+#: A spread is a property of a stand IN A MODE, not of a field and not even of a stand: naming
+#: the stand and not the mode let this table outlive the change that voided it.
 SPREAD = {
     "over_retraction_rate": 0.05,
     "control_miss_rate": 0.2,
