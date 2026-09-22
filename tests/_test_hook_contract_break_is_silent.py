@@ -46,10 +46,24 @@ def check(name, cond, detail=""):
 
 
 def run(payload: dict) -> tuple[int, str]:
-    """The entry point, driven exactly as a host drives it: one JSON object on stdin."""
+    """The entry point, driven exactly as a host drives it: one JSON object on stdin.
+
+    **Why this cannot wake the extraction model, stated correctly.** A recognised `SessionStart`
+    on a store with a backlog detaches a catch-up that takes the vault lock and extracts - the
+    auditing session triggered exactly that twice today, once loading 22 GB onto the GPU. The
+    gate is `has_unprocessed`, and it is a filesystem walk over the TRANSCRIPTS root filtered by
+    the processed database: an empty `NEVERTWICE_PROJECTS_ROOT` has no candidates, so there is no
+    backlog to chase. An empty VAULT alone would do the opposite - an empty processed database
+    makes every transcript look unprocessed, which is the worst case, and the first version of
+    this docstring justified the isolation by the wrong half of the pair (the auditing session
+    read the call graph and corrected it: the `return` at `_engine_hooks.py:468` leaves the
+    HELPER, not `main`). The claim is asserted below rather than argued, because an argument that
+    was wrong once can be wrong again.
+    """
     with tempfile.TemporaryDirectory(prefix="nw_hookpayload_") as td:
         env = dict(os.environ)
         env.update({"NEVERTWICE_VAULT": td, "NEVERTWICE_PROJECTS_ROOT": td,
+                    "NEVERTWICE_START_SWEEP_DETACH": "0",
                     "PYTHONIOENCODING": "utf-8"})
         p = subprocess.run([sys.executable, str(HOOK)], input=json.dumps(payload),
                            capture_output=True, text=True, encoding="utf-8",
@@ -66,6 +80,17 @@ rc_empty, out_empty = run({})
 for label, rc in (("today's contract", rc_today), ("a renamed contract", rc_renamed),
                   ("an empty payload", rc_empty)):
     check(f"{label} exits 0 - a failing hook would break the user's agent", rc == 0, str(rc))
+
+print("\n- and none of the three woke anything: the property is measured, not argued -")
+#: A detached catch-up takes the vault lock and calls the extraction model. If this suite ever
+#: starts one - on a runner whose paths differ, or after a change to the backlog gate - it must
+#: say so here rather than quietly spend a GPU. The line it would print is fixed in the engine
+#: (`_engine_hooks.py:446`).
+for label, out in (("today", out_today), ("renamed", out_renamed), ("empty", out_empty)):
+    check(f"{label}: no catch-up was detached", "catch-up detached" not in out,
+          out.strip()[-140:].replace("\n", " | "))
+    check(f"{label}: no sweep ran either", "swept=0" in out or "swept" not in out,
+          out.strip()[-140:].replace("\n", " | "))
 
 print("\n- today's contract is recognised, and says which event it was -")
 check("the event name reaches the log", "SessionStart" in out_today,
