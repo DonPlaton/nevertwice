@@ -70,6 +70,15 @@ SPREAD = {
     "mean_chars_returned": 26.4,
 }
 
+#: WHERE that table was measured. Every number in it comes from five runs of the supersession
+#: stand, so `SPREAD.get(leaf)` is a rule by FIELD NAME: for a claim of another stand it transfers
+#: someone else's resolution. Eleven of the forty-five in group C do exactly that (abstention's
+#: `current_rate`, code-sessions' `stale_rate`), and the transfer may well hold - noise of the
+#: same kind is often of the same order - but it is inherited, not measured. Named here because
+#: a property of a named stand quietly becoming a property of a field is the night's defect class
+#: (found by the auditing session, 2026-09-22).
+SPREAD_MEASURED_ON = "research/supersession_bench.py"
+
 #: The six doors through which a stand reaches the extraction model. Asked of the source, not
 #: kept as a list of stand names, because such a list goes stale the first time a stand grows a
 #: call (`tests/_test_stands_pin_the_sampler.py:110` keeps the same six).
@@ -164,6 +173,16 @@ def triage(claim: dict) -> tuple[str, str]:
                  f"{spread / step:.0f}x finer than this stand resolves")
 
 
+def transferred(claim: dict) -> bool:
+    """Does this claim's spread come from a stand other than its own?
+
+    `supersession_v1_implicit` is the same stand on another corpus, so the transfer is within the
+    instrument; `abstention_ab` and `code_sessions_eval` are different stands, and for them "finer
+    than this stand resolves" is really "finer than ANOTHER stand resolves".
+    """
+    return _stand(claim) not in ("", SPREAD_MEASURED_ON, "(no stand in the command)")
+
+
 NAMES = {"A": "deterministic given committed inputs",
          "B": "noisy, printed no finer than the measured spread",
          "C": "noisy, printed FINER than the stand resolves",
@@ -210,6 +229,11 @@ def main(argv: list[str] | None = None) -> int:
     comp = [c for c, _ in groups["A"] if COMPETITOR.search(c["id"])]
     print(f"\n  A splits: {len(own)} our own arms, re-measurable from the cache; "
           f"{len(comp)} competitor arms, static by a recorded decision")
+
+    home = [c for c, _ in groups["C"] if not transferred(c)]
+    away = [c for c, _ in groups["C"] if transferred(c)]
+    print(f"  C splits: {len(home)} on the stand the spread was measured on; "
+          f"{len(away)} on a spread transferred from {SPREAD_MEASURED_ON} by field name")
 
     for g in "ACDE":
         if not groups[g]:

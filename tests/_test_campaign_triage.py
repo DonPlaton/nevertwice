@@ -73,6 +73,19 @@ comp = [c for c, _ in groups["A"] if T.COMPETITOR.search(c["id"])]
 check("and A splits 128 our own / 60 competitor arms", (len(own), len(comp)) == (128, 60),
       f"{len(own)} / {len(comp)}")
 
+#: C carries a seam of its own. The spread table was measured on ONE stand, so `SPREAD.get(leaf)`
+#: is a rule by field NAME, and for a claim of another stand it transfers someone else's
+#: resolution. 34 of the 45 sit on the stand the spread came from; 11 (abstention's `current_rate`,
+#: code-sessions' `stale_rate`) inherit it. The transfer may hold - noise of the same kind is often
+#: of the same order - but it is inherited rather than measured, and for the campaign those 11 may
+#: turn out to belong in D, needing a run rather than a re-print.
+home = [c for c, _ in groups["C"] if not T.transferred(c)]
+away = [c for c, _ in groups["C"] if T.transferred(c)]
+check("C splits 34 measured on their own stand / 11 on a transferred spread",
+      (len(home), len(away)) == (34, 11), f"{len(home)} / {len(away)}")
+check("and the table says which stand it was measured on, rather than implying every stand",
+      T.SPREAD_MEASURED_ON == "research/supersession_bench.py", T.SPREAD_MEASURED_ON)
+
 print("\n- B is empty OF THE MEASURED, which is a smaller claim than B is empty -")
 measured = len(groups["B"]) + len(groups["C"])
 check(f"the fields with a measured spread carry {measured} claims, and none of them is in B",
