@@ -42,6 +42,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import re
 import subprocess
 import sys
 import time
@@ -366,7 +367,15 @@ ARTIFACTS = [
                  "research/results/k8_collisions_implicit.json", "research/results/k8_collisions_asof.json",
                  "--out", "research/results/k8_step0.json"],
      "kind": DETERMINISTIC, "task": "supersession",
-     "inputs": ["the three k8_collisions_*.json files", "research/data/supersession_v1{,_implicit}.json (the markers)"],
+     #: Named as PATHS, not as prose. Written as "the three k8_collisions_*.json files" and a brace
+     #: expression, the existence test was asked about a sentence and always answered no, so this
+     #: DETERMINISTIC artifact was skipped in every run of the package while all five of its inputs
+     #: sat on disk. Named properly it reproduces byte-for-byte (2026-09-22).
+     "inputs": ["research/results/k8_collisions_explicit.json",
+                "research/results/k8_collisions_implicit.json",
+                "research/results/k8_collisions_asof.json",
+                "research/data/supersession_v1.json (the markers)",
+                "research/data/supersession_v1_implicit.json (the markers)"],
      "note": "ledger K8 step 0: can a skeleton test tell a replacement from a different fact on one topic? AUC "
              "0.63-0.66 on the extractor's descriptions, 0.76-0.81 on the facts block - the 'about 0.5' branch; the "
              "similarity is published and not shipped as a rule. Pure string work over the recorded pairs."},
@@ -780,14 +789,29 @@ def missing_modules(spec: dict) -> list:
     return out
 
 
+#: An input is written as a path followed by prose - "research/data/locomo10.json (third-party,
+#: CC-BY-NC-4.0, hash-pinned ...)" - and only the leading path is a path.
+INPUT_PATH = re.compile(r"^([A-Za-z0-9_./\-]+\.[A-Za-z0-9_]+)")
+
+
 def missing_inputs(spec: dict) -> list:
-    """Inputs that are files and are not here. Non-path inputs are hardware, listed as-is."""
+    """Inputs that are files and are not here. Non-path inputs are hardware, listed as-is.
+
+    The leading path is extracted rather than the whole entry tested, because an entry carries
+    its provenance in prose after the filename. Testing the whole string asked `Path.exists()`
+    about a SENTENCE, which always answers no: measured 2026-09-22, thirteen inputs across ten
+    artifacts were reported "missing" while the file sat on disk, and the run told the reader to
+    fetch corpora they already had. All ten are needs-hardware and were skipped anyway, so nothing
+    was mis-run - what was wrong was the sentence the package printed.
+    """
     out = []
     for item in spec["inputs"]:
         if "/" not in item and "." not in item:
             out.append(item)
             continue
-        if not (ROOT / item).exists():
+        m = INPUT_PATH.match(item.strip())
+        path = m.group(1) if m else item
+        if not (ROOT / path).exists():
             out.append(item)
     return out
 
