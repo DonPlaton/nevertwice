@@ -6,10 +6,16 @@ single live number to a page opening **"Withdrawn: figures on this page must not
 The council's fourth point was that the same silhouette had not been checked anywhere else. It had
 not, and it is not rare:
 
-    pages that open with a withdrawal              45
-    rows on reader-facing pages linking to one     59
+    pages carrying the withdrawal BANNER           43
+    rows on reader-facing pages linking to one     60
     of those, quoting a figure without saying so   10   (fixed here: 4 in research/README.md,
                                                          6 in docs/README.md)
+
+The first version counted 45 and 59, by matching the WORD "withdrawn" in a page's first screen.
+Three pages that merely talk about withdrawal were swept in - `CLAIM_HALFLIFE.md`,
+`EXTERNAL_RETRIEVAL.md`, `FRONTIER.md` - and the cost was not the miscount: a page counted as
+withdrawn is REMOVED from the reader-facing set this suite polices, so those three left its scope
+without a word. They are back in it, and they carry no offenders.
 
 The fix is not to delete the numbers. An index may say what a study concluded - that is what an
 index is for. What it may not do is print `R@5 0.80` or `0.36→0.05 (-86%)` as a current result and
@@ -46,8 +52,15 @@ def check(name, cond, detail=""):
 
 
 #: The withdrawal is at the top of the page or it is not a warning - a reader who has scrolled has
-#: already read the figures. 600 characters is the first screen.
-HEAD = 600
+#: already read the figures. 1200 characters covers the title and the banner beneath it.
+HEAD = 1200
+#: A page is withdrawn when it carries the BANNER, not when it uses the word. The first version of
+#: this suite matched the word in the first screen and collected three pages that merely TALK about
+#: withdrawal - `CLAIM_HALFLIFE.md`, `EXTERNAL_RETRIEVAL.md`, `FRONTIER.md`. The cost was not the
+#: miscount: a page counted as withdrawn is removed from the reader-facing set this suite polices,
+#: so those three left its scope in silence. Found 2026-09-22 by re-reading this suite's own
+#: numbers against the tree, which is the fourteenth mechanism applied to itself.
+BANNER = "<!-- withdrawn-banner -->"
 WD = re.compile(r"withdrawn|must not be quoted", re.I)
 LINK = re.compile(r"\]\(([^)]+)\)")
 #: A decimal or a percentage. Bare integers are excluded on purpose: "150 commits" and "four
@@ -66,7 +79,7 @@ def text_of(rel: str) -> str:
         return ""
 
 
-withdrawn = {f for f in pages if WD.search(text_of(f)[:HEAD])}
+withdrawn = {f for f in pages if BANNER in text_of(f)[:HEAD]}
 
 
 def resolve(base: str, target: str) -> str | None:
