@@ -117,6 +117,16 @@ check("a key exported for ANOTHER tool selects that vendor - this is the finding
 check("and the documented opt-out really opts out",
       resolve(GEMINI_API_KEY="x", NEVERTWICE_CLOUD="none") == "none",
       resolve(GEMINI_API_KEY="x", NEVERTWICE_CLOUD="none"))
+#: The NEGATIVE case bounds the exposure, and the prose must not be wider than it. An OpenAI or
+#: Anthropic key does NOT select a backend - `_resolve_cloud` tries exactly four, in the order
+#: Cerebras, Groq, DeepSeek, Gemini. The first draft of the security note said "any cloud key",
+#: which was wider than the code; the auditing session measured the two that do nothing.
+check("a key outside the four supported ones selects nothing",
+      resolve(OPENAI_API_KEY="x") == "none" and resolve(ANTHROPIC_API_KEY="x") == "none",
+      f"openai {resolve(OPENAI_API_KEY='x')}, anthropic {resolve(ANTHROPIC_API_KEY='x')}")
+SEC_TXT = (ROOT / "SECURITY.md").read_text(encoding="utf-8")
+check("and the security note names four keys rather than 'any cloud key'",
+      "any cloud key" not in SEC_TXT and "four keys" in SEC_TXT)
 
 print("\n- and the opt-outs the docs promise exist in the code, not only in the docs -")
 check("per-project local-only routing is a function extraction consults",
