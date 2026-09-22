@@ -18,6 +18,13 @@ implies it is would fail the first stranger who tried:
   artifact cannot be regenerated here at all. Recorded with what is missing.
 * **needs-hardware** - a GPU and local model weights.
 
+One more honesty, added 2026-09-22 after the recorded commands were compared with the artifacts
+they claim to make: eleven files here were assembled from SEVERAL runs, and the single command
+recorded beside them writes a strict subset of their arms. Those entries carry `assembled`,
+naming the arms the command cannot write and why, and the report prints it. Running such a
+command does not reproduce the artifact - it replaces it with a smaller one under the same name,
+which is how a positional claim came to hold a neighbouring pair's number (`33b1481`).
+
 A reproduction that quietly re-ran only the easy artifacts and printed "all reproduced" would be
 worse than none, so every artifact is listed in every run, including the ones that were skipped
 and why.
@@ -129,6 +136,8 @@ ARTIFACTS = [
              "store reproduces the shape, nobody reproduces the owner's numbers."},
     {"file": "research/results/frontier.json",
      "command": ["python", "research/frontier_eval.py", "judge", "--save"],
+     "assembled": {"arms": ["amem_full", "mem0_infer", "nevertwice_full"],
+                    "how": "the command's arm list cannot write `amem_full`, `mem0_infer`, `nevertwice_full`: those arms were measured by separate runs and merged into this file, and the per-run files are not on disk, so no invocation of this stand remakes it."},
      "kind": HARDWARE, "task": "answer-accuracy",
      "inputs": ["the oracle corpus and vector cache", "a local Ollama serving the reader, the two judges "
                 "and bge-m3", "the contexts of every arm (frontier_eval.py contexts, some in the "
@@ -201,6 +210,8 @@ ARTIFACTS = [
     {"file": "research/results/asof_v1.json",
      "command": ["python", "research/asof_bench.py", "--arms", "nevertwice,naive", "--runs", "2",
                  "--out", "research/results/asof_v1.json"],
+     "assembled": {"arms": ["mem0", "nevertwice_after_sleep", "zep"],
+                    "how": "the command's arm list cannot write `mem0`, `nevertwice_after_sleep`, `zep`: those arms were measured by separate runs and merged into this file, and the per-run files are not on disk, so no invocation of this stand remakes it; the `_after_sleep` arms need `--sleep`, which this command does not carry."},
      "kind": HARDWARE, "task": "supersession",
      "inputs": ["research/data/supersession_v1.json",
                 "a local Ollama serving bge-m3 and the extraction model"],
@@ -210,6 +221,8 @@ ARTIFACTS = [
     {"file": "research/results/asof_recent.json",
      "command": ["python", "research/asof_bench.py", "--recent", "--arms", "nevertwice", "--runs", "2",
                  "--out", "research/results/asof_recent.json"],
+     "assembled": {"arms": ["mem0"],
+                    "how": "the command's arm list cannot write `mem0`: those arms were measured by separate runs and merged into this file, and the per-run files are not on disk, so no invocation of this stand remakes it."},
      "kind": HARDWARE, "task": "supersession",
      "inputs": ["research/data/supersession_v1.json",
                 "a local Ollama serving bge-m3 and the extraction model"],
@@ -240,6 +253,8 @@ ARTIFACTS = [
      "command": ["python", "research/supersession_bench.py", "--dataset",
                  "research/data/supersession_v1_implicit.json", "--arms", "nevertwice,naive",
                  "--runs", "2", "--out", "research/results/supersession_v1_implicit.json"],
+     "assembled": {"arms": ["mem0", "nevertwice_after_sleep", "nevertwice_after_sleep_run2", "zep"],
+                    "how": "the command's arm list cannot write `mem0`, `nevertwice_after_sleep`, `nevertwice_after_sleep_run2`, `zep`: those arms were measured by separate runs and merged into this file, and the per-run files are not on disk, so no invocation of this stand remakes it; the `_after_sleep` arms need `--sleep`, which this command does not carry."},
      "kind": HARDWARE, "task": "supersession",
      "inputs": ["research/data/supersession_v1_implicit.json",
                 "a local Ollama serving bge-m3 and the extraction model",
@@ -274,6 +289,8 @@ ARTIFACTS = [
     {"file": "research/results/supersession_k7_d07375e.json",
      "command": ["python", "research/supersession_bench.py", "--arms", "nevertwice,naive",
                  "--runs", "2", "--out", "research/results/supersession_k7_d07375e.json"],
+     "assembled": {"arms": ["mem0", "zep"],
+                    "how": "the command's arm list cannot write `mem0`, `zep`: those arms were measured by separate runs and merged into this file, and the per-run files are not on disk, so no invocation of this stand remakes it."},
      "kind": HARDWARE, "task": "supersession",
      "inputs": ["this repository at d07375e - the engine with the K7 same-fact absorb gate ON (its default before the "
                 "revert), the K5 retry and the K6 preamble strip",
@@ -288,6 +305,8 @@ ARTIFACTS = [
      "command": ["python", "research/supersession_bench.py", "--dataset",
                  "research/data/supersession_v1_implicit.json", "--arms", "nevertwice,naive",
                  "--runs", "2", "--out", "research/results/supersession_k7_d07375e_implicit.json"],
+     "assembled": {"arms": ["mem0", "zep"],
+                    "how": "the command's arm list cannot write `mem0`, `zep`: those arms were measured by separate runs and merged into this file, and the per-run files are not on disk, so no invocation of this stand remakes it."},
      "kind": HARDWARE, "task": "supersession",
      "inputs": ["this repository at d07375e (see supersession_k7_d07375e.json)",
                 "research/data/supersession_v1_implicit.json",
@@ -298,6 +317,8 @@ ARTIFACTS = [
     {"file": "research/results/asof_k7_d07375e.json",
      "command": ["python", "research/asof_bench.py", "--arms", "nevertwice,naive", "--runs", "2",
                  "--out", "research/results/asof_v1.json"],
+     "assembled": {"arms": ["mem0", "zep"],
+                    "how": "the command's arm list cannot write `mem0`, `zep`: those arms were measured by separate runs and merged into this file, and the per-run files are not on disk, so no invocation of this stand remakes it."},
      "kind": HARDWARE, "task": "supersession",
      "inputs": ["this repository at d07375e (the K5 retry and the K7 gate on)",
                 "research/data/supersession_v1.json",
@@ -395,6 +416,8 @@ ARTIFACTS = [
      "command": ["python", "research/supersession_bench.py",
                  "--arms", "nevertwice,naive", "--runs", "2", "--out",
                  "research/results/supersession_v1.json"],
+     "assembled": {"arms": ["mem0", "nevertwice_after_sleep", "nevertwice_after_sleep_run2", "zep"],
+                    "how": "the command's arm list cannot write `mem0`, `nevertwice_after_sleep`, `nevertwice_after_sleep_run2`, `zep`: those arms were measured by separate runs and merged into this file, and the per-run files are not on disk, so no invocation of this stand remakes it; the `_after_sleep` arms need `--sleep`, which this command does not carry."},
      "kind": HARDWARE, "task": "supersession",
      "inputs": ["research/data/supersession_v1.json",
                 "a local Ollama serving bge-m3 and qwen3-coder:30b",
@@ -409,8 +432,10 @@ ARTIFACTS = [
              "environment and is merged in by --compare."},
     {"file": "research/results/supersession_v1_switch.json",
      "command": ["python", "research/supersession_bench.py", "--arms", "nevertwice", "--sleep",
-                 "--out", "research/results/supersession_v1_switch.json",
-                 "--runs", "2", "--out", "research/results/supersession_v1_switch.json"],
+                 "--runs", "2",
+                 "--out", "research/results/supersession_v1_switch.json"],
+     "assembled": {"arms": ["mem0", "naive", "zep"],
+                    "how": "the command's arm list cannot write `mem0`, `naive`, `zep`: those arms were measured by separate runs and merged into this file, and the per-run files are not on disk, so no invocation of this stand remakes it."},
      "kind": HARDWARE, "task": "supersession",
      "inputs": ["research/data/supersession_v1.json",
                 "a local Ollama serving bge-m3 and qwen3-coder:30b",
@@ -424,8 +449,10 @@ ARTIFACTS = [
     {"file": "research/results/supersession_v1_implicit_switch.json",
      "command": ["python", "research/supersession_bench.py", "--dataset",
                  "research/data/supersession_v1_implicit.json", "--arms", "nevertwice", "--sleep",
-                 "--out", "research/results/supersession_v1_implicit_switch.json",
-                 "--runs", "2", "--out", "research/results/supersession_v1_implicit_switch.json"],
+                 "--runs", "2",
+                 "--out", "research/results/supersession_v1_implicit_switch.json"],
+     "assembled": {"arms": ["mem0", "naive", "zep"],
+                    "how": "the command's arm list cannot write `mem0`, `naive`, `zep`: those arms were measured by separate runs and merged into this file, and the per-run files are not on disk, so no invocation of this stand remakes it."},
      "kind": HARDWARE, "task": "supersession",
      "inputs": ["research/data/supersession_v1_implicit.json",
                 "a local Ollama serving bge-m3 and qwen3-coder:30b",
@@ -437,6 +464,8 @@ ARTIFACTS = [
     {"file": "research/results/asof_v1_switch.json",
      "command": ["python", "research/asof_bench.py", "--arms", "nevertwice,naive", "--runs", "2",
                  "--sleep", "--out", "research/results/asof_v1_switch.json"],
+     "assembled": {"arms": ["mem0", "zep"],
+                    "how": "the command's arm list cannot write `mem0`, `zep`: those arms were measured by separate runs and merged into this file, and the per-run files are not on disk, so no invocation of this stand remakes it."},
      "kind": HARDWARE, "task": "supersession",
      "inputs": ["research/data/supersession_v1.json",
                 "a local Ollama serving bge-m3 and qwen3-coder:30b",
@@ -760,6 +789,10 @@ def run_one(spec: dict, regenerate: bool) -> dict:
         "committed_sha256": before,
         "committed_canonical_sha256": before_canonical,
         "volatile_fields": spec.get("volatile") or [],
+        #: Arms this command cannot write, because they came from other runs merged into the
+        #: file. Printed rather than kept in the source, so a stranger following the command
+        #: learns BEFORE running it that the result will be a smaller file under the same name.
+        "assembled": spec.get("assembled"),
         "committed_present": before is not None,
         "missing_inputs": missing_inputs(spec),
         "requires": spec.get("requires") or [],
@@ -778,6 +811,9 @@ def run_one(spec: dict, regenerate: bool) -> dict:
         result["status"] = "skipped"
         result["explain"] = (f"{spec['kind']}: regenerating would change the numbers without "
                              "any of the code being wrong")
+        if spec.get("assembled"):
+            result["explain"] += ("; and the command shown cannot remake this file at all - "
+                                  + spec["assembled"]["how"])
         return result
     if not regenerate:
         result["status"] = "not-run"
