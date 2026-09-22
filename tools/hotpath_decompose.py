@@ -71,16 +71,39 @@ def _ms(cmd: list[str], env: dict, n: int, stdin_text: str | None = None) -> flo
     return best
 
 
-def site_is_the_machines(env: dict, n: int) -> dict:
-    """The `site` step, with the evidence that it belongs to the machine rather than to us."""
-    bare = _ms([sys.executable, "-S", "-c", "pass"], env, n)
-    full = _ms([sys.executable, "-c", "pass"], env, n)
+def site_evidence() -> dict:
+    """Why the `site` step belongs to the machine: what it walks. No timing here - the step's
+    cost is the one the table measured, so the report carries ONE number for it, not two."""
     dirs = [d for d in site.getsitepackages() + [site.getusersitepackages()] if os.path.isdir(d)]
-    return {"bare_ms": round(bare, 2), "with_site_ms": round(full, 2),
-            "site_ms": round(full - bare, 2),
-            "pth_files": sorted(os.path.basename(p) for d in dirs
+    return {"pth_files": sorted(os.path.basename(p) for d in dirs
                                 for p in glob.glob(os.path.join(d, "*.pth"))),
             "distributions": sum(len(glob.glob(os.path.join(d, "*.dist-info"))) for d in dirs)}
+
+
+def shares(rows: list[tuple[str, float, float, bool]]) -> dict:
+    """Split the total into what the engine owns and what it does not, from the rows alone.
+
+    Each row is (label, cumulative ms, step ms, ours). The engine's share is the total minus
+    EVERY step declared not ours - computed from the same flags the table prints, never from a
+    row index. The first version subtracted `rows[0]` only, so the headline "engine's own
+    share" still contained `site` while the paragraph under it said `site` belonged to the
+    machine: one quantity credited to the engine and disowned in the same output, twelve
+    percentage points on the line a reader quotes first. Found by the auditing session.
+    """
+    total = rows[-1][1]
+    not_ours = sum(step for _label, _cum, step, ours in rows if not ours)
+    return {"total": total, "not_ours": not_ours, "ours": total - not_ours,
+            "ours_share": (total - not_ours) / total if total else 0.0}
+
+
+#: (label, ours). Whether a step is the engine's is declared once, here, next to the step - the
+#: headline and the prose read the same flag, so they cannot disagree about which is which.
+STAGES = (
+    ("the interpreter itself (-S)", False),
+    ("+ site (this machine's site-packages)", False),
+    ("+ importing the engine", True),
+    ("+ reading, deciding, answering", True),
+)
 
 
 def main() -> int:
@@ -92,39 +115,40 @@ def main() -> int:
     env.pop("NEVERTWICE_PROJECT_ROOTS", None)
     event = json.dumps({**EVENT, "cwd": str(ROOT)})
 
-    stages = [
-        ("the interpreter itself (-S)", [sys.executable, "-S", "-c", "pass"], None),
-        ("+ site", [sys.executable, "-c", "pass"], None),
-        ("+ importing the engine",
-         [sys.executable, "-c",
-          f"import sys;sys.path.insert(0,r'{PKG}');import memory_hook"], None),
-        ("+ reading, deciding, answering", [sys.executable, str(PKG / "memory_hook.py")], event),
+    commands = [
+        ([sys.executable, "-S", "-c", "pass"], None),
+        ([sys.executable, "-c", "pass"], None),
+        ([sys.executable, "-c", f"import sys;sys.path.insert(0,r'{PKG}');import memory_hook"],
+         None),
+        ([sys.executable, str(PKG / "memory_hook.py")], event),
     ]
 
     print(f"PreToolUse, decomposed by subtraction. Minimum of {n} processes per stage.")
     print()
     rows, prev = [], 0.0
-    for label, cmd, stdin_text in stages:
-        t = _ms(cmd, env, n, stdin_text)
-        rows.append((label, t, t - prev))
-        prev = t
-    total = rows[-1][1]
-    print(f"{'stage':34} {'total ms':>9} {'step ms':>9} {'share':>7}")
-    for label, t, step in rows:
-        print(f"{label:34} {t:9.2f} {step:9.2f} {step / total * 100:6.1f}%")
+    for (label, ours), (cmd, stdin_text) in zip(STAGES, commands):
+        cum = _ms(cmd, env, n, stdin_text)
+        rows.append((label, cum, cum - prev, ours))
+        prev = cum
+    s = shares(rows)
+    total = s["total"]
+    print(f"{'stage':40} {'total ms':>9} {'step ms':>9} {'share':>7}  engine's?")
+    for label, cum, step, ours in rows:
+        print(f"{label:40} {cum:9.2f} {step:9.2f} {step / total * 100:6.1f}%  "
+              f"{'yes' if ours else 'no'}")
     print()
-    print(f"not the engine at all (the interpreter): {rows[0][1]:8.2f} ms "
-          f"({rows[0][1] / total * 100:.1f}%)")
-    print(f"the engine's own share:                 {total - rows[0][1]:8.2f} ms "
-          f"({(total - rows[0][1]) / total * 100:.1f}%)")
+    print(f"not the engine's (every step marked no): {s['not_ours']:8.2f} ms "
+          f"({s['not_ours'] / total * 100:.1f}%)")
+    print(f"the engine's own share:                  {s['ours']:8.2f} ms "
+          f"({s['ours_share'] * 100:.1f}%)")
 
-    s = site_is_the_machines(env, n)
+    site_row = next(r for r in rows if r[0].startswith("+ site"))
+    ev = site_evidence()
     print()
     print("- the `site` step belongs to this machine, not to the engine -")
-    print(f"  bare {s['bare_ms']} ms, with site {s['with_site_ms']} ms, so site costs "
-          f"{s['site_ms']} ms here")
-    print(f"  because it walks {s['distributions']} installed distribution(s) and "
-          f"{len(s['pth_files'])} .pth file(s): {', '.join(s['pth_files']) or 'none'}")
+    print(f"  it cost {site_row[2]:.2f} ms in the table above, because it walks "
+          f"{ev['distributions']} installed distribution(s) and {len(ev['pth_files'])} .pth "
+          f"file(s): {', '.join(ev['pth_files']) or 'none'}")
     print("  a clean user machine pays a fraction of this, so `-S` in the hook command is a "
           "saving of the MACHINE's, and quoting it as ours would be a number without its mode")
     return 0
