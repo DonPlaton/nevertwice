@@ -30,6 +30,7 @@ from __future__ import annotations
 
 import ast
 import re
+import importlib.util
 import subprocess
 import sys
 from dataclasses import dataclass
@@ -384,6 +385,15 @@ def ruff_complexity(path: Path) -> dict[str, int] | None:
     threshold, but the value itself, from an implementation written in another language
     by other people.
     """
+    #: "ruff did not run" and "ruff found nothing" must not look alike, and for one missing
+    #: package they did: `python -m ruff` on a machine without it exits **1**, which is also
+    #: ruff's own code for "diagnostics found", so the return-code guard below let it through,
+    #: stdout was empty, and the caller read zero diagnostics as agreement. Found 2026-09-22
+    #: when CI ran these suites on a runner that has no ruff: {"f": 2} locally against
+    #: {"f": 0} there, seventeen checks red for a reason none of them named. The import is
+    #: asked FIRST, because absence has an answer of its own and the exit code does not carry it.
+    if importlib.util.find_spec("ruff") is None:
+        return None
     try:
         proc = subprocess.run(
             [sys.executable, "-m", "ruff", "check", "--isolated", "--no-cache",
@@ -430,6 +440,10 @@ def _ruff_diagnostics(path: Path, rule: str, config: str) -> list[tuple[int, int
     it did not run is worse than no control: the agreement it is supposed to check
     would pass by default.
     """
+    #: Same reason as in `ruff_complexity`: a missing module exits 1, which is also
+    #: ruff's code for "diagnostics found", so absence is asked for by name.
+    if importlib.util.find_spec("ruff") is None:
+        return None
     try:
         proc = subprocess.run(
             [sys.executable, "-m", "ruff", "check", "--isolated", "--no-cache",

@@ -38,7 +38,12 @@ dev = ["pytest>=8", "pyflakes>=3", "build>=1", "hypothesis>=6"]
 # one. They are NOT in `dev`: the documented contributor path stays small, and the core
 # matrix installs nothing at all, which is what makes "the core tier is stdlib-only" a
 # fact about the tree rather than a sentence in the workflow.
-research = ["networkx>=3", "numpy>=1.26", "scipy>=1.11", "statsmodels>=0.14"]  # local checks, wheel
+research = ["networkx>=3", "numpy>=1.26", "scipy>=1.11", "statsmodels>=0.14",
+            # Not an import: `complexity.py` shells out to `python -m ruff` for the
+            # second opinion its axes are checked against. An import sweep cannot see a
+            # dependency invoked as a subprocess, which is why this one was found by CI
+            # skipping five checks rather than by any sweep of the source.
+            "ruff>=0.15"]  # local checks, wheel
 # hypothesis is used by tests/_test_properties.py when present and never required: the
 # core CI matrix installs nothing, so every property there also has a deterministic
 # corpus. A suite that only runs for people who installed an extra stops running.
