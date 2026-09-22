@@ -39,11 +39,9 @@ at all, and five point at a turn id that is not in the conversation's own turns.
 nine are category 3.
 
 <!-- claims:locomo -->
-| method | R@1 | R@3 | R@5 | R@10 | MRR |
-|---|---|---|---|---|---|
-| semantic (bge-m3) | 0.182 | 0.340 | 0.432 | 0.560 | 0.301 |
-| lexical (BM25) | 0.339 | 0.527 | 0.601 | 0.681 | 0.459 |
-| **calibrated fusion (shipped default, 0 deps)** | **0.350** | **0.556** | **0.640** | **0.727** | **0.481** |
+> **Withdrawn 2026-09.** needs the GPU and the extraction model: the cross-platform fix to _detach_kwargs moved nevertwice/_engine_hooks.py, which sits in these claims' closure, so every stand behind them must be re-run before the numbers are live again. CI's first matrix run in 27 days showed the Windows detach flags fell back to 0 on POSIX and the engine had to move; the artifacts are untouched and the numbers are not disputed.
+>
+> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/locomo_eval.py --save --out=research/results/locomo.json` is what re-measures this one.
 <!-- /claims:locomo -->
 
 Per category at R@5 for the shipped ranker (this table and the one above are generated from the
@@ -51,9 +49,9 @@ register; until 2026-09-11 both were typed by hand here and had drifted a whole 
 the morphology of 2026-09-06 - behind the figures the register carried):
 
 <!-- claims:locomo-categories -->
-| fused R@5, category 1 | 2 | 3 | 4 | 5 |
-|---|---|---|---|---|
-| 0.544 | 0.716 | 0.371 | 0.675 | 0.635 |
+> **Withdrawn 2026-09.** needs the GPU and the extraction model: the cross-platform fix to _detach_kwargs moved nevertwice/_engine_hooks.py, which sits in these claims' closure, so every stand behind them must be re-run before the numbers are live again. CI's first matrix run in 27 days showed the Windows detach flags fell back to 0 on POSIX and the engine had to move; the artifacts are untouched and the numbers are not disputed.
+>
+> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/locomo_eval.py --save --out=research/results/locomo.json` is what re-measures this one.
 <!-- /claims:locomo-categories -->
 
 Category 3 is the hardest and is also where seven of the nine dropped questions sit.

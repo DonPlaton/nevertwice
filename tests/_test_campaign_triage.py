@@ -7,16 +7,16 @@ not reproduce the problem with fresh data and the same green checks. `tools/camp
 does the sorting; this suite pins its numbers so the split is a decision with a count attached
 rather than a paragraph.
 
-    A  188   deterministic given committed inputs   (128 our own arms, 60 competitors')
+    A  263   deterministic given committed inputs   (203 our own arms, 60 competitors')
     B    0   noisy, printed no finer than its spread
     C   45   noisy, printed FINER than the stand resolves
-    D  329   noisy, no run-to-run spread measured for the field
+    D  335   noisy, no run-to-run spread measured for the field
     E   10   machine-dependent
 
 **B is zero OF THE FORTY-FIVE WHOSE SPREAD IS KNOWN**, and the qualifier is the whole point.
 B and D are not independent: a claim cannot reach B without first leaving D, and D is "nobody
 measured this field". So `B = 0` is a statement about the 45 claims on the five fields that were
-measured - all 45 print finer than their stand resolves - and says nothing about the other 329.
+measured - all 45 print finer than their stand resolves - and says nothing about the other 335.
 Written flat as "no claim prints coarser than its spread" it would read as a property of the
 project when it is a property of our knowledge (the distinction is the auditing session's,
 2026-09-22). The five-run study is the authority for the 45: `over_retraction_rate` ranged
@@ -62,7 +62,7 @@ groups = T.groups_of(pending)
 
 #: Measured 2026-09-22 at `5dafc5b`. A number here moving is not a failure of the code: it means
 #: the campaign's shape changed, and whoever changed it says so in this line.
-KNOWN = {"A": 188, "B": 0, "C": 45, "D": 329, "E": 10}
+KNOWN = {"A": 263, "B": 0, "C": 45, "D": 335, "E": 10}
 
 print("\n- the split is the one the campaign was planned against -")
 check("the pending set has not moved", len(pending) == sum(KNOWN.values()),
@@ -72,7 +72,7 @@ for g, n in KNOWN.items():
 
 own = [c for c, _ in groups["A"] if not T.COMPETITOR.search(c["id"])]
 comp = [c for c, _ in groups["A"] if T.COMPETITOR.search(c["id"])]
-check("and A splits 128 our own / 60 competitor arms", (len(own), len(comp)) == (128, 60),
+check("and A splits 203 our own / 60 competitor arms", (len(own), len(comp)) == (203, 60),
       f"{len(own)} / {len(comp)}")
 
 #: C carries a seam of its own. The spread table was measured on ONE stand, so `SPREAD.get(leaf)`
@@ -93,7 +93,7 @@ measured = len(groups["B"]) + len(groups["C"])
 check(f"the fields with a measured spread carry {measured} claims, and none of them is in B",
       not groups["B"] and measured == 45, f"B {len(groups['B'])}, measured {measured}")
 check("the unmeasured majority is counted, not folded into the same sentence",
-      len(groups["D"]) == 329, str(len(groups["D"])))
+      len(groups["D"]) == 335, str(len(groups["D"])))
 c_over = [c for c, _ in groups["C"]
           if (c.get("pointer") or "").endswith("over_retraction_rate")]
 check("the gate called absolute is in C, printed finer than it is resolved", len(c_over) == 6,

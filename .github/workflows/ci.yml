@@ -68,6 +68,11 @@ jobs:
       - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
         with:
           python-version: "3.13"
+      - name: Install the research tier's declared dependencies
+        # The core matrix deliberately installs nothing; this tier is where the extras live, and
+        # until 2026-09-22 they were installed nowhere and the suites needing them sat in the
+        # core glob, passing only on a machine that happened to have them.
+        run: python -m pip install -e ".[research]"
       - name: Run research suites
         shell: bash
         # Same reason as the core loop above: report every failure, not the first one.

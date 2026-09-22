@@ -30,7 +30,15 @@ dependencies = []   # standard library only; Ollama/cloud are reached over HTTP
 reranker = ["torch", "transformers"]   # trained cross-encoder precision boost (NEVERTWICE_XRERANK=1)
 langchain = ["langchain-core"]         # NevertwiceRetriever / NevertwiceMemory adapters
 llamaindex = ["llama-index-core"]      # NevertwiceRetriever for LlamaIndex
-dev = ["pytest>=8", "pyflakes>=3", "build>=1", "hypothesis>=6"]  # local checks, wheel
+dev = ["pytest>=8", "pyflakes>=3", "build>=1", "hypothesis>=6"]
+# The research tier's own dependencies, declared because they were not: four suites under
+# `tests/research/` import a lab module at module level and cannot run without these.
+# Measured 2026-09-22 by running every research suite with each candidate blocked - these
+# four names are exactly the set that fails at import, and no other research suite needs
+# one. They are NOT in `dev`: the documented contributor path stays small, and the core
+# matrix installs nothing at all, which is what makes "the core tier is stdlib-only" a
+# fact about the tree rather than a sentence in the workflow.
+research = ["networkx>=3", "numpy>=1.26", "scipy>=1.11", "statsmodels>=0.14"]  # local checks, wheel
 # hypothesis is used by tests/_test_properties.py when present and never required: the
 # core CI matrix installs nothing, so every property there also has a deterministic
 # corpus. A suite that only runs for people who installed an extra stops running.

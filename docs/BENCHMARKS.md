@@ -175,18 +175,16 @@ the arm is re-measured with the rest of the head-to-head families.
 
 ### LoCoMo, the benchmark this project had excluded on paper
 
-Ten long conversations, 5,882 turns, 1,977 of the 1,986 questions scored, retrieving the
+Ten long conversations - their turn count, question count and the number scored are all **awaiting re-measure** since a cross-platform fix moved `nevertwice/_engine_hooks.py`, so the figures are not printed here until the stand is re-run - retrieving the
 human-annotated evidence turn from the question's own conversation - LoCoMo's own setting. Full
 method and the defect running it found: [`research/LOCOMO.md`](../research/LOCOMO.md).
 Re-measured at the reviewed engine on the cached vectors: every figure reproduced exactly, and
 LoCoMo turns are short enough that the embedding-cap defect never touched them.
 
 <!-- claims:locomo -->
-| method | R@1 | R@3 | R@5 | R@10 | MRR |
-|---|---|---|---|---|---|
-| semantic (bge-m3) | 0.182 | 0.340 | 0.432 | 0.560 | 0.301 |
-| lexical (BM25) | 0.339 | 0.527 | 0.601 | 0.681 | 0.459 |
-| **calibrated fusion (shipped default, 0 deps)** | **0.350** | **0.556** | **0.640** | **0.727** | **0.481** |
+> **Withdrawn 2026-09.** needs the GPU and the extraction model: the cross-platform fix to _detach_kwargs moved nevertwice/_engine_hooks.py, which sits in these claims' closure, so every stand behind them must be re-run before the numbers are live again. CI's first matrix run in 27 days showed the Windows detach flags fell back to 0 on POSIX and the engine had to move; the artifacts are untouched and the numbers are not disputed.
+>
+> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/locomo_eval.py --save --out=research/results/locomo.json` is what re-measures this one.
 <!-- /claims:locomo -->
 
 The exclusion was written around a reported 94% for plain BM25. The term-overlap floor here
@@ -220,12 +218,9 @@ python research/head_to_head.py --only=nevertwice,mem0,langmem,amem --save \
 ### The 2026-07 run, which stays withdrawn
 
 <!-- claims:longmem-benchmarks -->
-| method | R@1 | R@5 | R@10 | MRR |
-|---|---|---|---|---|
-| semantic (bge-m3) | 0.428 | 0.692 | 0.782 | 0.552 |
-| lexical (BM25) | 0.470 | 0.738 | 0.830 | 0.596 |
-| **calibrated fusion (shipped default, 0 deps)** | 0.512 | 0.800 | **0.866** | 0.636 |
-| **+ trained cross-encoder (opt-in)** | **0.626** | **0.834** | **0.866** | **0.723** |
+> **Withdrawn 2026-09.** needs the GPU and the extraction model: the cross-platform fix to _detach_kwargs moved nevertwice/_engine_hooks.py, which sits in these claims' closure, so every stand behind them must be re-run before the numbers are live again. CI's first matrix run in 27 days showed the Windows detach flags fell back to 0 on POSIX and the engine had to move; the artifacts are untouched and the numbers are not disputed.
+>
+> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/longmem_eval.py --save` is what re-measures this one.
 <!-- /claims:longmem-benchmarks -->
 
 The shipped ranker fuses the two signals with **calibrated score fusion** (z-normalise each, combine
