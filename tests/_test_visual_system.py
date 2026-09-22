@@ -251,10 +251,11 @@ def test_the_palette_is_readable() -> None:
 
 def test_every_image_in_a_tracked_document_has_alt_text() -> None:
     print("\n- alt text everywhere, describing rather than naming -")
-    missing, weak = [], []
+    missing, weak, judged = [], [], 0
     for rel in tracked("*.md"):
         text = (ROOT / rel).read_text(encoding="utf-8", errors="replace")
         for tag in IMG_TAG.findall(text):
+            judged += 1
             alt = re.search(r'alt="([^"]*)"', tag)
             src = re.search(r'src="([^"]*)"', tag)
             where = f"{rel}:{(src.group(1) if src else '?').split('/')[-1]}"
@@ -266,11 +267,21 @@ def test_every_image_in_a_tracked_document_has_alt_text() -> None:
         for alt, src in MD_IMAGE.findall(text):
             if src.startswith(("http://", "https://")):
                 continue                     # badges and remote assets carry their own label
+            judged += 1
             where = f"{rel}:{src.split('/')[-1]}"
             if not alt.strip():
                 missing.append(where)
             elif len(alt) < MIN_ALT:
                 weak.append(f"{where} ({len(alt)} chars)")
+    #: Both checks below report a count of OFFENDERS, and a scan that finds no images at all
+    #: reports zero offenders too. Nothing here said how many images were judged, so a refactor
+    #: that moved the figures to remote URLs, or changed the embed syntax, would leave both green
+    #: over an empty set. Measured 2026-09-22 over 118 tracked pages: 5 `<img>` tags and 4 local
+    #: Markdown images, 9 in all (8 remote badges are skipped on purpose, they carry their own
+    #: label). Found by sweeping for a classifier rule with a tiny population - the signature the
+    #: `MODEL_CALL` defect produced - and it is the same class as the sixteen checks fixed in
+    #: `1ef491c`, which that sweep missed because it looked for a name interpolating `len(X)`.
+    check("there are images to judge at all", judged >= 9, str(judged))
     check("every local image has alt text", not missing, ", ".join(missing[:5]))
     check(f"every alt text describes the image (>= {MIN_ALT} chars)", not weak,
           ", ".join(weak[:5]))
