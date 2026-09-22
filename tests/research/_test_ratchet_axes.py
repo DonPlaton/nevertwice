@@ -27,6 +27,7 @@ Run:  python tests/_test_ratchet_axes.py
 """
 from __future__ import annotations
 
+import subprocess
 import sys
 import tempfile
 from pathlib import Path
@@ -101,8 +102,29 @@ def test_the_instruments_report_numbers() -> None:
     # `if` -> `for` -> `while` is depth 3; the second `if` is depth 1. The first draft of
     # this line said 4, and the instrument it was written to check said 3. So did a hand
     # count. The expectation was wrong, which is the whole reason for a second opinion.
-    check("nesting is a per-function number", nest == {"f": 3}, str(nest))
-    check("returns is a per-function number", rets == {"f": 3}, str(rets))
+    #: When an axis comes back None the instrument refused - it ran and printed something this
+    #: parser could not read - and "None" alone is where the message used to stop. Two matrix
+    #: runs were spent guessing at a format; this prints the first line ruff actually emitted,
+    #: so the next run answers instead of restating. Ruff is re-run here rather than plumbed
+    #: through `complexity.py`, which is frozen: a diagnostic aid does not belong inside a
+    #: measured instrument.
+    def ruff_said(axis: str) -> str:
+        rule, config = C._RUFF_AXIS_RULES[axis]
+        try:
+            proc = subprocess.run(
+                [sys.executable, "-m", "ruff", "check", "--isolated", "--no-cache", "--preview",
+                 "--ignore-noqa", "--select", rule, "--output-format", "concise",
+                 "--config", config, str(path)],
+                capture_output=True, text=True, timeout=120)
+        except (OSError, subprocess.SubprocessError) as exc:
+            return f"<could not run: {type(exc).__name__}>"
+        first = next((ln for ln in proc.stdout.splitlines() if rule in ln), "")
+        return f"exit {proc.returncode}; first {rule} line: {first[:120]!r}"
+
+    check("nesting is a per-function number", nest == {"f": 3},
+          str(nest) if nest is not None else ruff_said("nesting"))
+    check("returns is a per-function number", rets == {"f": 3},
+          str(rets) if rets is not None else ruff_said("returns"))
     check("statements is a per-function number", isinstance(stmts, dict) and "f" in stmts,
           str(stmts))
     check("and all three name the same function", set(nest) == set(rets) == set(stmts),
