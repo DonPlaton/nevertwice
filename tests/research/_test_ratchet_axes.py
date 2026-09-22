@@ -119,7 +119,13 @@ def test_the_instruments_report_numbers() -> None:
         except (OSError, subprocess.SubprocessError) as exc:
             return f"<could not run: {type(exc).__name__}>"
         first = next((ln for ln in proc.stdout.splitlines() if rule in ln), "")
-        return f"exit {proc.returncode}; first {rule} line: {first[:120]!r}"
+        #: stderr too: exit 1 with no line carrying the rule is not "found nothing" - ruff says
+        #: 2 for a usage error but 1 for several failures as well, and the sentence that
+        #: distinguishes them is on the other stream. The first report without it said
+        #: `exit 1; first PLR1702 line: ''`, which is the same dead end one step further in.
+        err = (proc.stderr or "").strip().splitlines()
+        return (f"exit {proc.returncode}; first {rule} line: {first[:100]!r}"
+                + (f"; stderr: {err[0][:140]!r}" if err else "; stderr empty"))
 
     check("nesting is a per-function number", nest == {"f": 3},
           str(nest) if nest is not None else ruff_said("nesting"))
