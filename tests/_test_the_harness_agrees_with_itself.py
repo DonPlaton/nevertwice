@@ -446,7 +446,19 @@ def test_a_population_guard_watches_the_loop_it_guards() -> None:
     So the shape is refused here rather than remembered: an assignment `X = len(<expr>)` whose
     expression names the same source as a `for` in the same scope. Spelling is ignored - the
     comparison is over the Names, attributes and string constants, so `len(list(D.glob("*.py")))`
-    beside `for p in sorted(D.glob("*.py"))` is caught too.
+    beside `for p in sorted(D.glob("*.py"))` is caught too, and so is a counter that carries the
+    loop's filter, which is what the real case looked like.
+
+    Two shapes are out of reach, named rather than half-caught, and neither is in the tree today
+    (checked: zero occurrences of the first, and `sum(1 for` appears in sixteen suites but never
+    as a population counter beside a loop):
+
+        n = sum(1 for _ in sorted(D.glob("*.py")))     no `len` call
+        mods = list(D.glob("*.py"))                    the loop iterates a NAME, so its
+        for p in mods: ...                             fingerprint shares nothing with
+        n = len(D.glob("*.py"))                        the counter's
+
+    That is the rule's boundary, not a hole in it - a signature catches a class, never its edge.
     """
     def fingerprint(node):
         out = set()
@@ -475,7 +487,15 @@ def test_a_population_guard_watches_the_loop_it_guards() -> None:
                 if len(fp) < 2:
                     continue          # `len(rows)` names one thing; too thin to be a duplicate
                 for ln, lfp in loops:
-                    if ln != n.lineno and fp <= lfp:
+                    #: EITHER containment, and the direction matters. The first version asked
+                    #: only `fp <= lfp` - the counter must be a subset of the loop - and the
+                    #: real case is the other way round: a counter carrying the loop's filter
+                    #: (`[p for p in glob if p.name not in (...)]`) always names MORE than the
+                    #: loop. So the rule was silent on the very instance it was written for,
+                    #: `8ce3cbb:tests/_test_one_engine.py`, and looked proven because the
+                    #: planted examples had no filter. Caught by the auditing session
+                    #: 2026-09-22, which fed the genuine historical form back through it.
+                    if ln != n.lineno and len(lfp) >= 2 and (lfp <= fp or fp <= lfp):
                         found.append((n.lineno, ln))
                         break
         return found
@@ -484,12 +504,28 @@ def test_a_population_guard_watches_the_loop_it_guards() -> None:
     print("- a population guard counts inside the loop, not beside it -")
     #: The rule bites, before its silence is read as a result: a planted duplicate in each
     #: spelling must be seen, or a zero below would be the rule's blindness, not the tree's shape.
+    NL = chr(10)
     check("the rule sees a counter written with the loop's own spelling",
           bool(duplicates(ast.parse(
               'for p in sorted(D.glob("*.py")):\n    pass\nn = len(sorted(D.glob("*.py")))'))))
     check("and one written with a different spelling of the same source",
           bool(duplicates(ast.parse(
               'for p in sorted(D.glob("*.py")):\n    pass\nn = len(list(D.glob("*.py")))'))))
+    #: The genuine shape, which the first version of this rule did NOT see: the counter carries
+    #: the loop's own filter, so it names MORE than the loop, not less. This is the form
+    #: `8ce3cbb:tests/_test_one_engine.py` actually had, and the reason the rule looked proven
+    #: while being blind - both planted examples above are unfiltered.
+    FILTERED = ('for p in sorted(D.glob("*.py")):' + NL
+                + '    if p.name in SKIP:' + NL
+                + '        continue' + NL
+                + 'n = len([p for p in sorted(D.glob("*.py")) if p.name not in SKIP])')
+    check("the rule sees a counter that carries the loop's filter",
+          bool(duplicates(ast.parse(FILTERED))))
+    #: And the mirror: the LOOP filters, the counter does not.
+    MIRROR = ('for p in [q for q in sorted(D.glob("*.py")) if q.name not in SKIP]:' + NL
+              + '    pass' + NL
+              + 'n = len(sorted(D.glob("*.py")))')
+    check("and one the loop filters but the counter does not", bool(duplicates(ast.parse(MIRROR))))
     check("and leaves a counter of something else alone",
           not duplicates(ast.parse(
               'for p in sorted(D.glob("*.py")):\n    pass\nn = len(claims)')))
