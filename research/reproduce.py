@@ -794,6 +794,20 @@ def missing_modules(spec: dict) -> list:
 INPUT_PATH = re.compile(r"^([A-Za-z0-9_./\-]+\.[A-Za-z0-9_]+)")
 
 
+def unreadable_as_path(item: str) -> bool:
+    """Is this input a SENTENCE rather than a path this tool can test?
+
+    `missing_inputs` answers existence, and for an item with no leading path it answers it about
+    the whole sentence, which is always no. That is the right STATUS - an input we cannot check
+    must not be assumed present - and the wrong WORD, so the two are told apart here and printed
+    apart. Anchored deliberately: a path mentioned inside prose is a reference, not the input.
+    "a git worktree of this repository at ef8120d" names `research/supersession_bench.py` in its
+    parenthesis, and a rule that searched anywhere would declare that worktree present.
+    """
+    item = item.strip()
+    return not INPUT_PATH.match(item) and not (ROOT / item).exists()
+
+
 def missing_inputs(spec: dict) -> list:
     """Inputs that are files and are not here. Non-path inputs are hardware, listed as-is.
 
@@ -841,8 +855,21 @@ def run_one(spec: dict, regenerate: bool) -> dict:
         return result
     if result["missing_inputs"] or result["missing_modules"]:
         result["status"] = "skipped"
-        result["explain"] = ("cannot regenerate here: missing "
-                             + ", ".join(result["missing_inputs"] + result["missing_modules"]))
+        #: Two reasons wear one word if this is not split. An entry naming a file that is not on
+        #: disk is MISSING; an entry whose input is a sentence - "the same corpus and vector
+        #: cache as research/results/longmem_oracle.json" - names nothing this tool can look up,
+        #: and the corpus it describes is in fact present. Calling both "missing" told the reader
+        #: to fetch three corpora they already had. The status is the same either way, which is
+        #: why the wrong sentence survived; the sentence is what a stranger acts on.
+        gone = [i for i in result["missing_inputs"] if not unreadable_as_path(i)]
+        prose = [i for i in result["missing_inputs"] if unreadable_as_path(i)]
+        parts = []
+        if gone or result["missing_modules"]:
+            parts.append("missing " + ", ".join(gone + result["missing_modules"]))
+        if prose:
+            parts.append("not a file this tool can look up, so assumed absent: "
+                         + ", ".join(prose))
+        result["explain"] = "cannot regenerate here: " + "; ".join(parts)
         return result
     if spec["kind"] in (MACHINE, HARDWARE):
         result["status"] = "skipped"

@@ -35,6 +35,7 @@ gate that refuses on a sign it never checked is the failure this repository spen
 """
 import _env_guard  # noqa: F401
 import json
+import subprocess
 import sys
 from pathlib import Path
 
@@ -115,6 +116,36 @@ print("\n- and the spreads are the measured ones, with a source -")
 check("five fields carry a measured run-to-run spread", len(T.SPREAD) == 5, str(len(T.SPREAD)))
 check("over-retraction's spread is the .05 that one run in five produced",
       T.SPREAD["over_retraction_rate"] == 0.05, str(T.SPREAD["over_retraction_rate"]))
+
+print("")
+print("- the endpoint is recognised however the URL was built -")
+#: The rule used to demand a quote right before the path, which means the endpoint had to be the
+#: WHOLE string literal. Every caller in this repository builds it by interpolation instead -
+#: `f"{OLLAMA}/api/chat"` - so the rule saw ONE file in the tree while thirteen contain the
+#: endpoint, and the check above it passed because it was tried on that one file. Nothing in the
+#: register moved (the group sizes pinned at the top of this suite are the same under both
+#: rules), but `research/gen_code_sessions.py` generates a corpus with a local model and read as
+#: pure arithmetic. Found by a reviewing agent over the shift diff, 2026-09-22.
+_tracked = subprocess.run(["git", "ls-files", "*.py"], cwd=T.ROOT, capture_output=True,
+                          text=True, encoding="utf-8").stdout.split()
+_src = [f for f in _tracked if T.MODEL_CALL.search(
+        (T.ROOT / f).read_text(encoding="utf-8", errors="replace"))]
+#: Fourteen, of which eleven CALL the endpoint and three only quote it: this suite, the tool
+#: itself, and `_test_audit_fixes.py`. That is the declared false-positive direction - a file
+#: wrongly read as touching a model is kept out of the deterministic group, which is the safe
+#: side for a campaign plan. The count is pinned so that narrowing the rule again reddens here
+#: instead of quietly returning it to the one file it used to see.
+check("fourteen tracked sources name a generation endpoint, so the rule has a population",
+      len(_src) == 14, str(len(_src)))
+check("and the generators it could not see before are among them",
+      {"research/gen_code_sessions.py", "research/frontier_eval.py",
+       "research/token_ab.py"} <= set(_src))
+_door, _model = T._asked_of_source("research/gen_code_sessions.py")
+check("a corpus generator that interpolates the URL is seen as calling a model", _model)
+check("and it is not mistaken for a stand that writes notes", not _door)
+check("a path that merely starts the same way is not an endpoint",
+      not T.MODEL_CALL.search("/api/chatter"))
+
 
 print(f"\n{'ALL OK' if not FAILS else f'{FAILS} FAILED'}")
 sys.exit(1 if FAILS else 0)

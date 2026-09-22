@@ -42,8 +42,19 @@ HORIZONS = (1, 7, 14, 30)
 
 
 def _git(*args: str) -> str:
-    return subprocess.run(["git", *args], cwd=ROOT, capture_output=True, text=True,
-                          encoding="utf-8", errors="replace").stdout
+    """Git, or an exception. A survival curve built from commits git QUIETLY failed to read is
+    a curve over the commits that happened to work, and it would read exactly like a real one:
+    a commit whose blob could not be fetched looks like a commit that held no claims, which
+    moves every id born before it to an earlier death. Measured 2026-09-22 over the register's
+    162 commits - the manifest resolves in all of them and every blob parses - so this raises
+    nothing today and cannot start lying tomorrow. Raised by a reviewing agent, who could not
+    run git to tell whether the state had ever occurred; it has not.
+    """
+    r = subprocess.run(["git", *args], cwd=ROOT, capture_output=True, text=True,
+                       encoding="utf-8", errors="replace")
+    if r.returncode:
+        raise RuntimeError(f"git {' '.join(args)} failed: {r.stderr.strip()[:200]}")
+    return r.stdout
 
 
 def history(until: str = "HEAD") -> list[tuple[str, dt.datetime]]:
@@ -68,8 +79,12 @@ def claims_at(sha: str) -> list[dict]:
     blob = _git("show", f"{sha}:{MANIFEST_PATH}")
     try:
         data = json.loads(blob)
-    except json.JSONDecodeError:
-        return []
+    except json.JSONDecodeError as e:
+        #: An unparseable register at some commit is not "no claims there" - it is a commit whose
+        #: contents this tool does not know, and treating it as empty shortens every lifetime
+        #: that spans it. All 162 parse today; if one ever does not, the number is wrong and the
+        #: run should say so rather than publish a curve with a hole in it.
+        raise RuntimeError(f"the register at {sha[:8]} is not valid JSON: {e}") from e
     c = data.get("claims", [])
     return list(c.values() if isinstance(c, dict) else c)
 

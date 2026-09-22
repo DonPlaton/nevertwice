@@ -288,6 +288,36 @@ def test_the_exit_code_follows_the_result() -> None:
           "the exit code does not depend on the result")
 
 
+def test_a_deterministic_entry_cannot_be_skipped_by_a_sentence() -> None:
+    """The package's promise is that every DETERMINISTIC artifact reproduced byte-for-byte.
+
+    A deterministic entry is skipped, not run, when one of its inputs is not on disk. An input
+    written as prose is never on disk - `Path.exists()` is being asked about a sentence - so such
+    an entry would drop out of the promise silently, exit 0 intact. Today none does: all fourteen
+    name inputs this tool can look up, and the two that name `.git` name something that resolves.
+    The gate is here so that the FIRST entry written as "the corpora, as for research/x.py" is
+    refused when it is added, rather than found later by re-reading the run's own output.
+
+    Raised by a reviewing agent over the shift diff, 2026-09-22, as the live consequence of the
+    anchored path rule; the wording of the skip reason was fixed in the same commit.
+    """
+    print("")
+    print("- no deterministic entry rests on an input the tool cannot look up -")
+    det = [s for s in R.ARTIFACTS if s["kind"] == R.DETERMINISTIC]
+    check("there are deterministic entries to check at all", len(det) == 14, str(len(det)))
+    opaque = [(s["file"], i) for s in det
+              for i in s.get("inputs", []) if R.unreadable_as_path(i)]
+    check("and every one of their inputs is a path this tool can test", not opaque,
+          "; ".join(f"{f}: {i[:60]}" for f, i in opaque[:3]))
+    #: The rule bites: the same entry with a prose input is refused.
+    probe = dict(det[0], inputs=["the oracle corpus, as for research/longmem_eval.py"])
+    check("a deterministic entry whose input is a sentence would be caught",
+          any(R.unreadable_as_path(i) for i in probe["inputs"]))
+    check("and a real path in the same position is not",
+          not R.unreadable_as_path("research/longmem_eval.py"))
+
+
+
 def test_zz_every_check_passed() -> None:
     """Bare pytest must reach the same verdict as this suite's exit code.
 

@@ -93,7 +93,19 @@ DOORS = ("capture_session", "process_session", "generate_json", "write_typed_not
 #: and `_rerank.py`'s docstring mentions Ollama in prose. Embedding is not generation - the
 #: vectors are cached and the ranking over them is arithmetic. A gate refusing on a sign it has
 #: not checked is the failure this file exists to prevent, so the sign is the generation URL.
-MODEL_CALL = re.compile(r"""["']/api/(generate|chat)""")
+#: The quote before the path was a mistake, and an expensive shape of one: it demanded that the
+#: endpoint be the WHOLE string literal, while every caller in this repository builds it by
+#: interpolation - `f"{OLLAMA}/api/chat"` at `research/gen_code_sessions.py:255`. Measured
+#: 2026-09-22: the quoted rule saw ONE file in the tree; the literal path sees fourteen, of
+#: which eleven call the endpoint and three only quote it (this tool, and two suites). The
+#: register does not move (A 188 / C 45 / D 329 / E 10 under both rules, pinned in
+#: `tests/_test_campaign_triage.py`), because no pending claim is produced by the twelve it
+#: could not see - but `gen_code_sessions.py` generates its corpus with a local model and would
+#: have been read as "deterministic given committed inputs" the day a claim cited it.
+#: A file that only MENTIONS the endpoint in prose now matches too. That error keeps a claim out
+#: of the deterministic group, which is the safe direction for a campaign plan; the opposite
+#: error is the one that puts a model call in a list of arithmetic.
+MODEL_CALL = re.compile(r"/api/(generate|chat)(?![A-Za-z])")
 
 #: Fields that measure the machine. F1 re-measured one of these and it moved by a third between
 #: two sessions on one box, with no code change.
