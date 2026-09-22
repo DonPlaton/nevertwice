@@ -84,6 +84,12 @@ def test_every_suite_arms_the_guard_first() -> None:
         elif first_package_line is not None and guard_line > first_package_line:
             late.append(rel)
 
+    #: The count was in the NAME and in no assertion: had `_suites()` returned nothing, this
+    #: would have printed "all 0 suites import _env_guard" and passed - the whole hermeticity
+    #: guarantee resting on an empty population. Found by sweeping the suites for exactly that
+    #: shape (2026-09-22): 50 enumerate a population from the repository, 14 assert nothing about
+    #: its size, and this was the one whose emptiness would have cost the most.
+    check("there are suites to check at all", len(_suites()) >= 150, str(len(_suites())))
     check(f"all {len(_suites())} suites import _env_guard", not missing,
           ", ".join(missing))
     check("no suite imports a project module before the guard", not late,

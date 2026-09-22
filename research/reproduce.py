@@ -265,6 +265,7 @@ ARTIFACTS = [
     {"file": "research/results/supersession_baseline_ef8120d.json",
      "command": ["python", "research/supersession_bench.py", "--arms", "nevertwice,naive",
                  "--runs", "2", "--out", "research/results/supersession_baseline_ef8120d.json"],
+     "window": "half-pinned, and the moving half is the instrument: the ENGINE is a worktree at ef8120d, while `research/supersession_bench.py` is copied from HEAD so the old engine is scored by today's classifier. `today` meant one day when this was written and reads as any day since - the stand moved five commits in one shift (f405891 temperature, 186de9d sampler pinning and MIN_RUNS, 503d496 pool refusals, 6a3046f _code_sha, 5eab073 its contents), each changing what the measurement measures WITH. The package never catches it, because a needs-hardware entry is skipped and this input is described in prose rather than by a flag. All 20 claims behind the two baselines are withdrawn as historical; the comparison is only valid with the same classifier on both sides, so re-using these numbers as a `before` means re-measuring both sides (found by the auditing session, 2026-09-22).",
      "kind": HARDWARE, "task": "supersession",
      "inputs": ["a git worktree of this repository at ef8120d (the engine before J2b and the literal-fact "
                 "channel) with HEAD's research/supersession_bench.py copied into it, so the old engine is "
@@ -279,6 +280,7 @@ ARTIFACTS = [
      "command": ["python", "research/supersession_bench.py", "--dataset",
                  "research/data/supersession_v1_implicit.json", "--arms", "nevertwice,naive",
                  "--runs", "2", "--out", "research/results/supersession_baseline_ef8120d_implicit.json"],
+     "window": "half-pinned, and the moving half is the instrument: the ENGINE is a worktree at ef8120d, while `research/supersession_bench.py` is copied from HEAD so the old engine is scored by today's classifier. `today` meant one day when this was written and reads as any day since - the stand moved five commits in one shift (f405891 temperature, 186de9d sampler pinning and MIN_RUNS, 503d496 pool refusals, 6a3046f _code_sha, 5eab073 its contents), each changing what the measurement measures WITH. The package never catches it, because a needs-hardware entry is skipped and this input is described in prose rather than by a flag. All 20 claims behind the two baselines are withdrawn as historical; the comparison is only valid with the same classifier on both sides, so re-using these numbers as a `before` means re-measuring both sides (found by the auditing session, 2026-09-22).",
      "kind": HARDWARE, "task": "supersession",
      "inputs": ["a git worktree of this repository at ef8120d with HEAD's research/supersession_bench.py copied "
                 "into it (see supersession_baseline_ef8120d.json)",
