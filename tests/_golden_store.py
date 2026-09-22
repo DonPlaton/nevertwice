@@ -25,6 +25,7 @@ import hashlib
 import json
 import math
 import re
+import tempfile
 import sys
 from pathlib import Path
 
@@ -40,19 +41,27 @@ sys.path.insert(0, str(ROOT / "nevertwice"))
 #: than no proof, because the next real difference gets read as the calendar again.
 TS_RE = re.compile(r"\d{4}-\d{2}-\d{2}(?:[T ]\d{2}:\d{2}(?::\d{2})?)?")
 SID_RE = re.compile(r"\b[0-9a-f]{8}\b")
-#: Bookkeeping files key on absolute transcript paths, and a sandbox lands somewhere new every
-#: run. Where the sandbox landed is a property of the host, not a decision the engine made.
-#: The mask knew two shapes of temporary path - a Windows one and `/tmp/` - and a GitHub runner
-#: uses a third, `/home/runner/work/_temp/...`. So the source transcript path survived the mask
-#: there, the hash of `.processed_sessions.json` differed from the recorded fixture, and the
-#: golden store read as changed on every Linux and macOS job of CI's first matrix run
-#: (2026-09-22) while being byte-identical twice in a row on each machine. A fixture that can
-#: only be verified where it was recorded is not a fixture; the third shape is named here, and
-#: the pattern now matches a temp segment anywhere in a POSIX path rather than a known prefix.
+#: Masking a temporary path by its SHAPE needs every shape, and there is always one more. This
+#: knew Windows and `/tmp/`; a GitHub runner uses `/home/runner/work/_temp/`, and macOS uses
+#: `/var/folders/<hash>/<hash>/T/`, which carries no `tmp`, `temp` or `_temp` segment at all.
+#: So the host's ANSWER is masked instead of a list of the answers it might give:
+#: `tempfile.gettempdir()` is what this suite already calls to place the store, and a form nobody
+#: has seen is covered the day a host returns it. The shape patterns stay as a fallback, for a
+#: path recorded on ANOTHER machine and carried in a fixture, but they are no longer the rule.
+#: The failure on every Linux and macOS job of CI's first matrix run and the macOS one the
+#: auditing session named next are the same defect: a list where a computation belongs.
+_TMPDIR = tempfile.gettempdir()
+_TMP_FORMS = [
+    re.escape(_TMPDIR),                          # as the host spells it
+    re.escape(_TMPDIR.replace("\\", "\\\\")),    # as JSON escapes it
+    re.escape(_TMPDIR.replace("\\", "/")),       # as a POSIX-ified copy spells it
+]
 TMP_RE = re.compile(
-    r'[A-Za-z]:\\\\?[^"\n]*?[Tt]e?mp\\\\?[^"\n]*'      # C:\...\Temp\... (escaped in JSON)
-    r'|/[^"\n]*?/(?:_temp|tmp|temp|Temp|TEMP)/[^"\n]*'  # /home/runner/work/_temp/..., any root
-    r'|/tmp/[^"\n]*'                                    # /tmp/... at the root
+    "|".join([form + r'[^"\n]*' for form in _TMP_FORMS] + [
+        r'[A-Za-z]:\\\\?[^"\n]*?[Tt]e?mp\\\\?[^"\n]*',
+        r'/[^"\n]*?/(?:_temp|tmp|temp|Temp|TEMP|T)/[^"\n]*',
+        r'/tmp/[^"\n]*',
+    ])
 )
 #: Byte offsets into those transcripts move with them, for the same reason.
 NUM_RE = re.compile(r'"(from_byte|size|bytes|mtime)":\s*-?\d+')

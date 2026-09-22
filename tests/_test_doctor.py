@@ -18,6 +18,7 @@ for being a suggestion rather than something destructive.
 from __future__ import annotations
 
 import json
+import re
 import os
 import subprocess
 import sys
@@ -343,9 +344,46 @@ def test_the_cli_contract() -> None:
                 except ValueError as exc:
                     check("--json emits only JSON", False, str(exc))
             else:
-                check("the human report names every check",
-                      all(cid in proc.stdout or True for cid in CHECK_IDS)
-                      and "nevertwice doctor" in proc.stdout)
+                #: `all(cid in proc.stdout or True for cid in CHECK_IDS)` was here, and it is
+                #: identically True: the left operand is discarded, so the twelve identifiers
+                #: were asserted about nothing. Measured: with `or True` an EMPTY report and a
+                #: report reading "complete nonsense" both pass; without it, both fail. The
+                #: second mechanism of the catalogue, literally - a condition true independent
+                #: of the system. Found by the auditing session, 2026-09-22.
+                #:
+                #: Removing `or True` alone would go red for the WRONG reason: the human report
+                #: prints LABELS, not identifiers - `[ok  ] store exists and is writable`, never
+                #: `store_writable` - so zero of twelve identifiers appear and always did. The
+                #: property the check names is true today; the question was malformed. Making
+                #: the report print identifiers to satisfy it would damage the product to please
+                #: a broken test.
+                #:
+                #: So it is asked two ways, both of which the report can answer. By COUNT, which
+                #: is cheap and population-shaped: one verdict line per check, no more and no
+                #: fewer. And by LABEL, which is strict: `doctor.py` carries the pair at every
+                #: `_check("store_writable", "store exists and is writable", ...)`, so the
+                #: labels are read from the source rather than copied here, where they would be
+                #: a second source of truth agreeing on the day it was written.
+                _verdicts = [ln for ln in proc.stdout.splitlines()
+                             if re.match(r"\s*\[(ok|warn|skip|fail)", ln, re.I)]
+                check(f"the human report prints one verdict per check "
+                      f"({len(_verdicts)} lines, {len(CHECK_IDS)} checks)",
+                      len(_verdicts) == len(CHECK_IDS),
+                      f"{len(_verdicts)} != {len(CHECK_IDS)}")
+                _doctor_src = (ROOT / "nevertwice" / "doctor.py").read_text(encoding="utf-8")
+                _labels = {}
+                for _m in re.finditer(r'_check\(\s*"([a-z_]+)"\s*,\s*"([^"]+)"', _doctor_src,
+                                      re.S):
+                    _labels.setdefault(_m.group(1), _m.group(2))
+                #: One identifier builds its label from a variable (`twin_calibration`, whose
+                #: title names the model), so eleven of the twelve carry a literal. The count is
+                #: asserted, or an empty mapping would make the next check vacuous.
+                check(f"the labels are read from doctor.py itself ({len(_labels)} of "
+                      f"{len(CHECK_IDS)})", len(_labels) == 11, str(len(_labels)))
+                _unnamed = [cid for cid, label in _labels.items() if label not in proc.stdout]
+                check("and every one of those labels appears in the report", not _unnamed,
+                      ", ".join(_unnamed[:4]))
+                check("the report identifies itself", "nevertwice doctor" in proc.stdout)
 
         help_proc = subprocess.run(
             [sys.executable, str(ROOT / "nevertwice" / "doctor.py"), "--help"],

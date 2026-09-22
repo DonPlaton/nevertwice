@@ -172,23 +172,36 @@ check("exactly two artifacts pin a commit no clone can follow", len(KNOWN_ELSEWH
 check("there were commit pins to resolve", len(commitish) >= 5, str(len(commitish)))
 
 #: And the condition itself, counted rather than left inside the inventory: a pin that resolves
-#: HERE but sits on no remote-tracking branch is provenance only this machine can check. Asked of
-#: every pin, so a third one is a number rather than a discovery.
-_unpublished = []
+#: HERE but sits on no remote-tracking branch is provenance only this machine can check.
+#:
+#: The unit matters more than the number, and the first version of this got it wrong: it counted
+#: OCCURRENCES (12), which conflates "a second unverifiable commit appeared" with "the same one
+#: is written in four more places". Two units answer the two questions anyone would ask, and
+#: both are pinned: how many distinct COMMITS nobody else can follow (one - `f0ed0809`, on the
+#: unpushed `invariants/v3-preclean`), and what it costs in CLAIMS (sixty, across three
+#: artifacts). Occurrences answer neither. Named by the auditing session, which counted the same
+#: twelve and found them spread over three files rather than one.
+_unpublished_shas, _unpublished_files = set(), set()
 for rel, dotted, value in commitish:
     if subprocess.run(["git", "cat-file", "-t", value], cwd=ROOT, capture_output=True,
                       text=True).stdout.strip() != "commit":
         continue
-    on_remote = subprocess.run(["git", "branch", "-r", "--contains", value], cwd=ROOT,
-                               capture_output=True, text=True).stdout.strip()
-    if not on_remote:
-        _unpublished.append(f"{rel}:{dotted} = {value[:12]}")
-check(f"pins that resolve here but on no pushed branch are counted ({len(_unpublished)})",
-      len(_unpublished) <= 12, "; ".join(_unpublished[:3]))
-if _unpublished:
-    print(f"       ({len(_unpublished)} pin(s) name a commit that exists only on this machine - "
-          f"publish the ref or re-stamp the artifact)")
-print(f"       ({foreign_n} name another repository's history and are not asked of this one)")
+    if not subprocess.run(["git", "branch", "-r", "--contains", value], cwd=ROOT,
+                          capture_output=True, text=True).stdout.strip():
+        _unpublished_shas.add(value[:12])
+        _unpublished_files.add(rel)
+check(f"distinct commits that no clone can follow ({len(_unpublished_shas)})",
+      len(_unpublished_shas) <= 1, ", ".join(sorted(_unpublished_shas)))
+check(f"and the artifacts carrying them ({len(_unpublished_files)})",
+      len(_unpublished_files) <= 3, ", ".join(sorted(_unpublished_files)))
+if _unpublished_shas:
+    _man = json.loads((ROOT / "research" / "evidence_manifest.json").read_text(encoding="utf-8"))
+    _at_risk = [c for c in _man["claims"] if c.get("raw") in _unpublished_files]
+    check(f"and the claims standing on them ({len(_at_risk)})", len(_at_risk) <= 60,
+          f"{len(_at_risk)} claims on {sorted(_unpublished_files)}")
+    print(f"       ({len(_unpublished_shas)} commit(s) exist only on this machine, carried by "
+          f"{len(_unpublished_files)} artifact(s) under {len(_at_risk)} claim(s) - publish the "
+          f"ref or re-stamp)")
 
 print("\n- every sha256 recorded beside a path matches that file, where the file is here -")
 checked = absent = 0
