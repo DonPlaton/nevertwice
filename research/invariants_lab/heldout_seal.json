@@ -14,7 +14,7 @@
     "sigscan.py": "4da4b57f29c99d3ec8ce522446361bebee051ee63c9a8ea913dc524e1f54b6ad",
     "scale.py": "b35804f71fa92dd6979c5f55bc563582c16df0665ceb5ae79b2d24ff16d2ac37",
     "ratchet.py": "6c56e2c75edd679ffd19238dc9443a4c11b4327373f816c72f440ae3de5e8236",
-    "complexity.py": "8a28bc76937bd26194caf2ffd0671560842378ae99429adc08e08b18bec6ebd3",
+    "complexity.py": "2993e8a91464eff80d87d8441968af3a97781b33db54c6cab2628055c95de45d",
     "invariant_notes.py": "cea9d064a6961801ac8bd4295210b124baf1ba213178bb7f1b0c2abc15609ce1",
     "preconfigured.py": "1567c6f5554a169373710771c46b2a0a1ea0aef760f72c87c116fdb0c1be5521",
     "db_authority.py": "ec5b511ce92e83358e441d1d41617c043330140f253d8f8e6c95e227cf3c7254",
@@ -312,6 +312,16 @@
       "change": "both ruff parsers return None when ruff printed diagnostics the parser could not read, instead of an empty dict.",
       "why": "Exit 1 means ruff FOUND something, so a line this code skips is a format change and not a clean file. The research job installed ruff 0.16.8 against the 0.15 line these parse, and six checks read an empty dict as numbers. The frozen instrument is edited rather than the suite, because a control that reports agreement when it could not read the answer is the defect this file exists to measure.",
       "harmless_because": "No measurement changes where the format is the one it parses: the same file gives {'f': 3} before and after on ruff 0.15.16. Where the format is unknown the answer changes from a false zero to None, and both suites already skip on None with a named reason."
+    },
+    {
+      "at": "2026-09-22T21:50:42",
+      "task": "CI-matrix",
+      "file": "complexity.py",
+      "from": "8a28bc76937bd26194caf2ffd0671560842378ae99429adc08e08b18bec6ebd3",
+      "to": "2993e8a91464eff80d87d8441968af3a97781b33db54c6cab2628055c95de45d",
+      "change": "the ruff diagnostic line is matched on its position and its value, not on the rule token.",
+      "why": "The previous amendment taught both parsers to answer None instead of a false zero, and None is what every research job then read. The cause was one token: ruff 0.15.16 prints `cx.py:1:5: error[PLR0911] Too many return statements (3 > 0)` and 0.15.22, inside the same pinned range, prints `cx.py:1:5: too-many-return-statements: Too many return statements (3 > 0)` -- the rule's NAME where the code used to be. The parser required the code, matched nothing, and the refusal fired on every line. Matching the rule was never load-bearing: every invocation carries `--select <rule>`, so every diagnostic line IS that rule, and re-matching it only asks ruff to spell it the way this file expects. A frozen instrument is edited rather than the suite because an axis that cannot be read on the interpreter the matrix runs is not a measurement.",
+      "harmless_because": "Nothing changes where the old format is what ruff prints: the position and the `(V > N)` tail are in both spellings, and both are what the parser now reads. Verified on the installed ruff 0.15.22 -- returns {'f': 3}, nesting {'f': 2}, complexity {'f': 3}, where all three read None before. The three-way refusal added by the previous amendment is untouched: absent ruff still returns None, and exit 1 with unreadable stdout still returns None."
     }
   ]
 }
