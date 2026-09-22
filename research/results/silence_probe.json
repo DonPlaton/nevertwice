@@ -8,9 +8,11 @@
  "extract_temperature": "0",
  "silent_cases": 8,
  "by_kind": {
-  "written with the marker": 6,
+  "extraction failed": 0,
   "no items returned": 1,
-  "written without the marker": 1
+  "items returned, none written": 0,
+  "written without the marker": 1,
+  "written with the marker": 6
  },
  "rows": [
   {

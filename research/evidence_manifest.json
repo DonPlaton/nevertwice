@@ -53181,7 +53181,7 @@
    "command": "python research/silence_probe.py --save --out research/results/silence_probe.json",
    "raw": "research/results/silence_probe.json",
    "cited_in": [],
-   "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
+   "commit": "ea3386f59507f300f7fbf84ff21681ac100d21e9",
    "produced_by": [
     "research/silence_probe.py",
     "nevertwice/__init__.py",
@@ -53230,11 +53230,7 @@
     "research/uncertainty.py",
     "sandbox_guard.py"
    ],
-   "ci": null,
-   "cited_in_pending": [],
-   "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
-   "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "ci": null
   },
   {
    "id": "silence.written_without_marker",
@@ -53251,7 +53247,7 @@
    "command": "python research/silence_probe.py --save --out research/results/silence_probe.json",
    "raw": "research/results/silence_probe.json",
    "cited_in": [],
-   "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
+   "commit": "ea3386f59507f300f7fbf84ff21681ac100d21e9",
    "produced_by": [
     "research/silence_probe.py",
     "nevertwice/__init__.py",
@@ -53300,18 +53296,14 @@
     "research/uncertainty.py",
     "sandbox_guard.py"
    ],
-   "ci": null,
-   "cited_in_pending": [],
-   "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
-   "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "ci": null
   },
   {
    "id": "silence.no_items",
-   "statement": "of the 8 first sessions the as-of stand had marked never written, captured alone the extractor no items returned for 0",
+   "statement": "of the 8 first sessions the as-of stand had marked never written, captured alone the extractor no items returned for 1",
    "value": 1,
    "printed": [
-    "0"
+    "1"
    ],
    "unit": "sessions",
    "n": 8,
@@ -53321,7 +53313,7 @@
    "command": "python research/silence_probe.py --save --out research/results/silence_probe.json",
    "raw": "research/results/silence_probe.json",
    "cited_in": [],
-   "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
+   "commit": "ea3386f59507f300f7fbf84ff21681ac100d21e9",
    "produced_by": [
     "research/silence_probe.py",
     "nevertwice/__init__.py",
@@ -53372,11 +53364,7 @@
    ],
    "ci": null,
    "derivation": "by_kind carries no entry for 'no items returned': the count is zero",
-   "note": "Restored by hand at 71f83a1 (2026-09-19, the campaign at 71f83a1): value moved 0 -> 1 in this campaign. research/results/silence_probe.json by_kind = {'written with the marker': 6, 'no items returned': 1, 'written without the marker': 1}; the probe re-ran at this HEAD and found one session where the extractor returned no items at all, where the previous run found none. The engine's own non-determinism at temperature 0, measured again",
-   "cited_in_pending": [],
-   "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
-   "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "note": "Restored by hand at 71f83a1 (2026-09-19, the campaign at 71f83a1): value moved 0 -> 1 in this campaign. research/results/silence_probe.json by_kind = {'written with the marker': 6, 'no items returned': 1, 'written without the marker': 1}; the probe re-ran at this HEAD and found one session where the extractor returned no items at all, where the previous run found none. The engine's own non-determinism at temperature 0, measured again"
   },
   {
    "id": "silence.items_none_written",
@@ -53387,13 +53375,13 @@
    ],
    "unit": "sessions",
    "n": 8,
-   "pointer": null,
+   "pointer": "by_kind[\"items returned, none written\"]",
    "dataset": "supersession_v1",
    "environment": "local_supersession_stand",
    "command": "python research/silence_probe.py --save --out research/results/silence_probe.json",
    "raw": "research/results/silence_probe.json",
    "cited_in": [],
-   "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
+   "commit": "ea3386f59507f300f7fbf84ff21681ac100d21e9",
    "produced_by": [
     "research/silence_probe.py",
     "nevertwice/__init__.py",
@@ -53444,11 +53432,7 @@
    ],
    "ci": null,
    "derivation": "by_kind carries no entry for 'items returned, none written': the count is zero",
-   "note": "Restored by hand at 71f83a1 (2026-09-19, the campaign at 71f83a1): by_kind = {'written with the marker': 6, 'no items returned': 1, 'written without the marker': 1}: no session returned items that were then not written",
-   "cited_in_pending": [],
-   "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
-   "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "note": "Restored by hand at 71f83a1 (2026-09-19, the campaign at 71f83a1): by_kind = {'written with the marker': 6, 'no items returned': 1, 'written without the marker': 1}: no session returned items that were then not written"
   },
   {
    "id": "silence.extraction_failed",
@@ -53459,13 +53443,13 @@
    ],
    "unit": "sessions",
    "n": 8,
-   "pointer": null,
+   "pointer": "by_kind[\"extraction failed\"]",
    "dataset": "supersession_v1",
    "environment": "local_supersession_stand",
    "command": "python research/silence_probe.py --save --out research/results/silence_probe.json",
    "raw": "research/results/silence_probe.json",
    "cited_in": [],
-   "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
+   "commit": "ea3386f59507f300f7fbf84ff21681ac100d21e9",
    "produced_by": [
     "research/silence_probe.py",
     "nevertwice/__init__.py",
@@ -53516,11 +53500,7 @@
    ],
    "ci": null,
    "derivation": "by_kind carries no entry for 'extraction failed': the count is zero",
-   "note": "Restored by hand at 71f83a1 (2026-09-19, the campaign at 71f83a1): by_kind = {'written with the marker': 6, 'no items returned': 1, 'written without the marker': 1}: no extraction raised",
-   "cited_in_pending": [],
-   "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
-   "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "note": "Restored by hand at 71f83a1 (2026-09-19, the campaign at 71f83a1): by_kind = {'written with the marker': 6, 'no items returned': 1, 'written without the marker': 1}: no extraction raised"
   },
   {
    "id": "silence.cases",
@@ -53537,7 +53517,7 @@
    "command": "python research/silence_probe.py --save --out research/results/silence_probe.json",
    "raw": "research/results/silence_probe.json",
    "cited_in": [],
-   "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
+   "commit": "ea3386f59507f300f7fbf84ff21681ac100d21e9",
    "produced_by": [
     "research/silence_probe.py",
     "nevertwice/__init__.py",
@@ -53586,11 +53566,7 @@
     "research/uncertainty.py",
     "sandbox_guard.py"
    ],
-   "ci": null,
-   "cited_in_pending": [],
-   "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
-   "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "ci": null
   },
   {
    "id": "supersession.nevertwice.store_bytes",

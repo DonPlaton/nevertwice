@@ -29,10 +29,15 @@ and this checks, for every reference:
 A number standing BESIDE a reference is checked too, not only one written inside the brackets.
 That is how a document actually gets migrated - append `[[claim:id]]` to the line and leave the
 figure - and the first version of this tool passed exactly that with zero complaints while the
-line still read `current 1.000 / 1.000` against a stored 0.9833. On a line carrying exactly one
-reference, a bare number must be the claim's value or one of the forms in its `printed` field;
-`printed` is the register's own rounding, so `0.067` for a stored 0.0667 is legal and `0.017`
-for a stored 0.0583 is not.
+line still read `current 1.000 / 1.000` against a stored 0.9833. A bare number must be the
+claim's value or one of the forms in its `printed` field; `printed` is the register's own
+rounding, so `0.067` for a stored 0.0667 is legal and `0.017` for a stored 0.0583 is not.
+
+It fires on the two readings that are unambiguous: one reference where EVERY number on the line
+disagrees, or as many numbers as references paired in reading order. A line that also carries a
+date, a sample size or a section number is therefore silent rather than noisy - measured, that
+naive form gave five false messages out of eight - and `current 1.000 / 1.000 [[a]] / [[b]]`,
+the frozen block's own shape, is still caught.
 
 Exit code 1 if any reference is broken OR any named document references nothing, so a document
 can be put in CI. A zero-reference file is the state this tool exists to end, and reporting it
@@ -116,22 +121,38 @@ def check_file(path: Path, claims: dict) -> tuple[int, list[str]]:
     found = 0
     for n, line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
         refs = REF.findall(line)
-        #: The ADJACENT number, checked only when the line carries exactly one reference - with
-        #: two, which figure belongs to which claim is a guess, and a guessing check is worse
-        #: than none. The numbers inside the brackets are stripped first so a correct migration
-        #: does not report its own value twice.
-        if len(refs) == 1 and refs[0][0] in claims:
-            claim = claims[refs[0][0]]
-            if not claim.get("declaration"):
-                outside = REF.sub(" ", line)
-                #: Deduplicated per line: `current 1.000 / 1.000` writes one wrong figure
-                #: twice, and reporting it twice would make a reader count two defects.
-                for bare in dict.fromkeys(BARE.findall(outside)):
+        #: The ADJACENT number. Two readings of a line are unambiguous and the rule fires on
+        #: exactly those; anything else would be a guess, and a guessing check is worse than
+        #: none. Measured on a corpus of realistic gate lines: reporting every unmatched number
+        #: on a one-reference line gave 8 messages of which 5 were false - a sample size, a
+        #: section number and a date, the date alone producing three (audit 2026-09-22).
+        #: Numbers inside the brackets are stripped first, so a correct migration does not
+        #: report its own value twice.
+        outside = BARE.findall(REF.sub(" ", line))
+        named = [(cid, claims[cid]) for cid, _ in refs if cid in claims]
+        if outside and named and not any(c.get("declaration") for _, c in named):
+            def _complain(cid, claim, bare):
+                problems.append(
+                    f"{path}:{n}: `{cid}` - the line writes {bare} beside the reference; "
+                    f"the register holds {claim.get('value')} (printed {claim.get('printed')})")
+
+            if len(named) == 1 and len(refs) == 1:
+                #: One reference: report only when EVERY number on the line disagrees. A line
+                #: mentioning a date or an `n` is then silent - those agree with nothing and
+                #: the line is not all-wrong - while a line whose only figure is the stale one
+                #: is caught.
+                cid, claim = named[0]
+                if all(not _matches(b, claim) for b in outside):
+                    for bare in dict.fromkeys(outside):
+                        _complain(cid, claim, bare)
+            elif len(outside) == len(refs) == len(named):
+                #: As many numbers as references, paired in reading order. This is the frozen
+                #: block's own shape - `current 1.000 / 1.000 [[explicit]] / [[implicit]]` -
+                #: and it has no other reading. Deduplication would break it: half the block's
+                #: pairs repeat the figure, and collapsing them makes the counts disagree.
+                for (cid, claim), bare in zip(named, outside):
                     if not _matches(bare, claim):
-                        problems.append(
-                            f"{path}:{n}: `{refs[0][0]}` - the line writes {bare} beside the "
-                            f"reference; the register holds {claim.get('value')} "
-                            f"(printed {claim.get('printed')})")
+                        _complain(cid, claim, bare)
         for cid, printed in refs:
             found += 1
             claim = claims.get(cid)

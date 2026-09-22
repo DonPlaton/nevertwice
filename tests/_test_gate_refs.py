@@ -39,6 +39,7 @@ CLAIMS = {
     "a.live":      {"id": "a.live", "value": 0.9833, "printed": ["0.983"]},
     "a.units":     {"id": "a.units", "value": 30, "printed": ["30 ms"]},
     "a.round":     {"id": "a.round", "value": 0.0667, "printed": ["0.067"]},
+    "a.one":       {"id": "a.one", "value": 1.0, "printed": ["1.000"]},
     "a.pending":   {"id": "a.pending", "value": 411.0, "stale": "reason", "pending_remeasure": True},
     "a.withdrawn": {"id": "a.withdrawn", "value": 0.5, "stale": "reason"},
     "a.declared":  {"id": "a.declared", "value": 0.80, "declaration": "ledger J2: written before the run"},
@@ -119,6 +120,31 @@ check("a line with two references reports no adjacent number - which figure is w
 n, probs = run("Gate: as-of 0.80 [[claim:a.declared]]\n")
 check("a declared value has no measurement for an adjacent number to drift from", not probs,
       str(probs))
+
+print("\n- the noise that would switch this check off -")
+#: Reporting every unmatched number on a one-reference line gave 8 messages on a corpus of
+#: realistic gate lines, of which 5 were false: a sample size, a section number, and a date
+#: producing three by itself (audit 2026-09-22). A check that noises stops being read - which
+#: is not a hypothesis about people, it is what happened to six gates of part 3.
+n, probs = run("Gate: current at or below 0.9833 on n=120 sessions [[claim:a.live]]\n")
+check("a sample size beside a correct figure is not reported", not probs, str(probs))
+n, probs = run("Gate: cold import at or below 30 ms, see section 4.2 [[claim:a.units]]\n")
+check("a section number is not reported", not probs, str(probs))
+n, probs = run("Gate: measured 2026-09-18, holds at 0.9833 [[claim:a.live]]\n")
+check("a date is not reported - it would be three messages on its own", not probs, str(probs))
+
+print("\n- and the paired line, which is the frozen block's own shape -")
+#: Half the block's pairs repeat the figure (`0.000 / 0.000`), so per-line deduplication - right
+#: for one reference - collapsed two numbers to one, the count stopped matching two references,
+#: and the rule went silent on exactly the case it exists for.
+n, probs = run("Frozen: current 1.000 / 1.000 [[claim:a.live]] / [[claim:a.one]]\n")
+check("two numbers against two references are paired in reading order",
+      len(probs) == 1 and "1.000" in probs[0] and "0.9833" in probs[0], str(probs))
+n, probs = run("Frozen: current 0.983 / 1.0 [[claim:a.live]] / [[claim:a.one]]\n")
+check("and a correct pair is silent", not probs, str(probs))
+n, probs = run("Frozen: 0.983 and 30 and 0.067 [[claim:a.live]] / [[claim:a.units]]\n")
+check("three numbers against two references stay silent - the pairing would be a guess",
+      not probs, str(probs))
 
 print("\n- a document that names nothing must FAIL, not merely be mentioned -")
 #: The first version printed "names no claim" and returned 0. CI reads the exit code, by which
