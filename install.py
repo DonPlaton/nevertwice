@@ -255,6 +255,31 @@ def _register_tasks_windows() -> None:
         manage_tasks.cmd_register(force=True)
 
 
+def _existing_crontab() -> tuple[list[str], str]:
+    """The user's current crontab lines, and a reason when they could not be read.
+
+    `crontab -l` exits non-zero for two entirely different reasons and prints nothing on stdout
+    for both: the user has no crontab yet, which is fine and means an empty list, or it could not
+    be read - no Full Disk Access on macOS, a locked spool, a hardened container, a missing user
+    entry. The first version of this code read `current.stdout or ""` and never looked at the exit
+    code, so both cases produced an empty list, and the `crontab -` below - which REPLACES the
+    crontab rather than appending to it - wrote this project's three jobs over whatever the person
+    had. That is data loss on a developer's own machine, on the documented first-run path, in the
+    half of `register_tasks` that cannot execute on Windows, where all of this project's suites run.
+
+    "No crontab yet" is recognised by the message every implementation prints for it. Anything
+    else is refused: an installer that cannot read what it is about to replace has no business
+    replacing it.
+    """
+    r = subprocess.run(["crontab", "-l"], capture_output=True, text=True)
+    if r.returncode == 0:
+        return r.stdout.splitlines(), ""
+    err = (r.stderr or "").strip()
+    if "no crontab for" in err.lower():
+        return [], ""
+    return [], err or f"`crontab -l` exited {r.returncode} and said nothing"
+
+
 def _register_tasks_cron() -> None:
     """Idempotently install the periodic jobs into the user's crontab (POSIX).
     Each line is tagged `# nevertwice` so re-running replaces, never duplicates."""
@@ -266,8 +291,18 @@ def _register_tasks_cron() -> None:
     log = store_dir() / ".logs" / "cron.log"
     new = [f'{sched} {PYTHON} "{PKG / script}" {args} >> "{log}" 2>&1 {_CRON_MARK}'.replace("  ", " ")
            for script, args, sched in _JOBS]
-    current = subprocess.run(["crontab", "-l"], capture_output=True, text=True)
-    kept = [l for l in (current.stdout or "").splitlines() if _CRON_MARK not in l]
+    existing, problem = _existing_crontab()
+    if problem:
+        # Refusing is the whole point. `crontab -` REPLACES the crontab; writing our three lines
+        # after failing to read the user's is how an installer deletes someone's scheduled
+        # backups on its own documented first run.
+        print(f"[cron] could not read the current crontab: {problem}")
+        print("[cron] refusing to write, because `crontab -` replaces what is already there and "
+              "what is already there could not be read. Add these lines yourself:")
+        for l in new:
+            print("    " + l)
+        return
+    kept = [l for l in existing if _CRON_MARK not in l]
     merged = "\n".join(kept + new).strip() + "\n"
     print("[cron] installing 3 jobs (tagged # nevertwice):")
     for l in new:
