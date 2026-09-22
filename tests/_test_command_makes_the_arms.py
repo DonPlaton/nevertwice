@@ -235,6 +235,31 @@ for artifact, commands in sorted(by_artifact.items()):
 check("no claim names a command that silently makes a smaller artifact", not undeclared,
       " | ".join(undeclared[:2]))
 
+print("\n- and a command's --out names the file the entry claims, or declares that it does not -")
+#: A flag-SET comparison cannot see this: `--out` is present in both, and only its VALUE differs.
+#: One entry writes another artifact entirely - `asof_k7_d07375e.json`'s command says
+#: `--out research/results/asof_v1.json`, which 29 claims read - and the record is accurate rather
+#: than wrong, because that WAS this file's name when the run happened. Following it today is what
+#: is dangerous, so the entry declares it. Swept 2026-09-22: 58 entries, 1 like this, 22 naming no
+#: `--out` at all (their stand writes a fixed path).
+mismatched, no_out = [], 0
+for f, spec in sorted(package.items()):
+    outs = [spec["command"][i + 1] for i, t in enumerate(spec["command"])
+            if t == "--out" and i + 1 < len(spec["command"])]
+    outs += [t.split("=", 1)[1] for t in spec["command"] if t.startswith("--out=")]
+    if not outs:
+        no_out += 1
+        continue
+    if not any(o.replace("\\", "/") == f for o in outs):
+        if not spec.get("writes_elsewhere"):
+            mismatched.append(f"{f} -> --out {outs}")
+check("every --out names its own artifact, or the entry says where it really writes",
+      not mismatched, " | ".join(mismatched[:2]))
+check("the declared exception is still exactly one",
+      sum(1 for s in package.values() if s.get("writes_elsewhere")) == 1)
+check("and there were entries with an --out to compare", len(package) - no_out >= 20,
+      f"{len(package) - no_out} of {len(package)}")
+
 print("\n- the rule is exercised, so a green line above can still go red -")
 sup_stand = "python research/supersession_bench.py"
 check("a two-arm command against a seven-arm file leaves the foreign arms unexplained",

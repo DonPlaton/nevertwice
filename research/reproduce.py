@@ -319,6 +319,15 @@ ARTIFACTS = [
     {"file": "research/results/asof_k7_d07375e.json",
      "command": ["python", "research/asof_bench.py", "--arms", "nevertwice,naive", "--runs", "2",
                  "--out", "research/results/asof_v1.json"],
+     #: The command writes ANOTHER FILE, and the record is accurate rather than wrong: at d07375e
+     #: this run produced the canonical `asof_v1.json`, and when the later re-run took that name
+     #: over, this measurement was preserved under the k7 one. As an INSTRUCTION it is dangerous -
+     #: following it today overwrites `asof_v1.json`, which 29 claims read. Declared rather than
+     #: silently corrected, because correcting it would make the record of what ran untrue.
+     "writes_elsewhere": ("`--out` names research/results/asof_v1.json: that WAS this file's name "
+                          "when the run happened. Redirect the output to "
+                          "research/results/asof_k7_d07375e.json, or you overwrite the canonical "
+                          "as-of artifact and the 29 claims that read it."),
      "assembled": {"arms": ["mem0", "zep"],
                     "how": "the command's arm list cannot write `mem0`, `zep`: those arms were measured by separate runs and merged into this file, and the per-run files are not on disk, so no invocation of this stand remakes it."},
      "kind": HARDWARE, "task": "supersession",
