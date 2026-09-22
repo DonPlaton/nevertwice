@@ -40,6 +40,18 @@ except Exception:                      # noqa: BLE001 - a redirected stream may 
     pass
 
 KS = (1, 5, 10)
+
+def mrr_key(arm: dict) -> str | None:
+    """The arm's reciprocal-rank field, taken from the ARTIFACT rather than remembered here.
+
+    The stand renamed it from `mrr` to `mrr@10` when it started reading only the first max(KS)
+    candidates - the truncation that makes arms with different return depths comparable. A
+    registrar carrying its own copy of the name is a second definition of the same thing, and
+    this file already holds one: `KS` here is (1, 5, 10) while the stand's is (1, 3, 5, 10). So
+    the key is read off the row, and an ambiguous row registers nothing rather than guessing.
+    """
+    keys = [k for k in arm if k == "mrr" or k.startswith("mrr@")]
+    return keys[0] if len(keys) == 1 else None
 ENVIRONMENT = "local_bge_m3_pinned"
 
 #: Per family: the artifact, the pinned corpus, the phrase every statement ends on, the command
@@ -148,8 +160,15 @@ def build_claims(family: str, artifact: dict, *, systems: list[str] | None, head
         if arm.get("blocked"):
             blocked.append(f"{system}: {arm['blocked']}")
             continue
-        if "recall@1" not in arm or "mrr" not in arm or not arm.get("n"):
-            blocked.append(f"{system}: no recall/mrr/n row in the artifact")
+        #: The stand names this metric for the depth it is taken at - `mrr@10`, from max(KS) -
+        #: because it reads the first max(KS) candidates and no further. Read it by the same
+        #: name the stand writes, so a rename cannot leave the registrar quietly skipping every
+        #: arm for want of a key.
+        mkey = mrr_key(arm)
+        if "recall@1" not in arm or mkey is None or not arm.get("n"):
+            blocked.append(f"{system}: no recall / single reciprocal-rank field / n row in the "
+                           f"artifact (mrr-like keys: "
+                           f"{[k for k in arm if k.startswith('mrr')] or 'none'})")
             continue
         label = label_for(system, arm)
         n = int(arm["n"])
@@ -173,11 +192,11 @@ def build_claims(family: str, artifact: dict, *, systems: list[str] | None, head
         if cid in existing:
             skipped.append(cid)
         else:
-            v = float(arm["mrr"])
+            v = float(arm[mkey])
             new.append({"id": cid,
-                        "statement": f"{label} reaches MRR {v:.3f} on {cfg['stand']}",
-                        "value": v, "printed": [f"{v:.3f}"], "unit": "mrr",
-                        **base, "pointer": f"{system}.mrr", "ci": None})
+                        "statement": f"{label} reaches {mkey.upper()} {v:.3f} on {cfg['stand']}",
+                        "value": v, "printed": [f"{v:.3f}"], "unit": mkey,
+                        **base, "pointer": f"{system}.{mkey}", "ci": None})
     return new, skipped, blocked
 
 

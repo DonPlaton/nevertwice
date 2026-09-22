@@ -8425,13 +8425,13 @@
     },
     {
       "id": "head_to_head.nevertwice.mrr",
-      "statement": "nevertwice reaches MRR 0.6511 on the same stand (same dataset, same local embedder, one run)",
+      "statement": "nevertwice reaches MRR@10 0.6511 on the same stand (same dataset, same local embedder, one run)",
       "value": 0.6511,
       "printed": [
         "0.65",
         "0.651"
       ],
-      "unit": "mrr",
+      "unit": "mrr@10",
       "dataset": "longmemeval_oracle",
       "environment": "local_bge_m3_competitors",
       "n": 500,
@@ -8477,7 +8477,8 @@
       ],
       "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the re-measurement is queued: the campaign runs this command and `tools/remeasure.py --restore` reads the number out of the artifact it writes",
       "withdrawn_on": "2026-08-25",
-      "pending_remeasure": true
+      "pending_remeasure": true,
+      "note": " Metric renamed 2026-09-22: the stand takes the reciprocal rank over max(KS)=10 candidates, so the field is `mrr@10`. It was called `mrr` while the loop read the whole returned list, which made the number depend on how deep each arm happened to answer. The depth is a condition of the number and now stands in its name."
     },
     {
       "id": "head_to_head.mem0.recall_at_10",
@@ -8542,13 +8543,13 @@
     },
     {
       "id": "head_to_head.mem0.mrr",
-      "statement": "mem0 reaches MRR 0.6026 on the same stand (same dataset, same local embedder, one run)",
+      "statement": "mem0 reaches MRR@10 0.6026 on the same stand (same dataset, same local embedder, one run)",
       "value": 0.6026,
       "printed": [
         "0.60",
         "0.603"
       ],
-      "unit": "mrr",
+      "unit": "mrr@10",
       "dataset": "longmemeval_oracle",
       "environment": "local_bge_m3_competitors",
       "n": 500,
@@ -8594,7 +8595,8 @@
       ],
       "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the re-measurement is queued: the campaign runs this command and `tools/remeasure.py --restore` reads the number out of the artifact it writes And a second reason, found 2026-09-22: this MRR was computed over a deeper list than the arms it is compared with. `Memory.search` in mem0 2.0.19 takes `top_k` (default 20) and has no `limit`, so the stand's `limit=max(KS)` went into `**kwargs` and vanished - Mem0 answered with twenty candidates where our arm and LangMem answered with ten, and `score()` walked the whole list for MRR while truncating recall at k. A hit at rank 11-20 earned Mem0 up to 1/11 that no other arm could earn. Both halves are fixed (`top_k`, and MRR truncated at max(KS)); recall@k is untouched. The size of the correction is NOT known - competitor per-question rows were never saved, which is the same gap that blocks the paired McNemar - so the re-measured number must be read as a new measurement, not as drift.",
       "withdrawn_on": "2026-08-25",
-      "pending_remeasure": true
+      "pending_remeasure": true,
+      "note": " Metric renamed 2026-09-22: the stand takes the reciprocal rank over max(KS)=10 candidates, so the field is `mrr@10`. It was called `mrr` while the loop read the whole returned list, which made the number depend on how deep each arm happened to answer. The depth is a condition of the number and now stands in its name."
     },
     {
       "id": "head_to_head.langmem.recall_at_10",
@@ -8659,13 +8661,13 @@
     },
     {
       "id": "head_to_head.langmem.mrr",
-      "statement": "langmem reaches MRR 0.5427 on the same stand (same dataset, same local embedder, one run)",
+      "statement": "langmem reaches MRR@10 0.5427 on the same stand (same dataset, same local embedder, one run)",
       "value": 0.5427,
       "printed": [
         "0.54",
         "0.543"
       ],
-      "unit": "mrr",
+      "unit": "mrr@10",
       "dataset": "longmemeval_oracle",
       "environment": "local_bge_m3_competitors",
       "n": 500,
@@ -8711,7 +8713,8 @@
       ],
       "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the re-measurement is queued: the campaign runs this command and `tools/remeasure.py --restore` reads the number out of the artifact it writes",
       "withdrawn_on": "2026-08-25",
-      "pending_remeasure": true
+      "pending_remeasure": true,
+      "note": " Metric renamed 2026-09-22: the stand takes the reciprocal rank over max(KS)=10 candidates, so the field is `mrr@10`. It was called `mrr` while the loop read the whole returned list, which made the number depend on how deep each arm happened to answer. The depth is a condition of the number and now stands in its name."
     },
     {
       "id": "head_to_head.amem.recall_at_10",
@@ -8776,13 +8779,13 @@
     },
     {
       "id": "head_to_head.amem.mrr",
-      "statement": "amem reaches MRR 0.5437 on the same stand (same dataset, same local embedder, one run)",
+      "statement": "amem reaches MRR@10 0.5437 on the same stand (same dataset, same local embedder, one run)",
       "value": 0.5437,
       "printed": [
         "0.54",
         "0.544"
       ],
-      "unit": "mrr",
+      "unit": "mrr@10",
       "dataset": "longmemeval_oracle",
       "environment": "local_bge_m3_competitors",
       "n": 500,
@@ -8828,7 +8831,8 @@
       ],
       "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the re-measurement is queued: the campaign runs this command and `tools/remeasure.py --restore` reads the number out of the artifact it writes",
       "withdrawn_on": "2026-08-25",
-      "pending_remeasure": true
+      "pending_remeasure": true,
+      "note": " Metric renamed 2026-09-22: the stand takes the reciprocal rank over max(KS)=10 candidates, so the field is `mrr@10`. It was called `mrr` while the loop read the whole returned list, which made the number depend on how deep each arm happened to answer. The depth is a condition of the number and now stands in its name."
     },
     {
       "id": "blast_radius.shipped.flag_rate",
@@ -11331,12 +11335,12 @@
     },
     {
       "id": "h2h_pinned.nevertwice.mrr",
-      "statement": "Nevertwice (calibrated fusion) reaches MRR 0.630 on the pinned stand",
+      "statement": "Nevertwice (calibrated fusion) reaches MRR@10 0.630 on the pinned stand",
       "value": 0.6301,
       "printed": [
         "0.630"
       ],
-      "unit": "mrr",
+      "unit": "mrr@10",
       "dataset": "longmemeval_oracle_pinned",
       "environment": "local_bge_m3_pinned",
       "n": 500,
@@ -11382,7 +11386,8 @@
       "cited_in_pending": [],
       "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
       "withdrawn_on": "2026-09-19",
-      "pending_remeasure": true
+      "pending_remeasure": true,
+      "note": " Metric renamed 2026-09-22: the stand takes the reciprocal rank over max(KS)=10 candidates, so the field is `mrr@10`. It was called `mrr` while the loop read the whole returned list, which made the number depend on how deep each arm happened to answer. The depth is a condition of the number and now stands in its name."
     },
     {
       "id": "h2h_pinned.mem0.recall_at_1",
@@ -11569,12 +11574,12 @@
     },
     {
       "id": "h2h_pinned.mem0.mrr",
-      "statement": "Mem0 2.0.19 reaches MRR 0.603 on the pinned stand",
+      "statement": "Mem0 2.0.19 reaches MRR@10 0.603 on the pinned stand",
       "value": 0.6026,
       "printed": [
         "0.603"
       ],
-      "unit": "mrr",
+      "unit": "mrr@10",
       "dataset": "longmemeval_oracle_pinned",
       "environment": "local_bge_m3_pinned",
       "n": 500,
@@ -11620,7 +11625,8 @@
       "cited_in_pending": [],
       "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored And a second reason, found 2026-09-22: this MRR was computed over a deeper list than the arms it is compared with. `Memory.search` in mem0 2.0.19 takes `top_k` (default 20) and has no `limit`, so the stand's `limit=max(KS)` went into `**kwargs` and vanished - Mem0 answered with twenty candidates where our arm and LangMem answered with ten, and `score()` walked the whole list for MRR while truncating recall at k. A hit at rank 11-20 earned Mem0 up to 1/11 that no other arm could earn. Both halves are fixed (`top_k`, and MRR truncated at max(KS)); recall@k is untouched. The size of the correction is NOT known - competitor per-question rows were never saved, which is the same gap that blocks the paired McNemar - so the re-measured number must be read as a new measurement, not as drift.",
       "withdrawn_on": "2026-09-19",
-      "pending_remeasure": true
+      "pending_remeasure": true,
+      "note": " Metric renamed 2026-09-22: the stand takes the reciprocal rank over max(KS)=10 candidates, so the field is `mrr@10`. It was called `mrr` while the loop read the whole returned list, which made the number depend on how deep each arm happened to answer. The depth is a condition of the number and now stands in its name."
     },
     {
       "id": "h2h_pinned.langmem.recall_at_1",
@@ -11807,12 +11813,12 @@
     },
     {
       "id": "h2h_pinned.langmem.mrr",
-      "statement": "LangMem 0.0.30 reaches MRR 0.543 on the pinned stand",
+      "statement": "LangMem 0.0.30 reaches MRR@10 0.543 on the pinned stand",
       "value": 0.5427,
       "printed": [
         "0.543"
       ],
-      "unit": "mrr",
+      "unit": "mrr@10",
       "dataset": "longmemeval_oracle_pinned",
       "environment": "local_bge_m3_pinned",
       "n": 500,
@@ -11858,7 +11864,8 @@
       "cited_in_pending": [],
       "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
       "withdrawn_on": "2026-09-19",
-      "pending_remeasure": true
+      "pending_remeasure": true,
+      "note": " Metric renamed 2026-09-22: the stand takes the reciprocal rank over max(KS)=10 candidates, so the field is `mrr@10`. It was called `mrr` while the loop read the whole returned list, which made the number depend on how deep each arm happened to answer. The depth is a condition of the number and now stands in its name."
     },
     {
       "id": "h2h_pinned.amem.recall_at_1",
@@ -12045,12 +12052,12 @@
     },
     {
       "id": "h2h_pinned.amem.mrr",
-      "statement": "A-MEM (chromadb 1.5.9) reaches MRR 0.544 on the pinned stand",
+      "statement": "A-MEM (chromadb 1.5.9) reaches MRR@10 0.544 on the pinned stand",
       "value": 0.5437,
       "printed": [
         "0.544"
       ],
-      "unit": "mrr",
+      "unit": "mrr@10",
       "dataset": "longmemeval_oracle_pinned",
       "environment": "local_bge_m3_pinned",
       "n": 500,
@@ -12096,7 +12103,8 @@
       "cited_in_pending": [],
       "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
       "withdrawn_on": "2026-09-19",
-      "pending_remeasure": true
+      "pending_remeasure": true,
+      "note": " Metric renamed 2026-09-22: the stand takes the reciprocal rank over max(KS)=10 candidates, so the field is `mrr@10`. It was called `mrr` while the loop read the whole returned list, which made the number depend on how deep each arm happened to answer. The depth is a condition of the number and now stands in its name."
     },
     {
       "id": "longmem_pinned.xrerank.delta_recall_at_1",
@@ -19023,12 +19031,12 @@
     },
     {
       "id": "h2h_locomo.nevertwice.mrr",
-      "statement": "Nevertwice (calibrated fusion) reaches MRR 0.421 on the LoCoMo global pool (all ten conversations in one store)",
+      "statement": "Nevertwice (calibrated fusion) reaches MRR@10 0.421 on the LoCoMo global pool (all ten conversations in one store)",
       "value": 0.4215,
       "printed": [
         "0.421"
       ],
-      "unit": "mrr",
+      "unit": "mrr@10",
       "dataset": "locomo10_pinned",
       "environment": "local_bge_m3_pinned",
       "n": 1977,
@@ -19036,7 +19044,7 @@
       "raw": "research/results/head_to_head_locomo.json",
       "cited_in": [],
       "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
-      "note": "LoCoMo pooled globally: one store holds the turns of all ten conversations, which is what a user's whole history looks like to a competitor store and is harder than LoCoMo's own per-conversation setting (`locomo.*`). Retrieval of the annotated evidence turn, never judge-scored answer accuracy. Competitor versions are recorded in the artifact.",
+      "note": "LoCoMo pooled globally: one store holds the turns of all ten conversations, which is what a user's whole history looks like to a competitor store and is harder than LoCoMo's own per-conversation setting (`locomo.*`). Retrieval of the annotated evidence turn, never judge-scored answer accuracy. Competitor versions are recorded in the artifact. Metric renamed 2026-09-22: the stand takes the reciprocal rank over max(KS)=10 candidates, so the field is `mrr@10`. It was called `mrr` while the loop read the whole returned list, which made the number depend on how deep each arm happened to answer. The depth is a condition of the number and now stands in its name.",
       "produced_by": [
         "research/head_to_head.py",
         "nevertwice/_engine.py",
@@ -19270,12 +19278,12 @@
     },
     {
       "id": "h2h_locomo.mem0.mrr",
-      "statement": "Mem0 2.0.19 reaches MRR 0.404 on the LoCoMo global pool (all ten conversations in one store)",
+      "statement": "Mem0 2.0.19 reaches MRR@10 0.404 on the LoCoMo global pool (all ten conversations in one store)",
       "value": 0.4042,
       "printed": [
         "0.404"
       ],
-      "unit": "mrr",
+      "unit": "mrr@10",
       "dataset": "locomo10_pinned",
       "environment": "local_bge_m3_pinned",
       "n": 1977,
@@ -19283,7 +19291,7 @@
       "raw": "research/results/head_to_head_locomo.json",
       "cited_in": [],
       "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
-      "note": "LoCoMo pooled globally: one store holds the turns of all ten conversations, which is what a user's whole history looks like to a competitor store and is harder than LoCoMo's own per-conversation setting (`locomo.*`). Retrieval of the annotated evidence turn, never judge-scored answer accuracy. Competitor versions are recorded in the artifact.",
+      "note": "LoCoMo pooled globally: one store holds the turns of all ten conversations, which is what a user's whole history looks like to a competitor store and is harder than LoCoMo's own per-conversation setting (`locomo.*`). Retrieval of the annotated evidence turn, never judge-scored answer accuracy. Competitor versions are recorded in the artifact. Metric renamed 2026-09-22: the stand takes the reciprocal rank over max(KS)=10 candidates, so the field is `mrr@10`. It was called `mrr` while the loop read the whole returned list, which made the number depend on how deep each arm happened to answer. The depth is a condition of the number and now stands in its name.",
       "produced_by": [
         "research/head_to_head.py",
         "nevertwice/_engine.py",
@@ -19517,12 +19525,12 @@
     },
     {
       "id": "h2h_locomo.langmem.mrr",
-      "statement": "LangMem 0.0.30 reaches MRR 0.295 on the LoCoMo global pool (all ten conversations in one store)",
+      "statement": "LangMem 0.0.30 reaches MRR@10 0.295 on the LoCoMo global pool (all ten conversations in one store)",
       "value": 0.295,
       "printed": [
         "0.295"
       ],
-      "unit": "mrr",
+      "unit": "mrr@10",
       "dataset": "locomo10_pinned",
       "environment": "local_bge_m3_pinned",
       "n": 1977,
@@ -19530,7 +19538,7 @@
       "raw": "research/results/head_to_head_locomo.json",
       "cited_in": [],
       "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
-      "note": "LoCoMo pooled globally: one store holds the turns of all ten conversations, which is what a user's whole history looks like to a competitor store and is harder than LoCoMo's own per-conversation setting (`locomo.*`). Retrieval of the annotated evidence turn, never judge-scored answer accuracy. Competitor versions are recorded in the artifact.",
+      "note": "LoCoMo pooled globally: one store holds the turns of all ten conversations, which is what a user's whole history looks like to a competitor store and is harder than LoCoMo's own per-conversation setting (`locomo.*`). Retrieval of the annotated evidence turn, never judge-scored answer accuracy. Competitor versions are recorded in the artifact. Metric renamed 2026-09-22: the stand takes the reciprocal rank over max(KS)=10 candidates, so the field is `mrr@10`. It was called `mrr` while the loop read the whole returned list, which made the number depend on how deep each arm happened to answer. The depth is a condition of the number and now stands in its name.",
       "produced_by": [
         "research/head_to_head.py",
         "nevertwice/_engine.py",
@@ -19764,12 +19772,12 @@
     },
     {
       "id": "h2h_locomo.amem.mrr",
-      "statement": "A-MEM (chromadb 1.5.9) reaches MRR 0.292 on the LoCoMo global pool (all ten conversations in one store)",
+      "statement": "A-MEM (chromadb 1.5.9) reaches MRR@10 0.292 on the LoCoMo global pool (all ten conversations in one store)",
       "value": 0.2922,
       "printed": [
         "0.292"
       ],
-      "unit": "mrr",
+      "unit": "mrr@10",
       "dataset": "locomo10_pinned",
       "environment": "local_bge_m3_pinned",
       "n": 1977,
@@ -19777,7 +19785,7 @@
       "raw": "research/results/head_to_head_locomo.json",
       "cited_in": [],
       "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
-      "note": "LoCoMo pooled globally: one store holds the turns of all ten conversations, which is what a user's whole history looks like to a competitor store and is harder than LoCoMo's own per-conversation setting (`locomo.*`). Retrieval of the annotated evidence turn, never judge-scored answer accuracy. Competitor versions are recorded in the artifact.",
+      "note": "LoCoMo pooled globally: one store holds the turns of all ten conversations, which is what a user's whole history looks like to a competitor store and is harder than LoCoMo's own per-conversation setting (`locomo.*`). Retrieval of the annotated evidence turn, never judge-scored answer accuracy. Competitor versions are recorded in the artifact. Metric renamed 2026-09-22: the stand takes the reciprocal rank over max(KS)=10 candidates, so the field is `mrr@10`. It was called `mrr` while the loop read the whole returned list, which made the number depend on how deep each arm happened to answer. The depth is a condition of the number and now stands in its name.",
       "produced_by": [
         "research/head_to_head.py",
         "nevertwice/_engine.py",
@@ -20011,12 +20019,12 @@
     },
     {
       "id": "h2h_s.nevertwice.mrr",
-      "statement": "Nevertwice (calibrated fusion) reaches MRR 0.314 on the non-oracle LongMemEval pool",
+      "statement": "Nevertwice (calibrated fusion) reaches MRR@10 0.314 on the non-oracle LongMemEval pool",
       "value": 0.3139,
       "printed": [
         "0.314"
       ],
-      "unit": "mrr",
+      "unit": "mrr@10",
       "dataset": "longmemeval_s_pinned",
       "environment": "local_bge_m3_pinned",
       "n": 500,
@@ -20024,7 +20032,7 @@
       "raw": "research/results/head_to_head_s.json",
       "cited_in": [],
       "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
-      "note": "The standard non-oracle pool: 19,206 retrievable sessions against the oracle variant's 940, the same 500 questions and annotated evidence, twenty-one times the haystack. Same local bge-m3 and scoring function for every system. Competitor versions are recorded in the artifact.",
+      "note": "The standard non-oracle pool: 19,206 retrievable sessions against the oracle variant's 940, the same 500 questions and annotated evidence, twenty-one times the haystack. Same local bge-m3 and scoring function for every system. Competitor versions are recorded in the artifact. Metric renamed 2026-09-22: the stand takes the reciprocal rank over max(KS)=10 candidates, so the field is `mrr@10`. It was called `mrr` while the loop read the whole returned list, which made the number depend on how deep each arm happened to answer. The depth is a condition of the number and now stands in its name.",
       "produced_by": [
         "research/head_to_head.py",
         "nevertwice/_engine.py",
@@ -20258,12 +20266,12 @@
     },
     {
       "id": "h2h_s.mem0.mrr",
-      "statement": "Mem0 2.0.19 reaches MRR 0.281 on the non-oracle LongMemEval pool",
+      "statement": "Mem0 2.0.19 reaches MRR@10 0.281 on the non-oracle LongMemEval pool",
       "value": 0.281,
       "printed": [
         "0.281"
       ],
-      "unit": "mrr",
+      "unit": "mrr@10",
       "dataset": "longmemeval_s_pinned",
       "environment": "local_bge_m3_pinned",
       "n": 500,
@@ -20271,7 +20279,7 @@
       "raw": "research/results/head_to_head_s.json",
       "cited_in": [],
       "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
-      "note": "The standard non-oracle pool: 19,206 retrievable sessions against the oracle variant's 940, the same 500 questions and annotated evidence, twenty-one times the haystack. Same local bge-m3 and scoring function for every system. Competitor versions are recorded in the artifact.",
+      "note": "The standard non-oracle pool: 19,206 retrievable sessions against the oracle variant's 940, the same 500 questions and annotated evidence, twenty-one times the haystack. Same local bge-m3 and scoring function for every system. Competitor versions are recorded in the artifact. Metric renamed 2026-09-22: the stand takes the reciprocal rank over max(KS)=10 candidates, so the field is `mrr@10`. It was called `mrr` while the loop read the whole returned list, which made the number depend on how deep each arm happened to answer. The depth is a condition of the number and now stands in its name.",
       "produced_by": [
         "research/head_to_head.py",
         "nevertwice/_engine.py",
@@ -20505,12 +20513,12 @@
     },
     {
       "id": "h2h_s.langmem.mrr",
-      "statement": "LangMem 0.0.30 reaches MRR 0.237 on the non-oracle LongMemEval pool",
+      "statement": "LangMem 0.0.30 reaches MRR@10 0.237 on the non-oracle LongMemEval pool",
       "value": 0.237,
       "printed": [
         "0.237"
       ],
-      "unit": "mrr",
+      "unit": "mrr@10",
       "dataset": "longmemeval_s_pinned",
       "environment": "local_bge_m3_pinned",
       "n": 500,
@@ -20518,7 +20526,7 @@
       "raw": "research/results/head_to_head_s.json",
       "cited_in": [],
       "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
-      "note": "The standard non-oracle pool: 19,206 retrievable sessions against the oracle variant's 940, the same 500 questions and annotated evidence, twenty-one times the haystack. Same local bge-m3 and scoring function for every system. Competitor versions are recorded in the artifact.",
+      "note": "The standard non-oracle pool: 19,206 retrievable sessions against the oracle variant's 940, the same 500 questions and annotated evidence, twenty-one times the haystack. Same local bge-m3 and scoring function for every system. Competitor versions are recorded in the artifact. Metric renamed 2026-09-22: the stand takes the reciprocal rank over max(KS)=10 candidates, so the field is `mrr@10`. It was called `mrr` while the loop read the whole returned list, which made the number depend on how deep each arm happened to answer. The depth is a condition of the number and now stands in its name.",
       "produced_by": [
         "research/head_to_head.py",
         "nevertwice/_engine.py",
@@ -20752,12 +20760,12 @@
     },
     {
       "id": "h2h_pinned.mem0_infer.mrr",
-      "statement": "Mem0 2.0.19 full pipeline (its LLM extraction on) reaches MRR 0.523 on the pinned stand",
+      "statement": "Mem0 2.0.19 full pipeline (its LLM extraction on) reaches MRR@10 0.523 on the pinned stand",
       "value": 0.5231,
       "printed": [
         "0.523"
       ],
-      "unit": "mrr",
+      "unit": "mrr@10",
       "dataset": "longmemeval_oracle_pinned",
       "environment": "local_bge_m3_pinned",
       "n": 500,
@@ -20765,7 +20773,7 @@
       "raw": "research/results/head_to_head_v2.json",
       "cited_in": [],
       "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
-      "note": "Mem0 2.0.19 as shipped: infer=True, its LLM extraction (qwen2.5-7b-64k, local) on every session, then its default hybrid search over the memories. The row was produced by the run of 2026-09-06 on the oracle pool; its log shows 13 of 940 extractions the product could not parse (1.4%, below the tenth at which the arm blocks itself) - the counter that records this in the artifact was added to the stand after that run began. Same pool, questions, embedder and scoring as the store arms.",
+      "note": "Mem0 2.0.19 as shipped: infer=True, its LLM extraction (qwen2.5-7b-64k, local) on every session, then its default hybrid search over the memories. The row was produced by the run of 2026-09-06 on the oracle pool; its log shows 13 of 940 extractions the product could not parse (1.4%, below the tenth at which the arm blocks itself) - the counter that records this in the artifact was added to the stand after that run began. Same pool, questions, embedder and scoring as the store arms. Metric renamed 2026-09-22: the stand takes the reciprocal rank over max(KS)=10 candidates, so the field is `mrr@10`. It was called `mrr` while the loop read the whole returned list, which made the number depend on how deep each arm happened to answer. The depth is a condition of the number and now stands in its name.",
       "produced_by": [
         "research/head_to_head.py",
         "nevertwice/_engine.py",
@@ -20999,12 +21007,12 @@
     },
     {
       "id": "h2h_pinned.langmem_full.mrr",
-      "statement": "LangMem 0.0.30 full pipeline (create_memory_store_manager) reaches MRR 0.558 on the pinned stand",
+      "statement": "LangMem 0.0.30 full pipeline (create_memory_store_manager) reaches MRR@10 0.558 on the pinned stand",
       "value": 0.5579,
       "printed": [
         "0.558"
       ],
-      "unit": "mrr",
+      "unit": "mrr@10",
       "dataset": "longmemeval_oracle_pinned",
       "environment": "local_bge_m3_pinned",
       "n": 500,
@@ -21012,7 +21020,7 @@
       "raw": "research/results/head_to_head_v2.json",
       "cited_in": [],
       "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
-      "note": "LangMem 0.0.30 as shipped: its own extraction prompt over each session with a local qwen2.5-7b-64k, then its own search over the memories it wrote. The row was produced by the run of 2026-09-06 on the oracle pool, in the same environment as the store arms - same pool, questions, embedder and scoring.",
+      "note": "LangMem 0.0.30 as shipped: its own extraction prompt over each session with a local qwen2.5-7b-64k, then its own search over the memories it wrote. The row was produced by the run of 2026-09-06 on the oracle pool, in the same environment as the store arms - same pool, questions, embedder and scoring. Metric renamed 2026-09-22: the stand takes the reciprocal rank over max(KS)=10 candidates, so the field is `mrr@10`. It was called `mrr` while the loop read the whole returned list, which made the number depend on how deep each arm happened to answer. The depth is a condition of the number and now stands in its name.",
       "produced_by": [
         "research/head_to_head.py",
         "nevertwice/_engine.py",
@@ -22441,12 +22449,12 @@
     },
     {
       "id": "h2h_s.amem.mrr",
-      "statement": "A-MEM (chromadb 1.5.9) reaches MRR 0.232 on the non-oracle LongMemEval pool",
+      "statement": "A-MEM (chromadb 1.5.9) reaches MRR@10 0.232 on the non-oracle LongMemEval pool",
       "value": 0.2321,
       "printed": [
         "0.232"
       ],
-      "unit": "mrr",
+      "unit": "mrr@10",
       "dataset": "longmemeval_s_pinned",
       "environment": "local_bge_m3_pinned",
       "n": 500,
@@ -22454,7 +22462,7 @@
       "raw": "research/results/head_to_head_s.json",
       "cited_in": [],
       "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
-      "note": "The standard non-oracle pool: 19,206 retrievable sessions against the oracle variant's 940, the same 500 questions and annotated evidence, twenty-one times the haystack. Same local bge-m3 and scoring function for every system. Competitor versions are recorded in the artifact.",
+      "note": "The standard non-oracle pool: 19,206 retrievable sessions against the oracle variant's 940, the same 500 questions and annotated evidence, twenty-one times the haystack. Same local bge-m3 and scoring function for every system. Competitor versions are recorded in the artifact. Metric renamed 2026-09-22: the stand takes the reciprocal rank over max(KS)=10 candidates, so the field is `mrr@10`. It was called `mrr` while the loop read the whole returned list, which made the number depend on how deep each arm happened to answer. The depth is a condition of the number and now stands in its name.",
       "produced_by": [
         "research/head_to_head.py",
         "nevertwice/_engine.py",
@@ -22688,12 +22696,12 @@
     },
     {
       "id": "h2h_pinned.amem_full.mrr",
-      "statement": "A-MEM 0.2.6 full pipeline (agentic_memory) reaches MRR 0.544 on the pinned stand",
+      "statement": "A-MEM 0.2.6 full pipeline (agentic_memory) reaches MRR@10 0.544 on the pinned stand",
       "value": 0.5436,
       "printed": [
         "0.544"
       ],
-      "unit": "mrr",
+      "unit": "mrr@10",
       "dataset": "longmemeval_oracle_pinned",
       "environment": "local_bge_m3_pinned",
       "n": 500,
@@ -22701,7 +22709,7 @@
       "raw": "research/results/head_to_head_v2.json",
       "cited_in": [],
       "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
-      "note": "A-MEM 0.2.6 as shipped: every session becomes a note through its LLM analysis (keywords, context, tags), linked and possibly evolved against its neighbours, and searched with its own search_agentic. Same pool, questions, embedder and scoring as the store arms; the local model is the one every full-pipeline arm uses.",
+      "note": "A-MEM 0.2.6 as shipped: every session becomes a note through its LLM analysis (keywords, context, tags), linked and possibly evolved against its neighbours, and searched with its own search_agentic. Same pool, questions, embedder and scoring as the store arms; the local model is the one every full-pipeline arm uses. Metric renamed 2026-09-22: the stand takes the reciprocal rank over max(KS)=10 candidates, so the field is `mrr@10`. It was called `mrr` while the loop read the whole returned list, which made the number depend on how deep each arm happened to answer. The depth is a condition of the number and now stands in its name.",
       "produced_by": [
         "research/head_to_head.py",
         "nevertwice/_engine.py",

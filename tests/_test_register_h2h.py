@@ -26,7 +26,7 @@ def check(name, cond, detail=""):
 
 def arm(r1, r5, r10, mrr, version, n=1977, **extra):
     return {"recall@1": r1, "recall@3": (r1 + r5) / 2, "recall@5": r5, "recall@10": r10,
-            "mrr": mrr, "n": n, "version": version, **extra}
+            "mrr@10": mrr, "n": n, "version": version, **extra}
 
 
 ART = {
@@ -62,12 +62,18 @@ ci = m5["ci"]
 check("recall claims carry a Wilson interval around the value",
       ci and ci["method"] == "wilson" and ci["low"] < 0.575 < ci["high"], str(ci))
 check("MRR claims carry no interval", by["h2h_locomo.mem0.mrr"]["ci"] is None)
+#: The statement quotes the field's own name, so it says MRR@10 as soon as the stand starts
+#: truncating at max(KS) - the depth is a condition of the number and belongs in the sentence a
+#: reader sees, not only in the unit. Spelled from the fixture's key rather than written out.
 check("MRR statement form", by["h2h_locomo.mem0.mrr"]["statement"]
-      == "Mem0 2.0.19 reaches MRR 0.420 on the LoCoMo global pool (all ten conversations in one store)")
+      == "Mem0 2.0.19 reaches MRR@10 0.420 on the LoCoMo global pool "
+         "(all ten conversations in one store)")
+check("and the unit is that same name, not a bare 'mrr'",
+      by["h2h_locomo.mem0.mrr"]["unit"] == "mrr@10", by["h2h_locomo.mem0.mrr"]["unit"])
 check("our label needs no version", by["h2h_locomo.nevertwice.recall_at_1"]["statement"]
       .startswith("Nevertwice (calibrated fusion) reaches RECALL@1 0.271"))
 check("A-MEM label names its store and version", by["h2h_locomo.amem.mrr"]["statement"]
-      .startswith("A-MEM (chromadb 1.5.9) reaches MRR 0.310"))
+      .startswith("A-MEM (chromadb 1.5.9) reaches MRR@10 0.310"))
 check("every claim names dataset, environment, raw, command, commit and closure",
       all(c["dataset"] == "locomo10_pinned" and c["environment"] == rh.ENVIRONMENT
           and c["raw"].endswith("head_to_head_locomo.json") and c["commit"] == "deadbeef"

@@ -6,6 +6,8 @@ failure rather than a product's score - the A-MEM pipeline arm published a row o
 with the same endpoint; chroma asks it for `embed_query` at search time, and the missing method
 was what made that arm retrieve nothing in the first place.
 """
+import ast
+import collections
 import sys
 from pathlib import Path
 
@@ -27,7 +29,7 @@ def check(name, cond, detail=""):
 
 
 def row(**over):
-    base = {"recall@1": 0.4, "recall@3": 0.6, "recall@5": 0.7, "recall@10": 0.8, "mrr": 0.5,
+    base = {"recall@1": 0.4, "recall@3": 0.6, "recall@5": 0.7, "recall@10": 0.8, "mrr@10": 0.5,
             "n": 500, "version": "1.2.3", "label": "Some product", "_wall_s": 12.0,
             "measured_at": {"commit": "abc", "utc": "2026-09-06T00:00:00Z"}}
     base.update(over)
@@ -77,6 +79,74 @@ check("it delegates to __call__ with the same input",
 check("chroma's protocol pieces are all present",
       all(hasattr(ef, a) for a in ("name", "get_config", "build_from_config", "default_space",
                                    "supported_spaces", "validate_config", "validate_config_update")))
+
+# the metric is named for the depth it is measured at
+#: `score()` truncated recall at k and walked the WHOLE list for MRR, so the number depended on
+#: how many candidates an arm happened to return - and they differed: mem0 2.0.19's `search` has
+#: no `limit` (it is `top_k`, default 20), so the stand's `limit=max(KS)` fell into `**kwargs`
+#: and Mem0 answered with twenty where our arm and LangMem answered with ten. A hit at rank
+#: 11-20 earned Mem0 up to 1/11 that no other arm could earn. Truncating fixes the comparison
+#: and changes what the number IS, so the field is `mrr@10` and not `mrr`.
+print()
+print("- MRR is taken at one depth for every arm, and says so in its name -")
+
+_DATA = [{"question_id": "q1", "answer_session_ids": ["s15"]}]
+_POOL = [f"s{i}" for i in range(1, 21)]
+_KEY = f"mrr@{max(h2h.KS)}"
+_deep = h2h.score({"q1": [f"s{i}" for i in range(1, 21)]}, _DATA, _POOL)
+_shallow = h2h.score({"q1": [f"s{i}" for i in range(1, 11)]}, _DATA, _POOL)
+
+check("the key carries the depth, not the bare name 'mrr'",
+      _KEY in _deep and "mrr" not in _deep, str(sorted(_deep)))
+check("a hit past the depth earns nothing", _deep[_KEY] == 0.0, str(_deep[_KEY]))
+check("so an arm that returned twenty scores what an arm that returned ten scores",
+      _deep[_KEY] == _shallow[_KEY], f"{_deep[_KEY]} vs {_shallow[_KEY]}")
+_inside = h2h.score({"q1": ["sX", "s15"]}, _DATA, _POOL)
+check("and a hit INSIDE the depth still scores", _inside[_KEY] == 0.5, str(_inside[_KEY]))
+
+
+# two source rules, because both defects were visible without running anything
+_STANDS = ("head_to_head.py", "frontier_eval.py", "code_sessions_eval.py")
+
+
+def _tree(name):
+    return ast.parse((ROOT / "research" / name).read_text(encoding="utf-8")), name
+
+
+print()
+print("- what the source can be asked before anything runs -")
+
+#: `limit=10` was passed to mem0 for as long as this stand existed and was swallowed by
+#: `**kwargs` in silence. `named_or_raise` catches it at the call sites that remember to ask;
+#: this catches the call site written next year that does not.
+_bad = []
+for _t, _name in (_tree(n) for n in _STANDS):
+    for _n in ast.walk(_t):
+        if not (isinstance(_n, ast.Call) and isinstance(_n.func, ast.Attribute)
+                and _n.func.attr == "search"):
+            continue
+        kw = {k.arg for k in _n.keywords if k.arg}
+        if "filters" not in kw:          # mem0's signature is the one carrying `filters`
+            continue
+        if "limit" in kw or "top_k" not in kw:
+            _bad.append(f"{_name}:{_n.lineno} {sorted(kw)}")
+check("no mem0 search asks for `limit`, and every one asks for `top_k`", not _bad, "; ".join(_bad))
+
+#: `accept` and `_OllamaChromaEF.embed_query` each stood twice in head_to_head.py, byte for
+#: byte. The second silently replaced the first - harmless while they are identical, a live
+#: defect the moment one is edited. Ruff's F811 had been reporting both for as long as they
+#: existed; nothing ever ran ruff against research/, so the rule existed and the answer did not.
+_dupes = []
+for _t, _name in (_tree(n) for n in _STANDS):
+    _scopes = [("<module>", _t.body)] + [(c.name, c.body) for c in ast.walk(_t)
+                                         if isinstance(c, ast.ClassDef)]
+    for _scope, _body in _scopes:
+        _seen = collections.Counter(
+            d.name for d in _body
+            if isinstance(d, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)))
+        _dupes += [f"{_name} {_scope}.{k} x{v}" for k, v in _seen.items() if v > 1]
+check("no name in a stand is defined twice", not _dupes, "; ".join(_dupes))
+
 
 print(f"\n{'ALL OK' if not FAILS else f'{FAILS} FAILED'}")
 sys.exit(1 if FAILS else 0)

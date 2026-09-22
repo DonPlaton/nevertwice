@@ -72,9 +72,16 @@ for k in H.KS:
     from_rows = sum(r[f"h{k}"] for r in rows) / len(rows)
     check(f"recall@{k} = {out[f'recall@{k}']} is the mean of the rows",
           abs(from_rows - out[f"recall@{k}"]) < 0.0006, f"rows give {from_rows:.4f}")
+#: Named for the depth it is taken at. The field was `mrr` while the loop walked the whole
+#: returned list, which made the number depend on how deep each arm answered; it reads max(KS)
+#: now, and the name says so. Derived from H.KS rather than written out, so this suite cannot
+#: assert a name the stand has stopped using.
+MRR_KEY = f"mrr@{max(H.KS)}"
+check(f"the reciprocal-rank field is named for its depth ({MRR_KEY})",
+      MRR_KEY in out and "mrr" not in out, str(sorted(out)))
 mrr_rows = sum(r["rr"] for r in rows) / len(rows)
-check(f"mrr = {out['mrr']} is the mean of the rows", abs(mrr_rows - out["mrr"]) < 0.0002,
-      f"rows give {mrr_rows:.4f}")
+check(f"{MRR_KEY} = {out[MRR_KEY]} is the mean of the rows",
+      abs(mrr_rows - out[MRR_KEY]) < 0.0002, f"rows give {mrr_rows:.4f}")
 
 print("# the hand-computed answers, so the rows are checked against truth and not only themselves")
 by_q = {r["q"]: r for r in rows}

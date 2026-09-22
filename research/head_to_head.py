@@ -264,22 +264,6 @@ def accept(name: str, row: dict) -> dict:
             "refused": {k: v for k, v in row.items() if k not in keep}}
 
 
-def accept(name: str, row: dict) -> dict:
-    """A scored row, or a blocker when the run cannot be a product's number.
-
-    Zero recall at every k over a pool that contains the answers means no query retrieved
-    anything at all - an adapter or endpoint failure, not a ranking. The A-MEM pipeline arm
-    read exactly that on 2026-09-06 (the shim above), and the row would have been published as
-    the product's score. The numbers are kept under `refused` so the artifact still records
-    what happened."""
-    if "blocked" in row or not row.get("n") or row.get(f"recall@{max(KS)}"):
-        return row
-    keep = {k: row[k] for k in ("version", "label", "measured_at", "_wall_s") if k in row}
-    return {**keep, "blocked": f"{name}: every query returned nothing over {row['n']} questions "
-                               "- the stand refuses to score a run that retrieved nothing",
-            "refused": {k: v for k, v in row.items() if k not in keep}}
-
-
 def score(ranked_by_q: dict, data, pool_ids) -> dict:
     """R@k + MRR over the canonical question subset (questions whose answer sessions are in
     the pool) - the identical denominator for every system. ranked_by_q maps question_id to
@@ -326,7 +310,14 @@ def score(ranked_by_q: dict, data, pool_ids) -> dict:
             row["rr"] = 0.0
         per_q.append(row)
     out = {f"recall@{k}": round(hit[k] / n, 3) if n else 0.0 for k in KS}
-    out["mrr"] = round(mrr / n, 4) if n else 0.0
+    #: `mrr@10`, not `mrr`, because the loop below reads max(KS) of the list and no further.
+    #: The truncation is required - without it an arm returning twenty candidates earns
+    #: rank-11-to-20 credit that an arm returning ten cannot - but it changes WHAT the number
+    #: is, and a field called `mrr` next to a published MRR from a paper invites a comparison
+    #: between a full ranked list and the first ten of one. The value changed definition; the
+    #: name had to change with it. Named from max(KS) rather than written as "mrr@10", so the
+    #: label cannot drift from the depth it describes.
+    out[f"mrr@{max(KS)}"] = round(mrr / n, 4) if n else 0.0
     out["n"] = n
     #: P1 (part 3.5). Without these rows the arms can only be compared unpaired, and unpaired this
     #: design resolves 4.4 points while the interesting differences are one - "behind Mem0 at R@5"
@@ -685,13 +676,6 @@ class _OllamaChromaEF:
         `__call__`, and this shim is a protocol implementation rather than a subclass."""
         return self(input)
 
-    def embed_query(self, input):                              # noqa: A002 - chroma's name
-        """chroma embeds a search differently from a document when the function says so; this
-        one does not, but the method must exist. A-MEM's full-pipeline arm scored zero on
-        2026-09-06 because it did not: chroma's own base class defaults `embed_query` to
-        `__call__`, and this shim is a protocol implementation rather than a subclass."""
-        return self(input)
-
     @staticmethod
     def name() -> str:
         return "nevertwice_ollama_ef"
@@ -879,7 +863,7 @@ def main():
             print(f"  BLOCKED: {r['blocked']}")
         else:
             print("  " + "  ".join(f"{k} {r[k]}" for k in
-                  ("recall@1", "recall@3", "recall@5", "recall@10", "mrr", "n") if k in r))
+                  ("recall@1", "recall@3", "recall@5", "recall@10", f"mrr@{max(KS)}", "n") if k in r))
             extra = {k: r[k] for k in ("ingest_s", "query_s", "mode", "setup", "version") if k in r}
             if extra:
                 print("  " + "  ".join(f"{k}={v}" for k, v in extra.items()))
