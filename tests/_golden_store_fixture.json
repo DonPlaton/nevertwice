@@ -21,9 +21,6 @@
   0
  ],
  "files": {
-  ".embeddings_cache.json": "96ec8a4999f408d8",
-  ".embeddings_meta.json": "848a9b569296faee",
-  ".index.sqlite": "<binary 81920>",
   ".processed_sessions.json": "8e0836a4586efaf4",
   ".processed_sessions.json.prev": "9ed45a6e907c61d5",
   "Context/golden_proj.md": "6dc585505a55dd7a",

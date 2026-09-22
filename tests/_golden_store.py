@@ -235,7 +235,20 @@ def mask(text: str, store: Path) -> str:
 
 
 def masked_text(path: Path, store: Path) -> str:
-    return mask(path.read_text(encoding="utf-8"), store)
+    """The masked text of one file, or a note saying it is not text at all.
+
+    A binary file has no masked text, and a report that raises while explaining a mismatch
+    explains nothing: the reader gets a traceback where the answer was.
+    """
+    try:
+        return mask(path.read_text(encoding="utf-8"), store)
+    except UnicodeDecodeError:
+        return f"<binary {path.stat().st_size} bytes>"
+
+
+#: Files a snapshot must not certify: written only when an embedder answered.
+DERIVED_FROM_EMBEDDER = {".embeddings_cache.json", ".embeddings_meta.json",
+                         ".index.sqlite"}
 
 
 def snapshot(store: Path, extra: dict | None = None) -> dict:
@@ -247,6 +260,16 @@ def snapshot(store: Path, extra: dict | None = None) -> dict:
         rel = p.relative_to(store).as_posix()
         if rel.startswith(".logs/") or rel.endswith(".bak"):
             continue                                       # a log is a diary, not a state
+        #: Derived from an EXTERNAL service and therefore not state either: the embedding cache,
+        #: its meta and the sqlite index exist only when an embedder answered. On macOS jobs of
+        #: CI's first matrix run all three were absent while Linux and Windows wrote them, with
+        #: the same unreachable Ollama on every runner - so the fixture certified the presence of
+        #: something outside the code under test. Their CONTENT was already excluded from what a
+        #: reader can check (the cache is plaintext and held back by the store's own rules); what
+        #: is excluded here is their existence, which is a fact about the machine.
+        #: The notes themselves stay in, and the count below keeps this from quietly emptying.
+        if rel in DERIVED_FROM_EMBEDDER:
+            continue
         try:
             text = p.read_text(encoding="utf-8")
         except (UnicodeDecodeError, OSError):
