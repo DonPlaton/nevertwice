@@ -226,29 +226,20 @@ def _iter_contested(project: str | None = None, key: str | None = None) -> list[
     """Every live or archived typed note carrying a `contested` stamp (or, with `key`, a `disputed`
     one), with the sibling stems it names: `[{stem, path, project, ntype, date, title, archived,
     new_stems}]`. A header-only scan of the type folders (Superseded/ skipped - a retired note's
-    stamp is settled)."""
+    stamp is settled).
+
+    One walk, `_iter_contested_both`'s. This function carried its own copy of the same loop and
+    the same row until K9 folded it in: two bodies of one scan are two places for the skip rule,
+    the date or the title to drift apart, and the digest reads one while the judge reads the
+    other. The cost of taking both keys from a walk that wants one is the second field of a
+    frontmatter already parsed."""
     # Resolved HERE, not in the signature: a default argument is evaluated once at
     # def time, so a module constant frozen there stops answering to the module.
     key = CONTESTED_KEY if key is None else key
-    out = []
-    for ntype, folder in TYPE_FOLDER.items():
-        base = VAULT / folder
-        if not base.exists():
-            continue
-        for p in base.rglob("*.md"):
-            if "Superseded" in p.parts[len(base.parts):]:
-                continue
-            parsed = parse_typed_stem(p.stem)
-            if not parsed or (project and parsed["project"] != project):
-                continue
-            fm = _read_frontmatter_file(p)
-            new_stems = _contested_of(fm) if key == CONTESTED_KEY else _contested_of({CONTESTED_KEY: fm.get(key)})
-            if not new_stems:
-                continue
-            out.append({"stem": p.stem, "path": str(p), "project": parsed["project"], "ntype": ntype,
-                        "date": parsed["date"], "title": parsed["slug"].replace("-", " "),
-                        "archived": p.parent.name == "Archive", "new_stems": new_stems})
-    return sorted(out, key=lambda r: (r["ntype"], r["stem"]))
+    if key not in (CONTESTED_KEY, DISPUTED_KEY):
+        raise ValueError(f"_iter_contested reads {CONTESTED_KEY!r} or {DISPUTED_KEY!r}, not {key!r}")
+    contested, disputed = _iter_contested_both(project)
+    return contested if key == CONTESTED_KEY else disputed
 
 
 def _iter_contested_both(project: str | None = None) -> tuple[list[dict], list[dict]]:
