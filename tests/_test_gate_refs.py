@@ -146,6 +146,35 @@ n, probs = run("Frozen: 0.983 and 30 and 0.067 [[claim:a.live]] / [[claim:a.unit
 check("three numbers against two references stay silent - the pairing would be a guess",
       not probs, str(probs))
 
+print("\n- a stray number must not shift the pairing -")
+#: Counting alone is not enough, because the counts can match by accident. "Frozen 2026:
+#: current 1.000 [[a]] / [[b]]" has two figures and two references, so pairing in reading order
+#: put the YEAR against the first claim - a message invented out of nothing - and paired the
+#: real defect, 1.000 against a stored 0.9833, with the second claim, where it matched and
+#: passed. The true defect was swallowed and a false one printed in its place (audit
+#: 2026-09-22). Only the last contiguous run of figures pairs now.
+n, probs = run("Frozen 2026: current 1.000 [[claim:a.live]] / [[claim:a.one]]\n")
+check("a year before the figures does not produce a message about the year", not probs,
+      str(probs))
+n, probs = run("Frozen: current 1.000 / 1.000 [[claim:a.live]] / [[claim:a.one]]\n")
+check("and the block's own pair is still caught", len(probs) == 1 and "1.000" in probs[0],
+      str(probs))
+n, probs = run("Frozen: 0.017 / 0.067 [[claim:a.live]] / [[claim:a.one]]\n")
+check("both halves of a wrong pair are reported", len(probs) == 2, str(probs))
+
+print("\n- the two misses, named so they are chosen rather than discovered -")
+#: Both are silences, not false alarms, and that is the direction chosen deliberately: a check
+#: that invents a message gets switched off, a check that misses one is still worth running.
+n, probs = run("Frozen: current 0.9833, was 1.000 [[claim:a.live]]\n")
+check("MISS: a wrong figure hiding behind a right one on a one-reference line", not probs,
+      str(probs))
+n, probs = run("Frozen 2026: current 1.000 [[claim:a.live]] / [[claim:a.one]]\n")
+check("MISS: a wrong figure in a paired line that also carries a stray number", not probs,
+      str(probs))
+doc = (ROOT / "tools" / "check_gate_refs.py").read_text(encoding="utf-8")
+check("and both misses are written in the docstring, not left to be discovered",
+      "hiding behind a correct one" in doc and "stray" in doc)
+
 print("\n- a document that names nothing must FAIL, not merely be mentioned -")
 #: The first version printed "names no claim" and returned 0. CI reads the exit code, by which
 #: the state this tool exists to end passed (audit 2026-09-22).

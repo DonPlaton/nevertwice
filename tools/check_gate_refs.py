@@ -34,10 +34,20 @@ claim's value or one of the forms in its `printed` field; `printed` is the regis
 rounding, so `0.067` for a stored 0.0667 is legal and `0.017` for a stored 0.0583 is not.
 
 It fires on the two readings that are unambiguous: one reference where EVERY number on the line
-disagrees, or as many numbers as references paired in reading order. A line that also carries a
-date, a sample size or a section number is therefore silent rather than noisy - measured, that
-naive form gave five false messages out of eight - and `current 1.000 / 1.000 [[a]] / [[b]]`,
-the frozen block's own shape, is still caught.
+disagrees, or a contiguous run of figures as long as the line's list of references, paired in
+reading order. A line that also carries a date, a sample size or a section number is therefore
+silent rather than noisy - measured, the naive form gave five false messages out of eight - and
+`current 1.000 / 1.000 [[a]] / [[b]]`, the frozen block's own shape, is still caught.
+
+**Two misses, chosen rather than discovered**, both silences rather than false alarms - a check
+that invents a message gets switched off, one that misses a case is still worth running:
+
+  * a wrong figure hiding behind a correct one on a one-reference line - `current 0.9833, was
+    1.000 [[a]]` - because not every number disagrees;
+  * a wrong figure on a paired line that also carries a stray number earlier - `Frozen 2026:
+    current 1.000 [[a]] / [[b]]` - because only the last contiguous run pairs. Pairing by count
+    alone reported the YEAR against the first claim and let the real defect pass against the
+    second, which is worse than saying nothing.
 
 Exit code 1 if any reference is broken OR any named document references nothing, so a document
 can be put in CI. A zero-reference file is the state this tool exists to end, and reporting it
@@ -85,6 +95,9 @@ def state(claim: dict) -> str:
 #: are left to `printed`, which carries the form the register itself publishes.
 BARE = re.compile(r"(?<![\w.])(-?\d+(?:\.\d+)?)(?![\w.])")
 
+#: A run of figures separated by nothing but a delimiter: `1.000 / 1.000`, `0.017, 0.067`.
+RUN = re.compile(r"-?\d+(?:\.\d+)?(?:\s*[/,]\s*-?\d+(?:\.\d+)?)+")
+
 
 def _legal_forms(claim: dict) -> set[str]:
     """Every spelling of a claim's value the register itself publishes, plus the value."""
@@ -128,7 +141,17 @@ def check_file(path: Path, claims: dict) -> tuple[int, list[str]]:
         #: section number and a date, the date alone producing three (audit 2026-09-22).
         #: Numbers inside the brackets are stripped first, so a correct migration does not
         #: report its own value twice.
-        outside = BARE.findall(REF.sub(" ", line))
+        stripped = REF.sub(" | ", line)
+        outside = BARE.findall(stripped)
+        #: For the paired branch, only the LAST CONTIGUOUS RUN of figures counts -
+        #: numbers separated from each other by nothing but a delimiter. A stray number
+        #: earlier in the line ("Frozen 2026: current 1.000 [[a]] / [[b]]") would
+        #: otherwise shift the pairing by one: the year reported against the first claim
+        #: and the real defect - 1.000 against a stored 0.9833 - paired with the second
+        #: and passing. Counting alone cannot see that: the counts happen to match
+        #: (audit 2026-09-22).
+        run = RUN.findall(stripped)
+        paired = BARE.findall(run[-1]) if run else []
         named = [(cid, claims[cid]) for cid, _ in refs if cid in claims]
         if outside and named and not any(c.get("declaration") for _, c in named):
             def _complain(cid, claim, bare):
@@ -145,12 +168,12 @@ def check_file(path: Path, claims: dict) -> tuple[int, list[str]]:
                 if all(not _matches(b, claim) for b in outside):
                     for bare in dict.fromkeys(outside):
                         _complain(cid, claim, bare)
-            elif len(outside) == len(refs) == len(named):
+            elif len(paired) == len(refs) == len(named) > 1:
                 #: As many numbers as references, paired in reading order. This is the frozen
                 #: block's own shape - `current 1.000 / 1.000 [[explicit]] / [[implicit]]` -
                 #: and it has no other reading. Deduplication would break it: half the block's
                 #: pairs repeat the figure, and collapsing them makes the counts disagree.
-                for (cid, claim), bare in zip(named, outside):
+                for (cid, claim), bare in zip(named, paired):
                     if not _matches(bare, claim):
                         _complain(cid, claim, bare)
         for cid, printed in refs:
