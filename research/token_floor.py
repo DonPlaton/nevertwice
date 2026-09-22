@@ -141,8 +141,21 @@ def load_corpus(name: str) -> tuple[list, dict]:
                         gold = ast.literal_eval(gold)
                     except (ValueError, SyntaxError):
                         gold = []
+                #: `markers` carries the answer as TEXT ("60 seconds", "60s"), and that is what
+                #: reachability has to look for. The first version of this stand searched the
+                #: injected payload for the gold SESSION ID and got 0 of 20 - of course it did:
+                #: the payload carries notes, and a note never quotes the id of the session it
+                #: came from. The column read "we inject and never deliver", which was a
+                #: property of the question I asked, not of the system (measured 2026-09-22).
+                markers = q.get("markers")
+                if isinstance(markers, str):
+                    try:
+                        markers = ast.literal_eval(markers)
+                    except (ValueError, SyntaxError):
+                        markers = []
                 rows.append({"question_id": q["id"], "question": q["question"],
-                             "gold": {str(g) for g in (gold or [])}})
+                             "gold": {str(g) for g in (gold or [])},
+                             "markers": [str(x) for x in (markers or [])]})
         return rows, pool
     raise KeyError(f"unknown corpus {name!r}; have {', '.join(CORPORA)}")
 
@@ -342,8 +355,19 @@ def run_nevertwice(data, pool, toks, cap) -> dict:
         row["question_id"] = e.get("question_id")
         #: "found" asks of the TEXT INJECTED, not of a ranker: the claim is about what the
         #: model can see, and a hit that never reached the prompt did not help the answer.
-        gold = e["gold"]
-        row["answer_reachable"] = bool(gold) and any(g in turn for g in gold)
+        #: Reachability asks of the TEXT INJECTED, and it asks for the ANSWER, not for the id
+        #: of the session the answer came from. Where the corpus gives answer markers, they are
+        #: the question; where it gives only session ids, the column says so rather than
+        #: reporting a zero it cannot justify - a reachability of 0 that comes from asking the
+        #: wrong string is indistinguishable from a system that delivers nothing.
+        mk = e.get("markers") or []
+        both = start + "\n" + turn
+        if mk:
+            row["answer_reachable"] = any(x and x.lower() in both.lower() for x in mk)
+        elif e["gold"]:
+            row["answer_reachable"] = any(g in both for g in e["gold"])
+        else:
+            row["answer_reachable"] = None      # nothing to ask with; not a zero
         rows.append(row)
     if not rows:
         return {"blocked": "no questions - refusing to report over an empty set"}
@@ -355,6 +379,8 @@ def run_nevertwice(data, pool, toks, cap) -> dict:
             "median_chars": sorted(r["chars"] for r in rows)[len(rows) // 2],
             "turns_that_injected": sum(1 for r in rows if r["chars"] > 0),
             "answer_reachable": sum(1 for r in rows if r["answer_reachable"]),
+            "reachability_unanswerable": sum(1 for r in rows
+                                             if r["answer_reachable"] is None),
         },
         "rows": rows,
     }
@@ -422,6 +448,8 @@ def run_mem0(data, pool, toks, cap) -> dict:
             "median_chars": sorted(r["chars"] for r in rows)[len(rows) // 2],
             "turns_that_injected": sum(1 for r in rows if r["chars"] > 0),
             "answer_reachable": sum(1 for r in rows if r["answer_reachable"]),
+            "reachability_unanswerable": sum(1 for r in rows
+                                             if r["answer_reachable"] is None),
         },
         "rows": rows,
     }
