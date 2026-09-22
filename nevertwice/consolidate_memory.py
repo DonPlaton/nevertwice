@@ -161,6 +161,14 @@ def adjudicate_contested(apply: bool, has_llm: bool, cap: int | None = None,
     if budget <= 0:
         stats["skipped"] = "judge budget 0 - the pairs stay contested and visible in conflicts()"
         return stats
+    #: One vector cache for the whole run, written once at the end. `supersede_note` used to load
+    #: it, pop one stem and write the whole file back for EVERY pair it retired - N full rewrites
+    #: of a cache the consolidator (below, `consolidate`) already holds and writes itself. Given a
+    #: cache, `supersede_note` only pops; so a caller that passes one writes it, and a standalone
+    #: run loads its own here and writes it once after the loop.
+    own_cache = apply and cache is None
+    if own_cache:
+        cache = m.load_embed_cache()
     p0 = m._LLM_STATS.get("prompt_tokens", 0)
     e0 = m._LLM_STATS.get("eval_tokens", 0)
     spent = 0
@@ -257,7 +265,8 @@ def adjudicate_contested(apply: bool, has_llm: bool, cap: int | None = None,
                     # the stamp already gone and nothing pointing back at it. A failure here
                     # leaves `old_path` untouched and still contested - re-queued next run.
                     if not m.supersede_note(old_path, new_stem, via="judge",
-                                            extra_fields={m.CONTESTED_KEY: remaining}):
+                                            extra_fields={m.CONTESTED_KEY: remaining},
+                                            cache=cache):
                         print(f"      supersede failed for {old_path.name} - left live, still contested",
                               file=sys.stderr)
                     else:
@@ -298,6 +307,8 @@ def adjudicate_contested(apply: bool, has_llm: bool, cap: int | None = None,
     stats["tokens_spent"] = spent
     stats["prompt_tokens"] = m._LLM_STATS.get("prompt_tokens", 0) - p0
     stats["eval_tokens"] = m._LLM_STATS.get("eval_tokens", 0) - e0
+    if own_cache and stats["replaces"]:
+        m.save_embed_cache(cache)                      # the run's one write (see own_cache above)
     return stats
 
 

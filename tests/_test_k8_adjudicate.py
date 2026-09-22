@@ -259,5 +259,81 @@ res = cm.adjudicate_contested(apply=True, has_llm=True, judge=judge(True))
 check("with the scan blinded no pair is found - the suite above would redden", res["pairs"] == 0 and fm(o).get("contested") == [n])
 m._iter_contested = _real
 
+print("\n- a run of retirements writes the vector cache once, not once a pair -")
+#: K9 tail, measured by the auditing session on a copy of the owner's cache: 6 514 entries,
+#: 107 MB, 2 093 ms to serialise and write ONE generation. `supersede_note` loaded the cache,
+#: popped the retired stem and saved the whole file back - once per retired note - while the
+#: consolidator it runs under already holds that cache, pops the same stem from it (F13) and
+#: saves it once when the loop is done. So N retirements cost N+1 full rewrites where one does
+#: the job: ~21 s at ten pairs, ~7 min at two hundred.
+#:
+#: Counted, not timed. The number of full writes is a property of the code and has no spread,
+#: so this gate can see a difference of ONE write; a stopwatch on a 107 MB file on a shared disk
+#: could not see a difference of ten.
+N_PAIRS = 4
+
+
+def seeded_pairs(n):
+    """n independent contested pairs, every stem present in the vector cache."""
+    made = []
+    for i in range(n):
+        made.append(pair(title=f"queue backend number {i}",
+                         old_desc=f"jobs go through sqs {i}.{F}sqs {i}",
+                         new_desc=f"jobs go through nats {i}.{F}nats {i}"))
+    m.save_embed_cache({s: {"title": s, "desc": "d", "vec": [0.1, 0.2]}
+                        for o_, n_ in made for s in (o_, n_)})
+    return made
+
+
+def counting_saves(run):
+    real, calls = m.save_embed_cache, []
+
+    def spy(cache):
+        calls.append(len(cache))
+        return real(cache)
+
+    m.save_embed_cache = spy
+    try:
+        res = run()
+    finally:
+        m.save_embed_cache = real
+    return res, calls
+
+
+# (a) the consolidator's own path: it passes its cache in and saves it once afterwards
+d = fresh()
+made = seeded_pairs(N_PAIRS)
+shared = m.load_embed_cache()
+res, calls = counting_saves(lambda: cm.adjudicate_contested(apply=True, has_llm=True,
+                                                            judge=judge(True), cache=shared))
+check(f"{N_PAIRS} pairs judged `replaces`", res["replaces"] == N_PAIRS, str(res))
+check("with the caller's cache in hand, the judge loop writes the cache ZERO times - "
+      "the caller writes it once",
+      calls == [], f"{len(calls)} full write(s) inside the loop")
+check("and every retired stem is gone from the cache the caller will save",
+      not any(o_ in shared for o_, _ in made) and all(n_ in shared for _, n_ in made),
+      str(sorted(shared)))
+
+# (b) standalone - no cache passed - still one write for the whole run, not one a pair
+d = fresh()
+made = seeded_pairs(N_PAIRS)
+res, calls = counting_saves(lambda: cm.adjudicate_contested(apply=True, has_llm=True,
+                                                            judge=judge(True)))
+check(f"standalone: {N_PAIRS} retirements, ONE write of the cache",
+      res["replaces"] == N_PAIRS and len(calls) == 1, f"{len(calls)} full write(s)")
+on_disk = m.load_embed_cache()
+check("and the file on disk holds the winners and none of the retired",
+      not any(o_ in on_disk for o_, _ in made) and all(n_ in on_disk for _, n_ in made),
+      str(sorted(on_disk)))
+
+# (c) the write path keeps its single retirement: one note, one write, as before
+d = fresh()
+o, n = pair()
+m.save_embed_cache({o: {"title": o, "desc": "d", "vec": [0.1]},
+                    n: {"title": n, "desc": "d", "vec": [0.2]}})
+ok, calls = counting_saves(lambda: m.supersede_note(m.VAULT / "Decisions" / f"{o}.md", n))
+check("a lone supersede (the write path's call) still drops the stem and saves once",
+      ok and len(calls) == 1 and o not in m.load_embed_cache(), f"ok={ok} writes={len(calls)}")
+
 print(f"\nK8 layer 3: {len(RUN) - len(FAILED)} passed, {len(FAILED)} failed")
 sys.exit(1 if FAILED else 0)

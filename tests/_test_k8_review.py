@@ -255,7 +255,9 @@ o = write(OLD_FACT, S1, title="pool retry mut")
 n = write(NEW_FACT, S2, title="pool retry mut")
 
 
-def _broken_order(p, new_stem, via="slug", extra_fields=None):
+def _broken_order(p, new_stem, via="slug", extra_fields=None, cache=None):
+    #: `cache` mirrors the real signature: the adjudicator now hands its vector cache in, so
+    #: `supersede_note` pops the retired stem without rewriting the whole file per pair (K9).
     cm._set_contested(p, [])          # the pre-fix bug: clear the stamp with a SEPARATE write first
     return False                       # ... then the retirement itself fails
 

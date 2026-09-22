@@ -301,7 +301,8 @@ def _reconcilable_typed_paths(folder_path: Path, project: str, ntype: str,
                   key=lambda p: p.stem, reverse=True)
 
 
-def supersede_note(p: Path, new_stem: str, via: str = "slug", extra_fields: dict | None = None) -> bool:
+def supersede_note(p: Path, new_stem: str, via: str = "slug", extra_fields: dict | None = None,
+                   cache: dict | None = None) -> bool:
     """Retire a superseded note: stamp status, move into <folder>/Superseded/
     (Obsidian still resolves [[stem]]), drop it from the embedding cache so
     recall surfaces only current truth - contradictory facts no longer coexist
@@ -369,9 +370,16 @@ def supersede_note(p: Path, new_stem: str, via: str = "slug", extra_fields: dict
         log(f"Supersede failed for {p.name} (unlink: {e}); rolled back the Superseded/ copy")
         return False
     _unregister_slug(p.stem)              # keep the grounding cache honest (audit A16)
-    cache = load_embed_cache()
-    if cache.pop(p.stem, None) is not None:
-        save_embed_cache(cache)
+    if cache is not None:
+        #: The caller holds the vector cache and writes it once when its loop is done. Writing it
+        #: here as well cost one FULL rewrite per retired note - 2 093 ms a write on the owner's
+        #: 107 MB cache, so ~7 minutes for two hundred retirements in one consolidation, for a
+        #: file the caller was about to write anyway (K9, measured by the auditing session).
+        cache.pop(p.stem, None)
+    else:
+        cache = load_embed_cache()
+        if cache.pop(p.stem, None) is not None:
+            save_embed_cache(cache)
     sync_scale_index(delete=[p.stem])     # drop from the SQLite index too (C2/C3)
     log(f"Superseded {p.stem} → {new_stem}")
     return True
