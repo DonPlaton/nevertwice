@@ -47,12 +47,34 @@ def rows_from(steps: list[float], flags: list[bool]) -> list[tuple[str, float, f
     return out
 
 
+#: Reached through getattr, so a full revert of the tool reports a NAMED failure rather than an
+#: AttributeError - the same rule as `_test_cleanup_fixes.py`. The auditing session reverted the
+#: whole tool commit and got `module 'hotpath_decompose' has no attribute 'STAGES'`: the first
+#: question this suite asks was being asked through a crash, and a reader would have seen "no
+#: attribute" instead of "the headline counts `site` for the engine again".
+STAGES = getattr(H, "STAGES", None)
+SHARES = getattr(H, "shares", None)
+
+
+def test_the_tool_declares_which_steps_are_the_engines() -> None:
+    print("\n- the tool says, per step, whether it is the engine's -")
+    check("the tool declares the ownership of every step (STAGES)",
+          isinstance(STAGES, tuple) and all(isinstance(s, tuple) and len(s) == 2 for s in STAGES),
+          "no STAGES - the headline is computed from a row index again, which is how it came "
+          "to count `site` for the engine")
+    check("and computes the engine's share from those flags (shares)", callable(SHARES),
+          "no shares() - nothing ties the headline to what the output disowns")
+
+
 def test_the_share_subtracts_every_step_the_output_disowns() -> None:
     print("\n- the engine's share is the total minus every step marked not the engine's -")
     #: The auditing session's run, step by step: interpreter, site, import, work.
-    flags = [ours for _label, ours in H.STAGES]
+    if STAGES is None or SHARES is None:
+        check("the share can be computed at all", False, "STAGES/shares missing - see above")
+        return
+    flags = [ours for _label, ours in STAGES]
     rows = rows_from([17.82, 6.77, 25.08, 4.98], flags)
-    s = H.shares(rows)
+    s = SHARES(rows)
     disowned = sum(step for _l, _c, step, ours in rows if not ours)
     check("ours == total - (sum of every step flagged not ours)",
           abs(s["ours"] - (s["total"] - disowned)) < 1e-9, str(s))
@@ -65,21 +87,27 @@ def test_the_share_subtracts_every_step_the_output_disowns() -> None:
 
 def test_the_step_the_prose_disowns_is_flagged_in_the_table() -> None:
     print("\n- the table and the prose read one flag -")
-    site_rows = [(label, ours) for label, ours in H.STAGES if label.startswith("+ site")]
+    if STAGES is None:
+        check("the table and the prose can be compared at all", False, "STAGES missing - see above")
+        return
+    site_rows = [(label, ours) for label, ours in STAGES if label.startswith("+ site")]
     check("there is exactly one `site` stage", len(site_rows) == 1, str(site_rows))
     check("and it is flagged not the engine's, which is what the prose says of it",
           site_rows and site_rows[0][1] is False, str(site_rows))
     check("the interpreter is flagged not the engine's",
-          H.STAGES[0][1] is False, str(H.STAGES[0]))
+          STAGES[0][1] is False, str(STAGES[0]))
     check("and both engine stages are flagged the engine's",
-          [ours for _l, ours in H.STAGES[2:]] == [True, True], str(H.STAGES[2:]))
+          [ours for _l, ours in STAGES[2:]] == [True, True], str(STAGES[2:]))
 
 
 def test_a_new_disowned_step_is_subtracted_without_touching_the_formula() -> None:
     print("\n- a step added tomorrow and marked not ours leaves the engine's share -")
     base = rows_from([10.0, 5.0, 20.0, 5.0], [False, False, True, True])
     more = rows_from([10.0, 5.0, 3.0, 20.0, 5.0], [False, False, False, True, True])
-    a, b = H.shares(base), H.shares(more)
+    if SHARES is None:
+        check("a new step can be subtracted at all", False, "shares() missing - see above")
+        return
+    a, b = SHARES(base), SHARES(more)
     check("the engine's milliseconds do not change when a non-engine step is inserted",
           abs(a["ours"] - b["ours"]) < 1e-9, f"{a['ours']} vs {b['ours']}")
     check("only its share of a larger total does", b["ours_share"] < a["ours_share"],
@@ -95,7 +123,8 @@ def test_zz_every_check_passed() -> None:
 
 
 def main() -> int:
-    for fn in (test_the_share_subtracts_every_step_the_output_disowns,
+    for fn in (test_the_tool_declares_which_steps_are_the_engines,
+               test_the_share_subtracts_every_step_the_output_disowns,
                test_the_step_the_prose_disowns_is_flagged_in_the_table,
                test_a_new_disowned_step_is_subtracted_without_touching_the_formula):
         fn()
