@@ -38,9 +38,23 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Run core suites
         shell: bash
+        # Every suite runs, and the failures are printed as a LIST. `set -e` plus a loop kills
+        # the job on the first red file and leaves the rest unrun, so a matrix job reports one
+        # defect however many it holds: the first matrix run in 27 days (2026-09-22) died on
+        # `_test_cleanup_fixes.py` on Linux and macOS and on `_test_complexity.py` on Windows,
+        # and "twelve red jobs" turned out to mean "one defect per job, count unknown". Each
+        # fix would then have bought exactly one more layer, at a matrix run apiece.
         run: |
-          set -e
-          for t in tests/_test_*.py; do python "$t"; done
+          failed=()
+          for t in tests/_test_*.py; do
+            python "$t" || failed+=("$t")
+          done
+          if [ ${#failed[@]} -gt 0 ]; then
+            printf '\n%d of %d core suite(s) failed:\n' "${#failed[@]}" "$(ls tests/_test_*.py | wc -l)"
+            printf '  %s\n' "${failed[@]}"
+            exit 1
+          fi
+          printf '\nall %d core suites passed\n' "$(ls tests/_test_*.py | wc -l)"
 
   # The research/ harnesses are maintainer dev-tools (not in the wheel); they run on current
   # Python only, so they may use newer syntax than the product's 3.10 floor.
@@ -53,9 +67,20 @@ jobs:
           python-version: "3.13"
       - name: Run research suites
         shell: bash
+        # Same reason as the core loop above: report every failure, not the first one.
         run: |
-          set -e
-          for t in tests/research/_test_*.py; do python "$t"; done
+          failed=()
+          for t in tests/research/_test_*.py; do
+            python "$t" || failed+=("$t")
+          done
+          if [ ${#failed[@]} -gt 0 ]; then
+            printf '
+%d research suite(s) failed:
+' "${#failed[@]}"
+            printf '  %s
+' "${failed[@]}"
+            exit 1
+          fi
 
   # The path a contributor actually follows. The matrix above proves the suites pass when
   # run directly; this proves they pass the way README and CONTRIBUTING tell people to run

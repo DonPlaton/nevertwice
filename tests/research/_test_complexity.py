@@ -32,7 +32,16 @@ import tempfile
 from collections import Counter
 from pathlib import Path
 
-HERE = Path(__file__).resolve().parent
+#: This suite lives under `tests/research/` and not beside the core ones, because
+#: `research/invariants_lab/complexity.py` imports `networkx` - a research extra that the core
+#: matrix does not install. In `tests/` it crashed all twelve matrix jobs at import with
+#: `ModuleNotFoundError: No module named 'networkx'` on CI's first matrix run (2026-09-22), and
+#: passed locally only because this machine has the extra. The repository already draws that
+#: line: the core job globs `tests/_test_*.py` and installs nothing, the research job globs
+#: `tests/research/_test_*.py` after `pip install -e ".[dev]"`. The local battery collects both,
+#: so nothing is lost here - only the wrong job is no longer asked to import a dependency it
+#: deliberately does not have.
+HERE = Path(__file__).resolve().parent.parent
 ROOT = HERE.parent
 sys.path.insert(0, str(HERE))
 

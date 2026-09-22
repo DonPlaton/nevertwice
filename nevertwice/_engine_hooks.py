@@ -424,9 +424,17 @@ def _detach_kwargs(osname: str = "") -> dict:
     if (osname or os.name) == "nt":
         # getattr: these two names do not exist in `subprocess` on POSIX, so asking for the
         # Windows answer from a POSIX machine - which is what the check beside this does -
-        # would raise rather than answer.
-        return {"creationflags": (getattr(subprocess, "DETACHED_PROCESS", 0)
-                                  | getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0))}
+        # would raise rather than answer. The fallbacks are the REAL Windows values, not 0:
+        # with 0 the POSIX-computed Windows answer is `creationflags: 0`, which says "attach
+        # the child to this console" - the opposite of what this function is named for - and
+        # the check beside it can then only pass on Windows. That is the shape the comment
+        # above the check warns about, and it is what CI found on its first matrix run
+        # (2026-09-22, ubuntu and macOS red, Windows green).
+        DETACHED_PROCESS = 0x00000008          # CreateProcess dwCreationFlags, WinBase.h
+        CREATE_NEW_PROCESS_GROUP = 0x00000200
+        return {"creationflags": (getattr(subprocess, "DETACHED_PROCESS", DETACHED_PROCESS)
+                                  | getattr(subprocess, "CREATE_NEW_PROCESS_GROUP",
+                                            CREATE_NEW_PROCESS_GROUP))}
     return {"start_new_session": True}      # setsid(2): its own session and process group
 
 

@@ -198,7 +198,7 @@ def test_every_harness_takes_a_corpus_rather_than_assuming_one() -> None:
                  "audit_axes.py", "mutate.py", "verify_mutants.py", "corpus_census.py",
                  "mine_quadratics.py", "facade_shapes.py"]
     import subprocess
-    missing_flag, hardcoded = [], []
+    missing_flag, hardcoded, could_not_start = [], [], []
     for name in harnesses:
         path = LAB / name
         if not path.exists():
@@ -218,11 +218,31 @@ def test_every_harness_takes_a_corpus_rather_than_assuming_one() -> None:
             missing_flag.append(name + " (" + type(exc).__name__ + ")")
             continue
         if "--corpus" not in (proc.stdout or ""):
-            missing_flag.append(name)
+            #: "refused the flag" and "could not start" are different answers, and asking one
+            #: question of both is how this check read as a corpus defect on a machine without
+            #: the research extras: the harness dies importing `numpy`/`networkx`/`scipy`
+            #: before argparse ever prints, so stdout carries no `--corpus` and the harness is
+            #: reported as missing a flag it actually declares. Measured 2026-09-22 by
+            #: reproducing the core CI matrix locally with those imports blocked - eight of
+            #: eight harnesses "missing the flag", none of them missing it.
+            err = (proc.stderr or "")
+            if "ModuleNotFoundError" in err or "ImportError" in err:
+                could_not_start.append(f"{name}: {err.strip().splitlines()[-1][:60]}")
+            else:
+                missing_flag.append(name)
     check("every harness resolves its corpus through corpora.repos_for()",
           not hardcoded, str(hardcoded))
-    check("and every harness's own parser accepts --corpus",
+    #: The population, so that "no harness is missing the flag" cannot be true because none of
+    #: them started. A run where every harness dies is a dependency finding, not a corpus one.
+    started = len(harnesses) - len(could_not_start)
+    check(f"enough harnesses started for the question to mean anything ({started} of "
+          f"{len(harnesses)})", started >= 1,
+          "; ".join(could_not_start[:3]))
+    check("and every harness that STARTED accepts --corpus",
           not missing_flag, str(missing_flag))
+    if could_not_start:
+        print(f"    ({len(could_not_start)} harness(es) could not start - a research extra is "
+              f"absent; that is the dependency tier's question, not this one)")
 
 
 def test_no_harness_dies_printing_its_own_help() -> None:

@@ -20,7 +20,11 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-HERE = Path(__file__).resolve().parent
+#: Under `tests/research/` and not beside the core suites: it imports a lab module that
+#: needs a research extra (numpy), and the core matrix installs nothing. In `tests/` it
+#: crashed the core job at import; the local battery collects both directories, so the
+#: suite still runs here. Moved 2026-09-22 after CI's first matrix run in 27 days.
+HERE = Path(__file__).resolve().parent.parent
 ROOT = HERE.parent
 sys.path.insert(0, str(HERE))
 
@@ -220,11 +224,23 @@ def test_the_power_calculation_is_exact_not_approximate() -> None:
     k<=5 or k>=15 (size 0.0414), and under p=0.8 that region carries 0.8042.
     """
     print("\n- the power function, against a hand-computed value -")
-    from scipy import stats
-    hand = stats.binom.cdf(5, 20, 0.8) + (1 - stats.binom.cdf(14, 20, 0.8))
+    #: scipy is a research extra; the core matrix installs nothing and this suite is globbed by
+    #: the core job. The import sat unguarded behind `_test_complexity.py`, which crashed all
+    #: twelve jobs first with `networkx` - so this one had not fired yet. Two other core suites
+    #: already guard their extras this way (`hypothesis`, `matplotlib`); this one did not, and
+    #: passed locally because the machine has scipy. Found while fixing the first (2026-09-22).
+    #: The cross-check is what scipy buys; the property is checked either way, against the same
+    #: number pinned from a run where scipy was present.
+    try:
+        from scipy import stats                          # noqa: PLC0415
+        hand = float(stats.binom.cdf(5, 20, 0.8) + (1 - stats.binom.cdf(14, 20, 0.8)))
+        _src = "scipy"
+    except ImportError:
+        hand = 0.8042079657359471       # the same expression, pinned from a run with scipy
+        _src = "the pinned constant"
     got = PW.exact_power_one_prop(20, 0.5, 0.8)
-    check("n=20 gives exactly the hand-computed power", abs(got - hand) < 1e-12,
-          f"{got} vs {hand}")
+    check(f"n=20 gives exactly the hand-computed power (against {_src})",
+          abs(got - hand) < 1e-12, f"{got} vs {hand}")
     check("and it clears 80%, so 20 positives tell 0.8 from 0.5", got >= 0.80,
           f"{got:.4f}")
     check("19 does not, so the boundary is real, not rounded",

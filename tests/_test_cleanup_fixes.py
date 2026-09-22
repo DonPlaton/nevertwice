@@ -815,6 +815,28 @@ check("on Windows it is detached and in its own process group",
       bool(_nt.get("creationflags", 0) & _DP) and bool(_nt.get("creationflags", 0) & _NG))
 check("and it does not also ask for a POSIX session", "start_new_session" not in _nt)
 
+#: And the Windows answer computed WITHOUT the Windows names, which is the only state a POSIX
+#: runner is ever in. The block above says both branches are exercised "rather than the one this
+#: machine happens to be" - and it was not: the engine fell back to 0 for the two constants while
+#: this file fell back to their real values, so the check could only pass on Windows. CI's first
+#: matrix run found it on 2026-09-22 (ubuntu and macOS red, Windows green), which is the run that
+#: had never happened because the workflow only fired on master.
+_saved = {k: getattr(_subprocess, k) for k in ("DETACHED_PROCESS", "CREATE_NEW_PROCESS_GROUP")
+          if hasattr(_subprocess, k)}
+for _k in _saved:
+    delattr(_subprocess, _k)
+try:
+    _nt_posix = _detach("nt") if callable(_detach) else {}
+    _cf = _nt_posix.get("creationflags", 0)
+    check(f"the Windows answer survives the Windows names being absent (creationflags={_cf})",
+          bool(_cf & 0x08) and bool(_cf & 0x200))
+    check("and the POSIX answer is unaffected by their absence",
+          (_detach("posix") if callable(_detach) else {}).get("start_new_session") is True)
+finally:
+    for _k, _v in _saved.items():
+        setattr(_subprocess, _k, _v)
+
+
 # ... and the spawn actually passes them, on whichever platform this is.
 _seen = {}
 

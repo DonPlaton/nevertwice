@@ -23,7 +23,11 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-HERE = Path(__file__).resolve().parent
+#: Under `tests/research/` and not beside the core suites: it imports a lab module that
+#: needs a research extra (scipy and statsmodels), and the core matrix installs nothing. In `tests/` it
+#: crashed the core job at import; the local battery collects both directories, so the
+#: suite still runs here. Moved 2026-09-22 after CI's first matrix run in 27 days.
+HERE = Path(__file__).resolve().parent.parent
 ROOT = HERE.parent
 sys.path.insert(0, str(HERE))
 
