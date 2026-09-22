@@ -27,6 +27,7 @@ dialogue, and the haystack is that dialogue's turns.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import sys
 import time
@@ -88,6 +89,21 @@ def load() -> list[dict]:
                        "category": q.get("category"), "sample_id": sid})
         out.append({"sample_id": sid, "pool": pool, "qa": qa})
     return out
+
+
+def _cache_identity() -> dict:
+    """What the vectors in `locomo_embeds.json` are, so a re-measure on stale ones is visible."""
+    if not EMB.exists():
+        return {"path": str(EMB.relative_to(ROOT)).replace("\\", "/"), "present": False}
+    h, size = hashlib.sha256(), 0
+    with open(EMB, "rb") as fh:
+        for chunk in iter(lambda: fh.read(1 << 20), b""):
+            h.update(chunk)
+            size += len(chunk)
+    return {"path": str(EMB.relative_to(ROOT)).replace("\\", "/"), "present": True,
+            "bytes": size, "sha256": h.hexdigest(),
+            "mtime": int(EMB.stat().st_mtime),
+            "note": "rebuilt by `python research/locomo_eval.py --embed`; gitignored input"}
 
 
 def embed_all(convs: list[dict]) -> dict:
@@ -222,7 +238,18 @@ def main() -> int:
                "by_category_recall_at_5": {c: {k: (v[0] / v[1] if v[1] else 0.0)
                                                for k, v in s.items()}
                                            for c, s in sorted(by_cat.items())},
-               "provenance": corpus_pin.record(CORPUS)}
+               "provenance": corpus_pin.record(CORPUS),
+               #: The corpus is pinned by hash and the VECTORS were pinned by nothing. This
+               #: stand's claims close over thirty files including all nine engine parts, so any
+               #: engine edit withdraws them - and the re-measure then reads whatever vectors
+               #: `locomo_embeds.json` happens to hold, leaving the semantic half of the
+               #: measurement un-redone. On a cached cache "every figure reproduced exactly" is
+               #: then true by construction: evidence that nothing was re-embedded rather than
+               #: that the numbers survive a revised engine (audit 2026-09-22). The cache is a
+               #: declared rebuildable input, not a committed artifact - `research/data/
+               #: .gitignore:11` - so recording its identity is the only way a reader can tell
+               #: which vectors a number came from.
+               "embed_cache": _cache_identity()}
         target = Path(args.out) if args.out else (HERE / "results" / "locomo.json")
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(json.dumps(res, ensure_ascii=False, indent=1), encoding="utf-8", newline="\n")

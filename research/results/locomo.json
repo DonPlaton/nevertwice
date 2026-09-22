@@ -63,5 +63,13 @@
   "url": "https://raw.githubusercontent.com/snap-research/locomo/main/data/locomo10.json",
   "licence": "CC-BY-NC-4.0 (dataset card); the repository's LICENSE.txt is the authority",
   "citation": "Maharana et al., Evaluating Very Long-Term Conversational Memory of LLM Agents, ACL 2024"
+ },
+ "embed_cache": {
+  "path": "research/data/locomo_embeds.json",
+  "present": true,
+  "bytes": 108392476,
+  "sha256": "f9869727bfad8bf1208528eacca8aaafb6e203ba757141a8caab0351d48a88cb",
+  "mtime": 1788386057,
+  "note": "rebuilt by `python research/locomo_eval.py --embed`; gitignored input"
  }
 }

@@ -141,7 +141,14 @@ def check_file(path: Path, claims: dict) -> tuple[int, list[str]]:
         #: section number and a date, the date alone producing three (audit 2026-09-22).
         #: Numbers inside the brackets are stripped first, so a correct migration does not
         #: report its own value twice.
-        stripped = REF.sub(" | ", line)
+        #: Positions come from the ORIGINAL line, never from a substitution. The first version
+        #: replaced each reference with `" | "` and split on the first `|` - which in a markdown
+        #: table row is the table's own pipe, before any reference, so `head` came out empty and
+        #: the paired branch went silent on every table row (audit 2026-09-22). The claim tables
+        #: and the derived frozen block are all markdown tables, so that is the main form, not a
+        #: rare one. Overloading a character that the text itself uses is the defect.
+        marks = list(REF.finditer(line))
+        stripped = REF.sub(" ", line)
         outside = BARE.findall(stripped)
         #: For the paired branch, only the LAST CONTIGUOUS RUN of figures counts -
         #: numbers separated from each other by nothing but a delimiter. A stray number
@@ -157,8 +164,8 @@ def check_file(path: Path, claims: dict) -> tuple[int, list[str]]:
         #: (`... [[a]] / [[b]] (95% CI 0.9412, 0.9954)`) or a trailing date paired the CI bounds
         #: against the claims and swallowed the real defect (audit 2026-09-22). Neither form is
         #: contrived - the register itself stores `ci: {low, high}`.
-        head, _, tail = stripped.partition("|")
-        tail = tail.rpartition("|")[2]
+        head = line[:marks[0].start()] if marks else ""
+        tail = line[marks[-1].end():] if marks else ""
         before, after = RUN.findall(head), RUN.findall(tail)
         paired = BARE.findall(before[-1] if before else after[0]) if (before or after) else []
         named = [(cid, claims[cid]) for cid, _ in refs if cid in claims]

@@ -17364,9 +17364,9 @@
   {
    "id": "morphology.vault.session.ru.raw.recall_at_1",
    "statement": "on the Russian half of the owner's store, a session summary finds a note extracted from it at RECALL@1 0.637 with raw tokens",
-   "value": 0.6653,
+   "value": 0.6638,
    "printed": [
-    "0.665"
+    "0.664"
    ],
    "unit": "recall@1",
    "dataset": "owner_vault_snapshot",
@@ -17378,11 +17378,11 @@
    "ci": {
     "method": "wilson",
     "level": 0.95,
-    "low": 0.6052,
-    "high": 0.7205
+    "low": 0.6036,
+    "high": 0.7191
    },
    "cited_in": [],
-   "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
+   "commit": "55e33989f85b0be6eb4657a5d91e4cfb0ee0e263",
    "note": "The owner's store, read-only: the summary of a Session note is the query, the typed notes extracted from that session are the relevant set, the pool is the project's typed notes; lexical BM25 only, the engine's own tokenizer switched off (raw) and on (morph). The store is private; the artifact holds rates and counts only, and anyone with a populated store reproduces the shape with one command.",
    "produced_by": [
     "research/lexical_morphology_probe.py",
@@ -17411,18 +17411,14 @@
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [],
-   "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
-   "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "morphology.vault.session.ru.raw.recall_at_5",
-   "statement": "on the Russian half of the owner's store, a session summary finds a note extracted from it at RECALL@5 0.810 with raw tokens",
-   "value": 0.8099,
+   "statement": "on the Russian half of the owner's store, a session summary finds a note extracted from it at RECALL@5 0.828 with raw tokens",
+   "value": 0.8276,
    "printed": [
-    "0.810"
+    "0.828"
    ],
    "unit": "recall@5",
    "dataset": "owner_vault_snapshot",
@@ -17434,11 +17430,11 @@
    "ci": {
     "method": "wilson",
     "level": 0.95,
-    "low": 0.7572,
-    "high": 0.8534
+    "low": 0.7764,
+    "high": 0.8691
    },
    "cited_in": [],
-   "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
+   "commit": "55e33989f85b0be6eb4657a5d91e4cfb0ee0e263",
    "note": "The owner's store, read-only: the summary of a Session note is the query, the typed notes extracted from that session are the relevant set, the pool is the project's typed notes; lexical BM25 only, the engine's own tokenizer switched off (raw) and on (morph). The store is private; the artifact holds rates and counts only, and anyone with a populated store reproduces the shape with one command.",
    "produced_by": [
     "research/lexical_morphology_probe.py",
@@ -17467,18 +17463,14 @@
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [],
-   "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
-   "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "morphology.vault.session.ru.raw.recall_at_10",
-   "statement": "on the Russian half of the owner's store, a session summary finds a note extracted from it at RECALL@10 0.864 with raw tokens",
-   "value": 0.8636,
+   "statement": "on the Russian half of the owner's store, a session summary finds a note extracted from it at RECALL@10 0.879 with raw tokens",
+   "value": 0.8793,
    "printed": [
-    "0.864"
+    "0.879"
    ],
    "unit": "recall@10",
    "dataset": "owner_vault_snapshot",
@@ -17490,11 +17482,11 @@
    "ci": {
     "method": "wilson",
     "level": 0.95,
-    "low": 0.8159,
-    "high": 0.9004
+    "low": 0.8335,
+    "high": 0.9138
    },
    "cited_in": [],
-   "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
+   "commit": "55e33989f85b0be6eb4657a5d91e4cfb0ee0e263",
    "note": "The owner's store, read-only: the summary of a Session note is the query, the typed notes extracted from that session are the relevant set, the pool is the project's typed notes; lexical BM25 only, the engine's own tokenizer switched off (raw) and on (morph). The store is private; the artifact holds rates and counts only, and anyone with a populated store reproduces the shape with one command.",
    "produced_by": [
     "research/lexical_morphology_probe.py",
@@ -17523,18 +17515,14 @@
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [],
-   "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
-   "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "morphology.vault.session.ru.raw.mrr",
    "statement": "on the Russian half of the owner's store, MRR 0.726 with raw tokens",
-   "value": 0.7353,
+   "value": 0.7395,
    "printed": [
-    "0.735"
+    "0.740"
    ],
    "unit": "mrr",
    "dataset": "owner_vault_snapshot",
@@ -17545,7 +17533,7 @@
    "pointer": "protocols.session.halves.ru.raw.mrr",
    "ci": null,
    "cited_in": [],
-   "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
+   "commit": "55e33989f85b0be6eb4657a5d91e4cfb0ee0e263",
    "note": "The owner's store, read-only: the summary of a Session note is the query, the typed notes extracted from that session are the relevant set, the pool is the project's typed notes; lexical BM25 only, the engine's own tokenizer switched off (raw) and on (morph). The store is private; the artifact holds rates and counts only, and anyone with a populated store reproduces the shape with one command.",
    "produced_by": [
     "research/lexical_morphology_probe.py",
@@ -17574,18 +17562,14 @@
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [],
-   "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
-   "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "morphology.vault.session.ru.morph.recall_at_1",
-   "statement": "on the Russian half of the owner's store, a session summary finds a note extracted from it at RECALL@1 0.731 with stop words + stems",
-   "value": 0.7314,
+   "statement": "on the Russian half of the owner's store, a session summary finds a note extracted from it at RECALL@1 0.746 with stop words + stems",
+   "value": 0.7457,
    "printed": [
-    "0.731"
+    "0.746"
    ],
    "unit": "recall@1",
    "dataset": "owner_vault_snapshot",
@@ -17597,11 +17581,11 @@
    "ci": {
     "method": "wilson",
     "level": 0.95,
-    "low": 0.6737,
-    "high": 0.7822
+    "low": 0.6888,
+    "high": 0.7953
    },
    "cited_in": [],
-   "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
+   "commit": "55e33989f85b0be6eb4657a5d91e4cfb0ee0e263",
    "note": "The owner's store, read-only: the summary of a Session note is the query, the typed notes extracted from that session are the relevant set, the pool is the project's typed notes; lexical BM25 only, the engine's own tokenizer switched off (raw) and on (morph). The store is private; the artifact holds rates and counts only, and anyone with a populated store reproduces the shape with one command.",
    "produced_by": [
     "research/lexical_morphology_probe.py",
@@ -17630,18 +17614,14 @@
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [],
-   "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
-   "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "morphology.vault.session.ru.morph.recall_at_5",
-   "statement": "on the Russian half of the owner's store, a session summary finds a note extracted from it at RECALL@5 0.843 with stop words + stems",
-   "value": 0.843,
+   "statement": "on the Russian half of the owner's store, a session summary finds a note extracted from it at RECALL@5 0.858 with stop words + stems",
+   "value": 0.8578,
    "printed": [
-    "0.843"
+    "0.858"
    ],
    "unit": "recall@5",
    "dataset": "owner_vault_snapshot",
@@ -17653,11 +17633,11 @@
    "ci": {
     "method": "wilson",
     "level": 0.95,
-    "low": 0.7932,
-    "high": 0.8826
+    "low": 0.8095,
+    "high": 0.8954
    },
    "cited_in": [],
-   "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
+   "commit": "55e33989f85b0be6eb4657a5d91e4cfb0ee0e263",
    "note": "The owner's store, read-only: the summary of a Session note is the query, the typed notes extracted from that session are the relevant set, the pool is the project's typed notes; lexical BM25 only, the engine's own tokenizer switched off (raw) and on (morph). The store is private; the artifact holds rates and counts only, and anyone with a populated store reproduces the shape with one command.",
    "produced_by": [
     "research/lexical_morphology_probe.py",
@@ -17686,18 +17666,14 @@
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [],
-   "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
-   "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "morphology.vault.session.ru.morph.recall_at_10",
-   "statement": "on the Russian half of the owner's store, a session summary finds a note extracted from it at RECALL@10 0.888 with stop words + stems",
-   "value": 0.8884,
+   "statement": "on the Russian half of the owner's store, a session summary finds a note extracted from it at RECALL@10 0.892 with stop words + stems",
+   "value": 0.8922,
    "printed": [
-    "0.888"
+    "0.892"
    ],
    "unit": "recall@10",
    "dataset": "owner_vault_snapshot",
@@ -17709,11 +17685,11 @@
    "ci": {
     "method": "wilson",
     "level": 0.95,
-    "low": 0.8437,
-    "high": 0.9215
+    "low": 0.8481,
+    "high": 0.9247
    },
    "cited_in": [],
-   "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
+   "commit": "55e33989f85b0be6eb4657a5d91e4cfb0ee0e263",
    "note": "The owner's store, read-only: the summary of a Session note is the query, the typed notes extracted from that session are the relevant set, the pool is the project's typed notes; lexical BM25 only, the engine's own tokenizer switched off (raw) and on (morph). The store is private; the artifact holds rates and counts only, and anyone with a populated store reproduces the shape with one command.",
    "produced_by": [
     "research/lexical_morphology_probe.py",
@@ -17742,18 +17718,14 @@
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [],
-   "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
-   "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "morphology.vault.session.ru.morph.mrr",
-   "statement": "on the Russian half of the owner's store, MRR 0.785 with stop words + stems",
-   "value": 0.7846,
+   "statement": "on the Russian half of the owner's store, MRR 0.795 with stop words + stems",
+   "value": 0.7951,
    "printed": [
-    "0.785"
+    "0.795"
    ],
    "unit": "mrr",
    "dataset": "owner_vault_snapshot",
@@ -17764,7 +17736,7 @@
    "pointer": "protocols.session.halves.ru.morph.mrr",
    "ci": null,
    "cited_in": [],
-   "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
+   "commit": "55e33989f85b0be6eb4657a5d91e4cfb0ee0e263",
    "note": "The owner's store, read-only: the summary of a Session note is the query, the typed notes extracted from that session are the relevant set, the pool is the project's typed notes; lexical BM25 only, the engine's own tokenizer switched off (raw) and on (morph). The store is private; the artifact holds rates and counts only, and anyone with a populated store reproduces the shape with one command.",
    "produced_by": [
     "research/lexical_morphology_probe.py",
@@ -17793,18 +17765,14 @@
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [],
-   "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
-   "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "morphology.vault.session.en.raw.recall_at_1",
-   "statement": "on the English half of the owner's store, a session summary finds a note extracted from it at RECALL@1 0.764 with raw tokens",
-   "value": 0.7637,
+   "statement": "on the English half of the owner's store, a session summary finds a note extracted from it at RECALL@1 0.775 with raw tokens",
+   "value": 0.7746,
    "printed": [
-    "0.764"
+    "0.775"
    ],
    "unit": "recall@1",
    "dataset": "owner_vault_snapshot",
@@ -17816,11 +17784,11 @@
    "ci": {
     "method": "wilson",
     "level": 0.95,
-    "low": 0.7303,
-    "high": 0.7941
+    "low": 0.7417,
+    "high": 0.8045
    },
    "cited_in": [],
-   "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
+   "commit": "55e33989f85b0be6eb4657a5d91e4cfb0ee0e263",
    "note": "The owner's store, read-only: the summary of a Session note is the query, the typed notes extracted from that session are the relevant set, the pool is the project's typed notes; lexical BM25 only, the engine's own tokenizer switched off (raw) and on (morph). The store is private; the artifact holds rates and counts only, and anyone with a populated store reproduces the shape with one command.",
    "produced_by": [
     "research/lexical_morphology_probe.py",
@@ -17849,18 +17817,14 @@
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [],
-   "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
-   "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "morphology.vault.session.en.raw.recall_at_5",
-   "statement": "on the English half of the owner's store, a session summary finds a note extracted from it at RECALL@5 0.918 with raw tokens",
-   "value": 0.9185,
+   "statement": "on the English half of the owner's store, a session summary finds a note extracted from it at RECALL@5 0.925 with raw tokens",
+   "value": 0.9249,
    "printed": [
-    "0.918"
+    "0.925"
    ],
    "unit": "recall@5",
    "dataset": "owner_vault_snapshot",
@@ -17872,11 +17836,11 @@
    "ci": {
     "method": "wilson",
     "level": 0.95,
-    "low": 0.8955,
-    "high": 0.9368
+    "low": 0.9026,
+    "high": 0.9424
    },
    "cited_in": [],
-   "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
+   "commit": "55e33989f85b0be6eb4657a5d91e4cfb0ee0e263",
    "note": "The owner's store, read-only: the summary of a Session note is the query, the typed notes extracted from that session are the relevant set, the pool is the project's typed notes; lexical BM25 only, the engine's own tokenizer switched off (raw) and on (morph). The store is private; the artifact holds rates and counts only, and anyone with a populated store reproduces the shape with one command.",
    "produced_by": [
     "research/lexical_morphology_probe.py",
@@ -17905,18 +17869,14 @@
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [],
-   "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
-   "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "morphology.vault.session.en.raw.recall_at_10",
-   "statement": "on the English half of the owner's store, a session summary finds a note extracted from it at RECALL@10 0.950 with raw tokens",
-   "value": 0.9499,
+   "statement": "on the English half of the owner's store, a session summary finds a note extracted from it at RECALL@10 0.953 with raw tokens",
+   "value": 0.9525,
    "printed": [
-    "0.950"
+    "0.953"
    ],
    "unit": "recall@10",
    "dataset": "owner_vault_snapshot",
@@ -17928,11 +17888,11 @@
    "ci": {
     "method": "wilson",
     "level": 0.95,
-    "low": 0.9308,
-    "high": 0.9639
+    "low": 0.9338,
+    "high": 0.9661
    },
    "cited_in": [],
-   "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
+   "commit": "55e33989f85b0be6eb4657a5d91e4cfb0ee0e263",
    "note": "The owner's store, read-only: the summary of a Session note is the query, the typed notes extracted from that session are the relevant set, the pool is the project's typed notes; lexical BM25 only, the engine's own tokenizer switched off (raw) and on (morph). The store is private; the artifact holds rates and counts only, and anyone with a populated store reproduces the shape with one command.",
    "produced_by": [
     "research/lexical_morphology_probe.py",
@@ -17961,18 +17921,14 @@
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [],
-   "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
-   "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "morphology.vault.session.en.raw.mrr",
-   "statement": "on the English half of the owner's store, MRR 0.831 with raw tokens",
-   "value": 0.8313,
+   "statement": "on the English half of the owner's store, MRR 0.840 with raw tokens",
+   "value": 0.8398,
    "printed": [
-    "0.831"
+    "0.840"
    ],
    "unit": "mrr",
    "dataset": "owner_vault_snapshot",
@@ -17983,7 +17939,7 @@
    "pointer": "protocols.session.halves.en.raw.mrr",
    "ci": null,
    "cited_in": [],
-   "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
+   "commit": "55e33989f85b0be6eb4657a5d91e4cfb0ee0e263",
    "note": "The owner's store, read-only: the summary of a Session note is the query, the typed notes extracted from that session are the relevant set, the pool is the project's typed notes; lexical BM25 only, the engine's own tokenizer switched off (raw) and on (morph). The store is private; the artifact holds rates and counts only, and anyone with a populated store reproduces the shape with one command.",
    "produced_by": [
     "research/lexical_morphology_probe.py",
@@ -18012,18 +17968,14 @@
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [],
-   "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
-   "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "morphology.vault.session.en.morph.recall_at_1",
-   "statement": "on the English half of the owner's store, a session summary finds a note extracted from it at RECALL@1 0.781 with stop words + stems",
-   "value": 0.7811,
+   "statement": "on the English half of the owner's store, a session summary finds a note extracted from it at RECALL@1 0.793 with stop words + stems",
+   "value": 0.7934,
    "printed": [
-    "0.781"
+    "0.793"
    ],
    "unit": "recall@1",
    "dataset": "owner_vault_snapshot",
@@ -18035,11 +17987,11 @@
    "ci": {
     "method": "wilson",
     "level": 0.95,
-    "low": 0.7484,
-    "high": 0.8106
+    "low": 0.7613,
+    "high": 0.8222
    },
    "cited_in": [],
-   "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
+   "commit": "55e33989f85b0be6eb4657a5d91e4cfb0ee0e263",
    "note": "The owner's store, read-only: the summary of a Session note is the query, the typed notes extracted from that session are the relevant set, the pool is the project's typed notes; lexical BM25 only, the engine's own tokenizer switched off (raw) and on (morph). The store is private; the artifact holds rates and counts only, and anyone with a populated store reproduces the shape with one command.",
    "produced_by": [
     "research/lexical_morphology_probe.py",
@@ -18068,18 +18020,14 @@
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [],
-   "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
-   "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "morphology.vault.session.en.morph.recall_at_5",
-   "statement": "on the English half of the owner's store, a session summary finds a note extracted from it at RECALL@5 0.925 with stop words + stems",
-   "value": 0.9255,
+   "statement": "on the English half of the owner's store, a session summary finds a note extracted from it at RECALL@5 0.929 with stop words + stems",
+   "value": 0.9293,
    "printed": [
-    "0.925"
+    "0.929"
    ],
    "unit": "recall@5",
    "dataset": "owner_vault_snapshot",
@@ -18091,11 +18039,11 @@
    "ci": {
     "method": "wilson",
     "level": 0.95,
-    "low": 0.9032,
-    "high": 0.943
+    "low": 0.9075,
+    "high": 0.9463
    },
    "cited_in": [],
-   "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
+   "commit": "55e33989f85b0be6eb4657a5d91e4cfb0ee0e263",
    "note": "The owner's store, read-only: the summary of a Session note is the query, the typed notes extracted from that session are the relevant set, the pool is the project's typed notes; lexical BM25 only, the engine's own tokenizer switched off (raw) and on (morph). The store is private; the artifact holds rates and counts only, and anyone with a populated store reproduces the shape with one command.",
    "produced_by": [
     "research/lexical_morphology_probe.py",
@@ -18124,18 +18072,14 @@
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [],
-   "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
-   "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "morphology.vault.session.en.morph.recall_at_10",
-   "statement": "on the English half of the owner's store, a session summary finds a note extracted from it at RECALL@10 0.955 with stop words + stems",
-   "value": 0.9546,
+   "statement": "on the English half of the owner's store, a session summary finds a note extracted from it at RECALL@10 0.957 with stop words + stems",
+   "value": 0.9569,
    "printed": [
-    "0.955"
+    "0.957"
    ],
    "unit": "recall@10",
    "dataset": "owner_vault_snapshot",
@@ -18147,11 +18091,11 @@
    "ci": {
     "method": "wilson",
     "level": 0.95,
-    "low": 0.9362,
-    "high": 0.9679
+    "low": 0.9389,
+    "high": 0.9698
    },
    "cited_in": [],
-   "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
+   "commit": "55e33989f85b0be6eb4657a5d91e4cfb0ee0e263",
    "note": "The owner's store, read-only: the summary of a Session note is the query, the typed notes extracted from that session are the relevant set, the pool is the project's typed notes; lexical BM25 only, the engine's own tokenizer switched off (raw) and on (morph). The store is private; the artifact holds rates and counts only, and anyone with a populated store reproduces the shape with one command.",
    "produced_by": [
     "research/lexical_morphology_probe.py",
@@ -18180,18 +18124,14 @@
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [],
-   "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
-   "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "morphology.vault.session.en.morph.mrr",
-   "statement": "on the English half of the owner's store, MRR 0.843 with stop words + stems",
-   "value": 0.8432,
+   "statement": "on the English half of the owner's store, MRR 0.852 with stop words + stems",
+   "value": 0.8518,
    "printed": [
-    "0.843"
+    "0.852"
    ],
    "unit": "mrr",
    "dataset": "owner_vault_snapshot",
@@ -18202,7 +18142,7 @@
    "pointer": "protocols.session.halves.en.morph.mrr",
    "ci": null,
    "cited_in": [],
-   "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
+   "commit": "55e33989f85b0be6eb4657a5d91e4cfb0ee0e263",
    "note": "The owner's store, read-only: the summary of a Session note is the query, the typed notes extracted from that session are the relevant set, the pool is the project's typed notes; lexical BM25 only, the engine's own tokenizer switched off (raw) and on (morph). The store is private; the artifact holds rates and counts only, and anyone with a populated store reproduces the shape with one command.",
    "produced_by": [
     "research/lexical_morphology_probe.py",
@@ -18231,11 +18171,7 @@
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [],
-   "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
-   "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "h2h_locomo.nevertwice.recall_at_1",

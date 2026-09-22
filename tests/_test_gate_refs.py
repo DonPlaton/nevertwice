@@ -179,6 +179,22 @@ n, probs = run("Frozen: [[claim:a.live]] / [[claim:a.one]] read 1.000 / 1.000\n"
 check("and a line that puts its figures AFTER the references still pairs",
       len(probs) == 1 and "1.000" in probs[0], str(probs))
 
+print("\n- a markdown table row, which is the form the block is actually written in -")
+#: The first version marked each reference with `" | "` and split on the first `|`. In a table
+#: row that is the table's own pipe, before any reference: `head` came out empty and the paired
+#: branch went silent on every row (audit 2026-09-22). The claim tables in docs/BENCHMARKS.md
+#: and research/LOCOMO.md and the derived frozen block are all markdown tables, so this is the
+#: main form. Positions now come from the original line, never from a substitution - overloading
+#: a character the text itself uses is the defect.
+n, probs = run("| current | 1.000 / 1.000 | [[claim:a.live]] / [[claim:a.one]] |\n")
+check("a table row pairs like any other line", len(probs) == 1 and "1.000" in probs[0],
+      str(probs))
+n, probs = run("| current | 0.983 / 1.0 | [[claim:a.live]] / [[claim:a.one]] |\n")
+check("and a correct table row is silent", not probs, str(probs))
+n, probs = run("| stale | 0.017 / 0.067 | [[claim:a.live]] / [[claim:a.round]] |\n")
+check("only the half that disagrees is reported - 0.067 is a.round's own printed form",
+      len(probs) == 1 and "0.017" in probs[0], str(probs))
+
 print("\n- the two misses, named so they are chosen rather than discovered -")
 #: Both are silences, not false alarms, and that is the direction chosen deliberately: a check
 #: that invents a message gets switched off, a check that misses one is still worth running.
