@@ -162,6 +162,23 @@ check("and the block's own pair is still caught", len(probs) == 1 and "1.000" in
 n, probs = run("Frozen: 0.017 / 0.067 [[claim:a.live]] / [[claim:a.one]]\n")
 check("both halves of a wrong pair are reported", len(probs) == 2, str(probs))
 
+print("\n- a stray number AFTER the references breaks it the same way -")
+#: The first fix took the last run of the whole line, which closed the case where a stray number
+#: stands BEFORE the figures and opened the identical hole after it. A trailing interval paired
+#: the CI bounds against the two claims - two invented messages - and swallowed the real defect;
+#: a trailing date did the same (audit 2026-09-22). Neither form is contrived: the register
+#: itself stores `ci: {low, high}`. The run NEAREST the references pairs now.
+n, probs = run("Frozen: current 1.000 / 1.000 [[claim:a.live]] / [[claim:a.one]] "
+               "(95% CI 0.9412, 0.9954)\n")
+check("a trailing interval does not pair its bounds against the claims",
+      len(probs) == 1 and "1.000" in probs[0], str(probs))
+n, probs = run("Frozen: 0.017 / 0.067 [[claim:a.live]] / [[claim:a.one]], measured 2026, 09\n")
+check("a trailing date does not pair either",
+      len(probs) == 2 and all("2026" not in x for x in probs), str(probs))
+n, probs = run("Frozen: [[claim:a.live]] / [[claim:a.one]] read 1.000 / 1.000\n")
+check("and a line that puts its figures AFTER the references still pairs",
+      len(probs) == 1 and "1.000" in probs[0], str(probs))
+
 print("\n- the two misses, named so they are chosen rather than discovered -")
 #: Both are silences, not false alarms, and that is the direction chosen deliberately: a check
 #: that invents a message gets switched off, a check that misses one is still worth running.

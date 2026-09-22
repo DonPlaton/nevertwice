@@ -175,16 +175,18 @@ the arm is re-measured with the rest of the head-to-head families.
 
 ### LoCoMo, the benchmark this project had excluded on paper
 
-Ten long conversations, five thousand eight hundred turns, all but nine of the questions scored, retrieving the
+Ten long conversations, 5,882 turns, 1,977 of the 1,986 questions scored, retrieving the
 human-annotated evidence turn from the question's own conversation - LoCoMo's own setting. Full
 method and the defect running it found: [`research/LOCOMO.md`](../research/LOCOMO.md).
 Re-measured at the reviewed engine on the cached vectors: every figure reproduced exactly, and
 LoCoMo turns are short enough that the embedding-cap defect never touched them.
 
 <!-- claims:locomo -->
-> **Withdrawn 2026-09.** the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored
->
-> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/locomo_eval.py --save --out=research/results/locomo.json` is what re-measures this one.
+| method | R@1 | R@3 | R@5 | R@10 | MRR |
+|---|---|---|---|---|---|
+| semantic (bge-m3) | 0.182 | 0.340 | 0.432 | 0.560 | 0.301 |
+| lexical (BM25) | 0.339 | 0.527 | 0.601 | 0.681 | 0.459 |
+| **calibrated fusion (shipped default, 0 deps)** | **0.350** | **0.556** | **0.640** | **0.727** | **0.481** |
 <!-- /claims:locomo -->
 
 The exclusion was written around a reported 94% for plain BM25. The term-overlap floor here

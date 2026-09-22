@@ -150,8 +150,17 @@ def check_file(path: Path, claims: dict) -> tuple[int, list[str]]:
         #: and the real defect - 1.000 against a stored 0.9833 - paired with the second
         #: and passing. Counting alone cannot see that: the counts happen to match
         #: (audit 2026-09-22).
-        run = RUN.findall(stripped)
-        paired = BARE.findall(run[-1]) if run else []
+        #: The run NEAREST the references: the last one before the first reference, or - if the
+        #: line puts its figures after - the first one following the last reference. Taking the
+        #: last run of the whole line closed the case where a stray number stands BEFORE the
+        #: figures and opened the same hole after it: a trailing interval
+        #: (`... [[a]] / [[b]] (95% CI 0.9412, 0.9954)`) or a trailing date paired the CI bounds
+        #: against the claims and swallowed the real defect (audit 2026-09-22). Neither form is
+        #: contrived - the register itself stores `ci: {low, high}`.
+        head, _, tail = stripped.partition("|")
+        tail = tail.rpartition("|")[2]
+        before, after = RUN.findall(head), RUN.findall(tail)
+        paired = BARE.findall(before[-1] if before else after[0]) if (before or after) else []
         named = [(cid, claims[cid]) for cid, _ in refs if cid in claims]
         if outside and named and not any(c.get("declaration") for _, c in named):
             def _complain(cid, claim, bare):

@@ -12527,8 +12527,10 @@
     "low": 0.1657,
     "high": 0.1997
    },
-   "cited_in": [],
-   "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
+   "cited_in": [
+    "docs/BENCHMARKS.md"
+   ],
+   "commit": "7921f29b0d916a88453121e19f45e96218a22732",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
     "research/locomo_eval.py",
@@ -12561,13 +12563,7 @@
     "research/corpus_pin.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [
-    "docs/BENCHMARKS.md"
-   ],
-   "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
-   "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "locomo.semantic.recall_at_5",
@@ -12589,8 +12585,10 @@
     "low": 0.4108,
     "high": 0.4544
    },
-   "cited_in": [],
-   "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
+   "cited_in": [
+    "docs/BENCHMARKS.md"
+   ],
+   "commit": "7921f29b0d916a88453121e19f45e96218a22732",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
     "research/locomo_eval.py",
@@ -12623,13 +12621,7 @@
     "research/corpus_pin.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [
-    "docs/BENCHMARKS.md"
-   ],
-   "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
-   "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "locomo.semantic.recall_at_10",
@@ -12651,8 +12643,10 @@
     "low": 0.538,
     "high": 0.5817
    },
-   "cited_in": [],
-   "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
+   "cited_in": [
+    "docs/BENCHMARKS.md"
+   ],
+   "commit": "7921f29b0d916a88453121e19f45e96218a22732",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
     "research/locomo_eval.py",
@@ -12685,13 +12679,7 @@
     "research/corpus_pin.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [
-    "docs/BENCHMARKS.md"
-   ],
-   "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
-   "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "locomo.semantic.mrr",
@@ -12708,8 +12696,10 @@
    "raw": "research/results/locomo.json",
    "pointer": "methods.semantic.mrr",
    "ci": null,
-   "cited_in": [],
-   "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
+   "cited_in": [
+    "docs/BENCHMARKS.md"
+   ],
+   "commit": "7921f29b0d916a88453121e19f45e96218a22732",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
     "research/locomo_eval.py",
@@ -12742,13 +12732,7 @@
     "research/corpus_pin.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [
-    "docs/BENCHMARKS.md"
-   ],
-   "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
-   "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "locomo.lexical.recall_at_1",
@@ -12770,8 +12754,10 @@
     "low": 0.3189,
     "high": 0.3606
    },
-   "cited_in": [],
-   "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
+   "cited_in": [
+    "docs/BENCHMARKS.md"
+   ],
+   "commit": "7921f29b0d916a88453121e19f45e96218a22732",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
     "research/locomo_eval.py",
@@ -12804,13 +12790,7 @@
     "research/corpus_pin.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [
-    "docs/BENCHMARKS.md"
-   ],
-   "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
-   "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "locomo.lexical.recall_at_5",
@@ -12832,8 +12812,10 @@
     "low": 0.5797,
     "high": 0.6228
    },
-   "cited_in": [],
-   "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
+   "cited_in": [
+    "docs/BENCHMARKS.md"
+   ],
+   "commit": "7921f29b0d916a88453121e19f45e96218a22732",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
     "research/locomo_eval.py",
@@ -12866,13 +12848,7 @@
     "research/corpus_pin.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [
-    "docs/BENCHMARKS.md"
-   ],
-   "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
-   "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "locomo.lexical.recall_at_10",
@@ -12894,8 +12870,10 @@
     "low": 0.6599,
     "high": 0.701
    },
-   "cited_in": [],
-   "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
+   "cited_in": [
+    "docs/BENCHMARKS.md"
+   ],
+   "commit": "7921f29b0d916a88453121e19f45e96218a22732",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
     "research/locomo_eval.py",
@@ -12928,13 +12906,7 @@
     "research/corpus_pin.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [
-    "docs/BENCHMARKS.md"
-   ],
-   "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
-   "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "locomo.lexical.mrr",
@@ -12951,8 +12923,10 @@
    "raw": "research/results/locomo.json",
    "pointer": "methods.lexical.mrr",
    "ci": null,
-   "cited_in": [],
-   "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
+   "cited_in": [
+    "docs/BENCHMARKS.md"
+   ],
+   "commit": "7921f29b0d916a88453121e19f45e96218a22732",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
     "research/locomo_eval.py",
@@ -12985,13 +12959,7 @@
     "research/corpus_pin.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [
-    "docs/BENCHMARKS.md"
-   ],
-   "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
-   "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "locomo.hybrid.recall_at_1",
@@ -13013,8 +12981,10 @@
     "low": 0.3293,
     "high": 0.3713
    },
-   "cited_in": [],
-   "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
+   "cited_in": [
+    "docs/BENCHMARKS.md"
+   ],
+   "commit": "7921f29b0d916a88453121e19f45e96218a22732",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
     "research/locomo_eval.py",
@@ -13047,13 +13017,7 @@
     "research/corpus_pin.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [
-    "docs/BENCHMARKS.md"
-   ],
-   "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
-   "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "locomo.hybrid.recall_at_5",
@@ -13075,8 +13039,10 @@
     "low": 0.619,
     "high": 0.6612
    },
-   "cited_in": [],
-   "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
+   "cited_in": [
+    "docs/BENCHMARKS.md"
+   ],
+   "commit": "7921f29b0d916a88453121e19f45e96218a22732",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
     "research/locomo_eval.py",
@@ -13109,13 +13075,7 @@
     "research/corpus_pin.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [
-    "docs/BENCHMARKS.md"
-   ],
-   "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
-   "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "locomo.hybrid.recall_at_10",
@@ -13137,8 +13097,10 @@
     "low": 0.7068,
     "high": 0.746
    },
-   "cited_in": [],
-   "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
+   "cited_in": [
+    "docs/BENCHMARKS.md"
+   ],
+   "commit": "7921f29b0d916a88453121e19f45e96218a22732",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
     "research/locomo_eval.py",
@@ -13171,13 +13133,7 @@
     "research/corpus_pin.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [
-    "docs/BENCHMARKS.md"
-   ],
-   "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
-   "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "locomo.hybrid.mrr",
@@ -13194,8 +13150,10 @@
    "raw": "research/results/locomo.json",
    "pointer": "methods.hybrid.mrr",
    "ci": null,
-   "cited_in": [],
-   "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
+   "cited_in": [
+    "docs/BENCHMARKS.md"
+   ],
+   "commit": "7921f29b0d916a88453121e19f45e96218a22732",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
     "research/locomo_eval.py",
@@ -13228,13 +13186,7 @@
     "research/corpus_pin.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [
-    "docs/BENCHMARKS.md"
-   ],
-   "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
-   "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "locomo.dataset.questions_scored",
@@ -13252,8 +13204,10 @@
    "raw": "research/results/locomo.json",
    "pointer": "questions",
    "ci": null,
-   "cited_in": [],
-   "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
+   "cited_in": [
+    "docs/BENCHMARKS.md"
+   ],
+   "commit": "7921f29b0d916a88453121e19f45e96218a22732",
    "produced_by": [
     "research/locomo_eval.py",
     "nevertwice/_engine.py",
@@ -13285,13 +13239,7 @@
     "research/corpus_pin.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [
-    "docs/BENCHMARKS.md"
-   ],
-   "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
-   "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "locomo.dataset.questions_total",
@@ -13309,8 +13257,10 @@
    "raw": "research/results/locomo.json",
    "pointer": "provenance.questions",
    "ci": null,
-   "cited_in": [],
-   "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
+   "cited_in": [
+    "docs/BENCHMARKS.md"
+   ],
+   "commit": "7921f29b0d916a88453121e19f45e96218a22732",
    "derivation": "the corpus record in research/corpus_pin.py; the result file carries only the scoreable subset",
    "produced_by": [
     "research/locomo_eval.py",
@@ -13344,13 +13294,7 @@
     "research/longmem_eval.py",
     "sandbox_guard.py"
    ],
-   "note": "Restored by hand at 9262543 (2026-09-11): no pointer to read it through, so the value was re-checked against the campaign artifact - research/results/locomo.json: provenance.questions = 1986 - and the commit restamped. Restored by hand at b72a1ff (2026-09-12, campaign B): the corpus carries 1,986 questions, research/results/locomo.json scores 1,977 of them as before Restored by hand at 32796e8 (2026-09-18, campaign K8-C): the corpus carries 1,986 questions; research/results/locomo.json scores 1977 of them Restored by hand at 71f83a1 (2026-09-19, the campaign at 71f83a1): the corpus carries 1,986 questions; this run scored 1977 of them",
-   "cited_in_pending": [
-    "docs/BENCHMARKS.md"
-   ],
-   "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
-   "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "note": "Restored by hand at 9262543 (2026-09-11): no pointer to read it through, so the value was re-checked against the campaign artifact - research/results/locomo.json: provenance.questions = 1986 - and the commit restamped. Restored by hand at b72a1ff (2026-09-12, campaign B): the corpus carries 1,986 questions, research/results/locomo.json scores 1,977 of them as before Restored by hand at 32796e8 (2026-09-18, campaign K8-C): the corpus carries 1,986 questions; research/results/locomo.json scores 1977 of them Restored by hand at 71f83a1 (2026-09-19, the campaign at 71f83a1): the corpus carries 1,986 questions; this run scored 1977 of them"
   },
   {
    "id": "locomo.dataset.turns",
@@ -13368,8 +13312,10 @@
    "raw": "research/results/locomo.json",
    "pointer": "turns",
    "ci": null,
-   "cited_in": [],
-   "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
+   "cited_in": [
+    "docs/BENCHMARKS.md"
+   ],
+   "commit": "7921f29b0d916a88453121e19f45e96218a22732",
    "produced_by": [
     "research/locomo_eval.py",
     "nevertwice/_engine.py",
@@ -13401,13 +13347,7 @@
     "research/corpus_pin.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [
-    "docs/BENCHMARKS.md"
-   ],
-   "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
-   "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "locomo.semantic.recall_at_3",
@@ -13430,7 +13370,7 @@
     "high": 0.3616
    },
    "cited_in": [],
-   "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
+   "commit": "7921f29b0d916a88453121e19f45e96218a22732",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
     "research/locomo_eval.py",
@@ -13463,11 +13403,7 @@
     "research/corpus_pin.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [],
-   "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
-   "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "locomo.lexical.recall_at_3",
@@ -13490,7 +13426,7 @@
     "high": 0.5485
    },
    "cited_in": [],
-   "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
+   "commit": "7921f29b0d916a88453121e19f45e96218a22732",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
     "research/locomo_eval.py",
@@ -13523,11 +13459,7 @@
     "research/corpus_pin.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [],
-   "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
-   "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "locomo.hybrid.recall_at_3",
@@ -13550,7 +13482,7 @@
     "high": 0.5777
    },
    "cited_in": [],
-   "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
+   "commit": "7921f29b0d916a88453121e19f45e96218a22732",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
     "research/locomo_eval.py",
@@ -13583,11 +13515,7 @@
     "research/corpus_pin.py",
     "research/longmem_eval.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [],
-   "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
-   "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "locomo_raw.semantic.recall_at_1",
@@ -34164,7 +34092,7 @@
    "command": "python research/locomo_eval.py --save --out=research/results/locomo.json",
    "raw": "research/results/locomo.json",
    "cited_in": [],
-   "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
+   "commit": "7921f29b0d916a88453121e19f45e96218a22732",
    "note": "",
    "produced_by": [
     "research/locomo_eval.py",
@@ -34200,11 +34128,7 @@
    ],
    "pointer": "by_category_recall_at_5[\"1\"].hybrid",
    "ci": null,
-   "ci_note": "the artifact records the per-category rate, not its count",
-   "cited_in_pending": [],
-   "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
-   "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "ci_note": "the artifact records the per-category rate, not its count"
   },
   {
    "id": "locomo.hybrid.by_category.2.recall_at_5",
@@ -34220,7 +34144,7 @@
    "command": "python research/locomo_eval.py --save --out=research/results/locomo.json",
    "raw": "research/results/locomo.json",
    "cited_in": [],
-   "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
+   "commit": "7921f29b0d916a88453121e19f45e96218a22732",
    "note": "",
    "produced_by": [
     "research/locomo_eval.py",
@@ -34256,11 +34180,7 @@
    ],
    "pointer": "by_category_recall_at_5[\"2\"].hybrid",
    "ci": null,
-   "ci_note": "the artifact records the per-category rate, not its count",
-   "cited_in_pending": [],
-   "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
-   "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "ci_note": "the artifact records the per-category rate, not its count"
   },
   {
    "id": "locomo.hybrid.by_category.3.recall_at_5",
@@ -34276,7 +34196,7 @@
    "command": "python research/locomo_eval.py --save --out=research/results/locomo.json",
    "raw": "research/results/locomo.json",
    "cited_in": [],
-   "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
+   "commit": "7921f29b0d916a88453121e19f45e96218a22732",
    "note": "",
    "produced_by": [
     "research/locomo_eval.py",
@@ -34312,11 +34232,7 @@
    ],
    "pointer": "by_category_recall_at_5[\"3\"].hybrid",
    "ci": null,
-   "ci_note": "the artifact records the per-category rate, not its count",
-   "cited_in_pending": [],
-   "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
-   "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "ci_note": "the artifact records the per-category rate, not its count"
   },
   {
    "id": "locomo.hybrid.by_category.4.recall_at_5",
@@ -34332,7 +34248,7 @@
    "command": "python research/locomo_eval.py --save --out=research/results/locomo.json",
    "raw": "research/results/locomo.json",
    "cited_in": [],
-   "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
+   "commit": "7921f29b0d916a88453121e19f45e96218a22732",
    "note": "",
    "produced_by": [
     "research/locomo_eval.py",
@@ -34368,11 +34284,7 @@
    ],
    "pointer": "by_category_recall_at_5[\"4\"].hybrid",
    "ci": null,
-   "ci_note": "the artifact records the per-category rate, not its count",
-   "cited_in_pending": [],
-   "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
-   "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "ci_note": "the artifact records the per-category rate, not its count"
   },
   {
    "id": "locomo.hybrid.by_category.5.recall_at_5",
@@ -34388,7 +34300,7 @@
    "command": "python research/locomo_eval.py --save --out=research/results/locomo.json",
    "raw": "research/results/locomo.json",
    "cited_in": [],
-   "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
+   "commit": "7921f29b0d916a88453121e19f45e96218a22732",
    "note": "",
    "produced_by": [
     "research/locomo_eval.py",
@@ -34424,11 +34336,7 @@
    ],
    "pointer": "by_category_recall_at_5[\"5\"].hybrid",
    "ci": null,
-   "ci_note": "the artifact records the per-category rate, not its count",
-   "cited_in_pending": [],
-   "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
-   "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "ci_note": "the artifact records the per-category rate, not its count"
   },
   {
    "id": "dilution.named.worse_with_block",
@@ -55803,6 +55711,11 @@
    "pattern": "^(0[1-9]|1[0-2]|[12][0-9]|3[01])$",
    "context": "20\\d{2}-\\d{2}",
    "reason": "the month or day of an ISO date on the same line - not a measurement. Accounted for only by coincidence until 2026-09: whichever claim happened to print the same two digits covered it, and withdrawing that claim exposed the date."
+  },
+  {
+   "literal": "0.037",
+   "context": "The first run of this file reported|Namespacing the ids",
+   "reason": "the value the FIRST run of research/LOCOMO.md reported before the id collision was found - a defect in the harness, not a measurement of the ranker, and the page keeps it because deleting the number one was wrong about destroys the record of having been wrong. Scoped by context so the figure is excused only on the two lines that narrate the defect; it became visible when the locomo family was restored on 2026-09-22 and the page came under the rule for the first time."
   }
  ],
  "drift_note": "A drift entry records a number a document prints that the stored raw result contradicts. All five entries opened by task B1 were closed by task B2: the tables are generated from this manifest now, and the prose around them was corrected to the stored values. Open a new entry when a published figure is found to disagree and cannot be corrected in the same change; the test fails once the document no longer prints it, so an entry cannot outlive its fix.",
