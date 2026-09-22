@@ -204,5 +204,35 @@ finally:
     _raw.unlink(missing_ok=True)
 
 
+print("")
+print("- a guard that cannot do its job refuses, rather than falling silent -")
+#: Both guards used to return None when the pointer could not be walked - "I see no mismatch",
+#: which is what they also return on healthy data. That was safe only because `restore` resolves
+#: the pointer BEFORE calling them and drops the claim when that fails: a dependency on the ORDER
+#: of two calls, written down nowhere, and no test would have noticed the guards being moved
+#: above it. Rather than record the dependency in a comment, the branch was measured - 807
+#: pointers in the register walked, ZERO exceptions in either guard - and made to refuse, which
+#: costs nothing today and makes the order irrelevant. Found by the auditing session, 2026-09-22.
+_pair_claim = {"id": "supersession.mem0_vs_naive.p_mcnemar", "pointer": "pairs[0].p_mcnemar"}
+_said = rm.pair_mismatch(_pair_claim, {"pairs": {"not": "a list"}})
+check("`pair_mismatch` on a pointer it cannot walk says so instead of nothing",
+      _said is not None and "cannot be walked" in _said, repr(_said))
+
+_shape_claim = {"id": "abstention.recall", "pointer": "recall_sweep[0].threshold",
+                "shape": [{"at": "recall_sweep", "len": 6, "keys": ["recall", "threshold"]}]}
+_said = rm.shape_mismatch(_shape_claim, {"recall_sweep": 7})
+check("`shape_mismatch` on a pointer it cannot walk says so instead of nothing",
+      _said is not None and "cannot be walked" in _said, repr(_said))
+
+#: The other half of the property: refusing an unwalkable pointer must not make the guards
+#: trigger-happy on the claims they exist for. Healthy data still passes both.
+check("and neither guard has started refusing healthy data",
+      rm.pair_mismatch({"id": "supersession.mem0_vs_naive.p", "pointer": "pairs[0].p"},
+                       {"pairs": [{"a": "mem0", "b": "naive", "p": 0.1}]}) is None
+      and rm.shape_mismatch(_shape_claim,
+                            {"recall_sweep": [{"threshold": t, "recall": 0.5} for t in range(6)]})
+      is None)
+
+
 print(f"\nremeasure: {len(RUN) - len(FAILED)} passed, {len(FAILED)} failed")
 sys.exit(1 if FAILED else 0)

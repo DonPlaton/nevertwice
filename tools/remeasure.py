@@ -100,8 +100,14 @@ def pair_mismatch(claim: dict, data) -> str | None:
         return None
     try:
         row = resolve(data, f"{mp.group(1)}[{mp.group(2)}]")
-    except (KeyError, IndexError, TypeError):
-        return None                       # the pointer itself is checked by the caller
+    except (KeyError, IndexError, TypeError) as e:
+        #: A guard that goes SILENT when it cannot do its job is only safe while something else
+        #: refuses the same input - here `restore` resolving the pointer five lines earlier. That
+        #: is a dependency on call ORDER, and nothing recorded it: move the guards above the
+        #: resolve and their silence becomes the whole answer. Measured 2026-09-22 across the
+        #: register: 807 pointers walked, ZERO exceptions in either guard - the branch is dead
+        #: code, so refusing here costs nothing today and removes the order dependency entirely.
+        return f"`{ptr}` cannot be walked in this artifact ({type(e).__name__})"
     if not isinstance(row, dict) or "a" not in row or "b" not in row:
         return None
     want, got = {mi.group(1), mi.group(2)}, {str(row["a"]), str(row["b"])}
@@ -149,8 +155,10 @@ def shape_mismatch(claim: dict, data) -> str | None:
         return None
     try:
         now = list_shape(data, claim.get("pointer") or "")
-    except (KeyError, IndexError, TypeError):
-        return None                       # the pointer itself is checked by the caller
+    except (KeyError, IndexError, TypeError) as e:
+        #: Refuse rather than fall silent - see `pair_mismatch` above for why the silent form was
+        #: safe only by accident of call order.
+        return f"`{claim.get('pointer')}` cannot be walked in this artifact ({type(e).__name__})"
     if now == recorded:
         return None
     for was, isnow in zip(recorded, now + [None] * len(recorded)):
