@@ -217,6 +217,101 @@ def test_the_citation_agrees_with_the_package() -> None:
     check("the contract reports on CITATION.cff", "CITATION.cff" in proc.stdout)
 
 
+def test_a_documented_flag_is_a_flag_the_script_defines() -> None:
+    """A command a page tells a reader to run must not name a flag its script never defines.
+
+    Found the hard way in a working document: the campaign package told the reader to smoke each
+    of eight stands with `--limit 3`, and `research/abstention_ab.py` answers
+    `error: unrecognized arguments: --limit 3` - it takes `--stages` and `--per-stage`. The
+    command had been written from memory of how the stands are built rather than from their
+    `add_argument` calls, which is the same gap as an instruction compared with its description
+    instead of its PRODUCT.
+
+    The tracked pages turned out to be clean, and the rule that says so took four tries to build:
+    a first version read only `argparse` and reported 16 offenders in scripts that parse
+    `sys.argv` by hand; a second missed literals written `"--entity="`; a third missed names a
+    helper reads without the dashes, `m.argint(argv, "days", 7)`; a fourth missed flags a helper
+    registers on the parser, `corpora.add_corpus_argument(ap)`. Every one of those was the rule
+    finding itself rather than a defect.
+
+    So this gate refuses to guess. It judges only commands whose script has a CLOSED parser -
+    argparse, no helper registration, no `parents=` - where the flags really are enumerable, and
+    says how many commands that is. The rest are out of scope by construction, stated rather than
+    silently skipped.
+    """
+    import ast as _ast
+
+    CMD = re.compile(r"(?:^|\n)\s*(?:\$ )?((?:[A-Z_]+=\S+\s+)*python[3]? +(?:-m +)?[\w./-]+[^\n]*)")
+    FLAG = re.compile(r"(?<![\w-])--[a-z][a-z0-9-]*")
+    #: A parser this rule may not enumerate: someone else adds arguments to it.
+    OPEN_PARSER = re.compile(r"\badd_\w+_argument\(\s*\w+\s*\)|\bparents\s*=")
+
+    def closed_parser_flags(script: Path):
+        """Every flag of a script whose parser is fully enumerable here, or None."""
+        try:
+            src = script.read_text(encoding="utf-8", errors="replace")
+            tree = _ast.parse(src)
+        except (OSError, SyntaxError):
+            return None
+        if "argparse" not in src or OPEN_PARSER.search(src):
+            return None
+        out = set()
+        for n in _ast.walk(tree):
+            if (isinstance(n, _ast.Call) and isinstance(n.func, _ast.Attribute)
+                    and n.func.attr == "add_argument"):
+                for a in n.args:
+                    if isinstance(a, _ast.Constant) and isinstance(a.value, str) \
+                            and a.value.startswith("--"):
+                        out.add(a.value)
+        return out or None
+
+    def script_of(command: str):
+        parts = command.split()
+        for i, p in enumerate(parts):
+            if p in ("python", "python3"):
+                nxt = parts[i + 1:i + 3]
+                if nxt and nxt[0] == "-m" and len(nxt) > 1:
+                    return ROOT / (nxt[1].replace(".", "/") + ".py")
+                if nxt:
+                    return ROOT / nxt[0]
+                return None
+        return None
+
+    print("")
+    print("- a flag a page tells you to type is a flag the script takes -")
+    #: The rule bites before its silence counts: a planted command must be refused, or a zero
+    #: below would be this rule's blindness rather than the pages' state.
+    probe = ROOT / "tools" / "remeasure.py"
+    known = closed_parser_flags(probe)
+    check("the rule can enumerate a closed parser", bool(known), str(probe.name))
+    check("and it refuses a flag that parser does not define",
+          "--nosuchflag" not in (known or set()))
+    check("while accepting one it does", "--restore" in (known or set()), str(sorted(known or [])[:6]))
+
+    judged, offenders = 0, []
+    listed = subprocess.run(["git", "ls-files", "*.md"], cwd=ROOT, capture_output=True,
+                            text=True, encoding="utf-8").stdout.split()
+    for rel in listed:
+        text = (ROOT / rel).read_text(encoding="utf-8", errors="replace")
+        for m in CMD.finditer(text):
+            command = m.group(1)
+            target = script_of(command)
+            if not target or not target.is_file():
+                continue
+            flags = closed_parser_flags(target)
+            if flags is None:
+                continue            # an open parser: out of scope, by construction
+            judged += 1
+            unknown = sorted(set(FLAG.findall(command)) - flags)
+            if unknown:
+                offenders.append(f"{rel}: {target.name} has no {', '.join(unknown)}")
+    check(f"there are documented commands with an enumerable parser ({judged})",
+          judged >= 30, str(judged))
+    check("every flag they name is one the script defines", not offenders,
+          "; ".join(offenders[:4]))
+
+
+
 def test_zz_every_check_passed() -> None:
     """Bare pytest must reach the same verdict as this suite's exit code.
 
