@@ -78,6 +78,33 @@ died_early = {"probe.short": {"family": "probe", "born": head - dt.timedelta(day
 check("and one that died on day one counts as observed but not survived",
       H.survival(died_early, head, 7) == (0, 1))
 
+print("\n- the committed artifact is re-derived at the state it names, not trusted -")
+#: The first version of this suite recomputed everything and checked the recomputation, and never
+#: opened `research/results/claim_halflife.json` at all. The auditing session edited a survivor
+#: count in that file by hand and the suite stayed ALL OK (2026-09-22): the page's evidence was
+#: unguarded exactly the way a claim's evidence is not. The artifact now names the HEAD it was
+#: generated at, so it can be re-derived - and a number changed by hand no longer agrees with it.
+import json as _json  # noqa: E402
+
+ART = ROOT / "research" / "results" / "claim_halflife.json"
+check("the artifact the page cites is committed", ART.exists())
+if ART.exists():
+    art = _json.loads(ART.read_text(encoding="utf-8"))
+    check("and it names the state it is a snapshot of", bool(art.get("head")), str(art.get("head")))
+    at_head, head_at = H.lifetimes(art["head"])
+    for days in (1, 7, 14):
+        s, n = H.survival(at_head, head_at, days)
+        was = art["overall"][str(days)]
+        check(f"{days}-day row re-derives at {art['head'][:7]}: {s}/{n}",
+              (s, n) == (was["survived"], was["observed"]),
+              f"artifact says {was['survived']}/{was['observed']}")
+    horizon = dt.timedelta(days=art["survivors"]["horizon_days"])
+    again = [cid for cid, r in at_head.items()
+             if head_at - r["born"] >= horizon
+             and (r["died"] is None or r["died"] - r["born"] >= horizon)]
+    check("and the survivor count re-derives too", len(again) == art["survivors"]["count"],
+          f"{len(again)} against {art['survivors']['count']}")
+
 print("\n- what survives is a frozen artefact, which is the finding rather than the rate -")
 horizon = dt.timedelta(days=14)
 long = [cid for cid, r in records.items()

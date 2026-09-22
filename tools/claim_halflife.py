@@ -30,6 +30,7 @@ from __future__ import annotations
 import argparse
 import collections
 import datetime as dt
+import hashlib
 import json
 import subprocess
 import sys
@@ -45,10 +46,17 @@ def _git(*args: str) -> str:
                           encoding="utf-8", errors="replace").stdout
 
 
-def history() -> list[tuple[str, dt.datetime]]:
-    """Every commit that touched the register, oldest first."""
+def history(until: str = "HEAD") -> list[tuple[str, dt.datetime]]:
+    """Every commit that touched the register up to `until`, oldest first.
+
+    `until` exists so a committed artifact can be RE-DERIVED at the state it names. Without it
+    the numbers are a function of "now": the artifact drifts from the page with every commit and
+    nothing can tell drift from tampering - the auditing session changed a survivor count in the
+    committed file by hand and the suite stayed green (2026-09-22).
+    """
     out = []
-    for line in _git("log", "--format=%H %cI", "--reverse", "--", MANIFEST_PATH).splitlines():
+    for line in _git("log", "--format=%H %cI", "--reverse", until, "--",
+                     MANIFEST_PATH).splitlines():
         if not line.strip():
             continue
         sha, when = line.split()
@@ -66,10 +74,10 @@ def claims_at(sha: str) -> list[dict]:
     return list(c.values() if isinstance(c, dict) else c)
 
 
-def lifetimes() -> tuple[dict[str, dict], dt.datetime]:
-    """{id: {family, born, died}} over the register's whole history."""
+def lifetimes(until: str = "HEAD") -> tuple[dict[str, dict], dt.datetime]:
+    """{id: {family, born, died}} over the register's history up to `until`."""
     seen: dict[str, dict] = {}
-    commits = history()
+    commits = history(until)
     for sha, when in commits:
         for c in claims_at(sha):
             cid = c.get("id")
@@ -104,7 +112,16 @@ def main(argv: list[str] | None = None) -> int:
 
     records, head = lifetimes()
     span = head - min(r["born"] for r in records.values())
-    report: dict = {"claims": len(records), "history_days": round(span.total_seconds() / 86400, 1),
+    #: The state these numbers are a snapshot OF. Without it "28.5 days over 160 commits" is a
+    #: figure with no address - true when it was printed, unfalsifiable afterwards - which is the
+    #: defect this repository pins corpora and vector caches to avoid (`corpus_pin.record`,
+    #: `locomo_eval._cache_identity`). With it, the page may say "as of <sha>" and stay true.
+    head_sha = _git("rev-parse", "HEAD").strip()
+    manifest_sha = hashlib.sha256(
+        (ROOT / MANIFEST_PATH).read_bytes()).hexdigest() if (ROOT / MANIFEST_PATH).exists() else ""
+    report: dict = {"head": head_sha, "manifest_sha256": manifest_sha,
+                    "register_commits": len(history()),
+                    "claims": len(records), "history_days": round(span.total_seconds() / 86400, 1),
                     "overall": {}, "by_family": {}}
     for d in HORIZONS:
         s, n = survival(records, head, d)

@@ -7,6 +7,13 @@ survival curve, computed from the register's own git history rather than asserte
 
     python tools/claim_halflife.py --save    ->  research/results/claim_halflife.json
 
+**Every number on this page is as of `737444c`**, and the artifact records that commit plus the
+sha256 of the register it read. A figure computed from a history that grows is meaningless without
+the state it was computed at: it is true when printed and unfalsifiable afterwards. With the state
+named, the page can be checked by re-deriving it - `tests/_test_claim_halflife.py` does exactly
+that, and a number edited by hand in the artifact no longer agrees with the history it claims to
+summarise.
+
 **Definitions.** A claim is *born* in the first commit where its id appears, and *dies* in the
 first commit after that where it carries `stale` or `pending_remeasure`. Right-censoring is
 handled the only honest way: a claim born five days ago cannot be asked whether it survived seven,
@@ -21,7 +28,7 @@ so it is excluded from the seven-day row rather than counted as a survivor.
 | 14 days | 14 | 272 | 0.051 |
 | 30 days | 0 | 0 | the register is younger than the question |
 
-The register's history spans 28.5 days over 160 commits, so no claim in it has had the chance to
+At `737444c` the register's history spans 28.5 days over 161 commits, so no claim in it has had the chance to
 live a month. That row stays empty until the calendar fills it; a six-month figure is not
 something this repository can produce by computing harder.
 

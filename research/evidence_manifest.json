@@ -551,7 +551,7 @@
   },
   "research/CLAIM_HALFLIFE.md": {
    "governance": "exempt",
-   "reason": "a measurement OF the register rather than with it: every number is recomputed from the register's own git history by `tools/claim_halflife.py --save`, and changes with each commit that touches the manifest. Registering them as claims would create claims that are stale by construction - a claim about the register cannot survive the register being written to. The artifact `research/results/claim_halflife.json` is committed and the command is one line, so the page is checkable by running it rather than by pointing at a claim id."
+   "reason": "a historical snapshot rather than a current measurement: survival is a property of the register's past, and the register publishes what holds now. The first reason given here was that such claims would be stale by construction, which proves too much - by that argument any claim with a fast-moving input would be exempt, and this project's answer to that is to PIN the input, as `corpus_pin` and the vector cache do. So the artifact pins its own: it records the HEAD and the register's sha256, the page states `as of <sha>`, and `tests/_test_claim_halflife.py` re-derives every published row at that commit instead of trusting the file."
   },
   "research/CODE_SESSIONS.md": {
    "governance": "governed",
