@@ -223,7 +223,21 @@ def probe() -> dict:
     rec["installed_is_loader"] = "_engine" in source and len(source) < 20000
     rec.update(sync_commit(path))
 
-    carried = features_in(source)
+    #: Read the INSTALLED side the way the repository side is read, or the census compares a
+    #: 3 KB loader against ~460 KB of engine and calls every feature that lives in a part
+    #: missing. The docstring of `repo_engine_files` says exactly this about the repository and
+    #: the same sentence was never applied here: measured 2026-09-22, right after a successful
+    #: `sync_install.py --apply`, this probe printed "installed hook LAGS the repo on 11
+    #: feature(s)" while all eleven were physically present in `_engine_write.py`,
+    #: `_engine_notes.py` and `_engine_recall.py` next to the loader. A check extended on one
+    #: side of a seam is the split's own defect, found by the auditing session.
+    installed_files = [path] + sorted(path.parent.glob("_engine*.py"))
+    installed_src = "".join(f.read_text(encoding="utf-8", errors="replace")
+                            for f in installed_files)
+    rec["installed_parts"] = [f.name for f in installed_files]
+    rec["installed_engine_bytes"] = len(installed_src.encode("utf-8"))
+
+    carried = features_in(installed_src)
     repo_src = "".join(f.read_text(encoding="utf-8", errors="replace") for f in repo_engine_files())
     in_repo = features_in(repo_src)
 

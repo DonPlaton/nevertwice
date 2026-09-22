@@ -83,6 +83,40 @@ with tempfile.TemporaryDirectory() as td:
     check("a settings file that invokes no memory hook is a None",
           probe.installed_hook_path(s) is None)
 
+print("")
+print("- the census reads BOTH sides of the split, not one -")
+#: The repository side was taught about the split (`repo_engine_files` walks the loader's own
+#: `ENGINE_PARTS`); the installed side kept reading the single file the hook command names, which
+#: after the split is a 3 KB loader. So the probe compared 3 KB against ~460 KB and called every
+#: feature living in a part missing: measured 2026-09-22, right after a successful
+#: `sync_install.py --apply`, it printed "installed hook LAGS the repo on 11 feature(s)" with all
+#: eleven physically present beside the loader. Found by the auditing session; a check extended on
+#: one side of a seam is the split's own defect.
+_td2 = tempfile.mkdtemp()
+_dir = Path(_td2) / "scripts"
+_dir.mkdir(parents=True, exist_ok=True)
+(_dir / "memory_hook.py").write_text("import _engine  # loader only\n", encoding="utf-8")
+_parts = "\n".join(f"{name} = 1" for name in list(probe.FEATURES)[:4])
+(_dir / "_engine_write.py").write_text(_parts + "\n", encoding="utf-8")
+
+_loader_only = probe.features_in((_dir / "memory_hook.py").read_text(encoding="utf-8"))
+check("reading the loader alone finds none of the features it loads",
+      not any(_loader_only.values()), str(sum(_loader_only.values())))
+_both = probe.features_in("".join(f.read_text(encoding="utf-8")
+                                  for f in [_dir / "memory_hook.py"]
+                                  + sorted(_dir.glob("_engine*.py"))))
+check("reading the loader AND its parts finds them",
+      sum(_both.values()) == 4, str(sum(_both.values())))
+
+#: And the live probe, on this machine's real install, must not report a lag it cannot name.
+_rec = probe.probe()
+check("the probe reads more than the loader from the install",
+      _rec.get("installed_engine_bytes", 0) > 4 * _rec.get("installed_bytes", 1),
+      f"engine {_rec.get('installed_engine_bytes')} vs loader {_rec.get('installed_bytes')}")
+check("and it names the files it read",
+      len(_rec.get("installed_parts") or []) >= 2, str(_rec.get("installed_parts"))[:90])
+
+
 print()
 print(f"installed engine probe: {P} passed, {F} failed")
 sys.exit(1 if F else 0)
