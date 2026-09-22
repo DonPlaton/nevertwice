@@ -45,16 +45,19 @@ jobs:
         # and "twelve red jobs" turned out to mean "one defect per job, count unknown". Each
         # fix would then have bought exactly one more layer, at a matrix run apiece.
         run: |
+          total=$(ls tests/_test_*.py | wc -l)
           failed=()
           for t in tests/_test_*.py; do
             python "$t" || failed+=("$t")
           done
           if [ ${#failed[@]} -gt 0 ]; then
-            printf '\n%d of %d core suite(s) failed:\n' "${#failed[@]}" "$(ls tests/_test_*.py | wc -l)"
-            printf '  %s\n' "${failed[@]}"
+            echo ""
+            echo "${#failed[@]} of $total core suite(s) failed:"
+            for t in "${failed[@]}"; do echo "  $t"; done
             exit 1
           fi
-          printf '\nall %d core suites passed\n' "$(ls tests/_test_*.py | wc -l)"
+          echo ""
+          echo "all $total core suites passed"
 
   # The research/ harnesses are maintainer dev-tools (not in the wheel); they run on current
   # Python only, so they may use newer syntax than the product's 3.10 floor.
@@ -74,13 +77,13 @@ jobs:
             python "$t" || failed+=("$t")
           done
           if [ ${#failed[@]} -gt 0 ]; then
-            printf '
-%d research suite(s) failed:
-' "${#failed[@]}"
-            printf '  %s
-' "${failed[@]}"
+            echo ""
+            echo "${#failed[@]} research suite(s) failed:"
+            for t in "${failed[@]}"; do echo "  $t"; done
             exit 1
           fi
+          echo ""
+          echo "all research suites passed"
 
   # The path a contributor actually follows. The matrix above proves the suites pass when
   # run directly; this proves they pass the way README and CONTRIBUTING tell people to run
