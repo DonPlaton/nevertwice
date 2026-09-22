@@ -95,9 +95,10 @@ def _code_sha() -> str:
     is a guard someone switches off. The glob is coarser and it is the same for every run.
 
     What it covers, counted rather than assumed: `rglob` walks the whole package, which today is
-    63 files - 59 at the top level plus `integrations/` (3) and `invariants/` (1). The top-level
-    count alone is the number a person reads off `ls`, and writing it beside an `rglob` would
-    leave the comment and the hash disagreeing about the subpackages.
+    63 files - 59 at the top level plus `integrations/` (3) and `invariants/` (1) - and the stand
+    itself makes 64 hashed in all. The top-level count alone is the number a person reads off
+    `ls`, and writing it beside an `rglob` would leave the comment and the hash disagreeing about
+    the subpackages.
 
     The cost of the coarseness, stated: an edit to a package module this stand never calls also
     changes the hash. That refusal is conservative rather than wrong - between two runs of one
@@ -111,8 +112,8 @@ def _code_sha() -> str:
     # files of equal content would leave the hash still. And sorted as STRINGS rather than as
     # `Path` objects, because `sorted(Path...)` is platform-dependent twice over: Windows
     # compares a lowercased string with `\` (0x5C), POSIX the raw string with `/` (0x2F), and
-    # digits and capitals lie between those two bytes. Today's 63 files happen to sort the same
-    # either way - checked - but `nevertwice/Z.py` beside `nevertwice/invariants/` is enough to
+    # digits and capitals lie between those two bytes. Today's 64 sort the same either way
+    # - checked - but `nevertwice/Z.py` beside `nevertwice/invariants/` is enough to
     # split them, and then one unchanged tree hashes differently on Windows and on Linux. The
     # refusal would land on the cross-OS CI run, which is exit criterion 4, and be false.
     files = sorted(p.relative_to(ROOT).as_posix()
