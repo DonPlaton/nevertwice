@@ -145,10 +145,23 @@ def run_corpus(store: Path) -> dict:
     m._ROOTS_NORM = [m._norm_path(str(Path(PROJ_DIR).parent))]
     #: The corpus has to live somewhere, and every writable somewhere in a test is under the
     #: OS temp tree, which `_EXCLUDE_FRAGMENTS` rejects as transient. That rule is real and has
-    #: its own suite (`_test_memory_v3`); it is not what this proof is about, so the fragment
-    #: is lifted here and only here.
-    m._EXCLUDE_FRAGMENTS = [f for f in m._EXCLUDE_FRAGMENTS
-                            if 'temp' not in f.lower() and 'tmp' not in f.lower()]
+    #: its own suite (`_test_memory_v3`); it is not what this proof is about, so the fragments
+    #: that swallow THIS path are lifted here and only here.
+    #:
+    #: They are computed, not recognised by their spelling. The first version kept every
+    #: fragment whose TEXT lacked "temp" and "tmp", which is a guess about how a temp directory
+    #: is written down - and macOS writes it `/var/folders/.../T`, a fragment carrying neither
+    #: word. So the suite lifted the two fragments that did not apply and kept the one that did:
+    #: all seven sessions were refused with "is not a tracked project", nothing was written, and
+    #: four checks reported an empty store on every macOS job of the first matrix run. Windows
+    #: and Linux passed only because GitHub points TMPDIR at `D:\a\_temp` and
+    #: `/home/runner/work/_temp`; the suite's trackability was a property of the runner's temp
+    #: location and no line said so.
+    #:
+    #: The question a fragment answers is "does this path contain me", and that is the question
+    #: asked here - of this path, on this machine, in the engine's own normalisation.
+    _proj_tail = m._norm_path(PROJ_DIR) + m._SEP
+    m._EXCLUDE_FRAGMENTS = [f for f in m._EXCLUDE_FRAGMENTS if f not in _proj_tail]
 
     tdir = store / "_transcripts"
     tdir.mkdir(parents=True, exist_ok=True)
@@ -233,8 +246,23 @@ second = once()
 same = first == second
 check("two runs of the corpus give the identical snapshot", same,
       "\n".join(G.diff(first, second)[:12]))
-check("the corpus wrote notes", len(first["files"]) > 4,
-      f"{len(first['files'])} files")
+#: The precondition of every check below, and it had none. When the engine refuses PROJ_DIR the
+#: corpus is skipped session by session, the store still holds the scaffolding it writes anyway,
+#: and the three checks that follow compare empty against empty - four red lines, none of which
+#: names the cause. This one does, and it is the first to read.
+check("the golden project is a tracked project on this machine", m.is_tracked_project(PROJ_DIR),
+      f"{PROJ_DIR} - the engine's own gate refuses it, so every session was skipped before it "
+      f"was extracted, and everything below measures an empty store")
+
+#: Counted over the notes, not over the files. `len(files) > 4` passed on a run that wrote no
+#: note at all: a store carries its index, its guard file and its processed-session ledger
+#: whether or not a single session was ingested, so the old count answered "did a store get
+#: built" while claiming to answer "did the corpus write". Both are true here; only one is the
+#: question.
+NOTE_DIRS = ("Context/", "Decisions/", "Mistakes/", "Patterns/", "Sessions/")
+notes = [f for f in first["files"] if f.startswith(NOTE_DIRS) and f.endswith(".md")]
+check("the corpus wrote notes", len(notes) > 4,
+      f"{len(notes)} notes among {len(first['files'])} files in the store")
 check("the displacement machinery ran",
       first["contested"] != [0, 0] or any("Superseded" in f for f in first["files"]),
       f"contested {first['contested']}, adjudication {first['adjudication']}")

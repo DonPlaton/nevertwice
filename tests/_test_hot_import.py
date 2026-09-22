@@ -96,25 +96,43 @@ added = count - baseline
 print(f"       top-level modules: {baseline} in a bare interpreter, {count} after the engine, "
       f"so the engine adds {added}")
 check("the baseline itself was measured, not assumed", baseline > 0, str(baseline))
-#: A ceiling on imports is a property of the pair (engine, interpreter), not of the engine. The
-#: first version pinned the TOTAL - 63 here on 3.14, 65 on the runner's 3.10 - and failed on a
-#: version. The second pinned what the engine ADDS, which is closer but still not the engine's
-#: alone: a stdlib module pulls different helpers on different minors, so 43 here is not 43
-#: there, and 3.10 failed again. Recorded per interpreter, and an unmeasured one is PRINTED
-#: rather than asserted - an entry appears when someone measures it, not when someone guesses.
-#: The same shape as the spread table: a number without its mode is a number about nothing.
-ADDED_CEILING = {(3, 14): 43}
+#: A ceiling on imports is a property of the (engine, interpreter, PLATFORM) triple, and it took
+#: three refusals to learn the third name. The first version pinned the TOTAL and failed on a
+#: version. The second pinned what the engine ADDS, which is closer, and failed on a minor. The
+#: third keyed it by version alone - and ubuntu 3.14 printed 45 against this machine's 43, on the
+#: same interpreter version. Each time the key was narrower than the measurement, each time the
+#: next axis arrived as a red job rather than as a question, and each time reasoning had already
+#: said the key was complete.
+#:
+#: So the rule, written down where the next number goes: the key of a pinned number must carry
+#: everything the measurement varies by, and what that is can only be learned by varying it.
+#: The instrument that varies is the matrix, which is why a pin that sat green for twenty-seven
+#: days was green only because nothing ever varied under it.
+#:
+#: Every cell below is a measurement, not an interpolation. Eleven come from the twelve jobs of
+#: run 35768577984 (`gh run view --job <id> --log`, the line "so the engine adds N"); win32/3.14
+#: is also this machine's own run. No cell is filled by reading a neighbour: darwin 3.10 is 43
+#: where linux 3.10 is 44, which is exactly the inference that would have been wrong.
+ADDED_CEILING = {
+    ("win32", (3, 10)): 44, ("win32", (3, 12)): 40,
+    ("win32", (3, 13)): 40, ("win32", (3, 14)): 43,
+    ("linux", (3, 10)): 44, ("linux", (3, 12)): 39,
+    ("linux", (3, 13)): 41, ("linux", (3, 14)): 45,
+    ("darwin", (3, 10)): 43, ("darwin", (3, 12)): 39,
+    ("darwin", (3, 13)): 41, ("darwin", (3, 14)): 45,
+}
 
-_key = sys.version_info[:2]
+_key = (sys.platform, sys.version_info[:2])
 _ceiling = ADDED_CEILING.get(_key)
-check("a ceiling is recorded for at least one interpreter", bool(ADDED_CEILING),
-      str(ADDED_CEILING))
+check("a ceiling is recorded for at least one platform and interpreter", bool(ADDED_CEILING),
+      f"{len(ADDED_CEILING)} cells")
 if _ceiling is None:
-    print(f"       [--] no ceiling recorded for python {_key[0]}.{_key[1]}: the engine adds "
-          f"{added}, printed and not asserted")
+    print(f"       [--] no ceiling recorded for {_key[0]} python {_key[1][0]}.{_key[1][1]}: "
+          f"the engine adds {added}, printed and not asserted")
 else:
     check(f"the engine imports no more top-level modules than it did "
-          f"(python {_key[0]}.{_key[1]}: {added} <= {_ceiling})", 0 < added <= _ceiling,
+          f"({_key[0]} python {_key[1][0]}.{_key[1][1]}: {added} <= {_ceiling})",
+          0 < added <= _ceiling,
           f"{added} - if this grew, name the new import and decide whether the hot path needs it")
 
 print("# gate 3: nothing the deferred imports serve has stopped working")

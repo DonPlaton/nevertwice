@@ -136,10 +136,20 @@ def test_the_instruments_report_numbers() -> None:
           str(nest) if nest is not None else ruff_said("nesting"))
     check("returns is a per-function number", rets == {"f": 3},
           str(rets) if rets is not None else ruff_said("returns"))
+    #: The third axis got `str(stmts)` where the other two got `ruff_said`, so its report was the
+    #: single word `None` - the dead end the other two had already been taught out of. One axis
+    #: fixed is not the class fixed; the diagnostic belongs to every axis that can refuse.
     check("statements is a per-function number", isinstance(stmts, dict) and "f" in stmts,
-          str(stmts))
-    check("and all three name the same function", set(nest) == set(rets) == set(stmts),
-          str((set(nest), set(rets), set(stmts))))
+          str(stmts) if stmts is not None else ruff_said("statements"))
+    #: `set(None)` raises, and a raise here ENDS the file: the research job's last run died on
+    #: this line and the eleven checks after it never ran, so one refusing axis was reported as
+    #: a crash with no verdict. A check that cannot answer must still answer.
+    _named = {k: (set(v) if isinstance(v, dict) else None)
+              for k, v in (("nesting", nest), ("returns", rets), ("statements", stmts))}
+    check("and all three name the same function",
+          all(v is not None for v in _named.values())
+          and len({frozenset(v) for v in _named.values()}) == 1,
+          str(_named))
 
 
 def test_a_missing_ruff_returns_none_rather_than_zero() -> None:

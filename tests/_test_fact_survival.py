@@ -120,8 +120,11 @@ _small = "a/b.c-d" * 1700          # ~12 kB of ordinary path-like text, no colon
 _big = "a/b.c-d" * 6800            # ~48 kB of the same
 
 
+MIN_CALLS, MIN_RUNS = 8, 12
+
+
 def _cost(fn) -> float:
-    """Seconds per call: the cheapest of five runs of enough calls to clear the timer.
+    """Seconds per call: the cheapest of MIN_RUNS runs of enough calls to clear the timer.
 
     A single `perf_counter` pair measures the machine as much as the code, and the gate below
     leaves only TWO times of headroom by construction - the input is four times bigger and the
@@ -142,6 +145,29 @@ def _cost(fn) -> float:
     between 3.0 and 4.2, i.e. linear, and the thinnest headroom is 1.90x, so the tighter floor
     reddens nothing and every pattern is judged by its ratio. A floor is still there because a
     measurement of exactly zero must not divide.
+
+    Five runs were not enough, and the replacement is measured rather than chosen. macOS 3.12 of
+    the first matrix run reported `0.0001->0.0013` for one pattern - past the gate of eight, where
+    every pattern's true ratio is four. Two things let a single interrupted run decide the verdict.
+    The escalation stopped at the first n whose batch cleared a millisecond, so the cheap side was
+    averaged over 64 calls while the expensive side, clearing the millisecond in one, was averaged
+    over ONE - a well-averaged number compared against a single shot, and interference can only
+    push the single shot up. And five minima are not enough minima: the least-interrupted of five
+    runs is still often interrupted.
+
+    Swept on a quiet machine, 18 patterns x 7 repeats, worst ratio observed against a true 4.0:
+
+        runs=4  n>=1    5.21      0.7 s     <- what shipped, and what macOS crossed
+        runs=4  n>=8    5.61      2.2 s
+        runs=12 n>=8    4.42      5.5 s     <- here
+        runs=30 n>=8    4.49     12.9 s
+        runs=12 n>=64   4.33     41.1 s
+
+    The median was 3.97-4.00 at every setting, which answers the question the gate asks: these
+    patterns are linear, and what moved was the instrument. Twelve runs is the knee - thirty buys
+    nothing, and a floor of 64 calls buys 0.09 for seven times the wall clock. At twelve the worst
+    observation sits 11% above the truth instead of 31%, which is the headroom the gate of eight
+    needs in order to be about the code.
     """
     n = 1
     while True:
@@ -149,11 +175,19 @@ def _cost(fn) -> float:
         for _ in range(n):
             fn()
         span = time.perf_counter() - t0
-        if span >= 0.001 or n >= 512:
+        #: MIN_CALLS is about the TIMER, and a call that already takes 50 ms has cleared it
+        #: many times over - repeating such a call eight times buys resolution nobody needs and
+        #: costs the suite minutes. It is not hypothetical: the pathological shape this gate
+        #: exists to catch runs 0.26 s at 12 kB and 4.09 s at 48 kB, so a floor of eight calls
+        #: would make the suite spend seven minutes before reporting the pattern as slow. The
+        #: escape hatch changes nothing for the eighteen real patterns, whose calls are 0.1 to
+        #: 1.3 ms - three orders of magnitude under it - and the sweep above was measured with
+        #: it in place.
+        if (span >= 0.001 and (n >= MIN_CALLS or span / n >= 0.05)) or n >= 512:
             break
         n *= 8
     best = span / n
-    for _ in range(4):
+    for _ in range(MIN_RUNS):
         t0 = time.perf_counter()
         for _ in range(n):
             fn()
@@ -177,7 +211,11 @@ for _rx in m._LIT_PATTERNS:
     _a = _cost(lambda rx=_rx: rx.findall(_small))
     _b = _cost(lambda rx=_rx: rx.findall(_big))
     if _b > 8 * max(_a, 1e-6):
-        _slow.append(f"{_rx.pattern[:40]} {_a:.4f}->{_b:.4f}")
+        #: The RATIO, not only the two times it came from. `0.0001->0.0013` is where the macOS
+        #: report stopped, leaving a reader to divide two rounded numbers to learn whether the
+        #: gate was crossed by three times or by a hair.
+        _slow.append(f"{_rx.pattern[:40]} {_a:.5f}->{_b:.5f} = {_b / max(_a, 1e-6):.1f}x "
+                     f"(linear is 4.0, gate is 8.0)")
 check("no literal pattern is superlinear: " + "; ".join(_slow[:3]), not _slow)
 
 # And it still finds what it exists for.
