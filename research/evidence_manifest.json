@@ -926,27 +926,27 @@
  "claims": [
   {
    "id": "longmem.semantic.recall_at_1",
-   "statement": "semantic recall (bge-m3 bi-encoder) reaches RECALL@1 0.422 on LongMemEval-oracle",
-   "value": 0.422,
+   "statement": "semantic recall (bge-m3 bi-encoder) reaches RECALL@1 0.432 on LongMemEval-oracle",
+   "value": 0.428,
    "printed": [
-    "0.42",
-    "0.422"
+    "0.43",
+    "0.428"
    ],
    "unit": "recall@1",
    "dataset": "longmemeval_oracle",
    "environment": "local_bge_m3",
    "n": 500,
-   "command": "python research/longmem_eval.py",
+   "command": "python research/longmem_eval.py --save",
    "raw": "research/longmem_results.json",
    "pointer": "methods.semantic.recall@1",
    "ci": {
     "method": "wilson",
     "level": 0.95,
-    "low": 0.3795,
-    "high": 0.4657
+    "low": 0.3853,
+    "high": 0.4718
    },
    "cited_in": [],
-   "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+   "commit": "8870d41dfb8a055499ad161166a5cf690b01bad3",
    "produced_by": [
     "research/longmem_eval.py",
     "nevertwice/_engine.py",
@@ -977,34 +977,31 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ],
-   "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the re-measurement is queued: the campaign runs this command and `tools/remeasure.py --restore` reads the number out of the artifact it writes",
-   "withdrawn_on": "2026-08-25",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "longmem.semantic.recall_at_5",
-   "statement": "semantic recall (bge-m3 bi-encoder) reaches RECALL@5 0.652 on LongMemEval-oracle",
-   "value": 0.652,
+   "statement": "semantic recall (bge-m3 bi-encoder) reaches RECALL@5 0.692 on LongMemEval-oracle",
+   "value": 0.692,
    "printed": [
-    "0.65",
-    "0.652"
+    "0.69",
+    "0.692"
    ],
    "unit": "recall@5",
    "dataset": "longmemeval_oracle",
    "environment": "local_bge_m3",
    "n": 500,
-   "command": "python research/longmem_eval.py",
+   "command": "python research/longmem_eval.py --save",
    "raw": "research/longmem_results.json",
    "pointer": "methods.semantic.recall@5",
    "ci": {
     "method": "wilson",
     "level": 0.95,
-    "low": 0.6092,
-    "high": 0.6925
+    "low": 0.6502,
+    "high": 0.7309
    },
    "cited_in": [],
-   "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+   "commit": "8870d41dfb8a055499ad161166a5cf690b01bad3",
    "produced_by": [
     "research/longmem_eval.py",
     "nevertwice/_engine.py",
@@ -1035,34 +1032,31 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ],
-   "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the re-measurement is queued: the campaign runs this command and `tools/remeasure.py --restore` reads the number out of the artifact it writes",
-   "withdrawn_on": "2026-08-25",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "longmem.semantic.recall_at_10",
-   "statement": "semantic recall (bge-m3 bi-encoder) reaches RECALL@10 0.728 on LongMemEval-oracle",
-   "value": 0.728,
+   "statement": "semantic recall (bge-m3 bi-encoder) reaches RECALL@10 0.782 on LongMemEval-oracle",
+   "value": 0.782,
    "printed": [
-    "0.728",
-    "0.73"
+    "0.782",
+    "0.78"
    ],
    "unit": "recall@10",
    "dataset": "longmemeval_oracle",
    "environment": "local_bge_m3",
    "n": 500,
-   "command": "python research/longmem_eval.py",
+   "command": "python research/longmem_eval.py --save",
    "raw": "research/longmem_results.json",
    "pointer": "methods.semantic.recall@10",
    "ci": {
     "method": "wilson",
     "level": 0.95,
-    "low": 0.6874,
-    "high": 0.7652
+    "low": 0.7437,
+    "high": 0.816
    },
    "cited_in": [],
-   "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+   "commit": "8870d41dfb8a055499ad161166a5cf690b01bad3",
    "produced_by": [
     "research/longmem_eval.py",
     "nevertwice/_engine.py",
@@ -1093,30 +1087,27 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ],
-   "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the re-measurement is queued: the campaign runs this command and `tools/remeasure.py --restore` reads the number out of the artifact it writes",
-   "withdrawn_on": "2026-08-25",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "longmem.semantic.mrr",
-   "statement": "semantic recall (bge-m3 bi-encoder) reaches MRR 0.528 on LongMemEval-oracle",
-   "value": 0.5281852224668283,
+   "statement": "semantic recall (bge-m3 bi-encoder) reaches MRR 0.552 on LongMemEval-oracle",
+   "value": 0.552113821339757,
    "printed": [
-    "0.528",
-    "0.53"
+    "0.552",
+    "0.55"
    ],
    "unit": "mrr",
    "dataset": "longmemeval_oracle",
    "environment": "local_bge_m3",
    "n": 500,
-   "command": "python research/longmem_eval.py",
+   "command": "python research/longmem_eval.py --save",
    "raw": "research/longmem_results.json",
    "pointer": "methods.semantic.mrr",
    "ci": null,
    "ci_note": "MRR is a mean of reciprocal ranks, not a proportion; a Wilson interval does not apply. Bootstrap CI is task F5.",
    "cited_in": [],
-   "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+   "commit": "8870d41dfb8a055499ad161166a5cf690b01bad3",
    "produced_by": [
     "research/longmem_eval.py",
     "nevertwice/_engine.py",
@@ -1147,34 +1138,31 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ],
-   "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the re-measurement is queued: the campaign runs this command and `tools/remeasure.py --restore` reads the number out of the artifact it writes",
-   "withdrawn_on": "2026-08-25",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "longmem.lexical.recall_at_1",
-   "statement": "lexical recall (BM25) reaches RECALL@1 0.522 on LongMemEval-oracle",
-   "value": 0.522,
+   "statement": "lexical recall (BM25) reaches RECALL@1 0.472 on LongMemEval-oracle",
+   "value": 0.47,
    "printed": [
-    "0.52",
-    "0.522"
+    "0.47",
+    "0.470"
    ],
    "unit": "recall@1",
    "dataset": "longmemeval_oracle",
    "environment": "local_bge_m3",
    "n": 500,
-   "command": "python research/longmem_eval.py",
+   "command": "python research/longmem_eval.py --save",
    "raw": "research/longmem_results.json",
    "pointer": "methods.lexical.recall@1",
    "ci": {
     "method": "wilson",
     "level": 0.95,
-    "low": 0.4782,
-    "high": 0.5654
+    "low": 0.4266,
+    "high": 0.5138
    },
    "cited_in": [],
-   "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+   "commit": "8870d41dfb8a055499ad161166a5cf690b01bad3",
    "produced_by": [
     "research/longmem_eval.py",
     "nevertwice/_engine.py",
@@ -1205,34 +1193,31 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ],
-   "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the re-measurement is queued: the campaign runs this command and `tools/remeasure.py --restore` reads the number out of the artifact it writes",
-   "withdrawn_on": "2026-08-25",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "longmem.lexical.recall_at_5",
-   "statement": "lexical recall (BM25) reaches RECALL@5 0.752 on LongMemEval-oracle",
-   "value": 0.752,
+   "statement": "lexical recall (BM25) reaches RECALL@5 0.742 on LongMemEval-oracle",
+   "value": 0.738,
    "printed": [
-    "0.75",
-    "0.752"
+    "0.74",
+    "0.738"
    ],
    "unit": "recall@5",
    "dataset": "longmemeval_oracle",
    "environment": "local_bge_m3",
    "n": 500,
-   "command": "python research/longmem_eval.py",
+   "command": "python research/longmem_eval.py --save",
    "raw": "research/longmem_results.json",
    "pointer": "methods.lexical.recall@5",
    "ci": {
     "method": "wilson",
     "level": 0.95,
-    "low": 0.7123,
-    "high": 0.7878
+    "low": 0.6977,
+    "high": 0.7746
    },
    "cited_in": [],
-   "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+   "commit": "8870d41dfb8a055499ad161166a5cf690b01bad3",
    "produced_by": [
     "research/longmem_eval.py",
     "nevertwice/_engine.py",
@@ -1263,34 +1248,31 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ],
-   "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the re-measurement is queued: the campaign runs this command and `tools/remeasure.py --restore` reads the number out of the artifact it writes",
-   "withdrawn_on": "2026-08-25",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "longmem.lexical.recall_at_10",
-   "statement": "lexical recall (BM25) reaches RECALL@10 0.834 on LongMemEval-oracle",
-   "value": 0.834,
+   "statement": "lexical recall (BM25) reaches RECALL@10 0.830 on LongMemEval-oracle",
+   "value": 0.83,
    "printed": [
     "0.83",
-    "0.834"
+    "0.830"
    ],
    "unit": "recall@10",
    "dataset": "longmemeval_oracle",
    "environment": "local_bge_m3",
    "n": 500,
-   "command": "python research/longmem_eval.py",
+   "command": "python research/longmem_eval.py --save",
    "raw": "research/longmem_results.json",
    "pointer": "methods.lexical.recall@10",
    "ci": {
     "method": "wilson",
     "level": 0.95,
-    "low": 0.7989,
-    "high": 0.864
+    "low": 0.7946,
+    "high": 0.8604
    },
    "cited_in": [],
-   "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+   "commit": "8870d41dfb8a055499ad161166a5cf690b01bad3",
    "produced_by": [
     "research/longmem_eval.py",
     "nevertwice/_engine.py",
@@ -1321,30 +1303,27 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ],
-   "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the re-measurement is queued: the campaign runs this command and `tools/remeasure.py --restore` reads the number out of the artifact it writes",
-   "withdrawn_on": "2026-08-25",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "longmem.lexical.mrr",
-   "statement": "lexical recall (BM25) reaches MRR 0.623 on LongMemEval-oracle",
-   "value": 0.6231697064835308,
+   "statement": "lexical recall (BM25) reaches MRR 0.596 on LongMemEval-oracle",
+   "value": 0.5956663939692122,
    "printed": [
-    "0.623",
-    "0.62"
+    "0.596",
+    "0.60"
    ],
    "unit": "mrr",
    "dataset": "longmemeval_oracle",
    "environment": "local_bge_m3",
    "n": 500,
-   "command": "python research/longmem_eval.py",
+   "command": "python research/longmem_eval.py --save",
    "raw": "research/longmem_results.json",
    "pointer": "methods.lexical.mrr",
    "ci": null,
    "ci_note": "MRR is a mean of reciprocal ranks, not a proportion; a Wilson interval does not apply. Bootstrap CI is task F5.",
    "cited_in": [],
-   "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+   "commit": "8870d41dfb8a055499ad161166a5cf690b01bad3",
    "produced_by": [
     "research/longmem_eval.py",
     "nevertwice/_engine.py",
@@ -1375,34 +1354,31 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ],
-   "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the re-measurement is queued: the campaign runs this command and `tools/remeasure.py --restore` reads the number out of the artifact it writes",
-   "withdrawn_on": "2026-08-25",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "longmem.hybrid.recall_at_1",
-   "statement": "calibrated score fusion (shipped default) reaches RECALL@1 0.55 on LongMemEval-oracle",
-   "value": 0.55,
+   "statement": "calibrated score fusion (shipped default) reaches RECALL@1 0.51 on LongMemEval-oracle",
+   "value": 0.512,
    "printed": [
-    "0.55",
-    "0.550"
+    "0.51",
+    "0.512"
    ],
    "unit": "recall@1",
    "dataset": "longmemeval_oracle",
    "environment": "local_bge_m3",
    "n": 500,
-   "command": "python research/longmem_eval.py",
+   "command": "python research/longmem_eval.py --save",
    "raw": "research/longmem_results.json",
    "pointer": "methods.hybrid.recall@1",
    "ci": {
     "method": "wilson",
     "level": 0.95,
-    "low": 0.5062,
-    "high": 0.5931
+    "low": 0.4683,
+    "high": 0.5556
    },
    "cited_in": [],
-   "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+   "commit": "8870d41dfb8a055499ad161166a5cf690b01bad3",
    "produced_by": [
     "research/longmem_eval.py",
     "nevertwice/_engine.py",
@@ -1433,34 +1409,31 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ],
-   "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the re-measurement is queued: the campaign runs this command and `tools/remeasure.py --restore` reads the number out of the artifact it writes",
-   "withdrawn_on": "2026-08-25",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "longmem.hybrid.recall_at_5",
-   "statement": "calibrated score fusion (shipped default) reaches RECALL@5 0.802 on LongMemEval-oracle",
-   "value": 0.802,
+   "statement": "calibrated score fusion (shipped default) reaches RECALL@5 0.800 on LongMemEval-oracle",
+   "value": 0.8,
    "printed": [
     "0.80",
-    "0.802"
+    "0.800"
    ],
    "unit": "recall@5",
    "dataset": "longmemeval_oracle",
    "environment": "local_bge_m3",
    "n": 500,
-   "command": "python research/longmem_eval.py",
+   "command": "python research/longmem_eval.py --save",
    "raw": "research/longmem_results.json",
    "pointer": "methods.hybrid.recall@5",
    "ci": {
     "method": "wilson",
     "level": 0.95,
-    "low": 0.7648,
-    "high": 0.8346
+    "low": 0.7627,
+    "high": 0.8327
    },
    "cited_in": [],
-   "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+   "commit": "8870d41dfb8a055499ad161166a5cf690b01bad3",
    "headline": true,
    "baseline_verdicts": {
     "lexical_recall": {
@@ -1523,34 +1496,31 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ],
-   "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the re-measurement is queued: the campaign runs this command and `tools/remeasure.py --restore` reads the number out of the artifact it writes",
-   "withdrawn_on": "2026-08-25",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "longmem.hybrid.recall_at_10",
-   "statement": "calibrated score fusion (shipped default) reaches RECALL@10 0.858 on LongMemEval-oracle",
-   "value": 0.858,
+   "statement": "calibrated score fusion (shipped default) reaches RECALL@10 0.876 on LongMemEval-oracle",
+   "value": 0.866,
    "printed": [
-    "0.858",
-    "0.86"
+    "0.866",
+    "0.87"
    ],
    "unit": "recall@10",
    "dataset": "longmemeval_oracle",
    "environment": "local_bge_m3",
    "n": 500,
-   "command": "python research/longmem_eval.py",
+   "command": "python research/longmem_eval.py --save",
    "raw": "research/longmem_results.json",
    "pointer": "methods.hybrid.recall@10",
    "ci": {
     "method": "wilson",
     "level": 0.95,
-    "low": 0.8247,
-    "high": 0.8859
+    "low": 0.8333,
+    "high": 0.8931
    },
    "cited_in": [],
-   "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+   "commit": "8870d41dfb8a055499ad161166a5cf690b01bad3",
    "produced_by": [
     "research/longmem_eval.py",
     "nevertwice/_engine.py",
@@ -1581,30 +1551,27 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ],
-   "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the re-measurement is queued: the campaign runs this command and `tools/remeasure.py --restore` reads the number out of the artifact it writes",
-   "withdrawn_on": "2026-08-25",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "longmem.hybrid.mrr",
-   "statement": "calibrated score fusion (shipped default) reaches MRR 0.657 on LongMemEval-oracle",
-   "value": 0.6565628988084086,
+   "statement": "calibrated score fusion (shipped default) reaches MRR 0.636 on LongMemEval-oracle",
+   "value": 0.6361181037061142,
    "printed": [
-    "0.657",
-    "0.66"
+    "0.636",
+    "0.64"
    ],
    "unit": "mrr",
    "dataset": "longmemeval_oracle",
    "environment": "local_bge_m3",
    "n": 500,
-   "command": "python research/longmem_eval.py",
+   "command": "python research/longmem_eval.py --save",
    "raw": "research/longmem_results.json",
    "pointer": "methods.hybrid.mrr",
    "ci": null,
    "ci_note": "MRR is a mean of reciprocal ranks, not a proportion; a Wilson interval does not apply. Bootstrap CI is task F5.",
    "cited_in": [],
-   "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+   "commit": "8870d41dfb8a055499ad161166a5cf690b01bad3",
    "produced_by": [
     "research/longmem_eval.py",
     "nevertwice/_engine.py",
@@ -1635,34 +1602,31 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ],
-   "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the re-measurement is queued: the campaign runs this command and `tools/remeasure.py --restore` reads the number out of the artifact it writes",
-   "withdrawn_on": "2026-08-25",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "longmem.hybrid_xrerank.recall_at_1",
-   "statement": "calibrated fusion + trained cross-encoder (opt-in) reaches RECALL@1 0.614 on LongMemEval-oracle",
-   "value": 0.614,
+   "statement": "calibrated fusion + trained cross-encoder (opt-in) reaches RECALL@1 0.634 on LongMemEval-oracle",
+   "value": 0.626,
    "printed": [
-    "0.61",
-    "0.614"
+    "0.63",
+    "0.626"
    ],
    "unit": "recall@1",
    "dataset": "longmemeval_oracle",
    "environment": "local_bge_m3",
    "n": 500,
-   "command": "python research/longmem_eval.py --xrerank",
+   "command": "python research/longmem_eval.py --xrerank --save",
    "raw": "research/longmem_results.json",
    "pointer": "methods.hybrid+xrerank.recall@1",
    "ci": {
     "method": "wilson",
     "level": 0.95,
-    "low": 0.5706,
-    "high": 0.6556
+    "low": 0.5828,
+    "high": 0.6673
    },
    "cited_in": [],
-   "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+   "commit": "8870d41dfb8a055499ad161166a5cf690b01bad3",
    "produced_by": [
     "research/longmem_eval.py",
     "nevertwice/_engine.py",
@@ -1693,34 +1657,31 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ],
-   "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the re-measurement is queued: the campaign runs this command and `tools/remeasure.py --restore` reads the number out of the artifact it writes",
-   "withdrawn_on": "2026-08-25",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "longmem.hybrid_xrerank.recall_at_5",
-   "statement": "calibrated fusion + trained cross-encoder (opt-in) reaches RECALL@5 0.826 on LongMemEval-oracle",
-   "value": 0.826,
+   "statement": "calibrated fusion + trained cross-encoder (opt-in) reaches RECALL@5 0.834 on LongMemEval-oracle",
+   "value": 0.834,
    "printed": [
-    "0.826",
+    "0.834",
     "0.83"
    ],
    "unit": "recall@5",
    "dataset": "longmemeval_oracle",
    "environment": "local_bge_m3",
    "n": 500,
-   "command": "python research/longmem_eval.py --xrerank",
+   "command": "python research/longmem_eval.py --xrerank --save",
    "raw": "research/longmem_results.json",
    "pointer": "methods.hybrid+xrerank.recall@5",
    "ci": {
     "method": "wilson",
     "level": 0.95,
-    "low": 0.7903,
-    "high": 0.8567
+    "low": 0.7989,
+    "high": 0.864
    },
    "cited_in": [],
-   "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+   "commit": "8870d41dfb8a055499ad161166a5cf690b01bad3",
    "produced_by": [
     "research/longmem_eval.py",
     "nevertwice/_engine.py",
@@ -1751,34 +1712,31 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ],
-   "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the re-measurement is queued: the campaign runs this command and `tools/remeasure.py --restore` reads the number out of the artifact it writes",
-   "withdrawn_on": "2026-08-25",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "longmem.hybrid_xrerank.recall_at_10",
-   "statement": "calibrated fusion + trained cross-encoder (opt-in) reaches RECALL@10 0.858 on LongMemEval-oracle",
-   "value": 0.858,
+   "statement": "calibrated fusion + trained cross-encoder (opt-in) reaches RECALL@10 0.876 on LongMemEval-oracle",
+   "value": 0.866,
    "printed": [
-    "0.858",
-    "0.86"
+    "0.866",
+    "0.87"
    ],
    "unit": "recall@10",
    "dataset": "longmemeval_oracle",
    "environment": "local_bge_m3",
    "n": 500,
-   "command": "python research/longmem_eval.py --xrerank",
+   "command": "python research/longmem_eval.py --xrerank --save",
    "raw": "research/longmem_results.json",
    "pointer": "methods.hybrid+xrerank.recall@10",
    "ci": {
     "method": "wilson",
     "level": 0.95,
-    "low": 0.8247,
-    "high": 0.8859
+    "low": 0.8333,
+    "high": 0.8931
    },
    "cited_in": [],
-   "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+   "commit": "8870d41dfb8a055499ad161166a5cf690b01bad3",
    "produced_by": [
     "research/longmem_eval.py",
     "nevertwice/_engine.py",
@@ -1809,30 +1767,27 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ],
-   "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the re-measurement is queued: the campaign runs this command and `tools/remeasure.py --restore` reads the number out of the artifact it writes",
-   "withdrawn_on": "2026-08-25",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "longmem.hybrid_xrerank.mrr",
-   "statement": "calibrated fusion + trained cross-encoder (opt-in) reaches MRR 0.712 on LongMemEval-oracle",
-   "value": 0.7117716289671387,
+   "statement": "calibrated fusion + trained cross-encoder (opt-in) reaches MRR 0.723 on LongMemEval-oracle",
+   "value": 0.7231022306902412,
    "printed": [
-    "0.712",
-    "0.71"
+    "0.723",
+    "0.72"
    ],
    "unit": "mrr",
    "dataset": "longmemeval_oracle",
    "environment": "local_bge_m3",
    "n": 500,
-   "command": "python research/longmem_eval.py --xrerank",
+   "command": "python research/longmem_eval.py --xrerank --save",
    "raw": "research/longmem_results.json",
    "pointer": "methods.hybrid+xrerank.mrr",
    "ci": null,
    "ci_note": "MRR is a mean of reciprocal ranks, not a proportion; a Wilson interval does not apply. Bootstrap CI is task F5.",
    "cited_in": [],
-   "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+   "commit": "8870d41dfb8a055499ad161166a5cf690b01bad3",
    "produced_by": [
     "research/longmem_eval.py",
     "nevertwice/_engine.py",
@@ -1863,10 +1818,7 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ],
-   "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the re-measurement is queued: the campaign runs this command and `tools/remeasure.py --restore` reads the number out of the artifact it writes",
-   "withdrawn_on": "2026-08-25",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "longmem.dataset.sessions",
@@ -1879,12 +1831,12 @@
    "dataset": "longmemeval_oracle",
    "environment": "local_bge_m3",
    "n": null,
-   "command": "python research/longmem_eval.py",
+   "command": "python research/longmem_eval.py --save",
    "raw": "research/longmem_results.json",
    "pointer": "sessions",
    "ci": null,
    "cited_in": [],
-   "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+   "commit": "8870d41dfb8a055499ad161166a5cf690b01bad3",
    "produced_by": [
     "research/longmem_eval.py",
     "nevertwice/_engine.py",
@@ -1915,10 +1867,7 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ],
-   "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the re-measurement is queued: the campaign runs this command and `tools/remeasure.py --restore` reads the number out of the artifact it writes",
-   "withdrawn_on": "2026-08-25",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "longmem.dataset.questions",
@@ -1931,12 +1880,12 @@
    "dataset": "longmemeval_oracle",
    "environment": "local_bge_m3",
    "n": null,
-   "command": "python research/longmem_eval.py",
+   "command": "python research/longmem_eval.py --save",
    "raw": "research/longmem_results.json",
    "pointer": "questions",
    "ci": null,
    "cited_in": [],
-   "commit": "05cfdc96ca857e9a6e472d925a520b9469618e66",
+   "commit": "8870d41dfb8a055499ad161166a5cf690b01bad3",
    "produced_by": [
     "research/longmem_eval.py",
     "nevertwice/_engine.py",
@@ -1967,10 +1916,7 @@
     "research/_xreranker.py",
     "research/corpus_pin.py",
     "sandbox_guard.py"
-   ],
-   "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the re-measurement is queued: the campaign runs this command and `tools/remeasure.py --restore` reads the number out of the artifact it writes",
-   "withdrawn_on": "2026-08-25",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "longmem.rrf_old_default.recall_at_5",
@@ -1984,7 +1930,7 @@
    "dataset": "longmemeval_oracle",
    "environment": "local_bge_m3",
    "n": 500,
-   "command": "python research/longmem_eval.py",
+   "command": "python research/longmem_eval.py --save",
    "raw": null,
    "pointer": null,
    "raw_gap": "No committed result file. The number is published only in research/RETRIEVAL_FUSION.md; re-running the fusion study must write a raw artifact before this claim can be re-cited.",
@@ -12530,7 +12476,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "7921f29b0d916a88453121e19f45e96218a22732",
+   "commit": "8870d41dfb8a055499ad161166a5cf690b01bad3",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
     "research/locomo_eval.py",
@@ -12588,7 +12534,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "7921f29b0d916a88453121e19f45e96218a22732",
+   "commit": "8870d41dfb8a055499ad161166a5cf690b01bad3",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
     "research/locomo_eval.py",
@@ -12646,7 +12592,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "7921f29b0d916a88453121e19f45e96218a22732",
+   "commit": "8870d41dfb8a055499ad161166a5cf690b01bad3",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
     "research/locomo_eval.py",
@@ -12699,7 +12645,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "7921f29b0d916a88453121e19f45e96218a22732",
+   "commit": "8870d41dfb8a055499ad161166a5cf690b01bad3",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
     "research/locomo_eval.py",
@@ -12757,7 +12703,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "7921f29b0d916a88453121e19f45e96218a22732",
+   "commit": "8870d41dfb8a055499ad161166a5cf690b01bad3",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
     "research/locomo_eval.py",
@@ -12815,7 +12761,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "7921f29b0d916a88453121e19f45e96218a22732",
+   "commit": "8870d41dfb8a055499ad161166a5cf690b01bad3",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
     "research/locomo_eval.py",
@@ -12873,7 +12819,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "7921f29b0d916a88453121e19f45e96218a22732",
+   "commit": "8870d41dfb8a055499ad161166a5cf690b01bad3",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
     "research/locomo_eval.py",
@@ -12911,7 +12857,7 @@
   {
    "id": "locomo.lexical.mrr",
    "statement": "lexical recall (term overlap, no embedder) reaches MRR 0.459 on LoCoMo",
-   "value": 0.45889847274401196,
+   "value": 0.45887318189929777,
    "printed": [
     "0.459"
    ],
@@ -12926,7 +12872,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "7921f29b0d916a88453121e19f45e96218a22732",
+   "commit": "8870d41dfb8a055499ad161166a5cf690b01bad3",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
     "research/locomo_eval.py",
@@ -12984,7 +12930,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "7921f29b0d916a88453121e19f45e96218a22732",
+   "commit": "8870d41dfb8a055499ad161166a5cf690b01bad3",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
     "research/locomo_eval.py",
@@ -13042,7 +12988,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "7921f29b0d916a88453121e19f45e96218a22732",
+   "commit": "8870d41dfb8a055499ad161166a5cf690b01bad3",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
     "research/locomo_eval.py",
@@ -13100,7 +13046,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "7921f29b0d916a88453121e19f45e96218a22732",
+   "commit": "8870d41dfb8a055499ad161166a5cf690b01bad3",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
     "research/locomo_eval.py",
@@ -13153,7 +13099,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "7921f29b0d916a88453121e19f45e96218a22732",
+   "commit": "8870d41dfb8a055499ad161166a5cf690b01bad3",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
     "research/locomo_eval.py",
@@ -13207,7 +13153,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "7921f29b0d916a88453121e19f45e96218a22732",
+   "commit": "8870d41dfb8a055499ad161166a5cf690b01bad3",
    "produced_by": [
     "research/locomo_eval.py",
     "nevertwice/_engine.py",
@@ -13260,7 +13206,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "7921f29b0d916a88453121e19f45e96218a22732",
+   "commit": "8870d41dfb8a055499ad161166a5cf690b01bad3",
    "derivation": "the corpus record in research/corpus_pin.py; the result file carries only the scoreable subset",
    "produced_by": [
     "research/locomo_eval.py",
@@ -13315,7 +13261,7 @@
    "cited_in": [
     "docs/BENCHMARKS.md"
    ],
-   "commit": "7921f29b0d916a88453121e19f45e96218a22732",
+   "commit": "8870d41dfb8a055499ad161166a5cf690b01bad3",
    "produced_by": [
     "research/locomo_eval.py",
     "nevertwice/_engine.py",
@@ -13370,7 +13316,7 @@
     "high": 0.3616
    },
    "cited_in": [],
-   "commit": "7921f29b0d916a88453121e19f45e96218a22732",
+   "commit": "8870d41dfb8a055499ad161166a5cf690b01bad3",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
     "research/locomo_eval.py",
@@ -13426,7 +13372,7 @@
     "high": 0.5485
    },
    "cited_in": [],
-   "commit": "7921f29b0d916a88453121e19f45e96218a22732",
+   "commit": "8870d41dfb8a055499ad161166a5cf690b01bad3",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
     "research/locomo_eval.py",
@@ -13482,7 +13428,7 @@
     "high": 0.5777
    },
    "cited_in": [],
-   "commit": "7921f29b0d916a88453121e19f45e96218a22732",
+   "commit": "8870d41dfb8a055499ad161166a5cf690b01bad3",
    "note": "Retrieval of the annotated evidence turn, per conversation, which is LoCoMo's own setting. NOT the judge-scored answer accuracy that published LoCoMo headlines report; the two are different quantities and must never be tabled together.",
    "produced_by": [
     "research/locomo_eval.py",
@@ -34028,7 +33974,7 @@
    "command": "python research/locomo_eval.py --save --out=research/results/locomo.json",
    "raw": "research/results/locomo.json",
    "cited_in": [],
-   "commit": "7921f29b0d916a88453121e19f45e96218a22732",
+   "commit": "8870d41dfb8a055499ad161166a5cf690b01bad3",
    "note": "",
    "produced_by": [
     "research/locomo_eval.py",
@@ -34080,7 +34026,7 @@
    "command": "python research/locomo_eval.py --save --out=research/results/locomo.json",
    "raw": "research/results/locomo.json",
    "cited_in": [],
-   "commit": "7921f29b0d916a88453121e19f45e96218a22732",
+   "commit": "8870d41dfb8a055499ad161166a5cf690b01bad3",
    "note": "",
    "produced_by": [
     "research/locomo_eval.py",
@@ -34132,7 +34078,7 @@
    "command": "python research/locomo_eval.py --save --out=research/results/locomo.json",
    "raw": "research/results/locomo.json",
    "cited_in": [],
-   "commit": "7921f29b0d916a88453121e19f45e96218a22732",
+   "commit": "8870d41dfb8a055499ad161166a5cf690b01bad3",
    "note": "",
    "produced_by": [
     "research/locomo_eval.py",
@@ -34184,7 +34130,7 @@
    "command": "python research/locomo_eval.py --save --out=research/results/locomo.json",
    "raw": "research/results/locomo.json",
    "cited_in": [],
-   "commit": "7921f29b0d916a88453121e19f45e96218a22732",
+   "commit": "8870d41dfb8a055499ad161166a5cf690b01bad3",
    "note": "",
    "produced_by": [
     "research/locomo_eval.py",
@@ -34236,7 +34182,7 @@
    "command": "python research/locomo_eval.py --save --out=research/results/locomo.json",
    "raw": "research/results/locomo.json",
    "cited_in": [],
-   "commit": "7921f29b0d916a88453121e19f45e96218a22732",
+   "commit": "8870d41dfb8a055499ad161166a5cf690b01bad3",
    "note": "",
    "produced_by": [
     "research/locomo_eval.py",

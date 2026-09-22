@@ -220,9 +220,12 @@ python research/head_to_head.py --only=nevertwice,mem0,langmem,amem --save \
 ### The 2026-07 run, which stays withdrawn
 
 <!-- claims:longmem-benchmarks -->
-> **Withdrawn 2026-08.** the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the re-measurement is queued: the campaign runs this command and `tools/remeasure.py --restore` reads the number out of the artifact it writes
->
-> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/longmem_eval.py` is what re-measures this one.
+| method | R@1 | R@5 | R@10 | MRR |
+|---|---|---|---|---|
+| semantic (bge-m3) | 0.428 | 0.692 | 0.782 | 0.552 |
+| lexical (BM25) | 0.470 | 0.738 | 0.830 | 0.596 |
+| **calibrated fusion (shipped default, 0 deps)** | 0.512 | 0.800 | **0.866** | 0.636 |
+| **+ trained cross-encoder (opt-in)** | **0.626** | **0.834** | **0.866** | **0.723** |
 <!-- /claims:longmem-benchmarks -->
 
 The shipped ranker fuses the two signals with **calibrated score fusion** (z-normalise each, combine

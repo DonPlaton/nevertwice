@@ -2,50 +2,63 @@
  "sessions": 940,
  "questions": 500,
  "embedder": "bge-m3",
+ "sessions_shrunk": 0,
+ "embed_chars": 28000,
+ "morphology": true,
  "methods": {
   "semantic": {
-   "recall@1": 0.422,
-   "recall@3": 0.58,
-   "recall@5": 0.652,
-   "recall@10": 0.728,
-   "mrr": 0.5281852224668283
+   "recall@1": 0.428,
+   "recall@3": 0.624,
+   "recall@5": 0.692,
+   "recall@10": 0.782,
+   "mrr": 0.552113821339757
   },
   "lexical": {
-   "recall@1": 0.522,
-   "recall@3": 0.678,
-   "recall@5": 0.752,
-   "recall@10": 0.834,
-   "mrr": 0.6231697064835308
+   "recall@1": 0.47,
+   "recall@3": 0.682,
+   "recall@5": 0.738,
+   "recall@10": 0.83,
+   "mrr": 0.5956663939692122
   },
   "hybrid": {
-   "recall@1": 0.55,
-   "recall@3": 0.722,
-   "recall@5": 0.802,
-   "recall@10": 0.858,
-   "mrr": 0.6565628988084086
+   "recall@1": 0.512,
+   "recall@3": 0.714,
+   "recall@5": 0.8,
+   "recall@10": 0.866,
+   "mrr": 0.6361181037061142
   },
   "semantic+recur": {
-   "recall@1": 0.422,
-   "recall@3": 0.58,
-   "recall@5": 0.652,
-   "recall@10": 0.728,
-   "mrr": 0.5281852224668283
+   "recall@1": 0.428,
+   "recall@3": 0.624,
+   "recall@5": 0.692,
+   "recall@10": 0.782,
+   "mrr": 0.552113821339757
   },
   "hybrid+xrerank": {
-   "recall@1": 0.614,
-   "recall@3": 0.796,
-   "recall@5": 0.826,
-   "recall@10": 0.858,
-   "mrr": 0.7117716289671387
+   "recall@1": 0.626,
+   "recall@3": 0.794,
+   "recall@5": 0.834,
+   "recall@10": 0.866,
+   "mrr": 0.7231022306902412
   }
  },
  "recur_inert": true,
+ "provenance": {
+  "corpus": "longmemeval_oracle",
+  "sha256": "821a2034d219ab45846873dd14c14f12cfe7776e73527a483f9dac095d38620c",
+  "bytes": 15388478,
+  "questions": 500,
+  "pool_sessions": 940,
+  "url": "https://huggingface.co/datasets/xiaowu0162/longmemeval/resolve/main/longmemeval_oracle",
+  "licence": "MIT",
+  "citation": "Wu et al., LongMemEval: Benchmarking Chat Assistants on Long-Term Interactive Memory, ICLR 2025"
+ },
  "xrerank": {
   "model": "BAAI/bge-reranker-v2-m3",
   "n": 10,
   "snippet_chars": 1200,
-  "delta_recall@1": 0.06399999999999995,
-  "delta_recall@5": 0.02399999999999991,
+  "delta_recall@1": 0.11399999999999999,
+  "delta_recall@5": 0.03399999999999992,
   "delta_recall@10": 0.0
  }
 }
