@@ -81,14 +81,28 @@ def _field(fields: dict, *needles: str) -> str | None:
     return None
 
 
+#: Results `schtasks` reports that are not failures. 0 is success; the other two mean the task
+#: is running right now, and has never run yet - both normal states for a fresh registration.
+_TASK_RESULT_OK = {0, 267009, 267011}
+
+
 def query_task(name: str) -> dict:
-    """Status of one task → {name, exists, enabled, next_run, status}. Existence
-    is authoritative (schtasks return code); enabled/next_run are best-effort
-    parsed from the localised LIST output and may be None."""
-    rc, out, _ = _schtasks("/Query", "/TN", name, "/FO", "LIST")
+    """Status of one task → {name, exists, enabled, next_run, status, last_run, last_result}.
+
+    Existence is authoritative (schtasks return code); everything else is best-effort parsed
+    from the localised LIST output and may be None.
+
+    `/V` is what makes the last two fields available, and they are the ones that answer the
+    question a watchdog is for. Without them this function reported only whether a task is
+    REGISTERED and ENABLED - so a task failing every week read as healthy, which is what
+    happened on the owner's own machine: `health.txt` said "tasks=4/4 ok" while the weekly
+    consolidation had been exiting 2147946720 (0x800710E0, "the request was refused") for two
+    days. Wiring is not delivery, and this file is the only automatic watchdog the system has.
+    """
+    rc, out, _ = _schtasks("/Query", "/TN", name, "/FO", "LIST", "/V")
     if rc != 0 or not out.strip():
-        return {"name": name, "exists": False, "enabled": None,
-                "next_run": None, "status": None}
+        return {"name": name, "exists": False, "enabled": None, "next_run": None,
+                "status": None, "last_run": None, "last_result": None}
     fields = {}
     for ln in out.splitlines():
         if ":" in ln:
@@ -99,9 +113,19 @@ def query_task(name: str) -> dict:
     if status:
         low = status.lower()
         enabled = ("disab" not in low) and ("отключ" not in low)
+    #: "Last Result" in English, "Прошлый результат" in Russian. It arrives SIGNED, so a
+    #: failure like 0x800710E0 reads as -2147020576 rather than 2147946720; both are
+    #: non-zero, which is all the verdict below needs.
+    raw_result = _field(fields, "last result", "прошлый результат", "код возврата")
+    try:
+        last_result = int(str(raw_result).strip()) if raw_result not in (None, "") else None
+    except ValueError:                       # a locale that spells it some other way
+        last_result = None
     return {"name": name, "exists": True, "enabled": enabled,
             "next_run": _field(fields, "next run", "следующего запуска"),
-            "status": status or None}
+            "status": status or None,
+            "last_run": _field(fields, "last run time", "время прошлого запуска"),
+            "last_result": last_result}
 
 
 def resolve_task(spec: dict) -> dict:
@@ -143,14 +167,24 @@ def tasks_health() -> tuple[str, bool]:
         return "not-registered", False
     missing = [s["name"] for s in states if not s["exists"]]
     disabled = [s["name"] for s in present if s["enabled"] is False]
-    ok = len(present) - len(disabled)
+    # A task that is registered, enabled, and failing every run is the case this watchdog used
+    # to call healthy. `last_result` is None where the field could not be parsed - an unknown
+    # result is not a failure, because reporting one on a locale we cannot read would be the
+    # same mistake in the other direction.
+    failing = [s["name"] for s in present
+               if s["enabled"] is not False and s["last_result"] is not None
+               and s["last_result"] not in _TASK_RESULT_OK]
+    ok = len(present) - len({*disabled, *failing})
     parts = [f"{ok}/{len(states)} ok"]
     short = lambda n: n.split("_")[-1]
     if missing:
         parts.append("missing:" + ",".join(short(n) for n in missing))
     if disabled:
         parts.append("disabled:" + ",".join(short(n) for n in disabled))
-    return " ".join(parts), bool(missing or disabled)
+    if failing:
+        parts.append("failing:" + ",".join(
+            f"{short(s['name'])}={s['last_result']}" for s in present if s["name"] in failing))
+    return " ".join(parts), bool(missing or disabled or failing)
 
 
 def cmd_check() -> int:
