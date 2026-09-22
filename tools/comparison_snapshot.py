@@ -188,8 +188,16 @@ def render_head_to_head(data: dict, snap: dict, claims: dict) -> str:
         for i, r in enumerate(rows):
             if r[col] == best:
                 formatted[i][col] = f"**{formatted[i][col]}**"
+    #: The reciprocal-rank header is the manifest's own unit for that claim, uppercased -
+    #: `MRR@10` while the stand reads the first max(KS) candidates and no further, and whatever
+    #: it becomes if that depth changes. Written out here it was a SECOND name for the field,
+    #: and it had already fallen a rename behind: the manifest said `mrr@10` and this column
+    #: said `MRR`, which is the difference between "the first ten" and "the whole list" to any
+    #: reader comparing against a published MRR.
+    unit = next((c.get("unit") for c in load(MANIFEST)["claims"]
+                 if c["id"] == f"head_to_head.{HEAD_TO_HEAD_ROWS[0][1]}.mrr"), "mrr")
     return table(["System (same bge-m3, same 500 questions, one run)",
-                  "R@1", "R@5", "R@10", "MRR"], formatted)
+                  "R@1", "R@5", "R@10", (unit or "mrr").upper()], formatted)
 
 
 RENDERERS = {

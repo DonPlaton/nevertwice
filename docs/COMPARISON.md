@@ -123,7 +123,7 @@ reruns the whole stand, on the competitors' own packages, with one command.
 ### Retrieval recall on that stand
 
 <!-- comparison:head-to-head -->
-| System (same bge-m3, same 500 questions, one run) | R@1 | R@5 | R@10 | MRR |
+| System (same bge-m3, same 500 questions, one run) | R@1 | R@5 | R@10 | MRR@10 |
 |---|---|---|---|---|
 | **Nevertwice** (calibrated fusion, shipped default, 0 deps) | **0.550** | **0.802** | **0.858** | **0.651** |
 | Mem0 (`infer=False`, dense+BM25) | 0.478 | 0.758 | 0.846 | 0.603 |

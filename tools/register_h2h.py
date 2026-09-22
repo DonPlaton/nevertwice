@@ -39,7 +39,30 @@ try:
 except Exception:                      # noqa: BLE001 - a redirected stream may not support it
     pass
 
+#: Kept only for the docstrings that name it. The depths a run is registered at come from the
+#: ARTIFACT, below - see `recall_depths`.
 KS = (1, 5, 10)
+
+
+def recall_depths(arm: dict) -> list[int]:
+    """The k values this arm actually carries, ascending, read off the row.
+
+    This file used to hold `KS = (1, 5, 10)` against the stand's `KS = (1, 3, 5, 10)`, and the
+    cost was silent and years long: the stand measures recall@3 on every run and the registrar
+    never looked for it, so the register holds 19 recall@1, 19 recall@5 and 19 recall@10 claims
+    from the head-to-head family and ZERO recall@3. The numbers were never wrong - they were
+    never there. Two copies of one constant, each sensible on its own, and nothing compared them.
+
+    Reading the depths off the artifact makes "what was measured is what is registered" a
+    property rather than a coincidence. It does not retroactively add the missing claims: a
+    claim registered now would be stamped with today's HEAD while the artifact was measured at
+    another commit, which is a freshness lie. They arrive with the next run of the stand.
+    """
+    out = []
+    for key in arm:
+        if key.startswith("recall@") and key[7:].isdigit():
+            out.append(int(key[7:]))
+    return sorted(out)
 
 def mrr_key(arm: dict) -> str | None:
     """The arm's reciprocal-rank field, taken from the ARTIFACT rather than remembered here.
@@ -175,7 +198,7 @@ def build_claims(family: str, artifact: dict, *, systems: list[str] | None, head
         base = {"dataset": cfg["dataset"], "environment": environment, "n": n,
                 "command": command, "raw": cfg["raw"], "cited_in": list(cite),
                 "commit": head, "note": note, "produced_by": list(produced_by)}
-        for k in KS:
+        for k in recall_depths(arm):
             cid = f"{family}.{system}.recall_at_{k}"
             if cid in existing:
                 skipped.append(cid)

@@ -44,7 +44,16 @@ new, skipped, blocked = rh.build_claims("h2h_locomo", ART, systems=None, head="d
                                         produced_by=["research/head_to_head.py"],
                                         existing=set())
 ids = [c["id"] for c in new]
-check("four unblocked arms x four metrics = sixteen claims", len(new) == 16, str(len(new)))
+#: Five metrics, not four. The registrar used to carry its own `KS = (1, 5, 10)` against the
+#: stand's `(1, 3, 5, 10)`, so recall@3 was measured on every run and registered on none - the
+#: register holds 19 recall@1, 19 recall@5, 19 recall@10 from this family and ZERO recall@3.
+#: The depths now come off the artifact, and this count is the assertion that they do: an arm
+#: carrying four depths yields four recall claims, and a copy of the constant anywhere in the
+#: registrar would show up here as sixteen again.
+check("four unblocked arms x (four depths + the reciprocal rank) = twenty claims",
+      len(new) == 20, str(len(new)))
+check("the depth the registrar used to drop is registered",
+      "h2h_locomo.mem0.recall_at_3" in ids, str(sorted(i for i in ids if "recall_at" in i)))
 check("ids follow the family.system.metric shape",
       "h2h_locomo.mem0.recall_at_5" in ids and "h2h_locomo.amem.mrr" in ids)
 check("blocked arms are skipped and named", len(blocked) == 2 and blocked[0].startswith("amem_full:"),
