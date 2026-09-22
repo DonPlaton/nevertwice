@@ -308,5 +308,64 @@ with tempfile.TemporaryDirectory() as tmp4:
         check("every run ingesting nothing stays legal - that is extractor silence, not a bug",
               False, str(e))
 
+print("\n- two runs of one commit must be one program -")
+#: `--runs N` re-executes the stand per run, so the sources on disk are live state between
+#: runs. The dangerous edit is the one that lands CLEANLY: a torn write fails loudly on its own,
+#: a clean one silently makes run 2 a different program from run 1 (2026-09-22: a comment edited
+#: in the stand while runs were in flight, judged safe only afterwards).
+with tempfile.TemporaryDirectory() as tmp5:
+    def _rev(store, sha):
+        arm = _arm(engine_rows({"s0"}), 250.0)
+        arm["sessions_ingested"], arm["sessions_not_stored"] = 160, 0
+        b = dict(_blob({"nevertwice": arm}), store=store)
+        if sha is not None:
+            b["code_sha"] = sha
+        return b
+
+    old = _write(tmp5, "old.json", _rev("/tmp/a", "aaaaaaaaaaaa"))
+    new = _write(tmp5, "new.json", _rev("/tmp/b", "bbbbbbbbbbbb"))
+    same = _write(tmp5, "same.json", _rev("/tmp/c", "aaaaaaaaaaaa"))
+    none1 = _write(tmp5, "n1.json", _rev("/tmp/d", None))
+    none2 = _write(tmp5, "n2.json", _rev("/tmp/e", None))
+    try:
+        sb.pool([old, new])
+        check("two runs from different source revisions are refused", False, "pool returned")
+    except ValueError as e:
+        check("two runs from different source revisions are refused", True)
+        check("and the refusal prints both revisions",
+              "aaaaaaaaaaaa" in str(e) and "bbbbbbbbbbbb" in str(e), str(e)[:140])
+    try:
+        sb.pool([old, same])
+        check("the same revision twice still pools", True)
+    except ValueError as e:
+        check("the same revision twice still pools", False, str(e))
+    try:
+        sb.pool([none1, none2])
+        check("artifacts written before the field carry none and pool as before", True)
+    except ValueError as e:
+        check("artifacts written before the field carry none and pool as before", False, str(e))
+
+    #: The hash is over the package, not a hand-written list. The list it replaced was chosen as
+    #: "what that session happened to edit" and missed `api.py`, through which this stand does
+    #: both of its jobs. And the sort key is the repo-relative POSIX path, which is also the
+    #: token, so the identity does not depend on the platform: `sorted(Path...)` compares a
+    #: lowercased string with `\\` on Windows and the raw one with `/` on POSIX.
+    before = sb._code_sha()
+    api = ROOT / "nevertwice" / "api.py"
+    body = api.read_bytes()
+    try:
+        api.write_bytes(body + b"\n# touched by the suite\n")
+        check("touching api.py moves the hash (the hand-written list would not have)",
+              sb._code_sha() != before)
+    finally:
+        api.write_bytes(body)
+    check("and restoring it moves the hash back", sb._code_sha() == before)
+    rels = sorted(q.relative_to(ROOT).as_posix()
+                  for q in (ROOT / "nevertwice").rglob("*.py"))
+    check("the walk reaches the subpackages, not just the top level",
+          any("/" in r.split("nevertwice/", 1)[1] for r in rels), len(rels))
+    check("the sort key is the string that is hashed, so the order is platform-free",
+          rels == sorted(rels))
+
 print(f"\n{'ALL OK' if not FAILS else f'{FAILS} FAILED'}")
 sys.exit(1 if FAILS else 0)

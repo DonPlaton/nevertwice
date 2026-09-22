@@ -70,6 +70,59 @@ LLM = os.environ.get("SUPERSESSION_LLM", "qwen3-coder:30b")
 
 DATASET = HERE / "data" / "supersession_v1.json"
 
+
+def _code_sha() -> str:
+    """One hash over the program a run IS: this stand plus every module of the package.
+
+    Why a hash at all. `--runs N` starts a fresh interpreter per run, so the sources on disk are
+    live state between runs. The edit that lands cleanly is the dangerous one: it is silent, and
+    it makes the second run a different program from the first. `pool` refuses a mismatch - the
+    same guarantee `store` gives from the other side. Two runs must be INDEPENDENT in their
+    store and IDENTICAL in their code.
+
+    Why the whole package and not a list. The first draft hashed "the stand plus `_engine*.py`
+    plus `memory_hook.py`", chosen as *what this session happened to edit* - which is no basis
+    for a permanent guard, and it missed `api.py`, the module through which this stand does
+    both of its jobs (`capture_session` and `recall`; `api.py` is a separate module and not part
+    of the exec-ed engine body, so the hand-written list did not reach it). A glob maintains
+    itself: it survives the engine being cut into a different number of parts, a file moving,
+    and a module that does not exist yet.
+
+    Why not `sys.modules`, which would be exact. Because it is not deterministic HERE: run 1
+    executes the engine arm and the other arms, run 2 only the engine arm, so the set of loaded
+    modules differs between the two runs by construction, and deferred imports inside the engine
+    make it differ again by which branches the data took. A guard that fires on two honest runs
+    is a guard someone switches off. The glob is coarser and it is the same for every run.
+
+    What it covers, counted rather than assumed: `rglob` walks the whole package, which today is
+    63 files - 59 at the top level plus `integrations/` (3) and `invariants/` (1). The top-level
+    count alone is the number a person reads off `ls`, and writing it beside an `rglob` would
+    leave the comment and the hash disagreeing about the subpackages.
+
+    The cost of the coarseness, stated: an edit to a package module this stand never calls also
+    changes the hash. That refusal is conservative rather than wrong - between two runs of one
+    repeat, nothing in the package should be moving at all. The walk is of the FILESYSTEM and
+    not of git, deliberately: an untracked `.py` dropped into the package is importable, so it
+    is part of what could execute.
+    """
+    # The repo-relative POSIX path is both the sort key and the token, and that is the whole
+    # portability argument in one line. Not the basename, because `invariants/__init__.py` and
+    # the package's own `__init__.py` would contribute the same token and a rename between two
+    # files of equal content would leave the hash still. And sorted as STRINGS rather than as
+    # `Path` objects, because `sorted(Path...)` is platform-dependent twice over: Windows
+    # compares a lowercased string with `\` (0x5C), POSIX the raw string with `/` (0x2F), and
+    # digits and capitals lie between those two bytes. Today's 63 files happen to sort the same
+    # either way - checked - but `nevertwice/Z.py` beside `nevertwice/invariants/` is enough to
+    # split them, and then one unchanged tree hashes differently on Windows and on Linux. The
+    # refusal would land on the cross-OS CI run, which is exit criterion 4, and be false.
+    files = sorted(p.relative_to(ROOT).as_posix()
+                   for p in [Path(__file__).resolve()] + list((ROOT / "nevertwice").rglob("*.py")))
+    h = hashlib.sha256()
+    for rel in files:
+        h.update(rel.encode() + b"\0")
+        h.update((ROOT / rel).read_bytes())
+    return h.hexdigest()[:12]
+
 #: Deterministic extraction, which this stand had never actually asked for. The engine's default
 #: is 0.2 - right for the live hook, wrong for a benchmark - and the stands that care pin it to 0.
 #: This one did not, so every number it has ever produced was sampled, and the artifact it writes
@@ -739,6 +792,7 @@ def pool(engine_files: list[Path], other_files: list[Path] | None = None) -> dic
     """
     runs: list[dict] = []
     engine_stores: list[str | None] = []
+    engine_code: list[str | None] = []
     after_runs: list[dict] = []
     other_runs: dict[str, list[dict]] = {}
     meta: dict | None = None
@@ -751,6 +805,7 @@ def pool(engine_files: list[Path], other_files: list[Path] | None = None) -> dic
             raise ValueError(f"{f}: no {ENGINE_ARM} arm to pool")
         runs.append(arm)
         engine_stores.append(blob.get("store"))
+        engine_code.append(blob.get("code_sha"))
         after = blob["arms"].get(f"{ENGINE_ARM}_after_sleep")     # K8: the second reading, when present
         if after and not after.get("blocked"):
             after_runs.append(after)
@@ -777,6 +832,16 @@ def pool(engine_files: list[Path], other_files: list[Path] | None = None) -> dic
     #: process per run: run 1 served 440.0 chars/query and run 2 served 387.5 - which is run 1's
     #: own AFTER-SLEEP figure (2026-09-22). Files written before this field existed carry no
     #: store and are pooled as before; `None` is not evidence of sharing.
+    #: Two runs of one commit have to be ONE program. The stand re-executes itself per run, so
+    #: an edit landing between them is silent and spoils the comparison the repeat exists for.
+    #: The failure this guards is the SUCCESSFUL write; a truncated one fails loudly by itself
+    #: (2026-09-22: a comment edited in this file while runs were in flight, judged safe only
+    #: afterwards). Files written before the field carry none and pool as before.
+    shas = [x for x in engine_code if x]
+    if len(set(shas)) > 1:
+        raise ValueError(
+            "two engine runs came from different source revisions of the stand and package "
+            f"({' vs '.join(sorted(set(shas)))}) - that is not a repeat of the same commit")
     stores = [s for s in engine_stores if s]
     if len(stores) != len(set(stores)):
         raise ValueError(
@@ -962,6 +1027,7 @@ def _one_run(data: dict, cases: list[dict], args, arm_names: list[str]) -> dict:
            # because a second pass over a store the first already filled is not a repeat - see
            # the `--runs` branch in `main` for the measurement that made that concrete.
            "store": str(sandbox_guard.store()),
+           "code_sha": _code_sha(),
            "extract_temperature": os.environ.get("NEVERTWICE_EXTRACT_TEMP"),
            "arms": {}}
     for name in arm_names:
