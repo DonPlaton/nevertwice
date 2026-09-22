@@ -388,7 +388,11 @@ def check_list_fields(vault: Path) -> dict:
                 key, val = (s.strip() for s in ln.split(":", 1))
                 block = (val == "" and i + 1 < len(lines)
                          and lines[i + 1].lstrip().startswith("- "))
-                if val.startswith("[") or block:
+                #: `[[note]]` is a wiki-link, not a list shape: the parser reads it as the link
+                #: string, which is what it means. Counting it would send someone to rewrite a
+                #: correct link as a JSON list (found by the auditing session's seven-form probe).
+                wikilink = val.startswith("[[")
+                if (val.startswith("[") and not wikilink) or block:
                     list_keys.append(key)
             if not list_keys:
                 continue

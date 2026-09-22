@@ -487,14 +487,23 @@ def test_a_list_the_engine_cannot_read_is_counted() -> None:
                                                encoding="utf-8")
 
         note("2026-01-01-p-decision-json", 'tags: ["python", "testing"]\n'
-             'relations: [{"rel": "caused-by", "target": "x"}]\ncontested: []')
-        result = doctor.check_list_fields(vault)
-        check("JSON lists - the form the engine writes - are not counted",
+             'relations: [{"rel": "caused-by", "target": "x"}]\ncontested: []\n'
+             'related: [[2025-12-01-p-decision-older]]')
+        #: Reached through getattr: a revert of the check must fail by name, not by
+        #: AttributeError - the auditing session reverted doctor.py and got the crash.
+        check_list_fields = getattr(doctor, "check_list_fields", None)
+        check("doctor has a check for list fields the engine reads as text",
+              callable(check_list_fields),
+              "no check_list_fields - a hand-edited list that loses its tags is silent again")
+        if not callable(check_list_fields):
+            return
+        result = check_list_fields(vault)
+        check("JSON lists and a wiki-link - both read as meant - are not counted",
               result["status"] == doctor.OK, f"{result['status']}: {result['detail']}")
 
         note("2026-01-02-p-decision-flow", "tags: [python, testing]")
         note("2026-01-03-p-decision-block", "tags:\n  - python\n  - testing")
-        result = doctor.check_list_fields(vault)
+        result = check_list_fields(vault)
         check("an unquoted flow list and a block list are both counted",
               result["status"] == doctor.WARN and result["detail"].startswith("2 list field"),
               f"{result['status']}: {result['detail']}")
@@ -508,12 +517,12 @@ def test_a_list_the_engine_cannot_read_is_counted() -> None:
         sup.mkdir()
         (sup / "2026-01-04-p-decision-old.md").write_text(
             "---\ntype: decision\ntags: [a, b]\n---\n\nbody\n", encoding="utf-8")
-        result = doctor.check_list_fields(vault)
+        result = check_list_fields(vault)
         check("a retired note is not counted - nothing reads it any more",
               result["detail"].startswith("2 list field"), result["detail"])
 
     with tempfile.TemporaryDirectory() as tmp:
-        result = doctor.check_list_fields(Path(tmp) / "absent")
+        result = check_list_fields(Path(tmp) / "absent")
         check("no store: skipped, not failed", result["status"] == doctor.SKIP, str(result))
 
 
