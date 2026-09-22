@@ -93,7 +93,7 @@ if ab:
           str(ab.get("value")) == "0.35" and "[4]" in (ab.get("pointer") or ""),
           f"value {ab.get('value')}, pointer {ab.get('pointer')}")
 
-print("\n- and the pairs are guarded at the restore, which the rest are not -")
+print("\n- all of them are guarded at the restore, by name where possible and by shape otherwise -")
 sys.path.insert(0, str(ROOT / "tools"))
 import remeasure as rm  # noqa: E402
 
@@ -101,10 +101,31 @@ art = {"pairs": [{"a": "naive", "b": "nevertwice", "p_mcnemar": 2.78e-17}]}
 check("a moved pair is refused by name",
       bool(rm.pair_mismatch({"id": "supersession.mem0_vs_naive.p_mcnemar",
                              "pointer": "pairs[0].p_mcnemar"}, art)))
-check("a sweep index has no such guard, and this suite says so rather than implying it",
-      rm.pair_mismatch({"id": "abstention.recall.shipped_threshold",
-                        "pointer": "recall_sweep[4].threshold"},
-                       {"recall_sweep": [{"threshold": 0.9}] * 5}) is None)
+#: A sweep index has no arm names to compare, so what is compared is the shape of the list it
+#: indexes, recorded when the claim was registered (`tools/stamp_shapes.py`).
+sweep = {"recall_sweep": [{"threshold": t} for t in (0.1, 0.2, 0.25, 0.3, 0.33, 0.35)]}
+was_five = [{"at": "recall_sweep", "len": 5, "keys": ["threshold"]}]
+check("a sweep that grew a row is refused by shape",
+      bool(rm.shape_mismatch({"id": "abstention.recall.shipped_threshold",
+                              "pointer": "recall_sweep[4].threshold",
+                              "shape": was_five}, sweep)))
+check("and a sweep that did not move is left alone",
+      rm.shape_mismatch({"id": "abstention.recall.shipped_threshold",
+                         "pointer": "recall_sweep[4].threshold",
+                         "shape": [{"at": "recall_sweep", "len": 6, "keys": ["threshold"]}]},
+                        sweep) is None)
+
+print("\n- every positional claim carries the shape it was registered against -")
+missing = [c["id"] for c in positional if not c.get("shape")]
+check("none of the 108 is left without one", not missing, f"{len(missing)}: {missing[:3]}")
+#: What shape does NOT see: rows reordered inside a list of unchanged length and unchanged keys.
+#: That residue is not unguarded - `_test_evidence_manifest.test_pointers_match_the_raw_results`
+#: compares every claim's value with the artifact, over ALL claims rather than the live ones, so
+#: a reorder is caught there whenever the neighbouring row holds a different value. It is NOT
+#: caught when the two rows hold the same number, and it is not caught on the restore path,
+#: where the value is rewritten from what was just read. That is the shape of the hole, measured
+#: rather than implied.
+check("the residue is named and its size is known", len(positional) == 108, str(len(positional)))
 
 print(f"\n{'ALL OK' if not FAILS else f'{FAILS} FAILED'}")
 sys.exit(1 if FAILS else 0)

@@ -111,6 +111,63 @@ def pair_mismatch(claim: dict, data) -> str | None:
     return None
 
 
+def list_shape(data, pointer: str) -> list[dict]:
+    """The shape of every list a pointer indexes by position, as it stands in this artifact.
+
+    `pair_mismatch` above covers the claims whose id names the two arms compared - thirty-six of
+    the hundred and eight positional claims. The other seventy-two index a list whose rows carry
+    no such signature: `recall_sweep[4].threshold`, `by_k[0].recall_at_k`, `per_run[0]`. For
+    those the only thing that can be compared is the list's SHAPE, so it is recorded when the
+    claim is registered and compared on every restore. Inserting one threshold before index 4
+    moves thirty-three abstention claims to a neighbouring row while every existing check still
+    passes - the value resolves, and it is a number of the same kind.
+    """
+    out: list[dict] = []
+    node, path = data, ""
+    for quoted, index, key in SEGMENT.findall(pointer):
+        if index:
+            row = node[int(index)]
+            out.append({"at": path, "len": len(node),
+                        "keys": sorted(row) if isinstance(row, dict) else None})
+            node = row
+        else:
+            k = quoted or key
+            path = f"{path}.{k}" if path else k
+            node = node[k]
+    return out
+
+
+def shape_mismatch(claim: dict, data) -> str | None:
+    """Has the list this claim indexes changed shape since the claim was registered?
+
+    A claim with no recorded `shape` is one registered before this layer; it is not refused here
+    (that would withdraw the register wholesale), it is counted by
+    `tests/_test_positional_pointers.py`, which is where the number lives.
+    """
+    recorded = claim.get("shape")
+    if not recorded:
+        return None
+    try:
+        now = list_shape(data, claim.get("pointer") or "")
+    except (KeyError, IndexError, TypeError):
+        return None                       # the pointer itself is checked by the caller
+    if now == recorded:
+        return None
+    for was, isnow in zip(recorded, now + [None] * len(recorded)):
+        if isnow is None or was != isnow:
+            where = (was or {}).get("at") or "the artifact's top level"
+            if isnow and was["len"] != isnow["len"]:
+                return (f"`{where}` held {was['len']} rows when this claim was registered and "
+                        f"holds {isnow['len']} now - the index addresses a different row, and "
+                        "the value it finds there is the same kind of number")
+            if isnow:
+                return (f"`{where}` still holds {isnow['len']} rows, but the row at this index "
+                        f"changed shape: keys were {was['keys']}, are {isnow['keys']}")
+            return f"`{where}` no longer indexes a list at all"
+    return (f"the shape of the lists `{claim.get('pointer')}` indexes changed: "
+            f"{recorded} became {now}")
+
+
 def wilson(p: float, n: int, z: float = 1.96) -> tuple[float, float]:
     d = 1 + z * z / n
     c = p + z * z / (2 * n)
@@ -246,7 +303,7 @@ def restore(manifest: dict, select: set[str] | None = None, head: str | None = N
         #: Before trusting the number: does the index still point at the same pair? Restoring
         #: from a renumbered list is how four live claims took another pair's figures while
         #: keeping their own sentence (2026-09-22).
-        moved = pair_mismatch(c, data)
+        moved = pair_mismatch(c, data) or shape_mismatch(c, data)
         if moved:
             left.append(f"{c['id']}: {moved}")
             continue

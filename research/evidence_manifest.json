@@ -3317,7 +3317,22 @@
     "sandbox_guard.py"
    ],
    "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again, and nothing re-runs it yet: the campaign's block B3 runs `token_ab.py --save` for the injection-budget measurement, which does not fill the pointers these claims read. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the run is possible the moment someone schedules it",
-   "withdrawn_on": "2026-08-25"
+   "withdrawn_on": "2026-08-25",
+   "shape": [
+    {
+     "at": "longmem_token_ab.by_k",
+     "len": 3,
+     "keys": [
+      "global_history_tok",
+      "k",
+      "mean_oracle_haystack_tok",
+      "mean_topk_tok",
+      "net_vs_curated_haystack_tok",
+      "net_vs_full_history_tok",
+      "recall_at_k"
+     ]
+    }
+   ]
   },
   {
    "id": "token_ab.raw.k3.mean_topk_tok",
@@ -3371,7 +3386,22 @@
     "sandbox_guard.py"
    ],
    "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again, and nothing re-runs it yet: the campaign's block B3 runs `token_ab.py --save` for the injection-budget measurement, which does not fill the pointers these claims read. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the run is possible the moment someone schedules it",
-   "withdrawn_on": "2026-08-25"
+   "withdrawn_on": "2026-08-25",
+   "shape": [
+    {
+     "at": "longmem_token_ab.by_k",
+     "len": 3,
+     "keys": [
+      "global_history_tok",
+      "k",
+      "mean_oracle_haystack_tok",
+      "mean_topk_tok",
+      "net_vs_curated_haystack_tok",
+      "net_vs_full_history_tok",
+      "recall_at_k"
+     ]
+    }
+   ]
   },
   {
    "id": "token_ab.raw.k3.net_vs_curated_haystack_tok",
@@ -3426,7 +3456,22 @@
     "sandbox_guard.py"
    ],
    "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again, and nothing re-runs it yet: the campaign's block B3 runs `token_ab.py --save` for the injection-budget measurement, which does not fill the pointers these claims read. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the run is possible the moment someone schedules it",
-   "withdrawn_on": "2026-08-25"
+   "withdrawn_on": "2026-08-25",
+   "shape": [
+    {
+     "at": "longmem_token_ab.by_k",
+     "len": 3,
+     "keys": [
+      "global_history_tok",
+      "k",
+      "mean_oracle_haystack_tok",
+      "mean_topk_tok",
+      "net_vs_curated_haystack_tok",
+      "net_vs_full_history_tok",
+      "recall_at_k"
+     ]
+    }
+   ]
   },
   {
    "id": "token_ab.raw.k3.net_vs_full_history_tok",
@@ -3480,7 +3525,22 @@
     "sandbox_guard.py"
    ],
    "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again, and nothing re-runs it yet: the campaign's block B3 runs `token_ab.py --save` for the injection-budget measurement, which does not fill the pointers these claims read. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the run is possible the moment someone schedules it",
-   "withdrawn_on": "2026-08-25"
+   "withdrawn_on": "2026-08-25",
+   "shape": [
+    {
+     "at": "longmem_token_ab.by_k",
+     "len": 3,
+     "keys": [
+      "global_history_tok",
+      "k",
+      "mean_oracle_haystack_tok",
+      "mean_topk_tok",
+      "net_vs_curated_haystack_tok",
+      "net_vs_full_history_tok",
+      "recall_at_k"
+     ]
+    }
+   ]
   },
   {
    "id": "token_ab.raw.k5.recall_at_k",
@@ -3538,7 +3598,22 @@
     "sandbox_guard.py"
    ],
    "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again, and nothing re-runs it yet: the campaign's block B3 runs `token_ab.py --save` for the injection-budget measurement, which does not fill the pointers these claims read. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the run is possible the moment someone schedules it",
-   "withdrawn_on": "2026-08-25"
+   "withdrawn_on": "2026-08-25",
+   "shape": [
+    {
+     "at": "longmem_token_ab.by_k",
+     "len": 3,
+     "keys": [
+      "global_history_tok",
+      "k",
+      "mean_oracle_haystack_tok",
+      "mean_topk_tok",
+      "net_vs_curated_haystack_tok",
+      "net_vs_full_history_tok",
+      "recall_at_k"
+     ]
+    }
+   ]
   },
   {
    "id": "token_ab.raw.k5.mean_topk_tok",
@@ -3592,7 +3667,22 @@
     "sandbox_guard.py"
    ],
    "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again, and nothing re-runs it yet: the campaign's block B3 runs `token_ab.py --save` for the injection-budget measurement, which does not fill the pointers these claims read. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the run is possible the moment someone schedules it",
-   "withdrawn_on": "2026-08-25"
+   "withdrawn_on": "2026-08-25",
+   "shape": [
+    {
+     "at": "longmem_token_ab.by_k",
+     "len": 3,
+     "keys": [
+      "global_history_tok",
+      "k",
+      "mean_oracle_haystack_tok",
+      "mean_topk_tok",
+      "net_vs_curated_haystack_tok",
+      "net_vs_full_history_tok",
+      "recall_at_k"
+     ]
+    }
+   ]
   },
   {
    "id": "token_ab.raw.k5.net_vs_curated_haystack_tok",
@@ -3647,7 +3737,22 @@
     "sandbox_guard.py"
    ],
    "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again, and nothing re-runs it yet: the campaign's block B3 runs `token_ab.py --save` for the injection-budget measurement, which does not fill the pointers these claims read. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the run is possible the moment someone schedules it",
-   "withdrawn_on": "2026-08-25"
+   "withdrawn_on": "2026-08-25",
+   "shape": [
+    {
+     "at": "longmem_token_ab.by_k",
+     "len": 3,
+     "keys": [
+      "global_history_tok",
+      "k",
+      "mean_oracle_haystack_tok",
+      "mean_topk_tok",
+      "net_vs_curated_haystack_tok",
+      "net_vs_full_history_tok",
+      "recall_at_k"
+     ]
+    }
+   ]
   },
   {
    "id": "token_ab.raw.k5.net_vs_full_history_tok",
@@ -3701,7 +3806,22 @@
     "sandbox_guard.py"
    ],
    "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again, and nothing re-runs it yet: the campaign's block B3 runs `token_ab.py --save` for the injection-budget measurement, which does not fill the pointers these claims read. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the run is possible the moment someone schedules it",
-   "withdrawn_on": "2026-08-25"
+   "withdrawn_on": "2026-08-25",
+   "shape": [
+    {
+     "at": "longmem_token_ab.by_k",
+     "len": 3,
+     "keys": [
+      "global_history_tok",
+      "k",
+      "mean_oracle_haystack_tok",
+      "mean_topk_tok",
+      "net_vs_curated_haystack_tok",
+      "net_vs_full_history_tok",
+      "recall_at_k"
+     ]
+    }
+   ]
   },
   {
    "id": "token_ab.raw.k10.recall_at_k",
@@ -3759,7 +3879,22 @@
     "sandbox_guard.py"
    ],
    "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again, and nothing re-runs it yet: the campaign's block B3 runs `token_ab.py --save` for the injection-budget measurement, which does not fill the pointers these claims read. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the run is possible the moment someone schedules it",
-   "withdrawn_on": "2026-08-25"
+   "withdrawn_on": "2026-08-25",
+   "shape": [
+    {
+     "at": "longmem_token_ab.by_k",
+     "len": 3,
+     "keys": [
+      "global_history_tok",
+      "k",
+      "mean_oracle_haystack_tok",
+      "mean_topk_tok",
+      "net_vs_curated_haystack_tok",
+      "net_vs_full_history_tok",
+      "recall_at_k"
+     ]
+    }
+   ]
   },
   {
    "id": "token_ab.raw.k10.mean_topk_tok",
@@ -3813,7 +3948,22 @@
     "sandbox_guard.py"
    ],
    "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again, and nothing re-runs it yet: the campaign's block B3 runs `token_ab.py --save` for the injection-budget measurement, which does not fill the pointers these claims read. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the run is possible the moment someone schedules it",
-   "withdrawn_on": "2026-08-25"
+   "withdrawn_on": "2026-08-25",
+   "shape": [
+    {
+     "at": "longmem_token_ab.by_k",
+     "len": 3,
+     "keys": [
+      "global_history_tok",
+      "k",
+      "mean_oracle_haystack_tok",
+      "mean_topk_tok",
+      "net_vs_curated_haystack_tok",
+      "net_vs_full_history_tok",
+      "recall_at_k"
+     ]
+    }
+   ]
   },
   {
    "id": "token_ab.raw.k10.net_vs_curated_haystack_tok",
@@ -3868,7 +4018,22 @@
     "sandbox_guard.py"
    ],
    "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again, and nothing re-runs it yet: the campaign's block B3 runs `token_ab.py --save` for the injection-budget measurement, which does not fill the pointers these claims read. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the run is possible the moment someone schedules it",
-   "withdrawn_on": "2026-08-25"
+   "withdrawn_on": "2026-08-25",
+   "shape": [
+    {
+     "at": "longmem_token_ab.by_k",
+     "len": 3,
+     "keys": [
+      "global_history_tok",
+      "k",
+      "mean_oracle_haystack_tok",
+      "mean_topk_tok",
+      "net_vs_curated_haystack_tok",
+      "net_vs_full_history_tok",
+      "recall_at_k"
+     ]
+    }
+   ]
   },
   {
    "id": "token_ab.raw.k10.net_vs_full_history_tok",
@@ -3922,7 +4087,22 @@
     "sandbox_guard.py"
    ],
    "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again, and nothing re-runs it yet: the campaign's block B3 runs `token_ab.py --save` for the injection-budget measurement, which does not fill the pointers these claims read. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the run is possible the moment someone schedules it",
-   "withdrawn_on": "2026-08-25"
+   "withdrawn_on": "2026-08-25",
+   "shape": [
+    {
+     "at": "longmem_token_ab.by_k",
+     "len": 3,
+     "keys": [
+      "global_history_tok",
+      "k",
+      "mean_oracle_haystack_tok",
+      "mean_topk_tok",
+      "net_vs_curated_haystack_tok",
+      "net_vs_full_history_tok",
+      "recall_at_k"
+     ]
+    }
+   ]
   },
   {
    "id": "token_ab.distill.ratio",
@@ -4329,7 +4509,22 @@
     "sandbox_guard.py"
    ],
    "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again, and nothing re-runs it yet: the campaign's block B3 runs `token_ab.py --save` for the injection-budget measurement, which does not fill the pointers these claims read. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the run is possible the moment someone schedules it",
-   "withdrawn_on": "2026-08-25"
+   "withdrawn_on": "2026-08-25",
+   "shape": [
+    {
+     "at": "distillation_ab.by_k",
+     "len": 3,
+     "keys": [
+      "distilled_topk_tok",
+      "k",
+      "net_distilled_vs_curated",
+      "net_distilled_vs_history",
+      "net_raw_vs_curated",
+      "raw_topk_tok",
+      "recall_at_k"
+     ]
+    }
+   ]
   },
   {
    "id": "token_ab.distill.k3.raw_topk_tok",
@@ -4383,7 +4578,22 @@
     "sandbox_guard.py"
    ],
    "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again, and nothing re-runs it yet: the campaign's block B3 runs `token_ab.py --save` for the injection-budget measurement, which does not fill the pointers these claims read. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the run is possible the moment someone schedules it",
-   "withdrawn_on": "2026-08-25"
+   "withdrawn_on": "2026-08-25",
+   "shape": [
+    {
+     "at": "distillation_ab.by_k",
+     "len": 3,
+     "keys": [
+      "distilled_topk_tok",
+      "k",
+      "net_distilled_vs_curated",
+      "net_distilled_vs_history",
+      "net_raw_vs_curated",
+      "raw_topk_tok",
+      "recall_at_k"
+     ]
+    }
+   ]
   },
   {
    "id": "token_ab.distill.k3.distilled_topk_tok",
@@ -4436,7 +4646,22 @@
     "sandbox_guard.py"
    ],
    "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again, and nothing re-runs it yet: the campaign's block B3 runs `token_ab.py --save` for the injection-budget measurement, which does not fill the pointers these claims read. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the run is possible the moment someone schedules it",
-   "withdrawn_on": "2026-08-25"
+   "withdrawn_on": "2026-08-25",
+   "shape": [
+    {
+     "at": "distillation_ab.by_k",
+     "len": 3,
+     "keys": [
+      "distilled_topk_tok",
+      "k",
+      "net_distilled_vs_curated",
+      "net_distilled_vs_history",
+      "net_raw_vs_curated",
+      "raw_topk_tok",
+      "recall_at_k"
+     ]
+    }
+   ]
   },
   {
    "id": "token_ab.distill.k3.net_raw_vs_curated",
@@ -4491,7 +4716,22 @@
     "sandbox_guard.py"
    ],
    "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again, and nothing re-runs it yet: the campaign's block B3 runs `token_ab.py --save` for the injection-budget measurement, which does not fill the pointers these claims read. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the run is possible the moment someone schedules it",
-   "withdrawn_on": "2026-08-25"
+   "withdrawn_on": "2026-08-25",
+   "shape": [
+    {
+     "at": "distillation_ab.by_k",
+     "len": 3,
+     "keys": [
+      "distilled_topk_tok",
+      "k",
+      "net_distilled_vs_curated",
+      "net_distilled_vs_history",
+      "net_raw_vs_curated",
+      "raw_topk_tok",
+      "recall_at_k"
+     ]
+    }
+   ]
   },
   {
    "id": "token_ab.distill.k3.net_distilled_vs_curated",
@@ -4545,7 +4785,22 @@
     "sandbox_guard.py"
    ],
    "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again, and nothing re-runs it yet: the campaign's block B3 runs `token_ab.py --save` for the injection-budget measurement, which does not fill the pointers these claims read. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the run is possible the moment someone schedules it",
-   "withdrawn_on": "2026-08-25"
+   "withdrawn_on": "2026-08-25",
+   "shape": [
+    {
+     "at": "distillation_ab.by_k",
+     "len": 3,
+     "keys": [
+      "distilled_topk_tok",
+      "k",
+      "net_distilled_vs_curated",
+      "net_distilled_vs_history",
+      "net_raw_vs_curated",
+      "raw_topk_tok",
+      "recall_at_k"
+     ]
+    }
+   ]
   },
   {
    "id": "token_ab.distill.k5.recall_at_k",
@@ -4603,7 +4858,22 @@
     "sandbox_guard.py"
    ],
    "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again, and nothing re-runs it yet: the campaign's block B3 runs `token_ab.py --save` for the injection-budget measurement, which does not fill the pointers these claims read. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the run is possible the moment someone schedules it",
-   "withdrawn_on": "2026-08-25"
+   "withdrawn_on": "2026-08-25",
+   "shape": [
+    {
+     "at": "distillation_ab.by_k",
+     "len": 3,
+     "keys": [
+      "distilled_topk_tok",
+      "k",
+      "net_distilled_vs_curated",
+      "net_distilled_vs_history",
+      "net_raw_vs_curated",
+      "raw_topk_tok",
+      "recall_at_k"
+     ]
+    }
+   ]
   },
   {
    "id": "token_ab.distill.k5.raw_topk_tok",
@@ -4657,7 +4927,22 @@
     "sandbox_guard.py"
    ],
    "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again, and nothing re-runs it yet: the campaign's block B3 runs `token_ab.py --save` for the injection-budget measurement, which does not fill the pointers these claims read. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the run is possible the moment someone schedules it",
-   "withdrawn_on": "2026-08-25"
+   "withdrawn_on": "2026-08-25",
+   "shape": [
+    {
+     "at": "distillation_ab.by_k",
+     "len": 3,
+     "keys": [
+      "distilled_topk_tok",
+      "k",
+      "net_distilled_vs_curated",
+      "net_distilled_vs_history",
+      "net_raw_vs_curated",
+      "raw_topk_tok",
+      "recall_at_k"
+     ]
+    }
+   ]
   },
   {
    "id": "token_ab.distill.k5.distilled_topk_tok",
@@ -4710,7 +4995,22 @@
     "sandbox_guard.py"
    ],
    "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again, and nothing re-runs it yet: the campaign's block B3 runs `token_ab.py --save` for the injection-budget measurement, which does not fill the pointers these claims read. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the run is possible the moment someone schedules it",
-   "withdrawn_on": "2026-08-25"
+   "withdrawn_on": "2026-08-25",
+   "shape": [
+    {
+     "at": "distillation_ab.by_k",
+     "len": 3,
+     "keys": [
+      "distilled_topk_tok",
+      "k",
+      "net_distilled_vs_curated",
+      "net_distilled_vs_history",
+      "net_raw_vs_curated",
+      "raw_topk_tok",
+      "recall_at_k"
+     ]
+    }
+   ]
   },
   {
    "id": "token_ab.distill.k5.net_raw_vs_curated",
@@ -4765,7 +5065,22 @@
     "sandbox_guard.py"
    ],
    "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again, and nothing re-runs it yet: the campaign's block B3 runs `token_ab.py --save` for the injection-budget measurement, which does not fill the pointers these claims read. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the run is possible the moment someone schedules it",
-   "withdrawn_on": "2026-08-25"
+   "withdrawn_on": "2026-08-25",
+   "shape": [
+    {
+     "at": "distillation_ab.by_k",
+     "len": 3,
+     "keys": [
+      "distilled_topk_tok",
+      "k",
+      "net_distilled_vs_curated",
+      "net_distilled_vs_history",
+      "net_raw_vs_curated",
+      "raw_topk_tok",
+      "recall_at_k"
+     ]
+    }
+   ]
   },
   {
    "id": "token_ab.distill.k5.net_distilled_vs_curated",
@@ -4819,7 +5134,22 @@
     "sandbox_guard.py"
    ],
    "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again, and nothing re-runs it yet: the campaign's block B3 runs `token_ab.py --save` for the injection-budget measurement, which does not fill the pointers these claims read. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the run is possible the moment someone schedules it",
-   "withdrawn_on": "2026-08-25"
+   "withdrawn_on": "2026-08-25",
+   "shape": [
+    {
+     "at": "distillation_ab.by_k",
+     "len": 3,
+     "keys": [
+      "distilled_topk_tok",
+      "k",
+      "net_distilled_vs_curated",
+      "net_distilled_vs_history",
+      "net_raw_vs_curated",
+      "raw_topk_tok",
+      "recall_at_k"
+     ]
+    }
+   ]
   },
   {
    "id": "token_ab.distill.k10.recall_at_k",
@@ -4877,7 +5207,22 @@
     "sandbox_guard.py"
    ],
    "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again, and nothing re-runs it yet: the campaign's block B3 runs `token_ab.py --save` for the injection-budget measurement, which does not fill the pointers these claims read. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the run is possible the moment someone schedules it",
-   "withdrawn_on": "2026-08-25"
+   "withdrawn_on": "2026-08-25",
+   "shape": [
+    {
+     "at": "distillation_ab.by_k",
+     "len": 3,
+     "keys": [
+      "distilled_topk_tok",
+      "k",
+      "net_distilled_vs_curated",
+      "net_distilled_vs_history",
+      "net_raw_vs_curated",
+      "raw_topk_tok",
+      "recall_at_k"
+     ]
+    }
+   ]
   },
   {
    "id": "token_ab.distill.k10.raw_topk_tok",
@@ -4931,7 +5276,22 @@
     "sandbox_guard.py"
    ],
    "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again, and nothing re-runs it yet: the campaign's block B3 runs `token_ab.py --save` for the injection-budget measurement, which does not fill the pointers these claims read. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the run is possible the moment someone schedules it",
-   "withdrawn_on": "2026-08-25"
+   "withdrawn_on": "2026-08-25",
+   "shape": [
+    {
+     "at": "distillation_ab.by_k",
+     "len": 3,
+     "keys": [
+      "distilled_topk_tok",
+      "k",
+      "net_distilled_vs_curated",
+      "net_distilled_vs_history",
+      "net_raw_vs_curated",
+      "raw_topk_tok",
+      "recall_at_k"
+     ]
+    }
+   ]
   },
   {
    "id": "token_ab.distill.k10.distilled_topk_tok",
@@ -4985,7 +5345,22 @@
     "sandbox_guard.py"
    ],
    "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again, and nothing re-runs it yet: the campaign's block B3 runs `token_ab.py --save` for the injection-budget measurement, which does not fill the pointers these claims read. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the run is possible the moment someone schedules it",
-   "withdrawn_on": "2026-08-25"
+   "withdrawn_on": "2026-08-25",
+   "shape": [
+    {
+     "at": "distillation_ab.by_k",
+     "len": 3,
+     "keys": [
+      "distilled_topk_tok",
+      "k",
+      "net_distilled_vs_curated",
+      "net_distilled_vs_history",
+      "net_raw_vs_curated",
+      "raw_topk_tok",
+      "recall_at_k"
+     ]
+    }
+   ]
   },
   {
    "id": "token_ab.distill.k10.net_raw_vs_curated",
@@ -5040,7 +5415,22 @@
     "sandbox_guard.py"
    ],
    "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again, and nothing re-runs it yet: the campaign's block B3 runs `token_ab.py --save` for the injection-budget measurement, which does not fill the pointers these claims read. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the run is possible the moment someone schedules it",
-   "withdrawn_on": "2026-08-25"
+   "withdrawn_on": "2026-08-25",
+   "shape": [
+    {
+     "at": "distillation_ab.by_k",
+     "len": 3,
+     "keys": [
+      "distilled_topk_tok",
+      "k",
+      "net_distilled_vs_curated",
+      "net_distilled_vs_history",
+      "net_raw_vs_curated",
+      "raw_topk_tok",
+      "recall_at_k"
+     ]
+    }
+   ]
   },
   {
    "id": "token_ab.distill.k10.net_distilled_vs_curated",
@@ -5094,7 +5484,22 @@
     "sandbox_guard.py"
    ],
    "stale": "the 2026-07 run is gone: nobody recorded which corpus file produced it, so this number cannot be restored from anything, only measured again, and nothing re-runs it yet: the campaign's block B3 runs `token_ab.py --save` for the injection-budget measurement, which does not fill the pointers these claims read. The corpus problem behind the original withdrawal is fixed - research/corpus_pin.py has carried a committed sha256 for longmemeval_oracle, longmemeval_s and locomo10 since 2026-09-03, verified before a byte is read, so the run is possible the moment someone schedules it",
-   "withdrawn_on": "2026-08-25"
+   "withdrawn_on": "2026-08-25",
+   "shape": [
+    {
+     "at": "distillation_ab.by_k",
+     "len": 3,
+     "keys": [
+      "distilled_topk_tok",
+      "k",
+      "net_distilled_vs_curated",
+      "net_distilled_vs_history",
+      "net_raw_vs_curated",
+      "raw_topk_tok",
+      "recall_at_k"
+     ]
+    }
+   ]
   },
   {
    "id": "token_ab.live_two_arm.mean_prompt_tok_no_memory",
@@ -9054,7 +9459,23 @@
    ],
    "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "pending_remeasure": true,
+   "shape": [
+    {
+     "at": "recall_sweep",
+     "len": 10,
+     "keys": [
+      "cases",
+      "char_reduction_vs_off",
+      "current_delta_vs_off",
+      "current_rate",
+      "mean_chars",
+      "mean_hits",
+      "stale_rate",
+      "threshold"
+     ]
+    }
+   ]
   },
   {
    "id": "abstention.recall.char_reduction_at_shipped",
@@ -9117,7 +9538,23 @@
    "cited_in_pending": [],
    "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "pending_remeasure": true,
+   "shape": [
+    {
+     "at": "recall_sweep",
+     "len": 10,
+     "keys": [
+      "cases",
+      "char_reduction_vs_off",
+      "current_delta_vs_off",
+      "current_rate",
+      "mean_chars",
+      "mean_hits",
+      "stale_rate",
+      "threshold"
+     ]
+    }
+   ]
   },
   {
    "id": "abstention.recall.current_loss_at_shipped",
@@ -9180,7 +9617,23 @@
    "cited_in_pending": [],
    "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "pending_remeasure": true,
+   "shape": [
+    {
+     "at": "recall_sweep",
+     "len": 10,
+     "keys": [
+      "cases",
+      "char_reduction_vs_off",
+      "current_delta_vs_off",
+      "current_rate",
+      "mean_chars",
+      "mean_hits",
+      "stale_rate",
+      "threshold"
+     ]
+    }
+   ]
   },
   {
    "id": "abstention.remine.byte_reduction",
@@ -25283,7 +25736,24 @@
    "cited_in_pending": [],
    "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "pending_remeasure": true,
+   "shape": [
+    {
+     "at": "arms.guards_deterministic.curve",
+     "len": 101,
+     "keys": [
+      "f1",
+      "false_positive_rate",
+      "fn",
+      "fp",
+      "precision",
+      "recall",
+      "threshold",
+      "tn",
+      "tp"
+     ]
+    }
+   ]
   },
   {
    "id": "guards.guards_deterministic.fpr_all_fire",
@@ -25345,7 +25815,24 @@
    "cited_in_pending": [],
    "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "pending_remeasure": true,
+   "shape": [
+    {
+     "at": "arms.guards_deterministic.curve",
+     "len": 101,
+     "keys": [
+      "f1",
+      "false_positive_rate",
+      "fn",
+      "fp",
+      "precision",
+      "recall",
+      "threshold",
+      "tn",
+      "tp"
+     ]
+    }
+   ]
   },
   {
    "id": "guards.guards_deterministic.tokens_per_call",
@@ -27007,7 +27494,24 @@
    "cited_in_pending": [],
    "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "pending_remeasure": true,
+   "shape": [
+    {
+     "at": "arms.guards_llm.curve",
+     "len": 101,
+     "keys": [
+      "f1",
+      "false_positive_rate",
+      "fn",
+      "fp",
+      "precision",
+      "recall",
+      "threshold",
+      "tn",
+      "tp"
+     ]
+    }
+   ]
   },
   {
    "id": "guards.guards_llm.fpr_all_fire",
@@ -27069,7 +27573,24 @@
    "cited_in_pending": [],
    "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "pending_remeasure": true,
+   "shape": [
+    {
+     "at": "arms.guards_llm.curve",
+     "len": 101,
+     "keys": [
+      "f1",
+      "false_positive_rate",
+      "fn",
+      "fp",
+      "precision",
+      "recall",
+      "threshold",
+      "tn",
+      "tp"
+     ]
+    }
+   ]
   },
   {
    "id": "guards.guards_llm.tokens_per_call",
@@ -31668,7 +32189,14 @@
    "cited_in_pending": [],
    "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "pending_remeasure": true,
+   "shape": [
+    {
+     "at": "arms.nevertwice.per_run",
+     "len": 2,
+     "keys": null
+    }
+   ]
   },
   {
    "id": "asof.nevertwice.per_run.two",
@@ -31738,7 +32266,14 @@
    "cited_in_pending": [],
    "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "pending_remeasure": true,
+   "shape": [
+    {
+     "at": "arms.nevertwice.per_run",
+     "len": 2,
+     "keys": null
+    }
+   ]
   },
   {
    "id": "asof.gate.old_day_threshold",
@@ -31822,7 +32357,23 @@
    "cited_in_pending": [],
    "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "pending_remeasure": true,
+   "shape": [
+    {
+     "at": "recall_sweep",
+     "len": 10,
+     "keys": [
+      "cases",
+      "char_reduction_vs_off",
+      "current_delta_vs_off",
+      "current_rate",
+      "mean_chars",
+      "mean_hits",
+      "stale_rate",
+      "threshold"
+     ]
+    }
+   ]
   },
   {
    "id": "abstention.recall.sweep.t0_0.mean_hits",
@@ -31884,7 +32435,23 @@
    "cited_in_pending": [],
    "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "pending_remeasure": true,
+   "shape": [
+    {
+     "at": "recall_sweep",
+     "len": 10,
+     "keys": [
+      "cases",
+      "char_reduction_vs_off",
+      "current_delta_vs_off",
+      "current_rate",
+      "mean_chars",
+      "mean_hits",
+      "stale_rate",
+      "threshold"
+     ]
+    }
+   ]
   },
   {
    "id": "abstention.recall.sweep.t0_0.current_rate",
@@ -31946,7 +32513,23 @@
    "cited_in_pending": [],
    "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "pending_remeasure": true,
+   "shape": [
+    {
+     "at": "recall_sweep",
+     "len": 10,
+     "keys": [
+      "cases",
+      "char_reduction_vs_off",
+      "current_delta_vs_off",
+      "current_rate",
+      "mean_chars",
+      "mean_hits",
+      "stale_rate",
+      "threshold"
+     ]
+    }
+   ]
   },
   {
    "id": "abstention.recall.sweep.t0_0.char_reduction",
@@ -32010,7 +32593,23 @@
    "cited_in_pending": [],
    "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "pending_remeasure": true,
+   "shape": [
+    {
+     "at": "recall_sweep",
+     "len": 10,
+     "keys": [
+      "cases",
+      "char_reduction_vs_off",
+      "current_delta_vs_off",
+      "current_rate",
+      "mean_chars",
+      "mean_hits",
+      "stale_rate",
+      "threshold"
+     ]
+    }
+   ]
   },
   {
    "id": "abstention.recall.sweep.t0_0.current_delta",
@@ -32074,7 +32673,23 @@
    "cited_in_pending": [],
    "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "pending_remeasure": true,
+   "shape": [
+    {
+     "at": "recall_sweep",
+     "len": 10,
+     "keys": [
+      "cases",
+      "char_reduction_vs_off",
+      "current_delta_vs_off",
+      "current_rate",
+      "mean_chars",
+      "mean_hits",
+      "stale_rate",
+      "threshold"
+     ]
+    }
+   ]
   },
   {
    "id": "abstention.recall.sweep.t0_1.mean_chars",
@@ -32136,7 +32751,23 @@
    "cited_in_pending": [],
    "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "pending_remeasure": true,
+   "shape": [
+    {
+     "at": "recall_sweep",
+     "len": 10,
+     "keys": [
+      "cases",
+      "char_reduction_vs_off",
+      "current_delta_vs_off",
+      "current_rate",
+      "mean_chars",
+      "mean_hits",
+      "stale_rate",
+      "threshold"
+     ]
+    }
+   ]
   },
   {
    "id": "abstention.recall.sweep.t0_1.mean_hits",
@@ -32198,7 +32829,23 @@
    "cited_in_pending": [],
    "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "pending_remeasure": true,
+   "shape": [
+    {
+     "at": "recall_sweep",
+     "len": 10,
+     "keys": [
+      "cases",
+      "char_reduction_vs_off",
+      "current_delta_vs_off",
+      "current_rate",
+      "mean_chars",
+      "mean_hits",
+      "stale_rate",
+      "threshold"
+     ]
+    }
+   ]
   },
   {
    "id": "abstention.recall.sweep.t0_1.current_rate",
@@ -32260,7 +32907,23 @@
    "cited_in_pending": [],
    "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "pending_remeasure": true,
+   "shape": [
+    {
+     "at": "recall_sweep",
+     "len": 10,
+     "keys": [
+      "cases",
+      "char_reduction_vs_off",
+      "current_delta_vs_off",
+      "current_rate",
+      "mean_chars",
+      "mean_hits",
+      "stale_rate",
+      "threshold"
+     ]
+    }
+   ]
   },
   {
    "id": "abstention.recall.sweep.t0_1.char_reduction",
@@ -32324,7 +32987,23 @@
    "cited_in_pending": [],
    "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "pending_remeasure": true,
+   "shape": [
+    {
+     "at": "recall_sweep",
+     "len": 10,
+     "keys": [
+      "cases",
+      "char_reduction_vs_off",
+      "current_delta_vs_off",
+      "current_rate",
+      "mean_chars",
+      "mean_hits",
+      "stale_rate",
+      "threshold"
+     ]
+    }
+   ]
   },
   {
    "id": "abstention.recall.sweep.t0_1.current_delta",
@@ -32388,7 +33067,23 @@
    "cited_in_pending": [],
    "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "pending_remeasure": true,
+   "shape": [
+    {
+     "at": "recall_sweep",
+     "len": 10,
+     "keys": [
+      "cases",
+      "char_reduction_vs_off",
+      "current_delta_vs_off",
+      "current_rate",
+      "mean_chars",
+      "mean_hits",
+      "stale_rate",
+      "threshold"
+     ]
+    }
+   ]
   },
   {
    "id": "abstention.recall.sweep.t0_2.mean_chars",
@@ -32450,7 +33145,23 @@
    "cited_in_pending": [],
    "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "pending_remeasure": true,
+   "shape": [
+    {
+     "at": "recall_sweep",
+     "len": 10,
+     "keys": [
+      "cases",
+      "char_reduction_vs_off",
+      "current_delta_vs_off",
+      "current_rate",
+      "mean_chars",
+      "mean_hits",
+      "stale_rate",
+      "threshold"
+     ]
+    }
+   ]
   },
   {
    "id": "abstention.recall.sweep.t0_2.mean_hits",
@@ -32512,7 +33223,23 @@
    "cited_in_pending": [],
    "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "pending_remeasure": true,
+   "shape": [
+    {
+     "at": "recall_sweep",
+     "len": 10,
+     "keys": [
+      "cases",
+      "char_reduction_vs_off",
+      "current_delta_vs_off",
+      "current_rate",
+      "mean_chars",
+      "mean_hits",
+      "stale_rate",
+      "threshold"
+     ]
+    }
+   ]
   },
   {
    "id": "abstention.recall.sweep.t0_2.current_rate",
@@ -32574,7 +33301,23 @@
    "cited_in_pending": [],
    "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "pending_remeasure": true,
+   "shape": [
+    {
+     "at": "recall_sweep",
+     "len": 10,
+     "keys": [
+      "cases",
+      "char_reduction_vs_off",
+      "current_delta_vs_off",
+      "current_rate",
+      "mean_chars",
+      "mean_hits",
+      "stale_rate",
+      "threshold"
+     ]
+    }
+   ]
   },
   {
    "id": "abstention.recall.sweep.t0_2.char_reduction",
@@ -32638,7 +33381,23 @@
    "cited_in_pending": [],
    "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "pending_remeasure": true,
+   "shape": [
+    {
+     "at": "recall_sweep",
+     "len": 10,
+     "keys": [
+      "cases",
+      "char_reduction_vs_off",
+      "current_delta_vs_off",
+      "current_rate",
+      "mean_chars",
+      "mean_hits",
+      "stale_rate",
+      "threshold"
+     ]
+    }
+   ]
   },
   {
    "id": "abstention.recall.sweep.t0_2.current_delta",
@@ -32702,7 +33461,23 @@
    "cited_in_pending": [],
    "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "pending_remeasure": true,
+   "shape": [
+    {
+     "at": "recall_sweep",
+     "len": 10,
+     "keys": [
+      "cases",
+      "char_reduction_vs_off",
+      "current_delta_vs_off",
+      "current_rate",
+      "mean_chars",
+      "mean_hits",
+      "stale_rate",
+      "threshold"
+     ]
+    }
+   ]
   },
   {
    "id": "abstention.recall.sweep.t0_35.mean_chars",
@@ -32764,7 +33539,23 @@
    "cited_in_pending": [],
    "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "pending_remeasure": true,
+   "shape": [
+    {
+     "at": "recall_sweep",
+     "len": 10,
+     "keys": [
+      "cases",
+      "char_reduction_vs_off",
+      "current_delta_vs_off",
+      "current_rate",
+      "mean_chars",
+      "mean_hits",
+      "stale_rate",
+      "threshold"
+     ]
+    }
+   ]
   },
   {
    "id": "abstention.recall.sweep.t0_35.mean_hits",
@@ -32826,7 +33617,23 @@
    "cited_in_pending": [],
    "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "pending_remeasure": true,
+   "shape": [
+    {
+     "at": "recall_sweep",
+     "len": 10,
+     "keys": [
+      "cases",
+      "char_reduction_vs_off",
+      "current_delta_vs_off",
+      "current_rate",
+      "mean_chars",
+      "mean_hits",
+      "stale_rate",
+      "threshold"
+     ]
+    }
+   ]
   },
   {
    "id": "abstention.recall.sweep.t0_35.current_rate",
@@ -32888,7 +33695,23 @@
    "cited_in_pending": [],
    "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "pending_remeasure": true,
+   "shape": [
+    {
+     "at": "recall_sweep",
+     "len": 10,
+     "keys": [
+      "cases",
+      "char_reduction_vs_off",
+      "current_delta_vs_off",
+      "current_rate",
+      "mean_chars",
+      "mean_hits",
+      "stale_rate",
+      "threshold"
+     ]
+    }
+   ]
   },
   {
    "id": "abstention.recall.sweep.t0_35.char_reduction",
@@ -32952,7 +33775,23 @@
    "cited_in_pending": [],
    "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "pending_remeasure": true,
+   "shape": [
+    {
+     "at": "recall_sweep",
+     "len": 10,
+     "keys": [
+      "cases",
+      "char_reduction_vs_off",
+      "current_delta_vs_off",
+      "current_rate",
+      "mean_chars",
+      "mean_hits",
+      "stale_rate",
+      "threshold"
+     ]
+    }
+   ]
   },
   {
    "id": "abstention.recall.sweep.t0_35.current_delta",
@@ -33016,7 +33855,23 @@
    "cited_in_pending": [],
    "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "pending_remeasure": true,
+   "shape": [
+    {
+     "at": "recall_sweep",
+     "len": 10,
+     "keys": [
+      "cases",
+      "char_reduction_vs_off",
+      "current_delta_vs_off",
+      "current_rate",
+      "mean_chars",
+      "mean_hits",
+      "stale_rate",
+      "threshold"
+     ]
+    }
+   ]
   },
   {
    "id": "abstention.recall.sweep.t0_5.mean_chars",
@@ -33078,7 +33933,23 @@
    "cited_in_pending": [],
    "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "pending_remeasure": true,
+   "shape": [
+    {
+     "at": "recall_sweep",
+     "len": 10,
+     "keys": [
+      "cases",
+      "char_reduction_vs_off",
+      "current_delta_vs_off",
+      "current_rate",
+      "mean_chars",
+      "mean_hits",
+      "stale_rate",
+      "threshold"
+     ]
+    }
+   ]
   },
   {
    "id": "abstention.recall.sweep.t0_5.mean_hits",
@@ -33140,7 +34011,23 @@
    "cited_in_pending": [],
    "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "pending_remeasure": true,
+   "shape": [
+    {
+     "at": "recall_sweep",
+     "len": 10,
+     "keys": [
+      "cases",
+      "char_reduction_vs_off",
+      "current_delta_vs_off",
+      "current_rate",
+      "mean_chars",
+      "mean_hits",
+      "stale_rate",
+      "threshold"
+     ]
+    }
+   ]
   },
   {
    "id": "abstention.recall.sweep.t0_5.current_rate",
@@ -33202,7 +34089,23 @@
    "cited_in_pending": [],
    "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "pending_remeasure": true,
+   "shape": [
+    {
+     "at": "recall_sweep",
+     "len": 10,
+     "keys": [
+      "cases",
+      "char_reduction_vs_off",
+      "current_delta_vs_off",
+      "current_rate",
+      "mean_chars",
+      "mean_hits",
+      "stale_rate",
+      "threshold"
+     ]
+    }
+   ]
   },
   {
    "id": "abstention.recall.sweep.t0_5.char_reduction",
@@ -33266,7 +34169,23 @@
    "cited_in_pending": [],
    "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "pending_remeasure": true,
+   "shape": [
+    {
+     "at": "recall_sweep",
+     "len": 10,
+     "keys": [
+      "cases",
+      "char_reduction_vs_off",
+      "current_delta_vs_off",
+      "current_rate",
+      "mean_chars",
+      "mean_hits",
+      "stale_rate",
+      "threshold"
+     ]
+    }
+   ]
   },
   {
    "id": "abstention.recall.sweep.t0_5.current_delta",
@@ -33330,7 +34249,23 @@
    "cited_in_pending": [],
    "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "pending_remeasure": true,
+   "shape": [
+    {
+     "at": "recall_sweep",
+     "len": 10,
+     "keys": [
+      "cases",
+      "char_reduction_vs_off",
+      "current_delta_vs_off",
+      "current_rate",
+      "mean_chars",
+      "mean_hits",
+      "stale_rate",
+      "threshold"
+     ]
+    }
+   ]
   },
   {
    "id": "abstention.recall.sweep.t0_75.mean_chars",
@@ -33392,7 +34327,23 @@
    "cited_in_pending": [],
    "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "pending_remeasure": true,
+   "shape": [
+    {
+     "at": "recall_sweep",
+     "len": 10,
+     "keys": [
+      "cases",
+      "char_reduction_vs_off",
+      "current_delta_vs_off",
+      "current_rate",
+      "mean_chars",
+      "mean_hits",
+      "stale_rate",
+      "threshold"
+     ]
+    }
+   ]
   },
   {
    "id": "abstention.recall.sweep.t0_75.mean_hits",
@@ -33454,7 +34405,23 @@
    "cited_in_pending": [],
    "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "pending_remeasure": true,
+   "shape": [
+    {
+     "at": "recall_sweep",
+     "len": 10,
+     "keys": [
+      "cases",
+      "char_reduction_vs_off",
+      "current_delta_vs_off",
+      "current_rate",
+      "mean_chars",
+      "mean_hits",
+      "stale_rate",
+      "threshold"
+     ]
+    }
+   ]
   },
   {
    "id": "abstention.recall.sweep.t0_75.current_rate",
@@ -33516,7 +34483,23 @@
    "cited_in_pending": [],
    "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "pending_remeasure": true,
+   "shape": [
+    {
+     "at": "recall_sweep",
+     "len": 10,
+     "keys": [
+      "cases",
+      "char_reduction_vs_off",
+      "current_delta_vs_off",
+      "current_rate",
+      "mean_chars",
+      "mean_hits",
+      "stale_rate",
+      "threshold"
+     ]
+    }
+   ]
   },
   {
    "id": "abstention.recall.sweep.t0_75.char_reduction",
@@ -33580,7 +34563,23 @@
    "cited_in_pending": [],
    "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "pending_remeasure": true,
+   "shape": [
+    {
+     "at": "recall_sweep",
+     "len": 10,
+     "keys": [
+      "cases",
+      "char_reduction_vs_off",
+      "current_delta_vs_off",
+      "current_rate",
+      "mean_chars",
+      "mean_hits",
+      "stale_rate",
+      "threshold"
+     ]
+    }
+   ]
   },
   {
    "id": "abstention.recall.sweep.t0_75.current_delta",
@@ -33644,7 +34643,23 @@
    "cited_in_pending": [],
    "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "pending_remeasure": true,
+   "shape": [
+    {
+     "at": "recall_sweep",
+     "len": 10,
+     "keys": [
+      "cases",
+      "char_reduction_vs_off",
+      "current_delta_vs_off",
+      "current_rate",
+      "mean_chars",
+      "mean_hits",
+      "stale_rate",
+      "threshold"
+     ]
+    }
+   ]
   },
   {
    "id": "abstention.recall.mean_hits_returned",
@@ -40584,7 +41599,14 @@
    ],
    "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "pending_remeasure": true,
+   "shape": [
+    {
+     "at": "arms.zep.per_run_stale",
+     "len": 2,
+     "keys": null
+    }
+   ]
   },
   {
    "id": "supersession.zep.per_run_stale.two",
@@ -40656,7 +41678,14 @@
    ],
    "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "pending_remeasure": true,
+   "shape": [
+    {
+     "at": "arms.zep.per_run_stale",
+     "len": 2,
+     "keys": null
+    }
+   ]
   },
   {
    "id": "supersession.zep.control_miss_rate",
@@ -41237,7 +42266,22 @@
    "cited_in_pending": [],
    "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "pending_remeasure": true,
+   "shape": [
+    {
+     "at": "pairs",
+     "len": 6,
+     "keys": [
+      "a",
+      "b",
+      "discordant",
+      "n",
+      "p_mcnemar",
+      "stale_only_mem0",
+      "stale_only_naive"
+     ]
+    }
+   ]
   },
   {
    "id": "supersession.mem0_vs_naive.discordant.mem0",
@@ -41309,7 +42353,22 @@
    ],
    "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "pending_remeasure": true,
+   "shape": [
+    {
+     "at": "pairs",
+     "len": 6,
+     "keys": [
+      "a",
+      "b",
+      "discordant",
+      "n",
+      "p_mcnemar",
+      "stale_only_mem0",
+      "stale_only_naive"
+     ]
+    }
+   ]
   },
   {
    "id": "supersession.mem0_vs_naive.discordant.naive",
@@ -41381,7 +42440,22 @@
    ],
    "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "pending_remeasure": true,
+   "shape": [
+    {
+     "at": "pairs",
+     "len": 6,
+     "keys": [
+      "a",
+      "b",
+      "discordant",
+      "n",
+      "p_mcnemar",
+      "stale_only_mem0",
+      "stale_only_naive"
+     ]
+    }
+   ]
   },
   {
    "id": "supersession.mem0_vs_nevertwice.p_mcnemar",
@@ -41450,7 +42524,22 @@
    "cited_in_pending": [],
    "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "pending_remeasure": true,
+   "shape": [
+    {
+     "at": "pairs",
+     "len": 6,
+     "keys": [
+      "a",
+      "b",
+      "discordant",
+      "n",
+      "p_mcnemar",
+      "stale_only_mem0",
+      "stale_only_nevertwice"
+     ]
+    }
+   ]
   },
   {
    "id": "supersession.mem0_vs_nevertwice.discordant.mem0",
@@ -41521,7 +42610,22 @@
    ],
    "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "pending_remeasure": true,
+   "shape": [
+    {
+     "at": "pairs",
+     "len": 6,
+     "keys": [
+      "a",
+      "b",
+      "discordant",
+      "n",
+      "p_mcnemar",
+      "stale_only_mem0",
+      "stale_only_nevertwice"
+     ]
+    }
+   ]
   },
   {
    "id": "supersession.mem0_vs_nevertwice.discordant.nevertwice",
@@ -41593,7 +42697,22 @@
    ],
    "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "pending_remeasure": true,
+   "shape": [
+    {
+     "at": "pairs",
+     "len": 6,
+     "keys": [
+      "a",
+      "b",
+      "discordant",
+      "n",
+      "p_mcnemar",
+      "stale_only_mem0",
+      "stale_only_nevertwice"
+     ]
+    }
+   ]
   },
   {
    "id": "supersession.mem0_vs_zep.p_mcnemar",
@@ -41662,7 +42781,22 @@
    "cited_in_pending": [],
    "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "pending_remeasure": true,
+   "shape": [
+    {
+     "at": "pairs",
+     "len": 6,
+     "keys": [
+      "a",
+      "b",
+      "discordant",
+      "n",
+      "p_mcnemar",
+      "stale_only_mem0",
+      "stale_only_zep"
+     ]
+    }
+   ]
   },
   {
    "id": "supersession.mem0_vs_zep.discordant.mem0",
@@ -41733,7 +42867,22 @@
    ],
    "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "pending_remeasure": true,
+   "shape": [
+    {
+     "at": "pairs",
+     "len": 6,
+     "keys": [
+      "a",
+      "b",
+      "discordant",
+      "n",
+      "p_mcnemar",
+      "stale_only_mem0",
+      "stale_only_zep"
+     ]
+    }
+   ]
   },
   {
    "id": "supersession.mem0_vs_zep.discordant.zep",
@@ -41805,7 +42954,22 @@
    ],
    "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "pending_remeasure": true,
+   "shape": [
+    {
+     "at": "pairs",
+     "len": 6,
+     "keys": [
+      "a",
+      "b",
+      "discordant",
+      "n",
+      "p_mcnemar",
+      "stale_only_mem0",
+      "stale_only_zep"
+     ]
+    }
+   ]
   },
   {
    "id": "supersession.naive_vs_nevertwice.p_mcnemar",
@@ -41874,7 +43038,22 @@
    "cited_in_pending": [],
    "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "pending_remeasure": true,
+   "shape": [
+    {
+     "at": "pairs",
+     "len": 6,
+     "keys": [
+      "a",
+      "b",
+      "discordant",
+      "n",
+      "p_mcnemar",
+      "stale_only_naive",
+      "stale_only_nevertwice"
+     ]
+    }
+   ]
   },
   {
    "id": "supersession.naive_vs_nevertwice.discordant.naive",
@@ -41945,7 +43124,22 @@
    ],
    "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "pending_remeasure": true,
+   "shape": [
+    {
+     "at": "pairs",
+     "len": 6,
+     "keys": [
+      "a",
+      "b",
+      "discordant",
+      "n",
+      "p_mcnemar",
+      "stale_only_naive",
+      "stale_only_nevertwice"
+     ]
+    }
+   ]
   },
   {
    "id": "supersession.naive_vs_nevertwice.discordant.nevertwice",
@@ -42017,7 +43211,22 @@
    ],
    "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "pending_remeasure": true,
+   "shape": [
+    {
+     "at": "pairs",
+     "len": 6,
+     "keys": [
+      "a",
+      "b",
+      "discordant",
+      "n",
+      "p_mcnemar",
+      "stale_only_naive",
+      "stale_only_nevertwice"
+     ]
+    }
+   ]
   },
   {
    "id": "supersession.naive_vs_zep.p_mcnemar",
@@ -42086,7 +43295,22 @@
    "cited_in_pending": [],
    "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "pending_remeasure": true,
+   "shape": [
+    {
+     "at": "pairs",
+     "len": 6,
+     "keys": [
+      "a",
+      "b",
+      "discordant",
+      "n",
+      "p_mcnemar",
+      "stale_only_naive",
+      "stale_only_zep"
+     ]
+    }
+   ]
   },
   {
    "id": "supersession.naive_vs_zep.discordant.naive",
@@ -42157,7 +43381,22 @@
    ],
    "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "pending_remeasure": true,
+   "shape": [
+    {
+     "at": "pairs",
+     "len": 6,
+     "keys": [
+      "a",
+      "b",
+      "discordant",
+      "n",
+      "p_mcnemar",
+      "stale_only_naive",
+      "stale_only_zep"
+     ]
+    }
+   ]
   },
   {
    "id": "supersession.naive_vs_zep.discordant.zep",
@@ -42229,7 +43468,22 @@
    ],
    "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "pending_remeasure": true,
+   "shape": [
+    {
+     "at": "pairs",
+     "len": 6,
+     "keys": [
+      "a",
+      "b",
+      "discordant",
+      "n",
+      "p_mcnemar",
+      "stale_only_naive",
+      "stale_only_zep"
+     ]
+    }
+   ]
   },
   {
    "id": "supersession.nevertwice_vs_zep.p_mcnemar",
@@ -42298,7 +43552,22 @@
    "cited_in_pending": [],
    "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "pending_remeasure": true,
+   "shape": [
+    {
+     "at": "pairs",
+     "len": 6,
+     "keys": [
+      "a",
+      "b",
+      "discordant",
+      "n",
+      "p_mcnemar",
+      "stale_only_nevertwice",
+      "stale_only_zep"
+     ]
+    }
+   ]
   },
   {
    "id": "supersession.nevertwice_vs_zep.discordant.nevertwice",
@@ -42370,7 +43639,22 @@
    ],
    "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "pending_remeasure": true,
+   "shape": [
+    {
+     "at": "pairs",
+     "len": 6,
+     "keys": [
+      "a",
+      "b",
+      "discordant",
+      "n",
+      "p_mcnemar",
+      "stale_only_nevertwice",
+      "stale_only_zep"
+     ]
+    }
+   ]
   },
   {
    "id": "supersession.nevertwice_vs_zep.discordant.zep",
@@ -42441,7 +43725,22 @@
    ],
    "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "pending_remeasure": true,
+   "shape": [
+    {
+     "at": "pairs",
+     "len": 6,
+     "keys": [
+      "a",
+      "b",
+      "discordant",
+      "n",
+      "p_mcnemar",
+      "stale_only_nevertwice",
+      "stale_only_zep"
+     ]
+    }
+   ]
   },
   {
    "id": "supersession.dataset.supersession_cases",
@@ -45669,7 +46968,14 @@
    "cited_in_pending": [],
    "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "pending_remeasure": true,
+   "shape": [
+    {
+     "at": "arms.zep.per_run_stale",
+     "len": 2,
+     "keys": null
+    }
+   ]
   },
   {
    "id": "supersession_implicit.zep.per_run_stale.two",
@@ -45738,7 +47044,14 @@
    "cited_in_pending": [],
    "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "pending_remeasure": true,
+   "shape": [
+    {
+     "at": "arms.zep.per_run_stale",
+     "len": 2,
+     "keys": null
+    }
+   ]
   },
   {
    "id": "supersession_implicit.zep.control_miss_rate",
@@ -46302,7 +47615,22 @@
    "cited_in_pending": [],
    "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "pending_remeasure": true,
+   "shape": [
+    {
+     "at": "pairs",
+     "len": 6,
+     "keys": [
+      "a",
+      "b",
+      "discordant",
+      "n",
+      "p_mcnemar",
+      "stale_only_mem0",
+      "stale_only_naive"
+     ]
+    }
+   ]
   },
   {
    "id": "supersession_implicit.mem0_vs_naive.discordant.mem0",
@@ -46371,7 +47699,22 @@
    "cited_in_pending": [],
    "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "pending_remeasure": true,
+   "shape": [
+    {
+     "at": "pairs",
+     "len": 6,
+     "keys": [
+      "a",
+      "b",
+      "discordant",
+      "n",
+      "p_mcnemar",
+      "stale_only_mem0",
+      "stale_only_naive"
+     ]
+    }
+   ]
   },
   {
    "id": "supersession_implicit.mem0_vs_naive.discordant.naive",
@@ -46440,7 +47783,22 @@
    "cited_in_pending": [],
    "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "pending_remeasure": true,
+   "shape": [
+    {
+     "at": "pairs",
+     "len": 6,
+     "keys": [
+      "a",
+      "b",
+      "discordant",
+      "n",
+      "p_mcnemar",
+      "stale_only_mem0",
+      "stale_only_naive"
+     ]
+    }
+   ]
   },
   {
    "id": "supersession_implicit.mem0_vs_nevertwice.p_mcnemar",
@@ -46509,7 +47867,22 @@
    "cited_in_pending": [],
    "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "pending_remeasure": true,
+   "shape": [
+    {
+     "at": "pairs",
+     "len": 6,
+     "keys": [
+      "a",
+      "b",
+      "discordant",
+      "n",
+      "p_mcnemar",
+      "stale_only_mem0",
+      "stale_only_nevertwice"
+     ]
+    }
+   ]
   },
   {
    "id": "supersession_implicit.mem0_vs_nevertwice.discordant.mem0",
@@ -46578,7 +47951,22 @@
    "cited_in_pending": [],
    "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "pending_remeasure": true,
+   "shape": [
+    {
+     "at": "pairs",
+     "len": 6,
+     "keys": [
+      "a",
+      "b",
+      "discordant",
+      "n",
+      "p_mcnemar",
+      "stale_only_mem0",
+      "stale_only_nevertwice"
+     ]
+    }
+   ]
   },
   {
    "id": "supersession_implicit.mem0_vs_nevertwice.discordant.nevertwice",
@@ -46647,7 +48035,22 @@
    "cited_in_pending": [],
    "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "pending_remeasure": true,
+   "shape": [
+    {
+     "at": "pairs",
+     "len": 6,
+     "keys": [
+      "a",
+      "b",
+      "discordant",
+      "n",
+      "p_mcnemar",
+      "stale_only_mem0",
+      "stale_only_nevertwice"
+     ]
+    }
+   ]
   },
   {
    "id": "supersession_implicit.mem0_vs_zep.p_mcnemar",
@@ -46716,7 +48119,22 @@
    "cited_in_pending": [],
    "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "pending_remeasure": true,
+   "shape": [
+    {
+     "at": "pairs",
+     "len": 6,
+     "keys": [
+      "a",
+      "b",
+      "discordant",
+      "n",
+      "p_mcnemar",
+      "stale_only_mem0",
+      "stale_only_zep"
+     ]
+    }
+   ]
   },
   {
    "id": "supersession_implicit.mem0_vs_zep.discordant.mem0",
@@ -46785,7 +48203,22 @@
    "cited_in_pending": [],
    "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "pending_remeasure": true,
+   "shape": [
+    {
+     "at": "pairs",
+     "len": 6,
+     "keys": [
+      "a",
+      "b",
+      "discordant",
+      "n",
+      "p_mcnemar",
+      "stale_only_mem0",
+      "stale_only_zep"
+     ]
+    }
+   ]
   },
   {
    "id": "supersession_implicit.mem0_vs_zep.discordant.zep",
@@ -46854,7 +48287,22 @@
    "cited_in_pending": [],
    "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "pending_remeasure": true,
+   "shape": [
+    {
+     "at": "pairs",
+     "len": 6,
+     "keys": [
+      "a",
+      "b",
+      "discordant",
+      "n",
+      "p_mcnemar",
+      "stale_only_mem0",
+      "stale_only_zep"
+     ]
+    }
+   ]
   },
   {
    "id": "supersession_implicit.naive_vs_nevertwice.p_mcnemar",
@@ -46923,7 +48371,22 @@
    "cited_in_pending": [],
    "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "pending_remeasure": true,
+   "shape": [
+    {
+     "at": "pairs",
+     "len": 6,
+     "keys": [
+      "a",
+      "b",
+      "discordant",
+      "n",
+      "p_mcnemar",
+      "stale_only_naive",
+      "stale_only_nevertwice"
+     ]
+    }
+   ]
   },
   {
    "id": "supersession_implicit.naive_vs_nevertwice.discordant.naive",
@@ -46992,7 +48455,22 @@
    "cited_in_pending": [],
    "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "pending_remeasure": true,
+   "shape": [
+    {
+     "at": "pairs",
+     "len": 6,
+     "keys": [
+      "a",
+      "b",
+      "discordant",
+      "n",
+      "p_mcnemar",
+      "stale_only_naive",
+      "stale_only_nevertwice"
+     ]
+    }
+   ]
   },
   {
    "id": "supersession_implicit.naive_vs_nevertwice.discordant.nevertwice",
@@ -47061,7 +48539,22 @@
    "cited_in_pending": [],
    "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "pending_remeasure": true,
+   "shape": [
+    {
+     "at": "pairs",
+     "len": 6,
+     "keys": [
+      "a",
+      "b",
+      "discordant",
+      "n",
+      "p_mcnemar",
+      "stale_only_naive",
+      "stale_only_nevertwice"
+     ]
+    }
+   ]
   },
   {
    "id": "supersession_implicit.naive_vs_zep.p_mcnemar",
@@ -47130,7 +48623,22 @@
    "cited_in_pending": [],
    "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "pending_remeasure": true,
+   "shape": [
+    {
+     "at": "pairs",
+     "len": 6,
+     "keys": [
+      "a",
+      "b",
+      "discordant",
+      "n",
+      "p_mcnemar",
+      "stale_only_naive",
+      "stale_only_zep"
+     ]
+    }
+   ]
   },
   {
    "id": "supersession_implicit.naive_vs_zep.discordant.naive",
@@ -47199,7 +48707,22 @@
    "cited_in_pending": [],
    "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "pending_remeasure": true,
+   "shape": [
+    {
+     "at": "pairs",
+     "len": 6,
+     "keys": [
+      "a",
+      "b",
+      "discordant",
+      "n",
+      "p_mcnemar",
+      "stale_only_naive",
+      "stale_only_zep"
+     ]
+    }
+   ]
   },
   {
    "id": "supersession_implicit.naive_vs_zep.discordant.zep",
@@ -47268,7 +48791,22 @@
    "cited_in_pending": [],
    "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "pending_remeasure": true,
+   "shape": [
+    {
+     "at": "pairs",
+     "len": 6,
+     "keys": [
+      "a",
+      "b",
+      "discordant",
+      "n",
+      "p_mcnemar",
+      "stale_only_naive",
+      "stale_only_zep"
+     ]
+    }
+   ]
   },
   {
    "id": "supersession_implicit.nevertwice_vs_zep.p_mcnemar",
@@ -47337,7 +48875,22 @@
    "cited_in_pending": [],
    "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "pending_remeasure": true,
+   "shape": [
+    {
+     "at": "pairs",
+     "len": 6,
+     "keys": [
+      "a",
+      "b",
+      "discordant",
+      "n",
+      "p_mcnemar",
+      "stale_only_nevertwice",
+      "stale_only_zep"
+     ]
+    }
+   ]
   },
   {
    "id": "supersession_implicit.nevertwice_vs_zep.discordant.nevertwice",
@@ -47406,7 +48959,22 @@
    "cited_in_pending": [],
    "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "pending_remeasure": true,
+   "shape": [
+    {
+     "at": "pairs",
+     "len": 6,
+     "keys": [
+      "a",
+      "b",
+      "discordant",
+      "n",
+      "p_mcnemar",
+      "stale_only_nevertwice",
+      "stale_only_zep"
+     ]
+    }
+   ]
   },
   {
    "id": "supersession_implicit.nevertwice_vs_zep.discordant.zep",
@@ -47475,7 +49043,22 @@
    "cited_in_pending": [],
    "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "pending_remeasure": true,
+   "shape": [
+    {
+     "at": "pairs",
+     "len": 6,
+     "keys": [
+      "a",
+      "b",
+      "discordant",
+      "n",
+      "p_mcnemar",
+      "stale_only_nevertwice",
+      "stale_only_zep"
+     ]
+    }
+   ]
   },
   {
    "id": "supersession_implicit.dataset.supersession_cases",
@@ -52789,7 +54372,14 @@
    "cited_in_pending": [],
    "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "pending_remeasure": true,
+   "shape": [
+    {
+     "at": "arms.zep.per_run",
+     "len": 2,
+     "keys": null
+    }
+   ]
   },
   {
    "id": "asof.zep.per_run.two",
@@ -52859,7 +54449,14 @@
    "cited_in_pending": [],
    "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
    "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "pending_remeasure": true,
+   "shape": [
+    {
+     "at": "arms.zep.per_run",
+     "len": 2,
+     "keys": null
+    }
+   ]
   },
   {
    "id": "asof.zep.llm_calls_per_episode",

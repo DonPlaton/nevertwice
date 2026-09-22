@@ -167,6 +167,42 @@ with _tf.TemporaryDirectory() as _td:
     finally:
         _raw.unlink(missing_ok=True)
 
+print("\n- and the same at the call site for a list that grew a row -")
+#: `pair_mismatch` covers the claims whose id names the two arms. The other seventy-two index a
+#: list with no such signature, and `shape_mismatch` compares the list's recorded shape instead.
+#: Checked HERE rather than only on the helper, for the reason written above.
+_raw = ROOT / "research" / "results" / "_shapemove_probe.json"
+_raw.parent.mkdir(parents=True, exist_ok=True)
+_raw.write_text(json.dumps({"recall_sweep": [{"threshold": t, "recall": 0.9} for t in
+                                             (0.1, 0.2, 0.25, 0.3, 0.33, 0.35)]}),
+                encoding="utf-8")
+try:
+    os.utime(_raw, None)
+    _man = {"claims": [{
+        "id": "abstention.recall.shipped_threshold", "value": 0.35, "printed": ["0.35"],
+        "statement": "the shipped abstention threshold", "unit": "threshold", "n": 40,
+        "ci": None, "dataset": "d", "environment": "e",
+        "command": "python research/abstention_ab.py --part all",
+        "produced_by": ["research/abstention_ab.py"], "cited_in": [],
+        "stale": "withdrawn for the re-measure", "pending_remeasure": True,
+        "commit": "0" * 40, "raw": "research/results/_shapemove_probe.json",
+        "pointer": "recall_sweep[4].threshold",
+        #: five rows when it was registered, six on disk now: one threshold inserted
+        "shape": [{"at": "recall_sweep", "len": 5, "keys": ["recall", "threshold"]}]}]}
+    _restored, _left, _ = rm.restore(_man, head=HEAD)
+    check("restore refuses a claim whose list grew a row under it",
+          _restored == [] and any("held 5 rows" in x for x in _left), str(_left))
+    check("and the claim keeps 0.35 rather than taking the neighbouring threshold",
+          _man["claims"][0]["value"] == 0.35, str(_man["claims"][0]["value"]))
+    #: The hole, exercised rather than described: an equal-length reorder is invisible to shape.
+    _reordered = [{"at": "recall_sweep", "len": 6, "keys": ["recall", "threshold"]}]
+    _man["claims"][0]["shape"] = _reordered
+    check("an equal-length reorder passes, which is this layer's stated limit",
+          rm.shape_mismatch(_man["claims"][0],
+                            json.loads(_raw.read_text(encoding="utf-8"))) is None)
+finally:
+    _raw.unlink(missing_ok=True)
+
 
 print(f"\nremeasure: {len(RUN) - len(FAILED)} passed, {len(FAILED)} failed")
 sys.exit(1 if FAILED else 0)

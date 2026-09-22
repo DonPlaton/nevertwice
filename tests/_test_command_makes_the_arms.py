@@ -128,6 +128,22 @@ def producible(cmd) -> set[str] | None:
     return out
 
 
+def disagreement(disk: set[str], makes: set[str], declared: set[str]) -> set[str]:
+    """The arms on which the file and its entry disagree - empty when they agree.
+
+    A SYMMETRIC difference, so it catches both directions: an arm on disk that nothing can write
+    and nothing declares, and a declared arm that has vanished from the file. A one-sided
+    "nothing new appeared" rule would wave through a run that shrank a seven-arm artifact to two,
+    which is the corruption of `33b1481` arriving from the other side.
+
+    It lives in a function because the demonstration at the bottom must call the LINE THAT
+    DECIDES, not restate its semantics: the first version of that demonstration compared two
+    literals with `!=`, and weakening the real comparison to `<=` left it green (found by the
+    auditing session, 2026-09-22 - the fourth tautological check of the night).
+    """
+    return (disk - makes) ^ declared
+
+
 def arms_on_disk(artifact: str) -> set[str] | None:
     p = ROOT / artifact
     if not p.exists():
@@ -188,7 +204,7 @@ for f, spec in sorted(package.items()):
     unexplained = disk - makes
     declared = set(spec.get("assembled", {}).get("arms", ()))
     check(f"{f}: the arms it cannot make are the ones it declares",
-          unexplained == declared,
+          not disagreement(disk, makes, declared),
           f"unmakeable {sorted(unexplained)}, declared {sorted(declared)}")
     if declared:
         check(f"{f}: and the declaration says where they came from",
@@ -231,14 +247,16 @@ check("--runs and --sleep are accounted for rather than ignored",
 check("and a command with no --arms at all is read as the stand's default, not as 'anything'",
       producible(f"{sup_stand} --out x.json") == {"nevertwice", "naive"},
       str(sorted(producible(f"{sup_stand} --out x.json"))))
-#: The comparison above is an equality, not a containment, so it fails in BOTH directions - the
-#: auditing session asked for this explicitly. A run that SHRINKS an artifact leaves nothing
-#: unexplained, and a one-sided "no new unexplained arm" rule would wave it through while seven
-#: declared arms quietly became two. That is the very corruption of `33b1481`, arriving from the
-#: other side.
-shrunk, declared_seven = set(), {"mem0", "zep"}
-check("a file that LOST its declared arms is refused too, not only one that gained arms",
-      shrunk != declared_seven)
+#: Both directions, through the same `disagreement` the loop above calls - so weakening it to a
+#: containment reddens HERE. A shrunk file leaves nothing unexplained while the entry still
+#: declares two arms; a grown one leaves an arm nobody declared.
+check("a file that LOST its declared arms is refused, not only one that gained arms",
+      disagreement({"nevertwice", "naive"}, {"nevertwice", "naive"}, {"mem0", "zep"})
+      == {"mem0", "zep"})
+check("and a file that gained an undeclared arm is refused by the same line",
+      disagreement({"nevertwice", "naive", "zep"}, {"nevertwice", "naive"}, set()) == {"zep"})
+check("while a file that agrees with its entry passes",
+      not disagreement({"nevertwice", "naive", "zep"}, {"nevertwice", "naive"}, {"zep"}))
 
 print(f"\n{'ALL OK' if not FAILS else f'{FAILS} FAILED'}")
 sys.exit(1 if FAILS else 0)
