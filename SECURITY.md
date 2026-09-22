@@ -1,8 +1,8 @@
 # Security Policy
 
 Your memory store is plain Markdown and Git on your own machine, the core runs on the Python
-standard library with no third-party packages, and nothing leaves your computer unless you opt
-into a cloud backend with your own key. That removes most of the usual attack surface. What is
+standard library with no third-party packages, and nothing leaves your computer while
+`NEVERTWICE_CLOUD=none` or no cloud key is set. Mind the default `auto`: any cloud key in your environment - even one exported for another tool - is used, and extraction goes there FIRST. That removes most of the usual attack surface. What is
 left is listed below, and reports are welcome.
 
 [`docs/THREAT_MODEL.md`](docs/THREAT_MODEL.md) names every trust boundary, its owner, the test

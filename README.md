@@ -130,9 +130,7 @@ Details: [ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 Embeddings run locally on Ollama by default, so nothing leaves the machine;
 `NEVERTWICE_EMBED_PROVIDER` points at a cloud embedder if you would rather not run a local model,
-and with none at all recall falls back to lexical search rather than going dark. Extraction is
-local-first and an optional cloud key only speeds it up. Secrets are redacted before anything is
-written or sent. There is **no telemetry** - no account, no usage pings, no phone-home; the only
+and with none at all recall falls back to lexical search rather than going dark. Extraction tries a cloud backend FIRST whenever one of the four supported keys is in your environment (`NEVERTWICE_CLOUD=auto`) and local Ollama otherwise or on failure; `NEVERTWICE_CLOUD=none` keeps every session on the machine. Secrets are redacted before anything is written or sent. There is **no telemetry** - no account, no usage pings, no phone-home; the only
 network calls are the ones you configured, and `NEVERTWICE_LOCAL_ONLY` pins projects local for good.
 
 ## Any agent
@@ -160,7 +158,7 @@ With no backend at all, extraction pauses loudly (sessions are kept and retried,
 recall runs on lexical search until an embedder shows up. The five-minute walkthrough is in
 [QUICKSTART.md](QUICKSTART.md); every environment variable is in [CONFIG.md](docs/CONFIG.md).
 
-Contributing: `pip install -e ".[dev]"`, then `python -m pytest -q`. Two hundred six hermetic suites -
+Contributing: `pip install -e ".[dev]"`, then `python -m pytest -q`. Two hundred seven hermetic suites -
 LLMs, embedders, the optional reranker, network and GPU execution are disabled or mocked, and a lint
 fails the build if a script reaches a memory store without declaring which store it means. CI runs
 them on Linux, Windows and macOS across four Python versions. One is a golden store - same sessions
