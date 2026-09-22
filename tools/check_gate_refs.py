@@ -30,8 +30,23 @@ A number standing BESIDE a reference is checked too, not only one written inside
 That is how a document actually gets migrated - append `[[claim:id]]` to the line and leave the
 figure - and the first version of this tool passed exactly that with zero complaints while the
 line still read `current 1.000 / 1.000` against a stored 0.9833. A bare number must be the
-claim's value or one of the forms in its `printed` field; `printed` is the register's own
-rounding, so `0.067` for a stored 0.0667 is legal and `0.017` for a stored 0.0583 is not.
+claim's value or one of the forms in its `printed` field, so `0.067` for a stored 0.0667 is legal
+and `0.017` for a stored 0.0583 is not.
+
+**What `printed` actually holds, corrected 2026-09-22 - it is wider than "the register's own
+rounding", which is what this docstring used to say.** It is the list of literal forms the claim's
+own SENTENCE uses, and that includes the interval's bounds and the numerator:
+
+    blast_radius.shipped.flag_rate   value 0.6933   printed ['69.3%', '104']
+                                     "flags 69.3% of this repository's commits (104 of 150)"
+    embed...delta_recall_at_1        value 0.0278   printed ['0.028', '0.005', '0.065']
+                                     ci [-0.0046, 0.0648] - the last two are the BOUNDS
+
+So the tolerance here is wider than the sentence above implied: a line reading "flags 104 commits"
+beside that reference passes, though 104 is the numerator rather than the value. That is a real
+limit of this gate and not a bug - its job is to catch a figure the register does not hold at all,
+and it still does - but the limit is now written where a reader of the gate will see it, rather
+than left to be discovered by someone who trusts the old sentence.
 
 It fires on the two readings that are unambiguous: one reference where EVERY number on the line
 disagrees, or a contiguous run of figures as long as the line's list of references, paired in
@@ -92,7 +107,8 @@ def state(claim: dict) -> str:
 
 
 #: A bare number on a gate line: `0.9833`, `411.0`, `89`, `-0.060`. Percent and unit suffixes
-#: are left to `printed`, which carries the form the register itself publishes.
+#: are left to `printed`, which carries every literal form the claim's sentence uses - the value,
+#: the interval's bounds and the numerator - not the value's rounding alone (see the docstring).
 BARE = re.compile(r"(?<![\w.])(-?\d+(?:\.\d+)?)(?![\w.])")
 
 #: A run of figures separated by nothing but a delimiter: `1.000 / 1.000`, `0.017, 0.067`.
