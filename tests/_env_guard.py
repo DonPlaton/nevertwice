@@ -22,4 +22,20 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import sandbox_guard  # noqa: E402 - the path insert above is what makes this importable
 
+#: A suite that prints Cyrillic must not die of its console. Every suite imports this file, so
+#: the reconfiguration lives here rather than in the two that happened to be caught: on the
+#: Windows runner stdout is cp1252, and `_test_slug_both_sides` and `_test_stemmer` both died
+#: with `UnicodeEncodeError: 'charmap' codec can't encode` while printing an `ok` line - not a
+#: failure of anything they check. This machine's console is cp1251, which encodes Cyrillic, so
+#: the defect was invisible here and appeared on CI's first matrix run (2026-09-22).
+#:
+#: `errors="replace"` rather than a hard UTF-8: a test's job is to report its verdict, and a
+#: character that cannot be rendered must cost a glyph, never the verdict. Guarded because a
+#: stream that is not a real console - a pipe, a capture, a pytest buffer - may not support it.
+for _stream in (sys.stdout, sys.stderr):
+    try:
+        _stream.reconfigure(encoding="utf-8", errors="replace")
+    except (AttributeError, ValueError, OSError):
+        pass
+
 _TMP_HOME = str(sandbox_guard.isolate(prefix="nevertwice_test_home_"))
