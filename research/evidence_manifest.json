@@ -339,45 +339,69 @@
   }
  },
  "documents": {
-  "README.md": {
-   "governance": "governed",
-   "note": "every printed number must resolve to a claim, and the generated regions are rendered by tools/render_claims.py"
+  ".github/ISSUE_TEMPLATE/bug_report.md": {
+   "governance": "exempt",
+   "reason": "issue template"
   },
-  "docs/BENCHMARKS.md": {
-   "governance": "governed",
-   "note": "every printed number must resolve to a claim, and the generated regions are rendered by tools/render_claims.py"
+  ".github/ISSUE_TEMPLATE/feature_request.md": {
+   "governance": "exempt",
+   "reason": "issue template"
+  },
+  ".github/PULL_REQUEST_TEMPLATE.md": {
+   "governance": "exempt",
+   "reason": "pull-request template"
   },
   "CHANGELOG.md": {
    "governance": "exempt",
    "reason": "release history - each entry describes a past change, not a measurement to reproduce"
   },
-  "ROADMAP.md": {
+  "CODE_OF_CONDUCT.md": {
    "governance": "exempt",
-   "reason": "planned work"
+   "reason": "no numeric claims"
   },
   "CONTRIBUTING.md": {
    "governance": "exempt",
    "reason": "workflow instructions and the support matrix"
   },
-  "CODE_OF_CONDUCT.md": {
+  "QUICKSTART.md": {
    "governance": "exempt",
-   "reason": "no numeric claims"
+   "reason": "walkthrough timings and command output"
+  },
+  "README.md": {
+   "governance": "governed",
+   "note": "every printed number must resolve to a claim, and the generated regions are rendered by tools/render_claims.py"
+  },
+  "ROADMAP.md": {
+   "governance": "exempt",
+   "reason": "planned work"
   },
   "SECURITY.md": {
    "governance": "exempt",
    "reason": "supported-version table and contact policy"
   },
-  "QUICKSTART.md": {
+  "docs/AGENT_CONFIGS.md": {
    "governance": "exempt",
-   "reason": "walkthrough timings and command output"
-  },
-  "docs/README.md": {
-   "governance": "exempt",
-   "reason": "index page"
+   "reason": "copy-paste configuration blocks for each agent host"
   },
   "docs/ARCHITECTURE.md": {
    "governance": "exempt",
    "reason": "structure, not measurement"
+  },
+  "docs/BENCHMARKS.md": {
+   "governance": "governed",
+   "note": "every printed number must resolve to a claim, and the generated regions are rendered by tools/render_claims.py"
+  },
+  "docs/BRAIN_LAYER_DESIGN.md": {
+   "governance": "exempt",
+   "reason": "design note for an opt-in layer"
+  },
+  "docs/COMPARISON.md": {
+   "governance": "backlog",
+   "budget": 15,
+   "target": "B4",
+   "note": "The vendor matrix, repository activity, verified-run and retrieval tables are generated from docs/comparison_data.json, docs/comparison_snapshot.json and the evidence manifest; the budget covers only the prose that remains. A WITHDRAWN banner was added above the generated regions in 2026-09: the page renders the July head-to-head while the register marks all sixteen of those figures withdrawn, and the citation guard does not look at this page because it is backlog rather than governed, so the retraction never reached the reader. The budget rises for the banner's own figures.",
+   "budget_metric": "evidence-bearing numeric tokens: numbers outside fenced blocks, excluding years, months, Python versions and bare single digits",
+   "generator": "tools/comparison_snapshot.py"
   },
   "docs/CONFIG.md": {
    "governance": "exempt",
@@ -387,25 +411,35 @@
    "governance": "exempt",
    "reason": "recording instructions - frame counts and durations"
   },
+  "docs/FEATURES.md": {
+   "governance": "exempt",
+   "reason": "capability list; every measured claim links to the study that produced it rather than restating a number here"
+  },
   "docs/INTEGRATIONS.md": {
    "governance": "exempt",
    "reason": "per-agent setup steps"
+  },
+  "docs/README.md": {
+   "governance": "exempt",
+   "reason": "index page"
   },
   "docs/SELF_EXTRACTION.md": {
    "governance": "exempt",
    "reason": "mechanism description"
   },
-  "docs/BRAIN_LAYER_DESIGN.md": {
-   "governance": "exempt",
-   "reason": "design note for an opt-in layer"
+  "docs/THREAT_MODEL.md": {
+   "governance": "backlog",
+   "budget": 6,
+   "target": "E2",
+   "note": "Trust boundaries and their tests. Its numbers are incident dates, thresholds and constants rather than published measurements, so it is registered as backlog with a ratchet instead of exempted - an exemption is a hole that never closes. Its *claims* are governed more strictly than any metric: tests/_test_threat_model.py fails when one names a check that does not exist.",
+   "budget_metric": "evidence-bearing numeric tokens: numbers outside fenced blocks, excluding years and bare single digits"
   },
-  "docs/FEATURES.md": {
-   "governance": "exempt",
-   "reason": "capability list; every measured claim links to the study that produced it rather than restating a number here"
-  },
-  "docs/AGENT_CONFIGS.md": {
-   "governance": "exempt",
-   "reason": "copy-paste configuration blocks for each agent host"
+  "docs/WEAKNESSES.md": {
+   "governance": "backlog",
+   "budget": 146,
+   "target": null,
+   "note": "evidence-bearing numbers not yet registered; the budget is a ceiling that may only be lowered",
+   "budget_metric": "evidence-bearing numeric tokens: numbers outside fenced blocks, excluding years, months, Python versions and bare single digits"
   },
   "docs/starter-issues/01-latency-interval-not-point.md": {
    "governance": "exempt",
@@ -423,30 +457,6 @@
    "governance": "exempt",
    "reason": "how to run the demos"
   },
-  "examples/sample-store/README.md": {
-   "governance": "exempt",
-   "reason": "what the sample store contains"
-  },
-  "research/data/README.md": {
-   "governance": "exempt",
-   "reason": "dataset download instructions"
-  },
-  "skills/nevertwice-remember/SKILL.md": {
-   "governance": "exempt",
-   "reason": "an agent skill definition"
-  },
-  ".github/ISSUE_TEMPLATE/bug_report.md": {
-   "governance": "exempt",
-   "reason": "issue template"
-  },
-  ".github/ISSUE_TEMPLATE/feature_request.md": {
-   "governance": "exempt",
-   "reason": "issue template"
-  },
-  ".github/PULL_REQUEST_TEMPLATE.md": {
-   "governance": "exempt",
-   "reason": "pull-request template"
-  },
   "examples/sample-store/Context/demo_api.md": {
    "governance": "exempt",
    "reason": "fixture note in the sample store"
@@ -463,106 +473,9 @@
    "governance": "exempt",
    "reason": "fixture note in the sample store"
   },
-  "research/invariants_lab/DB_AUTHORITY.md": {
-   "governance": "backlog",
-   "budget": 9,
-   "note": "Tasks B1-B3 of the invariants lab: migration reversibility and a destructive-operation authority boundary, measured by attack rather than by precision per PREREGISTRATION.md section 6. Fifteen bypass attempts across six classes are published in full with their verdicts; two of them broke earlier builds of the mechanism and are described. Every number regenerates from tests/_test_db_authority.py, which is hermetic."
-  },
-  "research/invariants_lab/DEFECTS.md": {
-   "governance": "backlog",
-   "budget": 31,
-   "note": "Phase D of the invariants lab: the five false-positive classes the previous census quantified and left in the code, with the state of each. Its shares are quoted from research/blast_radius_precision.json, the artifact of the run being replaced; its regressions live in tests/_test_blast_radius.py and run in CI. D5 is blocked while any row is open, so this page is a gate rather than a claim."
-  },
-  "research/invariants_lab/BLAST_RADIUS_D5.md": {
-   "governance": "backlog",
-   "budget": 168,
-   "note": "Task D5 of the invariants lab: precision AND recall for the blast-radius checker on the eight-repository corpus, against git grep at a matched flag rate, with every threshold fixed in PREREGISTRATION.md before the run. Two of four gates fail and the mechanism is deleted; the numbers regenerate from research/invariants_lab/measure_blast_radius.py against blast_radius_d5.json and the SHAs in corpus_manifest.json. Every finding is judged mechanically, never by hand, and the 70% abstention rate is reported with the precision it qualifies."
-  },
-  "research/invariants_lab/HELDOUT_V.md": {
-   "governance": "backlog",
-   "budget": 148,
-   "note": "Phase V of the invariants lab: every mechanism measured once on twenty-seven repositories the frozen code never saw, against thresholds fixed in PREREGISTRATION-SHIP.md before the corpus was cloned. blast_radius under decidable-only passes all three V1-A gates out of sample; the ratchet, scale's static half and the union fail theirs and are deleted per their declared consequences. The numbers regenerate from research/invariants_lab/analyse_v.py against v_delta.json and the *_heldout.json artifacts run_phase_v.py produced. Provenance of each artifact is established in PROVENANCE_V.md from the data rather than the labels, because three of them are mislabelled."
-  },
-  "research/invariants_lab/PROVENANCE_V.md": {
-   "governance": "backlog",
-   "budget": 32,
-   "note": "The provenance audit that had to run before any Phase V number was interpreted: three artifacts written by the unattended chain carry a hardcoded corpus_dev label under a *_heldout.json name. Ten of eleven artifacts are decided from their own contents by three routes - disjoint block names, census shape, and exclusion against the development run - and every decided one is held out. The numbers regenerate from research/invariants_lab/provenance_audit.py against provenance_v.json. The frozen modules are deliberately not edited; the correction lives here with its evidence."
-  },
-  "research/invariants_lab/CORPUS.md": {
-   "governance": "backlog",
-   "budget": 129,
-   "note": "Task C1 of the invariants lab: the corpus of eight public repositories, its selection rationale committed before any clone, and the census that shows a non-zero base rate. Its numbers are counts of a corpus that lives outside git at D:/Coding/_nevertwice_polygon/corpus and are reproducible from research/invariants_lab/corpus_census.py against the SHAs in corpus_manifest.json; nothing here is a claim about the product. Registering them as claims waits for Phase T, when the lab results are either promoted or published as negatives."
-  },
-  "research/invariants_lab/INVARIANT_NOTES.md": {
-   "governance": "backlog",
-   "budget": 5,
-   "note": "Tasks I1-I3 of the invariants lab: the invariant note type, its two-strike lifecycle, and the three-checker preconfigured pack. Mechanism 1 is infrastructure, judged by contract assertions rather than precision per PREREGISTRATION.md section 7; every claim here is checked by tests/_test_invariant_notes.py, which is hermetic and needs neither vault nor corpus. No claim is made that the pack is useful -- that is T3."
-  },
-  "research/invariants_lab/MUTANTS.md": {
-   "governance": "backlog",
-   "budget": 52,
-   "note": "Task C2 of the invariants lab: the positive class, 495 breakages generated by reverting the caller half of a commit that changed a signature and updated its callers together. Every one is re-decided by CPython inspect.Signature.bind in verify_mutants.py rather than by the generator that proposed it, and the counts are reproducible from mutants.json and mutant_controls.json against the SHAs in corpus_manifest.json. Nothing here is a claim about the product; the detector measurements land in Phase D."
-  },
-  "research/invariants_lab/COLDSTART_T3.md": {
-   "governance": "backlog",
-   "budget": 39,
-   "note": "Task T3 of the invariants lab, the cold-start axis: the preconfigured pack measured on the LIVE_VALIDATION stand against two local models, 96 usable generations each. It fails on both, because the base pitfall rate is at or near zero -- the finding being that portable knowledge is the knowledge models already have. Numbers regenerate from research/invariants_lab/measure_coldstart.py against coldstart_t3_qwen35_4b.json and coldstart_t3_qwen25_3b.json; the run was read-only against the owner's already-running Ollama."
-  },
-  "research/invariants_lab/README.md": {
-   "governance": "backlog",
-   "budget": 58,
-   "note": "Task T5 of the invariants lab: the write-up that ties the six mechanisms together. Every number on it is quoted from one of the per-mechanism documents registered beside it and regenerates from the harness that produced it. Two mechanisms passed their gates, four did not, and the cross-cutting finding -- that scope rather than accuracy is what buys silence -- is stated as an observation across five measured flag rates rather than as a law."
-  },
-  "research/invariants_lab/TOGETHER_T1.md": {
-   "governance": "backlog",
-   "budget": 28,
-   "note": "Tasks S1-S3, T1 and T2 of the invariants lab: the seam journal executed on a real migration, and the union of every mechanism that passed its own gate measured against the combined flag-rate ceiling declared in PREREGISTRATION.md section 8. The union fails at 0.119, and the declared remedy is applied and its cost reported rather than renegotiated. Numbers regenerate from research/invariants_lab/measure_together.py against together_t1.json; the seam journal claims are checked by tests/_test_seam_journal.py, which is hermetic."
-  },
-  "research/invariants_lab/SCALE_X4.md": {
-   "governance": "backlog",
-   "budget": 47,
-   "note": "Task X4 of the invariants lab: the scale detector and the 10x canary, the first mechanism to pass all its declared gates. Its static recall and false-positive figures are measured against templates written alongside the detector and the write-up says so in its first paragraph; the non-circular evidence is the dynamic canary and an exploratory flag rate on 738 real corpus commits. Numbers regenerate from research/invariants_lab/measure_scale.py against scale_x4.json."
-  },
-  "research/invariants_lab/RATCHET_R3.md": {
-   "governance": "backlog",
-   "budget": 40,
-   "note": "Tasks R1-R3 of the invariants lab: the complexity ratchet, measured by agreement with an independent instrument rather than by recall against its own metric, which would be 1.0 by construction. One gate of four fails and the mechanism is deleted. Numbers regenerate from research/invariants_lab/measure_ratchet.py against ratchet_r3.json and the SHAs in corpus_manifest.json; the metric itself is pinned against ruff C901 on every module in nevertwice/ by tests/_test_complexity.py."
-  },
-  "research/invariants_lab/POWER.md": {
-   "governance": "backlog",
-   "budget": 195,
-   "note": "Task C3 of the invariants lab: what effect sizes the corpus can resolve, computed before any mechanism is measured. Exact binomial for one proportion and simulated exact McNemar for the paired detector-vs-baseline comparison; reproducible from research/invariants_lab/power.py against mutants.json and corpus_census.json. Every number is a minimum detectable effect at a fixed n, never observed power. Nothing here is a claim about the product."
-  },
-  "research/invariants_lab/PREREGISTRATION.md": {
+  "examples/sample-store/README.md": {
    "governance": "exempt",
-   "reason": "Task C4 of the invariants lab: the thresholds, baselines and deletion decisions for all six mechanisms, declared before any of them is measured. Its numbers are PROSPECTIVE -- floors, ceilings, required sample sizes and the n each gate will be evaluated at -- not measurements to reproduce, which is the same governance the earlier BLAST_RADIUS_DECISION.md carries for the same reason. The measurements land in the per-mechanism documents of Phase D onward."
-  },
-  "research/README.md": {
-   "governance": "exempt",
-   "reason": "index of the studies; the numbers it quotes are verdict summaries of the study pages it links"
-  },
-  "research/embed_universal/README.md": {
-   "governance": "exempt",
-   "reason": "training-run log for the unpublished embedder"
-  },
-  "research/embed_universal/hf_card/README.md": {
-   "governance": "exempt",
-   "reason": "the model card for that embedder"
-  },
-  "docs/COMPARISON.md": {
-   "governance": "backlog",
-   "budget": 15,
-   "target": "B4",
-   "note": "The vendor matrix, repository activity, verified-run and retrieval tables are generated from docs/comparison_data.json, docs/comparison_snapshot.json and the evidence manifest; the budget covers only the prose that remains. A WITHDRAWN banner was added above the generated regions in 2026-09: the page renders the July head-to-head while the register marks all sixteen of those figures withdrawn, and the citation guard does not look at this page because it is backlog rather than governed, so the retraction never reached the reader. The budget rises for the banner's own figures.",
-   "budget_metric": "evidence-bearing numeric tokens: numbers outside fenced blocks, excluding years, months, Python versions and bare single digits",
-   "generator": "tools/comparison_snapshot.py"
-  },
-  "docs/WEAKNESSES.md": {
-   "governance": "backlog",
-   "budget": 146,
-   "target": null,
-   "note": "evidence-bearing numbers not yet registered; the budget is a ceiling that may only be lowered",
-   "budget_metric": "evidence-bearing numeric tokens: numbers outside fenced blocks, excluding years, months, Python versions and bare single digits"
+   "reason": "what the sample store contains"
   },
   "research/ABLATION_RESULTS.md": {
    "governance": "backlog",
@@ -570,6 +483,13 @@
    "target": null,
    "note": "evidence-bearing numbers not yet registered; the budget is a ceiling that may only be lowered",
    "budget_metric": "evidence-bearing numeric tokens: numbers outside fenced blocks, excluding years, months, Python versions and bare single digits"
+  },
+  "research/ABSTENTION_AB.md": {
+   "governance": "backlog",
+   "budget": 23,
+   "note": "The sweep tables restate one curve per mechanism. The decision they drove - both abstention defaults reverted to 0 - is pinned by tests rather than by this page.",
+   "budget_metric": "evidence-bearing numeric tokens: numbers outside fenced blocks, excluding years, months, Python versions and bare single digits",
+   "generator": "research/abstention_ab.py"
   },
   "research/ABSTRACTIVE.md": {
    "governance": "backlog",
@@ -592,6 +512,11 @@
    "note": "evidence-bearing numbers not yet registered; the budget is a ceiling that may only be lowered",
    "budget_metric": "evidence-bearing numeric tokens: numbers outside fenced blocks, excluding years, months, Python versions and bare single digits"
   },
+  "research/BASELINES.md": {
+   "governance": "governed",
+   "generator": "tools/render_claims.py",
+   "note": "the baseline policy, registry, verdict matrix and summary are generated from this manifest; the prose around them names the three gaps"
+  },
   "research/BIO_MEMORY.md": {
    "governance": "backlog",
    "budget": 22,
@@ -599,12 +524,38 @@
    "note": "evidence-bearing numbers not yet registered; the budget is a ceiling that may only be lowered",
    "budget_metric": "evidence-bearing numeric tokens: numbers outside fenced blocks, excluding years, months, Python versions and bare single digits"
   },
+  "research/BLAST_RADIUS_CALIBRATION.md": {
+   "governance": "backlog",
+   "budget": 72,
+   "note": "A research write-up, registered the way every other one here is. Its six load-bearing numbers - the ones the T1/T2 decision rests on - are registered as claims and checked against the artifact by tests/_test_blast_radius_calibration.py, which also re-checks the thresholds themselves. The distribution tables are the backlog. The cost figure is deliberately NOT a claim: it points at a field the artifact declares volatile, so every regeneration would move it and break the claim. T4 is enforced against the artifact directly instead."
+  },
+  "research/BLAST_RADIUS_DECISION.md": {
+   "governance": "exempt",
+   "reason": "the decision rules for whether the blast-radius checker is worth keeping, declared before any finding was labelled and before the baseline was built, per hard rule 2.6. Its numbers are prospective thresholds - a precision floor and a matched-flag-rate comparison - and the size of the census it commits to labelling, not measurements to reproduce. The measurements land in research/BLAST_RADIUS_PRECISION.md."
+  },
+  "research/BLAST_RADIUS_PRECISION.md": {
+   "governance": "backlog",
+   "budget": 30,
+   "note": "the negative result that closed the blast-radius track. Its headline - 0 of 24 findings true, precision 0.000 - is registered as a claim and checked against research/blast_radius_precision.json; the taxonomy of why each finding is false is the backlog. The labeller that produced the labels has its own controls in tests/_test_blast_radius_labeller.py, because a null result whose instrument was never shown capable of a positive is unfalsifiable."
+  },
+  "research/BLAST_RADIUS_THRESHOLDS.md": {
+   "governance": "exempt",
+   "reason": "thresholds for the blast-radius calibration, declared before the run per hard rule 2.6. Its numbers are prospective decision rules - a flag-rate ceiling, a percentile rule for the budgets, a cost ceiling quoted from the integration spec - not measurements to reproduce. The retrospective figures it cites as motivation are the twelve-commit spot check recorded in .loop/STATE.md, which is untracked working record rather than published evidence; every number this run produces is published in research/BLAST_RADIUS_CALIBRATION.md, which is governed."
+  },
   "research/CAUSAL_VOCAB.md": {
    "governance": "backlog",
    "budget": 27,
    "target": null,
    "note": "evidence-bearing numbers not yet registered; the budget is a ceiling that may only be lowered",
    "budget_metric": "evidence-bearing numeric tokens: numbers outside fenced blocks, excluding years, months, Python versions and bare single digits"
+  },
+  "research/CLAIM_HALFLIFE.md": {
+   "governance": "exempt",
+   "reason": "a measurement OF the register rather than with it: every number is recomputed from the register's own git history by `tools/claim_halflife.py --save`, and changes with each commit that touches the manifest. Registering them as claims would create claims that are stale by construction - a claim about the register cannot survive the register being written to. The artifact `research/results/claim_halflife.json` is committed and the command is one line, so the page is checkable by running it rather than by pointing at a claim id."
+  },
+  "research/CODE_SESSIONS.md": {
+   "governance": "governed",
+   "note": "every printed number must resolve to a claim; the table is the generated region `code-sessions`, rendered from the code_sessions.* family"
   },
   "research/CONSOLIDATION_EVAL.md": {
    "governance": "backlog",
@@ -620,12 +571,69 @@
    "note": "evidence-bearing numbers not yet registered; the budget is a ceiling that may only be lowered",
    "budget_metric": "evidence-bearing numeric tokens: numbers outside fenced blocks, excluding years, months, Python versions and bare single digits"
   },
+  "research/EMBED_CAPACITY.md": {
+   "governance": "backlog",
+   "budget": 86,
+   "note": "the LoRA capacity curve, the replacement for a belief measured on a saturated axis, and the discovery that v1 is not reproducible from its own recipe. The two load-bearing results are registered as claims and checked against research/embed_universal/heldout/capacity_sweep.json by tests/_test_capacity.py; the curve and the per-language table are the backlog. All four checkpoints were deleted as they failed the promotion rule."
+  },
+  "research/EMBED_DISTILLATION.md": {
+   "governance": "backlog",
+   "budget": 46,
+   "note": "the negative result that closed M3. Both gates it failed are registered as claims and checked against research/embed_universal/heldout/distil_v1.json by tests/_test_distillation.py; the two-attempt table and the reasoning are the backlog. The distilled checkpoint was deleted per the decision written before the run; every measurement it produced is kept, including the first attempt's, whose failure was a specification error rather than a finding."
+  },
+  "research/EMBED_HARD_NEGATIVES.md": {
+   "governance": "backlog",
+   "budget": 49,
+   "note": "the negative result that closed M2. The gate it failed and the one improvement it did produce are registered as claims and checked against research/embed_universal/heldout/hard_v1.json by tests/_test_hard_negatives.py; the mining statistics and the taxonomy of why are the backlog. The mined checkpoint was deleted per the decision written before the run; every measurement it produced is kept."
+  },
+  "research/EMBED_HELDOUT_BASELINE.md": {
+   "governance": "backlog",
+   "budget": 125,
+   "note": "the first evaluation of the shipped embedding on material outside the owner's vault. Its three load-bearing results are registered as claims and checked against research/embed_universal/heldout/baseline_v1.json by tests/_test_heldout_baseline.py; the full table is the backlog. Every per-query rank and per-pair score is in the artifact, so any cell can be recomputed rather than trusted."
+  },
+  "research/EMBED_M2_THRESHOLD.md": {
+   "governance": "exempt",
+   "reason": "the success threshold and deletion decision for hard-negative mining, declared before any negative was mined and before anything was retrained, per hard rule 2.6. Its numbers are prospective decision rules - a paired interval that must exclude zero, a bound on collateral regression, and the effect size this benchmark can resolve - not measurements to reproduce. The retrospective figures it cites as motivation are claims already registered from M1."
+  },
+  "research/EMBED_M3_THRESHOLD.md": {
+   "governance": "exempt",
+   "reason": "the success threshold and deletion decision for cross-encoder distillation, declared before any teacher score was collected and before anything was retrained, per hard rule 2.6. Its numbers are prospective decision rules and the effect size the benchmark can resolve, not measurements. The retrospective figures it cites are claims already registered from M1."
+  },
+  "research/EMBED_M4_THRESHOLD.md": {
+   "governance": "exempt",
+   "reason": "the success threshold and deletion decision for Matryoshka representations, declared before anything was trained or truncated, per hard rule 2.6. Its numbers are prospective decision rules - a bound on what the full vector may lose, tolerances for graceful truncation, and the resolution the benchmark offers - not measurements. It inverts the question M2 and M3 asked, and says so before the run: here 'no accuracy gain, three quarters of the memory' is a pass."
+  },
+  "research/EMBED_M5_THRESHOLD.md": {
+   "governance": "exempt",
+   "reason": "the promotion rule and deletion decision for the LoRA capacity sweep, declared before any rank was trained, per hard rule 2.6. It also records, before the run, that half the task cannot execute from committed data - gen_pairs.py produces same-language twins only, so there is no cross-lingual arm to re-test - and what would be needed instead. Prospective rules, not measurements."
+  },
+  "research/EMBED_M6_THRESHOLD.md": {
+   "governance": "exempt",
+   "reason": "what the served model had to prove before its numbers could be quoted as the shipped model's, declared before a single embedding was fetched. Prospective agreement tolerances, not measurements, plus the promise that failing V1 would force republishing every M1-M5 number with a caveat - written in advance so it could not be quietly avoided."
+  },
+  "research/EMBED_MATRYOSHKA.md": {
+   "governance": "backlog",
+   "budget": 55,
+   "note": "what Matryoshka training bought (nothing measurable) and what the baseline it was measured against revealed (the shipped model already truncates). Both are registered as claims and checked against research/embed_universal/heldout/matryoshka_v1.json by tests/_test_matryoshka.py. The trained checkpoint was deleted; the truncation table is the deliverable and belongs in the model card as an operating mode of the model already shipped."
+  },
+  "research/EMBED_SERVING.md": {
+   "governance": "backlog",
+   "budget": 28,
+   "note": "the check that lets M1-M5 be quoted as describing the shipped model: the f16 GGUF Ollama serves is numerically indistinguishable from the safetensors checkpoint every number was measured on. Two claims registered and checked by tests/_test_serving.py."
+  },
   "research/EMBED_SPECIALIZE.md": {
    "governance": "backlog",
    "budget": 51,
    "target": null,
    "note": "evidence-bearing numbers not yet registered; the budget is a ceiling that may only be lowered",
    "budget_metric": "evidence-bearing numeric tokens: numbers outside fenced blocks, excluding years, months, Python versions and bare single digits"
+  },
+  "research/EXTERNAL_RETRIEVAL.md": {
+   "governance": "backlog",
+   "budget": 19,
+   "note": "Every figure on this page is registered under `longmem_pinned.*` and `h2h_pinned.*`; the budget counts them because study pages are backlog rather than governed, the same rule as the rest of the archive.",
+   "budget_metric": "evidence-bearing numeric tokens: numbers outside fenced blocks, excluding years, months, Python versions and bare single digits",
+   "generator": "research/longmem_eval.py + research/head_to_head.py"
   },
   "research/FORGETTING.md": {
    "governance": "backlog",
@@ -634,12 +642,31 @@
    "note": "evidence-bearing numbers not yet registered; the budget is a ceiling that may only be lowered",
    "budget_metric": "evidence-bearing numeric tokens: numbers outside fenced blocks, excluding years, months, Python versions and bare single digits"
   },
+  "research/FRONTIER.md": {
+   "governance": "governed",
+   "note": "every printed number must resolve to a claim; the table is the generated region `frontier`, rendered from the frontier.* family"
+  },
+  "research/GUARD_BENCH.md": {
+   "governance": "governed",
+   "note": "every printed number must resolve to a claim; the table is the generated region `guard-bench`, rendered from the guards.* family"
+  },
+  "research/LEXICAL_MORPHOLOGY.md": {
+   "governance": "governed",
+   "note": "every printed number must resolve to a claim, and the three tables are generated regions (`lexical-morphology-locomo`, `-oracle`, `-vault`) rendered by tools/render_claims.py from the live and ablation families"
+  },
   "research/LIVE_VALIDATION.md": {
    "governance": "backlog",
    "budget": 71,
    "target": null,
    "note": "evidence-bearing numbers not yet registered; the budget is a ceiling that may only be lowered",
    "budget_metric": "evidence-bearing numeric tokens: numbers outside fenced blocks, excluding years, months, Python versions and bare single digits"
+  },
+  "research/LOCOMO.md": {
+   "governance": "backlog",
+   "budget": 18,
+   "note": "Every retrieval figure here is registered under `locomo.*`. The vendor accuracy figure this page names is an external citation, not a measurement of ours.",
+   "budget_metric": "evidence-bearing numeric tokens: numbers outside fenced blocks, excluding years, months, Python versions and bare single digits",
+   "generator": "research/locomo_eval.py"
   },
   "research/LONGITUDINAL_BENCH.md": {
    "governance": "backlog",
@@ -662,6 +689,10 @@
    "note": "evidence-bearing numbers not yet registered; the budget is a ceiling that may only be lowered",
    "budget_metric": "evidence-bearing numeric tokens: numbers outside fenced blocks, excluding years, months, Python versions and bare single digits"
   },
+  "research/PREREGISTRATION.md": {
+   "governance": "exempt",
+   "reason": "a preregistration states hypotheses, endpoints and decision rules BEFORE the confirmatory run. Its numbers are prospective thresholds and power targets, not measurements to reproduce, and every retrospective figure it refers to is cited by artifact rather than reprinted."
+  },
   "research/QA_ACCURACY.md": {
    "governance": "backlog",
    "budget": 85,
@@ -683,6 +714,10 @@
    "note": "evidence-bearing numbers not yet registered; the budget is a ceiling that may only be lowered",
    "budget_metric": "evidence-bearing numeric tokens: numbers outside fenced blocks, excluding years, months, Python versions and bare single digits"
   },
+  "research/README.md": {
+   "governance": "exempt",
+   "reason": "index of the studies; the numbers it quotes are verdict summaries of the study pages it links"
+  },
   "research/REAL_TRACE.md": {
    "governance": "backlog",
    "budget": 73,
@@ -696,6 +731,13 @@
    "target": null,
    "note": "evidence-bearing numbers not yet registered; the budget is a ceiling that may only be lowered",
    "budget_metric": "evidence-bearing numeric tokens: numbers outside fenced blocks, excluding years, months, Python versions and bare single digits"
+  },
+  "research/SUPERSESSION.md": {
+   "governance": "backlog",
+   "budget": 62,
+   "note": "Every figure on this page is registered above; the budget covers the per-shape breakdown and the prose, which restate registered numbers in other shapes. The study pages are backlog by the same rule as the rest of the archive.",
+   "budget_metric": "evidence-bearing numeric tokens: numbers outside fenced blocks and generated regions, excluding years, months, Python versions and bare single digits",
+   "generator": "research/supersession_bench.py"
   },
   "research/TWIN_GATE.md": {
    "governance": "backlog",
@@ -711,10 +753,164 @@
    "note": "evidence-bearing numbers not yet registered; the budget is a ceiling that may only be lowered",
    "budget_metric": "evidence-bearing numeric tokens: numbers outside fenced blocks, excluding years, months, Python versions and bare single digits"
   },
-  "research/BASELINES.md": {
-   "governance": "governed",
-   "generator": "tools/render_claims.py",
-   "note": "the baseline policy, registry, verdict matrix and summary are generated from this manifest; the prose around them names the three gaps"
+  "research/data/README.md": {
+   "governance": "exempt",
+   "reason": "dataset download instructions"
+  },
+  "research/embed_universal/README.md": {
+   "governance": "exempt",
+   "reason": "training-run log for the unpublished embedder"
+  },
+  "research/embed_universal/hf_card/README.md": {
+   "governance": "exempt",
+   "reason": "the model card for that embedder"
+  },
+  "research/invariants_lab/ABSTENTION_F1.md": {
+   "governance": "backlog",
+   "budget": 141,
+   "note": "Task F1 of the invariants lab: the abstention ladder, declared before the run, and its (recall, flag rate) curve on corpus_dev. Precision after abstention is circular by construction and is reported only as a consistency check; the numbers are in-sample and none of them may carry a public claim."
+  },
+  "research/invariants_lab/AXES_F3.md": {
+   "governance": "backlog",
+   "budget": 129,
+   "note": "Task F3 of the invariants lab: the ratchet's three unaudited axes against ruff's pylint-derived rules, the four defects that audit found, and the flag rate re-measured with and without them. All numbers are on corpus_dev and in sample."
+  },
+  "research/invariants_lab/BLAST_RADIUS_D5.md": {
+   "governance": "backlog",
+   "budget": 168,
+   "note": "Task D5 of the invariants lab: precision AND recall for the blast-radius checker on the eight-repository corpus, against git grep at a matched flag rate, with every threshold fixed in PREREGISTRATION.md before the run. Two of four gates fail and the mechanism is deleted; the numbers regenerate from research/invariants_lab/measure_blast_radius.py against blast_radius_d5.json and the SHAs in corpus_manifest.json. Every finding is judged mechanically, never by hand, and the 70% abstention rate is reported with the precision it qualifies."
+  },
+  "research/invariants_lab/COLDSTART_F5.md": {
+   "governance": "backlog",
+   "budget": 90,
+   "note": "Task F5 of the invariants lab: the cold-start experiment X1 named. A declared growth axis is project-specific and day-one checkable, and it still does not help -- base rate 0.013 over 150 generations on the strongest local model, 0 discordant pairs, and a documented refusal to run at the 750 trials the effect would need."
+  },
+  "research/invariants_lab/COLDSTART_T3.md": {
+   "governance": "backlog",
+   "budget": 39,
+   "note": "Task T3 of the invariants lab, the cold-start axis: the preconfigured pack measured on the LIVE_VALIDATION stand against two local models, 96 usable generations each. It fails on both, because the base pitfall rate is at or near zero -- the finding being that portable knowledge is the knowledge models already have. Numbers regenerate from research/invariants_lab/measure_coldstart.py against coldstart_t3_qwen35_4b.json and coldstart_t3_qwen25_3b.json; the run was read-only against the owner's already-running Ollama."
+  },
+  "research/invariants_lab/CORPORA.md": {
+   "governance": "backlog",
+   "budget": 42,
+   "note": "Task F0 of the invariants lab: the eight repositories frozen as a development set, and the two locks that keep the held-out corpus sealed until Phase V. Its counts are recomputed from mutants.json by tests/_test_corpus_freeze.py rather than restated, so a drift between the freeze and the answer key is a red test."
+  },
+  "research/invariants_lab/CORPUS.md": {
+   "governance": "backlog",
+   "budget": 129,
+   "note": "Task C1 of the invariants lab: the corpus of eight public repositories, its selection rationale committed before any clone, and the census that shows a non-zero base rate. Its numbers are counts of a corpus that lives outside git at D:/Coding/_nevertwice_polygon/corpus and are reproducible from research/invariants_lab/corpus_census.py against the SHAs in corpus_manifest.json; nothing here is a claim about the product. Registering them as claims waits for Phase T, when the lab results are either promoted or published as negatives."
+  },
+  "research/invariants_lab/DB_AUTHORITY.md": {
+   "governance": "backlog",
+   "budget": 9,
+   "note": "Tasks B1-B3 of the invariants lab: migration reversibility and a destructive-operation authority boundary, measured by attack rather than by precision per PREREGISTRATION.md section 6. Fifteen bypass attempts across six classes are published in full with their verdicts; two of them broke earlier builds of the mechanism and are described. Every number regenerates from tests/_test_db_authority.py, which is hermetic."
+  },
+  "research/invariants_lab/DEFECTS.md": {
+   "governance": "backlog",
+   "budget": 31,
+   "note": "Phase D of the invariants lab: the five false-positive classes the previous census quantified and left in the code, with the state of each. Its shares are quoted from research/blast_radius_precision.json, the artifact of the run being replaced; its regressions live in tests/_test_blast_radius.py and run in CI. D5 is blocked while any row is open, so this page is a gate rather than a claim."
+  },
+  "research/invariants_lab/ENDTOEND_E.md": {
+   "governance": "backlog",
+   "budget": 79,
+   "note": "Phase E of the invariants lab, and E4 is G-C: whether an agent fixes a stale caller better with the mechanism than without, with harm counted separately. Every number is in sample -- the held-out corpus does not exist, see HELDOUT_H3_BLOCKED.md."
+  },
+  "research/invariants_lab/ENDTOEND_HELDOUT.md": {
+   "governance": "backlog",
+   "budget": 49,
+   "note": "The shipping gate re-run out of sample: 150 benefit and 150 harm trials on the held-out corpus, 87 usable pairs against the 37 PREREGISTRATION-SHIP.md required. Net benefit p = 0.453 with 5 fixed against 2 broken, so G-C is not met and the NO-GO stands on evidence rather than on a missing measurement; harm passes at 0.013. Numbers regenerate from research/invariants_lab/measure_endtoend.py --corpus heldout against endtoend_e_heldout.json. The 92 harness timeouts and the selection bias they imply are stated with the verdict rather than after it."
+  },
+  "research/invariants_lab/HELDOUT_H2.md": {
+   "governance": "backlog",
+   "budget": 30,
+   "note": "Task H2: thirty candidate held-out repositories across six domains, the selection criteria, and a per-block prediction of what each should show -- all written before any clone ran, so a wrong prediction is visible."
+  },
+  "research/invariants_lab/HELDOUT_H3_BLOCKED.md": {
+   "governance": "backlog",
+   "budget": 21,
+   "note": "Task H3, blocked: DNS resolves nothing on this machine and the local proxy's tunnel carries no TLS, so no public repository host is reachable by any route tried. G-B is unevaluable rather than failed, and every artefact H3 needs is committed so it runs unchanged when a name resolves."
+  },
+  "research/invariants_lab/HELDOUT_V.md": {
+   "governance": "backlog",
+   "budget": 148,
+   "note": "Phase V of the invariants lab: every mechanism measured once on twenty-seven repositories the frozen code never saw, against thresholds fixed in PREREGISTRATION-SHIP.md before the corpus was cloned. blast_radius under decidable-only passes all three V1-A gates out of sample; the ratchet, scale's static half and the union fail theirs and are deleted per their declared consequences. The numbers regenerate from research/invariants_lab/analyse_v.py against v_delta.json and the *_heldout.json artifacts run_phase_v.py produced. Provenance of each artifact is established in PROVENANCE_V.md from the data rather than the labels, because three of them are mislabelled."
+  },
+  "research/invariants_lab/INVARIANT_NOTES.md": {
+   "governance": "backlog",
+   "budget": 5,
+   "note": "Tasks I1-I3 of the invariants lab: the invariant note type, its two-strike lifecycle, and the three-checker preconfigured pack. Mechanism 1 is infrastructure, judged by contract assertions rather than precision per PREREGISTRATION.md section 7; every claim here is checked by tests/_test_invariant_notes.py, which is hermetic and needs neither vault nor corpus. No claim is made that the pack is useful -- that is T3."
+  },
+  "research/invariants_lab/MUTANTS.md": {
+   "governance": "backlog",
+   "budget": 52,
+   "note": "Task C2 of the invariants lab: the positive class, 495 breakages generated by reverting the caller half of a commit that changed a signature and updated its callers together. Every one is re-decided by CPython inspect.Signature.bind in verify_mutants.py rather than by the generator that proposed it, and the counts are reproducible from mutants.json and mutant_controls.json against the SHAs in corpus_manifest.json. Nothing here is a claim about the product; the detector measurements land in Phase D."
+  },
+  "research/invariants_lab/POWER.md": {
+   "governance": "backlog",
+   "budget": 195,
+   "note": "Task C3 of the invariants lab: what effect sizes the corpus can resolve, computed before any mechanism is measured. Exact binomial for one proportion and simulated exact McNemar for the paired detector-vs-baseline comparison; reproducible from research/invariants_lab/power.py against mutants.json and corpus_census.json. Every number is a minimum detectable effect at a fixed n, never observed power. Nothing here is a claim about the product."
+  },
+  "research/invariants_lab/PREREGISTRATION-SHIP.md": {
+   "governance": "backlog",
+   "budget": 84,
+   "note": "Task H1: every threshold for Phase V and Phase E, the sample size each is judged at, the statistical test, the deletion consequence, and the end-to-end gate with its harm bound -- committed before a single held-out repository was cloned."
+  },
+  "research/invariants_lab/PREREGISTRATION.md": {
+   "governance": "exempt",
+   "reason": "Task C4 of the invariants lab: the thresholds, baselines and deletion decisions for all six mechanisms, declared before any of them is measured. Its numbers are PROSPECTIVE -- floors, ceilings, required sample sizes and the n each gate will be evaluated at -- not measurements to reproduce, which is the same governance the earlier BLAST_RADIUS_DECISION.md carries for the same reason. The measurements land in the per-mechanism documents of Phase D onward."
+  },
+  "research/invariants_lab/PROVENANCE_V.md": {
+   "governance": "backlog",
+   "budget": 32,
+   "note": "The provenance audit that had to run before any Phase V number was interpreted: three artifacts written by the unattended chain carry a hardcoded corpus_dev label under a *_heldout.json name. Ten of eleven artifacts are decided from their own contents by three routes - disjoint block names, census shape, and exclusion against the development run - and every decided one is held out. The numbers regenerate from research/invariants_lab/provenance_audit.py against provenance_v.json. The frozen modules are deliberately not edited; the correction lives here with its evidence."
+  },
+  "research/invariants_lab/QUADRATIC_F4.md": {
+   "governance": "backlog",
+   "budget": 41,
+   "note": "Task F4 of the invariants lab: the design for testing scale's static half on quadratic fixes mined from maintainers' own commit messages rather than generated by the detector's author, with the blind declaration and the withdrawal rule."
+  },
+  "research/invariants_lab/RATCHET_R3.md": {
+   "governance": "backlog",
+   "budget": 40,
+   "note": "Tasks R1-R3 of the invariants lab: the complexity ratchet, measured by agreement with an independent instrument rather than by recall against its own metric, which would be 1.0 by construction. One gate of four fails and the mechanism is deleted. Numbers regenerate from research/invariants_lab/measure_ratchet.py against ratchet_r3.json and the SHAs in corpus_manifest.json; the metric itself is pinned against ruff C901 on every module in nevertwice/ by tests/_test_complexity.py."
+  },
+  "research/invariants_lab/README.md": {
+   "governance": "backlog",
+   "budget": 58,
+   "note": "Task T5 of the invariants lab: the write-up that ties the six mechanisms together. Every number on it is quoted from one of the per-mechanism documents registered beside it and regenerates from the harness that produced it. Two mechanisms passed their gates, four did not, and the cross-cutting finding -- that scope rather than accuracy is what buys silence -- is stated as an observation across five measured flag rates rather than as a law."
+  },
+  "research/invariants_lab/SCALE_X4.md": {
+   "governance": "backlog",
+   "budget": 47,
+   "note": "Task X4 of the invariants lab: the scale detector and the 10x canary, the first mechanism to pass all its declared gates. Its static recall and false-positive figures are measured against templates written alongside the detector and the write-up says so in its first paragraph; the non-circular evidence is the dynamic canary and an exploratory flag rate on 738 real corpus commits. Numbers regenerate from research/invariants_lab/measure_scale.py against scale_x4.json."
+  },
+  "research/invariants_lab/SHIP_G4.md": {
+   "governance": "backlog",
+   "budget": 88,
+   "note": "Task G4: the invariants/v3 write-up for a reader outside this project -- what finishing four half-built mechanisms showed, why abstention is the only lever that moved a flag rate by an order of magnitude, and why it is not general."
+  },
+  "research/invariants_lab/SURFACE_F2.md": {
+   "governance": "backlog",
+   "budget": 118,
+   "note": "Task F2 of the invariants lab: the scoping grid, and the census showing that the declared surface the task asks for does not exist in found history. Conventions are labelled as conventions on every row; corpus_dev, in sample."
+  },
+  "research/invariants_lab/TOGETHER_T1.md": {
+   "governance": "backlog",
+   "budget": 28,
+   "note": "Tasks S1-S3, T1 and T2 of the invariants lab: the seam journal executed on a real migration, and the union of every mechanism that passed its own gate measured against the combined flag-rate ceiling declared in PREREGISTRATION.md section 8. The union fails at 0.119, and the declared remedy is applied and its cost reported rather than renegotiated. Numbers regenerate from research/invariants_lab/measure_together.py against together_t1.json; the seam journal claims are checked by tests/_test_seam_journal.py, which is hermetic."
+  },
+  "research/invariants_lab/VERDICT_G1.md": {
+   "governance": "backlog",
+   "budget": 148,
+   "note": "Task G1: the GO/NO-GO, revised 2026-08-29 after Phase V completed. Still NO-GO, but for a different reason: G-B is no longer unevaluable -- 27 held-out repositories exist and blast_radius under decidable-only passes all three of its out-of-sample gates while the ratchet, scale's static half and the union fail theirs. G-C remains not met, its benefit half inconclusive at 3 discordant pairs on an in-sample stand the held-out corpus would now unstarve. The budget rises from 57 because the page absorbed the Phase V numbers; the growth is deliberate and its source is research/invariants_lab/HELDOUT_V.md."
+  },
+  "skills/nevertwice-remember/SKILL.md": {
+   "governance": "exempt",
+   "reason": "an agent skill definition"
+  },
+  "tests/UNPROVEN.md": {
+   "governance": "exempt",
+   "reason": "an inventory of what the golden-store proof does not enter, regenerated by the command it names at the top of itself. Its two figures are coverage of this repository's own test run, not a benchmark anyone reproduces against a corpus, and they are meant to be read as a list of names rather than as a percentage"
   },
   "tests/fixtures/hosts/README.md": {
    "governance": "backlog",
@@ -729,198 +925,6 @@
    "target": "D7",
    "note": "Describes the recorded migration fixtures for a contributor adding a source. A fixture README is prose people read, so it stays governed even though the fixture data beside it does not - see tests/_docs_scope.py.",
    "budget_metric": "evidence-bearing numeric tokens: numbers outside fenced blocks, excluding years and bare single digits"
-  },
-  "docs/THREAT_MODEL.md": {
-   "governance": "backlog",
-   "budget": 6,
-   "target": "E2",
-   "note": "Trust boundaries and their tests. Its numbers are incident dates, thresholds and constants rather than published measurements, so it is registered as backlog with a ratchet instead of exempted - an exemption is a hole that never closes. Its *claims* are governed more strictly than any metric: tests/_test_threat_model.py fails when one names a check that does not exist.",
-   "budget_metric": "evidence-bearing numeric tokens: numbers outside fenced blocks, excluding years and bare single digits"
-  },
-  "research/PREREGISTRATION.md": {
-   "governance": "exempt",
-   "reason": "a preregistration states hypotheses, endpoints and decision rules BEFORE the confirmatory run. Its numbers are prospective thresholds and power targets, not measurements to reproduce, and every retrospective figure it refers to is cited by artifact rather than reprinted."
-  },
-  "research/BLAST_RADIUS_THRESHOLDS.md": {
-   "governance": "exempt",
-   "reason": "thresholds for the blast-radius calibration, declared before the run per hard rule 2.6. Its numbers are prospective decision rules - a flag-rate ceiling, a percentile rule for the budgets, a cost ceiling quoted from the integration spec - not measurements to reproduce. The retrospective figures it cites as motivation are the twelve-commit spot check recorded in .loop/STATE.md, which is untracked working record rather than published evidence; every number this run produces is published in research/BLAST_RADIUS_CALIBRATION.md, which is governed."
-  },
-  "research/BLAST_RADIUS_CALIBRATION.md": {
-   "governance": "backlog",
-   "budget": 72,
-   "note": "A research write-up, registered the way every other one here is. Its six load-bearing numbers - the ones the T1/T2 decision rests on - are registered as claims and checked against the artifact by tests/_test_blast_radius_calibration.py, which also re-checks the thresholds themselves. The distribution tables are the backlog. The cost figure is deliberately NOT a claim: it points at a field the artifact declares volatile, so every regeneration would move it and break the claim. T4 is enforced against the artifact directly instead."
-  },
-  "research/BLAST_RADIUS_DECISION.md": {
-   "governance": "exempt",
-   "reason": "the decision rules for whether the blast-radius checker is worth keeping, declared before any finding was labelled and before the baseline was built, per hard rule 2.6. Its numbers are prospective thresholds - a precision floor and a matched-flag-rate comparison - and the size of the census it commits to labelling, not measurements to reproduce. The measurements land in research/BLAST_RADIUS_PRECISION.md."
-  },
-  "research/BLAST_RADIUS_PRECISION.md": {
-   "governance": "backlog",
-   "budget": 30,
-   "note": "the negative result that closed the blast-radius track. Its headline - 0 of 24 findings true, precision 0.000 - is registered as a claim and checked against research/blast_radius_precision.json; the taxonomy of why each finding is false is the backlog. The labeller that produced the labels has its own controls in tests/_test_blast_radius_labeller.py, because a null result whose instrument was never shown capable of a positive is unfalsifiable."
-  },
-  "research/EMBED_HELDOUT_BASELINE.md": {
-   "governance": "backlog",
-   "budget": 125,
-   "note": "the first evaluation of the shipped embedding on material outside the owner's vault. Its three load-bearing results are registered as claims and checked against research/embed_universal/heldout/baseline_v1.json by tests/_test_heldout_baseline.py; the full table is the backlog. Every per-query rank and per-pair score is in the artifact, so any cell can be recomputed rather than trusted."
-  },
-  "research/EMBED_M2_THRESHOLD.md": {
-   "governance": "exempt",
-   "reason": "the success threshold and deletion decision for hard-negative mining, declared before any negative was mined and before anything was retrained, per hard rule 2.6. Its numbers are prospective decision rules - a paired interval that must exclude zero, a bound on collateral regression, and the effect size this benchmark can resolve - not measurements to reproduce. The retrospective figures it cites as motivation are claims already registered from M1."
-  },
-  "research/EMBED_HARD_NEGATIVES.md": {
-   "governance": "backlog",
-   "budget": 49,
-   "note": "the negative result that closed M2. The gate it failed and the one improvement it did produce are registered as claims and checked against research/embed_universal/heldout/hard_v1.json by tests/_test_hard_negatives.py; the mining statistics and the taxonomy of why are the backlog. The mined checkpoint was deleted per the decision written before the run; every measurement it produced is kept."
-  },
-  "research/EMBED_M3_THRESHOLD.md": {
-   "governance": "exempt",
-   "reason": "the success threshold and deletion decision for cross-encoder distillation, declared before any teacher score was collected and before anything was retrained, per hard rule 2.6. Its numbers are prospective decision rules and the effect size the benchmark can resolve, not measurements. The retrospective figures it cites are claims already registered from M1."
-  },
-  "research/EMBED_DISTILLATION.md": {
-   "governance": "backlog",
-   "budget": 46,
-   "note": "the negative result that closed M3. Both gates it failed are registered as claims and checked against research/embed_universal/heldout/distil_v1.json by tests/_test_distillation.py; the two-attempt table and the reasoning are the backlog. The distilled checkpoint was deleted per the decision written before the run; every measurement it produced is kept, including the first attempt's, whose failure was a specification error rather than a finding."
-  },
-  "research/EMBED_M4_THRESHOLD.md": {
-   "governance": "exempt",
-   "reason": "the success threshold and deletion decision for Matryoshka representations, declared before anything was trained or truncated, per hard rule 2.6. Its numbers are prospective decision rules - a bound on what the full vector may lose, tolerances for graceful truncation, and the resolution the benchmark offers - not measurements. It inverts the question M2 and M3 asked, and says so before the run: here 'no accuracy gain, three quarters of the memory' is a pass."
-  },
-  "research/EMBED_MATRYOSHKA.md": {
-   "governance": "backlog",
-   "budget": 55,
-   "note": "what Matryoshka training bought (nothing measurable) and what the baseline it was measured against revealed (the shipped model already truncates). Both are registered as claims and checked against research/embed_universal/heldout/matryoshka_v1.json by tests/_test_matryoshka.py. The trained checkpoint was deleted; the truncation table is the deliverable and belongs in the model card as an operating mode of the model already shipped."
-  },
-  "research/EMBED_M5_THRESHOLD.md": {
-   "governance": "exempt",
-   "reason": "the promotion rule and deletion decision for the LoRA capacity sweep, declared before any rank was trained, per hard rule 2.6. It also records, before the run, that half the task cannot execute from committed data - gen_pairs.py produces same-language twins only, so there is no cross-lingual arm to re-test - and what would be needed instead. Prospective rules, not measurements."
-  },
-  "research/EMBED_CAPACITY.md": {
-   "governance": "backlog",
-   "budget": 86,
-   "note": "the LoRA capacity curve, the replacement for a belief measured on a saturated axis, and the discovery that v1 is not reproducible from its own recipe. The two load-bearing results are registered as claims and checked against research/embed_universal/heldout/capacity_sweep.json by tests/_test_capacity.py; the curve and the per-language table are the backlog. All four checkpoints were deleted as they failed the promotion rule."
-  },
-  "research/EMBED_M6_THRESHOLD.md": {
-   "governance": "exempt",
-   "reason": "what the served model had to prove before its numbers could be quoted as the shipped model's, declared before a single embedding was fetched. Prospective agreement tolerances, not measurements, plus the promise that failing V1 would force republishing every M1-M5 number with a caveat - written in advance so it could not be quietly avoided."
-  },
-  "research/EMBED_SERVING.md": {
-   "governance": "backlog",
-   "budget": 28,
-   "note": "the check that lets M1-M5 be quoted as describing the shipped model: the f16 GGUF Ollama serves is numerically indistinguishable from the safetensors checkpoint every number was measured on. Two claims registered and checked by tests/_test_serving.py."
-  },
-  "research/invariants_lab/CORPORA.md": {
-   "governance": "backlog",
-   "budget": 42,
-   "note": "Task F0 of the invariants lab: the eight repositories frozen as a development set, and the two locks that keep the held-out corpus sealed until Phase V. Its counts are recomputed from mutants.json by tests/_test_corpus_freeze.py rather than restated, so a drift between the freeze and the answer key is a red test."
-  },
-  "research/invariants_lab/ABSTENTION_F1.md": {
-   "governance": "backlog",
-   "budget": 141,
-   "note": "Task F1 of the invariants lab: the abstention ladder, declared before the run, and its (recall, flag rate) curve on corpus_dev. Precision after abstention is circular by construction and is reported only as a consistency check; the numbers are in-sample and none of them may carry a public claim."
-  },
-  "research/invariants_lab/AXES_F3.md": {
-   "governance": "backlog",
-   "budget": 129,
-   "note": "Task F3 of the invariants lab: the ratchet's three unaudited axes against ruff's pylint-derived rules, the four defects that audit found, and the flag rate re-measured with and without them. All numbers are on corpus_dev and in sample."
-  },
-  "research/invariants_lab/SURFACE_F2.md": {
-   "governance": "backlog",
-   "budget": 118,
-   "note": "Task F2 of the invariants lab: the scoping grid, and the census showing that the declared surface the task asks for does not exist in found history. Conventions are labelled as conventions on every row; corpus_dev, in sample."
-  },
-  "research/invariants_lab/QUADRATIC_F4.md": {
-   "governance": "backlog",
-   "budget": 41,
-   "note": "Task F4 of the invariants lab: the design for testing scale's static half on quadratic fixes mined from maintainers' own commit messages rather than generated by the detector's author, with the blind declaration and the withdrawal rule."
-  },
-  "research/invariants_lab/COLDSTART_F5.md": {
-   "governance": "backlog",
-   "budget": 90,
-   "note": "Task F5 of the invariants lab: the cold-start experiment X1 named. A declared growth axis is project-specific and day-one checkable, and it still does not help -- base rate 0.013 over 150 generations on the strongest local model, 0 discordant pairs, and a documented refusal to run at the 750 trials the effect would need."
-  },
-  "research/invariants_lab/PREREGISTRATION-SHIP.md": {
-   "governance": "backlog",
-   "budget": 84,
-   "note": "Task H1: every threshold for Phase V and Phase E, the sample size each is judged at, the statistical test, the deletion consequence, and the end-to-end gate with its harm bound -- committed before a single held-out repository was cloned."
-  },
-  "research/invariants_lab/HELDOUT_H2.md": {
-   "governance": "backlog",
-   "budget": 30,
-   "note": "Task H2: thirty candidate held-out repositories across six domains, the selection criteria, and a per-block prediction of what each should show -- all written before any clone ran, so a wrong prediction is visible."
-  },
-  "research/invariants_lab/HELDOUT_H3_BLOCKED.md": {
-   "governance": "backlog",
-   "budget": 21,
-   "note": "Task H3, blocked: DNS resolves nothing on this machine and the local proxy's tunnel carries no TLS, so no public repository host is reachable by any route tried. G-B is unevaluable rather than failed, and every artefact H3 needs is committed so it runs unchanged when a name resolves."
-  },
-  "research/invariants_lab/ENDTOEND_E.md": {
-   "governance": "backlog",
-   "budget": 79,
-   "note": "Phase E of the invariants lab, and E4 is G-C: whether an agent fixes a stale caller better with the mechanism than without, with harm counted separately. Every number is in sample -- the held-out corpus does not exist, see HELDOUT_H3_BLOCKED.md."
-  },
-  "research/invariants_lab/VERDICT_G1.md": {
-   "governance": "backlog",
-   "budget": 148,
-   "note": "Task G1: the GO/NO-GO, revised 2026-08-29 after Phase V completed. Still NO-GO, but for a different reason: G-B is no longer unevaluable -- 27 held-out repositories exist and blast_radius under decidable-only passes all three of its out-of-sample gates while the ratchet, scale's static half and the union fail theirs. G-C remains not met, its benefit half inconclusive at 3 discordant pairs on an in-sample stand the held-out corpus would now unstarve. The budget rises from 57 because the page absorbed the Phase V numbers; the growth is deliberate and its source is research/invariants_lab/HELDOUT_V.md."
-  },
-  "research/invariants_lab/SHIP_G4.md": {
-   "governance": "backlog",
-   "budget": 88,
-   "note": "Task G4: the invariants/v3 write-up for a reader outside this project -- what finishing four half-built mechanisms showed, why abstention is the only lever that moved a flag rate by an order of magnitude, and why it is not general."
-  },
-  "research/invariants_lab/ENDTOEND_HELDOUT.md": {
-   "governance": "backlog",
-   "budget": 49,
-   "note": "The shipping gate re-run out of sample: 150 benefit and 150 harm trials on the held-out corpus, 87 usable pairs against the 37 PREREGISTRATION-SHIP.md required. Net benefit p = 0.453 with 5 fixed against 2 broken, so G-C is not met and the NO-GO stands on evidence rather than on a missing measurement; harm passes at 0.013. Numbers regenerate from research/invariants_lab/measure_endtoend.py --corpus heldout against endtoend_e_heldout.json. The 92 harness timeouts and the selection bias they imply are stated with the verdict rather than after it."
-  },
-  "research/SUPERSESSION.md": {
-   "governance": "backlog",
-   "budget": 62,
-   "note": "Every figure on this page is registered above; the budget covers the per-shape breakdown and the prose, which restate registered numbers in other shapes. The study pages are backlog by the same rule as the rest of the archive.",
-   "budget_metric": "evidence-bearing numeric tokens: numbers outside fenced blocks and generated regions, excluding years, months, Python versions and bare single digits",
-   "generator": "research/supersession_bench.py"
-  },
-  "research/ABSTENTION_AB.md": {
-   "governance": "backlog",
-   "budget": 23,
-   "note": "The sweep tables restate one curve per mechanism. The decision they drove - both abstention defaults reverted to 0 - is pinned by tests rather than by this page.",
-   "budget_metric": "evidence-bearing numeric tokens: numbers outside fenced blocks, excluding years, months, Python versions and bare single digits",
-   "generator": "research/abstention_ab.py"
-  },
-  "research/EXTERNAL_RETRIEVAL.md": {
-   "governance": "backlog",
-   "budget": 19,
-   "note": "Every figure on this page is registered under `longmem_pinned.*` and `h2h_pinned.*`; the budget counts them because study pages are backlog rather than governed, the same rule as the rest of the archive.",
-   "budget_metric": "evidence-bearing numeric tokens: numbers outside fenced blocks, excluding years, months, Python versions and bare single digits",
-   "generator": "research/longmem_eval.py + research/head_to_head.py"
-  },
-  "research/LOCOMO.md": {
-   "governance": "backlog",
-   "budget": 18,
-   "note": "Every retrieval figure here is registered under `locomo.*`. The vendor accuracy figure this page names is an external citation, not a measurement of ours.",
-   "budget_metric": "evidence-bearing numeric tokens: numbers outside fenced blocks, excluding years, months, Python versions and bare single digits",
-   "generator": "research/locomo_eval.py"
-  },
-  "research/LEXICAL_MORPHOLOGY.md": {
-   "governance": "governed",
-   "note": "every printed number must resolve to a claim, and the three tables are generated regions (`lexical-morphology-locomo`, `-oracle`, `-vault`) rendered by tools/render_claims.py from the live and ablation families"
-  },
-  "research/FRONTIER.md": {
-   "governance": "governed",
-   "note": "every printed number must resolve to a claim; the table is the generated region `frontier`, rendered from the frontier.* family"
-  },
-  "research/GUARD_BENCH.md": {
-   "governance": "governed",
-   "note": "every printed number must resolve to a claim; the table is the generated region `guard-bench`, rendered from the guards.* family"
-  },
-  "research/CODE_SESSIONS.md": {
-   "governance": "governed",
-   "note": "every printed number must resolve to a claim; the table is the generated region `code-sessions`, rendered from the code_sessions.* family"
-  },
-  "tests/UNPROVEN.md": {
-   "governance": "exempt",
-   "reason": "an inventory of what the golden-store proof does not enter, regenerated by the command it names at the top of itself. Its two figures are coverage of this repository's own test run, not a benchmark anyone reproduces against a corpus, and they are meant to be read as a list of names rather than as a percentage"
   }
  },
  "claims": [

@@ -78,7 +78,7 @@ command imports, most of them turned out to describe the engine as it stood at t
 the ranker beneath them had been rewritten. Re-measuring them needs a third-party dataset this repo
 does not ship, the owner's private store, or a paid API, so they are withdrawn rather than
 reprinted. `python tools/check_freshness.py --list-stale` names every one and the gate that blocks
-it, and CI now fails when a published number outlives the code that made it.
+it, and CI now fails when a published number outlives the code that made it. How long a claim lives, and why engine claims die first: [CLAIM_HALFLIFE.md](research/CLAIM_HALFLIFE.md).
 
 What survived re-measurement at HEAD, and what it cost:
 
@@ -160,7 +160,7 @@ With no backend at all, extraction pauses loudly (sessions are kept and retried,
 recall runs on lexical search until an embedder shows up. The five-minute walkthrough is in
 [QUICKSTART.md](QUICKSTART.md); every environment variable is in [CONFIG.md](docs/CONFIG.md).
 
-Contributing: `pip install -e ".[dev]"`, then `python -m pytest -q`. Two hundred four hermetic suites -
+Contributing: `pip install -e ".[dev]"`, then `python -m pytest -q`. Two hundred five hermetic suites -
 LLMs, embedders, the optional reranker, network and GPU execution are disabled or mocked, and a lint
 fails the build if a script reaches a memory store without declaring which store it means. CI runs
 them on Linux, Windows and macOS across four Python versions. One is a golden store - same sessions
