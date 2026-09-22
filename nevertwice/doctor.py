@@ -337,6 +337,75 @@ def check_orphaned_temp(vault: Path) -> dict:
                   "real note was either written or retried")
 
 
+def check_list_fields(vault: Path) -> dict:
+    """Frontmatter lists written in a form the engine's parser reads as something else.
+
+    The parser reads JSON-style lists - `tags: ["a", "b"]`, the form the engine writes - and
+    reads an unquoted flow list `tags: [a, b]` as ONE string and a block list (`- a` lines under
+    the key) as an empty string. The engine's own notes round-trip; a note edited by hand does
+    not, and its tags or its `contested` stamp are gone without a word. On the owner's store
+    (2026-09-23) there were none in 17 192 notes with Obsidian's property editor switched on, so
+    the risk is latent - and this is what makes the first real one a number in a report instead
+    of a lost stamp found a month later.
+
+    Compared, not re-implemented: a key whose RAW value is shaped like a list is looked up in
+    what the engine's own `_read_frontmatter` returned for it. The rule for "a list the parser
+    reads" is therefore the parser's, asked each time, and cannot drift from it. The engine is
+    imported here, lazily, like `check_twin_calibration`: a store the engine cannot import on is
+    skipped, not failed.
+    """
+    title = "frontmatter lists are in a form the engine reads as lists"
+    if not vault.exists():
+        return _check("list_fields", title, SKIP, "no store", "")
+    try:
+        import memory_hook as _m                        # noqa: PLC0415 - CLI-only, not hot
+    except Exception as exc:                            # noqa: BLE001 - any failure is one
+        return _check("list_fields", title, SKIP,
+                      f"could not load the engine's parser: {type(exc).__name__}", "")
+    bad: list[str] = []
+    notes = 0
+    for folder in _m.TYPE_FOLDER.values():
+        base = vault / folder
+        if not base.is_dir():
+            continue
+        for p in base.rglob("*.md"):
+            if "Superseded" in p.parts[len(base.parts):]:
+                continue                                # retired: nothing reads it any more
+            try:
+                text = p.read_text(encoding="utf-8", errors="replace")
+            except OSError:
+                continue
+            head = text.lstrip("﻿")
+            if not head.startswith("---"):
+                continue
+            lines = head.split("\n")[1:]
+            end = next((i for i, ln in enumerate(lines) if ln.strip() == "---"), len(lines))
+            lines = lines[:end]
+            list_keys = []
+            for i, ln in enumerate(lines):
+                if not ln or ln[:1] in (" ", "\t", "-") or ":" not in ln:
+                    continue
+                key, val = (s.strip() for s in ln.split(":", 1))
+                block = (val == "" and i + 1 < len(lines)
+                         and lines[i + 1].lstrip().startswith("- "))
+                if val.startswith("[") or block:
+                    list_keys.append(key)
+            if not list_keys:
+                continue
+            fm, _ = _m._read_frontmatter(text)
+            misread = [k for k in list_keys if not isinstance(fm.get(k), list)]
+            if misread:
+                notes += 1
+                bad += [f"{p.name}: {k}" for k in misread]
+    if not bad:
+        return _check("list_fields", title, OK, "none")
+    return _check("list_fields", title, WARN,
+                  f"{len(bad)} list field(s) in {notes} note(s) are read as text, "
+                  f"e.g. {'; '.join(bad[:3])}",
+                  'rewrite each as a JSON list on one line - tags: ["a", "b"] - which is the '
+                  "form the engine writes and reads back")
+
+
 def check_package_matches_repo() -> dict:
     """A pip-installed copy and a checkout on the same machine drift, and the hook may run
     either one. Naming both is the whole check."""
@@ -385,6 +454,7 @@ def run(vault=None, *, settings=None, probe: bool = False, now: float | None = N
         check_scheduler(store, now),
         check_graph_generator(),
         check_orphaned_temp(store),
+        check_list_fields(store),
         check_package_matches_repo(),
     ]
     summary = {status: sum(1 for c in checks if c["status"] == status)

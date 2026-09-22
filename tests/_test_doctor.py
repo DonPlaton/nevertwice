@@ -40,7 +40,7 @@ import doctor  # noqa: E402
 REPORT_KEYS = {"schema_version", "vault", "probed", "checks", "summary"}
 CHECK_IDS = ["store_writable", "store_schema", "hook_registration", "capture_freshness",
              "extractor", "embedding_space", "twin_calibration", "index_age", "scheduler", "graph_generator",
-             "orphaned_temp", "package_source"]
+             "orphaned_temp", "list_fields", "package_source"]
 
 # A repair is printed for a human to run. These are the things it must never be.
 DESTRUCTIVE = ("rm -rf", "rmdir /s", "git push", "git reset --hard", "DROP TABLE",
@@ -464,6 +464,57 @@ def test_a_note_archived_mid_run_does_not_crash_the_diagnostic() -> None:
                   "notes" in fresh["detail"], str(fresh))
             check("the index-age check survives it too", age["status"] in
                   (doctor.OK, doctor.WARN, doctor.SKIP), str(age))
+
+
+def test_a_list_the_engine_cannot_read_is_counted() -> None:
+    """A hand-edited list the engine's parser reads as text is a number in the report.
+
+    The frontmatter parser reads JSON-style lists - the form the engine writes - and reads an
+    unquoted flow list `[a, b]` as ONE string and a block list (`- a` lines under the key) as
+    empty. The engine's own notes round-trip; a note edited by hand does not, and its tags or its
+    `contested` stamp are lost without a word. Measured on the owner's store 2026-09-23: 0 such
+    lists in 17 192 notes, with Obsidian's property editor switched on - a latent risk, and this
+    makes the first real one visible instead of discovered.
+    """
+    print("\n- a list the engine cannot read is counted, not discovered -")
+    with tempfile.TemporaryDirectory() as tmp:
+        vault = Path(tmp) / "store"
+        folder = vault / "Decisions"
+        folder.mkdir(parents=True)
+
+        def note(name, header):
+            (folder / f"{name}.md").write_text(f"---\ntype: decision\n{header}\n---\n\nbody\n",
+                                               encoding="utf-8")
+
+        note("2026-01-01-p-decision-json", 'tags: ["python", "testing"]\n'
+             'relations: [{"rel": "caused-by", "target": "x"}]\ncontested: []')
+        result = doctor.check_list_fields(vault)
+        check("JSON lists - the form the engine writes - are not counted",
+              result["status"] == doctor.OK, f"{result['status']}: {result['detail']}")
+
+        note("2026-01-02-p-decision-flow", "tags: [python, testing]")
+        note("2026-01-03-p-decision-block", "tags:\n  - python\n  - testing")
+        result = doctor.check_list_fields(vault)
+        check("an unquoted flow list and a block list are both counted",
+              result["status"] == doctor.WARN and result["detail"].startswith("2 list field"),
+              f"{result['status']}: {result['detail']}")
+        check("and the report names a note and the key, so a human can find it",
+              "tags" in result["detail"] and "2026-01-0" in result["detail"], result["detail"])
+        check("the repair names the form that reads, not a command that rewrites notes",
+              '["' in result["repair"] and not any(d in result["repair"] for d in DESTRUCTIVE),
+              result["repair"])
+
+        sup = folder / "Superseded"
+        sup.mkdir()
+        (sup / "2026-01-04-p-decision-old.md").write_text(
+            "---\ntype: decision\ntags: [a, b]\n---\n\nbody\n", encoding="utf-8")
+        result = doctor.check_list_fields(vault)
+        check("a retired note is not counted - nothing reads it any more",
+              result["detail"].startswith("2 list field"), result["detail"])
+
+    with tempfile.TemporaryDirectory() as tmp:
+        result = doctor.check_list_fields(Path(tmp) / "absent")
+        check("no store: skipped, not failed", result["status"] == doctor.SKIP, str(result))
 
 
 def test_zz_every_check_passed() -> None:
