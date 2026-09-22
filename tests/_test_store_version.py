@@ -27,6 +27,8 @@ The rest guards the ways a rebuild could quietly cost someone something:
 """
 from __future__ import annotations
 
+import contextlib
+import io
 import json
 import os
 import shutil
@@ -45,6 +47,8 @@ sys.path.insert(0, str(ROOT / "nevertwice"))
 import api                      # noqa: E402
 import index_sqlite as ix       # noqa: E402
 import memory_hook as m         # noqa: E402
+
+NL = chr(10)
 import store_version as SV      # noqa: E402
 
 PASSED = 0
@@ -543,6 +547,72 @@ def test_the_rollback_text_says_what_the_rollback_costs() -> None:
               "aside" in low and "remove " not in low.replace("do not remove", ""), text)
 
 
+def test_a_backup_survives_a_file_that_vanishes_under_it() -> None:
+    """Git tidies its own repository while the backup walks it.
+
+    macOS 3.14 of run 35781171527, one job of twelve: `copytree` listed `.git/objects/`, git's
+    background maintenance removed `maintenance.lock`, and the copy raised `shutil.Error` on a
+    file that had been there a moment earlier. The operation it breaks is the backup taken
+    immediately before a migration - the one moment a store has no second copy - and the rarity
+    is what makes it worth fixing rather than retrying.
+
+    The race is made deterministic rather than waited for: the copy of one file removes a
+    sibling the walk has not reached yet, so the code meets a genuinely missing source. The
+    control below is the same walk with the same copy semantics (`copy2`) and WITHOUT the
+    tolerance - it must still raise, or this proves nothing about the fix.
+    """
+    print(NL + "- a backup survives a file that vanishes under it -")
+    with tempfile.TemporaryDirectory() as td:
+        store = Path(td) / "store"
+        (store / "Mistakes").mkdir(parents=True)
+        for name in ("a.md", "b.md", "c.md"):
+            (store / "Mistakes" / name).write_text(f"---{NL}type: mistake{NL}---{NL}{NL}{name}{NL}",
+                                                   encoding="utf-8")
+        doomed = store / "Mistakes" / "c.md"
+        real_copy2 = SV.shutil.copy2
+        state = {"fired": False}
+
+        def copy2_that_removes_a_sibling(src, dst, **kw):
+            """Copies one file and, once, deletes another the walk has yet to reach."""
+            if not state["fired"] and Path(src) != doomed and doomed.exists():
+                state["fired"] = True
+                doomed.unlink()
+            return real_copy2(src, dst, **kw)
+
+        SV.shutil.copy2 = copy2_that_removes_a_sibling
+        try:
+            out = io.StringIO()
+            with contextlib.redirect_stdout(out):
+                backup_path = SV.backup(store)
+            said = out.getvalue()
+        finally:
+            SV.shutil.copy2 = real_copy2
+
+        check("the backup completes instead of raising", backup_path.is_dir(), str(backup_path))
+        kept = sorted(q.name for q in (backup_path / "Mistakes").iterdir())
+        check("every file that was still there is in it", kept == ["a.md", "b.md"], str(kept))
+        check("and the one that vanished is NAMED, not swallowed",
+              "c.md" in said and "disappeared" in said, said.strip() or "(said nothing)")
+
+        #: The control: the same race, copy2 as the copy function, no tolerance. Passed
+        #: explicitly because `copytree` binds its default copy function at definition time, so
+        #: patching the module attribute does not reach it - which is also why the first
+        #: version of this control was green while testing nothing.
+        state["fired"] = False
+        doomed.write_text("back", encoding="utf-8")
+        raised = None
+        try:
+            SV.shutil.copytree(store, Path(td) / "plain", dirs_exist_ok=False,
+                               copy_function=copy2_that_removes_a_sibling)
+        except SV.shutil.Error as exc:
+            raised = exc
+        check("without the tolerance the same vanishing file still raises",
+              raised is not None and "c.md" in str(raised), str(raised)[:200])
+
+        _rmtree(store)
+        _rmtree(backup_path)
+
+
 def test_zz_every_check_passed() -> None:
     """Bare pytest must reach the same verdict as this suite's exit code.
 
@@ -566,7 +636,8 @@ def main() -> int:
                test_the_rollback_text_says_what_the_rollback_costs,
                test_the_migration_writes_the_ledger_the_way_the_ledger_is_read,
                test_a_rebuild_promises_only_what_it_rebuilds,
-               test_a_filename_inside_a_comment_is_not_an_ignore_rule):
+               test_a_filename_inside_a_comment_is_not_an_ignore_rule,
+               test_a_backup_survives_a_file_that_vanishes_under_it):
         fn()
     print(f"\nstore version: {PASSED} passed, {FAILED} failed")
     return 1 if FAILED else 0

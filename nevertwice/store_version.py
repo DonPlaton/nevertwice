@@ -226,6 +226,35 @@ def plan(vault: Path) -> dict:
 
 # ── backup and rollback ─────────────────────────────────────────────────
 
+#: Paths that were listed and gone by the time the copy reached them. Module-level rather than
+#: threaded through `shutil.copytree`, which gives a copy function no place to report.
+_VANISHED: set[str] = set()
+
+
+def _copy_or_note_vanished(src, dst, *, follow_symlinks=True):
+    """copy2, except that a source which has disappeared is recorded rather than raised.
+
+    Every nevertwice store is a git repository, and git runs its own background maintenance
+    inside it. `copytree` lists a directory and then copies its entries, and on macOS 3.14 of
+    run 35781171527 git created and removed `.git/objects/maintenance.lock` inside that window:
+
+        shutil.Error: [(.../store/.git/objects/maintenance.lock, .../store.backup-.../...,
+                        "[Errno 2] No such file or directory: ...maintenance.lock")]
+
+    One job of twelve, which is what makes it worth fixing rather than retrying: the race needs
+    maintenance to fire during the copy, so it is rare, and the operation it breaks is the
+    backup taken immediately before a migration - the one moment a store has no second copy.
+
+    Written as "tolerate a vanished source" rather than "skip files named *.lock": the name is a
+    guess about which file will disappear, and a lock is only the one that disappeared first. An
+    editor's temp file, a cache being rewritten and git's own index would all do the same.
+    """
+    try:
+        shutil.copy2(src, dst, follow_symlinks=follow_symlinks)
+    except FileNotFoundError:
+        _VANISHED.add(str(src))
+
+
 def backup(vault: Path) -> Path:
     """Copy the store beside itself before anything is written.
 
@@ -241,7 +270,14 @@ def backup(vault: Path) -> Path:
     """
     vault = Path(vault)
     target = vault.parent / f"{vault.name}.backup-{datetime.now():%Y%m%d-%H%M%S}"
-    shutil.copytree(vault, target, dirs_exist_ok=False)
+    shutil.copytree(vault, target, dirs_exist_ok=False, copy_function=_copy_or_note_vanished)
+    if _VANISHED:
+        #: Named, never swallowed. A backup that quietly dropped a note would be worse than one
+        #: that refused, so the paths go where the caller can see them.
+        print(f"backup: {len(_VANISHED)} file(s) disappeared while the copy walked the store and "
+              f"were skipped: {', '.join(sorted(_VANISHED)[:5])}"
+              + (" ..." if len(_VANISHED) > 5 else ""))
+        _VANISHED.clear()
     return target
 
 
