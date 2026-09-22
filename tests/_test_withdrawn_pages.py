@@ -126,5 +126,52 @@ if sample.exists():
     check("the page was not modified by the check",
           sample.read_text(encoding="utf-8") == before)
 
+# A live number whose evidence link lands on a retracted page
+#
+# The banner is a statement about the page it is on, and the check above pins that. It says
+# nothing about the reader who arrives from somewhere else. The register's only cited claim is
+# the token ratio in README's evidence table, whose evidence column links to
+# `research/ACTIVE_MEMORY.md` - a page that opens with "figures on this page must not be
+# quoted". So the one reader who does what the project asks, and follows the link to check the
+# project's single published number, is told not to quote it.
+#
+# Nothing here is false: the claim is live, the page is retracted, and both statements are
+# correct on their own. The reader gets the wrong answer from two right ones, which is why this
+# needs its own check rather than a stronger banner.
+print()
+print("- a live number never sends the reader to a page that retracts it -")
+import re  # noqa: E402
+
+LINK = re.compile(r"\[[^\]]+\]\(([^)#]+)(?:#[^)]*)?\)")
+WARNS = ("withdrawn", "retracted", "still registered", "still live")
+
+live_claims = [c for c in manifest["claims"] if not (c.get("stale") or c.get("withdrawn_on"))]
+unwarned = []
+checked = 0
+for c in live_claims:
+    forms = [str(f) for f in (c.get("printed") or []) if str(f).strip()]
+    for rel in (c.get("cited_in") or []):
+        page = ROOT / rel
+        if not page.exists():
+            continue
+        for line in page.read_text(encoding="utf-8").splitlines():
+            if not any(f in line for f in forms):
+                continue
+            for target in LINK.findall(line):
+                dest = (page.parent / target).resolve()
+                if not dest.is_file() or dest.suffix != ".md":
+                    continue
+                checked += 1
+                head = dest.read_text(encoding="utf-8", errors="replace")[:4000].lower()
+                if not any(m in head for m in sw.MARKERS):
+                    continue
+                if not any(w in line.lower() for w in WARNS):
+                    unwarned.append(f"{rel}: {c['id']} -> {target}")
+
+check(f"a live number's evidence link says so when it lands on a retracted page "
+      f"({checked} link(s) checked)", not unwarned, "; ".join(unwarned[:4]))
+check("and at least one such link exists, so the check above proved something", checked > 0,
+      "no live claim's citation carries a link to a markdown page")
+
 print(f"\nwithdrawn pages: {len(RUN) - len(FAILED)} passed, {len(FAILED)} failed")
 sys.exit(1 if FAILED else 0)
