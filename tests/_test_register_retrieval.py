@@ -39,8 +39,17 @@ new, skipped = rr.build_claims("locomo_raw", ART, dataset="locomo10_pinned", sta
                                produced_by=["research/locomo_eval.py"], existing=set(),
                                label_suffix=" (raw tokens)")
 ids = [c["id"] for c in new]
-check("three known methods x four metrics = twelve claims; the recur arm is not a claim",
-      len(new) == 12 and not any("recur" in i for i in ids), str(ids))
+#: Five metrics, not four, and this count WAS the assertion of a defect. The registrar carried
+#: `KS = (1, 5, 10)` while both stands it serves - longmem_eval and locomo_eval - carry
+#: (1, 3, 5, 10) and write all four depths into the artifact. Four families in the register hold
+#: recall@1, @5 and @10 and no recall@3 at all. Depths now come off the artifact, and a copy of
+#: the constant reappearing anywhere in the registrar shows up here as twelve again.
+check("three known methods x (four depths + the reciprocal rank) = fifteen claims; "
+      "the recur arm is not a claim",
+      len(new) == 15 and not any("recur" in i for i in ids), str(ids))
+check("the depth the registrar used to drop is registered",
+      "locomo_raw.hybrid.recall_at_3" in ids,
+      str(sorted(i for i in ids if "recall_at" in i)))
 by = {c["id"]: c for c in new}
 lex5 = by["locomo_raw.lexical.recall_at_5"]
 check("statement carries the label, the suffix and the stand",

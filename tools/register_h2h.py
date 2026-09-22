@@ -39,10 +39,6 @@ try:
 except Exception:                      # noqa: BLE001 - a redirected stream may not support it
     pass
 
-#: Kept only for the docstrings that name it. The depths a run is registered at come from the
-#: ARTIFACT, below - see `recall_depths`.
-KS = (1, 5, 10)
-
 
 def recall_depths(arm: dict) -> list[int]:
     """The k values this arm actually carries, ascending, read off the row.
@@ -64,17 +60,20 @@ def recall_depths(arm: dict) -> list[int]:
             out.append(int(key[7:]))
     return sorted(out)
 
+
 def mrr_key(arm: dict) -> str | None:
     """The arm's reciprocal-rank field, taken from the ARTIFACT rather than remembered here.
 
     The stand renamed it from `mrr` to `mrr@10` when it started reading only the first max(KS)
     candidates - the truncation that makes arms with different return depths comparable. A
     registrar carrying its own copy of the name is a second definition of the same thing, and
-    this file already holds one: `KS` here is (1, 5, 10) while the stand's is (1, 3, 5, 10). So
-    the key is read off the row, and an ambiguous row registers nothing rather than guessing.
+    this file held exactly that defect one line up (`recall_depths`). So the key is read off the
+    row, and an ambiguous row registers nothing rather than guessing.
     """
     keys = [k for k in arm if k == "mrr" or k.startswith("mrr@")]
     return keys[0] if len(keys) == 1 else None
+
+
 ENVIRONMENT = "local_bge_m3_pinned"
 
 #: Per family: the artifact, the pinned corpus, the phrase every statement ends on, the command

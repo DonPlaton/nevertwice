@@ -35,7 +35,25 @@ try:
 except Exception:                      # noqa: BLE001 - a redirected stream may not support it
     pass
 
-KS = (1, 5, 10)
+
+def recall_depths(row: dict) -> list[int]:
+    """The k values this row actually carries, ascending, read off the artifact.
+
+    The same defect as in `register_h2h.py`, in the second registrar and found by the same
+    sweep: `KS` here was (1, 5, 10) while both stands it serves - `longmem_eval.py` and
+    `locomo_eval.py` - carry (1, 3, 5, 10) and write all four into the artifact. Counted in the
+    register: longmem_pinned, longmem_s, locomo_raw and longmem_raw hold recall@1, @5 and @10
+    and no recall@3 at all; the three recall@3 claims that do exist are in `locomo`, registered
+    by the one-off scripts this tool replaced. Four families, three arms each - twelve numbers
+    measured on every run and registered on none.
+
+    Nothing is back-filled: a claim registered today carries today's HEAD, and these artifacts
+    were measured at other commits. The depths arrive with the next run.
+    """
+    return sorted(int(key[7:]) for key in row
+                  if key.startswith("recall@") and key[7:].isdigit())
+
+
 ENVIRONMENT = "local_bge_m3_pinned"
 #: Artifact method key -> (claim slug, label)
 METHODS = {
@@ -86,7 +104,7 @@ def build_claims(family: str, artifact: dict, *, dataset: str, stand: str, comma
         base = {"dataset": dataset, "environment": environment, "n": n, "command": command,
                 "raw": raw, "cited_in": list(cite or []), "commit": head, "note": note,
                 "produced_by": list(produced_by)}
-        for k in KS:
+        for k in recall_depths(row):
             cid = f"{family}.{slug}.recall_at_{k}"
             if cid in existing:
                 skipped.append(cid)
