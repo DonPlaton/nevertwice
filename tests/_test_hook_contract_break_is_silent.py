@@ -138,9 +138,25 @@ def event_field(text: str) -> list[str]:
 check("the event is empty under a renamed contract, exactly as under an empty payload",
       event_field(out_renamed) == event_field(out_empty) == [""],
       f"renamed {event_field(out_renamed)} | empty {event_field(out_empty)}")
+#: The property is that a renamed contract closes the way an IDLE RUN closes, and that today's
+#: contract does not. Naming the sentence - "No work performed" - pinned one backend's wording:
+#: on a runner with no model at all the engine pauses earlier and both runs close with "No LLM
+#: backend available (cloud key unset + Ollama down) - paused" instead, so the check went red on
+#: every Linux and macOS job of CI's first matrix run while the property it names held perfectly.
+#: Comparing the two closing lines to EACH OTHER states the property without naming a wording,
+#: and keeps the half that matters: today's run must not close the same way.
+def closing(text: str) -> str:
+    lines = [ln.split("] ", 1)[-1].strip() for ln in text.splitlines() if ln.strip()]
+    return lines[-1] if lines else ""
+
+
 check("and both end in the same sentence, which is what an idle run also prints",
-      ("No work performed" in out_renamed) and ("No work performed" in out_empty)
-      and ("No work performed" not in out_today))
+      closing(out_renamed) == closing(out_empty) != "",
+      f"renamed {closing(out_renamed)!r} | empty {closing(out_empty)!r}")
+check("while today's contract closes differently, or the two would be indistinguishable "
+      "for the wrong reason",
+      closing(out_today) != closing(out_renamed),
+      f"today {closing(out_today)!r}")
 check("and neither says anything about an unrecognised payload",
       not any("unrecognis" in ln.lower() or "unknown payload" in ln.lower()
               or "contract" in ln.lower() for ln in shape(out_renamed)),
