@@ -243,8 +243,32 @@ def test_a_documented_flag_is_a_flag_the_script_defines() -> None:
 
     CMD = re.compile(r"(?:^|\n)\s*(?:\$ )?((?:[A-Z_]+=\S+\s+)*python[3]? +(?:-m +)?[\w./-]+[^\n]*)")
     FLAG = re.compile(r"(?<![\w-])--[a-z][a-z0-9-]*")
-    #: A parser this rule may not enumerate: someone else adds arguments to it.
-    OPEN_PARSER = re.compile(r"\badd_\w+_argument\(\s*\w+\s*\)|\bparents\s*=")
+    def _name_of(fn):
+        return fn.attr if isinstance(fn, _ast.Attribute) else (fn.id if isinstance(fn, _ast.Name) else "")
+
+    def open_parser(tree):
+        """Why this script's flags may not be enumerated here, or None.
+
+        Asked of the SYNTAX, not of the text. The first version matched `parents=` anywhere in
+        the file, and `research/abstention_ab.py` writes `tmp.mkdir(parents=True)` on line 83 -
+        so the one script this gate was written for was excluded from it, along with 23 others,
+        `research/supersession_bench.py` among them. A rule that asks a question adjacent to the
+        one it means is the defect this repository keeps finding; here it halved the gate's reach
+        while the gate reported a clean sweep. Found 2026-09-22 by running the gate against the
+        instance that motivated it rather than against the fixtures it shipped with.
+        """
+        for n in _ast.walk(tree):
+            if not isinstance(n, _ast.Call):
+                continue
+            nm = _name_of(n.func)
+            #: `corpora.add_corpus_argument(ap)` - someone else puts flags on this parser.
+            if nm.startswith("add_") and nm.endswith("_argument") and nm != "add_argument" \
+                    and len(n.args) == 1:
+                return f"helper {nm}"
+            #: A parser that inherits its flags from another one.
+            if nm == "ArgumentParser" and any(k.arg == "parents" for k in n.keywords):
+                return "parents="
+        return None
 
     def closed_parser_flags(script: Path):
         """Every flag of a script whose parser is fully enumerable here, or None."""
@@ -253,12 +277,11 @@ def test_a_documented_flag_is_a_flag_the_script_defines() -> None:
             tree = _ast.parse(src)
         except (OSError, SyntaxError):
             return None
-        if "argparse" not in src or OPEN_PARSER.search(src):
+        if "argparse" not in src or open_parser(tree):
             return None
         out = set()
         for n in _ast.walk(tree):
-            if (isinstance(n, _ast.Call) and isinstance(n.func, _ast.Attribute)
-                    and n.func.attr == "add_argument"):
+            if isinstance(n, _ast.Call) and _name_of(n.func) == "add_argument":
                 for a in n.args:
                     if isinstance(a, _ast.Constant) and isinstance(a.value, str) \
                             and a.value.startswith("--"):
@@ -305,8 +328,16 @@ def test_a_documented_flag_is_a_flag_the_script_defines() -> None:
             unknown = sorted(set(FLAG.findall(command)) - flags)
             if unknown:
                 offenders.append(f"{rel}: {target.name} has no {', '.join(unknown)}")
+    #: The instance that motivated this gate, kept as a fixture: a working document told the
+    #: reader to smoke this stand with `--limit 3`, and it has no such flag. The first version
+    #: of the rule excluded this very script, so the fixture is the genuine case, not a written
+    #: one - a fixture written from memory of a defect tests the memory, not the defect.
+    _ab = closed_parser_flags(ROOT / "research" / "abstention_ab.py")
+    check("the stand this gate was written for is one it can enumerate", bool(_ab))
+    check("and `--limit 3` on it would be refused, as it was in the document",
+          "--limit" not in (_ab or set()) and "--stages" in (_ab or set()))
     check(f"there are documented commands with an enumerable parser ({judged})",
-          judged >= 30, str(judged))
+          judged >= 55, str(judged))
     check("every flag they name is one the script defines", not offenders,
           "; ".join(offenders[:4]))
 
