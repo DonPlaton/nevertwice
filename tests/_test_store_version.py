@@ -556,14 +556,22 @@ def test_a_backup_survives_a_file_that_vanishes_under_it() -> None:
     immediately before a migration - the one moment a store has no second copy - and the rarity
     is what makes it worth fixing rather than retrying.
 
-    The race is made deterministic rather than waited for: the first file copied removes a
-    sibling the walk has not reached yet, so the code meets a genuinely missing source. The
-    sibling is CHOSEN at that moment, not named in advance. The first version named `c.md` and
-    assumed the walk would reach it last - true on NTFS, which lists alphabetically, and false
-    on ext4, where `scandir` order is whatever the directory holds: on every Linux job of run
-    35784500315 `c.md` was copied first, nothing vanished, and three checks went red on a race
-    that never happened. The control is the same walk with the same copy function and WITHOUT
-    the tolerance - it must still raise, or this proves nothing about the fix.
+    The race is planted in the LISTING: `os.scandir` returns every entry of the folder and removes
+    one of them before handing the list back, so any "list, then copy" walk meets a source that
+    is gone, whatever copy function it uses. Two earlier versions planted it elsewhere and each
+    tested less than it claimed:
+
+    - the first named its victim in advance and relied on NTFS listing alphabetically; ext4 does
+      not, and every Linux job of run 35784500315 went red on a race that never happened;
+    - the second replaced `shutil.copy2`. The fixed `backup()` passes `copy_function=`, which
+      looks `copy2` up at call time; the unfixed one used `copytree`'s default, bound to the
+      REAL `copy2` when `shutil` was imported. So the plant reached the fixed code and not the
+      unfixed one: with the fix reverted, the test reported "the race did not happen" instead
+      of "the backup raised" - an honest line pointing the reader at the harness instead of at
+      the missing fix. Found by the auditing session by reverting the fix in a worktree.
+
+    The control is the exact call this code made before the fix - a plain `copytree`, default
+    copy function - over the same planted listing. It must raise, or the fix has no subject.
     """
     print(NL + "- a backup survives a file that vanishes under it -")
     with tempfile.TemporaryDirectory() as td:
@@ -577,56 +585,84 @@ def test_a_backup_survives_a_file_that_vanishes_under_it() -> None:
                 (folder / name).write_text(f"---{NL}type: mistake{NL}---{NL}{NL}{name}{NL}",
                                            encoding="utf-8")
 
-        seed()
-        real_copy2 = SV.shutil.copy2
+        real_scandir = os.scandir
         state = {"doomed": None}
 
-        def copy2_that_removes_a_sibling(src, dst, **kw):
-            """On the first file copied, delete a sibling the walk has not reached yet."""
-            if state["doomed"] is None and Path(src).parent == folder:
-                for name in names:
-                    if name != Path(src).name:
-                        (folder / name).unlink()
-                        state["doomed"] = name
-                        break
-            return real_copy2(src, dst, **kw)
+        class _ListedThenGone:
+            """What `os.scandir(folder)` returns: the full listing, one file already deleted."""
 
-        SV.shutil.copy2 = copy2_that_removes_a_sibling
-        try:
-            out = io.StringIO()
-            with contextlib.redirect_stdout(out):
-                backup_path = SV.backup(store)
-            said = out.getvalue()
-        finally:
-            SV.shutil.copy2 = real_copy2
+            def __init__(self, entries):
+                self._entries = entries
 
+            def __iter__(self):
+                return iter(self._entries)
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *exc):
+                return False
+
+            def close(self):
+                pass
+
+        def scandir_that_loses_one(path="."):
+            it = real_scandir(path)
+            if state["doomed"] is not None or Path(path) != folder:
+                return it
+            with it:
+                entries = list(it)
+            victim = next(e for e in entries if e.is_file())
+            os.unlink(victim.path)
+            state["doomed"] = victim.name
+            return _ListedThenGone(entries)
+
+        def planted(run):
+            state["doomed"] = None
+            os.scandir = scandir_that_loses_one
+            try:
+                return run()
+            finally:
+                os.scandir = real_scandir
+
+        seed()
+        out = io.StringIO()
+        raised_in_backup = None
+        backup_path = None
+        with contextlib.redirect_stdout(out):
+            try:
+                backup_path = planted(lambda: SV.backup(store))
+            except SV.shutil.Error as exc:
+                raised_in_backup = exc
+        said = out.getvalue()
         doomed = state["doomed"]
-        check("the race actually happened (a sibling was removed mid-walk)", doomed is not None)
-        check("the backup completes instead of raising", backup_path.is_dir(), str(backup_path))
-        kept = sorted(q.name for q in (backup_path / "Mistakes").iterdir())
+
+        check("the race actually happened (a listed file was gone before it was copied)",
+              doomed is not None)
+        check("the backup completes instead of raising",
+              raised_in_backup is None and backup_path is not None and backup_path.is_dir(),
+              str(raised_in_backup)[:200])
+        kept = sorted(q.name for q in (backup_path / "Mistakes").iterdir()) if backup_path else []
         check("every file that was still there is in it",
               kept == sorted(n for n in names if n != doomed), f"{kept}, doomed {doomed}")
         check("and the one that vanished is NAMED, not swallowed",
               bool(doomed) and doomed in said and "disappeared" in said,
               said.strip() or "(said nothing)")
 
-        #: The control: the same race, copy2 as the copy function, no tolerance. Passed
-        #: explicitly because `copytree` binds its default copy function at definition time, so
-        #: patching the module attribute does not reach it.
+        #: The control: the call this code made before the fix, over the same planted listing.
         seed()
-        state["doomed"] = None
         raised = None
         try:
-            SV.shutil.copytree(store, Path(td) / "plain", dirs_exist_ok=False,
-                               copy_function=copy2_that_removes_a_sibling)
+            planted(lambda: SV.shutil.copytree(store, Path(td) / "plain", dirs_exist_ok=False))
         except SV.shutil.Error as exc:
             raised = exc
-        check("without the tolerance the same vanishing file still raises",
+        check("the pre-fix call over the same listing still raises, so the fix has a subject",
               raised is not None and bool(state["doomed"]) and state["doomed"] in str(raised),
               str(raised)[:200])
 
         _rmtree(store)
-        _rmtree(backup_path)
+        if backup_path is not None:
+            _rmtree(backup_path)
 
 
 def test_zz_every_check_passed() -> None:
