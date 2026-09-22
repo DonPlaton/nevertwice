@@ -513,13 +513,25 @@ def test_a_list_the_engine_cannot_read_is_counted() -> None:
               '["' in result["repair"] and not any(d in result["repair"] for d in DESTRUCTIVE),
               result["repair"])
 
+        #: Only ONE whole link is exempt. Each of these starts with `[[` and each is misread:
+        #: the parser returns a string, and for `contested` that string becomes a stem named
+        #: "[[...]]" that does not exist, so the pair falls off the judge's queue. The first
+        #: exemption was the prefix `[[` and silenced all four (the auditing session's probe).
+        note("2026-01-05-p-decision-links", "contested: [[2026-01-01-p-decision-x]]\n"
+             "see_also: [[[note-a]], [[note-b]]]\n"
+             "pair: [[note-a]], [[note-b]]\n"
+             "topics: [[python, testing]]")
+        result = check_list_fields(vault)
+        check("a stem list written as a link, a list of links and a nested flow list all count",
+              result["detail"].startswith("6 list field"), result["detail"])
+
         sup = folder / "Superseded"
         sup.mkdir()
         (sup / "2026-01-04-p-decision-old.md").write_text(
             "---\ntype: decision\ntags: [a, b]\n---\n\nbody\n", encoding="utf-8")
         result = check_list_fields(vault)
         check("a retired note is not counted - nothing reads it any more",
-              result["detail"].startswith("2 list field"), result["detail"])
+              result["detail"].startswith("6 list field"), result["detail"])
 
     with tempfile.TemporaryDirectory() as tmp:
         result = check_list_fields(Path(tmp) / "absent")

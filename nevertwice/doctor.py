@@ -28,6 +28,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import subprocess
 import sys
 import time
@@ -337,6 +338,11 @@ def check_orphaned_temp(vault: Path) -> dict:
                   "real note was either written or retried")
 
 
+#: One whole wiki-link and nothing else: `[[note]]` - not `[[a]], [[b]]`, not `[[[a]]]`, and not
+#: `[[python, testing]]`, which is a flow list nested in a flow list, not a link.
+_LONE_WIKILINK = re.compile(r"\[\[[^\[\],]+\]\]")
+
+
 def check_list_fields(vault: Path) -> dict:
     """Frontmatter lists written in a form the engine's parser reads as something else.
 
@@ -388,11 +394,18 @@ def check_list_fields(vault: Path) -> dict:
                 key, val = (s.strip() for s in ln.split(":", 1))
                 block = (val == "" and i + 1 < len(lines)
                          and lines[i + 1].lstrip().startswith("- "))
-                #: `[[note]]` is a wiki-link, not a list shape: the parser reads it as the link
-                #: string, which is what it means. Counting it would send someone to rewrite a
-                #: correct link as a JSON list (found by the auditing session's seven-form probe).
-                wikilink = val.startswith("[[")
-                if (val.startswith("[") and not wikilink) or block:
+                #: ONE whole wiki-link - `related: [[note]]` - is not a list shape: the parser reads
+                #: it as the link string, which is what it means, and counting it would send
+                #: someone to rewrite a correct link as a JSON list. Only that exact form is
+                #: exempt. The first version exempted every value starting `[[`, which also
+                #: silenced `[[[a]], [[b]]]`, `[[a]], [[b]]` and `[[python, testing]]` - and
+                #: `contested: [[stem]]`, which `_contested_of` turns into a stem named
+                #: "[[stem]]" that does not exist, dropping the pair from the judge's queue.
+                #: So a key the engine reads as a LIST of stems gets no exemption at all.
+                #: Both narrowings from the auditing session's twelve-form probe.
+                lone_link = (bool(_LONE_WIKILINK.fullmatch(val))
+                             and key not in (_m.CONTESTED_KEY, _m.DISPUTED_KEY))
+                if (val.startswith("[") and not lone_link) or block:
                     list_keys.append(key)
             if not list_keys:
                 continue
