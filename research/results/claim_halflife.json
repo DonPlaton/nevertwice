@@ -1,7 +1,7 @@
 {
- "head": "737444cae61fc4950e79b1d563ce3497404780f2",
- "manifest_sha256": "d56f5e455d182fb45b73658263c2bfc19e05511271c301af45df937655b14fc5",
- "register_commits": 161,
+ "head": "43b92c891cd77563bea027cd164fb89982062128",
+ "manifest_sha256": "19bb9999dff79cae3315e53e09363c2ceb4b76f1ef30c10c63095ac7d999cbf3",
+ "register_commits": 162,
  "claims": 869,
  "history_days": 28.5,
  "overall": {
@@ -1335,5 +1335,58 @@
    "longitudinal": 1,
    "embed": 13
   }
+ },
+ "by_kind": {
+  "frozen_artefact": {
+   "claims": 381,
+   "horizons": {
+    "1": {
+     "survived": 127,
+     "observed": 381,
+     "share": 0.333
+    },
+    "7": {
+     "survived": 25,
+     "observed": 368,
+     "share": 0.068
+    },
+    "14": {
+     "survived": 14,
+     "observed": 250,
+     "share": 0.056
+    },
+    "30": {
+     "survived": 0,
+     "observed": 0,
+     "share": null
+    }
+   }
+  },
+  "engine_behaviour": {
+   "claims": 488,
+   "horizons": {
+    "1": {
+     "survived": 87,
+     "observed": 488,
+     "share": 0.178
+    },
+    "7": {
+     "survived": 2,
+     "observed": 389,
+     "share": 0.005
+    },
+    "14": {
+     "survived": 0,
+     "observed": 22,
+     "share": 0.0
+    },
+    "30": {
+     "survived": 0,
+     "observed": 0,
+     "share": null
+    }
+   }
+  },
+  "rule": "campaign_triage.triage: group A (no engine door and no generation endpoint in the closure) is the frozen artefact, everything else measures the engine"
  }
 }

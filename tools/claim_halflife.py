@@ -83,7 +83,12 @@ def lifetimes(until: str = "HEAD") -> tuple[dict[str, dict], dt.datetime]:
             cid = c.get("id")
             if not cid:
                 continue
-            rec = seen.setdefault(cid, {"family": cid.split(".")[0], "born": when, "died": None})
+            #: The claim's own fields are kept from the version first seen, so a claim that no
+            #: longer exists in the current manifest can still be classified by what it measured.
+            rec = seen.setdefault(cid, {"family": cid.split(".")[0], "born": when, "died": None,
+                                        "meta": {"id": cid, "pointer": c.get("pointer"),
+                                                 "command": c.get("command"),
+                                                 "produced_by": c.get("produced_by")}})
             if rec["died"] is None and (c.get("stale") or c.get("pending_remeasure")):
                 rec["died"] = when
     return seen, (commits[-1][1] if commits else dt.datetime.now(dt.timezone.utc))
@@ -149,6 +154,31 @@ def main(argv: list[str] | None = None) -> int:
     report["survivors"] = {"horizon_days": horizon_days, "count": len(survivors),
                            "by_family": dict(collections.Counter(c.split(".")[0]
                                                                  for c in survivors))}
+
+    #: The split that answers what the ratio alone cannot: claims about ENGINE BEHAVIOUR against
+    #: claims about a FROZEN artefact. The rule is NOT a list of family names - a first draft used
+    #: one and left 39 families and 387 claims outside both groups, which would have made the
+    #: headline a statement about whichever families someone remembered. It is the same rule
+    #: `tools/campaign_triage.py` asks of the source: a claim whose closure calls an engine door
+    #: or posts to a generation endpoint measures the engine; anything else is arithmetic over
+    #: inputs that are already on disk. Every claim lands in exactly one group.
+    sys.path.insert(0, str(ROOT / "tools"))
+    import campaign_triage as T                                     # noqa: PLC0415
+
+    report["by_kind"] = {}
+    groups = {"frozen_artefact": {}, "engine_behaviour": {}}
+    for cid, rec in records.items():
+        kind = "frozen_artefact" if T.triage(rec["meta"])[0] == "A" else "engine_behaviour"
+        groups[kind][cid] = rec
+    for label, sub in groups.items():
+        rows = {}
+        for d in HORIZONS:
+            s, n = survival(sub, head, d)
+            rows[d] = {"survived": s, "observed": n, "share": round(s / n, 3) if n else None}
+        report["by_kind"][label] = {"claims": len(sub), "horizons": rows}
+    report["by_kind"]["rule"] = ("campaign_triage.triage: group A (no engine door and no "
+                                 "generation endpoint in the closure) is the frozen artefact, "
+                                 "everything else measures the engine")
 
     if args.save:
         out = ROOT / "research" / "results" / "claim_halflife.json"

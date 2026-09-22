@@ -135,6 +135,26 @@ if ART.exists():
     check("and the survivor count re-derives too", len(again) == art["survivors"]["count"],
           f"{len(again)} against {art['survivors']['count']}")
 
+    #: The split the page acts on - engine behaviour against frozen artefact - is re-derived by
+    #: the same source-read rule, not trusted from the file. Every claim must land in exactly one
+    #: group: a first draft classified by family name and left 387 of 869 outside both, which
+    #: would have made the headline a statement about whichever families someone remembered.
+    sys.path.insert(0, str(ROOT / "tools"))
+    import campaign_triage as T  # noqa: E402
+
+    kinds = {"frozen_artefact": {}, "engine_behaviour": {}}
+    for cid, r in at_head.items():
+        kinds["frozen_artefact" if T.triage(r["meta"])[0] == "A" else "engine_behaviour"][cid] = r
+    check("every claim lands in exactly one kind",
+          sum(len(v) for v in kinds.values()) == art["claims"],
+          f"{sum(len(v) for v in kinds.values())} against {art['claims']}")
+    for label, sub in kinds.items():
+        s7, n7 = H.survival(sub, head_at, 7)
+        was = art["by_kind"][label]["horizons"]["7"]
+        check(f"{label}: 7-day row re-derives, {s7}/{n7}",
+              (s7, n7) == (was["survived"], was["observed"]),
+              f"artifact says {was['survived']}/{was['observed']}")
+
 print("\n- what survives is a frozen artefact, which is the finding rather than the rate -")
 horizon = dt.timedelta(days=14)
 long = [cid for cid, r in records.items()

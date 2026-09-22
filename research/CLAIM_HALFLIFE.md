@@ -41,6 +41,29 @@ the 7-day share is an older, smaller population, not a resurrection.
 Of the 14 claims that reached two weeks, 13 are embedder claims and 1 is a seeded simulation.
 Every survivor measures a **frozen artefact**.
 
+Split by what a claim measures - engine behaviour against a frozen artefact, decided by the same
+rule `tools/campaign_triage.py` asks of the source (does the claim's closure call an engine door
+or a generation endpoint?) rather than by a list of names, so all 869 land in exactly
+one group:
+
+| | claims | 1 day | 7 days | 14 days |
+|---|---|---|---|---|
+| engine behaviour | 488 | 87/488 = 0.178 | 2/389 = 0.005 | 0/22 = 0.0 |
+| frozen artefact | 381 | 127/381 = 0.333 | 25/368 = 0.068 | 14/250 = 0.056 |
+
+**The seven-day figure is the one to act on**, because it rests on the largest denominators:
+2 of 389 engine-behaviour claims survive a week against
+25 of 368 frozen-artefact ones. The fourteen-day row says 0 of
+22 for the engine, and twenty-two is a small number - it is reported as it
+stands rather than rounded up into a stronger sentence.
+
+This is the number a measurement campaign has to answer to. A campaign that spends GPU-hours
+producing engine-behaviour claims is producing claims whose measured chance of still being live a
+week later is 0.005. That does not make the campaign wrong - a withdrawn claim still
+did its job if a decision was taken while it was live - but it does mean "re-measure everything"
+is the expensive way to raise the live count, and narrowing what a claim closes over is the cheap
+one.
+
 No claim about engine behaviour has ever reached that horizon. That is not bad luck: a claim is
 withdrawn when the code it closes over changes, the engine's closure is most of the package, and
 the engine changes daily. The design is working exactly as specified, and the cost of it is
