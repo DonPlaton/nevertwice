@@ -517,13 +517,18 @@ def test_a_list_the_engine_cannot_read_is_counted() -> None:
         #: the parser returns a string, and for `contested` that string becomes a stem named
         #: "[[...]]" that does not exist, so the pair falls off the judge's queue. The first
         #: exemption was the prefix `[[` and silenced all four (the auditing session's probe).
+        #: `disputed` is read the same way - the dispute re-queue walks it - so it is held here
+        #: too: with only `contested` in the fixture, dropping DISPUTED_KEY from the exemption's
+        #: key test stayed green (the auditing session's mutation M3).
         note("2026-01-05-p-decision-links", "contested: [[2026-01-01-p-decision-x]]\n"
+             "disputed: [[2026-01-01-p-decision-y]]\n"
              "see_also: [[[note-a]], [[note-b]]]\n"
              "pair: [[note-a]], [[note-b]]\n"
              "topics: [[python, testing]]")
         result = check_list_fields(vault)
-        check("a stem list written as a link, a list of links and a nested flow list all count",
-              result["detail"].startswith("6 list field"), result["detail"])
+        check("a stem list written as a link (contested AND disputed), a list of links and a "
+              "nested flow list all count",
+              result["detail"].startswith("7 list field"), result["detail"])
 
         sup = folder / "Superseded"
         sup.mkdir()
@@ -531,7 +536,7 @@ def test_a_list_the_engine_cannot_read_is_counted() -> None:
             "---\ntype: decision\ntags: [a, b]\n---\n\nbody\n", encoding="utf-8")
         result = check_list_fields(vault)
         check("a retired note is not counted - nothing reads it any more",
-              result["detail"].startswith("6 list field"), result["detail"])
+              result["detail"].startswith("7 list field"), result["detail"])
 
     with tempfile.TemporaryDirectory() as tmp:
         result = check_list_fields(Path(tmp) / "absent")
