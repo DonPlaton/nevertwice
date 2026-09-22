@@ -115,6 +115,10 @@ def test_every_headline_declares_a_verdict_for_every_baseline() -> None:
         for baseline in registered:
             if baseline not in verdicts:
                 holes.append(f"{claim['id']} x {baseline}")
+    #: Both sides of the product must be non-empty or "all 0 x 0 pairs are declared" passes with
+    #: nothing compared - the same shape found in fifteen other checks on 2026-09-22.
+    check("there are claims and baselines to pair", claims and len(registered) >= 3,
+          f"{len(claims)} claims x {len(registered)} baselines")
     check(f"all {len(claims)} x {len(registered)} pairs are declared", not holes,
           "; ".join(holes[:5]))
 

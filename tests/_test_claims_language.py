@@ -103,6 +103,11 @@ def test_no_absolute_comparative_claims() -> None:
             m = RX.search(line)
             if m and not _allowed(doc, line):
                 offenders.append(f"{doc}:{i}: {m.group(0)!r}")
+    #: The count was in the NAME and in no condition: with `tracked` empty this printed "all 0
+    #: tracked documents are free of absolute comparative claims" and passed. "No offenders" and
+    #: "nothing examined" print the same sentence (swept 2026-09-22: sixteen checks in this
+    #: repository interpolate a population size they never assert).
+    check("there are tracked documents to read", len(tracked) >= 50, str(len(tracked)))
     check(f"all {len(tracked)} tracked documents are free of absolute "
           f"comparative claims", not offenders, "; ".join(offenders[:6]))
 

@@ -72,6 +72,9 @@ print("# and the reason still holds: no hot-path function reaches them")
 
 tree = ast.parse((PKG / "guards.py").read_text(encoding="utf-8"))
 funcs = {n.name: n for n in tree.body if isinstance(n, ast.FunctionDef)}
+#: `all(...)` over an empty HOT_ENTRIES is True, so the count belongs in a condition and not only
+#: in the sentence (swept 2026-09-22).
+check("there are hot-path entry points to check", len(HOT_ENTRIES) >= 3, str(len(HOT_ENTRIES)))
 check(f"all {len(HOT_ENTRIES)} hot-path entry points exist",
       all(e in funcs for e in HOT_ENTRIES),
       str([e for e in HOT_ENTRIES if e not in funcs]))
