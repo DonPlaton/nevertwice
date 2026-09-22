@@ -108,5 +108,65 @@ try:
 finally:
     raw.unlink(missing_ok=True)
 
+print("\n- a positional pointer must still address the pair the claim is about -")
+#: Measured, not supposed. Running the two supersession commands exactly as the register records
+#: them produced three arms instead of seven - `--arms nevertwice,naive` cannot make the mem0 and
+#: zep arms, which had come from separate runs pooled with `--with`. `pairs[0]` stopped being
+#: `(mem0, naive)` and became `(naive, nevertwice)`; the restore rewrote
+#: `supersession.mem0_vs_naive.p_mcnemar` from 1.0 to 2.78e-17 while its sentence still read
+#: "mem0 against naive". Pointer resolved, value matched what had just been written there,
+#: freshness passed, battery green (2026-09-22).
+_art = {"pairs": [{"a": "mem0", "b": "naive", "p_mcnemar": 1.0},
+                  {"a": "mem0", "b": "nevertwice", "p_mcnemar": 2.2e-14}]}
+check("a pointer addressing the claim's own pair is accepted",
+      rm.pair_mismatch({"id": "supersession.mem0_vs_naive.p_mcnemar",
+                       "pointer": "pairs[0].p_mcnemar"}, _art) is None)
+_moved = rm.pair_mismatch({"id": "supersession.mem0_vs_nevertwice.p_mcnemar",
+                          "pointer": "pairs[0].p_mcnemar"}, _art)
+check("a pointer that moved to another pair is refused", bool(_moved))
+check("and the refusal names both pairs, so the reader sees the swap",
+      _moved and "mem0" in _moved and "naive" in _moved and "nevertwice" in _moved, str(_moved))
+check("a pointer that is not positional into a pair list is left alone",
+      rm.pair_mismatch({"id": "supersession.nevertwice.stale_rate",
+                       "pointer": "pooled_nevertwice.stale.rate"}, _art) is None)
+check("an id that names no pair is left alone",
+      rm.pair_mismatch({"id": "locomo.semantic.recall_at_1",
+                       "pointer": "pairs[0].p_mcnemar"}, _art) is None)
+check("a list whose rows carry no arm names is left alone - nothing to compare",
+      rm.pair_mismatch({"id": "supersession.mem0_vs_naive.p_mcnemar",
+                       "pointer": "pairs[0].p_mcnemar"}, {"pairs": [{"p_mcnemar": 1.0}]}) is None)
+
+
+print("\n- and `restore` itself refuses it, not merely the helper -")
+#: The first version checked `pair_mismatch` and never the call site: disabling the call in
+#: `restore` reddened nothing. That is the same shape as the helper's own defect - a property
+#: verified where it is defined and not where it is used (2026-09-22).
+import tempfile as _tf  # noqa: E402
+
+with _tf.TemporaryDirectory() as _td:
+    _raw = ROOT / "research" / "results" / "_pairmove_probe.json"
+    _raw.parent.mkdir(parents=True, exist_ok=True)
+    _raw.write_text(json.dumps({"pairs": [{"a": "naive", "b": "nevertwice",
+                                           "p_mcnemar": 2.78e-17}]}), encoding="utf-8")
+    try:
+        os.utime(_raw, None)
+        _man = {"claims": [{
+            "id": "supersession.mem0_vs_naive.p_mcnemar", "value": 1.0, "printed": ["1.0"],
+            "statement": "mem0 against naive on the same 60 supersession cases",
+            "unit": "p", "n": 60, "ci": None, "dataset": "d", "environment": "e",
+            "command": "python research/supersession_bench.py --runs 2",
+            "produced_by": ["research/supersession_bench.py"], "cited_in": [],
+            "stale": "withdrawn for the re-measure", "pending_remeasure": True,
+            "commit": "0" * 40, "raw": "research/results/_pairmove_probe.json",
+            "pointer": "pairs[0].p_mcnemar"}]}
+        _restored, _left, _ = rm.restore(_man, head=HEAD)
+        check("restore refuses a claim whose index moved to another pair",
+              _restored == [] and any("another pair" in x for x in _left), str(_left))
+        check("and the claim keeps its own value rather than taking the neighbour's",
+              _man["claims"][0]["value"] == 1.0, str(_man["claims"][0]["value"]))
+    finally:
+        _raw.unlink(missing_ok=True)
+
+
 print(f"\nremeasure: {len(RUN) - len(FAILED)} passed, {len(FAILED)} failed")
 sys.exit(1 if FAILED else 0)

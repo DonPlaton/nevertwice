@@ -248,7 +248,8 @@ ARTIFACTS = [
              "the Mem0 and naive arms carried beside them (--pool ... --with ...); the extractor "
              "is not deterministic."},
     {"file": "research/results/supersession_baseline_ef8120d.json",
-     "command": ["python", "research/supersession_bench.py", "--arms", "nevertwice,naive"],
+     "command": ["python", "research/supersession_bench.py", "--arms", "nevertwice,naive",
+                 "--runs", "2", "--out", "research/results/supersession_baseline_ef8120d.json"],
      "kind": HARDWARE, "task": "supersession",
      "inputs": ["a git worktree of this repository at ef8120d (the engine before J2b and the literal-fact "
                 "channel) with HEAD's research/supersession_bench.py copied into it, so the old engine is "
@@ -261,7 +262,8 @@ ARTIFACTS = [
              "nothing; the artifact records engine_commit and bench_commit."},
     {"file": "research/results/supersession_baseline_ef8120d_implicit.json",
      "command": ["python", "research/supersession_bench.py", "--dataset",
-                 "research/data/supersession_v1_implicit.json", "--arms", "nevertwice,naive"],
+                 "research/data/supersession_v1_implicit.json", "--arms", "nevertwice,naive",
+                 "--runs", "2", "--out", "research/results/supersession_baseline_ef8120d_implicit.json"],
      "kind": HARDWARE, "task": "supersession",
      "inputs": ["a git worktree of this repository at ef8120d with HEAD's research/supersession_bench.py copied "
                 "into it (see supersession_baseline_ef8120d.json)",
@@ -270,7 +272,8 @@ ARTIFACTS = [
      "note": "the implicit-corpus half of the same historical baseline: the pre-J2b engine under today's "
              "classifier, two runs pooled; registered born withdrawn."},
     {"file": "research/results/supersession_k7_d07375e.json",
-     "command": ["python", "research/supersession_bench.py", "--arms", "nevertwice,naive"],
+     "command": ["python", "research/supersession_bench.py", "--arms", "nevertwice,naive",
+                 "--runs", "2", "--out", "research/results/supersession_k7_d07375e.json"],
      "kind": HARDWARE, "task": "supersession",
      "inputs": ["this repository at d07375e - the engine with the K7 same-fact absorb gate ON (its default before the "
                 "revert), the K5 retry and the K6 preamble strip",
@@ -283,7 +286,8 @@ ARTIFACTS = [
              "historical family that cites nothing."},
     {"file": "research/results/supersession_k7_d07375e_implicit.json",
      "command": ["python", "research/supersession_bench.py", "--dataset",
-                 "research/data/supersession_v1_implicit.json", "--arms", "nevertwice,naive"],
+                 "research/data/supersession_v1_implicit.json", "--arms", "nevertwice,naive",
+                 "--runs", "2", "--out", "research/results/supersession_k7_d07375e_implicit.json"],
      "kind": HARDWARE, "task": "supersession",
      "inputs": ["this repository at d07375e (see supersession_k7_d07375e.json)",
                 "research/data/supersession_v1_implicit.json",
@@ -405,7 +409,8 @@ ARTIFACTS = [
              "environment and is merged in by --compare."},
     {"file": "research/results/supersession_v1_switch.json",
      "command": ["python", "research/supersession_bench.py", "--arms", "nevertwice", "--sleep",
-                 "--out", "research/results/supersession_v1_switch.json"],
+                 "--out", "research/results/supersession_v1_switch.json",
+                 "--runs", "2", "--out", "research/results/supersession_v1_switch.json"],
      "kind": HARDWARE, "task": "supersession",
      "inputs": ["research/data/supersession_v1.json",
                 "a local Ollama serving bge-m3 and qwen3-coder:30b",
@@ -419,7 +424,8 @@ ARTIFACTS = [
     {"file": "research/results/supersession_v1_implicit_switch.json",
      "command": ["python", "research/supersession_bench.py", "--dataset",
                  "research/data/supersession_v1_implicit.json", "--arms", "nevertwice", "--sleep",
-                 "--out", "research/results/supersession_v1_implicit_switch.json"],
+                 "--out", "research/results/supersession_v1_implicit_switch.json",
+                 "--runs", "2", "--out", "research/results/supersession_v1_implicit_switch.json"],
      "kind": HARDWARE, "task": "supersession",
      "inputs": ["research/data/supersession_v1_implicit.json",
                 "a local Ollama serving bge-m3 and qwen3-coder:30b",

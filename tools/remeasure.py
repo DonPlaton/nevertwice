@@ -80,6 +80,37 @@ def resolve(data, pointer: str):
     return node
 
 
+#: `pairs[2].p_mcnemar` - a pointer whose first step indexes a list by POSITION.
+PAIR_POINTER = re.compile(r"^(\w+)\[(\d+)\]")
+#: `supersession_implicit.mem0_vs_naive.discordant.naive` - the id names the two arms compared.
+PAIR_ID = re.compile(r"\.([A-Za-z0-9_]+?)_vs_([A-Za-z0-9_]+?)\.")
+
+
+def pair_mismatch(claim: dict, data) -> str | None:
+    """Does a positional pointer still address the pair the claim's id names?
+
+    A list index is an address only while the list keeps its shape. The supersession artifact's
+    `pairs` is built from whichever arms a run produced, so a run with fewer arms renumbers it
+    and every positional pointer silently moves to a different pair - measured 2026-09-22, four
+    live claims rewritten to another arm-pair's figures with every check still green.
+    """
+    ptr, cid = claim.get("pointer") or "", claim.get("id") or ""
+    mp, mi = PAIR_POINTER.match(ptr), PAIR_ID.search(cid)
+    if not (mp and mi):
+        return None
+    try:
+        row = resolve(data, f"{mp.group(1)}[{mp.group(2)}]")
+    except (KeyError, IndexError, TypeError):
+        return None                       # the pointer itself is checked by the caller
+    if not isinstance(row, dict) or "a" not in row or "b" not in row:
+        return None
+    want, got = {mi.group(1), mi.group(2)}, {str(row["a"]), str(row["b"])}
+    if want != got:
+        return (f"`{ptr}` now addresses {sorted(got)}, but the claim is about {sorted(want)} - "
+                f"the artifact's arm list changed shape, so the index moved to another pair")
+    return None
+
+
 def wilson(p: float, n: int, z: float = 1.96) -> tuple[float, float]:
     d = 1 + z * z / n
     c = p + z * z / (2 * n)
@@ -211,6 +242,13 @@ def restore(manifest: dict, select: set[str] | None = None, head: str | None = N
             value = resolve(data, c["pointer"])
         except (KeyError, IndexError, TypeError):
             left.append(f"{c['id']}: pointer {c['pointer']} missing in {raw}")
+            continue
+        #: Before trusting the number: does the index still point at the same pair? Restoring
+        #: from a renumbered list is how four live claims took another pair's figures while
+        #: keeping their own sentence (2026-09-22).
+        moved = pair_mismatch(c, data)
+        if moved:
+            left.append(f"{c['id']}: {moved}")
             continue
         # The artifact must be newer than the code it was produced by. A file untouched since
         # the code commit is the OLD measurement wearing a new commit hash.

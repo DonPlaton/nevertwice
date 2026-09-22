@@ -48,15 +48,19 @@ def flags(cmd: str | list) -> set[str]:
 MANIFEST = json.loads((ROOT / "research" / "evidence_manifest.json").read_text(encoding="utf-8"))
 _claims = MANIFEST["claims"]
 claims = list(_claims.values() if isinstance(_claims, dict) else _claims)
-live = [c for c in claims if not (c.get("stale") or c.get("pending_remeasure"))]
-
+#: EVERY claim, not only the live ones. Scoping this to the live set makes the check hide
+#: exactly while a family is withdrawn - and return the moment a campaign revives it, which is
+#: when the cost of a wrong command is highest. Measured: with the supersession families
+#: withdrawn, removing `--runs` from their package entries left this suite ALL OK
+#: (audit 2026-09-22). A withdrawn claim is not a reason to skip checking the instruction by
+#: which it will be restored.
 by_artifact: dict[str, set[str]] = {}
-for c in live:
+for c in claims:
     if c.get("raw") and c.get("command"):
         by_artifact.setdefault(c["raw"].replace("\\", "/"), set()).add(c["command"])
 
 print("\n- the package names, for each artifact, a command that produces it -")
-check("there are artifacts with live claims to check", len(by_artifact) > 5, str(len(by_artifact)))
+check("there are artifacts to check", len(by_artifact) > 5, str(len(by_artifact)))
 
 package = {spec["file"].replace("\\", "/"): spec["command"] for spec in R.ARTIFACTS}
 missing, disagree = [], []
@@ -73,17 +77,41 @@ for artifact, commands in sorted(by_artifact.items()):
         disagree.append(f"{artifact}: package {' '.join(pkg)!r} lacks {sorted(need - pkg_flags)}; "
                         f"claims name {sorted(commands)}")
 
-check("every artifact behind a live claim is in the package", not missing, ", ".join(missing[:3]))
-check("and the package's command carries every flag the claims' commands do",
-      not disagree, " | ".join(disagree[:2]))
+#: Artifacts a claim names that the package does not carry. Not a pass - an inventory, so the
+#: gap is a number someone decided to leave rather than one nobody counted. All three predate
+#: the package's own scope rule and are behind withdrawn claims.
+KNOWN_ABSENT = {"research/consolidation_eval.json", "research/head_to_head.json",
+                "research/live_validation_results.json", "research/qa_results_reasoner.json",
+                "research/token_ab.json"}
 
-print("\n- the one artifact written by two commands is known, not assumed -")
+#: Artifacts written by MORE than one registered command. `longmem_results.json` is the case the
+#: package can express, because `--xrerank --save` is a genuine superset that writes every block.
+#: The other two cannot be: `--only=` selects arms, so three `--only=` runs write three disjoint
+#: parts of one file and no single run is a superset. That is a defect of the register - one
+#: artifact, several commands, no way to name them all in one entry - recorded rather than
+#: designed around.
+KNOWN_MULTI = {"research/longmem_results.json": "superset expressible (--xrerank --save)",
+               "research/results/head_to_head_v2.json": "three --only= runs, no superset exists",
+               "research/token_ab.json": "two runs, no superset expressible"}
+
+check("the artifacts absent from the package are the known three, no more",
+      set(missing) == KNOWN_ABSENT, f"{sorted(set(missing) ^ KNOWN_ABSENT)}")
+
+#: The flag-superset rule applies where a superset can exist at all - that is, everywhere except
+#: the artifacts whose commands differ by a value-carrying selector.
+unexpressible = {a for a, why in KNOWN_MULTI.items() if "no superset" in why}
+real = [d for d in disagree if d.split(":")[0] not in unexpressible]
+check("and the package's command carries every flag the claims' commands do, where a superset "
+      "can exist", not real, " | ".join(real[:2]))
+
+print("\n- the artifacts written by several commands are named, not assumed to be one -")
 multi = {a: cs for a, cs in by_artifact.items() if len(cs) > 1}
-check("at most one artifact carries two registered commands", len(multi) <= 1, str(sorted(multi)))
-if multi:
-    a, cs = next(iter(multi.items()))
-    check(f"{a} is the known case and the package names the superset",
-          flags(package.get(a, [])) >= set().union(*(flags(c) for c in cs)), str(sorted(cs)))
+check("the set of multi-command artifacts has not moved", set(multi) == set(KNOWN_MULTI),
+      f"{sorted(set(multi) ^ set(KNOWN_MULTI))}")
+check("longmem, the one where a superset exists, has it named in the package",
+      flags(package.get("research/longmem_results.json", []))
+      >= set().union(*(flags(c) for c in by_artifact["research/longmem_results.json"])),
+      str(sorted(by_artifact.get("research/longmem_results.json", []))))
 
 print(f"\n{'ALL OK' if not FAILS else f'{FAILS} FAILED'}")
 sys.exit(1 if FAILS else 0)
