@@ -20,8 +20,11 @@ milliseconds again.
 from __future__ import annotations
 
 import ast
+import json
+import os
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -104,6 +107,60 @@ check("neither name is imported at module scope either", not (module_level & set
       str(sorted(module_level & set(BANNED))))
 print(f"       (the walk reaches {len(reach)} of {len(funcs)} functions from "
       f"{', '.join(HOT_ENTRIES)})")
+
+print("# and the engine's own patterns are compiled only when something uses them")
+
+#: Two dozen module-level regular expressions cost 3.64 ms of a 13.07 ms cold import, and
+#: PreToolUse forces none of them: the guard path matches through `re.search(pattern_string, ..)`,
+#: which uses `re`'s internal cache, and these belong to session start, session end and the write
+#: path. `_lazy_re` compiles on first use. The property worth pinning is not that the proxy exists
+#: - that is one grep - but that the hot path still does not touch them, because moving one use
+#: onto that path costs the milliseconds back with nothing going red.
+probe = (
+    "import sys, json; sys.path.insert(0, %r)\n"
+    "import memory_hook as m\n"
+    "lazy = [v for v in vars(m).values() if type(v).__name__ == '_lazy_re']\n"
+    "before = sum(1 for v in lazy if v._compiled is not None)\n"
+    "m.emit_pretooluse_guard({'tool_name': 'Bash', 'tool_input': {'command': 'rm -rf /tmp/x'}},\n"
+    "                        %r)\n"
+    "after = sum(1 for v in lazy if v._compiled is not None)\n"
+    "print(json.dumps({'total': len(lazy), 'before': before, 'after': after}))\n"
+) % (str(PKG), str(ROOT))
+env = dict(os.environ)
+store = tempfile.mkdtemp(prefix="lazyre_")
+env.update({"NEVERTWICE_HOME": store, "NEVERTWICE_VAULT": store, "NEVERTWICE_CLOUD": "none"})
+r = subprocess.run([sys.executable, "-c", probe], capture_output=True, text=True, timeout=240,
+                   env=env)
+counts = {}
+for line in reversed((r.stdout or "").splitlines()):
+    try:
+        counts = json.loads(line)
+        break
+    except ValueError:
+        continue
+check("the probe ran", bool(counts), f"exit {r.returncode}: {r.stderr[-300:]}")
+if counts:
+    check(f"all {counts['total']} engine patterns are lazy, none compiled at import",
+          counts["total"] >= 20 and counts["before"] == 0,
+          f"{counts['before']} were already compiled")
+    check("and a PreToolUse guard forces none of them",
+          counts["after"] == 0,
+          f"{counts['after']} compiled during the guard - either the hot path grew or a pattern "
+          f"moved onto it")
+
+#: Both call forms, because the auditing session's own shim broke on the keyword one and only
+#: SessionEnd used it - a whole event was failing while the paired measurement looked clean.
+import re as _re  # noqa: E402
+
+sys.path.insert(0, str(PKG))
+import memory_hook as _m  # noqa: E402
+
+check("a lazy pattern takes its flags positionally and by keyword",
+      _m._lazy_re(r"a", _re.I).flags == _m._lazy_re(r"a", flags=_re.I).flags == _re.I | 32)
+check("and forwards whatever attribute is asked for, not a fixed list",
+      _m._lazy_re(r"(a)(b)").groups == 2 and _m._lazy_re(r"ab").fullmatch("ab") is not None)
+check("compiling is deferred until something asks",
+      _m._lazy_re(r"z")._compiled is None)
 
 print()
 print(f"hot-path imports: {PASSED} passed, {FAILED} failed")
