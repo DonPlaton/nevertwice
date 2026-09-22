@@ -50,17 +50,23 @@ check("every page that prints one carries a retraction", not offenders,
       ", ".join(offenders[:4]))
 
 print("\n- the banner points somewhere that exists -")
-missing = []
+missing, _carry = [], 0
 for md in list(ROOT.glob("docs/*.md")) + list(ROOT.glob("research/**/*.md")):
     text = md.read_text(encoding="utf-8", errors="replace")
     if sw.BANNER_ID not in text:
         continue
+    _carry += 1
     for line in text.splitlines():
         if "evidence_manifest.json`](" not in line:
             continue
         target = line.split("evidence_manifest.json`](", 1)[1].split(")", 1)[0]
         if not (md.parent / target).resolve().exists():
             missing.append(f"{md.relative_to(ROOT).as_posix()} -> {target}")
+#: A sweep that discovers nothing reports no offenders, which reads exactly like a
+#: sweep that found none. Pinned so the discovery has to keep working. Same class as
+#: `1ef491c`; found by a third signature over offender checks whose loop iterates a
+#: FILE DISCOVERY and whose size nothing asserts, 2026-09-22.
+check(f"pages carry the banner this loop looks for ({_carry})", _carry >= 20, str(_carry))
 check("every banner link resolves", not missing, "; ".join(missing[:3]))
 
 print("\n- a number a live claim prints is not a withdrawn citation -")

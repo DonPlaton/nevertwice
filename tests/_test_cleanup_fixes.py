@@ -166,6 +166,12 @@ for _f in sorted(Path(m.__file__).resolve().parent.glob("*.py")):
                 if isinstance(_nm, ast.Name) and _nm.id in _consts:
                     _frozen.append(_f.name + ":" + str(_fn.lineno) + " " + _fn.name
                                    + " <- " + _nm.id)
+#: A sweep that discovers nothing reports no offenders, which reads exactly like a
+#: sweep that found none. Pinned so the discovery has to keep working. Same class as
+#: `1ef491c`; found by a third signature over offender checks whose loop iterates a
+#: FILE DISCOVERY and whose size nothing asserts, 2026-09-22.
+_pkg = len(sorted(Path(m.__file__).resolve().parent.glob("*.py")))
+check(f"the package sweep sees its modules ({_pkg})", _pkg >= 55)
 check("no module constant is frozen into a default argument: " + "; ".join(_frozen[:4]),
       not _frozen)
 

@@ -257,6 +257,12 @@ def test_nothing_else_asks_git_what_is_dirty() -> None:
             hit = TREE_STATE & set(argv)
             if hit:
                 offenders.append(f"{path.name}: git {sorted(hit)[0]}")
+    #: A sweep that discovers nothing reports no offenders, which reads exactly like a
+    #: sweep that found none. Pinned so the discovery has to keep working. Same class as
+    #: `1ef491c`; found by a third signature over offender checks whose loop iterates a
+    #: FILE DISCOVERY and whose size nothing asserts, 2026-09-22.
+    _swept = len(sorted((ROOT / "tools").glob("*.py")) + sorted((ROOT / "research").glob("*.py")))
+    check(f"the sweep sees the modules it polices ({_swept})", _swept >= 100, str(_swept))
     check(f"only tools/{DOOR_MODULE}.py asks git for the state of the tree", not offenders,
           "; ".join(offenders[:6]))
 

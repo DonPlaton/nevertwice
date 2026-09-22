@@ -146,6 +146,12 @@ def test_no_module_reaches_around_the_seal() -> None:
         for needle in ("corpus_heldout", "HELDOUT_ROOT", "heldout_repos"):
             if needle in text:
                 offenders.append(path.name + ":" + needle)
+    #: A sweep that discovers nothing reports no offenders, which reads exactly like a
+    #: sweep that found none. Pinned so the discovery has to keep working. Same class as
+    #: `1ef491c`; found by a third signature over offender checks whose loop iterates a
+    #: FILE DISCOVERY and whose size nothing asserts, 2026-09-22.
+    _lab = len(sorted(LAB.glob("*.py")))
+    check(f"the lab has modules to police ({_lab})", _lab >= 30, str(_lab))
     check("no lab module outside the allowlist names the held-out corpus",
           not offenders, str(offenders))
     check("the allowlist names corpora.py, which owns the seal",

@@ -58,6 +58,13 @@ for path in sorted((ROOT / "nevertwice").glob("*.py")):
         # zero it is the only binding, and a package caller gets a second engine.
         if BARE.match(line):
             offenders.append(f"{path.name}:{i} {line.strip()}")
+#: A sweep that discovers nothing reports no offenders, which reads exactly like a
+#: sweep that found none. Pinned so the discovery has to keep working. Same class as
+#: `1ef491c`; found by a third signature over offender checks whose loop iterates a
+#: FILE DISCOVERY and whose size nothing asserts, 2026-09-22.
+_swept = len([p for p in sorted((ROOT / "nevertwice").glob("*.py"))
+              if p.name not in ("memory_hook.py", "_engine.py")])
+check(f"the sweep sees the package's modules ({_swept})", _swept >= 55, str(_swept))
 check("every sibling import is the try-relative-then-flat pair", not offenders,
       "; ".join(offenders[:6]) + (f" (+{len(offenders) - 6} more)" if len(offenders) > 6 else ""))
 check("and the pair is actually used somewhere in the package",
