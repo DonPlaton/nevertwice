@@ -82,8 +82,21 @@ mod_probe = ("import sys;sys.path.insert(0, r'%s');import memory_hook;"
              "print(len([k for k in sys.modules if '.' not in k]))" % PKG)
 r2 = subprocess.run([sys.executable, "-S", "-c", mod_probe], capture_output=True, text=True)
 count = int((r2.stdout or "0").strip() or 0)
-print(f"       top-level modules after importing the engine: {count}")
-check("the engine imports no more top-level modules than it did", 0 < count <= 63,
+#: Counted as what the ENGINE adds, not as the total, because the total is a property of the
+#: interpreter as much as of the code: the same import reads 63 here on 3.14 and 65 on the CI
+#: runner's 3.10, where the standard library starts with a different set. A ceiling on the total
+#: therefore fails on a version rather than on an import, which is what it did on every 3.10 job
+#: of CI's first matrix run (2026-09-22). The baseline is measured in the same interpreter, in
+#: the same `-S` mode, one line above - so the number compared is the engine's own.
+r0 = subprocess.run([sys.executable, "-S", "-c",
+                     "import sys;print(len([k for k in sys.modules if '.' not in k]))"],
+                    capture_output=True, text=True)
+baseline = int((r0.stdout or "0").strip() or 0)
+added = count - baseline
+print(f"       top-level modules: {baseline} in a bare interpreter, {count} after the engine, "
+      f"so the engine adds {added}")
+check("the baseline itself was measured, not assumed", baseline > 0, str(baseline))
+check("the engine imports no more top-level modules than it did", 0 < added <= 43,
       f"{count} - if this grew, name the new import and decide whether the hot path needs it")
 
 print("# gate 3: nothing the deferred imports serve has stopped working")

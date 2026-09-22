@@ -435,10 +435,19 @@ def test_the_sandbox_pins_the_transcript_root_too() -> None:
     check("and it is not the machine's real transcript root",
           not sandbox_guard._inside(_m.PROJECTS_ROOT, Path.home() / ".claude" / "projects"),
           str(_m.PROJECTS_ROOT))
+    #: Compared with the engine's OWN normaliser, because the list is built with it. The check
+    #: used `sandbox_guard._norm`, which calls `Path.resolve()` and therefore follows symlinks,
+    #: while `_engine_config._norm_path` does not - so on macOS, where `/var` is a symlink to
+    #: `/private/var`, the same directory read as `/private/var/folders/...` on one side and
+    #: `/var/folders/...` on the other and the check failed on every macOS job of CI's first
+    #: matrix run (2026-09-22). Two normalisers compared to each other measure the normalisers,
+    #: not the property. The resolved form is checked too, so a real mismatch still fails.
+    _root_norm = _m._norm_path(str(_m.PROJECTS_ROOT))
+    _prefixes = [_m._norm_path(str(x)) for x in _m._EXCLUDE_PREFIXES]
+    _resolved = {sandbox_guard._norm(x) for x in _m._EXCLUDE_PREFIXES}
     check("the exclusion prefixes were rebuilt from the pinned root",
-          sandbox_guard._norm(_m.PROJECTS_ROOT) in [sandbox_guard._norm(x)
-                                                    for x in _m._EXCLUDE_PREFIXES],
-          str(_m._EXCLUDE_PREFIXES[-3:]))
+          _root_norm in _prefixes or sandbox_guard._norm(_m.PROJECTS_ROOT) in _resolved,
+          f"{_root_norm} not among {_prefixes[-3:]}")
     check("so an empty sandbox has no backlog", _m.has_unprocessed({}) is False,
           str(_m.PROJECTS_ROOT))
 
