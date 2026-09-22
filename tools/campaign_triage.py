@@ -92,6 +92,18 @@ SPREAD = {
 #: (found by the auditing session, 2026-09-22).
 SPREAD_MEASURED_ON = "research/supersession_bench.py"
 
+#: WHEN, in the only sense that moves these numbers: the extractor's sampling temperature at the
+#: time of those runs, and how many runs there were. Written as VALUES rather than prose because
+#: a mode recorded in a comment is a property written down and not enforced - which is the defect
+#: this whole file exists to sort. `tests/_test_campaign_triage.py` reads the stand's own pin out
+#: of its source and requires the flag below to agree with the comparison.
+SPREAD_MEASURED_AT = {"extract_temp": "0.2", "runs": 5}
+
+#: True while the table was measured in a mode the stand no longer runs in, so every number is an
+#: upper bound on today's resolution rather than today's resolution. Flipping this by hand without
+#: re-measuring reddens the suite, and so does re-measuring without flipping it.
+SPREAD_IS_UPPER_BOUND = True
+
 #: The six doors through which a stand reaches the extraction model. Asked of the source, not
 #: kept as a list of stand names, because such a list goes stale the first time a stand grows a
 #: call (`tests/_test_stands_pin_the_sampler.py:110` keeps the same six).

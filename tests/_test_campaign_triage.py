@@ -35,6 +35,7 @@ gate that refuses on a sign it never checked is the failure this repository spen
 """
 import _env_guard  # noqa: F401
 import json
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -145,6 +146,34 @@ check("a corpus generator that interpolates the URL is seen as calling a model",
 check("and it is not mistaken for a stand that writes notes", not _door)
 check("a path that merely starts the same way is not an endpoint",
       not T.MODEL_CALL.search("/api/chatter"))
+
+
+print("")
+print("- the spread table names the MODE it was measured in, and the mode is checked -")
+#: `SPREAD_MEASURED_ON` was added when a property of a named stand had quietly become a property
+#: of a field. One level down, a property of a stand IN A MODE had become a property of the stand:
+#: every number in the table was sampled at extractor temperature 0.2, `f405891` pinned the stand
+#: to 0, and the same field then ranged 1.30 over three runs instead of 26.4 over five. The table
+#: plans a campaign, so the mode is a VALUE here and the staleness is derived from the stand's own
+#: source rather than remembered. Found 2026-09-22 by using the table on a gate margin.
+_stand = (T.ROOT / T.SPREAD_MEASURED_ON).read_text(encoding="utf-8", errors="replace")
+_pin = re.search(r'NEVERTWICE_EXTRACT_TEMP"\]\s*=\s*"([^"]+)"', _stand)
+check("the stand pins an extraction temperature in its own source", bool(_pin),
+      T.SPREAD_MEASURED_ON)
+check("the table says which temperature and how many runs it was measured over",
+      T.SPREAD_MEASURED_AT.get("extract_temp") and T.SPREAD_MEASURED_AT.get("runs"),
+      str(T.SPREAD_MEASURED_AT))
+_stale = bool(_pin) and _pin.group(1) != T.SPREAD_MEASURED_AT["extract_temp"]
+check(f"and the upper-bound flag agrees with the comparison "
+      f"(stand pins {_pin.group(1) if _pin else '?'}, table measured at "
+      f"{T.SPREAD_MEASURED_AT['extract_temp']})",
+      T.SPREAD_IS_UPPER_BOUND == _stale,
+      f"flag={T.SPREAD_IS_UPPER_BOUND} but stale={_stale}")
+#: The rule bites: were the table re-measured at the stand's current pin, the flag would have to
+#: come down with it, and claiming either half alone is refused.
+check("re-measuring at the stand's pin without lowering the flag would be refused",
+      not (_pin and _pin.group(1) == T.SPREAD_MEASURED_AT["extract_temp"]
+           and T.SPREAD_IS_UPPER_BOUND))
 
 
 print(f"\n{'ALL OK' if not FAILS else f'{FAILS} FAILED'}")
