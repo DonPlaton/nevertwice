@@ -474,7 +474,17 @@ def _ruff_diagnostics(path: Path, rule: str, config: str) -> list[tuple[int, int
     # than split on ':' because on Windows the path starts `C:\`, and splitting gives
     # the drive letter -- a bug that returns an empty result and therefore an agreement
     # that passes by default.
-    pattern = re.compile(r":(\d+):\d+:\s+\w+\[" + re.escape(rule) + r"\]")
+    #: The line is matched on its POSITION and its value, not on the rule code, because ruff
+    #: stopped printing the code: 0.15.16 emits
+    #:     cx.py:1:5: error[PLR0911] Too many return statements (3 > 0)
+    #: and 0.15.22, which the research job installed, emits
+    #:     /tmp/x.py:1:5: too-many-return-statements: Too many return statements (3 > 0)
+    #: - the long name instead of the code, inside a patch range. The parser asked for the
+    #: code, found none, returned nothing, and the caller read agreement; it took three
+    #: rounds of teaching the report to speak before the runner said this much.
+    #: Dropping the code costs nothing: the run carries `--select <rule>`, so every diagnostic
+    #: line IS that rule, and matching it again only asks ruff to spell it the way we expect.
+    pattern = re.compile(r":(\d+):\d+:\s")
     out: list[tuple[int, int]] = []
     for line in proc.stdout.splitlines():
         match = pattern.search(line)
