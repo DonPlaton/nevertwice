@@ -589,7 +589,7 @@ def _harvest_literals(source: str, near: str, want: int, exclude: set) -> list[s
     return out
 
 
-_PREAMBLE_RE = re.compile(r"\A(?:(?:Working directory|Trigger):[^\n]*\n)+\n*")
+_PREAMBLE_RE = _lazy_re(r"\A(?:(?:Working directory|Trigger):[^\n]*\n)+\n*")
 
 
 def _facts_source(transcript: str) -> str:

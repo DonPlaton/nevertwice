@@ -182,7 +182,7 @@ def _salience_mult(stem: str, rec: dict) -> float:
 
 # letter-runs ≥3, plus pure-digit runs ≥3 so number queries (RTX 5090, port 8080,
 # CVE / error codes, years) are recallable - bare digits were dropped before (round 4)
-_TOKEN_RE = re.compile(r"[^\W\d_]{3,}|\d{3,}", re.UNICODE)
+_TOKEN_RE = _lazy_re(r"[^\W\d_]{3,}|\d{3,}", re.UNICODE)
 
 # Stop words out and stems in, on both sides of the lexical signal (BM25 here, FTS5 in the
 # SQLite index). Measured 2026-09-06 before it shipped (research/LEXICAL_MORPHOLOGY.md): on
@@ -211,11 +211,11 @@ def _tokens(s: str) -> set:
     return set(_token_list(s))
 
 
-_PATH_REF_RE = re.compile(r"`([^`\n]+?\.[A-Za-z0-9]{1,8})`")
+_PATH_REF_RE = _lazy_re(r"`([^`\n]+?\.[A-Za-z0-9]{1,8})`")
 # bare path-like token: at least one separator AND a file extension. Lets the
 # staleness check see paths NOT wrapped in backticks - most notes don't wrap
 # them, so the round-1 backtick-only matcher almost never fired (audit M-b).
-_BARE_PATH_RE = re.compile(
+_BARE_PATH_RE = _lazy_re(
     r"(?<![\w/\\.])([A-Za-z0-9_.\-]+(?:[/\\][A-Za-z0-9_.\-]+)+\.[A-Za-z0-9]{1,8})")
 
 

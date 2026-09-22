@@ -306,7 +306,7 @@ def _norm_tags(tags) -> list:
     return out
 
 
-_ENTITY_BAD_RE = re.compile(r"[^\w\s-]", re.UNICODE)
+_ENTITY_BAD_RE = _lazy_re(r"[^\w\s-]", re.UNICODE)
 
 
 def _norm_entities(raw, cap: int = 8) -> list:
@@ -416,7 +416,7 @@ def _is_relevant(flag) -> bool:
     return True if flag is None else bool(flag)
 
 
-_NOISE_UPDATE_RE = re.compile(
+_NOISE_UPDATE_RE = _lazy_re(
     r"не\s+содержит\s+полезн|только\s+метаданны|(?<![\w-])тривиальн|нет\s+полезн|"
     r"не\s+предоставил|пуст(ой|ая)\s+(диалог|сесси)|только\s+(что\s+)?стартова|"
     r"no\s+useful|nothing\s+to\s+(extract|report)|(?<![\w-])trivial|session\s+just\s+started|"
@@ -443,7 +443,7 @@ def _is_noise_update(text: str) -> bool:
 # a thin wrapper", "you are now able to batch" - and silently dropped legitimate
 # knowledge, which is worse than no guard. These patterns fire only on a genuine
 # override attempt while leaving normal lessons untouched.
-_INJECTION_RE = re.compile(
+_INJECTION_RE = _lazy_re(
     # "ignore/disregard … (previous/all/your/the/above) instructions|prompts|rules|context"
     r"\b(?:ignore|disregard|forget|bypass|override)\s+"
     # up to four single-word modifiers between verb and object. Bounded {0,4} of
@@ -492,7 +492,7 @@ def _looks_injected(text: str) -> bool:
 # a cautionary lesson ("never disable TLS verification", "don't chmod 777") is the legitimate,
 # common shape on a real store, so a danger token preceded by a warning marker is NOT flagged -
 # only a bare imperative to perform the harm is. Verified 0/328 false-positive on the live vault.
-_DANGER_RE = re.compile(
+_DANGER_RE = _lazy_re(
     # secret exfiltration: a transfer verb near a secret object
     r"\b(?:exfiltrat\w+|leak|upload|e-?mail|post|send|curl|wget|scp|push)\b[^.\n]{0,60}?"
     r"(?:\.env\b|\b(?:secrets?|credentials?|api[ _-]?keys?|passwords?|private[ _-]?keys?|"
@@ -508,7 +508,7 @@ _DANGER_RE = re.compile(
 # warning markers that flip an imperative into a cautionary lesson (EN + RU). Matched ANYWHERE in
 # the preceding window (not anchored to end-of-window): "do not blindly curl secrets" is a warning,
 # not an instruction - an intervening word must not defeat the gate (audit, W8 fix).
-_NEGATION_RE = re.compile(
+_NEGATION_RE = _lazy_re(
     r"(?:do\s*n['o]?t|does\s*n['o]?t|did\s*n['o]?t|don'?t|\bnever\b|\bavoid\b|\bwithout\b|"
     r"instead\s+of|rather\s+than|\bstop\b|\bprevent\b|\bне\b|\bнет\b|\bбез\b|вместо|нельзя|избегай)",
     re.IGNORECASE)
@@ -516,7 +516,7 @@ _NEGATION_RE = re.compile(
 # between the negation and the danger token flips the polarity back to an imperative, so the
 # danger STANDS. Without this guard the 36-char negation window is a trivial one-word bypass
 # (audit 2026-06-18, CRIT): prepending "Don't forget to " neutralised the entire W8 gate.
-_NEG_FLIP_RE = re.compile(
+_NEG_FLIP_RE = _lazy_re(
     r"\b(?:forget|hesitate|fail|neglect|avoid|delay|wait|hold\s+back|put\s+off|shy\s+away)\b"
     r"|забуд\w*|постесня\w*|стесня\w*|избега\w*",
     re.IGNORECASE)
@@ -597,7 +597,7 @@ WRITE_DEDUP_PREFILTER = env_float("NEVERTWICE_WRITE_DEDUP_PREFILTER", 0.70)
 # (same meaning, different words) while high word overlap signals template-similar but
 # distinct notes. Weights are baked so the production gate stays stdlib-only; retraining
 # lives in the research script (see research/TWIN_GATE.md).
-_TWIN_WORD_RE = re.compile(r"[a-zа-я0-9]{3,}")
+_TWIN_WORD_RE = _lazy_re(r"[a-zа-я0-9]{3,}")
 
 
 _TWIN_BAKED_SPACE = "bge-m3"
@@ -832,7 +832,7 @@ def _twin_probability(cos_sim: float, title_a: str, desc_a: str, ents_a,
     return 1.0 / (1.0 + math.exp(-max(-_TWIN_LOGIT_CLAMP, min(_TWIN_LOGIT_CLAMP, zsum))))
 
 
-_YAML_NEEDS_QUOTE = re.compile(r'[:#&*!|>\'"%@`{}\[\],]|^\s|\s$')
+_YAML_NEEDS_QUOTE = _lazy_re(r'[:#&*!|>\'"%@`{}\[\],]|^\s|\s$')
 
 
 def _yaml_scalar(v) -> str:

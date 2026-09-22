@@ -60,6 +60,45 @@ def env_int(name: str, default: int) -> int:
         return default
 
 
+class _lazy_re:
+    """A compiled pattern that compiles itself the first time it is used.
+
+    The engine defines two dozen module-level patterns, and compiling all of them costs 3.64 ms
+    of a 13.07 ms cold import - about a quarter of the body's load. PreToolUse runs before every
+    Edit, Write and Bash the agent makes, and it forces **none** of them: the guard path matches
+    through `re.search(pattern_string, line)`, which goes to `re`'s own internal cache, and the
+    two dozen here belong to session start, session end and the write path. They were compiled on
+    every tool call and used on none.
+
+    A proxy rather than a `functools.cached_property` or a module-level `__getattr__`: the
+    patterns are read as plain globals from inside functions, and neither of those mechanisms is
+    consulted for a global lookup. `__getattr__` here forwards everything - `search`, `sub`,
+    `findall`, `finditer`, `match`, and any attribute a future caller reaches for - so the proxy
+    cannot fall behind `re.Pattern`'s surface the way a hand-listed set of methods would.
+
+    What it is not safe for: `isinstance(x, re.Pattern)`, and passing a pattern somewhere that
+    type-checks it. Neither occurs in this repository - checked across the engine and the suites
+    - and `tests/_test_hot_path_imports.py` is where that would be noticed if it ever did.
+    """
+
+    __slots__ = ("_pattern", "_flags", "_compiled")
+
+    def __init__(self, pattern: str, flags: int = 0):
+        self._pattern = pattern
+        self._flags = flags
+        self._compiled = None
+
+    def __getattr__(self, name):
+        rx = self._compiled
+        if rx is None:
+            rx = self._compiled = re.compile(self._pattern, self._flags)
+        return getattr(rx, name)
+
+    def __repr__(self):
+        state = "compiled" if self._compiled is not None else "not yet compiled"
+        return f"<lazy pattern {self._pattern[:40]!r} ({state})>"
+
+
 def env_float(name: str, default: float) -> float:
     """float twin of env_int - same rationale. NaN/Inf parse without raising, so they are
     rejected explicitly: a NaN weight silently poisons every downstream comparison (NaN loses

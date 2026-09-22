@@ -128,14 +128,14 @@ def _mark_contested(old_path: Path, new_stem: str) -> bool:
 
 #: Value-shaped tokens: numbers with or without a unit, versions. The shape a replacement changes
 #: ("30 seconds" -> "5 seconds", "PostgreSQL 14" -> "16") and the shape an extractor hallucinates.
-_VALUE_RE = re.compile(
+_VALUE_RE = _lazy_re(
     r"[~+\-]?\b\d+(?:[.,]\d+)*\s?(?:MB|GB|KB|TB|ms|s|GHz|MHz|px|%|seconds?|minutes?|hours?|days?)?\b"
     r"|\bv\d+(?:\.\d+)*\b", re.I)
 
 #: F14 (xhigh review): the context a BARE integer (no unit, no version prefix) needs to count as
 #: a value at all - port/PR/#/version, immediately before it. Without one it is far more likely an
 #: ISO-date piece, a year or a plain count than a value a replacement actually changed.
-_BARE_VALUE_CTX_RE = re.compile(r"(?:\bport|\bpr|\bversion)\s*#?\s*$|#\s*$", re.I)
+_BARE_VALUE_CTX_RE = _lazy_re(r"(?:\bport|\bpr|\bversion)\s*#?\s*$|#\s*$", re.I)
 
 
 def _bare_int_has_value_context(statement: str, pos: int) -> bool:
@@ -174,7 +174,7 @@ def _unverified_values(desc: str) -> list[str]:
 
 #: A bare hex identifier (a commit sha, a build id) - the "identifier" shape rule 2 (F3) also
 #: accepts as proof, alongside a value-shaped literal from `_VALUE_RE`.
-_IDENTIFIER_RE = re.compile(r"\b[0-9a-f]{7,40}\b", re.I)
+_IDENTIFIER_RE = _lazy_re(r"\b[0-9a-f]{7,40}\b", re.I)
 
 
 def _has_value_literal(facts: set) -> bool:
@@ -322,7 +322,7 @@ def _same_fact_verdict(old_title: str, old_desc: str, new_desc: str, project: st
 #: leaves the list as a separate hit. Nothing is hidden and nothing is demoted below k on a
 #: presumption - both facts are served and the agent sees which is newer. `as_of` sees both files.
 EARLIER_MAX_CHARS = env_int("NEVERTWICE_EARLIER_MAX_CHARS", 100)
-_SIB_SUFFIX_RE = re.compile(r"-[2-9]$")
+_SIB_SUFFIX_RE = _lazy_re(r"-[2-9]$")
 
 
 def _sibling_key(stem: str):

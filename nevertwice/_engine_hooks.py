@@ -23,7 +23,7 @@
 # dedup, capped) so it stays high-signal and cheap. State lives per session under
 # VAULT/.prompt_recall/ (gitignored) because each prompt is a fresh hook process.
 
-_TRIVIAL_PROMPT_RE = re.compile(
+_TRIVIAL_PROMPT_RE = _lazy_re(
     r"^(да|нет|ок|ага|угу|спасибо|спс|ладно|продолжай|продолжи|дальше|готово|стоп|"
     r"хватит|ok|okay|yes|no|yep|nope|thanks|thx|sure|go|go\s+on|continue|next|"
     r"stop|done|y|n|k)[!.…\s]*$", re.IGNORECASE)

@@ -434,13 +434,13 @@ def _transcript_grew(entry, path) -> bool:
 # Ollama or any written note, so a pasted key can't leak into the (Obsidian-
 # Sync'd) vault (audit C2). Not full DLP - high-confidence patterns only.
 # key=value / key: value form - redact the value, keep the key (group sub)
-_SECRET_KV = re.compile(
+_SECRET_KV = _lazy_re(
     r'(?i)(api[_-]?key|secret[_-]?access[_-]?key|access[_-]?key[_-]?id|'
     r'secret[_-]?key|private[_-]?key|client[_-]?secret|secret|password|'
     r'passwd|access[_-]?token|token)'
     r'(\s*["\']?\s*[:=]\s*["\']?)([^\s"\',]{8,})')
 # connection string - redact only the password between user: and @, keep host/db
-_SECRET_CONN = re.compile(
+_SECRET_CONN = _lazy_re(
     r'(?i)((?:postgres(?:ql)?|mysql|mongodb(?:\+srv)?|redis|amqps?)://[^:\s/@]+:)'
     r'([^@\s/]{3,})(@)')
 # full-redact, high-confidence token shapes (no entropy heuristics → no false
@@ -478,7 +478,7 @@ def redact_secrets(text: str) -> str:
     return out
 
 
-_SYSREM_RE = re.compile(r"<system-reminder>.*?</system-reminder>", re.S)
+_SYSREM_RE = _lazy_re(r"<system-reminder>.*?</system-reminder>", re.S)
 
 
 def strip_injected_boilerplate(body: str, min_len: int = 200, min_repeats: int = 3) -> str:
@@ -1110,7 +1110,7 @@ def _embed_key() -> str:
     return os.environ.get(_EMBED_KEY_ENV.get(EMBED_PROVIDER, ""), "").strip()
 
 
-_SAFE_MODEL_RE = re.compile(r"[^A-Za-z0-9._-]")
+_SAFE_MODEL_RE = _lazy_re(r"[^A-Za-z0-9._-]")
 
 
 def _safe_model_seg(model: str) -> str:
@@ -1121,11 +1121,11 @@ def _safe_model_seg(model: str) -> str:
     return _SAFE_MODEL_RE.sub("", model or "")
 
 
-_BEARER_RE = re.compile(r"(?i)bearer\s+[A-Za-z0-9._\-]+")
+_BEARER_RE = _lazy_re(r"(?i)bearer\s+[A-Za-z0-9._\-]+")
 # Provider key headers/fields a hostile or misconfigured endpoint could echo back into
 # its error body (Gemini uses x-goog-api-key, OpenAI-compat hosts sometimes reflect an
 # api_key/api-key field). Launch-round security pass 2026-06-20.
-_KEYHDR_RE = re.compile(r"(?i)(x-goog-api-key|api[-_]?key)[\"'\s:=]+[A-Za-z0-9._\-]+")
+_KEYHDR_RE = _lazy_re(r"(?i)(x-goog-api-key|api[-_]?key)[\"'\s:=]+[A-Za-z0-9._\-]+")
 
 
 def _scrub_for_log(s: str) -> str:

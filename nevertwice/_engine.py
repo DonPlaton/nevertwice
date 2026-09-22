@@ -27,11 +27,20 @@ bytecode.
 
 Doing the same thing eight times does not stay free. Measured paired and alternating on
 2026-09-22, monolith against parts, 25 rounds each: **+4.47 ms on the minimum, +6.00 ms on the
-median** of a whole PreToolUse. The cost is not the code - `exec` of the body is 0.50 ms against
-0.68 ms for the eight pieces - it is eight `spec_from_file_location` + `get_code` round trips,
+median** of a whole PreToolUse. What the split ADDED was not the code - re-running the body cost
+0.50 ms against 0.68 ms for the eight pieces, measured warm in one process - it was eight
+`spec_from_file_location` + `get_code` round trips,
 each with its own stats, its own pyc header validation and its own unmarshal. Part 1's gate is
 that PreToolUse does not grow, and a refactor that spends five milliseconds of every tool call
 on file bookkeeping fails it.
+
+That "0.50 ms" is a warm re-exec and it should not be read as what running the body costs. The
+first exec in a fresh process is 10.32 ms, of which the module-level `re.compile` calls are
+3.64 ms; a second exec in the same process is 2.22 ms because `re` has cached the patterns, and
+7.31 ms again after `re.purge()`. The sentence above is about what the SPLIT added, not about
+what the body costs - and reading it the other way is what would stop the next person looking
+where several milliseconds actually are. They are in the patterns, and `_lazy_re` in
+`_engine_config.py` is where that was taken.
 
 So the eight code objects are cached as one marshalled tuple, validated the way CPython
 validates a `.pyc` - source size and mtime, per part, all eight or none. The hot path is then

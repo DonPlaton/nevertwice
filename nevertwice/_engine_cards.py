@@ -104,7 +104,7 @@ def _read_frontmatter_file(p: Path) -> dict:
 #: `**Project:**`, `**Date:**`, the legacy `**Как избежать:**`. A statement that genuinely opens
 #: `**Always:** ...` is still excluded, which is the narrow price of not being able to tell it
 #: apart from a label.
-_STRUCTURAL_LEAD = re.compile(r"(?:\*\*[^*]{1,40}:\*\*)|[#\-_|]|\[\[")
+_STRUCTURAL_LEAD = _lazy_re(r"(?:\*\*[^*]{1,40}:\*\*)|[#\-_|]|\[\[")
 
 
 def _parse_note_body(lines) -> tuple[str, str, str]:
