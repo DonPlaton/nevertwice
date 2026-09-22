@@ -231,6 +231,15 @@ def test_every_amendment_answers_to_the_files_and_not_to_itself() -> None:
     check("each amendment starts where the previous one for that file ended", not broken,
           str(broken))
 
+    #: This one check reads every COMMITTED version of the seal, so it needs the repository's
+    #: history. A `git clone --depth 1` - what `actions/checkout` does by default - leaves one
+    #: commit, and the check then reports all 23 files as "invented" when nothing is wrong.
+    #: Measured on a real depth-1 clone of this branch (2026-09-22). CI now checks out with
+    #: `fetch-depth: 0`; this branch names the case instead of failing for want of data.
+    if subprocess.run(["git", "rev-parse", "--is-shallow-repository"], cwd=ROOT,
+                      capture_output=True, text=True).stdout.strip() == "true":
+        print("  skip   the first amendment's origin - shallow clone, the seal's history is absent")
+        return
     history = _seal_history()
     invented = [name for name, chain in sorted(chains.items())
                 if chain[0].get("from") not in _digests_available_to(chain[0], history)]

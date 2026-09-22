@@ -19,7 +19,16 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest]
         python-version: ["3.10", "3.12", "3.13", "3.14"]
     steps:
+      # fetch-depth: 0, because two suites read the repository's HISTORY rather than its files:
+      # `_test_claim_halflife.py` re-derives a published survival curve from the register's 160
+      # commits, and `_test_g3_deletion.py` verifies a seal against the digests a file really
+      # held. Under the default depth-1 checkout both fail for want of history, not for want of
+      # correctness - measured on a real `git clone --depth 1` of this branch: 2 failed, 204
+      # passed. This branch has never been pushed, so that would have been the FIRST CI run's
+      # result, red on all twelve matrix jobs.
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          fetch-depth: 0
       - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
         with:
           python-version: ${{ matrix.python-version }}

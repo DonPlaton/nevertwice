@@ -46,6 +46,21 @@ def check(name, cond, detail=""):
         FAILS += 1
 
 
+#: This suite reads the repository's HISTORY, not its files, so it cannot run in a clone that
+#: does not have one. A `git clone --depth 1` - which is what `actions/checkout` does by default -
+#: leaves exactly one commit, and every re-derivation below then fails for want of data rather
+#: than for want of correctness. Measured on a real depth-1 clone of this branch before the branch
+#: was ever pushed: the battery came back 2 failed, 204 passed, and both failures were this shape.
+#: CI is fixed properly (`fetch-depth: 0` in `.github/workflows/ci.yml`); this says so out loud
+#: for anyone else who clones shallow, rather than reporting a defect that is not there.
+SHALLOW = H._git("rev-parse", "--is-shallow-repository").strip() == "true"
+if SHALLOW:
+    print("\n- SKIPPED: this clone is shallow, and these checks read the register's history -")
+    print("  clone with full depth (or `git fetch --unshallow`) to run them;")
+    print("  CI does this with `fetch-depth: 0`, added after a depth-1 clone reddened them.")
+    print("\nALL OK (skipped: shallow clone)")
+    sys.exit(0)
+
 records, head = H.lifetimes()
 
 print("\n- the register's history is read, not assumed -")
@@ -98,6 +113,21 @@ if ART.exists():
         check(f"{days}-day row re-derives at {art['head'][:7]}: {s}/{n}",
               (s, n) == (was["survived"], was["observed"]),
               f"artifact says {was['survived']}/{was['observed']}")
+    #: The pin must be READ, or it is decoration. Measured by the auditing session: changing
+    #: `head` to a commit six back left the battery ALL OK (the curve had not moved over that
+    #: stretch), and replacing `manifest_sha256` with sixty-four zeros left it ALL OK too - the
+    #: field appeared in the tool that writes it and nowhere else. One line closes both: the
+    #: register AT the recorded commit must hash to the recorded digest, so a wrong `head` brings
+    #: a wrong manifest and a wrong digest with it. Third instance of this shape tonight, after
+    #: `code_sha` in a commit message and locomo's `embed_cache.sha256`.
+    import hashlib as _hashlib  # noqa: E402
+
+    blob = H._git("show", f"{art['head']}:{H.MANIFEST_PATH}")
+    digest_at_head = _hashlib.sha256(blob.encode("utf-8")).hexdigest() if blob else ""
+    check("the register at the recorded commit hashes to the recorded digest",
+          digest_at_head == art.get("manifest_sha256"),
+          f"at {art['head'][:7]}: {digest_at_head[:16]}..., recorded {str(art.get('manifest_sha256'))[:16]}...")
+
     horizon = dt.timedelta(days=art["survivors"]["horizon_days"])
     again = [cid for cid, r in at_head.items()
              if head_at - r["born"] >= horizon
