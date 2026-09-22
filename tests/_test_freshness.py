@@ -86,8 +86,19 @@ def test_the_closure_reaches_the_engine() -> None:
 def test_every_claim_declares_its_closure() -> None:
     print("\n- every claim names the files that produced it -")
     claims = MANIFEST["claims"]
-    missing = [c["id"] for c in claims if not c.get("produced_by")]
+    #: A DECLARED value is a decision - a gate written into a ledger before any run - and a
+    #: decision has no code closure to watch. `asof.gate.threshold` (0.80) carried the engine's
+    #: whole 46-file closure, so every engine edit withdrew it and a person re-typed "still 0.80"
+    #: at four campaigns running, recorded in its own note (2026-09-22). The escape is not free:
+    #: the two checks below are what it costs.
+    missing = [c["id"] for c in claims
+               if not c.get("produced_by") and not c.get("declaration")]
     check("no claim is missing produced_by", not missing, ", ".join(missing[:5]))
+    thin = [c["id"] for c in claims if c.get("declaration") and len(c["declaration"]) < 20]
+    check("a declared value says where it was decided", not thin, ", ".join(thin))
+    both = [c["id"] for c in claims if c.get("declaration") and c.get("produced_by")]
+    check("a declared value keeps no closure that could be watched instead",
+          not both, ", ".join(both))
 
     tracked = subprocess.run(["git", "-C", str(ROOT), "ls-files"],
                              capture_output=True, text=True)
@@ -111,6 +122,8 @@ def test_the_closure_is_current() -> None:
     drifted = []
     cache: dict[str, list[str]] = {}
     for claim in MANIFEST["claims"]:
+        if claim.get("declaration"):
+            continue                 # no stored closure to drift - see the check above
         command = claim["command"]
         if command not in cache:
             try:

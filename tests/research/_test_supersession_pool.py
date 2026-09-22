@@ -226,5 +226,87 @@ check("a repository-relative path loads (a run from any cwd, and every printed c
 check("the recorded path is repository-relative with forward slashes",
       by_rel["path"] == rel and by_abs["path"] == rel, f"{by_rel['path']!r} {by_abs['path']!r}")
 
+print("\n- two engine runs that shared one store are not two runs -")
+#: `sandbox_guard.isolate` makes one store per PROCESS, and the engine skips a session it has
+#: already processed - so a second pass inside one interpreter reads what the first wrote and
+#: judged. Measured on the explicit corpus with `--sleep` while `--runs 2` still looped in
+#: process: run 1 served 440.0 chars/query and run 2 served 387.5, which is run 1's own
+#: AFTER-SLEEP figure (2026-09-22). `--runs` now spawns a process per run; this is the check
+#: that notices if it ever stops.
+with tempfile.TemporaryDirectory() as tmp3:
+    same = "/tmp/nevertwice_supersession_same"
+    a = _write(tmp3, "a.json", dict(_blob({"nevertwice": _arm(engine_rows({"s0"}), 260.0)}),
+                                    store=same))
+    b = _write(tmp3, "b.json", dict(_blob({"nevertwice": _arm(engine_rows({"s1"}), 240.0)}),
+                                    store=same))
+    c = _write(tmp3, "c.json", dict(_blob({"nevertwice": _arm(engine_rows({"s1"}), 240.0)}),
+                                    store=same + "_other"))
+    try:
+        sb.pool([a, b])
+        check("pooling two runs from one store is refused", False, "pool returned")
+    except ValueError as e:
+        check("pooling two runs from one store is refused", True)
+        check("and the refusal says why, not just that", "not a repeat" in str(e), str(e)[:90])
+    try:
+        sb.pool([a, c])
+        check("two runs from different stores still pool", True)
+    except ValueError as e:
+        check("two runs from different stores still pool", False, str(e))
+    # Every committed artifact predates the field. `None` must not read as "the same store".
+    d = _write(tmp3, "d.json", _blob({"nevertwice": _arm(engine_rows({"s0"}), 260.0)}))
+    e2 = _write(tmp3, "e.json", _blob({"nevertwice": _arm(engine_rows({"s1"}), 240.0)}))
+    try:
+        sb.pool([d, e2])
+        check("files written before the field carry no store and pool as before", True)
+    except ValueError as e:
+        check("files written before the field carry no store and pool as before", False, str(e))
+
+print("\n- a repeat that ingested nothing is not a repeat -")
+#: Distinct stores and the work still not done - the shape the store check cannot see. Counted
+#: as the ACTION, because the obvious state-shaped proxy fails: in the auditing session's copy
+#: of the one-process bug BOTH runs reported `notes_written` 52, the second having inherited the
+#: first's notes and counted them honestly, while taking 1.4 s against 124.6 (2026-09-22).
+with tempfile.TemporaryDirectory() as tmp4:
+    def _run(store, ingested, not_stored, stale_ids):
+        arm = _arm(engine_rows(stale_ids), 250.0)
+        arm["sessions_ingested"], arm["sessions_not_stored"] = ingested, not_stored
+        arm["notes_written"] = 52          # identical in both, as it was in the real case
+        return dict(_blob({"nevertwice": arm}), store=store)
+
+    busy = _write(tmp4, "busy.json", _run("/tmp/one", 160, 0, {"s0"}))
+    idle = _write(tmp4, "idle.json", _run("/tmp/two", 0, 160, {"s1"}))
+    also = _write(tmp4, "also.json", _run("/tmp/three", 160, 0, {"s1"}))
+    mute1 = _write(tmp4, "mute1.json", _run("/tmp/four", 0, 0, {"s0"}))
+    mute2 = _write(tmp4, "mute2.json", _run("/tmp/five", 0, 0, {"s1"}))
+    try:
+        sb.pool([busy, idle])
+        check("a run that ingested nothing is refused even with its own store", False,
+              "pool returned")
+    except ValueError as e:
+        check("a run that ingested nothing is refused even with its own store", True)
+        check("the refusal names what was OBSERVED - offered and not accepted",
+              "offered [160]" in str(e) and "accepted none" in str(e), str(e)[:150])
+        #: And does NOT name a cause. `stored: False` is one bit for four endings of
+        #: `process_session` (already processed / cwd untracked / empty transcript / extraction
+        #: failed), and the reason never reaches the artifact. A message that says "already
+        #: processed" would point at the wrong thing exactly when the extractor is broken.
+        check("and attributes no cause, because the artifact does not carry one",
+              "already processed" not in str(e).split("one bit")[0], str(e)[:150])
+    check("the state-shaped proxy would NOT have caught it (this is why the count is the action)",
+          json.loads(busy.read_text(encoding="utf-8"))["arms"]["nevertwice"]["notes_written"]
+          == json.loads(idle.read_text(encoding="utf-8"))["arms"]["nevertwice"]["notes_written"])
+    try:
+        sb.pool([busy, also])
+        check("two runs that both ingested still pool", True)
+    except ValueError as e:
+        check("two runs that both ingested still pool", False, str(e))
+    try:
+        sb.pool([mute1, mute2])
+        check("every run ingesting nothing stays legal - that is extractor silence, not a bug",
+              True)
+    except ValueError as e:
+        check("every run ingesting nothing stays legal - that is extractor silence, not a bug",
+              False, str(e))
+
 print(f"\n{'ALL OK' if not FAILS else f'{FAILS} FAILED'}")
 sys.exit(1 if FAILS else 0)

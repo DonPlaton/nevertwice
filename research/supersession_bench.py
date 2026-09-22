@@ -47,6 +47,7 @@ import math
 import os
 import re
 import shutil
+import subprocess
 import sys
 import tempfile
 import time
@@ -68,6 +69,24 @@ EMBED_MODEL = os.environ.get("NEVERTWICE_EMBED_MODEL", "bge-m3")
 LLM = os.environ.get("SUPERSESSION_LLM", "qwen3-coder:30b")
 
 DATASET = HERE / "data" / "supersession_v1.json"
+
+#: Deterministic extraction, which this stand had never actually asked for. The engine's default
+#: is 0.2 - right for the live hook, wrong for a benchmark - and the stands that care pin it to 0.
+#: This one did not, so every number it has ever produced was sampled, and the artifact it writes
+#: said "the extraction model is not deterministic at temperature 0" about a run that was never at
+#: temperature 0.
+#:
+#: Measured before changing it, same prompt through this engine's own `generate_json`: at the 0.2
+#: default, back-to-back calls in one process differ every time (0 of 3 repeats identical, three
+#: distinct answers); at 0, every condition tried is identical - back to back, with an unrelated
+#: prompt in between, with a long unrelated prompt in between, and from a fresh interpreter (3 of
+#: 3, one answer). The run-to-run spread this stand is famous for is sampling, not the model.
+#:
+#: At module level rather than inside `run_nevertwice`, so that the artifact's
+#: `extract_temperature` is the truth for the file and not just for the arm that happened to set
+#: it: a `--arms naive` run recorded `null` while the value it would have used was 0.
+os.environ["NEVERTWICE_EXTRACT_TEMP"] = "0"
+
 
 #: The exact probe Mem0 2.0.19 was measured on (2026-08-30, polygon `mem0_eval/`), kept
 #: verbatim so this repository can reproduce that comparison rather than cite it. Five turns,
@@ -343,32 +362,42 @@ def run_nevertwice(cases: list[dict], k: int, sleep: bool = False) -> dict:
     os.environ["NEVERTWICE_CLOUD"] = "none"          # local only: nothing billed, nothing sent
     os.environ["NEVERTWICE_MODEL"] = LLM
     os.environ.setdefault("NEVERTWICE_EMBED_MODEL", EMBED_MODEL)
-    # Deterministic extraction, which this stand had never actually asked for. The engine's
-    # default is 0.2 - right for the live hook, wrong for a benchmark - and the three stands that
-    # care (`code_sessions_eval`, `facts_dilution_probe`, `silence_probe`) pin it to 0. This one
-    # did not, so every number it has ever produced was sampled, and the artifact it writes says
-    # "the extraction model is not deterministic at temperature 0" about a run that was never at
-    # temperature 0.
-    #
-    # Measured before changing it, same prompt through this engine's own `generate_json`:
-    # at the 0.2 default, back-to-back calls in one process differ every time (0 of 3 repeats
-    # identical, three distinct answers); at 0, every condition tried is identical - back to
-    # back, with an unrelated prompt in between, with a long unrelated prompt in between, and
-    # from a fresh interpreter (3 of 3, one answer). The run-to-run spread this stand is famous
-    # for is sampling, not the model.
-    os.environ["NEVERTWICE_EXTRACT_TEMP"] = "0"
     try:
         from nevertwice import api
     except Exception as e:                            # pragma: no cover - import-time only
         return {"blocked": f"nevertwice import failed ({type(e).__name__}: {e})"}
 
     rows, t0 = [], time.time()
+    #: What this pass DID, as opposed to what it found lying in the store. `capture_session`
+    #: returns `stored: False` whenever `process_session` did not write, and a repeat that
+    #: stored nothing has measured nothing - see `pool`, which refuses that. `notes_written`
+    #: cannot stand in for this: it counts the notes present when a case is scored, so an
+    #: inherited store reports the first run's work as the second run's.
+    #:
+    #: The second counter is named for what is OBSERVED, not for a cause. `stored: False` is one
+    #: bit standing for four different endings of `process_session` - already processed, cwd not
+    #: a tracked project, empty transcript, and extraction failed (four `return False` branches,
+    #: `_engine_cards.py` 870 / 882 / 913 / 952, against one `return True`). Only the first is
+    #: "skipped"; the last is a broken model, which is when a message pointing at the wrong cause
+    #: does the most harm. The reason does not reach this side: `run_log` is appended only on the
+    #: success path, so nothing carries it out (audit 2026-09-22 - reported, not fixed here,
+    #: because the reason would have to travel through `run_log`, which six places in four
+    #: files read and not one of them the same way: `api.py:688` reads it UNGUARDED and puts its
+    #: fields in `capture_session`'s public return, `ingest.py:599` and `process_now.py:137`
+    #: read it behind `if ok` and would never see a failure entry, and three `write_status`
+    #: calls take the whole list. That is a public-API change plus three status surfaces, and it
+    #: deserves its own commit).
+    ingested = not_stored = 0
     for i, case in enumerate(cases):
         project = f"sup{i:03d}"
         try:
             for j, session in enumerate(case["sessions"]):
-                api.capture_session("\n".join(session), project=project,
-                                    session_id=f"{project}-s{j}", trigger="ingest")
+                r = api.capture_session("\n".join(session), project=project,
+                                        session_id=f"{project}-s{j}", trigger="ingest")
+                if isinstance(r, dict) and r.get("stored"):
+                    ingested += 1
+                else:
+                    not_stored += 1
         except Exception as e:
             rows.append({**_blank(case), "error": f"{type(e).__name__}: {e}"})
             continue
@@ -378,6 +407,7 @@ def run_nevertwice(cases: list[dict], k: int, sleep: bool = False) -> dict:
         print(f"  [{i + 1}/{len(cases)}] {case['id']}  hits={len(hits)}"
               f"  stale={rows[-1]['stale_returned']}@{rows[-1]['stale_rank']}", flush=True)
     out = {"rows": rows, **score(rows), "seconds": round(time.time() - t0, 1),
+           "sessions_ingested": ingested, "sessions_not_stored": not_stored,
            "config": f"ollama {LLM} + {EMBED_MODEL}, k={k}",
            "store_bytes": store_bytes()}
     if sleep:
@@ -708,6 +738,7 @@ def pool(engine_files: list[Path], other_files: list[Path] | None = None) -> dic
     a silent choice.
     """
     runs: list[dict] = []
+    engine_stores: list[str | None] = []
     after_runs: list[dict] = []
     other_runs: dict[str, list[dict]] = {}
     meta: dict | None = None
@@ -719,6 +750,7 @@ def pool(engine_files: list[Path], other_files: list[Path] | None = None) -> dic
         if not arm or arm.get("blocked"):
             raise ValueError(f"{f}: no {ENGINE_ARM} arm to pool")
         runs.append(arm)
+        engine_stores.append(blob.get("store"))
         after = blob["arms"].get(f"{ENGINE_ARM}_after_sleep")     # K8: the second reading, when present
         if after and not after.get("blocked"):
             after_runs.append(after)
@@ -739,6 +771,32 @@ def pool(engine_files: list[Path], other_files: list[Path] | None = None) -> dic
             other_runs.setdefault(name, []).append(res)
     if len(shas) != 1:
         raise ValueError(f"result files come from different datasets: {sorted(shas)}")
+    #: Two engine runs that wrote into ONE store are not two runs of the same commit: the second
+    #: reads what the first wrote and judged, and the engine skips a session it has already
+    #: processed. Measured on the explicit corpus with `--sleep` before `--runs` spawned a
+    #: process per run: run 1 served 440.0 chars/query and run 2 served 387.5 - which is run 1's
+    #: own AFTER-SLEEP figure (2026-09-22). Files written before this field existed carry no
+    #: store and are pooled as before; `None` is not evidence of sharing.
+    stores = [s for s in engine_stores if s]
+    if len(stores) != len(set(stores)):
+        raise ValueError(
+            "two engine runs share one sandbox store, so the later ones read what the earlier "
+            f"ones wrote - that is not a repeat of the same commit: {sorted(set(stores))}")
+    #: The same failure wearing different store paths: distinct sandboxes and the work still
+    #: not done. Counted as the ACTION - sessions this pass actually ingested - because the
+    #: obvious state-shaped proxy does not work: in the auditing session's copy of the
+    #: one-process bug BOTH runs reported `notes_written` 52, the second having inherited the
+    #: first's notes and counted them honestly (2026-09-22). Runs written before this field
+    #: exists report `None` and are pooled as before.
+    acted = [r.get("sessions_ingested") for r in runs]
+    if any(a for a in acted) and any(a == 0 for a in acted):
+        offered = [r.get("sessions_ingested", 0) + (r.get("sessions_not_stored") or 0)
+                   for r in runs if r.get("sessions_ingested") == 0]
+        raise ValueError(
+            "an engine run stored nothing while another did - that is not a repeat of the same "
+            f"commit: sessions_ingested {acted}; the idle run(s) were offered {offered} "
+            "session(s) and accepted none. The cause is not in the artifact: the engine returns "
+            "one bit for four endings, and only one of them is 'already processed'.")
     assert meta is not None
     others: dict[str, dict] = {name: pool_other_arm(rs) for name, rs in other_runs.items()}
 
@@ -900,6 +958,11 @@ def _one_run(data: dict, cases: list[dict], args, arm_names: list[str]) -> dict:
     `--pool` reads. Split out of `main` so `--runs N` can call it N times."""
     out = {"dataset": {k: data[k] for k in ("name", "sha256", "path")},
            "n_cases": len(cases), "k": args.k, "llm": LLM, "embedder": EMBED_MODEL,
+           # Which sandbox this pass wrote into. `pool` refuses two engine runs that share one,
+           # because a second pass over a store the first already filled is not a repeat - see
+           # the `--runs` branch in `main` for the measurement that made that concrete.
+           "store": str(sandbox_guard.store()),
+           "extract_temperature": os.environ.get("NEVERTWICE_EXTRACT_TEMP"),
            "arms": {}}
     for name in arm_names:
         fn = ARMS.get(name)
@@ -1012,9 +1075,17 @@ def main() -> int:
         return 2
 
     if args.runs > 1:
-        # The engine arm repeats; the other arms do not. Only the engine arm goes through the
-        # extractor, and only the extractor moves between runs of one commit - a second `naive`
-        # or `mem0` pass would cost the same wall clock and produce the same rows. It also
+        # A SUBPROCESS per run, not a loop in this one. `sandbox_guard.isolate` makes one store
+        # per PROCESS, at import, and the engine skips a session it has already processed - so an
+        # in-process second pass reads a store the first pass has already written and judged, and
+        # is not a repeat of the same commit at all. Measured before this was fixed, explicit
+        # corpus with `--sleep`: run 1 served 440.0 chars/query and run 2 served 387.5, which is
+        # exactly run 1's AFTER-SLEEP figure - the second run had inherited the first run's
+        # adjudicated store (2026-09-22). `--pool a.json b.json` never had this problem because
+        # its two files come from two invocations, and that is what this flag has to reproduce.
+        #
+        # The engine arm repeats; the other arms run once, in run 1. Only the engine arm goes
+        # through the extractor, and only the extractor moves between runs of one commit. It also
         # removes an ambiguity in `pool`, which keeps the FIRST file's other arms and silently
         # drops the rest: with one run of each there is nothing to drop.
         if not args.out:
@@ -1022,14 +1093,25 @@ def main() -> int:
             return 2
         stem = Path(args.out)
         stem.parent.mkdir(parents=True, exist_ok=True)
+        base = [sys.executable, str(Path(__file__).resolve()),
+                "--dataset", args.dataset, "--k", str(args.k)]
+        if args.limit:
+            base += ["--limit", str(args.limit)]
+        if args.sleep:
+            base += ["--sleep"]
+        if args.probe:
+            base += ["--probe"]
         paths = []
         for i in range(1, args.runs + 1):
             names = arm_names if i == 1 else [a for a in arm_names if a == ENGINE_ARM]
-            print(f"=== run {i} of {args.runs} ({', '.join(names)}) ===")
             q = stem.with_name(f"{stem.stem}.run{i}{stem.suffix or '.json'}")
-            q.write_text(json.dumps(_one_run(data, cases, args, names), indent=1,
-                                    ensure_ascii=False), encoding="utf-8", newline="\n")
-            print("wrote", q)
+            print(f"=== run {i} of {args.runs} ({', '.join(names)}), fresh process ===",
+                  flush=True)
+            rc = subprocess.run(base + ["--arms", ",".join(names), "--out", str(q)],
+                                cwd=str(Path(__file__).resolve().parent.parent)).returncode
+            if rc != 0 or not q.exists():
+                print(f"run {i} failed (exit {rc}); nothing pooled")
+                return 2
             paths.append(q)
         try:
             res = pool(paths)

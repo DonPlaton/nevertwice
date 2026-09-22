@@ -110,9 +110,17 @@ def test_schema_is_complete() -> None:
     check("claims are only cited in documents the manifest covers", not unscoped,
           ", ".join(unscoped))
 
-    missing_produced_by = [c["id"] for c in claims if not c.get("produced_by")]
+    missing_produced_by = [c["id"] for c in claims
+                           if not c.get("produced_by") and not c.get("declaration")]
     check("every claim names the source files that produced it", not missing_produced_by,
           ", ".join(missing_produced_by[:5]))
+    #: The escape is a sentence, not a flag: a claim that opts out of the closure has to say
+    #: where its value was decided, so the reader can go and check the decision.
+    thin = [c["id"] for c in claims if c.get("declaration") and len(c["declaration"]) < 20]
+    check("a declared value names where it was decided", not thin, ", ".join(thin))
+    both = [c["id"] for c in claims if c.get("declaration") and c.get("produced_by")]
+    check("a declared value carries no code closure to be invalidated by",
+          not both, ", ".join(both))
 
     # `stale` is the only exemption from the freshness ratchet, so it is not free: a withdrawn
     # claim must say why and must not still be cited, and a claim with no recorded producing

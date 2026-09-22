@@ -220,6 +220,8 @@ def main(argv: list[str] | None = None) -> int:
         for claim in manifest["claims"]:
             deps = resolved.get(claim["command"])
             if deps is not None:
+                if claim.get("declaration"):
+                    continue          # a decision has no code closure - check_freshness skips it
                 claim["produced_by"] = deps
         #: indent=1 and "\n" are the register's format, which every `tools/register_*.py`
         #: writes. This file used indent=2 and Windows newlines, so a run that changed one

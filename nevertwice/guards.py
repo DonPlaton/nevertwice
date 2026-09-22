@@ -924,6 +924,23 @@ def main():
         # read-only: the size of the shipped pack, for the evidence register. `pack` alone
         # installs it into the live ledger, which is not something a claim's command may do.
         print(len(_UNIVERSAL_GUARDS))
+        # `--out FILE` writes what was printed. Printing it was enough for a person and not for
+        # the register: `tools/remeasure.py --restore` reads a value through a pointer into an
+        # artifact, and with nothing on disk this number has been restored BY HAND at four
+        # campaigns in a row, each time by someone reading stdout (audit 2026-09-22).
+        if "--out" in argv:
+            i = argv.index("--out")
+            if i + 1 >= len(argv):
+                print("--out needs a path", file=sys.stderr)
+                return
+            import json as _json                                        # noqa: PLC0415
+            _p = Path(argv[i + 1])
+            _p.parent.mkdir(parents=True, exist_ok=True)
+            _p.write_text(_json.dumps({"universal_pack_size": len(_UNIVERSAL_GUARDS),
+                                       "patterns": [p for p, _m in _UNIVERSAL_GUARDS]},
+                                      indent=1, ensure_ascii=False),
+                          encoding="utf-8", newline="\n")
+            print("wrote", _p)
         return
     if cmd == "pack":
         # Report what LANDED, not what a snapshot would have added: the merge runs against the

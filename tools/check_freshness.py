@@ -90,6 +90,14 @@ def check(manifest: dict, git: Git) -> tuple[list[dict], list[dict], list[dict]]
             if claim.get("cited_in"):
                 cited_while_stale.append(claim)
             continue
+        if claim.get("declaration"):
+            #: A DECLARED value - a gate written before the run, quoted from a ledger entry -
+            #: is a decision, not a measurement. It has no code closure to move: `asof.gate.
+            #: threshold` carried the engine's whole 46-file closure, so every engine edit
+            #: withdrew it and a human re-typed "still 0.80" at four campaigns in a row
+            #: (its own note records 9262543, b72a1ff, 32796e8, 71f83a1). What CAN falsify it is
+            #: the ledger entry changing, and that is what `declaration` names.
+            continue
         produced_by = claim.get("produced_by")
         if not produced_by:
             failures.append({"claim": claim, "moved": [],

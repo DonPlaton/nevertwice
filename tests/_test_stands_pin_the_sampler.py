@@ -127,7 +127,13 @@ REACH_EXEMPT = {
                   "than NEVERTWICE_MODEL, and no claim in the register is pending against it",
 }
 
-reaching = [p.name for p in stands
+#: Every `research/*.py`, underscore-prefixed ones included. The population above skips them
+#: because a leading underscore means a library rather than a stand, and libraries do not choose
+#: models - but the DOOR walk must not skip them, or a future `research/_helper.py` that ingests
+#: falls out of this suite by its filename. None do today (audit 2026-09-22); the check is so
+#: that the first one does not arrive silently.
+all_research = sorted((ROOT / "research").glob("*.py"))
+reaching = [p.name for p in all_research
             if reaches_extractor(ast.parse(p.read_text(encoding="utf-8"), str(p)))]
 check("the door walk finds stands rather than nothing", len(reaching) >= 6, ", ".join(reaching))
 outside = sorted(set(reaching) - set(pin_model) - set(REACH_EXEMPT))

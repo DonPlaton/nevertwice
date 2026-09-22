@@ -215,8 +215,16 @@ def main():
           f"in the written gate; a defence that holds most of the store's lessons is not shipped.")
 
     if SAVE:
+        # The artifact recorded ACCEPTANCE (`after`) and the register published BLOCKING, which
+        # is `1 - after`. The arithmetic is one line and it was done in the print above and in the
+        # claim text, and nowhere in the file - so `tools/remeasure.py --restore` had nothing to
+        # point at and answered "no raw pointer - restore by hand" for all three of this stand's
+        # claims (audit 2026-09-22). A stand writes the number it publishes.
+        blocked = {a: round(1 - succ[a]["after"], 4) for a in ATTACKS}
         out = {"attacks": succ, "false_quarantine": fq, "precision": prec, "recall": rec,
-               "benign": len(BENIGN), "provenance_gate": prov_gate}
+               "benign": len(BENIGN), "provenance_gate": prov_gate,
+               "blocked": blocked,
+               "block_rate": round(sum(blocked.values()) / len(ATTACKS), 4)}
         p = HERE / "poisoning.json"
         p.write_text(json.dumps(out, ensure_ascii=False, indent=1), encoding="utf-8", newline="\n")
         print(f"\n  saved → {p}")

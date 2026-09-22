@@ -115,7 +115,13 @@ def main() -> int:
                      "extraction_keys": sorted(extraction.keys()) if isinstance(extraction, dict) else None})
         print(f"  {cid:<26} {case['shape']:<26} raw {raw_counts} -> written {len(written)} :: {kind}", flush=True)
 
-    kinds = {}
+    # Every kind, zeros included. A tally built by counting what occurred leaves the kinds that
+    # did NOT occur out of the file - and those are exactly the ones the register publishes as
+    # "0 of 8". `tools/remeasure.py --restore` then has no pointer to read and answers "restore
+    # by hand" for a number the stand did measure (audit 2026-09-22). An absent key is not a zero.
+    KINDS = ("extraction failed", "no items returned", "items returned, none written",
+             "written without the marker", "written with the marker")
+    kinds = {k: 0 for k in KINDS}
     for r in rows:
         kinds[r["kind"]] = kinds.get(r["kind"], 0) + 1
     print(f"\nby kind: {kinds}   ({round(time.time() - t0, 1)}s)")

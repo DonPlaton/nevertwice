@@ -143,7 +143,9 @@ def affected(manifest: dict, touching: set[str] | None = None) -> list[dict]:
     will ask once those files are committed, answered before the commit so the withdrawal
     and the change land together. Without it, the freshness check's own failures are used.
     """
-    live = [c for c in manifest["claims"] if not c.get("stale")]
+    #: A declared value (see `declaration` in check_freshness) is decided, not measured, so no
+    #: code change can affect it and no campaign can restore it.
+    live = [c for c in manifest["claims"] if not c.get("stale") and not c.get("declaration")]
     if touching is not None:
         norm = {t.replace("\\", "/") for t in touching}
         return [c for c in live if norm & set(c.get("produced_by") or [])]

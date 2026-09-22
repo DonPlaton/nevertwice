@@ -1,0 +1,16 @@
+{
+ "universal_pack_size": 11,
+ "patterns": [
+  "[!=]=\\s*None\\b",
+  "\\btype\\s*\\([^)]{1,40}\\)\\s*==",
+  "except\\s*:",
+  "\\beval\\s*\\(",
+  "\\bexec\\s*\\(",
+  "\\bos\\.system\\s*\\(",
+  "pickle\\.loads?\\s*\\(",
+  "shell\\s*=\\s*True",
+  "verify\\s*=\\s*False",
+  "yaml\\.load\\s*\\(",
+  "hashlib\\.(md5|sha1)\\s*\\("
+ ]
+}

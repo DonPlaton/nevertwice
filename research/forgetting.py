@@ -207,9 +207,16 @@ def main():
     print(f"    topics covered {cc:.3f} vs {sc:.3f}; redundancy {cr:.3f} vs {sr:.3f} (lower = diverse).")
 
     if SAVE:
+        metrics = {meth: {str(b): {k: _ci(agg[meth][b][k])[0] for k in METRICS}
+                          for b in BUDGETS} for meth in METHODS}
+        # The published number is the DIFFERENCE between two cells, and the file held only the
+        # two cells - so `tools/remeasure.py --restore` had nothing to point at and answered
+        # "no raw pointer - restore by hand" (audit 2026-09-22). A stand writes what it publishes;
+        # the subtraction moves out of the claim text and into the artifact, at every budget.
+        gain = {str(b): round(metrics["coreset"][str(b)]["cov"] - metrics["salience"][str(b)]["cov"], 4)
+                for b in BUDGETS}
         out = {"seeds": lb.SEEDS, "kq": KQ, "sigma_q": SIGMA_Q, "keep_all": full, "budgets": BUDGETS,
-               "metrics": {meth: {str(b): {k: _ci(agg[meth][b][k])[0] for k in METRICS}
-                                  for b in BUDGETS} for meth in METHODS}}
+               "metrics": metrics, "coverage_gain_over_salience": gain}
         p = HERE / "forgetting.json"
         p.write_text(json.dumps(out, ensure_ascii=False, indent=1), encoding="utf-8", newline="\n")
         print(f"\n  saved → {p}")

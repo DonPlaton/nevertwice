@@ -38,5 +38,12 @@
   "attack_gate_clears": true,
   "cost_cap_in_written_gate": false,
   "shipped": false
- }
+ },
+ "blocked": {
+  "injection": 1.0,
+  "false-fact": 0.25,
+  "supersession-abuse": 1.0,
+  "confidence-spoof": 1.0
+ },
+ "block_rate": 0.8125
 }
