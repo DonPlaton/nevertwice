@@ -108,6 +108,11 @@ TURNS = (1, 5, 10, 25, 50, 100)
 #: compress the ratio between them without changing what either system costs.
 CONSUMER_PROMPT_OVERHEAD_TOKENS = 125
 
+#: Mem0's own default, read from `inspect.signature(Memory.search)` rather than
+#: chosen here. Printed with every Mem0 figure: their cost is a property of their
+#: settings, and a number measured at ours would be ours wearing their name.
+MEM0_TOP_K = 20
+
 
 def load_corpus(name: str) -> tuple[list, dict]:
     """(questions, session pool) in one shape for both corpora, verified before it is read.
@@ -426,7 +431,14 @@ def run_mem0(data, pool, toks, cap) -> dict:
     rows = []
     for e in data:
         try:
-            res = mem.search(e["question"], filters={"user_id": "tf"}, limit=10)
+            #: `top_k`, not `limit`. Mem0 2.0.19 takes `top_k=20` and swallows `limit`
+            #: into `**kwargs` without a word: measured, `limit=1` and `limit=10` both return
+            #: 20 rows, `top_k=1` returns 1. Three stands in this repository pass `limit` and
+            #: have been getting 20 all along. Left at Mem0's OWN default and printed beside
+            #: the cost as a condition, so the number belongs to (Mem0, its settings) rather
+            #: than to (Mem0, our choice) - a cost measured at a limit we imposed would be our
+            #: number wearing their name.
+            res = mem.search(e["question"], filters={"user_id": "tf"}, top_k=MEM0_TOP_K)
         except Exception as exc:                                    # noqa: BLE001
             return {"blocked": f"mem0.search failed: {type(exc).__name__}: {exc}"}
         hits = res.get("results", res) if isinstance(res, dict) else res
@@ -434,6 +446,7 @@ def run_mem0(data, pool, toks, cap) -> dict:
         row = _count(payload, toks)
         row["question_id"] = e.get("question_id")
         row["hits"] = len(hits)
+        row["top_k"] = MEM0_TOP_K
         gold = e["gold"]
         row["answer_reachable"] = bool(gold) and any(
             g == str((h.get("metadata") or {}).get("session_id")) for h in hits for g in gold)
@@ -474,14 +487,20 @@ def curve(arms: dict, toks: dict) -> dict:
                     row[arm] = None
                     continue
                 start = res["session_start"].get(unit)
-                med = res["per_turn"]["median_chars"] if unit == "chars" else None
-                if med is None:
-                    vals = sorted(r.get(unit) or 0 for r in res["rows"])
-                    med = vals[len(vals) // 2] if vals else 0
                 if start is None:
                     row[arm] = None
                     continue
-                row[arm] = start + n * med
+                #: The MEAN, not the median, and the difference is the whole curve. Cost over N
+                #: turns is a SUM, and the statistic that predicts a sum is the mean; the median
+                #: predicts a typical turn and says nothing about the total. Measured
+                #: 2026-09-22 on 50 questions: our per-turn median is 0 because the path fires
+                #: on 6 turns of 50, while the mean is 97. Built on the median this curve read
+                #: "our cost never grows" and made us 668x cheaper at N=100; built on the mean
+                #: it is 101x. Six-fold, and in OUR favour - which is exactly the direction a
+                #: number has to be checked in hardest.
+                vals = [r.get(unit) or 0 for r in res["rows"]]
+                mean = sum(vals) / len(vals) if vals else 0
+                row[arm] = round(start + n * mean)
             per_n[str(n)] = row
         out[unit] = per_n
     return out
@@ -593,8 +612,42 @@ def main(argv=None) -> int:
     if a.save:
         out = Path(a.out)
         out.parent.mkdir(parents=True, exist_ok=True)
+        #: MERGE AT WRITE TIME, the shape `head_to_head.py` uses, and here it is not a
+        #: convenience: the two arms cannot run in one process. Ours needs this interpreter,
+        #: Mem0's needs the polygon venv, so a single run can only ever hold one arm and the
+        #: curve -- the entire point of this stand -- would never be printed.
+        #:
+        #: Two guards, because merging is how a stale number survives a change it should not
+        #: have survived. A run refuses to merge into a file written at a DIFFERENT code_sha
+        #: (two arms measured on two engines are not a comparison), and it records which run
+        #: contributed which arm, so "when was this measured" has an answer per arm.
+        merged_from = []
+        if out.exists():
+            try:
+                prev = json.loads(out.read_text(encoding="utf-8"))
+            except (OSError, ValueError) as exc:
+                print(f"refusing to merge into {out}: unreadable ({type(exc).__name__})",
+                      file=sys.stderr)
+                return 2
+            if prev.get("code_sha") and head and prev["code_sha"] != head:
+                print(f"refusing to merge: {out.name} was written at {prev['code_sha'][:8]}, "
+                      f"this run is at {head[:8]} - two arms measured on two engines are not "
+                      f"a comparison. Delete the file to start a fresh pair.", file=sys.stderr)
+                return 2
+            for cname, cres in (prev.get("corpora") or {}).items():
+                keep = {k: v for k, v in (cres.get("arms") or {}).items() if k not in wanted}
+                if keep:
+                    result["corpora"].setdefault(cname, cres).setdefault("arms", {}).update(keep)
+            merged_from = list(prev.get("measured_by") or [])
+        result["measured_by"] = merged_from + [
+            {"arms": wanted, "code_sha": head, "python": sys.version.split()[0],
+             "at": time.strftime("%Y-%m-%dT%H:%M:%S")}]
+        for cres in result["corpora"].values():
+            if "arms" in cres:
+                cres["curve"] = curve(cres["arms"], toks)
         out.write_text(json.dumps(result, indent=1, ensure_ascii=False), encoding="utf-8")
-        print(f"\nwrote {out}")
+        present = sorted({a for c in result["corpora"].values() for a in (c.get("arms") or {})})
+        print(f"\nwrote {out}  (arms present: {', '.join(present)})")
     return 0
 
 
