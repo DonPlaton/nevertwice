@@ -433,6 +433,81 @@ def test_a_green_suite_stays_green_under_both_channels() -> None:
         check("and pytest passes it too", py.returncode == 0, py.stdout.strip()[-200:])
 
 
+def test_a_population_guard_watches_the_loop_it_guards() -> None:
+    """A guard that pins a sweep's population must count INSIDE that sweep.
+
+    `8ce3cbb` pinned five populations so an empty discovery could not pass for a clean sweep, and
+    four of the five measured the population with a SECOND, independent call to the same glob.
+    Such a guard watches its own copy of the intention: emptying the LOOP left both the offender
+    check and the guard green, and one of the four also carried the wrong number - 36 against the
+    loop's 34, because the loop's allowlist skipped two. A second source of truth cannot disagree
+    with the first on the day it is written, or the author would notice; it disagrees later.
+
+    So the shape is refused here rather than remembered: an assignment `X = len(<expr>)` whose
+    expression names the same source as a `for` in the same scope. Spelling is ignored - the
+    comparison is over the Names, attributes and string constants, so `len(list(D.glob("*.py")))`
+    beside `for p in sorted(D.glob("*.py"))` is caught too.
+    """
+    def fingerprint(node):
+        out = set()
+        for k in ast.walk(node):
+            if isinstance(k, ast.Name):
+                out.add(k.id)
+            elif isinstance(k, ast.Attribute):
+                out.add(k.attr)
+            elif isinstance(k, ast.Constant) and isinstance(k.value, str):
+                out.add(k.value)
+        return out - {"sorted", "list", "len", "set", "tuple"}
+
+    def duplicates(tree):
+        found = []
+        scopes = [tree] + [n for n in ast.walk(tree)
+                           if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))]
+        for scope in scopes:
+            loops = [(n.lineno, fingerprint(n.iter)) for n in ast.walk(scope)
+                     if isinstance(n, (ast.For, ast.AsyncFor))]
+            for n in ast.walk(scope):
+                if not (isinstance(n, ast.Assign) and isinstance(n.value, ast.Call)
+                        and isinstance(n.value.func, ast.Name) and n.value.func.id == "len"
+                        and n.value.args):
+                    continue
+                fp = fingerprint(n.value.args[0])
+                if len(fp) < 2:
+                    continue          # `len(rows)` names one thing; too thin to be a duplicate
+                for ln, lfp in loops:
+                    if ln != n.lineno and fp <= lfp:
+                        found.append((n.lineno, ln))
+                        break
+        return found
+
+    print("")
+    print("- a population guard counts inside the loop, not beside it -")
+    #: The rule bites, before its silence is read as a result: a planted duplicate in each
+    #: spelling must be seen, or a zero below would be the rule's blindness, not the tree's shape.
+    check("the rule sees a counter written with the loop's own spelling",
+          bool(duplicates(ast.parse(
+              'for p in sorted(D.glob("*.py")):\n    pass\nn = len(sorted(D.glob("*.py")))'))))
+    check("and one written with a different spelling of the same source",
+          bool(duplicates(ast.parse(
+              'for p in sorted(D.glob("*.py")):\n    pass\nn = len(list(D.glob("*.py")))'))))
+    check("and leaves a counter of something else alone",
+          not duplicates(ast.parse(
+              'for p in sorted(D.glob("*.py")):\n    pass\nn = len(claims)')))
+
+    check(f"there are suites to check at all ({len(SUITES)})", len(SUITES) >= 150, str(len(SUITES)))
+    bad = []
+    for s in SUITES:
+        try:
+            tree = ast.parse(s.read_text(encoding="utf-8", errors="replace"))
+        except SyntaxError:
+            continue
+        for at, loop_at in duplicates(tree):
+            bad.append(f"{s.name}:{at} counts what line {loop_at} iterates")
+    check("no guard counts a second call to the source its loop walks", not bad,
+          "; ".join(bad[:4]))
+
+
+
 def test_zz_every_check_passed() -> None:
     assert FAILED == 0, f"{FAILED} check(s) failed"
 
