@@ -422,10 +422,29 @@ def test_a_filename_inside_a_comment_is_not_an_ignore_rule() -> None:
     check("and the rule is written as its own line", ".index.sqlite" in lines, str(sorted(lines)))
 
 
+#: `sandbox_guard.isolate()` switches git's auto-gc and auto-maintenance off for every git a
+#: sandboxed process starts; these tests hand git a minimal explicit environment, so they
+#: carry the same keys across.
+_NO_GIT_HOUSEKEEPING = {k: v for k, v in os.environ.items() if k.startswith("GIT_CONFIG_")}
+
+
 def _force_remove(func, path, exc) -> None:
-    """Clear the read-only bit git puts on its objects, then retry (Windows)."""
-    os.chmod(path, 0o700)
-    func(path)
+    """Clear the read-only bit git puts on its objects, then retry (Windows).
+
+    A path that is already gone is what rmtree wanted, not an error. The test stores are git
+    repositories, and git's background maintenance creates and removes
+    `.git/objects/maintenance.lock` while the test tears the store down. macOS 3.10 of run
+    35794625037: rmtree met the vanished lock, called this handler, `chmod` raised
+    FileNotFoundError from inside it, and the whole suite failed on its own cleanup - the same
+    race `backup()` was taught to survive in 41e2423, one file over, in the harness.
+    """
+    if not os.path.lexists(path):
+        return
+    try:
+        os.chmod(path, 0o700)
+        func(path)
+    except FileNotFoundError:
+        return
 
 
 #: `rmtree`'s handler keyword is `onexc` from Python 3.12 and `onerror` before it, and this file
@@ -464,7 +483,8 @@ def test_the_documented_rollback_does_not_destroy_what_it_restores() -> None:
         (store / "Mistakes" / "note.md").write_text(
             "---\ntype: mistake\n---\n\nbody\n", encoding="utf-8")
         env = {"GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@t", "GIT_COMMITTER_NAME": "t",
-               "GIT_COMMITTER_EMAIL": "t@t", "PATH": os.environ.get("PATH", "")}
+               "GIT_COMMITTER_EMAIL": "t@t", "PATH": os.environ.get("PATH", ""),
+               **_NO_GIT_HOUSEKEEPING}
 
         def git(*args: str) -> str:
             return subprocess.run(["git", *args], cwd=store, capture_output=True, text=True,
@@ -513,7 +533,8 @@ def test_the_rollback_text_says_what_the_rollback_costs() -> None:
         (store / "Mistakes" / "before.md").write_text(
             "---\ntype: mistake\n---\n\nold\n", encoding="utf-8")
         env = {"GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@t", "GIT_COMMITTER_NAME": "t",
-               "GIT_COMMITTER_EMAIL": "t@t", "PATH": os.environ.get("PATH", "")}
+               "GIT_COMMITTER_EMAIL": "t@t", "PATH": os.environ.get("PATH", ""),
+               **_NO_GIT_HOUSEKEEPING}
 
         def git(*args: str) -> str:
             return subprocess.run(["git", *args], cwd=store, capture_output=True, text=True,
@@ -665,6 +686,33 @@ def test_a_backup_survives_a_file_that_vanishes_under_it() -> None:
             _rmtree(backup_path)
 
 
+def test_the_cleanup_survives_git_tidying_under_it() -> None:
+    """The harness's own teardown met the race the product was taught to survive.
+
+    macOS 3.10 of run 35794625037: `_rmtree(store)` reached `.git/objects/maintenance.lock`
+    after git's background maintenance had removed it, called `_force_remove`, and its `chmod`
+    raised FileNotFoundError from inside the error handler - the suite failed on cleanup, not on
+    anything it checks. Two fixes, both asserted here: the handler treats a vanished path as
+    done, and the test environment switches git's housekeeping off so the race has nothing to
+    race with.
+    """
+    print(NL + "- the harness survives git tidying its store under it -")
+    with tempfile.TemporaryDirectory() as td:
+        gone = Path(td) / "maintenance.lock"          # never created: it vanished already
+        raised = None
+        try:
+            _force_remove(os.unlink, str(gone), FileNotFoundError(str(gone)))
+        except OSError as exc:
+            raised = exc
+        check("the remove handler treats a path that is already gone as removed",
+              raised is None, f"{type(raised).__name__}: {raised}")
+    for key, want in (("maintenance.auto", "false"), ("gc.auto", "0")):
+        got = subprocess.run(["git", "config", "--get", key], capture_output=True, text=True,
+                             env={**_NO_GIT_HOUSEKEEPING, "PATH": os.environ.get("PATH", "")}
+                             ).stdout.strip()
+        check(f"git in a test's minimal env sees {key}={want}", got == want, repr(got))
+
+
 def test_zz_every_check_passed() -> None:
     """Bare pytest must reach the same verdict as this suite's exit code.
 
@@ -689,7 +737,8 @@ def main() -> int:
                test_the_migration_writes_the_ledger_the_way_the_ledger_is_read,
                test_a_rebuild_promises_only_what_it_rebuilds,
                test_a_filename_inside_a_comment_is_not_an_ignore_rule,
-               test_a_backup_survives_a_file_that_vanishes_under_it):
+               test_a_backup_survives_a_file_that_vanishes_under_it,
+               test_the_cleanup_survives_git_tidying_under_it):
         fn()
     print(f"\nstore version: {PASSED} passed, {FAILED} failed")
     return 1 if FAILED else 0

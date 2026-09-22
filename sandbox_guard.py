@@ -194,6 +194,35 @@ def _import_config():
 
 # -- the two declarations ----------------------------------------------
 
+#: git settings every sandboxed process hands to every git it starts.
+GIT_HOUSEKEEPING_OFF = (("maintenance.auto", "false"), ("gc.auto", "0"))
+
+
+def _no_git_housekeeping() -> None:
+    """No background housekeeping in a sandbox's repositories.
+
+    Git runs auto-gc and auto-maintenance after a commit, in a child it does not wait for, and
+    that child creates and deletes files under `.git/objects/` while the process is still walking
+    or removing the tree. macOS jobs of runs 35781171527 and 35794625037 failed on exactly that,
+    once in the product's backup and once in a test's own cleanup. The product keeps tolerating it
+    - a live store IS maintained - but a sandbox store has nothing to maintain, and switching it
+    off makes a run deterministic instead of lucky. It lives here, with the rest of the sandbox,
+    so tests, examples and benches that make repositories all get it.
+
+    Carried in the environment (GIT_CONFIG_COUNT, git >= 2.31), so every git the process starts
+    inherits it. Keys already present are kept and not repeated.
+    """
+    n = int(os.environ.get("GIT_CONFIG_COUNT", "0") or 0)
+    have = {os.environ.get(f"GIT_CONFIG_KEY_{i}") for i in range(n)}
+    for key, value in GIT_HOUSEKEEPING_OFF:
+        if key in have:
+            continue
+        os.environ[f"GIT_CONFIG_KEY_{n}"] = key
+        os.environ[f"GIT_CONFIG_VALUE_{n}"] = value
+        n += 1
+    os.environ["GIT_CONFIG_COUNT"] = str(n)
+
+
 def isolate(prefix: str = "nevertwice-sandbox-") -> Path:
     """Point the whole process at a throwaway store, then prove it landed there.
 
@@ -223,6 +252,7 @@ def isolate(prefix: str = "nevertwice-sandbox-") -> Path:
     # `sweep_unprocessed` reads, and would mine the owner's sessions into a throwaway vault.
     (_STORE / "transcripts").mkdir(parents=True, exist_ok=True)
     os.environ["NEVERTWICE_PROJECTS_ROOT"] = str(_STORE / "transcripts")
+    _no_git_housekeeping()
     _MODE = "sandbox"
     atexit.register(_cleanup)
     verify()
