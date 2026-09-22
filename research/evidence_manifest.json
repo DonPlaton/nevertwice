@@ -2970,8 +2970,10 @@
    "caveat": "Per-attack-instance the rate is 9/12 = 0.75 (raw `recall`). The two aggregates differ; the doc cites the per-family mean. Both fell against the v1.0.0 artifact this replaces - see CHANGELOG.",
    "ci": null,
    "ci_note": "12 hand-written attacks - a proof of taxonomy, not a benchmark.",
-   "cited_in": [],
-   "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
+   "cited_in": [
+    "README.md"
+   ],
+   "commit": "5eab073fb00a89c418f2634f152ff06cd10772a4",
    "produced_by": [
     "research/poisoning.py",
     "nevertwice/_engine.py",
@@ -3000,13 +3002,7 @@
     "nevertwice/why_fired.py",
     "sandbox_guard.py"
    ],
-   "note": "Restored by hand at 9262543 (2026-09-11): no pointer to read it through, so the value was re-checked against the campaign artifact - research/poisoning.json: unweighted mean of the four attack-family block rates - and the commit restamped. Restored by hand at b72a1ff (2026-09-12, campaign B): research/poisoning.json unchanged since the previous restore (git diff empty): injection after 0.0, false-fact after 0.75, the other classes 0.0 Restored by hand at 32796e8 (2026-09-18, campaign K8-C): the mean of one minus `after` over the attack classes the run scored: injection 1.00, false-fact 0.25, supersession-abuse 1.00, confidence-spoof 1.00 Restored by hand at 71f83a1 (2026-09-19, the campaign at 71f83a1): the mean of one minus `after` over the attack classes this run scored: injection 1.00, false-fact 0.25, supersession-abuse 1.00, confidence-spoof 1.00",
-   "cited_in_pending": [
-    "README.md"
-   ],
-   "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
-   "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "note": "Restored by hand at 9262543 (2026-09-11): no pointer to read it through, so the value was re-checked against the campaign artifact - research/poisoning.json: unweighted mean of the four attack-family block rates - and the commit restamped. Restored by hand at b72a1ff (2026-09-12, campaign B): research/poisoning.json unchanged since the previous restore (git diff empty): injection after 0.0, false-fact after 0.75, the other classes 0.0 Restored by hand at 32796e8 (2026-09-18, campaign K8-C): the mean of one minus `after` over the attack classes the run scored: injection 1.00, false-fact 0.25, supersession-abuse 1.00, confidence-spoof 1.00 Restored by hand at 71f83a1 (2026-09-19, the campaign at 71f83a1): the mean of one minus `after` over the attack classes this run scored: injection 1.00, false-fact 0.25, supersession-abuse 1.00, confidence-spoof 1.00"
   },
   {
    "id": "poisoning.precision",
@@ -3024,7 +3020,7 @@
    "pointer": "precision",
    "ci": null,
    "cited_in": [],
-   "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
+   "commit": "5eab073fb00a89c418f2634f152ff06cd10772a4",
    "produced_by": [
     "research/poisoning.py",
     "nevertwice/_engine.py",
@@ -3052,11 +3048,7 @@
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [],
-   "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
-   "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "poisoning.injection_blocked",
@@ -3075,8 +3067,10 @@
    "derivation": "1 - attacks.injection.after = 1 - 0.0",
    "ci": null,
    "ci_note": "n=4.",
-   "cited_in": [],
-   "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
+   "cited_in": [
+    "README.md"
+   ],
+   "commit": "5eab073fb00a89c418f2634f152ff06cd10772a4",
    "produced_by": [
     "research/poisoning.py",
     "nevertwice/_engine.py",
@@ -3105,13 +3099,7 @@
     "nevertwice/why_fired.py",
     "sandbox_guard.py"
    ],
-   "note": "Restored by hand at 9262543 (2026-09-11): no pointer to read it through, so the value was re-checked against the campaign artifact - research/poisoning.json: attacks.injection.after = 0.0 - and the commit restamped. Restored by hand at b72a1ff (2026-09-12, campaign B): attacks.injection.after = 0.0 -> 100% blocked Restored by hand at 32796e8 (2026-09-18, campaign K8-C): research/poisoning.json attacks.injection.after = 0.0 -> 100% blocked Restored by hand at 71f83a1 (2026-09-19, the campaign at 71f83a1): research/poisoning.json attacks.injection.after = 0.0",
-   "cited_in_pending": [
-    "README.md"
-   ],
-   "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
-   "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "note": "Restored by hand at 9262543 (2026-09-11): no pointer to read it through, so the value was re-checked against the campaign artifact - research/poisoning.json: attacks.injection.after = 0.0 - and the commit restamped. Restored by hand at b72a1ff (2026-09-12, campaign B): attacks.injection.after = 0.0 -> 100% blocked Restored by hand at 32796e8 (2026-09-18, campaign K8-C): research/poisoning.json attacks.injection.after = 0.0 -> 100% blocked Restored by hand at 71f83a1 (2026-09-19, the campaign at 71f83a1): research/poisoning.json attacks.injection.after = 0.0"
   },
   {
    "id": "poisoning.false_fact_blocked",
@@ -3130,8 +3118,10 @@
    "derivation": "1 - attacks.false-fact.after = 1 - 0.75",
    "ci": null,
    "ci_note": "n=4; the honest open problem, published as such.",
-   "cited_in": [],
-   "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
+   "cited_in": [
+    "README.md"
+   ],
+   "commit": "5eab073fb00a89c418f2634f152ff06cd10772a4",
    "produced_by": [
     "research/poisoning.py",
     "nevertwice/_engine.py",
@@ -3161,13 +3151,7 @@
     "sandbox_guard.py"
    ],
    "caveat": "n=4; the honest open problem, published as such - and it got worse, not better: the v1.0.0 artifact recorded 50%.",
-   "note": "Restored by hand at 9262543 (2026-09-11): no pointer to read it through, so the value was re-checked against the campaign artifact - research/poisoning.json: attacks.false-fact.after = 0.75 - and the commit restamped. Restored by hand at b72a1ff (2026-09-12, campaign B): attacks.false-fact.after = 0.75 -> 25% blocked Restored by hand at 32796e8 (2026-09-18, campaign K8-C): attacks['false-fact'].after = 0.75 -> 25% blocked Restored by hand at 71f83a1 (2026-09-19, the campaign at 71f83a1): attacks['false-fact'].after = 0.75",
-   "cited_in_pending": [
-    "README.md"
-   ],
-   "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
-   "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "note": "Restored by hand at 9262543 (2026-09-11): no pointer to read it through, so the value was re-checked against the campaign artifact - research/poisoning.json: attacks.false-fact.after = 0.75 - and the commit restamped. Restored by hand at b72a1ff (2026-09-12, campaign B): attacks.false-fact.after = 0.75 -> 25% blocked Restored by hand at 32796e8 (2026-09-18, campaign K8-C): attacks['false-fact'].after = 0.75 -> 25% blocked Restored by hand at 71f83a1 (2026-09-19, the campaign at 71f83a1): attacks['false-fact'].after = 0.75"
   },
   {
    "id": "forgetting.coverage_gain_at_20pct",
@@ -3189,7 +3173,7 @@
    "ci": null,
    "ci_note": "6 seeds on a synthetic world; report the spread, not a CI.",
    "cited_in": [],
-   "commit": "8fd91c99b208a47027e96ee2882d1bcd7457d6ec",
+   "commit": "5eab073fb00a89c418f2634f152ff06cd10772a4",
    "produced_by": [
     "research/forgetting.py",
     "nevertwice/_engine.py",
@@ -3224,11 +3208,7 @@
     "sandbox_guard.py",
     "tools/claims_footer.py"
    ],
-   "note": "Re-run on CPU at 2e9e79e (2026-09-10) after the renderer tool entered its closure; the artifact reproduced byte-identically, so the value stands and the commit is restamped by hand. Restored by hand at 9262543 (2026-09-11): no pointer to read it through, so the value was re-checked against the campaign artifact - research/forgetting.json: coreset.0.2.cov - salience.0.2.cov - and the commit restamped. Re-run again at b1bffab (2026-09-11) after the renderer moved for the as-of verdict; byte-identical artifact, value re-checked, commit restamped by hand. Re-run at 74cfcd4 (2026-09-11, the renderer moved again for the cause table); byte-identical, restamped by hand. Re-run at 27b5b09 (2026-09-11, the renderer moved for the absorbed kind); byte-identical, restamped by hand. Re-run at 81dc960 (2026-09-12, the renderer's cause caption reworded); byte-identical, restamped by hand. Re-run at b72a1ff (campaign B, the K5/K6/K7 engine package); byte-identical, restamped by hand. Restored by hand at 32796e8 (2026-09-18, campaign K8-C): coreset coverage at a fifth of the budget 0.8541666666666666 minus salience's 0.7166666666666667 Re-run at 4879a8c (2026-09-18, the renderer moved for the K8-C campaign); byte-identical, restamped by hand. Restored by hand at 71f83a1 (2026-09-19, the campaign at 71f83a1): coreset coverage at a fifth of the budget 0.8541666666666666 minus salience's 0.7166666666666667 Restamped at 8fd91c9 (2026-09-19): the renderer moved in its closure, the difference was re-read from research/forgetting.json and is unchanged at 0.1375.",
-   "cited_in_pending": [],
-   "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
-   "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "note": "Re-run on CPU at 2e9e79e (2026-09-10) after the renderer tool entered its closure; the artifact reproduced byte-identically, so the value stands and the commit is restamped by hand. Restored by hand at 9262543 (2026-09-11): no pointer to read it through, so the value was re-checked against the campaign artifact - research/forgetting.json: coreset.0.2.cov - salience.0.2.cov - and the commit restamped. Re-run again at b1bffab (2026-09-11) after the renderer moved for the as-of verdict; byte-identical artifact, value re-checked, commit restamped by hand. Re-run at 74cfcd4 (2026-09-11, the renderer moved again for the cause table); byte-identical, restamped by hand. Re-run at 27b5b09 (2026-09-11, the renderer moved for the absorbed kind); byte-identical, restamped by hand. Re-run at 81dc960 (2026-09-12, the renderer's cause caption reworded); byte-identical, restamped by hand. Re-run at b72a1ff (campaign B, the K5/K6/K7 engine package); byte-identical, restamped by hand. Restored by hand at 32796e8 (2026-09-18, campaign K8-C): coreset coverage at a fifth of the budget 0.8541666666666666 minus salience's 0.7166666666666667 Re-run at 4879a8c (2026-09-18, the renderer moved for the K8-C campaign); byte-identical, restamped by hand. Restored by hand at 71f83a1 (2026-09-19, the campaign at 71f83a1): coreset coverage at a fifth of the budget 0.8541666666666666 minus salience's 0.7166666666666667 Restamped at 8fd91c9 (2026-09-19): the renderer moved in its closure, the difference was re-read from research/forgetting.json and is unchanged at 0.1375."
   },
   {
    "id": "consolidation.recall_drop",
@@ -7902,7 +7882,7 @@
    "raw_gap": "A property of the shipped pack; a test should assert it (task D1).",
    "ci": null,
    "cited_in": [],
-   "commit": "f1218fc8d7a7e7d7b91514d4cb2b3c1f461a4249",
+   "commit": "5eab073fb00a89c418f2634f152ff06cd10772a4",
    "produced_by": [
     "nevertwice/guards.py",
     "nevertwice/_engine.py",
@@ -7929,11 +7909,7 @@
     "nevertwice/telemetry.py",
     "nevertwice/why_fired.py"
    ],
-   "note": "The former command (`--list`) was not a subcommand the CLI accepts; `pack --count` is read-only and prints the number (review 2026-09-05). Restored by hand at 9262543 (2026-09-11): no pointer to read it through, so the value was re-checked against the campaign artifact - `python -m nevertwice.guards pack --count` printed 11 - and the commit restamped. Restored by hand at b72a1ff (2026-09-12, campaign B): `python -m nevertwice.guards pack --count` printed 11 (cb2_guards_pack.log) Restored by hand at 32796e8 (2026-09-18, campaign K8-C): `python -m nevertwice.guards pack --count` printed 11 in this campaign (k8c2_guards_pack.log) Restored by hand at 71f83a1 (2026-09-19, the campaign at 71f83a1): `python -m nevertwice.guards pack --count` printed 11 in this campaign (camp_f2_guards_pack.log) Restored by hand at f1218fc (2026-09-19): `python -m nevertwice.guards pack --count` printed 11 in this session.",
-   "cited_in_pending": [],
-   "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
-   "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "note": "The former command (`--list`) was not a subcommand the CLI accepts; `pack --count` is read-only and prints the number (review 2026-09-05). Restored by hand at 9262543 (2026-09-11): no pointer to read it through, so the value was re-checked against the campaign artifact - `python -m nevertwice.guards pack --count` printed 11 - and the commit restamped. Restored by hand at b72a1ff (2026-09-12, campaign B): `python -m nevertwice.guards pack --count` printed 11 (cb2_guards_pack.log) Restored by hand at 32796e8 (2026-09-18, campaign K8-C): `python -m nevertwice.guards pack --count` printed 11 in this campaign (k8c2_guards_pack.log) Restored by hand at 71f83a1 (2026-09-19, the campaign at 71f83a1): `python -m nevertwice.guards pack --count` printed 11 in this campaign (camp_f2_guards_pack.log) Restored by hand at f1218fc (2026-09-19): `python -m nevertwice.guards pack --count` printed 11 in this session."
   },
   {
    "id": "head_to_head.nevertwice.recall_at_10",

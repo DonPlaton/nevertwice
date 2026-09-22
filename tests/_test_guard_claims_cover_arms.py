@@ -93,10 +93,19 @@ PAGE = ROOT / "research" / "GUARD_BENCH.md"
 # During a withdrawal window the family has no live claims, so the generated table says the stand
 # has not run at this HEAD rather than printing figures the register has retracted. That is the
 # register working; the invariant this suite holds is about LIVE numbers reaching the page.
-_live_guard = any(cid.startswith("guards.") and not claims[cid].get("stale")
-                  and not claims[cid].get("pending_remeasure") for cid in claims)
+#: The page check waits on the claims the TABLE is rendered from - the two bench arms - and not
+#: on any `guards.*` at all. The first version asked the broad question, and `guards.
+#: universal_pack_size` coming back live on 2026-09-22 switched the check on while every arm
+#: claim was still withdrawn: the block held a withdrawal banner, the rows were absent, and the
+#: suite reported three failures about a table nobody claims. A family prefix standing in for
+#: the specific claims a check reads is the same substitution this suite exists to catch.
+_ARM_CLAIMS = [f"guards.{arm}.{field}"
+               for arm in ("guards_deterministic", "guards_llm")
+               for field in ("project_recall", "project_fpr")]
+_live_guard = any(cid in claims and not claims[cid].get("stale")
+                  and not claims[cid].get("pending_remeasure") for cid in _ARM_CLAIMS)
 if not _live_guard:
-    print("  --   every guard claim is withdrawn; the page check waits for the re-measure")
+    print("  --   both bench arms are withdrawn; the page check waits for the re-measure")
 elif PAGE.exists():
     body = PAGE.read_text(encoding="utf-8")
     block = body.split("<!-- claims:guard-bench -->")[-1].split("<!-- /claims:guard-bench -->")[0]

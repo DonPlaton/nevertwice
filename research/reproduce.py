@@ -476,6 +476,16 @@ ARTIFACTS = [
      "command": ["python", "research/poisoning.py", "--save"],
      "kind": DETERMINISTIC, "task": "E2/prior",
      "inputs": [], "note": "memory-poisoning attack corpus"},
+    # `pack --count` printed the size and wrote nothing, so this number was restored BY HAND at
+    # four campaigns in a row (its own note records 9262543, b72a1ff, 32796e8, 71f83a1). The
+    # `--out` flag gives it an artifact; the scope rule then requires that artifact to be
+    # reproducible, which is this entry. Read-only: `pack` alone installs the pack into the live
+    # ledger, and a claim's command may not do that.
+    {"file": "research/results/guards_pack.json",
+     "command": ["python", "-m", "nevertwice.guards", "pack", "--count",
+                 "--out", "research/results/guards_pack.json"],
+     "kind": DETERMINISTIC, "task": "prior",
+     "inputs": [], "note": "the shipped universal guard pack, counted read-only"},
     {"file": "research/forgetting.json",
      "command": ["python", "research/forgetting.py", "--save"],
      "kind": DETERMINISTIC, "task": "prior",
