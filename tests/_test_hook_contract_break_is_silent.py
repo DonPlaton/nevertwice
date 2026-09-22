@@ -64,7 +64,17 @@ def run(payload: dict) -> tuple[int, str]:
         env = dict(os.environ)
         env.update({"NEVERTWICE_VAULT": td, "NEVERTWICE_PROJECTS_ROOT": td,
                     "NEVERTWICE_START_SWEEP_DETACH": "0",
+                    #: PREVENTION, not detection. The assertions below run AFTER the subprocess
+                    #: returns, so on a machine where the isolation fails they would report a
+                    #: sweep that has already spent five minutes of GPU. Pointing the extractor
+                    #: at a closed port makes the worst case the one measured in the premortem:
+                    #: `{}` after 10.7 s, "Ollama unreachable after 3 tries", cloud=0 ollama=0
+                    #: fail=1 - loud, cheap, and the same on any machine (auditing session).
+                    "OLLAMA_URL": "http://127.0.0.1:1",
+                    "NEVERTWICE_CLOUD": "none",
                     "PYTHONIOENCODING": "utf-8"})
+        for key in ("CEREBRAS_API_KEY", "GROQ_API_KEY", "DEEPSEEK_API_KEY", "GEMINI_API_KEY"):
+            env.pop(key, None)
         p = subprocess.run([sys.executable, str(HOOK)], input=json.dumps(payload),
                            capture_output=True, text=True, encoding="utf-8",
                            errors="replace", env=env, timeout=300)
@@ -89,7 +99,13 @@ print("\n- and none of the three woke anything: the property is measured, not ar
 for label, out in (("today", out_today), ("renamed", out_renamed), ("empty", out_empty)):
     check(f"{label}: no catch-up was detached", "catch-up detached" not in out,
           out.strip()[-140:].replace("\n", " | "))
-    check(f"{label}: no sweep ran either", "swept=0" in out or "swept" not in out,
+    #: The run must SAY that nothing was swept, in one of the two wordings the engine uses - the
+    #: recognised-SessionStart path reports "no backlog (lock never taken)", the others close with
+    #: "swept=0". An earlier draft accepted `"swept" not in out`, which passes for any log that
+    #: merely lacks the word: absence taken as evidence, and it would have survived a change of
+    #: format (auditing session). Requiring one of the two named sentences is the positive form.
+    check(f"{label}: the run states that it swept nothing",
+          ("swept=0" in out) or ("no backlog (lock never taken)" in out),
           out.strip()[-140:].replace("\n", " | "))
 
 print("\n- today's contract is recognised, and says which event it was -")

@@ -538,6 +538,7 @@ ARTIFACTS = [
      "inputs": [], "note": "the active-vs-inject token ratio"},
     {"file": "research/blast_radius_precision.json",
      "command": ["python", "research/blast_radius_precision.py"],
+     "window": "the input is this repository's own history: `base` 7ef8ad2 plus the 150 commits AFTER it, so the near end is HEAD and moves with every commit. Running this today scans a different 150 than the recording did - measured 2026-09-22: summary.findings 24 -> 5 for the precision census, and two of the three proposed budgets moved. The artifact is deterministic GIVEN a fixed window, and the window's far end is pinned while its near end is not. Making it reproducible needs an --until flag and a re-record, which changes published figures (8 claims, all withdrawn) and belongs to the owner.",
      "kind": DETERMINISTIC, "task": "I4",
      "inputs": [".git", "research/blast_radius_calibration.json",
                 "research/blast_radius_labels.json"],
@@ -546,6 +547,7 @@ ARTIFACTS = [
              "is byte-identical or it is wrong. Needs FULL history."},
     {"file": "research/blast_radius_calibration.json",
      "command": ["python", "research/blast_radius_calibration.py", "--commits", "150"],
+     "window": "the input is this repository's own history: `base` 7ef8ad2 plus the 150 commits AFTER it, so the near end is HEAD and moves with every commit. Running this today scans a different 150 than the recording did - measured 2026-09-22: summary.findings 24 -> 5 for the precision census, and two of the three proposed budgets moved. The artifact is deterministic GIVEN a fixed window, and the window's far end is pinned while its near end is not. Making it reproducible needs an --until flag and a re-record, which changes published figures (8 claims, all withdrawn) and belongs to the owner.",
      "kind": DETERMINISTIC, "task": "I1",
      "inputs": [".git"],
      "volatile": ["seconds"],
@@ -846,6 +848,11 @@ def run_one(spec: dict, regenerate: bool) -> dict:
                              "volatile - either the code changed without the artifact being "
                              "restamped, or this artifact is not as deterministic as it is "
                              "declared to be")
+        #: A third possibility, and for two artifacts here it is the actual one: the INPUT moved.
+        #: Named on the entry so a stranger is not told the code is broken when the repository
+        #: simply grew (found 2026-09-22 by running this package rather than reading it).
+        if spec.get("window"):
+            result["explain"] += f"; but see `window`: {spec['window']}"
     return result
 
 
