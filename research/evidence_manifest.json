@@ -9379,7 +9379,7 @@
    "pointer": "matched_false_positive_rate",
    "ci": null,
    "cited_in": [],
-   "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
+   "commit": "7a25bf335b0173a5874f96bb7413c03a2e99111a",
    "produced_by": [
     "research/cheap_baselines.py",
     "nevertwice/_engine.py",
@@ -9410,11 +9410,7 @@
     "research/_frontier.py",
     "research/matched_conditions.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [],
-   "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
-   "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "baselines.f2.nevertwice.recall",
@@ -9437,7 +9433,7 @@
     "high": 0.7263
    },
    "cited_in": [],
-   "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
+   "commit": "7a25bf335b0173a5874f96bb7413c03a2e99111a",
    "produced_by": [
     "research/cheap_baselines.py",
     "nevertwice/_engine.py",
@@ -9468,11 +9464,7 @@
     "research/_frontier.py",
     "research/matched_conditions.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [],
-   "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
-   "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "baselines.f2.curated_agents_md.recall",
@@ -9495,7 +9487,7 @@
     "high": 0.3731
    },
    "cited_in": [],
-   "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
+   "commit": "7a25bf335b0173a5874f96bb7413c03a2e99111a",
    "produced_by": [
     "research/cheap_baselines.py",
     "nevertwice/_engine.py",
@@ -9526,11 +9518,7 @@
     "research/_frontier.py",
     "research/matched_conditions.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [],
-   "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
-   "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "baselines.f2.linter_or_test.recall",
@@ -9553,7 +9541,7 @@
     "high": 0.6386
    },
    "cited_in": [],
-   "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
+   "commit": "7a25bf335b0173a5874f96bb7413c03a2e99111a",
    "produced_by": [
     "research/cheap_baselines.py",
     "nevertwice/_engine.py",
@@ -9584,11 +9572,7 @@
     "research/_frontier.py",
     "research/matched_conditions.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [],
-   "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
-   "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "baselines.f2.nevertwice.tokens_per_episode",
@@ -9606,7 +9590,7 @@
    "pointer": "arms.nevertwice.tokens_per_episode",
    "ci": null,
    "cited_in": [],
-   "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
+   "commit": "7a25bf335b0173a5874f96bb7413c03a2e99111a",
    "produced_by": [
     "research/cheap_baselines.py",
     "nevertwice/_engine.py",
@@ -9637,11 +9621,7 @@
     "research/_frontier.py",
     "research/matched_conditions.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [],
-   "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
-   "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "baselines.f2.curated_agents_md.tokens_per_episode",
@@ -9659,7 +9639,7 @@
    "pointer": "arms.curated_agents_md.tokens_per_episode",
    "ci": null,
    "cited_in": [],
-   "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
+   "commit": "7a25bf335b0173a5874f96bb7413c03a2e99111a",
    "produced_by": [
     "research/cheap_baselines.py",
     "nevertwice/_engine.py",
@@ -9690,11 +9670,7 @@
     "research/_frontier.py",
     "research/matched_conditions.py",
     "sandbox_guard.py"
-   ],
-   "cited_in_pending": [],
-   "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
-   "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   ]
   },
   {
    "id": "longmem_pinned.semantic.recall_at_1",
@@ -54165,7 +54141,7 @@
    "command": "python research/k8_skeleton.py research/results/k8_collisions_explicit.json research/results/k8_collisions_implicit.json research/results/k8_collisions_asof.json --out research/results/k8_step0.json",
    "raw": "research/results/k8_step0.json",
    "cited_in": [],
-   "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
+   "commit": "7a25bf335b0173a5874f96bb7413c03a2e99111a",
    "produced_by": [
     "research/k8_skeleton.py",
     "nevertwice/_engine.py",
@@ -54195,11 +54171,7 @@
     "sandbox_guard.py"
    ],
    "ci": null,
-   "note": "One named measure (Jaccard overlap of the skeletons), not the best of the five the artifact computes: a maximum over measures is a choice, and the artifact carries all five for anyone who wants the spread. This is why layer 1 decides by proof rules and not by similarity - at this AUC a threshold that loses no still-true fact also keeps most real replacements apart.",
-   "cited_in_pending": [],
-   "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
-   "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "note": "One named measure (Jaccard overlap of the skeletons), not the best of the five the artifact computes: a maximum over measures is a choice, and the artifact carries all five for anyone who wants the spread. This is why layer 1 decides by proof rules and not by similarity - at this AUC a threshold that loses no still-true fact also keeps most real replacements apart."
   },
   {
    "id": "skeleton.explicit.auc_facts_block",
@@ -54217,7 +54189,7 @@
    "command": "python research/k8_skeleton.py research/results/k8_collisions_explicit.json research/results/k8_collisions_implicit.json research/results/k8_collisions_asof.json --out research/results/k8_step0.json",
    "raw": "research/results/k8_step0.json",
    "cited_in": [],
-   "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
+   "commit": "7a25bf335b0173a5874f96bb7413c03a2e99111a",
    "produced_by": [
     "research/k8_skeleton.py",
     "nevertwice/_engine.py",
@@ -54247,11 +54219,7 @@
     "sandbox_guard.py"
    ],
    "ci": null,
-   "note": "One named measure (Jaccard overlap of the skeletons), not the best of the five the artifact computes: a maximum over measures is a choice, and the artifact carries all five for anyone who wants the spread. This is why layer 1 decides by proof rules and not by similarity - at this AUC a threshold that loses no still-true fact also keeps most real replacements apart.",
-   "cited_in_pending": [],
-   "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
-   "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "note": "One named measure (Jaccard overlap of the skeletons), not the best of the five the artifact computes: a maximum over measures is a choice, and the artifact carries all five for anyone who wants the spread. This is why layer 1 decides by proof rules and not by similarity - at this AUC a threshold that loses no still-true fact also keeps most real replacements apart."
   },
   {
    "id": "skeleton.implicit.auc_description",
@@ -54269,7 +54237,7 @@
    "command": "python research/k8_skeleton.py research/results/k8_collisions_explicit.json research/results/k8_collisions_implicit.json research/results/k8_collisions_asof.json --out research/results/k8_step0.json",
    "raw": "research/results/k8_step0.json",
    "cited_in": [],
-   "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
+   "commit": "7a25bf335b0173a5874f96bb7413c03a2e99111a",
    "produced_by": [
     "research/k8_skeleton.py",
     "nevertwice/_engine.py",
@@ -54299,11 +54267,7 @@
     "sandbox_guard.py"
    ],
    "ci": null,
-   "note": "One named measure (Jaccard overlap of the skeletons), not the best of the five the artifact computes: a maximum over measures is a choice, and the artifact carries all five for anyone who wants the spread. This is why layer 1 decides by proof rules and not by similarity - at this AUC a threshold that loses no still-true fact also keeps most real replacements apart.",
-   "cited_in_pending": [],
-   "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
-   "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "note": "One named measure (Jaccard overlap of the skeletons), not the best of the five the artifact computes: a maximum over measures is a choice, and the artifact carries all five for anyone who wants the spread. This is why layer 1 decides by proof rules and not by similarity - at this AUC a threshold that loses no still-true fact also keeps most real replacements apart."
   },
   {
    "id": "skeleton.implicit.auc_facts_block",
@@ -54321,7 +54285,7 @@
    "command": "python research/k8_skeleton.py research/results/k8_collisions_explicit.json research/results/k8_collisions_implicit.json research/results/k8_collisions_asof.json --out research/results/k8_step0.json",
    "raw": "research/results/k8_step0.json",
    "cited_in": [],
-   "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
+   "commit": "7a25bf335b0173a5874f96bb7413c03a2e99111a",
    "produced_by": [
     "research/k8_skeleton.py",
     "nevertwice/_engine.py",
@@ -54351,11 +54315,7 @@
     "sandbox_guard.py"
    ],
    "ci": null,
-   "note": "One named measure (Jaccard overlap of the skeletons), not the best of the five the artifact computes: a maximum over measures is a choice, and the artifact carries all five for anyone who wants the spread. This is why layer 1 decides by proof rules and not by similarity - at this AUC a threshold that loses no still-true fact also keeps most real replacements apart.",
-   "cited_in_pending": [],
-   "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
-   "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "note": "One named measure (Jaccard overlap of the skeletons), not the best of the five the artifact computes: a maximum over measures is a choice, and the artifact carries all five for anyone who wants the spread. This is why layer 1 decides by proof rules and not by similarity - at this AUC a threshold that loses no still-true fact also keeps most real replacements apart."
   },
   {
    "id": "skeleton.asof.auc_description",
@@ -54373,7 +54333,7 @@
    "command": "python research/k8_skeleton.py research/results/k8_collisions_explicit.json research/results/k8_collisions_implicit.json research/results/k8_collisions_asof.json --out research/results/k8_step0.json",
    "raw": "research/results/k8_step0.json",
    "cited_in": [],
-   "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
+   "commit": "7a25bf335b0173a5874f96bb7413c03a2e99111a",
    "produced_by": [
     "research/k8_skeleton.py",
     "nevertwice/_engine.py",
@@ -54403,11 +54363,7 @@
     "sandbox_guard.py"
    ],
    "ci": null,
-   "note": "One named measure (Jaccard overlap of the skeletons), not the best of the five the artifact computes: a maximum over measures is a choice, and the artifact carries all five for anyone who wants the spread. This is why layer 1 decides by proof rules and not by similarity - at this AUC a threshold that loses no still-true fact also keeps most real replacements apart.",
-   "cited_in_pending": [],
-   "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
-   "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "note": "One named measure (Jaccard overlap of the skeletons), not the best of the five the artifact computes: a maximum over measures is a choice, and the artifact carries all five for anyone who wants the spread. This is why layer 1 decides by proof rules and not by similarity - at this AUC a threshold that loses no still-true fact also keeps most real replacements apart."
   },
   {
    "id": "skeleton.asof.auc_facts_block",
@@ -54425,7 +54381,7 @@
    "command": "python research/k8_skeleton.py research/results/k8_collisions_explicit.json research/results/k8_collisions_implicit.json research/results/k8_collisions_asof.json --out research/results/k8_step0.json",
    "raw": "research/results/k8_step0.json",
    "cited_in": [],
-   "commit": "71f83a14ba59cec68991f24fae43e081d68fafc1",
+   "commit": "7a25bf335b0173a5874f96bb7413c03a2e99111a",
    "produced_by": [
     "research/k8_skeleton.py",
     "nevertwice/_engine.py",
@@ -54455,11 +54411,7 @@
     "sandbox_guard.py"
    ],
    "ci": null,
-   "note": "One named measure (Jaccard overlap of the skeletons), not the best of the five the artifact computes: a maximum over measures is a choice, and the artifact carries all five for anyone who wants the spread. This is why layer 1 decides by proof rules and not by similarity - at this AUC a threshold that loses no still-true fact also keeps most real replacements apart.",
-   "cited_in_pending": [],
-   "stale": "the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored",
-   "withdrawn_on": "2026-09-19",
-   "pending_remeasure": true
+   "note": "One named measure (Jaccard overlap of the skeletons), not the best of the five the artifact computes: a maximum over measures is a choice, and the artifact carries all five for anyone who wants the spread. This is why layer 1 decides by proof rules and not by similarity - at this AUC a threshold that loses no still-true fact also keeps most real replacements apart."
   },
   {
    "id": "vault.contested_per_week",
