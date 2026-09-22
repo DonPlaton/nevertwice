@@ -15,6 +15,7 @@ Safe by default - prints a plan and changes NOTHING. Pass --apply to execute.
     python consolidate_memory.py            # dry-run
     python consolidate_memory.py --apply
 """
+import hashlib
 import heapq
 import os
 import re
@@ -87,14 +88,88 @@ def _pair_fields(p: Path) -> tuple[dict, str, str]:
     return fm, (title or p.stem), (desc or "")
 
 
-def _set_contested(p: Path, stems: list[str], disputed: str | None = None) -> None:
+#: What each dispute was about, on the earlier note: `{newer stem: "<hash old>:<hash new>"}`.
+DISPUTED_AT_KEY = "disputed_at"
+
+
+def _dispute_hash(old_path: Path, new_path: Path) -> str:
+    """Both statements the guard judged - title and description - hashed. A dispute is about
+    those words; when either changes, the answer the guard gave may no longer be the answer."""
+    def h(title: str, desc: str) -> str:
+        return hashlib.sha256(f"{title}\n{desc}".encode("utf-8")).hexdigest()[:16]
+    _, t_old, d_old = _pair_fields(old_path)
+    _, t_new, d_new = _pair_fields(new_path)
+    return f"{h(t_old, d_old)}:{h(t_new, d_new)}"
+
+
+def _set_contested(p: Path, stems: list[str], disputed: str | None = None,
+                   dispute_hash: str | None = None) -> None:
     text = p.read_text(encoding="utf-8", errors="replace")
     fields = {m.CONTESTED_KEY: stems}
     if disputed:
         fm, _ = m._read_frontmatter(text)
         cur = m._contested_of({m.CONTESTED_KEY: fm.get(m.DISPUTED_KEY)})
         fields[m.DISPUTED_KEY] = cur + ([disputed] if disputed not in cur else [])
+        if dispute_hash:
+            seen = fm.get(DISPUTED_AT_KEY)
+            fields[DISPUTED_AT_KEY] = {**(seen if isinstance(seen, dict) else {}),
+                                       disputed: dispute_hash}
     m.write_atomic(p, m._stamp_frontmatter(text, fields))
+
+
+def _requeue_changed_disputes(apply: bool) -> tuple[int, int]:
+    """Put a disputed pair back on the judge's queue when either statement changed since the
+    dispute. Returns (re-queued, baselined).
+
+    F14's second half, recorded in K8 as a follow-up and never built. A pair the judge said
+    `replaces` and the guard vetoed leaves the queue as `disputed`, so the judge is not paid
+    again for the same answer on the same text. But nothing ever brought one back: a note
+    corrected later - the value the session really said, now in its facts - stayed disputed for
+    good, and off limits to the near-duplicate merge for good.
+
+    A dispute stamped before `disputed_at` existed has no hash. It is baselined, not re-judged:
+    nothing says its text changed since the dispute, and re-judging every old dispute would pay
+    the judge for answers it already gave. From the baseline on, a change counts.
+    """
+    requeued = baselined = 0
+    _contested_rows, disputed_rows = m._iter_contested_both(None)
+    for c in disputed_rows:
+        old_path = Path(c["path"])
+        folder = m.VAULT / m.TYPE_FOLDER[c["ntype"]]
+        try:
+            text = old_path.read_text(encoding="utf-8", errors="replace")
+        except OSError:
+            continue
+        fm, _ = m._read_frontmatter(text)
+        seen = fm.get(DISPUTED_AT_KEY)
+        seen = dict(seen) if isinstance(seen, dict) else {}
+        back, baseline = [], False
+        for ns in c["new_stems"]:
+            new_path = next((q for q in (folder / f"{ns}.md", folder / "Archive" / f"{ns}.md")
+                             if q.exists()), None)
+            if new_path is None:
+                continue                  # the newer note is gone: the record stays for a human
+            now = _dispute_hash(old_path, new_path)
+            if ns not in seen:
+                seen[ns] = now
+                baseline = True
+                baselined += 1
+            elif seen[ns] != now:
+                back.append(ns)
+                seen.pop(ns, None)
+                requeued += 1
+        if apply and (back or baseline):
+            fields = {m.DISPUTED_KEY: [s for s in c["new_stems"] if s not in back],
+                      DISPUTED_AT_KEY: seen}
+            if back:
+                contested = m._contested_of(fm)
+                fields[m.CONTESTED_KEY] = contested + [s for s in back if s not in contested]
+            try:
+                m.write_atomic(old_path, m._stamp_frontmatter(text, fields))
+            except OSError as e:
+                print(f"      dispute re-queue failed for {old_path.name} ({e}) - left as is",
+                      file=sys.stderr)
+    return requeued, baselined
 
 
 def _replacement_guard(old_desc: str, new_desc: str) -> str:
@@ -154,6 +229,7 @@ def adjudicate_contested(apply: bool, has_llm: bool, cap: int | None = None,
     budget = CONTESTED_BUDGET if budget is None else budget
     seconds = CONTESTED_SECONDS if seconds is None else seconds
     judge = judge or m._same_fact_verdict
+    requeued, baselined = _requeue_changed_disputes(apply)
     pairs: list[tuple] = []
     for c in m._iter_contested(None):
         old_path = Path(c["path"])
@@ -176,6 +252,7 @@ def adjudicate_contested(apply: bool, has_llm: bool, cap: int | None = None,
     stats = {"pairs": len(pairs), "budget": budget, "cap": cap, "judged": 0, "tokens_spent": 0,
              "estimated_calls": 0, "replaces": 0, "separate": 0, "vetoed": 0, "unanswered": 0,
              "errors": 0, "left": len(pairs), "prompt_tokens": 0, "eval_tokens": 0, "skipped": None}
+    stats["requeued"], stats["baselined"] = requeued, baselined
     #: One vector cache for the whole run, written once at the end. `supersede_note` used to load
     #: it, pop one stem and write the whole file back for EVERY pair it retired - N full rewrites
     #: of a cache the consolidator (below, `consolidate`) already holds and writes itself. Given a
@@ -269,7 +346,8 @@ def adjudicate_contested(apply: bool, has_llm: bool, cap: int | None = None,
                     stats["vetoed"] += 1
                     print(f"      vetoed ({veto}): {c['stem']} | {new_stem} - both stay, disputed")
                     if apply:
-                        _set_contested(old_path, remaining, disputed=new_stem)
+                        _set_contested(old_path, remaining, disputed=new_stem,
+                                       dispute_hash=_dispute_hash(old_path, new_path))
                 elif verdict is True:
                     stats["replaces"] += 1
                     print(f"      replaces: {c['stem']} -> {new_stem}")

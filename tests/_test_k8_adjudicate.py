@@ -450,5 +450,70 @@ res = cm.adjudicate_contested(apply=True, has_llm=True, judge=judge(True))
 check("a clean early exit reports healed=0, not nothing", res.get("healed") == 0,
       f"healed={res.get('healed')!r}")
 
+print("\n- a disputed pair goes back on the queue when its content changes, and only then -")
+#: F14's second half, recorded as a follow-up in K8 and never built. A pair the judge said
+#: `replaces` and the guard vetoed is stamped `disputed` and leaves the queue - so that the
+#: judge is not paid again for the same answer on the same text. But nothing ever put it back:
+#: a note corrected later (the value the session really said now in its facts) stayed disputed
+#: forever, and off limits to the near-duplicate merge forever. The dispute now remembers what
+#: it was about - a hash of both statements - and a run re-queues the pair when either changed.
+VETO_OLD = f"The upload size limit is 25 MB.{F}the upload size limit is 25 MB"
+VETO_NEW = f"The system enforces an upload size limit of 100 MB.{F}the request rate limit is 100 per minute"
+FIXED_NEW = f"The upload size limit is 100 MB.{F}the upload size limit is 100 MB"
+
+
+def rewrite_desc(stem, old_text, new_text):
+    fp = m.VAULT / "Decisions" / f"{stem}.md"
+    body = fp.read_text(encoding="utf-8")
+    assert old_text in body, "the fixture's description is not where the test expects it"
+    fp.write_text(body.replace(old_text, new_text), encoding="utf-8")
+
+
+d = fresh()
+o, n = pair(old_desc=VETO_OLD, new_desc=VETO_NEW)
+res = cm.adjudicate_contested(apply=True, has_llm=True, judge=judge(True))
+check("the pair is vetoed and disputed (the fixture works)", res["vetoed"] == 1
+      and fm(o).get("disputed") == [n], str(res))
+check("the dispute records what it was about: a hash of both statements, keyed by the newer stem",
+      isinstance(fm(o).get("disputed_at"), dict) and n in fm(o)["disputed_at"],
+      str(fm(o).get("disputed_at")))
+
+SEEN.clear()
+res = cm.adjudicate_contested(apply=True, has_llm=True, judge=judge(True))
+check("unchanged text: no call, still disputed - the reason the stamp exists",
+      res["judged"] == 0 and not SEEN and fm(o).get("disputed") == [n]
+      and res.get("requeued") == 0, str(res))
+
+rewrite_desc(n, VETO_NEW, FIXED_NEW)          # the newer note now carries the value, verified
+plan = cm.adjudicate_contested(apply=False, has_llm=True, judge=judge(True))
+check("a dry run names the pair it would put back, and writes nothing",
+      plan.get("requeued") == 1 and fm(o).get("disputed") == [n], str(plan))
+SEEN.clear()
+res = cm.adjudicate_contested(apply=True, has_llm=True, judge=judge(True))
+check("changed text: the pair is back on the queue and judged again in the same run",
+      res.get("requeued") == 1 and res["judged"] == 1 and len(SEEN) == 1, str(res))
+check("and this time the proof is there, so the earlier note retires",
+      res["replaces"] == 1 and (d / "Decisions" / "Superseded" / f"{o}.md").exists(), str(res))
+
+#: A dispute stamped before this change has no hashes. It is not re-queued - nothing says its
+#: text changed since the dispute, and re-judging every old dispute would spend the judge on
+#: answers already given. The run records a baseline instead, and from then on a change counts.
+d = fresh()
+o, n = pair(old_desc=VETO_OLD, new_desc=VETO_NEW)
+cm._set_contested(m.VAULT / "Decisions" / f"{o}.md", [], disputed=n)   # the legacy stamp: no hashes
+if "disputed_at" in fm(o):
+    fp = m.VAULT / "Decisions" / f"{o}.md"
+    fp.write_text("\n".join(ln for ln in fp.read_text(encoding="utf-8").split("\n")
+                            if not ln.startswith("disputed_at:")), encoding="utf-8")
+SEEN.clear()
+res = cm.adjudicate_contested(apply=True, has_llm=True, judge=judge(True))
+check("a dispute without hashes is baselined, not re-judged",
+      res["judged"] == 0 and not SEEN and res.get("baselined") == 1
+      and isinstance(fm(o).get("disputed_at"), dict) and n in fm(o)["disputed_at"], str(res))
+rewrite_desc(n, VETO_NEW, FIXED_NEW)
+res = cm.adjudicate_contested(apply=True, has_llm=True, judge=judge(True))
+check("and a change after the baseline puts it back on the queue",
+      res.get("requeued") == 1 and res["judged"] == 1, str(res))
+
 print(f"\nK8 layer 3: {len(RUN) - len(FAILED)} passed, {len(FAILED)} failed")
 sys.exit(1 if FAILED else 0)
