@@ -97,7 +97,26 @@ SPREAD_MEASURED_ON = "research/supersession_bench.py"
 #: a mode recorded in a comment is a property written down and not enforced - which is the defect
 #: this whole file exists to sort. `tests/_test_campaign_triage.py` reads the stand's own pin out
 #: of its source and requires the flag below to agree with the comparison.
-SPREAD_MEASURED_AT = {"extract_temp": "0.2", "runs": 5}
+SPREAD_MEASURED_AT = {"extract_temp": "0.2", "runs": 5, "corpus": None}
+
+#: `corpus` is None because it was never recorded, and that turned out to matter more than the
+#: temperature. Measured 2026-09-22 AFTER the pin, five runs of the same stand at temperature 0
+#: on one corpus and one on the other, same `code_sha`, same dataset sha:
+#:
+#:     explicit  443.8 / 414.0 / 414.0 / 443.4 / 408.4    range 35.4   sd 17.39
+#:     implicit  492.2, against 492.2 recorded and 495.1 / 493.8 / 493.8 in the pin's own commit
+#:
+#: Twenty-three times the spread on one corpus against the other, at the same pin. So the pin did
+#: not remove the variance - it removed it on the implicit corpus - and a spread is a property of
+#: a stand in a MODE and on a CORPUS, not of a stand and not of a field. The table below cannot
+#: say which corpus it describes, so "35.4 now against 26.4 before" compares two numbers that
+#: each carry an unrecorded variable; only the pair measured in one sitting is defensible.
+SPREAD_POST_PIN = {
+    "research/supersession_bench.py": {
+        "explicit": {"field": "mean_chars_returned", "range": 35.4, "sd": 17.39, "runs": 5},
+        "implicit": {"field": "mean_chars_returned", "range": 1.30, "sd": 0.7506, "runs": 3},
+    },
+}
 
 #: True while the table was measured in a mode the stand no longer runs in, so every number is an
 #: upper bound on today's resolution rather than today's resolution. Flipping this by hand without

@@ -176,5 +176,28 @@ check("re-measuring at the stand's pin without lowering the flag would be refuse
            and T.SPREAD_IS_UPPER_BOUND))
 
 
+print("")
+print("- a spread names the corpus it was measured on, or says it was not recorded -")
+#: The pin was supposed to make this stand reproducible. It did, on ONE corpus: five runs on the
+#: explicit corpus at temperature 0 span 35.4 characters while the implicit corpus reproduces to
+#: 1.30, a factor of twenty-three at the same pin. The legacy table cannot say which corpus it
+#: describes, so comparing it against either is comparing two numbers that each carry an
+#: unrecorded variable. Found 2026-09-22 by running the stand instead of trusting the table; the
+#: missing field was named by the auditing session.
+check("the legacy record admits it does not know its corpus",
+      "corpus" in T.SPREAD_MEASURED_AT and T.SPREAD_MEASURED_AT["corpus"] is None,
+      str(T.SPREAD_MEASURED_AT))
+_pp = T.SPREAD_POST_PIN.get(T.SPREAD_MEASURED_ON) or {}
+check("and the post-pin measurements name theirs", set(_pp) == {"explicit", "implicit"},
+      str(sorted(_pp)))
+check("each of them says the field, the range and how many runs",
+      all({"field", "range", "runs"} <= set(v) for v in _pp.values()), str(_pp)[:100])
+#: The finding itself, pinned as a number rather than a sentence: the two corpora disagree by
+#: more than an order of magnitude, so a run count taken from one does not transfer to the other.
+_ratio = _pp["explicit"]["range"] / _pp["implicit"]["range"] if _pp else 0
+check(f"the two corpora disagree by more than tenfold ({_ratio:.0f}x), so a run count does not "
+      f"transfer between them", _ratio >= 10, f"{_ratio:.1f}")
+
+
 print(f"\n{'ALL OK' if not FAILS else f'{FAILS} FAILED'}")
 sys.exit(1 if FAILS else 0)
