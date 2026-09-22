@@ -251,6 +251,12 @@ def contexts_nevertwice_full(data, pool) -> dict:
     stand publish the extractor's silence - the questions whose gold sessions yielded no note."""
     os.environ["NEVERTWICE_CLOUD"] = "none"
     os.environ["NEVERTWICE_MODEL"] = EXTRACTOR
+    # The extractor samples: the engine's default is 0.2, right for the live hook and
+    # wrong for a measurement. Pinning the MODEL and leaving the TEMPERATURE loose is
+    # what `supersession_bench` did for a year, publishing a run-to-run spread it blamed
+    # on the model (fixed 2026-09-22: at 0.2 every one of 80 cases served different text
+    # between runs of one commit, at 0 exactly one did).
+    os.environ["NEVERTWICE_EXTRACT_TEMP"] = "0"
     # The engine binds its model name at import, and this module imported it at the top - so the
     # environment variable alone left the arm on whatever NEVERTWICE_MODEL the shell exported
     # (the campaign of 2026-09-10 ran 940 sessions through qwen3.6:35b-a3b, which declared every

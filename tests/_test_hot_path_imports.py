@@ -20,7 +20,9 @@ milliseconds again.
 from __future__ import annotations
 
 import ast
+import copy as _copy
 import json
+import pickle as _pickle
 import os
 import subprocess
 import sys
@@ -173,6 +175,35 @@ check("and forwards whatever attribute is asked for, not a fixed list",
       _m._lazy_re(r"(a)(b)").groups == 2 and _m._lazy_re(r"ab").fullmatch("ab") is not None)
 check("compiling is deferred until something asks",
       _m._lazy_re(r"z")._compiled is None)
+
+#: `__slots__` plus `__getattr__` is a recursion trap, and the proxy has both. `copy`, `deepcopy`
+#: and `pickle` build an instance through `__new__` without running `__init__`, so the slots are
+#: unset; the first read of `self._compiled` raises `AttributeError`, which lands in `__getattr__`,
+#: which reads `self._compiled` again. Without the guard both lines below raise `RecursionError`
+#: instead - and the whole battery stays green, all 197 suites, because nothing else in the
+#: package copies a pattern (checked by the audit, 2026-09-22). This is the suite that would have
+#: to notice, so it does.
+_bare = _m._lazy_re.__new__(_m._lazy_re)          # exactly what copy and pickle do
+try:
+    _bare.pattern
+    check("an instance built without __init__ raises rather than recursing", False)
+except AttributeError:
+    check("an instance built without __init__ raises rather than recursing", True)
+except RecursionError:
+    check("an instance built without __init__ raises rather than recursing", False)
+
+try:
+    check("copy.copy of a pattern returns a pattern",
+          type(_copy.copy(_m._lazy_re(r"a"))) is _m._lazy_re)
+except RecursionError:
+    check("copy.copy of a pattern returns a pattern", False)
+
+try:
+    _rt = _pickle.loads(_pickle.dumps(_m._lazy_re(r"a\d+")))
+    check("a pickled pattern survives the round trip and still matches",
+          type(_rt) is _m._lazy_re and _rt.findall("a1 a22") == ["a1", "a22"])
+except RecursionError:
+    check("a pickled pattern survives the round trip and still matches", False)
 
 print()
 print(f"hot-path imports: {PASSED} passed, {FAILED} failed")

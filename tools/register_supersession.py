@@ -41,6 +41,23 @@ except Exception:                      # noqa: BLE001
     pass
 
 ENVIRONMENT = "local_supersession_stand"
+
+#: The floor on pooled runs, and it is 2 rather than a larger number for a reason that is worth
+#: writing down, because the obvious reading of the stand's history argues for 7-10.
+#:
+#: What the run-to-run spread actually was, and why. Until 2026-09-22 the stand never pinned
+#: `NEVERTWICE_EXTRACT_TEMP`, so it sampled at the engine's live default of 0.2, and five runs of
+#: one commit moved chars/query by 26.4 with all 80 cases serving different text. Pinned to 0, the
+#: same corpus gives chars 495.1 / 493.8 / 493.8 over three runs, stale 0.0667 in all three, and
+#: 1 of 80 cases differing. So the spread the docstring blamed on the model was sampling.
+#:
+#: What two runs buy that one does not is therefore not averaging - it is the CHECK. Three runs at
+#: temperature 0 is a small sample on one of the two corpora, `supersession_v1_explicit` has not
+#: been measured pinned at all, and a second run is what makes "they agreed" a statement rather
+#: than an assumption. It costs one extra pass, about 5.7 minutes of the stand's ~340 s, against a
+#: campaign of hours; a floor of 7 would cost six passes per cell to average away a spread that is
+#: no longer there. Raise this if a pinned pair ever disagrees by more than its Wilson interval.
+MIN_RUNS = 2
 ARM_LABEL = {"mem0": "Mem0 2.0.19", "naive": "the append-only floor (markdown + term overlap)",
              "zep": "Zep/Graphiti (graphiti-core 0.30.2, FalkorDB)"}
 
@@ -90,16 +107,27 @@ def build_claims(family: str, art: dict, *, dataset: str, command: str, raw: str
     P = art[pooled_key]
     engine_only = engine_only or pooled_key != "pooled_nevertwice"
     runs = P["runs"]
+    if runs < MIN_RUNS:
+        #: The stand's own rule, enforced instead of described. `pool` accepts a single file and
+        #: the artifact then says "pooled over 1 runs" - true, and read by nobody between the run
+        #: and the page. 144 of the 655 pending claims were registered against a command with no
+        #: repeat in it at all (audit 2026-09-22), which is how a rule that lives only in a
+        #: docstring performs. The repeat is one flag now: `--runs 2`.
+        raise ValueError(
+            f"{family}: the artifact pools {runs} run(s) and this stand's floor is {MIN_RUNS}. "
+            f"Re-run with `--runs {MIN_RUNS}`, or pool existing runs with `--pool a.json b.json`.")
     ds = art["dataset"]
     n_sup, n_ctl = int(ds["supersession_cases"]), int(ds["control_cases"])
     stand = stand or f"the {ds['name']} corpus"
     base = {"dataset": dataset, "environment": ENVIRONMENT, "command": command, "raw": raw,
             "cited_in": list(cite or []), "commit": head, "produced_by": list(produced_by)}
-    note_pooled = (f"Pooled over {runs} runs of the same commit: the extraction model is not "
-                   f"deterministic at temperature 0 and the runs read "
+    note_pooled = (f"Pooled over {runs} runs of the same commit, which read "
                    + " and ".join(str(x) for x in P["stale"]["per_run"])
-                   + f". One run of this stand is not a result, so the published figure is the pooled "
-                   f"rate over {P['stale']['n']} case-runs with the per-run values beside it in the artifact.")
+                   + f". The published figure is the pooled rate over {P['stale']['n']} case-runs "
+                   f"with the per-run values beside it in the artifact. The runs are repeated "
+                   f"because agreement between them is a claim like any other and has to be "
+                   f"shown; before 2026-09-22 they also had to be, because the stand sampled at "
+                   f"the engine's live temperature of 0.2 and moved every case between runs.")
     new: list[dict] = []
     skipped: list[str] = []
 

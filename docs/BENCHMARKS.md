@@ -64,7 +64,7 @@ breakdown and what it costs us: [`research/SUPERSESSION.md`](../research/SUPERSE
 <!-- claims:supersession-pinned -->
 > **Withdrawn 2026-09.** the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored
 >
-> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/supersession_bench.py` is what re-measures this one.
+> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/supersession_bench.py --runs 2 --out research/results/supersession_v1.json` is what re-measures this one.
 <!-- /claims:supersession-pinned -->
 
 The third column counts every control case whose still-true fact did not come back, whatever the
@@ -77,7 +77,7 @@ retirement.
 <!-- claims:supersession-causes -->
 > **Withdrawn 2026-09.** the part-four review changed the engine (privacy gate, stem parser, recurrence ceiling, tag fold); the numbers need one GPU campaign (extractor + judge + embedder) at the post-review HEAD before they can be restored
 >
-> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/supersession_bench.py` is what re-measures this one.
+> The claim is kept in `research/evidence_manifest.json` marked `stale`, with the command that would restore it. `python tools/check_freshness.py --list-stale` prints every withdrawn number and why; `python research/supersession_bench.py --runs 2 --out research/results/supersession_v1.json` is what re-measures this one.
 <!-- /claims:supersession-causes -->
 
 Nevertwice's row is pooled over two runs of the same commit, and Zep/Graphiti's over two runs on a flushed FalkorDB; Mem0 and the append-only floor are one run each.

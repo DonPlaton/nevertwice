@@ -6,6 +6,7 @@ artifact's pair order, characters per query, the dataset counts; blocked arms sk
 claims left alone; the refusals of the CLI.
 """
 import _env_guard  # noqa: F401
+import copy
 import json
 import sys
 import tempfile
@@ -104,8 +105,12 @@ print("\n- K8: a second (after-sleep) reading under the same family gets its OWN
 ART_AS = dict(ART, arms=dict(ART["arms"], nevertwice_after_sleep={
     "stale_rate": 0.05, "current_rate": 0.95, "rows": []}))
 ART_AS["pooled_nevertwice_after_sleep"] = {
-    "runs": 1, "stale": {"k": 3, "n": 60, "rate": 0.05, "ci": [0.01, 0.14], "per_run": [0.05]},
-    "current": {"k": 57, "n": 60, "rate": 0.95, "ci": [0.86, 0.98], "per_run": [0.95]},
+    #: Two runs, because that is what the stand produces: `pool` builds this block only when the
+    #: after-sleep reading is present in EVERY engine run (`len(after_runs) == len(runs)`), and
+    #: both committed switch artifacts carry runs=2 here. The fixture said 1, which the run floor
+    #: added on 2026-09-22 refuses - it described an artifact the stand cannot write.
+    "runs": 2, "stale": {"k": 3, "n": 60, "rate": 0.05, "ci": [0.01, 0.14], "per_run": [0.05, 0.05]},
+    "current": {"k": 57, "n": 60, "rate": 0.95, "ci": [0.86, 0.98], "per_run": [0.95, 0.95]},
     "over_retraction": {"k": 1, "n": 20, "rate": 0.05, "ci": [0.01, 0.24]},
     "mean_chars_returned": 240.0}
 new3, skipped3 = rs.build_claims("supersession_implicit", ART_AS, dataset="supersession_v1_implicit",
@@ -190,6 +195,54 @@ with tempfile.TemporaryDirectory() as tmp:
         check("an uncommitted file in the closure is refused with 2, not registered", rc == 2, rc)
     finally:
         rs._dirty_files = real_dirty
+
+print("\n- a single-run artifact is refused, and the refusal names the flag -")
+#: The stand's docstring has said "one run of this stand is not a result" since 2026-09-02 and
+#: nothing enforced it: `pool` accepts one file, and 229 registered claims named a command with
+#: no repeat in it (audit 2026-09-22). All eight committed artifacts happen to pool 2 - checked -
+#: so no published number came from one run; what was missing was the guarantee.
+SINGLE = copy.deepcopy(ART)
+SINGLE["pooled_nevertwice"]["runs"] = 1
+SINGLE["pooled_nevertwice"]["stale"]["per_run"] = [0.05]
+try:
+    rs.build_claims("supersession_single", SINGLE, dataset="d",
+                    command="python research/supersession_bench.py", raw="r.json", head="deadbeef",
+                    produced_by=["research/supersession_bench.py"], existing=set())
+    check("a one-run artifact is refused", False, "build_claims returned instead of raising")
+except ValueError as e:
+    check("a one-run artifact is refused", True)
+    check("the refusal names the floor and the flag that meets it",
+          f"--runs {rs.MIN_RUNS}" in str(e), str(e))
+
+SINGLE["pooled_nevertwice"]["runs"] = rs.MIN_RUNS
+SINGLE["pooled_nevertwice"]["stale"]["per_run"] = [0.05, 0.1]
+try:
+    n2, _ = rs.build_claims("supersession_single", SINGLE, dataset="d",
+                            command="python research/supersession_bench.py", raw="r.json",
+                            head="deadbeef", produced_by=["research/supersession_bench.py"],
+                            existing=set())
+    check("the same artifact at the floor is accepted (the check is the run count, nothing else)",
+          len(n2) > 0, len(n2))
+except ValueError as e:
+    check("the same artifact at the floor is accepted (the check is the run count, nothing else)",
+          False, str(e))
+
+print("\n- every registered supersession command carries the repeat -")
+#: The register is where the campaign reads its instructions. A command without the repeat does
+#: not reproduce the artifact it points at; it produces a one-run one, which the registrar above
+#: then refuses, an hour of stand time later.
+MAN = json.loads((ROOT / "research" / "evidence_manifest.json").read_text(encoding="utf-8"))
+_cl = MAN["claims"]
+bench = [c for c in (_cl.values() if isinstance(_cl, dict) else _cl)
+         if "supersession_bench" in (c.get("command") or "")]
+check("the manifest still has supersession claims to check", len(bench) > 0, len(bench))
+missing = sorted({c["command"] for c in bench
+                  if "--runs" not in c["command"] and "--pool" not in c["command"]})
+check("no supersession command names a single run", not missing, "; ".join(missing))
+lost = sorted(c["id"] for c in bench
+              if c.get("raw") and f"--out {c['raw']}" not in c["command"])
+check("a command whose claim points at an artifact also writes that artifact",
+      not lost, f"{len(lost)}: {', '.join(lost[:3])}")
 
 print(f"\n{'ALL OK' if not FAILS else f'{FAILS} FAILED'}")
 sys.exit(1 if FAILS else 0)

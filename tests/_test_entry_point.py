@@ -289,6 +289,34 @@ try:
 finally:
     blob.parent.unlink()
 
+# A cache it cannot MOVE INTO PLACE, which is a different branch from the one above and the one
+# that was leaking. Five hook events can compile at once; each writes `<cache>.<pid>.tmp` and
+# calls `os.replace`. On Windows `os.replace` raises `PermissionError [WinError 5]` while another
+# process has the destination open for reading - exactly the shape of a cold-cache race - and the
+# first version of this loader returned without removing its temporary. Eight simultaneous hooks
+# on an empty cache left three orphans of 493 KB each, named after pids that no longer exist, so
+# nothing would ever pick them up. One per loser per race, and a race follows every engine edit
+# on a machine running more than one session.
+#
+# The race itself is not a test: it leaves three orphans in one run and none in the next, so a
+# mutation is indistinguishable from luck. Making the DESTINATION a directory takes the same
+# branch deterministically and on both platforms, the way the file-instead-of-__pycache__ trick
+# above does for `makedirs`.
+blob.parent.mkdir(parents=True, exist_ok=True)
+for junk in blob.parent.glob("*.tmp"):
+    junk.unlink()
+blob.unlink(missing_ok=True)
+blob.mkdir()
+try:
+    r = load_in(cachedir, "getattr(m, '_CACHE_PROBE', 'absent')")
+    check("a cache it cannot move into place still loads the engine",
+          r.returncode == 0 and "fresh" in r.stdout,
+          f"exit {r.returncode}: {r.stdout!r} {r.stderr[-300:]}")
+    orphans = sorted(q.name for q in blob.parent.glob("*.tmp"))
+    check("and leaves no temporary behind when it loses", not orphans, ", ".join(orphans))
+finally:
+    blob.rmdir()
+
 # And the freshness key has to be the PARTS, not the loader: editing `_engine.py` itself is a
 # change to the index, which CPython's own `.pyc` for the entry point does not cover either -
 # so the check is that the parts' identity is what the key is made of.

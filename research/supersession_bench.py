@@ -32,7 +32,11 @@ machine.
     python research/supersession_bench.py --probe                # the five-fact Mem0 probe
     python research/supersession_bench.py --arms nevertwice,naive
     python research/supersession_bench.py --arms nevertwice,mem0,naive --out results.json
+    python research/supersession_bench.py --arms nevertwice,naive --runs 2 --out pooled.json
     python research/supersession_bench.py --pool run1.json run2.json --with mem0.json --out pooled.json
+
+A registered number comes from `--runs 2` or from `--pool` over two runs; `register_supersession.py`
+refuses an artifact pooled over one.
 """
 from __future__ import annotations
 
@@ -684,12 +688,19 @@ def pool_other_arm(results: list[dict]) -> dict:
 def pool(engine_files: list[Path], other_files: list[Path] | None = None) -> dict:
     """Pool several runs of the engine arm into one artifact, the other arms beside them.
 
-    Two runs of the same commit on the same corpus read stale 0.017 and 0.067 (2026-09-02):
-    the extraction model is not deterministic at temperature 0, so one run of this stand is not
-    a result. The published rate is pooled over case-runs with the per-run values kept beside
-    it; the paired tests are computed on the first run, where the arms saw identical cases, and
-    repeated per run against Mem0. Until 2026-09-06 this lived in a session scratchpad, which
-    meant the committed artifact could not be rebuilt by anyone else.
+    Two runs of the same commit on the same corpus read stale 0.017 and 0.067 (2026-09-02), and
+    this docstring blamed the model: "the extraction model is not deterministic at temperature 0".
+    It was not at temperature 0. The stand never pinned `NEVERTWICE_EXTRACT_TEMP` and so sampled
+    at the engine's live default of 0.2 (fixed 2026-09-22, see `run_nevertwice`). Pinned to 0,
+    three runs of one commit on `supersession_v1_implicit` read stale 0.0667 / 0.0667 / 0.0667,
+    chars 495.1 / 493.8 / 493.8, and 1 of 80 cases served different text where all 80 had before.
+
+    Runs are still pooled, and `tools/register_supersession.py` now refuses a single one, but for
+    the other reason: agreement between two runs is a claim like any other and is worth one extra
+    pass to show rather than assume. The published rate is pooled over case-runs with the per-run
+    values kept beside it; the paired tests are computed on the first run, where the arms saw
+    identical cases, and repeated per run against Mem0. Until 2026-09-06 this lived in a session
+    scratchpad, which meant the committed artifact could not be rebuilt by anyone else.
 
     Every file must come from the same dataset (content hash). Engine files contribute their
     `nevertwice` arm to the pool and any other unblocked arm to the artifact; `other_files`
@@ -772,9 +783,12 @@ def pool(engine_files: list[Path], other_files: list[Path] | None = None) -> dic
     per_run_stale = pooled["stale"]["per_run"]
     spread = " and ".join(f"{v:.4f}" for v in per_run_stale)
     note = (f"{len(runs)} runs of the same commit on the same corpus with the same models read "
-            f"stale {spread}. The extraction model is not deterministic at temperature 0, so the "
-            "published rate is pooled over case-runs and the per-run values are kept beside it. "
-            "One run of this stand is not a result.")
+            f"stale {spread}. The published rate is pooled over case-runs and the per-run values "
+            "are kept beside it. Extraction is pinned to temperature 0 (2026-09-22); before that "
+            "the stand sampled at the engine's live 0.2 and every case moved between runs, which "
+            "is the spread this note used to blame on the model."
+            + (" ONE RUN: the agreement between runs is not shown here, and "
+               "tools/register_supersession.py refuses this artifact." if len(runs) < 2 else ""))
     out = {"arms": arms, "k": meta["k"], "llm": meta["llm"], "embedder": meta["embedder"],
            "dataset": ds, "pooled_nevertwice": pooled, "pooled_note": note,
            "pairs": compare_arms(first), "pairs_per_engine_run": per_run_pairs}
@@ -860,80 +874,34 @@ def load_dataset(path: Path) -> dict:
     return data
 
 
-def main() -> int:
-    ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--probe", action="store_true",
-                    help="run the five-fact Mem0 probe instead of the committed dataset")
-    ap.add_argument("--dataset", default=str(DATASET))
-    ap.add_argument("--arms", default="nevertwice,naive")
-    ap.add_argument("--k", type=int, default=5)
-    ap.add_argument("--limit", type=int, default=0, help="first N cases only (a smoke run)")
-    ap.add_argument("--sleep", action="store_true",
-                    help="K8: read the engine arm twice - after session two, and again after the "
-                         "sleep-time judge over the contested pairs (arm `nevertwice_after_sleep`)")
-    ap.add_argument("--out", default="")
-    ap.add_argument("--compare", nargs="*", default=None,
-                    help="result files to pair against each other instead of running an arm")
-    ap.add_argument("--pool", nargs="+", default=None, metavar="RUN",
-                    help="engine result files to pool into one artifact (each must carry the "
-                         "nevertwice arm); the other arms in them are carried along")
-    ap.add_argument("--with", dest="others", nargs="*", default=[], metavar="FILE",
-                    help="result files whose other arms (mem0, naive) go into the pooled artifact")
-    args = ap.parse_args()
+def _print_pooled(res: dict) -> None:
+    """The pooled summary, printed the same way whether the pool came from `--pool` or
+    from `--runs N`."""
+    p = res["pooled_nevertwice"]
+    print(f"pooled {p['runs']} engine runs on {res['dataset']['name']}: "
+          f"stale {p['stale']['rate']} {p['stale']['ci']} per run {p['stale']['per_run']} | "
+          f"current {p['current']['rate']} {p['current']['ci']} | "
+          f"control miss {p['control_miss']['rate']} (retired {p['control_causes']['retired']}, "
+          f"demoted {p['control_causes'].get('demoted', 0)}, "
+          f"never written {p['control_causes']['never_written']}, "
+          f"unranked {p['control_causes']['unranked']}) | "
+          f"over-retraction {p['over_retraction']['rate']} | "
+          f"{p['mean_chars_returned']} chars/query")
+    for pr in res["pairs"]:
+        print(f"  {pr['a']} vs {pr['b']}: n={pr['n']} discordant {pr['discordant']} "
+              f"p={pr['p_mcnemar']:.3g}")
+    for i, pr in enumerate(res["pairs_per_engine_run"], start=1):
+        print(f"  run {i} vs mem0: nevertwice-only {pr['nevertwice_only']}, "
+              f"mem0-only {pr['mem0_only']}")
 
-    if args.pool:
-        try:
-            res = pool([Path(f) for f in args.pool], [Path(f) for f in args.others])
-        except (ValueError, OSError, KeyError) as e:
-            print(f"pool: {e}")
-            return 2
-        p = res["pooled_nevertwice"]
-        print(f"pooled {p['runs']} engine runs on {res['dataset']['name']}: "
-              f"stale {p['stale']['rate']} {p['stale']['ci']} per run {p['stale']['per_run']} | "
-              f"current {p['current']['rate']} {p['current']['ci']} | "
-              f"control miss {p['control_miss']['rate']} (retired {p['control_causes']['retired']}, "
-              f"demoted {p['control_causes'].get('demoted', 0)}, "
-              f"never written {p['control_causes']['never_written']}, "
-              f"unranked {p['control_causes']['unranked']}) | "
-              f"over-retraction {p['over_retraction']['rate']} | "
-              f"{p['mean_chars_returned']} chars/query")
-        for pr in res["pairs"]:
-            print(f"  {pr['a']} vs {pr['b']}: n={pr['n']} discordant {pr['discordant']} "
-                  f"p={pr['p_mcnemar']:.3g}")
-        for i, pr in enumerate(res["pairs_per_engine_run"], start=1):
-            print(f"  run {i} vs mem0: nevertwice-only {pr['nevertwice_only']}, "
-                  f"mem0-only {pr['mem0_only']}")
-        if args.out:
-            Path(args.out).write_text(json.dumps(res, indent=1, ensure_ascii=False),
-                                      encoding="utf-8", newline="\n")
-            print("wrote", args.out)
-        return 0
 
-    if args.compare:
-        res = compare([Path(f) for f in args.compare])
-        print(json.dumps(res, indent=1))
-        if args.out:
-            Path(args.out).write_text(json.dumps(res, indent=1), encoding="utf-8", newline="\n")
-            print("wrote", args.out)
-        return 0
-
-    if args.probe:
-        data = dict(PROBE, sha256="n/a (inline probe)", path="research/supersession_bench.py")
-    else:
-        p = Path(args.dataset)
-        if not p.exists():
-            print(f"dataset not found: {p}\nbuild it: python research/gen_supersession_dataset.py")
-            return 2
-        data = load_dataset(p)
-
-    cases = data["cases"][:args.limit] if args.limit else data["cases"]
-    print(f"dataset {data['name']}  n={len(cases)}  sha256={data['sha256'][:16]}")
-    print(f"store   {sandbox_guard.store()}\n")
-
+def _one_run(data: dict, cases: list[dict], args, arm_names: list[str]) -> dict:
+    """One pass of the requested arms over the corpus: the shape `--out` writes and
+    `--pool` reads. Split out of `main` so `--runs N` can call it N times."""
     out = {"dataset": {k: data[k] for k in ("name", "sha256", "path")},
            "n_cases": len(cases), "k": args.k, "llm": LLM, "embedder": EMBED_MODEL,
            "arms": {}}
-    for name in [a.strip() for a in args.arms.split(",") if a.strip()]:
+    for name in arm_names:
         fn = ARMS.get(name)
         if fn is None:
             print(f"- {name}: unknown arm (have: {', '.join(ARMS)})")
@@ -974,6 +942,107 @@ def main() -> int:
                   f"{res['notes_in_cyrillic']} of them in Cyrillic on an all-English corpus "
                   f"(drift {res['language_drift_rate']})")
         print()
+    return out
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument("--probe", action="store_true",
+                    help="run the five-fact Mem0 probe instead of the committed dataset")
+    ap.add_argument("--dataset", default=str(DATASET))
+    ap.add_argument("--arms", default="nevertwice,naive")
+    ap.add_argument("--k", type=int, default=5)
+    ap.add_argument("--limit", type=int, default=0, help="first N cases only (a smoke run)")
+    ap.add_argument("--runs", type=int, default=1, metavar="N",
+                    help="repeat the engine arm N times and pool them into --out, writing each "
+                         "run beside it as <out>.runN.json; the other arms run once. One command "
+                         "instead of N runs plus a --pool, which is why every registered claim "
+                         "from this stand carried `pooled over 1 runs` until 2026-09-22")
+    ap.add_argument("--sleep", action="store_true",
+                    help="K8: read the engine arm twice - after session two, and again after the "
+                         "sleep-time judge over the contested pairs (arm `nevertwice_after_sleep`)")
+    ap.add_argument("--out", default="")
+    ap.add_argument("--compare", nargs="*", default=None,
+                    help="result files to pair against each other instead of running an arm")
+    ap.add_argument("--pool", nargs="+", default=None, metavar="RUN",
+                    help="engine result files to pool into one artifact (each must carry the "
+                         "nevertwice arm); the other arms in them are carried along")
+    ap.add_argument("--with", dest="others", nargs="*", default=[], metavar="FILE",
+                    help="result files whose other arms (mem0, naive) go into the pooled artifact")
+    args = ap.parse_args()
+
+    if args.pool:
+        try:
+            res = pool([Path(f) for f in args.pool], [Path(f) for f in args.others])
+        except (ValueError, OSError, KeyError) as e:
+            print(f"pool: {e}")
+            return 2
+        _print_pooled(res)
+        if args.out:
+            Path(args.out).write_text(json.dumps(res, indent=1, ensure_ascii=False),
+                                      encoding="utf-8", newline="\n")
+            print("wrote", args.out)
+        return 0
+
+    if args.compare:
+        res = compare([Path(f) for f in args.compare])
+        print(json.dumps(res, indent=1))
+        if args.out:
+            Path(args.out).write_text(json.dumps(res, indent=1), encoding="utf-8", newline="\n")
+            print("wrote", args.out)
+        return 0
+
+    if args.probe:
+        data = dict(PROBE, sha256="n/a (inline probe)", path="research/supersession_bench.py")
+    else:
+        p = Path(args.dataset)
+        if not p.exists():
+            print(f"dataset not found: {p}\nbuild it: python research/gen_supersession_dataset.py")
+            return 2
+        data = load_dataset(p)
+
+    cases = data["cases"][:args.limit] if args.limit else data["cases"]
+    print(f"dataset {data['name']}  n={len(cases)}  sha256={data['sha256'][:16]}")
+    print(f"store   {sandbox_guard.store()}\n")
+
+    arm_names = [a.strip() for a in args.arms.split(",") if a.strip()]
+
+    if args.runs < 1:
+        print(f"--runs {args.runs}: a run count below 1 measures nothing")
+        return 2
+
+    if args.runs > 1:
+        # The engine arm repeats; the other arms do not. Only the engine arm goes through the
+        # extractor, and only the extractor moves between runs of one commit - a second `naive`
+        # or `mem0` pass would cost the same wall clock and produce the same rows. It also
+        # removes an ambiguity in `pool`, which keeps the FIRST file's other arms and silently
+        # drops the rest: with one run of each there is nothing to drop.
+        if not args.out:
+            print("--runs N needs --out: the per-run artifacts are written beside the pooled one")
+            return 2
+        stem = Path(args.out)
+        stem.parent.mkdir(parents=True, exist_ok=True)
+        paths = []
+        for i in range(1, args.runs + 1):
+            names = arm_names if i == 1 else [a for a in arm_names if a == ENGINE_ARM]
+            print(f"=== run {i} of {args.runs} ({', '.join(names)}) ===")
+            q = stem.with_name(f"{stem.stem}.run{i}{stem.suffix or '.json'}")
+            q.write_text(json.dumps(_one_run(data, cases, args, names), indent=1,
+                                    ensure_ascii=False), encoding="utf-8", newline="\n")
+            print("wrote", q)
+            paths.append(q)
+        try:
+            res = pool(paths)
+        except (ValueError, OSError, KeyError) as e:
+            print(f"pool: {e}")
+            return 2
+        _print_pooled(res)
+        Path(args.out).write_text(json.dumps(res, indent=1, ensure_ascii=False),
+                                  encoding="utf-8", newline="\n")
+        print("wrote", args.out)
+        return 0
+
+    out = _one_run(data, cases, args, arm_names)
 
     if args.out:
         Path(args.out).write_text(json.dumps(out, indent=1, ensure_ascii=False), encoding="utf-8", newline="\n")

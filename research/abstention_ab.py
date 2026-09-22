@@ -154,6 +154,12 @@ def build_store(cases: list[dict]) -> None:
     llm = os.environ.get("SUPERSESSION_LLM", "qwen3-coder:30b")
     os.environ["NEVERTWICE_MODEL"] = llm
     from nevertwice import api                                  # noqa: PLC0415
+    # The extractor samples: the engine's default is 0.2, right for the live hook and
+    # wrong for a measurement. Pinning the MODEL and leaving the TEMPERATURE loose is
+    # what `supersession_bench` did for a year, publishing a run-to-run spread it blamed
+    # on the model (fixed 2026-09-22: at 0.2 every one of 80 cases served different text
+    # between runs of one commit, at 0 exactly one did).
+    os.environ["NEVERTWICE_EXTRACT_TEMP"] = "0"
     api.m.OLLAMA_MODEL = llm
     t0 = time.time()
     for i, case in enumerate(cases):

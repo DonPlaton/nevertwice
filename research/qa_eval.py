@@ -390,6 +390,12 @@ def run():
             return [cand[i] for i in order]
 
     judge_llm = None
+    # The non-paced path answers and judges through `m.generate_json`, which samples at the
+    # engine's live default of 0.2. A judge that gives a different verdict on a second reading is
+    # not a judge. The MODEL is deliberately left to the environment here - the judge is held at
+    # deepseek-chat through NEVERTWICE_DEEPSEEK_MODEL, see the header - which is why this stand
+    # is exempt from the model half of `tests/_test_stands_pin_the_sampler.py` and not from this.
+    os.environ["NEVERTWICE_EXTRACT_TEMP"] = "0"
     if REASONER:
         # reader = deepseek-reasoner (probe the ceiling); judge = the configured chat backend,
         # held constant vs the 0.748 run so the only change is the reader. Stamp the reader into

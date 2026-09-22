@@ -151,6 +151,13 @@ def _llm_pattern(n: dict, cache: dict) -> tuple[str, str, bool]:
 def arm_guards_llm(corpus: dict, notes: list[dict]) -> tuple[list, dict]:
     os.environ["NEVERTWICE_CLOUD"] = "none"
     os.environ["NEVERTWICE_MODEL"] = LLM
+    # A guard IS a regex, and recall and FPR are measured on the one this call returns. At the
+    # engine's live default of 0.2 the same note gives different guards: three fresh processes on
+    # one note produced two distinct patterns, and at 0 the same one three times (audit
+    # 2026-09-22). `LLM_CACHE` hides that on a machine that has one - it is `*_cache.json`, never
+    # committed - so the number stayed reproducible from the artifact and was not reproducible
+    # from the command, which is what the register stores.
+    os.environ["NEVERTWICE_EXTRACT_TEMP"] = "0"
     m.OLLAMA_MODEL = LLM               # the engine binds the name at import; the shell may export another
     cache = json.loads(LLM_CACHE.read_text(encoding="utf-8")) if LLM_CACHE.exists() else {}
     ledger, born, empty, unsafe, fresh = [], {}, [], [], 0
