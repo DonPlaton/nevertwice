@@ -378,7 +378,7 @@ def test_the_migration_writes_the_ledger_the_way_the_ledger_is_read() -> None:
     check("the pre-migration ledger is kept as the rollback generation",
           prev.is_file() and "outcomes" not in prev.read_text(encoding="utf-8"),
           "present" if prev.is_file() else "no .prev was written")
-    shutil.rmtree(result["backup"], ignore_errors=True, onexc=_force_remove)
+    _rmtree(result["backup"], ignore_errors=True)
 
 
 def test_a_rebuild_promises_only_what_it_rebuilds() -> None:
@@ -424,6 +424,23 @@ def _force_remove(func, path, exc) -> None:
     func(path)
 
 
+#: `rmtree`'s handler keyword is `onexc` from Python 3.12 and `onerror` before it, and this file
+#: used `onexc` unconditionally while the package declares 3.10+. On 3.10 that is
+#: `TypeError: rmtree() got an unexpected keyword argument 'onexc'` - a crash in the cleanup of a
+#: test, reported as the suite failing. Invisible on any interpreter new enough, which is every
+#: one on this machine; it appeared on the 3.10 jobs of CI's first matrix run (2026-09-22).
+#: Chosen by asking the function, not the version number: a parameter is present or it is not.
+import inspect as _inspect  # noqa: E402
+
+_RMTREE_HANDLER = ("onexc" if "onexc" in _inspect.signature(shutil.rmtree).parameters
+                   else "onerror")
+
+
+def _rmtree(path, **kw):
+    """`shutil.rmtree` with the read-only handler under whichever name this Python takes."""
+    return shutil.rmtree(path, **{**kw, _RMTREE_HANDLER: _force_remove})
+
+
 def test_the_documented_rollback_does_not_destroy_what_it_restores() -> None:
     """A backup you are told to swap in must contain what the swap deletes.
 
@@ -462,7 +479,7 @@ def test_the_documented_rollback_does_not_destroy_what_it_restores() -> None:
 
         # Exactly what the instruction says to do. `onexc` is a Windows detail, not a
         # concession: git marks its object files read-only, so a plain rmtree stops halfway.
-        shutil.rmtree(store, onexc=_force_remove)
+        _rmtree(store)
         backup_path.rename(store)
         after = git("rev-parse", "HEAD").strip()
         check("and the rolled-back store is still the same repository", after == before,
@@ -510,7 +527,7 @@ def test_the_rollback_text_says_what_the_rollback_costs() -> None:
         git("add", "-A")
         git("commit", "-qm", "a week of sessions after the migration")
 
-        shutil.rmtree(store, onexc=_force_remove)
+        _rmtree(store)
         backup_path.rename(store)
         check("following the instruction rewinds the notes too, not only state files",
               not (store / "Mistakes" / "after.md").exists())
