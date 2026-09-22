@@ -249,10 +249,11 @@ def test_nothing_else_asks_git_what_is_dirty() -> None:
     out of it, so no parser lives there to go wrong.
     """
     print("\n- and nobody else asks git the question -")
-    offenders = []
+    offenders, _swept = [], 0
     for path in sorted((ROOT / "tools").glob("*.py")) + sorted((ROOT / "research").glob("*.py")):
         if path.stem == DOOR_MODULE:
             continue
+        _swept += 1
         for argv in _git_argvs(path):
             hit = TREE_STATE & set(argv)
             if hit:
@@ -261,7 +262,10 @@ def test_nothing_else_asks_git_what_is_dirty() -> None:
     #: sweep that found none. Pinned so the discovery has to keep working. Same class as
     #: `1ef491c`; found by a third signature over offender checks whose loop iterates a
     #: FILE DISCOVERY and whose size nothing asserts, 2026-09-22.
-    _swept = len(sorted((ROOT / "tools").glob("*.py")) + sorted((ROOT / "research").glob("*.py")))
+    #: Counted INSIDE the loop, after its own skips: a second, independent call to the same
+    #: glob would be a copy of the intention, green while the loop below looked at nothing.
+    #: Measured by the auditing session, 2026-09-22 - emptying this loop's discovery left
+    #: both the offender check and the first version of this guard passing.
     check(f"the sweep sees the modules it polices ({_swept})", _swept >= 100, str(_swept))
     check(f"only tools/{DOOR_MODULE}.py asks git for the state of the tree", not offenders,
           "; ".join(offenders[:6]))

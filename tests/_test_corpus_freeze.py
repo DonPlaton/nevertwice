@@ -138,10 +138,11 @@ def test_the_dev_corpus_is_readable_whatever_the_seal_says() -> None:
 def test_no_module_reaches_around_the_seal() -> None:
     print("\n- the seal, statically -")
     allowed = set(C.HELDOUT_READERS)
-    offenders = []
+    offenders, _lab = [], 0
     for path in sorted(LAB.glob("*.py")):
         if path.name in allowed:
             continue
+        _lab += 1
         text = path.read_text(encoding="utf-8", errors="replace")
         for needle in ("corpus_heldout", "HELDOUT_ROOT", "heldout_repos"):
             if needle in text:
@@ -150,7 +151,9 @@ def test_no_module_reaches_around_the_seal() -> None:
     #: sweep that found none. Pinned so the discovery has to keep working. Same class as
     #: `1ef491c`; found by a third signature over offender checks whose loop iterates a
     #: FILE DISCOVERY and whose size nothing asserts, 2026-09-22.
-    _lab = len(sorted(LAB.glob("*.py")))
+    #: Counted INSIDE the loop, after the allowlist skip: a second, independent call to the
+    #: same glob would be a copy of the intention, green while the loop looked at nothing.
+    #: Measured by the auditing session, 2026-09-22.
     check(f"the lab has modules to police ({_lab})", _lab >= 30, str(_lab))
     check("no lab module outside the allowlist names the held-out corpus",
           not offenders, str(offenders))

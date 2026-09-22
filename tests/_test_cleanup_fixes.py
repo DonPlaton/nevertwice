@@ -152,8 +152,9 @@ finally:
     m.RETRIEVAL_TOP_K, m.CROSS_PROJECT_K, m.generate_json, m._retrieval_candidates = _sk
 
 # The rule, over every module: no module-level constant may be captured in a default.
-_frozen = []
+_frozen, _pkg = [], 0
 for _f in sorted(Path(m.__file__).resolve().parent.glob("*.py")):
+    _pkg += 1
     _tree = ast.parse(_f.read_text(encoding="utf-8"))
     _consts = {n.targets[0].id for n in _tree.body
                if isinstance(n, ast.Assign) and len(n.targets) == 1
@@ -170,7 +171,9 @@ for _f in sorted(Path(m.__file__).resolve().parent.glob("*.py")):
 #: sweep that found none. Pinned so the discovery has to keep working. Same class as
 #: `1ef491c`; found by a third signature over offender checks whose loop iterates a
 #: FILE DISCOVERY and whose size nothing asserts, 2026-09-22.
-_pkg = len(sorted(Path(m.__file__).resolve().parent.glob("*.py")))
+#: Counted INSIDE the loop: a second, independent call to the same glob would be a copy of
+#: the intention, green while the loop looked at nothing. Measured by the auditing
+#: session, 2026-09-22.
 check(f"the package sweep sees its modules ({_pkg})", _pkg >= 55)
 check("no module constant is frozen into a default argument: " + "; ".join(_frozen[:4]),
       not _frozen)

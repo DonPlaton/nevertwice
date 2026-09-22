@@ -49,10 +49,11 @@ BARE = re.compile(r"^import (memory_hook|api|store_state|index_sqlite|outcomes|g
 RELATIVE = re.compile(r"^\s*from \. import ", re.M)
 
 print("# no module in the package binds a sibling flat outside an ImportError fallback")
-offenders = []
+offenders, _swept = [], 0
 for path in sorted((ROOT / "nevertwice").glob("*.py")):
     if path.name in ("memory_hook.py", "_engine.py"):
         continue                      # the loader and the engine itself are the one exception
+    _swept += 1
     for i, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
         # indented inside the `except ImportError:` arm is the fallback and is fine; at column
         # zero it is the only binding, and a package caller gets a second engine.
@@ -62,8 +63,10 @@ for path in sorted((ROOT / "nevertwice").glob("*.py")):
 #: sweep that found none. Pinned so the discovery has to keep working. Same class as
 #: `1ef491c`; found by a third signature over offender checks whose loop iterates a
 #: FILE DISCOVERY and whose size nothing asserts, 2026-09-22.
-_swept = len([p for p in sorted((ROOT / "nevertwice").glob("*.py"))
-              if p.name not in ("memory_hook.py", "_engine.py")])
+#: Counted INSIDE the loop, after its own skips: a second, independent call to the same
+#: glob would be a copy of the intention, green while the loop below looked at nothing.
+#: Measured by the auditing session, 2026-09-22 - emptying this loop's discovery left
+#: both the offender check and the first version of this guard passing.
 check(f"the sweep sees the package's modules ({_swept})", _swept >= 55, str(_swept))
 check("every sibling import is the try-relative-then-flat pair", not offenders,
       "; ".join(offenders[:6]) + (f" (+{len(offenders) - 6} more)" if len(offenders) > 6 else ""))
