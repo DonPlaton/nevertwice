@@ -24,6 +24,7 @@ from __future__ import annotations
 import hashlib
 import json
 import math
+import os
 import re
 import tempfile
 import sys
@@ -199,12 +200,36 @@ def session(path: Path, *, cwd: str, marker: str, day: str, turns: int = 3) -> s
 #: The backreference template, as its own constant: a `` inside an edited line is the first thing
 #: a shell heredoc eats, and it did, twice. Written from `chr(92)` so no editor or tool
 #: between here and the file can lose it.
+#: The path separator, from `os.sep`, so the three spellings below need no literal.
+SEP = os.sep
+#: What follows the `<STORE>` marker up to the closing quote - the path tail.
+STORE_TAIL = re.compile(r'<STORE>([^"]*)')
+
 PLACE_N = '"' + chr(92) + '1": <N>'
 
 
 def mask(text: str, store: Path) -> str:
-    """The text a snapshot hashes: machine-specific spellings replaced by markers."""
-    text = TS_RE.sub("<TS>", text.replace(str(store), "<STORE>"))
+    r"""The text a snapshot hashes: machine-specific spellings replaced by markers.
+
+    The store is replaced in every spelling a JSON file can carry, and that is not a detail. On
+    POSIX `str(store)` appears verbatim, the replacement fires, and what remains is
+    `<STORE>/_transcripts/GS-DB-NEW.jsonl`. On Windows the same path is written with its
+    separators escaped - `C:\\Users\\...` - the replacement misses, and `TMP_RE` then swallows
+    the WHOLE path as `<TMP>`, tail and all. Two platforms, two different masked texts, each
+    perfectly stable on its own machine, and a fixture recorded on one that cannot match the
+    other. That is what `.processed_sessions.json` had been failing on since the matrix first
+    ran, through two runs of guessing; the instrument was taught to print the masked text and it
+    said so in one line.
+    """
+    for spelling in (str(store), str(store).replace(SEP, SEP + SEP), str(store).replace(SEP, "/")):
+        text = text.replace(spelling, "<STORE>")
+    #: and the TAIL after the marker, whose separators are still the host's: `<STORE>` plus
+    #: `\_transcripts\A.jsonl` on Windows against `/_transcripts/A.jsonl` on POSIX, which is the
+    #: same difference one level smaller. Normalised to `/` only inside the tail, so nothing
+    #: else in the document is touched.
+    text = STORE_TAIL.sub(lambda m: "<STORE>" + m.group(1).replace(SEP + SEP, "/")
+                          .replace(SEP, "/"), text)
+    text = TS_RE.sub("<TS>", text)
     text = SID_RE.sub("<SID>", text)
     return NUM_RE.sub(PLACE_N, TMP_RE.sub("<TMP>", text))
 
