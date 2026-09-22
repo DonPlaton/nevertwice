@@ -35,7 +35,10 @@ def check(name, cond, detail=""):
 
 
 CLAIMS = {
-    "a.live":      {"id": "a.live", "value": 0.9833},
+    #: `printed` is the register's own rounding, so a document may legally write 0.983.
+    "a.live":      {"id": "a.live", "value": 0.9833, "printed": ["0.983"]},
+    "a.units":     {"id": "a.units", "value": 30, "printed": ["30 ms"]},
+    "a.round":     {"id": "a.round", "value": 0.0667, "printed": ["0.067"]},
     "a.pending":   {"id": "a.pending", "value": 411.0, "stale": "reason", "pending_remeasure": True},
     "a.withdrawn": {"id": "a.withdrawn", "value": 0.5, "stale": "reason"},
     "a.declared":  {"id": "a.declared", "value": 0.80, "declaration": "ledger J2: written before the run"},
@@ -86,6 +89,50 @@ live = [cid for cid, c in g.load_claims().items() if g.state(c) == "live"]
 check("the real register loads and has live claims to reference", len(live) > 0, str(len(live)))
 check("state() separates the three cases on real data",
       {g.state(c) for c in g.load_claims().values()} <= {"live", "withdrawn", "pending re-measure"})
+
+print("\n- the number standing BESIDE the reference, which is how a document gets migrated -")
+#: The naive migration appends `[[claim:id]]` to the existing line and leaves the figure. The
+#: first version of this tool passed exactly that with zero complaints while the line still read
+#: `current 1.000 / 1.000` against a stored 0.9833 (audit 2026-09-22, on a simulated
+#: post-campaign register where the liveness check no longer masked it).
+n, probs = run("Frozen: current 1.000 / 1.000 [[claim:a.live]]\n")
+check("a stale number left beside a reference is caught", len(probs) == 1
+      and "1.000" in probs[0] and "0.9833" in probs[0], str(probs))
+
+n, probs = run("Frozen: cold import 29 ms [[claim:a.units]]\n")
+check("and caught when the register's printed form carries a unit",
+      len(probs) == 1 and "29" in probs[0], str(probs))
+
+print("\n- and the legal spellings it must NOT report -")
+n, probs = run("Frozen: current 0.983 [[claim:a.live]]\n")
+check("a `printed` rounding is legal - it is the register's own form", not probs, str(probs))
+n, probs = run("Frozen: stale 0.067 [[claim:a.round]]\n")
+check("0.067 beside a stored 0.0667 is legal for the same reason", not probs, str(probs))
+n, probs = run("Frozen: cold import 30 ms [[claim:a.units]]\n")
+check("the bare number inside a united printed form is legal", not probs, str(probs))
+n, probs = run("Frozen: current 1.0 [[claim:a.live = 0.9833]]\n")
+check("a number INSIDE the brackets is not also reported as an adjacent one",
+      len(probs) == 1 and "1.0" in probs[0], str(probs))
+n, probs = run("Two refs: 0.9833 [[claim:a.live]] and 30 [[claim:a.units]]\n")
+check("a line with two references reports no adjacent number - which figure is whose is a guess",
+      not probs, str(probs))
+n, probs = run("Gate: as-of 0.80 [[claim:a.declared]]\n")
+check("a declared value has no measurement for an adjacent number to drift from", not probs,
+      str(probs))
+
+print("\n- a document that names nothing must FAIL, not merely be mentioned -")
+#: The first version printed "names no claim" and returned 0. CI reads the exit code, by which
+#: the state this tool exists to end passed (audit 2026-09-22).
+with tempfile.TemporaryDirectory() as tmp:
+    q = Path(tmp) / "gates.md"
+    q.write_text("Gate: chars/query at or below 400, under Mem0's 411.\n", encoding="utf-8")
+    rc = g.main([str(q)])
+    check("a file with gates and no references exits non-zero", rc == 1, f"exit {rc}")
+
+print("\n- the limit is stated, because a tool read as catching more than it does is worse -")
+doc = (ROOT / "tools" / "check_gate_refs.py").read_text(encoding="utf-8")
+check("the docstring says a WRONG claim written correctly is not caught",
+      "does not close a claim chosen by family" in doc)
 
 print(f"\n{'ALL OK' if not FAILS else f'{FAILS} FAILED'}")
 sys.exit(1 if FAILS else 0)

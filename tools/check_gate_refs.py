@@ -26,9 +26,24 @@ and this checks, for every reference:
     python tools/check_gate_refs.py .loop/GOAL-FINISH-C.md docs/*.md
     python tools/check_gate_refs.py --list          # every referencable live claim id
 
-Exit code 1 if any reference is broken, so a document can be put in CI. Documents that name no
-claim are reported as such rather than passing silently: a gate file with zero references is
-the state this tool exists to end, not evidence that it is clean.
+A number standing BESIDE a reference is checked too, not only one written inside the brackets.
+That is how a document actually gets migrated - append `[[claim:id]]` to the line and leave the
+figure - and the first version of this tool passed exactly that with zero complaints while the
+line still read `current 1.000 / 1.000` against a stored 0.9833. On a line carrying exactly one
+reference, a bare number must be the claim's value or one of the forms in its `printed` field;
+`printed` is the register's own rounding, so `0.067` for a stored 0.0667 is legal and `0.017`
+for a stored 0.0583 is not.
+
+Exit code 1 if any reference is broken OR any named document references nothing, so a document
+can be put in CI. A zero-reference file is the state this tool exists to end, and reporting it
+while exiting 0 is the defect, not the report.
+
+**What it cannot catch, stated so it is not read as catching it:** the WRONG claim, correctly
+written. `[[claim:supersession_implicit.nevertwice.current_rate = 1.0]]` placed under an
+explicit reading passes every check here - the claim exists, is live, and its number matches.
+That substitution happened in this project on 2026-09-22 and was found by a person reading.
+This tool closes rewritten numbers; it does not close a claim chosen by family instead of by
+the reading it belongs to.
 """
 from __future__ import annotations
 
@@ -61,12 +76,63 @@ def state(claim: dict) -> str:
     return "live"
 
 
+#: A bare number on a gate line: `0.9833`, `411.0`, `89`, `-0.060`. Percent and unit suffixes
+#: are left to `printed`, which carries the form the register itself publishes.
+BARE = re.compile(r"(?<![\w.])(-?\d+(?:\.\d+)?)(?![\w.])")
+
+
+def _legal_forms(claim: dict) -> set[str]:
+    """Every spelling of a claim's value the register itself publishes, plus the value."""
+    forms = {str(claim.get("value"))}
+    for pr in (claim.get("printed") or []):
+        forms.add(str(pr).strip())
+        #: `printed` carries units - "30 ms", "81%" - and a gate line writes the number alone.
+        m = BARE.search(str(pr))
+        if m:
+            forms.add(m.group(1))
+    return forms
+
+
+def _matches(text: str, claim: dict) -> bool:
+    forms = _legal_forms(claim)
+    if text in forms:
+        return True
+    try:
+        want = float(text)
+    except ValueError:
+        return False
+    for f in forms:
+        try:
+            if abs(float(f) - want) <= 1e-9:
+                return True
+        except ValueError:
+            continue
+    return False
+
+
 def check_file(path: Path, claims: dict) -> tuple[int, list[str]]:
     """Returns (references found, problems)."""
     problems: list[str] = []
     found = 0
     for n, line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
-        for cid, printed in REF.findall(line):
+        refs = REF.findall(line)
+        #: The ADJACENT number, checked only when the line carries exactly one reference - with
+        #: two, which figure belongs to which claim is a guess, and a guessing check is worse
+        #: than none. The numbers inside the brackets are stripped first so a correct migration
+        #: does not report its own value twice.
+        if len(refs) == 1 and refs[0][0] in claims:
+            claim = claims[refs[0][0]]
+            if not claim.get("declaration"):
+                outside = REF.sub(" ", line)
+                #: Deduplicated per line: `current 1.000 / 1.000` writes one wrong figure
+                #: twice, and reporting it twice would make a reader count two defects.
+                for bare in dict.fromkeys(BARE.findall(outside)):
+                    if not _matches(bare, claim):
+                        problems.append(
+                            f"{path}:{n}: `{refs[0][0]}` - the line writes {bare} beside the "
+                            f"reference; the register holds {claim.get('value')} "
+                            f"(printed {claim.get('printed')})")
+        for cid, printed in refs:
             found += 1
             claim = claims.get(cid)
             if claim is None:
@@ -128,7 +194,9 @@ def main(argv: list[str] | None = None) -> int:
         print(f"{p}: names no claim - its gates are not connected to any evidence")
     print(f"\n{total} reference(s) checked, {len(all_problems)} broken, "
           f"{len(silent)} document(s) naming no claim")
-    return 1 if all_problems else 0
+    #: A silent document fails too. Printing "names no claim" and exiting 0 let the state this
+    #: tool exists to end pass CI, which reads the code and not the line (audit 2026-09-22).
+    return 1 if (all_problems or silent) else 0
 
 
 if __name__ == "__main__":
