@@ -63,8 +63,11 @@ def env_int(name: str, default: int) -> int:
 class _lazy_re:
     """A compiled pattern that compiles itself the first time it is used.
 
-    The engine defines two dozen module-level patterns, and compiling all of them costs 3.64 ms
-    of a 13.07 ms cold import - about a quarter of the body's load. PreToolUse runs before every
+    The engine defines two dozen module-level patterns, and compiling all of them costs 3.64 ms.
+    Of what, matters: **3.64 of the 13.07 ms a cold import takes**, and the body itself is 8.87 ms
+    of that, so within the body it is **43%** rather than the quarter a reader would infer. The
+    rest of the 13.07 is `re`, `json` and `pathlib` arriving - the standard library, which the
+    body does not control and which no change here can reach. PreToolUse runs before every
     Edit, Write and Bash the agent makes, and it forces **none** of them: the guard path matches
     through `re.search(pattern_string, line)`, which goes to `re`'s own internal cache, and the
     two dozen here belong to session start, session end and the write path. They were compiled on
@@ -89,6 +92,16 @@ class _lazy_re:
         self._compiled = None
 
     def __getattr__(self, name):
+        #: `copy`, `deepcopy` and `pickle` build an instance through `__new__` and never run
+        #: `__init__`, so the slots are unset; the first read of `self._compiled` then raises
+        #: `AttributeError`, which lands back in this method, which reads `self._compiled`
+        #: again. That is unbounded recursion rather than a clean failure - the classic
+        #: `__slots__` plus `__getattr__` trap, reproduced by calling `__new__` by hand. Nothing
+        #: in this package copies or pickles a pattern today, so this is a guard against the
+        #: next person putting one in a structure and copying it, who would otherwise get a
+        #: stack rather than an error.
+        if name in ("_pattern", "_flags", "_compiled"):
+            raise AttributeError(name)
         rx = self._compiled
         if rx is None:
             rx = self._compiled = re.compile(self._pattern, self._flags)

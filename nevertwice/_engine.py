@@ -141,7 +141,17 @@ if _ld_codes is None:
                 _ld_fh.write(_ld_marshal.dumps((_ld_FORMAT, _ld_key, _ld_codes)))
             _ld_os.replace(_ld_tmp, _ld_cache)            # atomic on POSIX and on Windows
         except OSError:
-            pass                                          # a read-only install just recompiles
+            #: A read-only install just recompiles - and so does the loser of a race, which is
+            #: the case the first version did not clean up after. On Windows `os.replace` raises
+            #: `PermissionError [WinError 5]` when the destination is open for reading, and
+            #: during a cold-cache race the other processes are reading it. Eight simultaneous
+            #: hooks on an empty cache left three orphans of 493 KB each, named after dead pids
+            #: so nothing would ever pick them up. One per loser per race, and a race follows
+            #: every engine edit on a machine running more than one session.
+            try:
+                _ld_os.remove(_ld_tmp)
+            except (OSError, NameError):                  # never created, or already gone
+                pass
 
 for _ld_code in _ld_codes:
     exec(_ld_code, globals())                             # noqa: S102 - our own cached bytecode

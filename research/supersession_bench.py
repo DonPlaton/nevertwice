@@ -339,6 +339,20 @@ def run_nevertwice(cases: list[dict], k: int, sleep: bool = False) -> dict:
     os.environ["NEVERTWICE_CLOUD"] = "none"          # local only: nothing billed, nothing sent
     os.environ["NEVERTWICE_MODEL"] = LLM
     os.environ.setdefault("NEVERTWICE_EMBED_MODEL", EMBED_MODEL)
+    # Deterministic extraction, which this stand had never actually asked for. The engine's
+    # default is 0.2 - right for the live hook, wrong for a benchmark - and the three stands that
+    # care (`code_sessions_eval`, `facts_dilution_probe`, `silence_probe`) pin it to 0. This one
+    # did not, so every number it has ever produced was sampled, and the artifact it writes says
+    # "the extraction model is not deterministic at temperature 0" about a run that was never at
+    # temperature 0.
+    #
+    # Measured before changing it, same prompt through this engine's own `generate_json`:
+    # at the 0.2 default, back-to-back calls in one process differ every time (0 of 3 repeats
+    # identical, three distinct answers); at 0, every condition tried is identical - back to
+    # back, with an unrelated prompt in between, with a long unrelated prompt in between, and
+    # from a fresh interpreter (3 of 3, one answer). The run-to-run spread this stand is famous
+    # for is sampling, not the model.
+    os.environ["NEVERTWICE_EXTRACT_TEMP"] = "0"
     try:
         from nevertwice import api
     except Exception as e:                            # pragma: no cover - import-time only
