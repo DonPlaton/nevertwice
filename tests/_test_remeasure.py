@@ -7,9 +7,12 @@ thing the freshness check exists to catch: a number restamped with a commit that
 it. Mutation-checked where it matters - a stale artifact is refused, a dirty closure is refused.
 """
 import _env_guard  # noqa: F401
+import contextlib
 import copy
+import io
 import json
 import os
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -232,6 +235,45 @@ check("and neither guard has started refusing healthy data",
       and rm.shape_mismatch(_shape_claim,
                             {"recall_sweep": [{"threshold": t, "recall": 0.5} for t in range(6)]})
       is None)
+
+
+print("")
+print("- `--pending` warns where the command it prints cannot write its own artifact -")
+#: The package declares eleven entries whose recorded command produces a SMALLER file than the
+#: committed one, and the register carries those same commands for 281 claims. Measured
+#: 2026-09-22: ZERO of the 281 mentioned it - 171 had an empty `note`, the other 110 talked about
+#: something else - so the surface a person acts on printed a command that silently overwrites a
+#: merged artifact. The caveat is READ from the package at print time rather than stamped into
+#: the manifest: a copy would be a second source of truth, agreeing on the day it is written.
+_asm = rm._assembled_artifacts()
+check("the package declares artifacts their command cannot write", len(_asm) == 11, str(len(_asm)))
+check("and the one the campaign turns on is among them",
+      "research/results/supersession_v1_implicit.json" in _asm)
+
+_buf = io.StringIO()
+with contextlib.redirect_stdout(_buf):
+    rm.main(["--pending"])
+_out = _buf.getvalue()
+check("the listing warns rather than printing the command bare",
+      "cannot write that file as it stands" in _out)
+_tail = [ln for ln in _out.splitlines() if "declares incomplete" in ln]
+check("and it says how many claims stand behind such a command", bool(_tail),
+      _out.splitlines()[-1] if _out else "(no output)")
+_n = int(re.search(r"(\d+) of the (\d+) stand behind", _out).group(1)) if _tail else 0
+check(f"which is a population, not a zero ({_n})", _n >= 200, str(_n))
+
+#: The rule bites: with the package's declaration removed, the listing goes back to printing the
+#: command bare - so a green line above means the caveat travelled, not that nothing was wrong.
+_real = rm._assembled_artifacts
+rm._assembled_artifacts = lambda: {}
+try:
+    _buf2 = io.StringIO()
+    with contextlib.redirect_stdout(_buf2):
+        rm.main(["--pending"])
+    check("without the declaration the warning disappears",
+          "cannot write that file as it stands" not in _buf2.getvalue())
+finally:
+    rm._assembled_artifacts = _real
 
 
 print(f"\nremeasure: {len(RUN) - len(FAILED)} passed, {len(FAILED)} failed")

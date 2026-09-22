@@ -358,6 +358,30 @@ def restore(manifest: dict, select: set[str] | None = None, head: str | None = N
     return restored, left, review
 
 
+def _assembled_artifacts() -> dict[str, str]:
+    """{artifact: why its recorded command cannot write it}, read from the package.
+
+    `research/reproduce.py` declares eleven entries whose recorded command produces a SMALLER
+    file than the committed one - arms that came from other runs merged in with `--with`. The
+    register carries the same commands for 281 claims and said nothing about it: measured
+    2026-09-22, zero of those 281 mentioned the assembly, 171 had an empty `note` and the other
+    110 talked about something else. `--pending` is the surface a person acts on - it prints the
+    command they are about to run - so the caveat is printed HERE rather than copied into the
+    manifest, which would be a second source of truth that agrees on the day it is written.
+    """
+    try:
+        sys.path.insert(0, str(ROOT / "research"))
+        import reproduce as _r
+    except Exception:                       # the package is research-only; absence is not fatal
+        return {}
+    out = {}
+    for entry in getattr(_r, "ARTIFACTS", []):
+        how = (entry.get("assembled") or {}).get("how") if entry.get("assembled") else None
+        if how:
+            out[entry["file"]] = how
+    return out
+
+
 def pending(manifest: dict) -> dict[str, list[str]]:
     by_cmd: dict[str, list[str]] = {}
     for c in manifest["claims"]:
@@ -424,8 +448,21 @@ def main(argv: list[str] | None = None) -> int:
     by_cmd = pending(manifest)
     n = sum(len(v) for v in by_cmd.values())
     print(f"{n} claim(s) pending re-measurement" + (":" if n else ""))
+    caveats = _assembled_artifacts()
+    raw_of = {c.get("command") or "?": c.get("raw") for c in manifest["claims"]
+              if c.get("pending_remeasure")}
+    flagged = 0
     for cmd, ids in sorted(by_cmd.items(), key=lambda kv: -len(kv[1])):
         print(f"  {len(ids):3d}  {cmd}")
+        how = caveats.get(raw_of.get(cmd) or "")
+        if how:
+            flagged += len(ids)
+            print(f"       ! this command cannot write that file as it stands: {how}")
+    if flagged:
+        print("")
+        print(f"  {flagged} of the {n} stand behind a command the package declares incomplete "
+              f"(`assembled` in research/reproduce.py). Running it overwrites a merged "
+              f"artifact with a smaller one under the same name.")
     return 0
 
 
