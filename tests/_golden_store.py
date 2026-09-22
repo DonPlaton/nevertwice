@@ -196,6 +196,23 @@ def session(path: Path, *, cwd: str, marker: str, day: str, turns: int = 3) -> s
     return str(path)
 
 
+#: The backreference template, as its own constant: a `` inside an edited line is the first thing
+#: a shell heredoc eats, and it did, twice. Written from `chr(92)` so no editor or tool
+#: between here and the file can lose it.
+PLACE_N = '"' + chr(92) + '1": <N>'
+
+
+def mask(text: str, store: Path) -> str:
+    """The text a snapshot hashes: machine-specific spellings replaced by markers."""
+    text = TS_RE.sub("<TS>", text.replace(str(store), "<STORE>"))
+    text = SID_RE.sub("<SID>", text)
+    return NUM_RE.sub(PLACE_N, TMP_RE.sub("<TMP>", text))
+
+
+def masked_text(path: Path, store: Path) -> str:
+    return mask(path.read_text(encoding="utf-8"), store)
+
+
 def snapshot(store: Path, extra: dict | None = None) -> dict:
     """Every file in the store, masked and hashed, plus whatever the caller measured beside it."""
     files: dict[str, str] = {}
@@ -210,20 +227,29 @@ def snapshot(store: Path, extra: dict | None = None) -> dict:
         except (UnicodeDecodeError, OSError):
             files[rel] = f"<binary {p.stat().st_size}>"
             continue
-        text = TS_RE.sub("<TS>", text.replace(str(store), "<STORE>"))
-        text = SID_RE.sub("<SID>", text)
-        text = NUM_RE.sub(r'"\1": <N>', TMP_RE.sub("<TMP>", text))
-        files[rel] = hashlib.sha256(text.encode("utf-8")).hexdigest()[:16]
+        files[rel] = hashlib.sha256(mask(text, store).encode("utf-8")).hexdigest()[:16]
     return {"files": files, **(extra or {})}
 
 
-def diff(a: dict, b: dict) -> list[str]:
-    """Human-readable first differences between two snapshots - the whole point on a miss."""
+def diff(a: dict, b: dict, store: Path | None = None) -> list[str]:
+    """Human-readable first differences between two snapshots - the whole point on a miss.
+
+    When `store` is given, a file whose hash moved is also shown MASKED, truncated. A snapshot
+    entry is a hash, so a mismatch on another machine says only "this file differs" and the next
+    step is a guess; on 2026-09-22 that cost two matrix runs guessing at
+    `.processed_sessions.json`. The masked text is what the hash is taken of, so printing it says
+    what actually differs rather than that something does.
+    """
     out = []
     fa, fb = a.get("files", {}), b.get("files", {})
     for k in sorted(set(fa) | set(fb)):
         if fa.get(k) != fb.get(k):
             out.append(f"  {k}: {fa.get(k, '<absent>')} -> {fb.get(k, '<absent>')}")
+            if store is not None:
+                try:
+                    out.append("      here: " + masked_text(store / k, store)[:400].replace("\n", " "))
+                except OSError as exc:
+                    out.append(f"      here: <unreadable: {type(exc).__name__}>")
     for k in sorted(set(a) | set(b)):
         if k == "files":
             continue

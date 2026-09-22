@@ -214,9 +214,16 @@ def run_corpus(store: Path) -> dict:
     })
 
 
+#: The sandbox of the LAST run, kept so a fixture mismatch can print what actually differs.
+#: A snapshot entry is a hash, so "this file differs" is where the message used to stop and the
+#: next step was a guess - two matrix runs were spent guessing at `.processed_sessions.json`.
+LAST_STORE: Path | None = None
+
+
 def once() -> dict:
-    store = make_sandbox(m, "golden_")
-    return run_corpus(store)
+    global LAST_STORE
+    LAST_STORE = make_sandbox(m, "golden_")
+    return run_corpus(LAST_STORE)
 
 
 # ── stability ───────────────────────────────────────────────────────────────────────
@@ -244,7 +251,7 @@ if "--record" in sys.argv:
 elif fixture.exists():
     want = json.loads(fixture.read_text(encoding="utf-8"))
     check("the snapshot matches the recorded fixture", want == first,
-          "\n".join(G.diff(want, first)[:20]))
+          "\n".join(G.diff(want, first, LAST_STORE)[:20]))
 else:
     print("  [--] no fixture recorded yet (run with --record)")
 
