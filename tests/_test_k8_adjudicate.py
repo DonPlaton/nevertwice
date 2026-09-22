@@ -415,5 +415,40 @@ res = cm.adjudicate_contested(apply=True, has_llm=True, judge=judge(False))
 check("a note live in its folder keeps its vector even with a copy in Superseded/",
       twin_old in cache_file() and not res.get("healed"), f"healed={res.get('healed')}")
 
+print("\n- a ghost is cleared on every path, not only when there is something to judge -")
+#: The first placement of the heal sat after the three early exits, and this suite tested it with
+#: pairs in the queue and a backend up - past all three exits, exactly where healing reached
+#: anyway. The same shape as the first race test: the condition of the experiment coincided with
+#: the condition under which the thing tested already worked. Found by the auditing session.
+
+
+def plant_ghost_only(keep_a_pair):
+    """A retired note whose vector a killed run left in the FILE; optionally one live pair."""
+    made = seeded_pairs(2 if keep_a_pair else 1)
+    g_old, g_new = made[0]
+    m.supersede_note(m.VAULT / "Decisions" / f"{g_old}.md", g_new)
+    #: with one pair only, retiring its earlier note empties the queue - nothing is left to judge
+    planted = cache_file()
+    planted[g_old] = {"title": g_old, "desc": "d", "vec": [0.1, 0.2]}
+    m.EMBED_CACHE.write_text(_json.dumps(planted), encoding="utf-8")
+    return g_old
+
+
+for label, kw, keep_pair in (
+        ("nothing to judge", {"has_llm": True}, False),
+        ("no LLM backend", {"has_llm": False}, True),
+        ("a judge budget of 0", {"has_llm": True, "budget": 0}, True)):
+    d = fresh()
+    ghost = plant_ghost_only(keep_pair)
+    res = cm.adjudicate_contested(apply=True, judge=judge(True), **kw)
+    check(f"{label}: the ghost leaves the cache file", ghost not in cache_file(),
+          f"skipped={res.get('skipped')!r}")
+    check(f"{label}: and the report says healed=1", res.get("healed") == 1, str(res.get("healed")))
+
+d = fresh()
+res = cm.adjudicate_contested(apply=True, has_llm=True, judge=judge(True))
+check("a clean early exit reports healed=0, not nothing", res.get("healed") == 0,
+      f"healed={res.get('healed')!r}")
+
 print(f"\nK8 layer 3: {len(RUN) - len(FAILED)} passed, {len(FAILED)} failed")
 sys.exit(1 if FAILED else 0)

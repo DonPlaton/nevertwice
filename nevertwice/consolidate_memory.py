@@ -176,25 +176,38 @@ def adjudicate_contested(apply: bool, has_llm: bool, cap: int | None = None,
     stats = {"pairs": len(pairs), "budget": budget, "cap": cap, "judged": 0, "tokens_spent": 0,
              "estimated_calls": 0, "replaces": 0, "separate": 0, "vetoed": 0, "unanswered": 0,
              "errors": 0, "left": len(pairs), "prompt_tokens": 0, "eval_tokens": 0, "skipped": None}
-    if not pairs:
-        return stats
-    if not has_llm:
-        stats["skipped"] = "no LLM backend - the pairs stay contested and visible in conflicts()"
-        return stats
-    if budget <= 0:
-        stats["skipped"] = "judge budget 0 - the pairs stay contested and visible in conflicts()"
-        return stats
     #: One vector cache for the whole run, written once at the end. `supersede_note` used to load
     #: it, pop one stem and write the whole file back for EVERY pair it retired - N full rewrites
     #: of a cache the consolidator (below, `consolidate`) already holds and writes itself. Given a
     #: cache, `supersede_note` only pops; so a caller that passes one writes it, and a standalone
     #: run loads its own here and writes it once after the loop.
+    #:
+    #: The ghosts a killed run left are cleared BEFORE any early exit, because healing has no reason
+    #: to wait for a judge. It first sat after the three exits below, and the auditing session
+    #: measured what that meant: healed with pairs and a backend, left in place with nothing to
+    #: judge, with no backend, and with a zero budget. "Nothing to judge" is the likeliest state
+    #: after a kill - a process killed after its last retirement leaves an empty queue - and a quiet
+    #: week or a down Ollama are the next two. `healed` is in the report on every path, 0 included.
     own_cache = apply and cache is None
     if own_cache:
         cache = m.load_embed_cache()
     healed = _drop_retired_vectors(cache) if (apply and cache is not None) else 0
     stats["healed"] = healed
     retired = 0
+
+    def _early(reason: str | None = None) -> dict:
+        if reason:
+            stats["skipped"] = reason
+        if own_cache and healed:
+            m.save_embed_cache(cache)      # what was healed is written even when nothing is judged
+        return stats
+
+    if not pairs:
+        return _early()
+    if not has_llm:
+        return _early("no LLM backend - the pairs stay contested and visible in conflicts()")
+    if budget <= 0:
+        return _early("judge budget 0 - the pairs stay contested and visible in conflicts()")
     p0 = m._LLM_STATS.get("prompt_tokens", 0)
     e0 = m._LLM_STATS.get("eval_tokens", 0)
     spent = 0
