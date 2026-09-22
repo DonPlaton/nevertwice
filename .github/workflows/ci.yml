@@ -2,7 +2,11 @@ name: tests
 
 on:
   push:
-    branches: [main, master]
+    # `invariants/**` is here for a measured reason, not for convenience: the matrix had never
+    # run on Linux or macOS, so every cross-OS claim in this repository rested on one machine.
+    # The work lands on a long-lived branch before master, and a trigger that only fires on
+    # master would first report platform breakage after the merge it was supposed to gate.
+    branches: [main, master, 'invariants/**']
   pull_request:
 
 permissions:
