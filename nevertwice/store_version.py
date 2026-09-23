@@ -52,6 +52,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import shutil
 import sqlite3
 import sys
@@ -226,33 +227,42 @@ def plan(vault: Path) -> dict:
 
 # ── backup and rollback ─────────────────────────────────────────────────
 
-#: Paths that were listed and gone by the time the copy reached them. Module-level rather than
-#: threaded through `shutil.copytree`, which gives a copy function no place to report.
-_VANISHED: set[str] = set()
-
-
-def _copy_or_note_vanished(src, dst, *, follow_symlinks=True):
-    """copy2, except that a source which has disappeared is recorded rather than raised.
+def _backup_with_report(vault: Path) -> tuple[Path, list[str]]:
+    """Copy the store beside itself; return the copy and the sources that vanished mid-copy.
 
     Every nevertwice store is a git repository, and git runs its own background maintenance
     inside it. `copytree` lists a directory and then copies its entries, and on macOS 3.14 of
-    run 35781171527 git created and removed `.git/objects/maintenance.lock` inside that window:
+    run 35781171527 git created and removed `.git/objects/maintenance.lock` inside that window.
+    The first fix (41e2423) tolerated a vanished FILE inside the copy function, and the engine
+    review of 2026-09-23 found three things wrong with it:
 
-        shutil.Error: [(.../store/.git/objects/maintenance.lock, .../store.backup-.../...,
-                        "[Errno 2] No such file or directory: ...maintenance.lock")]
+    - it treated EVERY FileNotFoundError as "the source vanished", including one raised on the
+      DESTINATION side - on Windows without long paths the backup sits 23 characters deeper, so
+      a note near the limit copied from a path that exists and failed to land, was reported as
+      "disappeared", and the migration went ahead on an incomplete backup. Before the fix that
+      migration was refused. This is the irreversible one;
+    - it covered files only: a directory git's prune-packed empties and removes between listing
+      and recursion still raised, and so did a Windows delete-pending file (PermissionError);
+    - it printed its report to stdout, corrupting `--json`, and kept it in a module-level set
+      that outlived a failed call and was reported by the next one.
 
-    One job of twelve, which is what makes it worth fixing rather than retrying: the race needs
-    maintenance to fire during the copy, so it is rare, and the operation it breaks is the
-    backup taken immediately before a migration - the one moment a store has no second copy.
-
-    Written as "tolerate a vanished source" rather than "skip files named *.lock": the name is a
-    guess about which file will disappear, and a lock is only the one that disappeared first. An
-    editor's temp file, a cache being rewritten and git's own index would all do the same.
+    So the copy runs as `copytree` normally does, collecting every failure, and each failure is
+    judged by the one question that separates the two cases: is the SOURCE still there? Gone -
+    it vanished, and the copy has everything that still exists. Still there - something could not
+    be copied, the backup is incomplete, and the error is raised so the migration is refused.
+    `copy_function` is named explicitly so it is looked up at call time.
     """
+    vault = Path(vault)
+    target = vault.parent / f"{vault.name}.backup-{datetime.now():%Y%m%d-%H%M%S}"
     try:
-        shutil.copy2(src, dst, follow_symlinks=follow_symlinks)
-    except FileNotFoundError:
-        _VANISHED.add(str(src))
+        shutil.copytree(vault, target, dirs_exist_ok=False, copy_function=shutil.copy2)
+    except shutil.Error as exc:
+        failures = exc.args[0] if exc.args and isinstance(exc.args[0], list) else []
+        still_there = [f for f in failures if os.path.lexists(f[0])]
+        if still_there or not failures:
+            raise
+        return target, sorted({str(f[0]) for f in failures})
+    return target, []
 
 
 def backup(vault: Path) -> Path:
@@ -267,17 +277,14 @@ def backup(vault: Path) -> Path:
     write), so following that instruction restored the notes and destroyed every commit behind
     them, and the sentence that said the notes were never modified is what made it read as
     safe. A backup has to contain what the rollback deletes, or the rollback is not one.
+
+    Sources that vanished while the copy walked the store are logged; `migrate()` also returns
+    them as `backup_skipped`, so the report reaches a caller that reads JSON.
     """
-    vault = Path(vault)
-    target = vault.parent / f"{vault.name}.backup-{datetime.now():%Y%m%d-%H%M%S}"
-    shutil.copytree(vault, target, dirs_exist_ok=False, copy_function=_copy_or_note_vanished)
-    if _VANISHED:
-        #: Named, never swallowed. A backup that quietly dropped a note would be worse than one
-        #: that refused, so the paths go where the caller can see them.
-        print(f"backup: {len(_VANISHED)} file(s) disappeared while the copy walked the store and "
-              f"were skipped: {', '.join(sorted(_VANISHED)[:5])}"
-              + (" ..." if len(_VANISHED) > 5 else ""))
-        _VANISHED.clear()
+    target, skipped = _backup_with_report(vault)
+    if skipped:
+        m.log(f"backup: {len(skipped)} source(s) disappeared while the copy walked the store and "
+              f"were skipped: {', '.join(skipped[:5])}{' ...' if len(skipped) > 5 else ''}")
     return target
 
 
@@ -313,7 +320,10 @@ def migrate(vault: Path, *, dry_run: bool = True) -> dict:
                            f"{len(preview['applicable'])} step(s) would apply. "
                            f"Re-run with --apply to take a backup and perform them.")}
 
-    backup_path = backup(vault)
+    backup_path, backup_skipped = _backup_with_report(vault)
+    if backup_skipped:
+        m.log(f"backup: {len(backup_skipped)} source(s) disappeared during the copy and were "
+              f"skipped: {', '.join(backup_skipped[:5])}")
     applied = []
     for version in range(preview["schema_version_current"] + 1, SCHEMA_VERSION + 1):
         for step in STEPS.get(version, ()):
@@ -323,7 +333,8 @@ def migrate(vault: Path, *, dry_run: bool = True) -> dict:
 
     validation = validate(vault)
     return {**preview, "ok": validation["ok"], "dry_run": False,
-            "backup": str(backup_path), "applied": applied, "validation": validation,
+            "backup": str(backup_path), "backup_skipped": backup_skipped,
+            "applied": applied, "validation": validation,
             "schema_version_current": detect(vault),
             "rollback": rollback_instructions(vault, backup_path),
             "detail": (f"migrated to v{SCHEMA_VERSION}; backup at {backup_path.name}"

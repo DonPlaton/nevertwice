@@ -569,63 +569,44 @@ def test_the_rollback_text_says_what_the_rollback_costs() -> None:
 
 
 def test_a_backup_survives_a_file_that_vanishes_under_it() -> None:
-    """Git tidies its own repository while the backup walks it.
+    """Git tidies its own repository while the backup walks it - and the backup must still refuse
+    to be incomplete.
 
-    macOS 3.14 of run 35781171527, one job of twelve: `copytree` listed `.git/objects/`, git's
-    background maintenance removed `maintenance.lock`, and the copy raised `shutil.Error` on a
-    file that had been there a moment earlier. The operation it breaks is the backup taken
-    immediately before a migration - the one moment a store has no second copy - and the rarity
-    is what makes it worth fixing rather than retrying.
+    macOS 3.14 of run 35781171527: `copytree` listed `.git/objects/`, git's maintenance removed
+    `maintenance.lock`, and the copy raised on a file that had been there a moment earlier. The
+    first fix tolerated a vanished FILE in the copy function; the engine review of 2026-09-23
+    found it also swallowed a DESTINATION-side FileNotFoundError (a Windows long path: the note
+    left out of the backup, the migration going ahead), missed a vanished DIRECTORY, printed its
+    report into `--json` stdout, and carried it over to the next call in a module-level set.
 
-    The race is planted in the LISTING: `os.scandir` returns every entry of the folder and removes
-    one of them before handing the list back, so any "list, then copy" walk meets a source that
-    is gone, whatever copy function it uses. Two earlier versions planted it elsewhere and each
-    tested less than it claimed:
-
-    - the first named its victim in advance and relied on NTFS listing alphabetically; ext4 does
-      not, and every Linux job of run 35784500315 went red on a race that never happened;
-    - the second replaced `shutil.copy2`. The fixed `backup()` passes `copy_function=`, which
-      looks `copy2` up at call time; the unfixed one used `copytree`'s default, bound to the
-      REAL `copy2` when `shutil` was imported. So the plant reached the fixed code and not the
-      unfixed one: with the fix reverted, the test reported "the race did not happen" instead
-      of "the backup raised" - an honest line pointing the reader at the harness instead of at
-      the missing fix. Found by the auditing session by reverting the fix in a worktree.
-
-    The control is the exact call this code made before the fix - a plain `copytree`, default
-    copy function - over the same planted listing. It must raise, or the fix has no subject.
+    The race is planted in the LISTING: `os.scandir` returns every entry and removes one before
+    handing the list back, so any "list, then copy" walk meets a source that is gone, whatever
+    copy function it uses. The control is the exact pre-fix call - a plain `copytree` - over the
+    same planted listing: it must raise, or the fix has no subject.
     """
-    print(NL + "- a backup survives a file that vanishes under it -")
-    with tempfile.TemporaryDirectory() as td:
-        store = Path(td) / "store"
-        folder = store / "Mistakes"
-        folder.mkdir(parents=True)
-        names = ("a.md", "b.md", "c.md")
+    print(NL + "- a backup survives a file that vanishes under it, and refuses to be incomplete -")
+    real_scandir = os.scandir
 
-        def seed():
-            for name in names:
-                (folder / name).write_text(f"---{NL}type: mistake{NL}---{NL}{NL}{name}{NL}",
-                                           encoding="utf-8")
+    class _ListedThenGone:
+        """What `os.scandir(folder)` returns: the full listing, one entry already deleted."""
 
-        real_scandir = os.scandir
+        def __init__(self, entries):
+            self._entries = entries
+
+        def __iter__(self):
+            return iter(self._entries)
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *exc):
+            return False
+
+        def close(self):
+            pass
+
+    def planted(folder, pick, run):
         state = {"doomed": None}
-
-        class _ListedThenGone:
-            """What `os.scandir(folder)` returns: the full listing, one file already deleted."""
-
-            def __init__(self, entries):
-                self._entries = entries
-
-            def __iter__(self):
-                return iter(self._entries)
-
-            def __enter__(self):
-                return self
-
-            def __exit__(self, *exc):
-                return False
-
-            def close(self):
-                pass
 
         def scandir_that_loses_one(path="."):
             it = real_scandir(path)
@@ -633,57 +614,107 @@ def test_a_backup_survives_a_file_that_vanishes_under_it() -> None:
                 return it
             with it:
                 entries = list(it)
-            victim = next(e for e in entries if e.is_file())
-            os.unlink(victim.path)
+            victim = next(e for e in entries if pick(e))
+            if victim.is_dir(follow_symlinks=False):
+                shutil.rmtree(victim.path)
+            else:
+                os.unlink(victim.path)
             state["doomed"] = victim.name
             return _ListedThenGone(entries)
 
-        def planted(run):
-            state["doomed"] = None
-            os.scandir = scandir_that_loses_one
-            try:
-                return run()
-            finally:
-                os.scandir = real_scandir
+        os.scandir = scandir_that_loses_one
+        try:
+            return run(), state["doomed"]
+        finally:
+            os.scandir = real_scandir
 
+    with tempfile.TemporaryDirectory() as td:
+        store = Path(td) / "store"
+        folder = store / "Mistakes"
+
+        def seed():
+            if store.exists():
+                _rmtree(store)
+            (folder / "objects" / "ab").mkdir(parents=True)
+            (folder / "objects" / "ab" / "loose").write_text("x", encoding="utf-8")
+            for name in ("a.md", "b.md", "c.md"):
+                (folder / name).write_text(f"---{NL}type: mistake{NL}---{NL}{NL}{name}{NL}",
+                                           encoding="utf-8")
+
+        def fresh_target():
+            for q in Path(td).glob("store.backup-*"):
+                _rmtree(q)
+
+        # 1. a FILE vanishes
         seed()
         out = io.StringIO()
-        raised_in_backup = None
-        backup_path = None
         with contextlib.redirect_stdout(out):
-            try:
-                backup_path = planted(lambda: SV.backup(store))
-            except SV.shutil.Error as exc:
-                raised_in_backup = exc
-        said = out.getvalue()
-        doomed = state["doomed"]
-
+            (backup_path, skipped), doomed = planted(
+                folder, lambda e: e.is_file(), lambda: SV._backup_with_report(store))
         check("the race actually happened (a listed file was gone before it was copied)",
               doomed is not None)
-        check("the backup completes instead of raising",
-              raised_in_backup is None and backup_path is not None and backup_path.is_dir(),
-              str(raised_in_backup)[:200])
-        kept = sorted(q.name for q in (backup_path / "Mistakes").iterdir()) if backup_path else []
+        check("the backup completes and names the one that vanished",
+              backup_path.is_dir() and any(s.endswith(doomed) for s in skipped), str(skipped))
+        kept = sorted(q.name for q in (backup_path / "Mistakes").iterdir() if q.is_file())
         check("every file that was still there is in it",
-              kept == sorted(n for n in names if n != doomed), f"{kept}, doomed {doomed}")
-        check("and the one that vanished is NAMED, not swallowed",
-              bool(doomed) and doomed in said and "disappeared" in said,
-              said.strip() or "(said nothing)")
+              kept == sorted(n for n in ("a.md", "b.md", "c.md") if n != doomed), str(kept))
+        check("and nothing is printed: the report is data, not stdout (it corrupted --json)",
+              out.getvalue() == "", repr(out.getvalue()[:120]))
+        fresh_target()
 
-        #: The control: the call this code made before the fix, over the same planted listing.
+        # 2. a DIRECTORY vanishes - git's prune-packed empties and removes .git/objects/xx/
         seed()
         raised = None
         try:
-            planted(lambda: SV.shutil.copytree(store, Path(td) / "plain", dirs_exist_ok=False))
+            (backup_path, skipped), doomed = planted(
+                folder / "objects", lambda e: e.is_dir(), lambda: SV._backup_with_report(store))
+        except SV.shutil.Error as exc:
+            raised, skipped = exc, []
+        check("a directory removed between listing and recursion is a vanished source too",
+              raised is None and any(s.endswith("ab") for s in skipped),
+              f"raised={str(raised)[:120]!r} skipped={skipped}")
+        fresh_target()
+
+        # 3. the DESTINATION fails while the source is still there - a Windows long path
+        seed()
+        real_copy2 = SV.shutil.copy2
+
+        def copy2_dest_fails(src, dst, **kw):
+            if Path(src).name == "b.md":
+                raise FileNotFoundError(2, "The system cannot find the path specified", str(dst))
+            return real_copy2(src, dst, **kw)
+
+        SV.shutil.copy2 = copy2_dest_fails
+        refused = None
+        try:
+            SV._backup_with_report(store)
+        except SV.shutil.Error as exc:
+            refused = exc
+        finally:
+            SV.shutil.copy2 = real_copy2
+        check("a file that exists but could not be copied REFUSES the backup - it is incomplete",
+              refused is not None and "b.md" in str(refused), str(refused)[:160])
+        fresh_target()
+
+        # 4. nothing carries over from a failed call
+        seed()
+        _backup_path, skipped_after = SV._backup_with_report(store)
+        check("a clean backup after a refused one reports nothing skipped",
+              skipped_after == [], str(skipped_after))
+        fresh_target()
+
+        # the control: the call this code made before any fix, over the same planted listing
+        seed()
+        raised = None
+        try:
+            planted(folder, lambda e: e.is_file(),
+                    lambda: SV.shutil.copytree(store, Path(td) / "plain", dirs_exist_ok=False))
         except SV.shutil.Error as exc:
             raised = exc
         check("the pre-fix call over the same listing still raises, so the fix has a subject",
-              raised is not None and bool(state["doomed"]) and state["doomed"] in str(raised),
-              str(raised)[:200])
+              raised is not None, str(raised)[:200])
 
         _rmtree(store)
-        if backup_path is not None:
-            _rmtree(backup_path)
 
 
 def test_the_cleanup_survives_git_tidying_under_it() -> None:
