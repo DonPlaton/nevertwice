@@ -971,5 +971,91 @@ cm._drain_old_carry_ledger(True, cache)
 check("an unreadable legacy ledger is set aside once - not reported every week, not deleted",
       not ledger.exists() and (m.VAULT / ".consolidate_carry_pending.unreadable.json").exists())
 
+print("\n- sixth review of 2026-09-23 -")
+for raw, want in (("[[stem#Heading]]", ["stem"]), ("[[stem^b1]]", ["stem"]), ("[[stem#H|alias]]", ["stem"]),
+                  ('[a, "b, c"]', ['[a, "b, c"]']), ('["a", "b"]', ["a", "b"])):
+    check(f"_list_field({raw!r}) == {want}", m._list_field(raw) == want, str(m._list_field(raw)))
+
+#: 1: an entry outside the grammar names no note by construction; the stale-stamp cleanup kept it
+#: only if it could find the note, so the weekly run erased what doctor exists to report.
+d = fresh()
+o, n = pair()
+op = m.VAULT / "Decisions" / f"{o}.md"
+op.write_text(op.read_text(encoding="utf-8").replace(f'contested: ["{n}"]', f"contested: [[{n}]], [[{n}]]"),
+              encoding="utf-8")
+cm.adjudicate_contested(apply=True, has_llm=True, judge=judge(None))
+check("the weekly run keeps a stamp it cannot read, for doctor to report - it does not erase it",
+      f"[[{n}]], [[{n}]]" in str(fm(o).get("contested")), str(fm(o).get("contested")))
+
+#: 5: the Superseded/ copy that proves a retirement must be NEW - an earlier one of the same name
+#: proved nothing about a note renamed during the judge call.
+d = fresh()
+o, n = pair()
+sup_dir = m.VAULT / "Decisions" / "Superseded"
+sup_dir.mkdir(parents=True, exist_ok=True)
+(sup_dir / f"{o}.md").write_text("---\ntype: decision\nstatus: superseded\n---\n\n# older\n\nbody\n", encoding="utf-8")
+wp = m.VAULT / "Decisions" / f"{n}.md"
+before_bytes = wp.read_bytes()
+m.supersede_note = _renamed_by_the_user
+try:
+    res = cm.adjudicate_contested(apply=True, has_llm=True, judge=judge(True))
+finally:
+    m.supersede_note = _real_sup
+check("an old Superseded/ copy of the same name is not proof: the carry is undone, an error",
+      wp.read_bytes() == before_bytes and res.get("errors") == 1, str(res))
+
+#: 4: the error after a retirement can be the closed stderr itself; the line that reports it must
+#: not raise again and stop the run.
+d = fresh()
+o, n = pair()
+o2, n2 = pair(title="queue depth", d1="2026-06-02", d2="2026-06-10",
+              old_desc=f"The queue depth is 10.{F}the queue depth is 10",
+              new_desc=f"The queue depth is 50.{F}the queue depth is 50")
+_stderr = sys.stderr
+closed = io.StringIO()
+closed.close()
+m.supersede_note = _retired_then_closed_stderr
+sys.stderr = closed
+try:
+    res = cm.adjudicate_contested(apply=True, has_llm=True, judge=judge(True))
+    stopped = None
+except ValueError as e:
+    res, stopped = {}, e
+finally:
+    sys.stderr = _stderr
+    m.supersede_note = _real_sup
+check("with stderr closed, a retirement followed by an error still lets the run go on",
+      stopped is None and res.get("replaces") == 2, f"{stopped!r} {res}")
+
+#: 8, 9: a dry run writes nothing, not even the rename of an unreadable ledger; and only what a
+#: malformed entry raises drops it - a fault in the reading code keeps the parked history.
+d = fresh()
+ledger = m.VAULT / ".consolidate_carry_pending.json"
+ledger.write_text("{not json", encoding="utf-8")
+with redirect_stdout(io.StringIO()):
+    cm._drain_old_carry_ledger(False)
+check("a dry run leaves an unreadable ledger where it is", ledger.exists()
+      and not (m.VAULT / ".consolidate_carry_pending.unreadable.json").exists())
+o, n = pair()
+ledger.write_text(json.dumps([{"stem": n, "ntype": "decision", "recurrence": 2, "sources": [], "supersedes": []}]),
+                  encoding="utf-8")
+_real_carry = cm._carry_into
+
+
+def _bug_in_carry(*a: object, **k: object) -> int:
+    raise AttributeError("a refactor broke _carry_into")
+
+
+cm._carry_into = _bug_in_carry
+try:
+    cm._drain_old_carry_ledger(True)
+    propagated = False
+except AttributeError:
+    propagated = True
+finally:
+    cm._carry_into = _real_carry
+check("a fault in the code that reads the ledger stops the drain and keeps the ledger",
+      propagated and ledger.exists())
+
 print(f"\nK8 layer 3: {len(RUN) - len(FAILED)} passed, {len(FAILED)} failed")
 sys.exit(1 if FAILED else 0)

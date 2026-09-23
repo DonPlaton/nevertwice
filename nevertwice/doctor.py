@@ -437,30 +437,44 @@ def check_list_fields(vault: Path) -> dict:
             lines = _frontmatter_lines(p)
             if not lines:
                 continue
-            list_keys, link_keys = [], []
+            list_keys, link_keys, scalar_keys, block_keys = [], [], [], set()
             for i, ln in enumerate(lines):
                 if not ln or ln[:1] in (" ", "\t", "-") or ":" not in ln:
                     continue
                 key, val = (s.strip() for s in ln.split(":", 1))
                 block = (val == "" and i + 1 < len(lines)
                          and lines[i + 1].lstrip().startswith("- "))
+                if block:
+                    block_keys.add(key)
                 if _LONE_WIKILINK.fullmatch(val):
                     link_keys.append(key)
                 elif (val.startswith("[") and val.endswith("]")) or block:
                     list_keys.append(key)
-            if not (list_keys or link_keys):
+                elif key in _READ_AS_LIST and val:
+                    scalar_keys.append(key)          # a scalar the engine still reads as a list
+            if not (list_keys or link_keys or scalar_keys):
                 continue
             fm, _ = _m._read_frontmatter("---\n" + "\n".join(lines) + "\n---\n")
             #: Keys the engine reads through its one list reader (`_list_field`; the two stamps via
-            #: `_contested_of`) are asked of THAT reader, not of the parser: since 5961f38 it reads
-            #: a link, links in a row and a flow list as intended, so reporting them sent people to
-            #: repair what was not broken (auditing session, probe C). Every other key keeps the
-            #: parser's answer. `sources` joined the list when its recurrence reader moved onto
-            #: `_list_field` (third review, 2026-09-23).
-            read_ok = {k for k in list_keys + link_keys
-                       if k in _READ_AS_LIST and _reads_cleanly(_m._list_field(fm.get(k)), fm.get(k))}
-            misread = [k for k in list_keys if k not in read_ok and not isinstance(fm.get(k), list)]
-            bare = [k for k in link_keys if k not in read_ok and not isinstance(fm.get(k), list)]
+            #: `_contested_of`) are asked of THAT reader, not of the parser - reporting what it reads
+            #: cleanly sent people to repair what was not broken (auditing session, probe C). Every
+            #: other key keeps the parser's answer.
+            #: A key the engine reads as a list is judged by that reader whatever its raw shape - a
+            #: scalar included: `contested: (manual)` or `a, [[b]]` is read as one entry naming
+            #: nothing, and the reader's docstring promises the doctor names every such shape
+            #: (auditing session on 4a2c234: four scalar shapes passed silently). An empty value
+            #: loses nothing; a block list loses every item on any key.
+            def _misread(k: str) -> bool:
+                v = fm.get(k)
+                if k not in _READ_AS_LIST:
+                    return not isinstance(v, list)
+                if k in block_keys:
+                    return True
+                if v in ("", None) or v == []:
+                    return False
+                return not _reads_cleanly(_m._list_field(v), v)
+            misread = [k for k in list_keys + scalar_keys if _misread(k)]
+            bare = [k for k in link_keys if _misread(k)]
             if misread or bare:
                 notes += 1
                 bad += [f"{p.name}: {k}" for k in misread]

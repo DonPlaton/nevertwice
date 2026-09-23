@@ -178,6 +178,19 @@ try:
                               "proj", "2026-06-07", ["t"], "pattern", session_stem_="2026-06-07-1500-proj-lone")
     check("W7 ON: a same-day explicit override of a corroborated note is quarantined like a next-day one",
           over == "" and "25 MB" in fp5.read_text(encoding="utf-8"))
+    # A VERBATIM restatement whose extractor also named its own title in `supersedes` is the same
+    # fact, not an override - the explicit rule fired first and quarantined it (sixth review).
+    d6 = sandbox()
+    base6 = m.write_typed_note("Patterns", {"title": "cap the retries", "description": "retry at most 3 times"},
+                               "proj", "2026-06-08", ["t"], "pattern", session_stem_="2026-06-08-0900-proj-s1")
+    fp6 = d6 / "Patterns" / f"{base6}.md"
+    fp6.write_text(fp6.read_text(encoding="utf-8").replace("---\n", '---\nrecurrence: 2\nsources: ["s1", "s2"]\n', 1),
+                   encoding="utf-8")
+    same6 = m.write_typed_note("Patterns", {"title": "cap the retries", "description": "retry at most 3 times",
+                                            "supersedes": "cap the retries"},
+                               "proj", "2026-06-08", ["t"], "pattern", session_stem_="2026-06-08-1500-proj-s3")
+    check("W7 ON: a verbatim restatement that names its own title in supersedes is not quarantined",
+          same6 != "")
 finally:
     m.QUARANTINE_MODE = _q
 

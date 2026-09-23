@@ -603,6 +603,24 @@ def test_a_list_the_engine_cannot_read_is_counted() -> None:
                   result["status"] == doctor.WARN and "supersedes" in result["detail"],
                   f"{result['status']}: {result['detail']}")
 
+    #: The small grammar holds only if the doctor names EVERY value of these keys the engine's reader
+    #: takes uncleanly, whatever its raw shape - a scalar included (auditing session's probe of 20
+    #: shapes on 4a2c234: four scalars passed silently). Clean shapes must stay silent.
+    clean = ('["a", "b"]', "[a, b]", "[[a]]", "[[a|alias]]", '"[[a]]"', "'a'", "a", "[[a|x, y]]",
+             '["[[a]]", "b"]', "[]")
+    unclean = ("[[a]], [[b]]", "[[a]] [[b]]", "[a, [[b]]]", "[[[a]], [[b]]]", "[a; b]", "[a, b c]",
+               "a, [[b]]", "(manual)", "a b", "[[a]]x")
+    for value in clean + unclean:
+        with tempfile.TemporaryDirectory() as tmp:
+            only = Path(tmp) / "store" / "Decisions"
+            only.mkdir(parents=True)
+            (only / "2026-01-09-p-decision-shape.md").write_text(
+                f"---\ntype: decision\ncontested: {value}\n---\n\nbody\n", encoding="utf-8")
+            status = check_list_fields(only.parent)["status"]
+            want = doctor.OK if value in clean else doctor.WARN
+            check(f"contested: {value}  ->  {'silent' if value in clean else 'reported'}",
+                  status == want, status)
+
     with tempfile.TemporaryDirectory() as tmp:
         result = check_list_fields(Path(tmp) / "absent")
         check("no store: skipped, not failed", result["status"] == doctor.SKIP, str(result))

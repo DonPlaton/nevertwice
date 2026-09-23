@@ -92,6 +92,19 @@ def _pair_fields(p: Path) -> tuple[dict, str, str]:
 DISPUTED_AT_KEY = "disputed_at"
 
 
+#: What a note or session name looks like - the same rule doctor's check_list_fields applies.
+_NAME_LIKE = re.compile(r"[^\s,;\[\]()]+")
+
+
+def _say(msg: str) -> None:
+    """A line to stderr that cannot stop the run. The error it reports can be the closed stderr
+    itself - the retirement path's reason to go on (sixth review: its own print raised again)."""
+    try:
+        print(msg, file=sys.stderr)
+    except (OSError, ValueError):
+        pass
+
+
 def _live_or_archived(folder: Path, stem: str) -> Path | None:
     """The note `stem` where the judge can still read it: live, or aged into Archive/.
     Superseded/ is gone - a retired note is no side of a pair (R12: one copy of the lookup)."""
@@ -253,6 +266,9 @@ def _drain_old_carry_ledger(apply: bool, cache: dict | None = None) -> int:
               file=sys.stderr)
         return 0
     except ValueError as e:
+        if not apply:                            # a dry run takes no lock and writes nothing
+            print(f"[consolidate] {p.name} from an earlier build is unreadable ({e}) - apply sets it aside")
+            return 0
         #: nothing in it can be applied; set aside once, not reported every week - and not deleted
         aside = p.with_name(p.stem + ".unreadable.json")
         try:
@@ -282,7 +298,9 @@ def _drain_old_carry_ledger(apply: bool, cache: dict | None = None) -> int:
             kept.append(e)                         # a lock: the next run tries again, idempotently
             print(f"[consolidate] a parked carry was not applied ({err}) - kept for the next run",
                   file=sys.stderr)
-        except Exception as err:  # noqa: BLE001 - a legacy file; nothing in it may stop the run
+        except (LookupError, TypeError, ValueError) as err:
+            #: what a malformed or stale ENTRY raises: dropped with its reason. Anything else is a
+            #: fault in the code that reads it and must not cost the parked history (sixth review)
             print(f"[consolidate] a parked carry was dropped ({type(err).__name__}: {err})",
                   file=sys.stderr)
     try:
@@ -374,10 +392,16 @@ def adjudicate_contested(apply: bool, has_llm: bool, cap: int | None = None,
             if new_path is not None:
                 _queue(c, old_path, new_path, ns)
                 live_new.append(ns)
-        if apply and len(live_new) != len(c["new_stems"]):
+        #: only a NAME whose note is gone is dropped. An entry the list reader could not read (a
+        #: hand-written shape outside its grammar, read as one entry) names no note by construction
+        #: and is kept as written - doctor reports it; erasing it here would lose the pair before
+        #: anyone could see it (sixth review, 2026-09-23)
+        unread = [s for s in c["new_stems"] if not _NAME_LIKE.fullmatch(s)]
+        gone = [s for s in c["new_stems"] if s not in live_new and s not in unread]
+        if apply and gone:
             #: the stamp is rewritten from a row read BEFORE the re-queue above stamped its stems
             #: into it: carry them, or the cleanup erases a pair from both lists at once (R1)
-            keep = live_new + [s for s in back_by_note.get(c["path"], []) if s not in live_new]
+            keep = live_new + unread + [s for s in back_by_note.get(c["path"], []) if s not in live_new]
             try:
                 _set_contested(old_path, keep)      # the newer note is gone: nothing left to judge
             except OSError as e:
@@ -535,6 +559,8 @@ def adjudicate_contested(apply: bool, has_llm: bool, cap: int | None = None,
                         before = raw.decode("utf-8", errors="replace").replace("\r\n", "\n").replace("\r", "\n")
                         rec = _carry_into(new_path, before, rec, sources, sup_list)
                         raised: Exception | None = None
+                        sup_dir = old_path.parent / "Superseded"          # supersede_note's rule
+                        sup_before = set(sup_dir.glob(f"{old_path.stem}*.md")) if sup_dir.is_dir() else set()
                         try:
                             retired_ok = m.supersede_note(old_path, new_stem, via="judge",
                                                           extra_fields={m.CONTESTED_KEY: remaining},
@@ -546,12 +572,15 @@ def adjudicate_contested(apply: bool, has_llm: bool, cap: int | None = None,
                         #: deleted during the judge call (fifth review). With the copy there, an error
                         #: raised after it (the log line after the unlink, on a detached stderr) does
                         #: not undo a retirement that happened (fourth review).
-                        retired_copy = old_path.parent / "Superseded" / old_path.name   # supersede_note's rule
-                        retired_ok = retired_ok or (not old_path.exists() and retired_copy.exists())
+                        #: The copy must be NEW: supersede_note names it `<stem>-N.md` when the name is
+                        #: taken, and a copy an earlier retirement left under that name proved nothing
+                        #: about this one (sixth review).
+                        sup_after = set(sup_dir.glob(f"{old_path.stem}*.md")) if sup_dir.is_dir() else set()
+                        retired_ok = retired_ok or (not old_path.exists() and bool(sup_after - sup_before))
                         why_not = f" ({raised})" if raised is not None else ""
                         if raised is not None and retired_ok:
-                            print(f"      retired {old_path.name}, and an error followed{why_not} - "
-                                  "the retirement stands", file=sys.stderr)
+                            _say(f"      retired {old_path.name}, and an error followed{why_not} - "
+                                 "the retirement stands")
                         if not retired_ok:
                             #: the pair is still contested on disk: an error, so `left` counts it -
                             #: "nothing left" over a pair still queued is #4 read the other way
@@ -559,14 +588,14 @@ def adjudicate_contested(apply: bool, has_llm: bool, cap: int | None = None,
                             stats["errors"] += 1
                             try:
                                 m.write_atomic(new_path, raw)            # the winner's exact bytes
-                                print(f"      supersede failed for {old_path.name}{why_not} - left live, "
-                                      "still contested; the carry was undone", file=sys.stderr)
+                                _say(f"      supersede failed for {old_path.name}{why_not} - left live, "
+                                     "still contested; the carry was undone")
                             except OSError as e:
                                 stats["carry_kept"] += 1
-                                print(f"      supersede failed for {old_path.name}{why_not} and the carry "
-                                      f"into {new_path.name} could not be undone ({e}) - the pair stays "
-                                      "contested; a replaces next run re-applies the same merge, any "
-                                      "other verdict leaves it on the winner", file=sys.stderr)
+                                _say(f"      supersede failed for {old_path.name}{why_not} and the carry "
+                                     f"into {new_path.name} could not be undone ({e}) - the pair stays "
+                                     "contested; a replaces next run re-applies the same merge, any "
+                                     "other verdict leaves it on the winner")
                         if raised is not None and not retired_ok and not isinstance(raised, OSError):
                             #: a retirement that did not happen for a reason that is not a lock or a disk
                             #: error: the run stops, as it always did - after the carry is undone above.
@@ -1212,8 +1241,7 @@ def _run_consolidation(apply, mode, has_llm):
     #    to archive one side of a pair K8 deliberately keeps apart before the judge ever ruled on it.
     #    Judging first also means a pair the judge just resolved this run is already off the
     #    contested list by the time the merge's own exclusion set (next) is built.
-    if _drain_old_carry_ledger(apply, cache) and apply:
-        m.save_embed_cache(cache)
+    drained = _drain_old_carry_ledger(apply, cache)
     adj = adjudicate_contested(apply, has_llm, cache=cache)
     print(f"[consolidate] contested pairs: {adj['pairs']} - {adj['judged']} judge call(s), "
           f"{adj['tokens_spent']} of {adj['budget']} tokens (~{adj['budget'] // TOKENS_PER_PAIR_EST} pairs a run "
@@ -1227,8 +1255,8 @@ def _run_consolidation(apply, mode, has_llm):
                     ("requeued", "baselined", "healed", "carry_kept")
                     if adj.get(k))
           + (f" ({adj['skipped']})" if adj.get("skipped") else "") + f" [{mode}]")
-    if apply and (adj["replaces"] or adj.get("healed")):
-        m.save_embed_cache(cache)
+    if apply and (drained or adj["replaces"] or adj.get("healed")):
+        m.save_embed_cache(cache)                    # one write for the drain and the judging
 
     # 2b) F2: both members of every pair K8 is still keeping apart (contested) or the judge
     #     vetoed (disputed) are off limits to the near-dup merge below - a pair still on either

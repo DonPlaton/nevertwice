@@ -220,7 +220,9 @@ def _replacement_guard(old_desc: str, new_desc: str) -> str:
 #: One whole wiki-link and nothing else: `[[stem]]` or `[[stem|alias]]`. Neither part takes a
 #: bracket, so no start position can run past the next `[[` - the pattern is linear on any input
 #: (an alias part that took `[` read 48 kB of unclosed links in 1.7 s - auditing session, ea9272c).
-_LONE_LINK_RE = _lazy_re(r"\[\[([^\[\]|]+)(?:\|[^\[\]]*)?\]\]")
+#: The target stops at `#` or `^`: `[[stem#Heading]]` and `[[stem^block]]` link INTO the note
+#: `stem`, and integrity.py's reader stops there too (sixth review).
+_LONE_LINK_RE = _lazy_re(r"\[\[([^\[\]|#^]+)(?:[#^][^\[\]|]*)?(?:\|[^\[\]]*)?\]\]")
 
 _QUOTES = "\"'"
 
@@ -234,7 +236,8 @@ def _list_field(v: object) -> list[str]:
 
     - a list: each item a string, quotes stripped, and an item that is one whole link its target;
     - a string that is one whole link (`[[stem]]`, `[[stem|alias]]`): its target;
-    - a string `[a, b]` with no `[[` inside: split on commas, quotes stripped;
+    - a string `[a, b]` with no `[[` inside: split on commas; with quotes in it, read as JSON
+      or not at all (`[a, "b, c"]` is one entry);
     - any other string: one entry, quotes stripped (`'stem'` is `stem`).
 
     Nothing else is parsed - links in a row, links mixed with plain items, other separators. Three
@@ -252,7 +255,16 @@ def _list_field(v: object) -> list[str]:
     if (mt := _LONE_LINK_RE.fullmatch(s)):
         return [mt.group(1).strip()]
     if s.startswith("[") and s.endswith("]") and "[[" not in s:
-        return [x for x in (p.strip().strip(_QUOTES).strip() for p in s[1:-1].split(",")) if x]
+        if any(q in s for q in _QUOTES):
+            #: quoted items: read as JSON, or not at all - splitting `[a, "b, c"]` on every comma
+            #: made three names of two (sixth review)
+            try:
+                items = json.loads(s)
+            except ValueError:
+                return [s]
+            return [x for x in (_list_item(i) for i in items if i not in (None, "")) if x] \
+                if isinstance(items, list) and all(isinstance(i, (str, int, float)) for i in items) else [s]
+        return [x for x in (p.strip() for p in s[1:-1].split(",")) if x]
     return [s]
 
 
@@ -668,10 +680,7 @@ def write_typed_note(folder: str, item, project: str, date: str,
     # without the retry duplicating notes.
     absorb_into = None
     absorb_recur, absorb_sources = 0, set()
-    #: W7: an absorb decided by an explicit `supersedes`/`contradicts` is an OVERRIDE of the note it
-    #: rewrites, not the same lesson re-encountered - its sources are not the new statement's
-    #: corroboration, exactly as for an explicit retirement on another day (fifth review)
-    absorb_overrides_corroborated = absorb_explicit = False
+    absorb_self = False                 # W7: a same-session refresh is the note's own history
     contested_olds: list = []           # K8: same-slug notes kept apart as siblings, stamped after the write
     for old in _live_typed_paths(p, project, ntype, slug):
         try:
@@ -689,6 +698,7 @@ def write_typed_note(folder: str, item, project: str, date: str,
             r_old, s_old = _note_recur_sources(old)
             absorb_into = old
             absorb_recur, absorb_sources = r_old, set(s_old)
+            absorb_self = True
             log(f"Same-session refresh (absorb): {old.stem}")
             break
         if old.stem == base_stem:
@@ -712,8 +722,6 @@ def write_typed_note(folder: str, item, project: str, date: str,
             r_old, s_old = _note_recur_sources(old)
             absorb_into = old
             absorb_recur, absorb_sources = r_old, set(s_old)
-            absorb_explicit = _rule == "explicit"
-            absorb_overrides_corroborated = absorb_explicit and r_old >= 2
     if session_stem_ and QUARANTINE_MODE:
         # a crash-retry must not duplicate a note already quarantined this session
         for old in _live_typed_paths(p / "Quarantine", project, ntype, slug):
@@ -745,12 +753,7 @@ def write_typed_note(folder: str, item, project: str, date: str,
     prior_sources: set = set(absorb_sources)
     to_retire: list = []
     retire_via: dict = {}               # J2b: how each retirement was decided (slug|explicit|twin)
-    superseded_corroborated = absorb_overrides_corroborated
-    #: the sessions of notes that are THIS lesson restated - a same-slug restatement that
-    #: `_same_replacement` proved the same fact. Collected where they are read, not re-read (fifth
-    #: review). Twins are NOT here: the near-duplicate classifier retires them with no value guard,
-    #: and a twin can contradict the note it retires (100 MB against a corroborated 25 MB).
-    restated_sources: set = set()
+    retire_hist: dict = {}              # W7: (recurrence, sources) of each note to retire, as read
     for old in _reconcilable_typed_paths(p, project, ntype, slug):
         if absorb_into is not None and old == absorb_into:
             continue                    # the absorb target is refreshed in place, never retired
@@ -774,16 +777,9 @@ def write_typed_note(folder: str, item, project: str, date: str,
             r_old, s_old = _note_recur_sources(old)        # one frontmatter read for both
             prior_recur = max(prior_recur, r_old)
             prior_sources |= s_old
-            if r_old >= 2:
-                # W7: a lone re-statement retiring corroborated truth is exactly as
-                # suspicious here as on the supersedes/near-dup paths below - this
-                # branch alone lacked the flag, so the outcome depended on whether the
-                # LLM reproduced the exact title or a variant (review 2026-08 G3)
-                superseded_corroborated = True
             to_retire.append(old)
             retire_via[old] = "explicit" if _rule == "explicit" else "slug"
-            if _rule != "explicit":
-                restated_sources |= s_old
+            retire_hist[old] = (r_old, s_old)
     _retire_slugs_seen: set = set()
     for other_title in (supersedes_title, contradicts_title):
         if not other_title:
@@ -811,10 +807,9 @@ def write_typed_note(folder: str, item, project: str, date: str,
                 r_old, s_old = _note_recur_sources(old)
                 prior_recur = max(prior_recur, r_old)
                 prior_sources |= s_old
-                if r_old >= 2:
-                    superseded_corroborated = True         # W7: a lone note retiring corroborated truth
                 to_retire.append(old)
                 retire_via[old] = "explicit"
+                retire_hist[old] = (r_old, s_old)
 
     # Near-duplicate reconcile (review 2026-08): catch the re-statements exact-slug matching
     # cannot see - the LLM re-mining the same work titles the lesson slightly differently
@@ -833,10 +828,9 @@ def write_typed_note(folder: str, item, project: str, date: str,
             r_old, s_old = _note_recur_sources(old)
             prior_recur = max(prior_recur, r_old)
             prior_sources |= s_old
-            if r_old >= 2:
-                superseded_corroborated = True
             to_retire.append(old)
             retire_via[old] = "twin"
+            retire_hist[old] = (r_old, s_old)
             log(f"Near-duplicate reconcile: {old.stem} retires in favor of {base_stem}")
 
     # W7 corroboration-gated quarantine (opt-in; see QUARANTINE_MODE). Divert a single-source note
@@ -844,18 +838,27 @@ def write_typed_note(folder: str, item, project: str, date: str,
     dest = p
     quarantine_reason = ""
     if QUARANTINE_MODE:
-        #: What corroborates the NEW statement: its own in-place history (unless that absorb was an
-        #: explicit override) and the sessions of same-slug restatements `_same_replacement` proved
-        #: the same fact. Not the sources of a note it replaces explicitly - evidence for the
-        #: statement being overturned (third review: counting them made the rule unable to fire) -
-        #: and not a twin's: no value guard stands between a twin and the note it retires (fifth
-        #: review). Counting none quarantined every honest restatement (fourth review).
-        same_lesson = (set() if absorb_explicit else set(absorb_sources)) | restated_sources
+        #: One rule for every note this write absorbs or retires, however it was found (same slug,
+        #: explicit supersedes, near-duplicate twin, same-day absorb): a note PROVEN to state the
+        #: same fact - `_same_replacement`'s literal/restated rules, asked without the explicit
+        #: title - corroborates the new statement with its sessions; a corroborated note that is
+        #: NOT the same fact is being overturned. A session's refresh of its own note is its own
+        #: history. Five review rounds each found a case the earlier per-path rules got wrong -
+        #: the explicit rule firing before a verbatim restatement, a contradicting twin, an honest
+        #: twin (third to sixth reviews, 2026-09-23); the path a note came by decides none of it.
+        same_lesson, overturned = set(), False
+        judged = ([(absorb_into, absorb_recur, absorb_sources)] if absorb_into is not None else [])
+        judged += [(o, *retire_hist[o]) for o in to_retire if o in retire_hist]
+        for note, r_x, s_x in judged:
+            if (note is absorb_into and absorb_self) or _same_replacement(note, title, desc, "", "")[0]:
+                same_lesson |= set(s_x)
+            elif r_x >= 2:
+                overturned = True
         n_sources = len(same_lesson | ({session_stem_} if session_stem_ else set())) or 1
         qconf = _coerce_confidence(confidence)
         if n_sources < 2 and qconf is not None and qconf >= QUARANTINE_CONF:
             quarantine_reason = "single-source near-max confidence"
-        elif n_sources < 2 and superseded_corroborated:
+        elif n_sources < 2 and overturned:
             quarantine_reason = "single-source supersedes a corroborated note"
         if quarantine_reason:
             dest = p / "Quarantine"

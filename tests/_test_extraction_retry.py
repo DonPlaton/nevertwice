@@ -232,6 +232,8 @@ _ROOT = Path(__file__).resolve().parents[1]
 _writer_kw = [p.name for p in inspect.signature(m.write_typed_note).parameters.values()
               if p.default is not inspect.Parameter.empty]
 _wrappers = []
+#: where `why` sits among the writer's positional parameters
+_WHY_SLOT = list(inspect.signature(m.write_typed_note).parameters).index("why")
 
 
 def _stand_in_problems(fn: ast.AST) -> list[str]:
@@ -247,10 +249,15 @@ def _stand_in_problems(fn: ast.AST) -> list[str]:
     kw_name = args.kwarg.arg if args.kwarg else None
     for node in ast.walk(fn):
         if isinstance(node, ast.Call):
-            if any((kw.arg == "why") or (kw.arg is None and isinstance(kw.value, ast.Name)
-                                         and kw.value.id in {kw_name, "why"}) for kw in node.keywords):
+            #: `why=why`, or a splat of the wrapper's own **kw - not `why=None` or `why=[]`, which
+            #: drop the caller's list (sixth review)
+            if any((kw.arg == "why" and isinstance(kw.value, ast.Name) and kw.value.id == "why")
+                   or (kw.arg is None and isinstance(kw.value, ast.Name) and kw.value.id == kw_name)
+                   for kw in node.keywords):
                 return []
-            if any(isinstance(a, ast.Name) and a.id == "why" for a in node.args):
+            #: positionally, in the writer's own slot - not `print(why)` or `len(why)`
+            if (len(node.args) > _WHY_SLOT and isinstance(node.args[_WHY_SLOT], ast.Name)
+                    and node.args[_WHY_SLOT].id == "why"):
                 return []
             if (isinstance(node.func, ast.Attribute) and isinstance(node.func.value, ast.Name)
                     and node.func.value.id == "why"):
