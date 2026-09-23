@@ -169,20 +169,76 @@ def _key_pattern(key_node, params: set) -> str | None:
     return None
 
 
+def _direct_env_patterns(node, params: set) -> set[str]:
+    """Patterns from `os.environ.get(...)` / `os.getenv(...)` calls directly inside `node`,
+    keyed off one of `params` (`_key_pattern`, above)."""
+    patterns: set[str] = set()
+    for n in ast.walk(node):
+        if not (isinstance(n, ast.Call) and n.args):
+            continue
+        target = n.func
+        is_environ_get = (isinstance(target, ast.Attribute) and target.attr == "get"
+                          and isinstance(target.value, ast.Attribute)
+                          and target.value.attr == "environ")
+        is_getenv = isinstance(target, ast.Attribute) and target.attr == "getenv"
+        if not (is_environ_get or is_getenv):
+            continue
+        pattern = _key_pattern(n.args[0], params)
+        if pattern:
+            patterns.add(pattern)
+    return patterns
+
+
+def _helper_call_patterns(node, params: set, known: dict[str, dict]) -> set[str]:
+    """Patterns from calls INSIDE `node` to a helper already in `known`, passing one of
+    `params` - bare, or as one literal prefix plus the parameter in an f-string - as the
+    helper's FIRST POSITIONAL argument. The composed pattern is the inner helper's own
+    pattern with `outer_prefix + "{}"` substituted for its `"{}"` - `NEVERTWICE_{}` composed
+    with an outer prefix of `""` (a bare passthrough) stays `NEVERTWICE_{}`; composed with an
+    outer prefix of `"BUDGET_"` becomes `NEVERTWICE_BUDGET_{}`."""
+    patterns: set[str] = set()
+    for n in ast.walk(node):
+        if not (isinstance(n, ast.Call) and n.args):
+            continue
+        tail = ast.unparse(n.func).rsplit(".", 1)[-1]
+        inner = known.get(tail)
+        if not inner:
+            continue
+        outer = _key_pattern(n.args[0], params)         # e.g. "{}" or "NEVERTWICE_{}"
+        if outer is None:
+            continue
+        outer_prefix = outer[:-2]                       # strip the trailing "{}"
+        for inner_pattern in inner["patterns"]:
+            patterns.add(inner_pattern.replace("{}", outer_prefix + "{}"))
+    return patterns
+
+
 def _env_read_helpers() -> dict[str, dict]:
     """Every function in `nevertwice/*.py` whose body reads an environment variable keyed off
     ONE OF ITS OWN PARAMETERS - discovered by AST shape, not a hand-written list, so a NEW
     helper (another `env_int`-shaped wrapper, or a future `config.env("SWEEP_DIR")` call
-    through a helper that does not exist yet) is picked up the moment it exists.
+    through a helper that does not exist yet) is picked up the moment it exists. Helpers OF
+    helpers, to any depth: a function that passes one of its own parameters - bare, or as one
+    literal prefix plus the parameter in an f-string - as the FIRST argument of an
+    ALREADY-KNOWN helper becomes a helper itself, with the two patterns COMPOSED
+    (`_helper_call_patterns`, above). `budget._env_int` is exactly this shape - it has no
+    `os.environ.get` of its own at all, only `_env_float(name, float(default))` - so a
+    single-pass scan (this function's own shape before this fixpoint was added, and the
+    auditing session's first probe) finds `_env_float` but not `_env_int`, and its four real
+    call sites (`budget.py:97-103`, `NEVERTWICE_BUDGET_TURN_TOKENS` and three siblings) stay
+    invisible. Fixed here by iterating: after each pass finds zero-or-more NEW helpers (or
+    grows an existing one's pattern set), run the pass again against the UPDATED helper set,
+    until nothing changes - so a third-order chain (a helper of a helper of a helper) is found
+    exactly as reliably as a second-order one, with no depth limit hand-coded anywhere.
 
-    Two shapes, both read off the KEY expression of every `os.environ.get(...)` /
-    `os.getenv(...)` call inside the function (`_key_pattern`, above): a bare parameter -
-    `env_int`/`env_float` (`_engine_config.py`) and `_env_float` (`budget.py`) all pass their
-    `name` parameter straight through, and all three declare `-> int` / `-> float`, so a call
-    site's literal argument is numeric BY CONSTRUCTION - classified automatically, never
-    hand-listed in ALLOWLIST; or an f-string of one literal prefix plus the parameter -
-    `config.env(suffix)` has TWO such patterns on the one function (`f"NEVERTWICE_{name}"` and
-    `f"CLAUDE_MEMORY_{name}"`), both applied to every call site.
+    Numeric-ness is never inherited: a composed helper is auto-numeric only if ITS OWN return
+    annotation says `int`/`float` - `_env_int` declares `-> int` on its own account and would
+    be numeric even if `_env_float` (which it calls) did not declare one at all.
+
+    NOT covered, by construction, and cannot be without a real data-flow analysis this
+    discovery tool does not attempt: a name passed to `os.environ.get`/`os.getenv`/a known
+    helper as a KEYWORD argument or in any position OTHER than first; a name built at runtime
+    from something that is not a literal at the call site.
 
     Returns `{helper_name: {"patterns": [...], "numeric": bool}}`. A name collision between
     two DIFFERENT functions that happen to share a name is not disambiguated by module - a
@@ -190,33 +246,42 @@ def _env_read_helpers() -> dict[str, dict]:
     general-purpose one (same trade-off `_package_env_names`'s docstring already makes for
     treating the module/function namespace as flat).
     """
-    helpers: dict[str, dict] = {}
+    funcs: list[tuple[str, object, set]] = []
     for path in sorted(PKG.glob("*.py")):
         tree = ast.parse(path.read_text(encoding="utf-8"))
         for node in ast.walk(tree):
             if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
                 continue
             params = {a.arg for a in node.args.args}
-            if not params:
+            if params:
+                funcs.append((node.name, node, params))
+
+    helpers: dict[str, dict] = {}
+    for name, node, params in funcs:
+        patterns = _direct_env_patterns(node, params)
+        if patterns:
+            numeric = isinstance(node.returns, ast.Name) and node.returns.id in ("int", "float")
+            existing = helpers.get(name, {"patterns": set(), "numeric": False})
+            helpers[name] = {"patterns": set(existing["patterns"]) | patterns,
+                             "numeric": existing["numeric"] or numeric}
+
+    changed = True
+    while changed:
+        changed = False
+        for name, node, params in funcs:
+            new_patterns = _helper_call_patterns(node, params, helpers)
+            if not new_patterns:
                 continue
-            patterns: set[str] = set()
-            for n in ast.walk(node):
-                if not (isinstance(n, ast.Call) and n.args):
-                    continue
-                target = n.func
-                is_environ_get = (isinstance(target, ast.Attribute) and target.attr == "get"
-                                  and isinstance(target.value, ast.Attribute)
-                                  and target.value.attr == "environ")
-                is_getenv = isinstance(target, ast.Attribute) and target.attr == "getenv"
-                if not (is_environ_get or is_getenv):
-                    continue
-                pattern = _key_pattern(n.args[0], params)
-                if pattern:
-                    patterns.add(pattern)
-            if patterns:
-                numeric = isinstance(node.returns, ast.Name) and node.returns.id in ("int", "float")
-                helpers[node.name] = {"patterns": sorted(patterns), "numeric": numeric}
-    return helpers
+            numeric = isinstance(node.returns, ast.Name) and node.returns.id in ("int", "float")
+            existing = helpers.get(name, {"patterns": set(), "numeric": False})
+            merged = set(existing["patterns"]) | new_patterns
+            merged_numeric = existing["numeric"] or numeric
+            if merged != existing["patterns"] or merged_numeric != existing["numeric"]:
+                helpers[name] = {"patterns": merged, "numeric": merged_numeric}
+                changed = True
+
+    return {name: {"patterns": sorted(spec["patterns"]), "numeric": spec["numeric"]}
+           for name, spec in helpers.items()}
 
 
 def _package_env_names() -> tuple[dict[str, list[str]], dict[str, list[str]]]:
@@ -229,15 +294,21 @@ def _package_env_names() -> tuple[dict[str, list[str]], dict[str, list[str]]]:
         -> `auto_numeric`, since their own return annotation makes the value numeric by
         construction; `config.env(suffix)` -> BOTH `NEVERTWICE_<suffix>` and
         `CLAUDE_MEMORY_<suffix>`, into `discovered` like any other name, since a suffix can
-        resolve to either a path or not (`VAULT` does; `PROFILE` does not)).
+        resolve to either a path or not (`VAULT` does; `PROFILE` does not));
+      * HELPERS OF HELPERS, TO ANY DEPTH - `budget._env_int` reads nothing itself; it calls
+        `_env_float(name, ...)`, so it is a helper only because `_env_float` is, and its own
+        `-> int` (never `_env_float`'s numeric-ness, which is never inherited) is what makes
+        ITS call sites auto-numeric. `_env_read_helpers()`'s fixpoint has no depth limit -
+        a helper of a helper of a helper is found the same way a first-order one is.
 
     Does NOT cover, and cannot by construction: a name built at runtime from something that is
-    not a literal at the call site (`os.environ.get(some_variable)`); `"X" in os.environ`
-    membership tests, `os.environ.setdefault(...)`/`.pop(...)`, or a WRITE via
-    `os.environ[...] = ...` (none of these are "reads" this scanner is asked to cover, and an
-    independent enumeration of this package by the auditing session found none that would add
-    a name beyond what the two shapes above already find - `env_enum_probe.py`, not shipped
-    with this repository).
+    not a literal at the call site (`os.environ.get(some_variable)`); a name passed as a
+    KEYWORD argument, or in any position other than FIRST, to `os.environ.get`/`os.getenv`/a
+    known helper; `"X" in os.environ` membership tests, `os.environ.setdefault(...)`/`.pop(...)`,
+    or a WRITE via `os.environ[...] = ...` (none of these are "reads" this scanner is asked to
+    cover, and an independent enumeration of this package by the auditing session found none
+    that would add a name beyond what the shapes above already find - `env_enum_probe.py` /
+    `env_enum_probe2.py`, not shipped with this repository).
     """
     helpers = _env_read_helpers()
     found: dict[str, list[str]] = {}
@@ -457,15 +528,31 @@ def test_walled_covers_or_allowlists_every_env_name_in_the_package() -> None:
     #   scanner's `_env_read_helpers()` is a separate, complete pass BEFORE any call site is
     #   examined, so file order cannot hide a call site from it - confirmed directly by
     #   reading the line the probe's own ordering skips.
+    #
+    # (в)3 adds 4 more on top of that 171: NEVERTWICE_BUDGET_TURN_TOKENS,
+    # _SESSION_TOKENS, _TURN_LATENCY_MS and _SESSION_LATENCY_MS (`budget.py:97-103`), read
+    # through `budget._env_int`, which is itself a SECOND-ORDER helper - it has no
+    # `os.environ.get` of its own, only a call to `_env_float(name, ...)` - invisible to a
+    # single, non-fixpoint pass (the auditor's mutation Z2 is exactly this shape, one level
+    # deeper: `_sweep_root` -> `_raw` -> `os.environ.get`). 171 + 4 = 175.
     all_names = set(discovered) | set(auto_numeric)
     expected_lost = {"VAULT", "PROFILE", "CLOUD", "EMBED_MODEL"}
     expected_gained = {"NEVERTWICE_VAULT", "CLAUDE_MEMORY_VAULT", "NEVERTWICE_PROFILE",
                        "CLAUDE_MEMORY_PROFILE", "CLAUDE_MEMORY_CLOUD", "CLAUDE_MEMORY_EMBED_MODEL",
-                       "NEVERTWICE_EXTRACT_RETRY"}
+                       "NEVERTWICE_EXTRACT_RETRY", "NEVERTWICE_BUDGET_TURN_TOKENS",
+                       "NEVERTWICE_BUDGET_SESSION_TOKENS", "NEVERTWICE_BUDGET_TURN_LATENCY_MS",
+                       "NEVERTWICE_BUDGET_SESSION_LATENCY_MS"}
+    expected_total = 168 - len(expected_lost) + len(expected_gained)
     check(f"this scanner finds {len(all_names)} names - every difference from the auditor's "
-          f"168 named above: {len(expected_gained)} gained, {len(expected_lost)} lost",
-          len(all_names) == 168 - len(expected_lost) + len(expected_gained),
-          f"{len(all_names)} names (expected {168 - len(expected_lost) + len(expected_gained)})")
+          f"168 named above: {len(expected_gained)} gained, {len(expected_lost)} lost "
+          f"(expected total {expected_total})",
+          len(all_names) == expected_total,
+          f"{len(all_names)} names (expected {expected_total})")
+    check("all four budget.py names are found and classified auto-numeric (budget._env_int's "
+          "OWN -> int, not inherited from _env_float)",
+          {"NEVERTWICE_BUDGET_TURN_TOKENS", "NEVERTWICE_BUDGET_SESSION_TOKENS",
+           "NEVERTWICE_BUDGET_TURN_LATENCY_MS", "NEVERTWICE_BUDGET_SESSION_LATENCY_MS"}
+          <= set(auto_numeric))
     check("NEVERTWICE_EXTRACT_RETRY is found (the probe's own file-ordering miss)",
           "NEVERTWICE_EXTRACT_RETRY" in all_names)
 
