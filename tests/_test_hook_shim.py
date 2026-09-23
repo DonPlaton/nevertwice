@@ -248,6 +248,37 @@ def _module_aliases(pkg: Path = PKG) -> dict[str, dict[str, str]]:
     return out
 
 
+def _symbol_aliases(pkg: Path = PKG) -> dict[str, dict[str, tuple[str, str]]]:
+    """(в)6, item (2). For every module in `nevertwice/*.py`, which LOCAL NAME (used BARE at a
+    call site, e.g. `env(...)`) was imported as a SPECIFIC SYMBOL from another package module -
+    `from .config import env` (or `as g`) makes a bare `env(...)` mean `config.env` every bit
+    as much as `_cfg.env(...)` means it through `_module_aliases`'s MODULE table above. This is
+    the counterpart `_module_aliases`'s own docstring said this package did not need - the
+    auditor's V4 (`from .config import env` plus a bare call, added to `hosts.py`) is exactly
+    the shape that needs it: without this table the call is invisible to `_resolve_call` (no
+    module alias named `config` in scope, and `hosts.py` defines no `env` of its own), and
+    - (в)6's OTHER half - a truly invisible call used to mean a silently DROPPED literal, never
+    even reaching the wall/allowlist check.
+
+    Maps `{importing_module: {local_name: (target_module, original_symbol_name)}}`. Only a
+    FROM-import naming an explicit package submodule is recorded (`node.module` resolves to a
+    package stem) - `from . import memory_hook as m` (no `node.module`) is a MODULE import,
+    `_module_aliases`'s job, not this one."""
+    stems = {p.stem for p in pkg.glob("*.py")}
+    out: dict[str, dict[str, tuple[str, str]]] = {}
+    for path in sorted(pkg.glob("*.py")):
+        table: dict[str, tuple[str, str]] = {}
+        tree = ast.parse(path.read_text(encoding="utf-8"))
+        for node in ast.walk(tree):
+            if isinstance(node, ast.ImportFrom) and node.module:
+                target = node.module.rsplit(".", 1)[-1]
+                if target in stems:
+                    for a in node.names:                # `from .config import env [as g]`
+                        table[a.asname or a.name] = (target, a.name)
+        out[path.stem] = table
+    return out
+
+
 def _engine_parts(pkg: Path = PKG) -> tuple[str, ...]:
     """The ordered list of `_engine_*.py` files that `nevertwice/_engine.py` execs into
     `memory_hook`'s own `__dict__` (its `ENGINE_PARTS` tuple, read the same way
@@ -286,13 +317,24 @@ def _module_members(module: str, engine_parts: tuple[str, ...]) -> set[str]:
 
 
 def _resolve_call(module: str, func_node, helpers: dict[tuple[str, str], dict],
-                  aliases: dict[str, dict[str, str]], engine_parts: tuple[str, ...]
-                  ) -> tuple[str, str] | None:
-    """(в)5: resolve one call's target to the SINGLE `(module, function)` key in `helpers` it
-    refers to, from the caller's own module context - or `None` when it cannot be pinned to
-    exactly one definition. Fail closed, never guess:
+                  aliases: dict[str, dict[str, str]],
+                  symbol_aliases: dict[str, dict[str, tuple[str, str]]],
+                  engine_parts: tuple[str, ...]
+                  ) -> tuple[tuple[str, str] | None, list[tuple[str, str]] | None]:
+    """(в)5/(в)6: resolve one call's target to the SINGLE `(module, function)` key in `helpers`
+    it refers to, from the caller's own module context. Returns `(resolved, broad)`:
+    `resolved` is that key, or `None` when it cannot be pinned to exactly one definition;
+    `broad` is populated ONLY when `resolved` is `None` AND the call's own name matches some
+    helper's name SOMEWHERE in the package anyway - every `(module, function)` pair that
+    matches, so the caller can decide what an UNRESOLVED (as opposed to genuinely unrelated)
+    call site is worth. Still fail closed for `resolved` itself - never guessed at:
 
-    * a BARE call (`f(...)`) is resolved within `module`'s own EFFECTIVE group
+    * an explicit symbol import (`_symbol_aliases`: `from .config import env`) is tried FIRST
+      for a bare call - it is direct evidence of exactly one target, stronger than a same-name
+      coincidence in scope, so `env(...)` after that import means `config.env` even though
+      `hosts.py` (в)6's V4 shape) defines no `env` of its own and is not `memory_hook` or an
+      engine part;
+    * otherwise a BARE call (`f(...)`) is resolved within `module`'s own EFFECTIVE group
       (`_module_members`) - covers both an ordinary same-file call (`budget._env_int` calling
       `_env_float`) and an engine part calling a sibling part's function through the shared
       exec namespace (`_engine_cards.py` calling `_engine_config.py`'s `env_int`);
@@ -301,49 +343,76 @@ def _resolve_call(module: str, func_node, helpers: dict[tuple[str, str], dict],
       group - so `m.env_int` (`m` aliasing `memory_hook`, used throughout this package) reaches
       `_engine_config.env_int` the same way a bare call from inside another engine part does,
       and `_cfg.env` (`doctor.py`, `_cfg` aliasing `config`) reaches `config.env`;
-    * anything else (a deeper attribute chain, a call result, a subscript) is `None` - not a
-      shape this scanner tries to resolve.
+    * anything else (a deeper attribute chain, a call result, a subscript) resolves to
+      `(None, None)` - not a shape this scanner tries to resolve at all, and not reported as
+      unresolved either, since it never looked like a helper call in the first place.
 
-    Either branch: two or more group members defining the SAME name, or zero, is `None` - never
-    guessed at. `hosts._env_float` versus `budget._env_float` (auditor's W6) is exactly the
+    Two or more group members defining the SAME name, or zero in scope, never becomes
+    `resolved` - `hosts._env_float` versus `budget._env_float` (auditor's W6) is exactly the
     shape this refuses to conflate: keying `helpers` by `(module, function)` instead of by bare
-    name (below) means the two are different keys from the start, so a call resolved to one is
-    never accidentally answered by the other's numeric flag."""
+    name means the two are different keys from the start, so a call resolved to one is never
+    accidentally answered by the other's numeric flag. (в)6's V5 is the SAME refusal reached a
+    different way - a second `env_int` appended to `_engine_text.py` (an engine part) makes
+    every `m.env_int`/bare-within-the-group call ambiguous (two matches, not one), so `resolved`
+    stays `None` for all of them; `broad` is what stops that from being silence."""
     func = func_node
     if isinstance(func, ast.Name):
-        candidates = [(m2, func.id) for m2 in _module_members(module, engine_parts)
-                     if (m2, func.id) in helpers]
-        return candidates[0] if len(candidates) == 1 else None
+        sym = symbol_aliases.get(module, {}).get(func.id)
+        if sym is not None:
+            target_module, target_name = sym
+            candidates = [(m2, target_name) for m2 in _module_members(target_module, engine_parts)
+                         if (m2, target_name) in helpers]
+            if len(candidates) == 1:
+                return candidates[0], None
+            broad = sorted(k for k in helpers if k[1] == target_name)
+            return None, (broad or None)
+        scoped = [(m2, func.id) for m2 in _module_members(module, engine_parts)
+                 if (m2, func.id) in helpers]
+        if len(scoped) == 1:
+            return scoped[0], None
+        broad = sorted(k for k in helpers if k[1] == func.id)
+        return None, (broad or None)
     if isinstance(func, ast.Attribute) and isinstance(func.value, ast.Name):
         target_module = aliases.get(module, {}).get(func.value.id)
-        if target_module is None:
-            return None
-        candidates = [(m2, func.attr) for m2 in _module_members(target_module, engine_parts)
+        if target_module is not None:
+            scoped = [(m2, func.attr) for m2 in _module_members(target_module, engine_parts)
                      if (m2, func.attr) in helpers]
-        return candidates[0] if len(candidates) == 1 else None
-    return None
+            if len(scoped) == 1:
+                return scoped[0], None
+        broad = sorted(k for k in helpers if k[1] == func.attr)
+        return None, (broad or None)
+    return None, None
 
 
 def _helper_call_patterns(module: str, name: str, node, params: set,
                           helpers: dict[tuple[str, str], dict],
-                          aliases: dict[str, dict[str, str]], engine_parts: tuple[str, ...]
+                          aliases: dict[str, dict[str, str]],
+                          symbol_aliases: dict[str, dict[str, tuple[str, str]]],
+                          engine_parts: tuple[str, ...]
                           ) -> set[str]:
     """Patterns from calls INSIDE `node` (the function `(module, name)`) to a helper ALREADY in
     `helpers`, resolved via `_resolve_call` - covers a same-module call, a same-exec-namespace
-    call between engine parts, and an aliased cross-module call (`m.env_int`), and refuses
-    anything ambiguous. `params` gates which of the CALLER's own parameters may feed the
-    callee's FIRST POSITIONAL argument - bare, or as one literal prefix plus the parameter in
-    an f-string (`_key_pattern`). The composed pattern is the inner helper's own pattern with
-    `outer_prefix + "{}"` substituted for its `"{}"` - `NEVERTWICE_{}` composed with an outer
-    prefix of `""` (a bare passthrough) stays `NEVERTWICE_{}`; composed with an outer prefix of
-    `"BUDGET_"` becomes `NEVERTWICE_BUDGET_{}`. (в)4: a call that resolves back to `(module,
-    name)` itself - the function calling itself, however it spells the call - is skipped
-    outright, never composed; a composed pattern longer than `MAX_PATTERN_LEN` is dropped."""
+    call between engine parts, an aliased cross-module call (`m.env_int`), and an explicit
+    symbol import (`from .config import env`). Only the STRICT `resolved` half of
+    `_resolve_call`'s return is ever used here, never `broad` - (в)6's fail-open-for-discovery
+    fix is for LEAF call sites with a literal argument (`_package_env_names`, below); composing
+    a NEW helper-of-helper from a merely-plausible, unresolved candidate would let an ambiguous
+    guess propagate its numeric-ness onto some THIRD function, which is exactly the unsafe
+    direction (в)5 exists to refuse - so an unresolved or ambiguous call composes nothing here,
+    full stop. `params` gates which of the CALLER's own parameters may feed the callee's FIRST
+    POSITIONAL argument - bare, or as one literal prefix plus the parameter in an f-string
+    (`_key_pattern`). The composed pattern is the inner helper's own pattern with `outer_prefix
+    + "{}"` substituted for its `"{}"` - `NEVERTWICE_{}` composed with an outer prefix of `""`
+    (a bare passthrough) stays `NEVERTWICE_{}`; composed with an outer prefix of `"BUDGET_"`
+    becomes `NEVERTWICE_BUDGET_{}`. (в)4: a call that resolves back to `(module, name)` itself -
+    the function calling itself, however it spells the call - is skipped outright, never
+    composed; a composed pattern longer than `MAX_PATTERN_LEN` is dropped."""
     patterns: set[str] = set()
     for n in ast.walk(node):
         if not (isinstance(n, ast.Call) and n.args):
             continue
-        resolved = _resolve_call(module, n.func, helpers, aliases, engine_parts)
+        resolved, _broad = _resolve_call(module, n.func, helpers, aliases, symbol_aliases,
+                                         engine_parts)
         if resolved is None or resolved == (module, name):
             continue
         inner = helpers[resolved]
@@ -393,6 +462,7 @@ def _env_read_helpers(pkg: Path = PKG) -> dict[tuple[str, str], dict]:
     """
     engine_parts = _engine_parts(pkg)
     aliases = _module_aliases(pkg)
+    symbol_aliases = _symbol_aliases(pkg)
 
     funcs: list[tuple[str, str, object, set]] = []
     for path in sorted(pkg.glob("*.py")):
@@ -427,7 +497,8 @@ def _env_read_helpers(pkg: Path = PKG) -> dict[tuple[str, str], dict]:
             # set, so the failure points at the offender rather than just "something, somewhere".
             still_growing = sorted(
                 f"{m}:{n}" for m, n, nd, pr in funcs
-                if _helper_call_patterns(m, n, nd, pr, helpers, aliases, engine_parts))
+                if _helper_call_patterns(m, n, nd, pr, helpers, aliases, symbol_aliases,
+                                         engine_parts))
             offender = ", ".join(still_growing) if still_growing else "<unknown>"
             raise HelperFixpointError(
                 f"helper fixpoint did not converge: {offender} ({max_passes} passes over "
@@ -436,7 +507,7 @@ def _env_read_helpers(pkg: Path = PKG) -> dict[tuple[str, str], dict]:
         passes += 1
         for module, name, node, params in funcs:
             new_patterns = _helper_call_patterns(module, name, node, params, helpers, aliases,
-                                                 engine_parts)
+                                                 symbol_aliases, engine_parts)
             if not new_patterns:
                 continue
             numeric = isinstance(node.returns, ast.Name) and node.returns.id in ("int", "float")
@@ -469,11 +540,21 @@ def _package_env_names(pkg: Path = PKG) -> tuple[dict[str, list[str]], dict[str,
         ITS call sites auto-numeric. `_env_read_helpers()`'s fixpoint has no depth limit -
         a helper of a helper of a helper is found the same way a first-order one is;
       * an ALIASED call across a genuine module boundary (`m.env_int`, `m` aliasing
-        `memory_hook`; `_cfg.env`, `_cfg` aliasing `config`), resolved by `_resolve_call` - see
-        its own docstring and (в)5. A call that cannot be pinned to exactly one definition
-        (two modules defining the same name, per `_module_members`, or an alias this scanner
-        does not recognise) is not treated as a helper call at all - FAIL CLOSED, never
-        guessed at, so a colliding name is `discovered` at best, never silently `auto_numeric`.
+        `memory_hook`; `_cfg.env`, `_cfg` aliasing `config`) or an explicit symbol import
+        (`from .config import env`, `_symbol_aliases`), resolved by `_resolve_call` - see its
+        own docstring and (в)5/(в)6;
+      * (в)6, item (1) - AN UNRESOLVED OR AMBIGUOUS call whose bare/attribute name still
+        matches SOME helper's name somewhere in the package (`_resolve_call`'s `broad` return)
+        is not silently dropped: its literal is put into `discovered`, NEVER `auto_numeric`
+        (fail closed on the number, same as an ordinary collision), with the UNION of every
+        matching candidate's patterns applied (so nothing is missed for want of guessing which
+        one), and labelled `"unresolved: <file>:<name>"` - which the classification check below
+        then forces to be pinned or allowlisted like any other name, and a dedicated check
+        lists by name (`_helper_fixpoint's` FAIL-CLOSED discipline was originally "fail closed
+        for numeric" only; before this fix an unresolved/ambiguous call was ALSO invisible to
+        DISCOVERY - dropped outright, the auditor's V4/V5 - which is the unsafe direction for a
+        coverage tool: a real path could vanish from the scan entirely, never even reaching the
+        wall/allowlist check that is this whole suite's point).
 
     Does NOT cover, and cannot by construction: a name built at runtime from something that is
     not a literal at the call site (`os.environ.get(some_variable)`); a name passed as a
@@ -483,12 +564,13 @@ def _package_env_names(pkg: Path = PKG) -> tuple[dict[str, list[str]], dict[str,
     cover, and an independent enumeration of this package by the auditing session found none
     that would add a name beyond what the shapes above already find - `env_enum_probe.py` /
     `env_enum_probe2.py`, not shipped with this repository); a call reached through anything
-    other than a bare name, a same-exec-namespace sibling call, or one level of attribute
-    access (`_resolve_call`'s docstring names the exact shapes it resolves).
+    other than a bare name, a same-exec-namespace sibling call, one level of attribute access,
+    or an explicit symbol import (`_resolve_call`'s docstring names the exact shapes it tries).
     """
     helpers = _env_read_helpers(pkg)
     engine_parts = _engine_parts(pkg)
     aliases = _module_aliases(pkg)
+    symbol_aliases = _symbol_aliases(pkg)
     found: dict[str, list[str]] = {}
     numeric: dict[str, list[str]] = {}
     for path in sorted(pkg.glob("*.py")):
@@ -509,11 +591,14 @@ def _package_env_names(pkg: Path = PKG) -> tuple[dict[str, list[str]], dict[str,
                         and isinstance(node.args[0].value, str):
                     found.setdefault(node.args[0].value, []).append(path.name)
                     continue
-                resolved = _resolve_call(module, target, helpers, aliases, engine_parts)
-                if resolved and node.args and isinstance(node.args[0], ast.Constant) \
-                        and isinstance(node.args[0].value, str):
+                if not (node.args and isinstance(node.args[0], ast.Constant)
+                       and isinstance(node.args[0].value, str)):
+                    continue
+                literal = node.args[0].value
+                resolved, broad = _resolve_call(module, target, helpers, aliases,
+                                                symbol_aliases, engine_parts)
+                if resolved:
                     spec = helpers[resolved]
-                    literal = node.args[0].value
                     for pattern in spec["patterns"]:
                         name = pattern.format(literal)
                         label = f"{path.name}:{resolved[0]}.{resolved[1]}"
@@ -521,6 +606,15 @@ def _package_env_names(pkg: Path = PKG) -> tuple[dict[str, list[str]], dict[str,
                             numeric.setdefault(name, []).append(label)
                         else:
                             found.setdefault(name, []).append(label)
+                elif broad:
+                    # (в)6, item (1): a name that WOULD be a helper call if it resolved, but
+                    # does not - never `auto_numeric` (fail closed), never dropped (fail open
+                    # for discovery: apply every candidate's patterns, so nothing vanishes).
+                    call_name = target.id if isinstance(target, ast.Name) else target.attr
+                    label = f"unresolved: {path.name}:{call_name}"
+                    for cand in broad:
+                        for pattern in helpers[cand]["patterns"]:
+                            found.setdefault(pattern.format(literal), []).append(label)
             elif isinstance(node, ast.Subscript):
                 val = node.value
                 if (isinstance(val, ast.Attribute) and val.attr == "environ"
@@ -654,6 +748,17 @@ def test_walled_covers_or_allowlists_every_env_name_in_the_package() -> None:
           not unclassified,
           f"unclassified: {[(n, discovered[n]) for n in unclassified]}")
 
+    # (в)6, item (3): every call site `_resolve_call` could not pin to exactly one definition,
+    # but which still matched a known helper's name somewhere - named here, not just counted.
+    # Empty on the unmutated tree; the auditor's V5 (a second `env_int` appended to an engine
+    # part, making every `m.env_int`/in-group bare call ambiguous) lists every affected call
+    # site by `file:name` when this check goes red.
+    unresolved_sites = sorted({label for labels in discovered.values() for label in labels
+                              if label.startswith("unresolved: ")})
+    check("no call site is unresolved or ambiguous - every bare/attribute call this scanner "
+          "recognised as a helper-shaped name resolves to exactly one (module, function)",
+          not unresolved_sites, "; ".join(unresolved_sites))
+
     check("every allowlist entry actually carries a one-line reason (not blank/placeholder)",
           all(isinstance(r, str) and len(r.strip()) >= 8 for r in ALLOWLIST.values()),
           str([n for n, r in ALLOWLIST.items() if len(r.strip()) < 8]))
@@ -737,11 +842,11 @@ def test_walled_covers_or_allowlists_every_env_name_in_the_package() -> None:
 
 
 def test_helper_fixpoint_bounded_and_module_qualified() -> None:
-    """(в)4 and (в)5 - permanent regression coverage for two bugs the auditing session found
-    in `_env_read_helpers()`'s fixpoint, reproduced against SYNTHETIC temp packages (never the
-    real `nevertwice/` tree, via `_env_read_helpers(pkg=...)`/`_package_env_names(pkg=...)`'s
-    own `pkg` parameter) so these run automatically, every session, with nothing to mutate or
-    revert by hand.
+    """(в)4, (в)5 and (в)6 - permanent regression coverage for the bugs the auditing session
+    found in `_env_read_helpers()`/`_resolve_call()`, reproduced against SYNTHETIC temp
+    packages (never the real `nevertwice/` tree, via `_env_read_helpers(pkg=...)`/
+    `_package_env_names(pkg=...)`'s own `pkg` parameter) so these run automatically, every
+    session, with nothing to mutate or revert by hand.
 
     (в)4, W5 - a function calling itself. `_loop(name, depth=0)` returns `os.environ.get(name,
     '')` when `depth`, else `_loop(f'X_{name}', 1)` - a real direct `os.environ.get` call AND a
@@ -771,8 +876,24 @@ def test_helper_fixpoint_bounded_and_module_qualified() -> None:
     shape, reproduced there and reverted - this permanent version never touches `hosts.py`).
     Checked here: the non-numeric module's own call resolves to ITS OWN definition and is
     `discovered`, never `auto_numeric`.
+
+    (в)6, item (2), V4 - an explicit `from .config import env` (a SYMBOL import, not a module
+    one) followed by a bare `env(...)` call. Resolved through `_symbol_aliases` to `config`'s
+    own `env`, exactly as `from .config import env` in `hosts.py` would be - checked here with
+    a synthetic `config_mod.env`.
+
+    (в)6, item (1), V5 - a SECOND `env_int` appended to the engine group (two `_engine_*.py`
+    parts both defining it) makes every `m.env_int(...)` call ambiguous - two matches, not one.
+    At 4e13d14's successor (517a373, still keyed by `(module, function)` but with no fallback
+    for "resolved to nothing"), such a call's literal was silently DROPPED from `discovered`
+    entirely - not merely misclassified, invisible, so the wall/allowlist check downstream had
+    nothing to complain about even though a real path could take this shape. Checked here: the
+    literal is `discovered` (never `auto_numeric`, fail closed on the number) AND the call site
+    is named in a dedicated "unresolved" list (`unresolved: <file>:<name>`), not merely a count
+    mismatch - matching the coordinator's own acceptance wording for V5.
     """
-    print("\n- (в)4/(в)5: the helper fixpoint is bounded, and keyed by module, not bare name -")
+    print("\n- (в)4/(в)5/(в)6: the helper fixpoint is bounded, module-qualified, and never "
+         "silently drops an unresolved or ambiguous call -")
     with tempfile.TemporaryDirectory() as td:
         pkg = Path(td)
         (pkg / "_engine.py").write_text("ENGINE_PARTS = ()\n", encoding="utf-8", newline="")
@@ -865,6 +986,62 @@ def test_helper_fixpoint_bounded_and_module_qualified() -> None:
               "depend on, per the coordinator's addendum",
               "NEVERTWICE_ENGINE_CHAIN_PROBE" in numeric2,
               str(numeric2.get("NEVERTWICE_ENGINE_CHAIN_PROBE")))
+
+        # --- (в)6, item (2): an explicit `from .X import f` symbol import resolves a bare
+        # call to its true origin, exactly like V4 (`from .config import env` in hosts.py) --
+        (pkg / "config_mod.py").write_text(
+            "import os\n\n"
+            "def env(name: str, default=None):\n"
+            "    return os.environ.get(f'NEVERTWICE_{name}',\n"
+            "                          os.environ.get(f'CLAUDE_MEMORY_{name}', default))\n",
+            encoding="utf-8", newline="")
+        (pkg / "importer_mod.py").write_text(
+            "try:\n"
+            "    from .config_mod import env\n"
+            "except ImportError:\n"
+            "    from config_mod import env\n\n"
+            "PROBE = env('SYMBOL_IMPORT_PROBE')\n",
+            encoding="utf-8", newline="")
+        found3, numeric3 = _package_env_names(pkg)
+        check("(в)6 item (2): a symbol import resolves a bare call to its true origin - "
+              "NEVERTWICE_SYMBOL_IMPORT_PROBE and its CLAUDE_MEMORY_ twin are discovered even "
+              "though importer_mod.py defines no env() of its own and is not memory_hook or "
+              "an engine part",
+              "NEVERTWICE_SYMBOL_IMPORT_PROBE" in found3
+              and "CLAUDE_MEMORY_SYMBOL_IMPORT_PROBE" in found3,
+              str({k: v for k, v in found3.items() if "SYMBOL_IMPORT_PROBE" in k}))
+        (pkg / "config_mod.py").unlink()
+        (pkg / "importer_mod.py").unlink()
+
+        # --- (в)6, item (1): an unresolved/ambiguous call is DISCOVERED, never silently
+        # dropped and never silently auto-numeric - V5's shape, a second env_int appended to
+        # the engine group makes the EXISTING caller_mod.py call (still present from the
+        # ENGINE_PARTS scenario above) ambiguous ----------------------------------------------
+        (pkg / "_engine_extra.py").write_text(
+            "import os\n\n"
+            "def env_int(name: str, default: int) -> int:\n"
+            "    raw = os.environ.get(name)\n"
+            "    return int(raw) if raw else default\n",
+            encoding="utf-8", newline="")
+        (pkg / "_engine.py").write_text(
+            "ENGINE_PARTS = ('_engine_config.py', '_engine_extra.py')\n",
+            encoding="utf-8", newline="")
+        found4, numeric4 = _package_env_names(pkg)
+        check("(в)6 item (1): a SECOND env_int appended to the engine group makes "
+              "m.env_int('NEVERTWICE_ENGINE_CHAIN_PROBE', ...) ambiguous (two matches) - the "
+              "literal is DISCOVERED, non-numeric, never silently dropped and never silently "
+              "auto-numeric",
+              "NEVERTWICE_ENGINE_CHAIN_PROBE" in found4
+              and "NEVERTWICE_ENGINE_CHAIN_PROBE" not in numeric4,
+              f"found={'NEVERTWICE_ENGINE_CHAIN_PROBE' in found4} "
+              f"numeric={'NEVERTWICE_ENGINE_CHAIN_PROBE' in numeric4} "
+              f"labels={found4.get('NEVERTWICE_ENGINE_CHAIN_PROBE')}")
+        unresolved4 = sorted({lbl for labels in found4.values() for lbl in labels
+                             if lbl.startswith("unresolved: ")})
+        check("and the unresolved call site is named by file:function - V5's acceptance was "
+              "LISTING them, not only a count mismatch",
+              bool(unresolved4) and all(lbl.endswith(":env_int") for lbl in unresolved4),
+              str(unresolved4))
 
 
 def test_every_host_adapter_and_watch_base_resolves_inside_the_wall() -> None:
