@@ -552,6 +552,98 @@ def _looks_unsafe(text: str) -> bool:
     return _looks_injected(text) or _looks_dangerous(text)
 
 
+# ── A3 (Q5, principle layer): de-identify a cross-project "principle" sentence ─────────
+# A `principle` is meant to travel OUTSIDE its own project (A4's universal recall pool), so it
+# must carry no clue about where it came from. Grouped exactly as the plan's classes: an ablated
+# group is what `tests/_test_principle_scan.py` mutates to prove each one is load-bearing BY
+# NAME. Every pattern here is a BOUNDED, single-pass shape - no nested unbounded quantifier over
+# the same character class - because this repository was bitten once by a regex that
+# backtracked exponentially on a hostile input (`_DANGER_RE`'s history above), and a
+# de-identification gate that stalls a session-end write is worse than the identifier it was
+# built to catch. `_lazy_re`: this scan runs once per pattern/mistake item at write time, never
+# on PreToolUse, so compiling on first use (not at import) costs nothing that matters.
+_PRINCIPLE_IP_RE = _lazy_re(
+    r"\b(?:\d{1,3}\.){3}\d{1,3}\b"                                    # IPv4
+    r"|\b(?:[0-9A-Fa-f]{1,4}:){2,7}[0-9A-Fa-f]{1,4}\b"                 # IPv6, full/compressed form
+    r"|\b(?:[0-9A-Fa-f]{1,4}:){1,7}:(?:[0-9A-Fa-f]{1,4})?\b")          # IPv6, trailing '::' shorthand
+_PRINCIPLE_URL_RE = _lazy_re(
+    r"\b[a-zA-Z][a-zA-Z0-9+.-]{1,15}://[^\s<>\"']+"                    # scheme://... (URL)
+    r"|\b(?:[a-zA-Z0-9][a-zA-Z0-9-]{0,61}\.){1,}[a-zA-Z]{2,24}\b")     # bare FQDN (word.word.tld)
+_PRINCIPLE_PATH_RE = _lazy_re(
+    r"\b[A-Za-z]:[\\/][^\s\"'<>]{1,200}"                               # C:\... / C:/...
+    r"|\\\\[^\s\\\"'<>]+\\[^\s\"'<>]{1,200}"                           # \\host\share UNC path
+    r"|(?<![\w./])(?:/[\w.-]+){2,}"                                    # /abs/posix/path
+    r"|(?<![\w./])~(?:/[\w.-]+)+"                                      # ~/posix/path
+    r"|\b[\w-]+(?:/[\w-]+)+\.[A-Za-z0-9]{1,8}\b")                      # rel/path/with-a.ext
+_PRINCIPLE_EMAIL_RE = _lazy_re(r"\b[\w.+-]+@[\w-]+(?:\.[\w-]+)*\b")    # user@host or user@a.b.tld -
+                                                                        # the dotted TLD is OPTIONAL
+                                                                        # (an intranet "user@host"
+                                                                        # address is still an
+                                                                        # identifier worth catching)
+_PRINCIPLE_PORT_RE = _lazy_re(
+    r"\b[a-zA-Z][\w.-]*:\d{2,5}\b"                                     # host:port (host starts with a
+                                                                        # letter - a bare "12:30" is a
+                                                                        # clock, not an endpoint)
+    r"|\bport\s*[:=]?\s*\d{2,5}\b", re.IGNORECASE)                     # "port 8080" / "port: 8080"
+# {1,2}, not {1,3}: a plain IPv4 address is ALWAYS four dotted octets (3 repeats) and is
+# already caught by `_PRINCIPLE_IP_RE` - letting the version pattern also swallow that exact
+# shape would double-classify every IPv4 literal as "a version string", which breaks the
+# per-class mutation test's isolation (ablating either pattern alone would leave the other
+# still rejecting an IPv4 address). Capped at three numbers total, which is every example the
+# plan gives (3.12.1, v2.0) and stays a version, not a four-octet address.
+#: `(?!\.\d)` after the boundary and `(?<!\d\.)` before it: without both, `{1,2}` still matches
+#: a THREE-octet slice of a genuine four-octet IPv4 address, and `re.search` tries every start
+#: position - blocking only the forward continuation ("10.0.0" out of "10.0.0.5") still leaves
+#: "0.0.5", starting one octet in, matching on its own. The trailing lookahead blocks a match
+#: that continues into another ".digit"; the leading lookbehind blocks a match that STARTS
+#: right after one - together no three-number slice of a four-number run can match at all.
+_PRINCIPLE_VERSION_RE = _lazy_re(r"(?<!\d\.)\bv?\d+(?:\.\d+){1,2}\b(?!\.\d)")   # 3.12.1, v2.0
+
+#: Named groups, walked in order by `principle_scan` and by its own mutation test - ablating one
+#: entry (a test-only monkeypatch of this dict, never a file edit) must fail exactly the check
+#: for that class and no other.
+PRINCIPLE_IDENTIFIER_GROUPS: dict = {
+    "ip": (_PRINCIPLE_IP_RE,),
+    "url_fqdn": (_PRINCIPLE_URL_RE,),
+    "path": (_PRINCIPLE_PATH_RE,),
+    "email": (_PRINCIPLE_EMAIL_RE,),
+    "host_port": (_PRINCIPLE_PORT_RE,),
+    "version": (_PRINCIPLE_VERSION_RE,),
+}
+
+
+def principle_scan(text: str, forbidden: set[str]) -> str:
+    """De-identification gate for the `principle` field: "" when `text` carries a source
+    identifier, otherwise the cleaned (whitespace-collapsed) text. The write path
+    (`_engine_write.py`) calls this on the item's own `principle`, forbidding the project slug
+    and this note's own entities; the promoter (`principles.py`, A5) calls it again at
+    promotion time forbidding the project's whole vocabulary - a fact that only shows up once a
+    principle is compared against a project's full note corpus is still caught before it ever
+    reaches another project's recall.
+
+    Errs toward REJECTING: a false positive here costs a "" principle, which the write path
+    already treats as simply absent - the rest of the note is untouched either way (the
+    degradation contract, A3). A false negative would leak a project's identity into another
+    project's memory through A4's universal pool, which the read path has no way to catch
+    afterwards. So a borderline match (a timestamp that parses as IPv6-shaped, a filename
+    extension that parses as an FQDN) is deliberately left rejected rather than tuned away.
+    """
+    s = (text or "").strip()
+    if not s:
+        return ""
+    for group in PRINCIPLE_IDENTIFIER_GROUPS.values():
+        for pat in group:
+            if pat.search(s):
+                return ""
+    toks = sorted({t.strip() for t in (forbidden or ()) if t and t.strip()},
+                  key=len, reverse=True)
+    if toks:
+        alt = "|".join(re.escape(t) for t in toks)
+        if re.search(rf"\b(?:{alt})\b", s, re.IGNORECASE):
+            return ""
+    return re.sub(r"\s+", " ", s)
+
+
 # W7 corroboration-gated quarantine - OFF by default. On a single-user store the user owns every
 # session, so the threat it defends (adversarial sessions planting a lone false "lesson") does not
 # apply and quarantine would only risk hiding legitimate memory. For a MULTI-TENANT / shared-store /
