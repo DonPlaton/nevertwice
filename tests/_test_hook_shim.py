@@ -189,102 +189,270 @@ def _direct_env_patterns(node, params: set) -> set[str]:
     return patterns
 
 
-def _helper_call_patterns(node, params: set, known: dict[str, dict]) -> set[str]:
-    """Patterns from calls INSIDE `node` to a helper already in `known`, passing one of
-    `params` - bare, or as one literal prefix plus the parameter in an f-string - as the
-    helper's FIRST POSITIONAL argument. The composed pattern is the inner helper's own
-    pattern with `outer_prefix + "{}"` substituted for its `"{}"` - `NEVERTWICE_{}` composed
-    with an outer prefix of `""` (a bare passthrough) stays `NEVERTWICE_{}`; composed with an
-    outer prefix of `"BUDGET_"` becomes `NEVERTWICE_BUDGET_{}`."""
+#: (в)4: three independent guards against a fixpoint that never settles - a function that
+#: calls itself with a growing literal prefix (auditor's W5: `_loop(name, depth=0)` returns
+#: `os.environ.get(name, '')` when `depth`, else `_loop(f'X_{name}', 1)` - a real direct
+#: `os.environ.get` AND a call to itself, both found by a static AST walk that does not
+#: evaluate the ternary) composed a longer prefix ("X_{}", "X_X_{}", ...) every pass, forever -
+#: the scanner at 4e13d14 did not finish this shape within a 12s bound in this session's own
+#: reproduction (the auditor reported 60s+). Any ONE of the three guards below stops W5; all
+#: three are kept because a future shape might defeat one but not the others:
+#:   - a self-call (a function whose own body calls back into itself, by ANY resolvable name -
+#:     bare or `module.own_name(...)`) is never composed AT ALL - the one shape that made W5
+#:     grow without bound is refused before it can add anything;
+#:   - no composed pattern is ever kept past MAX_PATTERN_LEN characters - a second line of
+#:     defense against a growth shape that is not literal self-recursion (e.g. a 2-function
+#:     cycle);
+#:   - the pass loop itself is bounded at `len(funcs) + 1` - a fixpoint over N (module,
+#:     function) pairs can never legitimately need more than N passes to finish propagating
+#:     (each pass that changes anything newly stabilizes at least one pair), so needing one
+#:     more is proof of non-convergence, not slowness.
+#: Any guard tripping FAILS BY NAME (`HelperFixpointError`) rather than truncating silently -
+#: silently capping the pattern set would hide exactly the kind of runaway this exists to catch.
+MAX_PATTERN_LEN = 128
+
+
+class HelperFixpointError(RuntimeError):
+    """`_env_read_helpers()` refused to keep iterating - the message names the pass bound and
+    function count; see (в)4 above."""
+
+
+def _module_aliases(pkg: Path = PKG) -> dict[str, dict[str, str]]:
+    """For every module in `nevertwice/*.py`, which LOCAL NAME (as used in `name.attr(...)` at
+    a call site) refers to which OTHER PACKAGE MODULE - covers exactly the two import shapes
+    this package uses to reach another module's functions: `import config as _cfg` / `import
+    memory_hook as m` (an `ast.Import`, aliased or not), and `from . import memory_hook as m`
+    (the package-relative half of the `try/except ImportError` fallback pairs throughout this
+    package) - both resolved by their LAST dotted component, matched against the package's own
+    module stems. Anything that does not name a module IN THIS PACKAGE (`os`, `sys`, `json`,
+    ...) is not recorded, since it cannot define an env helper this scanner would need to
+    chase. `from X import f` (importing a SYMBOL, not a module) is deliberately not handled -
+    no call site in this package reaches an env helper that way today (verified directly), and
+    guessing at that shape would be exactly the kind of guess (в)5 exists to refuse."""
+    stems = {p.stem for p in pkg.glob("*.py")}
+    out: dict[str, dict[str, str]] = {}
+    for path in sorted(pkg.glob("*.py")):
+        table: dict[str, str] = {}
+        tree = ast.parse(path.read_text(encoding="utf-8"))
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Import):
+                for a in node.names:
+                    target = a.name.rsplit(".", 1)[-1]
+                    if target in stems:
+                        table[a.asname or a.name.split(".")[0]] = target
+            elif isinstance(node, ast.ImportFrom) and node.level >= 1 and node.module is None:
+                for a in node.names:                    # `from . import memory_hook as m`
+                    if a.name in stems:
+                        table[a.asname or a.name] = a.name
+        out[path.stem] = table
+    return out
+
+
+def _engine_parts(pkg: Path = PKG) -> tuple[str, ...]:
+    """The ordered list of `_engine_*.py` files that `nevertwice/_engine.py` execs into
+    `memory_hook`'s own `__dict__` (its `ENGINE_PARTS` tuple, read the same way
+    `tools/produced_by.py`'s `PART_LIST_NAMES` already trusts it for import-closure purposes -
+    an `ast.literal_eval` of the assignment, not an import, so this stays a static scan)."""
+    engine_py = pkg / "_engine.py"
+    if not engine_py.is_file():
+        return ()
+    tree = ast.parse(engine_py.read_text(encoding="utf-8"))
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Assign) and any(
+                isinstance(t, ast.Name) and t.id == "ENGINE_PARTS" for t in node.targets):
+            try:
+                return tuple(str(n).removesuffix(".py") for n in ast.literal_eval(node.value))
+            except (ValueError, TypeError, SyntaxError):
+                return ()
+    return ()
+
+
+def _module_members(module: str, engine_parts: tuple[str, ...]) -> set[str]:
+    """The modules whose definitions are reachable from `module`'s OWN body WITHOUT any
+    attribute access - `module` itself, plus, when `module` is `memory_hook` or one of the
+    engine parts, every member of that whole group. `_engine.py` execs all eight parts into
+    `memory_hook`'s own `__dict__`, one shared namespace (its own module docstring: "the
+    parts... share one namespace by design") - so a BARE call inside `_engine_cards.py` to a
+    name `_engine_config.py` defines is not a cross-module call at runtime at all, it is a
+    same-namespace call, exactly as if both bodies had been pasted into one file. Parsing each
+    part as its own file (this scanner's only way in - nothing here executes the package) would
+    otherwise see that call as unresolvable and silently lose every name it reaches -
+    `NEVERTWICE_EXTRACT_RETRY` (`_engine_cards.py:810`, a bare `env_int(...)` reaching
+    `_engine_config.py`'s `env_int`) is exactly this shape, and is the check this function
+    exists to keep passing."""
+    if module == "memory_hook" or module in engine_parts:
+        return {"memory_hook"} | set(engine_parts)
+    return {module}
+
+
+def _resolve_call(module: str, func_node, helpers: dict[tuple[str, str], dict],
+                  aliases: dict[str, dict[str, str]], engine_parts: tuple[str, ...]
+                  ) -> tuple[str, str] | None:
+    """(в)5: resolve one call's target to the SINGLE `(module, function)` key in `helpers` it
+    refers to, from the caller's own module context - or `None` when it cannot be pinned to
+    exactly one definition. Fail closed, never guess:
+
+    * a BARE call (`f(...)`) is resolved within `module`'s own EFFECTIVE group
+      (`_module_members`) - covers both an ordinary same-file call (`budget._env_int` calling
+      `_env_float`) and an engine part calling a sibling part's function through the shared
+      exec namespace (`_engine_cards.py` calling `_engine_config.py`'s `env_int`);
+    * an ATTRIBUTE call (`alias.f(...)`) resolves `alias` through `module`'s own import
+      statements (`_module_aliases`) to a target module, then searches THAT module's effective
+      group - so `m.env_int` (`m` aliasing `memory_hook`, used throughout this package) reaches
+      `_engine_config.env_int` the same way a bare call from inside another engine part does,
+      and `_cfg.env` (`doctor.py`, `_cfg` aliasing `config`) reaches `config.env`;
+    * anything else (a deeper attribute chain, a call result, a subscript) is `None` - not a
+      shape this scanner tries to resolve.
+
+    Either branch: two or more group members defining the SAME name, or zero, is `None` - never
+    guessed at. `hosts._env_float` versus `budget._env_float` (auditor's W6) is exactly the
+    shape this refuses to conflate: keying `helpers` by `(module, function)` instead of by bare
+    name (below) means the two are different keys from the start, so a call resolved to one is
+    never accidentally answered by the other's numeric flag."""
+    func = func_node
+    if isinstance(func, ast.Name):
+        candidates = [(m2, func.id) for m2 in _module_members(module, engine_parts)
+                     if (m2, func.id) in helpers]
+        return candidates[0] if len(candidates) == 1 else None
+    if isinstance(func, ast.Attribute) and isinstance(func.value, ast.Name):
+        target_module = aliases.get(module, {}).get(func.value.id)
+        if target_module is None:
+            return None
+        candidates = [(m2, func.attr) for m2 in _module_members(target_module, engine_parts)
+                     if (m2, func.attr) in helpers]
+        return candidates[0] if len(candidates) == 1 else None
+    return None
+
+
+def _helper_call_patterns(module: str, name: str, node, params: set,
+                          helpers: dict[tuple[str, str], dict],
+                          aliases: dict[str, dict[str, str]], engine_parts: tuple[str, ...]
+                          ) -> set[str]:
+    """Patterns from calls INSIDE `node` (the function `(module, name)`) to a helper ALREADY in
+    `helpers`, resolved via `_resolve_call` - covers a same-module call, a same-exec-namespace
+    call between engine parts, and an aliased cross-module call (`m.env_int`), and refuses
+    anything ambiguous. `params` gates which of the CALLER's own parameters may feed the
+    callee's FIRST POSITIONAL argument - bare, or as one literal prefix plus the parameter in
+    an f-string (`_key_pattern`). The composed pattern is the inner helper's own pattern with
+    `outer_prefix + "{}"` substituted for its `"{}"` - `NEVERTWICE_{}` composed with an outer
+    prefix of `""` (a bare passthrough) stays `NEVERTWICE_{}`; composed with an outer prefix of
+    `"BUDGET_"` becomes `NEVERTWICE_BUDGET_{}`. (в)4: a call that resolves back to `(module,
+    name)` itself - the function calling itself, however it spells the call - is skipped
+    outright, never composed; a composed pattern longer than `MAX_PATTERN_LEN` is dropped."""
     patterns: set[str] = set()
     for n in ast.walk(node):
         if not (isinstance(n, ast.Call) and n.args):
             continue
-        tail = ast.unparse(n.func).rsplit(".", 1)[-1]
-        inner = known.get(tail)
-        if not inner:
+        resolved = _resolve_call(module, n.func, helpers, aliases, engine_parts)
+        if resolved is None or resolved == (module, name):
             continue
+        inner = helpers[resolved]
         outer = _key_pattern(n.args[0], params)         # e.g. "{}" or "NEVERTWICE_{}"
         if outer is None:
             continue
         outer_prefix = outer[:-2]                       # strip the trailing "{}"
         for inner_pattern in inner["patterns"]:
-            patterns.add(inner_pattern.replace("{}", outer_prefix + "{}"))
+            composed = inner_pattern.replace("{}", outer_prefix + "{}")
+            if len(composed) <= MAX_PATTERN_LEN:
+                patterns.add(composed)
     return patterns
 
 
-def _env_read_helpers() -> dict[str, dict]:
+def _env_read_helpers(pkg: Path = PKG) -> dict[tuple[str, str], dict]:
     """Every function in `nevertwice/*.py` whose body reads an environment variable keyed off
     ONE OF ITS OWN PARAMETERS - discovered by AST shape, not a hand-written list, so a NEW
     helper (another `env_int`-shaped wrapper, or a future `config.env("SWEEP_DIR")` call
     through a helper that does not exist yet) is picked up the moment it exists. Helpers OF
-    helpers, to any depth: a function that passes one of its own parameters - bare, or as one
+    helpers, TO ANY DEPTH: a function that passes one of its own parameters - bare, or as one
     literal prefix plus the parameter in an f-string - as the FIRST argument of an
-    ALREADY-KNOWN helper becomes a helper itself, with the two patterns COMPOSED
-    (`_helper_call_patterns`, above). `budget._env_int` is exactly this shape - it has no
-    `os.environ.get` of its own at all, only `_env_float(name, float(default))` - so a
-    single-pass scan (this function's own shape before this fixpoint was added, and the
-    auditing session's first probe) finds `_env_float` but not `_env_int`, and its four real
-    call sites (`budget.py:97-103`, `NEVERTWICE_BUDGET_TURN_TOKENS` and three siblings) stay
-    invisible. Fixed here by iterating: after each pass finds zero-or-more NEW helpers (or
-    grows an existing one's pattern set), run the pass again against the UPDATED helper set,
-    until nothing changes - so a third-order chain (a helper of a helper of a helper) is found
-    exactly as reliably as a second-order one, with no depth limit hand-coded anywhere.
+    ALREADY-KNOWN, UNAMBIGUOUSLY RESOLVED helper (`_resolve_call`) becomes a helper itself,
+    with the two patterns COMPOSED (`_helper_call_patterns`, above). `budget._env_int` is
+    exactly this shape - it has no `os.environ.get` of its own at all, only `_env_float(name,
+    float(default))` - so a single-pass scan finds `_env_float` but not `_env_int`, and its
+    four real call sites (`budget.py:97-103`) stay invisible without the fixpoint below.
 
     Numeric-ness is never inherited: a composed helper is auto-numeric only if ITS OWN return
     annotation says `int`/`float` - `_env_int` declares `-> int` on its own account and would
     be numeric even if `_env_float` (which it calls) did not declare one at all.
 
+    (в)5: keyed by `(module, function)`, NEVER by bare function name - two functions sharing a
+    name in two different files (auditor's W6: a second `_env_float` in `hosts.py`, returning a
+    plain string) are two different entries, and a call is only ever composed through
+    `_resolve_call`'s fail-closed resolution, never by name collision. (в)4: the pass loop is
+    bounded (see `MAX_PATTERN_LEN`'s docstring above) - a shape that would otherwise never
+    settle fails loudly, by name, instead of hanging.
+
     NOT covered, by construction, and cannot be without a real data-flow analysis this
     discovery tool does not attempt: a name passed to `os.environ.get`/`os.getenv`/a known
     helper as a KEYWORD argument or in any position OTHER than first; a name built at runtime
-    from something that is not a literal at the call site.
+    from something that is not a literal at the call site; a call reached through anything
+    other than a bare name, a same-exec-namespace sibling call, or one level of `alias.func`
+    attribute access (`_resolve_call`'s own docstring names the exact shapes).
 
-    Returns `{helper_name: {"patterns": [...], "numeric": bool}}`. A name collision between
-    two DIFFERENT functions that happen to share a name is not disambiguated by module - a
-    safe simplification for a discovery tool over this package's actual shape, not a
-    general-purpose one (same trade-off `_package_env_names`'s docstring already makes for
-    treating the module/function namespace as flat).
+    Returns `{(module, function): {"patterns": [...], "numeric": bool}}`.
     """
-    funcs: list[tuple[str, object, set]] = []
-    for path in sorted(PKG.glob("*.py")):
+    engine_parts = _engine_parts(pkg)
+    aliases = _module_aliases(pkg)
+
+    funcs: list[tuple[str, str, object, set]] = []
+    for path in sorted(pkg.glob("*.py")):
         tree = ast.parse(path.read_text(encoding="utf-8"))
         for node in ast.walk(tree):
             if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
                 continue
             params = {a.arg for a in node.args.args}
             if params:
-                funcs.append((node.name, node, params))
+                funcs.append((path.stem, node.name, node, params))
 
-    helpers: dict[str, dict] = {}
-    for name, node, params in funcs:
+    helpers: dict[tuple[str, str], dict] = {}
+    for module, name, node, params in funcs:
         patterns = _direct_env_patterns(node, params)
         if patterns:
             numeric = isinstance(node.returns, ast.Name) and node.returns.id in ("int", "float")
-            existing = helpers.get(name, {"patterns": set(), "numeric": False})
-            helpers[name] = {"patterns": set(existing["patterns"]) | patterns,
-                             "numeric": existing["numeric"] or numeric}
+            key = (module, name)
+            existing = helpers.get(key, {"patterns": set(), "numeric": False})
+            helpers[key] = {"patterns": set(existing["patterns"]) | patterns,
+                            "numeric": existing["numeric"] or numeric}
 
+    # (в)4: bounded fixpoint - see MAX_PATTERN_LEN's module-level docstring for the full
+    # rationale. `passes` counts completed passes; hitting `max_passes` without `changed`
+    # having gone False means the set is STILL growing, which fails loudly rather than hangs.
+    max_passes = len(funcs) + 1
     changed = True
+    passes = 0
     while changed:
+        if passes >= max_passes:
+            # One more pass than `len(funcs) + 1` still finding growth: name the functions
+            # whose call bodies are STILL producing new patterns against the current helper
+            # set, so the failure points at the offender rather than just "something, somewhere".
+            still_growing = sorted(
+                f"{m}:{n}" for m, n, nd, pr in funcs
+                if _helper_call_patterns(m, n, nd, pr, helpers, aliases, engine_parts))
+            offender = ", ".join(still_growing) if still_growing else "<unknown>"
+            raise HelperFixpointError(
+                f"helper fixpoint did not converge: {offender} ({max_passes} passes over "
+                f"{len(funcs)} functions - the pattern set is still changing; see (в)4)")
         changed = False
-        for name, node, params in funcs:
-            new_patterns = _helper_call_patterns(node, params, helpers)
+        passes += 1
+        for module, name, node, params in funcs:
+            new_patterns = _helper_call_patterns(module, name, node, params, helpers, aliases,
+                                                 engine_parts)
             if not new_patterns:
                 continue
             numeric = isinstance(node.returns, ast.Name) and node.returns.id in ("int", "float")
-            existing = helpers.get(name, {"patterns": set(), "numeric": False})
+            key = (module, name)
+            existing = helpers.get(key, {"patterns": set(), "numeric": False})
             merged = set(existing["patterns"]) | new_patterns
             merged_numeric = existing["numeric"] or numeric
             if merged != existing["patterns"] or merged_numeric != existing["numeric"]:
-                helpers[name] = {"patterns": merged, "numeric": merged_numeric}
+                helpers[key] = {"patterns": merged, "numeric": merged_numeric}
                 changed = True
 
-    return {name: {"patterns": sorted(spec["patterns"]), "numeric": spec["numeric"]}
-           for name, spec in helpers.items()}
+    return {key: {"patterns": sorted(spec["patterns"]), "numeric": spec["numeric"]}
+           for key, spec in helpers.items()}
 
 
-def _package_env_names() -> tuple[dict[str, list[str]], dict[str, list[str]]]:
+def _package_env_names(pkg: Path = PKG) -> tuple[dict[str, list[str]], dict[str, list[str]]]:
     """Every environment variable name this scanner can discover in `nevertwice/*.py`, split
     into `(discovered, auto_numeric)`.
 
@@ -299,7 +467,13 @@ def _package_env_names() -> tuple[dict[str, list[str]], dict[str, list[str]]]:
         `_env_float(name, ...)`, so it is a helper only because `_env_float` is, and its own
         `-> int` (never `_env_float`'s numeric-ness, which is never inherited) is what makes
         ITS call sites auto-numeric. `_env_read_helpers()`'s fixpoint has no depth limit -
-        a helper of a helper of a helper is found the same way a first-order one is.
+        a helper of a helper of a helper is found the same way a first-order one is;
+      * an ALIASED call across a genuine module boundary (`m.env_int`, `m` aliasing
+        `memory_hook`; `_cfg.env`, `_cfg` aliasing `config`), resolved by `_resolve_call` - see
+        its own docstring and (в)5. A call that cannot be pinned to exactly one definition
+        (two modules defining the same name, per `_module_members`, or an alias this scanner
+        does not recognise) is not treated as a helper call at all - FAIL CLOSED, never
+        guessed at, so a colliding name is `discovered` at best, never silently `auto_numeric`.
 
     Does NOT cover, and cannot by construction: a name built at runtime from something that is
     not a literal at the call site (`os.environ.get(some_variable)`); a name passed as a
@@ -308,12 +482,17 @@ def _package_env_names() -> tuple[dict[str, list[str]], dict[str, list[str]]]:
     or a WRITE via `os.environ[...] = ...` (none of these are "reads" this scanner is asked to
     cover, and an independent enumeration of this package by the auditing session found none
     that would add a name beyond what the shapes above already find - `env_enum_probe.py` /
-    `env_enum_probe2.py`, not shipped with this repository).
+    `env_enum_probe2.py`, not shipped with this repository); a call reached through anything
+    other than a bare name, a same-exec-namespace sibling call, or one level of attribute
+    access (`_resolve_call`'s docstring names the exact shapes it resolves).
     """
-    helpers = _env_read_helpers()
+    helpers = _env_read_helpers(pkg)
+    engine_parts = _engine_parts(pkg)
+    aliases = _module_aliases(pkg)
     found: dict[str, list[str]] = {}
     numeric: dict[str, list[str]] = {}
-    for path in sorted(PKG.glob("*.py")):
+    for path in sorted(pkg.glob("*.py")):
+        module = path.stem
         tree = ast.parse(path.read_text(encoding="utf-8"))
         for node in ast.walk(tree):
             if isinstance(node, ast.Call):
@@ -330,14 +509,14 @@ def _package_env_names() -> tuple[dict[str, list[str]], dict[str, list[str]]]:
                         and isinstance(node.args[0].value, str):
                     found.setdefault(node.args[0].value, []).append(path.name)
                     continue
-                tail = ast.unparse(target).rsplit(".", 1)[-1]
-                spec = helpers.get(tail)
-                if spec and node.args and isinstance(node.args[0], ast.Constant) \
+                resolved = _resolve_call(module, target, helpers, aliases, engine_parts)
+                if resolved and node.args and isinstance(node.args[0], ast.Constant) \
                         and isinstance(node.args[0].value, str):
+                    spec = helpers[resolved]
                     literal = node.args[0].value
                     for pattern in spec["patterns"]:
                         name = pattern.format(literal)
-                        label = f"{path.name}:{tail}"
+                        label = f"{path.name}:{resolved[0]}.{resolved[1]}"
                         if spec["numeric"] and pattern == "{}":
                             numeric.setdefault(name, []).append(label)
                         else:
@@ -555,6 +734,137 @@ def test_walled_covers_or_allowlists_every_env_name_in_the_package() -> None:
           <= set(auto_numeric))
     check("NEVERTWICE_EXTRACT_RETRY is found (the probe's own file-ordering miss)",
           "NEVERTWICE_EXTRACT_RETRY" in all_names)
+
+
+def test_helper_fixpoint_bounded_and_module_qualified() -> None:
+    """(в)4 and (в)5 - permanent regression coverage for two bugs the auditing session found
+    in `_env_read_helpers()`'s fixpoint, reproduced against SYNTHETIC temp packages (never the
+    real `nevertwice/` tree, via `_env_read_helpers(pkg=...)`/`_package_env_names(pkg=...)`'s
+    own `pkg` parameter) so these run automatically, every session, with nothing to mutate or
+    revert by hand.
+
+    (в)4, W5 - a function calling itself. `_loop(name, depth=0)` returns `os.environ.get(name,
+    '')` when `depth`, else `_loop(f'X_{name}', 1)` - a real direct `os.environ.get` call AND a
+    call to itself, both found by a static AST walk that does not evaluate the ternary. Before
+    this fix, composing patterns from every call to an already-known helper (with no check for
+    "is this call the function calling itself") grew the prefix by one more `X_` every single
+    pass, forever: the scanner AT 4e13d14 did not finish this shape within a 12s bound in this
+    session's own reproduction against the real package (subprocess killed by timeout, zero
+    output) - the auditor reported 60s+ there. Checked here: convergence well under a second,
+    AND `_loop`'s own pattern set stays exactly `{"{}"}`  -  the second assertion is the one
+    that actually proves the self-call was REFUSED, since a bug that merely finished fast for
+    an unrelated reason would still pass a timing-only check.
+
+    (в)4, a 2-function cycle - the shape self-call refusal alone does NOT stop (`_a` calls
+    `_b`, `_b` calls `_a`; neither call is literally "a function calling itself"), included so
+    the OTHER two guards (the `len(funcs) + 1` pass bound, `MAX_PATTERN_LEN`) are exercised by
+    something, not just present in the source with no test ever tripping them. With only two
+    functions in this synthetic package the pass bound (3) is reached long before any pattern
+    nears 128 characters, so this specifically proves the bound - `_env_read_helpers()` must
+    raise `HelperFixpointError`, by name, rather than loop.
+
+    (в)5, W6 - two functions sharing a bare name in two different modules, one `-> float`
+    (numeric) and one `-> str` (not). At 4e13d14, `helpers` was keyed by bare name, so the
+    second function's own call site got OR-merged onto the FIRST's numeric flag - a path
+    masquerading as a number, the unsafe direction, confirmed against the REAL package earlier
+    in this session (`budget._env_float` vs. a synthetic `hosts._env_float`: the auditor's own
+    shape, reproduced there and reverted - this permanent version never touches `hosts.py`).
+    Checked here: the non-numeric module's own call resolves to ITS OWN definition and is
+    `discovered`, never `auto_numeric`.
+    """
+    print("\n- (в)4/(в)5: the helper fixpoint is bounded, and keyed by module, not bare name -")
+    with tempfile.TemporaryDirectory() as td:
+        pkg = Path(td)
+        (pkg / "_engine.py").write_text("ENGINE_PARTS = ()\n", encoding="utf-8", newline="")
+
+        # --- (в)4, W5: a function calling itself -------------------------------------------
+        (pkg / "loopy.py").write_text(
+            "import os\n\n"
+            "def _loop(name: str, depth: int = 0) -> str:\n"
+            "    return os.environ.get(name, '') if depth else _loop(f'X_{name}', 1)\n",
+            encoding="utf-8", newline="")
+        t0 = time.time()
+        helpers = _env_read_helpers(pkg)
+        dt = time.time() - t0
+        check(f"W5 (a helper that calls itself) converges instead of composing forever - "
+              f"{dt:.3f}s (4e13d14 did not finish a 12s bound against the real package)",
+              dt < 5.0, f"{dt:.3f}s")
+        loop_spec = helpers.get(("loopy", "_loop"))
+        check("and W5's own pattern set stays exactly {'{}'} - the self-call was refused, not "
+              "merely slow to finish for an unrelated reason",
+              loop_spec is not None and loop_spec["patterns"] == ["{}"]
+              and loop_spec["numeric"] is False,
+              str(loop_spec))
+        (pkg / "loopy.py").unlink()
+
+        # --- (в)4, a 2-function cycle: proves the PASS-COUNT bound, not just self-refusal ---
+        (pkg / "cycle_mod.py").write_text(
+            "import os\n\n"
+            "def _a(name: str, depth: int = 0) -> str:\n"
+            "    return os.environ.get(name, '') if depth else _b(f'A_{name}')\n\n"
+            "def _b(name: str) -> str:\n"
+            "    return _a(name, 1)\n",
+            encoding="utf-8", newline="")
+        try:
+            _env_read_helpers(pkg)
+            cycle_raised, cycle_msg = False, ""
+        except HelperFixpointError as exc:
+            cycle_raised, cycle_msg = True, str(exc)
+        check("a 2-function cycle (neither call is literally self-recursive) trips the "
+              "PASS-COUNT bound instead of looping - HelperFixpointError, by name",
+              cycle_raised and "cycle_mod:_a" in cycle_msg and "cycle_mod:_b" in cycle_msg,
+              cycle_msg or "no exception raised")
+        (pkg / "cycle_mod.py").unlink()
+
+        # --- (в)5, W6: two modules, same bare function name, different numeric-ness ---------
+        (pkg / "numeric_mod.py").write_text(
+            "import os\n\n"
+            "def _env_float(name: str) -> float:\n"
+            "    raw = os.environ.get(name)\n"
+            "    return float(raw) if raw else 0.0\n",
+            encoding="utf-8", newline="")
+        (pkg / "stringy_mod.py").write_text(
+            "import os\n\n"
+            "def _env_float(name: str) -> str:\n"
+            "    return os.environ.get(name, '')\n\n"
+            "_PROBE = _env_float('NEVERTWICE_COLLIDE_DIR')\n",
+            encoding="utf-8", newline="")
+        found, numeric = _package_env_names(pkg)
+        check("W6: stringy_mod's OWN _env_float is not merged with numeric_mod's same-named "
+              "function - NEVERTWICE_COLLIDE_DIR is discovered, never silently auto-numeric",
+              "NEVERTWICE_COLLIDE_DIR" in found and "NEVERTWICE_COLLIDE_DIR" not in numeric,
+              f"found={'NEVERTWICE_COLLIDE_DIR' in found} "
+              f"numeric={'NEVERTWICE_COLLIDE_DIR' in numeric}")
+        (pkg / "numeric_mod.py").unlink()
+        (pkg / "stringy_mod.py").unlink()
+
+        # --- (в)5 addendum: the ENGINE_PARTS re-export chain, m.env_int's own real shape ----
+        (pkg / "_engine.py").write_text("ENGINE_PARTS = ('_engine_config.py',)\n",
+                                        encoding="utf-8", newline="")
+        (pkg / "memory_hook.py").write_text(
+            "# a loader: execs _engine.py's parts into this module's own namespace, never\n"
+            "# imports them - see nevertwice/_engine.py's own module docstring.\n",
+            encoding="utf-8", newline="")
+        (pkg / "_engine_config.py").write_text(
+            "import os\n\n"
+            "def env_int(name: str, default: int) -> int:\n"
+            "    raw = os.environ.get(name)\n"
+            "    return int(raw) if raw else default\n",
+            encoding="utf-8", newline="")
+        (pkg / "caller_mod.py").write_text(
+            "try:\n"
+            "    from . import memory_hook as m\n"
+            "except ImportError:\n"
+            "    import memory_hook as m\n\n"
+            "VALUE = m.env_int('NEVERTWICE_ENGINE_CHAIN_PROBE', 5)\n",
+            encoding="utf-8", newline="")
+        found2, numeric2 = _package_env_names(pkg)
+        check("the ENGINE_PARTS re-export chain resolves m.env_int to _engine_config's own "
+              "env_int (auto-numeric) even though memory_hook.py itself never defines or "
+              "imports it - the shape ~40 real names (NEVERTWICE_ANTICIPATE_TAU and siblings) "
+              "depend on, per the coordinator's addendum",
+              "NEVERTWICE_ENGINE_CHAIN_PROBE" in numeric2,
+              str(numeric2.get("NEVERTWICE_ENGINE_CHAIN_PROBE")))
 
 
 def test_every_host_adapter_and_watch_base_resolves_inside_the_wall() -> None:
@@ -1331,6 +1641,7 @@ def test_zz_every_check_passed() -> None:
 
 def main() -> int:
     for fn in (test_walled_covers_or_allowlists_every_env_name_in_the_package,
+               test_helper_fixpoint_bounded_and_module_qualified,
                test_every_host_adapter_and_watch_base_resolves_inside_the_wall,
                test_tokens_and_hook_command,
                test_is_ours_and_is_foreign_copy,
