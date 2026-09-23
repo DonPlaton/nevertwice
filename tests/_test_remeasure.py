@@ -286,5 +286,47 @@ finally:
     rm._assembled_artifacts = _real
 
 
+print("\n- the statement is rewritten in ONE anchored pass: a replaced number is never re-matched -")
+#: Restore #1 (2026-09-23) turned "and 0.0167 ms per check" into "and 0.0372 ms per check". The
+#: printed forms were ['0.017', '0.0167', '0.02'] -> ['0.027', '0.0272', '0.03'], and the rewrite
+#: replaced them one after another without anchors: "0.0167" became "0.0272", then the short form
+#: "0.02" matched INSIDE the new "0.0272" and made it "0.0372". The review line did not fire,
+#: because "0.03" - a new printed form - was then "in" the statement. Found by the auditing session.
+_sraw_rel = "tests/_tmp_remeasure_stmt.json"
+_sraw = ROOT / _sraw_rel
+
+
+def _restore_one(printed, statement, value):
+    _sraw.write_text(json.dumps({"v": value}), encoding="utf-8")
+    m = {"claims": [{"id": "s.ms", "value": 0.0, "printed": list(printed), "unit": "ms",
+                     "statement": statement, "cited_in": [], "cited_in_pending": [],
+                     "stale": "timed on a loaded machine; the re-run needs the GPU box idle",
+                     "withdrawn_on": "2026-09-23", "pending_remeasure": True,
+                     "produced_by": ["sandbox_guard.py"], "commit": "0" * 40,
+                     "raw": _sraw_rel, "pointer": "v"}]}
+    restored, left, review = rm.restore(m, head=HEAD)
+    return m["claims"][0], restored, left, review
+
+
+try:
+    c, restored, left, review = _restore_one(["0.017", "0.0167", "0.02"],
+                                              "and 0.0167 ms per check", 0.0272)
+    check("the auditor's case: 0.0167 -> 0.0272, not 0.0372",
+          c["statement"] == "and 0.0272 ms per check", repr(c["statement"]))
+    #: a short OLD form that is a prefix of a longer NEW form, which chaining would re-enter twice
+    #: ['0.2', '0.25'] -> ['0.3', '0.31']: in order, "0.2" hits inside "0.25" first and leaves
+    #: "0.35", after which "0.25" no longer occurs
+    c, *_ = _restore_one(["0.2", "0.25"], "reaches 0.25 on the stand", 0.31)
+    check("a short old form that is a prefix of a longer one does not eat it",
+          c["statement"] == "reaches 0.31 on the stand", repr(c["statement"]))
+    #: a digit on either side is not a boundary: 10.02 is not 0.02
+    c, *_ = _restore_one(["0.02"], "a budget of 10.02 ms and 0.02 ms per check", 0.03)
+    check("a number is matched whole, never inside a larger one",
+          c["statement"] == "a budget of 10.02 ms and 0.03 ms per check", repr(c["statement"]))
+finally:
+    if _sraw.exists():
+        _sraw.unlink()
+
+
 print(f"\nremeasure: {len(RUN) - len(FAILED)} passed, {len(FAILED)} failed")
 sys.exit(1 if FAILED else 0)

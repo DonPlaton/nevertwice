@@ -231,6 +231,36 @@ def reformat(old: str, value) -> str | None:
 
 # ── the two halves ─────────────────────────────────────────────────────────────
 
+#: A number as a statement prints it: digits with optional thousands commas and decimals, an
+#: optional percent sign. Used to find the numbers a rewrite INTRODUCED.
+_NUMBER = re.compile(r"\d+(?:,\d{3})*(?:\.\d+)?%?")
+
+
+def _rewrite_statement(stmt: str, old_printed: list[str], new_printed: list[str]
+                       ) -> tuple[str, list[str]]:
+    """The statement with each old printed form replaced by its new one, in ONE anchored pass.
+
+    Restore #1 (2026-09-23) replaced the forms one after another with `str.replace`, so a short
+    old form could match INSIDE a new form written a moment earlier: ['0.017', '0.0167', '0.02']
+    -> ['0.027', '0.0272', '0.03'] turned "0.0167" into "0.0272" and then "0.02" into "0.0372".
+    Here every old form is one alternative of a single regex, longest first, anchored so a match
+    is a whole number (no digit or decimal point before it, no digit after), and each match maps
+    straight to its new form - a replaced number is never scanned again. Returns the statement
+    and the numbers it would newly print that are neither in the old statement nor new printed
+    forms; the caller keeps the old statement when that list is not empty.
+    """
+    mapping = {o: n for o, n in zip(old_printed, new_printed) if o and o != n}
+    if not mapping:
+        return stmt, []
+    alts = sorted(mapping, key=len, reverse=True)
+    pattern = re.compile(r"(?<![\d.])(?:" + "|".join(re.escape(o) for o in alts) + r")(?!\d)")
+    out = pattern.sub(lambda mt: mapping[mt.group(0)], stmt)
+    before = set(_NUMBER.findall(stmt))
+    allowed = {p.strip() for p in new_printed}
+    unvouched = sorted({n for n in _NUMBER.findall(out) if n not in before and n not in allowed})
+    return out, unvouched
+
+
 def affected(manifest: dict, touching: set[str] | None = None) -> list[dict]:
     """Live claims whose closure moved after they were measured.
 
@@ -333,10 +363,12 @@ def restore(manifest: dict, select: set[str] | None = None, head: str | None = N
                 review.append(f"{c['id']}: printed form {p!r} kept - not a shape this tool formats")
                 f = p
             new_printed.append(f)
-        stmt = c.get("statement") or ""
-        for o, nw in zip(old_printed, new_printed):
-            if o != nw and o in stmt:
-                stmt = stmt.replace(o, nw)
+        stmt, unvouched = _rewrite_statement(c.get("statement") or "", old_printed, new_printed)
+        if unvouched:
+            review.append(f"{c['id']}: statement NOT rewritten - the rewrite would print "
+                          f"{', '.join(unvouched)}, which is neither in the old statement nor a new "
+                          f"printed form")
+            stmt = c.get("statement") or ""
         if isinstance(old_value, (int, float)) and isinstance(value, (int, float)) \
                 and abs(float(old_value) - float(value)) > 1e-9 and re.search(r"\d", stmt) \
                 and not any(nw in stmt for nw in new_printed if nw not in old_printed):
