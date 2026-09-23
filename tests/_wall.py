@@ -175,7 +175,14 @@ def walled(tmp) -> dict:
     env[TWIN_FILE_VAR] = str(tmp / "no-such-twin-calibration.json")
     for name in HF_CACHE_VARS:
         env[name] = str(tmp / "hf-cache")
+    # config.env(suffix) reads NEVERTWICE_<suffix> as its OUTER os.environ.get key, but
+    # BUILDS its own default by evaluating os.environ.get(f"CLAUDE_MEMORY_{suffix}", ...)
+    # UNCONDITIONALLY - Python evaluates every argument before the call, whether the outer
+    # key is set or not. NEVERTWICE_CLOUD alone is not enough: pin the legacy twin too, or
+    # env("CLOUD", ...) still READS the ambient CLAUDE_MEMORY_CLOUD on every call (its value
+    # is discarded once NEVERTWICE_CLOUD wins, but the read itself happens regardless).
     env["NEVERTWICE_CLOUD"] = "none"
+    env["CLAUDE_MEMORY_CLOUD"] = "none"
     _assert_walled(env, tmp)
     return env
 
@@ -184,7 +191,8 @@ def walled(tmp) -> dict:
 #: `walled_in_process()` (which has to save/restore each one) and by the package-wide AST scan
 #: test, which checks this list rather than re-deriving it.
 PINNED_VARS = (STORE_VARS + PROJECTS_ROOT_VARS + tuple(ADAPTER_ROOT_VARS) + EMPTY_LIST_VARS
-              + HF_CACHE_VARS + (ENV_FILE_VAR, TWIN_FILE_VAR, "NEVERTWICE_CLOUD"))
+              + HF_CACHE_VARS + (ENV_FILE_VAR, TWIN_FILE_VAR, "NEVERTWICE_CLOUD",
+                                 "CLAUDE_MEMORY_CLOUD"))
 
 
 @contextmanager

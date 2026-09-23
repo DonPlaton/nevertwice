@@ -140,31 +140,111 @@ def _payload_parses(payload: str) -> bool:
         return False
 
 
-def _package_env_names() -> dict[str, list[str]]:
-    """Every environment variable name read ANYWHERE in `nevertwice/*.py`, via
-    `os.environ.get(...)`, `os.getenv(...)` or `os.environ[...]` with a literal string name -
-    mapped to the file(s) it is read in. Discovered by AST, not kept as a list by hand, so a
-    NEW name added anywhere in the package later shows up here the next time this runs,
-    instead of silently reaching neither the wall nor the allowlist below (F1, class b: the
-    wall covered every path `config.py` itself resolves, but `hosts.py`'s host adapters and
-    `watch.py`'s daemon read their own sweep roots from OTHER names entirely -
-    `CursorAdapter.roots()` and `watch._vscode_globalstorage_bases()` both resolved to the
-    real `%APPDATA%\\...` on this machine, under a `walled()` that pinned neither).
+def _key_pattern(key_node, params: set) -> str | None:
+    """'{}' for a KEY expression that is a bare parameter name, 'PREFIX{}' for an f-string of
+    one literal prefix plus exactly one parameter - `None` for anything else (a shape this
+    scanner cannot safely expand, e.g. a suffix after the parameter, or more than one
+    substitution)."""
+    if isinstance(key_node, ast.Name) and key_node.id in params:
+        return "{}"
+    if isinstance(key_node, ast.JoinedStr):
+        prefix_parts: list[str] = []
+        param_seen = 0
+        for v in key_node.values:
+            if isinstance(v, ast.Constant) and isinstance(v.value, str):
+                if param_seen:
+                    return None                  # literal text AFTER the parameter
+                prefix_parts.append(v.value)
+            elif isinstance(v, ast.FormattedValue):
+                if (param_seen == 0 and isinstance(v.value, ast.Name)
+                        and v.value.id in params and v.format_spec is None
+                        and v.conversion == -1):
+                    param_seen += 1
+                else:
+                    return None
+            else:
+                return None
+        if param_seen == 1:
+            return "".join(prefix_parts) + "{}"
+    return None
 
-    Does not resolve config.py's own `env(suffix)` helper (`NEVERTWICE_{suffix}` /
-    `CLAUDE_MEMORY_{suffix}`) the way the narrower, now-superseded config.py-only scanner did
-    - that helper is private to config.py and every name it can produce is already covered by
-    STORE_VARS/PROJECTS_ROOT_VARS, which this test checks against directly rather than
-    re-deriving.
+
+def _env_read_helpers() -> dict[str, dict]:
+    """Every function in `nevertwice/*.py` whose body reads an environment variable keyed off
+    ONE OF ITS OWN PARAMETERS - discovered by AST shape, not a hand-written list, so a NEW
+    helper (another `env_int`-shaped wrapper, or a future `config.env("SWEEP_DIR")` call
+    through a helper that does not exist yet) is picked up the moment it exists.
+
+    Two shapes, both read off the KEY expression of every `os.environ.get(...)` /
+    `os.getenv(...)` call inside the function (`_key_pattern`, above): a bare parameter -
+    `env_int`/`env_float` (`_engine_config.py`) and `_env_float` (`budget.py`) all pass their
+    `name` parameter straight through, and all three declare `-> int` / `-> float`, so a call
+    site's literal argument is numeric BY CONSTRUCTION - classified automatically, never
+    hand-listed in ALLOWLIST; or an f-string of one literal prefix plus the parameter -
+    `config.env(suffix)` has TWO such patterns on the one function (`f"NEVERTWICE_{name}"` and
+    `f"CLAUDE_MEMORY_{name}"`), both applied to every call site.
+
+    Returns `{helper_name: {"patterns": [...], "numeric": bool}}`. A name collision between
+    two DIFFERENT functions that happen to share a name is not disambiguated by module - a
+    safe simplification for a discovery tool over this package's actual shape, not a
+    general-purpose one (same trade-off `_package_env_names`'s docstring already makes for
+    treating the module/function namespace as flat).
     """
-    found: dict[str, list[str]] = {}
+    helpers: dict[str, dict] = {}
     for path in sorted(PKG.glob("*.py")):
-        try:
-            tree = ast.parse(path.read_text(encoding="utf-8"))
-        except SyntaxError:
-            continue
+        tree = ast.parse(path.read_text(encoding="utf-8"))
         for node in ast.walk(tree):
-            name = None
+            if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                continue
+            params = {a.arg for a in node.args.args}
+            if not params:
+                continue
+            patterns: set[str] = set()
+            for n in ast.walk(node):
+                if not (isinstance(n, ast.Call) and n.args):
+                    continue
+                target = n.func
+                is_environ_get = (isinstance(target, ast.Attribute) and target.attr == "get"
+                                  and isinstance(target.value, ast.Attribute)
+                                  and target.value.attr == "environ")
+                is_getenv = isinstance(target, ast.Attribute) and target.attr == "getenv"
+                if not (is_environ_get or is_getenv):
+                    continue
+                pattern = _key_pattern(n.args[0], params)
+                if pattern:
+                    patterns.add(pattern)
+            if patterns:
+                numeric = isinstance(node.returns, ast.Name) and node.returns.id in ("int", "float")
+                helpers[node.name] = {"patterns": sorted(patterns), "numeric": numeric}
+    return helpers
+
+
+def _package_env_names() -> tuple[dict[str, list[str]], dict[str, list[str]]]:
+    """Every environment variable name this scanner can discover in `nevertwice/*.py`, split
+    into `(discovered, auto_numeric)`.
+
+    Covers, by AST, with a LITERAL string name in every case:
+      * `os.environ.get(...)` / `os.getenv(...)` / `os.environ[...]` anywhere in the package;
+      * a call to any helper `_env_read_helpers()` finds (`env_int`/`env_float`/`_env_float`
+        -> `auto_numeric`, since their own return annotation makes the value numeric by
+        construction; `config.env(suffix)` -> BOTH `NEVERTWICE_<suffix>` and
+        `CLAUDE_MEMORY_<suffix>`, into `discovered` like any other name, since a suffix can
+        resolve to either a path or not (`VAULT` does; `PROFILE` does not)).
+
+    Does NOT cover, and cannot by construction: a name built at runtime from something that is
+    not a literal at the call site (`os.environ.get(some_variable)`); `"X" in os.environ`
+    membership tests, `os.environ.setdefault(...)`/`.pop(...)`, or a WRITE via
+    `os.environ[...] = ...` (none of these are "reads" this scanner is asked to cover, and an
+    independent enumeration of this package by the auditing session found none that would add
+    a name beyond what the two shapes above already find - `env_enum_probe.py`, not shipped
+    with this repository).
+    """
+    helpers = _env_read_helpers()
+    found: dict[str, list[str]] = {}
+    numeric: dict[str, list[str]] = {}
+    for path in sorted(PKG.glob("*.py")):
+        tree = ast.parse(path.read_text(encoding="utf-8"))
+        for node in ast.walk(tree):
             if isinstance(node, ast.Call):
                 target = node.func
                 is_environ_get = (isinstance(target, ast.Attribute) and target.attr == "get"
@@ -177,17 +257,28 @@ def _package_env_names() -> dict[str, list[str]]:
                 if (is_environ_get or is_getenv) and node.args \
                         and isinstance(node.args[0], ast.Constant) \
                         and isinstance(node.args[0].value, str):
-                    name = node.args[0].value
+                    found.setdefault(node.args[0].value, []).append(path.name)
+                    continue
+                tail = ast.unparse(target).rsplit(".", 1)[-1]
+                spec = helpers.get(tail)
+                if spec and node.args and isinstance(node.args[0], ast.Constant) \
+                        and isinstance(node.args[0].value, str):
+                    literal = node.args[0].value
+                    for pattern in spec["patterns"]:
+                        name = pattern.format(literal)
+                        label = f"{path.name}:{tail}"
+                        if spec["numeric"] and pattern == "{}":
+                            numeric.setdefault(name, []).append(label)
+                        else:
+                            found.setdefault(name, []).append(label)
             elif isinstance(node, ast.Subscript):
                 val = node.value
                 if (isinstance(val, ast.Attribute) and val.attr == "environ"
                         and isinstance(val.value, ast.Name) and val.value.id == "os"):
                     sl = node.slice
                     if isinstance(sl, ast.Constant) and isinstance(sl.value, str):
-                        name = sl.value
-            if name:
-                found.setdefault(name, []).append(path.name)
-    return found
+                        found.setdefault(sl.value, []).append(path.name)
+    return found, numeric
 
 
 #: Every name `_package_env_names()` can discover that is NOT a filesystem path this test
@@ -229,6 +320,9 @@ ALLOWLIST: dict[str, str] = {
     "NEVERTWICE_WRITE_DEDUP_MODE": "a dedup-mode name string",
     "NEVERTWICE_XRERANK_MODEL": "a model name string",
     "NEVERTWICE_TWIN_SPACE": "a calibration SPACE LABEL string, not the calibration file itself (that is NEVERTWICE_TWIN_FILE, which IS pinned)",
+    "NEVERTWICE_PROFILE": "a comma-separated profile-name list (coding/research/general), not a path - via config.env('PROFILE')",
+    "CLAUDE_MEMORY_PROFILE": "the legacy-prefixed twin of NEVERTWICE_PROFILE above (config.env's own CLAUDE_MEMORY_ expansion) - same non-path value",
+    "CLAUDE_MEMORY_EMBED_MODEL": "the legacy-prefixed twin of NEVERTWICE_EMBED_MODEL above (config.env's own CLAUDE_MEMORY_ expansion) - same non-path value",
     # -- flags, thresholds, numbers, text prefixes: none are paths --
     "NEVERTWICE_ADAPTIVE_RECUR": "a boolean flag string",
     "NEVERTWICE_ATTACH_EARLIER_ALWAYS": "a boolean flag string",
@@ -270,24 +364,43 @@ ALLOWLIST: dict[str, str] = {
     "SystemRoot": "a Windows system dir NAME used only to exclude it from project detection - never read/listed",
     # -- deliberately-not-pinned PATHS: see tests/_wall.py's module docstring --
     "APPDATA": "a real path, deliberately NOT pinned directly - it also governs Windows user-site package resolution, and pinning it broke `import pytest` in every child process (measured). Mitigated at the adapter level instead: NEVERTWICE_CURSOR_EXPORT and NEVERTWICE_VSCODE_GLOBALSTORAGE_ROOT ARE pinned, and both are checked before this.",
-    "XDG_CONFIG_HOME": "the Linux/macOS analogue of APPDATA above - kept out for the same reason and mitigated the same way, for cross-platform consistency (this session measured the APPDATA breakage on Windows only).",
+    "XDG_CONFIG_HOME": "unlike APPDATA, NOT measured to break anything - Python's user site on Linux is ~/.local/lib/pythonX.Y/site-packages and on macOS ~/Library/Python/X.Y, never XDG_CONFIG_HOME. Kept unpinned for the CORRECT reason instead: both readers (hosts.py:615 CursorAdapter.roots(), watch.py:112 _vscode_globalstorage_bases()) consult it only in the `else` branch AFTER their own NEVERTWICE_* override is checked, and the wall pins both overrides (NEVERTWICE_CURSOR_EXPORT, NEVERTWICE_VSCODE_GLOBALSTORAGE_ROOT) - so under walled(), that `else` branch is never reached at all. test_every_host_adapter_and_watch_base_resolves_inside_the_wall is the evidence: it drives both readers end to end and both resolve inside tmp.",
 }
+
+
+#: Names that ARE pinned but are not path-shaped at all (their value is a mode string, not a
+#: directory), so checking them against tmp would be asking the wrong question. Each is pinned
+#: for its own, unrelated reason (`_wall.py`'s `walled()`), not because it is a path.
+_NON_PATH_PINNED = {"NEVERTWICE_CLOUD", "CLAUDE_MEMORY_CLOUD"}
 
 
 def test_walled_covers_or_allowlists_every_env_name_in_the_package() -> None:
     print("\n- walled() covers or allowlists every env name the package reads (F1) -")
-    discovered = _package_env_names()
+    discovered, auto_numeric = _package_env_names()
     check("the scan actually found names (a scan over nothing proves nothing)",
           len(discovered) >= 50, str(len(discovered)))
+    check("and the helper-expansion pass found the numeric env_int/env_float/_env_float names "
+          "too (auto-classified, never hand-listed)",
+          len(auto_numeric) >= 50, str(len(auto_numeric)))
 
     pinned = set(_wall.WALL_VARS) | set(_wall.PINNED_VARS)
-    overlap = pinned & set(ALLOWLIST)
-    check("no name is both pinned and allowlisted (one classification per name)",
-          not overlap, str(overlap))
+    allowlisted = set(ALLOWLIST)
+    numeric_names = set(auto_numeric)
 
-    unclassified = sorted(set(discovered) - pinned - set(ALLOWLIST))
+    pinned_and_allowlisted = pinned & allowlisted
+    pinned_and_numeric = pinned & numeric_names
+    allowlisted_and_numeric = allowlisted & numeric_names
+    check("no name is pinned AND allowlisted (one classification per name)",
+          not pinned_and_allowlisted, str(pinned_and_allowlisted))
+    check("no name is pinned AND auto-numeric", not pinned_and_numeric, str(pinned_and_numeric))
+    check("no name is allowlisted AND auto-numeric - a numeric env_int/env_float name does "
+          "not ALSO need a hand-written ALLOWLIST reason", not allowlisted_and_numeric,
+          str(allowlisted_and_numeric))
+
+    unclassified = sorted(set(discovered) - pinned - allowlisted)
     check(f"every discovered name is pinned by walled() or allowlisted with a reason: "
-          f"{len(discovered)} discovered, {len(pinned)} pinned, {len(ALLOWLIST)} allowlisted",
+          f"{len(discovered)} discovered, {len(pinned)} pinned, {len(ALLOWLIST)} allowlisted, "
+          f"{len(auto_numeric)} auto-numeric",
           not unclassified,
           f"unclassified: {[(n, discovered[n]) for n in unclassified]}")
 
@@ -301,10 +414,7 @@ def test_walled_covers_or_allowlists_every_env_name_in_the_package() -> None:
         tmp_r = str(tmp.resolve())
         discovered_pinned = sorted(set(discovered) & pinned)
         missing = [n for n in discovered_pinned if n not in env]
-        # NEVERTWICE_CLOUD is pinned for an unrelated reason (no real network calls from a
-        # sandboxed run) and its value ("none") is not path-shaped at all - checking it
-        # against tmp would be asking the wrong question, not catching a leak.
-        path_shaped = [n for n in discovered_pinned if n != "NEVERTWICE_CLOUD"]
+        path_shaped = [n for n in discovered_pinned if n not in _NON_PATH_PINNED]
         escaping = [n for n in path_shaped if n in env and env[n] and not (
             str(Path(env[n]).resolve()) == tmp_r
             or str(Path(env[n]).resolve()).startswith(tmp_r + os.sep))]
@@ -317,6 +427,47 @@ def test_walled_covers_or_allowlists_every_env_name_in_the_package() -> None:
           "F1 caution this test exists to hold the line on",
           "APPDATA" not in pinned and "XDG_CONFIG_HOME" not in pinned
           and "APPDATA" in ALLOWLIST and "XDG_CONFIG_HOME" in ALLOWLIST)
+
+    # (в)1 acceptance: this scanner's total (discovered + auto-numeric) is 171, not the
+    # auditing session's 168 - and every one of the 11 name-level differences (7 gained, 4
+    # lost) is accounted for below, none silently absorbed:
+    #
+    #   LOST (4) - the auditor's own probe records config.env(suffix) call sites by their RAW
+    #   SUFFIX ("VAULT", "PROFILE", "CLOUD", "EMBED_MODEL"), never expanded. Requirement (c)
+    #   is to expand each to BOTH NEVERTWICE_<suffix> and CLAUDE_MEMORY_<suffix> - which is
+    #   what config.env() itself actually reads - so none of the 4 raw suffixes appear here;
+    #   they are correctly replaced by their 8 real expansions (below).
+    #
+    #   GAINED (7) - 6 are exactly those 8 expansions, minus NEVERTWICE_CLOUD and
+    #   NEVERTWICE_EMBED_MODEL, which were ALREADY discovered independently (a direct literal
+    #   read elsewhere in the package), so expanding them adds no new name; only their
+    #   CLAUDE_MEMORY_ twins, plus both of VAULT's and PROFILE's expansions, are new:
+    #   NEVERTWICE_VAULT, CLAUDE_MEMORY_VAULT, NEVERTWICE_PROFILE, CLAUDE_MEMORY_PROFILE,
+    #   CLAUDE_MEMORY_CLOUD, CLAUDE_MEMORY_EMBED_MODEL.
+    #
+    #   The 7th, NEVERTWICE_EXTRACT_RETRY (`_engine_cards.py:810`,
+    #   `env_int("NEVERTWICE_EXTRACT_RETRY", 0)`), is a genuine finding the auditor's own probe
+    #   MISSES - not a difference in what either scanner is asked to cover. The probe builds
+    #   its `helpers` set incrementally, file by file, in the SAME single pass it scans call
+    #   sites in (`for path in sorted(...): <find helpers in this file> ... <find call sites
+    #   in this file>`), so a helper is only recognised at call sites in files sorted AFTER
+    #   the file that DEFINES it. `_engine_cards.py` sorts alphabetically BEFORE
+    #   `_engine_config.py` (which defines `env_int`), so this one call site is invisible to
+    #   the probe's own logic regardless of which scanner it is compared against. This
+    #   scanner's `_env_read_helpers()` is a separate, complete pass BEFORE any call site is
+    #   examined, so file order cannot hide a call site from it - confirmed directly by
+    #   reading the line the probe's own ordering skips.
+    all_names = set(discovered) | set(auto_numeric)
+    expected_lost = {"VAULT", "PROFILE", "CLOUD", "EMBED_MODEL"}
+    expected_gained = {"NEVERTWICE_VAULT", "CLAUDE_MEMORY_VAULT", "NEVERTWICE_PROFILE",
+                       "CLAUDE_MEMORY_PROFILE", "CLAUDE_MEMORY_CLOUD", "CLAUDE_MEMORY_EMBED_MODEL",
+                       "NEVERTWICE_EXTRACT_RETRY"}
+    check(f"this scanner finds {len(all_names)} names - every difference from the auditor's "
+          f"168 named above: {len(expected_gained)} gained, {len(expected_lost)} lost",
+          len(all_names) == 168 - len(expected_lost) + len(expected_gained),
+          f"{len(all_names)} names (expected {168 - len(expected_lost) + len(expected_gained)})")
+    check("NEVERTWICE_EXTRACT_RETRY is found (the probe's own file-ordering miss)",
+          "NEVERTWICE_EXTRACT_RETRY" in all_names)
 
 
 def test_every_host_adapter_and_watch_base_resolves_inside_the_wall() -> None:
