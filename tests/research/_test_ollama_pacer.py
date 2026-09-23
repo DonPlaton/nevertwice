@@ -83,19 +83,88 @@ class _JsonResp:
 
 
 @contextlib.contextmanager
+def _crash_guard(*names: str):
+    """K9 (the auditor's finding on 717f482): T2/T4/T7 called `urllib.request.urlopen`/
+    an httpx client method directly, with no try/except - a plausible regression (e.g.
+    `is_ollama_host` mutated to always return False, or MAX_RETRIES mutated to allow at
+    most one attempt) raises an exception THROUGH the check() calls that were supposed to
+    grade it, crashing the whole suite process and silently skipping every test after the
+    one that happened to trip it - the worst failure mode a test harness can have: fewer
+    FAIL lines than a real regression should produce, not more.
+
+    Wrap the risky call(s) in `with _crash_guard("name of every check the block would
+    otherwise make"): ...` - on ANY exception, every name is reported as a FAIL carrying
+    the exception's repr, the exception is swallowed, and `main()`'s loop moves on to the
+    next test exactly as if this one block had simply failed its assertions."""
+    try:
+        yield
+    except Exception as exc:                                          # noqa: BLE001
+        for n in names:
+            check(n, False, repr(exc))
+
+
+@contextlib.contextmanager
 def _isolated():
     """Every test starts from zero counters, an un-patched urllib/httpx and the real
     clock, and leaves exactly that behind on exit (success or failure) - module-global
-    state by design, so nothing here may leak from one test into the next."""
+    state by design, so nothing here may leak from one test into the next.
+
+    K9: also captures httpx.Client.send/AsyncClient.send (when httpx is importable)
+    BEFORE the test runs, and after `pacer.uninstall()` asserts - by IDENTITY, not just
+    "behaves the same" - that all three patched callables are back to exactly the
+    objects saved here. A mutated `uninstall()` that forgets to restore one of them
+    leaves the NEXT test's `install()` capturing the wrapper as its own "original"
+    (`_ORIG["httpx_send"] = httpx.Client.send` when that IS still `_paced_httpx_send`),
+    which self-references into an eventual RecursionError several tests later rather
+    than failing where the actual bug is - this check reddens AT THE TEST THAT BROKE IT,
+    by name, every single time (checked after every test, not just once)."""
     assert not pacer.installed(), "a previous test left the pacer installed"
     saved_now, saved_sleep, saved_async_sleep = pacer._now, pacer._sleep, pacer._async_sleep
     saved_urlopen = urllib.request.urlopen
+    try:
+        import httpx as _httpx
+        saved_httpx_send = _httpx.Client.send
+        saved_httpx_async_send = _httpx.AsyncClient.send
+    except ImportError:
+        _httpx = None
+        saved_httpx_send = saved_httpx_async_send = None
     pacer._reset_for_tests()
     try:
         yield
     finally:
+        # The "saved originals" a test's OWN uninstall() must restore to are whatever
+        # install() itself captured into `_ORIG` - NOT `saved_urlopen`/`saved_httpx_send`
+        # above, which several tests (T2/T3/T4/T6) deliberately overwrite with their own
+        # fake urlopen BEFORE calling install(), so install() legitimately captures THAT
+        # as "the original" for the duration of the test. Peeked from `_ORIG` here, right
+        # before `uninstall()` pops it, so the check verifies uninstall()'s own fidelity
+        # to what install() saved - independent of what any given test's pre-install
+        # stub happened to be. `saved_urlopen`/`saved_httpx_send` (captured at entry,
+        # before the test touched anything) are still what this function forcibly
+        # restores to afterward, for full isolation regardless of whether uninstall()
+        # itself is the one under test right now.
+        was_installed = pacer.installed()
+        pre_orig_urlopen = pacer._ORIG.get("urlopen")
+        pre_orig_httpx_send = pacer._ORIG.get("httpx_send")
+        pre_orig_httpx_async_send = pacer._ORIG.get("httpx_async_send")
         pacer.uninstall()
+        if was_installed:
+            urlopen_ok = urllib.request.urlopen is pre_orig_urlopen
+            httpx_ok = True
+            detail = f"urlopen restored={urlopen_ok}"
+            if _httpx is not None and pre_orig_httpx_send is not None:
+                httpx_ok = (_httpx.Client.send is pre_orig_httpx_send and
+                           _httpx.AsyncClient.send is pre_orig_httpx_async_send)
+                detail += (f", Client.send restored={_httpx.Client.send is pre_orig_httpx_send}, "
+                          f"AsyncClient.send restored="
+                          f"{_httpx.AsyncClient.send is pre_orig_httpx_async_send}")
+            check("uninstall restores urllib.request.urlopen, httpx.Client.send, "
+                  "httpx.AsyncClient.send (identity against the saved originals)",
+                  urlopen_ok and httpx_ok, detail)
         urllib.request.urlopen = saved_urlopen
+        if _httpx is not None:
+            _httpx.Client.send = saved_httpx_send
+            _httpx.AsyncClient.send = saved_httpx_async_send
         pacer._now, pacer._sleep, pacer._async_sleep = saved_now, saved_sleep, saved_async_sleep
         pacer._reset_for_tests()
 
@@ -132,9 +201,13 @@ def test_t1_classifier_matches_only_the_port_exhaustion_signature() -> None:
     check("httpx.Response-shaped (.status_code/.text) -> retry",
           pacer.classify(httpx_resp, is_ollama_host=True))
 
-    for we in pacer.PORT_WINERRORS:
-        check(f"connect failure winerror={we} -> retry",
-              pacer.classify(_Obj(winerror=we), is_ollama_host=True))
+    # K9 (the auditor's finding on 717f482): iterating `pacer.PORT_WINERRORS` here is a
+    # tautology - a mutation that SHRINKS the module's own constant to `(10048,)` leaves
+    # this loop green too, since it only ever asks the mutated module about itself. Both
+    # winerrors are hardcoded literals instead, so a mutated constant is checked against
+    # an expectation the mutation cannot also move.
+    check("10048 is retried", pacer.classify(_Obj(winerror=10048), is_ollama_host=True))
+    check("10055 is retried", pacer.classify(_Obj(winerror=10055), is_ollama_host=True))
 
     # ── near-misses: every one of these must NOT retry ──
     near_ctxlen = _HTTPErrorLike(code=400, _body="the input exceeds the context length")
@@ -225,13 +298,22 @@ def test_t2_retry_resends_the_identical_request_object() -> None:
             return "OK"
         urllib.request.urlopen = flaky
         pacer.install()
-        result = urllib.request.urlopen(req)
-        check("the call eventually succeeds", result == "OK")
-        check("exactly 3 attempts were made (2 failures + 1 success)",
-              attempts["n"] == 3, str(attempts["n"]))
-        check("every attempt reused the IDENTICAL Request object (same id())",
-              len(set(seen_ids)) == 1 and seen_ids[0] == id(req), str(seen_ids))
-        check("retries counted = 2", pacer.snapshot()["retries"] == 2)
+        # K9: a plausible regression here (is_ollama_host mutated to always return
+        # False - MP1; MAX_RETRIES mutated to allow at most one attempt - MP2) makes
+        # this call raise the underlying HTTPError on attempt 1 or 2, UNCAUGHT - without
+        # this guard that crashes the whole suite process and every test after this one
+        # silently never runs. Names every check this block would otherwise make.
+        with _crash_guard("the call eventually succeeds",
+                          "exactly 3 attempts were made (2 failures + 1 success)",
+                          "every attempt reused the IDENTICAL Request object (same id())",
+                          "retries counted = 2"):
+            result = urllib.request.urlopen(req)
+            check("the call eventually succeeds", result == "OK")
+            check("exactly 3 attempts were made (2 failures + 1 success)",
+                  attempts["n"] == 3, str(attempts["n"]))
+            check("every attempt reused the IDENTICAL Request object (same id())",
+                  len(set(seen_ids)) == 1 and seen_ids[0] == id(req), str(seen_ids))
+            check("retries counted = 2", pacer.snapshot()["retries"] == 2)
 
         # mutation: rebuild the request from scratch on every attempt (same bytes, a
         # NEW object) instead of resending the one the caller handed us
@@ -251,10 +333,12 @@ def test_t2_retry_resends_the_identical_request_object() -> None:
                 return orig(rebuilt, *args[1:], **kwargs)
             return pacer._run_paced(_call)
         urllib.request.urlopen = _rebuilding_paced_urlopen
-        urllib.request.urlopen(req)
-        check("mutation 'rebuild request': the attempts no longer share the SAME object "
-              "id (would FAIL the identical-object check above)",
-              len(set(seen_ids)) > 1, str(seen_ids))
+        with _crash_guard("mutation 'rebuild request': the attempts no longer share the "
+                         "SAME object id (would FAIL the identical-object check above)"):
+            urllib.request.urlopen(req)
+            check("mutation 'rebuild request': the attempts no longer share the SAME object "
+                  "id (would FAIL the identical-object check above)",
+                  len(set(seen_ids)) > 1, str(seen_ids))
 
 
 # ── T3: a non-port HTTPError is re-raised once, its body still readable afterwards ─────
@@ -324,24 +408,34 @@ def test_t4_seventeen_failures_exhaust_retries_and_raise_the_original_error() ->
         urllib.request.urlopen = always_fails
         pacer.install()
         req = urllib.request.Request("http://127.0.0.1:11434/api/embed", data=b"{}")
-        raised = None
-        try:
-            urllib.request.urlopen(req)
-        except urllib.error.HTTPError as e:
-            raised = e
-        check("the ORIGINAL error still propagates after exhausting retries",
-              raised is not None)
-        check(f"exactly {pacer.MAX_RETRIES + 1} attempts were made (1 + MAX_RETRIES "
-              f"retries) = 17", attempts["n"] == pacer.MAX_RETRIES + 1 == 17,
-              str(attempts["n"]))
-        snap = pacer.snapshot()
-        check(f"retries counted = MAX_RETRIES = {pacer.MAX_RETRIES}",
-              snap["retries"] == pacer.MAX_RETRIES, str(snap))
-        check("gave_up counted = 1", snap["gave_up"] == 1, str(snap))
-        check(f"total retry sleep = MAX_RETRIES x {pacer.RETRY_INTERVAL_S}s = "
-              f"{pacer.MAX_RETRIES * pacer.RETRY_INTERVAL_S}s (2x TIME_WAIT)",
-              abs(snap["retry_sleep_s"] - pacer.MAX_RETRIES * pacer.RETRY_INTERVAL_S) < 1e-6,
-              str(snap))
+        # K9: the inner except is narrowly typed to urllib.error.HTTPError (the EXPECTED
+        # failure) on purpose, so it can still inspect `raised`; the outer guard is the
+        # net for anything else a regression could raise (MP1/MP2 - see T2's comment).
+        with _crash_guard("the ORIGINAL error still propagates after exhausting retries",
+                          f"exactly {pacer.MAX_RETRIES + 1} attempts were made (1 + "
+                          "MAX_RETRIES retries) = 17",
+                          f"retries counted = MAX_RETRIES = {pacer.MAX_RETRIES}",
+                          "gave_up counted = 1",
+                          f"total retry sleep = MAX_RETRIES x {pacer.RETRY_INTERVAL_S}s = "
+                          f"{pacer.MAX_RETRIES * pacer.RETRY_INTERVAL_S}s (2x TIME_WAIT)"):
+            raised = None
+            try:
+                urllib.request.urlopen(req)
+            except urllib.error.HTTPError as e:
+                raised = e
+            check("the ORIGINAL error still propagates after exhausting retries",
+                  raised is not None)
+            check(f"exactly {pacer.MAX_RETRIES + 1} attempts were made (1 + MAX_RETRIES "
+                  f"retries) = 17", attempts["n"] == pacer.MAX_RETRIES + 1 == 17,
+                  str(attempts["n"]))
+            snap = pacer.snapshot()
+            check(f"retries counted = MAX_RETRIES = {pacer.MAX_RETRIES}",
+                  snap["retries"] == pacer.MAX_RETRIES, str(snap))
+            check("gave_up counted = 1", snap["gave_up"] == 1, str(snap))
+            check(f"total retry sleep = MAX_RETRIES x {pacer.RETRY_INTERVAL_S}s = "
+                  f"{pacer.MAX_RETRIES * pacer.RETRY_INTERVAL_S}s (2x TIME_WAIT)",
+                  abs(snap["retry_sleep_s"] - pacer.MAX_RETRIES * pacer.RETRY_INTERVAL_S) < 1e-6,
+                  str(snap))
 
 
 # ── T5: pacing floor, and call_ms excludes every sleep ─────────────────────────────────
@@ -394,35 +488,44 @@ def test_t6_engine_embed_text_transparently_survives_two_port_failures() -> None
             return _JsonResp({"embeddings": [vector]})
         urllib.request.urlopen = flaky
         pacer.install()
-        with mock.patch.object(m, "EMBED_PROVIDER", "ollama"), \
-             mock.patch.object(m, "OLLAMA_EMBED_URL", "http://127.0.0.1:11434/api/embed"), \
-             mock.patch.object(m, "_EMBED_TEXT_MEMO", {"key": None, "vec": None}):
-            buf = io.StringIO()
-            with contextlib.redirect_stderr(buf):
-                vec = m.embed_text("hello world")
-        check("embed_text returns the real vector after 2 port failures, transparently",
-              vec == vector, str(vec))
-        check("attempted 3 times underneath (2 failures + 1 success)",
-              attempts["n"] == 3, str(attempts["n"]))
-        check("no 'HTTP 400' reached the engine's own logger - the pacer absorbed both "
-              "failures beneath _embed_http entirely", "HTTP 400" not in buf.getvalue(),
-              buf.getvalue())
+        with _crash_guard("embed_text returns the real vector after 2 port failures, "
+                          "transparently",
+                          "attempted 3 times underneath (2 failures + 1 success)",
+                          "no 'HTTP 400' reached the engine's own logger - the pacer "
+                          "absorbed both failures beneath _embed_http entirely"):
+            with mock.patch.object(m, "EMBED_PROVIDER", "ollama"), \
+                 mock.patch.object(m, "OLLAMA_EMBED_URL", "http://127.0.0.1:11434/api/embed"), \
+                 mock.patch.object(m, "_EMBED_TEXT_MEMO", {"key": None, "vec": None}):
+                buf = io.StringIO()
+                with contextlib.redirect_stderr(buf):
+                    vec = m.embed_text("hello world")
+            check("embed_text returns the real vector after 2 port failures, transparently",
+                  vec == vector, str(vec))
+            check("attempted 3 times underneath (2 failures + 1 success)",
+                  attempts["n"] == 3, str(attempts["n"]))
+            check("no 'HTTP 400' reached the engine's own logger - the pacer absorbed both "
+                  "failures beneath _embed_http entirely", "HTTP 400" not in buf.getvalue(),
+                  buf.getvalue())
 
         # mutation: uninstall the pacer - the SAME two-failure flake now returns None,
         # and the engine's own log DOES see the HTTP 400 (proving the WIRING, not the
         # engine's own retry logic - it has none here - is what makes the block above pass)
         pacer.uninstall()
         attempts["n"] = 0
-        with mock.patch.object(m, "EMBED_PROVIDER", "ollama"), \
-             mock.patch.object(m, "OLLAMA_EMBED_URL", "http://127.0.0.1:11434/api/embed"), \
-             mock.patch.object(m, "_EMBED_TEXT_MEMO", {"key": None, "vec": None}):
-            buf2 = io.StringIO()
-            with contextlib.redirect_stderr(buf2):
-                vec2 = m.embed_text("hello world")
-        check("mutation 'uninstall': WITHOUT the pacer the same flake now returns None "
-              "(would FAIL the real-vector check above)", vec2 is None, str(vec2))
-        check("mutation 'uninstall': the engine's own log now DOES see 'HTTP 400'",
-              "HTTP 400" in buf2.getvalue(), buf2.getvalue())
+        with _crash_guard("mutation 'uninstall': WITHOUT the pacer the same flake now "
+                          "returns None (would FAIL the real-vector check above)",
+                          "mutation 'uninstall': the engine's own log now DOES see "
+                          "'HTTP 400'"):
+            with mock.patch.object(m, "EMBED_PROVIDER", "ollama"), \
+                 mock.patch.object(m, "OLLAMA_EMBED_URL", "http://127.0.0.1:11434/api/embed"), \
+                 mock.patch.object(m, "_EMBED_TEXT_MEMO", {"key": None, "vec": None}):
+                buf2 = io.StringIO()
+                with contextlib.redirect_stderr(buf2):
+                    vec2 = m.embed_text("hello world")
+            check("mutation 'uninstall': WITHOUT the pacer the same flake now returns None "
+                  "(would FAIL the real-vector check above)", vec2 is None, str(vec2))
+            check("mutation 'uninstall': the engine's own log now DOES see 'HTTP 400'",
+                  "HTTP 400" in buf2.getvalue(), buf2.getvalue())
 
 
 # ── T7: httpx.Client / httpx.AsyncClient, via MockTransport - plain, stream, async ─────
@@ -450,14 +553,21 @@ def test_t7_httpx_client_and_asyncclient_are_paced_through_mocktransport() -> No
             if calls["n"] <= 2:
                 return httpx.Response(400, text=pacer.SOCKET_ADDR_MSG)
             return httpx.Response(200, json={"ok": True})
-        client = httpx.Client(transport=httpx.MockTransport(handler),
-                              base_url="http://127.0.0.1:11434")
-        resp = client.get("/api/tags")
-        client.close()
-        check("plain request eventually succeeds (200) after 2 paced retries",
-              resp.status_code == 200, str(resp.status_code))
-        check("3 attempts were made underneath (2 retried 400s + 1 success)",
-              calls["n"] == 3, str(calls["n"]))
+        # K9: every direct client call below is a call into REAL httpx machinery, which
+        # is exactly where MP4 (a broken uninstall() - see _isolated()'s docstring)
+        # manifests as a RecursionError, and where MP1/MP2 (see T2) would surface too if
+        # this test ran before T2. Guarded so any of those redden by name instead of
+        # crashing the suite.
+        with _crash_guard("plain request eventually succeeds (200) after 2 paced retries",
+                          "3 attempts were made underneath (2 retried 400s + 1 success)"):
+            client = httpx.Client(transport=httpx.MockTransport(handler),
+                                  base_url="http://127.0.0.1:11434")
+            resp = client.get("/api/tags")
+            client.close()
+            check("plain request eventually succeeds (200) after 2 paced retries",
+                  resp.status_code == 200, str(resp.status_code))
+            check("3 attempts were made underneath (2 retried 400s + 1 success)",
+                  calls["n"] == 3, str(calls["n"]))
 
         # streaming: a 400 with the exact signature is PACED but never retried on body
         # content - reading the body here would consume the caller's own stream (R3)
@@ -466,14 +576,18 @@ def test_t7_httpx_client_and_asyncclient_are_paced_through_mocktransport() -> No
         def stream_handler(request):
             stream_calls["n"] += 1
             return httpx.Response(400, text=pacer.SOCKET_ADDR_MSG)
-        sclient = httpx.Client(transport=httpx.MockTransport(stream_handler),
-                               base_url="http://127.0.0.1:11434")
-        with sclient.stream("GET", "/api/generate") as sresp:
-            check("a streamed 400 passes through UNRETRIED (its body was never consumed "
-                  "here to classify it)", sresp.status_code == 400, str(sresp.status_code))
-        sclient.close()
-        check("exactly 1 attempt for the streamed call (no retry on a streamed body)",
-              stream_calls["n"] == 1, str(stream_calls["n"]))
+        with _crash_guard("a streamed 400 passes through UNRETRIED (its body was never "
+                          "consumed here to classify it)",
+                          "exactly 1 attempt for the streamed call (no retry on a "
+                          "streamed body)"):
+            sclient = httpx.Client(transport=httpx.MockTransport(stream_handler),
+                                   base_url="http://127.0.0.1:11434")
+            with sclient.stream("GET", "/api/generate") as sresp:
+                check("a streamed 400 passes through UNRETRIED (its body was never consumed "
+                      "here to classify it)", sresp.status_code == 400, str(sresp.status_code))
+            sclient.close()
+            check("exactly 1 attempt for the streamed call (no retry on a streamed body)",
+                  stream_calls["n"] == 1, str(stream_calls["n"]))
 
         # async: two port-exhaustion 400s, then 200, via an async handler
         async def _run_async():
@@ -489,10 +603,12 @@ def test_t7_httpx_client_and_asyncclient_are_paced_through_mocktransport() -> No
             r = await aclient.get("/api/tags")
             await aclient.aclose()
             return r, acalls["n"]
-        aresp, an = asyncio.run(_run_async())
-        check("async request eventually succeeds (200) after 2 paced retries",
-              aresp.status_code == 200, str(aresp.status_code))
-        check("3 async attempts were made underneath", an == 3, str(an))
+        with _crash_guard("async request eventually succeeds (200) after 2 paced retries",
+                          "3 async attempts were made underneath"):
+            aresp, an = asyncio.run(_run_async())
+            check("async request eventually succeeds (200) after 2 paced retries",
+                  aresp.status_code == 200, str(aresp.status_code))
+            check("3 async attempts were made underneath", an == 3, str(an))
 
         snap = pacer.snapshot()
         check("retries counted across the plain+async requests (2 + 2 = 4; the streamed "
