@@ -63,6 +63,11 @@ READER = os.environ.get("FRONTIER_READER", "qwen2.5:7b")
 JUDGE = os.environ.get("FRONTIER_JUDGE", "qwen3.6:27b")
 EXTRACTOR = os.environ.get("H2H_LLM", "qwen2.5-7b-64k:latest")
 K = 5
+#: The `api.recall` top-k `contexts_nevertwice_full` asks for - not yet a CLI flag, but named
+#: (not a bare `10` at the call site) and folded into `_ctx_path` below, so a future edit that
+#: makes it one, or a change to this constant itself, cannot silently share a cache file with a
+#: run made under the old value.
+RECALL_K = 10
 TOP_SITUATION = 3
 CHAR_BUDGET = int(os.environ.get("CODESESS_CHAR_BUDGET", "24000"))
 ARMS = ("nevertwice_full", "naive", "mem0_infer")
@@ -106,10 +111,24 @@ def pool_of(corpus: dict) -> dict:
 #: The caches are keyed by corpus name so the synthetic dev set and the private held-out never
 #: share a context, an answer or a verdict (set from the loaded corpus in `main`).
 CORPUS_NAME = "code_sessions_v1"
+#: `corpus["name"]` alone is self-declared by the FILE, not by its path or its bytes - two
+#: different files can carry the same name field. The content hash (`load_corpus`'s own
+#: `sha256`) is what actually identifies "which corpus", so `_ctx_path` folds a short prefix of
+#: it in too (set from the loaded corpus in `main`).
+CORPUS_SHA = ""
+#: `--seed-pairs N` (A9) changes what `contexts_nevertwice_full` writes into a project's store
+#: BEFORE ingest, so a seeded and an unseeded run of the identical corpus must not share the one
+#: `nevertwice_full` cache file - the collision an earlier commit on this branch flagged and left
+#: unfixed. Set from `args.seed_pairs` in `main`; irrelevant to every other arm.
+SEED_PAIRS_KEY = 0
 
 
 def _ctx_path(arm: str) -> Path:
-    return DATA / f"codesess_{CORPUS_NAME}_contexts_{arm}_cache.json"
+    sha_part = f"_c{CORPUS_SHA[:12]}" if CORPUS_SHA else ""
+    variant = ""
+    if arm in ENGINE_ARMS:
+        variant = f"_k{RECALL_K}" + (f"_seed{SEED_PAIRS_KEY}" if SEED_PAIRS_KEY else "")
+    return DATA / f"codesess_{CORPUS_NAME}{sha_part}_contexts_{arm}{variant}_cache.json"
 
 
 def _cache_path(stage: str) -> Path:
@@ -183,7 +202,7 @@ def contexts_nevertwice_full(corpus: dict, seed_pairs: int = 0) -> dict:
                 out["_ingest"]["errors"] += 1
         for q in p["questions"]:
             query = q["question"]
-            hits = api.recall(query, project=p["id"], k=10)
+            hits = api.recall(query, project=p["id"], k=RECALL_K)
             out[q["id"]] = [{"id": h.get("stem"), "text": fe._hit_text(h)} for h in hits]
         print(f"  [{i + 1}/{len(corpus['projects'])}] {p['slug']}  ({time.time() - t0:.0f}s)", flush=True)
     return out
@@ -435,8 +454,10 @@ def main() -> int:
     ap.add_argument("--out", default="")
     args = ap.parse_args()
     corpus = load_corpus(Path(args.corpus))
-    global CORPUS_NAME
+    global CORPUS_NAME, CORPUS_SHA, SEED_PAIRS_KEY
     CORPUS_NAME = str(corpus.get("name") or Path(args.corpus).stem)
+    CORPUS_SHA = str(corpus.get("sha256") or "")
+    SEED_PAIRS_KEY = int(args.seed_pairs or 0)
     if args.limit:
         corpus["projects"] = corpus["projects"][:args.limit]
     qs, pool = questions(corpus), pool_of(corpus)
