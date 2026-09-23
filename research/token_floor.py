@@ -630,12 +630,18 @@ def main(argv=None) -> int:
                 verdict = (("extractor produced nothing - a regime, not a refusal"
                             if not (k_off or k_fail) else
                             f"extractor produced nothing; of {n_sess} session(s) the relevance gate "
-                            f"judged {k_off} off-topic and {k_fail} failed to extract - for those a "
-                            "gate or a failure, not a regime")
+                            f"judged {k_off} off-topic and {k_fail} stored nothing (extraction failed "
+                            "or skipped) - for those a gate or a failure, not a regime")
                            if prop == 0 else
                            f"extractor proposed {prop}, write path refused {refu}"
                            + "".join(f", {k.replace('_', '-')} {n}" for k in ("off_topic", "quarantined", "skipped")
                                      if (n := sum((ing.get(k) or {}).values()))))
+                #: a session that stored nothing is named whatever else was proposed: `written`
+                #: counts it as ingested, and "stored False" is also an already-processed or empty
+                #: transcript - so it is called what the return can prove, not "failed" (fourth
+                #: review, 2026-09-23: 6 failures beside 4 good sessions printed nothing)
+                if k_fail and prop:
+                    verdict += f"; {k_fail} of {n_sess} session(s) stored nothing (extraction failed or skipped)"
                 print(f"  {'':12s}   write: {ing.get('written', 0)} session(s), "
                       f"{ing.get('typed_notes', 0)} typed note(s), "
                       f"{wc.get('prompt_tokens', 0)}+{wc.get('eval_tokens', 0)} tokens "

@@ -224,19 +224,55 @@ def _drop_retired_vectors(cache: dict, dry: bool = False) -> int:
     return dropped
 
 
-def _restore_bytes(path: Path, raw: bytes) -> None:
-    """Put `raw` back at `path` atomically - a temp file beside it, then the engine's replace with
-    retry. write_atomic takes text, and the undo of a carry must be the bytes that were there."""
-    tmp = path.with_name(f"{path.name}.{os.getpid()}.undo.tmp")
+#: 466a5d4 parked a carry that failed after its retirement in this file; 5961f38 replaced the
+#: ledger with carry-first. A store that ran 466a5d4 may still hold entries whose old notes are
+#: already retired and will never be judged again, so each is applied once, through the same
+#: idempotent merge, and the file goes (fourth review, 2026-09-23: warning about it every week
+#: applied nothing).
+_OLD_CARRY_LEDGER = ".consolidate_carry_pending.json"
+
+
+def _drain_old_carry_ledger(apply: bool) -> int:
+    """Apply what 466a5d4 parked, once; return how many landed. A dry run only says how many."""
+    import json                                          # noqa: PLC0415 - a legacy path only
+    p = m.VAULT / _OLD_CARRY_LEDGER
+    if not p.exists():
+        return 0
     try:
-        tmp.write_bytes(raw)
-        m._replace_with_retry(tmp, path)
-    except BaseException:
+        parked = json.loads(p.read_text(encoding="utf-8"))
+        if not isinstance(parked, list):
+            raise ValueError(f"a {type(parked).__name__}, not a list")
+    except (OSError, ValueError) as e:
+        print(f"[consolidate] {p.name} from an earlier build is unreadable ({e}) - left in place",
+              file=sys.stderr)
+        return 0
+    if not apply:
+        print(f"[consolidate] {p.name}: {len(parked)} carry(s) parked by an earlier build would be applied")
+        return 0
+    landed, kept = 0, []
+    for e in parked:
         try:
-            tmp.unlink(missing_ok=True)
-        except OSError:
-            pass
-        raise
+            target = _live_or_archived(m.VAULT / m.TYPE_FOLDER[e["ntype"]], str(e["stem"]))
+            if target is None:
+                raise LookupError(f"{e['stem']} is not live")
+            _carry_into(target, target.read_text(encoding="utf-8", errors="replace"),
+                        int(float(e.get("recurrence", 1))), set(map(str, e.get("sources") or [])),
+                        [str(s) for s in e.get("supersedes") or []])
+            landed += 1
+        except (OSError, KeyError, TypeError, ValueError, AttributeError, LookupError) as err:
+            kept.append(e)
+            print(f"[consolidate] a parked carry was not applied ({type(err).__name__}: {err}) - kept",
+                  file=sys.stderr)
+    try:
+        if kept:
+            m.write_atomic(p, json.dumps(kept, ensure_ascii=False, indent=1))
+        else:
+            p.unlink()
+    except OSError as err:
+        print(f"[consolidate] {p.name} not updated ({err}) - re-applied next run, idempotently",
+              file=sys.stderr)
+    print(f"[consolidate] applied {landed} carry(s) parked by an earlier build; {len(kept)} kept")
+    return landed
 
 
 def _carry_into(new_path: Path, text: str, rec: int, sources: set[str],
@@ -328,7 +364,8 @@ def adjudicate_contested(apply: bool, has_llm: bool, cap: int | None = None,
     pairs.sort(key=lambda t: t[3])                     # date-prefixed stems: the OLDEST pair first
     stats = {"pairs": len(pairs), "budget": budget, "cap": cap, "judged": 0, "tokens_spent": 0,
              "estimated_calls": 0, "replaces": 0, "separate": 0, "vetoed": 0, "unanswered": 0,
-             "errors": 0, "left": len(pairs), "prompt_tokens": 0, "eval_tokens": 0, "skipped": None}
+             "errors": 0, "left": len(pairs), "prompt_tokens": 0, "eval_tokens": 0, "skipped": None,
+             "carry_kept": 0}
     stats["requeued"], stats["baselined"] = len(requeued_pairs), baselined
     #: One vector cache for the whole run, written once at the end. `supersede_note` used to load
     #: it, pop one stem and write the whole file back for EVERY pair it retired - N full rewrites
@@ -475,30 +512,42 @@ def adjudicate_contested(apply: bool, has_llm: bool, cap: int | None = None,
                         raw = new_path.read_bytes()
                         before = raw.decode("utf-8", errors="replace").replace("\r\n", "\n").replace("\r", "\n")
                         rec = _carry_into(new_path, before, rec, sources, sup_list)
+                        raised: Exception | None = None
                         try:
                             retired_ok = m.supersede_note(old_path, new_stem, via="judge",
                                                           extra_fields={m.CONTESTED_KEY: remaining},
                                                           cache=cache)
-                            why_not = ""
-                        except OSError as e:
-                            #: raised from inside supersede_note (Superseded/ cannot be created, say)
-                            #: is a failed retirement too - the carry is undone on this path as well
-                            retired_ok, why_not = False, f" ({e})"
+                        except Exception as e:  # noqa: BLE001 - what happened is read off the disk below
+                            retired_ok, raised = False, e
+                        if not retired_ok and not old_path.exists():
+                            #: the old note left despite the error - the log line after the unlink can
+                            #: raise on a detached stderr, as scheduled runs often have. The
+                            #: retirement happened; undoing the carry now would lose its history
+                            #: (fourth review, 2026-09-23)
+                            retired_ok = True
+                        why_not = f" ({raised})" if raised is not None else ""
                         if not retired_ok:
                             #: the pair is still contested on disk: an error, so `left` counts it -
                             #: "nothing left" over a pair still queued is #4 read the other way
                             #: (auditing session's case B on 5961f38, a real WinError 32 unlink)
                             stats["errors"] += 1
                             try:
-                                _restore_bytes(new_path, raw)
+                                m.write_atomic(new_path, raw)            # the winner's exact bytes
                                 print(f"      supersede failed for {old_path.name}{why_not} - left live, "
                                       "still contested; the carry was undone", file=sys.stderr)
                             except OSError as e:
+                                stats["carry_kept"] += 1
                                 print(f"      supersede failed for {old_path.name}{why_not} and the carry "
                                       f"into {new_path.name} could not be undone ({e}) - the pair stays "
                                       "contested; a replaces next run re-applies the same merge, any "
                                       "other verdict leaves it on the winner", file=sys.stderr)
-                        else:
+                        if raised is not None and not isinstance(raised, OSError):
+                            #: not a lock or a disk error: the run stops, as it always did - after the
+                            #: disk agrees with itself (undone above, or counted as retired below)
+                            if retired_ok:
+                                retired += 1
+                            raise raised
+                        if retired_ok:
                             # the retired stem already left the cache: supersede_note pops it from
                             # the cache it is handed (the F13 pop that stood here was dead, #15)
                             retired += 1
@@ -677,6 +726,9 @@ def _union_meta_into_keeper(keep_fp: Path, member_fps: list[Path]) -> None:
                 if item not in seen:
                     seen.add(item)
                     out.append(item)
+        if field == "sources":
+            #: the cap and order every other sources writer keeps - newest CAP, sorted (fourth review)
+            out = sorted(out)[-m.RECUR_SOURCES_CAP:]
         if out and out != m._list_field(kfm.get(field)):
             merged[field] = out
     # entity_types is a MAP ({name: type}), not a list: union as a dict (keeper wins on a
@@ -1135,13 +1187,7 @@ def _run_consolidation(apply, mode, has_llm):
     #    to archive one side of a pair K8 deliberately keeps apart before the judge ever ruled on it.
     #    Judging first also means a pair the judge just resolved this run is already off the
     #    contested list by the time the merge's own exclusion set (next) is built.
-    #: 466a5d4 parked failed carries in this file and 5961f38 removed it for carry-first. Nothing
-    #: reads it any more; if a store ran that build and parked something, say so rather than let
-    #: the file sit in the vault and its git history unexplained (third review, 2026-09-23).
-    _orphan = m.VAULT / ".consolidate_carry_pending.json"
-    if _orphan.exists():
-        print(f"[consolidate] {_orphan.name} is left from an earlier build and is no longer read: "
-              "the carries in it were not applied - see `git show 5961f38`", file=sys.stderr)
+    _drain_old_carry_ledger(apply)
     adj = adjudicate_contested(apply, has_llm, cache=cache)
     print(f"[consolidate] contested pairs: {adj['pairs']} - {adj['judged']} judge call(s), "
           f"{adj['tokens_spent']} of {adj['budget']} tokens (~{adj['budget'] // TOKENS_PER_PAIR_EST} pairs a run "
@@ -1152,7 +1198,7 @@ def _run_consolidation(apply, mode, has_llm):
           + (f"; {adj['errors']} pair(s) failed (left as is)" if adj.get("errors") else "")  # F10
           # #11: what the run did besides judging - each printed when it happened, 0 omitted
           + "".join(f"; {k.replace('_', ' ')} {adj[k]}" for k in
-                    ("requeued", "baselined", "healed")
+                    ("requeued", "baselined", "healed", "carry_kept")
                     if adj.get(k))
           + (f" ({adj['skipped']})" if adj.get("skipped") else "") + f" [{mode}]")
     if apply and (adj["replaces"] or adj.get("healed")):

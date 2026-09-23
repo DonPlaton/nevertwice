@@ -538,7 +538,7 @@ rewrite_desc(n, VETO_NEW, FIXED_NEW)                                           #
 _real_fields = cm._pair_fields
 
 
-def _locked(p):
+def _locked(p: Path) -> tuple[dict, str, str]:
     if Path(p).stem == n:
         raise PermissionError(13, "The process cannot access the file", str(p))
     return _real_fields(p)
@@ -598,7 +598,7 @@ _real_write = m.write_atomic
 win_before = (m.VAULT / "Decisions" / f"{n}.md").read_text(encoding="utf-8")
 
 
-def _winner_locked(path, text, *a, **k):
+def _winner_locked(path: Path, text: str | bytes, *a: object, **k: object) -> None:
     if Path(path).stem == n and Path(path).parent.name == "Decisions":
         raise PermissionError(13, "The process cannot access the file", str(path))
     return _real_write(path, text, *a, **k)
@@ -675,7 +675,7 @@ _real_both = m._iter_contested_both
 WALKS = [0]
 
 
-def _counting_both(*a, **k):
+def _counting_both(*a: object, **k: object) -> tuple[list, list]:
     WALKS[0] += 1
     return _real_both(*a, **k)
 
@@ -729,6 +729,10 @@ check("the retiring note's own hand-written sources reach the winner (R6)",
 #: R7 / R11 - the one list reader, on every shape the review named.
 for raw, want in (("[[a]], [[b]]", ["a", "b"]), ("[[a]] [[b]]", ["a", "b"]), ("[a, b]", ["a", "b"]),
                   (["[[sess]]", "sess2"], ["sess", "sess2"]), ("[[a|alias]]", ["a"]),
+                  #: the one shape where splitting on EVERY comma differs from splitting outside
+                  #: the links: a comma inside a link's alias (auditing session's M3 stayed green
+                  #: without it - ['y]]', 'b'])
+                  ("[[[a|x, y]], b]", ["a", "b"]), ("[stem-a, [[stem-b]]]", ["stem-a", "stem-b"]),
                   ("plain", ["plain"]), ("", []), (None, [])):
     check(f"_list_field({raw!r}) == {want} (R7)", m._list_field(raw) == want, str(m._list_field(raw)))
 check("and `contested` is read through it: a hand-written flow list names two stems",
@@ -754,7 +758,7 @@ crlf = wp.read_bytes()
 _real_sup = m.supersede_note
 
 
-def _raises(*a, **k):
+def _raises(*a: object, **k: object) -> bool:
     raise PermissionError(13, "cannot create Superseded/", "x")
 
 
@@ -769,13 +773,120 @@ check("and the undo restores the winner's exact bytes - CRLF stays CRLF",
       wp.read_bytes() == crlf, f"{len(crlf)} -> {len(wp.read_bytes())} bytes")
 
 d = fresh()
-(m.VAULT / ".consolidate_carry_pending.json").write_text("[]", encoding="utf-8")
-err = io.StringIO()
+o, n = pair()
+cm._set_contested(m.VAULT / "Decisions" / f"{o}.md", [])        # no pair to judge: only the ledger
+ledger = m.VAULT / ".consolidate_carry_pending.json"
+ledger.write_text(json.dumps([{"stem": n, "ntype": "decision", "recurrence": 3,
+                               "sources": [SA, "s-parked"], "supersedes": [o], "retired": o}]),
+                  encoding="utf-8")
+out = io.StringIO()
 from contextlib import redirect_stderr  # noqa: E402
-with redirect_stdout(io.StringIO()), redirect_stderr(err):
+with redirect_stdout(out), redirect_stderr(io.StringIO()):
     cm._run_consolidation(False, "DRY-RUN", False)
-check("a carry ledger left by 466a5d4 is reported, not ignored",
-      ".consolidate_carry_pending.json" in err.getvalue(), err.getvalue()[-300:])
+check("a dry run names the carries an earlier build parked, and applies none",
+      "would be applied" in out.getvalue() and ledger.exists()
+      and str(fm(n).get("recurrence") or "1") != "3", out.getvalue()[-300:])
+landed = cm._drain_old_carry_ledger(True)
+win = fm(n)
+check("apply lands each parked carry once through the idempotent merge, and removes the file",
+      landed == 1 and not ledger.exists() and str(win.get("recurrence")) == "3"
+      and "s-parked" in (win.get("sources") or []) and o in (win.get("supersedes") or []), str(win))
+
+print("\n- doctor's exempt keys are read as lists by the engine (a claim held here) -")
+#: doctor._READ_AS_LIST is a claim about the engine, so it is held against the engine: each key is
+#: fed `[[stem]]` through the reader the engine really uses for it (auditing session's (c) on
+#: 63eb7b2). Kept in this suite, not doctor's: the readers need a sandboxed engine, and a sandbox
+#: made inside the doctor suite rebased memory_hook for every test after it (fourth review).
+import doctor  # noqa: E402
+d = fresh()
+stamps = m.VAULT / "Decisions" / "2026-01-09-p-decision-stamps.md"
+stamps.parent.mkdir(parents=True, exist_ok=True)
+stamps.write_text("---\ntype: decision\ncontested: [[2026-01-10-p-decision-c]]\n"
+                  "disputed: [[2026-01-10-p-decision-d]]\nsources: [[s-one]]\n"
+                  "supersedes: [[2026-01-01-p-decision-older]]\n---\n\n# stamps\n\nbody\n", encoding="utf-8")
+c_rows, d_rows = m._iter_contested_both(None)
+readers = {
+    "contested": [s for r in c_rows for s in r["new_stems"]] == ["2026-01-10-p-decision-c"],
+    "disputed": [s for r in d_rows for s in r["new_stems"]] == ["2026-01-10-p-decision-d"],
+    "sources": m._note_recur_sources(stamps)[1] == {"s-one"},
+}
+cm._carry_into(stamps, stamps.read_text(encoding="utf-8"), 1, set(), [])
+readers["supersedes"] = m._read_frontmatter_file(stamps).get("supersedes") == ["2026-01-01-p-decision-older"]
+check("every key the doctor exempts is read as a list by the engine's own reader for it",
+      set(readers) == set(doctor._READ_AS_LIST) and all(readers.values()), str(readers))
+
+print("\n- fourth review of 2026-09-23 -")
+for raw, want in (("[[a]], b", ["a", "b"]), ("stem-a, [[stem-b]]", ["stem-a", "stem-b"]),
+                  ("[[a]] x", ["a", "x"])):
+    check(f"_list_field({raw!r}) == {want}: an unbracketed mixed string keeps its plain items",
+          m._list_field(raw) == want, str(m._list_field(raw)))
+import time as _time  # noqa: E402
+_row = " ".join(f"[[s{i}]]" for i in range(24)) + " (imported)"
+_t0 = _time.perf_counter()
+m._list_field(_row)
+_ms = (_time.perf_counter() - _t0) * 1000
+#: 24 links and a word: the pattern that decided "links only" before took ~3 s here (x2.1 a link,
+#: 7.3 ms at 16, no answer in 120 s at 20+), on the write path under the vault lock
+check(f"a row of 24 links and a word is read in linear time ({_ms:.2f} ms, budget 100)", _ms < 100)
+
+d = fresh()
+o, n = pair()
+_real_sup = m.supersede_note
+
+
+def _unlinked_then_raised(p: Path, *a: object, **k: object) -> bool:
+    _real_sup(p, *a, **k)                                  # the retirement happens...
+    raise OSError("stderr is detached")                    # ...and the log line after it raises
+
+
+m.supersede_note = _unlinked_then_raised
+try:
+    res = cm.adjudicate_contested(apply=True, has_llm=True, judge=judge(True))
+finally:
+    m.supersede_note = _real_sup
+win = fm(n)
+check("an error AFTER the old note left is a retirement: the carry is kept, nothing left",
+      (d / "Decisions" / "Superseded" / f"{o}.md").exists() and res.get("errors") == 0
+      and res.get("left") == 0 and win.get("supersedes") == [o]
+      and set(win.get("sources") or []) == {SA, SB}, f"{res} {win}")
+
+d = fresh()
+o, n = pair()
+wp = m.VAULT / "Decisions" / f"{n}.md"
+before_bytes = wp.read_bytes()
+
+
+def _bug(*a: object, **k: object) -> bool:
+    raise ValueError("a bug inside supersede_note")
+
+
+m.supersede_note = _bug
+raised = None
+try:
+    cm.adjudicate_contested(apply=True, has_llm=True, judge=judge(True))
+except ValueError as e:
+    raised = e
+finally:
+    m.supersede_note = _real_sup
+check("a non-disk error still stops the run, but only after the carry is undone",
+      raised is not None and wp.read_bytes() == before_bytes and fm(o).get("contested") == [n],
+      repr(raised))
+
+#: The near-dup merge unions a cluster's sources: through the one list reader (so "[[s1]]" and
+#: s1 are one session) and under the cap and order every other sources writer keeps.
+d = fresh()
+keep_fp = m.VAULT / "Decisions" / "2026-01-01-p-decision-keep.md"
+member_fp = m.VAULT / "Decisions" / "2026-01-02-p-decision-member.md"
+keep_fp.parent.mkdir(parents=True, exist_ok=True)
+keep_fp.write_text("---\ntype: decision\nsources: " + json.dumps(["s01"] + [f"k{i:02d}" for i in range(20)])
+                   + "\n---\n\n# keep\n\nbody\n", encoding="utf-8")
+member_fp.write_text("---\ntype: decision\nsources: " + json.dumps(["[[s01]]"] + [f"m{i:02d}" for i in range(20)])
+                     + "\n---\n\n# member\n\nbody\n", encoding="utf-8")
+cm._union_meta_into_keeper(keep_fp, [member_fp])
+merged_src = m._read_frontmatter_file(keep_fp).get("sources") or []
+check("the merge counts [[s01]] and s01 once, and keeps the newest CAP sources in sorted order",
+      len(merged_src) == min(41, m.RECUR_SOURCES_CAP) and merged_src == sorted(merged_src)
+      and "[[s01]]" not in merged_src and merged_src.count("s01") <= 1, f"{len(merged_src)} {merged_src[:4]}")
 
 print(f"\nK8 layer 3: {len(RUN) - len(FAILED)} passed, {len(FAILED)} failed")
 sys.exit(1 if FAILED else 0)

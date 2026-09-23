@@ -59,8 +59,9 @@ def install_recorder(m) -> None:
     same project, type and slug (live or archived) beside the item about to be written."""
     orig = m.write_typed_note
 
-    def recorder(folder, item, project, date, tags, ntype, session_stem_=None, siblings=None,
-                 why=None):
+    def recorder(folder: str, item: object, project: str, date: str, tags: list, ntype: str,
+                 session_stem_: str | None = None, siblings: list[str] | None = None,
+                 why: list | None = None) -> str:
         #: `why` is the writer's reason channel (review 2026-09-23, R14): process_session passes
         #: it, and a recorder without it raised TypeError on every capture, which the stand's
         #: `except Exception` turned into an error row per case - a stand measuring nothing.

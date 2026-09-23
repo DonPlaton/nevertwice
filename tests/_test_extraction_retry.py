@@ -232,23 +232,54 @@ _ROOT = Path(__file__).resolve().parents[1]
 _writer_kw = [p.name for p in inspect.signature(m.write_typed_note).parameters.values()
               if p.default is not inspect.Parameter.empty]
 _wrappers = []
-for _py in sorted(list((_ROOT / "research").rglob("*.py")) + list((_ROOT / "tools").glob("*.py"))):
+
+
+def _stand_in_problems(fn: ast.AST) -> list[str]:
+    """What a stand-in for the writer gets wrong: a keyword it cannot take, or `why` taken and not
+    handed on to the writer it wraps (fourth review: the sweep only asked the first question)."""
+    args = fn.args
+    names = {a.arg for a in args.args + args.kwonlyargs}
+    missing = [] if args.kwarg else [k for k in _writer_kw if k not in names]
+    if isinstance(fn, ast.Lambda) or missing or args.kwarg:
+        return missing                     # a **kw lambda/def takes anything and hands on nothing
+    passes = any(isinstance(c, ast.Call) and any(kw.arg == "why" or kw.arg is None for kw in c.keywords)
+                 for c in ast.walk(fn))
+    return [] if passes else ["why accepted but not passed on"]
+
+
+for _py in sorted(list((_ROOT / "research").rglob("*.py")) + list((_ROOT / "tools").rglob("*.py"))):
     try:
         _tree = ast.parse(_py.read_text(encoding="utf-8"))
     except (SyntaxError, UnicodeDecodeError):
         continue
-    _defs = {n.name: n for n in ast.walk(_tree) if isinstance(n, ast.FunctionDef)}
+    _defs: dict[str, list] = {}
+    for _d in ast.walk(_tree):
+        if isinstance(_d, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            _defs.setdefault(_d.name, []).append(_d)
+    _values = []
     for _n in ast.walk(_tree):
-        if (isinstance(_n, ast.Assign) and isinstance(_n.value, ast.Name)
-                and any(isinstance(t, ast.Attribute) and t.attr == "write_typed_note" for t in _n.targets)
-                and _n.value.id in _defs):
-            _fn = _defs[_n.value.id]
-            _names = {a.arg for a in _fn.args.args + _fn.args.kwonlyargs}
-            _missing = [] if _fn.args.kwarg else [k for k in _writer_kw if k not in _names]
-            _wrappers.append((f"{_py.relative_to(_ROOT)}:{_fn.name}", _missing))
+        if isinstance(_n, ast.Assign) and any(isinstance(t, ast.Attribute) and t.attr == "write_typed_note"
+                                              for t in _n.targets):
+            _values.append(_n.value)
+        elif (isinstance(_n, ast.Call) and isinstance(_n.func, ast.Name) and _n.func.id == "setattr"
+              and len(_n.args) == 3 and isinstance(_n.args[1], ast.Constant)
+              and _n.args[1].value == "write_typed_note"):
+            _values.append(_n.args[2])
+    for _v in _values:
+        where = f"{_py.relative_to(_ROOT)}:{getattr(_v, 'lineno', '?')}"
+        if isinstance(_v, ast.Name) and _v.id in _defs:
+            #: every def of that name - a later one can shadow the first
+            probs = [p for d in _defs[_v.id] for p in _stand_in_problems(d)]
+        elif isinstance(_v, ast.Lambda):
+            probs = _stand_in_problems(_v)
+        elif isinstance(_v, ast.Name):
+            probs = []                     # restoring the real writer (`= real_write`), not a stand-in
+        else:
+            probs = [f"a {type(_v).__name__} stand-in this sweep cannot read - use a def"]
+        _wrappers.append((where, probs))
 check("the sweep finds the stand-ins (k8_collisions' recorder among them)",
       any("k8_collisions" in w for w, _ in _wrappers), str(_wrappers))
-check("each accepts every keyword the writer takes - " + ", ".join(_writer_kw),
+check("each takes every keyword the writer takes, and hands `why` on - " + ", ".join(_writer_kw),
       all(not miss for _, miss in _wrappers), str([w for w in _wrappers if w[1]]))
 
 print(f"\nextraction retry: {len(RUN) - len(FAILED)} passed, {len(FAILED)} failed")

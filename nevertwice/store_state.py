@@ -63,7 +63,7 @@ def _log(msg: str) -> None:
 
 # ── atomic publish ──────────────────────────────────────────────────────
 
-def write_atomic(path: Path, text: str, encoding: str = "utf-8") -> None:
+def write_atomic(path: Path, text: str | bytes, encoding: str = "utf-8") -> None:
     """Crash-safe write: temp file in the same dir + os.replace (atomic on
     NTFS). A crash mid-write can no longer truncate the live file (audit
     F1/F3/F30 - the corruption that triggered mass re-processing)."""
@@ -83,7 +83,13 @@ def write_atomic(path: Path, text: str, encoding: str = "utf-8") -> None:
         # landed as "\r\r\n", which reads back through universal newlines as a BLANK LINE.
         # Each consolidation rewrite added another, so the growth compounded. A crash-safe
         # write that changes the bytes it was handed is not one.
-        tmp.write_text(text, encoding=encoding, newline="")
+        if isinstance(text, bytes):
+            #: bytes are written as they are - the consolidator's undo of a carry restores a
+            #: note's exact bytes through here rather than a second copy of this function
+            #: (fourth review, 2026-09-23)
+            tmp.write_bytes(text)
+        else:
+            tmp.write_text(text, encoding=encoding, newline="")
         _replace_with_retry(tmp, path)
     except BaseException:
         try:

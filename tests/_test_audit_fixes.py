@@ -148,6 +148,22 @@ try:
             "proj", "2026-06-05", ["t"], "pattern", session_stem_="2026-06-05-1200-proj-lone")
     check("W7 ON: the same lone supersede is quarantined when the sources are the engine's own form",
           lie2 == "" and (d3 / "Patterns" / "2026-06-01-proj-pattern-corroborated-truth.md").exists())
+    # And the other side of the same rule: the SAME lesson restated by a new session on a later day
+    # is corroboration, not an override. Counting none of the retired notes' sources quarantined it,
+    # and a lesson could never recur past 2 (fourth review, 2026-09-23 - reproduced on 6e96441).
+    d4 = sandbox()
+    first = m.write_typed_note("Patterns", {"title": "pin the sampler", "description": "set temperature 0 for a benchmark"},
+                               "proj", "2026-06-01", ["t"], "pattern", session_stem_="2026-06-01-1000-proj-s1")
+    fp4 = d4 / "Patterns" / f"{first}.md"
+    fp4.write_text(fp4.read_text(encoding="utf-8").replace("---\n", '---\nrecurrence: 2\nsources: ["s1", "s2"]\n', 1),
+                   encoding="utf-8")
+    again = m.write_typed_note("Patterns", {"title": "pin the sampler", "description": "set temperature 0 for a benchmark"},
+                               "proj", "2026-06-05", ["t"], "pattern", session_stem_="2026-06-05-1000-proj-s3")
+    check("W7 ON: an honest restatement of a corroborated lesson by a new session is not quarantined",
+          again != "" and not list((d4 / "Patterns" / "Quarantine").glob("*.md"))
+          and int(str(m._read_frontmatter_file(d4 / "Patterns" / f"{again}.md").get("recurrence"))) >= 3)
+    if again == "":
+        print(f"         quarantined instead: {[p.name for p in (d4 / 'Patterns').rglob('*.md')]}")
 finally:
     m.QUARANTINE_MODE = _q
 

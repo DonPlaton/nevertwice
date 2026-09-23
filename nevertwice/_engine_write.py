@@ -227,10 +227,21 @@ def _list_field(v: object) -> list[str]:
     Obsidian writes by hand - an unquoted flow list `[a, b]`, a bare `[[link]]`, links in a row
     `[[a]], [[b]]` - as ONE string, and each reader then guessed: `_contested_of` took the string
     as one stem, the consolidator iterated it a character at a time (review 2026-09-23, #3 and its
-    follow-ups R7 and R11). Wiki-links anywhere in a string are their targets; otherwise a
-    bracketed string is split on commas; any other string is one entry. A list keeps its items,
-    each unwrapped the same way, so `["[[sess]]"]` and `["sess"]` name the same session. `doctor
-    check_list_fields` still reports the hand-written shape; this only reads it."""
+    follow-ups R7 and R11). The rules, in order:
+
+    - links and nothing else (`[[a]]`, `[[a]], [[b]]`, `[[a]] [[b]]`) are their targets;
+    - a bracketed string is a flow list, split on the commas OUTSIDE `[[...]]`, and each item is
+      unwrapped - so `[stem-a, [[stem-b]]]` is two stems and `[[[a|x, y]], b]` is `a` and `b`;
+    - an unbracketed string with a link in it is split the same way (`[[a]], b` is two entries);
+    - any other string is one entry.
+
+    Every item keeps its plain text beside a link rather than dropping it (third and fourth
+    reviews, 2026-09-23: the stamp writers wrote `contested` back without the dropped stems). A
+    list keeps its items, each unwrapped the same way, so `["[[sess]]"]` and `["sess"]` name the
+    same session. No regex here can backtrack: "links only" is decided by deleting the links and
+    looking at what is left, because the pattern that decided it before took exponential time on
+    a row of twenty links followed by a word. `doctor check_list_fields` still reports the
+    hand-written shape; this only reads it."""
     if isinstance(v, list):
         out: list[str] = []
         for x in v:
@@ -242,25 +253,24 @@ def _list_field(v: object) -> list[str]:
     if not isinstance(v, str) or not v.strip():
         return []
     s = v.strip()
-    if _ONLY_LINKS_RE.fullmatch(s):                     # [[a]] / [[a]], [[b]] / [[a]] [[b]]
+    if "[[" in s and not _WIKILINK_RE.sub("", s).strip(" \t,"):
         return [t.strip() for t in _WIKILINK_RE.findall(s) if t.strip()]
-    if s.startswith("[") and s.endswith("]"):          # a flow list; links may be its items
-        #: every item kept: `[stem-a, [[stem-b]]]` is two stems. Taking only the link targets of
-        #: a string with `[[` in it dropped stem-a, and the stamp writers then wrote `contested`
-        #: back without it - a pair off the judge's queue for good (third review, 2026-09-23)
+    if s.startswith("[") and s.endswith("]"):
         return [y for x in _split_outside_links(s[1:-1]) for y in _unwrap_list_item(x)]
-    return _unwrap_list_item(s)
-
-
-_ONLY_LINKS_RE = _lazy_re(r"\s*(?:\[\[[^\[\]]+\]\]\s*,?\s*)+")
+    if "[[" in s:
+        return [y for x in _split_outside_links(s) for y in _unwrap_list_item(x)]
+    return [s]
 
 
 def _unwrap_list_item(x: str) -> list[str]:
-    """One item of a list field: quotes stripped, a link replaced by its target."""
+    """One item of a list field: quotes stripped, each link replaced by its target, and any plain
+    text beside a link kept as an entry of its own (`[[a]] x` is `a` and `x`)."""
     x = x.strip().strip("\"'").strip()
-    if "[[" in x:
-        return [t.strip() for t in _WIKILINK_RE.findall(x) if t.strip()]
-    return [x] if x else []
+    if "[[" not in x:
+        return [x] if x else []
+    targets = [t.strip() for t in _WIKILINK_RE.findall(x) if t.strip()]
+    rest = _WIKILINK_RE.sub(" ", x).strip(" \t,\"'")
+    return targets + ([" ".join(rest.split())] if rest else [])
 
 
 def _split_outside_links(inner: str) -> list[str]:
@@ -853,14 +863,19 @@ def write_typed_note(folder: str, item, project: str, date: str,
     dest = p
     quarantine_reason = ""
     if QUARANTINE_MODE:
-        #: The NEW statement's own corroboration: its history when it refreshes itself in place, and
-        #: this session - not the sources of the notes it is about to retire. Those are evidence for
-        #: the OLD statement; counting them made a lone note that retires a corroborated one look
-        #: corroborated itself, so "single-source supersedes a corroborated note" could not fire on
-        #: any note whose `sources` the engine read. It fired only when a hand-written flow list was
-        #: misread as no sources - which the one list reader stopped doing (third review, 2026-09-23;
-        #: _test_audit_fixes' W7 fixture). The carry into recurrence still uses prior_sources.
-        n_sources = len(set(absorb_sources) | ({session_stem_} if session_stem_ else set())) or 1
+        #: What corroborates the NEW statement: its own history when it refreshes itself in place,
+        #: the sessions of the notes that are THIS lesson restated (a same-slug restatement, a
+        #: near-duplicate twin) - and not the sessions of a note it replaces by an explicit
+        #: `supersedes`/`contradicts`, which are evidence for the statement being overturned.
+        #: Counting every retired note's sources made a lone override of corroborated truth look
+        #: corroborated, so that branch never fired on a note whose sources were read (third review);
+        #: counting none of them quarantined every honest restatement by a new session, and a lesson
+        #: could not recur past 2 (fourth review, 2026-09-23). Read only when quarantine is on.
+        same_lesson = set(absorb_sources)
+        for old in to_retire:
+            if retire_via.get(old) in ("slug", "twin"):
+                same_lesson |= _note_recur_sources(old)[1]
+        n_sources = len(same_lesson | ({session_stem_} if session_stem_ else set())) or 1
         qconf = _coerce_confidence(confidence)
         if n_sources < 2 and qconf is not None and qconf >= QUARANTINE_CONF:
             quarantine_reason = "single-source near-max confidence"

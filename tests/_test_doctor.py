@@ -583,32 +583,21 @@ def test_a_list_the_engine_cannot_read_is_counted() -> None:
               engine_form in r and quoted in r and r.index(engine_form) < r.index(quoted)
               and all(k in r for k in doctor._READ_AS_LIST), r)
 
-    #: `_READ_AS_LIST` is a claim about the engine, so it is held against the engine: each key is fed
-    #: `[[stem]]` through the reader the engine really uses for it (auditing session's (c) on
-    #: 63eb7b2). The day one of them stops going through `_list_field`, this fails instead of the
-    #: doctor silently exempting a real misread.
-    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "nevertwice"))
-    import memory_hook as m  # noqa: PLC0415
-    import consolidate_memory as cm  # noqa: PLC0415
-    from _sandbox import make_sandbox  # noqa: PLC0415
-    make_sandbox(m, "doctor_readers_", offline=True)
-    dec = m.VAULT / "Decisions"
-    dec.mkdir(parents=True, exist_ok=True)
-    stamps = dec / "2026-01-09-p-decision-stamps.md"
-    stamps.write_text("---\ntype: decision\ncontested: [[2026-01-10-p-decision-c]]\n"
-                      "disputed: [[2026-01-10-p-decision-d]]\nsources: [[s-one]]\n"
-                      "supersedes: [[2026-01-01-p-decision-older]]\n---\n\n# stamps\n\nbody\n",
-                      encoding="utf-8")
-    c_rows, d_rows = m._iter_contested_both(None)
-    readers = {
-        "contested": [s for r in c_rows for s in r["new_stems"]] == ["2026-01-10-p-decision-c"],
-        "disputed": [s for r in d_rows for s in r["new_stems"]] == ["2026-01-10-p-decision-d"],
-        "sources": m._note_recur_sources(stamps)[1] == {"s-one"},
-    }
-    cm._carry_into(stamps, stamps.read_text(encoding="utf-8"), 1, set(), [])
-    readers["supersedes"] = m._read_frontmatter_file(stamps).get("supersedes") == ["2026-01-01-p-decision-older"]
-    check("every key the doctor exempts is read as a list by the engine's own reader for it",
-          set(readers) == set(doctor._READ_AS_LIST) and all(readers.values()), str(readers))
+
+    #: The exemption is for values the engine's reader takes cleanly, not for any value it returns
+    #: something for: `[[a, b]]` reads as ONE stem 'a, b' that names no note, and an unclosed
+    #: `[a, [[b, c]` loses what it cannot close (fourth review, 2026-09-23).
+    with tempfile.TemporaryDirectory() as tmp:
+        only = Path(tmp) / "store" / "Decisions"
+        only.mkdir(parents=True)
+        for value in ("[[2026-01-01-p-decision-a, 2026-01-01-p-decision-b]]",
+                      "[2026-01-01-p-decision-a, [[2026-01-01-p-decision-b, 2026-01-01-p-decision-c]"):
+            (only / "2026-01-08-p-decision-bad.md").write_text(
+                f"---\ntype: decision\nsupersedes: {value}\n---\n\nbody\n", encoding="utf-8")
+            result = check_list_fields(only.parent)
+            check(f"an exempt key is still reported when its reader would lose an entry: {value[:24]}...",
+                  result["status"] == doctor.WARN and "supersedes" in result["detail"],
+                  f"{result['status']}: {result['detail']}")
 
     with tempfile.TemporaryDirectory() as tmp:
         result = check_list_fields(Path(tmp) / "absent")

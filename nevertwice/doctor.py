@@ -372,6 +372,15 @@ def _frontmatter_lines(path: Path) -> list[str] | None:
 _READ_AS_LIST = ("contested", "disputed", "supersedes", "sources")
 
 
+def _reads_cleanly(items: list[str], raw: object) -> bool:
+    """True when the engine's list reader took `raw` apart cleanly: something came out, the
+    brackets of the raw value balance, and no entry still holds a comma or a bracket - an entry
+    like 'a, b' is one stem that names no note."""
+    text = raw if isinstance(raw, str) else ""
+    balanced = text.count("[") == text.count("]")
+    return bool(items) and balanced and not any(set(i) & {",", "[", "]"} for i in items)
+
+
 def check_list_fields(vault: Path) -> dict:
     """Frontmatter lists written in a form the engine's parser reads as something else.
 
@@ -391,12 +400,16 @@ def check_list_fields(vault: Path) -> dict:
     - a value that starts with `[` AND ends with `]`, or a block list. A leading bracket alone
       is a scalar - `status: [WIP] reviewing`, `source: [doc](url)` - and the first version
       reported those with a repair that would have turned them into lists;
-    - a bare wiki-link `[[note]]` is counted on every key. Two earlier versions exempted it,
-      first for every key and then for all but `contested`/`disputed`, and the review found the
-      exemption still covered `supersedes` and `sources`, which the consolidator iterates one
-      character at a time when they are strings. Which keys the engine reads as lists is not
-      something a diagnostic can list without drifting, so it no longer tries: a bare link is
-      reported, and the repair says what to do in either reading.
+    - a bare wiki-link `[[note]]` is list-shaped too.
+
+    Which keys are then reported: every key the parser does not return as a list, EXCEPT the
+    keys in `_READ_AS_LIST` when the engine's own list reader (`_list_field`) takes the value
+    cleanly - since 5961f38/6e96441 contested, disputed, supersedes and sources are read through
+    it, and a link, links in a row or a flow list there is read as meant. "Cleanly" is checked,
+    not assumed: brackets balanced and no entry still holding a comma or a bracket, so
+    `[[a, b]]` or an unclosed `[a, [[b` on those keys is still reported (fourth review,
+    2026-09-23). A block list reads as empty on every key and is always reported. The list of
+    keys is a claim about the engine, held by tests/_test_k8_adjudicate.py.
     """
     title = "frontmatter lists are in a form the engine reads as lists"
     if not vault.exists():
@@ -440,7 +453,7 @@ def check_list_fields(vault: Path) -> dict:
             #: parser's answer. `sources` joined the list when its recurrence reader moved onto
             #: `_list_field` (third review, 2026-09-23).
             read_ok = {k for k in list_keys + link_keys
-                       if k in _READ_AS_LIST and _m._list_field(fm.get(k))}
+                       if k in _READ_AS_LIST and _reads_cleanly(_m._list_field(fm.get(k)), fm.get(k))}
             misread = [k for k in list_keys if k not in read_ok and not isinstance(fm.get(k), list)]
             bare = [k for k in link_keys if k not in read_ok and not isinstance(fm.get(k), list)]
             if misread or bare:
@@ -456,9 +469,10 @@ def check_list_fields(vault: Path) -> dict:
     return _check("list_fields", title, WARN, detail,
                   'rewrite a list as a JSON list on one line - tags: ["a", "b"] - which is the '
                   "form the engine writes and reads back. A bare [[link]] reads as text either way. "
-                  "The keys nevertwice itself reads as note lists - contested, disputed, supersedes, "
-                  "sources - are read correctly in any of these forms and are not reported. "
-                  'Only for an Obsidian link property, quote it - related: "[[note]]"')
+                  f"The keys nevertwice reads as note lists - {', '.join(_READ_AS_LIST)} - also take "
+                  "links, links in a row and an unquoted flow list; a block list (- item lines) "
+                  "reads as empty on those keys too, and they are reported only when they would "
+                  'lose an entry. Only for an Obsidian link property, quote it - related: "[[note]]"')
 
 
 def check_package_matches_repo() -> dict:
