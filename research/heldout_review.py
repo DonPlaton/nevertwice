@@ -337,18 +337,49 @@ render();
 """
 
 
-def write_page(cands: list[dict], target: int) -> None:
+def write_page(cands: list[dict], target: int, page: Path | None = None) -> Path:
+    page = page or PAGE
     html = (PAGE_TEMPLATE
             .replace("__DATA__", json.dumps(cands, ensure_ascii=False))
             .replace("__TARGET__", str(target)))
-    PAGE.parent.mkdir(parents=True, exist_ok=True)
-    PAGE.write_text(html, encoding="utf-8", newline="\n")
+    page.parent.mkdir(parents=True, exist_ok=True)
+    page.write_text(html, encoding="utf-8", newline="\n")
+    return page
 
 
-def collect(marks_path: Path) -> dict:
-    """Marks + candidates -> a corpus in the shape `code_sessions_eval.py --corpus` reads."""
+def merged_marks(paths: list[Path]) -> dict:
+    """Several marks files as one: a later file wins where two mark the same candidate.
+
+    The first review stopped at its target (73 marked of 200, the easiest first), which is what
+    makes its number a dev-set figure. The rest is marked in a second sitting, on a page of only
+    the unmarked cards, and both sittings are collected together."""
+    out: dict = {}
+    for p in paths:
+        out.update(json.loads(p.read_text(encoding="utf-8"))["marks"])
+    return out
+
+
+def unmarked(cands: list[dict], marks: dict) -> list[dict]:
+    """The candidates no marks file has decided yet, in the page's usual order."""
+    return [c for c in cands if c["id"] not in marks]
+
+
+def _paths(name: str) -> tuple[Path, Path]:
+    """The corpus file and its manifest for a corpus name; the dev-set name keeps its old paths."""
+    if name == "code_heldout_v2":
+        return CORPUS, MANIFEST
+    return OUT_DIR / f"{name}.json", MANIFEST.parent / f"{name}_review_manifest.json"
+
+
+def collect(marks_path: Path | list[Path], name: str = "code_heldout_v2") -> dict:
+    """Marks + candidates -> a corpus in the shape `code_sessions_eval.py --corpus` reads.
+
+    `name` picks the corpus file and its manifest. The default is the dev-set corpus the
+    registered claims were measured on; the clean corpus, built from every card, is written beside
+    it under another name, so the dev-set figure stays reproducible."""
+    corpus_path, manifest_path = _paths(name)
     cands = {c["id"]: c for c in json.loads(CANDIDATES.read_text(encoding="utf-8"))["candidates"]}
-    marks = json.loads(marks_path.read_text(encoding="utf-8"))["marks"]
+    marks = merged_marks(marks_path if isinstance(marks_path, list) else [marks_path])
     projects, kept, edited = [], 0, 0
     for cid, mk in marks.items():
         if mk.get("verdict") != "yes" or cid not in cands:
@@ -370,17 +401,17 @@ def collect(marks_path: Path) -> dict:
                            "quote": c["quote"], "gold_sessions": [f"{pid}-s0"],
                            "hand_marked": True, "edited": bool(mk.get("edited"))}],
         })
-    corpus = {"name": "code_heldout_v2", "schema_version": 1,
+    corpus = {"name": name, "schema_version": 1,
               "generator_model": "glm-4.7-flash + owner review", "seed": SEED,
               "purpose": "held-out questions over the owner's own sessions, accepted by hand",
               "projects": projects}
-    CORPUS.write_text(json.dumps(corpus, ensure_ascii=False, indent=1), encoding="utf-8", newline="\n")
+    corpus_path.write_text(json.dumps(corpus, ensure_ascii=False, indent=1), encoding="utf-8", newline="\n")
     verdicts: dict = {}
     for mk in marks.values():
         verdicts[mk.get("verdict", "?")] = verdicts.get(mk.get("verdict", "?"), 0) + 1
     manifest = {
-        "corpus": {"name": "code_heldout_v2", "path_outside_repo": str(CORPUS),
-                   "sha256": hashlib.sha256(CORPUS.read_bytes()).hexdigest(),
+        "corpus": {"name": name, "path_outside_repo": str(corpus_path),
+                   "sha256": hashlib.sha256(corpus_path.read_bytes()).hexdigest(),
                    "questions": kept, "edited_by_hand": edited},
         "review": {"candidates": len(cands), "marked": len(marks), "verdicts": verdicts},
         "note": ("Questions over the owner's own transcripts, every one accepted by a person. "
@@ -388,7 +419,8 @@ def collect(marks_path: Path) -> dict:
                  "rephrasing a sentence it read correctly is a drop the reviewer repairs. "
                  "Neither the questions nor the transcripts are in the repository."),
     }
-    MANIFEST.write_text(json.dumps(manifest, ensure_ascii=False, indent=1) + "\n", encoding="utf-8", newline="\n")
+    manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=1) + "\n",
+                             encoding="utf-8", newline="\n")
     return manifest
 
 
@@ -400,17 +432,30 @@ def main() -> int:
     ap.add_argument("--target", type=int, default=45, help="questions the reviewer is aiming for")
     ap.add_argument("--dry", action="store_true", help="count slices, call no model")
     ap.add_argument("--page-only", action="store_true", help="rebuild the page from the saved file")
-    ap.add_argument("--collect", default="", help="marks file -> corpus + manifest")
+    ap.add_argument("--collect", nargs="*", default=[],
+                    help="marks file(s) -> corpus + manifest; a later file wins on the same card")
+    ap.add_argument("--skip-marked", nargs="*", default=[],
+                    help="with --page-only: a page of only the cards these marks files leave "
+                         "undecided, written to review_remaining.html")
+    ap.add_argument("--name", default="code_heldout_v2",
+                    help="with --collect: the corpus name (its file and manifest); the dev-set "
+                         "default keeps its paths, a clean corpus goes beside it")
     args = ap.parse_args()
 
     if args.collect:
-        man = collect(Path(args.collect))
+        man = collect([Path(p) for p in args.collect], args.name)
+        corpus_path, manifest_path = _paths(args.name)
         print(json.dumps(man, ensure_ascii=False, indent=1))
-        print(f"\ncorpus -> {CORPUS}\nmanifest -> {MANIFEST}")
+        print(f"\ncorpus -> {corpus_path}\nmanifest -> {manifest_path}")
         return 0
 
     if args.page_only:
         cands = json.loads(CANDIDATES.read_text(encoding="utf-8"))["candidates"]
+        if args.skip_marked:
+            left = unmarked(cands, merged_marks([Path(p) for p in args.skip_marked]))
+            page = write_page(left, len(left), OUT_DIR / "review_remaining.html")
+            print(f"page -> {page}  ({len(left)} unmarked of {len(cands)} candidates)")
+            return 0
         write_page(cands, args.target)
         print(f"page -> {PAGE}  ({len(cands)} candidates)")
         return 0
