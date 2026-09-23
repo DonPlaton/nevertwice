@@ -155,7 +155,8 @@ After setting `NEVERTWICE_EMBED_QUANT`, rebuild the index once the same way.
 
 | Variable | Default | Notes |
 |---|---|---|
-| `NEVERTWICE_CROSS_PROJECT` | `1` | Surface lessons from other projects. |
+| `NEVERTWICE_CROSS_PROJECT` | `universal` | `off` (`0`) - no cross-project section at all. `all` (`1`) - every OTHER project's own notes, shown labelled with their source project (the original, unrestricted behaviour). `universal` (default, unset, or empty) - ONLY the synthetic `universal` project's notes: lessons the sleep-time promoter (`nevertwice/principles.py`) de-identified (`principle_scan`) and found independently recurring across >=2 different projects. A project's own notes never reach another project through this path in `universal` mode. An unrecognised value degrades to `universal` with one logged warning. |
+| `NEVERTWICE_PRINCIPLE` | `1` | Ask the extractor for a de-identified, project-independent `principle` sentence on pattern/mistake items (off = the schema line and its rubric are both fully omitted from the prompt). |
 | `NEVERTWICE_CROSS_K` | `2` | Max cross-project lessons. |
 | `NEVERTWICE_CROSS_SIM_FLOOR` | `0.5` | Min similarity for a cross-project hit. |
 

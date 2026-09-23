@@ -414,6 +414,17 @@ below is read in context:
   SOTA claims.
 - **W14 [info] `sources` frontmatter** adds bounded store bloat (≤25 session stems) on recurring
   notes; not injected into context, so no recall-token cost.
+- **W16 [KNOWN GAP, Q5/A4] `_user_brief` is a second cross-project channel the principle-layer
+  boundary does not cover.** `NEVERTWICE_CROSS_PROJECT` (`universal`/`all`/`off`,
+  `docs/THREAT_MODEL.md`'s "cross-project recall" boundary) governs the `🔗 Similar lessons from
+  other projects` section only. `_user_brief` (`_engine_recall.py`, built by
+  `build_user_model.py` → `User/profile.md`, gated by the separate `NEVERTWICE_USER_MODEL`) is a
+  learned working-profile summary injected at SessionStart independently of `CROSS_PROJECT_MODE`
+  - it can carry whatever the profile-builder distilled ACROSS every project it has seen,
+  regardless of `off`/`universal`/`all`. Setting `NEVERTWICE_CROSS_PROJECT=off` does not touch
+  this second channel. Not fixed here - it is out of Q5's scope (PLAN-Q3Q5.md's "Вне рамки"
+  list, risk R12) - and is recorded so a reader of the cross-project boundary does not assume
+  it is the only one.
 
 ## Less-traveled-path audit (2026-06-17)
 

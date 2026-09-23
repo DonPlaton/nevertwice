@@ -134,6 +134,27 @@ crossing an MCP or hook boundary.
   is a protocol violation that confuses every conforming client. —
   `tests/_test_properties.py::a notification (no id) is never answered`
 
+## Boundary: cross-project recall
+
+- **Owner:** `nevertwice/_engine_recall.py` — `retrieve_cross_project`, `CROSS_PROJECT_MODE`
+- **Trusted:** nothing. A project's own notes are untrusted with respect to every OTHER
+  project until something has de-identified and independently corroborated them.
+- **Untrusted:** a project's own title, description, entities and source project name -
+  whether any of it may be shown inside a DIFFERENT project's session.
+- **Claim:** In the default mode (`universal`), a cross-project hit's shown project is always
+  the literal `universal` constant, never the record's own `project` field - so a mistagged or
+  hand-edited note cannot leak a source project's name through the injection line. —
+  `tests/_test_cross_mode.py::every hit's shown project is 'universal'`
+- **Claim:** In `universal` mode, project A's own notes never reach project B's cross-project
+  section, proved against a positive control: the same query in `all` mode (the unrestricted,
+  opt-in legacy behaviour) DOES surface them, so the negative result in `universal` mode is not
+  merely an empty test. —
+  `tests/_test_cross_mode.py::'all' mode DOES surface project A's note (proves the test can see a leak)`
+- **Residual risk:** `all` mode is still available (`NEVERTWICE_CROSS_PROJECT=all`) and is, by
+  design, the unrestricted pre-Q5 behaviour - choosing it re-opens this boundary entirely. The
+  `_user_brief` learned user-profile injection (`build_user_model.py`) is a SEPARATE
+  cross-project channel this boundary does not cover - see `docs/WEAKNESSES.md`.
+
 ## Boundary: outbound network
 
 - **Owner:** `nevertwice/config.py` — `NEVERTWICE_LOCAL_ONLY`, the cloud router
