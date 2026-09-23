@@ -414,7 +414,7 @@ below is read in context:
   SOTA claims.
 - **W14 [info] `sources` frontmatter** adds bounded store bloat (≤25 session stems) on recurring
   notes; not injected into context, so no recall-token cost.
-- **W16 [KNOWN GAP, Q5/A4] `_user_brief` is a second cross-project channel the principle-layer
+- **W-Sixteen [KNOWN GAP, Q5/A4] `_user_brief` is a second cross-project channel the principle-layer
   boundary does not cover.** `NEVERTWICE_CROSS_PROJECT` (`universal`/`all`/`off`,
   `docs/THREAT_MODEL.md`'s "cross-project recall" boundary) governs the `🔗 Similar lessons from
   other projects` section only. `_user_brief` (`_engine_recall.py`, built by
@@ -423,11 +423,11 @@ below is read in context:
   - it can carry whatever the profile-builder distilled ACROSS every project it has seen,
   regardless of `off`/`universal`/`all`. Setting `NEVERTWICE_CROSS_PROJECT=off` does not touch
   this second channel. Not fixed here - it is out of Q5's scope (PLAN-Q3Q5.md's "Вне рамки"
-  list, risk R12) - and is recorded so a reader of the cross-project boundary does not assume
+  list, risk R-Twelve) - and is recorded so a reader of the cross-project boundary does not assume
   it is the only one.
-- **W17 [CLOSED AT PROMOTION, Q5/A3+A5] `principle_scan` has no standalone pattern for the
+- **W-Seventeen [CLOSED AT PROMOTION, Q5/A3+A5] `principle_scan` has no standalone pattern for the
   "entity" class at WRITE time - closed one layer later, by a token-provenance rule at
-  PROMOTION time (owner review, 2026-09-23).** `principle_scan`'s other five identifier
+  PROMOTION time (owner review).** `principle_scan`'s other five identifier
   classes (IP, URL/FQDN, path, email, host:port/version) are regex-detected regardless of what
   the extractor declares around them; entity-class protection at write time runs entirely
   through the FORBIDDEN-TOKEN path - the project slug and the item's own `entities` field,
@@ -435,7 +435,7 @@ below is read in context:
   an entity slips past write time with no regex fallback to catch it. Surfaced by
   `research/cross_project_bench.py`'s `--dry` stub extractor
   (`tests/research/_test_cross_project_bench_extract_dry.py`) while widening A9 to test
-  EXTRACTED principles rather than only pre-written ones (2026-09-23).
+  EXTRACTED principles rather than only pre-written ones.
 
   Rather than leave this a documented write-time gap, the boundary the owner named is
   promotion, not write: a principle sits inside its OWN project's note until `principles.py`
@@ -462,15 +462,15 @@ below is read in context:
   is a judgement call this rule does not make - it counts projects, not how independent they
   are of each other.
 
-  **Second residual, at WRITE time this time (2026-09-24, `_looks_like_identifier`,
+  **Second residual, at WRITE time this time (`_looks_like_identifier`,
   `_engine_text.py` - two auditor passes on the same commit day).** The write-time gate that
   decides which DECLARED entities are worth forbidding (added alongside the promotion-time rule
   above) was first found too NARROW - "payments-api", "billing_service", "UserRepository",
   "STRIPE_SECRET_KEY", "useAuthStore", "db-primary", "orders_table", "kafka-consumer-group",
   "OrderService" and "prod-cluster" all silently survived - then, once widened to catch a
   camelCase/PascalCase transition and a hyphenated infra noun on top of digit/dot/slash/
-  underscore, found too WIDE by a second probe: 18 of 20 public tech names (PostgreSQL,
-  JavaScript, GitHub, WebSocket, GraphQL, MongoDB, DevOps...) and 9 of 14 generic hyphen
+  underscore, found too WIDE by a second probe: eighteen of twenty public tech names (PostgreSQL,
+  JavaScript, GitHub, WebSocket, GraphQL, MongoDB, DevOps...) and nine of fourteen generic hyphen
   concepts (consumer-group, worker-queue, api-gateway, service-mesh...) were now ALSO forbidden,
   because shape cannot tell a public name from a private one - PostgreSQL and UserRepository are
   the same camelCase shape, api-gateway and payments-api the same hyphen-infra shape.
