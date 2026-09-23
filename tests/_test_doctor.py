@@ -488,7 +488,8 @@ def test_a_list_the_engine_cannot_read_is_counted() -> None:
 
         note("2026-01-01-p-decision-json", 'tags: ["python", "testing"]\n'
              'relations: [{"rel": "caused-by", "target": "x"}]\ncontested: []\n'
-             'related: [[2025-12-01-p-decision-older]]')
+             'related: "[[2025-12-01-p-decision-older]]"\n'
+             'status: [WIP] reviewing\nsource: [doc](https://example.com/x)')
         #: Reached through getattr: a revert of the check must fail by name, not by
         #: AttributeError - the auditing session reverted doctor.py and got the crash.
         check_list_fields = getattr(doctor, "check_list_fields", None)
@@ -498,7 +499,10 @@ def test_a_list_the_engine_cannot_read_is_counted() -> None:
         if not callable(check_list_fields):
             return
         result = check_list_fields(vault)
-        check("JSON lists and a wiki-link - both read as meant - are not counted",
+        #: A quoted link, and two scalars that merely START with a bracket, are read as meant.
+        #: The review found `status: [WIP] reviewing` reported with a repair that would have
+        #: turned it into a list.
+        check("JSON lists, a quoted link and bracket-led scalars are not counted",
               result["status"] == doctor.OK, f"{result['status']}: {result['detail']}")
 
         note("2026-01-02-p-decision-flow", "tags: [python, testing]")
@@ -520,15 +524,19 @@ def test_a_list_the_engine_cannot_read_is_counted() -> None:
         #: `disputed` is read the same way - the dispute re-queue walks it - so it is held here
         #: too: with only `contested` in the fixture, dropping DISPUTED_KEY from the exemption's
         #: key test stayed green (the auditing session's mutation M3).
+        #: `supersedes` and `sources` are iterated as lists by the consolidator too; the review
+        #: found them still exempt. A bare link now counts on every key.
+        note("2026-01-06-p-decision-more", "supersedes: [[2026-01-01-p-decision-x]]\n"
+             "related: [[2025-12-01-p-decision-older]]")
         note("2026-01-05-p-decision-links", "contested: [[2026-01-01-p-decision-x]]\n"
              "disputed: [[2026-01-01-p-decision-y]]\n"
              "see_also: [[[note-a]], [[note-b]]]\n"
              "pair: [[note-a]], [[note-b]]\n"
              "topics: [[python, testing]]")
         result = check_list_fields(vault)
-        check("a stem list written as a link (contested AND disputed), a list of links and a "
-              "nested flow list all count",
-              result["detail"].startswith("7 list field"), result["detail"])
+        check("a bare link on ANY key (contested, disputed, supersedes, related), a list of "
+              "links and a nested flow list all count",
+              result["detail"].startswith("9 list field"), result["detail"])
 
         sup = folder / "Superseded"
         sup.mkdir()
@@ -536,7 +544,20 @@ def test_a_list_the_engine_cannot_read_is_counted() -> None:
             "---\ntype: decision\ntags: [a, b]\n---\n\nbody\n", encoding="utf-8")
         result = check_list_fields(vault)
         check("a retired note is not counted - nothing reads it any more",
-              result["detail"].startswith("7 list field"), result["detail"])
+              result["detail"].startswith("9 list field"), result["detail"])
+
+    #: Isolated, because a total can hide it: on the previous version two wrongly counted
+    #: scalars and two wrongly exempted links happened to give the same total of 9.
+    with tempfile.TemporaryDirectory() as tmp:
+        only = Path(tmp) / "store" / "Decisions"
+        only.mkdir(parents=True)
+        (only / "2026-01-07-p-decision-sup.md").write_text(
+            "---\ntype: decision\nsupersedes: [[2026-01-01-p-decision-x]]\n---\n\nbody\n",
+            encoding="utf-8")
+        result = check_list_fields(only.parent)
+        check("a bare link in `supersedes` alone is reported, and by its key",
+              result["status"] == doctor.WARN and "supersedes" in result["detail"],
+              f"{result['status']}: {result['detail']}")
 
     with tempfile.TemporaryDirectory() as tmp:
         result = check_list_fields(Path(tmp) / "absent")

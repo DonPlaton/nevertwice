@@ -338,9 +338,31 @@ def check_orphaned_temp(vault: Path) -> dict:
                   "real note was either written or retried")
 
 
-#: One whole wiki-link and nothing else: `[[note]]` - not `[[a]], [[b]]`, not `[[[a]]]`, and not
-#: `[[python, testing]]`, which is a flow list nested in a flow list, not a link.
+#: A bare wiki-link and nothing else: `[[note]]`. It reads as the link text, which is right if
+#: the key holds a link and wrong if it holds a list - the doctor cannot know which, so it counts
+#: it and the repair names both readings.
 _LONE_WIKILINK = re.compile(r"\[\[[^\[\],]+\]\]")
+
+
+def _frontmatter_lines(path: Path) -> list[str] | None:
+    """The frontmatter header's lines, read up to the closing fence and no further.
+
+    The doctor used to read every typed note whole; on a 17k-note store that made this one
+    check most of the doctor's runtime while it only ever looks at the header (review
+    2026-09-23)."""
+    try:
+        with path.open(encoding="utf-8", errors="replace") as fh:
+            first = fh.readline().lstrip("\ufeff")
+            if first.strip() != "---":
+                return None
+            out = []
+            for ln in fh:
+                if ln.strip() == "---":
+                    return out
+                out.append(ln.rstrip("\n"))
+    except OSError:
+        return None
+    return None
 
 
 def check_list_fields(vault: Path) -> dict:
@@ -355,10 +377,19 @@ def check_list_fields(vault: Path) -> dict:
     of a lost stamp found a month later.
 
     Compared, not re-implemented: a key whose RAW value is shaped like a list is looked up in
-    what the engine's own `_read_frontmatter` returned for it. The rule for "a list the parser
-    reads" is therefore the parser's, asked each time, and cannot drift from it. The engine is
-    imported here, lazily, like `check_twin_calibration`: a store the engine cannot import on is
-    skipped, not failed.
+    what the engine's own `_read_frontmatter` returned for it, so the rule for "a list the parser
+    reads" is the parser's, asked each time.
+
+    What counts as list-shaped, after the engine review of 2026-09-23:
+    - a value that starts with `[` AND ends with `]`, or a block list. A leading bracket alone
+      is a scalar - `status: [WIP] reviewing`, `source: [doc](url)` - and the first version
+      reported those with a repair that would have turned them into lists;
+    - a bare wiki-link `[[note]]` is counted on every key. Two earlier versions exempted it,
+      first for every key and then for all but `contested`/`disputed`, and the review found the
+      exemption still covered `supersedes` and `sources`, which the consolidator iterates one
+      character at a time when they are strings. Which keys the engine reads as lists is not
+      something a diagnostic can list without drifting, so it no longer tries: a bare link is
+      reported, and the repair says what to do in either reading.
     """
     title = "frontmatter lists are in a form the engine reads as lists"
     if not vault.exists():
@@ -369,6 +400,7 @@ def check_list_fields(vault: Path) -> dict:
         return _check("list_fields", title, SKIP,
                       f"could not load the engine's parser: {type(exc).__name__}", "")
     bad: list[str] = []
+    links: list[str] = []
     notes = 0
     for folder in _m.TYPE_FOLDER.values():
         base = vault / folder
@@ -377,50 +409,40 @@ def check_list_fields(vault: Path) -> dict:
         for p in base.rglob("*.md"):
             if "Superseded" in p.parts[len(base.parts):]:
                 continue                                # retired: nothing reads it any more
-            try:
-                text = p.read_text(encoding="utf-8", errors="replace")
-            except OSError:
+            lines = _frontmatter_lines(p)
+            if not lines:
                 continue
-            head = text.lstrip("﻿")
-            if not head.startswith("---"):
-                continue
-            lines = head.split("\n")[1:]
-            end = next((i for i, ln in enumerate(lines) if ln.strip() == "---"), len(lines))
-            lines = lines[:end]
-            list_keys = []
+            list_keys, link_keys = [], []
             for i, ln in enumerate(lines):
                 if not ln or ln[:1] in (" ", "\t", "-") or ":" not in ln:
                     continue
                 key, val = (s.strip() for s in ln.split(":", 1))
                 block = (val == "" and i + 1 < len(lines)
                          and lines[i + 1].lstrip().startswith("- "))
-                #: ONE whole wiki-link - `related: [[note]]` - is not a list shape: the parser reads
-                #: it as the link string, which is what it means, and counting it would send
-                #: someone to rewrite a correct link as a JSON list. Only that exact form is
-                #: exempt. The first version exempted every value starting `[[`, which also
-                #: silenced `[[[a]], [[b]]]`, `[[a]], [[b]]` and `[[python, testing]]` - and
-                #: `contested: [[stem]]`, which `_contested_of` turns into a stem named
-                #: "[[stem]]" that does not exist, dropping the pair from the judge's queue.
-                #: So a key the engine reads as a LIST of stems gets no exemption at all.
-                #: Both narrowings from the auditing session's twelve-form probe.
-                lone_link = (bool(_LONE_WIKILINK.fullmatch(val))
-                             and key not in (_m.CONTESTED_KEY, _m.DISPUTED_KEY))
-                if (val.startswith("[") and not lone_link) or block:
+                if _LONE_WIKILINK.fullmatch(val):
+                    link_keys.append(key)
+                elif (val.startswith("[") and val.endswith("]")) or block:
                     list_keys.append(key)
-            if not list_keys:
+            if not (list_keys or link_keys):
                 continue
-            fm, _ = _m._read_frontmatter(text)
+            fm, _ = _m._read_frontmatter("---\n" + "\n".join(lines) + "\n---\n")
             misread = [k for k in list_keys if not isinstance(fm.get(k), list)]
-            if misread:
+            bare = [k for k in link_keys if not isinstance(fm.get(k), list)]
+            if misread or bare:
                 notes += 1
                 bad += [f"{p.name}: {k}" for k in misread]
-    if not bad:
+                links += [f"{p.name}: {k}" for k in bare]
+    if not (bad or links):
         return _check("list_fields", title, OK, "none")
-    return _check("list_fields", title, WARN,
-                  f"{len(bad)} list field(s) in {notes} note(s) are read as text, "
-                  f"e.g. {'; '.join(bad[:3])}",
-                  'rewrite each as a JSON list on one line - tags: ["a", "b"] - which is the '
-                  "form the engine writes and reads back")
+    detail = f"{len(bad) + len(links)} list field(s) in {notes} note(s) are read as text"
+    if links:
+        detail += f" ({len(links)} of them a bare [[link]])"
+    detail += f", e.g. {'; '.join((bad + links)[:3])}"
+    return _check("list_fields", title, WARN, detail,
+                  'rewrite a list as a JSON list on one line - tags: ["a", "b"] - which is the '
+                  "form the engine writes and reads back; a bare [[link]] reads as text either way: "
+                  'quote it - related: "[[note]]" - if the key holds one link, or make it a JSON '
+                  'list - supersedes: ["note"] - if it holds several')
 
 
 def check_package_matches_repo() -> dict:
