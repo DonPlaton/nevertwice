@@ -816,10 +816,17 @@ def _note_snippet(stem: str, ntype: str, max_chars: int = 220) -> str:
     # C5 (2026-09-24): a plain `out[:max_chars]` char-slice can cut a word (or an
     # identifier-shaped token, e.g. "svc-a000.internal") in half - `_cut_word_boundary`
     # (`_engine_write.py`, shared namespace, A3/Q5's own `principle`-cap helper) either keeps
-    # the whole last word/token or drops it entirely, never a fragment. Word-boundary only
-    # (splits on " "), so a hyphenated/dotted identifier with no space inside it is kept
-    # whole or dropped as one unit - it is never split mid-token either.
-    return _cut_word_boundary(out, max_chars)
+    # the whole last word/token or drops it entirely: NEVER a fragment when a word boundary
+    # exists before the cap; otherwise nothing (C5b, 2026-09-24 - the auditor's edge case: no
+    # boundary at all before `max_chars`, e.g. this note's own first "word" already exceeds it
+    # - `"a" * 300`, or a URL with no space for 260 characters. `require_boundary=True` is
+    # THIS caller's own choice, not `_cut_word_boundary`'s default: cross-project recall must
+    # never inject a partial token under any circumstance, including this one; `principle`'s
+    # own cap keeps the OLD default behaviour, a fragment rather than an empty field - see
+    # `_cut_word_boundary`'s own docstring for why the two callers differ on purpose. An empty
+    # snippet already degrades cleanly at every caller of THIS function (title only, or a
+    # fallback to the raw description - never a dangling separator).
+    return _cut_word_boundary(out, max_chars, require_boundary=True)
 
 
 def _fit_fact_line(line: str, room: int) -> str:

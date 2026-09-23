@@ -624,19 +624,36 @@ def _record_why(why: list | None, reason: str) -> None:
         why.append(reason)
 
 
-def _cut_word_boundary(text: str, limit: int) -> str:
-    """Cap `text` at `limit` characters without splitting a word - used only for `principle`
-    (A3, Q5). A local helper rather than reusing `_engine_cards.py`'s `_one_line` (the same
-    word-boundary discipline, plus a sentence-boundary preference and a truncation marker):
-    that helper lives in a LATER engine part, and a two-line write-path utility does not
-    justify a forward reference across the engine's part ordering for a shared namespace this
-    file does not otherwise reach into."""
+def _cut_word_boundary(text: str, limit: int, *, require_boundary: bool = False) -> str:
+    """Cap `text` at `limit` characters without splitting a word - built for `principle`
+    (A3, Q5), also used by `_note_snippet`'s recall injection (C5/C5b, `_engine_recall.py`,
+    shared namespace). A local helper rather than reusing `_engine_cards.py`'s `_one_line`
+    (the same word-boundary discipline, plus a sentence-boundary preference and a truncation
+    marker): that helper lives in a LATER engine part, and a two-line write-path utility does
+    not justify a forward reference across the engine's part ordering for a shared namespace
+    this file does not otherwise reach into.
+
+    `require_boundary` (C5b, 2026-09-24, default False - the SHARED default, UNCHANGED for
+    every existing caller including `principle`'s own cap below): never a fragment when a word
+    boundary exists before `limit`, otherwise nothing - EXCEPT that "otherwise nothing" only
+    applies when `require_boundary=True`. The one case C5 itself did not cover: `text`'s very
+    FIRST token already exceeds `limit` on its own, so there is no earlier space to fall back
+    to at all (`"a" * 300`; a URL with no space until char 260). With `require_boundary=False`
+    (every caller before C5b, unchanged), that case still returns the fragment - `principle`'s
+    degradation contract (A3) already treats a capped-but-present principle as better than an
+    absent one, and a fragment there is a smaller change than dropping the principle entirely.
+    With `require_boundary=True` (`_note_snippet` only), that case returns "" instead - cross-
+    project recall must never inject a partial token under any circumstance, including this
+    one, and an empty snippet already degrades cleanly at every caller (title only, or a
+    fallback to the raw description - never a dangling separator)."""
     s = (text or "").strip()
     if len(s) <= limit:
         return s
     head = s[:limit]
     sp = head.rfind(" ")
-    return (head[:sp] if sp > 0 else head).rstrip()
+    if sp > 0:
+        return head[:sp].rstrip()
+    return "" if require_boundary else head.rstrip()
 
 
 def write_typed_note(folder: str, item, project: str, date: str,

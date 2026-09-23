@@ -112,6 +112,109 @@ def test_b_identifier_crossing_the_boundary_is_never_split() -> None:
          not snippet.endswith(split_prefix) or snippet.endswith(ident), repr(snippet[-20:]))
 
 
+def test_c_no_boundary_at_all_returns_empty() -> None:
+    """C5b (2026-09-24, the auditor's edge case on 490ee47): when the FIRST token alone
+    already exceeds `max_chars` - no space anywhere before the cut - C5's own fix still fell
+    back to the raw fragment (`_cut_word_boundary`'s pre-C5b-only branch). `_note_snippet`
+    now asks for `require_boundary=True`: no boundary before the cap means NOTHING, not a
+    fragment. `"a" * 300` is one giant 300-char "word" with no space in it at all."""
+    print("\n- (c) no word boundary anywhere before the cap - returns empty, not a fragment -")
+    desc = "a" * 300
+    check("setup: this description really has no space anywhere", " " not in desc, desc[:20])
+    stem = _write_note("c5b_no_boundary", "no boundary fixture", desc)
+    check("the fixture note was written", bool(stem), str(stem))
+    snippet = m._note_snippet(stem, "pattern", max_chars=220)
+    check("the snippet is empty - no 220-char fragment of 'a's", snippet == "", repr(snippet))
+
+
+def test_d_long_url_with_no_early_boundary_returns_empty() -> None:
+    """C5b: the auditor's other example - a URL with no space until well past the 220-char
+    cap (`_PRINCIPLE_PATH_RE`-shaped in spirit, though this text never goes through
+    principle_scan). The OLD code (490ee47, pre-C5b) would return the URL cut mid-path -
+    itself a different, wrong URL, not a truncation marker. Now: empty."""
+    print("\n- (d) a long URL with no early boundary - returns empty, not a mid-path cut -")
+    url = "https://example.com/" + "p" * 250
+    desc = f"{url} and then words follow after this to pad the fixture out a little more."
+    check("setup: the URL alone already exceeds the 220-char cap with no space inside it",
+         len(url) > 220 and " " not in url, str(len(url)))
+    stem = _write_note("c5b_long_url", "long url fixture", desc)
+    check("the fixture note was written", bool(stem), str(stem))
+    snippet = m._note_snippet(stem, "pattern", max_chars=220)
+    check("the snippet is empty - no mid-path cut of the URL", snippet == "", repr(snippet))
+
+
+def test_e_a_normal_sentence_is_unchanged_by_c5b() -> None:
+    """C5b changes ONE edge only (no boundary before the cap at all) - an ordinary
+    description, well under the cap, is untouched, and one where SOME earlier word crosses
+    the boundary (C5's own case, tests (a)/(b) above) keeps behaving exactly as C5 left it."""
+    print("\n- (e) a normal sentence is unchanged - C5b only touches the no-boundary edge -")
+    short = "Keep migrations idempotent and reversible."
+    stem = _write_note("c5b_normal_short", "short fixture", short)
+    check("the fixture note was written", bool(stem), str(stem))
+    snippet = m._note_snippet(stem, "pattern", max_chars=220)
+    check("a short description under the cap is returned unchanged", snippet == short,
+         repr(snippet))
+
+
+def test_f_principle_cap_keeps_the_old_behaviour_by_default() -> None:
+    """C5b's explicit constraint: `_cut_word_boundary`'s DEFAULT (`require_boundary=False`)
+    must be byte-for-byte the OLD (pre-C5b) behaviour, because `write_typed_note`'s own
+    `principle` cap (A3/W8, `_engine_write.py`) calls it with no keyword argument at all - a
+    principle whose first token alone exceeds `PRINCIPLE_MAX_CHARS` is capped to a fragment,
+    exactly as it was before C5b, never emptied. This is the one place C5b was told NOT to
+    change."""
+    print("\n- (f) principle cap with no early boundary: unchanged, still a fragment -")
+    limit = m.PRINCIPLE_MAX_CHARS
+    one_giant_token = "x" * (limit + 80)
+    result_default = m._cut_word_boundary(one_giant_token, limit)
+    check("default require_boundary=False: still returns the old fragment, length == limit",
+         result_default == one_giant_token[:limit], repr(result_default[-10:]))
+    result_explicit_false = m._cut_word_boundary(one_giant_token, limit, require_boundary=False)
+    check("require_boundary=False given explicitly: identical to the default",
+         result_explicit_false == result_default, repr(result_explicit_false[-10:]))
+    result_required = m._cut_word_boundary(one_giant_token, limit, require_boundary=True)
+    check("require_boundary=True (the NEW, opt-in-only behaviour): empty instead",
+         result_required == "", repr(result_required))
+
+    # End to end through the real write path, not just the helper in isolation.
+    stem = m.write_typed_note(m.TYPE_FOLDER["pattern"],
+                              {"title": "principle cap fixture", "description": "",
+                               "principle": one_giant_token, "entities": []},
+                              "c5b_principle_cap", "2026-09-23", [], "pattern")
+    check("the fixture note was written", bool(stem), str(stem))
+    fm = m._read_frontmatter_file(m.VAULT / "Patterns" / f"{stem}.md")
+    written = fm.get("principle") or ""
+    check("the WRITTEN principle is still capped to a fragment (old behaviour), not dropped",
+         0 < len(written) <= limit and written == one_giant_token[:len(written)],
+         repr(written[-10:]))
+
+
+def test_g_caller_rendering_on_an_empty_snippet_has_no_dangling_separator() -> None:
+    """C5b's instruction: check what the callers actually render on an empty snippet. Both
+    `_fact_line` and `_cross_line` (`_engine_recall.py`) already guard with
+    `(f" - {snip}" if snip else "")` - an empty snippet was ALWAYS a valid return (a missing
+    file, an OSError, a genuinely empty description), so this contract predates C5b. Proven
+    here by monkeypatching `_note_snippet` itself (the same pattern `tests/_test_memory_v3.py`
+    already uses for this exact function) rather than trusting the fixture to hit the
+    no-boundary edge through the full read path."""
+    print("\n- (g) callers render title-only on an empty snippet, no dangling ' - ' -")
+    saved = m._note_snippet
+    m._note_snippet = lambda stem, ntype, max_chars=220: ""
+    try:
+        fact = m._fact_line({"stem": "s1", "ntype": "pattern", "title": "a title",
+                             "recurrence": 1})
+        cross = m._cross_line({"stem": "s2", "ntype": "pattern", "title": "another title",
+                               "project": "acme"})
+    finally:
+        m._note_snippet = saved
+    check("_fact_line has no dangling ' - ' separator when the snippet is empty",
+         " - " not in fact, repr(fact))
+    check("_fact_line still shows the title", "a title" in fact, repr(fact))
+    check("_cross_line has no dangling ' - ' separator when the snippet is empty",
+         " - " not in cross, repr(cross))
+    check("_cross_line still shows the title", "another title" in cross, repr(cross))
+
+
 def test_zz_every_check_passed() -> None:
     """Bare pytest must reach the same verdict as this suite's exit code - enforced project-
     wide by tests/_test_the_harness_agrees_with_itself.py."""
@@ -121,7 +224,12 @@ def test_zz_every_check_passed() -> None:
 def main() -> int:
     make_sandbox(m, "note_snippet_wb_", offline=True)
     for fn in (test_a_word_crossing_the_boundary_ends_whole_or_is_dropped,
-              test_b_identifier_crossing_the_boundary_is_never_split):
+              test_b_identifier_crossing_the_boundary_is_never_split,
+              test_c_no_boundary_at_all_returns_empty,
+              test_d_long_url_with_no_early_boundary_returns_empty,
+              test_e_a_normal_sentence_is_unchanged_by_c5b,
+              test_f_principle_cap_keeps_the_old_behaviour_by_default,
+              test_g_caller_rendering_on_an_empty_snippet_has_no_dangling_separator):
         fn()
     print(f"\nnote snippet word boundary: {PASSED} passed, {FAILED} failed")
     return 1 if FAILED else 0
