@@ -12,6 +12,7 @@ extraction-side scanner rejection `--dry`'s stub extractor exists for (the 2026-
 a pre-written principle alone cannot prove an EXTRACTED one gets caught).
 """
 import sys
+import tempfile
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -77,6 +78,33 @@ rc = cpb.main(["--dry"])
 check("--dry exits 0", rc == 0, str(rc))
 check("--dry does not create/modify the results artifact",
       cpb.OUT.exists() == before, f"existed before: {before}, exists now: {cpb.OUT.exists()}")
+
+print("\n- C2 (2026-09-24): written_description_full is the UNTRUNCATED on-disk description -")
+long_desc = ("Splitting structural changes from large backfills in separate transactions "
+            "prevents table locking and reduces flaky failures. The original operation "
+            "combined both in one transaction, causing a timeout due to extended lock "
+            "contention that blocked other writers for several minutes during peak traffic.")
+check("fixture description is longer than the 220-char recall cap", len(long_desc) > 220,
+      str(len(long_desc)))
+cpb.m._rebase_vault(Path(tempfile.mkdtemp(prefix="nevertwice_cpb_c2_")))
+stem = cpb.m.write_typed_note(cpb.m.TYPE_FOLDER["pattern"],
+                              {"title": "long desc fixture", "description": long_desc,
+                               "principle": "keep migrations idempotent."},
+                              "c2_fixture_project", "2026-09-23", [], "pattern")
+check("the fixture note was written", bool(stem), str(stem))
+info = {"stem": stem, "ntype": "pattern"}
+snippet = cpb._side_written_description(info)
+full = cpb._side_written_description_full(info)
+check("_side_written_description (the recall simulation) IS capped at 220 chars",
+      len(snippet) <= 220, str(len(snippet)))
+check("_side_written_description_full is the WHOLE description, no truncation",
+      full == long_desc, repr(full))
+check("the full field is longer than the capped snippet on this fixture",
+      len(full) > len(snippet), str((len(full), len(snippet))))
+check("the capped snippet is a plain prefix of the full description (proves it's a char-slice)",
+      long_desc.startswith(snippet), repr(snippet[-15:]))
+check("the capped snippet, unlike the full field, ends mid-word here (the artifact C2 found)",
+      snippet[-1].isalpha() and long_desc[len(snippet)].isalpha(), repr(snippet[-15:]))
 
 print("\n- --help exits 0 -")
 try:

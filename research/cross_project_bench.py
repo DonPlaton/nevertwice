@@ -412,10 +412,47 @@ def _side_written_description(info: dict) -> str:
     note's DESCRIPTION section from disk, never its `principle` frontmatter (H5): a planted
     identifier can survive all the way into `principle` and still never reach project_b,
     because the injected line is built from the description, not the principle. `""` when
-    nothing was written for this side."""
+    nothing was written for this side.
+
+    Capped at `_note_snippet`'s 220-char recall-injection budget, plain char-slice, no
+    word-boundary awareness - by design, this is a RECALL simulation, and recall really does
+    serve exactly this text. Do NOT reuse this field as a vocabulary source: see
+    `_side_written_description_full` below (C2, 2026-09-24)."""
     if not info.get("stem"):
         return ""
     return m._note_snippet(info["stem"], info["ntype"])
+
+
+def _side_written_description_full(info: dict) -> str:
+    """The FULL, untruncated description exactly as `principles.py::_project_token_vocabulary`
+    reads it at promotion time - read straight from the note file's DESCRIPTION section, never
+    through `_note_snippet` (which caps at 220 chars for a different purpose, recall injection,
+    see `_side_written_description` above). `""` when nothing was written for this side.
+
+    C2 (2026-09-24): the H6 trigger recount (`.loop/explore/h6_recount.py`, a text-only, offline
+    reconstruction with no live vault to re-read) had only `written_description` to build with,
+    and used it as a stand-in for `_project_token_vocabulary`'s "desc" field - which in
+    PRODUCTION is never truncated at all. Six tokens the recount flagged as uncorroborated
+    (difficul, docum, funct, loc, oper, propagati) were the last, cut-off word of a 220-char-
+    exactly description, an artifact of that field substitution, not anything
+    `_project_token_vocabulary` (or provenance) ever actually sees - `promote_report["clusters"]`
+    for one such row (cpv1-016) is 0, confirming the real promotion path never even reached
+    provenance for it. This field exists so a future recount reads what production actually
+    reads, instead of the recall-simulation snippet."""
+    if not info.get("stem"):
+        return ""
+    ntype = info.get("ntype")
+    folder = m.TYPE_FOLDER.get(ntype)
+    if not folder:
+        return ""
+    fp = m.VAULT / folder / f"{info['stem']}.md"
+    try:
+        text = fp.read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return ""
+    _fm, body = m._read_frontmatter(text)
+    _title, desc, _prevention = m._parse_note_body(body.split("\n"))
+    return desc
 
 
 def _principle_cosine(info_a: dict, info_c: dict, project_a: str, project_c: str) -> float | None:
@@ -524,6 +561,10 @@ def _diagnostic_row(i: int, case: dict, written: dict[str, dict], case_rows: dic
             "has_principle": bool((info.get("written_principle") or "").strip()),
             "written_principle": info.get("written_principle") or "",
             "written_description": written_desc,
+            # C2 (2026-09-24): the untruncated description - use THIS for any vocabulary/
+            # provenance reconstruction from this row, never `written_description` above (that
+            # one is capped at 220 chars for the recall-simulation, H5, and can end mid-word).
+            "written_description_full": _side_written_description_full(info),
             "description_identifier_hits": _identifier_hits(written_desc, planted),
             # finding 1 (2026-09-24): WHY the raw proposed principle did or didn't survive to
             # `written_principle` - the write-time gate never says this itself.
