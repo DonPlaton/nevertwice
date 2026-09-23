@@ -1127,6 +1127,11 @@ def process_session(session_id: str, cwd: str, transcript_path: str,
             "quarantined": dict(quarantined),
             "skipped": dict(skipped),
             "off_topic": dict(off_topic),
+            #: The gate's verdict on the SESSION. The prompt tells the model to return empty lists
+            #: for an off-topic session, and a model that obeys leaves proposed 0 and off_topic 0 -
+            #: the numbers of an on-topic session with nothing durable. Only this tells them apart
+            #: (the auditing session's probe on e0e6924, through api.capture_session).
+            "relevant": bool(relevant),
         })
     return True
 

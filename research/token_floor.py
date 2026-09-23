@@ -231,6 +231,9 @@ def _ingest(pool: dict, cap: int | None, project: str) -> dict:
     quarantined = {"pattern": 0, "mistake": 0, "decision": 0}
     skipped = {"pattern": 0, "mistake": 0, "decision": 0}
     off_topic = {"pattern": 0, "mistake": 0, "decision": 0}
+    #: A model that obeys the off-topic instruction returns empty lists, so `off_topic` above stays
+    #: 0 and the zero reads as a regime. The session's own verdict is what separates the two.
+    off_topic_sessions = 0
     t0 = time.time()
     for sid, text in items:
         try:
@@ -245,6 +248,8 @@ def _ingest(pool: dict, cap: int | None, project: str) -> dict:
         #: From the RETURN, never from the log line: the log prints refusals only when there
         #: are some, so "no line" would become evidence again - the shape this stand exists to
         #: avoid. The return carries both numbers on every call, including zero.
+        if res.get("relevant") is False:
+            off_topic_sessions += 1
         for key, acc in (("proposed", proposed), ("refused", refused), ("quarantined", quarantined),
                          ("skipped", skipped), ("off_topic", off_topic)):
             for kind in acc:
@@ -276,7 +281,7 @@ def _ingest(pool: dict, cap: int | None, project: str) -> dict:
     #: remains lives at the printing site: a zero cost may be printed only beside both numbers.
     return {"written": written, "typed_notes": typed,
             "proposed": proposed, "refused": refused, "quarantined": quarantined,
-            "skipped": skipped, "off_topic": off_topic,
+            "skipped": skipped, "off_topic": off_topic, "off_topic_sessions": off_topic_sessions,
             "write_cost_tokens": write_cost,
             "seconds": round(time.time() - t0, 1)}
 
@@ -610,7 +615,10 @@ def main(argv=None) -> int:
                   f"answer reachable {pt['answer_reachable']}/{pt['n']}{cond}")
             if ing:
                 wc = ing.get("write_cost_tokens") or {}
-                verdict = ("extractor produced nothing - a regime, not a refusal"
+                k_off, n_sess = ing.get("off_topic_sessions") or 0, ing.get("written", 0)
+                verdict = (("extractor produced nothing - a regime, not a refusal" if not k_off else
+                            f"extractor produced nothing, and the relevance gate judged {k_off} of "
+                            f"{n_sess} session(s) off-topic - for those a gate, not a regime")
                            if prop == 0 else
                            f"extractor proposed {prop}, write path refused {refu}"
                            + "".join(f", {k.replace('_', '-')} {n}" for k in ("off_topic", "quarantined", "skipped")

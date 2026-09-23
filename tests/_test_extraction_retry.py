@@ -197,5 +197,27 @@ for _name, _r in (("off-topic", _off), ("quarantine", _q1), ("retry", _q2), ("re
     check(f"every outcome adds up to what was proposed ({_name})",
           sum((_r.get("proposed") or {}).values()) == sum(_r.get(k, 0) for k in _keys) + _parts, str(_r))
 
+print("")
+print("- a model that OBEYED the off-topic instruction still leaves a mark (auditor, e0e6924) -")
+#: The prompt tells the model to return empty lists when project_relevant is false. A model that
+#: obeys gives proposed 0 and off_topic 0 - the same numbers as an on-topic session with nothing
+#: durable in it. So the SESSION carries the gate's verdict, through the call token_floor makes.
+import api  # noqa: E402
+m.llm_available = lambda *a, **k: True
+_verdicts = {}
+for _name, _ex in (("on-topic, nothing durable", {"patterns": [], "mistakes": [], "decisions": []}),
+                   ("off-topic, model obeyed", {"project_relevant": False, "patterns": [],
+                                                "mistakes": [], "decisions": []})):
+    fresh()
+    m.generate_json = lambda *a, _e=_ex, **k: dict(_e)
+    _verdicts[_name] = api.capture_session(TRANSCRIPT_FOR_ZEROS, project="zerosproj",
+                                           session_id=f"gate-{len(_verdicts)}")
+_on, _off2 = _verdicts["on-topic, nothing durable"], _verdicts["off-topic, model obeyed"]
+check("the counts alone cannot tell these two apart - the case the auditor probed",
+      all(_on.get(k) == _off2.get(k) for k in ("proposed", "refused", "off_topic")), f"{_on} {_off2}")
+check("capture_session says which session the relevance gate called off-topic",
+      _on.get("relevant") is True and _off2.get("relevant") is False,
+      f"{_on.get('relevant')!r} {_off2.get('relevant')!r}")
+
 print(f"\nextraction retry: {len(RUN) - len(FAILED)} passed, {len(FAILED)} failed")
 sys.exit(1 if FAILED else 0)
