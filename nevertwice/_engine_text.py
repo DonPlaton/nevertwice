@@ -680,6 +680,72 @@ def principle_scan(text: str, forbidden: set[str]) -> str:
     return re.sub(r"\s+", " ", s)
 
 
+#: Whole-hyphen-part infra vocabulary (2026-09-24 widening, (A) below) - a hyphenated entity
+#: with no digit/dot/slash/underscore/case-transition ("payments-api", "db-primary",
+#: "kafka-consumer-group", "prod-cluster") still names something project-specific, and shape
+#: alone cannot tell it from a genuinely generic compound ("client-side", "fixture-isolation").
+#: The auditor's probe (2026-09-24, quoted in the finding) is the count this list is built from
+#: - `cross_project_v2.json`'s real extracted `entities` were not yet available (that 100-case
+#: run was still in progress; `cross_project_diag.json` predates entity capture entirely, so it
+#: contributes nothing). Of the probe's hyphenated tokens: 2 read as generic (client-side,
+#: fixture-isolation - 0 of their 2 parts are infra terms) and 4 read as identifier-like
+#: (payments-api, db-primary, kafka-consumer-group, prod-cluster - 6 of their 7 parts ARE:
+#: api, db, consumer, group, prod, cluster). `svc`, `service`, `staging`, `worker`, `queue` are
+#: the same semantic category (infrastructure/ops nouns) added by analogy, not directly
+#: attested in this small a sample - flagged here rather than presented as measured. A part is
+#: matched WHOLE, case-insensitive, never as a substring (so "clustering" is not "cluster").
+_INFRA_HYPHEN_TOKENS = frozenset({
+    "api", "svc", "service", "db", "cluster", "prod", "staging", "worker", "queue",
+    "consumer", "group",
+})
+
+
+def _has_digit_dot_or_slash(t: str) -> bool:
+    """A digit, a dot or a slash anywhere - `a000`, `JIRA-1234`, `v2`, a port number, a
+    hostname/FQDN fragment, a file extension, a path fragment. One bounded character-class
+    scan, no quantifier over a repeated group - the same discipline `_PRINCIPLE_IP_RE` and its
+    siblings above follow."""
+    return bool(re.search(r"[\d./]", t))
+
+
+def _has_underscore(t: str) -> bool:
+    """snake_case and SCREAMING_SNAKE both carry an underscore - `orders_table`,
+    `billing_service`, `STRIPE_SECRET_KEY` all name something specific to one codebase, never a
+    plain English compound (those use a space or a hyphen)."""
+    return "_" in t
+
+
+def _is_screaming_snake(t: str) -> bool:
+    """ALL-CAPS with an underscore, named as its OWN check (2026-09-24 widening) even though
+    `_has_underscore` already catches every SCREAMING_SNAKE token on its own - a second,
+    independent read of the same shape, so an ablation of the underscore rule alone does not
+    silently also disable this one (`tests/_test_principle_entity_forbidding.py`'s mutation
+    proves the underscore rule specifically is load-bearing, by name, for `orders_table` and
+    `billing_service` - tokens ONLY this or `_has_underscore` can catch, never both at once for
+    those two)."""
+    return "_" in t and t.isupper()
+
+
+def _has_camel_transition(t: str) -> bool:
+    """An internal lowercase-to-uppercase transition - `UserRepository`, `useAuthStore`,
+    `OrderService` - camelCase and PascalCase both name a specific class/module/variable, never
+    a plain English word. A pure acronym ("API", "HTTP") has NO lowercase letter to transition
+    FROM, so it never matches this - that is what keeps a plain acronym generic without a
+    separate allowlist. One bounded two-character scan, no quantifier."""
+    return bool(re.search(r"[a-z][A-Z]", t))
+
+
+def _hyphen_part_is_infra(t: str) -> bool:
+    """A hyphenated token where at least one whole part (case-insensitive) is an infrastructure
+    noun (`_INFRA_HYPHEN_TOKENS`) - the hard case a plain shape rule cannot otherwise separate
+    ("client-side" from "payments-api"). Splitting on "-" and checking set membership is O(n)
+    with no regex at all - the number of hyphens in a token is itself bounded by the token's
+    length, so this cannot be the slow path no matter how it is fed."""
+    if "-" not in t:
+        return False
+    return bool({p.lower() for p in t.split("-") if p} & _INFRA_HYPHEN_TOKENS)
+
+
 def _looks_like_identifier(token: str, project: str) -> bool:
     """Whether a declared `entities` string is worth forbidding as a `principle_scan`
     de-identification token - NOT every entity a model lists names something identifying. A
@@ -692,30 +758,48 @@ def _looks_like_identifier(token: str, project: str) -> bool:
     dropped this way, and `write_rejections_by_class` read 0 everywhere, because the rejection
     never correlated with a PLANTED identifier - it correlated with the model's own vocabulary.
 
-    A token counts as identifier-shaped when it carries a digit (`a000`, `JIRA-1234`, `v2`, a
-    port number), a dot (a hostname/FQDN fragment, a file extension) or a slash (a path
-    fragment) anywhere in it - or when it equals the project's own slug outright, which is
-    forbidden regardless of shape (naming your own project is a leak whatever the string looks
-    like). A bare hyphenated word with no digit ("client-side", "fixture-isolation") is let
-    through; a hyphen next to a digit ("svc-a000") already has a digit, so it is caught by the
-    same single check.
+    A token counts as identifier-shaped when ANY of these holds:
+      - it carries a digit, a dot or a slash anywhere (`_has_digit_dot_or_slash`);
+      - it carries an underscore (`_has_underscore` - snake_case AND SCREAMING_SNAKE);
+      - it is ALL-CAPS with an underscore (`_is_screaming_snake` - a second, independent read
+        of the same SCREAMING_SNAKE shape, see its own docstring for why);
+      - it has an internal lowercase-to-uppercase transition (`_has_camel_transition` -
+        camelCase/PascalCase; a PLAIN ACRONYM like "API" or "HTTP" has no lowercase letter to
+        transition from, so it stays generic without a separate allowlist);
+      - a whole hyphen-separated part of it is an infrastructure noun
+        (`_hyphen_part_is_infra` - "payments-api", "db-primary", never "client-side");
+      - it equals the project's own slug outright (forbidden regardless of shape).
 
-    Deliberately does NOT try to separate "specific to this one deployment" from "shared by
-    every project on this stack" any further than that - `principles.py::_token_provenance`
-    is the boundary built for exactly that question, at PROMOTION time, over the whole corpus a
-    single write never gets to see. This only has to stop an obviously-generic word from
-    costing a write; it errs the SAME direction `principle_scan` itself documents (toward
-    forbidding, not toward permissiveness) whenever a token is ambiguous.
+    First widening (2026-09-24 initial cut, digit/dot/slash/project-slug only) missed the
+    COMMONEST shapes of a real codebase's identifiers - the auditor's probe against a realistic
+    entity list found `payments-api`, `billing_service`, `UserRepository`,
+    `STRIPE_SECRET_KEY`, `useAuthStore`, `db-primary`, `orders_table`, `kafka-consumer-group`,
+    `OrderService` and `prod-cluster` all silently kept (forbidden = False) - ten of twelve
+    wrongly-kept tokens now caught by the five rules above (`tests/
+    _test_principle_entity_forbidding.py`, red before this widening).
 
-    One bounded character-class scan, no quantifier over a repeated group - the same discipline
-    `_PRINCIPLE_IP_RE` and its siblings above follow, so this cannot become the next
-    `_DANGER_RE`."""
+    TWO tokens from that same probe are a DELIBERATE residual, not an oversight: `phoenix` (a
+    single lowercase product/service word) and `acme-corp` (a company kebab whose parts are
+    NOT infra nouns). A lone lowercase word, or a hyphenated one whose parts read as ordinary
+    words, cannot be told apart from vocabulary by SHAPE alone - the only honest way to widen
+    further would be a project-specific word list, which is exactly what
+    `principles.py::_token_provenance` already is, built at PROMOTION time over the corpus a
+    single write never gets to see (a token only ONE project's corpus ever uses fails
+    provenance regardless of what this shape check let through at write time). This function
+    stays a SHAPE check; it does not try to be a dictionary. Documented as a residual in
+    `docs/WEAKNESSES.md` (W17).
+
+    Every new check above is either a plain string operation (`_has_underscore`,
+    `_is_screaming_snake`, the hyphen split) or one bounded, unquantified character-class scan
+    (`_has_camel_transition`) - the same discipline `_PRINCIPLE_IP_RE` and its siblings follow,
+    so this cannot become the next `_DANGER_RE`."""
     t = (token or "").strip()
     if not t:
         return False
     if t.lower() == (project or "").lower():
         return True
-    return bool(re.search(r"[\d./]", t))
+    return (_has_digit_dot_or_slash(t) or _has_underscore(t) or _is_screaming_snake(t)
+           or _has_camel_transition(t) or _hyphen_part_is_infra(t))
 
 
 # W7 corroboration-gated quarantine - OFF by default. On a single-user store the user owns every

@@ -462,6 +462,22 @@ below is read in context:
   is a judgement call this rule does not make - it counts projects, not how independent they
   are of each other.
 
+  **Second residual, at WRITE time this time (2026-09-24 widening of `_looks_like_identifier`,
+  `_engine_text.py`).** The write-time gate that decides which DECLARED entities are worth
+  forbidding (added alongside the promotion-time rule above, then found too narrow by an
+  auditor's probe: "payments-api", "billing_service", "UserRepository", "STRIPE_SECRET_KEY",
+  "useAuthStore", "db-primary", "orders_table", "kafka-consumer-group", "OrderService" and
+  "prod-cluster" all silently survived) now catches a digit/dot/slash, an underscore, a
+  camelCase/PascalCase transition, and a hyphenated infra noun ("payments-api", never
+  "client-side"). Two shapes from that same probe are LEFT KEPT, deliberately: a single
+  lowercase word ("phoenix") and a hyphenated company kebab whose parts read as ordinary words
+  ("acme-corp"). Neither has a SHAPE that distinguishes it from vocabulary - the only honest way
+  to widen further would be a project-specific word list, which is exactly what the
+  promotion-time `_token_provenance` rule above already is, built over the whole corpus a single
+  write never gets to see. So this write-time check stays a shape check, not a dictionary, and
+  a product name or a company name that never repeats across >=2 projects' own corpus is
+  defended by promotion-time provenance alone, the same way an undeclared entity always was.
+
 ## Less-traveled-path audit (2026-06-17)
 
 Audited the modules the main passes hadn't covered, looking for data loss / corruption:
