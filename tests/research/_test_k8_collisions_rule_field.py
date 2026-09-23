@@ -27,7 +27,8 @@ import k8_skeleton  # noqa: E402 - imported here, before any make_sandbox rebase
                     # top-level sandbox_guard.isolate() call is idempotent (a re-`verify()`), and
                     # a rebased m.VAULT by the time it runs would trip SandboxEscape on a mismatch
                     # that is not a real escape - only this test's own sandbox moving twice.
-import ride_along_judge_eval as rj  # noqa: E402 - same reason
+#: research/ride_along_judge_eval.py (the Q3 G3.0 stand) is not on this branch: Q3 came out "do not
+#: do" (REPORT-C §Q3), and the stand stays on q3/ride-along @901f3b1 as the record of that number.
 from nevertwice import api  # noqa: E402
 
 m = api.m
@@ -142,10 +143,6 @@ def test_old_artifact_readers_tolerate_the_field_being_absent() -> None:
     check("and both pairs still got labelled", all("pair_truth" in p for p in pairs), str(pairs))
     check("the field-carrying pair kept its rule_ok/rule untouched",
           pairs[1].get("rule_ok") is True and pairs[1].get("rule") == "literals", str(pairs[1]))
-
-    print("\n- research/ride_along_judge_eval.py's load_pairs also tolerates it -")
-    check("rj.load_pairs never reads rule_ok/rule at all (so an absent field cannot break it)",
-          "rule_ok" not in Path(rj.__file__).read_text(encoding="utf-8"), "")
 
 
 def test_zz_every_check_passed() -> None:
