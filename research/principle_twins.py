@@ -44,7 +44,11 @@ sys.path.insert(0, str(ROOT / "nevertwice"))
 import memory_hook as m  # noqa: E402
 
 DATA = HERE / "data" / "principle_twins_v1.json"
-OUT = HERE / "results" / "principle_twins.json"
+# .loop/explore/, not research/results/: a calibration sweep is exploratory - T_PRINCIPLE stays
+# a documented placeholder in principles.py until someone reads this artifact and deliberately
+# updates the constant. research/results/ is where a published, cited claim's artifact lives
+# (research/evidence_manifest.json); an exploratory run must not write there by default.
+OUT = ROOT / ".loop" / "explore" / "principle_twins.json"
 #: [0.75, 0.95] inclusive, step 0.01 - the plan's own sweep range for A6.
 T_SWEEP = [round(0.75 + 0.01 * i, 2) for i in range(21)]
 
