@@ -58,6 +58,12 @@ error-prevention for **31× fewer memory tokens**
 stood here was withdrawn in 2026-08 with the rest of the paid-API corpus - `python
 tools/check_freshness.py --list-stale` says why.
 
+Three more calls sit on the same surface. `api.anticipate_feedback(stem, outcome)` tells axis B
+whether a warning `helped` or was a `false_alarm`, so a predictor that cries wolf goes quiet (MCP:
+`memory_anticipate_feedback`). `api.guards_generate(project, limit=None)` distils guards from the
+store's mistake notes, off the hot path, and returns how many it wrote. `api.okf_index()` rebuilds
+the store's `Index.md` as its OKF index and returns the path.
+
 `nevertwice-store` answers what layout a store is in and moves it forward. `--migrate` plans by
 default and writes nothing; `--apply` takes a backup *before the first write*, runs the steps,
 validates the result and prints how to roll back. **The Markdown is never modified** - migration

@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 """Tests for nevertwice.api - the in-process library surface (recall/remember/
 capture_session/format_note). Fully offline: memory_hook + memory_search are mocked,
-so no vault, Ollama, or git is touched."""
+so no vault, Ollama, or git is touched - except the three entry-point tests at the end, which
+run the real implementation against a temporary store (no model, no network, no git)."""
+import json
+import os
 import sys
 import tempfile
 from pathlib import Path
@@ -325,6 +328,71 @@ def test_as_of_reads_each_note_once():
         f"already had: {reads}")
     assert len(set(reads)) == len(reads), f"a note was read twice: {reads}"
     assert all(r["description"] for r in out), "the descriptions did not survive the dedup"
+
+
+# ── the three documented entry points nothing in the repository calls ────────────
+# `anticipate_feedback`, `guards_generate` and `okf_index` have no caller inside the repository;
+# they are the public surface's only door to three documented capabilities (docs/INTEGRATIONS.md).
+# With no caller, a rename or a changed signature behind them broke nothing that ran. Each test
+# goes THROUGH the api into the real implementation - nothing between them is mocked - so such a
+# change fails here, by the test's name.
+
+def test_api_anticipate_feedback_reaches_the_predictor_state():
+    with tempfile.TemporaryDirectory() as td:
+        tmp = Path(td)
+        with mock.patch.object(m, "VAULT", tmp):
+            first = api.anticipate_feedback("2026-01-01-p-mistake-cpu", "false_alarm")
+            again = api.anticipate_feedback("2026-01-01-p-mistake-cpu", "helped")
+            try:
+                api.anticipate_feedback("2026-01-01-p-mistake-cpu", "maybe")
+                refused = False
+            except ValueError:
+                refused = True
+            state = json.loads((tmp / "anticipate.json").read_text(encoding="utf-8"))
+    assert first == {"helped": 0, "false_alarms": 1}, f"false_alarm not counted: {first!r}"
+    assert again == {"helped": 1, "false_alarms": 1}, f"helped not counted: {again!r}"
+    assert refused, "an unknown outcome was accepted instead of raising ValueError"
+    assert state.get("2026-01-01-p-mistake-cpu") == {"helped": 1, "false_alarms": 1}, \
+        f"the feedback did not reach the store's anticipate.json: {state!r}"
+
+
+def test_api_guards_generate_writes_the_ledger():
+    notes = [{"stem": "2026-01-01-demo-mistake-cpu", "ntype": "mistake", "project": "demo",
+              "recurrence": 3, "title": "training ran on the CPU",
+              "desc": "the model was left on torch.device('cpu')",
+              "prevention": "Assert torch.device('cuda') is used"},
+             {"stem": "2026-01-02-demo-pattern-x", "ntype": "pattern", "project": "demo",
+              "title": "not a mistake"}]
+    with tempfile.TemporaryDirectory() as td:
+        tmp = Path(td)
+        with mock.patch.object(m, "VAULT", tmp), \
+             mock.patch.object(m, "_iter_project_notes",
+                               lambda p: [n for n in notes if n["project"] == p]), \
+             mock.patch.object(m, "llm_available", lambda *a, **k: False), \
+             mock.patch.dict(os.environ, {"NEVERTWICE_GUARD_PACK": ""}):
+            wrote = api.guards_generate("demo", limit=5)
+            again = api.guards_generate("demo", limit=5)
+            ledger = json.loads((tmp / "guards.json").read_text(encoding="utf-8"))
+    rows = ledger if isinstance(ledger, list) else ledger.get("guards", [])
+    assert wrote == 1, f"one mistake should make one guard, api said {wrote}"
+    assert again == 0, f"a second pass re-distilled an already distilled mistake: {again}"
+    assert [g.get("born_from") for g in rows] == [["2026-01-01-demo-mistake-cpu"]], \
+        f"the ledger does not hold the guard the api reported: {rows!r}"
+
+
+def test_api_okf_index_writes_the_store_index():
+    with tempfile.TemporaryDirectory() as td:
+        tmp = Path(td)
+        with mock.patch.object(m, "VAULT", tmp):
+            path = api.okf_index()
+            text = Path(path).read_text(encoding="utf-8") if Path(path).is_file() else ""
+            names = sorted(p.name for p in tmp.iterdir())
+    # By NAME, not by Path equality: WindowsPath compares case-insensitively, and the lowercase
+    # `index.md` is exactly the file that clobbered the human index on such filesystems (H1).
+    assert Path(path).parent == tmp and Path(path).name == "Index.md",         f"okf_index returned {path!r}, not the store's Index.md"
+    assert "Index.md" in names and "index.md" not in names, f"the store holds {names}"
+    assert text.startswith("---") and "type: index" in text.split("---")[1], \
+        f"Index.md is not an OKF index (no `type: index` frontmatter): {text[:200]!r}"
 
 
 if __name__ == "__main__":
