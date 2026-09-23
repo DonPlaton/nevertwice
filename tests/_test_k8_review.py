@@ -288,13 +288,12 @@ def _raising_write_atomic(path, text):
 m.write_atomic = _raising_write_atomic
 res = cm.adjudicate_contested(apply=True, has_llm=True, judge=judge_fixed(True))
 check("the run did not abort - both pairs were judged", res["judged"] == 2, str(res))
-#: Since F5 the first write outside Superseded/ is the CARRY into the winner, made after the old
-#: note already retired - so this failure never left a pair "as is", and this check used to assert
-#: the report that said it did (review 2026-09-23, #4). Both pairs are replacements, the failed
-#: carry is parked for the next run, and nothing is left contested.
-check("the failed write came after a retirement: a replacement, its carry parked, nothing left",
-      res["replaces"] == 2 and res["errors"] == 0 and res.get("carry_parked") == 1
-      and res["left"] == 0, str(res))
+#: The first write outside Superseded/ is the CARRY into the winner, and since the second review
+#: of 2026-09-23 (R10) it comes BEFORE the retirement - so its failure changes nothing and the pair
+#: really is left as is. (Between F5 and R10 it came after the retirement, and this check asserted
+#: a "left as is" that was false: #4.)
+check("one pair recorded an error; 'left' still reflects it as unresolved",
+      res["errors"] == 1 and res["left"] == 1, str(res))
 m.write_atomic = _real_write_atomic
 
 #: F10 proper: a write that fails BEFORE anything changed - the stamp clear of a `separate` - is the

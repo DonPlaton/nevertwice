@@ -1027,12 +1027,12 @@ def process_session(session_id: str, cwd: str, transcript_path: str,
                 _vf = _note_facts(item, facts_source)
                 if _vf:
                     item["description"] = _append_facts(item.get("description", ""), _vf)
-            _set_write_outcome(None)
+            why: list[str] = []
             stem = write_typed_note(TYPE_FOLDER[nt], item, project, date, tags, nt,
-                                    session_stem_=sess_stem, siblings=all_siblings)
+                                    session_stem_=sess_stem, siblings=all_siblings, why=why)
             if not stem:                 # refused (M-10), quarantined (W7) or a retry's skip
-                why = last_write_outcome()
-                outcome[nt][why if why in ("quarantined", "skipped") else "refused"] += 1
+                reason = why[-1] if why else "refused"
+                outcome[nt][reason if reason in ("quarantined", "skipped") else "refused"] += 1
                 continue
             links[nt].append(stem)
             # redact BEFORE the embed path too: write_typed_note redacts what lands in the .md,

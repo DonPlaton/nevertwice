@@ -269,7 +269,9 @@ def _ingest(pool: dict, cap: int | None, project: str) -> dict:
     for folder in ("Mistakes", "Patterns", "Decisions"):
         d = store / folder
         if d.exists():
-            typed += sum(1 for p in d.rglob("*.md") if "Superseded" not in p.parts)
+            #: Quarantine/ is on disk for review and never served (W7) - counting it reported a
+            #: quarantined, empty-for-recall store as holding typed notes (review 2026-09-23, R9)
+            typed += sum(1 for p in d.rglob("*.md") if not {"Superseded", "Quarantine"} & set(p.parts))
     stats1 = dict(getattr(m, "_LLM_STATS", {}) or {})
     write_cost = {k: stats1.get(k, 0) - stats0.get(k, 0)
                   for k in ("prompt_tokens", "eval_tokens", "ollama", "cloud", "fail")}

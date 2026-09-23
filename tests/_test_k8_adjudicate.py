@@ -587,14 +587,15 @@ check("recurrence counts sessions, not characters", int(str(win.get("recurrence"
 check("supersedes keeps the linked stem and gains the retired one, no single characters",
       o in sups and "older-note" in sups and not any(len(str(s)) == 1 for s in sups), str(sups))
 
-print("\n- #4: a carry that fails after the retirement is parked, not lost -")
-#: The old note retires first (F5); the winner's history write comes after. An OSError there was
-#: reported as 'pair failed - left as is' and counted in errors, but nothing was left as is: the
-#: old note was already in Superseded/, never re-queued, and its recurrence and sources gone.
-CARRY = getattr(cm, "CARRY_PENDING_NAME", ".consolidate_carry_pending.json")
+print("\n- #4 / R10: the carry goes first, so a failure on either write leaves the pair as is -")
+#: The old note used to retire first and the winner's history follow; an OSError on that second
+#: write was reported 'pair failed - left as is' when the old note had already left (#4). The
+#: first fix parked the carry in a ledger, and the second review found three failure modes in the
+#: ledger itself (R10). Now the carry is an idempotent merge written BEFORE the retirement.
 d = fresh()
 o, n = pair()
 _real_write = m.write_atomic
+win_before = (m.VAULT / "Decisions" / f"{n}.md").read_text(encoding="utf-8")
 
 
 def _winner_locked(path, text, *a, **k):
@@ -608,20 +609,29 @@ try:
     res = cm.adjudicate_contested(apply=True, has_llm=True, judge=judge(True))
 finally:
     m.write_atomic = _real_write
-check("the retirement is counted as a replacement, not as a failed pair",
-      res.get("replaces") == 1 and res.get("errors") == 0
-      and (d / "Decisions" / "Superseded" / f"{o}.md").exists(), str(res))
-check("the carry is parked on disk for the next run", res.get("carry_parked") == 1
-      and (m.VAULT / CARRY).exists(), str(res))
+check("a carry that cannot be written is a failed pair, and it really is left as is",
+      res.get("errors") == 1 and res.get("left") == 1 and fm(o).get("contested") == [n]
+      and not (d / "Decisions" / "Superseded" / f"{o}.md").exists()
+      and (m.VAULT / "Decisions" / f"{n}.md").read_text(encoding="utf-8") == win_before, str(res))
+check("no ledger file exists any more", not list(m.VAULT.glob(".consolidate_carry*")))
 res = cm.adjudicate_contested(apply=True, has_llm=True, judge=judge(True))
 win = fm(n)
-check("the next run applies it: recurrence 2, both sessions, supersedes the retired note",
-      res.get("carried_late") == 1 and str(win.get("recurrence")) == "2"
+check("the next run judges it again and carries: recurrence 2, both sessions, supersedes",
+      res.get("replaces") == 1 and str(win.get("recurrence")) == "2"
       and set(win.get("sources") or []) == {SA, SB} and win.get("supersedes") == [o], str(win))
-check("and the ledger is gone once applied", not (m.VAULT / CARRY).exists())
-res = cm.adjudicate_contested(apply=True, has_llm=True, judge=judge(True))
-check("applying is idempotent: a third run changes nothing",
-      res.get("carried_late", 0) == 0 and str(fm(n).get("recurrence")) == "2", str(res))
+
+d = fresh()
+o, n = pair()
+win_before = (m.VAULT / "Decisions" / f"{n}.md").read_text(encoding="utf-8")
+_real_sup = m.supersede_note
+m.supersede_note = lambda *a, **k: False                # the retirement fails (a locked old note)
+try:
+    res = cm.adjudicate_contested(apply=True, has_llm=True, judge=judge(True))
+finally:
+    m.supersede_note = _real_sup
+check("a retirement that fails undoes the carry: the winner is byte-identical, the pair contested",
+      (m.VAULT / "Decisions" / f"{n}.md").read_text(encoding="utf-8") == win_before
+      and fm(o).get("contested") == [n], str(res))
 
 print("\n- #11: the dry run plans what apply would do, and the report prints it -")
 d = fresh()
@@ -640,11 +650,13 @@ cm.adjudicate_contested(apply=True, has_llm=True, judge=judge(True))           #
 cache = m.load_embed_cache()
 cache[o] = {"title": "ghost", "desc": "", "ntype": "decision", "project": "k8p", "vec": [0.1, 0.2]}
 m.save_embed_cache(cache)
-plan = cm.adjudicate_contested(apply=False, has_llm=True, judge=judge(True))
+plan = cm.adjudicate_contested(apply=False, has_llm=True, judge=judge(True), cache=m.load_embed_cache())
 on_disk = json.loads((m.VAULT / ".embeddings_cache.json").read_text(encoding="utf-8"))
-check("a dry run reports the ghost vector apply would heal, and leaves it on disk",
+check("a dry run handed the cache reports the ghost vector apply would heal, and leaves it on disk",
       plan.get("healed") == 1 and o in (on_disk.get("entries", on_disk) if isinstance(on_disk, dict) else {}),
       str(plan.get("healed")))
+check("a standalone dry run does not load a cache only to count (R13): healed is None",
+      cm.adjudicate_contested(apply=False, has_llm=True, judge=judge(True)).get("healed") is None)
 buf = io.StringIO()
 with redirect_stdout(buf):
     cm._run_consolidation(False, "DRY-RUN", False)
@@ -674,6 +686,51 @@ finally:
     m._iter_contested_both = _real_both
 check("two walks a consolidation: one before judging, one for the merge's exclusion set",
       WALKS[0] == 2, f"{WALKS[0]} walks")
+
+print("\n- second review of 2026-09-23: R1, R2, R6, R7 -")
+#: R1 - the single walk (#13) read the contested row BEFORE the re-queue stamped its stem into it,
+#: and the stale-stamp cleanup rewrote `contested` from that row: a re-queued dispute left both
+#: lists at once whenever the judge then did not answer.
+d = fresh()
+o, n = pair(old_desc=VETO_OLD, new_desc=VETO_NEW)
+cm.adjudicate_contested(apply=True, has_llm=True, judge=judge(True))           # o disputed with n
+cm._set_contested(m.VAULT / "Decisions" / f"{o}.md", ["2026-06-20-k8p-decision-gone"])
+rewrite_desc(n, VETO_NEW, FIXED_NEW)                                           # the dispute re-queues
+res = cm.adjudicate_contested(apply=True, has_llm=True, judge=judge(None))      # the judge is silent
+check("a re-queued dispute survives the stale-stamp cleanup of the same note (R1)",
+      n in (fm(o).get("contested") or []) and res.get("requeued") == 1 and res.get("left") == 1,
+      f"contested {fm(o).get('contested')} disputed {fm(o).get('disputed')} {res}")
+
+#: R2 - a stem in both lists of one note was built into the queue twice and judged twice.
+d = fresh()
+o, n = pair(old_desc=VETO_OLD, new_desc=VETO_NEW)
+cm.adjudicate_contested(apply=True, has_llm=True, judge=judge(True))           # o disputed with n
+cm._set_contested(m.VAULT / "Decisions" / f"{o}.md", [n])                       # and contested again
+rewrite_desc(n, VETO_NEW, FIXED_NEW)
+SEEN.clear()
+res = cm.adjudicate_contested(apply=False, has_llm=True, judge=judge(False))
+check("a pair named by both stamps of one note is judged once (R2)",
+      res.get("pairs") == 1 and len(SEEN) == 1, f"{res.get('pairs')} pairs, {len(SEEN)} calls")
+
+#: R6 - the RETIRING note's hand-written sources were dropped from the carry.
+d = fresh()
+o, n = pair()
+fp = m.VAULT / "Decisions" / f"{o}.md"
+lines = [ln for ln in fp.read_text(encoding="utf-8").split("\n") if not ln.startswith("sources:")]
+lines.insert(1, "sources: [sess-old1, sess-old2, sess-old3]")
+fp.write_text("\n".join(lines), encoding="utf-8")
+cm.adjudicate_contested(apply=True, has_llm=True, judge=judge(True))
+srcs = set(map(str, fm(n).get("sources") or []))
+check("the retiring note's own hand-written sources reach the winner (R6)",
+      {"sess-old1", "sess-old2", "sess-old3", SA, SB} <= srcs, str(sorted(srcs)))
+
+#: R7 / R11 - the one list reader, on every shape the review named.
+for raw, want in (("[[a]], [[b]]", ["a", "b"]), ("[[a]] [[b]]", ["a", "b"]), ("[a, b]", ["a", "b"]),
+                  (["[[sess]]", "sess2"], ["sess", "sess2"]), ("[[a|alias]]", ["a"]),
+                  ("plain", ["plain"]), ("", []), (None, [])):
+    check(f"_list_field({raw!r}) == {want} (R7)", m._list_field(raw) == want, str(m._list_field(raw)))
+check("and `contested` is read through it: a hand-written flow list names two stems",
+      m._contested_of({m.CONTESTED_KEY: "[a, b]"}) == ["a", "b"])
 
 print(f"\nK8 layer 3: {len(RUN) - len(FAILED)} passed, {len(FAILED)} failed")
 sys.exit(1 if FAILED else 0)

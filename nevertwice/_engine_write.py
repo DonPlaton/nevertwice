@@ -217,9 +217,41 @@ def _replacement_guard(old_desc: str, new_desc: str) -> str:
     return ""
 
 
+_WIKILINK_RE = _lazy_re(r"\[\[([^\[\]|]+)(?:\|[^\]]*)?\]\]")
+
+
+def _list_field(v) -> list[str]:
+    """A frontmatter list field as the note meant it, whatever shape it was written in.
+
+    `_read_frontmatter` reads the JSON list the engine writes as a list, but what a person or
+    Obsidian writes by hand - an unquoted flow list `[a, b]`, a bare `[[link]]`, links in a row
+    `[[a]], [[b]]` - as ONE string, and each reader then guessed: `_contested_of` took the string
+    as one stem, the consolidator iterated it a character at a time (review 2026-09-23, #3 and its
+    follow-ups R7 and R11). Wiki-links anywhere in a string are their targets; otherwise a
+    bracketed string is split on commas; any other string is one entry. A list keeps its items,
+    each unwrapped the same way, so `["[[sess]]"]` and `["sess"]` name the same session. `doctor
+    check_list_fields` still reports the hand-written shape; this only reads it."""
+    if isinstance(v, list):
+        out: list[str] = []
+        for x in v:
+            if isinstance(x, str) and "[[" in x:
+                out.extend(t.strip() for t in _WIKILINK_RE.findall(x) if t.strip())
+            elif x not in (None, ""):
+                out.append(str(x).strip().strip("\"'"))
+        return [x for x in out if x]
+    if not isinstance(v, str) or not v.strip():
+        return []
+    s = v.strip()
+    if "[[" in s:
+        return [t.strip() for t in _WIKILINK_RE.findall(s) if t.strip()]
+    if s.startswith("[") and s.endswith("]"):
+        return [x for x in (p.strip().strip("\"'") for p in s[1:-1].split(",")) if x]
+    return [s]
+
+
 def _contested_of(fm: dict) -> list[str]:
-    cur = fm.get(CONTESTED_KEY) or []
-    return [cur] if isinstance(cur, str) else [str(x) for x in cur if x]
+    """The stems a `contested` stamp names, read through `_list_field` (one reader, R11)."""
+    return _list_field(fm.get(CONTESTED_KEY))
 
 
 def _iter_contested(project: str | None = None, key: str | None = None) -> list[dict]:
@@ -551,30 +583,24 @@ def _append_facts(desc: str, facts: list[str]) -> str:
     return f"{base}{_FACTS_MARK}" + " \u00b7 ".join(facts)
 
 
-#: Why the last `write_typed_note` on this thread returned what it did: "written", "refused"
-#: (the M-10/W8 unsafe-payload screen), "quarantined" (W7, on disk for review, not served) or
-#: "skipped" (a crash retry of a note this session already quarantined). All three non-writes
-#: return "", and counting them as one number called a quarantine a refusal (review 2026-09-23,
-#: #12). A caller resets it to None before the call, so a stand-in writer that sets nothing reads
-#: as a refusal - the conservative reading. Keyed by thread, so concurrent writers each see their
-#: own; by `_thread.get_ident()` and not `threading.local`, because the hook's import path does not
-#: pull `threading` (tests/_test_hot_import.py) and `_thread` is loaded before any user code.
-_WRITE_OUTCOME: dict = {}
-
-
-def _set_write_outcome(why) -> None:
-    _WRITE_OUTCOME[__import__("_thread").get_ident()] = why
-
-
-def last_write_outcome():
-    """Why the last `write_typed_note` on this thread returned what it did (see above)."""
-    return _WRITE_OUTCOME.get(__import__("_thread").get_ident())
+def _record_why(why: list | None, reason: str) -> None:
+    """Append `reason` to a caller's `why` list, if it passed one (see write_typed_note)."""
+    if why is not None:
+        why.append(reason)
 
 
 def write_typed_note(folder: str, item, project: str, date: str,
                      tags: list, ntype: str,
                      session_stem_: str | None = None,
-                     siblings: list[str] | None = None) -> str:
+                     siblings: list[str] | None = None,
+                     why: list | None = None) -> str:
+    #: `why`, when given, receives the reason this call returned what it did: "written",
+    #: "refused" (the M-10/W8 unsafe-payload screen), "quarantined" (W7: on disk for review, not
+    #: served) or "skipped" (a crash retry of a note this session already quarantined). All three
+    #: non-writes return "", and counting them as one number called a quarantine a refusal
+    #: (review 2026-09-23, #12). A list the caller owns rather than a module-level record: nothing
+    #: to prune, nothing shared between threads (R14). A caller that finds it empty - a stand-in
+    #: writer in a suite - reads a refusal, the conservative reading.
     if isinstance(item, dict):
         # title goes through the same scrub as desc/prevention: it lands in the heading AND
         # the filename slug, so a secret-shaped string there would be baked in twice
@@ -612,7 +638,7 @@ def write_typed_note(folder: str, item, project: str, date: str,
     # defense-in-depth beyond secret redaction. Negation-gated so cautionary lessons survive.
     if _looks_unsafe(f"{title} {desc} {prevention}"):
         log(f"Rejected note (unsafe payload): {title[:50]!r}")
-        _set_write_outcome("refused")
+        _record_why(why, "refused")
         return ""
 
     p = VAULT / folder
@@ -677,7 +703,7 @@ def write_typed_note(folder: str, item, project: str, date: str,
                 continue
             if qfm.get("session") == session_stem_:
                 log(f"Idempotent skip (already quarantined this session): {old.stem}")
-                _set_write_outcome("skipped")
+                _record_why(why, "skipped")
                 return ""
 
     # F9 (xhigh review): the note actually being written may be a `-2` sibling, not `base_stem` -
@@ -967,7 +993,7 @@ def write_typed_note(folder: str, item, project: str, date: str,
     write_atomic(fp, "\n".join(body))
     if quarantine_reason:
         log(f"Quarantined note ({quarantine_reason}): {folder}/Quarantine/{fp.name}")
-        _set_write_outcome("quarantined")
+        _record_why(why, "quarantined")
         return ""                       # on disk for review, but NOT embedded/recalled (W7)
     # Deferred retirement (B5): the replacement is on disk - now the old truth may go.
     # A failure here leaves the old note live BESIDE the new one (recoverable by the
@@ -997,7 +1023,7 @@ def write_typed_note(folder: str, item, project: str, date: str,
             log(f"Contested: {old.stem} <- {stem}")
     _ndup_register(stem, project, ntype, title, desc, prevention, entities)
     log(f"Written: {folder}/{fp.name}")
-    _set_write_outcome("written")
+    _record_why(why, "written")
     return stem
 
 

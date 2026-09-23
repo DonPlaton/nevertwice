@@ -92,26 +92,11 @@ def _pair_fields(p: Path) -> tuple[dict, str, str]:
 DISPUTED_AT_KEY = "disputed_at"
 
 
-_LONE_LINK = re.compile(r"\[\[([^\[\]|,]+)(?:\|[^\]]*)?\]\]")
-
-
-def _as_stems(v) -> list[str]:
-    """A list field as the note meant it. The parser reads a JSON list as a list, but an unquoted
-    flow list `[a, b]` or a bare `[[link]]` - what a person or Obsidian writes by hand - as ONE
-    string, and iterating that string walks it a character at a time (review 2026-09-23, #3).
-    A lone link is its stem; a flow list is split; any other string is one entry."""
-    if isinstance(v, list):
-        return [str(x) for x in v if x]
-    if not isinstance(v, str) or not v.strip():
-        return []
-    s = v.strip()
-    if (mt := _LONE_LINK.fullmatch(s)):
-        return [mt.group(1).strip()]
-    if s.startswith("[") and s.endswith("]"):
-        items = (x.strip().strip("\"'") for x in s[1:-1].split(","))
-        return [(_LONE_LINK.fullmatch(x).group(1).strip() if _LONE_LINK.fullmatch(x) else x)
-                for x in items if x]
-    return [s]
+def _live_or_archived(folder: Path, stem: str) -> Path | None:
+    """The note `stem` where the judge can still read it: live, or aged into Archive/.
+    Superseded/ is gone - a retired note is no side of a pair (R12: one copy of the lookup)."""
+    return next((q for q in (folder / f"{stem}.md", folder / "Archive" / f"{stem}.md")
+                 if q.exists()), None)
 
 
 def _dispute_hash(old_path: Path, new_path: Path) -> str:
@@ -139,9 +124,10 @@ def _set_contested(p: Path, stems: list[str], disputed: str | None = None,
     m.write_atomic(p, m._stamp_frontmatter(text, fields))
 
 
-def _requeue_changed_disputes(apply: bool, disputed_rows: list[dict]) -> tuple[list, int, int]:
+def _requeue_changed_disputes(apply: bool,
+                              disputed_rows: list[dict]) -> tuple[list[tuple[dict, str, Path]], int]:
     """Put a disputed pair back on the judge's queue when either statement changed since the
-    dispute. Returns ([(row, new_stem), ...] re-queued, re-queued count, baselined).
+    dispute. Returns ([(row, new_stem, new_path), ...] re-queued, baselined).
 
     The rows come from the caller's walk (review 2026-09-23, #13: one consolidation header-read
     every typed note four times); the pairs come back so a dry run can plan them (#11) - apply
@@ -159,8 +145,8 @@ def _requeue_changed_disputes(apply: bool, disputed_rows: list[dict]) -> tuple[l
     nothing says its text changed since the dispute, and re-judging every old dispute would pay
     the judge for answers it already gave. From the baseline on, a change counts.
     """
-    requeued = baselined = 0
-    queued: list[tuple[dict, str]] = []
+    baselined = 0
+    queued: list[tuple[dict, str, Path]] = []
     for c in disputed_rows:
         old_path = Path(c["path"])
         folder = m.VAULT / m.TYPE_FOLDER[c["ntype"]]
@@ -173,8 +159,7 @@ def _requeue_changed_disputes(apply: bool, disputed_rows: list[dict]) -> tuple[l
         seen = dict(seen) if isinstance(seen, dict) else {}
         back, baseline = [], False
         for ns in c["new_stems"]:
-            new_path = next((q for q in (folder / f"{ns}.md", folder / "Archive" / f"{ns}.md")
-                             if q.exists()), None)
+            new_path = _live_or_archived(folder, ns)
             if new_path is None:
                 continue                  # the newer note is gone: the record stays for a human
             try:
@@ -190,8 +175,7 @@ def _requeue_changed_disputes(apply: bool, disputed_rows: list[dict]) -> tuple[l
             elif seen[ns] != now:
                 back.append(ns)
                 seen.pop(ns, None)
-                requeued += 1
-                queued.append((c, ns))
+                queued.append((c, ns, new_path))
         if apply and (back or baseline):
             fields = {m.DISPUTED_KEY: [s for s in c["new_stems"] if s not in back],
                       DISPUTED_AT_KEY: seen}
@@ -204,8 +188,7 @@ def _requeue_changed_disputes(apply: bool, disputed_rows: list[dict]) -> tuple[l
                 print(f"      dispute re-queue failed for {old_path.name} ({e}) - left as is",
                       file=sys.stderr)
                 queued = [q for q in queued if q[0] is not c]
-                requeued -= len(back)
-    return queued, requeued, baselined
+    return queued, baselined
 
 
 def _replacement_guard(old_desc: str, new_desc: str) -> str:
@@ -241,78 +224,26 @@ def _drop_retired_vectors(cache: dict, dry: bool = False) -> int:
     return dropped
 
 
-#: The history a replacement carries into the note that replaced it, when the write that carries
-#: it fails AFTER the old note already retired (review 2026-09-23, #4). The retirement comes first
-#: on purpose (F5: a failed retirement leaves the pair contested, re-queued next run), so a failure
-#: of the second write cannot be undone by leaving the pair alone - the pair is gone from the
-#: queue. It is parked here and applied by the next run instead of reported as "left as is".
-#: Only a failure writes this file; a run that parks nothing never opens it.
-CARRY_PENDING_NAME = ".consolidate_carry_pending.json"
+def _carry_into(new_path: Path, text: str, rec: int, sources: set[str],
+                supersedes: list[str]) -> int:
+    """Merge a retiring note's history into the note that replaces it; return the recurrence.
 
-
-def _carry_into(new_path: Path, rec: int, sources, supersedes) -> int:
-    """Merge carried history into the live winner: recurrence by max, sources and supersedes by
-    union in order. A merge, not an overwrite, so applying the same carry twice changes nothing."""
-    text = new_path.read_text(encoding="utf-8", errors="replace")
+    Recurrence by max, sources and supersedes by union, so applying the same carry twice changes
+    nothing. That is what lets the carry go FIRST, before the retirement (review 2026-09-23, R10):
+    it used to follow `supersede_note`, and a failure there came after the old note had already
+    left - reported "left as is" when nothing was (#4), and a pending-carry ledger to patch it
+    brought three failure modes of its own. Now a failed carry changes nothing, and a failed
+    retirement is undone by the caller writing `text` back. `text` is the note as read just
+    before, so the undo restores exactly what was there."""
     fm, _ = m._read_frontmatter(text)
-    #: sorted, then the newest CAP kept - the order the carry always wrote, so the success path
-    #: writes exactly what it wrote before this became a merge
-    src = sorted(set(_as_stems(fm.get("sources"))) | set(map(str, sources)))
-    have_sup = _as_stems(fm.get("supersedes"))
+    #: sorted, then the newest CAP kept - the order the carry always wrote
+    src = sorted(set(m._list_field(fm.get("sources"))) | set(map(str, sources)))
+    have_sup = m._list_field(fm.get("supersedes"))
     sup = have_sup + [s for s in supersedes if s not in have_sup]
     rec = max(m._coerce_recurrence(fm.get("recurrence")), int(rec), len(set(src)))
     m.write_atomic(new_path, m._stamp_frontmatter(
         text, {"recurrence": rec, "sources": src[-m.RECUR_SOURCES_CAP:], "supersedes": sup}))
     return rec
-
-
-def _park_carry(entry: dict) -> None:
-    import json                                          # noqa: PLC0415 - failure path only
-    p = m.VAULT / CARRY_PENDING_NAME
-    parked = json.loads(p.read_text(encoding="utf-8")) if p.exists() else []
-    parked.append(entry)
-    m.write_atomic(p, json.dumps(parked, ensure_ascii=False, indent=1))
-
-
-def _apply_parked_carries(apply: bool, cache: dict | None) -> int:
-    """Apply what an earlier run parked; return how many carries landed (a dry run: would land)."""
-    p = m.VAULT / CARRY_PENDING_NAME
-    if not p.exists():
-        return 0
-    import json                                          # noqa: PLC0415 - failure path only
-    try:
-        parked = json.loads(p.read_text(encoding="utf-8"))
-    except (OSError, ValueError) as e:
-        print(f"      parked carries unreadable ({e}) - left for the next run", file=sys.stderr)
-        return 0
-    if not apply:
-        return len(parked)
-    landed, left = 0, []
-    for e in parked:
-        folder = m.VAULT / m.TYPE_FOLDER.get(e.get("ntype", ""), "")
-        target = next((q for q in (folder / f"{e.get('stem')}.md", folder / "Archive" / f"{e.get('stem')}.md")
-                       if q.exists()), None)
-        if target is None:
-            print(f"      parked carry for {e.get('stem')} has no live note - dropped", file=sys.stderr)
-            continue
-        try:
-            rec = _carry_into(target, e.get("recurrence", 1), e.get("sources", []), e.get("supersedes", []))
-        except OSError as err:
-            print(f"      parked carry into {target.name} failed again ({err}) - kept", file=sys.stderr)
-            left.append(e)
-            continue
-        if cache is not None and isinstance(cache.get(target.stem), dict):
-            cache[target.stem]["recurrence"] = rec
-        landed += 1
-    try:
-        if left:
-            m.write_atomic(p, json.dumps(left, ensure_ascii=False, indent=1))
-        else:
-            p.unlink()
-    except OSError as err:
-        print(f"      parked-carry ledger not updated ({err}) - re-applied next run, idempotently",
-              file=sys.stderr)
-    return landed
 
 
 def adjudicate_contested(apply: bool, has_llm: bool, cap: int | None = None,
@@ -341,15 +272,24 @@ def adjudicate_contested(apply: bool, has_llm: bool, cap: int | None = None,
     seconds = CONTESTED_SECONDS if seconds is None else seconds
     judge = judge or m._same_fact_verdict
     contested_rows, disputed_rows = m._iter_contested_both(None)      # the run's one walk (#13)
-    requeued_pairs, requeued, baselined = _requeue_changed_disputes(apply, disputed_rows)
+    requeued_pairs, baselined = _requeue_changed_disputes(apply, disputed_rows)
     pairs: list[tuple] = []
-    for c, ns in requeued_pairs:
+    seen_pairs: set[tuple[str, str]] = set()
+    back_by_note: dict[str, list[str]] = {}
+
+    def _queue(c: dict, old_path: Path, new_path: Path, ns: str) -> None:
+        #: once a pair (R2): a stem in both `contested` and `disputed` on one note - a dispute
+        #: re-stamped contested by a later write - was built twice from the two lists and judged
+        #: and charged twice. The fresh walk after the re-queue write used to fold them.
+        if (str(old_path), ns) not in seen_pairs:
+            seen_pairs.add((str(old_path), ns))
+            pairs.append((c, old_path, new_path, ns))
+
+    for c, ns, new_path in requeued_pairs:
         # read before the re-queue stamp was written, so the walk above does not carry them;
         # a dry run never writes the stamp, and still plans what apply would judge (#11)
-        folder = m.VAULT / m.TYPE_FOLDER[c["ntype"]]
-        new_path = next((q for q in (folder / f"{ns}.md", folder / "Archive" / f"{ns}.md") if q.exists()), None)
-        if new_path is not None:
-            pairs.append((c, Path(c["path"]), new_path, ns))
+        _queue(c, Path(c["path"]), new_path, ns)
+        back_by_note.setdefault(c["path"], []).append(ns)
     for c in contested_rows:
         old_path = Path(c["path"])
         folder = m.VAULT / m.TYPE_FOLDER[c["ntype"]]
@@ -357,13 +297,16 @@ def adjudicate_contested(apply: bool, has_llm: bool, cap: int | None = None,
         for ns in c["new_stems"]:
             # the newer note is live, or has itself aged into Archive/ (an importer of old transcripts
             # archives on the way in - the as-of stand's dating does exactly that); Superseded/ is gone
-            new_path = next((q for q in (folder / f"{ns}.md", folder / "Archive" / f"{ns}.md") if q.exists()), None)
+            new_path = _live_or_archived(folder, ns)
             if new_path is not None:
-                pairs.append((c, old_path, new_path, ns))
+                _queue(c, old_path, new_path, ns)
                 live_new.append(ns)
         if apply and len(live_new) != len(c["new_stems"]):
+            #: the stamp is rewritten from a row read BEFORE the re-queue above stamped its stems
+            #: into it: carry them, or the cleanup erases a pair from both lists at once (R1)
+            keep = live_new + [s for s in back_by_note.get(c["path"], []) if s not in live_new]
             try:
-                _set_contested(old_path, live_new)      # the newer note is gone: nothing left to judge
+                _set_contested(old_path, keep)      # the newer note is gone: nothing left to judge
             except OSError as e:
                 print(f"      stale stamp cleanup failed for {old_path.name} ({e}) - left as is",
                       file=sys.stderr)
@@ -371,7 +314,7 @@ def adjudicate_contested(apply: bool, has_llm: bool, cap: int | None = None,
     stats = {"pairs": len(pairs), "budget": budget, "cap": cap, "judged": 0, "tokens_spent": 0,
              "estimated_calls": 0, "replaces": 0, "separate": 0, "vetoed": 0, "unanswered": 0,
              "errors": 0, "left": len(pairs), "prompt_tokens": 0, "eval_tokens": 0, "skipped": None}
-    stats["requeued"], stats["baselined"] = requeued, baselined
+    stats["requeued"], stats["baselined"] = len(requeued_pairs), baselined
     #: One vector cache for the whole run, written once at the end. `supersede_note` used to load
     #: it, pop one stem and write the whole file back for EVERY pair it retired - N full rewrites
     #: of a cache the consolidator (below, `consolidate`) already holds and writes itself. Given a
@@ -384,24 +327,23 @@ def adjudicate_contested(apply: bool, has_llm: bool, cap: int | None = None,
     #: judge, with no backend, and with a zero budget. "Nothing to judge" is the likeliest state
     #: after a kill - a process killed after its last retirement leaves an empty queue - and a quiet
     #: week or a down Ollama are the next two. `healed` is in the report on every path, 0 included.
-    stats["carry_parked"] = stats["carry_lost"] = 0
     own_cache = apply and cache is None
     if own_cache:
         cache = m.load_embed_cache()
     if apply:
         healed = _drop_retired_vectors(cache) if cache is not None else 0
     else:
-        # a dry run counts what apply would heal, on the cache as loaded, and pops nothing (#11)
-        _peek = cache if cache is not None else m.load_embed_cache()
-        healed = _drop_retired_vectors(_peek, dry=True) if _peek else 0
+        #: a dry run counts what apply would heal (#11) on the cache its caller holds, and pops
+        #: nothing. Standalone - no cache handed in - it does not load one just to count: on the
+        #: owner's store that is a 107 MB parse to print one number (R13); `healed` is then None.
+        healed = _drop_retired_vectors(cache, dry=True) if cache else (0 if cache is not None else None)
     stats["healed"] = healed
-    stats["carried_late"] = _apply_parked_carries(apply, cache)
     retired = 0
 
     def _early(reason: str | None = None) -> dict:
         if reason:
             stats["skipped"] = reason
-        if own_cache and (healed or stats["carried_late"]):
+        if own_cache and healed:
             m.save_embed_cache(cache)      # what was healed is written even when nothing is judged
         return stats
 
@@ -481,7 +423,11 @@ def adjudicate_contested(apply: bool, has_llm: bool, cap: int | None = None,
                         # the retired statement's history carries into the one that replaced it, as
                         # the write-time absorb used to carry it (recurrence = distinct sessions)
                         r_old, s_old = m._note_recur_sources(old_path)
-                        new_sources = _as_stems(fm_new.get("sources"))           # #3: never per character
+                        #: both sides read through the one list reader: `_note_recur_sources` drops a
+                        #: string-valued `sources` (a hand-written flow list) and falls back to the
+                        #: session, so the retiring note's own history was lost from the carry (R6)
+                        s_old = set(s_old) | set(m._list_field(fm_old.get("sources")))
+                        new_sources = m._list_field(fm_new.get("sources"))           # #3: never per character
                         sources = set(s_old) | set(new_sources)
                         for sess in (fm_old.get("session"), fm_new.get("session")):
                             if sess:
@@ -500,43 +446,34 @@ def adjudicate_contested(apply: bool, has_llm: bool, cap: int | None = None,
                             grew = True
                         rec = max(m._coerce_recurrence(fm_new.get("recurrence")), r_old + (1 if grew else 0),
                                   len(sources))
-                        sup_list = _as_stems(fm_new.get("supersedes"))
+                        sup_list = m._list_field(fm_new.get("supersedes"))
                         if c["stem"] not in sup_list:
                             sup_list.append(c["stem"])
-                        # F5 (xhigh review): supersede FIRST, the contested clear riding along in the
-                        # SAME atomic stamp (extra_fields) - the old code cleared the stamp with a
-                        # SEPARATE write before attempting the retirement, so a failed unlink (Windows:
-                        # Obsidian/AV/sync holding the note open) left the pair orphaned: live, with
-                        # the stamp already gone and nothing pointing back at it. A failure here
-                        # leaves `old_path` untouched and still contested - re-queued next run.
+                        # The carry goes FIRST (R10): an idempotent merge, so an OSError here changes
+                        # nothing and the pair really is left as is (F10 below). Then the retirement -
+                        # F5 still holds: the contested clear rides in the retirement's own atomic
+                        # stamp, never a separate write before it. If the retirement fails, the carry
+                        # is written back out, and the pair stays contested for the next run.
+                        before = new_path.read_text(encoding="utf-8", errors="replace")
+                        rec = _carry_into(new_path, before, rec, sources, sup_list)
                         if not m.supersede_note(old_path, new_stem, via="judge",
                                                 extra_fields={m.CONTESTED_KEY: remaining},
                                                 cache=cache):
-                            print(f"      supersede failed for {old_path.name} - left live, still contested",
-                                  file=sys.stderr)
+                            try:
+                                m.write_atomic(new_path, before)
+                                print(f"      supersede failed for {old_path.name} - left live, still "
+                                      "contested; the carry was undone", file=sys.stderr)
+                            except OSError as e:
+                                print(f"      supersede failed for {old_path.name} and the carry into "
+                                      f"{new_path.name} could not be undone ({e}) - the pair stays "
+                                      "contested, and a replaces next run re-applies the same merge",
+                                      file=sys.stderr)
                         else:
                             # the retired stem already left the cache: supersede_note pops it from
                             # the cache it is handed (the F13 pop that stood here was dead, #15)
                             retired += 1
-                            try:
-                                rec = _carry_into(new_path, rec, sources, sup_list)
-                                if cache is not None and isinstance(cache.get(new_stem), dict):
-                                    cache[new_stem]["recurrence"] = rec
-                            except OSError as e:
-                                # #4: the old note is already retired, so "left as is" would be
-                                # false and the queue will not bring the pair back - park the carry
-                                entry = {"stem": new_stem, "ntype": c["ntype"], "recurrence": rec,
-                                         "sources": sorted(sources), "supersedes": sup_list,
-                                         "retired": c["stem"]}
-                                try:
-                                    _park_carry(entry)
-                                    stats["carry_parked"] += 1
-                                    print(f"      carry into {new_path.name} failed ({e}) - "
-                                          "parked, applied next run", file=sys.stderr)
-                                except OSError as e2:
-                                    stats["carry_lost"] += 1
-                                    print(f"      carry into {new_path.name} failed ({e}) and could "
-                                          f"not be parked ({e2}) - LOST: {entry}", file=sys.stderr)
+                            if cache is not None and isinstance(cache.get(new_stem), dict):
+                                cache[new_stem]["recurrence"] = rec
                 elif verdict is False:
                     stats["separate"] += 1
                     print(f"      separate: {c['stem']} | {new_stem}")
@@ -559,7 +496,7 @@ def adjudicate_contested(apply: bool, has_llm: bool, cap: int | None = None,
         #: owns the cache: a caller that handed one in never reaches its own save when this raises.
         #: Before the cache was written once a run, each retirement wrote at once and this window
         #: was one pair; now it is the queue, so the write has to follow the queue out.
-        if (retired or healed or stats["carried_late"]) and cache is not None:
+        if (retired or healed) and cache is not None:
             m.save_embed_cache(cache)
         raise
 
@@ -571,7 +508,7 @@ def adjudicate_contested(apply: bool, has_llm: bool, cap: int | None = None,
     stats["tokens_spent"] = spent
     stats["prompt_tokens"] = m._LLM_STATS.get("prompt_tokens", 0) - p0
     stats["eval_tokens"] = m._LLM_STATS.get("eval_tokens", 0) - e0
-    if own_cache and (retired or healed or stats["carried_late"]):
+    if own_cache and (retired or healed):
         m.save_embed_cache(cache)                      # the run's one write (see own_cache above)
     return stats
 
@@ -696,6 +633,10 @@ def _union_meta_into_keeper(keep_fp: Path, member_fps: list[Path]) -> None:
             continue
 
     def _as_list(v):
+        #: a string through the engine's one list reader (R11): a hand-written `[a, b]` is two
+        #: entries here too, not the one string `["[a, b]"]` the merge used to write back
+        if isinstance(v, str):
+            return m._list_field(v)
         return v if isinstance(v, list) else ([v] if v not in (None, "") else [])
 
     merged = {}
@@ -1175,7 +1116,7 @@ def _run_consolidation(apply, mode, has_llm):
           + (f"; {adj['errors']} pair(s) failed (left as is)" if adj.get("errors") else "")  # F10
           # #11: what the run did besides judging - each printed when it happened, 0 omitted
           + "".join(f"; {k.replace('_', ' ')} {adj[k]}" for k in
-                    ("requeued", "baselined", "healed", "carried_late", "carry_parked", "carry_lost")
+                    ("requeued", "baselined", "healed")
                     if adj.get(k))
           + (f" ({adj['skipped']})" if adj.get("skipped") else "") + f" [{mode}]")
     if apply and (adj["replaces"] or adj.get("healed")):
