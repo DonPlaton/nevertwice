@@ -160,7 +160,7 @@ def build_side_oracle(case: dict, side: str, *, principle_override: str | None =
     # shape is kept identical to `build_side_extracted`'s so a diagnostic row reads the same
     # regardless of `extractor_mode`.
     items = [{"ntype": "pattern", "title": row["title"],
-             "has_principle": bool(principle.strip()), "principle": principle}]
+             "has_principle": bool(principle.strip()), "principle": principle, "entities": []}]
     stem = m.write_typed_note("Patterns",
                               {"title": row["title"], "description": row["description"],
                                "principle": principle},
@@ -168,12 +168,13 @@ def build_side_oracle(case: dict, side: str, *, principle_override: str | None =
     if not stem:
         return {"stem": None, "ntype": "pattern", "written_principle": "",
                "project_relevant": True, "n_items": 1, "items": items,
-               "raw_principle": principle}
+               "raw_principle": principle, "raw_entities": []}
     m.update_embeddings([(stem, "pattern", row["project"], row["title"], row["description"], "")])
     fm = m._read_frontmatter_file(m.VAULT / "Patterns" / f"{stem}.md")
     written = fm.get("principle") if isinstance(fm.get("principle"), str) else ""
     return {"stem": stem, "ntype": "pattern", "written_principle": written,
-           "project_relevant": True, "n_items": 1, "items": items, "raw_principle": principle}
+           "project_relevant": True, "n_items": 1, "items": items, "raw_principle": principle,
+           "raw_entities": []}
 
 
 # ── --extract mode: the real extraction pipeline over a synthetic transcript ───────────────
@@ -261,9 +262,11 @@ def _identifier_hits(text: str, planted: dict) -> dict[str, bool]:
 
 def _extraction_items(extraction: dict) -> list[dict]:
     """Every pattern/mistake item a real (or stub) extraction call proposed, title + whether it
-    carries a non-empty `principle` - diagnostic only. `_first_pattern_or_mistake` still decides
-    which ONE item actually gets written; this exists to answer "did a LATER item have a
-    principle the first one lacked" (H1/H2 at the item level, not just the written note's)."""
+    carries a non-empty `principle` + its declared `entities` - diagnostic only.
+    `_first_pattern_or_mistake` still decides which ONE item actually gets written; this exists
+    to answer "did a LATER item have a principle the first one lacked" (H1/H2 at the item
+    level, not just the written note's), and `entities` is what `_write_gate_diagnosis` needs
+    to replay the write-time forbidden-token check (finding 1, 2026-09-24)."""
     out = []
     for ntype, key in (("pattern", "patterns"), ("mistake", "mistakes")):
         items = extraction.get(key)
@@ -272,8 +275,10 @@ def _extraction_items(extraction: dict) -> list[dict]:
                 if not isinstance(it, dict):
                     continue
                 p = it.get("principle") if isinstance(it.get("principle"), str) else ""
+                ents = it.get("entities") if isinstance(it.get("entities"), list) else []
                 out.append({"ntype": ntype, "title": it.get("title", ""),
-                           "has_principle": bool(p.strip()), "principle": p})
+                           "has_principle": bool(p.strip()), "principle": p,
+                           "entities": [str(e) for e in ents]})
     return out
 
 
@@ -311,19 +316,21 @@ def build_side_extracted(case: dict, side: str, *, use_real: bool, poison_class:
     if not extraction.get("project_relevant", True):
         return {"stem": None, "ntype": None, "written_principle": "",
                "project_relevant": False, "n_items": len(items_all), "items": items_all,
-               "raw_principle": ""}
+               "raw_principle": "", "raw_entities": []}
     picked = _first_pattern_or_mistake(extraction)
     if not picked:
         return {"stem": None, "ntype": None, "written_principle": "",
                "project_relevant": True, "n_items": len(items_all), "items": items_all,
-               "raw_principle": ""}
+               "raw_principle": "", "raw_entities": []}
     ntype, item = picked
     raw_principle = item.get("principle") if isinstance(item.get("principle"), str) else ""
+    raw_entities = item.get("entities") if isinstance(item.get("entities"), list) else []
+    raw_entities = [str(e) for e in raw_entities]
     stem = m.write_typed_note(m.TYPE_FOLDER[ntype], item, project, "2026-09-23", [], ntype)
     if not stem:
         return {"stem": None, "ntype": ntype, "written_principle": "",
                "project_relevant": True, "n_items": len(items_all), "items": items_all,
-               "raw_principle": raw_principle}
+               "raw_principle": raw_principle, "raw_entities": raw_entities}
     fp = m.VAULT / m.TYPE_FOLDER[ntype] / f"{stem}.md"
     fm = m._read_frontmatter_file(fp)
     written_principle = fm.get("principle") if isinstance(fm.get("principle"), str) else ""
@@ -334,7 +341,7 @@ def build_side_extracted(case: dict, side: str, *, use_real: bool, poison_class:
             rejections[cls] = rejections.get(cls, 0) + 1
     return {"stem": stem, "ntype": ntype, "written_principle": written_principle,
            "project_relevant": True, "n_items": len(items_all), "items": items_all,
-           "raw_principle": raw_principle}
+           "raw_principle": raw_principle, "raw_entities": raw_entities}
 
 
 # ── shared: the distractor is always oracle-written (it is noise, not the thing under test) ──
@@ -436,6 +443,53 @@ def _cross_preview(project_b: str, query: str, max_chars: int = 300) -> str:
     return _hit_text(hits)[:max_chars]
 
 
+def _write_gate_diagnosis(raw_principle: str, project: str, entities: list) -> dict:
+    """Replays `_engine_write.py`'s `principle` write-time gate, IN THE SAME ORDER, to record
+    WHICH stage and WHICH token/class would reject a given (principle, entities) pair -
+    `write_typed_note` never exposes this itself (A3's degradation contract: a rejected
+    principle just becomes `""`, silently). Finding 1, 2026-09-24: the first real `--extract`
+    run showed 5 of 10 written notes' principles dropped with `write_rejections_by_class`
+    reading 0 everywhere, because the bench's own rejection classifier only ever attributed a
+    drop to a PLANTED identifier - this function is what answers "then what DID reject it".
+
+    Read-only mirror, not a call into the engine's own function: `write_typed_note` does not
+    return this detail on any path, so there is nothing to call instead of reimplementing the
+    four gates (redact -> cap -> `_looks_unsafe` -> `principle_scan`) in the same order.
+    `stage` is one of: "no_raw_principle" (nothing was proposed - not this gate's job at all),
+    "looks_unsafe", "principle_scan_regex" (one of `PRINCIPLE_IDENTIFIER_GROUPS`, unconditional,
+    `class` names which), "principle_scan_forbidden_token" (`class` is "project_slug" or
+    "entity", `token` the exact string matched), or "kept"."""
+    if not raw_principle:
+        return {"stage": "no_raw_principle", "capped": False, "class": None, "token": None}
+    p = m.redact_secrets(raw_principle).strip()
+    capped = len(p) > m.PRINCIPLE_MAX_CHARS
+    if capped:
+        p = m._cut_word_boundary(p, m.PRINCIPLE_MAX_CHARS)
+    if p and m._looks_unsafe(p):
+        return {"stage": "looks_unsafe", "capped": capped, "class": None, "token": None}
+    if not p:
+        return {"stage": "empty_after_redact_or_cap", "capped": capped, "class": None,
+               "token": None}
+    for cls, group in m.PRINCIPLE_IDENTIFIER_GROUPS.items():
+        for pat in group:
+            match = pat.search(p)
+            if match:
+                return {"stage": "principle_scan_regex", "capped": capped, "class": cls,
+                       "token": match.group(0)}
+    forbidden_entities = {e for e in entities if m._looks_like_identifier(e, project)}
+    toks = sorted({t.strip() for t in ({project} | forbidden_entities) if t and t.strip()},
+                  key=len, reverse=True)
+    if toks:
+        alt = "|".join(re.escape(t) for t in toks)
+        match = re.search(rf"\b(?:{alt})\b", p, re.IGNORECASE)
+        if match:
+            is_project = match.group(0).lower() == (project or "").lower()
+            return {"stage": "principle_scan_forbidden_token", "capped": capped,
+                   "class": "project_slug" if is_project else "entity",
+                   "token": match.group(0)}
+    return {"stage": "kept", "capped": capped, "class": None, "token": None}
+
+
 def _diagnostic_row(i: int, case: dict, written: dict[str, dict], case_rows: dict[str, dict],
                     promote_report: dict) -> dict:
     """One row of `rows` (owner review, 2026-09-24): everything H1-H5 need to be told apart,
@@ -457,6 +511,11 @@ def _diagnostic_row(i: int, case: dict, written: dict[str, dict], case_rows: dic
             "written_principle": info.get("written_principle") or "",
             "written_description": written_desc,
             "description_identifier_hits": _identifier_hits(written_desc, planted),
+            # finding 1 (2026-09-24): WHY the raw proposed principle did or didn't survive to
+            # `written_principle` - the write-time gate never says this itself.
+            "write_gate": _write_gate_diagnosis(info.get("raw_principle") or "",
+                                                case[side]["project"],
+                                                info.get("raw_entities") or []),
         }
     return {
         "case_id": case.get("id", i), "case_index": i,

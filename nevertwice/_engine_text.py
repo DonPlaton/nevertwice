@@ -680,6 +680,44 @@ def principle_scan(text: str, forbidden: set[str]) -> str:
     return re.sub(r"\s+", " ", s)
 
 
+def _looks_like_identifier(token: str, project: str) -> bool:
+    """Whether a declared `entities` string is worth forbidding as a `principle_scan`
+    de-identification token - NOT every entity a model lists names something identifying. A
+    model asked for "2-5 key entities of the lesson" (`_principle_prompt_rubric`) routinely
+    lists an ordinary technical word - "database", "retry", "timeout" - and
+    `write_typed_note`'s call to `principle_scan` used to forbid every declared entity
+    VERBATIM, so a principle that so much as USED one of its own note's entity words (not
+    named anything project-specific) was silently rejected. Found 2026-09-24 on the first real
+    `--extract` run of `research/cross_project_bench.py`: 5 of 10 written notes' principles were
+    dropped this way, and `write_rejections_by_class` read 0 everywhere, because the rejection
+    never correlated with a PLANTED identifier - it correlated with the model's own vocabulary.
+
+    A token counts as identifier-shaped when it carries a digit (`a000`, `JIRA-1234`, `v2`, a
+    port number), a dot (a hostname/FQDN fragment, a file extension) or a slash (a path
+    fragment) anywhere in it - or when it equals the project's own slug outright, which is
+    forbidden regardless of shape (naming your own project is a leak whatever the string looks
+    like). A bare hyphenated word with no digit ("client-side", "fixture-isolation") is let
+    through; a hyphen next to a digit ("svc-a000") already has a digit, so it is caught by the
+    same single check.
+
+    Deliberately does NOT try to separate "specific to this one deployment" from "shared by
+    every project on this stack" any further than that - `principles.py::_token_provenance`
+    is the boundary built for exactly that question, at PROMOTION time, over the whole corpus a
+    single write never gets to see. This only has to stop an obviously-generic word from
+    costing a write; it errs the SAME direction `principle_scan` itself documents (toward
+    forbidding, not toward permissiveness) whenever a token is ambiguous.
+
+    One bounded character-class scan, no quantifier over a repeated group - the same discipline
+    `_PRINCIPLE_IP_RE` and its siblings above follow, so this cannot become the next
+    `_DANGER_RE`."""
+    t = (token or "").strip()
+    if not t:
+        return False
+    if t.lower() == (project or "").lower():
+        return True
+    return bool(re.search(r"[\d./]", t))
+
+
 # W7 corroboration-gated quarantine - OFF by default. On a single-user store the user owns every
 # session, so the threat it defends (adversarial sessions planting a lone false "lesson") does not
 # apply and quarantine would only risk hiding legitimate memory. For a MULTI-TENANT / shared-store /

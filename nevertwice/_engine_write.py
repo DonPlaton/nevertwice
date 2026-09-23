@@ -707,7 +707,13 @@ def write_typed_note(folder: str, item, project: str, date: str,
     if principle and _looks_unsafe(principle):
         principle = ""
     if principle:
-        principle = principle_scan(principle, {project} | set(entities))
+        # 2026-09-24: forbidding every declared ENTITY verbatim rejected principles that named
+        # nothing identifying at all - a model's own "2-5 key entities" list routinely includes
+        # an ordinary technical word, and any principle that merely USED one was dropped. The
+        # project slug itself stays forbidden unconditionally either way; only the entity list
+        # is narrowed to strings that look identifier-shaped (`_looks_like_identifier`).
+        forbidden_entities = {e for e in entities if _looks_like_identifier(e, project)}
+        principle = principle_scan(principle, {project} | forbidden_entities)
 
     p = VAULT / folder
     p.mkdir(exist_ok=True)
