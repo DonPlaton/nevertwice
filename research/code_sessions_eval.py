@@ -116,21 +116,65 @@ def _cache_path(stage: str) -> Path:
 
 # ── stage 1: contexts per arm ─────────────────────────────────────────────────
 
-def contexts_nevertwice_full(corpus: dict) -> dict:
-    """Our extractor, one project per synthetic project, sessions dated as the corpus says."""
+def _llm_stats_snapshot(mh) -> tuple[int, int]:
+    """`(prompt_tokens, eval_tokens)` accumulated on `_LLM_STATS` so far - a process-lifetime
+    running total, never reset between sessions. A per-session cost is the DELTA of two
+    snapshots, never this value alone (same convention as `supersession_bench.py`'s own copy -
+    a two-line function kept local rather than cross-imported between research scripts)."""
+    return (mh._LLM_STATS.get("prompt_tokens", 0), mh._LLM_STATS.get("eval_tokens", 0))
+
+
+def _llm_stats_delta(before: tuple[int, int], after: tuple[int, int]) -> dict:
+    return {"prompt_tokens": after[0] - before[0], "eval_tokens": after[1] - before[1]}
+
+
+def seed_ride_pairs(api, project: str, n: int) -> int:
+    """A9 (Q3): `n` same-slug pairs of unproven-different statements, written directly through
+    `api.remember` - NO extractor call (`remember` -> `remember_lessons` -> `write_typed_note`
+    only) - so a project's store carries `n` genuine contested pairs BEFORE its real sessions are
+    ingested (PLAN: "--seed-pairs 2 seeds two synthetic contested pairs per project store before
+    ingest"). Two DIFFERENT numeric values under one title, with no `[facts]` block on either
+    side: K8 layer 1's own rules all need SOME literal or text overlap to prove a replacement
+    (`memory_hook._same_replacement` - "unproven" is what is left when neither side supplies
+    one), so the pair is kept apart as a live '-2' sibling and the earlier note is stamped
+    `contested` - the exact shape mechanism A (ride-along, TRIZ-PART2B) is meant to carry to the
+    project's NEXT real session. Returns how many pairs were actually seeded (`api.remember`
+    returns None for a write it refused as injection-shaped - counted, not raised on)."""
+    seeded = 0
+    for i in range(n):
+        title = f"seed contested pair {i}"
+        old = api.remember(title, project=project, type="decision",
+                           description=f"The seed threshold for case {i} is {10 + i} units.")
+        new = api.remember(title, project=project, type="decision",
+                           description=f"The seed threshold for case {i} is {90 + i} units.")
+        if old and new:
+            seeded += 1
+    return seeded
+
+
+def contexts_nevertwice_full(corpus: dict, seed_pairs: int = 0) -> dict:
+    """Our extractor, one project per synthetic project, sessions dated as the corpus says.
+    `seed_pairs` > 0 (A9) seeds that many synthetic contested pairs into each project's store
+    BEFORE its sessions are ingested (`seed_ride_pairs`), and every capture's `_LLM_STATS` token
+    delta is recorded per session (G3.2's per-session token reading)."""
     os.environ["NEVERTWICE_CLOUD"] = "none"
     os.environ["NEVERTWICE_MODEL"] = EXTRACTOR
     os.environ["NEVERTWICE_EXTRACT_TEMP"] = "0"   # deterministic extraction: a benchmark pins the seed
     m.OLLAMA_MODEL = EXTRACTOR         # bound explicitly: the engine read the name at import
     from nevertwice import api                                   # noqa: PLC0415
     out = {"_ingest": {"llm": api.m.OLLAMA_MODEL, "llm_calls_per_session": 1, "sessions": 0, "errors": 0,
-                       "sessions_with_zero_notes": 0}}
+                       "sessions_with_zero_notes": 0, "seed_pairs": seed_pairs,
+                       "seeded_pairs_by_project": {}, "session_tokens": {}}}
     t0 = time.time()
     for i, p in enumerate(corpus["projects"]):
+        if seed_pairs:
+            out["_ingest"]["seeded_pairs_by_project"][p["id"]] = seed_ride_pairs(api, p["id"], seed_pairs)
         for s in p["sessions"]:
             out["_ingest"]["sessions"] += 1
             try:
+                before = _llm_stats_snapshot(api.m)
                 r = api.capture_session(s["text"], project=p["id"], session_id=s["id"], trigger="ingest", date=s["day"])
+                out["_ingest"]["session_tokens"][s["id"]] = _llm_stats_delta(before, _llm_stats_snapshot(api.m))
                 if int(r.get("patterns", 0)) + int(r.get("mistakes", 0)) + int(r.get("decisions", 0)) == 0:
                     out["_ingest"]["sessions_with_zero_notes"] += 1
             except Exception:                                    # noqa: BLE001 - counted
@@ -381,6 +425,10 @@ def main() -> int:
     ap.add_argument("--arm", default="")
     ap.add_argument("--arms", default="nevertwice_full,naive")
     ap.add_argument("--limit", type=int, default=0, help="first N projects (a smoke run)")
+    ap.add_argument("--seed-pairs", type=int, default=0, dest="seed_pairs",
+                    help="A9 (Q3): seed this many synthetic contested pairs into each project's "
+                         "store before ingest (nevertwice_full arm only, contexts stage only) "
+                         "via api.remember - no extractor call")
     ap.add_argument("--save", action="store_true")
     ap.add_argument("--out", default="")
     args = ap.parse_args()
@@ -397,7 +445,7 @@ def main() -> int:
         if fn is None:
             print(f"unknown arm {args.arm!r}; have {', '.join(CONTEXT_FNS)}")
             return 2
-        ctx = fn(corpus)
+        ctx = fn(corpus, seed_pairs=args.seed_pairs) if args.arm == "nevertwice_full" else fn(corpus)
         fe._save(_ctx_path(args.arm), ctx)
         print(f"  {args.arm}: contexts for {len([k for k in ctx if not k.startswith('_')])} questions -> {_ctx_path(args.arm).name}")
         return 0
