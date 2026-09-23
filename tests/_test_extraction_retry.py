@@ -155,5 +155,47 @@ check("and how many the write path REFUSED",
       f"none {_none.get('refused')} refused {_ref.get('refused')}")
 check("so the two zeros are distinguishable by a number, not by reading the log",
       (_none.get("proposed") or {}) != (_ref.get("proposed") or {}))
+print("")
+print("- the relevance gate and quarantine are not 'proposed nothing' or 'refused' (review #2, #12) -")
+#: The /code-review xhigh of 2026-09-23. `proposed` was counted through the gated item list, so a
+#: session the relevance gate called off-topic reported that the extractor proposed nothing - the
+#: exact confusion the field was added to remove (token_floor treats an all-zero `proposed` as an
+#: honest regime). And `refused = proposed - written` counted a quarantined note and the crash-retry
+#: skip of one as refusals. Each outcome now has its own count, and they add up to `proposed`.
+_TWO_OFF = {**_TWO, "project_relevant": False}
+_off = _run("gate-a", _TWO_OFF, False)
+check("an off-topic session reports what the extractor proposed, not zero (#2)",
+      sum((_off.get("proposed") or {}).values()) == 2, str(_off.get("proposed")))
+check("and says the relevance gate dropped it, not the write path",
+      sum((_off.get("off_topic") or {}).values()) == 2
+      and sum((_off.get("refused") or {}).values()) == 0, f"{_off.get('off_topic')} {_off.get('refused')}")
+
+_SURE = {"patterns": [], "mistakes": [],
+         "decisions": [{"title": "quarantine me", "description": "the pool size is 64",
+                        "confidence": 0.99}]}
+m_q = m.QUARANTINE_MODE
+m.QUARANTINE_MODE = True
+try:
+    fresh()
+    m.generate_json = lambda *a, **k: dict(_SURE)
+    qlog: list[dict] = []
+    for _ in range(2):          # the second pass is the crash retry: the same session again
+        m.process_session("quar-a", CWD_FOR_ZEROS, "", "ingest", {}, run_log=qlog,
+                          transcript_text=TRANSCRIPT_FOR_ZEROS, project_override="zerosproj")
+finally:
+    m.QUARANTINE_MODE = m_q
+_q1, _q2 = (qlog + [{}, {}])[:2]
+check("a quarantined note is counted as quarantined, not refused (#12)",
+      sum((_q1.get("quarantined") or {}).values()) == 1
+      and sum((_q1.get("refused") or {}).values()) == 0, f"{_q1.get('quarantined')} {_q1.get('refused')}")
+check("the crash retry's idempotent skip is counted as skipped, not refused",
+      sum((_q2.get("skipped") or {}).values()) == 1
+      and sum((_q2.get("refused") or {}).values()) == 0, f"{_q2.get('skipped')} {_q2.get('refused')}")
+_keys = ("patterns", "mistakes", "decisions")
+for _name, _r in (("off-topic", _off), ("quarantine", _q1), ("retry", _q2), ("refused", _ref)):
+    _parts = sum(sum((_r.get(k) or {}).values()) for k in ("refused", "quarantined", "skipped", "off_topic"))
+    check(f"every outcome adds up to what was proposed ({_name})",
+          sum((_r.get("proposed") or {}).values()) == sum(_r.get(k, 0) for k in _keys) + _parts, str(_r))
+
 print(f"\nextraction retry: {len(RUN) - len(FAILED)} passed, {len(FAILED)} failed")
 sys.exit(1 if FAILED else 0)

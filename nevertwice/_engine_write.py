@@ -551,6 +551,26 @@ def _append_facts(desc: str, facts: list[str]) -> str:
     return f"{base}{_FACTS_MARK}" + " \u00b7 ".join(facts)
 
 
+#: Why the last `write_typed_note` on this thread returned what it did: "written", "refused"
+#: (the M-10/W8 unsafe-payload screen), "quarantined" (W7, on disk for review, not served) or
+#: "skipped" (a crash retry of a note this session already quarantined). All three non-writes
+#: return "", and counting them as one number called a quarantine a refusal (review 2026-09-23,
+#: #12). A caller resets it to None before the call, so a stand-in writer that sets nothing reads
+#: as a refusal - the conservative reading. Keyed by thread, so concurrent writers each see their
+#: own; by `_thread.get_ident()` and not `threading.local`, because the hook's import path does not
+#: pull `threading` (tests/_test_hot_import.py) and `_thread` is loaded before any user code.
+_WRITE_OUTCOME: dict = {}
+
+
+def _set_write_outcome(why) -> None:
+    _WRITE_OUTCOME[__import__("_thread").get_ident()] = why
+
+
+def last_write_outcome():
+    """Why the last `write_typed_note` on this thread returned what it did (see above)."""
+    return _WRITE_OUTCOME.get(__import__("_thread").get_ident())
+
+
 def write_typed_note(folder: str, item, project: str, date: str,
                      tags: list, ntype: str,
                      session_stem_: str | None = None,
@@ -592,6 +612,7 @@ def write_typed_note(folder: str, item, project: str, date: str,
     # defense-in-depth beyond secret redaction. Negation-gated so cautionary lessons survive.
     if _looks_unsafe(f"{title} {desc} {prevention}"):
         log(f"Rejected note (unsafe payload): {title[:50]!r}")
+        _set_write_outcome("refused")
         return ""
 
     p = VAULT / folder
@@ -656,6 +677,7 @@ def write_typed_note(folder: str, item, project: str, date: str,
                 continue
             if qfm.get("session") == session_stem_:
                 log(f"Idempotent skip (already quarantined this session): {old.stem}")
+                _set_write_outcome("skipped")
                 return ""
 
     # F9 (xhigh review): the note actually being written may be a `-2` sibling, not `base_stem` -
@@ -945,6 +967,7 @@ def write_typed_note(folder: str, item, project: str, date: str,
     write_atomic(fp, "\n".join(body))
     if quarantine_reason:
         log(f"Quarantined note ({quarantine_reason}): {folder}/Quarantine/{fp.name}")
+        _set_write_outcome("quarantined")
         return ""                       # on disk for review, but NOT embedded/recalled (W7)
     # Deferred retirement (B5): the replacement is on disk - now the old truth may go.
     # A failure here leaves the old note live BESIDE the new one (recoverable by the
@@ -974,6 +997,7 @@ def write_typed_note(folder: str, item, project: str, date: str,
             log(f"Contested: {old.stem} <- {stem}")
     _ndup_register(stem, project, ntype, title, desc, prevention, entities)
     log(f"Written: {folder}/{fp.name}")
+    _set_write_outcome("written")
     return stem
 
 

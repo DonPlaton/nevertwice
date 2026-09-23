@@ -1016,6 +1016,7 @@ def process_session(session_id: str, cwd: str, transcript_path: str,
     links: dict[str, list[str]] = {nt: [] for nt in TYPED_TYPES}
     new_notes = []
     touched_entities: set = set()       # F2: typed entities of notes ACTUALLY written (skips rejects)
+    outcome = {nt: {"refused": 0, "quarantined": 0, "skipped": 0} for nt in TYPED_TYPES}
     brain = _cfg.brain_enabled()
     for nt in TYPED_TYPES:
         for item in items_of(nt):
@@ -1026,9 +1027,12 @@ def process_session(session_id: str, cwd: str, transcript_path: str,
                 _vf = _note_facts(item, facts_source)
                 if _vf:
                     item["description"] = _append_facts(item.get("description", ""), _vf)
+            _set_write_outcome(None)
             stem = write_typed_note(TYPE_FOLDER[nt], item, project, date, tags, nt,
                                     session_stem_=sess_stem, siblings=all_siblings)
-            if not stem:                 # rejected (injection-shaped, M-10) - skip
+            if not stem:                 # refused (M-10), quarantined (W7) or a retry's skip
+                why = last_write_outcome()
+                outcome[nt][why if why in ("quarantined", "skipped") else "refused"] += 1
                 continue
             links[nt].append(stem)
             # redact BEFORE the embed path too: write_typed_note redacts what lands in the .md,
@@ -1096,12 +1100,22 @@ def process_session(session_id: str, cwd: str, transcript_path: str,
     #: a defect. A stand measuring the cost of memory has to print zero only when it can say
     #: which - a zero it cannot explain sells a bug as a design (asked for by the auditing
     #: session while writing `research/token_floor.py`, 2026-09-22).
-    proposed = {nt: len(items_of(nt)) for nt in TYPED_TYPES}
-    refused = {nt: proposed[nt] - counts[nt] for nt in TYPED_TYPES}
+    #: Counted from the extraction itself, not through `items_of`: the relevance gate empties
+    #: that list, and an off-topic session then read as "the extractor proposed nothing" - the
+    #: confusion this field exists to remove (review 2026-09-23, #2). What the gate dropped is
+    #: `off_topic`; what the write path did not write is split by why (#12). The five add up to
+    #: `proposed` - written + refused + quarantined + skipped + off_topic.
+    proposed = {nt: (len(v) if isinstance(v := extraction.get(f"{nt}s"), list) else 0)
+                for nt in TYPED_TYPES}
+    off_topic = {nt: (0 if relevant else proposed[nt]) for nt in TYPED_TYPES}
+    refused = {nt: outcome[nt]["refused"] for nt in TYPED_TYPES}
+    quarantined = {nt: outcome[nt]["quarantined"] for nt in TYPED_TYPES}
+    skipped = {nt: outcome[nt]["skipped"] for nt in TYPED_TYPES}
+    _unwritten = [(k, sum(d.values())) for k, d in (("refused", refused), ("quarantined", quarantined),
+                                                    ("skipped", skipped), ("off-topic", off_topic))]
     log(f"Done {session_id[:8]} | P={counts['pattern']} "
         f"M={counts['mistake']} D={counts['decision']}"
-        + (f" | refused {sum(refused.values())} of {sum(proposed.values())}"
-           if sum(refused.values()) else ""))
+        + "".join(f" | {k} {n} of {sum(proposed.values())}" for k, n in _unwritten if n))
     if run_log is not None:
         run_log.append({
             "session_id": session_id, "project": project, "time": time_str,
@@ -1110,6 +1124,9 @@ def process_session(session_id: str, cwd: str, transcript_path: str,
             "decisions": counts["decision"],
             "proposed": dict(proposed),
             "refused": dict(refused),
+            "quarantined": dict(quarantined),
+            "skipped": dict(skipped),
+            "off_topic": dict(off_topic),
         })
     return True
 

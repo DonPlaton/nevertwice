@@ -225,6 +225,12 @@ def _ingest(pool: dict, cap: int | None, project: str) -> dict:
     #: is a defect, and the written counters alone print the same for both.
     proposed = {"pattern": 0, "mistake": 0, "decision": 0}
     refused = {"pattern": 0, "mistake": 0, "decision": 0}
+    #: The rest of the gap between proposed and written, each with its own cause (review
+    #: 2026-09-23, #2 and #12): the relevance gate, the W7 quarantine, a crash retry's skip.
+    #: Without them an off-topic session reads as a refusing write path.
+    quarantined = {"pattern": 0, "mistake": 0, "decision": 0}
+    skipped = {"pattern": 0, "mistake": 0, "decision": 0}
+    off_topic = {"pattern": 0, "mistake": 0, "decision": 0}
     t0 = time.time()
     for sid, text in items:
         try:
@@ -239,7 +245,8 @@ def _ingest(pool: dict, cap: int | None, project: str) -> dict:
         #: From the RETURN, never from the log line: the log prints refusals only when there
         #: are some, so "no line" would become evidence again - the shape this stand exists to
         #: avoid. The return carries both numbers on every call, including zero.
-        for key, acc in (("proposed", proposed), ("refused", refused)):
+        for key, acc in (("proposed", proposed), ("refused", refused), ("quarantined", quarantined),
+                         ("skipped", skipped), ("off_topic", off_topic)):
             for kind in acc:
                 acc[kind] += int((res.get(key) or {}).get(kind, 0) or 0)
         written += 1
@@ -268,7 +275,8 @@ def _ingest(pool: dict, cap: int | None, project: str) -> dict:
     #: it (a defect, and the same row would be selling a bug as a design). The refusal that
     #: remains lives at the printing site: a zero cost may be printed only beside both numbers.
     return {"written": written, "typed_notes": typed,
-            "proposed": proposed, "refused": refused,
+            "proposed": proposed, "refused": refused, "quarantined": quarantined,
+            "skipped": skipped, "off_topic": off_topic,
             "write_cost_tokens": write_cost,
             "seconds": round(time.time() - t0, 1)}
 
@@ -604,7 +612,9 @@ def main(argv=None) -> int:
                 wc = ing.get("write_cost_tokens") or {}
                 verdict = ("extractor produced nothing - a regime, not a refusal"
                            if prop == 0 else
-                           f"extractor proposed {prop}, write path refused {refu}")
+                           f"extractor proposed {prop}, write path refused {refu}"
+                           + "".join(f", {k.replace('_', '-')} {n}" for k in ("off_topic", "quarantined", "skipped")
+                                     if (n := sum((ing.get(k) or {}).values()))))
                 print(f"  {'':12s}   write: {ing.get('written', 0)} session(s), "
                       f"{ing.get('typed_notes', 0)} typed note(s), "
                       f"{wc.get('prompt_tokens', 0)}+{wc.get('eval_tokens', 0)} tokens "

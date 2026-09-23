@@ -695,6 +695,8 @@ def capture_session(text: str, *, project: str | None = None,
                 #: first when the second is true reports a property of the workload where
                 #: there is a defect.
                 "proposed": r.get("proposed", {}), "refused": r.get("refused", {}),
+                "quarantined": r.get("quarantined", {}), "skipped": r.get("skipped", {}),
+                "off_topic": r.get("off_topic", {}),
                 "session_id": sid}
     finally:
         m.release_lock()
